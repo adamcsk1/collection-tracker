@@ -17,4 +17,7 @@
   /* Customs */
   --header-height: 60px;
   --input-height: 28px;
+  --glassy-background: rgb(from var(--background-color-alt) r g b / 85%);
+  --image-width: 90px;
+  --image-height: 125px;
 }
