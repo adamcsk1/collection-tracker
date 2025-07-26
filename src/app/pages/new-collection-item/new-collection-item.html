@@ -1,0 +1,32 @@
+<form [formGroup]="formGroup">
+  <ct-input
+    [label]="('Search' | signalTranslate)()"
+    [hint]="('Messages.NewCollectionItemSearch' | signalTranslate)()"
+    [mandatory]="true"
+    [control]="formGroup.controls.searchText"
+  />
+  @if (matchedContent().length) {
+    <ct-select
+      [mandatory]="true"
+      [label]="('SelectedContent' | signalTranslate)()"
+      [control]="formGroup.controls.selectedIMDbId"
+      [options]="matchedContent()"
+    >
+      <ng-container errors>
+        @if (!!formGroup.controls.selectedIMDbId.errors?.['knownIMDbId']) {
+          {{ ('Validation.KnownIMDbId' | signalTranslate)() }}
+        }
+      </ng-container>
+    </ct-select>
+    <ct-input
+      [label]="('Tags' | signalTranslate)()"
+      [hint]="('Messages.Tags' | signalTranslate)()"
+      [control]="formGroup.controls.tags"
+    />
+  }
+  <div class="form-buttons">
+    <button [disabled]="formGroup.invalid" (click)="onAdd()">{{ ('Save' | signalTranslate)() }}</button>
+    <button [disabled]="formGroup.invalid" (click)="onAdd(true)">{{ ('SaveAndNew' | signalTranslate)() }}</button>
+    <button class="button-danger" (click)="onCancel()">{{ ('Cancel' | signalTranslate)() }}</button>
+  </div>
+</form>
