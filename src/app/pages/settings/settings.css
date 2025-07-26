@@ -1,0 +1,34 @@
+form {
+  max-width: 500px;
+  margin: 0 auto;
+
+  label {
+    display: block;
+  }
+
+  @media (width <= 450px) {
+    max-width: 90vw;
+  }
+}
+
+.status {
+  display: flex;
+  align-items: center;
+
+  .status-circle {
+    display: inline-block;
+    background-color: var(--text-color);
+    border-radius: 50%;
+    width: var(--font-size-default);
+    height: var(--font-size-default);
+    margin-left: var(--size-small);
+  }
+
+  .status-circle-ok {
+    background-color: var(--color-lightseagreen);
+  }
+
+  .status-circle-error {
+    background-color: var(--color-crimson);
+  }
+}
