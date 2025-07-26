@@ -1,0 +1,59 @@
+.collection-list-item-skeleton {
+  height: var(--image-height);
+  width: 100%;
+  padding: var(--size-small);
+  margin-bottom: var(--size-small);
+  display: flex;
+
+  .collection-list-item-skeleton-image {
+    flex-basis: var(--image-width);
+    height: var(--image-height);
+    width: var(--image-width);
+    border-radius: var(--border-radius);
+  }
+
+  .collection-list-item-skeleton-content {
+    flex-basis: calc(100% - var(--image-width));
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: var(--size-small) var(--size-bigger);
+
+    span:nth-of-type(1) {
+      width: 70%;
+    }
+
+    span:nth-of-type(2) {
+      width: 50%;
+    }
+
+    span:nth-of-type(3) {
+      width: 30%;
+    }
+
+    .collection-list-item-skeleton-content-item {
+      background-color: var(--base-color-darker);
+      display: block;
+      height: var(--font-size-default);
+      border-radius: var(--border-radius);
+    }
+  }
+}
+
+.shine {
+  background: linear-gradient(
+      90deg,
+      var(--base-color-darker) 33%,
+      var(--base-color-lighter) 50%,
+      var(--base-color-darker) 66%
+    )
+    var(--base-color-darker);
+  background-size: 300% 100%;
+  animation: shine 0.75s infinite;
+}
+
+@keyframes shine {
+  0% {
+    background-position: right;
+  }
+}
