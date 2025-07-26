@@ -1,0 +1,32 @@
+@if (label(); as label) {
+  <label [for]="textareaId()"
+    >{{ label }}
+    @if (mandatory()) {
+      <span>*</span>
+    }
+  </label>
+}
+
+<textarea
+  #textarea
+  class="textarea"
+  [id]="textareaId()"
+  [rows]="rows()"
+  [cols]="cols()"
+  [formControl]="control()"
+></textarea>
+
+@if (hint()) {
+  <small>{{ hint() }}</small>
+}
+
+@if (control().touched || control().dirty) {
+  @if (control().errors; as errors) {
+    <small class="error">
+      @if (!!errors?.['required']) {
+        {{ ('Validation.Required' | signalTranslate)() }}
+      }
+      <ng-content select="[errors]"></ng-content>
+    </small>
+  }
+}
