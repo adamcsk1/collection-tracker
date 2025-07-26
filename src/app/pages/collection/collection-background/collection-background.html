@@ -1,0 +1,7 @@
+@for (image of images(); track image.url + $index) {
+  <img
+    [@opacityAnimation]
+    [src]="image.url"
+    style="--x: {{ image.x }}px; --y: {{ image.y }}px; --animation-duration:  {{ image.animationDuration }}s"
+  />
+}

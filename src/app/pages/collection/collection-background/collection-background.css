@@ -1,0 +1,27 @@
+:host {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  filter: blur(var(--size-small));
+  pointer-events: none;
+}
+
+img {
+  z-index: -1;
+  width: 90px;
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  animation-name: image-animation;
+  animation-timing-function: linear;
+  animation-duration: var(--animation-duration);
+  animation-iteration-count: infinite;
+}
+
+@keyframes image-animation {
+  100% {
+    transform: translateY(100vh);
+  }
+}
