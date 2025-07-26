@@ -1,0 +1,16 @@
+:host {
+  width: 100%;
+  display: inline-flex;
+  flex-direction: column;
+}
+
+ct-header {
+  z-index: 2;
+}
+
+.app-body {
+  padding: var(--size-default);
+  overflow: auto;
+  flex: 1;
+  max-height: calc(100vh - var(--header-height));
+}
