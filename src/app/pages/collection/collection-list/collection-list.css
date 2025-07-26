@@ -1,0 +1,52 @@
+:host {
+  --pagination-height: 35px;
+  --float-button-container-size: 45px;
+}
+
+.list {
+  max-height: calc(100vh - var(--header-height) - 46px - 2 * var(--size-default) - var(--pagination-height) - 2px);
+  overflow: hidden auto;
+
+  .list-empty {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+
+    i {
+      text-align: center;
+      font-size: 8rem;
+    }
+
+    a {
+      margin-bottom: var(--size-default);
+    }
+  }
+}
+
+.pagination {
+  height: var(--pagination-height);
+  display: flex;
+  justify-content: center;
+}
+
+.float-button {
+  position: fixed;
+  right: 0;
+  height: var(--float-button-container-size);
+  width: var(--float-button-container-size);
+  background-color: var(--background-color);
+  border-radius: var(--border-radius);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: var(--size-small);
+}
+
+.random-pick {
+  bottom: 0;
+}
+
+.add-new {
+  bottom: calc(2 * var(--size-small) + var(--float-button-container-size));
+  margin-bottom: 0;
+}

@@ -1,0 +1,78 @@
+<div class="float-button random-pick">
+  <button class="button-icon material-icons" (click)="onRandomPick()" [title]="('RandomPick' | signalTranslate)()">
+    casino
+  </button>
+</div>
+@if (permissionAdd()) {
+  <div class="float-button add-new">
+    <button class="button-icon material-icons" (click)="onAddNew()" [title]="('AddNew' | signalTranslate)()">
+      add
+    </button>
+  </div>
+}
+<div class="list" #scrollContainer>
+  @if (!loadNetworkStatus() || loadNetworkStatus() === 'pending') {
+    <ct-collection-list-item-skeleton />
+    <ct-collection-list-item-skeleton />
+    <ct-collection-list-item-skeleton />
+    <ct-collection-list-item-skeleton />
+    <ct-collection-list-item-skeleton />
+    <ct-collection-list-item-skeleton />
+    <ct-collection-list-item-skeleton />
+    <ct-collection-list-item-skeleton />
+    <ct-collection-list-item-skeleton />
+    <ct-collection-list-item-skeleton />
+  } @else {
+    @for (collectionItem of paginatedCollection(); track $index) {
+      @defer (prefetch on idle) {
+        <ct-collection-list-item [collectionItem]="collectionItem" />
+      } @placeholder {
+        <ct-collection-list-item-skeleton />
+      }
+    } @empty {
+      <div class="list-empty">
+        <i class="material-icons">movie</i>
+        @if (collectionLength() === 0) {
+          {{ ('Message.EmptyCollection' | signalTranslate)() }}<br />
+          <a (click)="onAddNew()">{{ ('Message.AddFirstCollectionItem' | signalTranslate)() }}</a>
+        } @else {
+          {{ ('Message.EmptySearch' | signalTranslate)() }}<br />
+        }
+      </div>
+    }
+  }
+</div>
+<div class="pagination">
+  <button
+    class="button-icon material-icons"
+    [title]="('First' | signalTranslate)()"
+    [disabled]="disablePreviousButton()"
+    (click)="onFirstPage()"
+  >
+    first_page
+  </button>
+  <button
+    class="button-icon material-icons"
+    [title]="('Previous' | signalTranslate)()"
+    [disabled]="disablePreviousButton()"
+    (click)="onPreviousPage()"
+  >
+    chevron_left
+  </button>
+  <button
+    class="button-icon material-icons"
+    [title]="('Next' | signalTranslate)()"
+    [disabled]="disableNextButton()"
+    (click)="onNextPage()"
+  >
+    chevron_right
+  </button>
+  <button
+    class="button-icon material-icons"
+    [title]="('Last' | signalTranslate)()"
+    [disabled]="disableNextButton()"
+    (click)="onLastPage()"
+  >
+    last_page
+  </button>
+</div>
