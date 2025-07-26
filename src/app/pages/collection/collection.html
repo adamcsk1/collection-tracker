@@ -1,0 +1,8 @@
+<ct-collection-background />
+<div class="collection-container">
+  <ct-collection-search />
+  @defer (prefetch on idle) {
+    <ct-collection-list />
+  }
+</div>
+<ng-container #collectionDialogs />

@@ -1,0 +1,18 @@
+:host {
+  width: 100%;
+  display: block;
+}
+
+.collection-container {
+  background-color: var(--glassy-background);
+  margin: 0 auto;
+  z-index: 1;
+  display: block;
+  position: relative;
+  max-width: 500px;
+  border-radius: var(--border-radius);
+
+  @media (width <= 450px) {
+    max-width: 90vw;
+  }
+}
