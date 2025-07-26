@@ -1,0 +1,31 @@
+label {
+  display: block;
+
+  span {
+    color: var(--color-crimson);
+  }
+}
+
+small {
+  display: block;
+}
+
+.textarea {
+  background-color: transparent;
+  border: var(--border-style);
+  border-radius: var(--border-radius);
+  border-color: var(--border-color);
+  margin: 1px;
+  color: var(--text-color);
+  width: 100%;
+  resize: none;
+
+  &:hover {
+    outline: var(--outline-style);
+    outline-color: var(--focus-border-color);
+  }
+}
+
+.error {
+  color: var(--color-crimson);
+}
