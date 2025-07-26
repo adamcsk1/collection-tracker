@@ -1,0 +1,59 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body,
+html,
+p {
+  margin: 0;
+}
+
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+#root,
+/* stylelint-disable-next-line selector-id-pattern */
+#__next {
+  isolation: isolate;
+}
+
+/* Customs */
+h1,
+h2,
+h3 {
+  margin: unset;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
