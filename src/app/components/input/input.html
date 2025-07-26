@@ -1,0 +1,36 @@
+@if (label(); as label) {
+  <label [for]="inputId()"
+    >{{ label }}
+    @if (mandatory()) {
+      <span>*</span>
+    }
+  </label>
+}
+<div class="container">
+  <input [type]="type()" class="input" [id]="inputId()" [formControl]="control()" [placeholder]="placeholder()" />
+  @if (showReset()) {
+    <button
+      class="button-icon material-icons"
+      (click)="onReset()"
+      [title]="('ResetInput' | signalTranslate)()"
+      [disabled]="!control().value"
+    >
+      close
+    </button>
+  }
+</div>
+
+@if (hint()) {
+  <small>{{ hint() }}</small>
+}
+
+@if (control().touched || control().dirty) {
+  @if (control().errors; as errors) {
+    <small class="error">
+      @if (!!errors?.['required']) {
+        {{ ('Validation.Required' | signalTranslate)() }}
+      }
+      <ng-content select="[errors]"></ng-content>
+    </small>
+  }
+}

@@ -1,0 +1,24 @@
+import { Component, input } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+
+@Component({
+  selector: 'ct-input',
+  imports: [ReactiveFormsModule, NgxSignalTranslatePipe],
+  templateUrl: './input.html',
+  styleUrl: './input.css',
+})
+export class Input<T> {
+  public readonly inputId = input<string>(crypto.randomUUID());
+  public readonly type = input<'text' | 'password'>('text');
+  public readonly label = input<string>('');
+  public readonly mandatory = input<boolean>(false);
+  public readonly showReset = input<boolean>(false);
+  public readonly placeholder = input<string>('');
+  public readonly control = input.required<FormControl<T>>();
+  public readonly hint = input<string>();
+
+  protected onReset(): void {
+    this.control().setValue('' as T);
+  }
+}
