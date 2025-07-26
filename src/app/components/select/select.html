@@ -1,0 +1,29 @@
+@if (label(); as label) {
+  <label [for]="selectId()"
+    >{{ label }}
+    @if (mandatory()) {
+      <span>*</span>
+    }
+  </label>
+}
+
+<select class="select" [id]="selectId()" [formControl]="control()">
+  @for (option of options(); track $index) {
+    <option [value]="option.value">{{ option.text }}</option>
+  }
+</select>
+
+@if (hint()) {
+  <small>{{ hint() }}</small>
+}
+
+@if (control().touched || control().dirty) {
+  @if (control().errors; as errors) {
+    <small class="error">
+      @if (!!errors?.['required']) {
+        {{ ('Validation.Required' | signalTranslate)() }}
+      }
+      <ng-content select="[errors]"></ng-content>
+    </small>
+  }
+}
