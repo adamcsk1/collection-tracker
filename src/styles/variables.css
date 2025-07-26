@@ -13,4 +13,7 @@
   --border-style: 1px solid var(--base-color-darker);
   --outline-style: 2px solid var(--base-color-darker);
   --outline-offset: 2px;
+
+  /* Customs */
+  --header-height: 60px;
 }

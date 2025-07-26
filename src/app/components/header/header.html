@@ -1,0 +1,21 @@
+<div class="header" [title]="('Title' | signalTranslate)()">
+  <a [routerLink]="['/', 'collection']">
+    <img src="images/logo.png" />
+  </a>
+  <h1>{{ ('Title.Short' | signalTranslate)() }}</h1>
+</div>
+
+<div class="dropdown-menu">
+  <button class="button-icon material-icons" [title]="('Menu' | signalTranslate)()">menu</button>
+  <div class="dropdown-menu-list" (click)="onRemoveFocus()">
+    <a [routerLink]="['/', 'collection']" routerLinkActive="active">
+      {{ ('Collection' | signalTranslate)() }}
+    </a>
+    <a [routerLink]="['/', 'settings']" routerLinkActive="active">
+      {{ ('Settings' | signalTranslate)() }}
+    </a>
+    <a href="#" routerLinkActive="active"> {{ ('Statistics' | signalTranslate)() }}</a>
+    <a href="#" routerLinkActive="active"> {{ ('About' | signalTranslate)() }}</a>
+    <a href="#"> {{ ('Disconnect' | signalTranslate)() }}</a>
+  </div>
+</div>
