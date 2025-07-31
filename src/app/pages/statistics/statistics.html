@@ -1,0 +1,35 @@
+<div class="statistics-group">
+  <h3>{{ ('GlobalStatistics' | signalTranslate)() }}</h3>
+  @for (item of statistics().global; track $index) {
+    <ct-statistics-item
+      [item]="item"
+      style="--percent: {{ (item.count / (statistics().global[0].count + statistics().global[1].count)) * 100 }}%"
+    />
+  } @empty {
+    <ng-container *ngTemplateOutlet="emptyStatistics"></ng-container>
+  }
+</div>
+<div class="statistics-group">
+  <h3>{{ ('MovieStatistics' | signalTranslate)() }}</h3>
+  @for (item of statistics().movies; track $index) {
+    <ct-statistics-item [item]="item" style="--percent: {{ (item.count / statistics().movies[0].count) * 100 }}%" />
+  } @empty {
+    <ng-container *ngTemplateOutlet="emptyStatistics"></ng-container>
+  }
+</div>
+<div class="statistics-group">
+  <h3>{{ ('SeriesStatistics' | signalTranslate)() }}</h3>
+  @for (item of statistics().series; track $index) {
+    <ct-statistics-item [item]="item" style="--percent: {{ (item.count / statistics().series[0].count) * 100 }}%" />
+  } @empty {
+    <ng-container *ngTemplateOutlet="emptyStatistics"></ng-container>
+  }
+</div>
+
+<ng-template #emptyStatistics>
+  @if (loadNetworkStatus() === 'pending') {
+    {{ ('Message.LoadStatistics' | signalTranslate)() }}
+  } @else {
+    {{ ('Message.EmptyStatistics' | signalTranslate)() }}
+  }
+</ng-template>

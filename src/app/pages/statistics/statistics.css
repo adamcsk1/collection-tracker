@@ -1,0 +1,35 @@
+:host {
+  display: flex;
+  flex-flow: wrap;
+  gap: var(--size-default);
+  max-width: 70vw;
+  justify-content: space-around;
+  margin: 0 auto;
+}
+
+.statistics-group {
+  min-width: 400px;
+  background-color: var(--glassy-background);
+  border-radius: var(--border-radius);
+  padding: var(--size-default);
+  display: flex;
+  flex-direction: column;
+
+  h3 {
+    margin-bottom: calc(var(--size-default) - var(--size-small));
+  }
+
+  ct-statistics-item::after {
+    content: "";
+    outline: var(--outline-style);
+    outline-color: var(--focus-border-color);
+    border-radius: var(--border-radius);
+    width: var(--percent);
+    height: 32px;
+    top: 0;
+    display: block;
+    position: relative;
+    transform: translateY(-100%);
+    z-index: 0;
+  }
+}

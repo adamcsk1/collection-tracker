@@ -13,6 +13,10 @@ export const routes: Routes = [
     canActivate: [newCollectionItemGuard],
   },
   {
+    path: 'statistics',
+    loadComponent: () => import('./pages/statistics/statistics').then((module) => module.Statistics),
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./pages/settings/settings').then((module) => module.Settings),
   },
