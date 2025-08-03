@@ -17,6 +17,7 @@
     "paths": {
       "@appConfig": ["./src/app/app.config.ts"],
       "@appRoutes": ["./src/app/app.routes.ts"],
+      "@appConst": ["./src/app/app.constant.ts"],
       "@app": ["./src/app/app.ts"],
       "@pages/*": ["./src/app/pages/*"],
       "@services/*": ["./src/app/services/*"],

@@ -1,0 +1,22 @@
+<div class="about">
+  <img src="images/logo.png" title="{{ ('Title' | signalTranslate)() }}" />
+  <h2>{{ ('Title' | signalTranslate)() }}</h2>
+  <h3>{{ ('BUILD' | signalTranslate)() }}</h3>
+  <div>
+    <div>{{ build }}</div>
+  </div>
+  <h3>{{ ('BUILD_DATE' | signalTranslate)() }}</h3>
+  <div>
+    <div>{{ buildDate }}</div>
+  </div>
+  <h3>{{ ('APP_VERSION' | signalTranslate)() }}</h3>
+  <div>
+    <div>{{ appVersion }}</div>
+  </div>
+  <h3>{{ ('REPOSITORY' | signalTranslate)() }}</h3>
+  <div>
+    <div>
+      <a href="https://github.com/adamcsk1/collection-tracker" target="_blank">{{ ('GITHUB' | signalTranslate)() }}</a>
+    </div>
+  </div>
+</div>

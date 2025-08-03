@@ -1,0 +1,23 @@
+:host {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.about {
+  background-color: var(--glassy-background);
+  border-radius: var(--border-radius);
+  padding: var(--size-default);
+  display: inline-flex;
+  flex-direction: column;
+
+  h2 {
+    margin-top: var(--size-default);
+  }
+
+  img {
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto;
+  }
+}

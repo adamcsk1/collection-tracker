@@ -5,7 +5,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "prebuild": "node ./scripts/set-build-infos.js",
+    "build": "npm run prebuild && ng build && npm run postbuild",
+    "postbuild": "node ./scripts/reset-build-infos.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "prepare": "husky"

@@ -15,7 +15,7 @@
       {{ ('Settings' | signalTranslate)() }}
     </a>
     <a [routerLink]="['/', 'statistics']" routerLinkActive="active"> {{ ('Statistics' | signalTranslate)() }}</a>
-    <a href="#" routerLinkActive="active"> {{ ('About' | signalTranslate)() }}</a>
+    <a [routerLink]="['/', 'about']" routerLinkActive="active"> {{ ('About' | signalTranslate)() }}</a>
     <a href="#"> {{ ('Disconnect' | signalTranslate)() }}</a>
   </div>
 </div>
