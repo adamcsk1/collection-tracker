@@ -21,6 +21,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/settings/settings').then((module) => module.Settings),
   },
   {
+    path: 'about',
+    loadComponent: () => import('./pages/about/about').then((module) => module.About),
+  },
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'collection',
