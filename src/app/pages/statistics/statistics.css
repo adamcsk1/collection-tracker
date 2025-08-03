@@ -8,7 +8,7 @@
 }
 
 .statistics-group {
-  min-width: 400px;
+  min-width: min(400px, 100%);
   background-color: var(--glassy-background);
   border-radius: var(--border-radius);
   padding: var(--size-default);

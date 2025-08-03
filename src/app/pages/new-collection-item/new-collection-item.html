@@ -1,7 +1,7 @@
 <form [formGroup]="formGroup">
   <ct-input
     [label]="('Search' | signalTranslate)()"
-    [hint]="('Messages.NewCollectionItemSearch' | signalTranslate)()"
+    [hint]="('Message.NewCollectionItemSearch' | signalTranslate)()"
     [mandatory]="true"
     [control]="formGroup.controls.searchText"
   />
@@ -20,7 +20,7 @@
     </ct-select>
     <ct-input
       [label]="('Tags' | signalTranslate)()"
-      [hint]="('Messages.Tags' | signalTranslate)()"
+      [hint]="('Message.Tags' | signalTranslate)()"
       [control]="formGroup.controls.tags"
     />
   }
