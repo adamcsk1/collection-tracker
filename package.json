@@ -10,6 +10,11 @@
     "postbuild": "node ./scripts/reset-build-infos.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "eslint": "eslint ./src/",
+    "eslint:fix": "eslint  ./src/ --fix",
+    "stylelint": "npx stylelint \"src/**/*.css\"",
+    "stylelint:fix": "npx stylelint \"src/**/*.css\" --fix",
+    "format": "prettier --write .",
     "prepare": "husky"
   },
   "private": true,
@@ -25,7 +30,7 @@
     "marked": "^16.1.1",
     "material-icons": "^1.13.14",
     "ngx-signal-translate": "^3.0.0",
-    "ngx-simple-signal-store": "^3.0.2",
+    "ngx-simple-signal-store": "^3.0.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

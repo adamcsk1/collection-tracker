@@ -27,7 +27,7 @@
               }
             ],
             "styles": ["src/styles.css"],
-            "allowedCommonJsDependencies": ["dayjs", "fast-deep-equal"]
+            "allowedCommonJsDependencies": ["dayjs"]
           },
           "configurations": {
             "production": {
