@@ -5,7 +5,7 @@ import { collectionStateToken } from '@stores/collection-store';
 import dayjs from 'dayjs';
 import { catchError, filter, map, Observable, of, Subject, tap } from 'rxjs';
 import { AlertService } from './alert-service';
-import { ApiResponseModel, MemosModel } from './memos.model';
+import { ApiResponseModel, MemoModel, MemosModel } from './memos.model';
 
 @Injectable({
   providedIn: 'root',
@@ -89,9 +89,9 @@ export class MemosService {
     return results.asObservable();
   }
 
-  public createMemo(content: string): Observable<void> {
+  public createMemo(content: string): Observable<MemoModel> {
     return this.httpClient
-      .post<void>(
+      .post<MemoModel>(
         `${this.appState.state.memosApiUrl()}/memos`,
         {
           state: 'NORMAL',
