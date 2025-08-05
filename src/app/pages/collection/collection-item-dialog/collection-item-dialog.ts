@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { Textarea } from '@components/textarea/textarea';
 import { CollectionService } from '@services/collection/collection-service';
+import { getCollectionItem } from '@services/collection/utils/get-collection-item-util';
 import { ConfirmService } from '@services/confirm-service';
 import { MemosService } from '@services/memos-service';
 import { appStateToken } from '@stores/app-store';
@@ -57,7 +58,7 @@ export class CollectionItemDialog implements OnInit {
       )
       .subscribe((confirmed) => {
         if (confirmed) {
-          this.collectionService.loadCollection();
+          this.collectionService.deleteCollectionItem(this.collectionItem().memoName);
           this.onClose();
         }
       });
@@ -83,12 +84,11 @@ export class CollectionItemDialog implements OnInit {
       )
       .subscribe((confirmed) => {
         if (confirmed) {
-          this.collectionItem.update((collectionItem) => ({
-            ...collectionItem,
-            rawContent: this.rawContentControl.value,
-          }));
+          this.collectionService.updateCollectionItem(this.collectionItem().memoName, this.rawContentControl.value);
+          this.collectionItem.update((collectionItem) =>
+            getCollectionItem({ name: collectionItem.memoName, content: this.rawContentControl.value })
+          );
           this.onReadOnly();
-          this.collectionService.loadCollection();
         }
       });
   }

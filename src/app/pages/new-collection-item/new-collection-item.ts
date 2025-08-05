@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { Form } from '@models/form.model';
+import { CollectionService } from '@services/collection/collection-service';
 import { MdContentGeneratorService } from '@services/md-content-generator-service';
 import { MemosService } from '@services/memos-service';
 import { OMDbService } from '@services/omdb-service';
@@ -24,6 +25,7 @@ import { knownIMDbIdValidator } from './validators/known-imdb-id.validator';
 export class NewCollectionItem implements OnInit {
   private readonly memos = inject(MemosService);
   private readonly omdb = inject(OMDbService);
+  private readonly collection = inject(CollectionService);
   private readonly appState = inject(appStateToken);
   private readonly mdContentGenerator = inject(MdContentGeneratorService);
   private readonly destroyRef = inject(DestroyRef);
@@ -81,10 +83,13 @@ export class NewCollectionItem implements OnInit {
         }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(() => {
+      .subscribe((memo) => {
         this.appState.setState('spinnerLoading', false);
         if (resetForm) this.formGroup.reset();
-        else this.router.navigate(['/', 'collection']);
+        else {
+          this.collection.addCollectionItem(memo, true);
+          this.router.navigate(['/', 'collection']);
+        }
       });
   }
 

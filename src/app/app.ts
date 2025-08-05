@@ -19,8 +19,11 @@ export class App {
   private readonly router = inject(Router);
 
   constructor() {
-    effect(() => {
-      if (this.settings.hasSettings()) this.collectionService.loadCollection();
+    const effectRef = effect(() => {
+      if (this.settings.hasSettings()) {
+        this.collectionService.loadCollection();
+        effectRef.destroy();
+      }
     });
 
     this.signalTranslateService.setLanguage('en');
