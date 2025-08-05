@@ -9,13 +9,25 @@
   <button class="button-icon material-icons" [title]="('Menu' | signalTranslate)()">menu</button>
   <div class="dropdown-menu-list" (click)="onRemoveFocus()">
     <a [routerLink]="['/', 'collection']" routerLinkActive="active">
+      <i class="material-icons">movie</i>
       {{ ('Collection' | signalTranslate)() }}
     </a>
     <a [routerLink]="['/', 'settings']" routerLinkActive="active">
+      <i class="material-icons">settings</i>
       {{ ('Settings' | signalTranslate)() }}
     </a>
-    <a [routerLink]="['/', 'statistics']" routerLinkActive="active"> {{ ('Statistics' | signalTranslate)() }}</a>
-    <a [routerLink]="['/', 'about']" routerLinkActive="active"> {{ ('About' | signalTranslate)() }}</a>
-    <a href="#"> {{ ('Disconnect' | signalTranslate)() }}</a>
+    <a [routerLink]="['/', 'statistics']" routerLinkActive="active">
+      <i class="material-icons">bar_chart</i> {{ ('Statistics' | signalTranslate)() }}
+    </a>
+    <a [routerLink]="['/', 'about']" routerLinkActive="active">
+      <i class="material-icons">info</i> {{ ('About' | signalTranslate)() }}
+    </a>
+    <a href="#" (click)="onSync()">
+      <i class="material-icons">sync</i>
+      {{ ('Sync' | signalTranslate)() }}
+    </a>
+    <a href="#" (click)="onDisconnect()">
+      <i class="material-icons">logout</i> {{ ('Disconnect' | signalTranslate)() }}
+    </a>
   </div>
 </div>

@@ -68,5 +68,6 @@
   "Message.MissingImages": "The image URL is sourced from the OMDb response and is stored in the markdown content. This setting allows for the possibility of changing the image URL in the background. Using this option, you can refresh any missing images, which will check the availability of all the images in the collection. Please do not refresh or close the page until the process is complete.",
   "Message.FetchBatchSize": "The fetch batch size determines the number of memos retrieved in a single request during the collection load.",
   "Confirm.DeleteMemo": "Do you want to delete the {name} item?",
-  "Confirm.ChangeMemo": "Do you want to save the the {name} item changes?"
+  "Confirm.ChangeMemo": "Do you want to save the the {name} item changes?",
+  "Confirm.Disconnect": "Do you want to break the connection with your memo instance? All locally stored data will be permanently deleted."
 }

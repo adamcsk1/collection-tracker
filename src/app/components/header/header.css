@@ -47,7 +47,8 @@
 
   .dropdown-menu-list {
     position: absolute;
-    transform: translate3d(-100%, 35px, 0);
+    top: var(--header-height);
+    right: var(--size-default);
     display: inline-flex;
     flex-direction: column;
     pointer-events: none;
@@ -61,7 +62,8 @@
     padding: calc(2 * var(--outline-offset));
 
     a {
-      display: block;
+      display: flex;
+      align-items: center;
       height: 0;
       opacity: 0;
       transition: var(--dropdown-transition);
@@ -69,6 +71,11 @@
       color: var(--text-color);
       text-decoration: none;
       white-space: nowrap;
+
+      i {
+        font-size: var(--font-size-default);
+        margin-right: var(--size-small);
+      }
 
       &:hover {
         color: var(--color-olive);
@@ -85,11 +92,13 @@
   &:focus-within {
     .dropdown-menu-list {
       pointer-events: auto;
-      height: 175px;
+      height: 205px;
       opacity: 1;
+      display: flex;
+      justify-content: space-between;
 
       a {
-        height: 20%;
+        height: 100%;
         opacity: 1;
       }
     }
