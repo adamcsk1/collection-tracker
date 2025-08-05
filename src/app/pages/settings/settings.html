@@ -1,15 +1,15 @@
 <form [formGroup]="formGroup">
   <h3>{{ ('BasicSettings' | signalTranslate)() }}</h3>
-  <p>{{ ('Messages.BasicSettings' | signalTranslate)() }}</p>
+  <p>{{ ('Message.BasicSettings' | signalTranslate)() }}</p>
   <ct-input
     [label]="('ApiUrl' | signalTranslate)()"
-    [hint]="('Messages.MemosApiUrl' | signalTranslate)()"
+    [hint]="('Message.MemosApiUrl' | signalTranslate)()"
     [mandatory]="true"
     [control]="formGroup.controls.apiUrl"
   />
   <ct-input
     [label]="('Token' | signalTranslate)()"
-    [hint]="('Messages.MemosToken' | signalTranslate)()"
+    [hint]="('Message.MemosToken' | signalTranslate)()"
     [mandatory]="true"
     type="password"
     [control]="formGroup.controls.token"
@@ -31,7 +31,7 @@
   </div>
   <ct-input
     [label]="('OMDbApiKey' | signalTranslate)()"
-    [hint]="('Messages.OMDbApiKey' | signalTranslate)()"
+    [hint]="('Message.OMDbApiKey' | signalTranslate)()"
     [mandatory]="true"
     [control]="formGroup.controls.omdbApiKey"
   />
@@ -47,7 +47,7 @@
   <h3>{{ ('AppSettings' | signalTranslate)() }}</h3>
   <ct-select
     [label]="('AppMode' | signalTranslate)()"
-    [hint]="('Messages.AppMode' | signalTranslate)()"
+    [hint]="('Message.AppMode' | signalTranslate)()"
     [mandatory]="true"
     [control]="formGroup.controls.appMode"
     [options]="[
@@ -56,10 +56,35 @@
       { text: ('FullAccess' | signalTranslate)(), value: 'full' },
     ]"
   />
+
   <div class="form-buttons">
     <button [disabled]="formGroup.invalid || !connected()" (click)="onSave()">
       {{ ('Save' | signalTranslate)() }}
     </button>
     <button class="button-danger" (click)="onReset()">{{ ('Reset' | signalTranslate)() }}</button>
   </div>
+
+  <h3>{{ ('Images' | signalTranslate)() }}</h3>
+  <p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
+  @if (imageRefreshStatus(); as imageRefreshStatus) {
+    @if (imageRefreshStatus.running || imageRefreshStatus.checked > 0) {
+      <div class="progress-bar" [style.width]="imageRefreshStatus.checked / imageRefreshStatus.count | percent">
+        {{ imageRefreshStatus.checked / imageRefreshStatus.count | percent }}
+      </div>
+      @if (imageRefreshStatus.fixed > 0) {
+        <div>{{ ('FixedImages' | signalTranslate)() }}: {{ imageRefreshStatus.fixed }}</div>
+      }
+      @if (imageRefreshStatus.errors > 0) {
+        <div>{{ ('Errors' | signalTranslate)() }}: {{ imageRefreshStatus.errors }}</div>
+      }
+    }
+    <div>
+      <button
+        [disabled]="!connected() || imageRefreshStatus.running || collectionLoadNetworkStatus() !== 'finished'"
+        (click)="onStartImagesRefresh()"
+      >
+        {{ ('Start' | signalTranslate)() }}
+      </button>
+    </div>
+  }
 </form>
