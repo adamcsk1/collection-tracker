@@ -1,10 +1,14 @@
+import { PercentPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { Form } from '@models/form.model';
+import { ImageRefreshService } from '@services/image-refresh-service';
 import { MemosService } from '@services/memos-service';
+import { OMDbService } from '@services/omdb-service';
 import { appStateToken } from '@stores/app-store';
+import { collectionStateToken } from '@stores/collection-store';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { of } from 'rxjs';
 import { catchError, debounceTime, filter, map, switchMap, tap } from 'rxjs/operators';
@@ -13,14 +17,17 @@ import { SettingsModel } from './settings.model';
 
 @Component({
   selector: 'ct-settings',
-  imports: [Input, Select, ReactiveFormsModule, NgxSignalTranslatePipe],
+  imports: [Input, Select, ReactiveFormsModule, NgxSignalTranslatePipe, PercentPipe],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
+  providers: [OMDbService, ImageRefreshService],
 })
 export class Settings implements OnInit {
   private readonly settings = inject(SettingsService);
   private readonly memos = inject(MemosService);
   private readonly appState = inject(appStateToken);
+  private readonly collectionState = inject(collectionStateToken);
+  private readonly imageRefresh = inject(ImageRefreshService);
   private readonly _connected = signal<boolean | null>(false);
   protected readonly formGroup = new FormGroup<Form<SettingsModel>>({
     token: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -30,6 +37,8 @@ export class Settings implements OnInit {
     appMode: new FormControl('basic', { nonNullable: true, validators: [Validators.required] }),
   });
   protected readonly connected = this._connected.asReadonly();
+  protected readonly collectionLoadNetworkStatus = this.collectionState.state.loadNetworkStatus;
+  protected readonly imageRefreshStatus = this.imageRefresh.state;
 
   public ngOnInit(): void {
     this.formGroup.valueChanges
@@ -60,5 +69,9 @@ export class Settings implements OnInit {
 
   protected onReset(): void {
     this.formGroup.reset();
+  }
+
+  protected onStartImagesRefresh(): void {
+    this.imageRefresh.refreshImages();
   }
 }

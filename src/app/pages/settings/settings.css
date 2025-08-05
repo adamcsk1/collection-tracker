@@ -32,3 +32,10 @@ form {
     background-color: var(--color-crimson);
   }
 }
+
+.progress-bar {
+  outline: var(--outline-style);
+  outline-color: var(--focus-border-color);
+  border-radius: var(--border-radius);
+  text-align: center;
+}
