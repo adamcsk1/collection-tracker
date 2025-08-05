@@ -78,27 +78,29 @@
     <button class="button-danger" (click)="onReset()">{{ ('Reset' | signalTranslate)() }}</button>
   </div>
 
-  <h3>{{ ('Images' | signalTranslate)() }}</h3>
-  <p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
-  @if (imageRefreshStatus(); as imageRefreshStatus) {
-    @if (imageRefreshStatus.running || imageRefreshStatus.checked > 0) {
-      <div class="progress-bar" [style.width]="imageRefreshStatus.checked / imageRefreshStatus.count | percent">
-        {{ imageRefreshStatus.checked / imageRefreshStatus.count | percent }}
+  @if (formGroup.controls.appMode.value === 'full') {
+    <h3>{{ ('Images' | signalTranslate)() }}</h3>
+    <p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
+    @if (imageRefreshStatus(); as imageRefreshStatus) {
+      @if (imageRefreshStatus.running || imageRefreshStatus.checked > 0) {
+        <div class="progress-bar" [style.width]="imageRefreshStatus.checked / imageRefreshStatus.count | percent">
+          {{ imageRefreshStatus.checked / imageRefreshStatus.count | percent }}
+        </div>
+        @if (imageRefreshStatus.fixed > 0) {
+          <div>{{ ('FixedImages' | signalTranslate)() }}: {{ imageRefreshStatus.fixed }}</div>
+        }
+        @if (imageRefreshStatus.errors > 0) {
+          <div>{{ ('Errors' | signalTranslate)() }}: {{ imageRefreshStatus.errors }}</div>
+        }
+      }
+      <div>
+        <button
+          [disabled]="!connected() || imageRefreshStatus.running || collectionLoadNetworkStatus() !== 'finished'"
+          (click)="onStartImagesRefresh()"
+        >
+          {{ ('Start' | signalTranslate)() }}
+        </button>
       </div>
-      @if (imageRefreshStatus.fixed > 0) {
-        <div>{{ ('FixedImages' | signalTranslate)() }}: {{ imageRefreshStatus.fixed }}</div>
-      }
-      @if (imageRefreshStatus.errors > 0) {
-        <div>{{ ('Errors' | signalTranslate)() }}: {{ imageRefreshStatus.errors }}</div>
-      }
     }
-    <div>
-      <button
-        [disabled]="!connected() || imageRefreshStatus.running || collectionLoadNetworkStatus() !== 'finished'"
-        (click)="onStartImagesRefresh()"
-      >
-        {{ ('Start' | signalTranslate)() }}
-      </button>
-    </div>
   }
 </form>
