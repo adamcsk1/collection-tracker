@@ -51,7 +51,7 @@ export class MemosService {
     const paginatedLoadItems = (pageToken?: string) =>
       this.httpClient
         .get<ApiResponseModel>(
-          `${this.appState.state.memosApiUrl()}/memos?sort=create_time&direction=DESC&pageSize=10000&state=NORMAL&filter=${encodeURIComponent(`content.contains("#series") || content.contains("#movie")`)}${pageToken ? `&pageToken=${pageToken}` : ''}`,
+          `${this.appState.state.memosApiUrl()}/memos?sort=create_time&direction=DESC&pageSize=${this.appState.state.fetchBatchSize()}&state=NORMAL&filter=${encodeURIComponent(`content.contains("#series") || content.contains("#movie")`)}${pageToken ? `&pageToken=${pageToken}` : ''}`,
           this.headerBuilder()
         )
         .pipe(

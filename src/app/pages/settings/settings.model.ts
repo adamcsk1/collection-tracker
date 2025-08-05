@@ -3,5 +3,6 @@ export interface SettingsModel {
   apiUrl: string;
   omdbApiKey: string;
   storeCredentials: boolean;
+  fetchBatchSize: number;
   appMode: 'basic' | 'limited' | 'full';
 }
