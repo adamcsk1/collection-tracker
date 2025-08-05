@@ -4,6 +4,7 @@ import { appStateToken } from '@stores/app-store';
 import {
   SETTINGS_LC_API_URL,
   SETTINGS_LC_APP_MODE,
+  SETTINGS_LC_FETCH_BATCH_SIZE,
   SETTINGS_LC_OMDB_API_KEY,
   SETTINGS_LC_TOKEN,
 } from './settings.const';
@@ -23,6 +24,7 @@ export class SettingsService {
     const memosApiUrl = localStorage.getItem(SETTINGS_LC_API_URL);
     const omdbApiKey = localStorage.getItem(SETTINGS_LC_OMDB_API_KEY);
     const appMode = localStorage.getItem(SETTINGS_LC_APP_MODE) as SettingsModel['appMode'];
+    const fetchBatchSize = localStorage.getItem(SETTINGS_LC_FETCH_BATCH_SIZE);
 
     if (memosToken) this.appState.setState('memosToken', memosToken);
     if (memosApiUrl) this.appState.setState('memosApiUrl', memosApiUrl);
@@ -31,6 +33,7 @@ export class SettingsService {
       this.appState.setState('appMode', appMode);
       this.setPermissions();
     }
+    if (fetchBatchSize) this.appState.setState('fetchBatchSize', Number(fetchBatchSize));
   }
 
   public storeFormData(formData: SettingsModel): void {
@@ -38,6 +41,7 @@ export class SettingsService {
     this.appState.setState('memosApiUrl', formData.apiUrl);
     this.appState.setState('omdbApiKey', formData.omdbApiKey);
     this.appState.setState('appMode', formData.appMode);
+    this.appState.setState('fetchBatchSize', formData.fetchBatchSize);
 
     if (formData.storeCredentials) {
       localStorage.setItem(SETTINGS_LC_TOKEN, formData.token);
@@ -50,6 +54,7 @@ export class SettingsService {
     }
 
     localStorage.setItem(SETTINGS_LC_APP_MODE, formData.appMode);
+    localStorage.setItem(SETTINGS_LC_FETCH_BATCH_SIZE, `${formData.fetchBatchSize}`);
 
     this.setPermissions();
 

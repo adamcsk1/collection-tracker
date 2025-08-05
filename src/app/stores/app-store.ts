@@ -7,6 +7,7 @@ export interface AppState {
   omdbApiKey: string;
   spinnerLoading: boolean;
   appMode: SettingsModel['appMode'] | null;
+  fetchBatchSize: number | null;
   permissions: {
     create: boolean;
     update: boolean;
@@ -20,6 +21,7 @@ export const initialAppState: AppState = {
   omdbApiKey: '',
   spinnerLoading: false,
   appMode: null,
+  fetchBatchSize: null,
   permissions: {
     create: false,
     update: false,

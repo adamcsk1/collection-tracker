@@ -56,6 +56,20 @@
       { text: ('FullAccess' | signalTranslate)(), value: 'full' },
     ]"
   />
+  <ct-select
+    [label]="('FetchBatchSize' | signalTranslate)()"
+    [hint]="('Message.FetchBatchSize' | signalTranslate)()"
+    [mandatory]="true"
+    [control]="formGroup.controls.fetchBatchSize"
+    [options]="[
+      { text: ('Unlimited' | signalTranslate)(), value: 10000 },
+      { text: '5000', value: 5000 },
+      { text: '1000', value: 1000 },
+      { text: '500', value: 500 },
+      { text: '100', value: 100 },
+      { text: '50', value: 50 },
+    ]"
+  />
 
   <div class="form-buttons">
     <button [disabled]="formGroup.invalid || !connected()" (click)="onSave()">
