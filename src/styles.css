@@ -19,11 +19,11 @@ h2 {
 
 a {
   text-decoration: none;
-  color: var(--color-olive);
+  color: var(--main-color);
 
   &:visited {
     text-decoration: none;
-    color: var(--color-olive);
+    color: var(--main-color);
   }
 
   &:hover {

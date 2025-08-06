@@ -14,17 +14,19 @@
 
   /* Customs */
   --border-color: var(--base-color-darker);
-  --focus-border-color: var(--color-olive);
+  --focus-border-color: var(--main-color);
 }
 
 .dark {
   --background-color: #002b36;
   --background-color-alt: #073642;
   --text-color: var(--base-color-lighter);
+  --main-color: var(--color-olive);
 }
 
 .light {
   --background-color: #fdf6e3;
   --background-color-alt: #eee8d5;
   --text-color: var(--base-color-darker);
+  --main-color: var(--color-olive);
 }
