@@ -2,15 +2,15 @@ button {
   background-color: transparent;
   border: var(--border-style);
   border-radius: var(--border-radius);
-  border-color: var(--color-olive);
-  color: var(--color-olive);
+  border-color: var(--main-color);
+  color: var(--main-color);
   cursor: pointer;
   padding: var(--size-smaller) var(--size-small);
 
   &:hover,
   &:focus-visible {
     outline: var(--outline-style);
-    outline-color: var(--color-olive);
+    outline-color: var(--main-color);
   }
 
   &.button-danger {

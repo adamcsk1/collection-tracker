@@ -78,11 +78,11 @@
       }
 
       &:hover {
-        color: var(--color-olive);
+        color: var(--main-color);
       }
 
       &.active {
-        color: var(--color-olive);
+        color: var(--main-color);
         cursor: default;
       }
     }
