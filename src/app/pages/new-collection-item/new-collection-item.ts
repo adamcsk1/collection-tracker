@@ -85,11 +85,9 @@ export class NewCollectionItem implements OnInit {
       )
       .subscribe((memo) => {
         this.appState.setState('spinnerLoading', false);
+        this.collection.addCollectionItem(memo, true);
         if (resetForm) this.formGroup.reset();
-        else {
-          this.collection.addCollectionItem(memo, true);
-          this.router.navigate(['/', 'collection']);
-        }
+        else this.router.navigate(['/', 'collection']);
       });
   }
 
