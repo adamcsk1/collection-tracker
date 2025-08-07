@@ -5,4 +5,5 @@ export interface SettingsModel {
   storeCredentials: boolean;
   fetchBatchSize: number;
   appMode: 'basic' | 'limited' | 'full';
+  theme: 'system' | 'dark' | 'light';
 }

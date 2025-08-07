@@ -8,6 +8,7 @@ export interface AppState {
   spinnerLoading: boolean;
   appMode: SettingsModel['appMode'] | null;
   fetchBatchSize: number | null;
+  theme: SettingsModel['theme'];
   permissions: {
     create: boolean;
     update: boolean;
@@ -22,6 +23,7 @@ export const initialAppState: AppState = {
   spinnerLoading: false,
   appMode: null,
   fetchBatchSize: null,
+  theme: 'system',
   permissions: {
     create: false,
     update: false,
