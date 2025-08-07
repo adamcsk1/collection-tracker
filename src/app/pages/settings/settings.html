@@ -70,6 +70,16 @@
       { text: '50', value: 50 },
     ]"
   />
+  <ct-select
+    [label]="('Theme' | signalTranslate)()"
+    [mandatory]="true"
+    [control]="formGroup.controls.theme"
+    [options]="[
+      { text: ('System' | signalTranslate)(), value: 'system' },
+      { text: ('SolarizedLight' | signalTranslate)(), value: 'light' },
+      { text: ('SolarizedDark' | signalTranslate)(), value: 'dark' },
+    ]"
+  />
 
   <div class="form-buttons">
     <button [disabled]="formGroup.invalid || !connected()" (click)="onSave()">

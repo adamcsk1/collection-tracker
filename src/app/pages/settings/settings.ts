@@ -36,6 +36,7 @@ export class Settings implements OnInit {
     omdbApiKey: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     appMode: new FormControl('basic', { nonNullable: true, validators: [Validators.required] }),
     fetchBatchSize: new FormControl(10000, { nonNullable: true, validators: [Validators.required] }),
+    theme: new FormControl('system', { nonNullable: true, validators: [Validators.required] }),
   });
   protected readonly connected = this._connected.asReadonly();
   protected readonly collectionLoadNetworkStatus = this.collectionState.state.loadNetworkStatus;
@@ -62,6 +63,7 @@ export class Settings implements OnInit {
       omdbApiKey: this.appState.state.omdbApiKey(),
       appMode: this.appState.state.appMode() || 'basic',
       fetchBatchSize: this.appState.state.fetchBatchSize() || 10000,
+      theme: this.appState.state.theme(),
     });
   }
 

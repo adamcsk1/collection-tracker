@@ -4,6 +4,7 @@ import { Header } from '@components/header/header';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
 import { SettingsService } from '@pages/settings/settings-service';
 import { CollectionService } from '@services/collection/collection-service';
+import { ThemeService } from '@services/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
@@ -17,6 +18,7 @@ export class App {
   private readonly settings = inject(SettingsService);
   private readonly collectionService = inject(CollectionService);
   private readonly router = inject(Router);
+  private readonly theme = inject(ThemeService);
 
   constructor() {
     const effectRef = effect(() => {
@@ -28,6 +30,7 @@ export class App {
 
     this.signalTranslateService.setLanguage('en');
     this.settings.loadStoredData();
+    this.theme.listen();
 
     if (!this.settings.hasSettings()) this.router.navigate(['/', 'settings']);
   }
