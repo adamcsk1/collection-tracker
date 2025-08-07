@@ -27,7 +27,7 @@
 </div>
 
 <ng-template #emptyStatistics>
-  @if (loadNetworkStatus() === 'pending') {
+  @if (memosLoadNetworkStatus() === 'pending') {
     {{ ('Message.LoadStatistics' | signalTranslate)() }}
   } @else {
     {{ ('Message.EmptyStatistics' | signalTranslate)() }}

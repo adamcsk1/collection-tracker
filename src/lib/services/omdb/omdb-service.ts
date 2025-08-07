@@ -1,12 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { SelectInputModel } from '@components/select/select.model';
-import { appStateToken } from '@stores/app-store';
+import { SelectInputModel } from '@lib/components/select/select-model';
 import { catchError, Observable } from 'rxjs';
-import { AlertService } from './alert-service';
-import { getIMDbId } from './collection/utils/get-imdb-id.util';
-import { OMDbResponseItemModel, OMDbResponseModel } from './omdb.model';
+import { getIMDbId } from '../../../app/services/collection/utils/get-imdb-id.util';
+import { AlertService } from '../alert-service';
+import { OMDbResponseItemModel, OMDbResponseModel } from './omdb-model';
+import { omdbStateToken } from './omdb-store';
 
 const OMDB_API = 'https://www.omdbapi.com/';
 
@@ -15,7 +15,7 @@ export class OMDbService {
   private readonly alert = inject(AlertService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly httpClient = inject(HttpClient);
-  private readonly appSate = inject(appStateToken);
+  private readonly omdbSate = inject(omdbStateToken);
   private searchText = '';
   private IMDbId: string | null = null;
   private readonly _matchedContent = signal<SelectInputModel>([]);
@@ -66,7 +66,7 @@ export class OMDbService {
     const url = new URL(OMDB_API);
 
     url.searchParams.append('i', `${queryParams.i}`);
-    url.searchParams.append('apikey', this.appSate.state.omdbApiKey());
+    url.searchParams.append('apikey', this.omdbSate.state.apiKey());
 
     return this.httpClient.get<OMDbResponseItemModel>(url.href).pipe(
       catchError((error) => {
@@ -80,7 +80,7 @@ export class OMDbService {
     const url = new URL(OMDB_API);
 
     url.searchParams.append('s', `${queryParams.s}`);
-    url.searchParams.append('apikey', this.appSate.state.omdbApiKey());
+    url.searchParams.append('apikey', this.omdbSate.state.apiKey());
 
     return this.httpClient.get<OMDbResponseModel>(url.href).pipe(
       catchError((error) => {

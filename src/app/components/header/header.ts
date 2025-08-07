@@ -1,8 +1,8 @@
 import { Component, DestroyRef, DOCUMENT, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { ConfirmService } from '@lib/services/confirm-service';
 import { CollectionService } from '@services/collection/collection-service';
-import { ConfirmService } from '@services/confirm-service';
 import { DisconnectService } from '@services/disconnect-service';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 

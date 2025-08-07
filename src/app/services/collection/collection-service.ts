@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { MemosService } from '@services/memos-service';
-import { MemoModel } from '@services/memos.model';
+import { MemoModel } from '@lib/services/memos/memos-model';
+import { MemosService } from '@lib/services/memos/memos-service';
+import { memosStateToken } from '@lib/services/memos/memos-store';
 import { collectionStateToken } from '@stores/collection-store';
 import { getCollectionItem } from './utils/get-collection-item-util';
 
@@ -8,9 +9,10 @@ import { getCollectionItem } from './utils/get-collection-item-util';
 export class CollectionService {
   private readonly memos = inject(MemosService);
   private readonly collectionState = inject(collectionStateToken);
+  private readonly memosState = inject(memosStateToken);
 
   public loadCollection(): void {
-    if (this.collectionState.state.loadNetworkStatus() === 'pending') return;
+    if (this.memosState.state.loadNetworkStatus() === 'pending') return;
     console.log('loadCollection');
     this.memos.getMemos().subscribe((memos) =>
       this.collectionState.patchState('collection', (state) => [

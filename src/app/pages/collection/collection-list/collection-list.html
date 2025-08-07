@@ -11,7 +11,7 @@
   </div>
 }
 <div class="list" #scrollContainer>
-  @if (!loadNetworkStatus() || loadNetworkStatus() === 'pending') {
+  @if (!memosLoadNetworkStatus() || memosLoadNetworkStatus() === 'pending') {
     <ct-collection-list-item-skeleton />
     <ct-collection-list-item-skeleton />
     <ct-collection-list-item-skeleton />

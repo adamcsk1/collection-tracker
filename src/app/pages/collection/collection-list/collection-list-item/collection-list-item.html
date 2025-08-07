@@ -1,9 +1,5 @@
 @if (collectionItem(); as collectionItem) {
-  <div
-    class="image"
-    [ngStyle]="{ backgroundImage: 'url(' + collectionItem.image + ')' }"
-    (click)="onOpenDetail()"
-  ></div>
+  <div class="image" [style.backgroundImage]="'url(' + collectionItem.image + ')'" (click)="onOpenDetail()"></div>
   <div class="content">
     <h3>
       <a (click)="onOpenDetail()">{{ collectionItem.title }}</a>

@@ -1,11 +1,11 @@
 import { Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
-import { Textarea } from '@components/textarea/textarea';
+import { Textarea } from '@lib/components/textarea/textarea';
+import { ConfirmService } from '@lib/services/confirm-service';
+import { MemosService } from '@lib/services/memos/memos-service';
 import { CollectionService } from '@services/collection/collection-service';
 import { getCollectionItem } from '@services/collection/utils/get-collection-item-util';
-import { ConfirmService } from '@services/confirm-service';
-import { MemosService } from '@services/memos-service';
 import { appStateToken } from '@stores/app-store';
 import { marked } from 'marked';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';

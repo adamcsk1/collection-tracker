@@ -1,10 +1,10 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { scaleAnimation } from '@animations/scale-animation';
-import { appStateToken } from '@stores/app-store';
+import { scaleAnimation } from '@lib/animations/scale-animation';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { concatMap, delay, filter, of, tap } from 'rxjs';
+import { spinnerLoadingStateToken } from './spinner-loading-store';
 
 @Component({
   selector: 'ct-spinner-loading',
@@ -15,9 +15,9 @@ import { concatMap, delay, filter, of, tap } from 'rxjs';
   animations: [scaleAnimation],
 })
 export class SpinnerLoading {
-  private readonly appStore = inject(appStateToken);
+  private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private counter = 0;
-  protected readonly spinnerLoading$ = toObservable(this.appStore.state.spinnerLoading).pipe(
+  protected readonly spinnerLoading$ = toObservable(this.spinnerLoadingState.state.spinnerLoading).pipe(
     tap((status) => {
       if (status) this.counter++;
       else this.counter--;

@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
+import { memosStateToken } from '@lib/services/memos/memos-store';
 import { collectionStateToken } from '@stores/collection-store';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { StatisticsItem } from './statistics-item/statistics-item';
@@ -14,7 +15,8 @@ import { sortWithTagPriority } from './utils/sort-with-tag-priority-util';
 })
 export class Statistics {
   private readonly collectionState = inject(collectionStateToken);
-  protected readonly loadNetworkStatus = this.collectionState.state.loadNetworkStatus;
+  private readonly memosState = inject(memosStateToken);
+  protected readonly memosLoadNetworkStatus = this.memosState.state.loadNetworkStatus;
   protected readonly statistics = computed(() => {
     const collection = this.collectionState.state.collection();
     const statistics: StatisticsGroupModel = {

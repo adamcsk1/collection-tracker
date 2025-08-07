@@ -10,3 +10,5 @@ export interface ApiResponseModel {
   memos: MemosModel;
   nextPageToken: string;
 }
+
+export type MemosLoadNetworkStatus = 'pending' | 'error' | 'finished' | null;

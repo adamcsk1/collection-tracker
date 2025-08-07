@@ -2,14 +2,14 @@ import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Input } from '@components/input/input';
-import { Select } from '@components/select/select';
-import { Form } from '@models/form.model';
+import { Input } from '@lib/components/input/input';
+import { Select } from '@lib/components/select/select';
+import { spinnerLoadingStateToken } from '@lib/components/spinner-loading/spinner-loading-store';
+import { Form } from '@lib/models/form-model';
+import { MemosService } from '@lib/services/memos/memos-service';
+import { OMDbService } from '@lib/services/omdb/omdb-service';
 import { CollectionService } from '@services/collection/collection-service';
 import { MdContentGeneratorService } from '@services/md-content-generator-service';
-import { MemosService } from '@services/memos-service';
-import { OMDbService } from '@services/omdb-service';
-import { appStateToken } from '@stores/app-store';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap } from 'rxjs';
 import { NewCollectionItemModel } from './new-collection-item.model';
@@ -26,7 +26,7 @@ export class NewCollectionItem implements OnInit {
   private readonly memos = inject(MemosService);
   private readonly omdb = inject(OMDbService);
   private readonly collection = inject(CollectionService);
-  private readonly appState = inject(appStateToken);
+  private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly mdContentGenerator = inject(MdContentGeneratorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
@@ -49,7 +49,7 @@ export class NewCollectionItem implements OnInit {
         this.formGroup.controls.selectedIMDbId.markAsUntouched();
       }
 
-      this.appState.setState('spinnerLoading', false);
+      this.spinnerLoadingState.setState('spinnerLoading', false);
     });
   }
 
@@ -57,7 +57,7 @@ export class NewCollectionItem implements OnInit {
     this.formGroup.controls.searchText.valueChanges
       .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
       .subscribe((searchText) => {
-        this.appState.setState('spinnerLoading', true);
+        this.spinnerLoadingState.setState('spinnerLoading', true);
         this.omdb.getMatchedContents(searchText);
       });
   }
@@ -75,16 +75,16 @@ export class NewCollectionItem implements OnInit {
             Tags: this.formGroup.controls.tags.value.trim(),
           })
         ),
-        tap(() => this.appState.setState('spinnerLoading', true)),
+        tap(() => this.spinnerLoadingState.setState('spinnerLoading', true)),
         mergeMap((mdContent) => this.memos.createMemo(mdContent)),
         catchError((error) => {
-          this.appState.setState('spinnerLoading', false);
+          this.spinnerLoadingState.setState('spinnerLoading', false);
           throw new Error(error.message);
         }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((memo) => {
-        this.appState.setState('spinnerLoading', false);
+        this.spinnerLoadingState.setState('spinnerLoading', false);
         this.collection.addCollectionItem(memo, true);
         if (resetForm) this.formGroup.reset();
         else this.router.navigate(['/', 'collection']);

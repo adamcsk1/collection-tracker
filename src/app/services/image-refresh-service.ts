@@ -1,15 +1,17 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
+import { memosStateToken } from '@lib/services/memos/memos-store';
 import { CollectionItemModel } from '@pages/collection/collection.model';
 import { collectionStateToken } from '@stores/collection-store';
 import { catchError, EMPTY, map, mergeMap, Observable, of, skip, take, tap } from 'rxjs';
+import { MemosService } from '../../lib/services/memos/memos-service';
+import { OMDbService } from '../../lib/services/omdb/omdb-service';
 import { ImageRefreshState } from './image-refresh.model';
-import { MemosService } from './memos-service';
-import { OMDbService } from './omdb-service';
 
 @Injectable()
 export class ImageRefreshService {
   private readonly collectionState = inject(collectionStateToken);
+  private readonly memosState = inject(memosStateToken);
   private readonly omdb = inject(OMDbService);
   private readonly memos = inject(MemosService);
   private readonly httpClient = inject(HttpClient);
@@ -85,7 +87,7 @@ export class ImageRefreshService {
         ...state,
         running: false,
       }));
-      this.collectionState.setState('loadNetworkStatus', null);
+      this.memosState.setState('loadNetworkStatus', null);
     }
   }
 }

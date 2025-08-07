@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
-import { opacityAnimation } from '@animations/opacity-animation';
+import { opacityAnimation } from '@lib/animations/opacity-animation';
+import { randomInt } from '@lib/utils/random-int-util';
 import { collectionStateToken } from '@stores/collection-store';
-import { randomInt } from '@utils/random-int.util';
 import { CollectionBackgroundImagesModel } from './collection-background.model';
 
 @Component({

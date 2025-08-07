@@ -1,8 +1,9 @@
 import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
+import { memosStateToken } from '@lib/services/memos/memos-store';
+import { randomInt } from '@lib/utils/random-int-util';
 import { appStateToken } from '@stores/app-store';
 import { collectionStateToken } from '@stores/collection-store';
-import { randomInt } from '@utils/random-int.util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { componentCollectionStateToken } from '../collection-store';
 import { CollectionListItemSkeleton } from './collection-list-item-skeleton/collection-list-item-skeleton';
@@ -18,6 +19,7 @@ export class CollectionList {
   private readonly router = inject(Router);
   private readonly collectionState = inject(collectionStateToken);
   private readonly appState = inject(appStateToken);
+  private readonly memosState = inject(memosStateToken);
   private readonly componentCollectionState = inject(componentCollectionStateToken);
   protected readonly filteredCollection = computed(() => {
     const searchText = this.componentCollectionState.state.searchText().toLowerCase();
@@ -36,7 +38,7 @@ export class CollectionList {
   protected readonly disableNextButton = computed(() => this.filteredCollection().length - 1 <= this.lastPageItem());
   protected readonly offset = signal(0);
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
-  protected readonly loadNetworkStatus = this.collectionState.state.loadNetworkStatus;
+  protected readonly memosLoadNetworkStatus = this.memosState.state.loadNetworkStatus;
   protected readonly collectionLength = computed(() => this.collectionState.state.collection().length);
   protected readonly permissionAdd = computed(() => this.appState.state.permissions().create);
 
