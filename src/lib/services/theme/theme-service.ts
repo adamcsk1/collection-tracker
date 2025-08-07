@@ -1,15 +1,15 @@
 import { DOCUMENT } from '@angular/common';
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
-import { SettingsModel } from '@pages/settings/settings.model';
-import { appStateToken } from '@stores/app-store';
 import { fromEvent } from 'rxjs';
+import { Themes } from './theme-model';
+import { themeStateToken } from './theme-store';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  private readonly appStore = inject(appStateToken);
+  private readonly themeStore = inject(themeStateToken);
   private readonly document = inject(DOCUMENT);
-  private readonly selectedTheme = signal<SettingsModel['theme']>('system');
-  private readonly usedTheme = signal<SettingsModel['theme']>('system');
+  private readonly selectedTheme = signal<Themes>('system');
+  private readonly usedTheme = signal<Themes>('system');
   private get htmlElement(): HTMLHtmlElement {
     return this.document.getElementsByTagName('html')[0];
   }
@@ -21,7 +21,7 @@ export class ThemeService {
 
   constructor() {
     effect(() => {
-      const theme = this.appStore.state.theme();
+      const theme = this.themeStore.state.theme();
       untracked(() => {
         if (theme !== this.selectedTheme()) this.switchTheme(theme);
       });
@@ -33,12 +33,12 @@ export class ThemeService {
       fromEvent<MediaQueryListEvent>(this.mediaQuery, 'change').subscribe((event: MediaQueryListEvent) =>
         this.setSystemTheme(event)
       );
-      this.switchTheme(this.appStore.state.theme());
+      this.switchTheme(this.themeStore.state.theme());
       this.listened = true;
     }
   }
 
-  private switchTheme(theme: SettingsModel['theme']): void {
+  private switchTheme(theme: Themes): void {
     switch (theme) {
       case 'dark':
         return this.setDarkTheme();

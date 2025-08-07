@@ -1,5 +1,5 @@
+import { MemoModel } from '@lib/services/memos/memos-model';
 import { CollectionItemModel } from '@pages/collection/collection.model';
-import { MemoModel } from '@services/memos.model';
 import { getGenre } from './get-genre-util';
 import { getImage } from './get-image-util';
 import { getIMDbId } from './get-imdb-id.util';

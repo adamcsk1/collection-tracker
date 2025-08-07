@@ -22,10 +22,8 @@
       "@pages/*": ["./src/app/pages/*"],
       "@services/*": ["./src/app/services/*"],
       "@stores/*": ["./src/app/stores/*"],
-      "@models/*": ["./src/app/models/*"],
       "@components/*": ["./src/app/components/*"],
-      "@utils/*": ["./src/app/utils/*"],
-      "@animations/*": ["./src/app/animations/*"]
+      "@lib/*": ["./src/lib/*"]
     }
   },
   "angularCompilerOptions": {

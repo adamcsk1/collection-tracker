@@ -1,10 +1,10 @@
 import { Component, effect, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { Header } from '@components/header/header';
-import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
+import { SpinnerLoading } from '@lib/components/spinner-loading/spinner-loading';
+import { ThemeService } from '@lib/services/theme/theme-service';
 import { SettingsService } from '@pages/settings/settings-service';
 import { CollectionService } from '@services/collection/collection-service';
-import { ThemeService } from '@services/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({

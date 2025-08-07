@@ -1,14 +1,16 @@
 import { PercentPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Input } from '@components/input/input';
-import { Select } from '@components/select/select';
-import { Form } from '@models/form.model';
+import { Input } from '@lib/components/input/input';
+import { Select } from '@lib/components/select/select';
+import { Form } from '@lib/models/form-model';
+import { MemosService } from '@lib/services/memos/memos-service';
+import { memosStateToken } from '@lib/services/memos/memos-store';
+import { OMDbService } from '@lib/services/omdb/omdb-service';
+import { omdbStateToken } from '@lib/services/omdb/omdb-store';
+import { themeStateToken } from '@lib/services/theme/theme-store';
 import { ImageRefreshService } from '@services/image-refresh-service';
-import { MemosService } from '@services/memos-service';
-import { OMDbService } from '@services/omdb-service';
 import { appStateToken } from '@stores/app-store';
-import { collectionStateToken } from '@stores/collection-store';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { of } from 'rxjs';
 import { catchError, debounceTime, filter, map, switchMap, tap } from 'rxjs/operators';
@@ -26,7 +28,9 @@ export class Settings implements OnInit {
   private readonly settings = inject(SettingsService);
   private readonly memos = inject(MemosService);
   private readonly appState = inject(appStateToken);
-  private readonly collectionState = inject(collectionStateToken);
+  private readonly omdbState = inject(omdbStateToken);
+  private readonly themeState = inject(themeStateToken);
+  private readonly memosState = inject(memosStateToken);
   private readonly imageRefresh = inject(ImageRefreshService);
   private readonly _connected = signal<boolean | null>(false);
   protected readonly formGroup = new FormGroup<Form<SettingsModel>>({
@@ -39,7 +43,7 @@ export class Settings implements OnInit {
     theme: new FormControl('system', { nonNullable: true, validators: [Validators.required] }),
   });
   protected readonly connected = this._connected.asReadonly();
-  protected readonly collectionLoadNetworkStatus = this.collectionState.state.loadNetworkStatus;
+  protected readonly memosLoadNetworkStatus = this.memosState.state.loadNetworkStatus;
   protected readonly imageRefreshStatus = this.imageRefresh.state;
 
   public ngOnInit(): void {
@@ -57,13 +61,13 @@ export class Settings implements OnInit {
       .subscribe((status) => this._connected.set(status));
 
     this.formGroup.setValue({
-      token: this.appState.state.memosToken(),
-      apiUrl: this.appState.state.memosApiUrl(),
-      storeCredentials: !!this.appState.state.memosToken(),
-      omdbApiKey: this.appState.state.omdbApiKey(),
+      token: this.memosState.state.token(),
+      apiUrl: this.memosState.state.apiUrl(),
+      storeCredentials: !!this.memosState.state.token(),
+      omdbApiKey: this.omdbState.state.apiKey(),
       appMode: this.appState.state.appMode() || 'basic',
-      fetchBatchSize: this.appState.state.fetchBatchSize() || 10000,
-      theme: this.appState.state.theme(),
+      fetchBatchSize: this.memosState.state.fetchBatchSize() || 10000,
+      theme: this.themeState.state.theme(),
     });
   }
 

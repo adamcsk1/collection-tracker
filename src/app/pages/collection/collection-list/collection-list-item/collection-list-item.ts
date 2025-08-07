@@ -1,11 +1,9 @@
-import { NgStyle } from '@angular/common';
 import { Component, inject, input } from '@angular/core';
 import { componentCollectionStateToken } from '@pages/collection/collection-store';
 import { CollectionItemModel } from '@pages/collection/collection.model';
 
 @Component({
   selector: 'ct-collection-list-item',
-  imports: [NgStyle],
   templateUrl: './collection-list-item.html',
   styleUrl: './collection-list-item.css',
 })

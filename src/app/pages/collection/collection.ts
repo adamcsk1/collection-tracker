@@ -1,5 +1,5 @@
 import { Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
-import { collectionStateToken } from '@stores/collection-store';
+import { memosStateToken } from '@lib/services/memos/memos-store';
 import { provideStore } from 'ngx-simple-signal-store';
 import { CollectionService } from '../../services/collection/collection-service';
 import { CollectionBackground } from './collection-background/collection-background';
@@ -19,7 +19,7 @@ export class Collection implements OnInit {
   private readonly collectionService = inject(CollectionService);
   private readonly collectionDialogsRef = viewChild('collectionDialogs', { read: ViewContainerRef });
   private readonly componentCollectionState = inject(componentCollectionStateToken);
-  private readonly collectionState = inject(collectionStateToken);
+  private readonly memosState = inject(memosStateToken);
 
   constructor() {
     effect(() => {
@@ -34,6 +34,6 @@ export class Collection implements OnInit {
   }
 
   public ngOnInit(): void {
-    if (this.collectionState.state.loadNetworkStatus() !== 'finished') this.collectionService.loadCollection();
+    if (this.memosState.state.loadNetworkStatus() !== 'finished') this.collectionService.loadCollection();
   }
 }
