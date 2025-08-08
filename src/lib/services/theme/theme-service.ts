@@ -59,6 +59,7 @@ export class ThemeService {
     if (this.htmlElement) {
       this.htmlElement.classList.remove('light');
       this.htmlElement.classList.add('dark');
+      this.setMetaThemeColor();
     }
     this.selectedTheme.set('dark');
     this.usedTheme.set('dark');
@@ -68,8 +69,15 @@ export class ThemeService {
     if (this.htmlElement) {
       this.htmlElement.classList.remove('dark');
       this.htmlElement.classList.add('light');
+      this.setMetaThemeColor();
     }
     this.selectedTheme.set('light');
     this.usedTheme.set('light');
+  }
+
+  private setMetaThemeColor(): void {
+    (this.document.querySelector('meta[name="theme-color"]') as HTMLMetaElement)!.content = getComputedStyle(
+      this.document.body
+    ).getPropertyValue('--theme-color');
   }
 }
