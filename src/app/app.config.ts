@@ -14,8 +14,8 @@ import { initialOMDbState, omdbStateToken } from '@lib/services/omdb/omdb-store'
 import { initialThemeState, themeStateToken } from '@lib/services/theme/theme-store';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
+import { initialPortalState, portalStateToken } from '../lib/services/portal/portal-store';
 import { appCollectionStateToken, initialAppCollectionState } from './app-collection-store';
-import { appPortalStateToken, initialAppPortalState } from './app-portal-store';
 import { appStateToken, initialAppState } from './app-store';
 
 export const appConfig: ApplicationConfig = {
@@ -30,9 +30,9 @@ export const appConfig: ApplicationConfig = {
     provideStore(initialMemosState, memosStateToken),
     provideStore(initialToastState, toastStateToken),
     provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
+    provideStore(initialPortalState, portalStateToken),
     provideStore(initialAppState, appStateToken),
     provideStore(initialAppCollectionState, appCollectionStateToken),
-    provideStore(initialAppPortalState, appPortalStateToken),
     provideSignalTranslateConfig({ path: './i18n' }),
   ],
 };
