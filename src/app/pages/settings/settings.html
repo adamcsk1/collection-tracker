@@ -105,6 +105,12 @@
         @if (imageRefreshStatus.errors > 0) {
           <div>{{ ('Errors' | signalTranslate)() }}: {{ imageRefreshStatus.errors }}</div>
         }
+      } @else if (
+        imageRefreshStatus.checked === imageRefreshStatus.count &&
+        !imageRefreshStatus.running &&
+        imageRefreshStatus.checked !== 0
+      ) {
+        {{ ('Finished' | signalTranslate)() }}
       }
       <div>
         <button
