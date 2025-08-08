@@ -22,6 +22,7 @@
   --background-color-alt: #073642;
   --text-color: var(--base-color-lighter);
   --main-color: var(--color-olive);
+  --theme-color: var(--background-color-alt);
 }
 
 .light {
@@ -29,4 +30,5 @@
   --background-color-alt: #eee8d5;
   --text-color: var(--base-color-darker);
   --main-color: var(--color-darkgoldenrod);
+  --theme-color: var(--background-color-alt);
 }
