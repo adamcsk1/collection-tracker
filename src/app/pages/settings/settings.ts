@@ -71,8 +71,8 @@ export class Settings implements OnInit {
     });
   }
 
-  protected onSave(): void {
-    this.settings.storeFormData(this.formGroup.getRawValue());
+  protected onSave(navigateBack = false): void {
+    this.settings.storeFormData(this.formGroup.getRawValue(), navigateBack);
   }
 
   protected onReset(): void {

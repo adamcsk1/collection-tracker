@@ -44,7 +44,7 @@ export class SettingsService {
     if (theme) this.themeState.setState('theme', theme);
   }
 
-  public storeFormData(formData: SettingsModel): void {
+  public storeFormData(formData: SettingsModel, navigateBack = false): void {
     this.memosState.setState('token', formData.token);
     this.memosState.setState('apiUrl', formData.apiUrl);
     this.omdbState.setState('apiKey', formData.omdbApiKey);
@@ -68,7 +68,7 @@ export class SettingsService {
 
     this.setPermissions();
 
-    this.router.navigate(['/', 'collection']);
+    if (navigateBack) this.router.navigate(['/', 'collection']);
   }
 
   private setPermissions(): void {

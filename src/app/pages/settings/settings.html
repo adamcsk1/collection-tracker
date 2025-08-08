@@ -85,6 +85,9 @@
     <button [disabled]="formGroup.invalid || !connected()" (click)="onSave()">
       {{ ('Save' | signalTranslate)() }}
     </button>
+    <button [disabled]="formGroup.invalid || !connected()" (click)="onSave(true)">
+      {{ ('SaveAndBack' | signalTranslate)() }}
+    </button>
     <button class="button-danger" (click)="onReset()">{{ ('Reset' | signalTranslate)() }}</button>
   </div>
 
