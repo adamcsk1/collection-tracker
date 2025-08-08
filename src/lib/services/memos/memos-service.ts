@@ -44,7 +44,7 @@ export class MemosService {
   }
 
   public getMemos(): Observable<MemosModel> {
-    this.spinnerLoadingState.setState('spinnerLoading', true);
+    this.spinnerLoadingState.setState('show', true);
     this.memosState.setState('loadNetworkStatus', 'pending');
     const results = new Subject<MemosModel>();
 
@@ -71,7 +71,7 @@ export class MemosService {
                 .subscribe((items) => results.next(items));
             } else {
               this.memosState.setState('loadNetworkStatus', 'finished');
-              this.spinnerLoadingState.setState('spinnerLoading', false);
+              this.spinnerLoadingState.setState('show', false);
             }
           }),
           map((response) => response.memos),
@@ -81,7 +81,7 @@ export class MemosService {
     paginatedLoadItems()
       .pipe(
         catchError((error) => {
-          this.spinnerLoadingState.setState('spinnerLoading', false);
+          this.spinnerLoadingState.setState('show', false);
           this.memosState.setState('loadNetworkStatus', 'error');
           console.error(error.message);
           throw new Error(error.message);

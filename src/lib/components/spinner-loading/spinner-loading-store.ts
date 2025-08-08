@@ -1,11 +1,11 @@
 import { createInjectionToken } from 'ngx-simple-signal-store';
 
 export interface SpinnerLoadingState {
-  spinnerLoading: boolean;
+  show: boolean;
 }
 
 export const initialSpinnerLoadingState: SpinnerLoadingState = {
-  spinnerLoading: false,
+  show: false,
 };
 
 export const spinnerLoadingStateToken = createInjectionToken<SpinnerLoadingState>('spinnerLoadingState');

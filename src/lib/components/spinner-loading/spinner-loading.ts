@@ -17,7 +17,7 @@ import { spinnerLoadingStateToken } from './spinner-loading-store';
 export class SpinnerLoading {
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private counter = 0;
-  protected readonly spinnerLoading$ = toObservable(this.spinnerLoadingState.state.spinnerLoading).pipe(
+  protected readonly spinnerLoading$ = toObservable(this.spinnerLoadingState.state.show).pipe(
     tap((status) => {
       if (status) this.counter++;
       else this.counter--;

@@ -49,7 +49,7 @@ export class NewCollectionItem implements OnInit {
         this.formGroup.controls.selectedIMDbId.markAsUntouched();
       }
 
-      this.spinnerLoadingState.setState('spinnerLoading', false);
+      this.spinnerLoadingState.setState('show', false);
     });
   }
 
@@ -57,7 +57,7 @@ export class NewCollectionItem implements OnInit {
     this.formGroup.controls.searchText.valueChanges
       .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
       .subscribe((searchText) => {
-        this.spinnerLoadingState.setState('spinnerLoading', true);
+        this.spinnerLoadingState.setState('show', true);
         this.omdb.getMatchedContents(searchText);
       });
   }
@@ -75,16 +75,16 @@ export class NewCollectionItem implements OnInit {
             Tags: this.formGroup.controls.tags.value.trim(),
           })
         ),
-        tap(() => this.spinnerLoadingState.setState('spinnerLoading', true)),
+        tap(() => this.spinnerLoadingState.setState('show', true)),
         mergeMap((mdContent) => this.memos.createMemo(mdContent)),
         catchError((error) => {
-          this.spinnerLoadingState.setState('spinnerLoading', false);
+          this.spinnerLoadingState.setState('show', false);
           throw new Error(error.message);
         }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((memo) => {
-        this.spinnerLoadingState.setState('spinnerLoading', false);
+        this.spinnerLoadingState.setState('show', false);
         this.collection.addCollectionItem(memo, true);
         if (mode === 'new') this.formGroup.reset();
         else if (mode === 'back') this.router.navigate(['/', 'collection']);
