@@ -51,11 +51,14 @@ export class MemosService {
     const paginatedLoadItems = (pageToken?: string) =>
       this.httpClient
         .get<ApiResponseModel>(
-          `${this.memosState.state.apiUrl()}/memos?sort=create_time&direction=DESC&pageSize=${this.memosState.state.fetchBatchSize()}&state=NORMAL&filter=${encodeURIComponent(`content.contains("#series") || content.contains("#movie")`)}${pageToken ? `&pageToken=${pageToken}` : ''}`,
+          // ? The crate_time in descending order does not actually sort by createTime.
+          // ? Ref: https://github.com/usememos/memos/blob/f4bdfa28a00514e71644980bd6dcf588da9798cb/server/router/api/v1/memo_service.go#L753
+          `${this.memosState.state.apiUrl()}/memos?orderBy=create_time%20desc&pageSize=${this.memosState.state.fetchBatchSize()}&state=NORMAL&filter=${encodeURIComponent(`content.contains("#series") || content.contains("#movie")`)}${pageToken ? `&pageToken=${pageToken}` : ''}`,
           this.headerBuilder()
         )
         .pipe(
           tap((response) => {
+            console.log(response);
             if (response.nextPageToken) {
               paginatedLoadItems(encodeURIComponent(response.nextPageToken))
                 .pipe(
