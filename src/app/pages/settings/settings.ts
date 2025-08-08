@@ -41,9 +41,11 @@ export class Settings implements OnInit {
     appMode: new FormControl('basic', { nonNullable: true, validators: [Validators.required] }),
     fetchBatchSize: new FormControl(10000, { nonNullable: true, validators: [Validators.required] }),
     theme: new FormControl('system', { nonNullable: true, validators: [Validators.required] }),
+    settingsLock: new FormControl(false, { nonNullable: true, validators: [Validators.required] }),
   });
   protected readonly connected = this._connected.asReadonly();
   protected readonly memosLoadNetworkStatus = this.memosState.state.loadNetworkStatus;
+  protected readonly settingLockEnabled = this.appState.state.settingsLock;
   protected readonly imageRefreshStatus = this.imageRefresh.state;
 
   public ngOnInit(): void {
@@ -68,6 +70,7 @@ export class Settings implements OnInit {
       appMode: this.appState.state.appMode() || 'basic',
       fetchBatchSize: this.memosState.state.fetchBatchSize() || 10000,
       theme: this.themeState.state.theme(),
+      settingsLock: this.appState.state.settingsLock(),
     });
   }
 

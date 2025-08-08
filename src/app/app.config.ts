@@ -8,6 +8,7 @@ import {
   initialSpinnerLoadingState,
   spinnerLoadingStateToken,
 } from '@lib/components/spinner-loading/spinner-loading-store';
+import { initialToastState, toastStateToken } from '@lib/components/toast/toast-store';
 import { initialMemosState, memosStateToken } from '@lib/services/memos/memos-store';
 import { initialOMDbState, omdbStateToken } from '@lib/services/omdb/omdb-store';
 import { initialThemeState, themeStateToken } from '@lib/services/theme/theme-store';
@@ -27,6 +28,7 @@ export const appConfig: ApplicationConfig = {
     provideStore(initialOMDbState, omdbStateToken),
     provideStore(initialThemeState, themeStateToken),
     provideStore(initialMemosState, memosStateToken),
+    provideStore(initialToastState, toastStateToken),
     provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
     provideStore(initialCollectionState, collectionStateToken),
     provideSignalTranslateConfig({ path: './i18n' }),

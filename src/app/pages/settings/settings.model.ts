@@ -8,4 +8,5 @@ export interface SettingsModel {
   fetchBatchSize: number;
   appMode: 'basic' | 'limited' | 'full';
   theme: Themes;
+  settingsLock: boolean;
 }

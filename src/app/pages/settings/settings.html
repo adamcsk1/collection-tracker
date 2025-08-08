@@ -1,75 +1,96 @@
 <form [formGroup]="formGroup">
-  <h3>{{ ('BasicSettings' | signalTranslate)() }}</h3>
-  <p>{{ ('Message.BasicSettings' | signalTranslate)() }}</p>
-  <ct-input
-    [label]="('ApiUrl' | signalTranslate)()"
-    [hint]="('Message.MemosApiUrl' | signalTranslate)()"
-    [mandatory]="true"
-    [control]="formGroup.controls.apiUrl"
-  />
-  <ct-input
-    [label]="('Token' | signalTranslate)()"
-    [hint]="('Message.MemosToken' | signalTranslate)()"
-    [mandatory]="true"
-    type="password"
-    [control]="formGroup.controls.token"
-  />
-  <div>
-    <label>{{ ('ConnectionStatus' | signalTranslate)() }}</label>
-    <div class="status">
-      @if (connected() === true) {
-        {{ ('Connected' | signalTranslate)() }}
-        <span class="status-circle status-circle-ok"></span>
-      } @else if (connected() === false) {
-        {{ ('Error' | signalTranslate)() }}
-        <span class="status-circle status-circle-error"></span>
-      } @else {
-        {{ ('Unknown' | signalTranslate)() }}
-        <span class="status-circle"></span>
-      }
+  @if (!settingLockEnabled()) {
+    <h3>{{ ('BasicSettings' | signalTranslate)() }}</h3>
+    <p>{{ ('Message.BasicSettings' | signalTranslate)() }}</p>
+    <ct-input
+      [label]="('ApiUrl' | signalTranslate)()"
+      [hint]="('Message.MemosApiUrl' | signalTranslate)()"
+      [mandatory]="true"
+      [control]="formGroup.controls.apiUrl"
+    />
+    <ct-input
+      [label]="('Token' | signalTranslate)()"
+      [hint]="('Message.MemosToken' | signalTranslate)()"
+      [mandatory]="true"
+      type="password"
+      [control]="formGroup.controls.token"
+    />
+    <div>
+      <label>{{ ('ConnectionStatus' | signalTranslate)() }}</label>
+      <div class="status">
+        @if (connected() === true) {
+          {{ ('Connected' | signalTranslate)() }}
+          <span class="status-circle status-circle-ok"></span>
+        } @else if (connected() === false) {
+          {{ ('Error' | signalTranslate)() }}
+          <span class="status-circle status-circle-error"></span>
+        } @else {
+          {{ ('Unknown' | signalTranslate)() }}
+          <span class="status-circle"></span>
+        }
+      </div>
     </div>
-  </div>
-  <ct-input
-    [label]="('OMDbApiKey' | signalTranslate)()"
-    [hint]="('Message.OMDbApiKey' | signalTranslate)()"
-    [mandatory]="true"
-    [control]="formGroup.controls.omdbApiKey"
-  />
-  <ct-select
-    [label]="('StoreCredentials' | signalTranslate)()"
-    [mandatory]="true"
-    [control]="formGroup.controls.storeCredentials"
-    [options]="[
-      { text: ('Yes' | signalTranslate)(), value: true },
-      { text: ('No' | signalTranslate)(), value: false },
-    ]"
-  />
+    <ct-input
+      [label]="('OMDbApiKey' | signalTranslate)()"
+      [hint]="('Message.OMDbApiKey' | signalTranslate)()"
+      [mandatory]="true"
+      [control]="formGroup.controls.omdbApiKey"
+    />
+    <ct-select
+      [label]="('StoreCredentials' | signalTranslate)()"
+      [mandatory]="true"
+      [control]="formGroup.controls.storeCredentials"
+      [options]="[
+        { text: ('Yes' | signalTranslate)(), value: true },
+        { text: ('No' | signalTranslate)(), value: false },
+      ]"
+    />
+
+    <div class="form-buttons">
+      <button class="button-danger" (click)="onReset()">{{ ('ResetBasicSettings' | signalTranslate)() }}</button>
+    </div>
+  }
+
   <h3>{{ ('AppSettings' | signalTranslate)() }}</h3>
-  <ct-select
-    [label]="('AppMode' | signalTranslate)()"
-    [hint]="('Message.AppMode' | signalTranslate)()"
-    [mandatory]="true"
-    [control]="formGroup.controls.appMode"
-    [options]="[
-      { text: ('BasicAccess' | signalTranslate)(), value: 'basic' },
-      { text: ('LimitedAccess' | signalTranslate)(), value: 'limited' },
-      { text: ('FullAccess' | signalTranslate)(), value: 'full' },
-    ]"
-  />
-  <ct-select
-    [label]="('FetchBatchSize' | signalTranslate)()"
-    [hint]="('Message.FetchBatchSize' | signalTranslate)()"
-    [mandatory]="true"
-    [control]="formGroup.controls.fetchBatchSize"
-    [options]="[
-      { text: ('Unlimited' | signalTranslate)(), value: 10000 },
-      { text: '5000', value: 5000 },
-      { text: '1000', value: 1000 },
-      { text: '500', value: 500 },
-      { text: '100', value: 100 },
-      { text: '50', value: 50 },
-    ]"
-  />
+  @if (!settingLockEnabled()) {
+    <ct-select
+      [label]="('AppMode' | signalTranslate)()"
+      [hint]="('Message.AppMode' | signalTranslate)()"
+      [mandatory]="true"
+      [control]="formGroup.controls.appMode"
+      [options]="[
+        { text: ('BasicAccess' | signalTranslate)(), value: 'basic' },
+        { text: ('LimitedAccess' | signalTranslate)(), value: 'limited' },
+        { text: ('FullAccess' | signalTranslate)(), value: 'full' },
+      ]"
+    />
+    @if (formGroup.controls.appMode.value !== 'full') {
+      <ct-select
+        [label]="('SettingsLock' | signalTranslate)()"
+        [hint]="('Message.SettingsLock' | signalTranslate)()"
+        [mandatory]="true"
+        [control]="formGroup.controls.settingsLock"
+        [options]="[
+          { text: ('Yes' | signalTranslate)(), value: true },
+          { text: ('No' | signalTranslate)(), value: false },
+        ]"
+      />
+    }
+    <ct-select
+      [label]="('FetchBatchSize' | signalTranslate)()"
+      [hint]="('Message.FetchBatchSize' | signalTranslate)()"
+      [mandatory]="true"
+      [control]="formGroup.controls.fetchBatchSize"
+      [options]="[
+        { text: ('Unlimited' | signalTranslate)(), value: 10000 },
+        { text: '5000', value: 5000 },
+        { text: '1000', value: 1000 },
+        { text: '500', value: 500 },
+        { text: '100', value: 100 },
+        { text: '50', value: 50 },
+      ]"
+    />
+  }
   <ct-select
     [label]="('Theme' | signalTranslate)()"
     [mandatory]="true"
@@ -88,7 +109,6 @@
     <button [disabled]="formGroup.invalid || !connected()" (click)="onSave(true)">
       {{ ('SaveAndBack' | signalTranslate)() }}
     </button>
-    <button class="button-danger" (click)="onReset()">{{ ('Reset' | signalTranslate)() }}</button>
   </div>
 
   @if (formGroup.controls.appMode.value === 'full') {
