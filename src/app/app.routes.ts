@@ -1,28 +1,28 @@
 import { Routes } from '@angular/router';
-import { newCollectionItemGuard } from '@pages/new-collection-item/new-collection-item-guard';
+import { collectionNewItemGuard } from './collection/collection-new-item/collection-new-item-guard';
 
 export const routes: Routes = [
   {
-    path: 'collection',
-    loadComponent: () => import('./pages/collection/collection').then((module) => module.Collection),
+    path: 'collection/new-item',
+    loadComponent: () =>
+      import('./collection/collection-new-item/collection-new-item').then((module) => module.CollectionNewItem),
+    canActivate: [collectionNewItemGuard],
   },
   {
-    path: 'new/collection-item',
-    loadComponent: () =>
-      import('./pages/new-collection-item/new-collection-item').then((module) => module.NewCollectionItem),
-    canActivate: [newCollectionItemGuard],
+    path: 'collection',
+    loadComponent: () => import('./collection/collection').then((module) => module.Collection),
   },
   {
     path: 'statistics',
-    loadComponent: () => import('./pages/statistics/statistics').then((module) => module.Statistics),
+    loadComponent: () => import('./statistics/statistics').then((module) => module.Statistics),
   },
   {
     path: 'settings',
-    loadComponent: () => import('./pages/settings/settings').then((module) => module.Settings),
+    loadComponent: () => import('./settings/settings').then((module) => module.Settings),
   },
   {
     path: 'about',
-    loadComponent: () => import('./pages/about/about').then((module) => module.About),
+    loadComponent: () => import('./about/about').then((module) => module.About),
   },
   {
     path: '',

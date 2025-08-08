@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
-import { appStateToken } from '@stores/app-store';
+import { appStateToken } from '../../app-store';
 
-export const newCollectionItemGuard = () => {
+export const collectionNewItemGuard = () => {
   const appState = inject(appStateToken);
   return appState.state.permissions().create;
 };

@@ -1,12 +1,12 @@
 import { inject } from '@angular/core';
 import { AbstractControl, ValidatorFn } from '@angular/forms';
-import { collectionStateToken } from '@stores/collection-store';
+import { appCollectionStateToken } from '../../../app-collection-store';
 
 export const knownIMDbIdValidator = (): ValidatorFn => {
-  const collectionState = inject(collectionStateToken);
+  const appCollectionState = inject(appCollectionStateToken);
 
   return (control: AbstractControl) => {
-    const collection = collectionState.state.collection();
+    const collection = appCollectionState.state.collection();
 
     return collection.find((collectionItem) => collectionItem.IMDbId === control.value) ? { knownIMDbId: true } : null;
   };

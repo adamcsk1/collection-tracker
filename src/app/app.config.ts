@@ -12,10 +12,10 @@ import { initialToastState, toastStateToken } from '@lib/components/toast/toast-
 import { initialMemosState, memosStateToken } from '@lib/services/memos/memos-store';
 import { initialOMDbState, omdbStateToken } from '@lib/services/omdb/omdb-store';
 import { initialThemeState, themeStateToken } from '@lib/services/theme/theme-store';
-import { appStateToken, initialAppState } from '@stores/app-store';
-import { collectionStateToken, initialCollectionState } from '@stores/collection-store';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
+import { appCollectionStateToken, initialAppCollectionState } from './app-collection-store';
+import { appStateToken, initialAppState } from './app-store';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -30,7 +30,7 @@ export const appConfig: ApplicationConfig = {
     provideStore(initialMemosState, memosStateToken),
     provideStore(initialToastState, toastStateToken),
     provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
-    provideStore(initialCollectionState, collectionStateToken),
+    provideStore(initialAppCollectionState, appCollectionStateToken),
     provideSignalTranslateConfig({ path: './i18n' }),
   ],
 };

@@ -7,12 +7,12 @@ import { ConfirmService } from '@lib/services/confirm-service';
 import { MemosService } from '@lib/services/memos/memos-service';
 import { CollectionService } from '@services/collection/collection-service';
 import { getCollectionItem } from '@services/collection/utils/get-collection-item-util';
-import { appStateToken } from '@stores/app-store';
 import { marked } from 'marked';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { mergeMap, of } from 'rxjs';
-import { componentCollectionStateToken } from '../collection-store';
-import { CollectionItemModel } from '../collection.model';
+import { appStateToken } from '../../app-store';
+import { CollectionItemModel } from '../collection-model';
+import { collectionStateToken } from '../collection-store';
 
 @Component({
   selector: 'ct-collection-item-dialog',
@@ -28,7 +28,7 @@ export class CollectionItemDialog implements OnInit {
   private readonly confirm = inject(ConfirmService);
   private readonly memos = inject(MemosService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly componentCollectionState = inject(componentCollectionStateToken);
+  private readonly collectionState = inject(collectionStateToken);
   private readonly _editMode = signal(false);
   protected parsedMdContent = computed(() => {
     const rawContent = this.collectionItem().rawContent;
@@ -41,7 +41,7 @@ export class CollectionItemDialog implements OnInit {
   public readonly collectionItem = model.required<CollectionItemModel>();
 
   protected onClose(): void {
-    this.componentCollectionState.setState('openedCollectionItem', null);
+    this.collectionState.setState('openedCollectionItem', null);
   }
 
   public ngOnInit(): void {

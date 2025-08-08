@@ -1,6 +1,6 @@
 import { Component, inject, input } from '@angular/core';
-import { componentCollectionStateToken } from '@pages/collection/collection-store';
-import { CollectionItemModel } from '@pages/collection/collection.model';
+import { CollectionItemModel } from '../../collection-model';
+import { collectionStateToken } from '../../collection-store';
 
 @Component({
   selector: 'ct-collection-list-item',
@@ -8,14 +8,14 @@ import { CollectionItemModel } from '@pages/collection/collection.model';
   styleUrl: './collection-list-item.css',
 })
 export class CollectionListItem {
-  private readonly componentCollectionState = inject(componentCollectionStateToken);
+  private readonly collectionState = inject(collectionStateToken);
   public readonly collectionItem = input.required<CollectionItemModel>();
 
   protected onSetSearchText(searchValue: string): void {
-    this.componentCollectionState.setState('searchText', searchValue);
+    this.collectionState.setState('searchText', searchValue);
   }
 
   protected onOpenDetail(): void {
-    this.componentCollectionState.setState('openedCollectionItem', this.collectionItem());
+    this.collectionState.setState('openedCollectionItem', this.collectionItem());
   }
 }

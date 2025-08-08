@@ -10,10 +10,10 @@ import { OMDbService } from '@lib/services/omdb/omdb-service';
 import { omdbStateToken } from '@lib/services/omdb/omdb-store';
 import { themeStateToken } from '@lib/services/theme/theme-store';
 import { ImageRefreshService } from '@services/image-refresh-service';
-import { appStateToken } from '@stores/app-store';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { of } from 'rxjs';
 import { catchError, debounceTime, filter, map, switchMap, tap } from 'rxjs/operators';
+import { appStateToken } from '../app-store';
 import { SettingsService } from './settings-service';
 import { SettingsModel } from './settings.model';
 

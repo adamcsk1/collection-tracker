@@ -1,8 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
 import { opacityAnimation } from '@lib/animations/opacity-animation';
 import { randomInt } from '@lib/utils/random-int-util';
-import { collectionStateToken } from '@stores/collection-store';
-import { CollectionBackgroundImagesModel } from './collection-background.model';
+import { appCollectionStateToken } from '../../app-collection-store';
+import { CollectionBackgroundImagesModel } from './collection-background-model';
 
 @Component({
   selector: 'ct-collection-background',
@@ -11,9 +11,9 @@ import { CollectionBackgroundImagesModel } from './collection-background.model';
   animations: [opacityAnimation],
 })
 export class CollectionBackground {
-  private readonly collectionState = inject(collectionStateToken);
+  private readonly appCollectionState = inject(appCollectionStateToken);
   protected readonly images = computed<CollectionBackgroundImagesModel>(() => {
-    const collection = this.collectionState.state.collection();
+    const collection = this.appCollectionState.state.collection();
 
     if (!collection.length) return [];
 
