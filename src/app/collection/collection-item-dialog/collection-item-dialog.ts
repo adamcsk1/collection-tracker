@@ -10,9 +10,9 @@ import { getCollectionItem } from '@services/collection/utils/get-collection-ite
 import { marked } from 'marked';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { mergeMap, of } from 'rxjs';
+import { PortalService } from '../../app-portal-service';
 import { appStateToken } from '../../app-store';
 import { CollectionItemModel } from '../collection-model';
-import { collectionStateToken } from '../collection-store';
 
 @Component({
   selector: 'ct-collection-item-dialog',
@@ -24,11 +24,11 @@ export class CollectionItemDialog implements OnInit {
   private readonly collectionService = inject(CollectionService);
   private readonly appState = inject(appStateToken);
   private readonly toastState = inject(toastStateToken);
+  private readonly portal = inject(PortalService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
   private readonly memos = inject(MemosService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly collectionState = inject(collectionStateToken);
   private readonly _editMode = signal(false);
   protected parsedMdContent = computed(() => {
     const rawContent = this.collectionItem().rawContent;
@@ -41,7 +41,7 @@ export class CollectionItemDialog implements OnInit {
   public readonly collectionItem = model.required<CollectionItemModel>();
 
   protected onClose(): void {
-    this.collectionState.setState('openedCollectionItem', null);
+    this.portal.close();
   }
 
   public ngOnInit(): void {

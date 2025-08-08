@@ -1,4 +1,6 @@
 import { Component, inject, input } from '@angular/core';
+import { PortalService } from '../../../app-portal-service';
+import { CollectionItemDialog } from '../../collection-item-dialog/collection-item-dialog';
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
 
@@ -9,6 +11,7 @@ import { collectionStateToken } from '../../collection-store';
 })
 export class CollectionListItem {
   private readonly collectionState = inject(collectionStateToken);
+  private readonly portal = inject(PortalService);
   public readonly collectionItem = input.required<CollectionItemModel>();
 
   protected onSetSearchText(searchValue: string): void {
@@ -16,6 +19,6 @@ export class CollectionListItem {
   }
 
   protected onOpenDetail(): void {
-    this.collectionState.setState('openedCollectionItem', this.collectionItem());
+    this.portal.open(CollectionItemDialog, { collectionItem: this.collectionItem() });
   }
 }

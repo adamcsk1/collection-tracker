@@ -58,7 +58,6 @@ export class MemosService {
         )
         .pipe(
           tap((response) => {
-            console.log(response);
             if (response.nextPageToken) {
               paginatedLoadItems(encodeURIComponent(response.nextPageToken))
                 .pipe(
