@@ -1,9 +1,11 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { toastStateToken } from '@lib/components/toast/toast-store';
 import { memosStateToken } from '@lib/services/memos/memos-store';
 import { omdbStateToken } from '@lib/services/omdb/omdb-store';
 import { themeStateToken } from '@lib/services/theme/theme-store';
 import { appStateToken } from '@stores/app-store';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import {
   SETTINGS_LC_API_URL,
   SETTINGS_LC_APP_MODE,
@@ -22,6 +24,8 @@ export class SettingsService {
   private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly memosState = inject(memosStateToken);
+  private readonly toastState = inject(toastStateToken);
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   public readonly hasSettings = computed(
     () => !!this.memosState.state.token() && !!this.memosState.state.apiUrl() && !!this.omdbState.state.apiKey()
   );
@@ -72,6 +76,8 @@ export class SettingsService {
     localStorage.setItem(SETTINGS_LC_THEME, formData.theme);
 
     this.setPermissions();
+
+    this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'));
 
     if (navigateBack) this.router.navigate(['/', 'collection']);
   }

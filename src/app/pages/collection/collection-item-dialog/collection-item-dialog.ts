@@ -2,6 +2,7 @@ import { Component, computed, DestroyRef, inject, model, OnInit, signal } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { Textarea } from '@lib/components/textarea/textarea';
+import { toastStateToken } from '@lib/components/toast/toast-store';
 import { ConfirmService } from '@lib/services/confirm-service';
 import { MemosService } from '@lib/services/memos/memos-service';
 import { CollectionService } from '@services/collection/collection-service';
@@ -22,6 +23,7 @@ import { CollectionItemModel } from '../collection.model';
 export class CollectionItemDialog implements OnInit {
   private readonly collectionService = inject(CollectionService);
   private readonly appState = inject(appStateToken);
+  private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
   private readonly memos = inject(MemosService);
@@ -58,6 +60,7 @@ export class CollectionItemDialog implements OnInit {
       )
       .subscribe((confirmed) => {
         if (confirmed) {
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
           this.collectionService.deleteCollectionItem(this.collectionItem().memoName);
           this.onClose();
         }
@@ -84,6 +87,7 @@ export class CollectionItemDialog implements OnInit {
       )
       .subscribe((confirmed) => {
         if (confirmed) {
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
           this.collectionService.updateCollectionItem(this.collectionItem().memoName, this.rawContentControl.value);
           this.collectionItem.update((collectionItem) =>
             getCollectionItem({ name: collectionItem.memoName, content: this.rawContentControl.value })

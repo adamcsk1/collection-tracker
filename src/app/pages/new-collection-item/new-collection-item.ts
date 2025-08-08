@@ -5,12 +5,13 @@ import { Router } from '@angular/router';
 import { Input } from '@lib/components/input/input';
 import { Select } from '@lib/components/select/select';
 import { spinnerLoadingStateToken } from '@lib/components/spinner-loading/spinner-loading-store';
+import { toastStateToken } from '@lib/components/toast/toast-store';
 import { Form } from '@lib/models/form-model';
 import { MemosService } from '@lib/services/memos/memos-service';
 import { OMDbService } from '@lib/services/omdb/omdb-service';
 import { CollectionService } from '@services/collection/collection-service';
 import { MdContentGeneratorService } from '@services/md-content-generator-service';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap } from 'rxjs';
 import { NewCollectionItemModel } from './new-collection-item.model';
 import { knownIMDbIdValidator } from './validators/known-imdb-id.validator';
@@ -27,6 +28,8 @@ export class NewCollectionItem implements OnInit {
   private readonly omdb = inject(OMDbService);
   private readonly collection = inject(CollectionService);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
+  private readonly toastState = inject(toastStateToken);
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly mdContentGenerator = inject(MdContentGeneratorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
@@ -86,6 +89,7 @@ export class NewCollectionItem implements OnInit {
       .subscribe((memo) => {
         this.spinnerLoadingState.setState('show', false);
         this.collection.addCollectionItem(memo, true);
+        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewItem'));
         if (mode === 'new') this.formGroup.reset();
         else if (mode === 'back') this.router.navigate(['/', 'collection']);
       });
