@@ -2,13 +2,13 @@ import { effect, inject, Injectable } from '@angular/core';
 import { MemoModel } from '@lib/services/memos/memos-model';
 import { MemosService } from '@lib/services/memos/memos-service';
 import { memosStateToken } from '@lib/services/memos/memos-store';
-import { collectionStateToken } from '@stores/collection-store';
+import { appCollectionStateToken } from '../../app-collection-store';
 import { getCollectionItem } from './utils/get-collection-item-util';
 
 @Injectable({ providedIn: 'root' })
 export class CollectionService {
   private readonly memos = inject(MemosService);
-  private readonly collectionState = inject(collectionStateToken);
+  private readonly appCollectionState = inject(appCollectionStateToken);
   private readonly memosState = inject(memosStateToken);
 
   constructor() {
@@ -17,7 +17,7 @@ export class CollectionService {
 
       // ?  Reorder by createTime because the Memos API does not return the items in a different correct order.
       if (loadNetworkStatus === 'finished') {
-        this.collectionState.patchState('collection', (state) =>
+        this.appCollectionState.patchState('collection', (state) =>
           state.sort((a, b) => -a.createTime.localeCompare(b.createTime))
         );
       }
@@ -28,7 +28,7 @@ export class CollectionService {
     if (this.memosState.state.loadNetworkStatus() === 'pending') return;
     console.log('loadCollection');
     this.memos.getMemos().subscribe((memos) =>
-      this.collectionState.patchState('collection', (state) => [
+      this.appCollectionState.patchState('collection', (state) => [
         ...state,
         ...memos
           .filter((memo) => !state.map((stateItem) => stateItem.memoName).includes(memo.name)) // ? The Memos API could return with duplications when the pagination is in used.
@@ -38,16 +38,16 @@ export class CollectionService {
   }
 
   public addCollectionItem(memo: MemoModel, first = false): void {
-    if (first) this.collectionState.patchState('collection', (state) => [getCollectionItem(memo), ...state]);
-    else this.collectionState.patchState('collection', (state) => [...state, getCollectionItem(memo)]);
+    if (first) this.appCollectionState.patchState('collection', (state) => [getCollectionItem(memo), ...state]);
+    else this.appCollectionState.patchState('collection', (state) => [...state, getCollectionItem(memo)]);
   }
 
   public deleteCollectionItem(memoName: string): void {
-    this.collectionState.patchState('collection', (state) => state.filter((item) => item.memoName !== memoName));
+    this.appCollectionState.patchState('collection', (state) => state.filter((item) => item.memoName !== memoName));
   }
 
   public updateCollectionItem(memoName: string, rawContent: string): void {
-    this.collectionState.patchState('collection', (state) => {
+    this.appCollectionState.patchState('collection', (state) => {
       const index = state.findIndex((item) => item.memoName === memoName);
       if (index !== -1) state[index] = getCollectionItem({ name: memoName, content: rawContent });
       return state;

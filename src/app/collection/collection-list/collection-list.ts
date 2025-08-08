@@ -2,10 +2,11 @@ import { Component, computed, effect, ElementRef, inject, signal, viewChild } fr
 import { Router } from '@angular/router';
 import { memosStateToken } from '@lib/services/memos/memos-store';
 import { randomInt } from '@lib/utils/random-int-util';
-import { appStateToken } from '@stores/app-store';
-import { collectionStateToken } from '@stores/collection-store';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { componentCollectionStateToken } from '../collection-store';
+
+import { appCollectionStateToken } from '../../app-collection-store';
+import { appStateToken } from '../../app-store';
+import { collectionStateToken } from '../collection-store';
 import { CollectionListItemSkeleton } from './collection-list-item-skeleton/collection-list-item-skeleton';
 import { CollectionListItem } from './collection-list-item/collection-list-item';
 
@@ -17,14 +18,14 @@ import { CollectionListItem } from './collection-list-item/collection-list-item'
 })
 export class CollectionList {
   private readonly router = inject(Router);
-  private readonly collectionState = inject(collectionStateToken);
+  private readonly appCollectionState = inject(appCollectionStateToken);
   private readonly appState = inject(appStateToken);
   private readonly memosState = inject(memosStateToken);
-  private readonly componentCollectionState = inject(componentCollectionStateToken);
+  private readonly collectionState = inject(collectionStateToken);
   protected readonly filteredCollection = computed(() => {
-    const searchText = this.componentCollectionState.state.searchText().toLowerCase();
+    const searchText = this.collectionState.state.searchText().toLowerCase();
     this.resetScrollPosition();
-    return this.collectionState.state
+    return this.appCollectionState.state
       .collection()
       .filter((collectionItem) => collectionItem.rawContent.toLowerCase().includes(searchText));
   });
@@ -39,12 +40,12 @@ export class CollectionList {
   protected readonly offset = signal(0);
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly memosLoadNetworkStatus = this.memosState.state.loadNetworkStatus;
-  protected readonly collectionLength = computed(() => this.collectionState.state.collection().length);
+  protected readonly collectionLength = computed(() => this.appCollectionState.state.collection().length);
   protected readonly permissionAdd = computed(() => this.appState.state.permissions().create);
 
   constructor() {
     effect(() => {
-      this.componentCollectionState.state.searchText();
+      this.collectionState.state.searchText();
       this.resetScrollPosition();
     });
   }
@@ -52,11 +53,11 @@ export class CollectionList {
   protected onRandomPick(): void {
     const filteredCollection = this.filteredCollection();
     const randomIndex = randomInt(0, filteredCollection.length - 1);
-    this.componentCollectionState.setState('openedCollectionItem', filteredCollection[randomIndex]);
+    this.collectionState.setState('openedCollectionItem', filteredCollection[randomIndex]);
   }
 
   protected onAddNew(): void {
-    this.router.navigate(['/', 'new', 'collection-item']);
+    this.router.navigate(['/', 'collection', 'new-item']);
   }
 
   protected onFirstPage(): void {

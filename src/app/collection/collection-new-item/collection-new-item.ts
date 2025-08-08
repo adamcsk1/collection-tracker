@@ -13,17 +13,17 @@ import { CollectionService } from '@services/collection/collection-service';
 import { MdContentGeneratorService } from '@services/md-content-generator-service';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap } from 'rxjs';
-import { NewCollectionItemModel } from './new-collection-item.model';
+import { CollectionNewItemModel } from './collection-new-item-model';
 import { knownIMDbIdValidator } from './validators/known-imdb-id.validator';
 
 @Component({
-  selector: 'ct-new-collection-item',
+  selector: 'ct-collection-new-item',
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe, Input, Select],
-  templateUrl: './new-collection-item.html',
-  styleUrl: './new-collection-item.css',
+  templateUrl: './collection-new-item.html',
+  styleUrl: './collection-new-item.css',
   providers: [OMDbService, MdContentGeneratorService],
 })
-export class NewCollectionItem implements OnInit {
+export class CollectionNewItem implements OnInit {
   private readonly memos = inject(MemosService);
   private readonly omdb = inject(OMDbService);
   private readonly collection = inject(CollectionService);
@@ -33,7 +33,7 @@ export class NewCollectionItem implements OnInit {
   private readonly mdContentGenerator = inject(MdContentGeneratorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
-  protected readonly formGroup = new FormGroup<Form<NewCollectionItemModel>>({
+  protected readonly formGroup = new FormGroup<Form<CollectionNewItemModel>>({
     searchText: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     selectedIMDbId: new FormControl(null, { validators: [Validators.required, knownIMDbIdValidator()] }),
     tags: new FormControl('', { nonNullable: true }),

@@ -83,7 +83,6 @@
 
       &.active {
         color: var(--main-color);
-        cursor: default;
       }
     }
   }

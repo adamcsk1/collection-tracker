@@ -2,10 +2,10 @@ import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { APP_VERSION, BUILD, BUILD_DATE } from '@appConst';
 import { toastStateToken } from '@lib/components/toast/toast-store';
-import { SETTINGS_LC_SETTINGS_LOCK } from '@pages/settings/settings.const';
-import { appStateToken } from '@stores/app-store';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { BehaviorSubject, debounceTime, filter, tap } from 'rxjs';
+import { appStateToken } from '../app-store';
+import { SETTINGS_LC_SETTINGS_LOCK } from '../settings/settings-const';
 
 @Component({
   selector: 'ct-about',

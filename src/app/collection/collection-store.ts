@@ -1,12 +1,14 @@
-import { CollectionModel } from '@pages/collection/collection.model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
+import { CollectionItemModel } from './collection-model';
 
 export interface CollectionState {
-  collection: CollectionModel;
+  searchText: string;
+  openedCollectionItem: CollectionItemModel | null;
 }
 
 export const initialCollectionState: CollectionState = {
-  collection: [],
+  searchText: '',
+  openedCollectionItem: null,
 };
 
 export const collectionStateToken = createInjectionToken<CollectionState>('collectionState');

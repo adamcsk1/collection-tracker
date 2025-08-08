@@ -1,6 +1,6 @@
 import { Component, DestroyRef, DOCUMENT, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ConfirmService } from '@lib/services/confirm-service';
 import { CollectionService } from '@services/collection/collection-service';
 import { DisconnectService } from '@services/disconnect-service';
@@ -19,7 +19,6 @@ export class Header {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
   private readonly disconnect = inject(DisconnectService);
-  private readonly router = inject(Router);
 
   protected onRemoveFocus(): void {
     (this.document.activeElement as HTMLElement)?.blur();

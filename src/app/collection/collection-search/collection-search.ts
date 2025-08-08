@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Input } from '@lib/components/input/input';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { componentCollectionStateToken } from '../collection-store';
+import { collectionStateToken } from '../collection-store';
 
 @Component({
   selector: 'ct-collection-search',
@@ -13,12 +13,12 @@ import { componentCollectionStateToken } from '../collection-store';
 })
 export class CollectionSearch implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly componentCollectionState = inject(componentCollectionStateToken);
+  private readonly collectionState = inject(collectionStateToken);
   protected readonly searchTextControl = new FormControl<string>('', { nonNullable: true });
 
   constructor() {
     effect(() => {
-      const searchText = this.componentCollectionState.state.searchText();
+      const searchText = this.collectionState.state.searchText();
       this.searchTextControl.setValue(searchText);
     });
   }
@@ -26,6 +26,6 @@ export class CollectionSearch implements OnInit {
   public ngOnInit(): void {
     this.searchTextControl.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((searchText) => this.componentCollectionState.setState('searchText', searchText));
+      .subscribe((searchText) => this.collectionState.setState('searchText', searchText));
   }
 }
