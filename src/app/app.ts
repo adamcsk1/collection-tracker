@@ -2,6 +2,7 @@ import { Component, effect, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { Header } from '@components/header/header';
 import { SpinnerLoading } from '@lib/components/spinner-loading/spinner-loading';
+import { Toast } from '@lib/components/toast/toast';
 import { ThemeService } from '@lib/services/theme/theme-service';
 import { SettingsService } from '@pages/settings/settings-service';
 import { CollectionService } from '@services/collection/collection-service';
@@ -9,7 +10,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-root',
-  imports: [RouterOutlet, Header, SpinnerLoading],
+  imports: [RouterOutlet, Header, SpinnerLoading, Toast],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

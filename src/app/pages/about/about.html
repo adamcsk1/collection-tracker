@@ -10,7 +10,7 @@
     <div>{{ buildDate }}</div>
   </div>
   <h3>{{ ('APP_VERSION' | signalTranslate)() }}</h3>
-  <div>
+  <div (click)="onClickAppVersion()">
     <div>{{ appVersion }}</div>
   </div>
   <h3>{{ ('REPOSITORY' | signalTranslate)() }}</h3>

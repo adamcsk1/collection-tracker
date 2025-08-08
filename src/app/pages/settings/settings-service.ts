@@ -9,6 +9,7 @@ import {
   SETTINGS_LC_APP_MODE,
   SETTINGS_LC_FETCH_BATCH_SIZE,
   SETTINGS_LC_OMDB_API_KEY,
+  SETTINGS_LC_SETTINGS_LOCK,
   SETTINGS_LC_THEME,
   SETTINGS_LC_TOKEN,
 } from './settings.const';
@@ -30,6 +31,7 @@ export class SettingsService {
     const memosApiUrl = localStorage.getItem(SETTINGS_LC_API_URL);
     const omdbApiKey = localStorage.getItem(SETTINGS_LC_OMDB_API_KEY);
     const appMode = localStorage.getItem(SETTINGS_LC_APP_MODE) as SettingsModel['appMode'];
+    const settingsLock = localStorage.getItem(SETTINGS_LC_SETTINGS_LOCK) === 'true';
     const fetchBatchSize = localStorage.getItem(SETTINGS_LC_FETCH_BATCH_SIZE);
     const theme = localStorage.getItem(SETTINGS_LC_THEME) as SettingsModel['theme'];
 
@@ -42,6 +44,7 @@ export class SettingsService {
     }
     if (fetchBatchSize) this.memosState.setState('fetchBatchSize', Number(fetchBatchSize));
     if (theme) this.themeState.setState('theme', theme);
+    this.appState.setState('settingsLock', settingsLock);
   }
 
   public storeFormData(formData: SettingsModel, navigateBack = false): void {
@@ -49,6 +52,7 @@ export class SettingsService {
     this.memosState.setState('apiUrl', formData.apiUrl);
     this.omdbState.setState('apiKey', formData.omdbApiKey);
     this.appState.setState('appMode', formData.appMode);
+    this.appState.setState('settingsLock', formData.settingsLock);
     this.memosState.setState('fetchBatchSize', formData.fetchBatchSize);
     this.themeState.setState('theme', formData.theme);
 
@@ -63,6 +67,7 @@ export class SettingsService {
     }
 
     localStorage.setItem(SETTINGS_LC_APP_MODE, formData.appMode);
+    localStorage.setItem(SETTINGS_LC_SETTINGS_LOCK, String(formData.settingsLock));
     localStorage.setItem(SETTINGS_LC_FETCH_BATCH_SIZE, `${formData.fetchBatchSize}`);
     localStorage.setItem(SETTINGS_LC_THEME, formData.theme);
 
