@@ -76,6 +76,11 @@
   "Message.FetchBatchSize": "The fetch batch size determines the number of memos retrieved in a single request during the collection load.",
   "Message.SettingsLock": "The settings lock helps prevent accidental changes to the application settings. If it is enabled, you must navigate to the About page and click on the app version ten times to unlock the settings.",
   "Toast.SettingsLockDisable": "You are {count} clicks away from disabling the settings lock!",
+  "Toast.SettingsLockDisabled": "The settings lock was disabled successfully!",
+  "Toast.NewItem": "The collection item was added successfully!",
+  "Toast.EditItem": "The collection item was changed successfully!",
+  "Toast.DeleteItem": "The collection item was deleted successfully!",
+  "Toast.SettingsSaved": "The settings changes was saved successfully!",
   "Confirm.DeleteMemo": "Do you want to delete the {name} item?",
   "Confirm.ChangeMemo": "Do you want to save the the {name} item changes?",
   "Confirm.Disconnect": "Do you want to break the connection with your memo instance? All locally stored data will be permanently deleted."

@@ -34,6 +34,7 @@ export class About {
               localStorage.setItem(SETTINGS_LC_SETTINGS_LOCK, 'false');
               this.counter.next(0);
               subscribe.unsubscribe();
+              this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsLockDisabled'));
             } else {
               this.toastState.setState(
                 'message',
