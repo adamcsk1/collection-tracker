@@ -15,6 +15,7 @@ import { initialThemeState, themeStateToken } from '@lib/services/theme/theme-st
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { appCollectionStateToken, initialAppCollectionState } from './app-collection-store';
+import { appPortalStateToken, initialAppPortalState } from './app-portal-store';
 import { appStateToken, initialAppState } from './app-store';
 
 export const appConfig: ApplicationConfig = {
@@ -24,13 +25,14 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideRouter(routes, withHashLocation()),
     provideHttpClient(withFetch()),
-    provideStore(initialAppState, appStateToken),
     provideStore(initialOMDbState, omdbStateToken),
     provideStore(initialThemeState, themeStateToken),
     provideStore(initialMemosState, memosStateToken),
     provideStore(initialToastState, toastStateToken),
     provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
+    provideStore(initialAppState, appStateToken),
     provideStore(initialAppCollectionState, appCollectionStateToken),
+    provideStore(initialAppPortalState, appPortalStateToken),
     provideSignalTranslateConfig({ path: './i18n' }),
   ],
 };

@@ -5,7 +5,9 @@ import { randomInt } from '@lib/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 import { appCollectionStateToken } from '../../app-collection-store';
+import { PortalService } from '../../app-portal-service';
 import { appStateToken } from '../../app-store';
+import { CollectionItemDialog } from '../collection-item-dialog/collection-item-dialog';
 import { collectionStateToken } from '../collection-store';
 import { CollectionListItemSkeleton } from './collection-list-item-skeleton/collection-list-item-skeleton';
 import { CollectionListItem } from './collection-list-item/collection-list-item';
@@ -22,6 +24,7 @@ export class CollectionList {
   private readonly appState = inject(appStateToken);
   private readonly memosState = inject(memosStateToken);
   private readonly collectionState = inject(collectionStateToken);
+  private readonly portal = inject(PortalService);
   protected readonly filteredCollection = computed(() => {
     const searchText = this.collectionState.state.searchText().toLowerCase();
     this.resetScrollPosition();
@@ -53,7 +56,8 @@ export class CollectionList {
   protected onRandomPick(): void {
     const filteredCollection = this.filteredCollection();
     const randomIndex = randomInt(0, filteredCollection.length - 1);
-    this.collectionState.setState('openedCollectionItem', filteredCollection[randomIndex]);
+
+    this.portal.open(CollectionItemDialog, { collectionItem: filteredCollection[randomIndex] });
   }
 
   protected onAddNew(): void {

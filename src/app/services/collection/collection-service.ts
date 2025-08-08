@@ -26,7 +26,7 @@ export class CollectionService {
 
   public loadCollection(): void {
     if (this.memosState.state.loadNetworkStatus() === 'pending') return;
-    console.log('loadCollection');
+
     this.memos.getMemos().subscribe((memos) =>
       this.appCollectionState.patchState('collection', (state) => [
         ...state,
