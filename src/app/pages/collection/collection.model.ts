@@ -6,6 +6,7 @@ export interface CollectionItemModel {
   IMDbId: string;
   tags: Array<string>;
   memoName: string;
+  createTime: string;
 }
 
 export type CollectionModel = Array<CollectionItemModel>;

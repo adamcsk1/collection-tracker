@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { effect, inject, Injectable } from '@angular/core';
 import { MemoModel } from '@lib/services/memos/memos-model';
 import { MemosService } from '@lib/services/memos/memos-service';
 import { memosStateToken } from '@lib/services/memos/memos-store';
@@ -10,6 +10,19 @@ export class CollectionService {
   private readonly memos = inject(MemosService);
   private readonly collectionState = inject(collectionStateToken);
   private readonly memosState = inject(memosStateToken);
+
+  constructor() {
+    effect(() => {
+      const loadNetworkStatus = this.memosState.state.loadNetworkStatus();
+
+      // ?  Reorder by createTime because the Memos API does not return the items in a different correct order.
+      if (loadNetworkStatus === 'finished') {
+        this.collectionState.patchState('collection', (state) =>
+          state.sort((a, b) => -a.createTime.localeCompare(b.createTime))
+        );
+      }
+    });
+  }
 
   public loadCollection(): void {
     if (this.memosState.state.loadNetworkStatus() === 'pending') return;

@@ -2,6 +2,7 @@
 export interface MemoModel {
   content: string;
   name: string;
+  createTime: string;
 }
 
 export type MemosModel = Array<MemoModel>;
