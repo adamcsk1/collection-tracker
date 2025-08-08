@@ -10,7 +10,7 @@ import { getCollectionItem } from '@services/collection/utils/get-collection-ite
 import { marked } from 'marked';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { mergeMap, of } from 'rxjs';
-import { PortalService } from '../../app-portal-service';
+import { PortalService } from '../../../lib/services/portal/portal-service';
 import { appStateToken } from '../../app-store';
 import { CollectionItemModel } from '../collection-model';
 

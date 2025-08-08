@@ -1,11 +1,11 @@
 import { ComponentRef, effect, inject, Injectable, signal, ViewContainerRef } from '@angular/core';
-import { AppPortalState, appPortalStateToken, initialAppPortalState } from './app-portal-store';
+import { initialPortalState, PortalState, portalStateToken } from './portal-store';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PortalService {
-  private readonly appPortalState = inject(appPortalStateToken);
+  private readonly appPortalState = inject(portalStateToken);
   private readonly portalViewContainerRef = signal<ViewContainerRef | null>(null);
   private readonly componentRef = signal<ComponentRef<unknown> | null>(null);
 
@@ -18,9 +18,9 @@ export class PortalService {
         this.portalViewContainerRef()?.clear();
         this.componentRef.set(null);
 
-        for (const [key, value] of Object.entries(initialAppPortalState)) {
+        for (const [key, value] of Object.entries(initialPortalState)) {
           if (key === 'component') continue;
-          this.appPortalState.setState(key as keyof AppPortalState, value);
+          this.appPortalState.setState(key as keyof PortalState, value);
         }
       } else {
         const componentRef = this.portalViewContainerRef()!.createComponent(component as any); // !! TODO type
