@@ -62,7 +62,7 @@ export class NewCollectionItem implements OnInit {
       });
   }
 
-  protected onAdd(resetForm = false): void {
+  protected onAdd(mode: 'new' | 'back' | null = null): void {
     this.omdb
       .getSelectedContent(`${this.formGroup.controls.selectedIMDbId.value}`)
       .pipe(
@@ -86,8 +86,8 @@ export class NewCollectionItem implements OnInit {
       .subscribe((memo) => {
         this.spinnerLoadingState.setState('spinnerLoading', false);
         this.collection.addCollectionItem(memo, true);
-        if (resetForm) this.formGroup.reset();
-        else this.router.navigate(['/', 'collection']);
+        if (mode === 'new') this.formGroup.reset();
+        else if (mode === 'back') this.router.navigate(['/', 'collection']);
       });
   }
 

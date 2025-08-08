@@ -26,7 +26,8 @@
   }
   <div class="form-buttons">
     <button [disabled]="formGroup.invalid" (click)="onAdd()">{{ ('Save' | signalTranslate)() }}</button>
-    <button [disabled]="formGroup.invalid" (click)="onAdd(true)">{{ ('SaveAndNew' | signalTranslate)() }}</button>
+    <button [disabled]="formGroup.invalid" (click)="onAdd('new')">{{ ('SaveAndNew' | signalTranslate)() }}</button>
+    <button [disabled]="formGroup.invalid" (click)="onAdd('back')">{{ ('SaveAndBack' | signalTranslate)() }}</button>
     <button class="button-danger" (click)="onCancel()">{{ ('Cancel' | signalTranslate)() }}</button>
   </div>
 </form>
