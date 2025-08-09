@@ -6,7 +6,7 @@ import { Toast } from '@lib/components/toast/toast';
 import { ThemeService } from '@lib/services/theme/theme-service';
 import { CollectionService } from '@services/collection/collection-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { PortalService } from '../lib/services/portal/portal-service';
+import { PortalService } from '../lib/services/portal-service';
 import { SettingsService } from './settings/settings-service';
 
 @Component({
