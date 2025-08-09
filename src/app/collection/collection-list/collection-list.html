@@ -1,11 +1,21 @@
 <div class="float-button random-pick">
-  <button class="button-icon material-icons" (click)="onRandomPick()" [title]="('RandomPick' | signalTranslate)()">
+  <button
+    class="button-icon material-icons"
+    [disabled]="memosLoadNetworkStatus() === 'pending' || collectionLength() === 0"
+    [title]="('RandomPick' | signalTranslate)()"
+    (click)="onRandomPick()"
+  >
     casino
   </button>
 </div>
 @if (permissionAdd()) {
   <div class="float-button add-new">
-    <button class="button-icon material-icons" (click)="onAddNew()" [title]="('AddNew' | signalTranslate)()">
+    <button
+      class="button-icon material-icons"
+      [disabled]="memosLoadNetworkStatus() === 'pending'"
+      [title]="('AddNew' | signalTranslate)()"
+      (click)="onAddNew()"
+    >
       add
     </button>
   </div>
