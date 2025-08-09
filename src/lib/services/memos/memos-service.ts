@@ -1,11 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { spinnerLoadingStateToken } from '@lib/components/spinner-loading/spinner-loading-store';
+import { AlertService } from '@lib/services/alert-service';
+import { ApiResponseModel, MemoModel, MemosModel } from '@lib/services/memos/memos-model';
+import { memosStateToken } from '@lib/services/memos/memos-store';
 import dayjs from 'dayjs';
 import { catchError, filter, map, Observable, of, Subject, tap } from 'rxjs';
-import { AlertService } from '../alert-service';
-import { ApiResponseModel, MemoModel, MemosModel } from './memos-model';
-import { memosStateToken } from './memos-store';
 
 @Injectable({
   providedIn: 'root',

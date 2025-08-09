@@ -1,6 +1,10 @@
 import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CollectionNewItemModel } from '@collection/collection-new-item-dialog/collection-new-item-dialog-model';
+import { MdContentGeneratorService } from '@collection/collection-new-item-dialog/md-content-generator-service';
+import { knownIMDbIdValidator } from '@collection/collection-new-item-dialog/validators/known-imdb-id.validator';
+import { CollectionService } from '@collection/collection-service';
 import { DialogShell } from '@lib/components/dialog-shell/dialog-shell';
 import { Input } from '@lib/components/input/input';
 import { Select } from '@lib/components/select/select';
@@ -10,12 +14,8 @@ import { Form } from '@lib/models/form-model';
 import { MemosService } from '@lib/services/memos/memos-service';
 import { OMDbService } from '@lib/services/omdb/omdb-service';
 import { PortalService } from '@lib/services/portal-service';
-import { CollectionService } from '@services/collection/collection-service';
-import { MdContentGeneratorService } from '@services/md-content-generator-service';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap } from 'rxjs';
-import { CollectionNewItemModel } from './collection-new-item-dialog-model';
-import { knownIMDbIdValidator } from './validators/known-imdb-id.validator';
 
 @Component({
   selector: 'ct-collection-new-item-dialog',

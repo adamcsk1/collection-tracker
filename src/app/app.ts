@@ -1,13 +1,13 @@
 import { Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { Header } from '@components/header/header';
+import { CollectionService } from '@collection/collection-service';
 import { SpinnerLoading } from '@lib/components/spinner-loading/spinner-loading';
 import { Toast } from '@lib/components/toast/toast';
+import { PortalService } from '@lib/services/portal-service';
 import { ThemeService } from '@lib/services/theme/theme-service';
-import { CollectionService } from '@services/collection/collection-service';
+import { SettingsService } from '@settings/settings-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { PortalService } from '../lib/services/portal-service';
-import { SettingsService } from './settings/settings-service';
+import { Header } from './header/header';
 
 @Component({
   selector: 'ct-root',

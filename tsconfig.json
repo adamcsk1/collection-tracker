@@ -1,6 +1,5 @@
 /* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
-/* !! TODO fix paths */
 {
   "compileOnSave": false,
   "compilerOptions": {
@@ -19,9 +18,13 @@
       "@appConfig": ["./src/app/app.config.ts"],
       "@appRoutes": ["./src/app/app.routes.ts"],
       "@appConst": ["./src/app/app.constant.ts"],
+      "@appStore": ["./src/app/app-store.ts"],
+      "@appCollectionStore": ["./src/app/app-collection-store.ts"],
       "@app": ["./src/app/app.ts"],
-      "@services/*": ["./src/app/services/*"],
-      "@components/*": ["./src/app/components/*"],
+      "@about/*": ["./src/app/about/*"],
+      "@collection/*": ["./src/app/collection/*"],
+      "@settings/*": ["./src/app/settings/*"],
+      "@statistics/*": ["./src/app/statistics/*"],
       "@lib/*": ["./src/lib/*"]
     }
   },

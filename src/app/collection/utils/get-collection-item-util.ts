@@ -1,10 +1,10 @@
+import { CollectionItemModel } from '@collection/collection-model';
+import { getGenre } from '@collection/utils/get-genre-util';
+import { getImage } from '@collection/utils/get-image-util';
+import { getTags } from '@collection/utils/get-tags.util';
+import { getTitle } from '@collection/utils/get-title-util';
 import { MemoModel } from '@lib/services/memos/memos-model';
-import { CollectionItemModel } from '../../../collection/collection-model';
-import { getGenre } from './get-genre-util';
-import { getImage } from './get-image-util';
-import { getIMDbId } from './get-imdb-id.util';
-import { getTags } from './get-tags.util';
-import { getTitle } from './get-title-util';
+import { getIMDbId } from '@lib/services/omdb/get-imdb-id-util';
 
 export const getCollectionItem = (memo: Partial<MemoModel>): CollectionItemModel => {
   const safeMemo: MemoModel = {

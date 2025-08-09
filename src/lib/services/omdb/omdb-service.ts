@@ -2,11 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { SelectInputModel } from '@lib/components/select/select-model';
+import { AlertService } from '@lib/services/alert-service';
+import { getIMDbId } from '@lib/services/omdb/get-imdb-id-util';
+import { OMDbResponseItemModel, OMDbResponseModel } from '@lib/services/omdb/omdb-model';
+import { omdbStateToken } from '@lib/services/omdb/omdb-store';
 import { catchError, Observable } from 'rxjs';
-import { getIMDbId } from '../../../app/services/collection/utils/get-imdb-id.util';
-import { AlertService } from '../alert-service';
-import { OMDbResponseItemModel, OMDbResponseModel } from './omdb-model';
-import { omdbStateToken } from './omdb-store';
 
 const OMDB_API = 'https://www.omdbapi.com/';
 

@@ -1,9 +1,9 @@
 import { effect, inject, Injectable } from '@angular/core';
+import { appCollectionStateToken } from '@appCollectionStore';
+import { getCollectionItem } from '@collection/utils/get-collection-item-util';
 import { MemoModel } from '@lib/services/memos/memos-model';
 import { MemosService } from '@lib/services/memos/memos-service';
 import { memosStateToken } from '@lib/services/memos/memos-store';
-import { appCollectionStateToken } from '../../app-collection-store';
-import { getCollectionItem } from './utils/get-collection-item-util';
 
 @Injectable({ providedIn: 'root' })
 export class CollectionService {
