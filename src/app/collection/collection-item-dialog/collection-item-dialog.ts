@@ -10,7 +10,7 @@ import { getCollectionItem } from '@services/collection/utils/get-collection-ite
 import { marked } from 'marked';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { mergeMap, of } from 'rxjs';
-import { PortalService } from '../../../lib/services/portal/portal-service';
+import { PortalService } from '../../../lib/services/portal-service';
 import { appStateToken } from '../../app-store';
 import { CollectionItemModel } from '../collection-model';
 
@@ -19,6 +19,9 @@ import { CollectionItemModel } from '../collection-model';
   imports: [NgxSignalTranslatePipe, Textarea],
   templateUrl: './collection-item-dialog.html',
   styleUrl: './collection-item-dialog.css',
+  host: {
+    class: 'dialog',
+  },
 })
 export class CollectionItemDialog implements OnInit {
   private readonly collectionService = inject(CollectionService);
