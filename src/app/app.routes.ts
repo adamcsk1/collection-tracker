@@ -1,13 +1,6 @@
 import { Routes } from '@angular/router';
-import { collectionNewItemGuard } from './collection/collection-new-item/collection-new-item-guard';
 
 export const routes: Routes = [
-  {
-    path: 'collection/new-item',
-    loadComponent: () =>
-      import('./collection/collection-new-item/collection-new-item').then((module) => module.CollectionNewItem),
-    canActivate: [collectionNewItemGuard],
-  },
   {
     path: 'collection',
     loadComponent: () => import('./collection/collection').then((module) => module.Collection),

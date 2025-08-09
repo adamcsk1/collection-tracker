@@ -12,7 +12,7 @@ export class PortalService {
     this.portalViewContainerRef.set(viewContainerRef);
   }
 
-  public open<T = unknown>(component: T, inputs: object): void {
+  public open<T = unknown>(component: T, inputs: object = {}): void {
     const componentRef = this.portalViewContainerRef()!.createComponent(component as Type<T>);
     this._componentRef.set(componentRef);
 

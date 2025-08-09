@@ -1,0 +1,57 @@
+<ct-dialog-shell>
+  <ng-container dialog-shell-actions>
+    <button
+      class="button-icon material-icons"
+      [disabled]="formGroup.invalid"
+      [title]="('Save' | signalTranslate)()"
+      (click)="onSave()"
+    >
+      save
+    </button>
+    <button
+      class="button-icon material-icons button-save-and-new"
+      [disabled]="formGroup.invalid"
+      [title]="('SaveAndNew' | signalTranslate)()"
+      (click)="onSave('new')"
+    >
+      save
+    </button>
+    <button
+      class="button-icon material-icons button-save-and-close"
+      [disabled]="formGroup.invalid"
+      [title]="('SaveAndClose' | signalTranslate)()"
+      (click)="onSave('close')"
+    >
+      save
+    </button>
+  </ng-container>
+  <ng-container dialog-shell-content>
+    <form [formGroup]="formGroup">
+      <ct-input
+        [label]="('Search' | signalTranslate)()"
+        [hint]="('Message.NewCollectionItemSearch' | signalTranslate)()"
+        [mandatory]="true"
+        [control]="formGroup.controls.searchText"
+      />
+      @if (matchedContent().length) {
+        <ct-select
+          [mandatory]="true"
+          [label]="('SelectedContent' | signalTranslate)()"
+          [control]="formGroup.controls.selectedIMDbId"
+          [options]="matchedContent()"
+        >
+          <ng-container errors>
+            @if (!!formGroup.controls.selectedIMDbId.errors?.['knownIMDbId']) {
+              {{ ('Validation.KnownIMDbId' | signalTranslate)() }}
+            }
+          </ng-container>
+        </ct-select>
+        <ct-input
+          [label]="('Tags' | signalTranslate)()"
+          [hint]="('Message.Tags' | signalTranslate)()"
+          [control]="formGroup.controls.tags"
+        />
+      }
+    </form>
+  </ng-container>
+</ct-dialog-shell>
