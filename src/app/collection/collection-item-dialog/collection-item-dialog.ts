@@ -1,22 +1,23 @@
 import { Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
+import { DialogShell } from '@lib/components/dialog-shell/dialog-shell';
 import { Textarea } from '@lib/components/textarea/textarea';
 import { toastStateToken } from '@lib/components/toast/toast-store';
 import { ConfirmService } from '@lib/services/confirm-service';
 import { MemosService } from '@lib/services/memos/memos-service';
+import { PortalService } from '@lib/services/portal-service';
 import { CollectionService } from '@services/collection/collection-service';
 import { getCollectionItem } from '@services/collection/utils/get-collection-item-util';
 import { marked } from 'marked';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { mergeMap, of } from 'rxjs';
-import { PortalService } from '../../../lib/services/portal-service';
 import { appStateToken } from '../../app-store';
 import { CollectionItemModel } from '../collection-model';
 
 @Component({
   selector: 'ct-collection-item-dialog',
-  imports: [NgxSignalTranslatePipe, Textarea],
+  imports: [NgxSignalTranslatePipe, Textarea, DialogShell],
   templateUrl: './collection-item-dialog.html',
   styleUrl: './collection-item-dialog.css',
   host: {
@@ -25,9 +26,9 @@ import { CollectionItemModel } from '../collection-model';
 })
 export class CollectionItemDialog implements OnInit {
   private readonly collectionService = inject(CollectionService);
+  private readonly portal = inject(PortalService);
   private readonly appState = inject(appStateToken);
   private readonly toastState = inject(toastStateToken);
-  private readonly portal = inject(PortalService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
   private readonly memos = inject(MemosService);
@@ -42,10 +43,6 @@ export class CollectionItemDialog implements OnInit {
   protected readonly permissionUpdate = computed(() => this.appState.state.permissions().update);
   protected readonly permissionDelete = computed(() => this.appState.state.permissions().delete);
   public readonly collectionItem = model.required<CollectionItemModel>();
-
-  protected onClose(): void {
-    this.portal.close();
-  }
 
   public ngOnInit(): void {
     this.rawContentControl.setValue(this.collectionItem().rawContent);
@@ -65,7 +62,7 @@ export class CollectionItemDialog implements OnInit {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
           this.collectionService.deleteCollectionItem(this.collectionItem().memoName);
-          this.onClose();
+          this.portal.close();
         }
       });
   }
