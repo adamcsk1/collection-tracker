@@ -1,39 +1,36 @@
-<div class="content-container">
-  <div class="content-container-actions">
-    <div>
-      @if (editMode()) {
-        <button class="button-icon material-icons" [title]="('ReadOnly' | signalTranslate)()" (click)="onReadOnly()">
-          visibility
+<ct-dialog-shell>
+  <ng-container dialog-shell-actions>
+    @if (editMode()) {
+      <button class="button-icon material-icons" [title]="('ReadOnly' | signalTranslate)()" (click)="onReadOnly()">
+        visibility
+      </button>
+      <button class="button-icon material-icons" [title]="('Save' | signalTranslate)()" (click)="onSaveChanges()">
+        save
+      </button>
+    } @else {
+      @if (permissionUpdate()) {
+        <button class="button-icon material-icons" [title]="('Edit' | signalTranslate)()" (click)="onEdit()">
+          edit
         </button>
-        <button class="button-icon material-icons" [title]="('Save' | signalTranslate)()" (click)="onSaveChanges()">
-          save
-        </button>
-      } @else {
-        @if (permissionUpdate()) {
-          <button class="button-icon material-icons" [title]="('Edit' | signalTranslate)()" (click)="onEdit()">
-            edit
-          </button>
-        }
-        @if (permissionDelete()) {
-          <button
-            class="button-icon material-icons button-danger"
-            [title]="('Delete' | signalTranslate)()"
-            (click)="onDelete()"
-          >
-            delete
-          </button>
-        }
       }
-    </div>
-    <button class="button-icon material-icons" [title]="('Close' | signalTranslate)()" (click)="onClose()">
-      close
-    </button>
-  </div>
-  @if (editMode()) {
-    <div class="content-container-editor">
-      <ct-textarea [control]="rawContentControl" [autoHeight]="true"></ct-textarea>
-    </div>
-  } @else {
-    <div class="content-container-parsed-content" [innerHTML]="parsedMdContent()"></div>
-  }
-</div>
+      @if (permissionDelete()) {
+        <button
+          class="button-icon material-icons button-danger"
+          [title]="('Delete' | signalTranslate)()"
+          (click)="onDelete()"
+        >
+          delete
+        </button>
+      }
+    }
+  </ng-container>
+  <ng-container dialog-shell-content>
+    @if (editMode()) {
+      <div class="content-container-editor">
+        <ct-textarea [control]="rawContentControl" [autoHeight]="true"></ct-textarea>
+      </div>
+    } @else {
+      <div class="content-container-parsed-content" [innerHTML]="parsedMdContent()"></div>
+    }
+  </ng-container>
+</ct-dialog-shell>
