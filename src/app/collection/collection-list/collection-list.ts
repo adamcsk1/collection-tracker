@@ -1,16 +1,15 @@
 import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { appCollectionStateToken } from '@appCollectionStore';
+import { appStateToken } from '@appStore';
+import { CollectionItemDialog } from '@collection/collection-item-dialog/collection-item-dialog';
+import { CollectionListItemSkeleton } from '@collection/collection-list/collection-list-item-skeleton/collection-list-item-skeleton';
+import { CollectionListItem } from '@collection/collection-list/collection-list-item/collection-list-item';
+import { CollectionNewItemDialog } from '@collection/collection-new-item-dialog/collection-new-item-dialog';
+import { collectionStateToken } from '@collection/collection-store';
 import { memosStateToken } from '@lib/services/memos/memos-store';
+import { PortalService } from '@lib/services/portal-service';
 import { randomInt } from '@lib/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-
-import { PortalService } from '../../../lib/services/portal-service';
-import { appCollectionStateToken } from '../../app-collection-store';
-import { appStateToken } from '../../app-store';
-import { CollectionItemDialog } from '../collection-item-dialog/collection-item-dialog';
-import { CollectionNewItemDialog } from '../collection-new-item-dialog/collection-new-item-dialog';
-import { collectionStateToken } from '../collection-store';
-import { CollectionListItemSkeleton } from './collection-list-item-skeleton/collection-list-item-skeleton';
-import { CollectionListItem } from './collection-list-item/collection-list-item';
 
 @Component({
   selector: 'ct-collection-list',

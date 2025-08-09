@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { StatisticsItemModel } from '../statistics-model';
+import { StatisticsItemModel } from '@statistics/statistics-model';
 
 @Component({
   selector: 'ct-statistics-item',

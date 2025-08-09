@@ -1,5 +1,5 @@
+import { SettingsModel } from '@settings/settings.model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
-import { SettingsModel } from './settings/settings.model';
 
 export interface AppState {
   appMode: SettingsModel['appMode'] | null;

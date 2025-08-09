@@ -1,5 +1,5 @@
+import { Themes } from '@lib/services/theme/theme-model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
-import { Themes } from './theme-model';
 
 export interface ThemeState {
   theme: Themes;

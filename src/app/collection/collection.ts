@@ -1,11 +1,11 @@
 import { Component, inject, OnInit } from '@angular/core';
+import { CollectionBackground } from '@collection/collection-background/collection-background';
+import { CollectionList } from '@collection/collection-list/collection-list';
+import { CollectionSearch } from '@collection/collection-search/collection-search';
+import { CollectionService } from '@collection/collection-service';
+import { collectionStateToken, initialCollectionState } from '@collection/collection-store';
 import { memosStateToken } from '@lib/services/memos/memos-store';
-import { CollectionService } from '@services/collection/collection-service';
 import { provideStore } from 'ngx-simple-signal-store';
-import { CollectionBackground } from './collection-background/collection-background';
-import { CollectionList } from './collection-list/collection-list';
-import { CollectionSearch } from './collection-search/collection-search';
-import { collectionStateToken, initialCollectionState } from './collection-store';
 
 @Component({
   selector: 'ct-collection',

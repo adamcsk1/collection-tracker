@@ -1,19 +1,19 @@
 import { Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
+import { appStateToken } from '@appStore';
+import { CollectionItemModel } from '@collection/collection-model';
+import { CollectionService } from '@collection/collection-service';
+import { getCollectionItem } from '@collection/utils/get-collection-item-util';
 import { DialogShell } from '@lib/components/dialog-shell/dialog-shell';
 import { Textarea } from '@lib/components/textarea/textarea';
 import { toastStateToken } from '@lib/components/toast/toast-store';
 import { ConfirmService } from '@lib/services/confirm-service';
 import { MemosService } from '@lib/services/memos/memos-service';
 import { PortalService } from '@lib/services/portal-service';
-import { CollectionService } from '@services/collection/collection-service';
-import { getCollectionItem } from '@services/collection/utils/get-collection-item-util';
 import { marked } from 'marked';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { mergeMap, of } from 'rxjs';
-import { appStateToken } from '../../app-store';
-import { CollectionItemModel } from '../collection-model';
 
 @Component({
   selector: 'ct-collection-item-dialog',

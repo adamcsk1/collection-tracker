@@ -1,11 +1,10 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { appStateToken } from '@appStore';
 import { toastStateToken } from '@lib/components/toast/toast-store';
 import { memosStateToken } from '@lib/services/memos/memos-store';
 import { omdbStateToken } from '@lib/services/omdb/omdb-store';
 import { themeStateToken } from '@lib/services/theme/theme-store';
-import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { appStateToken } from '../app-store';
 import {
   SETTINGS_LC_API_URL,
   SETTINGS_LC_APP_MODE,
@@ -14,8 +13,9 @@ import {
   SETTINGS_LC_SETTINGS_LOCK,
   SETTINGS_LC_THEME,
   SETTINGS_LC_TOKEN,
-} from './settings-const';
-import { SettingsModel } from './settings.model';
+} from '@settings/settings-const';
+import { SettingsModel } from '@settings/settings.model';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {

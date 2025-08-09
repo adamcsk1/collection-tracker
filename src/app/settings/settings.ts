@@ -1,6 +1,7 @@
 import { PercentPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { appStateToken } from '@appStore';
 import { Input } from '@lib/components/input/input';
 import { Select } from '@lib/components/select/select';
 import { Form } from '@lib/models/form-model';
@@ -9,13 +10,12 @@ import { memosStateToken } from '@lib/services/memos/memos-store';
 import { OMDbService } from '@lib/services/omdb/omdb-service';
 import { omdbStateToken } from '@lib/services/omdb/omdb-store';
 import { themeStateToken } from '@lib/services/theme/theme-store';
-import { ImageRefreshService } from '@services/image-refresh-service';
+import { ImageRefreshService } from '@settings/image-refresh/image-refresh-service';
+import { SettingsService } from '@settings/settings-service';
+import { SettingsModel } from '@settings/settings.model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { of } from 'rxjs';
 import { catchError, debounceTime, filter, map, switchMap, tap } from 'rxjs/operators';
-import { appStateToken } from '../app-store';
-import { SettingsService } from './settings-service';
-import { SettingsModel } from './settings.model';
 
 @Component({
   selector: 'ct-settings',

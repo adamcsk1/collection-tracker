@@ -1,4 +1,4 @@
-import { StatisticsItemModel } from '../statistics-model';
+import { StatisticsItemModel } from '@statistics/statistics-model';
 
 export const sortWithTagPriority = (a: StatisticsItemModel, b: StatisticsItemModel): number => {
   if (a.tag === '#movie') return -1;

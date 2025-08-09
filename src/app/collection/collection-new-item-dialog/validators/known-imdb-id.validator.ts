@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { AbstractControl, ValidatorFn } from '@angular/forms';
-import { appCollectionStateToken } from '../../../app-collection-store';
+import { appCollectionStateToken } from '@appCollectionStore';
 
 export const knownIMDbIdValidator = (): ValidatorFn => {
   const appCollectionState = inject(appCollectionStateToken);
