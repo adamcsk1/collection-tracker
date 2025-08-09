@@ -1,7 +1,7 @@
 import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { DialogShell } from '@lib/components/dialog-shell/dialog-shell';
 import { Input } from '@lib/components/input/input';
 import { Select } from '@lib/components/select/select';
 import { spinnerLoadingStateToken } from '@lib/components/spinner-loading/spinner-loading-store';
@@ -9,21 +9,25 @@ import { toastStateToken } from '@lib/components/toast/toast-store';
 import { Form } from '@lib/models/form-model';
 import { MemosService } from '@lib/services/memos/memos-service';
 import { OMDbService } from '@lib/services/omdb/omdb-service';
+import { PortalService } from '@lib/services/portal-service';
 import { CollectionService } from '@services/collection/collection-service';
 import { MdContentGeneratorService } from '@services/md-content-generator-service';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap } from 'rxjs';
-import { CollectionNewItemModel } from './collection-new-item-model';
+import { CollectionNewItemModel } from './collection-new-item-dialog-model';
 import { knownIMDbIdValidator } from './validators/known-imdb-id.validator';
 
 @Component({
-  selector: 'ct-collection-new-item',
-  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, Input, Select],
-  templateUrl: './collection-new-item.html',
-  styleUrl: './collection-new-item.css',
+  selector: 'ct-collection-new-item-dialog',
+  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, Input, Select, DialogShell],
+  templateUrl: './collection-new-item-dialog.html',
+  styleUrl: './collection-new-item-dialog.css',
   providers: [OMDbService, MdContentGeneratorService],
+  host: {
+    class: 'dialog',
+  },
 })
-export class CollectionNewItem implements OnInit {
+export class CollectionNewItemDialog implements OnInit {
   private readonly memos = inject(MemosService);
   private readonly omdb = inject(OMDbService);
   private readonly collection = inject(CollectionService);
@@ -32,7 +36,7 @@ export class CollectionNewItem implements OnInit {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly mdContentGenerator = inject(MdContentGeneratorService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly router = inject(Router);
+  private readonly portal = inject(PortalService);
   protected readonly formGroup = new FormGroup<Form<CollectionNewItemModel>>({
     searchText: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     selectedIMDbId: new FormControl(null, { validators: [Validators.required, knownIMDbIdValidator()] }),
@@ -65,7 +69,7 @@ export class CollectionNewItem implements OnInit {
       });
   }
 
-  protected onAdd(mode: 'new' | 'back' | null = null): void {
+  protected onSave(mode: 'new' | 'close' | null = null): void {
     this.omdb
       .getSelectedContent(`${this.formGroup.controls.selectedIMDbId.value}`)
       .pipe(
@@ -91,11 +95,7 @@ export class CollectionNewItem implements OnInit {
         this.collection.addCollectionItem(memo, true);
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewItem'));
         if (mode === 'new') this.formGroup.reset();
-        else if (mode === 'back') this.router.navigate(['/', 'collection']);
+        else if (mode === 'close') this.portal.close();
       });
-  }
-
-  protected onCancel(): void {
-    this.router.navigate(['/', 'collection']);
   }
 }

@@ -1,5 +1,4 @@
 import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
-import { Router } from '@angular/router';
 import { memosStateToken } from '@lib/services/memos/memos-store';
 import { randomInt } from '@lib/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
@@ -8,6 +7,7 @@ import { PortalService } from '../../../lib/services/portal-service';
 import { appCollectionStateToken } from '../../app-collection-store';
 import { appStateToken } from '../../app-store';
 import { CollectionItemDialog } from '../collection-item-dialog/collection-item-dialog';
+import { CollectionNewItemDialog } from '../collection-new-item-dialog/collection-new-item-dialog';
 import { collectionStateToken } from '../collection-store';
 import { CollectionListItemSkeleton } from './collection-list-item-skeleton/collection-list-item-skeleton';
 import { CollectionListItem } from './collection-list-item/collection-list-item';
@@ -19,7 +19,6 @@ import { CollectionListItem } from './collection-list-item/collection-list-item'
   styleUrl: './collection-list.css',
 })
 export class CollectionList {
-  private readonly router = inject(Router);
   private readonly appCollectionState = inject(appCollectionStateToken);
   private readonly appState = inject(appStateToken);
   private readonly memosState = inject(memosStateToken);
@@ -61,7 +60,7 @@ export class CollectionList {
   }
 
   protected onAddNew(): void {
-    this.router.navigate(['/', 'collection', 'new-item']);
+    this.portal.open(CollectionNewItemDialog);
   }
 
   protected onFirstPage(): void {

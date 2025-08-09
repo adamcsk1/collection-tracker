@@ -1,0 +1,23 @@
+form {
+  height: inherit;
+}
+
+.button-save-and-new::after {
+  content: "➕";
+  position: absolute;
+  transform: translate3d(-50%, 100%, 0);
+  font-weight: bold;
+  font-size: var(--font-size-small);
+  color: transparent;
+  text-shadow: 0 0 0 var(--main-color);
+}
+
+.button-save-and-close::after {
+  content: "❌";
+  position: absolute;
+  transform: translate3d(-50%, 100%, 0);
+  font-weight: bold;
+  font-size: var(--font-size-small);
+  color: transparent;
+  text-shadow: 0 0 0 var(--main-color);
+}
