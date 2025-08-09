@@ -1,5 +1,5 @@
 import { Component, inject, input } from '@angular/core';
-import { PortalService } from '../../../../lib/services/portal/portal-service';
+import { PortalService } from '../../../../lib/services/portal-service';
 import { CollectionItemDialog } from '../../collection-item-dialog/collection-item-dialog';
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';

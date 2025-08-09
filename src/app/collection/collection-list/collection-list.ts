@@ -4,7 +4,7 @@ import { memosStateToken } from '@lib/services/memos/memos-store';
 import { randomInt } from '@lib/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
-import { PortalService } from '../../../lib/services/portal/portal-service';
+import { PortalService } from '../../../lib/services/portal-service';
 import { appCollectionStateToken } from '../../app-collection-store';
 import { appStateToken } from '../../app-store';
 import { CollectionItemDialog } from '../collection-item-dialog/collection-item-dialog';
