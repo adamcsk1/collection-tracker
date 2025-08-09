@@ -1,0 +1,28 @@
+.dialog-shell {
+  background-color: var(--glassy-background);
+  margin: 0 auto;
+  margin-top: var(--size-default);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  max-width: 500px;
+  max-height: 90vh;
+  height: 100%;
+  border-radius: var(--border-radius);
+  padding: var(--size-default);
+
+  @media (width <= 450px) {
+    width: 100vw;
+    height: 100vh;
+    max-height: none;
+    max-width: none;
+    margin: unset;
+    border-radius: 0;
+  }
+
+  .dialog-shell-actions {
+    display: flex;
+    justify-content: space-between;
+  }
+}

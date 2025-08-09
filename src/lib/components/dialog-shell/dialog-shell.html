@@ -1,0 +1,11 @@
+<div class="dialog-shell">
+  <div class="dialog-shell-actions">
+    <div>
+      <ng-content select="[dialog-shell-actions]" />
+    </div>
+    <button class="button-icon material-icons" [title]="('Close' | signalTranslate)()" (click)="onClose()">
+      close
+    </button>
+  </div>
+  <ng-content select="[dialog-shell-content]" />
+</div>
