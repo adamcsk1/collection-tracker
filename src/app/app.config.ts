@@ -4,7 +4,6 @@ import { provideRouter, withHashLocation } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { appCollectionStateToken, initialAppCollectionState } from '@appCollectionStore';
-import { routes } from '@appRoutes';
 import { appStateToken, initialAppState } from '@appStore';
 import {
   initialSpinnerLoadingState,
@@ -16,6 +15,7 @@ import { initialOMDbState, omdbStateToken } from '@lib/services/omdb/omdb-store'
 import { initialThemeState, themeStateToken } from '@lib/services/theme/theme-store';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
+import { routes } from './app-routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [

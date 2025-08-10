@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CollectionNewItemModel } from '@collection/collection-new-item-dialog/collection-new-item-dialog-model';
 import { MdContentGeneratorService } from '@collection/collection-new-item-dialog/md-content-generator-service';
-import { knownIMDbIdValidator } from '@collection/collection-new-item-dialog/validators/known-imdb-id.validator';
+import { knownIMDbIdValidator } from '@collection/collection-new-item-dialog/validators/known-imdb-id-validator';
 import { CollectionService } from '@collection/collection-service';
 import { DialogShell } from '@lib/components/dialog-shell/dialog-shell';
 import { Input } from '@lib/components/input/input';

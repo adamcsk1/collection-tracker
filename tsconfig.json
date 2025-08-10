@@ -16,8 +16,8 @@
     "module": "preserve",
     "paths": {
       "@appConfig": ["./src/app/app.config.ts"],
-      "@appRoutes": ["./src/app/app.routes.ts"],
-      "@appConst": ["./src/app/app.constant.ts"],
+      "@appRoutes": ["./src/app/app-routes.ts"],
+      "@appConst": ["./src/app/app-const.ts"],
       "@appStore": ["./src/app/app-store.ts"],
       "@appCollectionStore": ["./src/app/app-collection-store.ts"],
       "@app": ["./src/app/app.ts"],
