@@ -1,0 +1,87 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "client-app",
+  "projectType": "application",
+  "generators": {
+    "@schematics/angular:component": {
+      "style": "css"
+    }
+  },
+  "sourceRoot": "src",
+  "prefix": "ct",
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "options": {
+        "browser": "apps/client-app/src/main.ts",
+        "index": "apps/client-app/src/index.html",
+        "tsConfig": "apps/client-app/tsconfig.app.json",
+        "inlineStyleLanguage": "css",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/client-app/public",
+            "output": "."
+          }
+        ],
+        "styles": ["apps/client-app/src/styles.css"],
+        "allowedCommonJsDependencies": ["dayjs"],
+        "outputPath": "dist/client-app"
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kB",
+              "maximumError": "1MB"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kB",
+              "maximumError": "8kB"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production",
+      "outputs": ["{options.outputPath}"]
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "client-app:build:production"
+        },
+        "development": {
+          "buildTarget": "client-app:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular/build:extract-i18n"
+    },
+    "test": {
+      "executor": "@angular/build:karma",
+      "options": {
+        "tsConfig": "tsconfig.spec.json",
+        "inlineStyleLanguage": "css",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/client-app/public",
+            "output": "."
+          }
+        ],
+        "styles": ["apps/client-app/src/styles.css"]
+      }
+    }
+  }
+}

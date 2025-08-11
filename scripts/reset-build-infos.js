@@ -1,6 +1,6 @@
 const { writeFileSync } = require('fs');
 
-const appConstantFilePath = `${__dirname}/../src/app/app-const.ts`;
+const appConstantFilePath = `${__dirname}/../apps/client-app/src/app/app-const.ts`;
 
 writeFileSync(
   appConstantFilePath,

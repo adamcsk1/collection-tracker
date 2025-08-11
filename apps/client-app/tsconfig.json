@@ -1,12 +1,13 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "moduleResolution": "bundler",
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "bundler",
+    "isolatedModules": true
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
@@ -19,7 +20,7 @@
   "include": [],
   "references": [
     {
-      "path": "./tsconfig.lib.json"
+      "path": "./tsconfig.app.json"
     }
   ]
 }
