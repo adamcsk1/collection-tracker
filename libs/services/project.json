@@ -13,6 +13,18 @@
         "tsConfig": ["libs/services/tsconfig.app.json"],
         "eslintConfig": "libs/services/eslint.config.cjs"
       }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write libs/services/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+      }
+    },
+    "format-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --check libs/services/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+      }
     }
   }
 }

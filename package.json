@@ -10,10 +10,13 @@
     "postbuild": "node ./scripts/reset-build-infos.js",
     "test": "nx test",
     "lint": "nx run-many --target=lint --projects=client-app,components,services,shared",
-    "lint:fix": "nx run-many --target=lint --projects=client-app,components,services,shared --fix",
+    "lint:fix": "nx run-many --target=lint --projects=client-app,components,services,shared --fix=true",
+    "lint:affected:fix": "nx affected --target=lint --fix=true",
     "stylelint": "nx run-many --target=stylelint --projects=client-app,components",
-    "stylelint:fix": "nx run-many --target=stylelint --projects=client-app,components --fix",
-    "format": "prettier --write .",
+    "stylelint:fix": "nx run-many --target=stylelint --projects=client-app,components --fix=true",
+    "stylelint:affected:fix": "nx affected --target=stylelint --fix=true",
+    "format": "nx run-many --target=format --projects=client-app,components,services,shared",
+    "format:check": "nx run-many --target=format-check --projects=client-app,components,services,shared",
     "prepare": "husky"
   },
   "private": true,
@@ -63,7 +66,6 @@
     "karma-coverage": "~2.2.1",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "lint-staged": "^16.1.4",
     "nx": "21.3.11",
     "nx-stylelint": "^18.0.0",
     "prettier": "^3.5.3",
@@ -72,14 +74,5 @@
     "stylelint-prettier": "^5.0.3",
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.34.1"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,md}": [
-      "prettier --write",
-      "npm run lint:fix"
-    ],
-    "*.{css,scss}": [
-      "npm run stylelint:fix"
-    ]
   }
 }
