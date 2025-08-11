@@ -9,6 +9,11 @@
     "test": {
       "cache": true,
       "inputs": ["default", "^production"]
+    },
+    "@angular/build:application": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
     }
   },
   "namedInputs": {
@@ -29,6 +34,12 @@
     },
     "@nx/angular:component": {
       "style": "css"
+    },
+    "@nx/angular:application": {
+      "e2eTestRunner": "none",
+      "linter": "eslint",
+      "style": "css",
+      "unitTestRunner": "none"
     }
   }
 }
