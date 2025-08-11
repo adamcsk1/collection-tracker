@@ -15,7 +15,7 @@
     "target": "ES2022",
     "module": "preserve",
     "paths": {
-      "@appConfig": ["./src/app/app.config.ts"],
+      "@appConfig": ["./src/app/app-config.ts"],
       "@appRoutes": ["./src/app/app-routes.ts"],
       "@appConst": ["./src/app/app-const.ts"],
       "@appStore": ["./src/app/app-store.ts"],
