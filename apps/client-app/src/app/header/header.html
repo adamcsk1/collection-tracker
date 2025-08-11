@@ -1,13 +1,13 @@
 <div class="header" [title]="('Title' | signalTranslate)()">
   <a [routerLink]="['/', 'collection']">
-    <img src="images/logo.png" />
+    <img src="images/logo.png" [alt]="('Title' | signalTranslate)()" />
   </a>
   <h1>{{ ('Title.Short' | signalTranslate)() }}</h1>
 </div>
 
 <div class="dropdown-menu">
   <button class="button-icon material-icons" [title]="('Menu' | signalTranslate)()">menu</button>
-  <div class="dropdown-menu-list" (click)="onRemoveFocus()">
+  <div class="dropdown-menu-list" (click)="onRemoveFocus()" (keydown)="onRemoveFocus()" tabindex="0" role="button">
     <a [routerLink]="['/', 'collection']" routerLinkActive="active">
       <i class="material-icons">movie</i>
       {{ ('Collection' | signalTranslate)() }}

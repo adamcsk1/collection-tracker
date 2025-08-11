@@ -82,6 +82,14 @@
         ],
         "styles": ["apps/client-app/src/styles.css"]
       }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "options": {
+        "lintFilePatterns": ["apps/client-app/src/**/*.ts", "apps/client-app/src/**/*.html"],
+        "tsConfig": ["apps/client-app/tsconfig.app.json"],
+        "eslintConfig": "apps/client-app/eslint.config.cjs"
+      }
     }
   }
 }

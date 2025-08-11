@@ -16,8 +16,8 @@
       [control]="formGroup.controls.token"
     />
     <div>
-      <label>{{ ('ConnectionStatus' | signalTranslate)() }}</label>
-      <div class="status">
+      <label for="status">{{ ('ConnectionStatus' | signalTranslate)() }}</label>
+      <div id="status" class="status">
         @if (connected() === true) {
           {{ ('Connected' | signalTranslate)() }}
           <span class="status-circle status-circle-ok"></span>
