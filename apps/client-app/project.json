@@ -94,9 +94,19 @@
     "stylelint": {
       "executor": "nx-stylelint:lint",
       "options": {
-        "lintFilePatterns": [
-          "apps/client-app/src/**/*.css"
-        ]
+        "lintFilePatterns": ["apps/client-app/src/**/*.css"]
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write apps/client-app/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+      }
+    },
+    "format-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --check apps/client-app/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
       }
     }
   }

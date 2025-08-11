@@ -1,1 +1,11 @@
-npx lint-staged
+#!/bin/sh
+
+FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
+[ -z "$FILES" ] && exit 0
+
+npm run format
+npm run lint:affected:fix
+npm run stylelint:affected:fix
+
+echo "$FILES" | xargs git add
+

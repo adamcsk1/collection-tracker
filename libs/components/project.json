@@ -14,12 +14,22 @@
         "eslintConfig": "libs/components/eslint.config.cjs"
       }
     },
-     "stylelint": {
+    "stylelint": {
       "executor": "nx-stylelint:lint",
       "options": {
-        "lintFilePatterns": [
-          "libs/components/src/**/*.css"
-        ]
+        "lintFilePatterns": ["libs/components/src/**/*.css"]
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write libs/components/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+      }
+    },
+    "format-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --check libs/components/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
       }
     }
   }
