@@ -2,9 +2,9 @@ const { execSync } = require('child_process');
 const { readFileSync, writeFileSync } = require('fs');
 const dayjs = require('dayjs');
 
-const appConstantFilePath = `${__dirname}/../apps/client-app/src/app/app-const.ts`;
+const appConstantFilePath = `${__dirname}/../src/app/app-const.ts`;
 const appConstants = readFileSync(appConstantFilePath, 'utf-8');
-const appVersion = JSON.parse(readFileSync(`${__dirname}/../package.json`, 'utf-8')).version;
+const appVersion = JSON.parse(readFileSync(`${__dirname}/../../../package.json`, 'utf-8')).version;
 
 const commitHash = execSync('git rev-parse --short HEAD').toString().trim();
 const branch = execSync(`git name-rev --name-only HEAD`).toString().trim();

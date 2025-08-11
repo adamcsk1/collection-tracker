@@ -5,9 +5,7 @@
   "scripts": {
     "ng": "ng",
     "start": "nx serve client-app",
-    "prebuild": "node ./scripts/set-build-infos.js",
-    "build": "npm run prebuild && nx build client-app && npm run postbuild",
-    "postbuild": "node ./scripts/reset-build-infos.js",
+    "build": "npx nx run client-app:prebuild && nx build client-app && npx nx run client-app:postbuild",
     "test": "nx test",
     "lint": "nx run-many --target=lint --projects=client-app,components,services,shared",
     "lint:fix": "nx run-many --target=lint --projects=client-app,components,services,shared --fix=true",
