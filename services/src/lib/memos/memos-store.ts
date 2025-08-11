@@ -1,4 +1,4 @@
-import { MemosLoadNetworkStatus } from '@lib/services/memos/memos-model';
+import { MemosLoadNetworkStatus } from '@services/memos/memos-model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
 
 export interface MemosState {

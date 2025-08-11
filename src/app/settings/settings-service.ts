@@ -1,10 +1,10 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { appStateToken } from '@appStore';
-import { toastStateToken } from '@lib/components/toast/toast-store';
-import { memosStateToken } from '@lib/services/memos/memos-store';
-import { omdbStateToken } from '@lib/services/omdb/omdb-store';
-import { themeStateToken } from '@lib/services/theme/theme-store';
+import { toastStateToken } from '@components/toast/toast-store';
+import { memosStateToken } from '@services/memos/memos-store';
+import { omdbStateToken } from '@services/omdb/omdb-store';
+import { themeStateToken } from '@services/theme/theme-store';
 import {
   SETTINGS_LC_API_URL,
   SETTINGS_LC_APP_MODE,

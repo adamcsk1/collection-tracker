@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
-import { Themes } from '@lib/services/theme/theme-model';
-import { themeStateToken } from '@lib/services/theme/theme-store';
+import { Themes } from '@services/theme/theme-model';
+import { themeStateToken } from '@services/theme/theme-store';
 import { fromEvent } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })

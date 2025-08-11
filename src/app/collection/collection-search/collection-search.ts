@@ -2,7 +2,7 @@ import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { collectionStateToken } from '@collection/collection-store';
-import { Input } from '@lib/components/input/input';
+import { Input } from '@components/input/input';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({

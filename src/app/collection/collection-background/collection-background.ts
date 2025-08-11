@@ -1,8 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
 import { appCollectionStateToken } from '@appCollectionStore';
 import { CollectionBackgroundImagesModel } from '@collection/collection-background/collection-background-model';
-import { opacityAnimation } from '@lib/animations/opacity-animation';
-import { randomInt } from '@lib/utils/random-int-util';
+import { opacityAnimation } from '@shared/animations/opacity-animation';
+import { randomInt } from '@shared/utils/random-int-util';
 
 @Component({
   selector: 'ct-collection-background',

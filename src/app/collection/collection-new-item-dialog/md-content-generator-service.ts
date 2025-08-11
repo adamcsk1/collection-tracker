@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { OMDbResponseItemModel } from '@lib/services/omdb/omdb-model';
+import { OMDbResponseItemModel } from '@services/omdb/omdb-model';
 
 const MD_TEMPLATE = `### {{Title}}
 [IMDb ({{imdbID}})](https://www.imdb.com/title/{{imdbID}}/) (**{{imdbRating}}** / 10)

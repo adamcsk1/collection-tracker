@@ -8,11 +8,11 @@ import { appStateToken, initialAppState } from '@appStore';
 import {
   initialSpinnerLoadingState,
   spinnerLoadingStateToken,
-} from '@lib/components/spinner-loading/spinner-loading-store';
-import { initialToastState, toastStateToken } from '@lib/components/toast/toast-store';
-import { initialMemosState, memosStateToken } from '@lib/services/memos/memos-store';
-import { initialOMDbState, omdbStateToken } from '@lib/services/omdb/omdb-store';
-import { initialThemeState, themeStateToken } from '@lib/services/theme/theme-store';
+} from '@components/spinner-loading/spinner-loading-store';
+import { initialToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialMemosState, memosStateToken } from '@services/memos/memos-store';
+import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
+import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { routes } from './app-routes';

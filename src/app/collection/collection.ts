@@ -4,7 +4,7 @@ import { CollectionList } from '@collection/collection-list/collection-list';
 import { CollectionSearch } from '@collection/collection-search/collection-search';
 import { CollectionService } from '@collection/collection-service';
 import { collectionStateToken, initialCollectionState } from '@collection/collection-store';
-import { memosStateToken } from '@lib/services/memos/memos-store';
+import { memosStateToken } from '@services/memos/memos-store';
 import { provideStore } from 'ngx-simple-signal-store';
 
 @Component({
