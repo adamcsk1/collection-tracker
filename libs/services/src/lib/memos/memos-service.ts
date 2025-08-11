@@ -1,6 +1,5 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { AlertService } from '@services/alert-service';
 import { ApiResponseModel, MemoModel, MemosModel } from '@services/memos/memos-model';
 import { memosStateToken } from '@services/memos/memos-store';
@@ -14,7 +13,6 @@ export class MemosService {
   private readonly alert = inject(AlertService);
   private readonly httpClient = inject(HttpClient);
   private readonly memosState = inject(memosStateToken);
-  private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly headerBuilder = (temporaryToken?: string) => ({
     headers: { Authorization: `Bearer ${temporaryToken || this.memosState.state.token()}` },
   });
@@ -44,7 +42,6 @@ export class MemosService {
   }
 
   public getMemos(): Observable<MemosModel> {
-    this.spinnerLoadingState.setState('show', true);
     this.memosState.setState('loadNetworkStatus', 'pending');
     const results = new Subject<MemosModel>();
 
@@ -70,7 +67,6 @@ export class MemosService {
                 .subscribe((items) => results.next(items));
             } else {
               this.memosState.setState('loadNetworkStatus', 'finished');
-              this.spinnerLoadingState.setState('show', false);
             }
           }),
           map((response) => response.memos),
@@ -80,7 +76,6 @@ export class MemosService {
     paginatedLoadItems()
       .pipe(
         catchError((error) => {
-          this.spinnerLoadingState.setState('show', false);
           this.memosState.setState('loadNetworkStatus', 'error');
           console.error(error.message);
           throw new Error(error.message);

@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { SelectInputModel } from '@components/select/select-model';
+import { SelectInputModel } from '@shared/models/select-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
