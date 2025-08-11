@@ -11,10 +11,10 @@ module.exports = [
   ...nx.configs['flat/angular'],
   ...nx.configs['flat/angular-template'],
   {
-    ignores: ['.cache/', '.git/', 'node_modules/'],
+    ignores: ['.cache/', '.git/', 'node_modules/', '.angular/', '.nx/', 'dist'],
   },
   {
-    files: ['**/*.ts'],
+    files: ['apps/client-app/**/*.ts', 'libs/components/**/*.ts', 'libs/services/**/*.ts', 'libs/shared/**/*.ts'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -56,7 +56,7 @@ module.exports = [
     },
   },
   {
-    files: ['**/*.html'],
+    files: ['apps/client-app/**/*.html', 'libs/components/**/*.html'],
     languageOptions: {
       parser: angularTemplateParser,
     },
