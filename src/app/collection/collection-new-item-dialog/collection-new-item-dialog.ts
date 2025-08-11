@@ -5,15 +5,15 @@ import { CollectionNewItemModel } from '@collection/collection-new-item-dialog/c
 import { MdContentGeneratorService } from '@collection/collection-new-item-dialog/md-content-generator-service';
 import { knownIMDbIdValidator } from '@collection/collection-new-item-dialog/validators/known-imdb-id-validator';
 import { CollectionService } from '@collection/collection-service';
-import { DialogShell } from '@lib/components/dialog-shell/dialog-shell';
-import { Input } from '@lib/components/input/input';
-import { Select } from '@lib/components/select/select';
-import { spinnerLoadingStateToken } from '@lib/components/spinner-loading/spinner-loading-store';
-import { toastStateToken } from '@lib/components/toast/toast-store';
-import { Form } from '@lib/models/form-model';
-import { MemosService } from '@lib/services/memos/memos-service';
-import { OMDbService } from '@lib/services/omdb/omdb-service';
-import { PortalService } from '@lib/services/portal-service';
+import { DialogShell } from '@components/dialog-shell/dialog-shell';
+import { Input } from '@components/input/input';
+import { Select } from '@components/select/select';
+import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
+import { toastStateToken } from '@components/toast/toast-store';
+import { MemosService } from '@services/memos/memos-service';
+import { OMDbService } from '@services/omdb/omdb-service';
+import { PortalService } from '@services/portal-service';
+import { Form } from '@shared/models/form-model';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap } from 'rxjs';
 

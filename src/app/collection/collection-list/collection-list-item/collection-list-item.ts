@@ -2,7 +2,7 @@ import { Component, inject, input } from '@angular/core';
 import { CollectionItemDialog } from '@collection/collection-item-dialog/collection-item-dialog';
 import { CollectionItemModel } from '@collection/collection-model';
 import { collectionStateToken } from '@collection/collection-store';
-import { PortalService } from '@lib/services/portal-service';
+import { PortalService } from '@services/portal-service';
 
 @Component({
   selector: 'ct-collection-list-item',

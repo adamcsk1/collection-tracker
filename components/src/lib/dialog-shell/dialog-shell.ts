@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { PortalService } from '@lib/services/portal-service';
+import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({

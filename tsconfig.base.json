@@ -1,0 +1,26 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve",
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@about/*": ["./src/app/about/*"],
+      "@app": ["./src/app/app.ts"],
+      "@appCollectionStore": ["./src/app/app-collection-store.ts"],
+      "@appConfig": ["./src/app/app-config.ts"],
+      "@appConst": ["./src/app/app-const.ts"],
+      "@appRoutes": ["./src/app/app-routes.ts"],
+      "@appStore": ["./src/app/app-store.ts"],
+      "@collection/*": ["./src/app/collection/*"],
+      "@components/*": ["components/src/lib/*"],
+      "@services/*": ["services/src/lib/*"],
+      "@settings/*": ["./src/app/settings/*"],
+      "@statistics/*": ["./src/app/statistics/*"],
+      "@shared/*": ["shared/src/lib/*"]
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { Themes } from '@lib/services/theme/theme-model';
+import { Themes } from '@services/theme/theme-model';
 
 export interface SettingsModel {
   token: string;

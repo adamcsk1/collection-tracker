@@ -6,9 +6,9 @@ import { CollectionListItemSkeleton } from '@collection/collection-list/collecti
 import { CollectionListItem } from '@collection/collection-list/collection-list-item/collection-list-item';
 import { CollectionNewItemDialog } from '@collection/collection-new-item-dialog/collection-new-item-dialog';
 import { collectionStateToken } from '@collection/collection-store';
-import { memosStateToken } from '@lib/services/memos/memos-store';
-import { PortalService } from '@lib/services/portal-service';
-import { randomInt } from '@lib/utils/random-int-util';
+import { memosStateToken } from '@services/memos/memos-store';
+import { PortalService } from '@services/portal-service';
+import { randomInt } from '@shared/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({

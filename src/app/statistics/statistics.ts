@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { appCollectionStateToken } from '@appCollectionStore';
-import { memosStateToken } from '@lib/services/memos/memos-store';
+import { memosStateToken } from '@services/memos/memos-store';
 import { StatisticsItem } from '@statistics/statistics-item/statistics-item';
 import { StatisticsGroupModel } from '@statistics/statistics-model';
 import { sortWithTagPriority } from '@statistics/utils/sort-with-tag-priority-util';

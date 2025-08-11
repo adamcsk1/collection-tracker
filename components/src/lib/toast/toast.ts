@@ -1,6 +1,6 @@
 import { Component, effect, inject } from '@angular/core';
-import { scaleAnimation } from '@lib/animations/scale-animation';
-import { initialToastState, toastStateToken } from '@lib/components/toast/toast-store';
+import { initialToastState, toastStateToken } from '@components/toast/toast-store';
+import { scaleAnimation } from '@shared/animations/scale-animation';
 import { asyncScheduler, Subscription } from 'rxjs';
 
 @Component({

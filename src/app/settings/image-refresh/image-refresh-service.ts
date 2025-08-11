@@ -2,9 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { appCollectionStateToken } from '@appCollectionStore';
 import { CollectionItemModel } from '@collection/collection-model';
-import { MemosService } from '@lib/services/memos/memos-service';
-import { memosStateToken } from '@lib/services/memos/memos-store';
-import { OMDbService } from '@lib/services/omdb/omdb-service';
+import { MemosService } from '@services/memos/memos-service';
+import { memosStateToken } from '@services/memos/memos-store';
+import { OMDbService } from '@services/omdb/omdb-service';
 import { ImageRefreshState } from '@settings/image-refresh/image-refresh-model';
 import { catchError, EMPTY, map, mergeMap, Observable, of, skip, take, tap } from 'rxjs';
 

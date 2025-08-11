@@ -1,10 +1,10 @@
 import { Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { CollectionService } from '@collection/collection-service';
-import { SpinnerLoading } from '@lib/components/spinner-loading/spinner-loading';
-import { Toast } from '@lib/components/toast/toast';
-import { PortalService } from '@lib/services/portal-service';
-import { ThemeService } from '@lib/services/theme/theme-service';
+import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
+import { Toast } from '@components/toast/toast';
+import { PortalService } from '@services/portal-service';
+import { ThemeService } from '@services/theme/theme-service';
 import { SettingsService } from '@settings/settings-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { Header } from './header/header';
