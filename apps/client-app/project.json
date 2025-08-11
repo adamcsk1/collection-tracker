@@ -68,23 +68,8 @@
     "extract-i18n": {
       "executor": "@angular/build:extract-i18n"
     },
-    "test": {
-      "executor": "@angular/build:karma",
-      "options": {
-        "tsConfig": "tsconfig.spec.json",
-        "inlineStyleLanguage": "css",
-        "assets": [
-          {
-            "glob": "**/*",
-            "input": "apps/client-app/public",
-            "output": "."
-          }
-        ],
-        "styles": ["apps/client-app/src/styles.css"]
-      }
-    },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "options": {
         "lintFilePatterns": ["apps/client-app/src/**/*.ts", "apps/client-app/src/**/*.html"],
         "tsConfig": ["apps/client-app/tsconfig.app.json"],
