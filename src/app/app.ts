@@ -2,7 +2,9 @@ import { Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '
 import { Router, RouterOutlet } from '@angular/router';
 import { CollectionService } from '@collection/collection-service';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
+import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { Toast } from '@components/toast/toast';
+import { memosStateToken } from '@services/memos/memos-store';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { SettingsService } from '@settings/settings-service';
@@ -16,6 +18,8 @@ import { Header } from './header/header';
   styleUrl: './app.css',
 })
 export class App implements OnInit {
+  private readonly memosState = inject(memosStateToken);
+  private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly portal = inject(PortalService);
   private readonly signalTranslateService = inject(NgxSignalTranslateService);
   private readonly settings = inject(SettingsService);
@@ -29,6 +33,14 @@ export class App implements OnInit {
       if (this.settings.hasSettings()) {
         this.collectionService.loadCollection();
         effectRef.destroy();
+      }
+    });
+
+    effect(() => {
+      const loadNetworkStatus = this.memosState.state.loadNetworkStatus();
+      if (loadNetworkStatus === 'pending') this.spinnerLoadingState.setState('show', true);
+      else if (['finished', 'error'].includes(loadNetworkStatus || '')) {
+        this.spinnerLoadingState.setState('show', false);
       }
     });
 
