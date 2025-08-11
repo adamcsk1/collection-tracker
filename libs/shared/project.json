@@ -7,7 +7,12 @@
   "tags": [],
   "targets": {
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "executor": "@nx/linter:eslint",
+      "options": {
+        "lintFilePatterns": ["libs/shared/src/**/*.ts"],
+        "tsConfig": ["libs/shared/tsconfig.app.json"],
+        "eslintConfig": "libs/shared/eslint.config.cjs"
+      }
     }
   }
 }

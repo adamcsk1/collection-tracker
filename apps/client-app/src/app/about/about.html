@@ -1,5 +1,5 @@
 <div class="about">
-  <img src="images/logo.png" title="{{ ('Title' | signalTranslate)() }}" />
+  <img src="images/logo.png" [title]="('Title' | signalTranslate)()" [alt]="('Title' | signalTranslate)()" />
   <h2>{{ ('Title' | signalTranslate)() }}</h2>
   <h3>{{ ('BUILD' | signalTranslate)() }}</h3>
   <div>
@@ -10,7 +10,7 @@
     <div>{{ buildDate }}</div>
   </div>
   <h3>{{ ('APP_VERSION' | signalTranslate)() }}</h3>
-  <div (click)="onClickAppVersion()">
+  <div (click)="onClickAppVersion()" (keydown)="onClickAppVersion()" tabindex="0" role="button">
     <div>{{ appVersion }}</div>
   </div>
   <h3>{{ ('REPOSITORY' | signalTranslate)() }}</h3>

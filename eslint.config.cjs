@@ -5,7 +5,11 @@ const tsPlugin = require('@typescript-eslint/eslint-plugin');
 const angularPlugin = require('@angular-eslint/eslint-plugin');
 const angularTemplateParser = require('@angular-eslint/template-parser');
 const eslintPluginPrettierRecommended = require('eslint-plugin-prettier/recommended');
+const nx = require('@nx/eslint-plugin');
+
 module.exports = [
+  ...nx.configs['flat/angular'],
+  ...nx.configs['flat/angular-template'],
   {
     ignores: ['.cache/', '.git/', 'node_modules/'],
   },
@@ -19,7 +23,6 @@ module.exports = [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      '@angular-eslint': angularPlugin,
       prettier: prettierPlugin,
     },
     rules: {
@@ -58,8 +61,6 @@ module.exports = [
       parser: angularTemplateParser,
     },
     plugins: {
-      '@angular-eslint': angularPlugin,
-      '@angular-eslint/template': angularPlugin,
       prettier: prettierPlugin,
     },
     rules: {

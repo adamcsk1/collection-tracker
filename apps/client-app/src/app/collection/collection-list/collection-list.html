@@ -44,7 +44,7 @@
         <i class="material-icons">movie</i>
         @if (collectionLength() === 0) {
           {{ ('Message.EmptyCollection' | signalTranslate)() }}<br />
-          <a (click)="onAddNew()">{{ ('Message.AddFirstCollectionItem' | signalTranslate)() }}</a>
+          <a href="#" (click)="onAddNew()">{{ ('Message.AddFirstCollectionItem' | signalTranslate)() }}</a>
         } @else {
           {{ ('Message.EmptySearch' | signalTranslate)() }}<br />
         }

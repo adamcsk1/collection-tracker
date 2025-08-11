@@ -9,8 +9,8 @@
     "build": "npm run prebuild && nx build client-app && npm run postbuild",
     "postbuild": "node ./scripts/reset-build-infos.js",
     "test": "nx test",
-    "eslint": "eslint ./src/",
-    "eslint:fix": "eslint  ./src/ --fix",
+    "lint": "nx run-many --target=lint --projects=client-app,components,services,shared",
+    "lint:fix": "nx run-many --target=lint --projects=client-app,components,services,shared --fix",
     "stylelint": "npx stylelint \"src/**/*.css\"",
     "stylelint:fix": "npx stylelint \"src/**/*.css\" --fix",
     "format": "prettier --write .",
@@ -25,6 +25,7 @@
     "@angular/forms": "^20.1.6",
     "@angular/platform-browser": "^20.1.6",
     "@angular/router": "^20.1.6",
+    "angular-eslint": "^20.1.1",
     "dayjs": "^1.11.13",
     "marked": "^16.1.2",
     "material-icons": "^1.13.14",
@@ -40,7 +41,9 @@
     "@angular/cli": "^20.1.5",
     "@angular/compiler-cli": "^20.1.6",
     "@nx/angular": "21.3.11",
+    "@nx/eslint-plugin": "^21.3.11",
     "@nx/js": "21.3.11",
+    "@nx/linter": "^19.8.4",
     "@nx/web": "21.3.11",
     "@nx/workspace": "21.3.11",
     "@schematics/angular": "^20.1.5",
@@ -51,8 +54,6 @@
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
     "@typescript-eslint/utils": "^8.29.0",
-    "angular-eslint": "^20.1.1",
-    "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.0",
     "husky": "^9.1.7",
@@ -75,7 +76,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,md}": [
       "prettier --write",
-      "eslint --fix"
+      "nx lint client-app --fix"
     ],
     "*.{css,scss}": [
       "stylelint --fix"
