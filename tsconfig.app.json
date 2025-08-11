@@ -6,11 +6,6 @@
     "outDir": "./out-tsc/app",
     "types": []
   },
-  "include": [
-    "src/**/*.ts",
-    "services/src/lib/alert-service.ts",
-    "services/src/lib/confirm-service.ts",
-    "services/src/lib/portal-service.ts"
-  ],
+  "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.spec.ts"]
 }

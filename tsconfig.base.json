@@ -16,11 +16,11 @@
       "@appRoutes": ["./src/app/app-routes.ts"],
       "@appStore": ["./src/app/app-store.ts"],
       "@collection/*": ["./src/app/collection/*"],
-      "@components/*": ["components/src/lib/*"],
-      "@services/*": ["services/src/lib/*"],
+      "@components/*": ["libs/components/src/lib/*"],
+      "@services/*": ["libs/services/src/lib/*"],
       "@settings/*": ["./src/app/settings/*"],
       "@statistics/*": ["./src/app/statistics/*"],
-      "@shared/*": ["shared/src/lib/*"]
+      "@shared/*": ["libs/shared/src/lib/*"]
     }
   }
 }
