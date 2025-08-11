@@ -90,6 +90,14 @@
         "tsConfig": ["apps/client-app/tsconfig.app.json"],
         "eslintConfig": "apps/client-app/eslint.config.cjs"
       }
+    },
+    "stylelint": {
+      "executor": "nx-stylelint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "apps/client-app/src/**/*.css"
+        ]
+      }
     }
   }
 }
