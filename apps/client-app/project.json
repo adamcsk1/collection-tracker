@@ -26,7 +26,7 @@
         ],
         "styles": ["apps/client-app/src/styles.css"],
         "allowedCommonJsDependencies": ["dayjs"],
-        "outputPath": "dist/client-app"
+        "outputPath": "dist/apps/client-app"
       },
       "configurations": {
         "production": {
