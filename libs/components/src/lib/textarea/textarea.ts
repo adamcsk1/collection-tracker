@@ -5,7 +5,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { asyncScheduler, debounceTime, fromEvent } from 'rxjs';
 
 @Component({
-  selector: 'ct-textarea',
+  selector: 'libc-textarea',
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe],
   templateUrl: './textarea.html',
   styleUrl: './textarea.css',

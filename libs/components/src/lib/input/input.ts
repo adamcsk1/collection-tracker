@@ -3,7 +3,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
-  selector: 'ct-input',
+  selector: 'libc-input',
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe],
   templateUrl: './input.html',
   styleUrl: './input.css',

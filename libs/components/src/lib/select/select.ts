@@ -4,7 +4,7 @@ import { SelectInputModel } from '@shared/models/select-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
-  selector: 'ct-select',
+  selector: 'libc-select',
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe],
   templateUrl: './select.html',
   styleUrl: './select.css',

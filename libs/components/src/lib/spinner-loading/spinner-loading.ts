@@ -7,7 +7,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { concatMap, delay, filter, of, tap } from 'rxjs';
 
 @Component({
-  selector: 'ct-spinner-loading',
+  selector: 'libc-spinner-loading',
   imports: [AsyncPipe, NgxSignalTranslatePipe],
   templateUrl: './spinner-loading.html',
   styleUrl: './spinner-loading.css',

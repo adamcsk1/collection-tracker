@@ -33,7 +33,7 @@ module.exports = [
         'warn',
         {
           type: 'attribute',
-          prefix: 'ct',
+          prefix: ['ct', 'libc'],
           style: 'camelCase',
         },
       ],
@@ -41,7 +41,7 @@ module.exports = [
         'warn',
         {
           type: 'element',
-          prefix: 'ct',
+          prefix: ['ct', 'libc'],
           style: 'kebab-case',
         },
       ],

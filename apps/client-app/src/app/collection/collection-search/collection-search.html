@@ -1,1 +1,6 @@
-<ct-input [placeholder]="('Placeholder.Search' | signalTranslate)()" [control]="searchTextControl" [showReset]="true" />
+<libc-input
+  [placeholder]="('Placeholder.Search' | signalTranslate)()"
+  [control]="searchTextControl"
+  [showReset]="true"
+/>
+<ct-autocomplete [control]="searchTextControl" />

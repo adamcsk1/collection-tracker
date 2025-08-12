@@ -4,7 +4,7 @@ import { scaleAnimation } from '@shared/animations/scale-animation';
 import { asyncScheduler, Subscription } from 'rxjs';
 
 @Component({
-  selector: 'ct-toast',
+  selector: 'libc-toast',
   templateUrl: './toast.html',
   styleUrl: './toast.css',
   animations: [scaleAnimation],

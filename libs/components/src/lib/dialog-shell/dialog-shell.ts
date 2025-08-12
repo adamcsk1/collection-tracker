@@ -3,7 +3,7 @@ import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
-  selector: 'ct-dialog-shell',
+  selector: 'libc-dialog-shell',
   imports: [NgxSignalTranslatePipe],
   templateUrl: './dialog-shell.html',
   styleUrl: './dialog-shell.css',

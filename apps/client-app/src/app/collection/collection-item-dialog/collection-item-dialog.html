@@ -1,4 +1,4 @@
-<ct-dialog-shell>
+<libc-dialog-shell>
   <ng-container dialog-shell-actions>
     @if (editMode()) {
       <button class="button-icon material-icons" [title]="('ReadOnly' | signalTranslate)()" (click)="onReadOnly()">
@@ -27,10 +27,10 @@
   <ng-container dialog-shell-content>
     @if (editMode()) {
       <div class="content-container-editor">
-        <ct-textarea [control]="rawContentControl" [autoHeight]="true"></ct-textarea>
+        <libc-textarea [control]="rawContentControl" [autoHeight]="true"></libc-textarea>
       </div>
     } @else {
       <div class="content-container-parsed-content" [innerHTML]="parsedMdContent()"></div>
     }
   </ng-container>
-</ct-dialog-shell>
+</libc-dialog-shell>
