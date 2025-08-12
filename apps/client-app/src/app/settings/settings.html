@@ -2,13 +2,13 @@
   @if (!settingLockEnabled()) {
     <h3>{{ ('BasicSettings' | signalTranslate)() }}</h3>
     <p>{{ ('Message.BasicSettings' | signalTranslate)() }}</p>
-    <ct-input
+    <libc-input
       [label]="('ApiUrl' | signalTranslate)()"
       [hint]="('Message.MemosApiUrl' | signalTranslate)()"
       [mandatory]="true"
       [control]="formGroup.controls.apiUrl"
     />
-    <ct-input
+    <libc-input
       [label]="('Token' | signalTranslate)()"
       [hint]="('Message.MemosToken' | signalTranslate)()"
       [mandatory]="true"
@@ -30,13 +30,13 @@
         }
       </div>
     </div>
-    <ct-input
+    <libc-input
       [label]="('OMDbApiKey' | signalTranslate)()"
       [hint]="('Message.OMDbApiKey' | signalTranslate)()"
       [mandatory]="true"
       [control]="formGroup.controls.omdbApiKey"
     />
-    <ct-select
+    <libc-select
       [label]="('StoreCredentials' | signalTranslate)()"
       [mandatory]="true"
       [control]="formGroup.controls.storeCredentials"
@@ -53,7 +53,7 @@
 
   <h3>{{ ('AppSettings' | signalTranslate)() }}</h3>
   @if (!settingLockEnabled()) {
-    <ct-select
+    <libc-select
       [label]="('AppMode' | signalTranslate)()"
       [hint]="('Message.AppMode' | signalTranslate)()"
       [mandatory]="true"
@@ -65,7 +65,7 @@
       ]"
     />
     @if (formGroup.controls.appMode.value !== 'full') {
-      <ct-select
+      <libc-select
         [label]="('SettingsLock' | signalTranslate)()"
         [hint]="('Message.SettingsLock' | signalTranslate)()"
         [mandatory]="true"
@@ -76,7 +76,7 @@
         ]"
       />
     }
-    <ct-select
+    <libc-select
       [label]="('FetchBatchSize' | signalTranslate)()"
       [hint]="('Message.FetchBatchSize' | signalTranslate)()"
       [mandatory]="true"
@@ -91,7 +91,7 @@
       ]"
     />
   }
-  <ct-select
+  <libc-select
     [label]="('Theme' | signalTranslate)()"
     [mandatory]="true"
     [control]="formGroup.controls.theme"
