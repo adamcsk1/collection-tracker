@@ -22,7 +22,7 @@ Store.getOnce$('app').subscribe((app) =>
       cache[name] = content;
       Store.set('cache', cache);
 
-      res.send({ message: name });
+      res.send();
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       res.sendStatus(500);
