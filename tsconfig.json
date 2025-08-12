@@ -9,6 +9,7 @@
     "baseUrl": ".",
     "paths": {
       "@client-app/*": ["apps/client-app/src/app/*"],
+      "@server/*": ["apps/server/src/*"],
       "@components/*": ["libs/components/src/lib/*"],
       "@services/*": ["libs/services/src/lib/*"],
       "@shared/*": ["libs/shared/src/lib/*"]
