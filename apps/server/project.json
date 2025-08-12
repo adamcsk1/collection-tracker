@@ -14,7 +14,7 @@
         "outputPath": "dist/apps/server",
         "format": ["cjs"],
         "bundle": false,
-        "main": "apps/server/src/main.ts",
+        "main": "apps/server/src/bootstrap.ts",
         "tsConfig": "apps/server/tsconfig.app.json",
         "assets": ["apps/server/src/assets"],
         "generatePackageJson": true,
@@ -53,6 +53,26 @@
         "production": {
           "buildTarget": "server:build:production"
         }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/server/**/*.ts"],
+        "tsConfig": ["apps/server/tsconfig.app.json"],
+        "eslintConfig": "apps/server/eslint.config.cjs"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write apps/server/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+      }
+    },
+    "format-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --check apps/server/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
       }
     }
   }
