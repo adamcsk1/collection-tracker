@@ -19,11 +19,11 @@ Store.getOnce$('app').subscribe((app) =>
 
       writeFileSync(`${storeFolder}/${name}`, content, { encoding: 'utf-8' });
       const cache = Store.getLastValue('cache');
-      const fullName = `${req.usernameHash}-${name}`;
-      cache[fullName] = content;
+      const checkKey = `${req.usernameHash}-${name}`;
+      cache[checkKey] = content;
       Store.set('cache', cache);
 
-      res.send({ name: fullName });
+      res.send({ name });
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       res.sendStatus(500);

@@ -17,9 +17,10 @@ Store.getOnce$('app').subscribe((app) =>
         return res.sendStatus(404);
       }
 
-      writeFileSync(`${storeFolder}/${name.split('-')[1]}`, content, { encoding: 'utf-8' });
+      writeFileSync(`${storeFolder}/${name}`, content, { encoding: 'utf-8' });
       const cache = Store.getLastValue('cache');
-      cache[name] = content;
+      const checkKey = `${req.usernameHash}-${name}`;
+      cache[checkKey] = content;
       Store.set('cache', cache);
 
       res.send();
