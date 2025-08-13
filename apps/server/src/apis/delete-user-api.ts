@@ -3,14 +3,14 @@ import { errorLog } from '@server/core/logger';
 import { API_PREFIX, DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { ExtendedRequestModel } from '@server/models/express-model';
-import { existsSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, rmSync, writeFileSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
   app.delete(`${API_PREFIX}/user/delete`, jwtGuard, (req: ExtendedRequestModel, res) => {
     try {
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${req.usernameHash}`;
 
-      if (existsSync(storeFolder)) unlinkSync(storeFolder);
+      if (existsSync(storeFolder)) rmSync(storeFolder, { recursive: true, force: true });
 
       const cache = Store.getLastValue('cache');
       for (const key in cache) {

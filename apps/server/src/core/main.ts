@@ -36,7 +36,7 @@ export const main = () => {
       cors({
         origin: (requestOrigin: string | undefined, callback: (err: Error | null, origin?: boolean) => void): void => {
           if (process.env.CORS_ORIGIN === requestOrigin || process.env.CORS_ORIGIN === '*') callback(null, true);
-          else callback(new Error('Not allowed by CORS'), false);
+          else callback(new Error(`Not allowed by CORS (invalid origin: ${requestOrigin})`), false);
         },
         optionsSuccessStatus: 200,
       })
