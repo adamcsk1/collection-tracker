@@ -7,8 +7,8 @@ import { SettingsService } from '@client-app/settings/settings-service';
 import { SettingsModel } from '@client-app/settings/settings.model';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
-import { MemosService } from '@services/memos/memos-service';
-import { memosStateToken } from '@services/memos/memos-store';
+import { ApiService } from '@services/api/api-service';
+import { apiStateToken } from '@services/api/api-store';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 import { themeStateToken } from '@services/theme/theme-store';
@@ -26,11 +26,11 @@ import { catchError, debounceTime, filter, map, switchMap, tap } from 'rxjs/oper
 })
 export class Settings implements OnInit {
   private readonly settings = inject(SettingsService);
-  private readonly memos = inject(MemosService);
+  private readonly api = inject(ApiService);
   private readonly appState = inject(appStateToken);
   private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
-  private readonly memosState = inject(memosStateToken);
+  private readonly apiState = inject(apiStateToken);
   private readonly imageRefresh = inject(ImageRefreshService);
   private readonly _connected = signal<boolean | null>(false);
   protected readonly formGroup = new FormGroup<Form<SettingsModel>>({
@@ -44,7 +44,7 @@ export class Settings implements OnInit {
     settingsLock: new FormControl(false, { nonNullable: true, validators: [Validators.required] }),
   });
   protected readonly connected = this._connected.asReadonly();
-  protected readonly memosLoadNetworkStatus = this.memosState.state.loadNetworkStatus;
+  protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly settingLockEnabled = this.appState.state.settingsLock;
   protected readonly imageRefreshStatus = this.imageRefresh.state;
 
@@ -55,7 +55,7 @@ export class Settings implements OnInit {
         filter((values) => !!values.token && !!values.apiUrl),
         debounceTime(500),
         switchMap((values) =>
-          this.memos.getProfile({ temporaryApiUrl: values.apiUrl, temporaryToken: values.token, suppressErrors: true })
+          this.api.getStatus({ temporaryApiUrl: values.apiUrl, temporaryToken: values.token, suppressErrors: true })
         ),
         map(() => true),
         catchError(() => of(false))
@@ -63,12 +63,12 @@ export class Settings implements OnInit {
       .subscribe((status) => this._connected.set(status));
 
     this.formGroup.setValue({
-      token: this.memosState.state.token(),
-      apiUrl: this.memosState.state.apiUrl(),
-      storeCredentials: !!this.memosState.state.token(),
+      token: this.apiState.state.token(),
+      apiUrl: this.apiState.state.apiUrl(),
+      storeCredentials: !!this.apiState.state.token(),
       omdbApiKey: this.omdbState.state.apiKey(),
       appMode: this.appState.state.appMode() || 'basic',
-      fetchBatchSize: this.memosState.state.fetchBatchSize() || 10000,
+      fetchBatchSize: this.apiState.state.fetchBatchSize() || 10000,
       theme: this.themeState.state.theme(),
       settingsLock: this.appState.state.settingsLock(),
     });

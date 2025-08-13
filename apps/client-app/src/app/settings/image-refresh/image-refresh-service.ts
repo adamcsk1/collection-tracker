@@ -3,17 +3,17 @@ import { inject, Injectable, signal } from '@angular/core';
 import { appCollectionStateToken } from '@client-app/app-collection-store';
 import { CollectionItemModel } from '@client-app/collection/collection-model';
 import { ImageRefreshState } from '@client-app/settings/image-refresh/image-refresh-model';
-import { MemosService } from '@services/memos/memos-service';
-import { memosStateToken } from '@services/memos/memos-store';
+import { ApiService } from '@services/api/api-service';
+import { apiStateToken } from '@services/api/api-store';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { catchError, EMPTY, map, mergeMap, Observable, of, skip, take, tap } from 'rxjs';
 
 @Injectable()
 export class ImageRefreshService {
   private readonly appCollectionState = inject(appCollectionStateToken);
-  private readonly memosState = inject(memosStateToken);
+  private readonly apiState = inject(apiStateToken);
   private readonly omdb = inject(OMDbService);
-  private readonly memos = inject(MemosService);
+  private readonly api = inject(ApiService);
   private readonly httpClient = inject(HttpClient);
   private readonly _state = signal<ImageRefreshState>({
     running: false,
@@ -62,8 +62,8 @@ export class ImageRefreshService {
       take(1),
       mergeMap((omdbItem) => {
         if (!!omdbItem) {
-          return this.memos.updateMemo(
-            collectionItem.memoName,
+          return this.api.update(
+            collectionItem.name,
             collectionItem.rawContent.replace(collectionItem.image, omdbItem.Poster)
           );
         } else return EMPTY;
@@ -87,7 +87,7 @@ export class ImageRefreshService {
         ...state,
         running: false,
       }));
-      this.memosState.setState('loadNetworkStatus', null);
+      this.apiState.setState('loadNetworkStatus', null);
     }
   }
 }

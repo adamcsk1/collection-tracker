@@ -1,7 +1,7 @@
 <div class="float-button random-pick">
   <button
     class="button-icon material-icons"
-    [disabled]="memosLoadNetworkStatus() === 'pending' || collectionLength() === 0"
+    [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
     [title]="('RandomPick' | signalTranslate)()"
     (click)="onRandomPick()"
   >
@@ -12,7 +12,7 @@
   <div class="float-button add-new">
     <button
       class="button-icon material-icons"
-      [disabled]="memosLoadNetworkStatus() === 'pending'"
+      [disabled]="apiLoadNetworkStatus() === 'pending'"
       [title]="('AddNew' | signalTranslate)()"
       (click)="onAddNew()"
     >
@@ -21,7 +21,7 @@
   </div>
 }
 <div class="list" #scrollContainer>
-  @if (!memosLoadNetworkStatus() || memosLoadNetworkStatus() === 'pending') {
+  @if (!apiLoadNetworkStatus() || apiLoadNetworkStatus() === 'pending') {
     <ct-collection-list-item-skeleton />
     <ct-collection-list-item-skeleton />
     <ct-collection-list-item-skeleton />

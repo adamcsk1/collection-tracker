@@ -1,55 +1,42 @@
-import { effect, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { appCollectionStateToken } from '@client-app/app-collection-store';
 import { getCollectionItem } from '@client-app/collection/utils/get-collection-item-util';
-import { MemoModel } from '@services/memos/memos-model';
-import { MemosService } from '@services/memos/memos-service';
-import { memosStateToken } from '@services/memos/memos-store';
+import { ApiGetAllItemModel } from '@services/api/api-model';
+import { ApiService } from '@services/api/api-service';
+import { apiStateToken } from '@services/api/api-store';
 
 @Injectable({ providedIn: 'root' })
 export class CollectionService {
-  private readonly memos = inject(MemosService);
+  private readonly api = inject(ApiService);
   private readonly appCollectionState = inject(appCollectionStateToken);
-  private readonly memosState = inject(memosStateToken);
-
-  constructor() {
-    effect(() => {
-      const loadNetworkStatus = this.memosState.state.loadNetworkStatus();
-
-      // ?  Reorder by createTime because the Memos API does not return the items in a different correct order.
-      if (loadNetworkStatus === 'finished') {
-        this.appCollectionState.patchState('collection', (state) =>
-          state.sort((a, b) => -a.createTime.localeCompare(b.createTime))
-        );
-      }
-    });
-  }
+  private readonly apiState = inject(apiStateToken);
 
   public loadCollection(): void {
-    if (this.memosState.state.loadNetworkStatus() === 'pending') return;
+    if (this.apiState.state.loadNetworkStatus() === 'pending') return;
 
-    this.memos.getMemos().subscribe((memos) =>
-      this.appCollectionState.patchState('collection', (state) => [
-        ...state,
-        ...memos
-          .filter((memo) => !state.map((stateItem) => stateItem.memoName).includes(memo.name)) // ? The Memos API could return with duplications when the pagination is in used.
-          .map((memo) => getCollectionItem(memo)),
-      ])
-    );
+    this.api
+      .getAll()
+      .subscribe((collectionItems) =>
+        this.appCollectionState.patchState('collection', (state) => [
+          ...state,
+          ...collectionItems.map((item) => getCollectionItem(item)),
+        ])
+      );
   }
 
-  public addCollectionItem(memo: MemoModel, first = false): void {
-    if (first) this.appCollectionState.patchState('collection', (state) => [getCollectionItem(memo), ...state]);
-    else this.appCollectionState.patchState('collection', (state) => [...state, getCollectionItem(memo)]);
+  public addCollectionItem(item: ApiGetAllItemModel, first = false): void {
+    if (first) this.appCollectionState.patchState('collection', (state) => [getCollectionItem(item), ...state]);
+    else this.appCollectionState.patchState('collection', (state) => [...state, getCollectionItem(item)]);
   }
 
-  public deleteCollectionItem(memoName: string): void {
-    this.appCollectionState.patchState('collection', (state) => state.filter((item) => item.memoName !== memoName));
+  public deleteCollectionItem(itemName: string): void {
+    this.appCollectionState.patchState('collection', (state) => state.filter((item) => item.name !== itemName));
   }
 
-  public updateCollectionItem(memoName: string, rawContent: string): void {
+  public updateCollectionItem(itemName: string, rawContent: string): void {
     this.appCollectionState.patchState('collection', (state) => {
-      const index = state.findIndex((item) => item.memoName === memoName);
-      if (index !== -1) state[index] = getCollectionItem({ name: memoName, content: rawContent });
+      const index = state.findIndex((item) => item.name === itemName);
+      if (index !== -1) state[index] = getCollectionItem({ name: itemName, content: rawContent });
       return state;
     });
   }

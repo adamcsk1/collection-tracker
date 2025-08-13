@@ -8,12 +8,12 @@ import { getCollectionItem } from '@client-app/collection/utils/get-collection-i
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Textarea } from '@components/textarea/textarea';
 import { toastStateToken } from '@components/toast/toast-store';
+import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
-import { MemosService } from '@services/memos/memos-service';
 import { PortalService } from '@services/portal-service';
 import { marked } from 'marked';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { mergeMap, of } from 'rxjs';
+import { map, mergeMap, of } from 'rxjs';
 
 @Component({
   selector: 'ct-collection-item-dialog',
@@ -31,7 +31,7 @@ export class CollectionItemDialog implements OnInit {
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
-  private readonly memos = inject(MemosService);
+  private readonly api = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly _editMode = signal(false);
   protected parsedMdContent = computed(() => {
@@ -50,10 +50,10 @@ export class CollectionItemDialog implements OnInit {
 
   protected onDelete(): void {
     this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.DeleteMemo', { name: this.collectionItem().title }))
+      .open(this.ngxSignalTranslate.translate('Confirm.Delete', { name: this.collectionItem().title }))
       .pipe(
         mergeMap((confirmed) => {
-          if (confirmed) return this.memos.deleteMemo(this.collectionItem().memoName);
+          if (confirmed) return this.api.delete(this.collectionItem().name).pipe(map(() => confirmed));
           else return of(confirmed);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -61,7 +61,7 @@ export class CollectionItemDialog implements OnInit {
       .subscribe((confirmed) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
-          this.collectionService.deleteCollectionItem(this.collectionItem().memoName);
+          this.collectionService.deleteCollectionItem(this.collectionItem().name);
           this.portal.close();
         }
       });
@@ -77,20 +77,21 @@ export class CollectionItemDialog implements OnInit {
 
   protected onSaveChanges(): void {
     this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.ChangeMemo', { name: this.collectionItem().title }))
+      .open(this.ngxSignalTranslate.translate('Confirm.Change', { name: this.collectionItem().title }))
       .pipe(
         mergeMap((confirmed) => {
-          if (confirmed) return this.memos.updateMemo(this.collectionItem().memoName, this.rawContentControl.value);
-          else return of(confirmed);
+          if (confirmed) {
+            return this.api.update(this.collectionItem().name, this.rawContentControl.value).pipe(map(() => confirmed));
+          } else return of(confirmed);
         }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((confirmed) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
-          this.collectionService.updateCollectionItem(this.collectionItem().memoName, this.rawContentControl.value);
+          this.collectionService.updateCollectionItem(this.collectionItem().name, this.rawContentControl.value);
           this.collectionItem.update((collectionItem) =>
-            getCollectionItem({ name: collectionItem.memoName, content: this.rawContentControl.value })
+            getCollectionItem({ name: collectionItem.name, content: this.rawContentControl.value })
           );
           this.onReadOnly();
         }

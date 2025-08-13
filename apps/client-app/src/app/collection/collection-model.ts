@@ -5,8 +5,7 @@ export interface CollectionItemModel {
   genre: Array<string>;
   IMDbId: string;
   tags: Array<string>;
-  memoName: string;
-  createTime: string;
+  name: string;
 }
 
 export type CollectionModel = Array<CollectionItemModel>;

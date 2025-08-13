@@ -4,13 +4,13 @@
     <p>{{ ('Message.BasicSettings' | signalTranslate)() }}</p>
     <libc-input
       [label]="('ApiUrl' | signalTranslate)()"
-      [hint]="('Message.MemosApiUrl' | signalTranslate)()"
+      [hint]="('Message.ApiUrl' | signalTranslate)()"
       [mandatory]="true"
       [control]="formGroup.controls.apiUrl"
     />
     <libc-input
       [label]="('Token' | signalTranslate)()"
-      [hint]="('Message.MemosToken' | signalTranslate)()"
+      [hint]="('Message.Token' | signalTranslate)()"
       [mandatory]="true"
       type="password"
       [control]="formGroup.controls.token"
@@ -134,7 +134,7 @@
       }
       <div>
         <button
-          [disabled]="!connected() || imageRefreshStatus.running || memosLoadNetworkStatus() !== 'finished'"
+          [disabled]="!connected() || imageRefreshStatus.running || apiLoadNetworkStatus() !== 'finished'"
           (click)="onStartImagesRefresh()"
         >
           {{ ('Start' | signalTranslate)() }}

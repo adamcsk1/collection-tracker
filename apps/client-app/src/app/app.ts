@@ -5,7 +5,7 @@ import { SettingsService } from '@client-app/settings/settings-service';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { Toast } from '@components/toast/toast';
-import { memosStateToken } from '@services/memos/memos-store';
+import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -18,7 +18,7 @@ import { Header } from './header/header';
   styleUrl: './app.css',
 })
 export class App implements OnInit {
-  private readonly memosState = inject(memosStateToken);
+  private readonly apiState = inject(apiStateToken);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly portal = inject(PortalService);
   private readonly signalTranslateService = inject(NgxSignalTranslateService);
@@ -37,7 +37,7 @@ export class App implements OnInit {
     });
 
     effect(() => {
-      const loadNetworkStatus = this.memosState.state.loadNetworkStatus();
+      const loadNetworkStatus = this.apiState.state.loadNetworkStatus();
       if (loadNetworkStatus === 'pending') this.spinnerLoadingState.setState('show', true);
       else if (['finished', 'error'].includes(loadNetworkStatus || '')) {
         this.spinnerLoadingState.setState('show', false);

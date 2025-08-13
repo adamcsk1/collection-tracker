@@ -30,14 +30,14 @@ Store.getOnce$('app').subscribe((app) =>
 
       if (!accessToken) return res.sendStatus(500);
 
+      users[usernameHash] = { accessTokenHash: await hashText(`${accessToken}${process.env.SALT}`) };
+      Store.set('users', users);
+
       writeFileSync(
         `${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.users}`,
         JSON.stringify(users, null, 2),
         { encoding: 'utf-8' }
       );
-
-      users[usernameHash] = { accessTokenHash: await hashText(`${accessToken}${process.env.SALT}`) };
-      Store.set('users', users);
 
       mkdirSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${usernameHash}`, { recursive: true });
 
