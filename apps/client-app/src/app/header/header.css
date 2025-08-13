@@ -87,8 +87,7 @@
     }
   }
 
-  &:hover,
-  &:focus-within {
+  &.open {
     .dropdown-menu-list {
       pointer-events: auto;
       height: 205px;

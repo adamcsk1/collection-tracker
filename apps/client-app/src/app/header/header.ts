@@ -1,28 +1,32 @@
-import { Component, DestroyRef, DOCUMENT, inject } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CollectionService } from '@client-app/collection/collection-service';
 import { ConfirmService } from '@services/confirm-service';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { DisconnectService } from './disconnect-service';
+import { HeaderService } from './header-service';
 
 @Component({
   selector: 'ct-header',
   imports: [RouterLink, RouterLinkActive, NgxSignalTranslatePipe],
   templateUrl: './header.html',
   styleUrl: './header.css',
-  providers: [DisconnectService],
+  providers: [HeaderService],
 })
 export class Header {
-  private readonly document = inject(DOCUMENT);
   private readonly collection = inject(CollectionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
-  private readonly disconnect = inject(DisconnectService);
+  private readonly header = inject(HeaderService);
+  protected readonly showMenu = signal(false);
 
-  protected onRemoveFocus(): void {
-    (this.document.activeElement as HTMLElement)?.blur();
+  protected onShowMenu(): void {
+    this.showMenu.set(true);
+  }
+
+  protected onHideMenu(): void {
+    this.showMenu.set(false);
   }
 
   protected onSync(): void {
@@ -35,7 +39,7 @@ export class Header {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (confirmed) {
-          this.disconnect.disconnect();
+          this.header.disconnect();
           window.location.reload();
         }
       });

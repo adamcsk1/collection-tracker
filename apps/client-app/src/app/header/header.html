@@ -5,9 +5,16 @@
   <h1>{{ ('Title' | signalTranslate)() }}</h1>
 </div>
 
-<div class="dropdown-menu">
-  <button class="button-icon material-icons" [title]="('Menu' | signalTranslate)()">menu</button>
-  <div class="dropdown-menu-list" (click)="onRemoveFocus()" (keydown)="onRemoveFocus()" tabindex="0" role="button">
+<div class="dropdown-menu" [class.open]="showMenu()" (mouseleave)="onHideMenu()">
+  <button
+    class="button-icon material-icons"
+    [title]="('Menu' | signalTranslate)()"
+    (mouseenter)="onShowMenu()"
+    (click)="onShowMenu()"
+  >
+    menu
+  </button>
+  <div class="dropdown-menu-list" (click)="onHideMenu()" (keydown)="onHideMenu()" tabindex="0" role="button">
     <a [routerLink]="['/', 'collection']" routerLinkActive="active">
       <i class="material-icons">movie</i>
       {{ ('Collection' | signalTranslate)() }}
