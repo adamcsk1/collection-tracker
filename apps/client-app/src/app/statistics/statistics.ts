@@ -4,7 +4,7 @@ import { appCollectionStateToken } from '@client-app/app-collection-store';
 import { StatisticsItem } from '@client-app/statistics/statistics-item/statistics-item';
 import { StatisticsGroupModel } from '@client-app/statistics/statistics-model';
 import { sortWithTagPriority } from '@client-app/statistics/utils/sort-with-tag-priority-util';
-import { memosStateToken } from '@services/memos/memos-store';
+import { apiStateToken } from '@services/api/api-store';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
@@ -15,8 +15,8 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 })
 export class Statistics {
   private readonly appCollectionState = inject(appCollectionStateToken);
-  private readonly memosState = inject(memosStateToken);
-  protected readonly memosLoadNetworkStatus = this.memosState.state.loadNetworkStatus;
+  private readonly apiState = inject(apiStateToken);
+  protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly statistics = computed(() => {
     const collection = this.appCollectionState.state.collection();
     const statistics: StatisticsGroupModel = {

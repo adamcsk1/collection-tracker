@@ -48,7 +48,7 @@ export class ApiService {
     const lazyLoad = (offset = 0) =>
       this.httpClient
         .get<ApiGetAllModel>(
-          `${this.apiState.state.apiUrl()}/memos?offset=${offset}&limit=${fetchBatchSize}`,
+          `${this.apiState.state.apiUrl()}/get-all?offset=${offset}&limit=${fetchBatchSize}`,
           this.headerBuilder()
         )
         .pipe(
@@ -102,7 +102,7 @@ export class ApiService {
 
   public update(name: string, content: string): Observable<void> {
     return this.httpClient
-      .patch<void>(
+      .put<void>(
         `${this.apiState.state.apiUrl()}/modify/${name}`,
         {
           content,

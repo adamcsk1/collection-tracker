@@ -12,7 +12,7 @@ import {
 } from '@client-app/settings/settings-const';
 import { SettingsModel } from '@client-app/settings/settings.model';
 import { toastStateToken } from '@components/toast/toast-store';
-import { memosStateToken } from '@services/memos/memos-store';
+import { apiStateToken } from '@services/api/api-store';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 import { themeStateToken } from '@services/theme/theme-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -23,41 +23,41 @@ export class SettingsService {
   private readonly appState = inject(appStateToken);
   private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
-  private readonly memosState = inject(memosStateToken);
+  private readonly apiState = inject(apiStateToken);
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   public readonly hasSettings = computed(
-    () => !!this.memosState.state.token() && !!this.memosState.state.apiUrl() && !!this.omdbState.state.apiKey()
+    () => !!this.apiState.state.token() && !!this.apiState.state.apiUrl() && !!this.omdbState.state.apiKey()
   );
 
   public loadStoredData(): void {
-    const memosToken = localStorage.getItem(SETTINGS_LC_TOKEN);
-    const memosApiUrl = localStorage.getItem(SETTINGS_LC_API_URL);
+    const apiToken = localStorage.getItem(SETTINGS_LC_TOKEN);
+    const apiUrl = localStorage.getItem(SETTINGS_LC_API_URL);
     const omdbApiKey = localStorage.getItem(SETTINGS_LC_OMDB_API_KEY);
     const appMode = localStorage.getItem(SETTINGS_LC_APP_MODE) as SettingsModel['appMode'];
     const settingsLock = localStorage.getItem(SETTINGS_LC_SETTINGS_LOCK) === 'true';
     const fetchBatchSize = localStorage.getItem(SETTINGS_LC_FETCH_BATCH_SIZE);
     const theme = localStorage.getItem(SETTINGS_LC_THEME) as SettingsModel['theme'];
 
-    if (memosToken) this.memosState.setState('token', memosToken);
-    if (memosApiUrl) this.memosState.setState('apiUrl', memosApiUrl);
+    if (apiToken) this.apiState.setState('token', apiToken);
+    if (apiUrl) this.apiState.setState('apiUrl', apiUrl);
     if (omdbApiKey) this.omdbState.setState('apiKey', omdbApiKey);
     if (appMode) {
       this.appState.setState('appMode', appMode);
       this.setPermissions();
     }
-    if (fetchBatchSize) this.memosState.setState('fetchBatchSize', Number(fetchBatchSize));
+    if (fetchBatchSize) this.apiState.setState('fetchBatchSize', Number(fetchBatchSize));
     if (theme) this.themeState.setState('theme', theme);
     this.appState.setState('settingsLock', settingsLock);
   }
 
   public storeFormData(formData: SettingsModel, navigateBack = false): void {
-    this.memosState.setState('token', formData.token);
-    this.memosState.setState('apiUrl', formData.apiUrl);
+    this.apiState.setState('token', formData.token);
+    this.apiState.setState('apiUrl', formData.apiUrl);
     this.omdbState.setState('apiKey', formData.omdbApiKey);
     this.appState.setState('appMode', formData.appMode);
     this.appState.setState('settingsLock', formData.settingsLock);
-    this.memosState.setState('fetchBatchSize', formData.fetchBatchSize);
+    this.apiState.setState('fetchBatchSize', formData.fetchBatchSize);
     this.themeState.setState('theme', formData.theme);
 
     if (formData.storeCredentials) {

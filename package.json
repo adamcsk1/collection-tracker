@@ -1,6 +1,6 @@
 {
-  "name": "collection-tracker-with-memos",
-  "description": "Collection tracker companion app for memos",
+  "name": "collection-tracker",
+  "description": "Collection tracker",
   "version": "0.0.1",
   "engines": {
     "node": ">=24.0.0"

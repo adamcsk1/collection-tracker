@@ -4,9 +4,9 @@
   "display": "standalone",
   "scope": "/",
   "start_url": "/",
-  "app_name": "Collection tracker companion app for memos",
+  "app_name": "Collection tracker",
   "short_name": "Collection tracker",
-  "description": "Collection tracker companion app for memos",
+  "description": "Collection tracker",
   "icons": [
     {
       "src": "./icons/icon-192x192.png",

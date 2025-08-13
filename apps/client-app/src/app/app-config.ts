@@ -9,7 +9,7 @@ import {
   spinnerLoadingStateToken,
 } from '@components/spinner-loading/spinner-loading-store';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
-import { initialMemosState, memosStateToken } from '@services/memos/memos-store';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
@@ -25,8 +25,8 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch()),
     provideStore(initialOMDbState, omdbStateToken),
     provideStore(initialThemeState, themeStateToken),
-    provideStore(initialMemosState, memosStateToken),
     provideStore(initialToastState, toastStateToken),
+    provideStore(initialApiState, apiStateToken),
     provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
     provideStore(initialAppState, appStateToken),
     provideStore(initialAppCollectionState, appCollectionStateToken),

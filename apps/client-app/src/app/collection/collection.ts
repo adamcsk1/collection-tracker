@@ -4,8 +4,8 @@ import { CollectionList } from '@client-app/collection/collection-list/collectio
 import { CollectionSearch } from '@client-app/collection/collection-search/collection-search';
 import { CollectionService } from '@client-app/collection/collection-service';
 import { collectionStateToken, initialCollectionState } from '@client-app/collection/collection-store';
+import { apiStateToken } from '@services/api/api-store';
 
-import { memosStateToken } from '@services/memos/memos-store';
 import { provideStore } from 'ngx-simple-signal-store';
 
 @Component({
@@ -17,9 +17,9 @@ import { provideStore } from 'ngx-simple-signal-store';
 })
 export class Collection implements OnInit {
   private readonly collectionService = inject(CollectionService);
-  private readonly memosState = inject(memosStateToken);
+  private readonly apiState = inject(apiStateToken);
 
   public ngOnInit(): void {
-    if (this.memosState.state.loadNetworkStatus() !== 'finished') this.collectionService.loadCollection();
+    if (this.apiState.state.loadNetworkStatus() !== 'finished') this.collectionService.loadCollection();
   }
 }

@@ -10,7 +10,7 @@ import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
-import { MemosService } from '@services/memos/memos-service';
+import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
 import { Form } from '@shared/models/form-model';
@@ -28,7 +28,7 @@ import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap } from
   },
 })
 export class CollectionNewItemDialog implements OnInit {
-  private readonly memos = inject(MemosService);
+  private readonly api = inject(ApiService);
   private readonly omdb = inject(OMDbService);
   private readonly collection = inject(CollectionService);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
@@ -83,16 +83,18 @@ export class CollectionNewItemDialog implements OnInit {
           })
         ),
         tap(() => this.spinnerLoadingState.setState('show', true)),
-        mergeMap((mdContent) => this.memos.createMemo(mdContent)),
+        mergeMap((mdContent) =>
+          this.api.create(mdContent).pipe(map((response) => ({ name: response.name, content: mdContent })))
+        ),
         catchError((error) => {
           this.spinnerLoadingState.setState('show', false);
           throw new Error(error.message);
         }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe((memo) => {
+      .subscribe((collectionItem) => {
         this.spinnerLoadingState.setState('show', false);
-        this.collection.addCollectionItem(memo, true);
+        this.collection.addCollectionItem(collectionItem, true);
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewItem'));
         if (mode === 'new') this.formGroup.reset();
         else if (mode === 'close') this.portal.close();

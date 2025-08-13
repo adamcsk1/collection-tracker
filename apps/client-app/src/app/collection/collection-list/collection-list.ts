@@ -6,7 +6,7 @@ import { CollectionListItemSkeleton } from '@client-app/collection/collection-li
 import { CollectionListItem } from '@client-app/collection/collection-list/collection-list-item/collection-list-item';
 import { CollectionNewItemDialog } from '@client-app/collection/collection-new-item-dialog/collection-new-item-dialog';
 import { collectionStateToken } from '@client-app/collection/collection-store';
-import { memosStateToken } from '@services/memos/memos-store';
+import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { randomInt } from '@shared/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
@@ -20,7 +20,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 export class CollectionList {
   private readonly appCollectionState = inject(appCollectionStateToken);
   private readonly appState = inject(appStateToken);
-  private readonly memosState = inject(memosStateToken);
+  private readonly apiState = inject(apiStateToken);
   private readonly collectionState = inject(collectionStateToken);
   private readonly portal = inject(PortalService);
   protected readonly filteredCollection = computed(() => {
@@ -40,7 +40,7 @@ export class CollectionList {
   protected readonly disableNextButton = computed(() => this.filteredCollection().length - 1 <= this.lastPageItem());
   protected readonly offset = signal(0);
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
-  protected readonly memosLoadNetworkStatus = this.memosState.state.loadNetworkStatus;
+  protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly collectionLength = computed(() => this.appCollectionState.state.collection().length);
   protected readonly permissionAdd = computed(() => this.appState.state.permissions().create);
 
