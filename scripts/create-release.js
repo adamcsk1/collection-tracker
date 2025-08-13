@@ -20,3 +20,5 @@ mkdirSync(releaseVersionFolder, { recursive: true });
 cpSync(distFolder, `${releaseVersionFolder}/dist`, { recursive: true });
 cpSync(dockerFolder, `${releaseVersionFolder}/docker`, { recursive: true });
 cpSync(dockerFile, `${releaseVersionFolder}/Dockerfile`);
+
+console.log(`Release created at ${releaseVersionFolder}`);
