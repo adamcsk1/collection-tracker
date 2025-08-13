@@ -19,10 +19,10 @@ Store.getOnce$('app').subscribe((app) =>
       const response = [];
       for (const file of files) {
         const cacheKey = `${req.usernameHash}-${file}`;
-        if (!!cache[cacheKey]) response.push({ name: cacheKey, content: cache[cacheKey] });
+        if (!!cache[cacheKey]) response.push({ name: file, content: cache[cacheKey] });
         else {
           const content = readFileSync(`${storeFolder}/${file}`, 'utf-8');
-          response.push({ name: cacheKey, content });
+          response.push({ name: file, content });
           cache[cacheKey] = content;
         }
       }

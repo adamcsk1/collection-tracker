@@ -16,9 +16,10 @@ Store.getOnce$('app').subscribe((app) =>
         return res.sendStatus(404);
       }
 
-      unlinkSync(`${storeFolder}/${name.split('-')[1]}`);
+      unlinkSync(`${storeFolder}/${name}`);
       const cache = Store.getLastValue('cache');
-      delete cache[name];
+      const checkKey = `${req.usernameHash}-${name}`;
+      delete cache[checkKey];
       Store.set('cache', cache);
 
       res.send();
