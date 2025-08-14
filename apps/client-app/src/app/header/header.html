@@ -6,7 +6,14 @@
 </div>
 
 <div class="dropdown-menu" [class.open]="showMenu()" (mouseleave)="onHideMenu()">
-  <button class="button-icon material-icons" [title]="('Menu' | signalTranslate)()" (click)="onShowMenu()">menu</button>
+  <button
+    class="button-icon material-icons"
+    [title]="('Menu' | signalTranslate)()"
+    (click)="onShowMenu($event)"
+    (mouseenter)="onShowMenu($event)"
+  >
+    menu
+  </button>
   <div class="dropdown-menu-list" (click)="onHideMenu()" (keydown)="onHideMenu()" tabindex="0" role="button">
     <div class="dropdown-menu-list-header">
       <div>
