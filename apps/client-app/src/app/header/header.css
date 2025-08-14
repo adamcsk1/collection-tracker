@@ -61,6 +61,10 @@
     background-color: var(--background-color-alt);
     padding: calc(2 * var(--outline-offset));
 
+    .dropdown-menu-list-header {
+      display: none;
+    }
+
     a {
       display: flex;
       align-items: center;
@@ -87,17 +91,88 @@
     }
   }
 
-  &.open {
-    .dropdown-menu-list {
-      pointer-events: auto;
-      height: 205px;
+  &.open .dropdown-menu-list {
+    pointer-events: auto;
+    height: 205px;
+    opacity: 1;
+    display: flex;
+    justify-content: space-between;
+
+    a {
+      height: 100%;
       opacity: 1;
-      display: flex;
-      justify-content: space-between;
+    }
+  }
+}
+
+@media (width <= 450px) {
+  .dropdown-menu {
+    .dropdown-menu-list {
+      position: fixed;
+      width: 100vw;
+      top: 0;
+      right: 0;
+      border-radius: 0;
+      border: none;
+      justify-content: flex-start !important;
+      padding: var(--size-default);
+
+      .dropdown-menu-list-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 50%;
+
+        div {
+          display: flex;
+          align-items: center;
+          gap: var(--size-default);
+
+          img {
+            width: var(--logo-size);
+            height: var(--logo-size);
+            border-radius: 35%;
+            border: var(--outline-style);
+            border-color: var(--focus-border-color);
+            display: inline;
+          }
+
+          h1 {
+            line-height: 1;
+            font-size: var(--font-size-default);
+          }
+        }
+      }
+
+      a,
+      i {
+        font-size: var(--font-size-big);
+      }
 
       a {
-        height: 100%;
-        opacity: 1;
+        height: auto;
+      }
+
+      a.highlight {
+        font-size: var(--font-size-huge);
+        font-weight: bold;
+
+        i {
+          font-size: var(--font-size-huge);
+        }
+      }
+
+      a.space {
+        margin-bottom: var(--size-default);
+      }
+    }
+
+    &.open {
+      .dropdown-menu-list {
+        height: 100vh;
+
+        a {
+          height: auto;
+        }
       }
     }
   }

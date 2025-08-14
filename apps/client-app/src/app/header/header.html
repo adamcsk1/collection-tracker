@@ -6,32 +6,34 @@
 </div>
 
 <div class="dropdown-menu" [class.open]="showMenu()" (mouseleave)="onHideMenu()">
-  <button
-    class="button-icon material-icons"
-    [title]="('Menu' | signalTranslate)()"
-    (mouseenter)="onShowMenu()"
-    (click)="onShowMenu()"
-  >
-    menu
-  </button>
+  <button class="button-icon material-icons" [title]="('Menu' | signalTranslate)()" (click)="onShowMenu()">menu</button>
   <div class="dropdown-menu-list" (click)="onHideMenu()" (keydown)="onHideMenu()" tabindex="0" role="button">
-    <a [routerLink]="['/', 'collection']" routerLinkActive="active">
+    <div class="dropdown-menu-list-header">
+      <div>
+        <img src="images/logo.png" [alt]="('Title' | signalTranslate)()" />
+        <h1>{{ ('Title' | signalTranslate)() }}</h1>
+      </div>
+      <button class="button-icon material-icons" [title]="('Close' | signalTranslate)()" (click)="onHideMenu()">
+        close
+      </button>
+    </div>
+    <a [routerLink]="['/', 'collection']" routerLinkActive="active" class="highlight">
       <i class="material-icons">movie</i>
       {{ ('Collection' | signalTranslate)() }}
     </a>
-    <a [routerLink]="['/', 'settings']" routerLinkActive="active">
+    <a [routerLink]="['/', 'settings']" routerLinkActive="active" class="highlight">
       <i class="material-icons">settings</i>
       {{ ('Settings' | signalTranslate)() }}
     </a>
-    <a [routerLink]="['/', 'statistics']" routerLinkActive="active">
+    <a [routerLink]="['/', 'statistics']" routerLinkActive="active" class="highlight space">
       <i class="material-icons">bar_chart</i> {{ ('Statistics' | signalTranslate)() }}
-    </a>
-    <a [routerLink]="['/', 'about']" routerLinkActive="active">
-      <i class="material-icons">info</i> {{ ('About' | signalTranslate)() }}
     </a>
     <a href="#" (click)="onSync()">
       <i class="material-icons">sync</i>
       {{ ('Sync' | signalTranslate)() }}
+    </a>
+    <a [routerLink]="['/', 'about']" routerLinkActive="active">
+      <i class="material-icons">info</i> {{ ('About' | signalTranslate)() }}
     </a>
     <a href="#" (click)="onDisconnect()">
       <i class="material-icons">logout</i> {{ ('Disconnect' | signalTranslate)() }}
