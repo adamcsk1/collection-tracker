@@ -40,13 +40,13 @@ export const main = () => {
         standardHeaders: 'draft-8',
         legacyHeaders: false,
         skipSuccessfulRequests: true,
-        keyGenerator: (req: express.Request): string => {
-          if (!req.ip) {
+        keyGenerator: (request: express.Request): string => {
+          if (!request.ip) {
             errorLog('request.ip is missing!');
-            return ipKeyGenerator(req.socket.remoteAddress);
+            return ipKeyGenerator(request.socket.remoteAddress);
           }
 
-          return ipKeyGenerator(req.ip.replace(/:\d+[^:]*$/, ''));
+          return ipKeyGenerator(request.ip.replace(/:\d+[^:]*$/, ''));
         },
       })
     );

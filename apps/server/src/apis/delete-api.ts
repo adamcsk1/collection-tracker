@@ -6,26 +6,26 @@ import { ExtendedRequestModel } from '@server/models/express-model';
 import { existsSync, unlinkSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
-  app.delete(`${API_PREFIX}/delete/:name`, jwtGuard, (req: ExtendedRequestModel, res) => {
+  app.delete(`${API_PREFIX}/delete/:name`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
-      let { name } = req.params;
+      let { name } = request.params;
       name = name.replace(/\\|\//g, '');
-      const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${req.usernameHash}`;
+      const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
 
       if (!existsSync(`${storeFolder}/${name}`)) {
-        return res.sendStatus(404);
+        return response.sendStatus(404);
       }
 
       unlinkSync(`${storeFolder}/${name}`);
       const cache = Store.getLastValue('cache');
-      const checkKey = `${req.usernameHash}-${name}`;
+      const checkKey = `${request.usernameHash}-${name}`;
       delete cache[checkKey];
       Store.set('cache', cache);
 
-      res.send();
+      response.send();
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
-      res.sendStatus(500);
+      response.sendStatus(500);
     }
   })
 );

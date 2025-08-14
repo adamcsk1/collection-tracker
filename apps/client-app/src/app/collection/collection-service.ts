@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { appCollectionStateToken } from '@client-app/app-collection-store';
 import { getCollectionItem } from '@client-app/collection/utils/get-collection-item-util';
-import { ApiGetAllItemModel } from '@services/api/api-model';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
+import { GetAllApiResponseItemModel } from '@shared/models/api-model';
 
 @Injectable({ providedIn: 'root' })
 export class CollectionService {
@@ -24,7 +24,7 @@ export class CollectionService {
       );
   }
 
-  public addCollectionItem(item: ApiGetAllItemModel, first = false): void {
+  public addCollectionItem(item: GetAllApiResponseItemModel, first = false): void {
     if (first) this.appCollectionState.patchState('collection', (state) => [getCollectionItem(item), ...state]);
     else this.appCollectionState.patchState('collection', (state) => [...state, getCollectionItem(item)]);
   }

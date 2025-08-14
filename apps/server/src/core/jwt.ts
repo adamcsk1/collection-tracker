@@ -40,33 +40,33 @@ export const verifyAccessToken = async (username: string, accessToken: string): 
   );
 
 export const jwtGuard = async (
-  req: ExtendedRequestModel,
-  res: express.Response,
+  request: ExtendedRequestModel,
+  response: express.Response,
   next: () => void
 ): Promise<express.Response> => {
-  const authHeader = req.headers['authorization'];
+  const authHeader = request.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (token === null) return res.sendStatus(401);
+  if (token === null) return response.sendStatus(401);
 
   jwt.verify(token, process.env.JWT_SECRET as string, async (err: any, data: any) => {
     try {
-      if (err) return res.sendStatus(403);
+      if (err) return response.sendStatus(403);
 
       const usernameHash = await hashText(`${data.username}${process.env.SALT}`);
       const user = Store.getLastValue('users')[usernameHash];
 
       if (user?.accessTokenHash !== (await hashText(`${token}${process.env.SALT}`))) {
-        return res.sendStatus(403);
+        return response.sendStatus(403);
       }
 
-      req.username = data.username;
-      req.usernameHash = usernameHash;
+      request.username = data.username;
+      request.usernameHash = usernameHash;
 
       next();
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Access token validation unknown error (${error.message})`);
-      return res.sendStatus(500);
+      return response.sendStatus(500);
     }
   });
 };

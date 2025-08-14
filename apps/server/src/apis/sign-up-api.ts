@@ -3,6 +3,7 @@ import { generateAccessToken } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { API_PREFIX, DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/api-model';
 import { mkdirSync, writeFileSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
@@ -12,7 +13,7 @@ Store.getOnce$('app').subscribe((app) =>
         return res.sendStatus(403);
       }
 
-      const { username } = req.body;
+      const { username } = req.body as SignUpApiRequestModel;
       const users = Store.getLastValue('users');
 
       const userLimit = Number(process.env.USER_LIMIT);
@@ -41,7 +42,8 @@ Store.getOnce$('app').subscribe((app) =>
 
       mkdirSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${usernameHash}`, { recursive: true });
 
-      res.send({ token: accessToken });
+      const result: SignUpApiResponseModel = { token: accessToken };
+      res.send(result);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       res.sendStatus(500);
