@@ -33,13 +33,12 @@ export class CollectionItemDialog implements OnInit {
   private readonly confirm = inject(ConfirmService);
   private readonly api = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly _editMode = signal(false);
   protected parsedMdContent = computed(() => {
     const rawContent = this.collectionItem().rawContent;
     return marked.parse(rawContent, { breaks: true });
   });
   protected readonly rawContentControl = new FormControl<string>('', { nonNullable: true });
-  protected readonly editMode = this._editMode.asReadonly();
+  protected readonly editMode = signal(false);
   protected readonly permissionUpdate = computed(() => this.appState.state.permissions().update);
   protected readonly permissionDelete = computed(() => this.appState.state.permissions().delete);
   public readonly collectionItem = model.required<CollectionItemModel>();
@@ -68,11 +67,11 @@ export class CollectionItemDialog implements OnInit {
   }
 
   protected onEdit(): void {
-    this._editMode.set(true);
+    this.editMode.set(true);
   }
 
   protected onReadOnly(): void {
-    this._editMode.set(false);
+    this.editMode.set(false);
   }
 
   protected onSaveChanges(): void {
