@@ -1,3 +1,265 @@
-# components
+# Components Library (libs/components)
 
-This library was generated with [Nx](https://nx.dev).
+[![Nx Workspace](https://img.shields.io/badge/Monorepo-Nx-143055?logo=nx&logoColor=white)](https://nx.dev)
+[![Angular](https://img.shields.io/badge/Angular-Standalone%20Components-dd0031?logo=angular&logoColor=white)](https://angular.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
+
+Reusable Angular standalone UI components shared across the workspace. Built with modern Angular (signals, standalone imports, control flow blocks) and designed to be simple to compose and theme.
+
+Highlights
+
+- Standalone Angular components, no NgModule required
+- Form-friendly inputs (FormControl) with validation hints
+- Lightweight state via ngx-simple-signal-store
+- i18n friendly via ngx-signal-translate
+- Clean CSS
+
+## Contents
+
+- libc-input — Text/password input with label, required marker, reset button, and validation hints
+- libc-select — Select dropdown bound to a FormControl with typed options
+- libc-textarea — Textarea with optional auto-height and sizing
+- libc-spinner-loading — Global loading spinner driven by a simple store
+- libc-toast — Tiny toast message component with auto-dismiss
+- libc-dialog-shell — Shell for dialogs with action/content slots and close button
+
+Import path aliases: `@components/*` (see `tsconfig.json`).
+
+## Installation & peers
+
+This is an internal Nx library; consumers inside the monorepo import directly via path aliases. Components rely on these workspace deps:
+
+- Angular (standalone components, ReactiveForms)
+- ngx-simple-signal-store — for small, injectable signal stores
+- ngx-signal-translate — for i18n helpers used in templates
+
+If you use the spinner or toast components, make sure to provide their stores at the application level (see Setup below).
+
+## Setup
+
+Provide the stores once at app bootstrap (example from `apps/client-app/src/app/app-config.ts`):
+
+```ts
+import { ApplicationConfig } from '@angular/core';
+import { provideStore } from 'ngx-simple-signal-store';
+import { provideSignalTranslateConfig } from 'ngx-signal-translate';
+import { initialToastState, toastStateToken } from '@components/toast/toast-store';
+import {
+  initialSpinnerLoadingState,
+  spinnerLoadingStateToken,
+} from '@components/spinner-loading/spinner-loading-store';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideStore(initialToastState, toastStateToken),
+    provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
+    provideSignalTranslateConfig({ path: './i18n' }),
+  ],
+};
+```
+
+## Usage
+
+All components are standalone. Import them directly where you need them.
+
+### libc-input
+
+```ts
+// component.ts
+import { Component } from '@angular/core';
+import { FormControl, Validators } from '@angular/forms';
+import { Input as LibcInput } from '@components/input/input';
+
+@Component({
+  selector: 'demo-input',
+  imports: [LibcInput],
+  templateUrl: './demo.html',
+})
+export class DemoInputComponent {
+  username = new FormControl<string>('', { validators: [Validators.required] });
+}
+```
+
+```html
+<!-- demo.html -->
+<libc-input
+  [label]="'Username'"
+  [mandatory]="true"
+  [placeholder]="'Type your username'"
+  [showReset]="true"
+  [control]="username"
+>
+  <!-- extra field-level errors can be projected -->
+  <span errors *ngIf="username.hasError('minlength')">Min length is 3</span>
+</libc-input>
+```
+
+Inputs
+
+- inputId?: string (auto-generated)
+- type?: 'text' | 'password' (default: 'text')
+- label?: string
+- mandatory?: boolean
+- showReset?: boolean
+- placeholder?: string
+- control: FormControl<T> (required)
+- hint?: string
+
+### libc-select
+
+```ts
+import { Component } from '@angular/core';
+import { FormControl, Validators } from '@angular/forms';
+import { Select } from '@components/select/select';
+import { SelectInputModel } from '@shared/models/select-model';
+
+@Component({ selector: 'demo-select', imports: [Select], templateUrl: './demo.html' })
+export class DemoSelectComponent {
+  options: SelectInputModel = [
+    { text: 'One', value: 1 },
+    { text: 'Two', value: 2 },
+  ];
+  value = new FormControl<number | null>(null, { validators: [Validators.required] });
+}
+```
+
+```html
+<libc-select [label]="'Choose'" [mandatory]="true" [options]="options" [control]="value">
+  <span errors *ngIf="value.hasError('required')">Selection required</span>
+</libc-select>
+```
+
+Inputs
+
+- selectId?: string (auto-generated)
+- options: SelectInputModel (required: array of { text, value })
+- label: string (required)
+- mandatory?: boolean
+- control: FormControl<T> (required)
+- hint?: string
+
+### libc-textarea
+
+```ts
+import { Component } from '@angular/core';
+import { FormControl } from '@angular/forms';
+import { Textarea } from '@components/textarea/textarea';
+
+@Component({ selector: 'demo-textarea', imports: [Textarea], templateUrl: './demo.html' })
+export class DemoTextareaComponent {
+  notes = new FormControl<string>('');
+}
+```
+
+```html
+<libc-textarea
+  [label]="'Notes'"
+  [rows]="6"
+  [autoHeight]="true"
+  [control]="notes"
+  hint="Markdown supported"
+></libc-textarea>
+```
+
+Inputs
+
+- textareaId?: string (auto-generated)
+- label?: string
+- mandatory?: boolean
+- control: FormControl<T> (required)
+- hint?: string
+- rows?: number
+- cols?: number
+- autoHeight?: boolean (auto-fits to container height)
+
+### libc-spinner-loading
+
+Place once near the app root so it can overlay screens when active.
+
+```ts
+import { Component } from '@angular/core';
+import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
+
+@Component({ selector: 'app-root-ui', imports: [SpinnerLoading], template: '<libc-spinner-loading />' })
+export class AppRootUi {}
+```
+
+Trigger from anywhere:
+
+```ts
+import { inject } from '@angular/core';
+import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
+
+const spinner = inject(spinnerLoadingStateToken);
+spinner.setState('show', true); // show
+spinner.setState('show', false); // hide
+```
+
+### libc-toast
+
+Place once near the app root:
+
+```ts
+import { Component } from '@angular/core';
+import { Toast } from '@components/toast/toast';
+
+@Component({ selector: 'app-toasts', imports: [Toast], template: '<libc-toast />' })
+export class AppToasts {}
+```
+
+Show a message programmatically:
+
+```ts
+import { inject } from '@angular/core';
+import { toastStateToken } from '@components/toast/toast-store';
+
+const toast = inject(toastStateToken);
+toast.setState('timeout', 3000);
+toast.setState('message', 'Saved successfully');
+```
+
+### libc-dialog-shell
+
+Wrapper that provides an action bar (with a close button) and a content area via slots:
+
+```html
+<libc-dialog-shell>
+  <div dialog-shell-actions>
+    <button class="button" (click)="onSave()">Save</button>
+  </div>
+
+  <div dialog-shell-content>
+    <!-- your dialog body here -->
+  </div>
+</libc-dialog-shell>
+```
+
+The close button uses `PortalService` from `@services/portal-service` under the hood to close the active portal.
+
+## Nx tasks
+
+Run from the repo root.
+
+```powershell
+# Lint TS + HTML
+npx nx lint components
+
+# Lint CSS via stylelint
+npx nx run components:stylelint
+
+# Format (write) or check
+npx nx run components:format
+npx nx run components:format-check
+```
+
+## Contributing
+
+- Keep components standalone and self-contained.
+- Favor `FormControl` inputs for form components.
+  - Avoid implementing ControlValueAccessor when possible to simplify the components.
+- Keep CSS minimal and accessible; prefer CSS variables for theming.
+- Add small usage snippets in this README when adding a new component.
+
+## License
+
+MIT — see the [LICENSE](../../LICENSE).
