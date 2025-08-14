@@ -13,6 +13,12 @@
         "eslintConfig": "libs/shared/eslint.config.cjs"
       }
     },
+    "stylelint": {
+      "executor": "nx-stylelint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/shared/src/**/*.css"]
+      }
+    },
     "format": {
       "executor": "nx:run-commands",
       "options": {
