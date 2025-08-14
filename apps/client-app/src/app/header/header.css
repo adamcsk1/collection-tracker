@@ -11,6 +11,19 @@
   background-color: var(--glassy-background);
 }
 
+:is(.header h1, .dropdown-menu .dropdown-menu-list-header h1) {
+  line-height: 1;
+  font-size: var(--font-size-default);
+}
+
+:is(.header img, .dropdown-menu .dropdown-menu-list-header img) {
+  width: var(--logo-size);
+  height: var(--logo-size);
+  border-radius: 35%;
+  border: var(--outline-style);
+  border-color: var(--focus-border-color);
+}
+
 .header {
   display: flex;
 
@@ -21,17 +34,10 @@
 
   img {
     display: block;
-    width: var(--logo-size);
-    height: var(--logo-size);
-    border-radius: 35%;
-    border: var(--outline-style);
-    border-color: var(--focus-border-color);
     margin-left: var(--size-default);
   }
 
   h1 {
-    line-height: 1;
-    font-size: var(--font-size-default);
     margin: auto 0;
     margin-left: var(--size-default);
 
@@ -60,6 +66,7 @@
     border: var(--border-style);
     background-color: var(--background-color-alt);
     padding: calc(2 * var(--outline-offset));
+    color: var(--text-color);
 
     .dropdown-menu-list-header {
       display: none;
@@ -72,7 +79,7 @@
       opacity: 0;
       transition: var(--dropdown-transition);
       padding: var(--size-smaller) var(--size-default);
-      color: var(--text-color);
+      color: inherit;
       text-decoration: none;
       white-space: nowrap;
 
@@ -81,11 +88,7 @@
         margin-right: var(--size-small);
       }
 
-      &:hover {
-        color: var(--main-color);
-      }
-
-      &.active {
+      &:is(:hover, .active) {
         color: var(--main-color);
       }
     }
@@ -116,6 +119,7 @@
       border: none;
       justify-content: flex-start !important;
       padding: var(--size-default);
+      padding-top: 10px;
 
       .dropdown-menu-list-header {
         display: flex;
@@ -128,17 +132,7 @@
           gap: var(--size-default);
 
           img {
-            width: var(--logo-size);
-            height: var(--logo-size);
-            border-radius: 35%;
-            border: var(--outline-style);
-            border-color: var(--focus-border-color);
             display: inline;
-          }
-
-          h1 {
-            line-height: 1;
-            font-size: var(--font-size-default);
           }
         }
       }
