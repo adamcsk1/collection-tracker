@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, DOCUMENT, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CollectionService } from '@client-app/collection/collection-service';
@@ -14,6 +14,7 @@ import { HeaderService } from './header-service';
   providers: [HeaderService],
 })
 export class Header {
+  private readonly document = inject(DOCUMENT);
   private readonly collection = inject(CollectionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
@@ -21,8 +22,8 @@ export class Header {
   private readonly header = inject(HeaderService);
   protected readonly showMenu = signal(false);
 
-  protected onShowMenu(): void {
-    this.showMenu.set(true);
+  protected onShowMenu($event: Event): void {
+    if ($event.type !== 'mouseenter' || this.document.body.offsetWidth > 450) this.showMenu.set(true);
   }
 
   protected onHideMenu(): void {
