@@ -8,6 +8,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { existsSync, readFileSync } from 'fs';
 import helmet from 'helmet';
 
@@ -32,6 +33,23 @@ export const main = () => {
     const app = express();
 
     app.use(helmet());
+    app.use(
+      rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        limit: 100,
+        standardHeaders: 'draft-8',
+        legacyHeaders: false,
+        skipSuccessfulRequests: true,
+        keyGenerator: (req: express.Request): string => {
+          if (!req.ip) {
+            errorLog('request.ip is missing!');
+            return ipKeyGenerator(req.socket.remoteAddress);
+          }
+
+          return ipKeyGenerator(req.ip.replace(/:\d+[^:]*$/, ''));
+        },
+      })
+    );
     app.use(
       cors({
         origin: (requestOrigin: string | undefined, callback: (err: Error | null, origin?: boolean) => void): void => {
