@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@client-app/*": ["apps/client-app/src/app/*"],
+      "@client/*": ["apps/client/src/app/*"],
       "@server/*": ["apps/server/src/*"],
       "@components/*": ["libs/components/src/lib/*"],
       "@services/*": ["libs/services/src/lib/*"],

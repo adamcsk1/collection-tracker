@@ -5,9 +5,9 @@ FROM node:20-alpine AS runtime
 RUN apk add --no-cache nginx bash su-exec
 
 # Copy pre-built artifacts produced outside of Docker (nx build ...)
-# - Angular client build -> dist/apps/client-app/browser
+# - Angular client build -> dist/apps/client/browser
 # - Node server build   -> dist/apps/server (with generated package.json)
-COPY dist/apps/client-app/browser/ /usr/share/nginx/html/
+COPY dist/apps/client/browser/ /usr/share/nginx/html/
 COPY dist/apps/server/ /app/server/
 
 # Install server production dependencies if package.json is present

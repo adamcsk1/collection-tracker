@@ -14,7 +14,7 @@ module.exports = [
     ignores: ['.cache/', '.git/', 'node_modules/', '.angular/', '.nx/', 'dist'],
   },
   {
-    files: ['apps/client-app/**/*.ts', 'libs/components/**/*.ts', 'libs/services/**/*.ts', 'libs/shared/**/*.ts'],
+    files: ['apps/client/**/*.ts', 'libs/components/**/*.ts', 'libs/services/**/*.ts', 'libs/shared/**/*.ts'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -56,7 +56,7 @@ module.exports = [
     },
   },
   {
-    files: ['apps/client-app/**/*.html', 'libs/components/**/*.html'],
+    files: ['apps/client/**/*.html', 'libs/components/**/*.html'],
     languageOptions: {
       parser: angularTemplateParser,
     },
