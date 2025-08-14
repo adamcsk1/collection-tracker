@@ -4,17 +4,18 @@ import { errorLog } from '@server/core/logger';
 import { API_PREFIX, DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { ExtendedRequestModel } from '@server/models/express-model';
+import { ChangeTokenApiRequestModel, ChangeTokenApiResponseModel } from '@shared/models/api-model';
 import { writeFileSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
-  app.put(`${API_PREFIX}/user/change-token`, jwtGuard, async (req: ExtendedRequestModel, res) => {
+  app.put(`${API_PREFIX}/user/change-token`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
-      let { expiration } = req.body;
+      let { expiration } = request.body as ChangeTokenApiRequestModel;
       const users = Store.getLastValue('users');
 
-      const newAccessToken = generateAccessToken(req.usernameHash, expiration);
+      const newAccessToken = generateAccessToken(request.usernameHash, expiration);
 
-      if (!newAccessToken) return res.sendStatus(500);
+      if (!newAccessToken) return response.sendStatus(500);
 
       writeFileSync(
         `${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.users}`,
@@ -22,13 +23,14 @@ Store.getOnce$('app').subscribe((app) =>
         { encoding: 'utf-8' }
       );
 
-      users[req.usernameHash].accessTokenHash = await hashText(`${newAccessToken}${process.env.SALT}`);
+      users[request.usernameHash].accessTokenHash = await hashText(`${newAccessToken}${process.env.SALT}`);
       Store.set('users', users);
 
-      res.send({ newToken: newAccessToken });
+      const result: ChangeTokenApiResponseModel = { newToken: newAccessToken };
+      response.send(result);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
-      res.sendStatus(500);
+      response.sendStatus(500);
     }
   })
 );

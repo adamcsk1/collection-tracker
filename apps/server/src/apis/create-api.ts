@@ -3,30 +3,32 @@ import { errorLog } from '@server/core/logger';
 import { API_PREFIX, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { ExtendedRequestModel } from '@server/models/express-model';
+import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
 import { existsSync, writeFileSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
-  app.post(`${API_PREFIX}/create`, jwtGuard, (req: ExtendedRequestModel, res) => {
+  app.post(`${API_PREFIX}/create`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
-      const { content } = req.body;
-      const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${req.usernameHash}`;
+      const { content } = request.body as CreateApiRequestModel;
+      const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
       const name = `${dayjs().toISOString().replaceAll(':', '-').replaceAll('.', '-')}.md`;
 
       if (existsSync(`${storeFolder}/${name}`)) {
-        return res.sendStatus(409);
+        return response.sendStatus(409);
       }
 
       writeFileSync(`${storeFolder}/${name}`, content, { encoding: 'utf-8' });
       const cache = Store.getLastValue('cache');
-      const checkKey = `${req.usernameHash}-${name}`;
+      const checkKey = `${request.usernameHash}-${name}`;
       cache[checkKey] = content;
       Store.set('cache', cache);
 
-      res.send({ name });
+      const result: CreateApiResponseModel = { name };
+      response.send(result);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
-      res.sendStatus(500);
+      response.sendStatus(500);
     }
   })
 );

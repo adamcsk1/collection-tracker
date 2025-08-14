@@ -3,11 +3,12 @@ import { verifyAccessToken } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { API_PREFIX } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { SignInApiRequestModel } from '@shared/models/api-model';
 
 Store.getOnce$('app').subscribe((app) =>
   app.post(`${API_PREFIX}/sign-in`, async (req, res) => {
     try {
-      const { username, token } = req.body;
+      const { username, token } = req.body as SignInApiRequestModel;
       const users = Store.getLastValue('users');
 
       const usernameHash = await hashText(`${username}${process.env.SALT}`);

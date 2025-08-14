@@ -1,8 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { AlertService } from '@services/alert-service';
-import { ApiCreateModel, ApiGetAllModel } from '@services/api/api-model';
 import { apiStateToken } from '@services/api/api-store';
+import {
+  CreateApiRequestModel,
+  CreateApiResponseModel,
+  GetAllApiResponseModel,
+  ModifyApiRequestModel,
+} from '@shared/models/api-model';
 import { catchError, filter, Observable, of, Subject, tap } from 'rxjs';
 
 @Injectable({
@@ -40,14 +45,14 @@ export class ApiService {
       );
   }
 
-  public getAll(): Observable<ApiGetAllModel> {
+  public getAll(): Observable<GetAllApiResponseModel> {
     this.apiState.setState('loadNetworkStatus', 'pending');
-    const results = new Subject<ApiGetAllModel>();
+    const results = new Subject<GetAllApiResponseModel>();
     const fetchBatchSize = this.apiState.state.fetchBatchSize() || 10;
 
     const lazyLoad = (offset = 0) =>
       this.httpClient
-        .get<ApiGetAllModel>(
+        .get<GetAllApiResponseModel>(
           `${this.apiState.state.apiUrl()}/get-all?offset=${offset}&limit=${fetchBatchSize}`,
           this.headerBuilder()
         )
@@ -83,15 +88,10 @@ export class ApiService {
     return results.asObservable();
   }
 
-  public create(content: string): Observable<ApiCreateModel> {
+  public create(content: string): Observable<CreateApiResponseModel> {
+    const body: CreateApiRequestModel = { content };
     return this.httpClient
-      .post<ApiCreateModel>(
-        `${this.apiState.state.apiUrl()}/create`,
-        {
-          content,
-        },
-        this.headerBuilder()
-      )
+      .post<CreateApiResponseModel>(`${this.apiState.state.apiUrl()}/create`, body, this.headerBuilder())
       .pipe(
         catchError((error) => {
           this.alert.show(error.message);
@@ -101,20 +101,13 @@ export class ApiService {
   }
 
   public update(name: string, content: string): Observable<void> {
-    return this.httpClient
-      .put<void>(
-        `${this.apiState.state.apiUrl()}/modify/${name}`,
-        {
-          content,
-        },
-        this.headerBuilder()
-      )
-      .pipe(
-        catchError((error) => {
-          this.alert.show(error.message);
-          throw new Error(error.message);
-        })
-      );
+    const body: ModifyApiRequestModel = { content };
+    return this.httpClient.put<void>(`${this.apiState.state.apiUrl()}/modify/${name}`, body, this.headerBuilder()).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        throw new Error(error.message);
+      })
+    );
   }
 
   public delete(name: string): Observable<void> {
