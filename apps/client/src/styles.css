@@ -1,10 +1,11 @@
 @import url("material-icons/iconfont/material-icons.css");
-@import url("./styles/reset.css");
-@import url("./styles/colors.css");
+@import url("../../../libs/shared/src/lib/styles/reset.css");
+@import url("../../../libs/shared/src/lib/styles/colors.css");
+@import url("../../../libs/shared/src/lib/styles/variables.css");
 @import url("./styles/variables.css");
-@import url("./styles/components/button.css");
-@import url("./styles/components/form.css");
-@import url("./styles/components/dialog.css");
+@import url("../../../libs/shared/src/lib/styles/components/button.css");
+@import url("../../../libs/shared/src/lib/styles/components/form.css");
+@import url("../../../libs/shared/src/lib/styles/components/dialog.css");
 
 html,
 body {

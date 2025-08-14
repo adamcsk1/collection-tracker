@@ -19,6 +19,11 @@ Animations
 - `@shared/animations/opacity-animation`
 - `@shared/animations/scale-animation`
 
+Styles
+
+- Base: `libs/shared/src/lib/styles/reset.css`, `libs/shared/src/lib/styles/colors.css`, `libs/shared/src/lib/styles/variables.css`
+- Components: `libs/shared/src/lib/styles/components/button.css`, `libs/shared/src/lib/styles/components/form.css`, `libs/shared/src/lib/styles/components/dialog.css`
+
 Utils
 
 - `@shared/utils/random-int-util` — `randomInt(min, max)`
@@ -70,6 +75,50 @@ import { randomInt } from '@shared/utils/random-int-util';
 const n = randomInt(1, 6); // 1..6
 ```
 
+### Styles
+
+Shared CSS utilities and tokens to keep look-and-feel consistent across apps.
+
+- Base styles
+  - `reset.css` — minimal reset and a11y-friendly defaults
+  - `colors.css` — theme tokens; switch via `.dark` or `.light` on a container
+  - `variables.css` — sizing, spacing, borders, and focus variables
+- Component styles
+  - `components/button.css` — base `button` styles and modifiers: `.button-danger`, `.button-basic`, `.button-icon`
+  - `components/form.css` — vertical layout and `.form-buttons` toolbar
+  - `components/dialog.css` — fixed-position `.dialog` overlay
+
+Usage (import in your app's global `styles.css`):
+
+```css
+@import url('../../../libs/shared/src/lib/styles/reset.css');
+@import url('../../../libs/shared/src/lib/styles/colors.css');
+@import url('../../../libs/shared/src/lib/styles/variables.css');
+@import url('../../../libs/shared/src/lib/styles/components/button.css');
+@import url('../../../libs/shared/src/lib/styles/components/form.css');
+@import url('../../../libs/shared/src/lib/styles/components/dialog.css');
+```
+
+Quick examples:
+
+```html
+<body class="dark">
+  <!-- or light -->
+  <form>
+    <div class="form-buttons">
+      <button>Save</button>
+      <button class="button-basic" type="button">Cancel</button>
+      <button class="button-danger" type="button">Delete</button>
+    </div>
+  </form>
+
+  <div class="dialog"><!-- overlay content --></div>
+
+  <!-- CSS variables available, e.g.: var(--main-color), var(--text-color), var(--size-small) -->
+  <!-- Focus styles use var(--outline-style) and var(--outline-offset) -->
+</body>
+```
+
 ## Nx tasks
 
 Run from the repo root.
@@ -77,6 +126,9 @@ Run from the repo root.
 ```powershell
 # Lint TS
 npx nx lint shared
+
+# Lint CSS via stylelint
+npx nx run shared:stylelint
 
 # Format (write) or check
 npx nx run shared:format
