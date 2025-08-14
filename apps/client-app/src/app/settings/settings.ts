@@ -32,7 +32,6 @@ export class Settings implements OnInit {
   private readonly themeState = inject(themeStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly imageRefresh = inject(ImageRefreshService);
-  private readonly _connected = signal<boolean | null>(false);
   protected readonly formGroup = new FormGroup<Form<SettingsModel>>({
     token: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     apiUrl: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -43,7 +42,7 @@ export class Settings implements OnInit {
     theme: new FormControl('system', { nonNullable: true, validators: [Validators.required] }),
     settingsLock: new FormControl(false, { nonNullable: true, validators: [Validators.required] }),
   });
-  protected readonly connected = this._connected.asReadonly();
+  protected readonly connected = signal<boolean | null>(false);
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly settingLockEnabled = this.appState.state.settingsLock;
   protected readonly imageRefreshStatus = this.imageRefresh.state;
@@ -51,7 +50,7 @@ export class Settings implements OnInit {
   public ngOnInit(): void {
     this.formGroup.valueChanges
       .pipe(
-        tap(() => this._connected.set(null)),
+        tap(() => this.connected.set(null)),
         filter((values) => !!values.token && !!values.apiUrl),
         debounceTime(500),
         switchMap((values) =>
@@ -60,7 +59,7 @@ export class Settings implements OnInit {
         map(() => true),
         catchError(() => of(false))
       )
-      .subscribe((status) => this._connected.set(status));
+      .subscribe((status) => this.connected.set(status));
 
     this.formGroup.setValue({
       token: this.apiState.state.token(),
