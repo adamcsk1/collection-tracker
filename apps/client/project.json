@@ -1,0 +1,110 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "client",
+  "projectType": "application",
+  "generators": {
+    "@schematics/angular:component": {
+      "style": "css"
+    }
+  },
+  "sourceRoot": "src",
+  "prefix": "ct",
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "options": {
+        "browser": "apps/client/src/main.ts",
+        "index": "apps/client/src/index.html",
+        "tsConfig": "apps/client/tsconfig.app.json",
+        "inlineStyleLanguage": "css",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/client/public",
+            "output": "."
+          }
+        ],
+        "styles": ["apps/client/src/styles.css"],
+        "allowedCommonJsDependencies": ["dayjs"],
+        "outputPath": "dist/apps/client"
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kB",
+              "maximumError": "1MB"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kB",
+              "maximumError": "8kB"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production",
+      "outputs": ["{options.outputPath}"]
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "client:build:production"
+        },
+        "development": {
+          "buildTarget": "client:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular/build:extract-i18n"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/client/src/**/*.ts", "apps/client/src/**/*.html"],
+        "tsConfig": ["apps/client/tsconfig.app.json"],
+        "eslintConfig": "apps/client/eslint.config.cjs"
+      }
+    },
+    "stylelint": {
+      "executor": "nx-stylelint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/client/src/**/*.css"]
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write apps/client/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+      }
+    },
+    "format-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --check apps/client/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+      }
+    },
+    "prebuild": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node apps/client/scripts/set-build-infos.js"
+      }
+    },
+    "postbuild": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node apps/client/scripts/reset-build-infos.js"
+      }
+    }
+  }
+}

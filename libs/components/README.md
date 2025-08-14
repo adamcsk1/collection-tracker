@@ -37,7 +37,7 @@ If you use the spinner or toast components, make sure to provide their stores at
 
 ## Setup
 
-Provide the stores once at app bootstrap (example from `apps/client-app/src/app/app-config.ts`):
+Provide the stores once at app bootstrap (example from `apps/client/src/app/app-config.ts`):
 
 ```ts
 import { ApplicationConfig } from '@angular/core';

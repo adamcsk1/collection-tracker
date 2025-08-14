@@ -1,7 +1,7 @@
 # Collection Tracker
 
 <p align="center">
-  <img src="apps/client-app/public/images/logo.png" alt="Collection Tracker Logo" width="128" />
+  <img src="apps/client/public/images/logo.png" alt="Collection Tracker Logo" width="128" />
   <br/>
 </p>
 
@@ -13,7 +13,7 @@ Track and manage your movie and series collection with a modern Angular client a
 
 ## Apps & Libraries
 
-- Client app: `apps/client-app` (Angular standalone)
+- Client app: `apps/client` (Angular standalone)
 - Server: `apps/server` (Node/Express via esbuild)
 - Libraries:
   - Components — UI elements: libs/components/README.md
@@ -45,8 +45,8 @@ npm run format
 Direct Nx targets
 ```powershell
 # Client
-npx nx serve client-app
-npx nx build client-app --configuration=production
+npx nx serve client
+npx nx build client --configuration=production
 
 # Server
 npx nx serve server
