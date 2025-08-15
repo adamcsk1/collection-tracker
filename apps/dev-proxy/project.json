@@ -1,0 +1,39 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "dev-proxy",
+  "projectType": "application",
+  "generators": {},
+  "sourceRoot": "./",
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "options": {
+        "browser": "apps/dev-proxy/main.ts",
+        "index": "apps/dev-proxy/index.html",
+        "tsConfig": "apps/dev-proxy/tsconfig.app.json"
+      },
+      "configurations": {
+      "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": false
+        }
+      },
+      "defaultConfiguration": "development",
+      "outputs": ["{options.outputPath}"]
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "configurations": {
+        "development": {
+          "buildTarget": "dev-proxy:build:development"
+        }
+      },
+      "options": {
+        "port": 4200,
+        "proxyConfig": "apps/dev-proxy/proxy.conf.js"
+      },
+      "defaultConfiguration": "development"
+    }
+  }
+}

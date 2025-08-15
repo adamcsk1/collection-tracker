@@ -6,8 +6,11 @@ RUN apk add --no-cache nginx bash su-exec
 
 # Copy pre-built artifacts produced outside of Docker (nx build ...)
 # - Angular client build -> dist/apps/client/browser
-# - Node server build   -> dist/apps/server (with generated package.json)
-COPY dist/apps/client/browser/ /usr/share/nginx/html/
+# - Angular login build  -> dist/apps/login/browser
+# - Node server build    -> dist/apps/server (with generated package.json)
+RUN mkdir -p /usr/share/nginx/html/client /usr/share/nginx/html/login
+COPY dist/apps/client/browser/ /usr/share/nginx/html/client/
+COPY dist/apps/login/browser/ /usr/share/nginx/html/login/
 COPY dist/apps/server/ /app/server/
 
 # Install server production dependencies if package.json is present
