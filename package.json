@@ -8,7 +8,7 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "nx run-many --target=serve --projects=client,server",
+    "start": "npx nx run server:preserve && nx run-many --target=serve --projects=client,server",
     "build": "npx nx run client:prebuild && nx run-many --target=build --projects=client,server && npx nx run client:postbuild",
     "test": "nx test",
     "lint": "nx run-many --target=lint --projects=client,components,services,shared,server",

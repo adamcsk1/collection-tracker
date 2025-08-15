@@ -74,6 +74,12 @@
       "options": {
         "command": "prettier --check apps/server/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
       }
+    },
+    "preserve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node apps/server/scripts/create-dev-env.js"
+      }
     }
   }
 }
