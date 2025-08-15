@@ -17,3 +17,5 @@ writeFileSync(
     .replace('localhost-version', appVersion),
   'utf-8'
 );
+
+console.log(`Build info updated in ${appConstantFilePath}`);

@@ -7,7 +7,10 @@ const dockerFile = `${__dirname}/../Dockerfile`;
 const minimalEnvFile = `${__dirname}/../.env.min.example`;
 const releaseFolder = `${__dirname}/../release`;
 
-if (!existsSync(releaseFolder)) mkdirSync(releaseFolder);
+if (!existsSync(releaseFolder)) {
+  mkdirSync(releaseFolder);
+  console.log(`Created folder: ${releaseFolder}`);
+}
 
 const appVersion = JSON.parse(readFileSync(`${__dirname}/../package.json`, 'utf-8')).version;
 
@@ -15,6 +18,7 @@ const releaseVersionFolder = `${releaseFolder}/release-${appVersion}`;
 
 if (existsSync(releaseVersionFolder)) {
   rmSync(releaseVersionFolder, { recursive: true, force: true });
+  console.log(`Removed folder: ${releaseVersionFolder}`);
 }
 
 mkdirSync(releaseVersionFolder, { recursive: true });

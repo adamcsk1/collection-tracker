@@ -10,3 +10,5 @@ export const APP_VERSION = 'localhost-version';
 `,
   'utf-8'
 );
+
+console.log(`Build info reset in ${appConstantFilePath}`);
