@@ -38,16 +38,12 @@ const PROXY_CONFIG = [
     logLevel: 'warn',
   },
   {
-    // Root redirect to /login
     context: ['/'],
-    bypass: function (req, res) {
-      if (req.url === '/' || req.url === '') {
-        res.writeHead(302, { Location: 'http://localhost:4200/login/' });
-        res.end();
-        return true; // handled
-      }
-      return false;
-    },
+    target: 'http://localhost:4201/login',
+    changeOrigin: true,
+    secure: false,
+    pathRewrite: {},
+    logLevel: 'warn',
   },
 ];
 
