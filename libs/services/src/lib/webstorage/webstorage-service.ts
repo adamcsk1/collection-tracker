@@ -5,9 +5,10 @@ import { WebStorageTypes } from '@services/webstorage/webstorage-model';
   providedIn: 'root',
 })
 export class WebstorageService {
-  public getItem(key: string): string | null {
-    const value = sessionStorage.getItem(key);
-    return value ?? localStorage.getItem(key);
+  public getItem(key: string, storage: WebStorageTypes | null = null): string | null {
+    if (storage === 'session') return sessionStorage.getItem(key);
+    else if (storage === 'local') return localStorage.getItem(key);
+    else return sessionStorage.getItem(key) ?? localStorage.getItem(key);
   }
 
   public setItem(key: string, value: string, storage: WebStorageTypes = 'local'): void {

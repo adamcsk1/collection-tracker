@@ -166,8 +166,11 @@ const storage = inject(WebstorageService);
 storage.setItem('token', 'abc123');
 storage.setItem('sessionId', 's-42', 'session'); // explicitly session
 
-// Read (checks sessionStorage first, then localStorage)
+// Read (auto: sessionStorage first, then localStorage)
+// Optional: force a specific storage with the 2nd arg
 const token = storage.getItem('token');
+const sessionToken = storage.getItem('token', 'session');
+const localToken = storage.getItem('token', 'local');
 
 // Remove and clear
 storage.removeItem('token'); // defaults have been removed from both session and local storage
