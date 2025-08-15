@@ -42,7 +42,7 @@ const PROXY_CONFIG = [
     context: ['/'],
     bypass: function (req, res) {
       if (req.url === '/' || req.url === '') {
-        res.writeHead(302, { Location: '/login/' });
+        res.writeHead(302, { Location: 'http://localhost:4200/login/' });
         res.end();
         return true; // handled
       }

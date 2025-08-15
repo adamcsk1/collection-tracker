@@ -22,6 +22,11 @@
             "glob": "**/*",
             "input": "apps/login/public",
             "output": "."
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/public/src",
+            "output": "."
           }
         ],
         "styles": ["apps/login/src/styles.css"],
