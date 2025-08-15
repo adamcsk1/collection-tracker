@@ -1,11 +1,11 @@
 import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
-import { appCollectionStateToken } from '@client/app-collection-store';
-import { appStateToken } from '@client/app-store';
 import { CollectionItemDialog } from '@client/collection/collection-item-dialog/collection-item-dialog';
 import { CollectionListItemSkeleton } from '@client/collection/collection-list/collection-list-item-skeleton/collection-list-item-skeleton';
 import { CollectionListItem } from '@client/collection/collection-list/collection-list-item/collection-list-item';
 import { CollectionNewItemDialog } from '@client/collection/collection-new-item-dialog/collection-new-item-dialog';
 import { collectionStateToken } from '@client/collection/collection-store';
+import { mainCollectionStateToken } from '@client/main/main-collection-store';
+import { mainStateToken } from '@client/main/main-store';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { randomInt } from '@shared/utils/random-int-util';
@@ -18,15 +18,15 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   styleUrl: './collection-list.css',
 })
 export class CollectionList {
-  private readonly appCollectionState = inject(appCollectionStateToken);
-  private readonly appState = inject(appStateToken);
+  private readonly mainCollectionState = inject(mainCollectionStateToken);
+  private readonly mainState = inject(mainStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly collectionState = inject(collectionStateToken);
   private readonly portal = inject(PortalService);
   protected readonly filteredCollection = computed(() => {
     const searchText = this.collectionState.state.searchText().toLowerCase();
     this.resetScrollPosition();
-    return this.appCollectionState.state
+    return this.mainCollectionState.state
       .collection()
       .filter((collectionItem) => collectionItem.rawContent.toLowerCase().includes(searchText));
   });
@@ -41,8 +41,8 @@ export class CollectionList {
   protected readonly offset = signal(0);
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
-  protected readonly collectionLength = computed(() => this.appCollectionState.state.collection().length);
-  protected readonly permissionAdd = computed(() => this.appState.state.permissions().create);
+  protected readonly collectionLength = computed(() => this.mainCollectionState.state.collection().length);
+  protected readonly permissionAdd = computed(() => this.mainState.state.permissions().create);
 
   constructor() {
     effect(() => {

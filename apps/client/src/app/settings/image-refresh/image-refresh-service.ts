@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { appCollectionStateToken } from '@client/app-collection-store';
 import { CollectionItemModel } from '@client/collection/collection-model';
+import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { ImageRefreshState } from '@client/settings/image-refresh/image-refresh-model';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
@@ -10,7 +10,7 @@ import { catchError, EMPTY, map, mergeMap, Observable, of, skip, take, tap } fro
 
 @Injectable()
 export class ImageRefreshService {
-  private readonly appCollectionState = inject(appCollectionStateToken);
+  private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly omdb = inject(OMDbService);
   private readonly api = inject(ApiService);
@@ -27,7 +27,7 @@ export class ImageRefreshService {
   public refreshImages(): void {
     this._state.set({
       running: true,
-      count: this.appCollectionState.state.collection().length,
+      count: this.mainCollectionState.state.collection().length,
       checked: 0,
       fixed: 0,
       errors: 0,
@@ -37,7 +37,7 @@ export class ImageRefreshService {
   }
 
   private checkImageAvailability(index: number): void {
-    const collectionItem = this.appCollectionState.state.collection()[index];
+    const collectionItem = this.mainCollectionState.state.collection()[index];
     this.httpClient
       .get(collectionItem.image, {
         responseType: 'text',
@@ -81,7 +81,7 @@ export class ImageRefreshService {
   }
 
   private next(index: number): void {
-    if (index < this.appCollectionState.state.collection().length - 1) this.checkImageAvailability(index + 1);
+    if (index < this.mainCollectionState.state.collection().length - 1) this.checkImageAvailability(index + 1);
     else {
       this._state.update((state) => ({
         ...state,

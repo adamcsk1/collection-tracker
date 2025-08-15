@@ -1,7 +1,7 @@
 import { SettingsModel } from '@client/settings/settings.model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
 
-export interface AppState {
+export interface MainState {
   appMode: SettingsModel['appMode'] | null;
   settingsLock: boolean;
   permissions: {
@@ -11,7 +11,7 @@ export interface AppState {
   };
 }
 
-export const initialAppState: AppState = {
+export const initialMainState: MainState = {
   appMode: null,
   settingsLock: false,
   permissions: {
@@ -21,4 +21,4 @@ export const initialAppState: AppState = {
   },
 };
 
-export const appStateToken = createInjectionToken<AppState>('appState');
+export const mainStateToken = createInjectionToken<MainState>('mainState');

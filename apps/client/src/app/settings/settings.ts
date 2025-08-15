@@ -1,7 +1,7 @@
 import { PercentPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { appStateToken } from '@client/app-store';
+import { mainStateToken } from '@client/main/main-store';
 import { ImageRefreshService } from '@client/settings/image-refresh/image-refresh-service';
 import { SettingsService } from '@client/settings/settings-service';
 import { SettingsModel } from '@client/settings/settings.model';
@@ -27,7 +27,7 @@ import { catchError, debounceTime, filter, map, switchMap, tap } from 'rxjs/oper
 export class Settings implements OnInit {
   private readonly settings = inject(SettingsService);
   private readonly api = inject(ApiService);
-  private readonly appState = inject(appStateToken);
+  private readonly mainState = inject(mainStateToken);
   private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly apiState = inject(apiStateToken);
@@ -44,7 +44,7 @@ export class Settings implements OnInit {
   });
   protected readonly connected = signal<boolean | null>(false);
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
-  protected readonly settingLockEnabled = this.appState.state.settingsLock;
+  protected readonly settingLockEnabled = this.mainState.state.settingsLock;
   protected readonly imageRefreshStatus = this.imageRefresh.state;
 
   public ngOnInit(): void {
@@ -66,10 +66,10 @@ export class Settings implements OnInit {
       apiUrl: this.apiState.state.apiUrl(),
       storeCredentials: !!this.apiState.state.token(),
       omdbApiKey: this.omdbState.state.apiKey(),
-      appMode: this.appState.state.appMode() || 'basic',
+      appMode: this.mainState.state.appMode() || 'basic',
       fetchBatchSize: this.apiState.state.fetchBatchSize() || 10000,
       theme: this.themeState.state.theme(),
-      settingsLock: this.appState.state.settingsLock(),
+      settingsLock: this.mainState.state.settingsLock(),
     });
   }
 
