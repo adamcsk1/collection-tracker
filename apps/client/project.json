@@ -22,6 +22,11 @@
             "glob": "**/*",
             "input": "apps/client/public",
             "output": "."
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/public/src",
+            "output": "."
           }
         ],
         "styles": ["apps/client/src/styles.css"],

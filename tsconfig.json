@@ -11,6 +11,7 @@
       "@client/*": ["apps/client/src/app/*"],
       "@login/*": ["apps/login/src/app/*"],
       "@components/*": ["libs/components/src/lib/*"],
+      "@public/*": ["libs/public/src/lib/*"],
       "@server/*": ["apps/server/src/*"],
       "@services/*": ["libs/services/src/lib/*"],
       "@shared/*": ["libs/shared/src/lib/*"]
