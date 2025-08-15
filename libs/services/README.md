@@ -4,7 +4,7 @@
 [![Angular](https://img.shields.io/badge/Angular-Services-dd0031?logo=angular&logoColor=white)](https://angular.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
 
-Cross-app Angular services and signal stores: API client, OMDb integration, portal utilities, simple alert/confirm, and theme management.
+Cross-app Angular services and signal stores: API client, OMDb integration, portal utilities, simple alert/confirm, theme management, and web storage helpers.
 
 Highlights
 
@@ -23,6 +23,7 @@ Services
 - ThemeService — system/dark/light theme management
 - ApiService — backend REST client with lazy pagination
 - OMDbService — public OMDb API helper for movie/series lookup
+- WebstorageService — tiny localStorage/sessionStorage helper
 
 Stores
 
@@ -92,7 +93,7 @@ import { Component, inject } from '@angular/core';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 
-@Component({ selector: 'demo-omdb', standalone: true, template: '' })
+@Component({ selector: 'demo-omdb', standalone: true, template: '', providers: [OMDbService] })
 export class DemoOMDb {
   private readonly omdb = inject(OMDbService);
   private readonly omdbStore = inject(omdbStateToken);
@@ -108,6 +109,8 @@ export class DemoOMDb {
   }
 }
 ```
+
+Note: OMDbService is provided locally (not `providedIn: 'root'`). Add it to the `providers` array where you use it.
 
 ### PortalService
 
@@ -132,6 +135,7 @@ export class RootPortalHost {
 // later
 // this.portal.open(SomeDialogComponent, { someInput: 42 });
 // this.portal.close();
+// this.portal.componentRef(); // access last opened component ref (signal)
 ```
 
 ### ThemeService
@@ -145,7 +149,33 @@ const theme = inject(ThemeService);
 const themeStore = inject(themeStateToken);
 
 theme.listen(); // start listening once (system changes, initialize class on <html>)
+theme.darkTheme(); // computed signal -> true when dark is active
 themeStore.setState('theme', 'dark'); // 'system' | 'dark' | 'light'
+```
+
+### WebstorageService
+
+```ts
+import { inject } from '@angular/core';
+import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { WebStorageTypes } from '@services/webstorage/webstorage-model';
+
+const storage = inject(WebstorageService);
+
+// Write (defaults to 'local')
+storage.setItem('token', 'abc123');
+storage.setItem('sessionId', 's-42', 'session'); // explicitly session
+
+// Read (checks sessionStorage first, then localStorage)
+const token = storage.getItem('token');
+
+// Remove and clear
+storage.removeItem('token'); // defaults have been removed from both session and local storage
+storage.clear('session'); // clears sessionStorage
+
+// Tip: store JSON
+// storage.setItem('settings', JSON.stringify(obj));
+// const settings = JSON.parse(storage.getItem('settings') ?? 'null');
 ```
 
 ### AlertService and ConfirmService

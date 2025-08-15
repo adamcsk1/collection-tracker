@@ -2,24 +2,26 @@ import { computed, inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { appStateToken } from '@client/app-store';
 import {
-  SETTINGS_LC_API_URL,
-  SETTINGS_LC_APP_MODE,
-  SETTINGS_LC_FETCH_BATCH_SIZE,
-  SETTINGS_LC_OMDB_API_KEY,
-  SETTINGS_LC_SETTINGS_LOCK,
-  SETTINGS_LC_THEME,
-  SETTINGS_LC_TOKEN,
+  SETTINGS_STORAGE_API_URL,
+  SETTINGS_STORAGE_APP_MODE,
+  SETTINGS_STORAGE_FETCH_BATCH_SIZE,
+  SETTINGS_STORAGE_OMDB_API_KEY,
+  SETTINGS_STORAGE_SETTINGS_LOCK,
+  SETTINGS_STORAGE_THEME,
+  SETTINGS_STORAGE_TOKEN,
 } from '@client/settings/settings-const';
 import { SettingsModel } from '@client/settings/settings.model';
 import { toastStateToken } from '@components/toast/toast-store';
 import { apiStateToken } from '@services/api/api-store';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 import { themeStateToken } from '@services/theme/theme-store';
+import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private readonly router = inject(Router);
+  private readonly webstorage = inject(WebstorageService);
   private readonly appState = inject(appStateToken);
   private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
@@ -31,13 +33,13 @@ export class SettingsService {
   );
 
   public loadStoredData(): void {
-    const apiToken = localStorage.getItem(SETTINGS_LC_TOKEN);
-    const apiUrl = localStorage.getItem(SETTINGS_LC_API_URL);
-    const omdbApiKey = localStorage.getItem(SETTINGS_LC_OMDB_API_KEY);
-    const appMode = localStorage.getItem(SETTINGS_LC_APP_MODE) as SettingsModel['appMode'];
-    const settingsLock = localStorage.getItem(SETTINGS_LC_SETTINGS_LOCK) === 'true';
-    const fetchBatchSize = localStorage.getItem(SETTINGS_LC_FETCH_BATCH_SIZE);
-    const theme = localStorage.getItem(SETTINGS_LC_THEME) as SettingsModel['theme'];
+    const apiToken = this.webstorage.getItem(SETTINGS_STORAGE_TOKEN);
+    const apiUrl = this.webstorage.getItem(SETTINGS_STORAGE_API_URL);
+    const omdbApiKey = this.webstorage.getItem(SETTINGS_STORAGE_OMDB_API_KEY);
+    const appMode = this.webstorage.getItem(SETTINGS_STORAGE_APP_MODE) as SettingsModel['appMode'];
+    const settingsLock = this.webstorage.getItem(SETTINGS_STORAGE_SETTINGS_LOCK) === 'true';
+    const fetchBatchSize = this.webstorage.getItem(SETTINGS_STORAGE_FETCH_BATCH_SIZE);
+    const theme = this.webstorage.getItem(SETTINGS_STORAGE_THEME) as SettingsModel['theme'];
 
     if (apiToken) this.apiState.setState('token', apiToken);
     if (apiUrl) this.apiState.setState('apiUrl', apiUrl);
@@ -60,20 +62,21 @@ export class SettingsService {
     this.apiState.setState('fetchBatchSize', formData.fetchBatchSize);
     this.themeState.setState('theme', formData.theme);
 
-    if (formData.storeCredentials) {
-      localStorage.setItem(SETTINGS_LC_TOKEN, formData.token);
-      localStorage.setItem(SETTINGS_LC_API_URL, formData.apiUrl);
-      localStorage.setItem(SETTINGS_LC_OMDB_API_KEY, formData.omdbApiKey);
-    } else {
-      localStorage.removeItem(SETTINGS_LC_TOKEN);
-      localStorage.removeItem(SETTINGS_LC_API_URL);
-      localStorage.removeItem(SETTINGS_LC_OMDB_API_KEY);
+    const storageType = formData.storeCredentials ? 'local' : 'session';
+    this.webstorage.setItem(SETTINGS_STORAGE_TOKEN, formData.token, storageType);
+    this.webstorage.setItem(SETTINGS_STORAGE_API_URL, formData.apiUrl, storageType);
+    this.webstorage.setItem(SETTINGS_STORAGE_OMDB_API_KEY, formData.omdbApiKey, storageType);
+
+    if (!formData.storeCredentials) {
+      this.webstorage.removeItem(SETTINGS_STORAGE_TOKEN, 'local');
+      this.webstorage.removeItem(SETTINGS_STORAGE_API_URL, 'local');
+      this.webstorage.removeItem(SETTINGS_STORAGE_OMDB_API_KEY, 'local');
     }
 
-    localStorage.setItem(SETTINGS_LC_APP_MODE, formData.appMode);
-    localStorage.setItem(SETTINGS_LC_SETTINGS_LOCK, String(formData.settingsLock));
-    localStorage.setItem(SETTINGS_LC_FETCH_BATCH_SIZE, `${formData.fetchBatchSize}`);
-    localStorage.setItem(SETTINGS_LC_THEME, formData.theme);
+    this.webstorage.setItem(SETTINGS_STORAGE_APP_MODE, formData.appMode);
+    this.webstorage.setItem(SETTINGS_STORAGE_SETTINGS_LOCK, String(formData.settingsLock));
+    this.webstorage.setItem(SETTINGS_STORAGE_FETCH_BATCH_SIZE, `${formData.fetchBatchSize}`);
+    this.webstorage.setItem(SETTINGS_STORAGE_THEME, formData.theme);
 
     this.setPermissions();
 
