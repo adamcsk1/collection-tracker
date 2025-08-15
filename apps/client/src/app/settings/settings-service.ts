@@ -64,15 +64,14 @@ export class SettingsService {
 
     const storageType = formData.storeCredentials ? 'local' : 'session';
     this.webstorage.setItem(SETTINGS_STORAGE_TOKEN, formData.token, storageType);
-    this.webstorage.setItem(SETTINGS_STORAGE_API_URL, formData.apiUrl, storageType);
     this.webstorage.setItem(SETTINGS_STORAGE_OMDB_API_KEY, formData.omdbApiKey, storageType);
 
     if (!formData.storeCredentials) {
       this.webstorage.removeItem(SETTINGS_STORAGE_TOKEN, 'local');
-      this.webstorage.removeItem(SETTINGS_STORAGE_API_URL, 'local');
       this.webstorage.removeItem(SETTINGS_STORAGE_OMDB_API_KEY, 'local');
     }
 
+    this.webstorage.setItem(SETTINGS_STORAGE_API_URL, formData.apiUrl);
     this.webstorage.setItem(SETTINGS_STORAGE_APP_MODE, formData.appMode);
     this.webstorage.setItem(SETTINGS_STORAGE_SETTINGS_LOCK, String(formData.settingsLock));
     this.webstorage.setItem(SETTINGS_STORAGE_FETCH_BATCH_SIZE, `${formData.fetchBatchSize}`);

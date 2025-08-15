@@ -14,7 +14,13 @@ module.exports = [
     ignores: ['.cache/', '.git/', 'node_modules/', '.angular/', '.nx/', 'dist'],
   },
   {
-    files: ['apps/client/**/*.ts', 'libs/components/**/*.ts', 'libs/services/**/*.ts', 'libs/shared/**/*.ts'],
+    files: [
+      'apps/client/**/*.ts',
+      'apps/login/**/*.ts',
+      'libs/components/**/*.ts',
+      'libs/services/**/*.ts',
+      'libs/shared/**/*.ts',
+    ],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -33,7 +39,7 @@ module.exports = [
         'warn',
         {
           type: 'attribute',
-          prefix: ['ct', 'libc'],
+          prefix: ['ct', 'libc', 'lo'],
           style: 'camelCase',
         },
       ],
@@ -41,7 +47,7 @@ module.exports = [
         'warn',
         {
           type: 'element',
-          prefix: ['ct', 'libc'],
+          prefix: ['ct', 'libc', 'lo'],
           style: 'kebab-case',
         },
       ],
@@ -56,7 +62,7 @@ module.exports = [
     },
   },
   {
-    files: ['apps/client/**/*.html', 'libs/components/**/*.html'],
+    files: ['apps/client/**/*.html', 'apps/login/**/*.html', 'libs/components/**/*.html'],
     languageOptions: {
       parser: angularTemplateParser,
     },

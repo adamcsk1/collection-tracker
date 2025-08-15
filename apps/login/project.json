@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "client",
+  "name": "login",
   "projectType": "application",
   "generators": {
     "@schematics/angular:component": {
@@ -8,25 +8,25 @@
     }
   },
   "sourceRoot": "src",
-  "prefix": "ct",
+  "prefix": "lo",
   "targets": {
     "build": {
       "executor": "@angular/build:application",
       "options": {
-        "browser": "apps/client/src/main.ts",
-        "index": "apps/client/src/index.html",
-        "tsConfig": "apps/client/tsconfig.app.json",
+        "browser": "apps/login/src/main.ts",
+        "index": "apps/login/src/index.html",
+        "tsConfig": "apps/login/tsconfig.app.json",
         "inlineStyleLanguage": "css",
         "assets": [
           {
             "glob": "**/*",
-            "input": "apps/client/public",
+            "input": "apps/login/public",
             "output": "."
           }
         ],
-        "styles": ["apps/client/src/styles.css"],
+        "styles": ["apps/login/src/styles.css"],
         "allowedCommonJsDependencies": ["dayjs"],
-        "outputPath": "dist/apps/client"
+        "outputPath": "dist/apps/login"
       },
       "configurations": {
         "production": {
@@ -48,7 +48,7 @@
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true,
-          "baseHref": "/client/"
+          "baseHref": "/login/"
         }
       },
       "defaultConfiguration": "production",
@@ -58,14 +58,14 @@
       "executor": "@angular/build:dev-server",
       "configurations": {
         "production": {
-          "buildTarget": "client:build:production"
+          "buildTarget": "login:build:production"
         },
         "development": {
-          "buildTarget": "client:build:development"
+          "buildTarget": "login:build:development"
         }
       },
       "options": {
-        "port": 4202
+        "port": 4201
       },
       "defaultConfiguration": "development"
     },
@@ -75,39 +75,27 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["apps/client/src/**/*.ts", "apps/client/src/**/*.html"],
-        "tsConfig": ["apps/client/tsconfig.app.json"],
-        "eslintConfig": "apps/client/eslint.config.cjs"
+        "lintFilePatterns": ["apps/login/src/**/*.ts", "apps/login/src/**/*.html"],
+        "tsConfig": ["apps/login/tsconfig.app.json"],
+        "eslintConfig": "apps/login/eslint.config.cjs"
       }
     },
     "stylelint": {
       "executor": "nx-stylelint:lint",
       "options": {
-        "lintFilePatterns": ["apps/client/src/**/*.css"]
+        "lintFilePatterns": ["apps/login/src/**/*.css"]
       }
     },
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --write apps/client/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "prettier --write apps/login/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --check apps/client/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
-      }
-    },
-    "prebuild": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node apps/client/scripts/set-build-infos.js"
-      }
-    },
-    "postbuild": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node apps/client/scripts/reset-build-infos.js"
+        "command": "prettier --check apps/login/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
       }
     }
   }
