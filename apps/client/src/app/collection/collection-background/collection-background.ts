@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
-import { appCollectionStateToken } from '@client/app-collection-store';
 import { CollectionBackgroundImagesModel } from '@client/collection/collection-background/collection-background-model';
+import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { opacityAnimation } from '@shared/animations/opacity-animation';
 import { randomInt } from '@shared/utils/random-int-util';
 
@@ -11,9 +11,9 @@ import { randomInt } from '@shared/utils/random-int-util';
   animations: [opacityAnimation],
 })
 export class CollectionBackground {
-  private readonly appCollectionState = inject(appCollectionStateToken);
+  private readonly mainCollectionState = inject(mainCollectionStateToken);
   protected readonly images = computed<CollectionBackgroundImagesModel>(() => {
-    const collection = this.appCollectionState.state.collection();
+    const collection = this.mainCollectionState.state.collection();
 
     if (!collection.length) return [];
 

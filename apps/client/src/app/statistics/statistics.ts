@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { appCollectionStateToken } from '@client/app-collection-store';
+import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { StatisticsItem } from '@client/statistics/statistics-item/statistics-item';
 import { StatisticsGroupModel } from '@client/statistics/statistics-model';
 import { sortWithTagPriority } from '@client/statistics/utils/sort-with-tag-priority-util';
@@ -14,11 +14,11 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   styleUrl: './statistics.css',
 })
 export class Statistics {
-  private readonly appCollectionState = inject(appCollectionStateToken);
+  private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly apiState = inject(apiStateToken);
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly statistics = computed(() => {
-    const collection = this.appCollectionState.state.collection();
+    const collection = this.mainCollectionState.state.collection();
     const statistics: StatisticsGroupModel = {
       movies: [],
       series: [],

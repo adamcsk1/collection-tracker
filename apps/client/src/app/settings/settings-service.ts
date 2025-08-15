@@ -1,6 +1,6 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { appStateToken } from '@client/app-store';
+import { mainStateToken } from '@client/main/main-store';
 import {
   SETTINGS_STORAGE_API_URL,
   SETTINGS_STORAGE_APP_MODE,
@@ -22,7 +22,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 export class SettingsService {
   private readonly router = inject(Router);
   private readonly webstorage = inject(WebstorageService);
-  private readonly appState = inject(appStateToken);
+  private readonly mainState = inject(mainStateToken);
   private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly apiState = inject(apiStateToken);
@@ -45,20 +45,20 @@ export class SettingsService {
     if (apiUrl) this.apiState.setState('apiUrl', apiUrl);
     if (omdbApiKey) this.omdbState.setState('apiKey', omdbApiKey);
     if (appMode) {
-      this.appState.setState('appMode', appMode);
+      this.mainState.setState('appMode', appMode);
       this.setPermissions();
     }
     if (fetchBatchSize) this.apiState.setState('fetchBatchSize', Number(fetchBatchSize));
     if (theme) this.themeState.setState('theme', theme);
-    this.appState.setState('settingsLock', settingsLock);
+    this.mainState.setState('settingsLock', settingsLock);
   }
 
   public storeFormData(formData: SettingsModel, navigateBack = false): void {
     this.apiState.setState('token', formData.token);
     this.apiState.setState('apiUrl', formData.apiUrl);
     this.omdbState.setState('apiKey', formData.omdbApiKey);
-    this.appState.setState('appMode', formData.appMode);
-    this.appState.setState('settingsLock', formData.settingsLock);
+    this.mainState.setState('appMode', formData.appMode);
+    this.mainState.setState('settingsLock', formData.settingsLock);
     this.apiState.setState('fetchBatchSize', formData.fetchBatchSize);
     this.themeState.setState('theme', formData.theme);
 
@@ -85,9 +85,9 @@ export class SettingsService {
   }
 
   private setPermissions(): void {
-    const appMode = this.appState.state.appMode() || 'basic';
+    const appMode = this.mainState.state.appMode() || 'basic';
 
-    this.appState.setState('permissions', {
+    this.mainState.setState('permissions', {
       create: ['limited', 'full'].includes(appMode),
       delete: ['full'].includes(appMode),
       update: ['full'].includes(appMode),

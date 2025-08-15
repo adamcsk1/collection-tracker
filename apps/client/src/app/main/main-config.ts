@@ -2,8 +2,8 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withHashLocation } from '@angular/router';
-import { appCollectionStateToken, initialAppCollectionState } from '@client/app-collection-store';
-import { appStateToken, initialAppState } from '@client/app-store';
+import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
+import { initialMainState, mainStateToken } from '@client/main/main-store';
 import {
   initialSpinnerLoadingState,
   spinnerLoadingStateToken,
@@ -14,9 +14,9 @@ import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
-import { routes } from './app-routes';
+import { routes } from './main-routes';
 
-export const appConfig: ApplicationConfig = {
+export const mainConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
@@ -28,8 +28,8 @@ export const appConfig: ApplicationConfig = {
     provideStore(initialToastState, toastStateToken),
     provideStore(initialApiState, apiStateToken),
     provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
-    provideStore(initialAppState, appStateToken),
-    provideStore(initialAppCollectionState, appCollectionStateToken),
+    provideStore(initialMainState, mainStateToken),
+    provideStore(initialMainCollectionState, mainCollectionStateToken),
     provideSignalTranslateConfig({ path: './i18n' }),
   ],
 };

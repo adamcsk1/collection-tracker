@@ -13,7 +13,7 @@
     "build": {
       "executor": "@angular/build:application",
       "options": {
-        "browser": "apps/client/src/main.ts",
+        "browser": "apps/client/src/bootstrap.ts",
         "index": "apps/client/src/index.html",
         "tsConfig": "apps/client/tsconfig.app.json",
         "inlineStyleLanguage": "css",

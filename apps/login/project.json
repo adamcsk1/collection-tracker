@@ -13,7 +13,7 @@
     "build": {
       "executor": "@angular/build:application",
       "options": {
-        "browser": "apps/login/src/main.ts",
+        "browser": "apps/login/src/bootstrap.ts",
         "index": "apps/login/src/index.html",
         "tsConfig": "apps/login/tsconfig.app.json",
         "inlineStyleLanguage": "css",

@@ -1,10 +1,10 @@
 import { Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
-import { appStateToken } from '@client/app-store';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { CollectionService } from '@client/collection/collection-service';
 import { getCollectionItem } from '@client/collection/utils/get-collection-item-util';
+import { mainStateToken } from '@client/main/main-store';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Textarea } from '@components/textarea/textarea';
 import { toastStateToken } from '@components/toast/toast-store';
@@ -27,7 +27,7 @@ import { map, mergeMap, of } from 'rxjs';
 export class CollectionItemDialog implements OnInit {
   private readonly collectionService = inject(CollectionService);
   private readonly portal = inject(PortalService);
-  private readonly appState = inject(appStateToken);
+  private readonly mainState = inject(mainStateToken);
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
@@ -39,8 +39,8 @@ export class CollectionItemDialog implements OnInit {
   });
   protected readonly rawContentControl = new FormControl<string>('', { nonNullable: true });
   protected readonly editMode = signal(false);
-  protected readonly permissionUpdate = computed(() => this.appState.state.permissions().update);
-  protected readonly permissionDelete = computed(() => this.appState.state.permissions().delete);
+  protected readonly permissionUpdate = computed(() => this.mainState.state.permissions().update);
+  protected readonly permissionDelete = computed(() => this.mainState.state.permissions().delete);
   public readonly collectionItem = model.required<CollectionItemModel>();
 
   public ngOnInit(): void {

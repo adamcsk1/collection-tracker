@@ -8,7 +8,7 @@ ct-header {
   z-index: 2;
 }
 
-.app-body {
+.main-body {
   padding: var(--size-default);
   overflow: auto;
   flex: 1;

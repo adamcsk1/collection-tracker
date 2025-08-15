@@ -1,1 +1,12 @@
-/* You can add global styles to this file, and also import other style files */
+@import url("material-icons/iconfont/material-icons.css");
+@import url("../../../libs/shared/src/lib/styles/reset.css");
+@import url("../../../libs/shared/src/lib/styles/colors.css");
+@import url("../../../libs/shared/src/lib/styles/variables.css");
+
+html,
+body {
+  font-family: "Gill Sans", sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-size: var(--font-size-default);
+}
