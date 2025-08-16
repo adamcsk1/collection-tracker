@@ -43,6 +43,7 @@
     "material-icons": "^1.13.14",
     "ngx-signal-translate": "^3.0.0",
     "ngx-simple-signal-store": "^3.0.4",
+    "random-words": "^2.0.1",
     "rxjs": "~7.8.2",
     "tslib": "^2.3.0"
   },

@@ -1,5 +1,6 @@
 export interface UserModel {
-  accessTokenHash: string;
+  accessTokenHashes: string[];
+  userTokenHash: string;
 }
 
 export type UsersModel = Record<string, UserModel>;

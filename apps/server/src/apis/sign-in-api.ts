@@ -1,9 +1,9 @@
 import { hashText } from '@server/core/crypto';
-import { verifyAccessToken } from '@server/core/jwt';
+import { generateAccessToken } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { API_PREFIX } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
-import { SignInApiRequestModel } from '@shared/models/api-model';
+import { SignInApiRequestModel, SignInApiResponseModel } from '@shared/models/api-model';
 
 Store.getOnce$('app').subscribe((app) =>
   app.post(`${API_PREFIX}/sign-in`, async (req, res) => {
@@ -17,15 +17,17 @@ Store.getOnce$('app').subscribe((app) =>
         return res.sendStatus(404);
       }
 
-      const tokenHash = await hashText(`${token}${process.env.SALT}`);
-      if (users[usernameHash].accessTokenHash !== tokenHash) {
+      const userTokenHash = await hashText(`${token}${process.env.SALT}`);
+      if (users[usernameHash].userTokenHash !== userTokenHash) {
         return res.sendStatus(401);
       }
 
-      try {
-        await verifyAccessToken(username, token);
-        res.send();
-      } catch {
+      if (users[usernameHash].userTokenHash === userTokenHash) {
+        const newAccessToken = await generateAccessToken(username);
+        users[usernameHash].accessTokenHashes.push(await hashText(`${newAccessToken}${process.env.SALT}`));
+        const result: SignInApiResponseModel = { accessToken: newAccessToken };
+        res.send(result);
+      } else {
         res.sendStatus(403);
       }
     } catch (error: unknown) {

@@ -1,3 +1,6 @@
+import { randomUUID } from 'crypto';
+import { generate } from 'random-words';
+
 export const hashText = async (message: string): Promise<string> => {
   const encoder = new TextEncoder();
   const data = encoder.encode(message);
@@ -6,3 +9,6 @@ export const hashText = async (message: string): Promise<string> => {
   const hashHex = hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('');
   return hashHex;
 };
+
+export const generateRandomToken = (length: number = 128): string =>
+  `${(generate(length) as Array<string>).join(' ')} ${randomUUID().replace(/-/g, '')}`;

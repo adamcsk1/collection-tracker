@@ -1,21 +1,25 @@
-import { hashText } from '@server/core/crypto';
+import { generateRandomToken, hashText } from '@server/core/crypto';
 import { generateAccessToken, jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { API_PREFIX, DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { ExtendedRequestModel } from '@server/models/express-model';
-import { ChangeTokenApiRequestModel, ChangeTokenApiResponseModel } from '@shared/models/api-model';
+import { ChangeTokenApiResponseModel } from '@shared/models/api-model';
 import { writeFileSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
   app.put(`${API_PREFIX}/user/change-token`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
-      let { expiration } = request.body as ChangeTokenApiRequestModel;
       const users = Store.getLastValue('users');
 
-      const newAccessToken = generateAccessToken(request.usernameHash, expiration);
+      const newUserToken = generateRandomToken();
+      const newAccessToken = await generateAccessToken(request.username);
 
-      if (!newAccessToken) return response.sendStatus(500);
+      users[request.usernameHash] = {
+        userTokenHash: await hashText(`${newUserToken}${process.env.SALT}`),
+        accessTokenHashes: [await hashText(`${newAccessToken}${process.env.SALT}`)],
+      };
+      Store.set('users', users);
 
       writeFileSync(
         `${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.users}`,
@@ -23,10 +27,7 @@ Store.getOnce$('app').subscribe((app) =>
         { encoding: 'utf-8' }
       );
 
-      users[request.usernameHash].accessTokenHash = await hashText(`${newAccessToken}${process.env.SALT}`);
-      Store.set('users', users);
-
-      const result: ChangeTokenApiResponseModel = { newToken: newAccessToken };
+      const result: ChangeTokenApiResponseModel = { newToken: newUserToken, accessToken: newAccessToken };
       response.send(result);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);

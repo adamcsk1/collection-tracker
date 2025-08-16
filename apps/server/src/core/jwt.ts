@@ -18,27 +18,6 @@ export const generateAccessToken = (username: string, expiresIn: string | null =
   }
 };
 
-export const verifyAccessToken = async (username: string, accessToken: string): Promise<void> =>
-  new Promise<void>((resolve, reject) =>
-    jwt.verify(accessToken, process.env.JWT_SECRET as string, async (err: any, data: any) => {
-      try {
-        const usernameHash = await hashText(`${data.username}${process.env.SALT}`);
-        const user = Store.getLastValue('users')[usernameHash];
-
-        if (
-          err ||
-          data.username !== username ||
-          user?.accessTokenHash !== (await hashText(`${accessToken}${process.env.SALT}`))
-        ) {
-          reject();
-        } else resolve();
-      } catch (error: unknown) {
-        if (error instanceof Error) errorLog(`Access token verify unknown error (${error.message})`);
-        return reject();
-      }
-    })
-  );
-
 export const jwtGuard = async (
   request: ExtendedRequestModel,
   response: express.Response,
@@ -56,7 +35,7 @@ export const jwtGuard = async (
       const usernameHash = await hashText(`${data.username}${process.env.SALT}`);
       const user = Store.getLastValue('users')[usernameHash];
 
-      if (user?.accessTokenHash !== (await hashText(`${token}${process.env.SALT}`))) {
+      if (!user?.accessTokenHashes?.includes(await hashText(`${token}${process.env.SALT}`))) {
         return response.sendStatus(403);
       }
 
