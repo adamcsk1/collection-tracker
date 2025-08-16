@@ -1,5 +1,4 @@
-import { hashText } from '@server/core/crypto';
-import { generateAccessToken } from '@server/core/jwt';
+import { generateRandomToken, hashText } from '@server/core/crypto';
 import { errorLog } from '@server/core/logger';
 import { API_PREFIX, DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
@@ -27,11 +26,9 @@ Store.getOnce$('app').subscribe((app) =>
         return res.sendStatus(409);
       }
 
-      const accessToken = generateAccessToken(username);
+      const userToken = generateRandomToken();
 
-      if (!accessToken) return res.sendStatus(500);
-
-      users[usernameHash] = { accessTokenHash: await hashText(`${accessToken}${process.env.SALT}`) };
+      users[usernameHash] = { userTokenHash: await hashText(`${userToken}${process.env.SALT}`), accessTokenHashes: [] };
       Store.set('users', users);
 
       writeFileSync(
@@ -42,7 +39,7 @@ Store.getOnce$('app').subscribe((app) =>
 
       mkdirSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${usernameHash}`, { recursive: true });
 
-      const result: SignUpApiResponseModel = { token: accessToken };
+      const result: SignUpApiResponseModel = { token: userToken };
       res.send(result);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);

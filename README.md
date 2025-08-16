@@ -9,7 +9,7 @@
 [![Angular](https://img.shields.io/badge/Angular-20-dd0031?logo=angular&logoColor=white)](https://angular.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-Track and manage your movie and series collection with a fast, lightweight, API‑driven app—built with a Angular and a Node.js/Express API.
+Track and manage your movie and series collection with a fast, lightweight, API-driven app—built with Angular and a Node.js/Express API.
 
 ## Apps & Libraries
 
@@ -109,6 +109,12 @@ DISABLE_REGISTRATION=0
 # Limit of registered users
 USER_LIMIT=2
 ```
+
+## Auth (summary)
+
+- No passwords. Sign-up issues a user token. Sign-in exchanges the user token for a JWT access token.
+
+See the server docs for details: [apps/server/README.md](./apps/server/README.md) and [apps/server/API.md](./apps/server/API.md).
 
 ## Docker
 

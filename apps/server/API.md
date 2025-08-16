@@ -4,8 +4,11 @@ Base URL prefix: `/api/v1`
 
 Authentication
 
-- JWT bearer token in `Authorization: Bearer <token>` where indicated
-- Tokens are issued on sign-up and can be rotated via `user/change-token`
+- There are two token types:
+  - User token: issued on sign-up; used only to sign in and to rotate tokens
+  - Access token: JWT issued by sign-in/change-token; send as `Authorization: Bearer <accessToken>` on protected routes
+- Rotating via `PUT /user/change-token` issues a new user token and a new access token, invalidating all previous access tokens
+- Access tokens currently have no expiry.
 
 ## Health
 
@@ -26,7 +29,7 @@ POST `/sign-up`
 
 - Body: `{ "username": string }`
 - Behavior: Creates a user (unless `DISABLE_REGISTRATION=1` or `USER_LIMIT` reached)
-- 200: `{ "token": string }` (JWT to use as bearer)
+- 200: `{ "token": string }` (user token; keep it safe—used for sign-in and rotating tokens)
 - 403: registration disabled or limit reached
 - 409: username already exists
 - 500: server error
@@ -34,18 +37,18 @@ POST `/sign-up`
 POST `/sign-in`
 
 - Body: `{ "username": string, "token": string }`
-- Behavior: Validates that provided token matches the stored token hash and that the token is a valid JWT for the user
-- 200: empty body on success
+- Behavior: Validates that the provided user token matches the stored hash; on success, issues a new JWT access token and allows it for future requests
+- 200: `{ "accessToken": string }`
 - 401: token doesn't match stored hash
-- 403: token invalid/expired
 - 404: user not found
 - 500: server error
 
 PUT `/user/change-token`
 
 - Auth: Bearer required
-- Body: `{ "expiration": string }` (JWT expiresIn value, e.g. `"1h"`, `"7d"`; pass an empty string/null to omit expiry)
-- 200: `{ "newToken": string }`
+- Body: none
+- Behavior: Generates a new user token and a new JWT access token; replaces the user's allowed token list (all previous access tokens become invalid)
+- 200: `{ "newToken": string, "accessToken": string }`
 - 500: server error
 
 DELETE `/user/delete`
@@ -63,7 +66,7 @@ GET `/get-all?limit=<n>&offset=<n>`
 - Query params:
   - `limit` number (default 10)
   - `offset` number (default 0)
-- 200: `Array<{ name: string; content: string }>`
+- 200: `Array<{ name: string; content: string }>` (items are sorted by filename descending; newest first)
 - 500: server error
 
 POST `/create`
