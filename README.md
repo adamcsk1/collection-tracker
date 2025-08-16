@@ -1,7 +1,7 @@
 # Collection Tracker
 
 <p align="center">
-  <img src="apps/client/public/images/logo.png" alt="Collection Tracker Logo" width="128" />
+  <img src="./libs/public/src/icons/logo.png" alt="Collection Tracker Logo" width="128" />
   <br/>
 </p>
 
@@ -9,16 +9,31 @@
 [![Angular](https://img.shields.io/badge/Angular-20-dd0031?logo=angular&logoColor=white)](https://angular.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-Track and manage your movie and series collection with a modern Angular client and a lightweight Node.js/Express API. This is an Nx workspace containing one client app, one server app, and shared libraries.
+Track and manage your movie and series collection with a fast, lightweight, API‑driven app—built with a Angular and a Node.js/Express API.
 
 ## Apps & Libraries
 
-- Client app: `apps/client` (Angular standalone)
-- Server: `apps/server` (Node/Express via esbuild)
+- Client app: `apps/client` (Client)
+- Login app: `apps/login` (Angular auth-only: sign in & sign up)
+- Server: `apps/server` (Node/Express backend via esbuild)
 - Libraries:
-  - Components — UI elements: libs/components/README.md
-  - Services — cross-app services and stores: libs/services/README.md
-  - Shared — models, animations, utilities: libs/shared/README.md
+  - Components — UI elements
+  - Services — cross-app services and stores
+  - Shared — models, animations, utilities
+  - Public — PWA manifest, icons, and shared static assets
+
+## More docs
+
+- Client app: [apps/client/README.md](./apps/client/README.md)
+- Login app: [apps/login/README.md](./apps/login/README.md)
+- Server app: [apps/server/README.md](./apps/server/README.md)
+- Server API: [apps/server/API.md](./apps/server/API.md)
+- Dev proxy: [apps/dev-proxy/README.md](./apps/dev-proxy/README.md)
+
+- Components lib: [libs/components/README.md](./libs/components/README.md)
+- Services lib: [libs/services/README.md](./libs/services/README.md)
+- Shared lib: [libs/shared/README.md](./libs/shared/README.md)
+- Public lib: [libs/public/README.md](./libs/public/README.md)
 
 ## Prerequisites
 
