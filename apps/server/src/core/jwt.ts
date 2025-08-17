@@ -35,7 +35,9 @@ export const jwtGuard = async (
       const usernameHash = await hashText(`${data.username}${process.env.SALT}`);
       const user = Store.getLastValue('users')[usernameHash];
 
-      if (!user?.accessTokenHashes?.includes(await hashText(`${token}${process.env.SALT}`))) {
+      if (
+        !user?.accessTokens?.map((token) => token.tokenHash)?.includes(await hashText(`${token}${process.env.SALT}`))
+      ) {
         return response.sendStatus(403);
       }
 

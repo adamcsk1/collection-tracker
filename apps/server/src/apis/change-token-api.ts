@@ -5,6 +5,7 @@ import { API_PREFIX, DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { ChangeTokenApiResponseModel } from '@shared/models/api-model';
+import dayjs from 'dayjs';
 import { writeFileSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
@@ -17,7 +18,13 @@ Store.getOnce$('app').subscribe((app) =>
 
       users[request.usernameHash] = {
         userTokenHash: await hashText(`${newUserToken}${process.env.SALT}`),
-        accessTokenHashes: [await hashText(`${newAccessToken}${process.env.SALT}`)],
+        accessTokens: [
+          {
+            tokenHash: await hashText(`${newAccessToken}${process.env.SALT}`),
+            createdAt: dayjs().toISOString(),
+            userAgent: request.headers['user-agent'],
+          },
+        ],
       };
       Store.set('users', users);
 

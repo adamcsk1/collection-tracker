@@ -1,5 +1,7 @@
+import { AccessTokenModel } from '@shared/models/api-model';
+
 export interface UserModel {
-  accessTokenHashes: string[];
+  accessTokens: Array<AccessTokenModel>;
   userTokenHash: string;
 }
 

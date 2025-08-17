@@ -38,3 +38,11 @@ export interface SignUpApiRequestModel {
 export interface SignUpApiResponseModel {
   token: string;
 }
+
+export interface AccessTokenModel {
+  tokenHash: string;
+  createdAt: string;
+  userAgent: string;
+}
+
+export type AccessTokensResponseModel = Array<AccessTokenModel>;

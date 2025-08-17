@@ -6,6 +6,7 @@ A lightweight Express-based API server that powers Collection Tracker. It provid
 
 - Versioned REST API under `/api/v1`
 - Token model: user token (for sign-in and rotation) + JWT access token for API (no passwords)
+- Token management: list active access tokens and delete by token hash
 - Per-user storage in `.data/store/<userHash>` with markdown files
 - Rate limiting, CORS, Helmet, JSON body parsing
 - Flat-file DB for users in `.data/database/users.json`
@@ -70,7 +71,8 @@ nx run server:serve -- --dataFolder=.data --debug=true
 
 ## Data model
 
-- Users: JSON map keyed by username hash → `{ userTokenHash: string; accessTokenHashes: string[] }`
+- Users: JSON map keyed by username hash →
+  `{ userTokenHash: string; accessTokens: Array<{ tokenHash: string; createdAt: string; userAgent: string }> }`
 - Content: markdown files under each user's store directory; file names are ISO-like timestamps
 
 ## API

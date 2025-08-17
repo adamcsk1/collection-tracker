@@ -58,6 +58,21 @@ DELETE `/user/delete`
 - 200: empty body
 - 500: server error
 
+## Token management
+
+GET `/user/access-tokens`
+
+- Auth: Bearer required
+- 200: `Array<{ tokenHash: string; createdAt: string; userAgent: string }>`
+- 500: server error
+
+DELETE `/user/access-token/:tokenHash`
+
+- Auth: Bearer required
+- Params: `tokenHash` (hash of the access token to delete)
+- 204: no content (succeeds even if the token hash does not exist)
+- 500: server error
+
 ## Store (per-user markdown items)
 
 GET `/get-all?limit=<n>&offset=<n>`
