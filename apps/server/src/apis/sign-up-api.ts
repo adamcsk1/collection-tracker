@@ -28,7 +28,7 @@ Store.getOnce$('app').subscribe((app) =>
 
       const userToken = generateRandomToken();
 
-      users[usernameHash] = { userTokenHash: await hashText(`${userToken}${process.env.SALT}`), accessTokenHashes: [] };
+      users[usernameHash] = { userTokenHash: await hashText(`${userToken}${process.env.SALT}`), accessTokens: [] };
       Store.set('users', users);
 
       writeFileSync(
