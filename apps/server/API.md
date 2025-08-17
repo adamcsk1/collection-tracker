@@ -74,6 +74,13 @@ DELETE `/user/access-token/:tokenHash`
 - 204: no content (succeeds even if the token hash does not exist)
 - 500: server error
 
+GET `/user/access-token/validate`
+
+- Auth: Bearer required
+- Behavior: Validates that the provided access token is a valid, currently allowed token for the user
+- 204: no content (token is valid)
+- 500: server error
+
 ## Store (per-user markdown items)
 
 GET `/get-all?limit=<n>&offset=<n>`

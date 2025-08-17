@@ -1,3 +1,4 @@
+export * from '@server/apis/access-token-validate-api';
 export * from '@server/apis/access-tokens-api';
 export * from '@server/apis/change-token-api';
 export * from '@server/apis/create-access-token-api';
