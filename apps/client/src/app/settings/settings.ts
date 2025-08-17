@@ -51,11 +51,9 @@ export class Settings implements OnInit {
     this.formGroup.valueChanges
       .pipe(
         tap(() => this.connected.set(null)),
-        filter((values) => !!values.token && !!values.apiUrl),
+        filter((values) => !!values.apiUrl),
         debounceTime(500),
-        switchMap((values) =>
-          this.api.getStatus({ temporaryApiUrl: values.apiUrl, temporaryToken: values.token, suppressErrors: true })
-        ),
+        switchMap((values) => this.api.getHealth({ temporaryApiUrl: values.apiUrl, suppressErrors: true })),
         map(() => true),
         catchError(() => of(false))
       )
