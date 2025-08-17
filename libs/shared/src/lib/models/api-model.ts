@@ -46,3 +46,7 @@ export interface AccessTokenModel {
 }
 
 export type AccessTokensResponseModel = Array<AccessTokenModel>;
+
+export interface CreateAccessTokenApiResponseModel {
+  accessToken: string;
+}

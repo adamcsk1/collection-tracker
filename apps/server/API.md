@@ -12,16 +12,10 @@ Authentication
 
 ## Health
 
-GET `/status`
+GET `/health`
 
 - Public
 - 200: `{ "message": "Ok" }`
-
-GET `/status-guarded`
-
-- Requires JWT
-- 200: `{ "message": "Ok" }`
-- 401/403 on missing/invalid token
 
 ## Auth
 
@@ -59,6 +53,13 @@ DELETE `/user/delete`
 - 500: server error
 
 ## Token management
+
+POST `/user/access-token`
+
+- Auth: Bearer required
+- Behavior: Issues a new JWT access token and appends it to the user's allowed token list (existing access tokens remain valid)
+- 200: `{ "accessToken": string }`
+- 500: server error
 
 GET `/user/access-tokens`
 
