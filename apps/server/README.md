@@ -5,8 +5,10 @@ A lightweight Express-based API server that powers Collection Tracker. It provid
 ## What it does
 
 - Versioned REST API under `/api/v1`
-- Token model: user token (for sign-in and rotation) + JWT access token for API (no passwords)
-- Token management: list active access tokens and delete by token hash
+- Token model: user token (for sign-in and rotation) + JWT access token for API (no passwords; access tokens have no expiry)
+- Token management: create/list/delete access tokens
+- Token rotation: rotate user token and issue a fresh access token (invalidates all previous access tokens)
+- Account deletion: remove user's store, cache entries, and user record
 - Per-user storage in `.data/store/<userHash>` with markdown files
 - Rate limiting, CORS, Helmet, JSON body parsing
 - Flat-file DB for users in `.data/database/users.json`

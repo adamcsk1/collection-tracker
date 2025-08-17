@@ -1,10 +1,11 @@
 import { hashText } from '@server/core/crypto';
 import { generateAccessToken } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
-import { API_PREFIX } from '@server/core/main-const';
+import { API_PREFIX, DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { SignInApiRequestModel, SignInApiResponseModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
+import { writeFileSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
   app.post(`${API_PREFIX}/sign-in`, async (req, res) => {
@@ -30,6 +31,14 @@ Store.getOnce$('app').subscribe((app) =>
           createdAt: dayjs().toISOString(),
           userAgent: req.headers['user-agent'],
         });
+        Store.set('users', users);
+
+        writeFileSync(
+          `${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.users}`,
+          JSON.stringify(users, null, 2),
+          { encoding: 'utf-8' }
+        );
+
         const result: SignInApiResponseModel = { accessToken: newAccessToken };
         res.send(result);
       } else {
