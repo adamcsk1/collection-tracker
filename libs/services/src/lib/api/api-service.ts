@@ -21,28 +21,22 @@ export class ApiService {
     headers: { Authorization: `Bearer ${temporaryToken || this.apiState.state.token()}` },
   });
 
-  public getStatus({
+  public getHealth({
     temporaryApiUrl,
-    temporaryToken,
     suppressErrors,
   }: {
     temporaryApiUrl?: string;
     temporaryToken?: string;
     suppressErrors?: boolean;
   }): Observable<void> {
-    return this.httpClient
-      .get<void>(
-        `${temporaryApiUrl || this.apiState.state.apiUrl()}/status-guarded`,
-        this.headerBuilder(temporaryToken)
-      )
-      .pipe(
-        catchError((error) => {
-          if (!suppressErrors) {
-            this.alert.show(error.message);
-            throw new Error(error.message);
-          } else return of();
-        })
-      );
+    return this.httpClient.get<void>(`${temporaryApiUrl || this.apiState.state.apiUrl()}/health`).pipe(
+      catchError((error) => {
+        if (!suppressErrors) {
+          this.alert.show(error.message);
+          throw new Error(error.message);
+        } else return of();
+      })
+    );
   }
 
   public getAll(): Observable<GetAllApiResponseModel> {
