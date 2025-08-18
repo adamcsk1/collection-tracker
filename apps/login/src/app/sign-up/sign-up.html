@@ -11,16 +11,25 @@
     [mandatory]="true"
     icon="person"
     [control]="formGroup.controls.username"
-  />
+  >
+    <ng-container errors>
+      @if (!!formGroup.controls.username.errors?.['minlength']) {
+        {{ ('Validation.UsernameMinLength' | signalTranslate)() }}
+      }
+      @if (!!formGroup.controls.username.errors?.['maxlength']) {
+        {{ ('Validation.UsernameMaxLength' | signalTranslate)() }}
+      }
+    </ng-container>
+  </libc-input>
   @if (secret()) {
     <label for="secret">{{ ('Secret' | signalTranslate)() }}</label>
     <code id="secret">{{ secret() }}</code>
     <a class="small-text-button" tabindex="0" (click)="onCopyToClipboard()" (keyup.enter)="onCopyToClipboard()">
       {{ ('CopyToClipboard' | signalTranslate)() }}
     </a>
-    <p>
+    <small>
       {{ ('Message.SignUpSecret' | signalTranslate)() }}
-    </p>
+    </small>
   }
 
   @if (showApiUrlInput()) {

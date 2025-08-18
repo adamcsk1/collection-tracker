@@ -1,0 +1,40 @@
+.header {
+  text-align: center;
+  margin-bottom: var(--size-bigger);
+
+  h2 {
+    font-weight: bold;
+  }
+
+  i {
+    padding: var(--size-smaller);
+    font-size: 3rem;
+    border-radius: 35%;
+    background-color: var(--color-darkgoldenrod);
+    color: var(--background-color-alt);
+  }
+}
+
+form {
+  .form-buttons {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--size-bigger);
+    gap: var(--size-default);
+
+    hr {
+      margin-top: var(--size-default);
+      width: 100%;
+    }
+
+    div {
+      display: flex;
+      text-align: center;
+
+      button,
+      a {
+        flex: 1;
+      }
+    }
+  }
+}

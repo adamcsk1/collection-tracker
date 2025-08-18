@@ -11,7 +11,15 @@
     [mandatory]="true"
     icon="person"
     [control]="formGroup.controls.username"
-  />
+    ><ng-container errors>
+      @if (!!formGroup.controls.username.errors?.['minlength']) {
+        {{ ('Validation.UsernameMinLength' | signalTranslate)() }}
+      }
+      @if (!!formGroup.controls.username.errors?.['maxlength']) {
+        {{ ('Validation.UsernameMaxLength' | signalTranslate)() }}
+      }
+    </ng-container>
+  </libc-input>
   <libc-input
     [label]="('Secret' | signalTranslate)()"
     [mandatory]="true"

@@ -8,6 +8,13 @@
   "ChangeApiUrl": "Change API url",
   "ShowSecret": "Show secret",
   "HideSecret": "Hide secret",
+  "BackToSignIn": "Back to Sign In",
+  "CopyToClipboard": "Copy to Clipboard",
   "Validation.Required": "Required field.",
-  "Message.SignIn": "Please sign in to unlock effortless, lightning-fast collection tracking."
+  "Validation.UsernameMinLength": "Minimum length is 3 characters.",
+  "Validation.UsernameMaxLength": "Maximum length is 32 characters.",
+  "Message.SignIn": "Please sign in to unlock effortless, lightning-fast collection tracking.",
+  "Message.SignUp": "Please sign up to begin using the Collection tracker. To do this, you need to select a username.",
+  "Message.SignUpSecret": "This is your secret key for your user account. You can use it to authenticate yourself in the Collection tracker. Please ensure you keep it safe.",
+  "Message.CopiedToClipboard": "The secret has been copied to the clipboard."
 }

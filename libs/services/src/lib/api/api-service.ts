@@ -8,6 +8,8 @@ import {
   GetAllApiResponseModel,
   ModifyApiRequestModel,
   SignInApiRequestModel,
+  SignUpApiRequestModel,
+  SignUpApiResponseModel,
 } from '@shared/models/api-model';
 import { catchError, filter, Observable, of, Subject, tap } from 'rxjs';
 
@@ -32,6 +34,16 @@ export class ApiService {
           this.alert.show(error.message);
           throw new Error(error.message);
         } else return of();
+      })
+    );
+  }
+
+  public signUp(username: string): Observable<SignUpApiResponseModel> {
+    const body: SignUpApiRequestModel = { username };
+    return this.httpClient.post<SignUpApiResponseModel>(`${this.apiState.state.apiUrl()}/sign-up`, body).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        throw new Error(error.message);
       })
     );
   }

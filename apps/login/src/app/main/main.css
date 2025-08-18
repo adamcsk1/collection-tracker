@@ -14,6 +14,7 @@
   border-color: var(--focus-border-color);
   border-radius: var(--border-radius);
   margin-top: min(10rem, 10%);
+  margin-bottom: var(--size-default);
   background-color: var(--background-color-alt);
 
   @media (width <= 450px) {
