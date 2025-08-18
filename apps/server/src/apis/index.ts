@@ -8,6 +8,7 @@ export * from '@server/apis/delete-api';
 export * from '@server/apis/delete-user-api';
 export * from '@server/apis/get-all-api';
 export * from '@server/apis/health-api';
+export * from '@server/apis/logout-api';
 export * from '@server/apis/modify-api';
 export * from '@server/apis/sign-in-api';
 export * from '@server/apis/sign-up-api';

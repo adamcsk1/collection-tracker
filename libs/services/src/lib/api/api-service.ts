@@ -46,6 +46,15 @@ export class ApiService {
     );
   }
 
+  public logout(): Observable<void> {
+    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/logout`).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        throw new Error(error.message);
+      })
+    );
+  }
+
   public validateAccessToken(): Observable<void> {
     return this.httpClient.get<void>(`${this.apiState.state.apiUrl()}/user/access-token/validate`);
   }
