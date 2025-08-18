@@ -6,9 +6,12 @@ Authentication
 
 - There are two token types:
   - User token: issued on sign-up; used only to sign in and to rotate tokens
-  - Access token: JWT issued by sign-in/change-token; send as `Authorization: Bearer <accessToken>` on protected routes
+  - Access token: JWT issued by sign-in/change-token; for protected routes provide it either
+    - as a signed HTTP-only cookie named `token` (preferred), or
+    - in the `Authorization` header as `Bearer <accessToken>`
 - Rotating via `PUT /user/change-token` issues a new user token and a new access token, invalidating all previous access tokens
 - Access tokens currently have no expiry.
+  - Cookie has a 1-year expiry and is `HttpOnly`, `Secure`, `SameSite=Strict`, and signed. Ensure `COOKIE_SECRET` is configured.
 
 ## Health
 
@@ -31,8 +34,8 @@ POST `/sign-up`
 POST `/sign-in`
 
 - Body: `{ "username": string, "token": string }`
-- Behavior: Validates that the provided user token matches the stored hash; on success, issues a new JWT access token and allows it for future requests
-- 200: `{ "accessToken": string }`
+- Behavior: Validates that the provided user token matches the stored hash; on success, issues a new JWT access token, stores its hash, and sets it as a signed HTTP-only cookie named `token`
+- 200: empty body (access token is set in the `token` cookie)
 - 401: token doesn't match stored hash
 - 404: user not found
 - 500: server error
@@ -41,8 +44,8 @@ PUT `/user/change-token`
 
 - Auth: Bearer required
 - Body: none
-- Behavior: Generates a new user token and a new JWT access token; replaces the user's allowed token list (all previous access tokens become invalid)
-- 200: `{ "newToken": string, "accessToken": string }`
+- Behavior: Generates a new user token and a new JWT access token; replaces the user's allowed token list (all previous access tokens become invalid). The new access token is set as a signed HTTP-only cookie named `token`.
+- 200: `{ "newToken": string }` (access token is set in the `token` cookie)
 - 500: server error
 
 DELETE `/user/delete`
@@ -77,7 +80,7 @@ DELETE `/user/access-token/:tokenHash`
 GET `/user/access-token/validate`
 
 - Auth: Bearer required
-- Behavior: Validates that the provided access token is a valid, currently allowed token for the user
+- Behavior: Validates that the provided access token (from the signed `token` cookie or the `Authorization: Bearer` header) is currently allowed for the user
 - 204: no content (token is valid)
 - 500: server error
 
@@ -122,3 +125,4 @@ DELETE `/delete/:name`
 - Rate limiting applies (100 requests / 15 minutes per IP, successful requests skipped)
 - CORS origin must match `CORS_ORIGIN` or be `*`
 - Body size limit: 50mb
+- Authentication on protected routes accepts either a signed cookie (`token`) or the `Authorization: Bearer` header.

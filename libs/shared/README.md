@@ -19,6 +19,11 @@ Animations
 - `@shared/animations/opacity-animation`
 - `@shared/animations/scale-animation`
 
+Constants
+
+- `@shared/constants/api-const` — `API_PREFIX` for server routes
+- `@shared/constants/storage-const` — storage key constants used across apps
+
 Styles
 
 - Base: `libs/shared/src/lib/styles/reset.css`, `libs/shared/src/lib/styles/colors.css`, `libs/shared/src/lib/styles/variables.css`
@@ -65,6 +70,23 @@ const options: SelectInputModel = [
   { text: 'One', value: 1 },
   { text: 'Two', value: 2 },
 ];
+```
+
+### Constants
+
+```ts
+import { API_PREFIX } from '@shared/constants/api-const';
+import {
+  STORAGE_API_URL,
+  STORAGE_OMDB_API_KEY,
+  STORAGE_APP_MODE,
+  STORAGE_FETCH_BATCH_SIZE,
+  STORAGE_THEME,
+  STORAGE_SETTINGS_LOCK,
+} from '@shared/constants/storage-const';
+
+// Storage keys
+localStorage.setItem(STORAGE_OMDB_API_KEY, '...');
 ```
 
 ### Utils

@@ -7,6 +7,7 @@ import {
   CreateApiResponseModel,
   GetAllApiResponseModel,
   ModifyApiRequestModel,
+  SignInApiRequestModel,
 } from '@shared/models/api-model';
 import { catchError, filter, Observable, of, Subject, tap } from 'rxjs';
 
@@ -17,16 +18,12 @@ export class ApiService {
   private readonly alert = inject(AlertService);
   private readonly httpClient = inject(HttpClient);
   private readonly apiState = inject(apiStateToken);
-  private readonly headerBuilder = (temporaryToken?: string) => ({
-    headers: { Authorization: `Bearer ${temporaryToken || this.apiState.state.token()}` },
-  });
 
   public getHealth({
     temporaryApiUrl,
     suppressErrors,
   }: {
     temporaryApiUrl?: string;
-    temporaryToken?: string;
     suppressErrors?: boolean;
   }): Observable<void> {
     return this.httpClient.get<void>(`${temporaryApiUrl || this.apiState.state.apiUrl()}/health`).pipe(
@@ -39,6 +36,20 @@ export class ApiService {
     );
   }
 
+  public signIn(username: string, token: string): Observable<void> {
+    const body: SignInApiRequestModel = { username, token };
+    return this.httpClient.post<void>(`${this.apiState.state.apiUrl()}/sign-in`, body).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        throw new Error(error.message);
+      })
+    );
+  }
+
+  public validateAccessToken(): Observable<void> {
+    return this.httpClient.get<void>(`${this.apiState.state.apiUrl()}/user/access-token/validate`);
+  }
+
   public getAll(): Observable<GetAllApiResponseModel> {
     this.apiState.setState('loadNetworkStatus', 'pending');
     const results = new Subject<GetAllApiResponseModel>();
@@ -46,10 +57,7 @@ export class ApiService {
 
     const lazyLoad = (offset = 0) =>
       this.httpClient
-        .get<GetAllApiResponseModel>(
-          `${this.apiState.state.apiUrl()}/get-all?offset=${offset}&limit=${fetchBatchSize}`,
-          this.headerBuilder()
-        )
+        .get<GetAllApiResponseModel>(`${this.apiState.state.apiUrl()}/get-all?offset=${offset}&limit=${fetchBatchSize}`)
         .pipe(
           tap((response) => {
             if (response.length > 0) {
@@ -84,19 +92,17 @@ export class ApiService {
 
   public create(content: string): Observable<CreateApiResponseModel> {
     const body: CreateApiRequestModel = { content };
-    return this.httpClient
-      .post<CreateApiResponseModel>(`${this.apiState.state.apiUrl()}/create`, body, this.headerBuilder())
-      .pipe(
-        catchError((error) => {
-          this.alert.show(error.message);
-          throw new Error(error.message);
-        })
-      );
+    return this.httpClient.post<CreateApiResponseModel>(`${this.apiState.state.apiUrl()}/create`, body).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        throw new Error(error.message);
+      })
+    );
   }
 
   public update(name: string, content: string): Observable<void> {
     const body: ModifyApiRequestModel = { content };
-    return this.httpClient.put<void>(`${this.apiState.state.apiUrl()}/modify/${name}`, body, this.headerBuilder()).pipe(
+    return this.httpClient.put<void>(`${this.apiState.state.apiUrl()}/modify/${name}`, body).pipe(
       catchError((error) => {
         this.alert.show(error.message);
         throw new Error(error.message);
@@ -105,7 +111,7 @@ export class ApiService {
   }
 
   public delete(name: string): Observable<void> {
-    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/delete/${name}`, this.headerBuilder()).pipe(
+    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/delete/${name}`).pipe(
       catchError((error) => {
         this.alert.show(error.message);
         throw new Error(error.message);

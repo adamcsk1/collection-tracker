@@ -33,7 +33,6 @@ export class Settings implements OnInit {
   private readonly apiState = inject(apiStateToken);
   private readonly imageRefresh = inject(ImageRefreshService);
   protected readonly formGroup = new FormGroup<Form<SettingsModel>>({
-    token: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     apiUrl: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     storeCredentials: new FormControl(false, { nonNullable: true, validators: [Validators.required] }),
     omdbApiKey: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -60,9 +59,8 @@ export class Settings implements OnInit {
       .subscribe((status) => this.connected.set(status));
 
     this.formGroup.setValue({
-      token: this.apiState.state.token(),
       apiUrl: this.apiState.state.apiUrl(),
-      storeCredentials: !!this.apiState.state.token(),
+      storeCredentials: true, // !! TODO
       omdbApiKey: this.omdbState.state.apiKey(),
       appMode: this.mainState.state.appMode() || 'basic',
       fetchBatchSize: this.apiState.state.fetchBatchSize() || 10000,

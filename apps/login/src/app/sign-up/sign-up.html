@@ -1,0 +1,48 @@
+<div class="header">
+  <i class="material-icons">person_add</i>
+  <h2>{{ ('SignUp' | signalTranslate)() }}</h2>
+  <p>
+    {{ ('Message.SignUp' | signalTranslate)() }}
+  </p>
+</div>
+<form [formGroup]="formGroup">
+  <libc-input
+    [label]="('Username' | signalTranslate)()"
+    [mandatory]="true"
+    icon="person"
+    [control]="formGroup.controls.username"
+  />
+  @if (secret()) {
+    <label for="secret">{{ ('Secret' | signalTranslate)() }}</label>
+    <code id="secret">{{ secret() }}</code>
+    <a class="small-text-button" tabindex="0" (click)="onCopyToClipboard()" (keyup.enter)="onCopyToClipboard()">
+      {{ ('CopyToClipboard' | signalTranslate)() }}
+    </a>
+    <p>
+      {{ ('Message.SignUpSecret' | signalTranslate)() }}
+    </p>
+  }
+
+  @if (showApiUrlInput()) {
+    <libc-input [label]="('ApiUrl' | signalTranslate)()" [mandatory]="true" [control]="formGroup.controls.apiUrl" />
+  }
+
+  <div class="form-buttons">
+    @if (!secret()) {
+      <button [disabled]="formGroup.invalid" (click)="onSend()">
+        {{ ('Continue' | signalTranslate)() }}
+      </button>
+    }
+    <hr />
+    <div>
+      <a [routerLink]="['/sign-in']">
+        {{ ('BackToSignIn' | signalTranslate)() }}
+      </a>
+      @if (!showApiUrlInput() && !secret()) {
+        <button class="button-basic" (click)="showApiUrlInput.set(true)">
+          {{ ('ChangeApiUrl' | signalTranslate)() }}
+        </button>
+      }
+    </div>
+  </div>
+</form>

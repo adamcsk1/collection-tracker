@@ -1,3 +1,4 @@
+import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
 import { hashText } from '@server/core/crypto';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
@@ -23,10 +24,11 @@ export const jwtGuard = async (
   response: express.Response,
   next: () => void
 ): Promise<express.Response> => {
-  const authHeader = request.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  console.log(request.signedCookies);
+  let token = request.signedCookies[COOKIE_TOKEN] || request.headers['authorization'] || '';
+  if (token.includes('Bearer ')) token = token.split(' ')[1];
 
-  if (token === null) return response.sendStatus(401);
+  if (!token) return response.sendStatus(401);
 
   jwt.verify(token, process.env.JWT_SECRET as string, async (err: any, data: any) => {
     try {

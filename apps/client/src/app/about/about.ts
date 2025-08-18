@@ -2,9 +2,9 @@ import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { APP_VERSION, BUILD, BUILD_DATE } from '@client/main/main-const';
 import { mainStateToken } from '@client/main/main-store';
-import { SETTINGS_STORAGE_SETTINGS_LOCK } from '@client/settings/settings-const';
 import { toastStateToken } from '@components/toast/toast-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { STORAGE_SETTINGS_LOCK } from '@shared/constants/storage-const';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { BehaviorSubject, debounceTime, filter, tap } from 'rxjs';
 
@@ -33,7 +33,7 @@ export class About {
           tap((value) => {
             if (value >= 10) {
               this.mainState.setState('settingsLock', false);
-              this.webstorage.setItem(SETTINGS_STORAGE_SETTINGS_LOCK, 'false');
+              this.webstorage.setItem(STORAGE_SETTINGS_LOCK, 'false');
               this.counter.next(0);
               subscribe.unsubscribe();
               this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsLockDisabled'));

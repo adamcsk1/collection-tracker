@@ -1,9 +1,10 @@
 import { hashText } from '@server/core/crypto';
 import { generateAccessToken, jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
-import { API_PREFIX, DATABASE_FILES, FOLDERS } from '@server/core/main-const';
+import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { ExtendedRequestModel } from '@server/models/express-model';
+import { API_PREFIX } from '@shared/constants/api-const';
 import { CreateAccessTokenApiResponseModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
 import { writeFileSync } from 'fs';

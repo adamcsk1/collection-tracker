@@ -6,7 +6,8 @@
     }
   </label>
 }
-<div class="container">
+<div class="container" [class.has-icon]="icon()">
+  <i class="material-icons">{{ icon() }}</i>
   <input [type]="type()" class="input" [id]="inputId()" [formControl]="control()" [placeholder]="placeholder()" />
   @if (showReset()) {
     <button

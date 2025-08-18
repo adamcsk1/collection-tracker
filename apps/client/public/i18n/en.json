@@ -1,6 +1,5 @@
 {
   "Title": "Collection tracker",
-  "Token": "Token",
   "ApiUrl": "API url",
   "OMDbApiKey": "OMDb api key",
   "Disconnect": "Disconnect",
@@ -65,7 +64,6 @@
   "Message.AddFirstCollectionItem": "Let's add your first movie.",
   "Message.BasicSettings": "The basic settings contain the essential configurations for the application. For instance, you can specify the API URL and the tokens.",
   "Message.ApiUrl": "The API URL should include the API prefix and the version (e.g., /api/v1).",
-  "Message.Token": "The token string must exclude the \"Bearer.\"",
   "Message.OMDbApiKey": "You could register a free API key at https://www.omdbapi.com/.",
   "Message.AppMode": "With the App mode settings, you can restrict modification actions. Basic = read-only, Limited = add-only, Full = add, edit, and delete.",
   "Message.Tags": "Please use space for delimiting. Eg: #tag1 tag2 The generated collection item will contain a default #movie or #series type tag.",

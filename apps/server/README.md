@@ -6,6 +6,7 @@ A lightweight Express-based API server that powers Collection Tracker. It provid
 
 - Versioned REST API under `/api/v1`
 - Token model: user token (for sign-in and rotation) + JWT access token for API (no passwords; access tokens have no expiry)
+  - Access tokens are sent back to the client as a signed, HttpOnly cookie named `token`. The API accepts tokens from this cookie or from the `Authorization: Bearer` header.
 - Token management: create/list/delete access tokens
 - Token rotation: rotate user token and issue a fresh access token (invalidates all previous access tokens)
 - Account deletion: remove user's store, cache entries, and user record
@@ -35,6 +36,7 @@ A lightweight Express-based API server that powers Collection Tracker. It provid
 - `PORT` – port (e.g. 3000)
 - `JWT_SECRET` – JWT signing secret
 - `SALT` – salt used for hashing usernames and tokens
+- `COOKIE_SECRET` – secret for signing authentication cookies (enables signed cookie auth)
 - `CORS_ORIGIN` – allowed origin or `*`
 - `DISABLE_REGISTRATION` – `1` to block sign-ups
 - `USER_LIMIT` – optional numeric limit on users
@@ -70,6 +72,7 @@ nx run server:serve -- --dataFolder=.data --debug=true
 - Helmet enabled; `trust proxy` set to 1
 - CORS restricted by `CORS_ORIGIN`
 - Request bodies up to 50mb
+- Auth cookie: `token` cookie is `HttpOnly`, `Secure`, `SameSite=Strict`, and signed. Set `COOKIE_SECRET`.
 
 ## Data model
 

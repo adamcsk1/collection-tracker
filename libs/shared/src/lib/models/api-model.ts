@@ -19,16 +19,11 @@ export interface ModifyApiRequestModel {
 
 export interface ChangeTokenApiResponseModel {
   newToken: string;
-  accessToken: string;
 }
 
 export interface SignInApiRequestModel {
   username: string;
   token: string;
-}
-
-export interface SignInApiResponseModel {
-  accessToken: string;
 }
 
 export interface SignUpApiRequestModel {

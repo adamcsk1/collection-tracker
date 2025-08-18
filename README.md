@@ -102,6 +102,9 @@ JWT_SECRET=change-me-to-a-secure-random-string
 # Used for hashing (pepper); set a strong, random string
 SALT=change-me-to-another-secure-random-string
 
+# Used to sign auth cookies; must be set to enable cookie-based auth
+COOKIE_SECRET=change-me-to-a-secure-random-string
+
 # Registration controls
 # 1 disables new registrations, 0 enables them
 DISABLE_REGISTRATION=0
@@ -113,6 +116,7 @@ USER_LIMIT=2
 ## Auth (summary)
 
 - No passwords. Sign-up issues a user token. Sign-in exchanges the user token for a JWT access token.
+- Access token is returned via a signed HTTP-only cookie named `token` (preferred) and is also accepted via `Authorization: Bearer`.
 
 See the server docs for details: [apps/server/README.md](./apps/server/README.md) and [apps/server/API.md](./apps/server/API.md).
 

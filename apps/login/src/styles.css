@@ -2,11 +2,10 @@
 @import url("../../../libs/shared/src/lib/styles/reset.css");
 @import url("../../../libs/shared/src/lib/styles/colors.css");
 @import url("../../../libs/shared/src/lib/styles/variables.css");
+@import url("../../../libs/shared/src/lib/styles/main.css");
+@import url("../../../libs/shared/src/lib/styles/components/button.css");
 
-html,
-body {
-  font-family: "Gill Sans", sans-serif;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  font-size: var(--font-size-default);
+.small-text-button {
+  display: block;
+  font-size: var(--font-size-small);
 }

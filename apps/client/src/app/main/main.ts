@@ -2,14 +2,16 @@ import { Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '
 import { Router, RouterOutlet } from '@angular/router';
 import { CollectionService } from '@client/collection/collection-service';
 import { Header } from '@client/main/header/header';
-import { SettingsService } from '@client/settings/settings-service';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { Toast } from '@components/toast/toast';
+import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
+import { omdbStateToken } from '@services/omdb/omdb-store';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { catchError } from 'rxjs';
 
 @Component({
   selector: 'ct-root',
@@ -19,23 +21,17 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 })
 export class Main implements OnInit {
   private readonly apiState = inject(apiStateToken);
+  private readonly omdbState = inject(omdbStateToken);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly portal = inject(PortalService);
-  private readonly signalTranslateService = inject(NgxSignalTranslateService);
-  private readonly settings = inject(SettingsService);
-  private readonly collectionService = inject(CollectionService);
   private readonly router = inject(Router);
+  private readonly signalTranslateService = inject(NgxSignalTranslateService);
+  private readonly collectionService = inject(CollectionService);
   private readonly theme = inject(ThemeService);
+  private readonly api = inject(ApiService);
   private readonly collectionDialogsRef = viewChild('portal', { read: ViewContainerRef });
 
   constructor() {
-    const effectRef = effect(() => {
-      if (this.settings.hasSettings()) {
-        this.collectionService.loadCollection();
-        effectRef.destroy();
-      }
-    });
-
     effect(() => {
       const loadNetworkStatus = this.apiState.state.loadNetworkStatus();
       if (loadNetworkStatus === 'pending') this.spinnerLoadingState.setState('show', true);
@@ -45,10 +41,20 @@ export class Main implements OnInit {
     });
 
     this.signalTranslateService.setLanguage('en');
-    this.settings.loadStoredData();
     this.theme.listen();
 
-    if (!this.settings.hasSettings()) this.router.navigate(['/', 'settings']);
+    this.api
+      .validateAccessToken()
+      .pipe(
+        catchError((error) => {
+          window.location.href = '/login/';
+          throw new Error(error.message);
+        })
+      )
+      .subscribe(() => {
+        if (!this.omdbState.state.apiKey()) this.router.navigate(['/settings']);
+        this.collectionService.loadCollection();
+      });
   }
 
   public ngOnInit(): void {
