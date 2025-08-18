@@ -5,6 +5,7 @@ import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { initializeFolders } from '@server/tools/initializer';
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -62,6 +63,7 @@ export const main = () => {
     app.set('trust proxy', 1);
     app.use(bodyParser.json({ limit: '50mb', strict: false }));
     app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(cookieParser(process.env.COOKIE_SECRET));
 
     Store.set('app', app);
 

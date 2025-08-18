@@ -1,0 +1,43 @@
+:host {
+  --logo-size: 40px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--size-default);
+  gap: var(--size-bigger);
+  max-width: 350px;
+  margin: 0 auto;
+  border: var(--border-style);
+  border-color: var(--focus-border-color);
+  border-radius: var(--border-radius);
+  margin-top: min(10rem, 10%);
+  background-color: var(--background-color-alt);
+
+  @media (width <= 450px) {
+    max-width: 85vw;
+  }
+}
+
+.header {
+  padding: 0 var(--size-default);
+  display: flex;
+  align-items: center;
+  gap: var(--size-default);
+  margin-top: var(--size-default);
+
+  img {
+    width: var(--logo-size);
+    height: var(--logo-size);
+    border-radius: 35%;
+    border: var(--outline-style);
+    border-color: var(--focus-border-color);
+  }
+
+  h1 {
+    font-size: var(--font-size-default);
+    line-height: 1;
+  }
+}

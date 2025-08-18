@@ -15,6 +15,7 @@ export class Input<T> {
   public readonly mandatory = input<boolean>(false);
   public readonly showReset = input<boolean>(false);
   public readonly placeholder = input<string>('');
+  public readonly icon = input<string>('');
   public readonly control = input.required<FormControl<T>>();
   public readonly hint = input<string>();
 

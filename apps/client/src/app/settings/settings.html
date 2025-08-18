@@ -8,13 +8,6 @@
       [mandatory]="true"
       [control]="formGroup.controls.apiUrl"
     />
-    <libc-input
-      [label]="('Token' | signalTranslate)()"
-      [hint]="('Message.Token' | signalTranslate)()"
-      [mandatory]="true"
-      type="password"
-      [control]="formGroup.controls.token"
-    />
     <div>
       <label for="status">{{ ('ConnectionStatus' | signalTranslate)() }}</label>
       <div id="status" class="status">

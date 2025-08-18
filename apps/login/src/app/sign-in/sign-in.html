@@ -1,0 +1,45 @@
+<div class="header">
+  <i class="material-icons">login</i>
+  <h2>{{ ('SignIn' | signalTranslate)() }}</h2>
+  <p>
+    {{ ('Message.SignIn' | signalTranslate)() }}
+  </p>
+</div>
+<form [formGroup]="formGroup">
+  <libc-input
+    [label]="('Username' | signalTranslate)()"
+    [mandatory]="true"
+    icon="person"
+    [control]="formGroup.controls.username"
+  />
+  <libc-input
+    [label]="('Secret' | signalTranslate)()"
+    [mandatory]="true"
+    [type]="tokenInputType()"
+    icon="lock"
+    [control]="formGroup.controls.token"
+  />
+  <a class="small-text-button" tabindex="0" (click)="onToggleTokenInputType()" (keyup.enter)="onToggleTokenInputType()">
+    {{ ((tokenInputType() === 'text' ? 'ShowSecret' : 'HideSecret') | signalTranslate)() }}
+  </a>
+  @if (showApiUrlInput()) {
+    <libc-input [label]="('ApiUrl' | signalTranslate)()" [mandatory]="true" [control]="formGroup.controls.apiUrl" />
+  }
+
+  <div class="form-buttons">
+    <button [disabled]="formGroup.invalid" (click)="onSend()">
+      {{ ('Continue' | signalTranslate)() }}
+    </button>
+    <hr />
+    <div>
+      <a [routerLink]="['/sign-up']">
+        {{ ('SignUp' | signalTranslate)() }}
+      </a>
+      @if (!showApiUrlInput()) {
+        <button class="button-basic" (click)="showApiUrlInput.set(true)">
+          {{ ('ChangeApiUrl' | signalTranslate)() }}
+        </button>
+      }
+    </div>
+  </div>
+</form>

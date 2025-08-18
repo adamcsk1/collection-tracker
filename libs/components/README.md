@@ -16,7 +16,7 @@ Highlights
 
 ## Contents
 
-- libc-input — Text/password input with label, required marker, reset button, and validation hints
+- libc-input — Text/password input with label, required marker, reset button, icon and validation hints
 - libc-select — Select dropdown bound to a FormControl with typed options
 - libc-textarea — Textarea with optional auto-height and sizing
 - libc-spinner-loading — Global loading spinner driven by a simple store
@@ -87,6 +87,7 @@ export class DemoInputComponent {
   [mandatory]="true"
   [placeholder]="'Type your username'"
   [showReset]="true"
+  [icon]="'person'"
   [control]="username"
 >
   <!-- extra field-level errors can be projected -->
@@ -102,6 +103,7 @@ Inputs
 - mandatory?: boolean
 - showReset?: boolean
 - placeholder?: string
+- icon?: string
 - control: FormControl<T> (required)
 - hint?: string
 

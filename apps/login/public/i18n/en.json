@@ -1,1 +1,13 @@
-{}
+{
+  "Title": "Collection tracker",
+  "Secret": "Secret",
+  "ApiUrl": "API url",
+  "Continue": "Continue",
+  "SignUp": "Sign up",
+  "SignIn": "Sign In",
+  "ChangeApiUrl": "Change API url",
+  "ShowSecret": "Show secret",
+  "HideSecret": "Hide secret",
+  "Validation.Required": "Required field.",
+  "Message.SignIn": "Please sign in to unlock effortless, lightning-fast collection tracking."
+}

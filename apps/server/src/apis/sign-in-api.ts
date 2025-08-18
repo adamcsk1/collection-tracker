@@ -1,35 +1,35 @@
+import { cookieConfig } from '@server/core/cookie/cookie-config';
+import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
 import { hashText } from '@server/core/crypto';
 import { generateAccessToken } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
-import { API_PREFIX, DATABASE_FILES, FOLDERS } from '@server/core/main-const';
+import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
-import { SignInApiRequestModel, SignInApiResponseModel } from '@shared/models/api-model';
+import { API_PREFIX } from '@shared/constants/api-const';
+import { SignInApiRequestModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
 import { writeFileSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
-  app.post(`${API_PREFIX}/sign-in`, async (req, res) => {
+  app.post(`${API_PREFIX}/sign-in`, async (request, response) => {
     try {
-      const { username, token } = req.body as SignInApiRequestModel;
+      const { username, token } = request.body as SignInApiRequestModel;
       const users = Store.getLastValue('users');
 
       const usernameHash = await hashText(`${username}${process.env.SALT}`);
 
-      if (!users[usernameHash]) {
-        return res.sendStatus(404);
-      }
+      if (!users[usernameHash]) return response.sendStatus(404);
 
       const userTokenHash = await hashText(`${token}${process.env.SALT}`);
-      if (users[usernameHash].userTokenHash !== userTokenHash) {
-        return res.sendStatus(401);
-      }
+
+      if (users[usernameHash].userTokenHash !== userTokenHash) return response.sendStatus(401);
 
       if (users[usernameHash].userTokenHash === userTokenHash) {
         const newAccessToken = await generateAccessToken(username);
         users[usernameHash].accessTokens.push({
           tokenHash: await hashText(`${newAccessToken}${process.env.SALT}`),
           createdAt: dayjs().toISOString(),
-          userAgent: req.headers['user-agent'],
+          userAgent: request.headers['user-agent'],
         });
         Store.set('users', users);
 
@@ -39,14 +39,14 @@ Store.getOnce$('app').subscribe((app) =>
           { encoding: 'utf-8' }
         );
 
-        const result: SignInApiResponseModel = { accessToken: newAccessToken };
-        res.send(result);
+        response.cookie(COOKIE_TOKEN, newAccessToken, cookieConfig());
+        response.send();
       } else {
-        res.sendStatus(403);
+        response.sendStatus(403);
       }
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
-      res.sendStatus(500);
+      response.sendStatus(500);
     }
   })
 );

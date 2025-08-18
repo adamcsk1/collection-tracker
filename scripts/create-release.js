@@ -27,6 +27,7 @@ mkdirSync(`${releaseVersionFolder}/data`, { recursive: true });
 let minimalEnv = readFileSync(minimalEnvFile, 'utf-8');
 minimalEnv = minimalEnv.replace('your_jwt_secret', randomUUID().toString('hex').replace(/-/g, ''));
 minimalEnv = minimalEnv.replace('your_salt', randomUUID().toString('hex').replace(/-/g, ''));
+minimalEnv = minimalEnv.replace('your_cookie_secret', randomUUID().toString('hex').replace(/-/g, ''));
 
 cpSync(distFolder, `${releaseVersionFolder}/dist`, { recursive: true });
 cpSync(dockerFolder, `${releaseVersionFolder}/docker`, { recursive: true });

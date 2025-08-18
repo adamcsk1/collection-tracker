@@ -1,0 +1,40 @@
+html,
+body {
+  font-family: "Gill Sans", sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-size: var(--font-size-default);
+}
+
+h2 {
+  margin-bottom: var(--size-default);
+}
+
+a {
+  text-decoration: none;
+  color: var(--main-color);
+
+  &:visited {
+    text-decoration: none;
+    color: var(--main-color);
+  }
+
+  &:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  &:focus-visible {
+    outline-offset: var(--outline-offset);
+  }
+}
+
+*:focus-visible {
+  outline: var(--outline-style);
+  outline-color: var(--focus-border-color);
+  border-radius: var(--border-radius);
+}
+
+hr {
+  opacity: 0.3;
+}

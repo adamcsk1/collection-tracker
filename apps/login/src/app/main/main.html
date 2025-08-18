@@ -1,1 +1,9 @@
-<router-outlet></router-outlet>
+<div class="header">
+  <img src="icons/logo.png" [alt]="('Title' | signalTranslate)()" />
+  <div>
+    <h1 class="typewriter">{{ ('Title' | signalTranslate)() }}</h1>
+  </div>
+</div>
+<div class="content">
+  <router-outlet></router-outlet>
+</div>

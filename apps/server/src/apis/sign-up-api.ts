@@ -1,32 +1,33 @@
 import { generateRandomToken, hashText } from '@server/core/crypto';
 import { errorLog } from '@server/core/logger';
-import { API_PREFIX, DATABASE_FILES, FOLDERS } from '@server/core/main-const';
+import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { API_PREFIX } from '@shared/constants/api-const';
 import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/api-model';
 import { mkdirSync, writeFileSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
-  app.post(`${API_PREFIX}/sign-up`, async (req, res) => {
+  app.post(`${API_PREFIX}/sign-up`, async (request, response) => {
     try {
       if (Number(process.env.DISABLE_REGISTRATION)) {
-        return res.sendStatus(403);
+        return response.sendStatus(403);
       }
 
-      const { username } = req.body as SignUpApiRequestModel;
+      const { username } = request.body as SignUpApiRequestModel;
       const users = Store.getLastValue('users');
 
       const userLimit = Number(process.env.USER_LIMIT);
       if (!isNaN(userLimit) && userLimit <= Object.keys(users).length) {
-        return res.sendStatus(403);
+        return response.sendStatus(403);
       }
 
       const usernameHash = await hashText(`${username}${process.env.SALT}`);
 
       if (users[usernameHash]) {
-        return res.sendStatus(409);
+        return response.sendStatus(409);
       }
 
-      const userToken = generateRandomToken();
+      const userToken = generateRandomToken(username);
 
       users[usernameHash] = { userTokenHash: await hashText(`${userToken}${process.env.SALT}`), accessTokens: [] };
       Store.set('users', users);
@@ -40,10 +41,10 @@ Store.getOnce$('app').subscribe((app) =>
       mkdirSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${usernameHash}`, { recursive: true });
 
       const result: SignUpApiResponseModel = { token: userToken };
-      res.send(result);
+      response.send(result);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
-      res.sendStatus(500);
+      response.sendStatus(500);
     }
   })
 );

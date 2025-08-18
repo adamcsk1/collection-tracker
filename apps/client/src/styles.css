@@ -3,43 +3,7 @@
 @import url("../../../libs/shared/src/lib/styles/colors.css");
 @import url("../../../libs/shared/src/lib/styles/variables.css");
 @import url("./styles/variables.css");
+@import url("../../../libs/shared/src/lib/styles/main.css");
 @import url("../../../libs/shared/src/lib/styles/components/button.css");
 @import url("../../../libs/shared/src/lib/styles/components/form.css");
 @import url("../../../libs/shared/src/lib/styles/components/dialog.css");
-
-html,
-body {
-  font-family: "Gill Sans", sans-serif;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  font-size: var(--font-size-default);
-}
-
-h2 {
-  margin-bottom: var(--size-default);
-}
-
-a {
-  text-decoration: none;
-  color: var(--main-color);
-
-  &:visited {
-    text-decoration: none;
-    color: var(--main-color);
-  }
-
-  &:hover {
-    text-decoration: underline;
-    cursor: pointer;
-  }
-
-  &:focus-visible {
-    outline-offset: var(--outline-offset);
-  }
-}
-
-*:focus-visible {
-  outline: var(--outline-style);
-  outline-color: var(--focus-border-color);
-  border-radius: var(--border-radius);
-}

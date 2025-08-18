@@ -4,8 +4,9 @@ Angular application used exclusively for user authentication: sign up and sign i
 
 ## Scope
 
-- Sign up: creates a user and receives a JWT token
-- Sign in: validates an existing JWT token for the user
+- Sign up: creates a user and returns a user token (keep it safe)
+- Sign in: sends username + user token; server issues a JWT access token and sets it as a signed, HttpOnly `token` cookie
+  - The backend accepts the access token from the signed cookie or an `Authorization: Bearer` header
 
 ## Run & build (Nx)
 

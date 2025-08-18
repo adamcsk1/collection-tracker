@@ -18,7 +18,7 @@ const PROXY_CONFIG = [
     target: 'http://localhost:3000',
     changeOrigin: true,
     secure: false,
-    // keep /api prefix as-is (server expects it)
+    cookieDomainRewrite: 'localhost',
     pathRewrite: {},
   },
   {

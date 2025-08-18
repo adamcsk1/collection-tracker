@@ -10,5 +10,5 @@ export const hashText = async (message: string): Promise<string> => {
   return hashHex;
 };
 
-export const generateRandomToken = (length: number = 128): string =>
-  `${(generate(length) as Array<string>).join(' ')} ${randomUUID().replace(/-/g, '')}`;
+export const generateRandomToken = (seed: string = randomUUID(), length: number = 128): string =>
+  `${generate({ exactly: length, join: ' ' })} ${generate({ exactly: 5, join: ' ', seed })}`;
