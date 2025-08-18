@@ -55,6 +55,13 @@ DELETE `/user/delete`
 - 200: empty body
 - 500: server error
 
+DELETE `/logout`
+
+- Auth: Bearer required
+- Behavior: Revokes the current access token only (removes it from the user's allowed token list), clears the signed `token` cookie. Other access tokens remain valid.
+- 204: no content
+- 500: server error
+
 ## Token management
 
 POST `/user/access-token`
