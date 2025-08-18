@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { Toast } from '@components/toast/toast';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -9,7 +10,7 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
 
 @Component({
   selector: 'lo-root',
-  imports: [RouterOutlet, NgxSignalTranslatePipe],
+  imports: [RouterOutlet, NgxSignalTranslatePipe, Toast],
   templateUrl: './main.html',
   styleUrl: './main.css',
 })

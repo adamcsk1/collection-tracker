@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Input } from '@components/input/input';
@@ -18,10 +19,14 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 })
 export class SignIn implements OnInit {
   private readonly apiState = inject(apiStateToken);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly webStorage = inject(WebstorageService);
   private readonly api = inject(ApiService);
   protected readonly formGroup = new FormGroup<Form<SignInModel>>({
-    username: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    username: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(3), Validators.maxLength(32)],
+    }),
     token: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     apiUrl: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
@@ -48,6 +53,7 @@ export class SignIn implements OnInit {
 
     this.api
       .signIn(`${this.formGroup.value.username}`, `${this.formGroup.value.token}`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => (window.location.href = '/client/'));
   }
 }
