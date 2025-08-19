@@ -8,7 +8,7 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "npx nx run server:preserve && nx run-many --target=serve --projects=client,server,login,dev-proxy",
+    "start": "npx nx run server:preserve && nx run-many --targets=serve --projects=client,server,login,dev-proxy",
     "build": "npx nx run client:prebuild && nx run-many --target=build --projects=client,server,login && npx nx run client:postbuild",
     "test": "nx test",
     "lint": "nx run-many --target=lint --projects=client,components,services,shared,server,login",
@@ -17,8 +17,8 @@
     "stylelint": "nx run-many --target=stylelint --projects=client,components,shared,login",
     "stylelint:fix": "nx run-many --target=stylelint --projects=client,components,shared,login --fix=true",
     "stylelint:affected:fix": "nx affected --target=stylelint --fix=true",
-    "format": "nx run-many --target=format --projects=client,components,services,shared,server,login",
-    "format:check": "nx run-many --target=format-check --projects=client,components,services,shared,server,login",
+    "format": "nx run-many --target=format --projects=client,components,services,shared,server,login,dev-proxy",
+    "format:check": "nx run-many --target=format-check --projects=client,components,services,shared,server,login,dev-proxy",
     "release:create": "npm run build && node ./scripts/create-release.js",
     "prepare": "husky"
   },
@@ -73,6 +73,7 @@
     "esbuild": "^0.19.2",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.0",
+    "http-proxy-middleware": "^3.0.5",
     "husky": "^9.1.7",
     "nx": "21.3.11",
     "nx-stylelint": "^18.0.0",
