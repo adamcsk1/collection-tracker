@@ -58,6 +58,7 @@
   "SettingsLock": "Settings lock",
   "LocalStorage": "Local storage",
   "SessionStorage": "Session storage",
+  "ClearLocalStorageAfterLogout": "Clear local storage after logout",
   "Validation.Required": "Required field.",
   "Validation.KnownIMDbId": "The content is already in the collection.",
   "Message.EmptyCollection": "Your collection is empty.",

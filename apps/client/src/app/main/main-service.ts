@@ -8,8 +8,10 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_API_URL,
   STORAGE_APP_MODE,
+  STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_FETCH_BATCH_SIZE,
   STORAGE_OMDB_API_KEY,
+  STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
   STORAGE_THEME,
 } from '@shared/constants/storage-const';
@@ -30,6 +32,10 @@ export class MainService {
     const settingsLock = this.webstorage.getItem(STORAGE_SETTINGS_LOCK) === 'true';
     const fetchBatchSize = this.webstorage.getItem(STORAGE_FETCH_BATCH_SIZE);
     const theme = this.webstorage.getItem(STORAGE_THEME) as SettingsModel['theme'];
+    const sensitiveDataStorage = this.webstorage.getItem(
+      STORAGE_SENSITIVE_DATA_STORAGE
+    ) as SettingsModel['sensitiveDataStorage'];
+    const clearLocalStorageAfterLogout = this.webstorage.getItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT) === 'true';
 
     if (apiUrl) this.apiState.setState('apiUrl', apiUrl);
     if (omdbApiKey) this.omdbState.setState('apiKey', omdbApiKey);
@@ -39,7 +45,9 @@ export class MainService {
     }
     if (fetchBatchSize) this.apiState.setState('fetchBatchSize', Number(fetchBatchSize));
     if (theme) this.themeState.setState('theme', theme);
+    if (sensitiveDataStorage) this.mainState.setState('sensitiveDataStorage', sensitiveDataStorage);
     this.mainState.setState('settingsLock', settingsLock);
+    this.mainState.setState('clearLocalStorageAfterLogout', clearLocalStorageAfterLogout);
   }
 
   public setPermissions(): void {

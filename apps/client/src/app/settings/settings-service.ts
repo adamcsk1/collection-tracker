@@ -10,6 +10,7 @@ import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_APP_MODE,
+  STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_FETCH_BATCH_SIZE,
   STORAGE_OMDB_API_KEY,
   STORAGE_SENSITIVE_DATA_STORAGE,
@@ -29,16 +30,13 @@ export class SettingsService {
   private readonly themeState = inject(themeStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly toastState = inject(toastStateToken);
-  public get sensitiveDataStorage(): 'local' | 'session' {
-    return (
-      (this.webstorage.getItem(STORAGE_SENSITIVE_DATA_STORAGE) as SettingsModel['sensitiveDataStorage']) || 'local'
-    );
-  }
 
   public storeFormData(formData: SettingsModel, navigateBack = false): void {
     this.omdbState.setState('apiKey', formData.omdbApiKey);
     this.mainState.setState('appMode', formData.appMode);
     this.mainState.setState('settingsLock', formData.settingsLock);
+    this.mainState.setState('sensitiveDataStorage', formData.sensitiveDataStorage);
+    this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout === 'true');
     this.apiState.setState('fetchBatchSize', formData.fetchBatchSize);
     this.themeState.setState('theme', formData.theme);
 
@@ -52,6 +50,7 @@ export class SettingsService {
     this.webstorage.setItem(STORAGE_SETTINGS_LOCK, String(formData.settingsLock));
     this.webstorage.setItem(STORAGE_FETCH_BATCH_SIZE, `${formData.fetchBatchSize}`);
     this.webstorage.setItem(STORAGE_THEME, formData.theme);
+    this.webstorage.setItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT, String(formData.clearLocalStorageAfterLogout));
 
     this.main.setPermissions();
 

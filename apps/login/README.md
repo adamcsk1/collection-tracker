@@ -5,8 +5,9 @@ Angular application used exclusively for user authentication: sign up and sign i
 ## Scope
 
 - Sign up: creates a user and returns a user token (keep it safe)
-- Sign in: sends username + user token; server issues a JWT access token and sets it as a signed, HttpOnly `token` cookie
-  - The backend accepts the access token from the signed cookie or an `Authorization: Bearer` header
+- Sign in: sends username + user token; server issues a JWT access token and sets it as a signed, HttpOnly `token` cookie (15-day expiry).
+  - On each cookie-authenticated API call, the server rotates the token and refreshes the cookie (sliding session).
+  - The backend also accepts the access token via `Authorization: Bearer` header.
 
 ## Run & build (Nx)
 
