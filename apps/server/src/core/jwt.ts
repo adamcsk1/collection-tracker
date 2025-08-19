@@ -24,7 +24,6 @@ export const jwtGuard = async (
   response: express.Response,
   next: () => void
 ): Promise<express.Response> => {
-  console.log(request.signedCookies);
   let token = request.signedCookies[COOKIE_TOKEN] || request.headers['authorization'] || '';
   if (token.includes('Bearer ')) token = token.split(' ')[1];
 

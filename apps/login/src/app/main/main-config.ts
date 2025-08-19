@@ -17,6 +17,6 @@ export const mainConfig: ApplicationConfig = {
     provideHttpClient(withFetch()),
     provideStore(initialApiState, apiStateToken),
     provideStore(initialToastState, toastStateToken),
-    provideSignalTranslateConfig({ path: './i18n' }),
+    provideSignalTranslateConfig({ path: './login/i18n' }),
   ],
 };

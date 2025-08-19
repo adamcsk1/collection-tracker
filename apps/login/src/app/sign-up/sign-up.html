@@ -33,7 +33,12 @@
   }
 
   @if (showApiUrlInput()) {
-    <libc-input [label]="('ApiUrl' | signalTranslate)()" [mandatory]="true" [control]="formGroup.controls.apiUrl" />
+    <libc-input
+      [label]="('ApiUrl' | signalTranslate)()"
+      [hint]="('Message.ApiUrl' | signalTranslate)()"
+      [mandatory]="true"
+      [control]="formGroup.controls.apiUrl"
+    />
   }
 
   <div class="form-buttons">
@@ -44,7 +49,7 @@
     }
     <hr />
     <div>
-      <a [routerLink]="['/sign-in']">
+      <a [routerLink]="['/', 'sign-in']">
         {{ ('BackToSignIn' | signalTranslate)() }}
       </a>
       @if (!showApiUrlInput() && !secret()) {

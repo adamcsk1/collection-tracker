@@ -1,9 +1,8 @@
 import { Themes } from '@services/theme/theme-model';
 
 export interface SettingsModel {
-  apiUrl: string;
   omdbApiKey: string;
-  storeCredentials: boolean;
+  sensitiveDataStorage: 'local' | 'session';
   fetchBatchSize: number;
   appMode: 'basic' | 'limited' | 'full';
   theme: Themes;
