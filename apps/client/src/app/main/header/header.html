@@ -5,7 +5,7 @@
   <h1>{{ ('Title' | signalTranslate)() }}</h1>
 </div>
 
-<div class="dropdown-menu" [class.open]="showMenu()" (mouseleave)="onHideMenu()">
+<div class="dropdown-menu" [class.open]="showMenu()">
   <button
     class="button-icon material-icons"
     [title]="('Menu' | signalTranslate)()"
@@ -14,7 +14,15 @@
   >
     menu
   </button>
-  <div class="dropdown-menu-list" (click)="onHideMenu()" (keydown)="onHideMenu()" tabindex="0" role="button">
+  <div class="dropdown-menu-backdrop"></div>
+  <div
+    class="dropdown-menu-list"
+    (click)="onHideMenu()"
+    (keydown)="onHideMenu()"
+    (mouseleave)="onHideMenu()"
+    tabindex="0"
+    role="button"
+  >
     <div class="dropdown-menu-list-header">
       <div>
         <img src="icons/logo.png" [alt]="('Title' | signalTranslate)()" />

@@ -36,6 +36,7 @@ export class Main implements OnInit {
   constructor() {
     effect(() => {
       const loadNetworkStatus = this.apiState.state.loadNetworkStatus();
+
       if (loadNetworkStatus === 'pending') this.spinnerLoadingState.setState('show', true);
       else if (['finished', 'error'].includes(loadNetworkStatus || '')) {
         this.spinnerLoadingState.setState('show', false);

@@ -4,7 +4,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { scaleAnimation } from '@shared/animations/scale-animation';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { concatMap, delay, filter, of, tap } from 'rxjs';
+import { concatMap, delay, filter, of, skip, tap } from 'rxjs';
 
 @Component({
   selector: 'libc-spinner-loading',
@@ -18,6 +18,7 @@ export class SpinnerLoading {
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private counter = 0;
   protected readonly spinnerLoading$ = toObservable(this.spinnerLoadingState.state.show).pipe(
+    skip(1),
     tap((status) => {
       if (status) this.counter++;
       else this.counter--;
