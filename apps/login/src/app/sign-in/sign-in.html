@@ -31,7 +31,12 @@
     {{ ((tokenInputType() === 'text' ? 'ShowSecret' : 'HideSecret') | signalTranslate)() }}
   </a>
   @if (showApiUrlInput()) {
-    <libc-input [label]="('ApiUrl' | signalTranslate)()" [mandatory]="true" [control]="formGroup.controls.apiUrl" />
+    <libc-input
+      [label]="('ApiUrl' | signalTranslate)()"
+      [hint]="('Message.ApiUrl' | signalTranslate)()"
+      [mandatory]="true"
+      [control]="formGroup.controls.apiUrl"
+    />
   }
 
   <div class="form-buttons">
@@ -40,7 +45,7 @@
     </button>
     <hr />
     <div>
-      <a [routerLink]="['/sign-up']">
+      <a [routerLink]="['/', 'sign-up']">
         {{ ('SignUp' | signalTranslate)() }}
       </a>
       @if (!showApiUrlInput()) {

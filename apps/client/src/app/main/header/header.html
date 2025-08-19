@@ -42,8 +42,6 @@
     <a [routerLink]="['/', 'about']" routerLinkActive="active">
       <i class="material-icons">info</i> {{ ('About' | signalTranslate)() }}
     </a>
-    <a href="#" (click)="onDisconnect()">
-      <i class="material-icons">logout</i> {{ ('Disconnect' | signalTranslate)() }}
-    </a>
+    <a href="#" (click)="onLogout()"> <i class="material-icons">logout</i> {{ ('Logout' | signalTranslate)() }} </a>
   </div>
 </div>

@@ -3,45 +3,21 @@
     <h3>{{ ('BasicSettings' | signalTranslate)() }}</h3>
     <p>{{ ('Message.BasicSettings' | signalTranslate)() }}</p>
     <libc-input
-      [label]="('ApiUrl' | signalTranslate)()"
-      [hint]="('Message.ApiUrl' | signalTranslate)()"
-      [mandatory]="true"
-      [control]="formGroup.controls.apiUrl"
-    />
-    <div>
-      <label for="status">{{ ('ConnectionStatus' | signalTranslate)() }}</label>
-      <div id="status" class="status">
-        @if (connected() === true) {
-          {{ ('Connected' | signalTranslate)() }}
-          <span class="status-circle status-circle-ok"></span>
-        } @else if (connected() === false) {
-          {{ ('Error' | signalTranslate)() }}
-          <span class="status-circle status-circle-error"></span>
-        } @else {
-          {{ ('Unknown' | signalTranslate)() }}
-          <span class="status-circle"></span>
-        }
-      </div>
-    </div>
-    <libc-input
       [label]="('OMDbApiKey' | signalTranslate)()"
       [hint]="('Message.OMDbApiKey' | signalTranslate)()"
       [mandatory]="true"
       [control]="formGroup.controls.omdbApiKey"
     />
     <libc-select
-      [label]="('StoreCredentials' | signalTranslate)()"
+      [label]="('SensitiveDataStorage' | signalTranslate)()"
+      [hint]="('Message.SensitiveDataStorage' | signalTranslate)()"
       [mandatory]="true"
-      [control]="formGroup.controls.storeCredentials"
+      [control]="formGroup.controls.sensitiveDataStorage"
       [options]="[
-        { text: ('Yes' | signalTranslate)(), value: true },
-        { text: ('No' | signalTranslate)(), value: false },
+        { text: ('LocalStorage' | signalTranslate)(), value: 'local' },
+        { text: ('SessionStorage' | signalTranslate)(), value: 'session' },
       ]"
     />
-
-    <div class="form-buttons">
-      <button class="button-danger" (click)="onReset()">{{ ('ResetBasicSettings' | signalTranslate)() }}</button>
-    </div>
   }
 
   <h3>{{ ('AppSettings' | signalTranslate)() }}</h3>
@@ -96,10 +72,10 @@
   />
 
   <div class="form-buttons">
-    <button [disabled]="formGroup.invalid || !connected()" (click)="onSave()">
+    <button [disabled]="formGroup.invalid" (click)="onSave()">
       {{ ('Save' | signalTranslate)() }}
     </button>
-    <button [disabled]="formGroup.invalid || !connected()" (click)="onSave(true)">
+    <button [disabled]="formGroup.invalid" (click)="onSave(true)">
       {{ ('SaveAndBack' | signalTranslate)() }}
     </button>
   </div>
@@ -127,7 +103,7 @@
       }
       <div>
         <button
-          [disabled]="!connected() || imageRefreshStatus.running || apiLoadNetworkStatus() !== 'finished'"
+          [disabled]="imageRefreshStatus.running || apiLoadNetworkStatus() !== 'finished'"
           (click)="onStartImagesRefresh()"
         >
           {{ ('Start' | signalTranslate)() }}

@@ -30,6 +30,6 @@ export const mainConfig: ApplicationConfig = {
     provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
     provideStore(initialMainState, mainStateToken),
     provideStore(initialMainCollectionState, mainCollectionStateToken),
-    provideSignalTranslateConfig({ path: './i18n' }),
+    provideSignalTranslateConfig({ path: './client/i18n' }),
   ],
 };

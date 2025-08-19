@@ -1,16 +1,16 @@
 import { inject } from '@angular/core';
-import { SettingsService } from '@client/settings/settings-service';
+import { MainService } from '@client/main/main-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 
 export const mainGuard = () => {
-  const settings = inject(SettingsService);
+  const main = inject(MainService);
   const webstorage = inject(WebstorageService);
 
-  if (settings.hasSettings()) return true;
+  if (main.hasRequiredConfig()) return true;
 
-  settings.loadStoredData();
+  main.loadStoredData();
 
-  if (!settings.hasSettings()) {
+  if (!main.hasRequiredConfig()) {
     webstorage.clear();
     window.location.href = '/login/';
     return false;
