@@ -20,6 +20,7 @@ Store.getOnce$('app').subscribe((app) =>
         tokenHash: await hashText(`${newAccessToken}${process.env.SALT}`),
         createdAt: dayjs().toISOString(),
         userAgent: request.headers['user-agent'],
+        expiredAt: null,
       });
       Store.set('users', users);
 

@@ -4,6 +4,8 @@ import { createInjectionToken } from 'ngx-simple-signal-store';
 export interface MainState {
   appMode: SettingsModel['appMode'];
   settingsLock: boolean;
+  clearLocalStorageAfterLogout: boolean;
+  sensitiveDataStorage: SettingsModel['sensitiveDataStorage'];
   permissions: {
     create: boolean;
     update: boolean;
@@ -14,6 +16,8 @@ export interface MainState {
 export const initialMainState: MainState = {
   appMode: 'full',
   settingsLock: false,
+  clearLocalStorageAfterLogout: false,
+  sensitiveDataStorage: 'local',
   permissions: {
     create: false,
     update: false,

@@ -10,8 +10,10 @@ Authentication
     - as a signed HTTP-only cookie named `token` (preferred), or
     - in the `Authorization` header as `Bearer <accessToken>`
 - Rotating via `PUT /user/change-token` issues a new user token and a new access token, invalidating all previous access tokens
-- Access tokens currently have no expiry.
-  - Cookie has a 1-year expiry and is `HttpOnly`, `Secure`, `SameSite=Strict`, and signed. Ensure `COOKIE_SECRET` is configured.
+- Access tokens (JWTs) currently have no intrinsic exp claim. However:
+  - When delivered via cookie, the token is rotated on each cookie-authenticated request (sliding) and the cookie expires in 15 days.
+  - The cookie is `HttpOnly`, `Secure`, `SameSite=Strict`, and signed. Ensure `COOKIE_SECRET` is configured.
+  - Tokens created for header usage via `POST /user/access-token` are tracked with `expiredAt: null`.
 
 ## Health
 
@@ -34,7 +36,8 @@ POST `/sign-up`
 POST `/sign-in`
 
 - Body: `{ "username": string, "token": string }`
-- Behavior: Validates that the provided user token matches the stored hash; on success, issues a new JWT access token, stores its hash, and sets it as a signed HTTP-only cookie named `token`
+- Behavior: Validates that the provided user token matches the stored hash; on success, issues a new JWT access token, stores its hash (with a 15-day cookie expiry), and sets it as a signed HTTP-only cookie named `token`.
+  - As part of sign-in housekeeping, server prunes expired cookie tokens and legacy tokens without an expiry.
 - 200: empty body (access token is set in the `token` cookie)
 - 401: token doesn't match stored hash
 - 404: user not found
@@ -44,7 +47,7 @@ PUT `/user/change-token`
 
 - Auth: Bearer required
 - Body: none
-- Behavior: Generates a new user token and a new JWT access token; replaces the user's allowed token list (all previous access tokens become invalid). The new access token is set as a signed HTTP-only cookie named `token`.
+- Behavior: Generates a new user token and a new JWT access token; replaces the user's allowed token list (all previous access tokens become invalid). The new access token is set as a signed HTTP-only cookie named `token` (15-day expiry).
 - 200: `{ "newToken": string }` (access token is set in the `token` cookie)
 - 500: server error
 
@@ -67,14 +70,14 @@ DELETE `/logout`
 POST `/user/access-token`
 
 - Auth: Bearer required
-- Behavior: Issues a new JWT access token and appends it to the user's allowed token list (existing access tokens remain valid)
+- Behavior: Issues a new JWT access token and appends it to the user's allowed token list (existing access tokens remain valid). Tokens created this way are intended for header use and are tracked with `expiredAt: null`.
 - 200: `{ "accessToken": string }`
 - 500: server error
 
 GET `/user/access-tokens`
 
 - Auth: Bearer required
-- 200: `Array<{ tokenHash: string; createdAt: string; userAgent: string }>`
+- 200: `Array<{ tokenHash: string; createdAt: string; userAgent: string; expiredAt: string | null }>`
 - 500: server error
 
 DELETE `/user/access-token/:tokenHash`
@@ -87,7 +90,7 @@ DELETE `/user/access-token/:tokenHash`
 GET `/user/access-token/validate`
 
 - Auth: Bearer required
-- Behavior: Validates that the provided access token (from the signed `token` cookie or the `Authorization: Bearer` header) is currently allowed for the user
+- Behavior: Validates that the provided access token (from the signed `token` cookie or the `Authorization: Bearer` header) is currently allowed for the user. When authenticated via cookie, the server rotates the token and sets a fresh cookie, invalidating the previous cookie token.
 - 204: no content (token is valid)
 - 500: server error
 

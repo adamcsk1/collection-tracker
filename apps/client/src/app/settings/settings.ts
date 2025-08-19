@@ -30,6 +30,7 @@ export class Settings implements OnInit {
   private readonly imageRefresh = inject(ImageRefreshService);
   protected readonly formGroup = new FormGroup<Form<SettingsModel>>({
     sensitiveDataStorage: new FormControl('local', { nonNullable: true, validators: [Validators.required] }),
+    clearLocalStorageAfterLogout: new FormControl('false', { nonNullable: true, validators: [Validators.required] }),
     omdbApiKey: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     appMode: new FormControl('basic', { nonNullable: true, validators: [Validators.required] }),
     fetchBatchSize: new FormControl(10000, { nonNullable: true, validators: [Validators.required] }),
@@ -42,12 +43,13 @@ export class Settings implements OnInit {
 
   public ngOnInit(): void {
     this.formGroup.setValue({
-      sensitiveDataStorage: this.settings.sensitiveDataStorage,
+      sensitiveDataStorage: this.mainState.state.sensitiveDataStorage(),
       omdbApiKey: this.omdbState.state.apiKey(),
       appMode: this.mainState.state.appMode(),
       fetchBatchSize: this.apiState.state.fetchBatchSize(),
       theme: this.themeState.state.theme(),
       settingsLock: this.mainState.state.settingsLock(),
+      clearLocalStorageAfterLogout: this.mainState.state.clearLocalStorageAfterLogout() ? 'true' : 'false',
     });
   }
 

@@ -1,4 +1,4 @@
-import { cookieConfig } from '@server/core/cookie/cookie-config';
+import { cookieConfig, cookieExpiration } from '@server/core/cookie/cookie-config';
 import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
 import { generateRandomToken, hashText } from '@server/core/crypto';
 import { generateAccessToken, jwtGuard } from '@server/core/jwt';
@@ -17,7 +17,11 @@ Store.getOnce$('app').subscribe((app) =>
       const users = Store.getLastValue('users');
 
       const newUserToken = generateRandomToken(request.username);
-      const newAccessToken = await generateAccessToken(request.username);
+      const cookie = cookieConfig();
+      const newAccessToken = await generateAccessToken(
+        request.username,
+        `${cookieExpiration.value} ${cookieExpiration.unit}`
+      );
 
       users[request.usernameHash] = {
         userTokenHash: await hashText(`${newUserToken}${process.env.SALT}`),
@@ -26,6 +30,7 @@ Store.getOnce$('app').subscribe((app) =>
             tokenHash: await hashText(`${newAccessToken}${process.env.SALT}`),
             createdAt: dayjs().toISOString(),
             userAgent: request.headers['user-agent'],
+            expiredAt: cookie.expires.toISOString(),
           },
         ],
       };
@@ -38,7 +43,7 @@ Store.getOnce$('app').subscribe((app) =>
       );
 
       const result: ChangeTokenApiResponseModel = { newToken: newUserToken };
-      response.cookie(COOKIE_TOKEN, newAccessToken, cookieConfig());
+      response.cookie(COOKIE_TOKEN, newAccessToken, cookie);
       response.send(result);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);

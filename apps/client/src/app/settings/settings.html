@@ -18,6 +18,17 @@
         { text: ('SessionStorage' | signalTranslate)(), value: 'session' },
       ]"
     />
+    @if (formGroup.controls.sensitiveDataStorage.value === 'local') {
+      <libc-select
+        [label]="('ClearLocalStorageAfterLogout' | signalTranslate)()"
+        [mandatory]="true"
+        [control]="formGroup.controls.clearLocalStorageAfterLogout"
+        [options]="[
+          { text: ('Yes' | signalTranslate)(), value: 'true' },
+          { text: ('No' | signalTranslate)(), value: 'false' },
+        ]"
+      />
+    }
   }
 
   <h3>{{ ('AppSettings' | signalTranslate)() }}</h3>
