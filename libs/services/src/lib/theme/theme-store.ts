@@ -6,7 +6,7 @@ export interface ThemeState {
 }
 
 export const initialThemeState: ThemeState = {
-  theme: 'system',
+  theme: 'light',
 };
 
 export const themeStateToken = createInjectionToken<ThemeState>('themeState');
