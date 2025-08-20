@@ -1,10 +1,9 @@
 import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
-import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { updateUsers } from '@server/core/utils/users-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
-import { writeFileSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
   app.delete(`${API_PREFIX}/user/access-token/:tokenHash`, jwtGuard, (request: ExtendedRequestModel, response) => {
@@ -15,13 +14,7 @@ Store.getOnce$('app').subscribe((app) =>
       users[request.usernameHash].accessTokens = users[request.usernameHash].accessTokens.filter(
         (token) => token.tokenHash !== tokenHash
       );
-      Store.set('users', users);
-
-      writeFileSync(
-        `${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.users}`,
-        JSON.stringify(users, null, 2),
-        { encoding: 'utf-8' }
-      );
+      updateUsers(users);
 
       response.sendStatus(204);
     } catch (error: unknown) {

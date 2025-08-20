@@ -2,11 +2,12 @@ import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { updateItem } from '@server/core/utils/cache-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
-import { existsSync, writeFileSync } from 'fs';
+import { existsSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
   app.post(`${API_PREFIX}/create`, jwtGuard, (request: ExtendedRequestModel, response) => {
@@ -19,11 +20,7 @@ Store.getOnce$('app').subscribe((app) =>
         return response.sendStatus(409);
       }
 
-      writeFileSync(`${storeFolder}/${name}`, content, { encoding: 'utf-8' });
-      const cache = Store.getLastValue('cache');
-      const checkKey = `${request.usernameHash}-${name}`;
-      cache[checkKey] = content;
-      Store.set('cache', cache);
+      updateItem(name, request.usernameHash, content);
 
       const result: CreateApiResponseModel = { name };
       response.send(result);

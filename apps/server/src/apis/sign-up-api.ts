@@ -1,10 +1,11 @@
 import { generateRandomToken, hashText } from '@server/core/crypto';
 import { errorLog } from '@server/core/logger';
-import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
+import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { updateUsers } from '@server/core/utils/users-util';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/api-model';
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
   app.post(`${API_PREFIX}/sign-up`, async (request, response) => {
@@ -30,13 +31,7 @@ Store.getOnce$('app').subscribe((app) =>
       const userToken = generateRandomToken(username);
 
       users[usernameHash] = { userTokenHash: await hashText(`${userToken}${process.env.SALT}`), accessTokens: [] };
-      Store.set('users', users);
-
-      writeFileSync(
-        `${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.users}`,
-        JSON.stringify(users, null, 2),
-        { encoding: 'utf-8' }
-      );
+      updateUsers(users);
 
       mkdirSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${usernameHash}`, { recursive: true });
 
