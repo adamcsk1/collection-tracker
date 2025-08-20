@@ -3,4 +3,6 @@
   --glassy-background: rgb(from var(--background-color-alt) r g b / 85%);
   --image-width: 90px;
   --image-height: 125px;
+  --container-max-width: 500px;
+  --container-max-width-mobile: 90vw;
 }

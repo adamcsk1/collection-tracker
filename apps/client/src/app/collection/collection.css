@@ -9,10 +9,10 @@
   z-index: 1;
   display: block;
   position: relative;
-  max-width: 500px;
+  max-width: var(--container-max-width);
   border-radius: var(--border-radius);
 
-  @media (width <= 450px) {
-    max-width: 90vw;
+  @media (width <= 520px) {
+    max-width: var(--container-max-width-mobile);
   }
 }
