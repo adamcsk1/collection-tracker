@@ -16,7 +16,7 @@ small {
 
 i {
   display: none;
-  margin-top: 5px;
+  margin-top: 8px;
   margin-left: 5px;
   position: absolute;
   font-size: var(--font-size-big);
@@ -41,6 +41,7 @@ i {
   color: var(--text-color);
   width: 100%;
   height: var(--input-height);
+  padding: 0 var(--size-default);
 
   &:hover {
     outline: var(--outline-style);
