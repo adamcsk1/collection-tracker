@@ -78,6 +78,7 @@ Minimal example
 # /data/.env
 JWT_SECRET="your_jwt_secret"
 SALT="your_salt"
+COOKIE_SECRET="your_cookie_secret"
 USER_LIMIT=2
 DISABLE_REGISTRATION=0
 ```
