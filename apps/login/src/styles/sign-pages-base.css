@@ -30,6 +30,7 @@ form {
     div {
       display: flex;
       text-align: center;
+      align-items: center;
 
       button,
       a {
