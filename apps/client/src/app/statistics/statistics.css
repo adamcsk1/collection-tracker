@@ -2,13 +2,17 @@
   display: flex;
   flex-flow: wrap;
   gap: var(--size-default);
-  max-width: 70vw;
+  max-width: var(--container-max-width);
   justify-content: space-around;
   margin: 0 auto;
+
+  @media (width <= 520px) {
+    max-width: var(--container-max-width-mobile);
+  }
 }
 
 .statistics-group {
-  min-width: min(400px, 100%);
+  width: 100%;
   background-color: var(--glassy-background);
   border-radius: var(--border-radius);
   padding: var(--size-default);
