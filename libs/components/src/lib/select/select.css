@@ -19,6 +19,7 @@ small {
   color: var(--text-color);
   width: 100%;
   height: var(--input-height);
+  padding: 0 var(--size-default);
 
   &:hover {
     outline: var(--outline-style);

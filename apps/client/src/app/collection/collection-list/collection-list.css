@@ -4,7 +4,7 @@
 }
 
 .list {
-  max-height: calc(100vh - var(--header-height) - 46px - 2 * var(--size-default) - var(--pagination-height) - 2px);
+  max-height: calc(100vh - var(--header-height) - 54px - 2 * var(--size-default) - var(--pagination-height) - 2px);
   overflow: hidden auto;
 
   .list-empty {
