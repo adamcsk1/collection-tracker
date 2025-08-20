@@ -47,11 +47,8 @@ Store.getOnce$('app').subscribe((app) =>
           { encoding: 'utf-8' }
         );
 
-        response.cookie(COOKIE_TOKEN, newAccessToken, cookie);
-        response.send();
-      } else {
-        response.sendStatus(403);
-      }
+        response.cookie(COOKIE_TOKEN, newAccessToken, cookie).send();
+      } else response.sendStatus(403);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);

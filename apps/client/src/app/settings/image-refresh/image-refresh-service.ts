@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { CollectionItemModel } from '@client/collection/collection-model';
+import { CollectionService } from '@client/collection/collection-service';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { ImageRefreshState } from '@client/settings/image-refresh/image-refresh-model';
 import { ApiService } from '@services/api/api-service';
@@ -14,6 +15,7 @@ export class ImageRefreshService {
   private readonly apiState = inject(apiStateToken);
   private readonly omdb = inject(OMDbService);
   private readonly api = inject(ApiService);
+  private readonly collection = inject(CollectionService);
   private readonly httpClient = inject(HttpClient);
   private readonly _state = signal<ImageRefreshState>({
     running: false,
@@ -83,11 +85,11 @@ export class ImageRefreshService {
   private next(index: number): void {
     if (index < this.mainCollectionState.state.collection().length - 1) this.checkImageAvailability(index + 1);
     else {
+      this.collection.loadCollection();
       this._state.update((state) => ({
         ...state,
         running: false,
       }));
-      this.apiState.setState('loadNetworkStatus', null);
     }
   }
 }

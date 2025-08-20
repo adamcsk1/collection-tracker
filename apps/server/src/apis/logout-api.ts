@@ -26,8 +26,7 @@ Store.getOnce$('app').subscribe((app) =>
         { encoding: 'utf-8' }
       );
 
-      response.clearCookie(COOKIE_TOKEN);
-      response.sendStatus(204);
+      response.clearCookie(COOKIE_TOKEN).sendStatus(204);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
