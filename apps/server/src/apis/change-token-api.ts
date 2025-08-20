@@ -43,8 +43,7 @@ Store.getOnce$('app').subscribe((app) =>
       );
 
       const result: ChangeTokenApiResponseModel = { newToken: newUserToken };
-      response.cookie(COOKIE_TOKEN, newAccessToken, cookie);
-      response.send(result);
+      response.cookie(COOKIE_TOKEN, newAccessToken, cookie).send(result);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
