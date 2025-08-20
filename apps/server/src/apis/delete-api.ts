@@ -2,9 +2,10 @@ import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { removeItem } from '@server/core/utils/cache-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
-import { existsSync, unlinkSync } from 'fs';
+import { existsSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
   app.delete(`${API_PREFIX}/delete/:name`, jwtGuard, (request: ExtendedRequestModel, response) => {
@@ -17,11 +18,7 @@ Store.getOnce$('app').subscribe((app) =>
         return response.sendStatus(404);
       }
 
-      unlinkSync(`${storeFolder}/${name}`);
-      const cache = Store.getLastValue('cache');
-      const checkKey = `${request.usernameHash}-${name}`;
-      delete cache[checkKey];
-      Store.set('cache', cache);
+      removeItem(name, request.usernameHash);
 
       response.send();
     } catch (error: unknown) {

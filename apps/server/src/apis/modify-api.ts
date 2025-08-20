@@ -2,10 +2,11 @@ import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { updateItem } from '@server/core/utils/cache-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { ModifyApiRequestModel } from '@shared/models/api-model';
-import { existsSync, writeFileSync } from 'fs';
+import { existsSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
   app.put(`${API_PREFIX}/modify/:name`, jwtGuard, (request: ExtendedRequestModel, response) => {
@@ -19,11 +20,7 @@ Store.getOnce$('app').subscribe((app) =>
         return response.sendStatus(404);
       }
 
-      writeFileSync(`${storeFolder}/${name}`, content, { encoding: 'utf-8' });
-      const cache = Store.getLastValue('cache');
-      const checkKey = `${request.usernameHash}-${name}`;
-      cache[checkKey] = content;
-      Store.set('cache', cache);
+      updateItem(name, request.usernameHash, content);
 
       response.send();
     } catch (error: unknown) {
