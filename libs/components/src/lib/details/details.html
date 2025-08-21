@@ -1,0 +1,7 @@
+<details [open]="open() || storedOpened()">
+  <summary (click)="onToggle($event)">
+    {{ summary() }}
+  </summary>
+
+  <ng-content></ng-content>
+</details>

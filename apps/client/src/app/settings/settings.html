@@ -1,9 +1,6 @@
 <form [formGroup]="formGroup">
   <h3>{{ ('BasicSettings' | signalTranslate)() }}</h3>
-  <details>
-    <summary>
-      {{ ('Basics' | signalTranslate)() }}
-    </summary>
+  <libc-details [summary]="('Basics' | signalTranslate)()">
     <libc-select
       [label]="('Theme' | signalTranslate)()"
       [mandatory]="true"
@@ -53,13 +50,10 @@
         ]"
       />
     }
-  </details>
+  </libc-details>
 
   @if (!settingLockEnabled()) {
-    <details [open]="!formGroup.controls.omdbApiKey.value">
-      <summary>
-        {{ ('Integrations' | signalTranslate)() }}
-      </summary>
+    <libc-details [open]="!formGroup.controls.omdbApiKey.value" [summary]="('Integrations' | signalTranslate)()">
       <p>{{ ('Message.IntegrationSettings' | signalTranslate)() }}</p>
       <libc-input
         [label]="('OMDbApiKey' | signalTranslate)()"
@@ -67,9 +61,8 @@
         [mandatory]="true"
         [control]="formGroup.controls.omdbApiKey"
       />
-    </details>
-    <details>
-      <summary>{{ ('StoragePolicies' | signalTranslate)() }}</summary>
+    </libc-details>
+    <libc-details [summary]="('StoragePolicies' | signalTranslate)()">
       <p>{{ ('Message.StorageSettings' | signalTranslate)() }}</p>
       <libc-select
         [label]="('SensitiveDataStorage' | signalTranslate)()"
@@ -92,21 +85,7 @@
           ]"
         />
       }
-    </details>
-    <details>
-      <summary>
-        {{ ('Tokens' | signalTranslate)() }}
-      </summary>
-      <p>{{ ('Message.TokenSettings' | signalTranslate)() }}</p>
-      @for (accessToken of accessTokens(); track $index) {
-        <ct-settings-access-token-item [accessToken]="accessToken" (revokeAccessToken)="onRevokeAccessToken($event)" />
-      }
-      <p>{{ ('Message.CreateNewAccessToken' | signalTranslate)() }}</p>
-      <br />
-      <button (click)="onCreateAccessToken()">
-        {{ ('CreateNewAccessToken' | signalTranslate)() }}
-      </button>
-    </details>
+    </libc-details>
   }
 
   <div class="form-buttons">
@@ -118,10 +97,34 @@
     </button>
   </div>
 
+  @if (!settingLockEnabled()) {
+    <h3>{{ ('UserSettings' | signalTranslate)() }}</h3>
+    <libc-details [summary]="('User' | signalTranslate)()">
+      <p>{{ ('Message.UserSettings' | signalTranslate)() }}</p>
+
+      <button (click)="onCreateNewUserToken()">
+        {{ ('CreateNewUserToken' | signalTranslate)() }}
+      </button>
+      <button class="button-danger" (click)="onDeleteUser()">
+        {{ ('DeleteUser' | signalTranslate)() }}
+      </button>
+    </libc-details>
+    <libc-details [summary]="('AccessTokens' | signalTranslate)()">
+      <p>{{ ('Message.AccessTokenSettings' | signalTranslate)() }}</p>
+      @for (accessToken of accessTokens(); track $index) {
+        <ct-settings-access-token-item [accessToken]="accessToken" (revokeAccessToken)="onRevokeAccessToken($event)" />
+      }
+      <br />
+      <p>{{ ('Message.CreateNewAccessToken' | signalTranslate)() }}</p>
+      <button (click)="onCreateAccessToken()">
+        {{ ('CreateNewAccessToken' | signalTranslate)() }}
+      </button>
+    </libc-details>
+  }
+
   <h3>{{ ('OtherSettings' | signalTranslate)() }}</h3>
   @if (formGroup.controls.appMode.value === 'full') {
-    <details>
-      <summary>{{ ('Images' | signalTranslate)() }}</summary>
+    <libc-details [summary]="('Images' | signalTranslate)()">
       <p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
       @if (imageRefreshStatus(); as imageRefreshStatus) {
         @if (imageRefreshStatus.running || imageRefreshStatus.checked > 0) {
@@ -150,6 +153,6 @@
           </button>
         </div>
       }
-    </details>
+    </libc-details>
   }
 </form>

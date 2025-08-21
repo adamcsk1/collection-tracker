@@ -4,6 +4,7 @@ import { AlertService } from '@services/alert-service';
 import { apiStateToken } from '@services/api/api-store';
 import {
   AccessTokensApiResponseModel,
+  ChangeTokenApiResponseModel,
   CreateAccessTokenApiResponseModel,
   CreateApiRequestModel,
   CreateApiResponseModel,
@@ -169,5 +170,25 @@ export class ApiService {
           throw new Error(error.message);
         })
       );
+  }
+
+  public createNewUserToken(): Observable<ChangeTokenApiResponseModel> {
+    return this.httpClient
+      .put<ChangeTokenApiResponseModel>(`${this.apiState.state.apiUrl()}/user/change-token`, {})
+      .pipe(
+        catchError((error) => {
+          this.alert.show(error.message);
+          throw new Error(error.message);
+        })
+      );
+  }
+
+  public deleteUser(): Observable<void> {
+    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/user`).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        throw new Error(error.message);
+      })
+    );
   }
 }

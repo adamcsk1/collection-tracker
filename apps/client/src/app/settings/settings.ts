@@ -7,6 +7,7 @@ import { ImageRefreshService } from '@client/settings/image-refresh/image-refres
 import { SettingsAccessTokenItem } from '@client/settings/settings-access-token-item/settings-access-token-item';
 import { SettingsModel } from '@client/settings/settings-model';
 import { SettingsService } from '@client/settings/settings-service';
+import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { toastStateToken } from '@components/toast/toast-store';
@@ -17,14 +18,15 @@ import { ConfirmService } from '@services/confirm-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 import { themeStateToken } from '@services/theme/theme-store';
+import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { AccessTokensApiResponseModel } from '@shared/models/api-model';
 import { Form } from '@shared/models/form-model';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { filter, mergeMap } from 'rxjs';
+import { delay, filter, mergeMap, tap } from 'rxjs';
 
 @Component({
   selector: 'ct-settings',
-  imports: [Input, Select, ReactiveFormsModule, NgxSignalTranslatePipe, PercentPipe, SettingsAccessTokenItem],
+  imports: [Input, Select, ReactiveFormsModule, NgxSignalTranslatePipe, PercentPipe, SettingsAccessTokenItem, Details],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   providers: [OMDbService, ImageRefreshService],
@@ -32,6 +34,7 @@ import { filter, mergeMap } from 'rxjs';
 export class Settings implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly settings = inject(SettingsService);
+  private readonly webstorage = inject(WebstorageService);
   private readonly mainState = inject(mainStateToken);
   private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
@@ -103,6 +106,37 @@ export class Settings implements OnInit {
         );
         this.loadAccessTokens();
       });
+  }
+
+  protected onCreateNewUserToken(): void {
+    this.confirm
+      .open(this.ngxSignalTranslate.translate('Confirm.CreateNewUserToken'))
+      .pipe(
+        filter((confirm) => confirm === true),
+        mergeMap(() => this.api.createNewUserToken()),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((response) => {
+        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewUserTokenCreated'));
+        this.alert.show(`${this.ngxSignalTranslate.translate('Message.NewUserTokenCreated')}\n\n${response.newToken}`);
+        this.loadAccessTokens();
+      });
+  }
+
+  protected onDeleteUser(): void {
+    this.confirm
+      .open(this.ngxSignalTranslate.translate('Confirm.DeleteUser'))
+      .pipe(
+        filter((confirm) => confirm === true),
+        mergeMap(() => this.api.deleteUser()),
+        tap(() => {
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UserDeleted'));
+          this.webstorage.clear();
+        }),
+        delay(2000),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => (window.location.href = '/login/'));
   }
 
   private loadAccessTokens(): void {

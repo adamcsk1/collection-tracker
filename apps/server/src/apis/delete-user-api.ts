@@ -8,7 +8,7 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { existsSync, rmSync } from 'fs';
 
 Store.getOnce$('app').subscribe((app) =>
-  app.delete(`${API_PREFIX}/user/delete`, jwtGuard, (request: ExtendedRequestModel, response) => {
+  app.delete(`${API_PREFIX}/user`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
 
