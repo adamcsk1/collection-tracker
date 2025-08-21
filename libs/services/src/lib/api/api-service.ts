@@ -3,6 +3,8 @@ import { inject, Injectable } from '@angular/core';
 import { AlertService } from '@services/alert-service';
 import { apiStateToken } from '@services/api/api-store';
 import {
+  AccessTokensApiResponseModel,
+  CreateAccessTokenApiResponseModel,
   CreateApiRequestModel,
   CreateApiResponseModel,
   GetAllApiResponseModel,
@@ -138,5 +140,34 @@ export class ApiService {
         throw new Error(error.message);
       })
     );
+  }
+
+  public getAccessTokens(): Observable<AccessTokensApiResponseModel> {
+    return this.httpClient.get<AccessTokensApiResponseModel>(`${this.apiState.state.apiUrl()}/user/access-tokens`).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        throw new Error(error.message);
+      })
+    );
+  }
+
+  public deleteAccessToken(tokenHash: string): Observable<void> {
+    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/user/access-token/${tokenHash}`).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        throw new Error(error.message);
+      })
+    );
+  }
+
+  public createAccessToken(): Observable<CreateAccessTokenApiResponseModel> {
+    return this.httpClient
+      .post<CreateAccessTokenApiResponseModel>(`${this.apiState.state.apiUrl()}/user/access-token`, {})
+      .pipe(
+        catchError((error) => {
+          this.alert.show(error.message);
+          throw new Error(error.message);
+        })
+      );
   }
 }

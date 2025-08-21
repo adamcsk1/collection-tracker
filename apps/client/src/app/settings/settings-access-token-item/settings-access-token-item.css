@@ -1,0 +1,14 @@
+div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  span {
+    font-weight: bold;
+    display: block;
+  }
+
+  button {
+    margin: var(--size-small) 1px 1px 1px;
+  }
+}

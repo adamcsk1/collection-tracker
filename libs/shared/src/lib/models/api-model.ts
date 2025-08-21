@@ -41,7 +41,7 @@ export interface AccessTokenModel {
   expiredAt: string | null;
 }
 
-export type AccessTokensResponseModel = Array<AccessTokenModel>;
+export type AccessTokensApiResponseModel = Array<AccessTokenModel>;
 
 export interface CreateAccessTokenApiResponseModel {
   accessToken: string;
