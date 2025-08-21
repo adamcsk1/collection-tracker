@@ -38,20 +38,3 @@ a {
 hr {
   opacity: 0.3;
 }
-
-details {
-  border: var(--border-style);
-  border-radius: var(--border-radius);
-  padding: var(--size-small);
-
-  summary {
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 1.125rem;
-  }
-
-  &:hover {
-    outline: var(--outline-style);
-    outline-color: var(--focus-border-color);
-  }
-}

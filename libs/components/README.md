@@ -19,6 +19,7 @@ Highlights
 - libc-input — Text/password input with label, required marker, reset button, icon and validation hints
 - libc-select — Select dropdown bound to a FormControl with typed options
 - libc-textarea — Textarea with optional auto-height and sizing
+- libc-details — Native details/summary with optional default open and persisted state
 - libc-spinner-loading — Global loading spinner driven by a simple store
 - libc-toast — Tiny toast message component with auto-dismiss
 - libc-dialog-shell — Shell for dialogs with action/content slots and close button
@@ -173,6 +174,47 @@ Inputs
 - rows?: number
 - cols?: number
 - autoHeight?: boolean (auto-fits to container height)
+
+### libc-details
+
+Lightweight wrapper around the native HTML details/summary elements. Supports an optional default-open state and automatically persists the last open/closed state per summary in web storage.
+
+```ts
+import { Component } from '@angular/core';
+import { Details } from '@components/details/details';
+
+@Component({ selector: 'demo-details', imports: [Details], templateUrl: './demo.html' })
+export class DemoDetailsComponent {}
+```
+
+```html
+<libc-details [summary]="'Advanced options'" [open]="false">
+  <p>Here go additional settings and explanations.</p>
+  <!-- Any projected content is supported -->
+  <div class="stack gap-small">
+    <label><input type="checkbox" /> Enable beta features</label>
+    <label><input type="checkbox" /> Show debug info</label>
+  </div>
+
+  <!-- You can include other components inside as needed -->
+  <!-- <libc-input ...></libc-input> -->
+
+  <p class="muted">State is remembered per device/browser.</p>
+
+  <!-- Optional long content to demonstrate collapse/expand -->
+  <!-- ... -->
+</libc-details>
+```
+
+Inputs
+
+- summary: string (required) — The text shown in the summary line; also used as part of the storage key, so keep it stable and unique for a given details block.
+- open?: boolean (default: false) — Initial open state. User toggles are persisted using the workspace WebstorageService.
+
+Notes
+
+- Accessibility: It uses native <details>/<summary>, so keyboard and semantics come for free.
+- Persistence: Open/closed state is saved per summary in web storage; changing the summary text will reset the remembered state.
 
 ### libc-spinner-loading
 
