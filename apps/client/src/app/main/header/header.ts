@@ -6,6 +6,7 @@ import { mainStateToken } from '@client/main/main-store';
 import { ApiService } from '@services/api/api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { catchError } from 'rxjs';
 
 @Component({
   selector: 'ct-header',
@@ -37,7 +38,15 @@ export class Header {
   protected onLogout(): void {
     this.api
       .logout()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        catchError((error) => {
+          if (this.mainState.state.clearLocalStorageAfterLogout()) this.webstorage.clear();
+          window.location.href = '/login/';
+
+          throw new Error(error.message);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe(() => {
         if (this.mainState.state.clearLocalStorageAfterLogout()) this.webstorage.clear();
         window.location.href = '/login/';

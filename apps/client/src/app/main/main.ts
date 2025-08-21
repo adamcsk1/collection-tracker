@@ -12,7 +12,6 @@ import { omdbStateToken } from '@services/omdb/omdb-store';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { asyncScheduler, catchError } from 'rxjs';
 
 @Component({
   selector: 'ct-root',
@@ -43,44 +42,25 @@ export class Main implements OnInit {
       }
     });
 
+    const effectRef = effect(() => {
+      const tokenValidated = this.main.tokenValid();
+      if (tokenValidated) {
+        if (!this.omdbState.state.apiKey()) this.router.navigate(['settings']);
+        this.collectionService.loadCollection();
+        effectRef.destroy();
+      } else if (tokenValidated === false) {
+        window.location.href = '/login/';
+        effectRef.destroy();
+      }
+    });
+
     this.main.loadStoredData();
 
     this.signalTranslateService.setLanguage('en');
     this.theme.listen();
-
-    this.api
-      .validateAccessToken()
-      .pipe(
-        catchError((error) => {
-          window.location.href = '/login/';
-          throw new Error(error.message);
-        })
-      )
-      .subscribe(() => {
-        if (!this.omdbState.state.apiKey()) this.router.navigate(['settings']);
-        this.collectionService.loadCollection();
-        this.backgroundTokenValidation();
-      });
   }
 
   public ngOnInit(): void {
     this.portal.setViewContainerRef(this.collectionDialogsRef()!);
-  }
-
-  private backgroundTokenValidation(timeout?: number): void {
-    if (!timeout && this.apiState.state.loadNetworkStatus() === 'pending') this.backgroundTokenValidation(60000);
-    else {
-      asyncScheduler.schedule(() => {
-        this.api
-          .validateAccessToken()
-          .pipe(
-            catchError((error) => {
-              window.location.href = '/login/';
-              throw new Error(error.message);
-            })
-          )
-          .subscribe();
-      }, timeout || 43200000);
-    }
   }
 }
