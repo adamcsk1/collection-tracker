@@ -1,33 +1,47 @@
 import { PercentPipe } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { mainStateToken } from '@client/main/main-store';
 import { ImageRefreshService } from '@client/settings/image-refresh/image-refresh-service';
+import { SettingsAccessTokenItem } from '@client/settings/settings-access-token-item/settings-access-token-item';
 import { SettingsModel } from '@client/settings/settings-model';
 import { SettingsService } from '@client/settings/settings-service';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
+import { toastStateToken } from '@components/toast/toast-store';
+import { AlertService } from '@services/alert-service';
+import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
+import { ConfirmService } from '@services/confirm-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 import { themeStateToken } from '@services/theme/theme-store';
+import { AccessTokensApiResponseModel } from '@shared/models/api-model';
 import { Form } from '@shared/models/form-model';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { filter, mergeMap } from 'rxjs';
 
 @Component({
   selector: 'ct-settings',
-  imports: [Input, Select, ReactiveFormsModule, NgxSignalTranslatePipe, PercentPipe],
+  imports: [Input, Select, ReactiveFormsModule, NgxSignalTranslatePipe, PercentPipe, SettingsAccessTokenItem],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   providers: [OMDbService, ImageRefreshService],
 })
 export class Settings implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly settings = inject(SettingsService);
   private readonly mainState = inject(mainStateToken);
   private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly imageRefresh = inject(ImageRefreshService);
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  private readonly alert = inject(AlertService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly toastState = inject(toastStateToken);
+  private readonly api = inject(ApiService);
   protected readonly formGroup = new FormGroup<Form<SettingsModel>>({
     sensitiveDataStorage: new FormControl('local', { nonNullable: true, validators: [Validators.required] }),
     clearLocalStorageAfterLogout: new FormControl('false', { nonNullable: true, validators: [Validators.required] }),
@@ -40,6 +54,7 @@ export class Settings implements OnInit {
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly settingLockEnabled = this.mainState.state.settingsLock;
   protected readonly imageRefreshStatus = this.imageRefresh.state;
+  protected readonly accessTokens = signal<AccessTokensApiResponseModel>([]);
 
   public ngOnInit(): void {
     this.formGroup.setValue({
@@ -51,6 +66,8 @@ export class Settings implements OnInit {
       settingsLock: this.mainState.state.settingsLock(),
       clearLocalStorageAfterLogout: this.mainState.state.clearLocalStorageAfterLogout() ? 'true' : 'false',
     });
+
+    this.loadAccessTokens();
   }
 
   protected onSave(navigateBack = false): void {
@@ -59,5 +76,39 @@ export class Settings implements OnInit {
 
   protected onStartImagesRefresh(): void {
     this.imageRefresh.refreshImages();
+  }
+
+  protected onRevokeAccessToken(tokenHash: string): void {
+    this.api
+      .deleteAccessToken(tokenHash)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AccessTokenRevoked'));
+        this.loadAccessTokens();
+      });
+  }
+
+  protected onCreateAccessToken(): void {
+    this.confirm
+      .open(this.ngxSignalTranslate.translate('Confirm.CreateNewAccessToken'))
+      .pipe(
+        filter((confirm) => confirm === true),
+        mergeMap(() => this.api.createAccessToken()),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((response) => {
+        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AccessTokenCreated'));
+        this.alert.show(
+          `${this.ngxSignalTranslate.translate('Message.AccessTokenCreated')}\n\n${response.accessToken}`
+        );
+        this.loadAccessTokens();
+      });
+  }
+
+  private loadAccessTokens(): void {
+    this.api
+      .getAccessTokens()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => this.accessTokens.set(response));
   }
 }

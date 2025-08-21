@@ -1,0 +1,24 @@
+@if (accessToken(); as accessToken) {
+  <div [title]="accessToken.tokenHash">
+    <span>{{ ('TokenHash' | signalTranslate)() }}:</span>
+    {{ accessToken.tokenHash }}
+  </div>
+  <div [title]="accessToken.createdAt | date: 'full'">
+    <span>{{ ('Created' | signalTranslate)() }}:</span>
+    {{ accessToken.createdAt | date: 'medium' }}
+  </div>
+  <div [title]="!accessToken.expiredAt ? '-' : (accessToken.expiredAt | date: 'full')">
+    <span>{{ ('Expires' | signalTranslate)() }}:</span>
+    {{ !accessToken.expiredAt ? '-' : (accessToken.expiredAt | date: 'medium') }}
+  </div>
+  <div [title]="accessToken.userAgent">
+    <span>{{ ('UserAgent' | signalTranslate)() }}:</span>
+    {{ accessToken.userAgent }}
+  </div>
+  <div>
+    <button class="button-danger" (click)="onRevokeAccessToken(accessToken.tokenHash)">
+      {{ ('Revoke' | signalTranslate)() }}
+    </button>
+  </div>
+  <hr />
+}
