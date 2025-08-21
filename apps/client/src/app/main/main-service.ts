@@ -1,6 +1,7 @@
-import { computed, inject, Injectable } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { mainStateToken } from '@client/main/main-store';
 import { SettingsModel } from '@client/settings/settings-model';
+import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 import { themeStateToken } from '@services/theme/theme-store';
@@ -15,15 +16,19 @@ import {
   STORAGE_SETTINGS_LOCK,
   STORAGE_THEME,
 } from '@shared/constants/storage-const';
+import { catchError } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class MainService {
+  private readonly api = inject(ApiService);
   private readonly webstorage = inject(WebstorageService);
   private readonly mainState = inject(mainStateToken);
   private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly apiState = inject(apiStateToken);
+  private readonly _tokenValid = signal<boolean | null>(null);
   public readonly hasRequiredConfig = computed(() => !!this.apiState.state.apiUrl());
+  public readonly tokenValid = this._tokenValid.asReadonly();
 
   public loadStoredData(): void {
     const apiUrl = this.webstorage.getItem(STORAGE_API_URL);
@@ -58,5 +63,17 @@ export class MainService {
       delete: ['full'].includes(appMode),
       update: ['full'].includes(appMode),
     });
+  }
+
+  public validateAccessToken(): void {
+    this.api
+      .validateAccessToken()
+      .pipe(
+        catchError((error) => {
+          this._tokenValid.set(false);
+          throw new Error(error.message);
+        })
+      )
+      .subscribe(() => this._tokenValid.set(true));
   }
 }

@@ -12,6 +12,7 @@ import express from 'express';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { existsSync, readFileSync } from 'fs';
 import helmet from 'helmet';
+import nocache from 'nocache';
 
 export const main = () => {
   try {
@@ -34,6 +35,7 @@ export const main = () => {
     const app = express();
 
     app.use(helmet());
+    app.use(nocache());
     app.use(
       rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
