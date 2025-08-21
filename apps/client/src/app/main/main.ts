@@ -68,7 +68,7 @@ export class Main implements OnInit {
   }
 
   private backgroundTokenValidation(timeout?: number): void {
-    if (this.apiState.state.loadNetworkStatus() === 'pending') this.backgroundTokenValidation(60000);
+    if (!timeout && this.apiState.state.loadNetworkStatus() === 'pending') this.backgroundTokenValidation(60000);
     else {
       asyncScheduler.schedule(() => {
         this.api
