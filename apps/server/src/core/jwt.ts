@@ -1,6 +1,6 @@
 import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
 import { hashText } from '@server/core/crypto';
-import { errorLog } from '@server/core/logger';
+import { debugLog, errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { randomUUID } from 'crypto';
@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 
 export const generateAccessToken = (username: string, expiresIn: string | null = null): string | null => {
   try {
+    debugLog('Generating access token');
     let options: any = {};
 
     if (!!expiresIn) options.expiresIn = expiresIn;
@@ -25,28 +26,38 @@ export const jwtGuard = async (
   response: express.Response,
   next: () => void
 ): Promise<express.Response> => {
+  debugLog(`Validating access token (${request.url})`);
+
   const cookieToken = request.signedCookies[COOKIE_TOKEN];
   const authorizationToken = request.headers['authorization'];
   let token = cookieToken || authorizationToken || '';
   if (token.includes('Bearer ')) token = token.split(' ')[1];
 
-  if (!token) return response.sendStatus(401);
+  if (!token) {
+    debugLog('No token found');
+    return response.sendStatus(401);
+  }
 
-  jwt.verify(token, process.env.JWT_SECRET as string, async (err: any, data: any) => {
+  jwt.verify(token, process.env.JWT_SECRET as string, async (error: any, data: any) => {
     try {
-      if (err) return response.sendStatus(403);
+      if (error) {
+        debugLog(`Access token verification failed (${error.message})`);
+        return response.sendStatus(403);
+      }
 
       const usernameHash = await hashText(`${data.username}${process.env.SALT}`);
       const users = Store.getLastValue('users');
       const tokenHash = await hashText(`${token}${process.env.SALT}`);
 
       if (!users[usernameHash]?.accessTokens?.map((token) => token.tokenHash)?.includes(tokenHash)) {
+        debugLog('Access token not recognized');
         return response.sendStatus(403);
       }
 
       request.username = data.username;
       request.usernameHash = usernameHash;
 
+      debugLog('Access token validated successfully');
       next();
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Access token validation unknown error (${error.message})`);
