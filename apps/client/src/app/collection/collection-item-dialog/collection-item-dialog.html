@@ -1,4 +1,7 @@
 <libc-dialog-shell>
+  <ng-container dialog-shell-top-content>
+    <h3>{{ ('Title.CollectionItem' | signalTranslate)() }}</h3>
+  </ng-container>
   <ng-container dialog-shell-content>
     @if (editMode()) {
       <div class="content-container-editor">
@@ -8,7 +11,7 @@
       <div class="content-container-parsed-content" [innerHTML]="parsedMdContent()"></div>
     }
   </ng-container>
-  <ng-container dialog-shell-bottom-actions>
+  <ng-container dialog-shell-bottom-content>
     @if (editMode()) {
       <button [title]="('ReadOnly' | signalTranslate)()" (click)="onReadOnly()">
         {{ ('ReadOnly' | signalTranslate)() }}

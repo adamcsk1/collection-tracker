@@ -1,4 +1,7 @@
 <libc-dialog-shell>
+  <ng-container dialog-shell-top-content>
+    <h3>{{ ('Title.NewCollectionItem' | signalTranslate)() }}</h3>
+  </ng-container>
   <ng-container dialog-shell-content>
     <form [formGroup]="formGroup">
       <libc-input
@@ -28,7 +31,7 @@
       }
     </form>
   </ng-container>
-  <ng-container dialog-shell-bottom-actions>
+  <ng-container dialog-shell-bottom-content>
     <button [disabled]="formGroup.invalid" [title]="('Save' | signalTranslate)()" (click)="onSave()">
       {{ ('Save' | signalTranslate)() }}
     </button>

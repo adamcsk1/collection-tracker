@@ -38,3 +38,17 @@ a {
 hr {
   opacity: 0.3;
 }
+
+a.small-text-button {
+  display: block;
+  font-size: var(--font-size-small);
+}
+
+code {
+  border: var(--border-style);
+  border-color: var(--text-color);
+  padding: var(--size-smaller);
+  border-radius: var(--border-radius);
+  display: block;
+  overflow: auto;
+}

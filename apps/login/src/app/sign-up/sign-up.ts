@@ -57,6 +57,6 @@ export class SignUp implements OnInit {
 
   protected onCopyToClipboard(): void {
     copyToClipboard(this.secret());
-    this.toastState.setState('message', this.ngxSignalTranslate.translate('Message.CopiedToClipboard'));
+    this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.CopiedToClipboard'));
   }
 }

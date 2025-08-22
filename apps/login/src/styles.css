@@ -4,8 +4,3 @@
 @import url("../../../libs/shared/src/lib/styles/variables.css");
 @import url("../../../libs/shared/src/lib/styles/main.css");
 @import url("../../../libs/shared/src/lib/styles/components/button.css");
-
-.small-text-button {
-  display: block;
-  font-size: var(--font-size-small);
-}

@@ -1,15 +1,9 @@
+import { mobileUserAgent } from '@shared/utils/mobile-user-ageint.util';
+
 type WindowExtended = Window & { clipboardData?: { setData: (format: string, data: string) => void } };
 
 export const copyToClipboard = (text: string) => {
-  if (
-    navigator.userAgent.match(/Android/i) ||
-    navigator.userAgent.match(/webOS/i) ||
-    navigator.userAgent.match(/iPhone/i) ||
-    navigator.userAgent.match(/iPad/i) ||
-    navigator.userAgent.match(/iPod/i) ||
-    navigator.userAgent.match(/BlackBerry/i) ||
-    navigator.userAgent.match(/Windows Phone/i)
-  ) {
+  if (mobileUserAgent()) {
     if ((window as WindowExtended)?.clipboardData?.setData) {
       (window as WindowExtended)!.clipboardData!.setData('Text', text);
     } else if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
