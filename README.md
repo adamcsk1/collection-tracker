@@ -118,7 +118,7 @@ USER_LIMIT=2
 
 - No passwords. Sign-up issues a user token. Sign-in exchanges the user token for a JWT access token.
 - Access token is returned via a signed HTTP-only cookie named `token` with a 15-day expiry (preferred). Each cookie-authenticated request rotates the token and refreshes the cookie (sliding).
-- The API also accepts `Authorization: Bearer <token>`; tokens created specifically for header use are not rotated and are tracked with `expiredAt: null`.
+- The API also accepts `Authorization: Bearer <token>`; tokens created specifically for header use are not rotated and are tracked with `expiresAt: null`.
 
 See the server docs for details: [apps/server/README.md](./apps/server/README.md) and [apps/server/API.md](./apps/server/API.md).
 
