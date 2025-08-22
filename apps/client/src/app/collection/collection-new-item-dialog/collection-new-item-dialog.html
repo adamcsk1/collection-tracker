@@ -29,17 +29,17 @@
           [control]="formGroup.controls.tags"
         />
       }
+      <div class="form-buttons">
+        <button [disabled]="formGroup.invalid" [title]="('Save' | signalTranslate)()" (click)="onSave()">
+          {{ ('Save' | signalTranslate)() }}
+        </button>
+        <button [disabled]="formGroup.invalid" [title]="('SaveAndNew' | signalTranslate)()" (click)="onSave('new')">
+          {{ ('SaveAndNew' | signalTranslate)() }}
+        </button>
+        <button [disabled]="formGroup.invalid" [title]="('SaveAndClose' | signalTranslate)()" (click)="onSave('close')">
+          {{ ('SaveAndClose' | signalTranslate)() }}
+        </button>
+      </div>
     </form>
-  </ng-container>
-  <ng-container dialog-shell-bottom-content>
-    <button [disabled]="formGroup.invalid" [title]="('Save' | signalTranslate)()" (click)="onSave()">
-      {{ ('Save' | signalTranslate)() }}
-    </button>
-    <button [disabled]="formGroup.invalid" [title]="('SaveAndNew' | signalTranslate)()" (click)="onSave('new')">
-      {{ ('SaveAndNew' | signalTranslate)() }}
-    </button>
-    <button [disabled]="formGroup.invalid" [title]="('SaveAndClose' | signalTranslate)()" (click)="onSave('close')">
-      {{ ('SaveAndClose' | signalTranslate)() }}
-    </button>
   </ng-container>
 </libc-dialog-shell>
