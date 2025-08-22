@@ -30,7 +30,7 @@ export class CollectionList {
       .collection()
       .filter((collectionItem) => collectionItem.rawContent.toLowerCase().includes(searchText));
   });
-  private readonly limit = 50;
+  private readonly limit = 150;
   private readonly lastPageItem = computed(() => this.offset() + this.limit);
   protected readonly paginatedCollection = computed(() => {
     const filteredCollection = this.filteredCollection();
