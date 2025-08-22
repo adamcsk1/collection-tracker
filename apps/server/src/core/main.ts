@@ -1,6 +1,6 @@
 import '@server/apis';
 import { getArgv } from '@server/core/argv/argv';
-import { errorLog, infoLog } from '@server/core/logger';
+import { debugLog, errorLog, infoLog } from '@server/core/logger';
 import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { initializeFolders } from '@server/tools/initializer';
@@ -33,9 +33,18 @@ export const main = () => {
     );
 
     const app = express();
+    app.set('trust proxy', 1);
+    debugLog('Initializing express server');
 
+    app.use((request, _response, next) => {
+      debugLog(`Incoming request: ${request.url}`);
+      next();
+    });
+    debugLog('Applying request logging middleware');
     app.use(helmet());
+    debugLog('Applying security middleware');
     app.use(nocache());
+    debugLog('Applying no-cache middleware');
     app.use(
       rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
@@ -53,6 +62,7 @@ export const main = () => {
         },
       })
     );
+    debugLog('Applying rate limiting middleware');
     app.use(
       cors({
         origin: (requestOrigin: string | undefined, callback: (err: Error | null, origin?: boolean) => void): void => {
@@ -62,10 +72,13 @@ export const main = () => {
         optionsSuccessStatus: 200,
       })
     );
-    app.set('trust proxy', 1);
+    debugLog('Applying CORS middleware');
+
     app.use(bodyParser.json({ limit: '50mb', strict: false }));
     app.use(bodyParser.urlencoded({ extended: true }));
+    debugLog('Applying body parser middleware');
     app.use(cookieParser(process.env.COOKIE_SECRET));
+    debugLog('Applying cookie parser middleware');
 
     Store.set('app', app);
 
