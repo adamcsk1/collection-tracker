@@ -4,7 +4,7 @@ import { hashText } from '@server/core/crypto';
 import { generateAccessToken, jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { getUserAccessToken, updateUsers } from '@server/core/utils/users-util';
+import { getUserAccessToken } from '@server/core/utils/users-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 
@@ -28,8 +28,7 @@ Store.getOnce$('app').subscribe((app) =>
         users[request.usernameHash].accessTokens = users[request.usernameHash].accessTokens.filter(
           (token) => token.tokenHash !== tokenHash
         );
-
-        updateUsers(users);
+        Store.set('users', users);
 
         response.cookie(COOKIE_TOKEN, newAccessToken, cookie).sendStatus(204);
       } else response.sendStatus(204);

@@ -28,6 +28,7 @@ const debugLog = (message: string): void => {
   const { debug } = getArgv();
   if (!debug) return;
   message = `[ debug ] ${message}`;
+  console.log(message);
   writeLog(message);
 };
 

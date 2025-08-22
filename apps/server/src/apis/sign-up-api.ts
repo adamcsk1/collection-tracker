@@ -2,7 +2,6 @@ import { generateRandomToken, hashText } from '@server/core/crypto';
 import { errorLog } from '@server/core/logger';
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
-import { updateUsers } from '@server/core/utils/users-util';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/api-model';
 import { mkdirSync } from 'fs';
@@ -31,7 +30,7 @@ Store.getOnce$('app').subscribe((app) =>
       const userToken = generateRandomToken(username);
 
       users[usernameHash] = { userTokenHash: await hashText(`${userToken}${process.env.SALT}`), accessTokens: [] };
-      updateUsers(users);
+      Store.set('users', users);
 
       mkdirSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${usernameHash}`, { recursive: true });
 
