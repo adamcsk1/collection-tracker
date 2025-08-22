@@ -1,29 +1,4 @@
 <libc-dialog-shell>
-  <ng-container dialog-shell-actions>
-    @if (editMode()) {
-      <button class="button-icon material-icons" [title]="('ReadOnly' | signalTranslate)()" (click)="onReadOnly()">
-        visibility
-      </button>
-      <button class="button-icon material-icons" [title]="('Save' | signalTranslate)()" (click)="onSaveChanges()">
-        save
-      </button>
-    } @else {
-      @if (permissionUpdate()) {
-        <button class="button-icon material-icons" [title]="('Edit' | signalTranslate)()" (click)="onEdit()">
-          edit
-        </button>
-      }
-      @if (permissionDelete()) {
-        <button
-          class="button-icon material-icons button-danger"
-          [title]="('Delete' | signalTranslate)()"
-          (click)="onDelete()"
-        >
-          delete
-        </button>
-      }
-    }
-  </ng-container>
   <ng-container dialog-shell-content>
     @if (editMode()) {
       <div class="content-container-editor">
@@ -31,6 +6,27 @@
       </div>
     } @else {
       <div class="content-container-parsed-content" [innerHTML]="parsedMdContent()"></div>
+    }
+  </ng-container>
+  <ng-container dialog-shell-bottom-actions>
+    @if (editMode()) {
+      <button [title]="('ReadOnly' | signalTranslate)()" (click)="onReadOnly()">
+        {{ ('ReadOnly' | signalTranslate)() }}
+      </button>
+      <button [title]="('Save' | signalTranslate)()" (click)="onSaveChanges()">
+        {{ ('Save' | signalTranslate)() }}
+      </button>
+    } @else {
+      @if (permissionUpdate()) {
+        <button [title]="('Edit' | signalTranslate)()" (click)="onEdit()">
+          {{ ('Edit' | signalTranslate)() }}
+        </button>
+      }
+      @if (permissionDelete()) {
+        <button class="button-danger" [title]="('Delete' | signalTranslate)()" (click)="onDelete()">
+          {{ ('Delete' | signalTranslate)() }}
+        </button>
+      }
     }
   </ng-container>
 </libc-dialog-shell>
