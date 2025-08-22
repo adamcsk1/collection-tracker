@@ -11,6 +11,7 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { Form } from '@shared/models/form-model';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
+import { mobileUserAgent } from '@shared/utils/mobile-user-ageint.util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
@@ -57,6 +58,8 @@ export class SignUp implements OnInit {
 
   protected onCopyToClipboard(): void {
     copyToClipboard(this.secret());
-    this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.CopiedToClipboard'));
+    if (!mobileUserAgent()) {
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.CopiedToClipboard'));
+    }
   }
 }
