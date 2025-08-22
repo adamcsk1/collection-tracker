@@ -21,13 +21,13 @@
     border-radius: 0;
   }
 
-  .dialog-shell-top-actions {
+  .dialog-shell-top-content {
     display: flex;
     justify-content: space-between;
     padding-bottom: var(--size-smaller);
   }
 
-  .dialog-shell-bottom-actions {
+  .dialog-shell-bottom-content {
     display: flex;
     flex-wrap: wrap;
     gap: var(--size-small);

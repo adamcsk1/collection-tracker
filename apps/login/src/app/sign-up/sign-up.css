@@ -1,12 +1,6 @@
 @import url("../../styles/sign-pages-base.css");
 
 code {
-  border: var(--border-style);
-  border-color: var(--text-color);
-  padding: var(--size-smaller);
-  border-radius: var(--border-radius);
   width: 100%;
-  display: block;
-  overflow: auto;
   max-height: 150px;
 }

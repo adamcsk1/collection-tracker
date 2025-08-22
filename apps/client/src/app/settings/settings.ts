@@ -7,6 +7,7 @@ import { ImageRefreshService } from '@client/settings/image-refresh/image-refres
 import { SettingsAccessTokenItem } from '@client/settings/settings-access-token-item/settings-access-token-item';
 import { SettingsModel } from '@client/settings/settings-model';
 import { SettingsService } from '@client/settings/settings-service';
+import { SettingsTokenDialog } from '@client/settings/settings-token-dialog/settings-token-dialog';
 import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
@@ -17,6 +18,7 @@ import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { omdbStateToken } from '@services/omdb/omdb-store';
+import { PortalService } from '@services/portal-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { AccessTokensApiResponseModel } from '@shared/models/api-model';
@@ -43,6 +45,7 @@ export class Settings implements OnInit {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly alert = inject(AlertService);
   private readonly confirm = inject(ConfirmService);
+  private readonly portal = inject(PortalService);
   private readonly toastState = inject(toastStateToken);
   private readonly api = inject(ApiService);
   protected readonly formGroup = new FormGroup<Form<SettingsModel>>({
@@ -101,9 +104,11 @@ export class Settings implements OnInit {
       )
       .subscribe((response) => {
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AccessTokenCreated'));
-        this.alert.show(
-          `${this.ngxSignalTranslate.translate('Message.AccessTokenCreated')}\n\n${response.accessToken}`
-        );
+        this.portal.open(SettingsTokenDialog, {
+          title: this.ngxSignalTranslate.translate('Title.NewAccessToken'),
+          message: this.ngxSignalTranslate.translate('Message.AccessTokenCreated'),
+          token: response.accessToken,
+        });
         this.loadAccessTokens();
       });
   }
@@ -118,7 +123,11 @@ export class Settings implements OnInit {
       )
       .subscribe((response) => {
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewUserTokenCreated'));
-        this.alert.show(`${this.ngxSignalTranslate.translate('Message.NewUserTokenCreated')}\n\n${response.newToken}`);
+        this.portal.open(SettingsTokenDialog, {
+          title: this.ngxSignalTranslate.translate('Title.NewUserToken'),
+          message: this.ngxSignalTranslate.translate('Message.NewUserTokenCreated'),
+          token: response.newToken,
+        });
         this.loadAccessTokens();
       });
   }

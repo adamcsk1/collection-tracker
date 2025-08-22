@@ -1,14 +1,14 @@
 <div class="dialog-shell">
-  <div class="dialog-shell-top-actions">
+  <div class="dialog-shell-top-content">
     <div>
-      <ng-content select="[dialog-shell-top-actions]" />
+      <ng-content select="[dialog-shell-top-content]" />
     </div>
     <button class="button-icon material-icons" [title]="('Close' | signalTranslate)()" (click)="onClose()">
       close
     </button>
   </div>
   <ng-content select="[dialog-shell-content]" />
-  <div class="dialog-shell-bottom-actions">
-    <ng-content select="[dialog-shell-bottom-actions]" />
+  <div class="dialog-shell-bottom-content">
+    <ng-content select="[dialog-shell-bottom-content]" />
   </div>
 </div>
