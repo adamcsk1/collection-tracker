@@ -4,7 +4,7 @@ import { generateRandomToken, hashText } from '@server/core/crypto';
 import { generateAccessToken, jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { getUserAccessToken, updateUsers } from '@server/core/utils/users-util';
+import { getUserAccessToken } from '@server/core/utils/users-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { ChangeTokenApiResponseModel } from '@shared/models/api-model';
@@ -25,7 +25,7 @@ Store.getOnce$('app').subscribe((app) =>
         userTokenHash: await hashText(`${newUserToken}${process.env.SALT}`),
         accessTokens: [await getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)],
       };
-      updateUsers(users);
+      Store.set('users', users);
 
       const result: ChangeTokenApiResponseModel = { newToken: newUserToken };
       response.cookie(COOKIE_TOKEN, newAccessToken, cookie).send(result);

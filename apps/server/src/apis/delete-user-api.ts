@@ -2,7 +2,6 @@ import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
-import { updateUsers } from '@server/core/utils/users-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { existsSync, rmSync } from 'fs';
@@ -22,7 +21,7 @@ Store.getOnce$('app').subscribe((app) =>
 
       const users = Store.getLastValue('users');
       delete users[request.usernameHash];
-      updateUsers(users);
+      Store.set('users', users);
 
       response.send();
     } catch (error: unknown) {

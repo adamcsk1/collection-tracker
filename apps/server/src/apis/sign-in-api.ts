@@ -4,7 +4,7 @@ import { hashText } from '@server/core/crypto';
 import { generateAccessToken } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { getUserAccessToken, updateUsers } from '@server/core/utils/users-util';
+import { getUserAccessToken } from '@server/core/utils/users-util';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignInApiRequestModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
@@ -35,7 +35,7 @@ Store.getOnce$('app').subscribe((app) =>
         users[usernameHash].accessTokens = users[usernameHash].accessTokens.filter(
           (token) => token.expiredAt !== null && dayjs(token.expiredAt).isAfter(dayjs())
         );
-        updateUsers(users);
+        Store.set('users', users);
 
         response.cookie(COOKIE_TOKEN, newAccessToken, cookie).send();
       } else response.sendStatus(403);

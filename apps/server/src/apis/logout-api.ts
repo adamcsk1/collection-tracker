@@ -3,7 +3,6 @@ import { hashText } from '@server/core/crypto';
 import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { updateUsers } from '@server/core/utils/users-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 
@@ -17,7 +16,7 @@ Store.getOnce$('app').subscribe((app) =>
       users[request.usernameHash].accessTokens = users[request.usernameHash].accessTokens.filter(
         (token) => token.tokenHash !== tokenHash
       );
-      updateUsers(users);
+      Store.set('users', users);
 
       response.clearCookie(COOKIE_TOKEN).sendStatus(204);
     } catch (error: unknown) {
