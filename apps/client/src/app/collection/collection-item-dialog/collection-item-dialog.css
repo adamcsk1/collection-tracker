@@ -1,6 +1,8 @@
 .content-container-parsed-content {
   height: 100%;
+  padding: var(--size-smaller);
   padding-bottom: var(--size-bigger);
+  margin-bottom: var(--size-bigger);
   overflow: auto;
 }
 

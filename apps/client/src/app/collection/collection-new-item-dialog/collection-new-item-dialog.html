@@ -1,30 +1,4 @@
 <libc-dialog-shell>
-  <ng-container dialog-shell-actions>
-    <button
-      class="button-icon material-icons"
-      [disabled]="formGroup.invalid"
-      [title]="('Save' | signalTranslate)()"
-      (click)="onSave()"
-    >
-      save
-    </button>
-    <button
-      class="button-icon material-icons button-save-and-new"
-      [disabled]="formGroup.invalid"
-      [title]="('SaveAndNew' | signalTranslate)()"
-      (click)="onSave('new')"
-    >
-      save
-    </button>
-    <button
-      class="button-icon material-icons button-save-and-close"
-      [disabled]="formGroup.invalid"
-      [title]="('SaveAndClose' | signalTranslate)()"
-      (click)="onSave('close')"
-    >
-      save
-    </button>
-  </ng-container>
   <ng-container dialog-shell-content>
     <form [formGroup]="formGroup">
       <libc-input
@@ -53,5 +27,16 @@
         />
       }
     </form>
+  </ng-container>
+  <ng-container dialog-shell-bottom-actions>
+    <button [disabled]="formGroup.invalid" [title]="('Save' | signalTranslate)()" (click)="onSave()">
+      {{ ('Save' | signalTranslate)() }}
+    </button>
+    <button [disabled]="formGroup.invalid" [title]="('SaveAndNew' | signalTranslate)()" (click)="onSave('new')">
+      {{ ('SaveAndNew' | signalTranslate)() }}
+    </button>
+    <button [disabled]="formGroup.invalid" [title]="('SaveAndClose' | signalTranslate)()" (click)="onSave('close')">
+      {{ ('SaveAndClose' | signalTranslate)() }}
+    </button>
   </ng-container>
 </libc-dialog-shell>

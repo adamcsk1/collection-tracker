@@ -21,8 +21,16 @@
     border-radius: 0;
   }
 
-  .dialog-shell-actions {
+  .dialog-shell-top-actions {
     display: flex;
     justify-content: space-between;
+    padding-bottom: var(--size-smaller);
+  }
+
+  .dialog-shell-bottom-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--size-small);
+    padding-top: var(--size-smaller);
   }
 }

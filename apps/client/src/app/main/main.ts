@@ -1,7 +1,7 @@
 import { Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { CollectionService } from '@client/collection/collection-service';
-import { Header } from '@client/main/header/header';
+import { MainHeader } from '@client/main/main-header/main-header';
 import { MainService } from '@client/main/main-service';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
@@ -15,7 +15,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-root',
-  imports: [RouterOutlet, Header, SpinnerLoading, Toast],
+  imports: [RouterOutlet, MainHeader, SpinnerLoading, Toast],
   templateUrl: './main.html',
   styleUrl: './main.css',
 })

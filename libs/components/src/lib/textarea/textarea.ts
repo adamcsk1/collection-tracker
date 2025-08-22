@@ -35,12 +35,13 @@ export class Textarea<T> implements OnInit {
   }
 
   private setFullHeight(): void {
-    asyncScheduler.schedule(() =>
+    asyncScheduler.schedule(() => {
+      console.log({ parent: this.elementRef!.nativeElement.parentElement });
       this.renderer.setStyle(
         this.textAreaWrapElement()?.nativeElement,
         'height',
-        `${this.elementRef!.nativeElement.parentElement!.clientHeight}px`
-      )
-    );
+        `${this.elementRef!.nativeElement.parentElement!.clientHeight - 16}px`
+      );
+    });
   }
 }
