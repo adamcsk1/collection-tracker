@@ -33,7 +33,7 @@ Store.getOnce$('app').subscribe((app) =>
           await getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
         );
         users[usernameHash].accessTokens = users[usernameHash].accessTokens.filter(
-          (token) => token.expiredAt !== null && dayjs(token.expiredAt).isAfter(dayjs())
+          (token) => token.expiresAt !== null && dayjs(token.expiresAt).isAfter(dayjs())
         );
         Store.set('users', users);
 

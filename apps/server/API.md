@@ -13,7 +13,7 @@ Authentication
 - Access tokens (JWTs) currently have no intrinsic exp claim. However:
   - When delivered via cookie, the token is rotated on each cookie-authenticated request (sliding) and the cookie expires in 15 days.
   - The cookie is `HttpOnly`, `Secure`, `SameSite=Strict`, and signed. Ensure `COOKIE_SECRET` is configured.
-  - Tokens created for header usage via `POST /user/access-token` are tracked with `expiredAt: null`.
+  - Tokens created for header usage via `POST /user/access-token` are tracked with `expiresAt: null`.
 
 ## Health
 
@@ -70,14 +70,14 @@ DELETE `/logout`
 POST `/user/access-token`
 
 - Auth: Bearer required
-- Behavior: Issues a new JWT access token and appends it to the user's allowed token list (existing access tokens remain valid). Tokens created this way are intended for header use and are tracked with `expiredAt: null`.
+- Behavior: Issues a new JWT access token and appends it to the user's allowed token list (existing access tokens remain valid). Tokens created this way are intended for header use and are tracked with `expiresAt: null`.
 - 200: `{ "accessToken": string }`
 - 500: server error
 
 GET `/user/access-tokens`
 
 - Auth: Bearer required
-- 200: `Array<{ tokenHash: string; createdAt: string; userAgent: string; expiredAt: string | null }>`
+- 200: `Array<{ tokenHash: string; createdAt: string; userAgent: string; expiresAt: string | null }>`
 - 500: server error
 
 DELETE `/user/access-token/:tokenHash`

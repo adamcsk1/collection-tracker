@@ -10,5 +10,5 @@ export const getUserAccessToken = async (
   tokenHash: await hashText(`${accessToken}${process.env.SALT}`),
   createdAt: dayjs().toISOString(),
   userAgent: userAgent,
-  expiredAt: expires?.toISOString() || null,
+  expiresAt: expires?.toISOString() || null,
 });

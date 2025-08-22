@@ -7,7 +7,7 @@ A lightweight Express-based API server that powers Collection Tracker. It provid
 - Versioned REST API under `/api/v1`
 - Token model: user token (for sign-in and rotation) + JWT access token for API (no passwords)
   - Cookie flow (recommended): access token is set as a signed, HttpOnly cookie named `token` with a 15-day expiry. On each cookie-authenticated request the server rotates the token (sliding) and sets a fresh cookie.
-  - Header flow: the API also accepts `Authorization: Bearer <token>`; tokens created explicitly for header use are tracked with `expiredAt: null` and are not rotated automatically.
+  - Header flow: the API also accepts `Authorization: Bearer <token>`; tokens created explicitly for header use are tracked with `expiresAt: null` and are not rotated automatically.
 - Token management: create/list/delete access tokens
 - Token rotation: rotate user token and issue a fresh access token (invalidates all previous access tokens)
 - Account deletion: remove user's store, cache entries, and user record
@@ -78,7 +78,7 @@ nx run server:serve -- --dataFolder=.data --debug=true
 ## Data model
 
 - Users: JSON map keyed by username hash →
-  `{ userTokenHash: string; accessTokens: Array<{ tokenHash: string; createdAt: string; userAgent: string; expiredAt: string | null }> }`
+  `{ userTokenHash: string; accessTokens: Array<{ tokenHash: string; createdAt: string; userAgent: string; expiresAt: string | null }> }`
 - Content: markdown files under each user's store directory; file names are ISO-like timestamps
 
 ## API

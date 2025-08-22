@@ -7,9 +7,9 @@
     <span>{{ ('Created' | signalTranslate)() }}:</span>
     {{ accessToken.createdAt | date: 'medium' }}
   </div>
-  <div [title]="!accessToken.expiredAt ? '-' : (accessToken.expiredAt | date: 'full')">
+  <div [title]="!accessToken.expiresAt ? '-' : (accessToken.expiresAt | date: 'full')">
     <span>{{ ('Expires' | signalTranslate)() }}:</span>
-    {{ !accessToken.expiredAt ? '-' : (accessToken.expiredAt | date: 'medium') }}
+    {{ !accessToken.expiresAt ? '-' : (accessToken.expiresAt | date: 'medium') }}
   </div>
   <div [title]="accessToken.userAgent">
     <span>{{ ('UserAgent' | signalTranslate)() }}:</span>

@@ -38,7 +38,7 @@ export interface AccessTokenModel {
   tokenHash: string;
   createdAt: string;
   userAgent: string;
-  expiredAt: string | null;
+  expiresAt: string | null;
 }
 
 export type AccessTokensApiResponseModel = Array<AccessTokenModel>;
