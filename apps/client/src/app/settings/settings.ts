@@ -32,6 +32,9 @@ import { delay, filter, mergeMap, tap } from 'rxjs';
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   providers: [OMDbService, ImageRefreshService],
+  host: {
+    class: 'page',
+  },
 })
 export class Settings implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

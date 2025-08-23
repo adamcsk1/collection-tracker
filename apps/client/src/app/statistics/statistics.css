@@ -1,14 +1,7 @@
 :host {
-  display: flex;
   flex-flow: wrap;
   gap: var(--size-default);
-  max-width: var(--container-max-width);
   justify-content: space-around;
-  margin: 0 auto;
-
-  @media (width <= 520px) {
-    max-width: var(--container-max-width-mobile);
-  }
 }
 
 .statistics-group {

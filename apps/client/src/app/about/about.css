@@ -1,19 +1,5 @@
-:host {
-  max-width: var(--container-max-width);
-  display: flex;
-  justify-content: center;
-  margin: 0 auto;
-
-  @media (width <= 520px) {
-    max-width: var(--container-max-width-mobile);
-  }
-}
-
 .about {
   width: 100%;
-  background-color: var(--glassy-background);
-  border-radius: var(--border-radius);
-  padding: var(--size-default);
   display: flex;
   flex-direction: column;
 

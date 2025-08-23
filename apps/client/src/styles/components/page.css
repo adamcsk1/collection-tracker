@@ -1,0 +1,12 @@
+.page {
+  display: flex;
+  background-color: var(--glassy-background);
+  border-radius: var(--border-radius);
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: var(--size-default);
+
+  @media (width <= 520px) {
+    max-width: var(--container-max-width-mobile);
+  }
+}

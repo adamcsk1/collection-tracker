@@ -12,6 +12,9 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   imports: [NgxSignalTranslatePipe, StatisticsItem, NgTemplateOutlet],
   templateUrl: './statistics.html',
   styleUrl: './statistics.css',
+  host: {
+    class: 'page',
+  },
 })
 export class Statistics {
   private readonly mainCollectionState = inject(mainCollectionStateToken);
