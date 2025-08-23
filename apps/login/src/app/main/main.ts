@@ -1,28 +1,41 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { BlockerLoading } from '@components/blocker-loading/blocker-loading';
+import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
 import { Toast } from '@components/toast/toast';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
+import { Themes } from '@services/theme/theme-model';
+import { ThemeService } from '@services/theme/theme-service';
+import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { API_PREFIX } from '@shared/constants/api-const';
-import { STORAGE_API_URL } from '@shared/constants/storage-const';
+import { STORAGE_API_URL, STORAGE_THEME } from '@shared/constants/storage-const';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { catchError } from 'rxjs';
 
 @Component({
   selector: 'lo-root',
-  imports: [RouterOutlet, NgxSignalTranslatePipe, Toast],
+  imports: [RouterOutlet, NgxSignalTranslatePipe, Toast, BlockerLoading],
   templateUrl: './main.html',
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Main {
+export class Main implements AfterViewInit {
   private readonly signalTranslateService = inject(NgxSignalTranslateService);
   private readonly webstorage = inject(WebstorageService);
   private readonly api = inject(ApiService);
+  private readonly theme = inject(ThemeService);
   private readonly apiState = inject(apiStateToken);
+  private readonly themeState = inject(themeStateToken);
+  private readonly blockerLoadingState = inject(blockerLoadingStateToken);
 
   constructor() {
     this.signalTranslateService.setLanguage('en');
+    this.blockerLoadingState.setState('withoutDelay', true);
+    this.blockerLoadingState.setState('show', true);
+    this.themeState.setState('theme', (this.webstorage.getItem(STORAGE_THEME) as Themes) || 'light');
+    this.theme.listen();
 
     let apiUrl = this.webstorage.getItem(STORAGE_API_URL);
 
@@ -31,7 +44,17 @@ export class Main {
       this.webstorage.setItem(STORAGE_API_URL, apiUrl);
     }
     this.apiState.setState('apiUrl', apiUrl);
+  }
 
-    this.api.validateAccessToken().subscribe(() => (window.location.href = '/client/'));
+  public ngAfterViewInit(): void {
+    this.api
+      .validateAccessToken()
+      .pipe(
+        catchError((error) => {
+          this.blockerLoadingState.setState('show', false);
+          throw new Error(error.message);
+        })
+      )
+      .subscribe(() => (window.location.href = '/client/'));
   }
 }

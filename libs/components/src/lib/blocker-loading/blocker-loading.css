@@ -1,0 +1,67 @@
+:host {
+  --logo-size: 100px;
+}
+
+.blocker-loading {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  background-color: var(--background-color);
+
+  img {
+    width: var(--logo-size);
+    height: var(--logo-size);
+    border-radius: 35%;
+    border: var(--outline-style);
+    border-color: var(--focus-border-color);
+    margin: 0 auto;
+  }
+
+  .loading {
+    font-size: var(--font-size-big);
+
+    .dots {
+      span {
+        opacity: 0;
+        display: inline-block;
+        animation: dot 1s infinite;
+
+        &:nth-child(1) {
+          animation-delay: 0s;
+        }
+
+        &:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+
+        &:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+      }
+    }
+  }
+}
+
+@keyframes dot {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+}
