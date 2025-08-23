@@ -2,6 +2,7 @@ form {
   display: flex;
   flex-direction: column;
   gap: var(--size-small);
+  width: 100%;
 
   div.form-buttons {
     display: flex;

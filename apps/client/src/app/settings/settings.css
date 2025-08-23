@@ -1,13 +1,6 @@
 form {
-  max-width: 500px;
-  margin: 0 auto;
-
   label {
     display: block;
-  }
-
-  @media (width <= 450px) {
-    max-width: 90vw;
   }
 }
 

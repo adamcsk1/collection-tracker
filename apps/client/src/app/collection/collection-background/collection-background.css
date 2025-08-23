@@ -6,6 +6,8 @@
   left: 0;
   filter: blur(var(--size-small));
   pointer-events: none;
+  will-change: filter;
+  contain: layout paint;
 }
 
 img {
@@ -18,10 +20,19 @@ img {
   animation-timing-function: linear;
   animation-duration: var(--animation-duration);
   animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  animation-delay: var(--animation-delay, 0s);
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 @keyframes image-animation {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
   100% {
-    transform: translateY(100vh);
+    transform: translate3d(0, 100vh, 0);
   }
 }

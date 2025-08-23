@@ -13,6 +13,9 @@ import { BehaviorSubject, debounceTime, filter, tap } from 'rxjs';
   imports: [NgxSignalTranslatePipe],
   templateUrl: './about.html',
   styleUrl: './about.css',
+  host: {
+    class: 'page',
+  },
 })
 export class About {
   private readonly destroyRef = inject(DestroyRef);
