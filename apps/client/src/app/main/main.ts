@@ -6,7 +6,6 @@ import { MainService } from '@client/main/main-service';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { Toast } from '@components/toast/toast';
-import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 import { PortalService } from '@services/portal-service';
@@ -30,7 +29,6 @@ export class Main implements OnInit {
   private readonly signalTranslateService = inject(NgxSignalTranslateService);
   private readonly collectionService = inject(CollectionService);
   private readonly theme = inject(ThemeService);
-  private readonly api = inject(ApiService);
   private readonly collectionDialogsRef = viewChild('portal', { read: ViewContainerRef });
 
   constructor() {

@@ -21,6 +21,7 @@ Highlights
 - libc-textarea — Textarea with optional auto-height and sizing
 - libc-details — Native details/summary with optional default open and persisted state
 - libc-spinner-loading — Global loading spinner driven by a simple store
+- libc-blocker-loading — Full-screen blocking overlay with title/logo shown during critical app loading
 - libc-toast — Tiny toast message component with auto-dismiss
 - libc-dialog-shell — Shell for dialogs with action/content slots and close button
 
@@ -49,11 +50,16 @@ import {
   initialSpinnerLoadingState,
   spinnerLoadingStateToken,
 } from '@components/spinner-loading/spinner-loading-store';
+import {
+  initialBlockerLoadingState,
+  blockerLoadingStateToken,
+} from '@components/blocker-loading/blocker-loading-store';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideStore(initialToastState, toastStateToken),
     provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
+    provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
     provideSignalTranslateConfig({ path: './i18n' }),
   ],
 };
@@ -238,6 +244,34 @@ const spinner = inject(spinnerLoadingStateToken);
 spinner.setState('show', true); // show
 spinner.setState('show', false); // hide
 ```
+
+### libc-blocker-loading
+
+Full-screen overlay that blocks interaction while the app performs critical work (e.g., bootstrapping, heavy route resolves). It appears after a short delay (~500ms) to avoid flicker on very fast operations.
+
+```ts
+import { Component } from '@angular/core';
+import { BlockerLoading } from '@components/blocker-loading/blocker-loading';
+
+@Component({ selector: 'app-root-ui', imports: [BlockerLoading], template: '<libc-blocker-loading />' })
+export class AppRootUi {}
+```
+
+Trigger from anywhere:
+
+```ts
+import { inject } from '@angular/core';
+import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
+
+const blocker = inject(blockerLoadingStateToken);
+blocker.setState('show', true); // show full-screen blocker
+blocker.setState('show', false); // hide
+```
+
+Notes
+
+- Uses `ngx-signal-translate` for i18n strings like `Title` and `Message.Loading`.
+- The template references `icons/logo.png`; ensure a logo exists in your app's public assets or adjust as needed.
 
 ### libc-toast
 

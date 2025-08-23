@@ -1,0 +1,11 @@
+@if (showBlockerLoading()) {
+  <div [@opacityOutAnimation] class="blocker-loading">
+    <div>
+      <img src="icons/logo.png" [alt]="('Title' | signalTranslate)()" />
+      <h1>{{ ('Title' | signalTranslate)() }}</h1>
+    </div>
+    <div class="loading">
+      {{ ('Message.Loading' | signalTranslate)() }}<span class="dots"><span>.</span><span>.</span><span>.</span></span>
+    </div>
+  </div>
+}

@@ -1,0 +1,1 @@
+export const BLOCKER_LOADING_TIMEOUT_MS = 500;

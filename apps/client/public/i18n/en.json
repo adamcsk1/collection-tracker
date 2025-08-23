@@ -101,6 +101,7 @@
   "Message.AccessTokenCreated": "Here is your new access token. Please copy it now, as it will not be displayed again.",
   "Message.UserSettings": "The user settings allow you to make account-related changes. This includes actions such as changing the login token or deleting the account.",
   "Message.NewUserTokenCreated": "Here is your new user token. Please copy it now, as it will not be displayed again.",
+  "Message.Loading": "Loading",
   "Toast.SettingsLockDisable": "You are {count} clicks away from disabling the settings lock!",
   "Toast.SettingsLockDisabled": "The settings lock was disabled successfully!",
   "Toast.NewItem": "The collection item was added successfully!",

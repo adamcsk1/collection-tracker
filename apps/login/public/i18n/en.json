@@ -17,5 +17,6 @@
   "Message.SignUp": "Please sign up to begin using the Collection tracker. To do this, you need to select a username.",
   "Message.ApiUrl": "The API URL should include the API prefix and the version (e.g., /api/v1).",
   "Message.SignUpSecret": "This is your secret key for your user account. You can use it to authenticate yourself in the Collection tracker. Please ensure you keep it safe.",
+  "Message.Loading": "Loading",
   "Toast.CopiedToClipboard": "The secret has been copied to the clipboard."
 }

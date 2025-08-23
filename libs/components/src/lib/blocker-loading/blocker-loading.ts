@@ -1,0 +1,48 @@
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { BLOCKER_LOADING_TIMEOUT_MS } from '@components/blocker-loading/blocker-loading-const';
+import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
+import { opacityOutAnimation } from '@shared/animations/opacity-out-animation';
+import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { asyncScheduler, Subscription } from 'rxjs';
+
+@Component({
+  selector: 'libc-blocker-loading',
+  imports: [NgxSignalTranslatePipe],
+  templateUrl: './blocker-loading.html',
+  styleUrl: './blocker-loading.css',
+  animations: [opacityOutAnimation],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class BlockerLoading {
+  private readonly blockerLoadingState = inject(blockerLoadingStateToken);
+  private startTime: number | null = null;
+  private scheduler?: Subscription;
+  protected readonly showBlockerLoading = signal(false);
+
+  constructor() {
+    effect(() => {
+      const show = this.blockerLoadingState.state.show();
+      const withoutDelay = this.blockerLoadingState.state.withoutDelay();
+      if (show && !withoutDelay) {
+        this.startTime = new Date().getTime();
+
+        this.scheduler = asyncScheduler.schedule(() => {
+          if (show) {
+            this.showBlockerLoading.set(true);
+          } else this.startTime = null;
+        }, BLOCKER_LOADING_TIMEOUT_MS);
+      } else if (withoutDelay) this.showBlockerLoading.set(true);
+
+      if (!show && this.startTime) {
+        this.scheduler?.unsubscribe();
+        this.showBlockerLoading.set(false);
+        this.startTime = null;
+      } else if (!show && withoutDelay) {
+        asyncScheduler.schedule(() => {
+          this.showBlockerLoading.set(false);
+          this.blockerLoadingState.setState('withoutDelay', false);
+        }, BLOCKER_LOADING_TIMEOUT_MS);
+      }
+    });
+  }
+}
