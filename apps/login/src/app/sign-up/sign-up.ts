@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -19,6 +19,7 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
   imports: [NgxSignalTranslatePipe, Input, ReactiveFormsModule, RouterLink],
   templateUrl: './sign-up.html',
   styleUrl: './sign-up.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignUp implements OnInit {
   private readonly apiState = inject(apiStateToken);

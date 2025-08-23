@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Toast } from '@components/toast/toast';
 import { ApiService } from '@services/api/api-service';
@@ -13,6 +13,7 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
   imports: [RouterOutlet, NgxSignalTranslatePipe, Toast],
   templateUrl: './main.html',
   styleUrl: './main.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Main {
   private readonly signalTranslateService = inject(NgxSignalTranslateService);

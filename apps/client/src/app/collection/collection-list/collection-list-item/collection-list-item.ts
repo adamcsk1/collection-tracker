@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { CollectionItemDialog } from '@client/collection/collection-item-dialog/collection-item-dialog';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { collectionStateToken } from '@client/collection/collection-store';
@@ -8,6 +8,7 @@ import { PortalService } from '@services/portal-service';
   selector: 'ct-collection-list-item',
   templateUrl: './collection-list-item.html',
   styleUrl: './collection-list-item.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CollectionListItem {
   private readonly collectionState = inject(collectionStateToken);

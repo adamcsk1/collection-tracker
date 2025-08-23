@@ -1,4 +1,4 @@
-import { Component, DestroyRef, DOCUMENT, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, DOCUMENT, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CollectionService } from '@client/collection/collection-service';
@@ -13,6 +13,7 @@ import { catchError } from 'rxjs';
   imports: [RouterLink, RouterLinkActive, NgxSignalTranslatePipe],
   templateUrl: './main-header.html',
   styleUrl: './main-header.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MainHeader {
   private readonly document = inject(DOCUMENT);

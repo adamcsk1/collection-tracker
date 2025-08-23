@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
@@ -7,6 +7,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   imports: [NgxSignalTranslatePipe],
   templateUrl: './dialog-shell.html',
   styleUrl: './dialog-shell.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogShell {
   private readonly portal = inject(PortalService);

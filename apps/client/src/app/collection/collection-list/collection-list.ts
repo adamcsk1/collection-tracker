@@ -1,4 +1,13 @@
-import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { CollectionItemDialog } from '@client/collection/collection-item-dialog/collection-item-dialog';
 import { CollectionListItemSkeleton } from '@client/collection/collection-list/collection-list-item-skeleton/collection-list-item-skeleton';
 import { CollectionListItem } from '@client/collection/collection-list/collection-list-item/collection-list-item';
@@ -16,6 +25,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   imports: [NgxSignalTranslatePipe, CollectionListItem, CollectionListItemSkeleton],
   templateUrl: './collection-list.html',
   styleUrl: './collection-list.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CollectionList {
   private readonly mainCollectionState = inject(mainCollectionStateToken);

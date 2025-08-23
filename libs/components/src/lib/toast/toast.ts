@@ -1,4 +1,4 @@
-import { Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { scaleAnimation } from '@shared/animations/scale-animation';
 import { asyncScheduler, Subscription } from 'rxjs';
@@ -8,6 +8,7 @@ import { asyncScheduler, Subscription } from 'rxjs';
   templateUrl: './toast.html',
   styleUrl: './toast.css',
   animations: [scaleAnimation],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Toast {
   private readonly toastState = inject(toastStateToken);

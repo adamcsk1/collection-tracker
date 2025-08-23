@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { toastStateToken } from '@components/toast/toast-store';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
@@ -13,6 +13,7 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
   host: {
     class: 'dialog',
   },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsTokenDialog {
   private readonly toastState = inject(toastStateToken);

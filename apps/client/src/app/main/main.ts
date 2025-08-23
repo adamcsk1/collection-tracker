@@ -1,4 +1,4 @@
-import { Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { CollectionService } from '@client/collection/collection-service';
 import { MainHeader } from '@client/main/main-header/main-header';
@@ -18,6 +18,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
   imports: [RouterOutlet, MainHeader, SpinnerLoading, Toast],
   templateUrl: './main.html',
   styleUrl: './main.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Main implements OnInit {
   private readonly apiState = inject(apiStateToken);

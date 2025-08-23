@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
@@ -7,6 +7,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe],
   templateUrl: './input.html',
   styleUrl: './input.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Input<T> {
   public readonly inputId = input<string>(crypto.randomUUID());

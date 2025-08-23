@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { StatisticsItem } from '@client/statistics/statistics-item/statistics-item';
 import { StatisticsGroupModel } from '@client/statistics/statistics-model';
@@ -15,6 +15,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   host: {
     class: 'page',
   },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Statistics {
   private readonly mainCollectionState = inject(mainCollectionStateToken);
