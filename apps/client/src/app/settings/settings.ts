@@ -1,5 +1,5 @@
 import { PercentPipe } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { mainStateToken } from '@client/main/main-store';
@@ -35,6 +35,7 @@ import { delay, filter, mergeMap, tap } from 'rxjs';
   host: {
     class: 'page',
   },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Settings implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

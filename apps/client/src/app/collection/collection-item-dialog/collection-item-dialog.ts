@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { CollectionItemModel } from '@client/collection/collection-model';
@@ -23,6 +23,7 @@ import { map, mergeMap, of } from 'rxjs';
   host: {
     class: 'dialog',
   },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CollectionItemDialog implements OnInit {
   private readonly collectionService = inject(CollectionService);

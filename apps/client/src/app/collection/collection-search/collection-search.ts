@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { collectionStateToken } from '@client/collection/collection-store';
@@ -10,6 +10,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   imports: [Input, ReactiveFormsModule, NgxSignalTranslatePipe],
   templateUrl: './collection-search.html',
   styleUrl: './collection-search.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CollectionSearch implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

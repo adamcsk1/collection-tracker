@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { CollectionBackgroundImagesModel } from '@client/collection/collection-background/collection-background-model';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { opacityAnimation } from '@shared/animations/opacity-animation';
@@ -9,6 +9,7 @@ import { randomInt } from '@shared/utils/random-int-util';
   templateUrl: './collection-background.html',
   styleUrl: './collection-background.css',
   animations: [opacityAnimation],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CollectionBackground {
   private readonly mainCollectionState = inject(mainCollectionStateToken);

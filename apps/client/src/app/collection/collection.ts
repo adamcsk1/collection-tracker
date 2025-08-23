@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CollectionBackground } from '@client/collection/collection-background/collection-background';
 import { CollectionList } from '@client/collection/collection-list/collection-list';
 import { CollectionSearch } from '@client/collection/collection-search/collection-search';
@@ -12,5 +12,6 @@ import { provideStore } from 'ngx-simple-signal-store';
   templateUrl: './collection.html',
   styleUrl: './collection.css',
   providers: [provideStore(initialCollectionState, collectionStateToken)],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Collection {}

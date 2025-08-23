@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { APP_VERSION, BUILD, BUILD_DATE } from '@client/main/main-const';
 import { mainStateToken } from '@client/main/main-store';
@@ -16,6 +16,7 @@ import { BehaviorSubject, debounceTime, filter, tap } from 'rxjs';
   host: {
     class: 'page',
   },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class About {
   private readonly destroyRef = inject(DestroyRef);

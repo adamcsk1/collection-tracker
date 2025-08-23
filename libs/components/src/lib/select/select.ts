@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { SelectInputModel } from '@shared/models/select-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
@@ -8,6 +8,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe],
   templateUrl: './select.html',
   styleUrl: './select.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Select<T> {
   public readonly selectId = input<string>(crypto.randomUUID());

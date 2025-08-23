@@ -11,8 +11,8 @@ import { concatMap, delay, filter, of, skip, tap } from 'rxjs';
   imports: [AsyncPipe, NgxSignalTranslatePipe],
   templateUrl: './spinner-loading.html',
   styleUrl: './spinner-loading.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [scaleAnimation],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpinnerLoading {
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);

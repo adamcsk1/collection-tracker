@@ -1,4 +1,14 @@
-import { Component, DestroyRef, ElementRef, inject, input, OnInit, Renderer2, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  OnInit,
+  Renderer2,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
@@ -9,6 +19,7 @@ import { asyncScheduler, debounceTime, fromEvent } from 'rxjs';
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe],
   templateUrl: './textarea.html',
   styleUrl: './textarea.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Textarea<T> implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

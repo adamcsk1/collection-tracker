@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CollectionNewItemModel } from '@client/collection/collection-new-item-dialog/collection-new-item-dialog-model';
@@ -26,6 +26,7 @@ import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap } from
   host: {
     class: 'dialog',
   },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CollectionNewItemDialog implements OnInit {
   private readonly api = inject(ApiService);

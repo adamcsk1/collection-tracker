@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   selector: 'ct-collection-list-item-skeleton',
@@ -13,5 +13,6 @@ import { Component } from '@angular/core';
     </div>
   `,
   styleUrl: './collection-list-item-skeleton.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CollectionListItemSkeleton {}

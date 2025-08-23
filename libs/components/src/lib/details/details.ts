@@ -1,4 +1,4 @@
-import { Component, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_PREFIX } from '@shared/constants/storage-const';
 
@@ -6,6 +6,7 @@ import { STORAGE_PREFIX } from '@shared/constants/storage-const';
   selector: 'libc-details',
   templateUrl: './details.html',
   styleUrl: './details.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Details implements OnInit {
   private readonly webstorage = inject(WebstorageService);

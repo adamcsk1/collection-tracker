@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ConfirmService } from '@services/confirm-service';
@@ -11,6 +11,7 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe, DatePipe],
   templateUrl: './settings-access-token-item.html',
   styleUrl: './settings-access-token-item.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsAccessTokenItem {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
