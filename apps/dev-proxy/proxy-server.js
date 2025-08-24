@@ -42,7 +42,9 @@ const apiProxy = createProxyMiddleware(
 const loginProxy = createProxyMiddleware(
   commonProxy({
     target: TARGETS.login,
-    pathRewrite: { '^/login': '' },
+    pathRewrite: {
+      '^/login(/|$)': '',
+    },
   })
 );
 
@@ -57,7 +59,7 @@ app.use('/api', apiProxy);
 app.use('/login', loginProxy);
 app.use('/client', clientProxy);
 app.get('/health', (_req, res) => res.status(200).send('ok'));
-app.get('/', (_req, res) => res.redirect(302, '/login/'));
+app.get('/', (_req, res) => res.redirect(302, '/login'));
 
 const server = app.listen(PORT, () => {
   console.log(`[proxy] Dev gateway ready at http://localhost:${PORT}`);
