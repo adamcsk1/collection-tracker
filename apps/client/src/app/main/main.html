@@ -2,6 +2,9 @@
 <div class="main-body">
   <router-outlet />
 </div>
+@if (useAnimatedBackground()) {
+  <ct-collection-background />
+}
 <libc-spinner-loading />
 <libc-toast />
 <ng-container #portal />

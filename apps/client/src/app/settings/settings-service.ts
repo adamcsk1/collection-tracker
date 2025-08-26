@@ -9,6 +9,7 @@ import { omdbStateToken } from '@services/omdb/omdb-store';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
+  STORAGE_ANIMATED_BACKGROUND,
   STORAGE_APP_MODE,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_FETCH_BATCH_SIZE,
@@ -34,9 +35,10 @@ export class SettingsService {
   public storeFormData(formData: SettingsModel, navigateBack = false): void {
     this.omdbState.setState('apiKey', formData.omdbApiKey);
     this.mainState.setState('appMode', formData.appMode);
-    this.mainState.setState('settingsLock', formData.settingsLock);
+    this.mainState.setState('settingsLock', formData.settingsLock === 'true');
     this.mainState.setState('sensitiveDataStorage', formData.sensitiveDataStorage);
     this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout === 'true');
+    this.mainState.setState('animatedBackground', formData.animatedBackground === 'true');
     this.apiState.setState('fetchBatchSize', formData.fetchBatchSize);
     this.themeState.setState('theme', formData.theme);
 
@@ -51,6 +53,7 @@ export class SettingsService {
     this.webstorage.setItem(STORAGE_FETCH_BATCH_SIZE, `${formData.fetchBatchSize}`);
     this.webstorage.setItem(STORAGE_THEME, formData.theme);
     this.webstorage.setItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT, String(formData.clearLocalStorageAfterLogout));
+    this.webstorage.setItem(STORAGE_ANIMATED_BACKGROUND, String(formData.animatedBackground));
 
     this.main.setPermissions();
 

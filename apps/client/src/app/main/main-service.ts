@@ -7,6 +7,7 @@ import { omdbStateToken } from '@services/omdb/omdb-store';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
+  STORAGE_ANIMATED_BACKGROUND,
   STORAGE_API_URL,
   STORAGE_APP_MODE,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
@@ -41,6 +42,7 @@ export class MainService {
       STORAGE_SENSITIVE_DATA_STORAGE
     ) as SettingsModel['sensitiveDataStorage'];
     const clearLocalStorageAfterLogout = this.webstorage.getItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT) === 'true';
+    const animatedBackground = this.webstorage.getItem(STORAGE_ANIMATED_BACKGROUND) !== 'false';
 
     if (apiUrl) this.apiState.setState('apiUrl', apiUrl);
     if (omdbApiKey) this.omdbState.setState('apiKey', omdbApiKey);
@@ -53,6 +55,7 @@ export class MainService {
     if (sensitiveDataStorage) this.mainState.setState('sensitiveDataStorage', sensitiveDataStorage);
     this.mainState.setState('settingsLock', settingsLock);
     this.mainState.setState('clearLocalStorageAfterLogout', clearLocalStorageAfterLogout);
+    this.mainState.setState('animatedBackground', animatedBackground);
   }
 
   public setPermissions(): void {

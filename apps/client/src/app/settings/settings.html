@@ -11,6 +11,16 @@
         { text: ('SolarizedDark' | signalTranslate)(), value: 'dark' },
       ]"
     />
+    <libc-select
+      [label]="('AnimatedBackground' | signalTranslate)()"
+      [hint]="('Message.AnimatedBackground' | signalTranslate)()"
+      [mandatory]="true"
+      [control]="formGroup.controls.animatedBackground"
+      [options]="[
+        { text: ('Yes' | signalTranslate)(), value: 'true' },
+        { text: ('No' | signalTranslate)(), value: 'false' },
+      ]"
+    />
     @if (!settingLockEnabled()) {
       <libc-select
         [label]="('AppMode' | signalTranslate)()"
@@ -30,8 +40,8 @@
           [mandatory]="true"
           [control]="formGroup.controls.settingsLock"
           [options]="[
-            { text: ('Yes' | signalTranslate)(), value: true },
-            { text: ('No' | signalTranslate)(), value: false },
+            { text: ('Yes' | signalTranslate)(), value: 'true' },
+            { text: ('No' | signalTranslate)(), value: 'false' },
           ]"
         />
       }
