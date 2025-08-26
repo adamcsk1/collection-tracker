@@ -1,3 +1,3 @@
 @if (message(); as message) {
-  <p [@scaleAnimation]>{{ message }}</p>
+  <p [@scaleAnimation] tabindex="0" (click)="onToastClick()" (keydown)="onToastClick()">{{ message }}</p>
 }
