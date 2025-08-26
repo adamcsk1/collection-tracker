@@ -12,7 +12,7 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { STORAGE_API_URL, STORAGE_THEME } from '@shared/constants/storage-const';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 
 @Component({
   selector: 'lo-root',
@@ -52,7 +52,7 @@ export class Main implements AfterViewInit {
       .pipe(
         catchError((error) => {
           this.blockerLoadingState.setState('show', false);
-          throw new Error(error.message);
+          return throwError(() => error);
         })
       )
       .subscribe(() => (window.location.href = '/client/'));

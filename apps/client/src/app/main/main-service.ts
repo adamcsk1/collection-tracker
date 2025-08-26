@@ -17,7 +17,7 @@ import {
   STORAGE_SETTINGS_LOCK,
   STORAGE_THEME,
 } from '@shared/constants/storage-const';
-import { catchError } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class MainService {
@@ -74,7 +74,7 @@ export class MainService {
       .pipe(
         catchError((error) => {
           this._tokenValid.set(false);
-          throw new Error(error.message);
+          return throwError(() => error);
         })
       )
       .subscribe(() => this._tokenValid.set(true));

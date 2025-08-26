@@ -14,7 +14,7 @@ import {
   SignUpApiRequestModel,
   SignUpApiResponseModel,
 } from '@shared/models/api-model';
-import { catchError, filter, Observable, of, Subject, tap } from 'rxjs';
+import { catchError, filter, Observable, of, Subject, tap, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -35,7 +35,7 @@ export class ApiService {
       catchError((error) => {
         if (!suppressErrors) {
           this.alert.show(error.message);
-          throw new Error(error.message);
+          return throwError(() => error);
         } else return of();
       })
     );
@@ -46,7 +46,7 @@ export class ApiService {
     return this.httpClient.post<SignUpApiResponseModel>(`${this.apiState.state.apiUrl()}/sign-up`, body).pipe(
       catchError((error) => {
         this.alert.show(error.message);
-        throw new Error(error.message);
+        return throwError(() => error);
       })
     );
   }
@@ -56,7 +56,7 @@ export class ApiService {
     return this.httpClient.post<void>(`${this.apiState.state.apiUrl()}/sign-in`, body).pipe(
       catchError((error) => {
         this.alert.show(error.message);
-        throw new Error(error.message);
+        return throwError(() => error);
       })
     );
   }
@@ -65,7 +65,7 @@ export class ApiService {
     return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/logout`).pipe(
       catchError((error) => {
         this.alert.show(error.message);
-        throw new Error(error.message);
+        return throwError(() => error);
       })
     );
   }
@@ -88,9 +88,8 @@ export class ApiService {
               lazyLoad(offset + fetchBatchSize)
                 .pipe(
                   catchError((error) => {
-                    console.error(error.message);
                     this.apiState.setState('loadNetworkStatus', 'error');
-                    throw new Error(error.message);
+                    return throwError(() => error);
                   })
                 )
                 .subscribe((items) => results.next(items));
@@ -105,8 +104,7 @@ export class ApiService {
       .pipe(
         catchError((error) => {
           this.apiState.setState('loadNetworkStatus', 'error');
-          console.error(error.message);
-          throw new Error(error.message);
+          return throwError(() => error);
         })
       )
       .subscribe((items) => results.next(items));
@@ -119,7 +117,7 @@ export class ApiService {
     return this.httpClient.post<CreateApiResponseModel>(`${this.apiState.state.apiUrl()}/create`, body).pipe(
       catchError((error) => {
         this.alert.show(error.message);
-        throw new Error(error.message);
+        return throwError(() => error);
       })
     );
   }
@@ -129,7 +127,7 @@ export class ApiService {
     return this.httpClient.put<void>(`${this.apiState.state.apiUrl()}/modify/${name}`, body).pipe(
       catchError((error) => {
         this.alert.show(error.message);
-        throw new Error(error.message);
+        return throwError(() => error);
       })
     );
   }
@@ -138,7 +136,7 @@ export class ApiService {
     return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/delete/${name}`).pipe(
       catchError((error) => {
         this.alert.show(error.message);
-        throw new Error(error.message);
+        return throwError(() => error);
       })
     );
   }
@@ -147,7 +145,7 @@ export class ApiService {
     return this.httpClient.get<AccessTokensApiResponseModel>(`${this.apiState.state.apiUrl()}/user/access-tokens`).pipe(
       catchError((error) => {
         this.alert.show(error.message);
-        throw new Error(error.message);
+        return throwError(() => error);
       })
     );
   }
@@ -156,7 +154,7 @@ export class ApiService {
     return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/user/access-token/${tokenHash}`).pipe(
       catchError((error) => {
         this.alert.show(error.message);
-        throw new Error(error.message);
+        return throwError(() => error);
       })
     );
   }
@@ -167,7 +165,7 @@ export class ApiService {
       .pipe(
         catchError((error) => {
           this.alert.show(error.message);
-          throw new Error(error.message);
+          return throwError(() => error);
         })
       );
   }
@@ -178,7 +176,7 @@ export class ApiService {
       .pipe(
         catchError((error) => {
           this.alert.show(error.message);
-          throw new Error(error.message);
+          return throwError(() => error);
         })
       );
   }
@@ -187,7 +185,7 @@ export class ApiService {
     return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/user`).pipe(
       catchError((error) => {
         this.alert.show(error.message);
-        throw new Error(error.message);
+        return throwError(() => error);
       })
     );
   }
