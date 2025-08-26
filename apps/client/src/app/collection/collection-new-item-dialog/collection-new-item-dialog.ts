@@ -15,7 +15,7 @@ import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
 import { Form } from '@shared/models/form-model';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap } from 'rxjs';
+import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
 
 @Component({
   selector: 'ct-collection-new-item-dialog',
@@ -89,7 +89,7 @@ export class CollectionNewItemDialog implements OnInit {
         ),
         catchError((error) => {
           this.spinnerLoadingState.setState('show', false);
-          throw new Error(error.message);
+          return throwError(() => error);
         }),
         takeUntilDestroyed(this.destroyRef)
       )

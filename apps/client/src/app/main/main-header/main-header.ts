@@ -6,7 +6,7 @@ import { mainStateToken } from '@client/main/main-store';
 import { ApiService } from '@services/api/api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { catchError } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 
 @Component({
   selector: 'ct-main-header',
@@ -44,7 +44,7 @@ export class MainHeader {
           if (this.mainState.state.clearLocalStorageAfterLogout()) this.webstorage.clear();
           window.location.href = '/login/';
 
-          throw new Error(error.message);
+          return throwError(() => error);
         }),
         takeUntilDestroyed(this.destroyRef)
       )
