@@ -12,22 +12,27 @@ import { asyncScheduler, Subscription } from 'rxjs';
 })
 export class Toast {
   private readonly toastState = inject(toastStateToken);
+  private scheduler?: Subscription;
   protected readonly message = this.toastState.state.message;
   protected readonly timeout = this.toastState.state.timeout;
 
   constructor() {
-    let scheduler: Subscription;
-
     effect(() => {
       if (this.message()) {
-        if (scheduler) scheduler.unsubscribe();
+        if (this.scheduler) this.scheduler.unsubscribe();
 
-        scheduler = asyncScheduler.schedule(() => {
-          this.toastState.setState('message', initialToastState.message);
-          this.toastState.setState('timeout', initialToastState.timeout);
-          scheduler.unsubscribe();
-        }, this.timeout());
+        this.scheduler = asyncScheduler.schedule(() => this.hide(), this.timeout());
       }
     });
+  }
+
+  protected onToastClick(): void {
+    this.hide();
+  }
+
+  protected hide(): void {
+    this.toastState.setState('message', initialToastState.message);
+    this.toastState.setState('timeout', initialToastState.timeout);
+    this.scheduler?.unsubscribe();
   }
 }
