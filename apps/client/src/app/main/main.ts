@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { CollectionService } from '@client/collection/collection-service';
+import { CollectionBackground } from '@client/main/collection-background/collection-background';
 import { MainHeader } from '@client/main/main-header/main-header';
 import { MainService } from '@client/main/main-service';
+import { mainStateToken } from '@client/main/main-store';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { Toast } from '@components/toast/toast';
@@ -14,12 +16,13 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-root',
-  imports: [RouterOutlet, MainHeader, SpinnerLoading, Toast],
+  imports: [RouterOutlet, MainHeader, SpinnerLoading, Toast, CollectionBackground],
   templateUrl: './main.html',
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Main implements OnInit {
+  private readonly mainState = inject(mainStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly omdbState = inject(omdbStateToken);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
@@ -30,6 +33,7 @@ export class Main implements OnInit {
   private readonly collectionService = inject(CollectionService);
   private readonly theme = inject(ThemeService);
   private readonly collectionDialogsRef = viewChild('portal', { read: ViewContainerRef });
+  protected readonly useAnimatedBackground = this.mainState.state.animatedBackground;
 
   constructor() {
     effect(() => {

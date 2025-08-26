@@ -5,6 +5,7 @@ export interface MainState {
   appMode: SettingsModel['appMode'];
   settingsLock: boolean;
   clearLocalStorageAfterLogout: boolean;
+  animatedBackground: boolean;
   sensitiveDataStorage: SettingsModel['sensitiveDataStorage'];
   permissions: {
     create: boolean;
@@ -17,6 +18,7 @@ export const initialMainState: MainState = {
   appMode: 'full',
   settingsLock: false,
   clearLocalStorageAfterLogout: false,
+  animatedBackground: true,
   sensitiveDataStorage: 'local',
   permissions: {
     create: false,
