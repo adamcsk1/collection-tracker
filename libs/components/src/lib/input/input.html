@@ -14,7 +14,7 @@
       class="button-icon material-icons"
       (click)="onReset()"
       [title]="('ResetInput' | signalTranslate)()"
-      [disabled]="!control().value"
+      [disabled]="!hasValue()"
     >
       close
     </button>
