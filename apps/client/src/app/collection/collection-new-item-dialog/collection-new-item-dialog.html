@@ -9,6 +9,7 @@
         [hint]="('Message.NewCollectionItemSearch' | signalTranslate)()"
         [mandatory]="true"
         [control]="formGroup.controls.searchText"
+        [showReset]="true"
       />
       @if (matchedContent().length) {
         <libc-select
