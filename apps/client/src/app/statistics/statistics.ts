@@ -1,15 +1,17 @@
-import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
-import { StatisticsItem } from '@client/statistics/statistics-item/statistics-item';
-import { StatisticsGroupModel } from '@client/statistics/statistics-model';
-import { sortWithTagPriority } from '@client/statistics/utils/sort-with-tag-priority-util';
+import { StatisticsSummaryModel } from '@client/statistics/statistics-model';
+import { Details } from '@components/details/details';
 import { apiStateToken } from '@services/api/api-store';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
+import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
+import Chart from 'chart.js/auto';
+import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-statistics',
-  imports: [NgxSignalTranslatePipe, StatisticsItem, NgTemplateOutlet],
+  imports: [NgxSignalTranslatePipe, Details],
   templateUrl: './statistics.html',
   styleUrl: './statistics.css',
   host: {
@@ -17,47 +19,80 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Statistics {
+export class Statistics implements AfterViewInit {
+  private readonly webstorage = inject(WebstorageService);
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly apiState = inject(apiStateToken);
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
-  protected readonly statistics = computed(() => {
+  protected readonly tags = computed(() => [
+    ...new Set(
+      this.mainCollectionState.state
+        .collection()
+        .flatMap((item) => item.tags)
+        .sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0))
+    ),
+  ]);
+  protected readonly chart = signal<Chart<'pie', (number | [number, number] | null)[], never> | null>(null);
+  protected readonly selectedTags = signal<Array<string>>([]);
+  protected readonly summary = computed<StatisticsSummaryModel>(() => {
     const collection = this.mainCollectionState.state.collection();
-    const statistics: StatisticsGroupModel = {
-      movies: [],
-      series: [],
-      global: [],
+    const summary = {
+      movies: collection.filter((item) => item.tags.includes('#movie')).length,
+      series: collection.filter((item) => item.tags.includes('#series')).length,
     };
+    return { ...summary, all: collection.length };
+  });
+  protected readonly defaultOpenSelectedTags: boolean;
 
-    if (!collection.length) return statistics;
+  constructor() {
+    const storedTags = this.webstorage.getItem(STORAGE_STATISTICS_SELECTED_TAGS);
+    if (storedTags) this.selectedTags.set(JSON.parse(storedTags));
+    this.defaultOpenSelectedTags = this.selectedTags().length === 0;
+  }
 
-    for (const collectionItem of collection) {
-      if (collectionItem.tags.includes('#movie')) {
-        for (const tag of collectionItem.tags) {
-          const existing = statistics.movies.find((item) => item.tag === tag);
-          if (existing) existing.count++;
-          else statistics.movies.push({ tag, count: 1 });
-        }
-      } else if (collectionItem.tags.includes('#series')) {
-        for (const tag of collectionItem.tags) {
-          const existing = statistics.series.find((item) => item.tag === tag);
-          if (existing) existing.count++;
-          else statistics.series.push({ tag, count: 1 });
-        }
-      }
+  public ngAfterViewInit(): void {
+    this.chart.set(
+      new Chart('statistics', {
+        type: 'pie',
+        data: {
+          labels: [],
+          datasets: [],
+        },
+      })
+    );
 
-      // Global statistics
-      for (const tag of collectionItem.tags) {
-        const existing = statistics.global.find((item) => item.tag === tag);
-        if (existing) existing.count++;
-        else statistics.global.push({ tag, count: 1 });
-      }
+    if (this.selectedTags().length > 0) this.updateChartData();
+  }
+
+  public onToggleTag(tag: string): void {
+    const currentTags = this.selectedTags();
+    if (currentTags.includes(tag)) {
+      this.selectedTags.update((selectedTags) => selectedTags.filter((selectedTag) => selectedTag !== tag));
+    } else this.selectedTags.update((selectedTags) => [...selectedTags, tag]);
+
+    this.webstorage.setItem(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify(this.selectedTags()));
+    this.updateChartData();
+  }
+
+  private updateChartData(): void {
+    const collection = this.mainCollectionState.state.collection();
+    const chart = this.chart();
+    chart!.data.labels = this.selectedTags() as Array<never>;
+    const data: Array<number> = [];
+
+    for (const tag of this.selectedTags()) {
+      const count = collection.filter((item) => item.tags.includes(tag)).length;
+      data.push(count);
     }
 
-    statistics.movies.sort(sortWithTagPriority);
-    statistics.series.sort(sortWithTagPriority);
-    statistics.global.sort(sortWithTagPriority);
-
-    return statistics;
-  });
+    chart!.data.datasets = [
+      {
+        label: this.ngxSignalTranslate.translate('Count'),
+        data,
+        backgroundColor: this.selectedTags().map((tag) => textToHexColor(tag.replace('#', ''))),
+      },
+    ];
+    chart!.update();
+  }
 }
