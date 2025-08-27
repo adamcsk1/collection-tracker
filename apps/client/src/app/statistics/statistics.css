@@ -1,32 +1,19 @@
 :host {
-  flex-flow: wrap;
-  gap: var(--size-default);
-  justify-content: space-around;
-}
-
-.statistics-group {
-  width: 100%;
-  background-color: var(--glassy-background);
-  border-radius: var(--border-radius);
-  padding: var(--size-default);
   display: flex;
   flex-direction: column;
+}
 
-  h3 {
-    margin-bottom: calc(var(--size-default) - var(--size-small));
-  }
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-default);
+}
 
-  ct-statistics-item::after {
-    content: "";
-    outline: var(--outline-style);
-    outline-color: var(--focus-border-color);
-    border-radius: var(--border-radius);
-    width: var(--percent);
-    height: 32px;
-    top: 0;
-    display: block;
-    position: relative;
-    transform: translateY(-100%);
-    z-index: 0;
-  }
+.tags-empty {
+  text-align: center;
+  margin-top: var(--size-default);
+}
+
+canvas {
+  margin-top: var(--size-default);
 }

@@ -1,7 +1,0 @@
-.statistic-item {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--size-smaller);
-  z-index: 1;
-  position: relative;
-}

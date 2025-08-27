@@ -1,12 +1,5 @@
-export interface StatisticsItemModel {
-  tag: string;
-  count: number;
-}
-
-export type StatisticsModel = Array<StatisticsItemModel>;
-
-export interface StatisticsGroupModel {
-  movies: StatisticsModel;
-  series: StatisticsModel;
-  global: StatisticsModel;
+export interface StatisticsSummaryModel {
+  movies: number;
+  series: number;
+  all: number;
 }
