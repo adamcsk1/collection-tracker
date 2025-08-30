@@ -10,7 +10,7 @@
     padding: var(--size-smaller);
     font-size: 3rem;
     border-radius: 35%;
-    background-color: var(--color-darkgoldenrod);
+    background-color: var(--main-color);
     color: var(--background-color-alt);
   }
 }

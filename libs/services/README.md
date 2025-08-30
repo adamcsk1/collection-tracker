@@ -4,7 +4,7 @@
 [![Angular](https://img.shields.io/badge/Angular-Services-dd0031?logo=angular&logoColor=white)](https://angular.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
 
-Cross-app Angular services and signal stores: API client, OMDb integration, portal utilities, simple alert/confirm, theme management, and web storage helpers.
+Cross-app Angular services and signal stores: API client, OMDb integration, portal utilities, simple alert/confirm, theme management with translated options, translation helpers, and web storage utilities.
 
 Highlights
 
@@ -20,7 +20,8 @@ Services
 - AlertService — minimal alert wrapper
 - ConfirmService — minimal confirm wrapper returning Observable<boolean>
 - PortalService — open/close dynamic components via ViewContainerRef
-- ThemeService — system/dark/light theme management
+- ThemeService — system/dark/light theme management with translated option list
+- TranslateService — language option helper wired to ngx-signal-translate
 - ApiService — backend REST client with lazy pagination
 - OMDbService — public OMDb API helper for movie/series lookup
 - WebstorageService — tiny localStorage/sessionStorage helper
@@ -148,8 +149,17 @@ import { themeStateToken } from '@services/theme/theme-store';
 const theme = inject(ThemeService);
 const themeStore = inject(themeStateToken);
 
-theme.listen(); // start listening once (system changes, initialize class on <html>)
-theme.darkTheme(); // computed signal -> true when dark is active
+// Start once (system changes, initialize class on <html>)
+theme.listen();
+
+// Computed signal -> true when dark is active
+theme.darkTheme();
+
+// Translated options for a theme dropdown
+// => [{ text: 'System'|'SolarizedLight'|'SolarizedDark' (translated), value: 'system'|'light'|'dark' }]
+theme.themeOptions();
+
+// Update theme via store
 themeStore.setState('theme', 'dark'); // 'system' | 'dark' | 'light'
 ```
 
@@ -180,6 +190,21 @@ storage.clear('session'); // clears sessionStorage
 // storage.setItem('settings', JSON.stringify(obj));
 // const settings = JSON.parse(storage.getItem('settings') ?? 'null');
 ```
+
+### TranslateService
+
+```ts
+import { inject } from '@angular/core';
+import { TranslateService } from '@services/translate-service';
+
+const translate = inject(TranslateService);
+
+// Language options for a selector (labels translated via ngx-signal-translate)
+// => [{ text: 'English', value: 'en' }]
+translate.languageOptions();
+```
+
+Note: The translation integration relies on `ngx-signal-translate`. Configure it at the app level so option labels render localized.
 
 ### AlertService and ConfirmService
 

@@ -1,1 +1,16 @@
 @import url("../../styles/sign-pages-base.css");
+
+.quick-options-separator {
+  margin-top: var(--size-big);
+}
+
+.quick-options {
+  display: flex;
+  justify-content: center;
+  gap: var(--size-default);
+  margin-top: var(--size-default);
+
+  libc-select {
+    flex-basis: 50%;
+  }
+}

@@ -142,7 +142,7 @@ Inputs
 
 - selectId?: string (auto-generated)
 - options: SelectInputModel (required: array of { text, value })
-- label: string (required)
+- label: string
 - mandatory?: boolean
 - control: FormControl<T> (required)
 - hint?: string
