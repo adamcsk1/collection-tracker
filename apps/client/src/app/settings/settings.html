@@ -5,17 +5,13 @@
       [label]="('Language' | signalTranslate)()"
       [mandatory]="true"
       [control]="formGroup.controls.language"
-      [options]="[{ text: ('English' | signalTranslate)(), value: 'en' }]"
+      [options]="languageOptions()"
     />
     <libc-select
       [label]="('Theme' | signalTranslate)()"
       [mandatory]="true"
       [control]="formGroup.controls.theme"
-      [options]="[
-        { text: ('System' | signalTranslate)(), value: 'system' },
-        { text: ('SolarizedLight' | signalTranslate)(), value: 'light' },
-        { text: ('SolarizedDark' | signalTranslate)(), value: 'dark' },
-      ]"
+      [options]="themeOptions()"
     />
     <libc-select
       [label]="('AnimatedBackground' | signalTranslate)()"

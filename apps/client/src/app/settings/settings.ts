@@ -12,14 +12,15 @@ import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { toastStateToken } from '@components/toast/toast-store';
-import { AlertService } from '@services/alert-service';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 import { PortalService } from '@services/portal-service';
+import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
+import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { AccessTokensApiResponseModel } from '@shared/models/api-model';
 import { Form } from '@shared/models/form-model';
@@ -47,7 +48,8 @@ export class Settings implements OnInit {
   private readonly apiState = inject(apiStateToken);
   private readonly imageRefresh = inject(ImageRefreshService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly alert = inject(AlertService);
+  private readonly translate = inject(TranslateService);
+  private readonly theme = inject(ThemeService);
   private readonly confirm = inject(ConfirmService);
   private readonly portal = inject(PortalService);
   private readonly toastState = inject(toastStateToken);
@@ -67,6 +69,8 @@ export class Settings implements OnInit {
   protected readonly settingLockEnabled = this.mainState.state.settingsLock;
   protected readonly imageRefreshStatus = this.imageRefresh.state;
   protected readonly accessTokens = signal<AccessTokensApiResponseModel>([]);
+  protected readonly themeOptions = this.theme.themeOptions;
+  protected readonly languageOptions = this.translate.languageOptions;
 
   public ngOnInit(): void {
     this.formGroup.setValue({

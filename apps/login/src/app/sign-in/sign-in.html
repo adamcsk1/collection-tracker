@@ -55,4 +55,19 @@
       }
     </div>
   </div>
+
+  <hr class="quick-options-separator" />
+
+  <div class="quick-options">
+    <libc-select
+      [label]="('Language' | signalTranslate)()"
+      [control]="formGroup.controls.language"
+      [options]="languageOptions()"
+    />
+    <libc-select
+      [label]="('Theme' | signalTranslate)()"
+      [control]="formGroup.controls.theme"
+      [options]="themeOptions()"
+    />
+  </div>
 </form>
