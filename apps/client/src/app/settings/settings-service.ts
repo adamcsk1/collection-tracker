@@ -13,6 +13,7 @@ import {
   STORAGE_APP_MODE,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_FETCH_BATCH_SIZE,
+  STORAGE_LANGUAGE,
   STORAGE_OMDB_API_KEY,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
@@ -39,6 +40,7 @@ export class SettingsService {
     this.mainState.setState('sensitiveDataStorage', formData.sensitiveDataStorage);
     this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout === 'true');
     this.mainState.setState('animatedBackground', formData.animatedBackground === 'true');
+    this.mainState.setState('language', formData.language);
     this.apiState.setState('fetchBatchSize', formData.fetchBatchSize);
     this.themeState.setState('theme', formData.theme);
 
@@ -54,6 +56,8 @@ export class SettingsService {
     this.webstorage.setItem(STORAGE_THEME, formData.theme);
     this.webstorage.setItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT, String(formData.clearLocalStorageAfterLogout));
     this.webstorage.setItem(STORAGE_ANIMATED_BACKGROUND, String(formData.animatedBackground));
+    this.webstorage.setItem(STORAGE_LANGUAGE, formData.language);
+    this.ngxSignalTranslate.setLanguage(formData.language);
 
     this.main.setPermissions();
 

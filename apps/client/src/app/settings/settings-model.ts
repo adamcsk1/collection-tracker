@@ -1,4 +1,5 @@
 import { Themes } from '@services/theme/theme-model';
+import { LanguageModel } from '@shared/models/language-model';
 import { StringBooleanModel } from '@shared/models/types-model';
 
 export interface SettingsModel {
@@ -10,4 +11,5 @@ export interface SettingsModel {
   appMode: 'basic' | 'limited' | 'full';
   theme: Themes;
   settingsLock: StringBooleanModel;
+  language: LanguageModel;
 }

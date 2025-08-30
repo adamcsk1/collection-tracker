@@ -10,7 +10,7 @@ import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { API_PREFIX } from '@shared/constants/api-const';
-import { STORAGE_API_URL, STORAGE_THEME } from '@shared/constants/storage-const';
+import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/constants/storage-const';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, throwError } from 'rxjs';
 
@@ -31,7 +31,8 @@ export class Main implements AfterViewInit {
   private readonly blockerLoadingState = inject(blockerLoadingStateToken);
 
   constructor() {
-    this.signalTranslateService.setLanguage('en');
+    const language = this.webstorage.getItem(STORAGE_LANGUAGE) || 'en';
+    this.signalTranslateService.setLanguage(language);
     this.blockerLoadingState.setState('withoutDelay', true);
     this.blockerLoadingState.setState('show', true);
     this.themeState.setState('theme', (this.webstorage.getItem(STORAGE_THEME) as Themes) || 'light');

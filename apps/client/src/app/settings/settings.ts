@@ -61,6 +61,7 @@ export class Settings implements OnInit {
     theme: new FormControl('system', { nonNullable: true, validators: [Validators.required] }),
     settingsLock: new FormControl('false', { nonNullable: true, validators: [Validators.required] }),
     animatedBackground: new FormControl('true', { nonNullable: true, validators: [Validators.required] }),
+    language: new FormControl('en', { nonNullable: true, validators: [Validators.required] }),
   });
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly settingLockEnabled = this.mainState.state.settingsLock;
@@ -77,6 +78,7 @@ export class Settings implements OnInit {
       settingsLock: this.mainState.state.settingsLock() ? 'true' : 'false',
       clearLocalStorageAfterLogout: this.mainState.state.clearLocalStorageAfterLogout() ? 'true' : 'false',
       animatedBackground: this.mainState.state.animatedBackground() ? 'true' : 'false',
+      language: this.mainState.state.language(),
     });
 
     this.loadAccessTokens();
