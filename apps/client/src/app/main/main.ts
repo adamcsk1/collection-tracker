@@ -59,7 +59,7 @@ export class Main implements OnInit {
 
     this.main.loadStoredData();
 
-    this.signalTranslateService.setLanguage('en');
+    this.signalTranslateService.setLanguage(this.mainState.state.language());
     this.theme.listen();
   }
 

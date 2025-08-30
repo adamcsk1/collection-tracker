@@ -2,6 +2,12 @@
   <h3>{{ ('BasicSettings' | signalTranslate)() }}</h3>
   <libc-details [summary]="('Basics' | signalTranslate)()">
     <libc-select
+      [label]="('Language' | signalTranslate)()"
+      [mandatory]="true"
+      [control]="formGroup.controls.language"
+      [options]="[{ text: ('English' | signalTranslate)(), value: 'en' }]"
+    />
+    <libc-select
       [label]="('Theme' | signalTranslate)()"
       [mandatory]="true"
       [control]="formGroup.controls.theme"

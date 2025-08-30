@@ -1,4 +1,5 @@
 import { SettingsModel } from '@client/settings/settings-model';
+import { LanguageModel } from '@shared/models/language-model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
 
 export interface MainState {
@@ -7,6 +8,7 @@ export interface MainState {
   clearLocalStorageAfterLogout: boolean;
   animatedBackground: boolean;
   sensitiveDataStorage: SettingsModel['sensitiveDataStorage'];
+  language: LanguageModel;
   permissions: {
     create: boolean;
     update: boolean;
@@ -20,6 +22,7 @@ export const initialMainState: MainState = {
   clearLocalStorageAfterLogout: false,
   animatedBackground: true,
   sensitiveDataStorage: 'local',
+  language: 'en',
   permissions: {
     create: false,
     update: false,
