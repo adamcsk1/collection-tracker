@@ -10,6 +10,14 @@
   "sourceRoot": "src",
   "prefix": "lo",
   "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/apps/login"],
+      "options": {
+        "jestConfig": "apps/login/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
     "build": {
       "executor": "@angular/build:application",
       "options": {

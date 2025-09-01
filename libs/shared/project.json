@@ -5,6 +5,14 @@
   "projectType": "library",
   "tags": [],
   "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/shared"],
+      "options": {
+        "jestConfig": "libs/shared/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
     "lint": {
       "executor": "@nx/linter:eslint",
       "options": {
