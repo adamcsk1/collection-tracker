@@ -5,6 +5,14 @@
   "projectType": "application",
   "tags": [],
   "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/apps/server"],
+      "options": {
+        "jestConfig": "apps/server/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
     "build": {
       "executor": "@nx/esbuild:esbuild",
       "outputs": ["{options.outputPath}"],

@@ -10,6 +10,14 @@
   "sourceRoot": "src",
   "prefix": "ct",
   "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/apps/client"],
+      "options": {
+        "jestConfig": "apps/client/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
     "build": {
       "executor": "@angular/build:application",
       "options": {
