@@ -14,14 +14,15 @@ export class CollectionService {
   public loadCollection(): void {
     if (this.apiState.state.loadNetworkStatus() === 'pending') return;
 
-    this.api
-      .getAll()
-      .subscribe((collectionItems) =>
-        this.mainCollectionState.patchState('collection', (state) => [
-          ...state,
-          ...collectionItems.map((item) => getCollectionItem(item)),
-        ])
-      );
+    this.mainCollectionState.setState('collection', []);
+
+    let firstBatch = true;
+    this.api.getAll().subscribe((rawCollectionItems) => {
+      const collectionItems = rawCollectionItems.map((item) => getCollectionItem(item));
+      if (!firstBatch) this.mainCollectionState.patchState('collection', (state) => [...state, ...collectionItems]);
+      else this.mainCollectionState.setState('collection', collectionItems);
+      firstBatch = false;
+    });
   }
 
   public addCollectionItem(item: GetAllApiResponseItemModel, first = false): void {
