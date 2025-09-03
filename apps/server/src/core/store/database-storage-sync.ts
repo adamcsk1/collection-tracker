@@ -8,7 +8,7 @@ import { debounceTime, filter, map, pairwise, tap } from 'rxjs';
 (global.__serverStorage as StoreModel).users
   .pipe(
     pairwise(),
-    filter(([previousUsers, nextUsers]) => deepEqual(previousUsers, nextUsers)),
+    filter(([previousUsers, nextUsers]) => !deepEqual(previousUsers, nextUsers)),
     map(([, nextUsers]) => nextUsers),
     tap(() => debugLog('Users changed')),
     debounceTime(2500)
