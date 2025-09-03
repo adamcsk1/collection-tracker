@@ -7,7 +7,7 @@ export const getUserAccessToken = async (
   userAgent: string,
   expires: Date | null
 ): Promise<AccessTokenModel> => ({
-  tokenHash: await hashText(`${accessToken}${process.env.SALT}`),
+  tokenHash: await hashText(accessToken),
   createdAt: dayjs().toISOString(),
   userAgent: userAgent,
   expiresAt: expires?.toISOString() || null,

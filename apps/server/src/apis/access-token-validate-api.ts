@@ -15,7 +15,7 @@ Store.getOnce$('app').subscribe((app) =>
       const users = Store.getLastValue('users');
 
       if (tokenFrom === 'cookie') {
-        const tokenHash = await hashText(`${request.signedCookies[COOKIE_TOKEN]}${process.env.SALT}`);
+        const tokenHash = await hashText(request.signedCookies[COOKIE_TOKEN]);
         const cookie = cookieConfig();
         const newAccessToken = generateAccessToken(
           request.username,

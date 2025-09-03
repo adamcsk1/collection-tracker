@@ -10,7 +10,7 @@ Store.getOnce$('app').subscribe((app) =>
   app.delete(`${API_PREFIX}/logout`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
       const token = request.signedCookies[COOKIE_TOKEN];
-      const tokenHash = await hashText(`${token}${process.env.SALT}`);
+      const tokenHash = await hashText(token);
       const users = Store.getLastValue('users');
 
       users[request.usernameHash].accessTokens = users[request.usernameHash].accessTokens.filter(

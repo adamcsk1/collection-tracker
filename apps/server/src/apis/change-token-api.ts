@@ -22,7 +22,7 @@ Store.getOnce$('app').subscribe((app) =>
       );
 
       users[request.usernameHash] = {
-        userTokenHash: await hashText(`${newUserToken}${process.env.SALT}`),
+        userTokenHash: await hashText(newUserToken),
         accessTokens: [await getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)],
       };
       Store.set('users', users);

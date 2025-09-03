@@ -21,7 +21,7 @@ Store.getOnce$('app').subscribe((app) =>
         return response.sendStatus(403);
       }
 
-      const usernameHash = await hashText(`${username}${process.env.SALT}`);
+      const usernameHash = await hashText(username);
 
       if (users[usernameHash]) {
         return response.sendStatus(409);
@@ -29,7 +29,7 @@ Store.getOnce$('app').subscribe((app) =>
 
       const userToken = generateRandomToken(username);
 
-      users[usernameHash] = { userTokenHash: await hashText(`${userToken}${process.env.SALT}`), accessTokens: [] };
+      users[usernameHash] = { userTokenHash: await hashText(userToken), accessTokens: [] };
       Store.set('users', users);
 
       mkdirSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${usernameHash}`, { recursive: true });
