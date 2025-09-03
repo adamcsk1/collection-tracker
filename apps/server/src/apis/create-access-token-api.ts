@@ -11,7 +11,7 @@ Store.getOnce$('app').subscribe((app) =>
     try {
       const users = Store.getLastValue('users');
 
-      const newAccessToken = await generateAccessToken(request.username);
+      const newAccessToken = generateAccessToken(request.username);
 
       users[request.usernameHash].accessTokens.push(
         await getUserAccessToken(newAccessToken, request.headers['user-agent'], null)

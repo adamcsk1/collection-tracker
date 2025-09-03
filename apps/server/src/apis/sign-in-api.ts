@@ -23,22 +23,17 @@ Store.getOnce$('app').subscribe((app) =>
 
       if (users[usernameHash].userTokenHash !== userTokenHash) return response.sendStatus(401);
 
-      if (users[usernameHash].userTokenHash === userTokenHash) {
-        const cookie = cookieConfig();
-        const newAccessToken = await generateAccessToken(
-          username,
-          `${cookieExpiration.value} ${cookieExpiration.unit}`
-        );
-        users[usernameHash].accessTokens.push(
-          await getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
-        );
-        users[usernameHash].accessTokens = users[usernameHash].accessTokens.filter(
-          (token) => token.expiresAt !== null && dayjs(token.expiresAt).isAfter(dayjs())
-        );
-        Store.set('users', users);
+      const cookie = cookieConfig();
+      const newAccessToken = generateAccessToken(username, `${cookieExpiration.value} ${cookieExpiration.unit}`);
+      users[usernameHash].accessTokens.push(
+        await getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
+      );
+      users[usernameHash].accessTokens = users[usernameHash].accessTokens.filter(
+        (token) => token.expiresAt !== null && dayjs(token.expiresAt).isAfter(dayjs())
+      );
+      Store.set('users', users);
 
-        response.cookie(COOKIE_TOKEN, newAccessToken, cookie).send();
-      } else response.sendStatus(403);
+      response.cookie(COOKIE_TOKEN, newAccessToken, cookie).send();
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
