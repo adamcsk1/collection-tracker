@@ -16,7 +16,7 @@ Store.getOnce$('app').subscribe((app) =>
 
       const newUserToken = generateRandomToken(request.username);
       const cookie = cookieConfig();
-      const newAccessToken = await generateAccessToken(
+      const newAccessToken = generateAccessToken(
         request.username,
         `${cookieExpiration.value} ${cookieExpiration.unit}`
       );

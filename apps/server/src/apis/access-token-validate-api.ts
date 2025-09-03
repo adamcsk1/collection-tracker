@@ -17,7 +17,7 @@ Store.getOnce$('app').subscribe((app) =>
       if (tokenFrom === 'cookie') {
         const tokenHash = await hashText(`${request.signedCookies[COOKIE_TOKEN]}${process.env.SALT}`);
         const cookie = cookieConfig();
-        const newAccessToken = await generateAccessToken(
+        const newAccessToken = generateAccessToken(
           request.username,
           `${cookieExpiration.value} ${cookieExpiration.unit}`
         );
