@@ -12,7 +12,7 @@ export const Store = {
   },
   getLastValue: <K extends keyof StoreDataModel>(key: K): StoreDataModel[K] => {
     debugLog(`Getting last store value (${key})`);
-    return store()[key].value;
+    return structuredClone(store()[key].value);
   },
   getOnce$: <K extends keyof StoreModel>(key: K): Observable<StoreDataModel[K]> =>
     Store.get$(key).pipe(
