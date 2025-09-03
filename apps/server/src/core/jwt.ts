@@ -49,9 +49,9 @@ export const jwtGuard = async (
         }
 
         const { username } = data as { username: string };
-        const usernameHash = await hashText(`${username}${process.env.SALT}`);
+        const usernameHash = await hashText(username);
         const users = Store.getLastValue('users');
-        const tokenHash = await hashText(`${token}${process.env.SALT}`);
+        const tokenHash = await hashText(token);
 
         if (!users[usernameHash]?.accessTokens?.map((token) => token.tokenHash)?.includes(tokenHash)) {
           debugLog('Access token not recognized');

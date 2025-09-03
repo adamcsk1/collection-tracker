@@ -15,11 +15,11 @@ Store.getOnce$('app').subscribe((app) =>
       const { username, token } = request.body as SignInApiRequestModel;
       const users = Store.getLastValue('users');
 
-      const usernameHash = await hashText(`${username}${process.env.SALT}`);
+      const usernameHash = await hashText(username);
 
       if (!users[usernameHash]) return response.sendStatus(404);
 
-      const userTokenHash = await hashText(`${token}${process.env.SALT}`);
+      const userTokenHash = await hashText(token);
 
       if (users[usernameHash].userTokenHash !== userTokenHash) return response.sendStatus(401);
 
