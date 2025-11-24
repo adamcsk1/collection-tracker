@@ -16,5 +16,8 @@
       "@services/*": ["libs/services/src/lib/*"],
       "@shared/*": ["libs/shared/src/lib/*"]
     }
+  },
+  "angularCompilerOptions": {
+    "strictTemplates": true
   }
 }
