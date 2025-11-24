@@ -68,9 +68,27 @@ const server = app.listen(PORT, () => {
   console.log(`[proxy] /client -> ${TARGETS.client}`);
 });
 
+const pickAppFromReferer = (referer = '') => {
+  try {
+    const { pathname = '' } = new URL(referer);
+    if (pathname.startsWith('/login')) return 'login';
+    if (pathname.startsWith('/client')) return 'client';
+  } catch {
+    // ignore bad referer
+  }
+  return null;
+};
+
 server.on('upgrade', (req, socket, head) => {
   const url = req.url || '';
-  if (url.startsWith('/login')) return loginProxy.upgrade(req, socket, head);
-  if (url.startsWith('/client')) return clientProxy.upgrade(req, socket, head);
+  const fromReferer = pickAppFromReferer(req.headers?.referer);
+
+  if (url.startsWith('/login') || fromReferer === 'login') return loginProxy.upgrade(req, socket, head);
+  if (url.startsWith('/client') || fromReferer === 'client') return clientProxy.upgrade(req, socket, head);
   if (url.startsWith('/api')) return apiProxy.upgrade(req, socket, head);
+
+  if (url.includes('ng-cli-ws') || url.startsWith('/ng-cli-ws')) {
+    if (fromReferer === 'login') return loginProxy.upgrade(req, socket, head);
+    return clientProxy.upgrade(req, socket, head);
+  }
 });
