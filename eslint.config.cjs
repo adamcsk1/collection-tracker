@@ -24,7 +24,8 @@ module.exports = [
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
-        project: ['./tsconfig.json', './tsconfig.app.json', './tsconfig.spec.json'],
+        tsconfigRootDir: __dirname,
+        projectService: true,
       },
     },
     plugins: {
@@ -78,7 +79,8 @@ module.exports = [
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
-        project: ['./tsconfig.json', './tsconfig.app.json', './tsconfig.spec.json'],
+        tsconfigRootDir: __dirname,
+        projectService: true,
       },
     },
     plugins: {

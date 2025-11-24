@@ -6,6 +6,12 @@
     },
     "editor.formatOnSave": true
   },
+  "eslint.experimental.useFlatConfig": true,
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.codeActionsOnSave": {
@@ -19,8 +25,12 @@
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "[css]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.stylelint": "explicit"
+    }
   },
+  "stylelint.validate": ["css", "scss"],
   "editor.suggest.snippetsPreventQuickSuggestions": false,
   "editor.inlineSuggest.enabled": true,
   "nxConsole.generateAiAgentRules": true,
