@@ -8,8 +8,8 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "npx nx run server:preserve && nx run-many --targets=serve --projects=client,server,login,dev-proxy",
-    "build": "npx nx run client:prebuild && nx run-many --target=build --projects=client,server,login && npx nx run client:postbuild",
+    "start": "npx nx run server:preserve && nx run-many --targets=serve --projects=client,server,login,dev-proxy --output-style=stream",
+    "build": "npx nx run client:prebuild && nx run-many --target=build --projects=client,server,login && npx nx run client:postbuild --output-style=stream",
     "test": "nx run-many --target=test --projects=client,components,services,shared,server,login",
     "test:affected": "nx affected --target=test ",
     "lint": "nx run-many --target=lint --projects=client,components,services,shared,server,login",
