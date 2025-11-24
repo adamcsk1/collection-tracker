@@ -3,6 +3,7 @@ import { getGenre } from '@client/collection/utils/get-genre-util';
 import { getImage } from '@client/collection/utils/get-image-util';
 import { getTags } from '@client/collection/utils/get-tags-util';
 import { getTitle } from '@client/collection/utils/get-title-util';
+import { getYear } from '@client/collection/utils/get-year-util';
 import { getIMDbId } from '@services/omdb/get-imdb-id-util';
 import { GetAllApiResponseItemModel } from '@shared/models/api-model';
 
@@ -19,6 +20,7 @@ export const getCollectionItem = (item: Partial<GetAllApiResponseItemModel>): Co
     genre: getGenre(safeItem.content),
     tags: getTags(safeItem.content),
     IMDbId: getIMDbId(safeItem.content),
+    year: getYear(safeItem.content),
     name: safeItem.name,
   };
 };

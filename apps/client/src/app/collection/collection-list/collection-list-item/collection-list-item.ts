@@ -15,8 +15,8 @@ export class CollectionListItem {
   private readonly portal = inject(PortalService);
   public readonly collectionItem = input.required<CollectionItemModel>();
 
-  protected onSetSearchText(searchValue: string): void {
-    this.collectionState.setState('searchText', searchValue);
+  protected onSetSearchText(searchValue: string | number | null): void {
+    if (searchValue !== null) this.collectionState.setState('searchText', `${searchValue}`);
   }
 
   protected onOpenDetail(): void {
