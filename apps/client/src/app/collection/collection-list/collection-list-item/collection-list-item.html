@@ -13,22 +13,33 @@
         {{ collectionItem.title }}
       </a>
     </h3>
+    <span class="content-info">
+      <small>
+        @if (collectionItem.year) {
+          <a href="#" (click)="onSetSearchText(collectionItem.year)">
+            <i class="material-icons"> calendar_today </i> {{ collectionItem.year }}</a
+          >&nbsp;
+        }
+        @if (collectionItem.rate) {
+          <a href="#" (click)="onSetSearchText(collectionItem.rate)"
+            ><i class="material-icons"> star_rate </i> {{ collectionItem.rate }}</a
+          >&nbsp;
+        }
+      </small>
+    </span>
     <span>
-      @if (collectionItem.year) {
-        <small>
-          <a href="#" (click)="onSetSearchText(collectionItem.year)">{{ collectionItem.year || '-' }}</a> -
-        </small>
-      }
       @for (genre of collectionItem.genre; track $index) {
         <small>
-          <a href="#" (click)="onSetSearchText(genre)">{{ genre }}</a> &nbsp;
+          <a href="#" (click)="onSetSearchText(genre)">{{ genre }}</a
+          >&nbsp;
         </small>
       }
     </span>
     <span>
       @for (tag of collectionItem.tags; track $index) {
         <small>
-          <a href="#" (click)="onSetSearchText(tag)">{{ tag }}</a> &nbsp;
+          <a href="#" (click)="onSetSearchText(tag)">{{ tag }}</a
+          >&nbsp;
         </small>
       }
     </span>

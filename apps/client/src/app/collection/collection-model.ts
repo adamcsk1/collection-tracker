@@ -7,6 +7,7 @@ export interface CollectionItemModel {
   tags: Array<string>;
   name: string;
   year: number | null;
+  rate: string;
 }
 
 export type CollectionModel = Array<CollectionItemModel>;
