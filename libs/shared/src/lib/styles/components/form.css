@@ -1,7 +1,7 @@
 form {
   display: flex;
   flex-direction: column;
-  gap: var(--size-small);
+  gap: var(--size-default);
   width: 100%;
 
   div.form-buttons {
