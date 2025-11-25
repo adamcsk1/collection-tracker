@@ -17,7 +17,7 @@
   border: var(--outline-style);
   border-color: var(--focus-border-color);
 
-  .spinner-loading-icon {
+  .spinner-dots {
     animation: dots 1s infinite linear;
 
     &::before,

@@ -1,5 +1,5 @@
 @if (spinnerLoading$ | async) {
   <div [@scaleAnimation] class="spinner-loading" [title]="('Loading' | signalTranslate)()">
-    <div class="spinner-loading-icon"></div>
+    <div class="spinner-dots"></div>
   </div>
 }

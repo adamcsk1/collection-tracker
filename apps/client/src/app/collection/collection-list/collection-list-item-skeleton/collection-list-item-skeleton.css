@@ -1,18 +1,18 @@
-.collection-list-item-skeleton {
+.skeleton {
   height: var(--image-height);
   width: 100%;
   padding: var(--size-small);
   margin-bottom: var(--size-small);
   display: flex;
 
-  .collection-list-item-skeleton-image {
+  .skeleton-thumb {
     flex-basis: var(--image-width);
     height: var(--image-height);
     width: var(--image-width);
     border-radius: var(--border-radius);
   }
 
-  .collection-list-item-skeleton-content {
+  .skeleton-body {
     flex-basis: calc(100% - var(--image-width));
     display: flex;
     flex-direction: column;
@@ -31,7 +31,7 @@
       width: 30%;
     }
 
-    .collection-list-item-skeleton-content-item {
+    .skeleton-line {
       background-color: var(--base-color-darker);
       display: block;
       height: var(--font-size-default);

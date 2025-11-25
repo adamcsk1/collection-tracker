@@ -1,6 +1,6 @@
 @import url("../../styles/sign-pages-base.css");
 
-.quick-options-separator {
+.options-divider {
   margin-top: var(--size-big);
 }
 

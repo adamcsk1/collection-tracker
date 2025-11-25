@@ -1,5 +1,5 @@
-<div class="dialog-shell">
-  <div class="dialog-shell-top-content">
+<div class="dialog-frame">
+  <div class="dialog-header">
     <div>
       <ng-content select="[dialog-shell-top-content]" />
     </div>
@@ -8,7 +8,7 @@
     </button>
   </div>
   <ng-content select="[dialog-shell-content]" />
-  <div class="dialog-shell-bottom-content">
+  <div class="dialog-footer">
     <ng-content select="[dialog-shell-bottom-content]" />
   </div>
 </div>

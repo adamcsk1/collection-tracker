@@ -1,4 +1,4 @@
-.content-container-parsed-content {
+.preview-pane {
   height: 100%;
   padding: var(--size-smaller);
   padding-bottom: var(--size-bigger);
@@ -6,6 +6,6 @@
   overflow: auto;
 }
 
-.content-container-editor {
+.editor-pane {
   height: inherit;
 }

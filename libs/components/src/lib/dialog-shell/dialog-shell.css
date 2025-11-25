@@ -1,4 +1,4 @@
-.dialog-shell {
+.dialog-frame {
   background-color: var(--glassy-background);
   margin: 0 auto;
   margin-top: var(--size-default);
@@ -21,13 +21,13 @@
     border-radius: 0;
   }
 
-  .dialog-shell-top-content {
+  .dialog-header {
     display: flex;
     justify-content: space-between;
     padding-bottom: var(--size-smaller);
   }
 
-  .dialog-shell-bottom-content {
+  .dialog-footer {
     display: flex;
     flex-wrap: wrap;
     gap: var(--size-small);
