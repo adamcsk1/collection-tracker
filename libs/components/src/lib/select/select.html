@@ -9,10 +9,10 @@
 
 <select
   class="select"
-  [id]="selectId()"
-  [formControl]="control()"
   [attr.aria-label]="label()"
   [attr.aria-describedby]="describedBy()"
+  [id]="selectId()"
+  [formControl]="control()"
 >
   @for (option of options(); track $index) {
     <option [value]="option.value">{{ option.text }}</option>

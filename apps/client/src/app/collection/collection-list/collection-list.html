@@ -1,9 +1,9 @@
 <div class="float-button random-pick">
   <button
     class="button-icon material-icons"
-    [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
-    [title]="('RandomPick' | signalTranslate)()"
     [attr.aria-label]="('RandomPick' | signalTranslate)()"
+    [title]="('RandomPick' | signalTranslate)()"
+    [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
     (click)="onRandomPick()"
   >
     casino
@@ -13,9 +13,9 @@
   <div class="float-button add-new">
     <button
       class="button-icon material-icons"
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
-      [title]="('AddNew' | signalTranslate)()"
       [attr.aria-label]="('AddNew' | signalTranslate)()"
+      [title]="('AddNew' | signalTranslate)()"
+      [disabled]="apiLoadNetworkStatus() === 'pending'"
       (click)="onAddNew()"
     >
       add
@@ -23,8 +23,8 @@
   </div>
 }
 <div
-  class="list"
   #scrollContainer
+  class="list"
   role="list"
   [attr.aria-label]="('Collection' | signalTranslate)()"
   [attr.aria-busy]="apiLoadNetworkStatus() === 'pending'"
@@ -65,8 +65,8 @@
 <div class="pagination">
   <button
     class="button-icon material-icons"
-    [title]="('First' | signalTranslate)()"
     [attr.aria-label]="('First' | signalTranslate)()"
+    [title]="('First' | signalTranslate)()"
     [disabled]="disablePreviousButton()"
     (click)="onFirstPage()"
   >
@@ -74,8 +74,8 @@
   </button>
   <button
     class="button-icon material-icons"
-    [title]="('Previous' | signalTranslate)()"
     [attr.aria-label]="('Previous' | signalTranslate)()"
+    [title]="('Previous' | signalTranslate)()"
     [disabled]="disablePreviousButton()"
     (click)="onPreviousPage()"
   >
@@ -83,8 +83,8 @@
   </button>
   <button
     class="button-icon material-icons"
-    [title]="('Next' | signalTranslate)()"
     [attr.aria-label]="('Next' | signalTranslate)()"
+    [title]="('Next' | signalTranslate)()"
     [disabled]="disableNextButton()"
     (click)="onNextPage()"
   >
@@ -92,8 +92,8 @@
   </button>
   <button
     class="button-icon material-icons"
-    [title]="('Last' | signalTranslate)()"
     [attr.aria-label]="('Last' | signalTranslate)()"
+    [title]="('Last' | signalTranslate)()"
     [disabled]="disableNextButton()"
     (click)="onLastPage()"
   >

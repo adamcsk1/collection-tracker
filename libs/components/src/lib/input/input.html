@@ -9,21 +9,21 @@
 <div class="container" [class.has-icon]="icon()">
   <i class="material-icons">{{ icon() }}</i>
   <input
-    [type]="type()"
     class="input"
+    [attr.aria-label]="label() || placeholder()"
+    [attr.aria-describedby]="describedBy()"
+    [type]="type()"
     [id]="inputId()"
     [formControl]="control()"
     [placeholder]="placeholder()"
-    [attr.aria-label]="label() || placeholder()"
-    [attr.aria-describedby]="describedBy()"
   />
   @if (showReset()) {
     <button
       class="button-icon material-icons"
-      (click)="onReset()"
-      [title]="('ResetInput' | signalTranslate)()"
       [attr.aria-label]="('ResetInput' | signalTranslate)()"
+      [title]="('ResetInput' | signalTranslate)()"
       [disabled]="!hasValue()"
+      (click)="onReset()"
     >
       close
     </button>

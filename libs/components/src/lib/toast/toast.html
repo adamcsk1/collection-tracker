@@ -1,9 +1,9 @@
 @if (message(); as message) {
   <p
-    [@scaleAnimation]
     tabindex="0"
     role="status"
     aria-live="assertive"
+    [@scaleAnimation]
     (click)="onToastClick()"
     (keydown)="onToastClick()"
   >

@@ -8,9 +8,9 @@
 <div class="menu" [class.open]="showMenu()" [attr.aria-hidden]="!showMenu()">
   <button
     class="button-icon material-icons"
-    [title]="('Menu' | signalTranslate)()"
     [attr.aria-label]="('Menu' | signalTranslate)()"
     [attr.aria-pressed]="showMenu()"
+    [title]="('Menu' | signalTranslate)()"
     (click)="onShowMenu($event)"
     (mouseenter)="onShowMenu($event)"
   >
@@ -19,11 +19,11 @@
   <div class="menu-backdrop" aria-hidden="true"></div>
   <div
     class="menu-panel"
+    role="navigation"
+    [attr.aria-label]="('Menu' | signalTranslate)()"
     (click)="onHideMenu()"
     (keydown)="onHideMenu()"
     (mouseleave)="onHideMenu()"
-    role="navigation"
-    [attr.aria-label]="('Menu' | signalTranslate)()"
   >
     <div class="menu-header">
       <div>
@@ -32,8 +32,8 @@
       </div>
       <button
         class="button-icon material-icons"
-        [title]="('Close' | signalTranslate)()"
         [attr.aria-label]="('Close' | signalTranslate)()"
+        [title]="('Close' | signalTranslate)()"
         (click)="onHideMenu()"
       >
         close
