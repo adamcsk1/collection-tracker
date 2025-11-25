@@ -1,5 +1,5 @@
 @if (showBlockerLoading()) {
-  <div [@opacityOutAnimation] class="blocker-loading">
+  <div [@opacityOutAnimation] class="blocker-loading" role="alert" aria-live="assertive">
     <div>
       <img src="icons/logo.png" [alt]="('Title' | signalTranslate)()" />
       <h1>{{ ('Title' | signalTranslate)() }}</h1>

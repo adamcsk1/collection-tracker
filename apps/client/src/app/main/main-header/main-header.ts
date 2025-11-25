@@ -14,6 +14,9 @@ import { catchError, throwError } from 'rxjs';
   templateUrl: './main-header.html',
   styleUrl: './main-header.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    role: 'banner',
+  },
 })
 export class MainHeader {
   private readonly document = inject(DOCUMENT);

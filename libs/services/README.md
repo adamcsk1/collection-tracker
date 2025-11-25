@@ -156,7 +156,7 @@ theme.listen();
 theme.darkTheme();
 
 // Translated options for a theme dropdown
-// => [{ text: 'System'|'SolarizedLight'|'SolarizedDark' (translated), value: 'system'|'light'|'dark' }]
+// => [{ text: 'System'|'Light'|'Dark' (translated), value: 'system'|'light'|'dark' }]
 theme.themeOptions();
 
 // Update theme via store

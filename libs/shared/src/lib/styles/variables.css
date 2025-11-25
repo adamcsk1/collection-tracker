@@ -11,8 +11,8 @@
   --size-big: 1.25rem;
   --size-bigger: 1.5rem;
   --border-radius: 5px;
-  --border-style: 1px solid var(--base-color-darker);
-  --outline-style: 2px solid var(--base-color-darker);
+  --border-style: 1px solid var(--border-color);
+  --outline-style: 2px solid var(--border-color);
   --outline-offset: 2px;
   --input-height: 36px;
 }

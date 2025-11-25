@@ -1,9 +1,14 @@
-<div class="dialog-frame">
+<div #dialogRoot class="dialog-frame" role="dialog" aria-modal="true" tabindex="-1" (keydown.escape)="onClose()">
   <div class="dialog-header">
     <div>
       <ng-content select="[dialog-shell-top-content]" />
     </div>
-    <button class="button-icon material-icons" [title]="('Close' | signalTranslate)()" (click)="onClose()">
+    <button
+      class="button-icon material-icons"
+      [title]="('Close' | signalTranslate)()"
+      [attr.aria-label]="('Close' | signalTranslate)()"
+      (click)="onClose()"
+    >
       close
     </button>
   </div>

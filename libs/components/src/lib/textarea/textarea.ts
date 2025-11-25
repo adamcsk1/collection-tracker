@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   inject,
@@ -34,6 +35,15 @@ export class Textarea<T> implements OnInit {
   public readonly rows = input<number | undefined>();
   public readonly cols = input<number | undefined>();
   public readonly autoHeight = input<boolean>(false);
+  protected readonly hintId = computed<string | null>(() => (this.hint() ? `${this.textareaId()}-hint` : null));
+  protected readonly errorId = computed<string | null>(() => {
+    const hasError = (this.control().touched || this.control().dirty) && !!this.control().errors;
+    return hasError ? `${this.textareaId()}-error` : null;
+  });
+  protected readonly describedBy = computed<string | null>(() => {
+    const ids = [this.hintId(), this.errorId()].filter(Boolean);
+    return ids.length ? ids.join(' ') : null;
+  });
 
   public ngOnInit(): void {
     if (this.autoHeight()) {

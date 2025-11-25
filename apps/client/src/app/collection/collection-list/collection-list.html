@@ -3,6 +3,7 @@
     class="button-icon material-icons"
     [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
     [title]="('RandomPick' | signalTranslate)()"
+    [attr.aria-label]="('RandomPick' | signalTranslate)()"
     (click)="onRandomPick()"
   >
     casino
@@ -14,13 +15,20 @@
       class="button-icon material-icons"
       [disabled]="apiLoadNetworkStatus() === 'pending'"
       [title]="('AddNew' | signalTranslate)()"
+      [attr.aria-label]="('AddNew' | signalTranslate)()"
       (click)="onAddNew()"
     >
       add
     </button>
   </div>
 }
-<div class="list" #scrollContainer>
+<div
+  class="list"
+  #scrollContainer
+  role="list"
+  [attr.aria-label]="('Collection' | signalTranslate)()"
+  [attr.aria-busy]="apiLoadNetworkStatus() === 'pending'"
+>
   @if (!apiLoadNetworkStatus() || apiLoadNetworkStatus() === 'pending') {
     <ct-collection-list-item-skeleton />
     <ct-collection-list-item-skeleton />
@@ -44,7 +52,9 @@
         <i class="material-icons">movie</i>
         @if (collectionLength() === 0) {
           {{ ('Message.EmptyCollection' | signalTranslate)() }}<br />
-          <a href="#" (click)="onAddNew()">{{ ('Message.AddFirstCollectionItem' | signalTranslate)() }}</a>
+          <a href="#" role="button" (click)="onAddNew()">{{
+            ('Message.AddFirstCollectionItem' | signalTranslate)()
+          }}</a>
         } @else {
           {{ ('Message.EmptySearch' | signalTranslate)() }}<br />
         }
@@ -56,6 +66,7 @@
   <button
     class="button-icon material-icons"
     [title]="('First' | signalTranslate)()"
+    [attr.aria-label]="('First' | signalTranslate)()"
     [disabled]="disablePreviousButton()"
     (click)="onFirstPage()"
   >
@@ -64,6 +75,7 @@
   <button
     class="button-icon material-icons"
     [title]="('Previous' | signalTranslate)()"
+    [attr.aria-label]="('Previous' | signalTranslate)()"
     [disabled]="disablePreviousButton()"
     (click)="onPreviousPage()"
   >
@@ -72,6 +84,7 @@
   <button
     class="button-icon material-icons"
     [title]="('Next' | signalTranslate)()"
+    [attr.aria-label]="('Next' | signalTranslate)()"
     [disabled]="disableNextButton()"
     (click)="onNextPage()"
   >
@@ -80,6 +93,7 @@
   <button
     class="button-icon material-icons"
     [title]="('Last' | signalTranslate)()"
+    [attr.aria-label]="('Last' | signalTranslate)()"
     [disabled]="disableNextButton()"
     (click)="onLastPage()"
   >

@@ -17,6 +17,7 @@ import { debounceTime, fromEvent } from 'rxjs';
     '[style.--window-height]': 'windowHeight + "px"',
     '[style.--image-width]': 'imageWidth + "px"',
     '[style.--image-height]': 'imageHeight + "px"',
+    'aria-hidden': 'true',
   },
 })
 export class CollectionBackground {

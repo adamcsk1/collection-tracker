@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
@@ -22,6 +22,15 @@ export class Input<T> implements OnInit {
   public readonly icon = input<string>('');
   public readonly control = input.required<FormControl<T>>();
   public readonly hint = input<string>();
+  protected readonly hintId = computed<string | null>(() => (this.hint() ? `${this.inputId()}-hint` : null));
+  protected readonly errorId = computed<string | null>(() => {
+    const hasError = (this.control().touched || this.control().dirty) && !!this.control().errors;
+    return hasError ? `${this.inputId()}-error` : null;
+  });
+  protected readonly describedBy = computed<string | null>(() => {
+    const ids = [this.hintId(), this.errorId()].filter(Boolean);
+    return ids.length ? ids.join(' ') : null;
+  });
 
   public ngOnInit(): void {
     this.control()

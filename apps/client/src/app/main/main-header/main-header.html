@@ -5,30 +5,37 @@
   <h1>{{ ('Title' | signalTranslate)() }}</h1>
 </div>
 
-<div class="menu" [class.open]="showMenu()">
+<div class="menu" [class.open]="showMenu()" [attr.aria-hidden]="!showMenu()">
   <button
     class="button-icon material-icons"
     [title]="('Menu' | signalTranslate)()"
+    [attr.aria-label]="('Menu' | signalTranslate)()"
+    [attr.aria-pressed]="showMenu()"
     (click)="onShowMenu($event)"
     (mouseenter)="onShowMenu($event)"
   >
     menu
   </button>
-  <div class="menu-backdrop"></div>
+  <div class="menu-backdrop" aria-hidden="true"></div>
   <div
     class="menu-panel"
     (click)="onHideMenu()"
     (keydown)="onHideMenu()"
     (mouseleave)="onHideMenu()"
-    tabindex="0"
-    role="button"
+    role="navigation"
+    [attr.aria-label]="('Menu' | signalTranslate)()"
   >
     <div class="menu-header">
       <div>
         <img src="icons/logo.png" [alt]="('Title' | signalTranslate)()" />
         <h1>{{ ('Title' | signalTranslate)() }}</h1>
       </div>
-      <button class="button-icon material-icons" [title]="('Close' | signalTranslate)()" (click)="onHideMenu()">
+      <button
+        class="button-icon material-icons"
+        [title]="('Close' | signalTranslate)()"
+        [attr.aria-label]="('Close' | signalTranslate)()"
+        (click)="onHideMenu()"
+      >
         close
       </button>
     </div>
