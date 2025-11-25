@@ -11,11 +11,11 @@
   </div>
   <h3>{{ ('AppVersion' | signalTranslate)() }}</h3>
   <div
-    (click)="onClickAppVersion()"
-    (keydown)="onClickAppVersion()"
     tabindex="0"
     role="button"
     [attr.aria-label]="('AppVersion' | signalTranslate)()"
+    (click)="onClickAppVersion()"
+    (keydown)="onClickAppVersion()"
   >
     <div>{{ appVersion }}</div>
   </div>

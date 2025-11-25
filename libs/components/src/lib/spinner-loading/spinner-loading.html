@@ -1,10 +1,10 @@
 @if (spinnerLoading$ | async) {
   <div
-    [@scaleAnimation]
     class="spinner-loading"
-    [title]="('Loading' | signalTranslate)()"
     role="status"
     aria-live="polite"
+    [@scaleAnimation]
+    [title]="('Loading' | signalTranslate)()"
   >
     <div class="spinner-dots"></div>
   </div>

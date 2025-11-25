@@ -5,11 +5,11 @@
     {{ ('Message.SignUp' | signalTranslate)() }}
   </p>
 </div>
-<form [formGroup]="formGroup" role="form" [attr.aria-label]="('SignUp' | signalTranslate)()">
+<form role="form" [attr.aria-label]="('SignUp' | signalTranslate)()" [formGroup]="formGroup">
   <libc-input
+    icon="person"
     [label]="('Username' | signalTranslate)()"
     [mandatory]="true"
-    icon="person"
     [control]="formGroup.controls.username"
   >
     <ng-container errors>
@@ -25,9 +25,9 @@
     <label for="secret">{{ ('Secret' | signalTranslate)() }}</label>
     <code id="secret">{{ secret() }}</code>
     <a
-      class="small-text-button"
       tabindex="0"
       role="button"
+      class="small-text-button"
       [attr.aria-label]="('CopyToClipboard' | signalTranslate)()"
       (click)="onCopyToClipboard()"
       (keyup.enter)="onCopyToClipboard()"

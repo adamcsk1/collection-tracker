@@ -1,12 +1,12 @@
 @if (collectionItem(); as collectionItem) {
   <div
     class="image"
-    [style.backgroundImage]="'url(' + collectionItem.image + ')'"
-    (click)="onOpenDetail()"
-    (keyup)="onOpenDetail()"
     tabindex="0"
     role="button"
+    [style.backgroundImage]="'url(' + collectionItem.image + ')'"
     [attr.aria-label]="collectionItem.title"
+    (click)="onOpenDetail()"
+    (keyup)="onOpenDetail()"
   ></div>
   <div class="content">
     <h3>

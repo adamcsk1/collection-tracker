@@ -5,11 +5,11 @@
     {{ ('Message.SignIn' | signalTranslate)() }}
   </p>
 </div>
-<form [formGroup]="formGroup" role="form" [attr.aria-label]="('SignIn' | signalTranslate)()">
+<form role="form" [attr.aria-label]="('SignIn' | signalTranslate)()" [formGroup]="formGroup">
   <libc-input
+    icon="person"
     [label]="('Username' | signalTranslate)()"
     [mandatory]="true"
-    icon="person"
     [control]="formGroup.controls.username"
     ><ng-container errors>
       @if (!!formGroup.controls.username.errors?.['minlength']) {
@@ -21,10 +21,10 @@
     </ng-container>
   </libc-input>
   <libc-input
+    icon="lock"
     [label]="('Secret' | signalTranslate)()"
     [mandatory]="true"
     [type]="tokenInputType()"
-    icon="lock"
     [control]="formGroup.controls.token"
   />
   <a
