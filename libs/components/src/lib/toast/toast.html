@@ -1,3 +1,12 @@
 @if (message(); as message) {
-  <p [@scaleAnimation] tabindex="0" (click)="onToastClick()" (keydown)="onToastClick()">{{ message }}</p>
+  <p
+    [@scaleAnimation]
+    tabindex="0"
+    role="status"
+    aria-live="assertive"
+    (click)="onToastClick()"
+    (keydown)="onToastClick()"
+  >
+    {{ message }}
+  </p>
 }

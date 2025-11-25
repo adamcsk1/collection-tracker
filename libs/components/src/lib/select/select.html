@@ -7,19 +7,25 @@
   </label>
 }
 
-<select class="select" [id]="selectId()" [formControl]="control()">
+<select
+  class="select"
+  [id]="selectId()"
+  [formControl]="control()"
+  [attr.aria-label]="label()"
+  [attr.aria-describedby]="describedBy()"
+>
   @for (option of options(); track $index) {
     <option [value]="option.value">{{ option.text }}</option>
   }
 </select>
 
 @if (hint()) {
-  <small>{{ hint() }}</small>
+  <small [id]="hintId()">{{ hint() }}</small>
 }
 
 @if (control().touched || control().dirty) {
   @if (control().errors; as errors) {
-    <small class="error">
+    <small class="error" [id]="errorId()">
       @if (!!errors?.['required']) {
         {{ ('Validation.Required' | signalTranslate)() }}
       }

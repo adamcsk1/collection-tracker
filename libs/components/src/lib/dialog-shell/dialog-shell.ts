@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
@@ -9,8 +9,13 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   styleUrl: './dialog-shell.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DialogShell {
+export class DialogShell implements AfterViewInit {
   private readonly portal = inject(PortalService);
+  private readonly dialogRoot = viewChild<ElementRef<HTMLDivElement>>('dialogRoot');
+
+  public ngAfterViewInit(): void {
+    this.dialogRoot()?.nativeElement.focus();
+  }
 
   protected onClose(): void {
     this.portal.close();

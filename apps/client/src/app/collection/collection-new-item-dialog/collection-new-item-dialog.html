@@ -3,7 +3,7 @@
     <h3>{{ ('Title.NewCollectionItem' | signalTranslate)() }}</h3>
   </ng-container>
   <ng-container dialog-shell-content>
-    <form [formGroup]="formGroup">
+    <form role="form" [formGroup]="formGroup">
       <libc-input
         [label]="('Search' | signalTranslate)()"
         [hint]="('Message.NewCollectionItemSearch' | signalTranslate)()"

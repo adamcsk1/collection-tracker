@@ -14,15 +14,17 @@
   [rows]="rows()"
   [cols]="cols()"
   [formControl]="control()"
+  [attr.aria-label]="label()"
+  [attr.aria-describedby]="describedBy()"
 ></textarea>
 
 @if (hint()) {
-  <small>{{ hint() }}</small>
+  <small [id]="hintId()">{{ hint() }}</small>
 }
 
 @if (control().touched || control().dirty) {
   @if (control().errors; as errors) {
-    <small class="error">
+    <small class="error" [id]="errorId()">
       @if (!!errors?.['required']) {
         {{ ('Validation.Required' | signalTranslate)() }}
       }

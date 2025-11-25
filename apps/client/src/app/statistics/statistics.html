@@ -16,7 +16,13 @@
   <libc-details [summary]="('SelectedTags' | signalTranslate)()" [open]="defaultOpenSelectedTags">
     <div class="tags">
       @for (tag of tags(); track tag) {
-        <button [class.button-basic]="!selectedTags().includes(tag)" (click)="onToggleTag(tag)">{{ tag }}</button>
+        <button
+          [class.button-basic]="!selectedTags().includes(tag)"
+          [attr.aria-pressed]="selectedTags().includes(tag)"
+          (click)="onToggleTag(tag)"
+        >
+          {{ tag }}
+        </button>
       }
     </div>
   </libc-details>

@@ -10,13 +10,21 @@
     <div>{{ buildDate }}</div>
   </div>
   <h3>{{ ('AppVersion' | signalTranslate)() }}</h3>
-  <div (click)="onClickAppVersion()" (keydown)="onClickAppVersion()" tabindex="0" role="button">
+  <div
+    (click)="onClickAppVersion()"
+    (keydown)="onClickAppVersion()"
+    tabindex="0"
+    role="button"
+    [attr.aria-label]="('AppVersion' | signalTranslate)()"
+  >
     <div>{{ appVersion }}</div>
   </div>
   <h3>{{ ('Repository' | signalTranslate)() }}</h3>
   <div>
     <div>
-      <a href="https://github.com/adamcsk1/collection-tracker" target="_blank">{{ ('GitHub' | signalTranslate)() }}</a>
+      <a href="https://github.com/adamcsk1/collection-tracker" target="_blank" role="link">{{
+        ('GitHub' | signalTranslate)()
+      }}</a>
     </div>
   </div>
 </div>

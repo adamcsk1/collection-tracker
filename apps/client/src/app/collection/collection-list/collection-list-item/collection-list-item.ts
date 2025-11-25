@@ -9,6 +9,9 @@ import { PortalService } from '@services/portal-service';
   templateUrl: './collection-list-item.html',
   styleUrl: './collection-list-item.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    role: 'listitem',
+  },
 })
 export class CollectionListItem {
   private readonly collectionState = inject(collectionStateToken);

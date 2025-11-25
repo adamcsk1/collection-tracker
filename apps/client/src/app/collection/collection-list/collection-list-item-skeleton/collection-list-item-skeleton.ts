@@ -14,5 +14,9 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   `,
   styleUrl: './collection-list-item-skeleton.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    role: 'listitem',
+    'aria-hidden': 'true',
+  },
 })
 export class CollectionListItemSkeleton {}

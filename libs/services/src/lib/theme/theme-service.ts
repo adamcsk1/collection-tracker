@@ -22,8 +22,8 @@ export class ThemeService {
   public readonly darkTheme = computed(() => ['dark'].includes(this.usedTheme()));
   public readonly themeOptions = computed(() => [
     { text: this.ngxSignalTranslate.translate('System'), value: 'system' },
-    { text: this.ngxSignalTranslate.translate('SolarizedLight'), value: 'light' },
-    { text: this.ngxSignalTranslate.translate('SolarizedDark'), value: 'dark' },
+    { text: this.ngxSignalTranslate.translate('Light'), value: 'light' },
+    { text: this.ngxSignalTranslate.translate('Dark'), value: 'dark' },
   ]);
 
   constructor() {
