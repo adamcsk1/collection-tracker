@@ -4,11 +4,11 @@
   </ng-container>
   <ng-container dialog-shell-content>
     @if (editMode()) {
-      <div class="content-container-editor">
+      <div class="editor-pane">
         <libc-textarea [control]="rawContentControl" [autoHeight]="true"></libc-textarea>
       </div>
     } @else {
-      <div class="content-container-parsed-content" [innerHTML]="parsedMdContent()"></div>
+      <div class="preview-pane" [innerHTML]="parsedMdContent()"></div>
     }
   </ng-container>
   <ng-container dialog-shell-bottom-content>

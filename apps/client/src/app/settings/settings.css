@@ -8,7 +8,7 @@ form {
   display: flex;
   align-items: center;
 
-  .status-circle {
+  .status-dot {
     display: inline-block;
     background-color: var(--text-color);
     border-radius: 50%;
@@ -17,11 +17,11 @@ form {
     margin-left: var(--size-small);
   }
 
-  .status-circle-ok {
+  .status-ok {
     background-color: var(--color-lightseagreen);
   }
 
-  .status-circle-error {
+  .status-error {
     background-color: var(--color-crimson);
   }
 }
