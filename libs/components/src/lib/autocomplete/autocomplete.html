@@ -1,3 +1,11 @@
+@if (label(); as label) {
+  <label [for]="inputId()"
+    >{{ label }}
+    @if (mandatory()) {
+      <span>*</span>
+    }
+  </label>
+}
 <div class="input">
   @if (suggestions().length) {
     <ul
