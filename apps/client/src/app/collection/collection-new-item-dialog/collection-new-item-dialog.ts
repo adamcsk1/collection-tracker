@@ -2,9 +2,11 @@ import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, OnInit 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CollectionNewItemModel } from '@client/collection/collection-new-item-dialog/collection-new-item-dialog-model';
+import { CollectionNewItemTagSuggestionService } from '@client/collection/collection-new-item-dialog/collection-new-item-tag-suggestion-service';
 import { MdContentGeneratorService } from '@client/collection/collection-new-item-dialog/md-content-generator-service';
 import { knownIMDbIdValidator } from '@client/collection/collection-new-item-dialog/validators/known-imdb-id-validator';
 import { CollectionService } from '@client/collection/collection-service';
+import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
@@ -19,10 +21,14 @@ import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap, throw
 
 @Component({
   selector: 'ct-collection-new-item-dialog',
-  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, Input, Select, DialogShell],
+  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, Input, Select, DialogShell, Autocomplete],
   templateUrl: './collection-new-item-dialog.html',
   styleUrl: './collection-new-item-dialog.css',
-  providers: [OMDbService, MdContentGeneratorService],
+  providers: [
+    OMDbService,
+    MdContentGeneratorService,
+    { provide: AutocompleteService, useClass: CollectionNewItemTagSuggestionService },
+  ],
   host: {
     class: 'dialog',
   },
