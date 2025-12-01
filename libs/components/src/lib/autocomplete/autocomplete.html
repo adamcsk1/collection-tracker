@@ -1,0 +1,80 @@
+<div class="input">
+  @if (suggestions().length) {
+    <ul
+      class="input-suggestions"
+      role="listbox"
+      id="autocomplete-suggestions-list"
+      [attr.aria-label]="('Suggestions' | signalTranslate)()"
+      [class.input-suggestions-small]="showReset()"
+    >
+      @for (suggestion of suggestions(); track $index) {
+        <li>
+          <button
+            type="button"
+            role="option"
+            [class.input-suggestion-selected]="$index === selectedSuggestion()"
+            [attr.id]="'autocomplete-suggestion-' + $index"
+            [attr.aria-selected]="$index === selectedSuggestion()"
+            [attr.aria-label]="suggestion"
+            (click)="onAcceptSuggestion($index)"
+          >
+            {{ formatSuggestionText(suggestion) }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="input-box" [class.input-box-with-pane]="suggestions().length" [class.input-box-focused]="focused()">
+    <div
+      #inputElement
+      [id]="inputId()"
+      contenteditable
+      class="input-box-content"
+      role="combobox"
+      aria-autocomplete="list"
+      aria-haspopup="listbox"
+      aria-multiline="false"
+      [attr.aria-expanded]="suggestions().length > 0"
+      [attr.aria-controls]="suggestions().length ? 'autocomplete-suggestions-list' : null"
+      [attr.aria-activedescendant]="suggestions().length ? 'autocomplete-suggestion-' + selectedSuggestion() : null"
+      [attr.aria-label]="placeholder()"
+      (keypress)="onKeypress($event)"
+      (keydown)="onKeydown($event)"
+      (keyup)="onKeyup($event)"
+      (blur)="onBlur()"
+      (focus)="onFocus()"
+    ></div>
+    @if (!inputContent().length) {
+      <span class="input-box-placeholder" aria-hidden="true">{{ placeholder() }}</span>
+    }
+  </div>
+
+  @if (showReset()) {
+    <button
+      class="button-icon material-icons"
+      [attr.aria-label]="('ResetInput' | signalTranslate)()"
+      [title]="('ResetInput' | signalTranslate)()"
+      [disabled]="!hasValue()"
+      (click)="onReset()"
+    >
+      close
+    </button>
+  }
+</div>
+<div class="input-messages">
+  @if (hint()) {
+    <small [id]="hintId()">{{ hint() }}</small>
+  }
+
+  @if (control().touched || control().dirty) {
+    @if (control().errors; as errors) {
+      <small class="error" [id]="errorId()">
+        @if (!!errors?.['required']) {
+          {{ ('Validation.Required' | signalTranslate)() }}
+        }
+        <ng-content select="[errors]"></ng-content>
+      </small>
+    }
+  }
+</div>

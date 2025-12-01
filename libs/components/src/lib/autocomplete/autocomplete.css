@@ -1,0 +1,106 @@
+:host {
+  --input-width: calc(100% - 40px) !important; /* reset button space */
+}
+
+.input {
+  position: relative;
+  display: flex;
+
+  .input-box {
+    flex: 1;
+    max-width: 100%;
+    padding: var(--size-smaller) var(--size-default) var(--size-smaller) var(--size-default);
+    border: var(--border-style);
+    border-radius: var(--border-radius);
+    border-color: var(--border-color);
+    height: var(--input-height);
+
+    .input-box-content {
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+
+      &:focus-visible {
+        outline: none;
+      }
+    }
+
+    &:hover,
+    &.input-box-focused {
+      outline: var(--outline-style);
+      outline-color: var(--focus-border-color);
+    }
+
+    .input-box-placeholder {
+      position: absolute;
+      top: calc(var(--size-smaller) + 1px);
+      left: calc(var(--size-default) + 1px);
+      z-index: 0;
+      opacity: 0.5;
+    }
+  }
+
+  .input-box-with-pane,
+  .input-box-with-pane:focus-visible {
+    width: var(--input-width);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  ul.input-suggestions-small {
+    width: var(--input-width) !important;
+  }
+
+  ul.input-suggestions {
+    position: absolute;
+    top: calc(var(--input-height) / 2 + 1px);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    max-height: 115px;
+    background-color: var(--background-color-alt);
+    border: var(--border-style);
+    border-top: none;
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+    margin-bottom: -1rem;
+    list-style-type: none;
+    padding: 4px 2px;
+    padding-left: 1px;
+    z-index: 2;
+    outline: var(--outline-style);
+    outline-color: var(--focus-border-color);
+    overflow: hidden;
+
+    .input-suggestion-selected {
+      outline: var(--outline-style);
+      outline-color: var(--focus-border-color);
+      border-radius: var(--border-radius);
+    }
+
+    li {
+      padding: 2px 1px;
+
+      button {
+        width: 100%;
+        text-align: left;
+        background-color: transparent;
+        border: none;
+        color: var(--main-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
+.input-messages {
+  small {
+    display: block;
+  }
+
+  .error {
+    color: var(--color-crimson);
+  }
+}
