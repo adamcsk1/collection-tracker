@@ -44,6 +44,7 @@ export class Autocomplete<T> implements OnInit {
   public readonly placeholder = input<string>('');
   public readonly label = input<string>('');
   public readonly hint = input<string>();
+  public readonly mandatory = input<boolean>(false);
   protected readonly hintId = computed<string | null>(() => (this.hint() ? `${this.inputId()}-hint` : null));
   protected readonly errorId = computed<string | null>(() => {
     const hasError = (this.control().touched || this.control().dirty) && !!this.control().errors;
