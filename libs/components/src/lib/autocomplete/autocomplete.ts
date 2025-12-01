@@ -100,7 +100,9 @@ export class Autocomplete<T> implements OnInit {
 
   protected onKeyup($event: KeyboardEvent): void {
     this.inputContent.set(($event.target! as HTMLElement).innerText.trim() || '');
-    this.getSuggestions();
+    this.control().setValue(this.inputContent() as T);
+    if ($event.code !== 'Escape') this.getSuggestions();
+    else this._suggestions.set([]);
   }
 
   protected onAcceptSuggestion(index: number): void {
@@ -146,8 +148,10 @@ export class Autocomplete<T> implements OnInit {
   }
 
   private setInput(value: T): void {
-    if (value !== this.control().value) this.control().setValue(value);
-    this.inputContent.set(value as string);
-    this.inputElement()!.nativeElement.innerHTML = this.inputContent();
+    if (value !== this.control().value) {
+      this.control().setValue(value);
+      this.inputContent.set(value as string);
+      this.inputElement()!.nativeElement.innerHTML = this.inputContent();
+    }
   }
 }
