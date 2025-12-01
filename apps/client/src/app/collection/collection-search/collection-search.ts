@@ -1,15 +1,17 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { CollectionSearchSuggestionService } from '@client/collection/collection-search/collection-search-suggestion-service';
 import { collectionStateToken } from '@client/collection/collection-store';
-import { Input } from '@components/input/input';
+import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-collection-search',
-  imports: [Input, ReactiveFormsModule, NgxSignalTranslatePipe],
+  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, Autocomplete],
   templateUrl: './collection-search.html',
   styleUrl: './collection-search.css',
+  providers: [{ provide: AutocompleteService, useClass: CollectionSearchSuggestionService }],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CollectionSearch implements OnInit {
