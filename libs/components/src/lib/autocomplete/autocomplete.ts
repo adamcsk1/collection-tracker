@@ -2,7 +2,6 @@ import {
   Component,
   computed,
   DestroyRef,
-  DOCUMENT,
   ElementRef,
   inject,
   InjectionToken,
@@ -13,7 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ControlValueAccessor, FormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
 import { AutocompleteServiceInterface } from '@components/autocomplete/autocomplete-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { asyncScheduler } from 'rxjs';
@@ -26,42 +25,64 @@ export const AutocompleteService = new InjectionToken<AutocompleteServiceInterfa
   templateUrl: './autocomplete.html',
   styleUrl: './autocomplete.css',
 })
-export class Autocomplete<T> implements OnInit {
-  private readonly document = inject(DOCUMENT);
+export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly inputElement = viewChild<ElementRef>('inputElement');
+  private readonly inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
   private readonly _suggestions = signal<Array<string>>([]);
   private readonly autocompleteService = inject(AutocompleteService);
+  private readonly ngControl = inject(NgControl, { optional: true, self: true });
   private lastKeycode = '';
+  private onChange: (value: T | null) => void = () => {};
+  private onTouched: () => void = () => {};
   protected readonly suggestions = this._suggestions.asReadonly();
   protected readonly inputContent = model('');
   protected readonly selectedSuggestion = model(-1);
-  protected readonly hasValue = signal<boolean>(false);
+  protected readonly hasValue = computed(() => !!this.inputContent());
   protected readonly focused = signal<boolean>(false);
   public readonly inputId = input<string>(crypto.randomUUID());
-  public readonly control = input.required<FormControl<T>>();
   public readonly showReset = input<boolean>(false);
   public readonly placeholder = input<string>('');
   public readonly label = input<string>('');
   public readonly hint = input<string>();
   public readonly mandatory = input<boolean>(false);
+  protected readonly control = computed<FormControl<T> | null>(() => this.ngControl?.control as FormControl<T>);
   protected readonly hintId = computed<string | null>(() => (this.hint() ? `${this.inputId()}-hint` : null));
   protected readonly errorId = computed<string | null>(() => {
-    const hasError = (this.control().touched || this.control().dirty) && !!this.control().errors;
+    const control = this.control();
+    const hasError = !!control && (control.touched || control.dirty) && !!control.errors;
     return hasError ? `${this.inputId()}-error` : null;
   });
   protected readonly describedBy = computed<string | null>(() => {
     const ids = [this.hintId(), this.errorId()].filter(Boolean);
     return ids.length ? ids.join(' ') : null;
   });
+  protected readonly isDisabled = signal(false);
+
+  constructor() {
+    if (this.ngControl) this.ngControl.valueAccessor = this;
+  }
 
   public ngOnInit(): void {
-    this.control()
-      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        this.hasValue.set(!!value);
-        this.setInput(value);
-      });
+    const control = this.control();
+    control?.valueChanges?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+      this.inputContent.set((value as string) ?? '');
+    });
+  }
+
+  public writeValue(value: T | null): void {
+    this.inputContent.set((value as string) ?? '');
+  }
+
+  public registerOnChange(fn: (value: T | null) => void): void {
+    this.onChange = fn;
+  }
+
+  public registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  public setDisabledState(isDisabled: boolean): void {
+    this.isDisabled.set(isDisabled);
   }
 
   protected onKeypress($event: KeyboardEvent): void {
@@ -100,8 +121,9 @@ export class Autocomplete<T> implements OnInit {
   }
 
   protected onKeyup($event: KeyboardEvent): void {
-    this.inputContent.set(($event.target! as HTMLElement).innerText.trim() || '');
-    this.control().setValue(this.inputContent() as T);
+    const inputText = ($event.target as HTMLInputElement).value;
+    this.inputContent.set(inputText);
+    this.onChange(this.inputContent() as T);
     if ($event.code !== 'Escape') this.getSuggestions();
     else this._suggestions.set([]);
   }
@@ -110,20 +132,11 @@ export class Autocomplete<T> implements OnInit {
     this.selectedSuggestion.set(-1);
     this.setInput(this.suggestions()[index] as T);
     this._suggestions.set([]);
-    this.inputElement()!.nativeElement.focus();
-
-    asyncScheduler.schedule(() => {
-      const selection = this.document.getSelection();
-      const range = this.document.createRange();
-      range.setStart(this.inputElement()!.nativeElement.childNodes[0], this.inputContent().length);
-      range.collapse(true);
-      selection!.removeAllRanges();
-      selection!.addRange(range);
-      this.inputElement()!.nativeElement.scrollLeft = this.inputElement()!.nativeElement.scrollWidth;
-    });
+    this.inputElement()?.nativeElement.focus();
   }
 
   protected onBlur(): void {
+    this.onTouched();
     asyncScheduler.schedule(() => this._suggestions.set([]), 100);
     this.focused.set(false);
   }
@@ -149,10 +162,7 @@ export class Autocomplete<T> implements OnInit {
   }
 
   private setInput(value: T): void {
-    if (value !== this.control().value) {
-      this.control().setValue(value);
-      this.inputContent.set(value as string);
-      this.inputElement()!.nativeElement.innerHTML = this.inputContent();
-    }
+    this.inputContent.set((value as string) ?? '');
+    this.onChange(value);
   }
 }

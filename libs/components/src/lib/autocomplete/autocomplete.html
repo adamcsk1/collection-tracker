@@ -34,28 +34,30 @@
   }
 
   <div class="input-box" [class.input-box-with-pane]="suggestions().length" [class.input-box-focused]="focused()">
-    <div
+    <input
       #inputElement
       [id]="inputId()"
-      contenteditable
-      class="input-box-content"
+      type="text"
       role="combobox"
       aria-autocomplete="list"
       aria-haspopup="listbox"
       aria-multiline="false"
       [attr.aria-expanded]="suggestions().length > 0"
       [attr.aria-controls]="suggestions().length ? 'autocomplete-suggestions-list' : null"
-      [attr.aria-activedescendant]="suggestions().length ? 'autocomplete-suggestion-' + selectedSuggestion() : null"
+      [attr.aria-activedescendant]="
+        suggestions().length && selectedSuggestion() !== -1 ? 'autocomplete-suggestion-' + selectedSuggestion() : null
+      "
       [attr.aria-label]="placeholder()"
+      [attr.aria-describedby]="describedBy()"
+      [placeholder]="placeholder()"
+      [disabled]="isDisabled()"
+      [value]="inputContent()"
       (keypress)="onKeypress($event)"
       (keydown)="onKeydown($event)"
       (keyup)="onKeyup($event)"
       (blur)="onBlur()"
       (focus)="onFocus()"
-    ></div>
-    @if (!inputContent().length) {
-      <span class="input-box-placeholder" aria-hidden="true">{{ placeholder() }}</span>
-    }
+    />
   </div>
 
   @if (showReset()) {
@@ -75,14 +77,16 @@
     <small [id]="hintId()">{{ hint() }}</small>
   }
 
-  @if (control().touched || control().dirty) {
-    @if (control().errors; as errors) {
-      <small class="error" [id]="errorId()">
-        @if (!!errors?.['required']) {
-          {{ ('Validation.Required' | signalTranslate)() }}
-        }
-        <ng-content select="[errors]"></ng-content>
-      </small>
+  @if (control(); as control) {
+    @if (control.touched || control.dirty) {
+      @if (control.errors; as errors) {
+        <small class="error" [id]="errorId()">
+          @if (!!errors?.['required']) {
+            {{ ('Validation.Required' | signalTranslate)() }}
+          }
+          <ng-content select="[errors]"></ng-content>
+        </small>
+      }
     }
   }
 </div>
