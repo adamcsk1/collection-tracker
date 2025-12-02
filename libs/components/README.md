@@ -150,7 +150,7 @@ Inputs
 
 ### libc-autocomplete
 
-An accessible, contenteditable autocomplete that plugs into any suggestion source you provide. Suggestions are supplied via an injected service implementing `AutocompleteServiceInterface`; keyboard navigation supports Up/Down arrows, Enter/Tab to accept, and Esc to close suggestions.
+An accessible autocomplete control (ControlValueAccessor) that plugs into any suggestion source you provide. Suggestions are supplied via an injected service implementing `AutocompleteServiceInterface`; keyboard navigation supports Up/Down arrows, Enter/Tab to accept, and Esc to close suggestions.
 
 ```ts
 // suggestion service
@@ -189,7 +189,7 @@ export class DemoAutocompleteComponent {
   [placeholder]="'Start typing...'"
   [mandatory]="true"
   [showReset]="true"
-  [control]="city"
+  [formControl]="city"
   hint="Type to see suggestions"
 ></libc-autocomplete>
 ```
@@ -197,7 +197,6 @@ export class DemoAutocompleteComponent {
 Inputs
 
 - inputId?: string (auto-generated)
-- control: FormControl<T> (required)
 - placeholder?: string
 - label?: string
 - hint?: string

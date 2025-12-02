@@ -15,10 +15,12 @@
     border-color: var(--border-color);
     height: var(--input-height);
 
-    .input-box-content {
-      position: relative;
-      overflow: hidden;
-      white-space: nowrap;
+    input {
+      width: 100%;
+      height: calc(var(--input-height) - (var(--size-smaller) * 2));
+      border: none;
+      background: transparent;
+      color: var(--text-color);
 
       &:focus-visible {
         outline: none;
@@ -32,11 +34,7 @@
     }
 
     .input-box-placeholder {
-      position: absolute;
-      top: calc(var(--size-smaller) + 1px);
-      left: calc(var(--size-default) + 1px);
-      z-index: 0;
-      opacity: 0.5;
+      display: none;
     }
   }
 
