@@ -8,10 +8,10 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { CollectionItemDialog } from '@client/collection/collection-item-dialog/collection-item-dialog';
-import { CollectionListItemSkeleton } from '@client/collection/collection-list/collection-list-item-skeleton/collection-list-item-skeleton';
-import { CollectionListItem } from '@client/collection/collection-list/collection-list-item/collection-list-item';
-import { CollectionNewItemDialog } from '@client/collection/collection-new-item-dialog/collection-new-item-dialog';
+import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
+import { ListItemSkeleton } from '@client/collection/list/list-item-skeleton/list-item-skeleton';
+import { ListItem } from '@client/collection/list/list-item/list-item';
+import { NewItemDialog } from '@client/collection/new-item-dialog/new-item-dialog';
 import { collectionStateToken } from '@client/collection/collection-store';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { mainStateToken } from '@client/main/main-store';
@@ -21,13 +21,13 @@ import { randomInt } from '@shared/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
-  selector: 'ct-collection-list',
-  imports: [NgxSignalTranslatePipe, CollectionListItem, CollectionListItemSkeleton],
-  templateUrl: './collection-list.html',
-  styleUrl: './collection-list.css',
+  selector: 'ct-list',
+  imports: [NgxSignalTranslatePipe, ListItem, ListItemSkeleton],
+  templateUrl: './list.html',
+  styleUrl: './list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CollectionList {
+export class List {
   private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly mainState = inject(mainStateToken);
   private readonly apiState = inject(apiStateToken);
@@ -65,11 +65,11 @@ export class CollectionList {
     const filteredCollection = this.filteredCollection();
     const randomIndex = randomInt(0, filteredCollection.length - 1);
 
-    this.portal.open(CollectionItemDialog, { collectionItem: filteredCollection[randomIndex] });
+    this.portal.open(ItemDialog, { collectionItem: filteredCollection[randomIndex] });
   }
 
   protected onAddNew(): void {
-    this.portal.open(CollectionNewItemDialog);
+    this.portal.open(NewItemDialog);
   }
 
   protected onFirstPage(): void {

@@ -16,16 +16,16 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
 import { map, mergeMap, of } from 'rxjs';
 
 @Component({
-  selector: 'ct-collection-item-dialog',
+  selector: 'ct-item-dialog',
   imports: [NgxSignalTranslatePipe, Textarea, DialogShell],
-  templateUrl: './collection-item-dialog.html',
-  styleUrl: './collection-item-dialog.css',
+  templateUrl: './item-dialog.html',
+  styleUrl: './item-dialog.css',
   host: {
     class: 'dialog',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CollectionItemDialog implements OnInit {
+export class ItemDialog implements OnInit {
   private readonly collectionService = inject(CollectionService);
   private readonly portal = inject(PortalService);
   private readonly mainState = inject(mainStateToken);

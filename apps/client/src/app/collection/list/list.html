@@ -30,22 +30,22 @@
   [attr.aria-busy]="apiLoadNetworkStatus() === 'pending'"
 >
   @if (!apiLoadNetworkStatus() || apiLoadNetworkStatus() === 'pending') {
-    <ct-collection-list-item-skeleton />
-    <ct-collection-list-item-skeleton />
-    <ct-collection-list-item-skeleton />
-    <ct-collection-list-item-skeleton />
-    <ct-collection-list-item-skeleton />
-    <ct-collection-list-item-skeleton />
-    <ct-collection-list-item-skeleton />
-    <ct-collection-list-item-skeleton />
-    <ct-collection-list-item-skeleton />
-    <ct-collection-list-item-skeleton />
+    <ct-list-item-skeleton />
+    <ct-list-item-skeleton />
+    <ct-list-item-skeleton />
+    <ct-list-item-skeleton />
+    <ct-list-item-skeleton />
+    <ct-list-item-skeleton />
+    <ct-list-item-skeleton />
+    <ct-list-item-skeleton />
+    <ct-list-item-skeleton />
+    <ct-list-item-skeleton />
   } @else {
     @for (collectionItem of paginatedCollection(); track $index) {
       @defer (on viewport; prefetch on idle) {
-        <ct-collection-list-item [collectionItem]="collectionItem" />
+        <ct-list-item [collectionItem]="collectionItem" />
       } @placeholder {
-        <ct-collection-list-item-skeleton />
+        <ct-list-item-skeleton />
       }
     } @empty {
       <div class="list-empty">

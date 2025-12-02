@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { CollectionService } from '@client/collection/collection-service';
-import { CollectionBackground } from '@client/main/collection-background/collection-background';
-import { MainHeader } from '@client/main/main-header/main-header';
+import { Background } from '@client/main/background/background';
+import { Header } from '@client/main/header/header';
 import { MainService } from '@client/main/main-service';
 import { mainStateToken } from '@client/main/main-store';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
@@ -16,7 +16,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-root',
-  imports: [RouterOutlet, MainHeader, SpinnerLoading, Toast, CollectionBackground],
+  imports: [RouterOutlet, Header, SpinnerLoading, Toast, Background],
   templateUrl: './main.html',
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,4 +1,4 @@
-export interface ImageRefreshState {
+export interface ImageRefreshStateModel {
   running: boolean;
   count: number;
   checked: number;

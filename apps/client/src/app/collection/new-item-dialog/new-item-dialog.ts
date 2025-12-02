@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CollectionNewItemModel } from '@client/collection/collection-new-item-dialog/collection-new-item-dialog-model';
-import { CollectionNewItemTagSuggestionService } from '@client/collection/collection-new-item-dialog/collection-new-item-tag-suggestion-service';
-import { MdContentGeneratorService } from '@client/collection/collection-new-item-dialog/md-content-generator-service';
-import { knownIMDbIdValidator } from '@client/collection/collection-new-item-dialog/validators/known-imdb-id-validator';
 import { CollectionService } from '@client/collection/collection-service';
+import { MdContentGeneratorService } from '@client/collection/new-item-dialog/md-content-generator/md-content-generator-service';
+import { NewItemModel } from '@client/collection/new-item-dialog/new-item-dialog-model';
+import { TagSuggestionService } from '@client/collection/new-item-dialog/suggestion/tag-suggestion-service';
+import { knownIMDbIdValidator } from '@client/collection/new-item-dialog/validators/known-imdb-id-validator';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
@@ -20,21 +20,17 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
 import { catchError, debounceTime, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
 
 @Component({
-  selector: 'ct-collection-new-item-dialog',
+  selector: 'ct-new-item-dialog',
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe, Input, Select, DialogShell, Autocomplete],
-  templateUrl: './collection-new-item-dialog.html',
-  styleUrl: './collection-new-item-dialog.css',
-  providers: [
-    OMDbService,
-    MdContentGeneratorService,
-    { provide: AutocompleteService, useClass: CollectionNewItemTagSuggestionService },
-  ],
+  templateUrl: './new-item-dialog.html',
+  styleUrl: './new-item-dialog.css',
+  providers: [OMDbService, MdContentGeneratorService, { provide: AutocompleteService, useClass: TagSuggestionService }],
   host: {
     class: 'dialog',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CollectionNewItemDialog implements OnInit {
+export class NewItemDialog implements OnInit {
   private readonly api = inject(ApiService);
   private readonly omdb = inject(OMDbService);
   private readonly collection = inject(CollectionService);
@@ -44,7 +40,7 @@ export class CollectionNewItemDialog implements OnInit {
   private readonly mdContentGenerator = inject(MdContentGeneratorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly portal = inject(PortalService);
-  protected readonly formGroup = new FormGroup<Form<CollectionNewItemModel>>({
+  protected readonly formGroup = new FormGroup<Form<NewItemModel>>({
     searchText: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     selectedIMDbId: new FormControl(null, { validators: [Validators.required, knownIMDbIdValidator()] }),
     tags: new FormControl('', { nonNullable: true }),

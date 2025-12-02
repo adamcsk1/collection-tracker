@@ -15,4 +15,9 @@
   @media (width <= 520px) {
     max-width: var(--container-max-width-mobile);
   }
+
+  libc-autocomplete {
+    display: block;
+    padding: var(--size-small);
+  }
 }
