@@ -111,31 +111,8 @@
 
   @if (!settingLockEnabled()) {
     <h3>{{ ('UserSettings' | signalTranslate)() }}</h3>
-    <libc-details [summary]="('User' | signalTranslate)()">
-      <p>{{ ('Message.UserSettings' | signalTranslate)() }}</p>
-
-      <div class="form-buttons">
-        <button (click)="onCreateNewUserToken()">
-          {{ ('CreateNewUserToken' | signalTranslate)() }}
-        </button>
-        <button class="button-danger" (click)="onDeleteUser()">
-          {{ ('DeleteUser' | signalTranslate)() }}
-        </button>
-      </div>
-    </libc-details>
-    <libc-details [summary]="('AccessTokens' | signalTranslate)()">
-      <p>{{ ('Message.AccessTokenSettings' | signalTranslate)() }}</p>
-      @for (accessToken of accessTokens(); track $index) {
-        <ct-access-token-item [accessToken]="accessToken" (revokeAccessToken)="onRevokeAccessToken($event)" />
-      }
-      <br />
-      <p>{{ ('Message.CreateNewAccessToken' | signalTranslate)() }}</p>
-      <div class="form-buttons">
-        <button (click)="onCreateAccessToken()">
-          {{ ('CreateNewAccessToken' | signalTranslate)() }}
-        </button>
-      </div>
-    </libc-details>
+    <ct-account-actions />
+    <ct-access-tokens />
   }
 
   <h3>{{ ('OtherSettings' | signalTranslate)() }}</h3>

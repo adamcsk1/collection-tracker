@@ -7,13 +7,13 @@ import { AccessTokenModel } from '@shared/models/api-model';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
-  selector: 'ct-access-token-item',
+  selector: 'ct-token-item',
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe, DatePipe],
-  templateUrl: './access-token-item.html',
-  styleUrl: './access-token-item.css',
+  templateUrl: './token-item.html',
+  styleUrl: './token-item.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AccessTokenItem {
+export class TokenItem {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirm = inject(ConfirmService);
