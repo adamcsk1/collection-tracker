@@ -96,7 +96,7 @@ export class DemoInputComponent {
   [placeholder]="'Type your username'"
   [showReset]="true"
   [icon]="'person'"
-  [control]="username"
+  [formControl]="username"
 >
   <!-- extra field-level errors can be projected -->
   <span errors *ngIf="username.hasError('minlength')">Min length is 3</span>
@@ -112,7 +112,6 @@ Inputs
 - showReset?: boolean
 - placeholder?: string
 - icon?: string
-- control: FormControl<T> (required)
 - hint?: string
 
 ### libc-select
@@ -134,7 +133,7 @@ export class DemoSelectComponent {
 ```
 
 ```html
-<libc-select [label]="'Choose'" [mandatory]="true" [options]="options" [control]="value">
+<libc-select [label]="'Choose'" [mandatory]="true" [options]="options" [formControl]="value">
   <span errors *ngIf="value.hasError('required')">Selection required</span>
 </libc-select>
 ```
@@ -145,7 +144,6 @@ Inputs
 - options: SelectInputModel (required: array of { text, value })
 - label: string
 - mandatory?: boolean
-- control: FormControl<T> (required)
 - hint?: string
 
 ### libc-autocomplete
@@ -221,7 +219,7 @@ export class DemoTextareaComponent {
   [label]="'Notes'"
   [rows]="6"
   [autoHeight]="true"
-  [control]="notes"
+  [formControl]="notes"
   hint="Markdown supported"
 ></libc-textarea>
 ```
@@ -231,7 +229,6 @@ Inputs
 - textareaId?: string (auto-generated)
 - label?: string
 - mandatory?: boolean
-- control: FormControl<T> (required)
 - hint?: string
 - rows?: number
 - cols?: number

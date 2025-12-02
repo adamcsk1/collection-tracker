@@ -14,15 +14,18 @@
     [attr.aria-describedby]="describedBy()"
     [type]="type()"
     [id]="inputId()"
-    [formControl]="control()"
+    [value]="value()"
     [placeholder]="placeholder()"
+    [disabled]="isDisabled()"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
   />
   @if (showReset()) {
     <button
       class="button-icon material-icons"
       [attr.aria-label]="('ResetInput' | signalTranslate)()"
       [title]="('ResetInput' | signalTranslate)()"
-      [disabled]="!hasValue()"
+      [disabled]="!hasValue() || isDisabled()"
       (click)="onReset()"
     >
       close
@@ -34,13 +37,15 @@
   <small [id]="hintId()">{{ hint() }}</small>
 }
 
-@if (control().touched || control().dirty) {
-  @if (control().errors; as errors) {
-    <small class="error" [id]="errorId()">
-      @if (!!errors?.['required']) {
-        {{ ('Validation.Required' | signalTranslate)() }}
-      }
-      <ng-content select="[errors]"></ng-content>
-    </small>
+@if (control(); as control) {
+  @if (control.touched || control.dirty) {
+    @if (control.errors; as errors) {
+      <small class="error" [id]="errorId()">
+        @if (!!errors?.['required']) {
+          {{ ('Validation.Required' | signalTranslate)() }}
+        }
+        <ng-content select="[errors]"></ng-content>
+      </small>
+    }
   }
 }

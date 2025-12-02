@@ -6,7 +6,6 @@ import {
   inject,
   InjectionToken,
   input,
-  model,
   OnInit,
   signal,
   viewChild,
@@ -35,9 +34,9 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   private onChange: (value: T | null) => void = () => {};
   private onTouched: () => void = () => {};
   protected readonly suggestions = this._suggestions.asReadonly();
-  protected readonly inputContent = model('');
-  protected readonly selectedSuggestion = model(-1);
-  protected readonly hasValue = computed(() => !!this.inputContent());
+  protected readonly value = signal('');
+  protected readonly selectedSuggestion = signal(-1);
+  protected readonly hasValue = computed(() => !!this.value());
   protected readonly focused = signal<boolean>(false);
   public readonly inputId = input<string>(crypto.randomUUID());
   public readonly showReset = input<boolean>(false);
@@ -65,12 +64,12 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   public ngOnInit(): void {
     const control = this.control();
     control?.valueChanges?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-      this.inputContent.set((value as string) ?? '');
+      this.value.set((value as string) ?? '');
     });
   }
 
   public writeValue(value: T | null): void {
-    this.inputContent.set((value as string) ?? '');
+    this.value.set((value as string) ?? '');
   }
 
   public registerOnChange(fn: (value: T | null) => void): void {
@@ -122,8 +121,8 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
 
   protected onKeyup($event: KeyboardEvent): void {
     const inputText = ($event.target as HTMLInputElement).value;
-    this.inputContent.set(inputText);
-    this.onChange(this.inputContent() as T);
+    this.value.set(inputText);
+    this.onChange(this.value() as T);
     if ($event.code !== 'Escape') this.getSuggestions();
     else this._suggestions.set([]);
   }
@@ -156,13 +155,13 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   }
 
   private getSuggestions(): void {
-    const suggestions = this.autocompleteService.getSuggestion(this.inputContent());
-    if (suggestions.length > 0 && !suggestions.includes(this.inputContent())) this._suggestions.set(suggestions);
+    const suggestions = this.autocompleteService.getSuggestion(this.value());
+    if (suggestions.length > 0 && !suggestions.includes(this.value())) this._suggestions.set(suggestions);
     else this._suggestions.set([]);
   }
 
   private setInput(value: T): void {
-    this.inputContent.set((value as string) ?? '');
+    this.value.set((value as string) ?? '');
     this.onChange(value);
   }
 }

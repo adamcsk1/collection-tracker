@@ -12,7 +12,10 @@
   [attr.aria-label]="label()"
   [attr.aria-describedby]="describedBy()"
   [id]="selectId()"
-  [formControl]="control()"
+  [value]="value()"
+  [disabled]="isDisabled()"
+  (change)="onChangeSelection($event)"
+  (blur)="onBlur()"
 >
   @for (option of options(); track $index) {
     <option [value]="option.value">{{ option.text }}</option>
@@ -23,13 +26,15 @@
   <small [id]="hintId()">{{ hint() }}</small>
 }
 
-@if (control().touched || control().dirty) {
-  @if (control().errors; as errors) {
-    <small class="error" [id]="errorId()">
-      @if (!!errors?.['required']) {
-        {{ ('Validation.Required' | signalTranslate)() }}
-      }
-      <ng-content select="[errors]"></ng-content>
-    </small>
+@if (control(); as control) {
+  @if (control.touched || control.dirty) {
+    @if (control.errors; as errors) {
+      <small class="error" [id]="errorId()">
+        @if (!!errors?.['required']) {
+          {{ ('Validation.Required' | signalTranslate)() }}
+        }
+        <ng-content select="[errors]"></ng-content>
+      </small>
+    }
   }
 }
