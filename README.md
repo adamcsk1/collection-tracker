@@ -9,7 +9,7 @@
 [![Angular](https://img.shields.io/badge/Angular-20-dd0031?logo=angular&logoColor=white)](https://angular.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-Track and manage your movie and series collection with a fast, lightweight, API-driven app—built with Angular and a Node.js/Express API.
+Collection Tracker is a small Angular + Node/Express workspace for cataloging movies and series without vendor lock-in. It stores items as Markdown so you can sync or edit them with other tools (e.g., Obsidian), while the UI layers on search, pagination, dialogs, and background visuals.
 
 ## Apps & Libraries
 
