@@ -1,0 +1,4 @@
+.form-buttons {
+  display: flex;
+  gap: var(--size-small);
+}

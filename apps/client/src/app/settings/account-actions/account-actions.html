@@ -1,0 +1,12 @@
+<libc-details [summary]="('User' | signalTranslate)()">
+  <p>{{ ('Message.UserSettings' | signalTranslate)() }}</p>
+
+  <div class="form-buttons">
+    <button (click)="onCreateNewUserToken()">
+      {{ ('CreateNewUserToken' | signalTranslate)() }}
+    </button>
+    <button class="button-danger" (click)="onDeleteUser()">
+      {{ ('DeleteUser' | signalTranslate)() }}
+    </button>
+  </div>
+</libc-details>
