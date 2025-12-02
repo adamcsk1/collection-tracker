@@ -18,6 +18,7 @@ Highlights
 
 - libc-input — Text/password input with label, required marker, reset button, icon and validation hints
 - libc-select — Select dropdown bound to a FormControl with typed options
+- libc-autocomplete — Contenteditable autocomplete input powered by a pluggable suggestion service
 - libc-textarea — Textarea with optional auto-height and sizing
 - libc-details — Native details/summary with optional default open and persisted state
 - libc-spinner-loading — Global loading spinner driven by a simple store
@@ -146,6 +147,62 @@ Inputs
 - mandatory?: boolean
 - control: FormControl<T> (required)
 - hint?: string
+
+### libc-autocomplete
+
+An accessible, contenteditable autocomplete that plugs into any suggestion source you provide. Suggestions are supplied via an injected service implementing `AutocompleteServiceInterface`; keyboard navigation supports Up/Down arrows, Enter/Tab to accept, and Esc to close suggestions.
+
+```ts
+// suggestion service
+import { Injectable } from '@angular/core';
+import { AutocompleteServiceInterface } from '@components/autocomplete/autocomplete-model';
+import { AutocompleteService } from '@components/autocomplete/autocomplete';
+
+@Injectable()
+export class CitySuggestionService implements AutocompleteServiceInterface {
+  private readonly cities = ['London', 'Lisbon', 'Lima', 'Los Angeles'];
+  getSuggestion(text: string): Array<string> {
+    const term = text.toLowerCase();
+    return this.cities.filter((city) => city.toLowerCase().startsWith(term));
+  }
+}
+
+// component.ts
+import { Component } from '@angular/core';
+import { FormControl } from '@angular/forms';
+import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
+
+@Component({
+  selector: 'demo-autocomplete',
+  imports: [Autocomplete],
+  providers: [{ provide: AutocompleteService, useClass: CitySuggestionService }],
+  templateUrl: './demo.html',
+})
+export class DemoAutocompleteComponent {
+  city = new FormControl<string>('', { nonNullable: true });
+}
+```
+
+```html
+<libc-autocomplete
+  [label]="'City'"
+  [placeholder]="'Start typing...'"
+  [mandatory]="true"
+  [showReset]="true"
+  [control]="city"
+  hint="Type to see suggestions"
+></libc-autocomplete>
+```
+
+Inputs
+
+- inputId?: string (auto-generated)
+- control: FormControl<T> (required)
+- placeholder?: string
+- label?: string
+- hint?: string
+- mandatory?: boolean
+- showReset?: boolean (clears the control and hides suggestions)
 
 ### libc-textarea
 
