@@ -3,3 +3,5 @@ export interface NewItemModel {
   selectedIMDbId: string | null;
   tags: string;
 }
+
+export type SaveMode = 'new' | 'close' | null;

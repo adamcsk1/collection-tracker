@@ -1,0 +1,65 @@
+import { effect, inject, Injectable } from '@angular/core';
+import { CollectionService } from '@client/collection/collection-service';
+import { MdContentGeneratorService } from '@client/collection/new-item-dialog/md-content-generator/md-content-generator-service';
+import { SaveMode } from '@client/collection/new-item-dialog/new-item-dialog-model';
+import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
+import { toastStateToken } from '@components/toast/toast-store';
+import { ApiService } from '@services/api/api-service';
+import { OMDbService } from '@services/omdb/omdb-service';
+import { PortalService } from '@services/portal-service';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { catchError, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
+
+@Injectable()
+export class NewItemDialogService {
+  private readonly api = inject(ApiService);
+  private readonly omdb = inject(OMDbService);
+  private readonly collection = inject(CollectionService);
+  private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
+  private readonly toastState = inject(toastStateToken);
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  private readonly mdContentGenerator = inject(MdContentGeneratorService);
+  private readonly portal = inject(PortalService);
+
+  constructor() {
+    effect(() => {
+      this.matchedContent();
+      this.spinnerLoadingState.setState('show', false);
+    });
+  }
+
+  readonly matchedContent = this.omdb.matchedContent;
+
+  public search(searchText: string): void {
+    this.spinnerLoadingState.setState('show', true);
+    this.omdb.getMatchedContents(searchText);
+  }
+
+  public save(selectedIMDbId: string, tags: string, mode: SaveMode) {
+    return this.omdb.getSelectedContent(selectedIMDbId).pipe(
+      skip(1),
+      filter((selectedContent) => !!selectedContent),
+      take(1),
+      map((selectedContent) =>
+        this.mdContentGenerator.getMdContent({
+          ...selectedContent,
+          Tags: tags.trim(),
+        })
+      ),
+      tap(() => this.spinnerLoadingState.setState('show', true)),
+      mergeMap((mdContent) =>
+        this.api.create(mdContent).pipe(map((response) => ({ name: response.name, content: mdContent })))
+      ),
+      catchError((error) => {
+        this.spinnerLoadingState.setState('show', false);
+        return throwError(() => error);
+      }),
+      tap((collectionItem) => {
+        this.spinnerLoadingState.setState('show', false);
+        this.collection.addCollectionItem(collectionItem, true);
+        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewItem'));
+        if (mode === 'close') this.portal.close();
+      })
+    );
+  }
+}
