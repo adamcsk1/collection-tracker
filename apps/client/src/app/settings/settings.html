@@ -4,20 +4,20 @@
     <libc-select
       [label]="('Language' | signalTranslate)()"
       [mandatory]="true"
-      [control]="formGroup.controls.language"
+      [formControl]="formGroup.controls.language"
       [options]="languageOptions()"
     />
     <libc-select
       [label]="('Theme' | signalTranslate)()"
       [mandatory]="true"
-      [control]="formGroup.controls.theme"
+      [formControl]="formGroup.controls.theme"
       [options]="themeOptions()"
     />
     <libc-select
       [label]="('AnimatedBackground' | signalTranslate)()"
       [hint]="('Message.AnimatedBackground' | signalTranslate)()"
       [mandatory]="true"
-      [control]="formGroup.controls.animatedBackground"
+      [formControl]="formGroup.controls.animatedBackground"
       [options]="[
         { text: ('Yes' | signalTranslate)(), value: 'true' },
         { text: ('No' | signalTranslate)(), value: 'false' },
@@ -28,7 +28,7 @@
         [label]="('AppMode' | signalTranslate)()"
         [hint]="('Message.AppMode' | signalTranslate)()"
         [mandatory]="true"
-        [control]="formGroup.controls.appMode"
+        [formControl]="formGroup.controls.appMode"
         [options]="[
           { text: ('BasicAccess' | signalTranslate)(), value: 'basic' },
           { text: ('LimitedAccess' | signalTranslate)(), value: 'limited' },
@@ -40,7 +40,7 @@
           [label]="('SettingsLock' | signalTranslate)()"
           [hint]="('Message.SettingsLock' | signalTranslate)()"
           [mandatory]="true"
-          [control]="formGroup.controls.settingsLock"
+          [formControl]="formGroup.controls.settingsLock"
           [options]="[
             { text: ('Yes' | signalTranslate)(), value: 'true' },
             { text: ('No' | signalTranslate)(), value: 'false' },
@@ -51,7 +51,7 @@
         [label]="('FetchBatchSize' | signalTranslate)()"
         [hint]="('Message.FetchBatchSize' | signalTranslate)()"
         [mandatory]="true"
-        [control]="formGroup.controls.fetchBatchSize"
+        [formControl]="formGroup.controls.fetchBatchSize"
         [options]="[
           { text: ('Unlimited' | signalTranslate)(), value: 10000 },
           { text: '5000', value: 5000 },
@@ -71,7 +71,7 @@
         [label]="('OMDbApiKey' | signalTranslate)()"
         [hint]="('Message.OMDbApiKey' | signalTranslate)()"
         [mandatory]="true"
-        [control]="formGroup.controls.omdbApiKey"
+        [formControl]="formGroup.controls.omdbApiKey"
       />
     </libc-details>
     <libc-details [summary]="('StoragePolicies' | signalTranslate)()">
@@ -80,7 +80,7 @@
         [label]="('SensitiveDataStorage' | signalTranslate)()"
         [hint]="('Message.SensitiveDataStorage' | signalTranslate)()"
         [mandatory]="true"
-        [control]="formGroup.controls.sensitiveDataStorage"
+        [formControl]="formGroup.controls.sensitiveDataStorage"
         [options]="[
           { text: ('LocalStorage' | signalTranslate)(), value: 'local' },
           { text: ('SessionStorage' | signalTranslate)(), value: 'session' },
@@ -90,7 +90,7 @@
         <libc-select
           [label]="('ClearLocalStorageAfterLogout' | signalTranslate)()"
           [mandatory]="true"
-          [control]="formGroup.controls.clearLocalStorageAfterLogout"
+          [formControl]="formGroup.controls.clearLocalStorageAfterLogout"
           [options]="[
             { text: ('Yes' | signalTranslate)(), value: 'true' },
             { text: ('No' | signalTranslate)(), value: 'false' },

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { CollectionService } from '@client/collection/collection-service';
 import { getCollectionItem } from '@client/collection/utils/get-collection-item-util';
@@ -17,7 +17,7 @@ import { map, mergeMap, of } from 'rxjs';
 
 @Component({
   selector: 'ct-item-dialog',
-  imports: [NgxSignalTranslatePipe, Textarea, DialogShell],
+  imports: [NgxSignalTranslatePipe, Textarea, DialogShell, ReactiveFormsModule],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
   host: {

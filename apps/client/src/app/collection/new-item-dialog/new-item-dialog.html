@@ -8,14 +8,14 @@
         [label]="('Search' | signalTranslate)()"
         [hint]="('Message.NewCollectionItemSearch' | signalTranslate)()"
         [mandatory]="true"
-        [control]="formGroup.controls.searchText"
+        [formControl]="formGroup.controls.searchText"
         [showReset]="true"
       />
       @if (matchedContent().length) {
         <libc-select
           [mandatory]="true"
           [label]="('SelectedContent' | signalTranslate)()"
-          [control]="formGroup.controls.selectedIMDbId"
+          [formControl]="formGroup.controls.selectedIMDbId"
           [options]="matchedContent()"
         >
           <ng-container errors>
