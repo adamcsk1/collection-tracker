@@ -4,7 +4,7 @@
   flex-direction: column;
 }
 
-ct-main-header {
+ct-header {
   z-index: 2;
 }
 

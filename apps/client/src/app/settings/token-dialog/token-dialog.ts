@@ -6,16 +6,16 @@ import { mobileUserAgent } from '@shared/utils/mobile-user-ageint.util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
-  selector: 'ct-settings-token-dialog',
+  selector: 'ct-token-dialog',
   imports: [NgxSignalTranslatePipe, DialogShell],
-  templateUrl: './settings-token-dialog.html',
-  styleUrl: './settings-token-dialog.css',
+  templateUrl: './token-dialog.html',
+  styleUrl: './token-dialog.css',
   host: {
     class: 'dialog',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SettingsTokenDialog {
+export class TokenDialog {
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   public readonly title = input.required<string>();

@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 
 @Injectable()
-export class CollectionSearchSuggestionService {
+export class SearchSuggestionService {
   private readonly appCollectionState = inject(mainCollectionStateToken);
 
   public getSuggestion(text: string): Array<string> {

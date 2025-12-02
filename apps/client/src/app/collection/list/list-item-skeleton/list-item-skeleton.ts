@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
-  selector: 'ct-collection-list-item-skeleton',
+  selector: 'ct-list-item-skeleton',
   template: `
     <div class="skeleton">
       <div class="skeleton-thumb shine"></div>
@@ -12,11 +12,11 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
       </div>
     </div>
   `,
-  styleUrl: './collection-list-item-skeleton.css',
+  styleUrl: './list-item-skeleton.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'listitem',
     'aria-hidden': 'true',
   },
 })
-export class CollectionListItemSkeleton {}
+export class ListItemSkeleton {}

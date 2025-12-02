@@ -1,16 +1,16 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CollectionModel } from '@client/collection/collection-model';
-import { CollectionBackgroundImagesModel } from '@client/main/collection-background/collection-background-model';
+import { BackgroundImagesModel } from '@client/main/background/background-model';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { opacityAnimation } from '@shared/animations/opacity-animation';
 import { randomInt } from '@shared/utils/random-int-util';
 import { debounceTime, fromEvent } from 'rxjs';
 
 @Component({
-  selector: 'ct-collection-background',
-  templateUrl: './collection-background.html',
-  styleUrl: './collection-background.css',
+  selector: 'ct-background',
+  templateUrl: './background.html',
+  styleUrl: './background.css',
   animations: [opacityAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -20,10 +20,10 @@ import { debounceTime, fromEvent } from 'rxjs';
     'aria-hidden': 'true',
   },
 })
-export class CollectionBackground {
+export class Background {
   private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly images = signal<CollectionBackgroundImagesModel>([]);
+  protected readonly images = signal<BackgroundImagesModel>([]);
   protected readonly imageWidth = 90; // px
   protected readonly imageHeight = 125; // px
   protected windowHeight = window.innerHeight;
@@ -42,7 +42,7 @@ export class CollectionBackground {
   private setImages(collection: CollectionModel): void {
     if (!collection.length) this.images.set([]);
     else {
-      const images: CollectionBackgroundImagesModel = [];
+      const images: BackgroundImagesModel = [];
       const startY = -Math.ceil(window.innerHeight / 2);
       const targetY = Math.ceil(window.innerHeight * 1.5);
       let x = 0;

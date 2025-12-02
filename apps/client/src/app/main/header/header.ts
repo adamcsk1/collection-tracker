@@ -9,16 +9,16 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { catchError, throwError } from 'rxjs';
 
 @Component({
-  selector: 'ct-main-header',
+  selector: 'ct-header',
   imports: [RouterLink, RouterLinkActive, NgxSignalTranslatePipe],
-  templateUrl: './main-header.html',
-  styleUrl: './main-header.css',
+  templateUrl: './header.html',
+  styleUrl: './header.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'banner',
   },
 })
-export class MainHeader {
+export class Header {
   private readonly document = inject(DOCUMENT);
   private readonly mainState = inject(mainStateToken);
   private readonly collection = inject(CollectionService);

@@ -3,21 +3,19 @@ import { inject, Injectable, signal } from '@angular/core';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { CollectionService } from '@client/collection/collection-service';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
-import { ImageRefreshState } from '@client/settings/image-refresh/image-refresh-model';
+import { ImageRefreshStateModel } from '@client/settings/image-refresh/image-refresh-model';
 import { ApiService } from '@services/api/api-service';
-import { apiStateToken } from '@services/api/api-store';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { catchError, EMPTY, map, mergeMap, Observable, of, skip, take, tap } from 'rxjs';
 
 @Injectable()
 export class ImageRefreshService {
   private readonly mainCollectionState = inject(mainCollectionStateToken);
-  private readonly apiState = inject(apiStateToken);
   private readonly omdb = inject(OMDbService);
   private readonly api = inject(ApiService);
   private readonly collection = inject(CollectionService);
   private readonly httpClient = inject(HttpClient);
-  private readonly _state = signal<ImageRefreshState>({
+  private readonly _state = signal<ImageRefreshStateModel>({
     running: false,
     count: 0,
     checked: 0,

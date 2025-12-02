@@ -3,11 +3,11 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { mainStateToken } from '@client/main/main-store';
+import { AccessTokenItem } from '@client/settings/access-token-item/access-token-item';
 import { ImageRefreshService } from '@client/settings/image-refresh/image-refresh-service';
-import { SettingsAccessTokenItem } from '@client/settings/settings-access-token-item/settings-access-token-item';
 import { SettingsModel } from '@client/settings/settings-model';
 import { SettingsService } from '@client/settings/settings-service';
-import { SettingsTokenDialog } from '@client/settings/settings-token-dialog/settings-token-dialog';
+import { TokenDialog } from '@client/settings/token-dialog/token-dialog';
 import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
@@ -29,7 +29,7 @@ import { delay, filter, mergeMap, tap } from 'rxjs';
 
 @Component({
   selector: 'ct-settings',
-  imports: [Input, Select, ReactiveFormsModule, NgxSignalTranslatePipe, PercentPipe, SettingsAccessTokenItem, Details],
+  imports: [Input, Select, ReactiveFormsModule, NgxSignalTranslatePipe, PercentPipe, AccessTokenItem, Details],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   providers: [OMDbService, ImageRefreshService],
@@ -116,7 +116,7 @@ export class Settings implements OnInit {
       )
       .subscribe((response) => {
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AccessTokenCreated'));
-        this.portal.open(SettingsTokenDialog, {
+        this.portal.open(TokenDialog, {
           title: this.ngxSignalTranslate.translate('Title.NewAccessToken'),
           message: this.ngxSignalTranslate.translate('Message.AccessTokenCreated'),
           token: response.accessToken,
@@ -135,7 +135,7 @@ export class Settings implements OnInit {
       )
       .subscribe((response) => {
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewUserTokenCreated'));
-        this.portal.open(SettingsTokenDialog, {
+        this.portal.open(TokenDialog, {
           title: this.ngxSignalTranslate.translate('Title.NewUserToken'),
           message: this.ngxSignalTranslate.translate('Message.NewUserTokenCreated'),
           token: response.newToken,
