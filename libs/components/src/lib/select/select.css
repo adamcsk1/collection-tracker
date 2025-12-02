@@ -11,7 +11,7 @@ small {
 }
 
 .select {
-  background-color: var(--background-color);
+  background-color: transparent;
   border: var(--border-style);
   border-radius: var(--border-radius);
   border-color: var(--border-color);
