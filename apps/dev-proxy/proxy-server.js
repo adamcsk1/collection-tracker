@@ -12,6 +12,31 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', true);
 
+const REFRESH_THRESHOLD = 1;
+const REFRESH_WINDOW_MS = 2000;
+const refreshTracker = new Map();
+
+app.use((req, res, next) => {
+  if (req.method !== 'GET') return next();
+  const acceptsHtml = (req.headers?.accept || '').includes('text/html');
+  if (!acceptsHtml) return next();
+
+  const path = req.path || req.originalUrl || '/';
+  const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+  const key = `${ip}|${path}`;
+  const now = Date.now();
+  const recent = (refreshTracker.get(key) || []).filter((ts) => now - ts < REFRESH_WINDOW_MS);
+  recent.push(now);
+  refreshTracker.set(key, recent);
+
+  if (recent.length >= REFRESH_THRESHOLD) {
+    refreshTracker.set(key, []);
+    return res.redirect(302, `http://localhost:${PORT}/`);
+  }
+
+  return next();
+});
+
 const commonProxy = (customs = {}) => ({
   changeOrigin: true,
   ws: true,
