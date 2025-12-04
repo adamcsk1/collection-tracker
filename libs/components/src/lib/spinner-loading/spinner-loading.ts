@@ -21,7 +21,7 @@ export class SpinnerLoading {
     skip(1),
     tap((status) => {
       if (status) this.counter++;
-      else this.counter--;
+      else if (this.counter > 0) this.counter--;
     }),
     concatMap((status) =>
       status
