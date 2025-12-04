@@ -94,7 +94,7 @@ import { Component, inject } from '@angular/core';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 
-@Component({ selector: 'demo-omdb', standalone: true, template: '', providers: [OMDbService] })
+@Component({ selector: 'demo-omdb', template: '', providers: [OMDbService] })
 export class DemoOMDb {
   private readonly omdb = inject(OMDbService);
   private readonly omdbStore = inject(omdbStateToken);
@@ -122,7 +122,6 @@ import { PortalService } from '@services/portal-service';
 @Component({
   selector: 'app-root-portal',
   template: '<ng-container #portal></ng-container>',
-  standalone: true,
 })
 export class RootPortalHost {
   private readonly portal = inject(PortalService);
