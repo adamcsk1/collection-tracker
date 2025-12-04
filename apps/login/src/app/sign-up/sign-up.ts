@@ -11,7 +11,7 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { Form } from '@shared/models/form-model';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
-import { mobileUserAgent } from '@shared/utils/mobile-user-ageint.util';
+import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({

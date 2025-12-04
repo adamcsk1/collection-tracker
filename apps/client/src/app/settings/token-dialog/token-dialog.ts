@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { toastStateToken } from '@components/toast/toast-store';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
-import { mobileUserAgent } from '@shared/utils/mobile-user-ageint.util';
+import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({

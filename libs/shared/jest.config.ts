@@ -2,7 +2,7 @@ import type { Config } from 'jest';
 
 const config: Config = {
   displayName: 'shared',
-  preset: 'jest-preset-angular',
+  preset: '../../jest.preset.js',
   testEnvironment: 'jsdom',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
@@ -12,6 +12,12 @@ const config: Config = {
         stringifyContentPathRegex: '\\.html$',
       },
     ],
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@angular|rxjs|deep-equal-util|ngx-simple-signal-store|ngx-signal-translate|jest-preset-angular)/)',
+  ],
+  moduleNameMapper: {
+    '^@shared/(.*)$': '<rootDir>/src/lib/$1',
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
