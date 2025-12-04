@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { BLOCKER_LOADING_TIMEOUT_MS } from '@components/blocker-loading/blocker-loading-const';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
-import { opacityOutAnimation } from '@shared/animations/opacity-out-animation';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { asyncScheduler, Subscription } from 'rxjs';
 
@@ -10,7 +9,6 @@ import { asyncScheduler, Subscription } from 'rxjs';
   imports: [NgxSignalTranslatePipe],
   templateUrl: './blocker-loading.html',
   styleUrl: './blocker-loading.css',
-  animations: [opacityOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BlockerLoading {

@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { take } from 'rxjs';
@@ -14,7 +13,6 @@ describe('SpinnerLoading component', () => {
       providers: [
         provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
-        provideAnimationsAsync(),
       ],
     });
   });

@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideStore } from 'ngx-simple-signal-store';
 import { Toast } from './toast';
 import { initialToastState, toastStateToken } from './toast-store';
@@ -10,8 +9,7 @@ describe('Toast component', () => {
 
     TestBed.configureTestingModule({
       imports: [Toast],
-      providers: [provideStore(initialToastState, toastStateToken), provideAnimations()],
-      animationsEnabled: false,
+      providers: [provideStore(initialToastState, toastStateToken)],
     });
   });
 

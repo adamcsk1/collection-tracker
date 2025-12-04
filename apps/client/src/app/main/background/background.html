@@ -2,7 +2,8 @@
   <img
     alt=""
     style="--x: {{ image.x }}px; --y: {{ image.y }}px; --animation-duration:  {{ image.animationDuration }}s;"
-    [@opacityAnimation]
+    animate.enter="animation-fade-in"
+    animate.leave="animation-fade-out"
     [src]="image.url"
   />
 }

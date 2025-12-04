@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { BlockerLoading } from './blocker-loading';
@@ -14,7 +13,6 @@ describe('BlockerLoading component', () => {
       providers: [
         provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
-        provideAnimations(),
       ],
     });
   });

@@ -2,6 +2,7 @@
 @import url("../../../libs/shared/src/lib/styles/reset.css");
 @import url("../../../libs/shared/src/lib/styles/colors.css");
 @import url("../../../libs/shared/src/lib/styles/variables.css");
+@import url("../../../libs/shared/src/lib/styles/animations.css");
 @import url("./styles/variables.css");
 @import url("../../../libs/shared/src/lib/styles/main.css");
 @import url("../../../libs/shared/src/lib/styles/components/button.css");

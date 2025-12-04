@@ -3,7 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CollectionModel } from '@client/collection/collection-model';
 import { BackgroundImagesModel } from '@client/main/background/background-model';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
-import { opacityAnimation } from '@shared/animations/opacity-animation';
 import { randomInt } from '@shared/utils/random-int-util';
 import { debounceTime, fromEvent } from 'rxjs';
 
@@ -11,7 +10,6 @@ import { debounceTime, fromEvent } from 'rxjs';
   selector: 'ct-background',
   templateUrl: './background.html',
   styleUrl: './background.css',
-  animations: [opacityAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.--window-height]': 'windowHeight + "px"',

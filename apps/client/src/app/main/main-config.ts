@@ -1,6 +1,5 @@
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withHashLocation } from '@angular/router';
 import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
@@ -20,7 +19,6 @@ export const mainConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
-    provideAnimationsAsync(),
     provideRouter(routes, withHashLocation()),
     provideHttpClient(withFetch()),
     provideStore(initialOMDbState, omdbStateToken),

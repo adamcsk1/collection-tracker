@@ -2,7 +2,6 @@ import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
-import { scaleAnimation } from '@shared/animations/scale-animation';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { concatMap, delay, filter, of, skip, tap } from 'rxjs';
 
@@ -11,7 +10,6 @@ import { concatMap, delay, filter, of, skip, tap } from 'rxjs';
   imports: [AsyncPipe, NgxSignalTranslatePipe],
   templateUrl: './spinner-loading.html',
   styleUrl: './spinner-loading.css',
-  animations: [scaleAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpinnerLoading {

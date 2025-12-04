@@ -3,7 +3,8 @@
     tabindex="0"
     role="status"
     aria-live="assertive"
-    [@scaleAnimation]
+    animate.enter="animation-scale-in"
+    animate.leave="animation-scale-out"
     (click)="onToastClick()"
     (keydown)="onToastClick()"
   >
