@@ -3,11 +3,20 @@ import type { Config } from 'jest';
 const config: Config = {
   displayName: 'services',
   preset: '../../jest.preset.js',
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   transform: {
-    '^.+\\.[tj]s$': ['@swc/jest'],
+    '^.+\\.(ts|mjs|js|html)$': [
+      'jest-preset-angular',
+      {
+        tsconfig: '<rootDir>/tsconfig.spec.json',
+        stringifyContentPathRegex: '\\.html$',
+      },
+    ],
   },
-  moduleFileExtensions: ['ts', 'js'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(@angular|rxjs|deep-equal-util|ngx-simple-signal-store|ngx-signal-translate|jest-preset-angular)/)',
+  ],
+  moduleFileExtensions: ['ts', 'js', 'html'],
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   testMatch: ['**/?(*.)+(spec|test).ts'],
   roots: ['<rootDir>/src/'],
