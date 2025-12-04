@@ -16,8 +16,7 @@ Models
 
 Animations
 
-- `@shared/animations/opacity-animation`
-- `@shared/animations/scale-animation`
+- `libs/shared/src/lib/styles/animations.css` — reusable classes for `animate.enter` / `animate.leave`
 
 Constants
 
@@ -28,6 +27,7 @@ Styles
 
 - Base: `libs/shared/src/lib/styles/reset.css`, `libs/shared/src/lib/styles/colors.css`, `libs/shared/src/lib/styles/variables.css`
 - Components: `libs/shared/src/lib/styles/components/button.css`, `libs/shared/src/lib/styles/components/form.css`, `libs/shared/src/lib/styles/components/dialog.css`
+- Animations: `libs/shared/src/lib/styles/animations.css`
 
 Utils
 
@@ -109,6 +109,7 @@ Shared CSS utilities and tokens to keep look-and-feel consistent across apps.
   - `components/button.css` — base `button` styles and modifiers: `.button-danger`, `.button-basic`, `.button-icon`
   - `components/form.css` — vertical layout and `.form-buttons` toolbar
   - `components/dialog.css` — fixed-position `.dialog` overlay
+  - `animations.css` — enter/leave helpers for `animate.enter` and `animate.leave`
 
 Usage (import in your app's global `styles.css`):
 
@@ -116,6 +117,7 @@ Usage (import in your app's global `styles.css`):
 @import url('../../../libs/shared/src/lib/styles/reset.css');
 @import url('../../../libs/shared/src/lib/styles/colors.css');
 @import url('../../../libs/shared/src/lib/styles/variables.css');
+@import url('../../../libs/shared/src/lib/styles/animations.css');
 @import url('../../../libs/shared/src/lib/styles/components/button.css');
 @import url('../../../libs/shared/src/lib/styles/components/form.css');
 @import url('../../../libs/shared/src/lib/styles/components/dialog.css');
@@ -135,6 +137,8 @@ Quick examples:
   </form>
 
   <div class="dialog"><!-- overlay content --></div>
+
+  <p animate.enter="animation-scale-in" animate.leave="animation-scale-out">Animated content</p>
 
   <!-- CSS variables available, e.g.: var(--main-color), var(--text-color), var(--size-small) -->
   <!-- Focus styles use var(--outline-style) and var(--outline-offset) -->
