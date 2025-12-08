@@ -1,0 +1,92 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import {
+  BlockerLoadingState,
+  blockerLoadingStateToken,
+  initialBlockerLoadingState,
+} from '@components/blocker-loading/blocker-loading-store';
+import { initialToastState, toastStateToken } from '@components/toast/toast-store';
+import { ApiService } from '@services/api/api-service';
+import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { ThemeService } from '@services/theme/theme-service';
+import { ThemeState, initialThemeState, themeStateToken } from '@services/theme/theme-store';
+import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { API_PREFIX } from '@shared/constants/api-const';
+import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/constants/storage-const';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { EMPTY, throwError } from 'rxjs';
+import { Main } from './main';
+
+describe('Main component', () => {
+  let fixture: ComponentFixture<Main>;
+  let apiState: NgxSimpleSignalStoreService<ApiState>;
+  let themeState: NgxSimpleSignalStoreService<ThemeState>;
+  let blockerState: NgxSimpleSignalStoreService<BlockerLoadingState>;
+  let apiService: { validateAccessToken: jest.Mock };
+  let webStorage: { getItem: jest.Mock; setItem: jest.Mock };
+  let themeService: { listen: jest.Mock };
+  let ngxTranslate: { translate: jest.Mock; setLanguage: jest.Mock };
+
+  beforeEach(() => {
+    apiService = { validateAccessToken: jest.fn(() => EMPTY) };
+    webStorage = {
+      getItem: jest.fn((key: string) => {
+        if (key === STORAGE_LANGUAGE) return 'fr';
+        if (key === STORAGE_THEME) return 'dark';
+        return null;
+      }),
+      setItem: jest.fn(),
+    };
+    themeService = { listen: jest.fn() };
+    ngxTranslate = { translate: jest.fn((value: string) => value), setLanguage: jest.fn() };
+
+    TestBed.configureTestingModule({
+      imports: [Main],
+      providers: [
+        { provide: ApiService, useValue: apiService },
+        { provide: WebstorageService, useValue: webStorage },
+        { provide: ThemeService, useValue: themeService },
+        { provide: NgxSignalTranslateService, useValue: ngxTranslate },
+        provideStore(initialApiState, apiStateToken),
+        provideStore(initialThemeState, themeStateToken),
+        provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
+        provideStore(initialToastState, toastStateToken),
+        provideRouter([]),
+      ],
+    });
+
+    fixture = TestBed.createComponent(Main);
+    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
+    themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<ThemeState>;
+    blockerState = TestBed.inject(blockerLoadingStateToken) as NgxSimpleSignalStoreService<BlockerLoadingState>;
+    jest.spyOn(apiState, 'setState');
+    jest.spyOn(blockerState, 'setState');
+  });
+
+  it('bootstraps language, theme, blocker state, and API URL defaults', () => {
+    const expectedApiUrl = `${window.location.origin}${API_PREFIX}`;
+
+    expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('fr');
+    expect(blockerState.state.show()).toBe(true);
+    expect(blockerState.state.withoutDelay()).toBe(true);
+    expect(themeState.state.theme()).toBe('dark');
+    expect(themeService.listen).toHaveBeenCalled();
+    expect(apiState.state.apiUrl()).toBe(expectedApiUrl);
+    expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, expectedApiUrl);
+  });
+
+  it('calls validateAccessToken on after view init', () => {
+    fixture.componentInstance.ngAfterViewInit();
+
+    expect(apiService.validateAccessToken).toHaveBeenCalled();
+  });
+
+  it('hides the blocker loader when validation fails', () => {
+    apiService.validateAccessToken.mockReturnValue(throwError(() => new Error('invalid')));
+
+    fixture.componentInstance.ngAfterViewInit();
+
+    expect(blockerState.state.show()).toBe(false);
+  });
+});
