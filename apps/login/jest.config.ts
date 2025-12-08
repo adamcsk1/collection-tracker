@@ -2,7 +2,7 @@ import type { Config } from 'jest';
 
 const config: Config = {
   displayName: 'login',
-  preset: 'jest-preset-angular',
+  preset: '../../jest.preset.js',
   testEnvironment: 'jsdom',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
@@ -13,12 +13,12 @@ const config: Config = {
       },
     ],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@angular|rxjs|deep-equal-util|ngx-simple-signal-store|ngx-signal-translate|jest-preset-angular)/)',
+  ],
   moduleFileExtensions: ['ts', 'js', 'html'],
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   testMatch: ['**/?(*.)+(spec|test).ts'],
-  moduleNameMapper: {
-    '\\.(css|less|scss)$': 'identity-obj-proxy',
-  },
   roots: ['<rootDir>/src/'],
 };
 
