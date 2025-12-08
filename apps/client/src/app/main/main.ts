@@ -14,6 +14,8 @@ import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
+export const redirectToLogin = () => window.location.assign('/login/');
+
 @Component({
   selector: 'ct-root',
   imports: [RouterOutlet, Header, SpinnerLoading, Toast, Background],
@@ -52,7 +54,7 @@ export class Main implements OnInit {
         this.collectionService.loadCollection();
         effectRef.destroy();
       } else if (tokenValidated === false) {
-        window.location.href = '/login/';
+        redirectToLogin();
         effectRef.destroy();
       }
     });

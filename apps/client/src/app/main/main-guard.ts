@@ -24,7 +24,7 @@ export const mainGuard: CanActivateFn = (): Observable<boolean> => {
 
   if (!main.hasRequiredConfig()) {
     if (mainState.state.clearLocalStorageAfterLogout()) webstorage.clear();
-    window.location.href = '/login/';
+    window.location.assign('/login/');
     return of(false);
   } else {
     main.validateAccessToken();

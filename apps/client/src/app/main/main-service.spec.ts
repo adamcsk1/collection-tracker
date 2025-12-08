@@ -1,0 +1,126 @@
+import { TestBed } from '@angular/core/testing';
+import { MainService } from './main-service';
+import { provideStore, NgxSimpleSignalStoreService } from 'ngx-simple-signal-store';
+import { initialMainState, mainStateToken } from '@client/main/main-store';
+import { initialApiState, apiStateToken } from '@services/api/api-store';
+import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
+import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
+import { ApiService } from '@services/api/api-service';
+import { WebstorageService } from '@services/webstorage/webstorage-service';
+import {
+  STORAGE_ANIMATED_BACKGROUND,
+  STORAGE_API_URL,
+  STORAGE_APP_MODE,
+  STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
+  STORAGE_FETCH_BATCH_SIZE,
+  STORAGE_LANGUAGE,
+  STORAGE_OMDB_API_KEY,
+  STORAGE_SENSITIVE_DATA_STORAGE,
+  STORAGE_SETTINGS_LOCK,
+  STORAGE_THEME,
+} from '@shared/constants/storage-const';
+import { of, throwError } from 'rxjs';
+
+describe('MainService', () => {
+  let service: MainService;
+  let api: { validateAccessToken: jest.Mock };
+  let webstorage: { getItem: jest.Mock };
+  let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
+  let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
+  let omdbState: NgxSimpleSignalStoreService<typeof initialOMDbState>;
+  let themeState: NgxSimpleSignalStoreService<typeof initialThemeState>;
+
+  beforeEach(() => {
+    api = { validateAccessToken: jest.fn(() => of(undefined)) };
+    webstorage = { getItem: jest.fn() };
+
+    TestBed.configureTestingModule({
+      providers: [
+        MainService,
+        { provide: ApiService, useValue: api },
+        { provide: WebstorageService, useValue: webstorage },
+        provideStore(initialMainState, mainStateToken),
+        provideStore(initialApiState, apiStateToken),
+        provideStore(initialOMDbState, omdbStateToken),
+        provideStore(initialThemeState, themeStateToken),
+      ],
+    });
+
+    service = TestBed.inject(MainService);
+    mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
+    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
+    omdbState = TestBed.inject(omdbStateToken) as NgxSimpleSignalStoreService<typeof initialOMDbState>;
+    themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<typeof initialThemeState>;
+  });
+
+  it('hydrates stores from web storage and sets permissions', () => {
+    webstorage.getItem.mockImplementation((key: string) => {
+      switch (key) {
+        case STORAGE_API_URL:
+          return 'https://api.test';
+        case STORAGE_OMDB_API_KEY:
+          return 'omdb-key';
+        case STORAGE_APP_MODE:
+          return 'limited';
+        case STORAGE_SETTINGS_LOCK:
+          return 'true';
+        case STORAGE_FETCH_BATCH_SIZE:
+          return '25';
+        case STORAGE_THEME:
+          return 'dark';
+        case STORAGE_SENSITIVE_DATA_STORAGE:
+          return 'session';
+        case STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT:
+          return 'true';
+        case STORAGE_ANIMATED_BACKGROUND:
+          return 'false';
+        case STORAGE_LANGUAGE:
+          return 'es';
+        default:
+          return null;
+      }
+    });
+    const setPermissionsSpy = jest.spyOn(service, 'setPermissions');
+
+    service.loadStoredData();
+
+    expect(apiState.state.apiUrl()).toBe('https://api.test');
+    expect(omdbState.state.apiKey()).toBe('omdb-key');
+    expect(mainState.state.appMode()).toBe('limited');
+    expect(mainState.state.settingsLock()).toBe(true);
+    expect(apiState.state.fetchBatchSize()).toBe(25);
+    expect(themeState.state.theme()).toBe('dark');
+    expect(mainState.state.sensitiveDataStorage()).toBe('session');
+    expect(mainState.state.clearLocalStorageAfterLogout()).toBe(true);
+    expect(mainState.state.animatedBackground()).toBe(false);
+    expect(mainState.state.language()).toBe('es');
+    expect(setPermissionsSpy).toHaveBeenCalled();
+  });
+
+  it('sets permissions based on app mode', () => {
+    mainState.setState('appMode', 'basic');
+    service.setPermissions();
+    expect(mainState.state.permissions()).toEqual({ create: false, update: false, delete: false });
+
+    mainState.setState('appMode', 'limited');
+    service.setPermissions();
+    expect(mainState.state.permissions()).toEqual({ create: true, update: false, delete: false });
+
+    mainState.setState('appMode', 'full');
+    service.setPermissions();
+    expect(mainState.state.permissions()).toEqual({ create: true, update: true, delete: true });
+  });
+
+  it('validates access token and marks it as valid', () => {
+    service.validateAccessToken();
+    expect(service.tokenValid()).toBe(true);
+    expect(api.validateAccessToken).toHaveBeenCalled();
+  });
+
+  it('marks token as invalid when validation fails and rethrows the error', () => {
+    api.validateAccessToken.mockReturnValue(throwError(() => new Error('fail')));
+
+    expect(() => service.validateAccessToken()).not.toThrow();
+    expect(service.tokenValid()).toBe(false);
+  });
+});

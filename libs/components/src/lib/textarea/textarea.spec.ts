@@ -44,7 +44,7 @@ describe('Textarea component', () => {
     fixture.detectChanges();
 
     const component = fixture.debugElement.children[0].children[0].componentInstance as Textarea<string>;
-    const setStyleSpy = jest.spyOn((component as any).renderer, 'setStyle');
+    const setStyleSpy = jest.spyOn(component['renderer'], 'setStyle');
 
     jest.runOnlyPendingTimers();
 
