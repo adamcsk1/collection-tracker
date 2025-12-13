@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { SearchSuggestionService } from './search-suggestion-service';
 
 const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({

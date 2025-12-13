@@ -12,17 +12,18 @@ import { PortalService } from '@services/portal-service';
 import * as randomIntUtil from '@shared/utils/random-int-util';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { List } from './list';
 
-jest.mock('marked', () => ({ marked: { parse: () => '' } }));
+vi.mock('marked', () => ({ marked: { parse: () => '' } }));
 
 describe('List', () => {
   let fixture: ComponentFixture<List>;
   let component: List;
-  let portal: { open: jest.Mock };
+  let portal: { open: ReturnType<typeof vi.fn> };
   let mainCollectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
   let collectionState: NgxSimpleSignalStoreService<typeof initialCollectionState>;
-  let scrollSpy: jest.Mock;
+  let scrollSpy: ReturnType<typeof vi.fn>;
 
   const buildItem = (name: string): CollectionItemModel => ({
     rawContent: name,
@@ -37,7 +38,7 @@ describe('List', () => {
   });
 
   beforeEach(() => {
-    portal = { open: jest.fn() };
+    portal = { open: vi.fn() };
     TestBed.configureTestingModule({
       imports: [List],
       providers: [
@@ -61,12 +62,12 @@ describe('List', () => {
       typeof initialCollectionState
     >;
 
-    scrollSpy = jest.fn();
+    scrollSpy = vi.fn();
     (component as any).scrollContainer = () => ({ nativeElement: { scrollTo: scrollSpy } }) as ElementRef;
   });
 
   it('filters collection based on search text and resets scroll position', () => {
-    jest.spyOn(component as any, 'resetScrollPosition');
+    vi.spyOn(component as any, 'resetScrollPosition');
     mainCollectionState.setState('collection', [buildItem('Alpha'), buildItem('Beta')]);
     collectionState.setState('searchText', 'be');
 
@@ -78,7 +79,7 @@ describe('List', () => {
   });
 
   it('opens a random item from the filtered collection', () => {
-    jest.spyOn(randomIntUtil, 'randomInt').mockReturnValue(1);
+    vi.spyOn(randomIntUtil, 'randomInt').mockReturnValue(1);
     mainCollectionState.setState('collection', [buildItem('First'), buildItem('Second'), buildItem('Third')]);
 
     component['onRandomPick']();

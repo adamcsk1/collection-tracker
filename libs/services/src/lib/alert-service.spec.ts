@@ -1,12 +1,13 @@
 import { TestBed } from '@angular/core/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlertService } from './alert-service';
 
 describe('AlertService', () => {
   let service: AlertService;
-  let alertSpy: jest.Mock;
+  let alertSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    alertSpy = jest.fn();
+    alertSpy = vi.fn();
     globalThis.alert = alertSpy as unknown as typeof alert;
 
     TestBed.configureTestingModule({

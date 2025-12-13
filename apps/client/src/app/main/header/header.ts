@@ -3,10 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CollectionService } from '@client/collection/collection-service';
 import { mainStateToken } from '@client/main/main-store';
+import { redirectToLogin } from '@client/main/main-util';
 import { ApiService } from '@services/api/api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { catchError, throwError } from 'rxjs';
+import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'ct-header',
@@ -43,17 +44,16 @@ export class Header {
     this.api
       .logout()
       .pipe(
-        catchError((error) => {
+        catchError(() => {
           if (this.mainState.state.clearLocalStorageAfterLogout()) this.webstorage.clear();
-          window.location.href = '/login/';
-
-          return throwError(() => error);
+          redirectToLogin();
+          return EMPTY;
         }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => {
         if (this.mainState.state.clearLocalStorageAfterLogout()) this.webstorage.clear();
-        window.location.href = '/login/';
+        redirectToLogin();
       });
   }
 }

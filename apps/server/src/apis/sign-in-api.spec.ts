@@ -3,16 +3,17 @@ import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
 import dayjs from 'dayjs';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-jest.mock('@server/core/store/store');
-jest.mock('@server/core/crypto', () => ({
-  hashText: jest.fn(async (text: string) => `hashed-${text}`),
+vi.mock('@server/core/store/store');
+vi.mock('@server/core/crypto', () => ({
+  hashText: vi.fn(async (text: string) => `hashed-${text}`),
 }));
-jest.mock('@server/core/jwt', () => ({
-  generateAccessToken: jest.fn().mockReturnValue('access'),
+vi.mock('@server/core/jwt', () => ({
+  generateAccessToken: vi.fn().mockReturnValue('access'),
 }));
-jest.mock('@server/core/utils/users-util', () => ({
-  getUserAccessToken: jest.fn(async (_token: string, _agent: string, expires: Date | null) => ({
+vi.mock('@server/core/utils/users-util', () => ({
+  getUserAccessToken: vi.fn(async (_token: string, _agent: string, expires: Date | null) => ({
     tokenHash: 'hashed-access',
     createdAt: dayjs().toISOString(),
     userAgent: 'agent',
@@ -21,19 +22,20 @@ jest.mock('@server/core/utils/users-util', () => ({
 }));
 
 describe('sign-in-api', () => {
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
 
   it('rejects when user does not exist', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValue({});
-    (Store.set as jest.Mock).mockImplementation(() => undefined);
+    (Store.getOnce$ as any).mockReturnValue(app$);
+    (Store.getLastValue as any).mockReturnValue({});
+    (Store.set as any).mockImplementation(() => undefined);
 
-    jest.isolateModules(() => {
-      require('./sign-in-api');
-    });
+    await import('./sign-in-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(404);
@@ -43,15 +45,13 @@ describe('sign-in-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValue({
+    (Store.getOnce$ as any).mockReturnValue(app$);
+    (Store.getLastValue as any).mockReturnValue({
       'hashed-neo': { userTokenHash: 'hashed-other', accessTokens: [] },
     });
-    (Store.set as jest.Mock).mockImplementation(() => undefined);
+    (Store.set as any).mockImplementation(() => undefined);
 
-    jest.isolateModules(() => {
-      require('./sign-in-api');
-    });
+    await import('./sign-in-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(401);
@@ -61,19 +61,17 @@ describe('sign-in-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: { 'user-agent': 'agent' } };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValue({
+    (Store.getOnce$ as any).mockReturnValue(app$);
+    (Store.getLastValue as any).mockReturnValue({
       'hashed-neo': {
         userTokenHash: 'hashed-token',
         accessTokens: [{ tokenHash: 'old', expiresAt: dayjs().subtract(1, 'day').toISOString() }],
       },
     });
-    (Store.set as jest.Mock).mockImplementation(() => undefined);
-    const setSpy = jest.spyOn(Store, 'set');
+    (Store.set as any).mockImplementation(() => undefined);
+    const setSpy = vi.spyOn(Store, 'set');
 
-    jest.isolateModules(() => {
-      require('./sign-in-api');
-    });
+    await import('./sign-in-api');
 
     await handlerPromise();
     expect(response.cookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'access', expect.any(Object));
@@ -86,14 +84,12 @@ describe('sign-in-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockImplementation(() => {
+    (Store.getOnce$ as any).mockReturnValue(app$);
+    (Store.getLastValue as any).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    jest.isolateModules(() => {
-      require('./sign-in-api');
-    });
+    await import('./sign-in-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

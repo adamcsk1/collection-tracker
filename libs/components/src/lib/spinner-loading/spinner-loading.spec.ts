@@ -2,12 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { take } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpinnerLoading } from './spinner-loading';
 import { initialSpinnerLoadingState, spinnerLoadingStateToken } from './spinner-loading-store';
 
 describe('SpinnerLoading component', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     TestBed.configureTestingModule({
       imports: [SpinnerLoading],
       providers: [
@@ -18,7 +19,7 @@ describe('SpinnerLoading component', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('emits true when show is set and false after delay when cleared', async () => {
@@ -31,13 +32,13 @@ describe('SpinnerLoading component', () => {
 
     store.setState('show', true);
     await Promise.resolve();
-    jest.runOnlyPendingTimers();
+    vi.runOnlyPendingTimers();
     expect(lastEmission).toBe(true);
 
     store.setState('show', false);
     fixture.componentInstance['spinnerLoading$'].pipe(take(1)).subscribe((value: boolean) => (lastEmission = value));
     await Promise.resolve();
-    jest.advanceTimersByTime(250);
+    vi.advanceTimersByTime(250);
     expect(lastEmission).toBe(false);
   });
 
@@ -53,24 +54,24 @@ describe('SpinnerLoading component', () => {
     store.setState('show', true);
     fixture.componentInstance['spinnerLoading$'].pipe(take(1)).subscribe((value: boolean) => (lastEmission = value));
     await Promise.resolve();
-    jest.runOnlyPendingTimers();
+    vi.runOnlyPendingTimers();
 
     store.setState('show', true);
     fixture.componentInstance['spinnerLoading$'].pipe(take(1)).subscribe((value: boolean) => (lastEmission = value));
     await Promise.resolve();
-    jest.runOnlyPendingTimers();
+    vi.runOnlyPendingTimers();
 
     store.setState('show', false);
     fixture.componentInstance['spinnerLoading$'].pipe(take(1)).subscribe((value: boolean) => (lastEmission = value));
     await Promise.resolve();
-    jest.runOnlyPendingTimers();
+    vi.runOnlyPendingTimers();
 
     expect(lastEmission).toBe(true);
 
     store.setState('show', false);
     fixture.componentInstance['spinnerLoading$'].pipe(take(1)).subscribe((value: boolean) => (lastEmission = value));
     await Promise.resolve();
-    jest.advanceTimersByTime(250);
+    vi.advanceTimersByTime(250);
 
     expect(lastEmission).toBe(false);
   });

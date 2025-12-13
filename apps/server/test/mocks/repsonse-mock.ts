@@ -1,8 +1,10 @@
+import { vi } from 'vitest';
+
 export const mockResponse = () => {
   const response: any = {};
-  response.send = jest.fn().mockReturnValue(response);
-  response.sendStatus = jest.fn().mockReturnValue(response);
-  response.cookie = jest.fn().mockReturnValue(response);
-  response.clearCookie = jest.fn().mockReturnValue(response);
+  response.send = vi.fn().mockReturnValue(response);
+  response.sendStatus = vi.fn().mockReturnValue(response);
+  response.cookie = vi.fn().mockReturnValue(response);
+  response.clearCookie = vi.fn().mockReturnValue(response);
   return response;
 };

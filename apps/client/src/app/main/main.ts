@@ -5,6 +5,7 @@ import { Background } from '@client/main/background/background';
 import { Header } from '@client/main/header/header';
 import { MainService } from '@client/main/main-service';
 import { mainStateToken } from '@client/main/main-store';
+import { redirectToLogin } from '@client/main/main-util';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { Toast } from '@components/toast/toast';
@@ -13,8 +14,6 @@ import { omdbStateToken } from '@services/omdb/omdb-store';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-
-export const redirectToLogin = () => window.location.assign('/login/');
 
 @Component({
   selector: 'ct-root',
@@ -58,6 +57,11 @@ export class Main implements OnInit {
         effectRef.destroy();
       }
     });
+
+    if (this.main.tokenValid() === false) {
+      redirectToLogin();
+      effectRef.destroy();
+    }
 
     this.main.loadStoredData();
 

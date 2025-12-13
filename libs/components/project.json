@@ -7,10 +7,10 @@
   "tags": [],
   "targets": {
     "test": {
-      "executor": "@nx/jest:jest",
+      "executor": "@nx/vitest:test",
       "outputs": ["{workspaceRoot}/coverage/libs/components"],
       "options": {
-        "jestConfig": "libs/components/jest.config.ts",
+        "config": "libs/components/vitest.config.ts",
         "passWithNoTests": true
       }
     },

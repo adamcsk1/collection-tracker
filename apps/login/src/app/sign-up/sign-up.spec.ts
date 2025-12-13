@@ -11,28 +11,29 @@ import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { SignUp } from './sign-up';
 
-jest.mock('@shared/utils/copy-to-clipboard-util', () => ({ copyToClipboard: jest.fn() }));
-jest.mock('@shared/utils/mobile-user-agent.util', () => ({ mobileUserAgent: jest.fn() }));
+vi.mock('@shared/utils/copy-to-clipboard-util', () => ({ copyToClipboard: vi.fn() }));
+vi.mock('@shared/utils/mobile-user-agent.util', () => ({ mobileUserAgent: vi.fn() }));
 
 describe('SignUp component', () => {
   let fixture: ComponentFixture<SignUp>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let toastState: NgxSimpleSignalStoreService<ToastState>;
-  let apiService: { signUp: jest.Mock };
-  let webStorage: { getItem: jest.Mock; setItem: jest.Mock };
-  let translateService: { languageOptions: jest.Mock };
-  let ngxTranslate: { translate: jest.Mock; setLanguage: jest.Mock };
+  let apiService: { signUp: Mock };
+  let webStorage: { getItem: Mock; setItem: Mock };
+  let translateService: { languageOptions: Mock };
+  let ngxTranslate: { translate: Mock; setLanguage: Mock };
 
   beforeEach(() => {
-    apiService = { signUp: jest.fn(() => of({ token: 'new-token' })) };
+    apiService = { signUp: vi.fn(() => of({ token: 'new-token' })) };
     webStorage = {
-      getItem: jest.fn(() => null),
-      setItem: jest.fn(),
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(),
     };
-    translateService = { languageOptions: jest.fn(() => [{ text: 'English', value: 'en' }]) };
-    ngxTranslate = { translate: jest.fn((value: string) => value), setLanguage: jest.fn() };
+    translateService = { languageOptions: vi.fn(() => [{ text: 'English', value: 'en' }]) };
+    ngxTranslate = { translate: vi.fn((value: string) => value), setLanguage: vi.fn() };
 
     TestBed.configureTestingModule({
       imports: [SignUp],
@@ -50,8 +51,8 @@ describe('SignUp component', () => {
     fixture = TestBed.createComponent(SignUp);
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
     toastState = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
-    jest.spyOn(apiState, 'setState');
-    jest.spyOn(toastState, 'setState');
+    vi.spyOn(apiState, 'setState');
+    vi.spyOn(toastState, 'setState');
     apiState.setState('apiUrl', 'https://stored-api');
     fixture.detectChanges();
   });
@@ -73,8 +74,8 @@ describe('SignUp component', () => {
 
   it('copies the generated token and surfaces a toast on desktop browsers', () => {
     const component = fixture.componentInstance;
-    const copySpy = copyToClipboard as jest.Mock;
-    const mobileSpy = mobileUserAgent as jest.Mock;
+    const copySpy = copyToClipboard as Mock;
+    const mobileSpy = mobileUserAgent as Mock;
     mobileSpy.mockReturnValue(false);
     component['secret'].set('copied-token');
 
@@ -86,8 +87,8 @@ describe('SignUp component', () => {
 
   it('avoids toast when running on mobile user agents', () => {
     const component = fixture.componentInstance;
-    const copySpy = copyToClipboard as jest.Mock;
-    const mobileSpy = mobileUserAgent as jest.Mock;
+    const copySpy = copyToClipboard as Mock;
+    const mobileSpy = mobileUserAgent as Mock;
     mobileSpy.mockReturnValue(true);
     component['secret'].set('secret-token');
     toastState.setState('message', '');

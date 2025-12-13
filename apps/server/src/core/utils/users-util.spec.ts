@@ -1,7 +1,8 @@
 import { getUserAccessToken } from '@server/core/utils/users-util';
+import { describe, expect, it, vi } from 'vitest';
 
-jest.mock('@server/core/crypto', () => ({
-  hashText: jest.fn(async (text: string) => `hashed-${text}`),
+vi.mock('@server/core/crypto', () => ({
+  hashText: vi.fn(async (text: string) => `hashed-${text}`),
 }));
 
 describe('users-util', () => {

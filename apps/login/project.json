@@ -11,10 +11,10 @@
   "prefix": "lo",
   "targets": {
     "test": {
-      "executor": "@nx/jest:jest",
+      "executor": "@nx/vitest:test",
       "outputs": ["{workspaceRoot}/coverage/apps/login"],
       "options": {
-        "jestConfig": "apps/login/jest.config.ts",
+        "config": "apps/login/vitest.config.ts",
         "passWithNoTests": true
       }
     },

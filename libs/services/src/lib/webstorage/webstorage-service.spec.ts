@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { describe, expect, it, vi } from 'vitest';
 import { WebstorageService } from './webstorage-service';
 
 describe('WebstorageService', () => {
@@ -69,7 +70,7 @@ describe('WebstorageService', () => {
     sessionStorage.setItem('session-only', 'value');
     localStorage.setItem('session-only', 'persist');
 
-    const sessionRemoveSpy = jest.spyOn(Storage.prototype, 'removeItem');
+    const sessionRemoveSpy = vi.spyOn(Storage.prototype, 'removeItem');
 
     service.removeItem('session-only', 'session');
 

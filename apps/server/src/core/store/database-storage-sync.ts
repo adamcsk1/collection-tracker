@@ -1,14 +1,14 @@
 import { debugLog, errorLog } from '@server/core/logger';
 import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { StoreModel } from '@server/core/store/store-model';
-import { deepEqual } from 'deep-equal-util';
+import { dequal } from 'dequal';
 import { writeFileSync } from 'fs';
 import { debounceTime, filter, map, pairwise, tap } from 'rxjs';
 
 (global.__serverStorage as StoreModel).users
   .pipe(
     pairwise(),
-    filter(([previousUsers, nextUsers]) => !deepEqual(previousUsers, nextUsers)),
+    filter(([previousUsers, nextUsers]) => !dequal(previousUsers, nextUsers)),
     map(([, nextUsers]) => nextUsers),
     tap(() => debugLog('Users changed')),
     debounceTime(2500)

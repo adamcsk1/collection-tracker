@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CanActivateFn } from '@angular/router';
+import { redirectToLogin } from '@client/main/main-util';
 import { MainService } from '@client/main/main-service';
 import { mainStateToken } from '@client/main/main-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -24,7 +25,7 @@ export const mainGuard: CanActivateFn = (): Observable<boolean> => {
 
   if (!main.hasRequiredConfig()) {
     if (mainState.state.clearLocalStorageAfterLogout()) webstorage.clear();
-    window.location.assign('/login/');
+    redirectToLogin();
     return of(false);
   } else {
     main.validateAccessToken();

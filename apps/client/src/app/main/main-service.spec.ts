@@ -1,11 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { MainService } from './main-service';
-import { provideStore, NgxSimpleSignalStoreService } from 'ngx-simple-signal-store';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
-import { initialApiState, apiStateToken } from '@services/api/api-store';
+import { ApiService } from '@services/api/api-service';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
-import { ApiService } from '@services/api/api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_ANIMATED_BACKGROUND,
@@ -19,20 +17,23 @@ import {
   STORAGE_SETTINGS_LOCK,
   STORAGE_THEME,
 } from '@shared/constants/storage-const';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, throwError } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MainService } from './main-service';
 
 describe('MainService', () => {
   let service: MainService;
-  let api: { validateAccessToken: jest.Mock };
-  let webstorage: { getItem: jest.Mock };
+  let api: { validateAccessToken: ReturnType<typeof vi.fn> };
+  let webstorage: { getItem: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
   let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
   let omdbState: NgxSimpleSignalStoreService<typeof initialOMDbState>;
   let themeState: NgxSimpleSignalStoreService<typeof initialThemeState>;
 
   beforeEach(() => {
-    api = { validateAccessToken: jest.fn(() => of(undefined)) };
-    webstorage = { getItem: jest.fn() };
+    api = { validateAccessToken: vi.fn(() => of(undefined)) };
+    webstorage = { getItem: vi.fn() };
 
     TestBed.configureTestingModule({
       providers: [
@@ -80,7 +81,7 @@ describe('MainService', () => {
           return null;
       }
     });
-    const setPermissionsSpy = jest.spyOn(service, 'setPermissions');
+    const setPermissionsSpy = vi.spyOn(service, 'setPermissions');
 
     service.loadStoredData();
 

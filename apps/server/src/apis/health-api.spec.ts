@@ -1,18 +1,17 @@
 import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
+import { describe, expect, it, vi, type Mock } from 'vitest';
 
-jest.mock('@server/core/store/store');
+vi.mock('@server/core/store/store');
 
 describe('health-api', () => {
-  it('responds with Ok', () => {
+  it('responds with Ok', async () => {
     const response = mockResponse();
     const { app$ } = buildApp({}, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
 
-    jest.isolateModules(() => {
-      require('./health-api');
-    });
+    await import('./health-api');
 
     expect(response.send).toHaveBeenCalledWith({ message: 'Ok' });
   });

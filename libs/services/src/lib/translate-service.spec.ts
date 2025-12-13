@@ -1,13 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TranslateService } from './translate-service';
 
 describe('TranslateService', () => {
   let service: TranslateService;
-  let translateSpy: jest.Mock;
+  let translateSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    translateSpy = jest.fn((value: string) => `t:${value}`);
+    translateSpy = vi.fn((value: string) => `t:${value}`);
 
     TestBed.configureTestingModule({
       providers: [TranslateService, { provide: NgxSignalTranslateService, useValue: { translate: translateSpy } }],

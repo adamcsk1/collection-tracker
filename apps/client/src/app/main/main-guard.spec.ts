@@ -2,32 +2,35 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { MainService } from '@client/main/main-service';
+import * as MainUtil from '@client/main/main-util';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { provideStore } from 'ngx-simple-signal-store';
 import { firstValueFrom, isObservable } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mainGuard } from './main-guard';
 
 describe('mainGuard', () => {
   let tokenValid = signal<boolean | null>(null);
   let main: {
     tokenValid: typeof tokenValid;
-    hasRequiredConfig: jest.Mock;
-    validateAccessToken: jest.Mock;
-    loadStoredData: jest.Mock;
+    hasRequiredConfig: ReturnType<typeof vi.fn>;
+    validateAccessToken: ReturnType<typeof vi.fn>;
+    loadStoredData: ReturnType<typeof vi.fn>;
   };
-  let webstorage: { clear: jest.Mock };
-  let consoleErrorSpy: jest.SpyInstance;
+  let webstorage: { clear: ReturnType<typeof vi.fn> };
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let redirectSpy: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     tokenValid = signal<boolean | null>(null);
     main = {
       tokenValid,
-      hasRequiredConfig: jest.fn(() => true),
-      validateAccessToken: jest.fn(() => tokenValid.set(true)),
-      loadStoredData: jest.fn(),
+      hasRequiredConfig: vi.fn(() => true),
+      validateAccessToken: vi.fn(() => tokenValid.set(true)),
+      loadStoredData: vi.fn(),
     };
-    webstorage = { clear: jest.fn() };
+    webstorage = { clear: vi.fn() };
 
     TestBed.configureTestingModule({
       providers: [
@@ -36,10 +39,13 @@ describe('mainGuard', () => {
         provideStore(initialMainState, mainStateToken),
       ],
     });
+
+    redirectSpy = vi.spyOn(MainUtil, 'redirectToLogin').mockImplementation(() => {});
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+    redirectSpy.mockRestore();
   });
 
   const resolveGuard = async () => {
@@ -72,6 +78,7 @@ describe('mainGuard', () => {
     const allowed = await resolveGuard();
     expect(main.loadStoredData).toHaveBeenCalled();
     expect(webstorage.clear).toHaveBeenCalled();
+    expect(redirectSpy).toHaveBeenCalled();
     expect(allowed).toBe(false);
   });
 

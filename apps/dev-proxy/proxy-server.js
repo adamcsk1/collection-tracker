@@ -12,7 +12,7 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', true);
 
-const REFRESH_THRESHOLD = 1;
+const REFRESH_THRESHOLD = 3;
 const REFRESH_WINDOW_MS = 2000;
 const refreshTracker = new Map();
 

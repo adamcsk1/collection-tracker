@@ -19,7 +19,7 @@ import {
   STORAGE_THEME,
 } from '@shared/constants/storage-const';
 import { LanguageModel } from '@shared/models/language-model';
-import { catchError, throwError } from 'rxjs';
+import { catchError, EMPTY } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class MainService {
@@ -77,9 +77,9 @@ export class MainService {
     this.api
       .validateAccessToken()
       .pipe(
-        catchError((error) => {
+        catchError(() => {
           this._tokenValid.set(false);
-          return throwError(() => error);
+          return EMPTY;
         })
       )
       .subscribe(() => this._tokenValid.set(true));

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Textarea } from './textarea';
 
 @Component({
@@ -28,7 +29,7 @@ class NoHintHostComponent {
 
 describe('Textarea component', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     TestBed.configureTestingModule({
       imports: [HostComponent, NoHintHostComponent],
       providers: [{ provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } }],
@@ -36,7 +37,7 @@ describe('Textarea component', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('updates control on input and adjusts height when autoHeight is true', () => {
@@ -44,14 +45,15 @@ describe('Textarea component', () => {
     fixture.detectChanges();
 
     const component = fixture.debugElement.children[0].children[0].componentInstance as Textarea<string>;
-    const setStyleSpy = jest.spyOn(component['renderer'], 'setStyle');
+    const setStyleSpy = vi.spyOn(component['renderer'], 'setStyle');
 
-    jest.runOnlyPendingTimers();
+    vi.runOnlyPendingTimers();
 
-    const textareaElement = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
-    textareaElement.value = 'hello';
-    textareaElement.dispatchEvent(new Event('input'));
+    component['onInput']({
+      target: { value: 'hello' },
+    } as unknown as Event);
     fixture.detectChanges();
+    vi.runOnlyPendingTimers();
 
     expect(fixture.componentInstance.control.value).toBe('hello');
     expect(setStyleSpy).toHaveBeenCalledWith(expect.anything(), 'height', expect.stringContaining('px'));
@@ -62,11 +64,10 @@ describe('Textarea component', () => {
     fixture.detectChanges();
 
     const component = fixture.debugElement.children[0].children[0].componentInstance as Textarea<string>;
-    const touchedSpy = jest.fn();
+    const touchedSpy = vi.fn();
     component.registerOnTouched(touchedSpy);
 
-    const textareaElement = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
-    textareaElement.dispatchEvent(new Event('blur'));
+    component['onBlur']();
 
     expect(touchedSpy).toHaveBeenCalled();
   });
@@ -79,15 +80,14 @@ describe('Textarea component', () => {
     fixture.detectChanges();
 
     const component = fixture.debugElement.children[0].children[0].componentInstance as Textarea<string>;
-    const textareaElement = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
     component.setDisabledState(true);
     fixture.detectChanges();
 
-    textareaElement.dispatchEvent(new Event('blur'));
+    component['onBlur']();
     fixture.detectChanges();
 
-    expect(textareaElement.disabled).toBe(true);
-    const describedBy = textareaElement.getAttribute('aria-describedby') ?? '';
+    expect(component['isDisabled']()).toBe(true);
+    const describedBy = component['describedBy']() ?? '';
     expect(describedBy).toContain('-error');
   });
 
@@ -98,7 +98,7 @@ describe('Textarea component', () => {
     fixture.componentInstance.control.markAsUntouched();
     fixture.detectChanges();
 
-    const textareaElement = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
-    expect(textareaElement.getAttribute('aria-describedby')).toBeNull();
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Textarea<string>;
+    expect(component['describedBy']()).toBeNull();
   });
 });

@@ -1,3 +1,14 @@
-import { setupZonelessTestEnv } from 'jest-preset-angular/setup-env/zoneless';
+import '@analogjs/vitest-angular/setup-snapshots';
+import '@angular/compiler';
 
-setupZonelessTestEnv();
+import { NgModule, provideZonelessChangeDetection } from '@angular/core';
+import { getTestBed } from '@angular/core/testing';
+import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
+
+// Configure Angular testing to use zoneless change detection for Vitest.
+@NgModule({
+  providers: [provideZonelessChangeDetection()],
+})
+export class ZonelessTestModule {}
+
+getTestBed().initTestEnvironment([BrowserTestingModule, ZonelessTestModule], platformBrowserTesting());

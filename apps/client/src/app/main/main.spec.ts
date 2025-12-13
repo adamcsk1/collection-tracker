@@ -14,33 +14,34 @@ import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import * as MainModule from './main';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Main } from './main';
+import * as MainUtil from './main-util';
 
 describe('Main component (client)', () => {
   let fixture: ComponentFixture<Main>;
   let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
   let mainService: {
-    tokenValid: jest.Mock;
-    loadStoredData: jest.Mock;
+    tokenValid: ReturnType<typeof vi.fn>;
+    loadStoredData: ReturnType<typeof vi.fn>;
   };
-  let collectionService: { loadCollection: jest.Mock };
-  let router: { navigate: jest.Mock };
-  let theme: { listen: jest.Mock };
-  let translate: { setLanguage: jest.Mock };
-  let portal: { setViewContainerRef: jest.Mock };
+  let collectionService: { loadCollection: ReturnType<typeof vi.fn> };
+  let router: { navigate: ReturnType<typeof vi.fn> };
+  let theme: { listen: ReturnType<typeof vi.fn> };
+  let translate: { setLanguage: ReturnType<typeof vi.fn> };
+  let portal: { setViewContainerRef: ReturnType<typeof vi.fn> };
   let omdbState: NgxSimpleSignalStoreService<typeof initialOMDbState>;
 
   beforeEach(() => {
     mainService = {
-      tokenValid: jest.fn(() => null),
-      loadStoredData: jest.fn(),
+      tokenValid: vi.fn(() => null),
+      loadStoredData: vi.fn(),
     };
-    collectionService = { loadCollection: jest.fn() };
-    router = { navigate: jest.fn() };
-    theme = { listen: jest.fn() };
-    translate = { setLanguage: jest.fn() };
-    portal = { setViewContainerRef: jest.fn() };
+    collectionService = { loadCollection: vi.fn() };
+    router = { navigate: vi.fn() };
+    theme = { listen: vi.fn() };
+    translate = { setLanguage: vi.fn() };
+    portal = { setViewContainerRef: vi.fn() };
 
     TestBed.configureTestingModule({
       imports: [Main],
@@ -112,7 +113,7 @@ describe('Main component (client)', () => {
   });
 
   it('redirects to login when token validation fails', () => {
-    const redirectSpy = jest.spyOn(MainModule, 'redirectToLogin').mockImplementation(() => {});
+    const redirectSpy = vi.spyOn(MainUtil, 'redirectToLogin').mockImplementation(() => {});
     mainService.tokenValid.mockReturnValue(false);
 
     fixture = TestBed.createComponent(Main);

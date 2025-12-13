@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { AlertService } from '@services/alert-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { defaultIfEmpty, lastValueFrom } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api-service';
 import { ApiState, apiStateToken, initialApiState } from './api-store';
 
@@ -11,10 +12,10 @@ describe('ApiService', () => {
   let service: ApiService;
   let httpMock: HttpTestingController;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
-  let alertSpy: jest.Mock;
+  let alertSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    alertSpy = jest.fn();
+    alertSpy = vi.fn();
 
     TestBed.configureTestingModule({
       providers: [

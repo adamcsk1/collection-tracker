@@ -2,21 +2,25 @@ import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
 import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
-jest.mock('@server/core/store/store');
-jest.mock('@server/core/crypto', () => ({
-  hashText: jest.fn(async (text: string) => `hashed-${text}`),
+vi.mock('@server/core/store/store');
+vi.mock('@server/core/crypto', () => ({
+  hashText: vi.fn(async (text: string) => `hashed-${text}`),
 }));
-jest.mock('@server/core/jwt', () => ({
-  generateAccessToken: jest.fn().mockReturnValue('new-token'),
-  jwtGuard: jest.fn((_req: any, _res: any, next: any) => next()),
+vi.mock('@server/core/jwt', () => ({
+  generateAccessToken: vi.fn().mockReturnValue('new-token'),
+  jwtGuard: vi.fn((_req: any, _res: any, next: any) => next()),
 }));
-jest.mock('@server/core/utils/users-util', () => ({
-  getUserAccessToken: jest.fn(async () => ({ tokenHash: 'hashed-new-token' })),
+vi.mock('@server/core/utils/users-util', () => ({
+  getUserAccessToken: vi.fn(async () => ({ tokenHash: 'hashed-new-token' })),
 }));
 
 describe('access-token-validate-api', () => {
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
 
   it('rotates cookie token and updates users cache when coming from cookie', async () => {
     const storeValue = {
@@ -30,14 +34,12 @@ describe('access-token-validate-api', () => {
       usernameHash: 'userHash',
     };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValue(storeValue);
-    (Store.set as jest.Mock).mockImplementation(() => undefined);
-    const setSpy = jest.spyOn(Store, 'set');
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    (Store.getLastValue as Mock).mockReturnValue(storeValue);
+    (Store.set as Mock).mockImplementation(() => undefined);
+    const setSpy = vi.spyOn(Store, 'set');
 
-    jest.isolateModules(() => {
-      require('./access-token-validate-api');
-    });
+    await import('./access-token-validate-api');
 
     await handlerPromise();
 
@@ -55,11 +57,9 @@ describe('access-token-validate-api', () => {
       usernameHash: 'userHash',
     };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
 
-    jest.isolateModules(() => {
-      require('./access-token-validate-api');
-    });
+    await import('./access-token-validate-api');
 
     await handlerPromise();
 
@@ -75,14 +75,12 @@ describe('access-token-validate-api', () => {
       usernameHash: 'userHash',
     };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockImplementation(() => {
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    jest.isolateModules(() => {
-      require('./access-token-validate-api');
-    });
+    await import('./access-token-validate-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

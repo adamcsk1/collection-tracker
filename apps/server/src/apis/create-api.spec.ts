@@ -3,17 +3,22 @@ import { updateItem } from '@server/core/utils/cache-util';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
 import { existsSync } from 'fs';
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
-jest.mock('@server/core/store/store');
-jest.mock('@server/core/utils/cache-util');
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  existsSync: jest.fn(),
-}));
+vi.mock('@server/core/store/store');
+vi.mock('@server/core/utils/cache-util');
+vi.mock('fs', async () => {
+  const fs = await vi.importActual<typeof import('fs')>('fs');
+  return {
+    ...fs,
+    existsSync: vi.fn(),
+  };
+});
 
 describe('create-api', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.resetModules();
+    vi.clearAllMocks();
   });
 
   it('creates a new file and returns name', async () => {
@@ -23,13 +28,11 @@ describe('create-api', () => {
       usernameHash: 'user',
     };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValue('/data');
-    (existsSync as jest.Mock).mockReturnValue(false);
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    (Store.getLastValue as Mock).mockReturnValue('/data');
+    (existsSync as Mock).mockReturnValue(false);
 
-    jest.isolateModules(() => {
-      require('./create-api');
-    });
+    await import('./create-api');
 
     await handlerPromise();
     expect(updateItem).toHaveBeenCalled();
@@ -40,13 +43,11 @@ describe('create-api', () => {
     const response = mockResponse();
     const request: any = { body: { content: 'body' }, usernameHash: 'user' };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValue('/data');
-    (existsSync as jest.Mock).mockReturnValue(true);
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    (Store.getLastValue as Mock).mockReturnValue('/data');
+    (existsSync as Mock).mockReturnValue(true);
 
-    jest.isolateModules(() => {
-      require('./create-api');
-    });
+    await import('./create-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(409);
@@ -57,14 +58,12 @@ describe('create-api', () => {
     const response = mockResponse();
     const request: any = { body: { content: 'body' }, usernameHash: 'user' };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockImplementation(() => {
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    jest.isolateModules(() => {
-      require('./create-api');
-    });
+    await import('./create-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

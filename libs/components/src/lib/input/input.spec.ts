@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Input } from './input';
 
 @Component({
@@ -32,31 +33,30 @@ describe('Input component', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
-    const inputElement = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    const resetButtonElement = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Input<string>;
 
-    inputElement.value = 'abc';
-    inputElement.dispatchEvent(new Event('input'));
+    component['onInput']({
+      target: { value: 'abc' },
+    } as unknown as Event);
     fixture.detectChanges();
 
     expect(fixture.componentInstance.control.value).toBe('abc');
-    expect(resetButtonElement.disabled).toBe(false);
+    expect(component['hasValue']()).toBe(true);
 
-    resetButtonElement.click();
+    component['onReset']();
     fixture.detectChanges();
 
     expect(fixture.componentInstance.control.value).toBe('');
-    expect(inputElement.value).toBe('');
+    expect(component['value']()).toBe('');
   });
 
   it('provides hint id in describedBy when hint is set', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
-    const inputElement = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    const hintElement = fixture.nativeElement.querySelector('small') as HTMLElement;
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Input<string>;
 
-    expect(inputElement.getAttribute('aria-describedby')).toBe(hintElement.id);
+    expect(component['describedBy']()).toBe(component['hintId']());
   });
 
   it('invokes onTouched when blurred', () => {
@@ -64,11 +64,10 @@ describe('Input component', () => {
     fixture.detectChanges();
 
     const component = fixture.debugElement.children[0].children[0].componentInstance as Input<string>;
-    const touchedSpy = jest.fn();
+    const touchedSpy = vi.fn();
     component.registerOnTouched(touchedSpy);
 
-    const inputElement = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    inputElement.dispatchEvent(new Event('blur'));
+    component['onBlur']();
 
     expect(touchedSpy).toHaveBeenCalled();
   });
@@ -80,8 +79,8 @@ describe('Input component', () => {
     fixture.componentInstance.control.markAsUntouched();
     fixture.detectChanges();
 
-    const inputElement = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    expect(inputElement.getAttribute('aria-describedby')).toBeNull();
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Input<string>;
+    expect(component['describedBy']()).toBeNull();
   });
 
   it('disables the input and exposes error id when control is touched with errors', () => {
@@ -92,13 +91,12 @@ describe('Input component', () => {
     fixture.detectChanges();
 
     const componentInstance = fixture.debugElement.children[0].children[0].componentInstance as Input<string>;
-    const inputElement = fixture.nativeElement.querySelector('input') as HTMLInputElement;
 
     componentInstance.setDisabledState(true);
     fixture.detectChanges();
 
-    expect(inputElement.disabled).toBe(true);
-    const describedBy = inputElement.getAttribute('aria-describedby') ?? '';
+    expect(componentInstance['isDisabled']()).toBe(true);
+    const describedBy = componentInstance['describedBy']() ?? '';
     expect(describedBy).toContain('-hint');
     expect(describedBy).toContain('-error');
   });

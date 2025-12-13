@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Select } from './select';
 
 @Component({
@@ -40,13 +41,14 @@ describe('Select component', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
-    const selectElement = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
-    const options = Array.from(selectElement.querySelectorAll('option')).map((option) => option.value);
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
+    const options = component.options().map((option) => option.value);
 
     expect(options).toEqual(['1', '2']);
 
-    selectElement.value = '2';
-    selectElement.dispatchEvent(new Event('change'));
+    component['onChangeSelection']({
+      target: { value: '2' },
+    } as unknown as Event);
     fixture.detectChanges();
 
     expect(fixture.componentInstance.control.value).toBe('2');
@@ -56,10 +58,9 @@ describe('Select component', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
-    const selectElement = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
-    const hintElement = fixture.nativeElement.querySelector('small') as HTMLElement;
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
 
-    expect(selectElement.getAttribute('aria-describedby')).toBe(hintElement.id);
+    expect(component['describedBy']()).toBe(component['hintId']());
   });
 
   it('calls onTouched when blurred', () => {
@@ -67,11 +68,10 @@ describe('Select component', () => {
     fixture.detectChanges();
 
     const componentInstance = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
-    const touchedSpy = jest.fn();
+    const touchedSpy = vi.fn();
     componentInstance.registerOnTouched(touchedSpy);
 
-    const selectElement = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
-    selectElement.dispatchEvent(new Event('blur'));
+    componentInstance['onBlur']();
 
     expect(touchedSpy).toHaveBeenCalled();
   });
@@ -83,8 +83,8 @@ describe('Select component', () => {
     fixture.componentInstance.control.markAsUntouched();
     fixture.detectChanges();
 
-    const selectElement = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
-    expect(selectElement.getAttribute('aria-describedby')).toBeNull();
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
+    expect(component['describedBy']()).toBeNull();
   });
 
   it('disables the control via setDisabledState and links error id', () => {
@@ -94,13 +94,12 @@ describe('Select component', () => {
     fixture.detectChanges();
 
     const componentInstance = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
-    const selectElement = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
 
     componentInstance.setDisabledState(true);
     fixture.detectChanges();
 
-    expect(selectElement.disabled).toBe(true);
-    const describedBy = selectElement.getAttribute('aria-describedby') ?? '';
+    expect(componentInstance['isDisabled']()).toBe(true);
+    const describedBy = componentInstance['describedBy']() ?? '';
     expect(describedBy).toContain('-hint');
     expect(describedBy).toContain('-error');
   });

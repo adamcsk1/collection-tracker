@@ -1,13 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BlockerLoading } from './blocker-loading';
 import { BLOCKER_LOADING_TIMEOUT_MS } from './blocker-loading-const';
 import { blockerLoadingStateToken, initialBlockerLoadingState } from './blocker-loading-store';
 
 describe('BlockerLoading component', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     TestBed.configureTestingModule({
       imports: [BlockerLoading],
       providers: [
@@ -18,58 +19,61 @@ describe('BlockerLoading component', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('shows after delay when withoutDelay is false', () => {
     const store = TestBed.inject(blockerLoadingStateToken);
     const fixture = TestBed.createComponent(BlockerLoading);
+    const component = fixture.componentInstance;
     fixture.detectChanges();
 
     store.setState('show', true);
-    jest.advanceTimersByTime(BLOCKER_LOADING_TIMEOUT_MS - 1);
+    vi.advanceTimersByTime(BLOCKER_LOADING_TIMEOUT_MS - 1);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.blocker-loading')).toBeNull();
+    expect(component['showBlockerLoading']()).toBe(false);
 
-    jest.advanceTimersByTime(1);
+    vi.advanceTimersByTime(1);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.blocker-loading')).not.toBeNull();
+    expect(component['showBlockerLoading']()).toBe(true);
   });
 
   it('shows immediately when withoutDelay is true and hides after turning off', () => {
     const store = TestBed.inject(blockerLoadingStateToken);
     const fixture = TestBed.createComponent(BlockerLoading);
+    const component = fixture.componentInstance;
     fixture.detectChanges();
 
     store.setState('withoutDelay', true);
     store.setState('show', true);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.blocker-loading')).not.toBeNull();
+    expect(component['showBlockerLoading']()).toBe(true);
 
     store.setState('show', false);
-    jest.runOnlyPendingTimers();
-    jest.advanceTimersByTime(BLOCKER_LOADING_TIMEOUT_MS);
+    vi.runOnlyPendingTimers();
+    vi.advanceTimersByTime(BLOCKER_LOADING_TIMEOUT_MS);
     fixture.detectChanges();
-    jest.runOnlyPendingTimers();
+    vi.runOnlyPendingTimers();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.blocker-loading')).toBeNull();
+    expect(component['showBlockerLoading']()).toBe(false);
     expect(store.state.withoutDelay()).toBe(false);
   });
 
   it('cancels delayed show when toggled off before timeout', () => {
     const store = TestBed.inject(blockerLoadingStateToken);
     const fixture = TestBed.createComponent(BlockerLoading);
+    const component = fixture.componentInstance;
     fixture.detectChanges();
 
     store.setState('show', true);
-    jest.advanceTimersByTime(BLOCKER_LOADING_TIMEOUT_MS - 10);
+    vi.advanceTimersByTime(BLOCKER_LOADING_TIMEOUT_MS - 10);
 
     store.setState('show', false);
-    jest.runOnlyPendingTimers();
+    vi.runOnlyPendingTimers();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.blocker-loading')).toBeNull();
+    expect(component['showBlockerLoading']()).toBe(false);
   });
 });

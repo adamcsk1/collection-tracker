@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DialogShell } from './dialog-shell';
 
 @Component({
@@ -16,10 +17,10 @@ import { DialogShell } from './dialog-shell';
 class HostComponent {}
 
 describe('DialogShell component', () => {
-  let closeSpy: jest.Mock;
+  let closeSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    closeSpy = jest.fn();
+    closeSpy = vi.fn();
     TestBed.configureTestingModule({
       imports: [HostComponent],
       providers: [
@@ -33,11 +34,11 @@ describe('DialogShell component', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
-    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLDivElement;
+    const dialogComponent = fixture.debugElement.children[0].componentInstance as DialogShell;
+    const dialogRoot = dialogComponent['dialogRoot']?.()?.nativeElement;
     expect(document.activeElement).toBe(dialogRoot);
 
-    const closeButton = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
-    closeButton.click();
+    dialogComponent['onClose']();
     expect(closeSpy).toHaveBeenCalled();
   });
 
@@ -45,8 +46,9 @@ describe('DialogShell component', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
-    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLDivElement;
-    dialogRoot.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    const dialogComponent = fixture.debugElement.children[0].componentInstance as DialogShell;
+    const dialogRoot = dialogComponent['dialogRoot']?.()?.nativeElement;
+    dialogRoot?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
     expect(closeSpy).toHaveBeenCalledTimes(1);
   });

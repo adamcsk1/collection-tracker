@@ -3,9 +3,10 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collection } from './collection';
 
-jest.mock('marked', () => ({ marked: jest.fn(() => '') }));
+vi.mock('marked', () => ({ marked: vi.fn(() => '') }));
 
 describe('Collection component', () => {
   let fixture: ComponentFixture<Collection>;
@@ -16,7 +17,7 @@ describe('Collection component', () => {
       imports: [Collection],
       providers: [
         provideStore(initialCollectionState, collectionStateToken),
-        { provide: AutocompleteService, useValue: { search: jest.fn() } },
+        { provide: AutocompleteService, useValue: { search: vi.fn() } },
       ],
     });
 

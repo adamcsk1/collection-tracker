@@ -4,8 +4,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "types": ["jest", "node"],
+    "types": ["vitest/globals", "vitest", "node"],
     "esModuleInterop": true
   },
-  "include": []
+  "include": ["vitest.setup.ts"]
 }

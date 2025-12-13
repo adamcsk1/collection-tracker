@@ -16,6 +16,7 @@ import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/consta
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { EMPTY, throwError } from 'rxjs';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { Main } from './main';
 
 describe('Main component', () => {
@@ -23,23 +24,23 @@ describe('Main component', () => {
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
   let blockerState: NgxSimpleSignalStoreService<BlockerLoadingState>;
-  let apiService: { validateAccessToken: jest.Mock };
-  let webStorage: { getItem: jest.Mock; setItem: jest.Mock };
-  let themeService: { listen: jest.Mock };
-  let ngxTranslate: { translate: jest.Mock; setLanguage: jest.Mock };
+  let apiService: { validateAccessToken: Mock };
+  let webStorage: { getItem: Mock; setItem: Mock };
+  let themeService: { listen: Mock };
+  let ngxTranslate: { translate: Mock; setLanguage: Mock };
 
   beforeEach(() => {
-    apiService = { validateAccessToken: jest.fn(() => EMPTY) };
+    apiService = { validateAccessToken: vi.fn(() => EMPTY) };
     webStorage = {
-      getItem: jest.fn((key: string) => {
+      getItem: vi.fn((key: string) => {
         if (key === STORAGE_LANGUAGE) return 'fr';
         if (key === STORAGE_THEME) return 'dark';
         return null;
       }),
-      setItem: jest.fn(),
+      setItem: vi.fn(),
     };
-    themeService = { listen: jest.fn() };
-    ngxTranslate = { translate: jest.fn((value: string) => value), setLanguage: jest.fn() };
+    themeService = { listen: vi.fn() };
+    ngxTranslate = { translate: vi.fn((value: string) => value), setLanguage: vi.fn() };
 
     TestBed.configureTestingModule({
       imports: [Main],
@@ -60,8 +61,8 @@ describe('Main component', () => {
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
     themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<ThemeState>;
     blockerState = TestBed.inject(blockerLoadingStateToken) as NgxSimpleSignalStoreService<BlockerLoadingState>;
-    jest.spyOn(apiState, 'setState');
-    jest.spyOn(blockerState, 'setState');
+    vi.spyOn(apiState, 'setState');
+    vi.spyOn(blockerState, 'setState');
   });
 
   it('bootstraps language, theme, blocker state, and API URL defaults', () => {

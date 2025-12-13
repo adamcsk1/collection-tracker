@@ -3,21 +3,28 @@ import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
 import { mkdirSync } from 'fs';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-jest.mock('@server/core/store/store');
-jest.mock('@server/core/crypto', () => ({
-  generateRandomToken: jest.fn().mockReturnValue('generated-token'),
-  hashText: jest.fn(async (text: string) => `hashed-${text}`),
+vi.mock('@server/core/store/store');
+vi.mock('@server/core/crypto', () => ({
+  generateRandomToken: vi.fn().mockReturnValue('generated-token'),
+  hashText: vi.fn(async (text: string) => `hashed-${text}`),
 }));
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  mkdirSync: jest.fn(),
-  writeFileSync: jest.fn(),
-}));
+vi.mock('fs', async () => {
+  const actual = await vi.importActual<typeof import('fs')>('fs');
+
+  return {
+    ...actual,
+    mkdirSync: vi.fn(),
+    writeFileSync: vi.fn(),
+  };
+});
 
 describe('sign-up-api', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.resetModules();
+    vi.clearAllMocks();
+    (Store.set as ReturnType<typeof vi.fn> | undefined)?.mockReset?.();
     delete process.env.DISABLE_REGISTRATION;
     delete process.env.USER_LIMIT;
   });
@@ -26,12 +33,10 @@ describe('sign-up-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
+    (Store.getOnce$ as ReturnType<typeof vi.fn>).mockReturnValue(app$);
     process.env.DISABLE_REGISTRATION = '1';
 
-    jest.isolateModules(() => {
-      require('./sign-up-api');
-    });
+    await import('./sign-up-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(403);
@@ -41,15 +46,13 @@ describe('sign-up-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValueOnce({}).mockReturnValueOnce('/data');
-    (Store.set as jest.Mock).mockImplementation(() => undefined);
+    (Store.getOnce$ as ReturnType<typeof vi.fn>).mockReturnValue(app$);
+    (Store.getLastValue as ReturnType<typeof vi.fn>).mockReturnValueOnce({}).mockReturnValueOnce('/data');
+    (Store.set as ReturnType<typeof vi.fn>).mockImplementation(() => undefined);
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '5';
 
-    jest.isolateModules(() => {
-      require('./sign-up-api');
-    });
+    await import('./sign-up-api');
 
     await handlerPromise();
     expect(Store.set).toHaveBeenCalledWith('users', expect.any(Object));
@@ -61,14 +64,12 @@ describe('sign-up-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValue({ 'hashed-neo': {} });
+    (Store.getOnce$ as ReturnType<typeof vi.fn>).mockReturnValue(app$);
+    (Store.getLastValue as ReturnType<typeof vi.fn>).mockReturnValue({ 'hashed-neo': {} });
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '5';
 
-    jest.isolateModules(() => {
-      require('./sign-up-api');
-    });
+    await import('./sign-up-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(409);
@@ -78,14 +79,12 @@ describe('sign-up-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValue({ existing: {} });
+    (Store.getOnce$ as ReturnType<typeof vi.fn>).mockReturnValue(app$);
+    (Store.getLastValue as ReturnType<typeof vi.fn>).mockReturnValue({ existing: {} });
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '0';
 
-    jest.isolateModules(() => {
-      require('./sign-up-api');
-    });
+    await import('./sign-up-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(403);
@@ -95,16 +94,14 @@ describe('sign-up-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockImplementation(() => {
+    (Store.getOnce$ as ReturnType<typeof vi.fn>).mockReturnValue(app$);
+    (Store.getLastValue as ReturnType<typeof vi.fn>).mockImplementation(() => {
       throw new Error('fail');
     });
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '5';
 
-    jest.isolateModules(() => {
-      require('./sign-up-api');
-    });
+    await import('./sign-up-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

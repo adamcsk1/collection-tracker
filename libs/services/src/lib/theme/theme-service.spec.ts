@@ -1,14 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeService } from './theme-service';
 import { ThemeState, initialThemeState, themeStateToken } from './theme-store';
 
 type MatchMediaMock = {
   matches: boolean;
   media: string;
-  addEventListener: jest.Mock;
-  removeEventListener: jest.Mock;
+  addEventListener: ReturnType<typeof vi.fn>;
+  removeEventListener: ReturnType<typeof vi.fn>;
   dispatch: (matches: boolean) => void;
 };
 
@@ -17,10 +18,10 @@ const createMatchMediaMock = (): MatchMediaMock => {
   const mock: MatchMediaMock = {
     matches: false,
     media: '(prefers-color-scheme: dark)',
-    addEventListener: jest.fn((event, callback) => {
+    addEventListener: vi.fn((event, callback) => {
       if (event === 'change') listeners.push(callback as (event: MediaQueryListEvent) => void);
     }),
-    removeEventListener: jest.fn(),
+    removeEventListener: vi.fn(),
     dispatch(matches: boolean) {
       mock.matches = matches;
       listeners.forEach((listener) => listener({ matches } as MediaQueryListEvent));
@@ -33,16 +34,16 @@ const createMatchMediaMock = (): MatchMediaMock => {
 describe('ThemeService', () => {
   let service: ThemeService;
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
-  let translateSpy: jest.Mock;
+  let translateSpy: ReturnType<typeof vi.fn>;
   let mediaQueryMock: MatchMediaMock;
   let metaThemeColor: HTMLMetaElement;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     mediaQueryMock = createMatchMediaMock();
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: jest.fn().mockImplementation(() => mediaQueryMock),
+      value: vi.fn().mockImplementation(() => mediaQueryMock),
     });
 
     document.head.innerHTML = '';
@@ -52,7 +53,7 @@ describe('ThemeService', () => {
     metaThemeColor.content = '#fff';
     document.head.appendChild(metaThemeColor);
 
-    translateSpy = jest.fn((value: string) => `t:${value}`);
+    translateSpy = vi.fn((value: string) => `t:${value}`);
 
     TestBed.configureTestingModule({
       providers: [
@@ -67,7 +68,7 @@ describe('ThemeService', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('returns translated theme options', () => {
@@ -86,7 +87,7 @@ describe('ThemeService', () => {
 
     themeState.setState('theme', 'dark');
     await Promise.resolve();
-    jest.runOnlyPendingTimers();
+    vi.runOnlyPendingTimers();
 
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect(service.darkTheme()).toBe(true);
@@ -94,7 +95,7 @@ describe('ThemeService', () => {
 
     themeState.setState('theme', 'light');
     await Promise.resolve();
-    jest.runOnlyPendingTimers();
+    vi.runOnlyPendingTimers();
 
     expect(document.documentElement.classList.contains('light')).toBe(true);
     expect(service.darkTheme()).toBe(false);

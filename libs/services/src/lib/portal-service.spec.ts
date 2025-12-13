@@ -1,22 +1,23 @@
 import { ComponentRef, Type, ViewContainerRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PortalService } from './portal-service';
 
 class DummyComponent {}
 
 describe('PortalService', () => {
   let service: PortalService;
-  let clearSpy: jest.Mock;
-  let createComponent: jest.Mock;
-  let setInput: jest.Mock;
+  let clearSpy: ReturnType<typeof vi.fn>;
+  let createComponent: ReturnType<typeof vi.fn>;
+  let setInput: ReturnType<typeof vi.fn>;
   let viewContainerRef: ViewContainerRef;
   let componentRef: ComponentRef<unknown>;
 
   beforeEach(() => {
-    clearSpy = jest.fn();
-    setInput = jest.fn();
+    clearSpy = vi.fn();
+    setInput = vi.fn();
     componentRef = { setInput } as unknown as ComponentRef<unknown>;
-    createComponent = jest.fn().mockReturnValue(componentRef);
+    createComponent = vi.fn().mockReturnValue(componentRef);
     viewContainerRef = {
       createComponent: createComponent as unknown as ViewContainerRef['createComponent'],
       clear: clearSpy,

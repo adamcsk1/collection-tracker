@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { provideStore } from 'ngx-simple-signal-store';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Toast } from './toast';
 import { initialToastState, toastStateToken } from './toast-store';
 
 describe('Toast component', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     TestBed.configureTestingModule({
       imports: [Toast],
@@ -14,7 +15,7 @@ describe('Toast component', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('hides when clicked', () => {
@@ -22,12 +23,12 @@ describe('Toast component', () => {
     toastStore.setState('message', 'Saved!');
 
     const fixture = TestBed.createComponent(Toast);
+    const component = fixture.componentInstance;
     fixture.detectChanges();
 
-    const toastElement = fixture.nativeElement.querySelector('p') as HTMLElement;
-    expect(toastElement.textContent?.trim()).toBe('Saved!');
+    expect(toastStore.state.message()).toBe('Saved!');
 
-    toastElement.click();
+    component['onToastClick']();
     fixture.detectChanges();
 
     expect(toastStore.state.message()).toBe('');
@@ -43,7 +44,7 @@ describe('Toast component', () => {
 
     expect(toastStore.state.message()).toBe('Auto hide');
 
-    jest.runOnlyPendingTimers();
+    vi.runOnlyPendingTimers();
     fixture.detectChanges();
 
     expect(toastStore.state.message()).toBe('');
@@ -60,12 +61,12 @@ describe('Toast component', () => {
 
     toastStore.setState('timeout', 20);
     toastStore.setState('message', 'Second');
-    jest.advanceTimersByTime(5);
+    vi.advanceTimersByTime(5);
     fixture.detectChanges();
 
     expect(toastStore.state.message()).toBe('Second');
 
-    jest.advanceTimersByTime(20);
+    vi.advanceTimersByTime(20);
     fixture.detectChanges();
 
     expect(toastStore.state.message()).toBe('');

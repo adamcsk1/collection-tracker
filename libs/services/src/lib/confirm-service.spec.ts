@@ -1,13 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfirmService } from './confirm-service';
 
 describe('ConfirmService', () => {
   let service: ConfirmService;
-  let confirmSpy: jest.Mock;
+  let confirmSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    confirmSpy = jest.fn();
+    confirmSpy = vi.fn();
     globalThis.confirm = confirmSpy as unknown as typeof confirm;
 
     TestBed.configureTestingModule({

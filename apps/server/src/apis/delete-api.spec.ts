@@ -3,28 +3,33 @@ import { removeItem } from '@server/core/utils/cache-util';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
 import { existsSync } from 'fs';
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
-jest.mock('@server/core/store/store');
-jest.mock('@server/core/utils/cache-util');
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  existsSync: jest.fn(),
-}));
+vi.mock('@server/core/store/store');
+vi.mock('@server/core/utils/cache-util');
+vi.mock('fs', async () => {
+  const fs = await vi.importActual<typeof import('fs')>('fs');
+  return {
+    ...fs,
+    existsSync: vi.fn(),
+  };
+});
 
 describe('delete-api', () => {
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
 
   it('deletes existing item', async () => {
     const request: any = { params: { name: 'file.md' }, usernameHash: 'user' };
     const response = mockResponse();
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValue('/data');
-    (existsSync as jest.Mock).mockReturnValue(true);
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    (Store.getLastValue as Mock).mockReturnValue('/data');
+    (existsSync as Mock).mockReturnValue(true);
 
-    jest.isolateModules(() => {
-      require('./delete-api');
-    });
+    await import('./delete-api');
 
     await handlerPromise();
     expect(removeItem).toHaveBeenCalledWith('file.md', 'user');
@@ -35,13 +40,11 @@ describe('delete-api', () => {
     const request: any = { params: { name: 'missing' }, usernameHash: 'user' };
     const response = mockResponse();
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockReturnValue('/data');
-    (existsSync as jest.Mock).mockReturnValue(false);
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    (Store.getLastValue as Mock).mockReturnValue('/data');
+    (existsSync as Mock).mockReturnValue(false);
 
-    jest.isolateModules(() => {
-      require('./delete-api');
-    });
+    await import('./delete-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(404);
@@ -52,14 +55,12 @@ describe('delete-api', () => {
     const request: any = { params: { name: 'file.md' }, usernameHash: 'user' };
     const response = mockResponse();
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockImplementation(() => {
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    jest.isolateModules(() => {
-      require('./delete-api');
-    });
+    await import('./delete-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);
