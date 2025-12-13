@@ -6,23 +6,24 @@ import { ExtendedRequestModel } from '@server/models/express-model';
 import { AccessTokenModel } from '@shared/models/api-model';
 import jwt from 'jsonwebtoken';
 import { BehaviorSubject } from 'rxjs';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
-jest.mock('@server/core/store/store');
-jest.mock('@server/core/crypto', () => ({
-  hashText: jest.fn(async (text: string) => `hashed-${text}`),
+vi.mock('@server/core/store/store');
+vi.mock('@server/core/crypto', () => ({
+  hashText: vi.fn(async (text: string) => `hashed-${text}`),
 }));
 
 describe('jwt utilities', () => {
   beforeEach(() => {
     process.env.JWT_SECRET = 'secret';
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('generates an access token and returns null on errors', () => {
     const token = generateAccessToken('neo', '1h');
     expect(token).toBeTruthy();
 
-    const signSpy = jest.spyOn(jwt, 'sign').mockImplementation(() => {
+    const signSpy = vi.spyOn(jwt, 'sign').mockImplementation(() => {
       throw new Error('fail');
     });
     expect(generateAccessToken('neo')).toBeNull();
@@ -30,8 +31,8 @@ describe('jwt utilities', () => {
   });
 
   it('jwtGuard rejects when no token provided', async () => {
-    const response: any = { sendStatus: jest.fn() };
-    const next = jest.fn();
+    const response: any = { sendStatus: vi.fn() };
+    const next = vi.fn();
 
     await jwtGuard({ signedCookies: {}, headers: {}, url: '/x' } as unknown as ExtendedRequestModel, response, next);
 
@@ -48,12 +49,12 @@ describe('jwt utilities', () => {
       }),
       cache: new BehaviorSubject({}),
     };
-    (Store.getLastValue as jest.Mock).mockImplementation((key: keyof StoreModel) => store[key].value);
+    (Store.getLastValue as Mock).mockImplementation((key: keyof StoreModel) => store[key].value);
 
     const token = jwt.sign({ username: 'user' }, 'secret');
     store.users.value!['hashed-user'].accessTokens = [{ tokenHash: `hashed-${token}` } as unknown as AccessTokenModel];
-    const response: any = { sendStatus: jest.fn() };
-    const next = jest.fn();
+    const response: any = { sendStatus: vi.fn() };
+    const next = vi.fn();
 
     await new Promise<void>((resolve) => {
       jwtGuard(
@@ -71,8 +72,8 @@ describe('jwt utilities', () => {
   });
 
   it('jwtGuard rejects invalid token', async () => {
-    const response: any = { sendStatus: jest.fn() };
-    const next = jest.fn();
+    const response: any = { sendStatus: vi.fn() };
+    const next = vi.fn();
 
     await jwtGuard(
       {

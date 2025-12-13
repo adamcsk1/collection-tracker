@@ -10,9 +10,10 @@ import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ItemDialog } from './item-dialog';
 
-jest.mock('marked', () => ({ marked: { parse: jest.fn(() => '<p>parsed</p>') } }));
+vi.mock('marked', () => ({ marked: { parse: vi.fn(() => '<p>parsed</p>') } }));
 
 const buildItem = (name: string, rawContent = 'raw content'): CollectionItemModel => ({
   rawContent,
@@ -29,27 +30,30 @@ const buildItem = (name: string, rawContent = 'raw content'): CollectionItemMode
 describe('ItemDialog', () => {
   let fixture: ComponentFixture<ItemDialog>;
   let component: ItemDialog;
-  let collectionService: { deleteCollectionItem: jest.Mock; updateCollectionItem: jest.Mock };
-  let portal: { close: jest.Mock };
-  let confirm: { open: jest.Mock };
-  let api: { delete: jest.Mock; update: jest.Mock };
+  let collectionService: {
+    deleteCollectionItem: ReturnType<typeof vi.fn>;
+    updateCollectionItem: ReturnType<typeof vi.fn>;
+  };
+  let portal: { close: ReturnType<typeof vi.fn> };
+  let confirm: { open: ReturnType<typeof vi.fn> };
+  let api: { delete: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
   let toastState: NgxSimpleSignalStoreService<typeof initialToastState>;
-  let translate: { translate: jest.Mock };
-  let getCollectionItemSpy: jest.SpyInstance;
+  let translate: { translate: ReturnType<typeof vi.fn> };
+  let getCollectionItemSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     collectionService = {
-      deleteCollectionItem: jest.fn(),
-      updateCollectionItem: jest.fn(),
+      deleteCollectionItem: vi.fn(),
+      updateCollectionItem: vi.fn(),
     };
-    portal = { close: jest.fn() };
-    confirm = { open: jest.fn() };
+    portal = { close: vi.fn() };
+    confirm = { open: vi.fn() };
     api = {
-      delete: jest.fn(() => of(undefined)),
-      update: jest.fn(() => of(undefined)),
+      delete: vi.fn(() => of(undefined)),
+      update: vi.fn(() => of(undefined)),
     };
-    translate = { translate: jest.fn((key: string) => key) };
-    getCollectionItemSpy = jest
+    translate = { translate: vi.fn((key: string) => key) };
+    getCollectionItemSpy = vi
       .spyOn(collectionUtils, 'getCollectionItem')
       .mockImplementation((input) => buildItem(input.name as string, input.content as string));
 
@@ -116,7 +120,7 @@ describe('ItemDialog', () => {
   it('saves changes after confirmation and updates state', () => {
     confirm.open.mockReturnValue(of(true));
     component['rawContentControl'].setValue('updated content');
-    const updateSpy = jest.spyOn(component.collectionItem as any, 'update');
+    const updateSpy = vi.spyOn(component.collectionItem as any, 'update');
 
     component['onSaveChanges']();
 

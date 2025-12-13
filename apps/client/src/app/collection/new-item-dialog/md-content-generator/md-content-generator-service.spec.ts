@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { MdContentGeneratorService } from './md-content-generator-service';
 
 describe('MdContentGeneratorService', () => {

@@ -6,15 +6,16 @@ import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { GetAllApiResponseItemModel, GetAllApiResponseModel } from '@shared/models/api-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { Subject } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectionModel } from './collection-model';
 import { CollectionService } from './collection-service';
 
 describe('CollectionService', () => {
   let service: CollectionService;
-  let api: { getAll: jest.Mock };
+  let api: { getAll: ReturnType<typeof vi.fn> };
   let mainCollectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
   let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
-  let getCollectionItemSpy: jest.SpyInstance;
+  let getCollectionItemSpy: ReturnType<typeof vi.spyOn>;
   const originalStructuredClone = global.structuredClone;
 
   const buildCollectionItem = (name: string) => ({
@@ -30,7 +31,7 @@ describe('CollectionService', () => {
   });
 
   beforeEach(() => {
-    api = { getAll: jest.fn() };
+    api = { getAll: vi.fn() };
     (global as any).structuredClone = (value: unknown) => JSON.parse(JSON.stringify(value));
     TestBed.configureTestingModule({
       providers: [
@@ -46,7 +47,7 @@ describe('CollectionService', () => {
       typeof initialMainCollectionState
     >;
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
-    getCollectionItemSpy = jest.spyOn(collectionUtils, 'getCollectionItem');
+    getCollectionItemSpy = vi.spyOn(collectionUtils, 'getCollectionItem');
   });
 
   afterEach(() => {
@@ -84,7 +85,7 @@ describe('CollectionService', () => {
   });
 
   it('adds a collection item to the front when first flag is true', () => {
-    getCollectionItemSpy.mockImplementation((raw) => buildCollectionItem(raw.name as string));
+    getCollectionItemSpy.mockImplementation((raw: GetAllApiResponseItemModel) => buildCollectionItem(raw.name));
     mainCollectionState.setState('collection', [buildCollectionItem('existing')]);
 
     service.addCollectionItem({ name: 'new', content: 'new' } as GetAllApiResponseItemModel, true);
@@ -96,7 +97,7 @@ describe('CollectionService', () => {
   });
 
   it('adds a collection item to the end when first flag is false', () => {
-    getCollectionItemSpy.mockImplementation((raw) => buildCollectionItem(raw.name as string));
+    getCollectionItemSpy.mockImplementation((raw: GetAllApiResponseItemModel) => buildCollectionItem(raw.name));
     mainCollectionState.setState('collection', [buildCollectionItem('existing')]);
 
     service.addCollectionItem({ name: 'another', content: 'another' } as GetAllApiResponseItemModel);

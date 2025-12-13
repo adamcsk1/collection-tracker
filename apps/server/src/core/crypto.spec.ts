@@ -1,17 +1,14 @@
 import { generateRandomToken, hashText } from '@server/core/crypto';
+import { describe, expect, it, vi } from 'vitest';
 
-jest.mock(
-  'random-words',
-  () => ({
-    __esModule: true,
-    generate: jest.fn(({ exactly, seed }: { exactly: number; seed?: string }) =>
-      Array(exactly)
-        .fill(seed ? `seed-${seed}` : 'word')
-        .join(' ')
-    ),
-  }),
-  { virtual: true }
-);
+vi.mock('random-words', () => ({
+  __esModule: true,
+  generate: vi.fn(({ exactly, seed }: { exactly: number; seed?: string }) =>
+    Array(exactly)
+      .fill(seed ? `seed-${seed}` : 'word')
+      .join(' ')
+  ),
+}));
 
 describe('crypto', () => {
   it('hashes text with salt', async () => {

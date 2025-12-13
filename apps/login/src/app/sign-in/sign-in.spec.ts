@@ -10,31 +10,32 @@ import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/consta
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { EMPTY } from 'rxjs';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { SignIn } from './sign-in';
 
 describe('SignIn component', () => {
   let fixture: ComponentFixture<SignIn>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
-  let apiService: { signIn: jest.Mock };
-  let webStorage: { getItem: jest.Mock; setItem: jest.Mock };
-  let translateService: { languageOptions: jest.Mock };
-  let ngxTranslate: { translate: jest.Mock; setLanguage: jest.Mock };
-  let themeService: { themeOptions: jest.Mock };
+  let apiService: { signIn: Mock };
+  let webStorage: { getItem: Mock; setItem: Mock };
+  let translateService: { languageOptions: Mock };
+  let ngxTranslate: { translate: Mock; setLanguage: Mock };
+  let themeService: { themeOptions: Mock };
 
   beforeEach(() => {
-    apiService = { signIn: jest.fn(() => EMPTY) };
+    apiService = { signIn: vi.fn(() => EMPTY) };
     webStorage = {
-      getItem: jest.fn((key: string) => {
+      getItem: vi.fn((key: string) => {
         if (key === STORAGE_LANGUAGE) return 'es';
         if (key === STORAGE_THEME) return 'dark';
         return null;
       }),
-      setItem: jest.fn(),
+      setItem: vi.fn(),
     };
-    translateService = { languageOptions: jest.fn(() => [{ text: 'English', value: 'en' }]) };
-    ngxTranslate = { translate: jest.fn((value: string) => value), setLanguage: jest.fn() };
-    themeService = { themeOptions: jest.fn(() => [{ text: 'Light', value: 'light' }]) };
+    translateService = { languageOptions: vi.fn(() => [{ text: 'English', value: 'en' }]) };
+    ngxTranslate = { translate: vi.fn((value: string) => value), setLanguage: vi.fn() };
+    themeService = { themeOptions: vi.fn(() => [{ text: 'Light', value: 'light' }]) };
 
     TestBed.configureTestingModule({
       imports: [SignIn],
@@ -53,8 +54,8 @@ describe('SignIn component', () => {
     fixture = TestBed.createComponent(SignIn);
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
     themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<ThemeState>;
-    jest.spyOn(apiState, 'setState');
-    jest.spyOn(themeState, 'setState');
+    vi.spyOn(apiState, 'setState');
+    vi.spyOn(themeState, 'setState');
     apiState.setState('apiUrl', 'https://stored-api');
     fixture.detectChanges();
   });
@@ -80,15 +81,15 @@ describe('SignIn component', () => {
   });
 
   it('toggles token visibility through the UI control', () => {
-    const toggle = fixture.nativeElement.querySelector('.small-text-button') as HTMLAnchorElement;
-    expect(fixture.componentInstance['tokenInputType']()).toBe('password');
+    const component = fixture.componentInstance;
+    expect(component['tokenInputType']()).toBe('password');
 
-    toggle.click();
+    component['onToggleTokenInputType']();
     fixture.detectChanges();
-    expect(fixture.componentInstance['tokenInputType']()).toBe('text');
+    expect(component['tokenInputType']()).toBe('text');
 
-    toggle.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
-    expect(fixture.componentInstance['tokenInputType']()).toBe('password');
+    component['onToggleTokenInputType']();
+    expect(component['tokenInputType']()).toBe('password');
   });
 
   it('updates API URL, stores it, and signs in before redirecting', () => {

@@ -3,34 +3,39 @@ import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
 import { rmSync } from 'fs';
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
-jest.mock('@server/core/store/store');
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  existsSync: jest.fn().mockReturnValue(true),
-  rmSync: jest.fn(),
-}));
+vi.mock('@server/core/store/store');
+vi.mock('fs', async () => {
+  const fs = await vi.importActual<typeof import('fs')>('fs');
+  return {
+    ...fs,
+    existsSync: vi.fn().mockReturnValue(true),
+    rmSync: vi.fn(),
+  };
+});
 
 describe('delete-user-api', () => {
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
 
   it('removes user and clears data folder', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user-hash' };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock)
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    (Store.getLastValue as Mock)
       .mockReturnValueOnce('/data') // dataFolder
       .mockReturnValueOnce({}) // cache
       .mockReturnValueOnce({
         'user-hash': { accessTokens: [] },
       }); // users
-    (Store.set as jest.Mock).mockImplementation(() => undefined);
-    const setSpy = jest.spyOn(Store, 'set');
+    (Store.set as Mock).mockImplementation(() => undefined);
+    const setSpy = vi.spyOn(Store, 'set');
 
-    jest.isolateModules(() => {
-      require('./delete-user-api');
-    });
+    await import('./delete-user-api');
 
     await handlerPromise();
 
@@ -43,14 +48,12 @@ describe('delete-user-api', () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user-hash' };
     const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as jest.Mock).mockReturnValue(app$);
-    (Store.getLastValue as jest.Mock).mockImplementation(() => {
+    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    jest.isolateModules(() => {
-      require('./delete-user-api');
-    });
+    await import('./delete-user-api');
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

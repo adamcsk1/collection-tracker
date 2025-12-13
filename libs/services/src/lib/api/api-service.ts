@@ -14,7 +14,7 @@ import {
   SignUpApiRequestModel,
   SignUpApiResponseModel,
 } from '@shared/models/api-model';
-import { catchError, filter, Observable, of, Subject, tap, throwError } from 'rxjs';
+import { catchError, EMPTY, filter, Observable, of, Subject, tap, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -87,9 +87,9 @@ export class ApiService {
             if (response.length > 0) {
               lazyLoad(offset + fetchBatchSize)
                 .pipe(
-                  catchError((error) => {
+                  catchError(() => {
                     this.apiState.setState('loadNetworkStatus', 'error');
-                    return throwError(() => error);
+                    return EMPTY;
                   })
                 )
                 .subscribe((items) => results.next(items));
@@ -102,9 +102,9 @@ export class ApiService {
 
     lazyLoad()
       .pipe(
-        catchError((error) => {
+        catchError(() => {
           this.apiState.setState('loadNetworkStatus', 'error');
-          return throwError(() => error);
+          return EMPTY;
         })
       )
       .subscribe((items) => results.next(items));

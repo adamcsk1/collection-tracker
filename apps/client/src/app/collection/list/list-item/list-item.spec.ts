@@ -3,6 +3,7 @@ import { CollectionItemModel } from '@client/collection/collection-model';
 import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
 import { PortalService } from '@services/portal-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListItem } from './list-item';
 
 const buildItem = (name: string): CollectionItemModel => ({
@@ -17,16 +18,16 @@ const buildItem = (name: string): CollectionItemModel => ({
   rate: '',
 });
 
-jest.mock('marked', () => ({ marked: { parse: () => '' } }));
+vi.mock('marked', () => ({ marked: { parse: () => '' } }));
 
 describe('ListItem', () => {
   let fixture: ComponentFixture<ListItem>;
   let component: ListItem;
   let collectionState: NgxSimpleSignalStoreService<typeof initialCollectionState>;
-  let portal: { open: jest.Mock };
+  let portal: { open: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    portal = { open: jest.fn() };
+    portal = { open: vi.fn() };
     TestBed.configureTestingModule({
       imports: [ListItem],
       providers: [

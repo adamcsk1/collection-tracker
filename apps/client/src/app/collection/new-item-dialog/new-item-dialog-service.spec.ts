@@ -12,7 +12,8 @@ import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of, throwError } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const buildSelectedContent = () => ({
   Title: 'Title',
@@ -29,22 +30,26 @@ const buildSelectedContent = () => ({
 
 describe('NewItemDialogService', () => {
   let service: NewItemDialogService;
-  let api: { create: jest.Mock };
-  let omdb: { matchedContent: jest.Mock; getMatchedContents: jest.Mock; getSelectedContent: jest.Mock };
-  let collection: { addCollectionItem: jest.Mock };
+  let api: { create: ReturnType<typeof vi.fn> };
+  let omdb: {
+    matchedContent: ReturnType<typeof vi.fn>;
+    getMatchedContents: ReturnType<typeof vi.fn>;
+    getSelectedContent: ReturnType<typeof vi.fn>;
+  };
+  let collection: { addCollectionItem: ReturnType<typeof vi.fn> };
   let spinnerStore: NgxSimpleSignalStoreService<typeof initialSpinnerLoadingState>;
   let toastStore: NgxSimpleSignalStoreService<typeof initialToastState>;
-  let portal: { close: jest.Mock };
-  let mdContent: { getMdContent: jest.Mock };
-  let translate: { translate: jest.Mock };
+  let portal: { close: ReturnType<typeof vi.fn> };
+  let mdContent: { getMdContent: ReturnType<typeof vi.fn> };
+  let translate: { translate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    api = { create: jest.fn() };
-    omdb = { matchedContent: jest.fn(() => []), getMatchedContents: jest.fn(), getSelectedContent: jest.fn() };
-    collection = { addCollectionItem: jest.fn() };
-    portal = { close: jest.fn() };
-    mdContent = { getMdContent: jest.fn().mockReturnValue('md-content') };
-    translate = { translate: jest.fn((key) => `t:${key}`) };
+    api = { create: vi.fn() };
+    omdb = { matchedContent: vi.fn(() => []), getMatchedContents: vi.fn(), getSelectedContent: vi.fn() };
+    collection = { addCollectionItem: vi.fn() };
+    portal = { close: vi.fn() };
+    mdContent = { getMdContent: vi.fn().mockReturnValue('md-content') };
+    translate = { translate: vi.fn((key) => `t:${key}`) };
 
     TestBed.configureTestingModule({
       providers: [
@@ -72,38 +77,25 @@ describe('NewItemDialogService', () => {
     expect(omdb.getMatchedContents).toHaveBeenCalledWith('matrix');
   });
 
-  it('save persists selected content and closes when requested', (done) => {
+  it('save persists selected content and closes when requested', async () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ name: 'generated-name' }));
 
-    service.save('tt123', '#tag', 'close').subscribe({
-      next: () => {
-        expect(mdContent.getMdContent).toHaveBeenCalledWith(expect.objectContaining({ Tags: '#tag' }));
-        expect(api.create).toHaveBeenCalledWith('md-content');
-        expect(collection.addCollectionItem).toHaveBeenCalledWith(
-          { name: 'generated-name', content: 'md-content' },
-          true
-        );
-        expect(toastStore.state.message()).toBe('t:Toast.NewItem');
-        expect(portal.close).toHaveBeenCalled();
-        expect(spinnerStore.state.show()).toBe(false);
-        done();
-      },
-      error: done.fail,
-    });
+    await firstValueFrom(service.save('tt123', '#tag', 'close'));
+
+    expect(mdContent.getMdContent).toHaveBeenCalledWith(expect.objectContaining({ Tags: '#tag' }));
+    expect(api.create).toHaveBeenCalledWith('md-content');
+    expect(collection.addCollectionItem).toHaveBeenCalledWith({ name: 'generated-name', content: 'md-content' }, true);
+    expect(toastStore.state.message()).toBe('t:Toast.NewItem');
+    expect(portal.close).toHaveBeenCalled();
+    expect(spinnerStore.state.show()).toBe(false);
   });
 
-  it('save stops spinner and rethrows on API error', (done) => {
+  it('save stops spinner and rethrows on API error', async () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(throwError(() => new Error('fail')));
 
-    service.save('tt123', '#tag', null).subscribe({
-      next: () => done.fail('expected error'),
-      error: (error) => {
-        expect(error).toEqual(new Error('fail'));
-        expect(spinnerStore.state.show()).toBe(false);
-        done();
-      },
-    });
+    await expect(firstValueFrom(service.save('tt123', '#tag', null))).rejects.toEqual(new Error('fail'));
+    expect(spinnerStore.state.show()).toBe(false);
   });
 });

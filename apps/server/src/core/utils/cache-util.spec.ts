@@ -2,10 +2,11 @@ import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { StoreModel } from '@server/core/store/store-model';
 import { removeItem, updateItem } from '@server/core/utils/cache-util';
-import { BehaviorSubject } from 'rxjs';
-import { mkdirSync, readFileSync, rmSync, existsSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
+import { BehaviorSubject } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('cache-util', () => {
   const originalStorage = (global as any).__serverStorage;
@@ -31,7 +32,7 @@ describe('cache-util', () => {
   });
 
   it('updates file contents and cache when updating an item', () => {
-    const storeSetSpy = jest.spyOn(Store, 'set');
+    const storeSetSpy = vi.spyOn(Store, 'set');
 
     updateItem('file.txt', 'notes', 'hello');
 
@@ -45,7 +46,7 @@ describe('cache-util', () => {
     const filePath = path.join(tempDir, FOLDERS.store, 'notes', 'file.txt');
     writeFileSync(filePath, 'to delete');
     Store.set('cache', { 'notes-file.txt': 'cached' });
-    const storeSetSpy = jest.spyOn(Store, 'set');
+    const storeSetSpy = vi.spyOn(Store, 'set');
 
     removeItem('file.txt', 'notes');
 

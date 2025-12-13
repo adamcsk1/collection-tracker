@@ -4,9 +4,10 @@ import { FOLDERS } from '@server/core/main-const';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
-jest.mock('@server/core/argv/argv', () => ({
-  getArgv: jest.fn(),
+vi.mock('@server/core/argv/argv', () => ({
+  getArgv: vi.fn(),
 }));
 
 describe('logger', () => {
@@ -19,12 +20,12 @@ describe('logger', () => {
 
   afterEach(() => {
     if (existsSync(tempDir)) rmSync(tempDir, { recursive: true, force: true });
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('writes info logs and echoes when debug is true', () => {
-    (getArgv as jest.Mock).mockReturnValue({ dataFolder: tempDir, debug: true });
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: true });
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     infoLog('hello world');
 
@@ -37,8 +38,8 @@ describe('logger', () => {
   });
 
   it('skips debug logs when debug flag is false', () => {
-    (getArgv as jest.Mock).mockReturnValue({ dataFolder: tempDir, debug: false });
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false });
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     debugLog('hidden');
 
@@ -48,7 +49,7 @@ describe('logger', () => {
   });
 
   it('writes error logs', () => {
-    (getArgv as jest.Mock).mockReturnValue({ dataFolder: tempDir, debug: false });
+    (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false });
 
     errorLog('boom');
 

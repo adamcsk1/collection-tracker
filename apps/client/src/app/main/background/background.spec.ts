@@ -3,12 +3,14 @@ import { CollectionItemModel } from '@client/collection/collection-model';
 import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
 import * as randomIntUtil from '@shared/utils/random-int-util';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Background } from './background';
 
 describe('Background component', () => {
   let fixture: ComponentFixture<Background>;
   let component: Background;
   let collectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
+  let randomSpy: ReturnType<typeof vi.spyOn>;
 
   const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
     rawContent: '',
@@ -23,8 +25,8 @@ describe('Background component', () => {
   });
 
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.spyOn(randomIntUtil, 'randomInt').mockImplementation((min) => min);
+    vi.useFakeTimers();
+    randomSpy = vi.spyOn(randomIntUtil, 'randomInt').mockImplementation((min) => min);
     Object.defineProperty(window, 'innerHeight', { value: 800, writable: true });
     Object.defineProperty(window, 'innerWidth', { value: 500, writable: true });
 
@@ -38,6 +40,11 @@ describe('Background component', () => {
     collectionState = TestBed.inject(mainCollectionStateToken) as NgxSimpleSignalStoreService<
       typeof initialMainCollectionState
     >;
+  });
+
+  afterEach(() => {
+    randomSpy.mockRestore();
+    vi.useRealTimers();
   });
 
   it('keeps images empty when there is no collection', () => {
@@ -67,7 +74,7 @@ describe('Background component', () => {
 
     Object.defineProperty(window, 'innerHeight', { value: 1200, writable: true });
     window.dispatchEvent(new Event('resize'));
-    jest.advanceTimersByTime(500);
+    vi.advanceTimersByTime(500);
 
     expect(component['images']().length).toBeGreaterThan(0);
     expect(component['windowHeight']).toBe(1200);

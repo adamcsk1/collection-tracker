@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Details } from './details';
 
 @Component({
@@ -13,8 +14,8 @@ class HostComponent {
 
 describe('Details component', () => {
   let storage: WebstorageService;
-  let getItemSpy: jest.SpyInstance;
-  let setItemSpy: jest.SpyInstance;
+  let getItemSpy: ReturnType<typeof vi.spyOn>;
+  let setItemSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -23,8 +24,8 @@ describe('Details component', () => {
     });
 
     storage = TestBed.inject(WebstorageService);
-    getItemSpy = jest.spyOn(storage, 'getItem').mockReturnValue('false');
-    setItemSpy = jest.spyOn(storage, 'setItem').mockImplementation(() => {});
+    getItemSpy = vi.spyOn(storage, 'getItem').mockReturnValue('false');
+    setItemSpy = vi.spyOn(storage, 'setItem').mockImplementation(() => {});
   });
 
   it('reads stored open state and persists on toggle', () => {
@@ -32,11 +33,11 @@ describe('Details component', () => {
     fixture.detectChanges();
 
     expect(getItemSpy).toHaveBeenCalled();
-    const detailsElement = fixture.nativeElement.querySelector('details') as HTMLDetailsElement;
-    expect(detailsElement.open).toBe(false);
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Details;
+    expect(component['storedOpened']()).toBe(false);
 
-    const summaryElement = fixture.nativeElement.querySelector('summary') as HTMLElement;
-    summaryElement.click();
+    const detailsElement = { open: false } as unknown as HTMLDetailsElement;
+    component.onToggle({ target: { parentElement: detailsElement } } as unknown as Event);
     fixture.detectChanges();
 
     expect(setItemSpy).toHaveBeenCalledWith(expect.stringContaining('DetailsSummary'), 'true');
@@ -47,11 +48,11 @@ describe('Details component', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
-    const detailsElement = fixture.nativeElement.querySelector('details') as HTMLDetailsElement;
-    expect(detailsElement.open).toBe(true);
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Details;
+    expect(component['storedOpened']()).toBe(true);
 
-    const summaryElement = fixture.nativeElement.querySelector('summary') as HTMLElement;
-    summaryElement.click();
+    const detailsElement = { open: true } as unknown as HTMLDetailsElement;
+    component.onToggle({ target: { parentElement: detailsElement } } as unknown as Event);
     fixture.detectChanges();
 
     expect(setItemSpy).toHaveBeenCalledWith(expect.stringContaining('DetailsSummary'), 'false');

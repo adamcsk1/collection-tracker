@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { AlertService } from '@services/alert-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { filter, firstValueFrom } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OMDbResponseItemModel } from './omdb-model';
 import { OMDbService } from './omdb-service';
 import { initialOMDbState, OMDbState, omdbStateToken } from './omdb-store';
@@ -12,10 +13,10 @@ describe('OMDbService', () => {
   let service: OMDbService;
   let httpMock: HttpTestingController;
   let omdbState: NgxSimpleSignalStoreService<OMDbState>;
-  let alertSpy: jest.Mock;
+  let alertSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    alertSpy = jest.fn();
+    alertSpy = vi.fn();
 
     TestBed.configureTestingModule({
       providers: [
@@ -78,9 +79,7 @@ describe('OMDbService', () => {
   });
 
   it('alerts and throws when search request fails', async () => {
-    const search$ = (
-      service as unknown as { getOMDbSearchData(params: { s: string | null }): unknown }
-    ).getOMDbSearchData({ s: 'ErrorSearch' }) as ReturnType<OMDbService['getOMDbSearchData']>;
+    const search$ = service['getOMDbSearchData']({ s: 'ErrorSearch' }) as ReturnType<OMDbService['getOMDbSearchData']>;
     const promise = firstValueFrom(search$);
 
     const searchRequest = httpMock.expectOne('https://www.omdbapi.com/?s=ErrorSearch&apikey=key123');
@@ -122,7 +121,7 @@ describe('OMDbService', () => {
   });
 
   it('alerts and throws when fetching selected item fails', async () => {
-    const detail$ = (service as unknown as { getOMDbData(params: { i: string | null }): unknown }).getOMDbData({
+    const detail$ = service['getOMDbData']({
       i: 'tt0000000',
     }) as ReturnType<OMDbService['getOMDbData']>;
     const promise = firstValueFrom(detail$);

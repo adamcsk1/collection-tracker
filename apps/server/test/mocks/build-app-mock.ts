@@ -1,21 +1,22 @@
 import { BehaviorSubject } from 'rxjs';
+import { vi } from 'vitest';
 
 export const buildApp = (request: any, response: any) => {
   let handlerPromise: Promise<any> | undefined;
   const app = {
-    get: jest.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
+    get: vi.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
       const handler = maybeHandler ?? guardOrHandler;
       handlerPromise = Promise.resolve(handler(request, response));
     }),
-    post: jest.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
+    post: vi.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
       const handler = maybeHandler ?? guardOrHandler;
       handlerPromise = Promise.resolve(handler(request, response));
     }),
-    delete: jest.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
+    delete: vi.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
       const handler = maybeHandler ?? guardOrHandler;
       handlerPromise = Promise.resolve(handler(request, response));
     }),
-    put: jest.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
+    put: vi.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
       const handler = maybeHandler ?? guardOrHandler;
       handlerPromise = Promise.resolve(handler(request, response));
     }),
