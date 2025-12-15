@@ -31,6 +31,12 @@ export const main = () => {
         readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.users}`, 'utf-8')
       )
     );
+    Store.set(
+      'parserConfigs',
+      JSON.parse(
+        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.parserConfigs}`, 'utf-8')
+      )
+    );
 
     const app = express();
     app.set('trust proxy', 1);

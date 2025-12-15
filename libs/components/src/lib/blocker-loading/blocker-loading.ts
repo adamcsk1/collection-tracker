@@ -16,6 +16,7 @@ export class BlockerLoading {
   private startTime: number | null = null;
   private scheduler?: Subscription;
   protected readonly showBlockerLoading = signal(false);
+  protected readonly message = this.blockerLoadingState.state.message;
 
   constructor() {
     effect(() => {
@@ -34,11 +35,13 @@ export class BlockerLoading {
       if (!show && this.startTime) {
         this.scheduler?.unsubscribe();
         this.showBlockerLoading.set(false);
+        this.blockerLoadingState.setState('message', null);
         this.startTime = null;
       } else if (!show && withoutDelay) {
         asyncScheduler.schedule(() => {
           this.showBlockerLoading.set(false);
           this.blockerLoadingState.setState('withoutDelay', false);
+          this.blockerLoadingState.setState('message', null);
         }, BLOCKER_LOADING_TIMEOUT_MS);
       }
     });

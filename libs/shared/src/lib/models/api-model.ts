@@ -46,3 +46,17 @@ export type AccessTokensApiResponseModel = Array<AccessTokenModel>;
 export interface CreateAccessTokenApiResponseModel {
   accessToken: string;
 }
+export interface ParserConfigApiResponseModel {
+  IMDbId?: string;
+  genre?: string;
+  genreToken?: string;
+  image?: string;
+  IMDbRate?: string;
+  tags?: string;
+  tagToken?: string;
+  title?: string;
+  year?: string;
+  mdTemplate?: string;
+}
+
+export type ParserConfigApiRequestModel = ParserConfigApiResponseModel;

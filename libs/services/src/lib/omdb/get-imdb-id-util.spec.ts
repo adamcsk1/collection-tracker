@@ -1,4 +1,12 @@
+import { getParserRegexp, setParserRegexp } from '@services/parser/parser-util';
+import { PARSER_REGEXPS } from '@shared/constants/parser-const';
+import { beforeAll } from 'vitest';
 import { getIMDbId } from './get-imdb-id-util';
+
+beforeAll(() => {
+  // Seed parser cache with default IMDbId regexp for isolated test environment
+  setParserRegexp('IMDbId', getParserRegexp('IMDbId') ?? PARSER_REGEXPS.IMDbId);
+});
 
 describe('getIMDbId', () => {
   it('extracts the IMDb id when present', () => {

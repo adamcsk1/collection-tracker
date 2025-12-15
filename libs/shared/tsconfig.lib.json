@@ -9,5 +9,10 @@
     "types": []
   },
   "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"],
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "../services/src/lib/parser/parser-util.ts",
+    "../services/src/lib/parser/parser-model.ts",
+    "src/lib/constants/parser-const.ts"
+  ]
 }
