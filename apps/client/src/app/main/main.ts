@@ -6,18 +6,20 @@ import { Header } from '@client/main/header/header';
 import { MainService } from '@client/main/main-service';
 import { mainStateToken } from '@client/main/main-store';
 import { redirectToLogin } from '@client/main/main-util';
+import { BlockerLoading } from '@components/blocker-loading/blocker-loading';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { Toast } from '@components/toast/toast';
 import { apiStateToken } from '@services/api/api-store';
 import { omdbStateToken } from '@services/omdb/omdb-store';
+import { ParserService } from '@services/parser/parser-service';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-root',
-  imports: [RouterOutlet, Header, SpinnerLoading, Toast, Background],
+  imports: [RouterOutlet, Header, SpinnerLoading, Toast, Background, BlockerLoading],
   templateUrl: './main.html',
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,8 +32,9 @@ export class Main implements OnInit {
   private readonly portal = inject(PortalService);
   private readonly main = inject(MainService);
   private readonly router = inject(Router);
-  private readonly signalTranslateService = inject(NgxSignalTranslateService);
-  private readonly collectionService = inject(CollectionService);
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  private readonly collection = inject(CollectionService);
+  private readonly parser = inject(ParserService);
   private readonly theme = inject(ThemeService);
   private readonly collectionDialogsRef = viewChild('portal', { read: ViewContainerRef });
   protected readonly useAnimatedBackground = this.mainState.state.animatedBackground;
@@ -50,7 +53,7 @@ export class Main implements OnInit {
       const tokenValidated = this.main.tokenValid();
       if (tokenValidated) {
         if (!this.omdbState.state.apiKey()) this.router.navigate(['settings']);
-        this.collectionService.loadCollection();
+        this.parser.preloadUserParserConfig().subscribe(() => this.collection.loadCollection());
         effectRef.destroy();
       } else if (tokenValidated === false) {
         redirectToLogin();
@@ -65,7 +68,7 @@ export class Main implements OnInit {
 
     this.main.loadStoredData();
 
-    this.signalTranslateService.setLanguage(this.mainState.state.language());
+    this.ngxSignalTranslate.setLanguage(this.mainState.state.language());
     this.theme.listen();
   }
 

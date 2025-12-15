@@ -22,6 +22,7 @@ Constants
 
 - `@shared/constants/api-const` — `API_PREFIX` for server routes
 - `@shared/constants/storage-const` — storage key constants used across apps
+- `@shared/constants/parser-const` — default parser regexps and Markdown template for item parsing/generation
 
 Styles
 
@@ -32,6 +33,7 @@ Styles
 Utils
 
 - `@shared/utils/random-int-util` — `randomInt(min, max)`
+- `@shared/utils/parser-serialize-util` — serialize/restore RegExp values to persist parser config
 
 ## Usage
 
@@ -84,17 +86,25 @@ import {
   STORAGE_THEME,
   STORAGE_SETTINGS_LOCK,
 } from '@shared/constants/storage-const';
+import { PARSER_REGEXPS, MD_TEMPLATE } from '@shared/constants/parser-const';
 
 // Storage keys
 localStorage.setItem(STORAGE_OMDB_API_KEY, '...');
+
+// Parser defaults
+PARSER_REGEXPS.IMDbId; // /(?<id>tt\d+)/
+MD_TEMPLATE; // Markdown template string used by MdContentGenerator
 ```
 
 ### Utils
 
 ```ts
 import { randomInt } from '@shared/utils/random-int-util';
+import { restoreSerializedParserRegexp, serializeParserRegexp } from '@shared/utils/parser-serialize-util';
 
 const n = randomInt(1, 6); // 1..6
+const stored = serializeParserRegexp(/(?<id>tt\d+)/);
+const regexp = restoreSerializedParserRegexp(stored);
 ```
 
 ### Styles

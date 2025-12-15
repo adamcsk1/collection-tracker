@@ -6,13 +6,25 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 export const initializeFolders = () => {
   try {
     const dataFolder = Store.getLastValue('dataFolder');
+    const databaseFolder = `${dataFolder}/${FOLDERS.database}`;
 
-    if (!existsSync(`${dataFolder}/${FOLDERS.database}`)) {
-      const databaseFolder = `${dataFolder}/${FOLDERS.database}`;
+    if (!existsSync(databaseFolder)) {
       mkdirSync(databaseFolder);
-      writeFileSync(`${databaseFolder}/${DATABASE_FILES.users}`, '{}', { encoding: 'utf-8' });
-      debugLog(`Created database folder and initial files in ${databaseFolder}`);
+      debugLog(`Created database folder${databaseFolder}`);
     }
+
+    const usersFilePath = `${databaseFolder}/${DATABASE_FILES.users}`;
+    if (!existsSync(usersFilePath)) {
+      writeFileSync(usersFilePath, '{}', { encoding: 'utf-8' });
+      debugLog(`Created initial ${usersFilePath} file in ${databaseFolder}`);
+    }
+
+    const parserConfigsFilePath = `${databaseFolder}/${DATABASE_FILES.parserConfigs}`;
+    if (!existsSync(parserConfigsFilePath)) {
+      writeFileSync(parserConfigsFilePath, '{}', { encoding: 'utf-8' });
+      debugLog(`Created initial ${parserConfigsFilePath} file in ${databaseFolder}`);
+    }
+
     if (!existsSync(`${dataFolder}/${FOLDERS.store}`)) {
       mkdirSync(`${dataFolder}/${FOLDERS.store}`);
       debugLog(`Created store folder in ${dataFolder}/${FOLDERS.store}`);

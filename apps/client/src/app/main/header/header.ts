@@ -27,6 +27,7 @@ export class Header {
   private readonly api = inject(ApiService);
   private readonly webstorage = inject(WebstorageService);
   protected readonly showMenu = signal(false);
+  protected readonly settingLockEnabled = this.mainState.state.settingsLock;
 
   protected onShowMenu($event: Event): void {
     if ($event.type !== 'mouseenter' || this.document.body.offsetWidth > 450) this.showMenu.set(true);

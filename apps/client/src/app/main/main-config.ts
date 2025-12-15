@@ -4,6 +4,10 @@ import { provideRouter, withHashLocation } from '@angular/router';
 import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
 import {
+  blockerLoadingStateToken,
+  initialBlockerLoadingState,
+} from '@components/blocker-loading/blocker-loading-store';
+import {
   initialSpinnerLoadingState,
   spinnerLoadingStateToken,
 } from '@components/spinner-loading/spinner-loading-store';
@@ -28,6 +32,7 @@ export const mainConfig: ApplicationConfig = {
     provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
     provideStore(initialMainState, mainStateToken),
     provideStore(initialMainCollectionState, mainCollectionStateToken),
+    provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
     provideSignalTranslateConfig({ path: './client/i18n' }),
   ],
 };

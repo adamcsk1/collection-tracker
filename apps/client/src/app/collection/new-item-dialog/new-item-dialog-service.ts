@@ -1,10 +1,10 @@
 import { effect, inject, Injectable } from '@angular/core';
 import { CollectionService } from '@client/collection/collection-service';
-import { MdContentGeneratorService } from '@client/collection/new-item-dialog/md-content-generator/md-content-generator-service';
 import { SaveMode } from '@client/collection/new-item-dialog/new-item-dialog-model';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
+import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -38,8 +38,9 @@ export class NewItemDialogService {
   public save(selectedIMDbId: string, tags: string, mode: SaveMode) {
     return this.omdb.getSelectedContent(selectedIMDbId).pipe(
       skip(1),
-      filter((selectedContent) => !!selectedContent),
       take(1),
+      filter((selectedContent) => !!selectedContent),
+      filter((selectedContent) => !!selectedContent?.imdbID),
       map((selectedContent) =>
         this.mdContentGenerator.getMdContent({
           ...selectedContent,

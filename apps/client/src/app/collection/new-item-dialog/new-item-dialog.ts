@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MdContentGeneratorService } from '@client/collection/new-item-dialog/md-content-generator/md-content-generator-service';
 import { NewItemModel, SaveMode } from '@client/collection/new-item-dialog/new-item-dialog-model';
 import { NewItemDialogService } from '@client/collection/new-item-dialog/new-item-dialog-service';
 import { TagSuggestionService } from '@client/collection/new-item-dialog/suggestion/tag-suggestion-service';
@@ -10,6 +9,7 @@ import { Autocomplete, AutocompleteService } from '@components/autocomplete/auto
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
+import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { Form } from '@shared/models/form-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';

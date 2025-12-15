@@ -1,0 +1,114 @@
+<form role="form" [formGroup]="formGroup">
+  <h3>{{ ('MarkdownTemplate' | signalTranslate)() }}</h3>
+  <p>{{ ('Message.ParserTemplate' | signalTranslate)() }}</p>
+  <libc-textarea
+    [label]="('RawTemplate' | signalTranslate)()"
+    [mandatory]="true"
+    [formControl]="formGroup.controls.mdTemplate"
+    [rows]="15"
+  >
+    <ng-container errors>
+      @if (!!formGroup.controls.mdTemplate.errors?.['mdTemplate']) {
+        {{
+          (
+            'Validation.MissingKeys'
+            | signalTranslate: { keys: formGroup.controls.mdTemplate.errors?.['mdTemplate'].missingKeys }
+          )()
+        }}
+      }
+    </ng-container>
+  </libc-textarea>
+  <h3>{{ ('TemplateVariables' | signalTranslate)() }}</h3>
+  <p>{{ ('Message.TemplateVariables' | signalTranslate)() }}</p>
+  <code>
+    {{ '{{ Title }}' }}: Neotrix<br />
+    {{ '{{ imdbID }}' }}: tt1234567<br />
+    {{ '{{ imdbRating }}' }}: 10.1<br />
+    {{ '{{ Plot }}' }}: Neo is born in the Neotrix.<br />
+    {{ '{{ Poster }}' }}: https://image.url/sample.jpg<br />
+    {{ '{{ Year }}' }}: 1999<br />
+    {{ '{{ Director }}' }}: John Doe<br />
+    {{ '{{ Genre }}' }}: Action, Adventure<br />
+    {{ '{{ Actors }}' }}: John Doe, Jane Smith<br />
+    {{ '{{ YoutubeQuery }}' }}: Neotrix<br />
+    {{ '{{ WebQuery }}' }}: Neotrix<br />
+    {{ '{{ Type }}' }}: #movie<br />
+    {{ '{{ Tags }}' }}: #favorite, #watched<br />
+  </code>
+  <libc-details [summary]="('TemplateRegexps' | signalTranslate)()" [open]="true">
+    <p>{{ ('Message.TemplateRegexps' | signalTranslate)() }}</p>
+    <libc-input
+      [label]="('IMDbIdRegexp' | signalTranslate)()"
+      [mandatory]="true"
+      [formControl]="formGroup.controls.IMDbId"
+      [hint]="('Message.IMDBIdRegexp' | signalTranslate)()"
+    />
+    <libc-input
+      [label]="('GenreRegexp' | signalTranslate)()"
+      [mandatory]="true"
+      [formControl]="formGroup.controls.genre"
+      [hint]="('Message.GenreRegexp' | signalTranslate)()"
+    />
+    <libc-input
+      [label]="('GenreTokenRegexp' | signalTranslate)()"
+      [mandatory]="true"
+      [formControl]="formGroup.controls.genreToken"
+      [hint]="('Message.GenreTokenRegexp' | signalTranslate)()"
+    />
+    <libc-input
+      [label]="('ImageRegexp' | signalTranslate)()"
+      [mandatory]="true"
+      [formControl]="formGroup.controls.image"
+      [hint]="('Message.ImageRegexp' | signalTranslate)()"
+    />
+    <libc-input
+      [label]="('IMDbRateRegexp' | signalTranslate)()"
+      [mandatory]="true"
+      [formControl]="formGroup.controls.IMDbRate"
+      [hint]="('Message.IMDbRateRegexp' | signalTranslate)()"
+    />
+    <libc-input
+      [label]="('TagsRegexp' | signalTranslate)()"
+      [mandatory]="true"
+      [formControl]="formGroup.controls.tags"
+      [hint]="('Message.TagsRegexp' | signalTranslate)()"
+    />
+    <libc-input
+      [label]="('TagTokenRegexp' | signalTranslate)()"
+      [mandatory]="true"
+      [formControl]="formGroup.controls.tagToken"
+      [hint]="('Message.TagTokenRegexp' | signalTranslate)()"
+    />
+    <libc-input
+      [label]="('TitleRegexp' | signalTranslate)()"
+      [mandatory]="true"
+      [formControl]="formGroup.controls.title"
+      [hint]="('Message.TitleRegexp' | signalTranslate)()"
+    />
+    <libc-input
+      [label]="('YearRegexp' | signalTranslate)()"
+      [mandatory]="true"
+      [formControl]="formGroup.controls.year"
+      [hint]="('Message.YearRegexp' | signalTranslate)()"
+    />
+  </libc-details>
+
+  <div class="form-buttons">
+    <button [disabled]="formGroup.invalid" (click)="onSave()">
+      {{ ('Save' | signalTranslate)() }}
+    </button>
+    <button class="button-basic" [disabled]="formGroup.invalid" (click)="onGeneratePreview()">
+      {{ ('Preview' | signalTranslate)() }}
+    </button>
+  </div>
+
+  <libc-details [summary]="('RefreshTemplates' | signalTranslate)()" [open]="true">
+    <p>{{ ('Message.RefreshTemplates' | signalTranslate)() }}</p>
+
+    <div class="form-buttons">
+      <button [disabled]="formGroup.invalid || apiLoadNetworkStatus() !== 'finished'" (click)="onRefreshTemplates()">
+        {{ ('Start' | signalTranslate)() }}
+      </button>
+    </div>
+  </libc-details>
+</form>

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { mainGuard } from '@client/main/main-guard';
+import { settingsLockedGuard } from '@client/settings/settings-locked-guard';
 
 export const routes: Routes = [
   {
@@ -16,6 +17,11 @@ export const routes: Routes = [
     path: 'settings',
     loadComponent: () => import('../settings/settings').then((module) => module.Settings),
     canActivate: [mainGuard],
+  },
+  {
+    path: 'parser',
+    loadComponent: () => import('../parser/parser').then((module) => module.Parser),
+    canActivate: [mainGuard, settingsLockedGuard],
   },
   {
     path: 'about',

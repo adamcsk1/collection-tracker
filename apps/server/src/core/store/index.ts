@@ -6,6 +6,7 @@ const initialStore = () =>
     app: new BehaviorSubject(null),
     dataFolder: new BehaviorSubject(null),
     users: new BehaviorSubject(null),
+    parserConfigs: new BehaviorSubject(null),
     cache: new BehaviorSubject({}),
   }) as StoreModel;
 

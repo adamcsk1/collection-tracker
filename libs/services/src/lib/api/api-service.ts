@@ -10,6 +10,8 @@ import {
   CreateApiResponseModel,
   GetAllApiResponseModel,
   ModifyApiRequestModel,
+  ParserConfigApiRequestModel,
+  ParserConfigApiResponseModel,
   SignInApiRequestModel,
   SignUpApiRequestModel,
   SignUpApiResponseModel,
@@ -183,6 +185,26 @@ export class ApiService {
 
   public deleteUser(): Observable<void> {
     return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/user`).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  public getUserParserConfig(): Observable<ParserConfigApiResponseModel | null> {
+    return this.httpClient
+      .get<ParserConfigApiResponseModel | null>(`${this.apiState.state.apiUrl()}/parser/config`)
+      .pipe(
+        catchError((error) => {
+          this.alert.show(error.message);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  public updateUserParserConfig(parserConfig: ParserConfigApiRequestModel): Observable<void> {
+    return this.httpClient.post<void>(`${this.apiState.state.apiUrl()}/parser/change-config`, parserConfig).pipe(
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);

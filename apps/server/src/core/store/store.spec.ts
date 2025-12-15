@@ -7,6 +7,7 @@ const createStore = (): StoreModel => ({
   app: new BehaviorSubject(null),
   dataFolder: new BehaviorSubject<string | null>('data'),
   users: new BehaviorSubject(null),
+  parserConfigs: new BehaviorSubject(null),
   cache: new BehaviorSubject<{ [key: string]: string }>({ cached: 'x' }),
 });
 

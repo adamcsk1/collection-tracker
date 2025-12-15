@@ -1,5 +1,6 @@
 export * from '@server/apis/access-token-validate-api';
 export * from '@server/apis/access-tokens-api';
+export * from '@server/apis/change-parser-config-api';
 export * from '@server/apis/change-token-api';
 export * from '@server/apis/create-access-token-api';
 export * from '@server/apis/create-api';
@@ -10,5 +11,6 @@ export * from '@server/apis/get-all-api';
 export * from '@server/apis/health-api';
 export * from '@server/apis/logout-api';
 export * from '@server/apis/modify-api';
+export * from '@server/apis/parser-config-api';
 export * from '@server/apis/sign-in-api';
 export * from '@server/apis/sign-up-api';

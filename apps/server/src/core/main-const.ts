@@ -6,4 +6,5 @@ export const FOLDERS = {
 
 export const DATABASE_FILES = {
   users: 'users.json',
+  parserConfigs: 'parser-configs.json',
 };

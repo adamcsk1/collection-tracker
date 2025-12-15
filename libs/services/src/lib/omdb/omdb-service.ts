@@ -71,6 +71,7 @@ export class OMDbService {
     return this.httpClient.get<OMDbResponseItemModel>(url.href).pipe(
       catchError((error) => {
         this.alert.show(error.message);
+        this._selectedContent.set({} as OMDbResponseItemModel);
         throw new Error(error.message);
       })
     );
@@ -85,6 +86,7 @@ export class OMDbService {
     return this.httpClient.get<OMDbResponseModel>(url.href).pipe(
       catchError((error) => {
         this.alert.show(error.message);
+        this._selectedContent.set({} as OMDbResponseItemModel);
         throw new Error(error.message);
       })
     );

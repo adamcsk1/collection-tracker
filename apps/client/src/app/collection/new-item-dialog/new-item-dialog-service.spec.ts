@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { CollectionService } from '@client/collection/collection-service';
-import { MdContentGeneratorService } from '@client/collection/new-item-dialog/md-content-generator/md-content-generator-service';
 import { NewItemDialogService } from '@client/collection/new-item-dialog/new-item-dialog-service';
 import {
   initialSpinnerLoadingState,
@@ -8,6 +7,7 @@ import {
 } from '@components/spinner-loading/spinner-loading-store';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
+import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';

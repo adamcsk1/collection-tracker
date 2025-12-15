@@ -43,6 +43,7 @@ export class ImageRefreshService {
         responseType: 'text',
       })
       .pipe(
+        take(1),
         map(() => true),
         catchError(() => this.fetchMovieDetails(collectionItem)),
         tap((status) =>

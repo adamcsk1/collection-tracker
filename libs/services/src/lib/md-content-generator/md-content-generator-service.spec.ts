@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { setParserTemplate } from '@services/parser/parser-util';
+import { MD_TEMPLATE } from '@shared/constants/parser-const';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { MdContentGeneratorService } from './md-content-generator-service';
+
+beforeAll(() => {
+  setParserTemplate(MD_TEMPLATE);
+});
 
 describe('MdContentGeneratorService', () => {
   it('builds markdown content with substituted fields and encoded queries', () => {

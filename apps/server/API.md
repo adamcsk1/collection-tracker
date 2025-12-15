@@ -122,6 +122,34 @@ PUT `/modify/:name`
 - 404: file not found
 - 500: server error
 
+## Parser config (per-user)
+
+GET `/parser/config`
+
+- Auth: Bearer required
+- Behavior: Returns the caller's parser configuration. If none exists yet, defaults are returned (see shared `parser-const`).
+- 200: `{
+  mdTemplate: string,
+  IMDbId: string,
+  genre: string,
+  genreToken: string,
+  image: string,
+  IMDbRate: string,
+  tags: string,
+  tagToken: string,
+  title: string,
+  year: string
+}`
+- 500: server error
+
+POST `/parser/change-config`
+
+- Auth: Bearer required
+- Body: any subset of the parser config fields above (template and regex values as strings)
+- Behavior: Merges the provided fields into the caller's stored parser config and persists it under their user hash
+- 200: full updated parser config (same shape as GET)
+- 500: server error
+
 DELETE `/delete/:name`
 
 - Auth: Bearer required

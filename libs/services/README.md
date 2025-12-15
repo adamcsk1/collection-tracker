@@ -4,7 +4,7 @@
 [![Angular](https://img.shields.io/badge/Angular-Services-dd0031?logo=angular&logoColor=white)](https://angular.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
 
-Cross-app Angular services and signal stores: API client, OMDb integration, portal utilities, simple alert/confirm, theme management with translated options, translation helpers, and web storage utilities.
+Cross-app Angular services and signal stores: API client, OMDb integration, Markdown content generation with configurable parser template/regexps, portal utilities, simple alert/confirm, theme management with translated options, translation helpers, and web storage utilities.
 
 Highlights
 
@@ -22,8 +22,10 @@ Services
 - PortalService — open/close dynamic components via ViewContainerRef
 - ThemeService — system/dark/light theme management with translated option list
 - TranslateService — language option helper wired to ngx-signal-translate
-- ApiService — backend REST client with lazy pagination
+- ApiService — backend REST client with lazy pagination and parser config endpoints
 - OMDbService — public OMDb API helper for movie/series lookup
+- MdContentGeneratorService — fill a Markdown template with OMDb data
+- ParserService — load/save per-user parser template and regexps, keep them cached for parser utilities
 - WebstorageService — tiny localStorage/sessionStorage helper
 
 Stores
@@ -83,6 +85,10 @@ api.getAll().subscribe((items) => {
 api.create('{ markdown or json }').subscribe();
 api.update('item-name.md', 'new content').subscribe();
 api.delete('item-name.md').subscribe();
+
+// Parser config (per-user)
+api.getUserParserConfig().subscribe((config) => console.log(config?.mdTemplate));
+api.updateUserParserConfig({ mdTemplate: '# {{Title}}' }).subscribe();
 ```
 
 Load network status is tracked via store key `loadNetworkStatus` ('pending' | 'finished' | 'error' | null).
@@ -136,6 +142,40 @@ export class RootPortalHost {
 // this.portal.open(SomeDialogComponent, { someInput: 42 });
 // this.portal.close();
 // this.portal.componentRef(); // access last opened component ref (signal)
+```
+
+### MdContentGeneratorService and ParserService
+
+```ts
+import { inject } from '@angular/core';
+import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
+import { ParserService } from '@services/parser/parser-service';
+
+const generator = inject(MdContentGeneratorService);
+const parserService = inject(ParserService);
+
+// Load the user's parser template/regexps on app start
+parserService.preloadUserParserConfig().subscribe();
+
+// Later, generate Markdown based on current parser template
+const md = generator.getMdContent({
+  Title: 'The Matrix',
+  imdbID: 'tt0133093',
+  imdbRating: '8.7',
+  Plot: 'A hacker learns about the true nature of reality.',
+  Poster: 'https://example/poster.jpg',
+  Year: '1999',
+  Director: 'The Wachowskis',
+  Genre: 'Action, Sci-Fi',
+  Actors: 'Keanu Reeves, Carrie-Anne Moss',
+  YoutubeQuery: 'The Matrix trailer',
+  WebQuery: 'The Matrix movie',
+  Type: 'movie',
+  Tags: 'matrix classic',
+});
+
+// Persist current parser template/regexps back to the server
+parserService.syncUserParserConfig().subscribe();
 ```
 
 ### ThemeService

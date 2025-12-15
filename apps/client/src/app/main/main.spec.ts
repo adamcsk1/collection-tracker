@@ -10,10 +10,12 @@ import {
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
+import { ParserService } from '@services/parser/parser-service';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Main } from './main';
 import * as MainUtil from './main-util';
@@ -50,6 +52,7 @@ describe('Main component (client)', () => {
         { provide: CollectionService, useValue: collectionService },
         { provide: PortalService, useValue: portal },
         { provide: ThemeService, useValue: theme },
+        { provide: ParserService, useValue: { preloadUserParserConfig: vi.fn(() => of(void 0)) } },
         { provide: NgxSignalTranslateService, useValue: translate },
         provideStore(initialApiState, apiStateToken),
         provideStore(initialOMDbState, omdbStateToken),

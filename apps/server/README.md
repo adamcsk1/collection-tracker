@@ -12,6 +12,7 @@ A lightweight Express-based API server that powers Collection Tracker. It provid
 - Token rotation: rotate user token and issue a fresh access token (invalidates all previous access tokens)
 - Account deletion: remove user's store, cache entries, and user record
 - Per-user storage in `.data/store/<userHash>` with markdown files
+- Per-user parser configuration (Markdown template + regexps) stored in flat-file DB
 - Rate limiting, CORS, Helmet, JSON body parsing
 - Flat-file DB for users in `.data/database/users.json`
 - Simple in-memory read cache
@@ -44,7 +45,7 @@ A lightweight Express-based API server that powers Collection Tracker. It provid
 
 Data subfolders under the selected `dataFolder`:
 
-- `database/` – contains `users.json`
+- `database/` – contains `users.json` and `parser-configs.json`
 - `store/` – per-user content directories
 - `logs/` – daily log files
 

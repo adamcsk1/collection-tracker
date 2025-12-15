@@ -47,6 +47,7 @@ describe('jwt utilities', () => {
       users: new BehaviorSubject<any>({
         ['hashed-user']: { accessTokens: [] },
       }),
+      parserConfigs: new BehaviorSubject(null),
       cache: new BehaviorSubject({}),
     };
     (Store.getLastValue as Mock).mockImplementation((key: keyof StoreModel) => store[key].value);
