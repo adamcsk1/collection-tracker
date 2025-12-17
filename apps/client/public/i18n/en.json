@@ -143,6 +143,7 @@
   "Message.PreviewGenerationError": "An error occurred while generating the preview. Please check your template and regexps.",
   "Message.RegeneratingTemplates": "Regenerating templates, please wait. {count} items remaining",
   "Message.RefreshImages": "Refreshing images, please wait. {count} items remaining",
+  "Message.RefreshTemplates": "Without applying the new template, the stored files on the collection page will not load correctly. This setting enables you to change the template if needed. By using this option, you can regenerate all templates based on the current parser settings.",
   "Toast.SettingsLockDisable": "You are {count} clicks away from disabling the settings lock!",
   "Toast.SettingsLockDisabled": "The settings lock was disabled successfully!",
   "Toast.NewItem": "The collection item was added successfully!",
