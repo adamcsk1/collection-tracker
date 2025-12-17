@@ -3,32 +3,3 @@ form {
     display: block;
   }
 }
-
-.status {
-  display: flex;
-  align-items: center;
-
-  .status-dot {
-    display: inline-block;
-    background-color: var(--text-color);
-    border-radius: 50%;
-    width: var(--font-size-default);
-    height: var(--font-size-default);
-    margin-left: var(--size-small);
-  }
-
-  .status-ok {
-    background-color: var(--color-lightseagreen);
-  }
-
-  .status-error {
-    background-color: var(--color-crimson);
-  }
-}
-
-.progress-bar {
-  outline: var(--outline-style);
-  outline-color: var(--focus-border-color);
-  border-radius: var(--border-radius);
-  text-align: center;
-}

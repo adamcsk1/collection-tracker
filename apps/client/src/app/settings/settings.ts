@@ -1,4 +1,3 @@
-import { PercentPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { mainStateToken } from '@client/main/main-store';
@@ -21,16 +20,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-settings',
-  imports: [
-    Input,
-    Select,
-    ReactiveFormsModule,
-    NgxSignalTranslatePipe,
-    PercentPipe,
-    Details,
-    AccountActions,
-    AccessTokens,
-  ],
+  imports: [Input, Select, ReactiveFormsModule, NgxSignalTranslatePipe, Details, AccountActions, AccessTokens],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   providers: [OMDbService, ImageRefreshService],
@@ -61,7 +51,6 @@ export class Settings implements OnInit {
   });
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly settingLockEnabled = this.mainState.state.settingsLock;
-  protected readonly imageRefreshStatus = this.imageRefresh.state;
   protected readonly themeOptions = this.theme.themeOptions;
   protected readonly languageOptions = this.translate.languageOptions;
 
