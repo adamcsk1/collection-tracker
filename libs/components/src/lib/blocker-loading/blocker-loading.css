@@ -2,6 +2,11 @@
   --logo-size: 100px;
 }
 
+h1 {
+  text-align: center;
+  margin: 0 var(--size-default);
+}
+
 .blocker-loading {
   position: fixed;
   width: 100vw;
@@ -26,6 +31,8 @@
 
   .loading {
     font-size: var(--font-size-big);
+    text-align: center;
+    margin: 0 var(--size-default);
 
     .dots {
       span {
