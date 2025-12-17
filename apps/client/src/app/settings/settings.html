@@ -119,33 +119,12 @@
   @if (formGroup.controls.appMode.value === 'full') {
     <libc-details [summary]="('Images' | signalTranslate)()">
       <p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
-      @if (imageRefreshStatus(); as imageRefreshStatus) {
-        @if (imageRefreshStatus.running || imageRefreshStatus.checked > 0) {
-          <div class="progress-bar" [style.width]="imageRefreshStatus.checked / imageRefreshStatus.count | percent">
-            {{ imageRefreshStatus.checked / imageRefreshStatus.count | percent }}
-          </div>
-          @if (imageRefreshStatus.fixed > 0) {
-            <div>{{ ('FixedImages' | signalTranslate)() }}: {{ imageRefreshStatus.fixed }}</div>
-          }
-          @if (imageRefreshStatus.errors > 0) {
-            <div>{{ ('Errors' | signalTranslate)() }}: {{ imageRefreshStatus.errors }}</div>
-          }
-        } @else if (
-          imageRefreshStatus.checked === imageRefreshStatus.count &&
-          !imageRefreshStatus.running &&
-          imageRefreshStatus.checked !== 0
-        ) {
-          {{ ('Finished' | signalTranslate)() }}
-        }
-        <div class="form-buttons">
-          <button
-            [disabled]="imageRefreshStatus.running || apiLoadNetworkStatus() !== 'finished'"
-            (click)="onStartImagesRefresh()"
-          >
-            {{ ('Start' | signalTranslate)() }}
-          </button>
-        </div>
-      }
+
+      <div class="form-buttons">
+        <button [disabled]="apiLoadNetworkStatus() !== 'finished'" (click)="onStartImagesRefresh()">
+          {{ ('Start' | signalTranslate)() }}
+        </button>
+      </div>
     </libc-details>
   }
 </form>
