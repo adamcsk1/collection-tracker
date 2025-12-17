@@ -6,7 +6,6 @@
     },
     "editor.formatOnSave": true
   },
-  "eslint.experimental.useFlatConfig": true,
   "eslint.workingDirectories": [
     {
       "mode": "auto"
