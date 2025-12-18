@@ -6,31 +6,35 @@ import {
   ElementRef,
   inject,
   input,
+  NgZone,
   OnInit,
   Renderer2,
   signal,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ControlValueAccessor, FormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
+import { ControlValueAccessor, FormControl, FormsModule, NgControl, ReactiveFormsModule } from '@angular/forms';
+import { getCoarsePointerBasedDebounceTime } from '@shared/utils/prefer-coarse-pointer-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { asyncScheduler, debounceTime, fromEvent } from 'rxjs';
+import { asyncScheduler, debounceTime, fromEvent, Subject } from 'rxjs';
 
 @Component({
   selector: 'libc-textarea',
-  imports: [ReactiveFormsModule, NgxSignalTranslatePipe],
+  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, FormsModule],
   templateUrl: './textarea.html',
   styleUrl: './textarea.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Textarea<T> implements ControlValueAccessor, OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly ngZone = inject(NgZone);
   private readonly renderer = inject(Renderer2);
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly ngControl = inject(NgControl, { optional: true, self: true });
   private onChange: (value: T | null) => void = () => {};
   private onTouched: () => void = () => {};
   private readonly textAreaWrapElement = viewChild<ElementRef>('textarea');
+  private readonly autoHeightRefreshTrigger = new Subject<void>();
   protected readonly value = signal<string>('');
   public readonly textareaId = input<string>(crypto.randomUUID());
   public readonly label = input<string>('');
@@ -58,11 +62,17 @@ export class Textarea<T> implements ControlValueAccessor, OnInit {
 
   public ngOnInit(): void {
     if (this.autoHeight()) {
-      this.setFullHeight();
+      this.ngZone.runOutsideAngular(() =>
+        fromEvent(window, 'resize')
+          .pipe(debounceTime(getCoarsePointerBasedDebounceTime()), takeUntilDestroyed(this.destroyRef))
+          .subscribe(() => this.ngZone.run(() => this.autoHeightRefreshTrigger.next()))
+      );
 
-      fromEvent(window, 'resize')
+      this.autoHeightRefreshTrigger
         .pipe(debounceTime(100), takeUntilDestroyed(this.destroyRef))
         .subscribe(() => this.setFullHeight());
+
+      this.autoHeightRefreshTrigger.next();
     }
   }
 
@@ -86,7 +96,7 @@ export class Textarea<T> implements ControlValueAccessor, OnInit {
     const text = (event.target as HTMLTextAreaElement).value;
     this.value.set(text);
     this.onChange(text as T);
-    if (this.autoHeight()) this.setFullHeight();
+    if (this.autoHeight()) this.autoHeightRefreshTrigger.next();
   }
 
   protected onBlur(): void {
