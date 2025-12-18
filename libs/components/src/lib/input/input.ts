@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { ControlValueAccessor, FormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
+import { ControlValueAccessor, FormControl, FormsModule, NgControl, ReactiveFormsModule } from '@angular/forms';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
   selector: 'libc-input',
-  imports: [ReactiveFormsModule, NgxSignalTranslatePipe],
+  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, FormsModule],
   templateUrl: './input.html',
   styleUrl: './input.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

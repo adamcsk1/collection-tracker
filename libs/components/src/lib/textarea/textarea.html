@@ -15,7 +15,7 @@
   [id]="textareaId()"
   [rows]="rows()"
   [cols]="cols()"
-  [value]="value()"
+  [(ngModel)]="value"
   [disabled]="isDisabled()"
   (input)="onInput($event)"
   (blur)="onBlur()"

@@ -12,7 +12,7 @@
   [attr.aria-label]="label()"
   [attr.aria-describedby]="describedBy()"
   [id]="selectId()"
-  [value]="value()"
+  [(ngModel)]="value"
   [disabled]="isDisabled()"
   (change)="onChangeSelection($event)"
   (blur)="onBlur()"
