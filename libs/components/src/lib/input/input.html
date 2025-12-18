@@ -14,7 +14,7 @@
     [attr.aria-describedby]="describedBy()"
     [type]="type()"
     [id]="inputId()"
-    [value]="value()"
+    [(ngModel)]="value"
     [placeholder]="placeholder()"
     [disabled]="isDisabled()"
     (input)="onInput($event)"

@@ -11,7 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ControlValueAccessor, FormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
+import { ControlValueAccessor, FormControl, FormsModule, NgControl, ReactiveFormsModule } from '@angular/forms';
 import { AutocompleteServiceInterface } from '@components/autocomplete/autocomplete-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { asyncScheduler } from 'rxjs';
@@ -20,7 +20,7 @@ export const AutocompleteService = new InjectionToken<AutocompleteServiceInterfa
 
 @Component({
   selector: 'libc-autocomplete',
-  imports: [ReactiveFormsModule, NgxSignalTranslatePipe],
+  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, FormsModule],
   templateUrl: './autocomplete.html',
   styleUrl: './autocomplete.css',
 })
