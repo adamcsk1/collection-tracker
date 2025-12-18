@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { computed, effect, inject, Injectable, NgZone, signal, untracked } from '@angular/core';
 import { Themes } from '@services/theme/theme-model';
 import { themeStateToken } from '@services/theme/theme-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -7,6 +7,7 @@ import { fromEvent } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
+  private readonly ngZone = inject(NgZone);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly themeStore = inject(themeStateToken);
   private readonly document = inject(DOCUMENT);
@@ -37,8 +38,10 @@ export class ThemeService {
 
   public listen(): void {
     if (!this.listened) {
-      fromEvent<MediaQueryListEvent>(this.mediaQuery, 'change').subscribe((event: MediaQueryListEvent) =>
-        this.setSystemTheme(event)
+      this.ngZone.runOutsideAngular(() =>
+        fromEvent<MediaQueryListEvent>(this.mediaQuery, 'change').subscribe((event: MediaQueryListEvent) =>
+          this.ngZone.run(() => this.setSystemTheme(event))
+        )
       );
       this.switchTheme(this.themeStore.state.theme());
       this.listened = true;
