@@ -4,6 +4,9 @@ const { mkdirSync, existsSync, cpSync, rmSync, readFileSync, writeFileSync, rena
 const distFolder = `${__dirname}/../dist`;
 const dockerFolder = `${__dirname}/../docker`;
 const dockerFile = `${__dirname}/../Dockerfile`;
+const startScript = `${dockerFolder}/scripts/start.sh`;
+const stopScript = `${dockerFolder}/scripts/stop.sh`;
+const buildScript = `${dockerFolder}/scripts/build.sh`;
 const minimalEnvFile = `${__dirname}/../.env.min.example`;
 const releaseFolder = `${__dirname}/../release`;
 
@@ -33,6 +36,9 @@ cpSync(distFolder, `${releaseVersionFolder}/dist`, { recursive: true });
 cpSync(dockerFolder, `${releaseVersionFolder}/docker`, { recursive: true });
 renameSync(`${releaseVersionFolder}/docker/README.md`, `${releaseVersionFolder}/README.md`, { recursive: true });
 cpSync(dockerFile, `${releaseVersionFolder}/Dockerfile`);
+cpSync(startScript, `${releaseVersionFolder}/start.sh`);
+cpSync(stopScript, `${releaseVersionFolder}/stop.sh`);
+cpSync(buildScript, `${releaseVersionFolder}/build.sh`);
 writeFileSync(`${releaseVersionFolder}/data/.env`, minimalEnv);
 
 console.log(`Release created at ${releaseVersionFolder}`);
