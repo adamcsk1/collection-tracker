@@ -59,6 +59,8 @@
     background-color: rgb(from var(--base-color-darker) r g b / 20%);
     width: 100vw;
     height: 100vh;
+    height: 100svh;
+    height: 100dvh;
   }
 
   .menu-panel {
@@ -67,6 +69,8 @@
     top: 0;
     right: 0;
     height: 100vh;
+    height: 100svh;
+    height: 100dvh;
     width: 0;
     display: flex;
     flex-direction: column;
