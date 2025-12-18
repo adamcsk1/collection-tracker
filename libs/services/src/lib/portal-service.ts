@@ -22,6 +22,7 @@ export class PortalService {
   }
 
   public close(): void {
+    this.componentRef()?.destroy?.();
     this.portalViewContainerRef()?.clear();
     this._componentRef.set(null);
   }
