@@ -31,6 +31,7 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   private readonly autocompleteService = inject(AutocompleteService);
   private readonly ngControl = inject(NgControl, { optional: true, self: true });
   private lastKeycode = '';
+  private lastEventWasAccept = false;
   private onChange: (value: T | null) => void = () => {};
   private onTouched: () => void = () => {};
   protected readonly suggestions = this._suggestions.asReadonly();
@@ -92,6 +93,8 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   }
 
   protected onKeydown($event: KeyboardEvent): void {
+    this.lastEventWasAccept = false;
+
     if ($event.code === 'Tab' && this.lastKeycode === 'Tab') {
       this.lastKeycode = '';
       return;
@@ -123,11 +126,12 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
     const inputText = ($event.target as HTMLInputElement).value;
     this.value.set(inputText);
     this.onChange(this.value() as T);
-    if ($event.code !== 'Escape') this.getSuggestions();
+    if ($event.code !== 'Escape' && !this.lastEventWasAccept) this.getSuggestions();
     else this._suggestions.set([]);
   }
 
   protected onAcceptSuggestion(index: number): void {
+    this.lastEventWasAccept = true;
     this.selectedSuggestion.set(-1);
     this.setInput(this.suggestions()[index] as T);
     this._suggestions.set([]);
