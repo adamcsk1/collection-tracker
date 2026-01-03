@@ -4,8 +4,8 @@
 
 ```powershell
 
-# Build image
-docker build -t collection-tracker .
+# Build image (BuildKit)
+docker buildx build --load -t collection-tracker .
 
 # Run (foreground)
 docker run --rm -p 3001:3001 -v ${PWD}/.data:/data collection-tracker

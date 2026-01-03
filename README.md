@@ -130,8 +130,8 @@ The container serves the built Angular app with Nginx on port 3001 and runs the 
 # Build apps
 npm run build
 
-# Build image
-docker build -t collection-tracker .
+# Build image (BuildKit)
+docker buildx build --load -t collection-tracker .
 
 # Run (foreground)
 docker run --rm -p 3001:3001 -v ${PWD}/.data:/data collection-tracker
@@ -157,7 +157,7 @@ Build an image directly from a release folder:
 
 ```powershell
 cd release/release-<version>
-docker build -t collection-tracker:<version> .
+docker buildx build --load -t collection-tracker:<version> .
 ```
 
 ## Contributing
