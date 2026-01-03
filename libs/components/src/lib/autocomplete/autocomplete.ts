@@ -133,7 +133,10 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   protected onAcceptSuggestion(index: number): void {
     this.lastEventWasAccept = true;
     this.selectedSuggestion.set(-1);
-    this.setInput(this.suggestions()[index] as T);
+    if (this.autocompleteService.formatSuggestionValue) {
+      const formatted = this.autocompleteService.formatSuggestionValue(this.suggestions()[index]);
+      this.setInput(formatted as T);
+    } else this.setInput(this.suggestions()[index] as T);
     this._suggestions.set([]);
     this.inputElement()?.nativeElement.focus();
   }
@@ -150,7 +153,7 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   }
 
   protected formatSuggestionText(text: string): string {
-    if (this.autocompleteService.formatSuggestionText) return this.autocompleteService?.formatSuggestionText(text);
+    if (this.autocompleteService.formatSuggestionText) return this.autocompleteService.formatSuggestionText(text);
     return text;
   }
 
@@ -159,6 +162,11 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   }
 
   private getSuggestions(): void {
+    if (this.value().trim() === '') {
+      this._suggestions.set([]);
+      return;
+    }
+
     const suggestions = this.autocompleteService.getSuggestion(this.value());
     if (suggestions.length > 0 && !suggestions.includes(this.value())) this._suggestions.set(suggestions);
     else this._suggestions.set([]);
