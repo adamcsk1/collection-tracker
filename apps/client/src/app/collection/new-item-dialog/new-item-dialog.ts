@@ -70,6 +70,7 @@ export class NewItemDialog implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         if (mode === 'new') this.formGroup.reset();
+        else this.formGroup.controls.selectedIMDbId.reset();
       });
   }
 }
