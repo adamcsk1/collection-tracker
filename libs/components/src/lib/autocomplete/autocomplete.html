@@ -12,6 +12,7 @@
       class="input-suggestions-close button-icon material-icons"
       [attr.aria-label]="('CloseSuggestions' | signalTranslate)()"
       [title]="('CloseSuggestions' | signalTranslate)()"
+      [class.input-suggestions-close-small-position]="showReset()"
       (click)="onCloseSuggestion()"
     >
       close
