@@ -1,5 +1,5 @@
 # Runtime image that serves the built Angular app with Nginx and runs the built Node.js server
-FROM node:20-alpine AS runtime
+FROM node:24-alpine AS runtime
 
 # Install Nginx, bash (for scripts) and su-exec (to drop privileges at runtime)
 RUN apk add --no-cache nginx bash su-exec
