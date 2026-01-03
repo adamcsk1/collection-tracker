@@ -12,4 +12,5 @@ export interface SettingsModel {
   theme: Themes;
   settingsLock: StringBooleanModel;
   language: LanguageModel;
+  searchMode: 'standard' | 'fuzzy';
 }

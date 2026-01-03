@@ -66,16 +66,23 @@ describe('List', () => {
     (component as any).scrollContainer = () => ({ nativeElement: { scrollTo: scrollSpy } }) as ElementRef;
   });
 
-  it('filters collection based on search text and resets scroll position', () => {
-    vi.spyOn(component as any, 'resetScrollPosition');
-    mainCollectionState.setState('collection', [buildItem('Alpha'), buildItem('Beta')]);
-    collectionState.setState('searchText', 'be');
+  it('filters collection based on search text and resets scroll position', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(component as any, 'resetScrollPosition');
+      mainCollectionState.setState('collection', [buildItem('Alpha'), buildItem('Beta')]);
+      collectionState.setState('searchText', 'be');
 
-    const filtered = component['filteredCollection']();
+      await vi.runAllTimersAsync();
 
-    expect(filtered).toEqual([buildItem('Beta')]);
-    expect(component['resetScrollPosition']).toHaveBeenCalled();
-    expect(scrollSpy).toHaveBeenCalled();
+      const filtered = component['filteredCollection']();
+
+      expect(filtered).toEqual([buildItem('Alpha'), buildItem('Beta')]);
+      expect(component['resetScrollPosition']).toHaveBeenCalled();
+      expect(scrollSpy).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('opens a random item from the filtered collection', () => {

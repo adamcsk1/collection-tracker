@@ -15,6 +15,7 @@ import {
   STORAGE_FETCH_BATCH_SIZE,
   STORAGE_LANGUAGE,
   STORAGE_OMDB_API_KEY,
+  STORAGE_SEARCH_MODE,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
   STORAGE_THEME,
@@ -41,6 +42,7 @@ export class SettingsService {
     this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout === 'true');
     this.mainState.setState('animatedBackground', formData.animatedBackground === 'true');
     this.mainState.setState('language', formData.language);
+    this.mainState.setState('searchMode', formData.searchMode);
     this.apiState.setState('fetchBatchSize', formData.fetchBatchSize);
     this.themeState.setState('theme', formData.theme);
 
@@ -51,6 +53,7 @@ export class SettingsService {
     }
 
     this.webstorage.setItem(STORAGE_APP_MODE, formData.appMode);
+    this.webstorage.setItem(STORAGE_SEARCH_MODE, formData.searchMode);
     this.webstorage.setItem(STORAGE_SETTINGS_LOCK, String(formData.settingsLock));
     this.webstorage.setItem(STORAGE_FETCH_BATCH_SIZE, `${formData.fetchBatchSize}`);
     this.webstorage.setItem(STORAGE_THEME, formData.theme);

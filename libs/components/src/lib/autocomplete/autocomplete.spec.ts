@@ -30,12 +30,14 @@ describe('Autocomplete component', () => {
   let serviceStub: {
     getSuggestion: ReturnType<typeof vi.fn>;
     formatSuggestionText?: ReturnType<typeof vi.fn>;
+    formatSuggestionValue?: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
     serviceStub = {
       getSuggestion: vi.fn().mockReturnValue(['alpha', 'beta']),
       formatSuggestionText: vi.fn((value: string) => `*${value}*`),
+      formatSuggestionValue: vi.fn((value: string) => `${value}-formatted`),
     };
 
     TestBed.configureTestingModule({
@@ -348,6 +350,40 @@ describe('Autocomplete component', () => {
 
     const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     expect(component['formatSuggestionText']('plain')).toBe('plain');
+  });
+
+  it('uses formatted value when accepting a suggestion', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
+
+    component['onKeyup']({
+      code: 'KeyA',
+      target: { value: 'a' },
+    } as unknown as KeyboardEvent);
+    fixture.detectChanges();
+
+    component['onAcceptSuggestion'](0);
+
+    expect(fixture.componentInstance.control.value).toBe('alpha-formatted');
+    expect(serviceStub.formatSuggestionValue).toHaveBeenCalledWith('alpha');
+  });
+
+  it('clears suggestions without calling service when input is empty', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
+    serviceStub.getSuggestion.mockClear();
+
+    component['onKeyup']({
+      code: 'KeyX',
+      target: { value: '' },
+    } as unknown as KeyboardEvent);
+
+    expect(serviceStub.getSuggestion).not.toHaveBeenCalled();
+    expect(component['suggestions']()).toEqual([]);
   });
 
   it('provides hint id in describedBy when hint is set', () => {

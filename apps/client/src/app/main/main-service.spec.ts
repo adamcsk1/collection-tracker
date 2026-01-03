@@ -13,6 +13,7 @@ import {
   STORAGE_FETCH_BATCH_SIZE,
   STORAGE_LANGUAGE,
   STORAGE_OMDB_API_KEY,
+  STORAGE_SEARCH_MODE,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
   STORAGE_THEME,
@@ -63,6 +64,8 @@ describe('MainService', () => {
           return 'omdb-key';
         case STORAGE_APP_MODE:
           return 'limited';
+        case STORAGE_SEARCH_MODE:
+          return 'fuzzy';
         case STORAGE_SETTINGS_LOCK:
           return 'true';
         case STORAGE_FETCH_BATCH_SIZE:
@@ -95,6 +98,7 @@ describe('MainService', () => {
     expect(mainState.state.clearLocalStorageAfterLogout()).toBe(true);
     expect(mainState.state.animatedBackground()).toBe(false);
     expect(mainState.state.language()).toBe('es');
+    expect(mainState.state.searchMode()).toBe('fuzzy');
     expect(setPermissionsSpy).toHaveBeenCalled();
   });
 
