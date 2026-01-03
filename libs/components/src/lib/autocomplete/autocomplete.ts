@@ -161,6 +161,11 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
     this.focused.set(true);
   }
 
+  protected onCloseSuggestion(): void {
+    this._suggestions.set([]);
+    this.inputElement()?.nativeElement.focus();
+  }
+
   private getSuggestions(): void {
     if (this.value().trim() === '') {
       this._suggestions.set([]);

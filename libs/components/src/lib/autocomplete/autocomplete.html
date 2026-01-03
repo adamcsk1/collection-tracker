@@ -8,6 +8,14 @@
 }
 <div class="input">
   @if (suggestions().length) {
+    <button
+      class="input-suggestions-close button-icon material-icons"
+      [attr.aria-label]="('CloseSuggestions' | signalTranslate)()"
+      [title]="('CloseSuggestions' | signalTranslate)()"
+      (click)="onCloseSuggestion()"
+    >
+      close
+    </button>
     <ul
       class="input-suggestions"
       role="listbox"
@@ -68,7 +76,7 @@
       [disabled]="!hasValue()"
       (click)="onReset()"
     >
-      close
+      backspace
     </button>
   }
 </div>
