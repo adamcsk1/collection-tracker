@@ -14,6 +14,16 @@
       [options]="themeOptions()"
     />
     <libc-select
+      [label]="('SearchMode' | signalTranslate)()"
+      [hint]="('Message.SearchMode' | signalTranslate)()"
+      [mandatory]="true"
+      [formControl]="formGroup.controls.searchMode"
+      [options]="[
+        { text: ('STANDARD' | signalTranslate)(), value: 'standard' },
+        { text: ('FUZZY' | signalTranslate)(), value: 'fuzzy' },
+      ]"
+    />
+    <libc-select
       [label]="('AnimatedBackground' | signalTranslate)()"
       [hint]="('Message.AnimatedBackground' | signalTranslate)()"
       [mandatory]="true"

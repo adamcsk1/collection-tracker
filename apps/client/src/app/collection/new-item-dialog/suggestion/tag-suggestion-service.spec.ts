@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
+import { initialMainState, mainStateToken } from '@client/main/main-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagSuggestionService } from './tag-suggestion-service';
@@ -20,14 +21,20 @@ const buildItem = (tags: Array<string>): CollectionItemModel => ({
 describe('TagSuggestionService', () => {
   let service: TagSuggestionService;
   let collectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
+  let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [TagSuggestionService, provideStore(initialMainCollectionState, mainCollectionStateToken)],
+      providers: [
+        TagSuggestionService,
+        provideStore(initialMainCollectionState, mainCollectionStateToken),
+        provideStore(initialMainState, mainStateToken),
+      ],
     });
 
     service = TestBed.inject(TagSuggestionService);
     collectionState = TestBed.inject(mainCollectionStateToken);
+    mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
   });
 
   it('suggests up to three unique tags replacing the last token', () => {
@@ -51,5 +58,19 @@ describe('TagSuggestionService', () => {
 
   it('formats suggestion by taking the last token', () => {
     expect(service.formatSuggestionText('alpha beta gamma')).toBe('gamma');
+  });
+
+  it('uses fuzzy search mode and honors the limit', () => {
+    mainState.setState('searchMode', 'fuzzy');
+    collectionState.setState('collection', [
+      buildItem(['#movie', '#space', '#spice']),
+      buildItem(['#series', '#span', '#spoke', '#spike']),
+    ]);
+
+    const suggestions = service.getSuggestion('find #spa');
+
+    expect(suggestions.length).toBeLessThanOrEqual(3);
+    expect(suggestions.every((text) => text.startsWith('find '))).toBe(true);
+    expect(suggestions.join(' ')).not.toContain('#movie');
   });
 });

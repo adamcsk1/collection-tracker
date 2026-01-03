@@ -14,6 +14,7 @@ import {
   STORAGE_FETCH_BATCH_SIZE,
   STORAGE_LANGUAGE,
   STORAGE_OMDB_API_KEY,
+  STORAGE_SEARCH_MODE,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
   STORAGE_THEME,
@@ -37,6 +38,7 @@ export class MainService {
     const apiUrl = this.webstorage.getItem(STORAGE_API_URL);
     const omdbApiKey = this.webstorage.getItem(STORAGE_OMDB_API_KEY);
     const appMode = this.webstorage.getItem(STORAGE_APP_MODE) as SettingsModel['appMode'];
+    const searchMode = this.webstorage.getItem(STORAGE_SEARCH_MODE) as SettingsModel['searchMode'];
     const settingsLock = this.webstorage.getItem(STORAGE_SETTINGS_LOCK) === 'true';
     const fetchBatchSize = this.webstorage.getItem(STORAGE_FETCH_BATCH_SIZE);
     const theme = this.webstorage.getItem(STORAGE_THEME) as SettingsModel['theme'];
@@ -57,6 +59,8 @@ export class MainService {
     if (theme) this.themeState.setState('theme', theme);
     if (sensitiveDataStorage) this.mainState.setState('sensitiveDataStorage', sensitiveDataStorage);
     if (language) this.mainState.setState('language', language as LanguageModel);
+    if (appMode) this.mainState.setState('appMode', appMode);
+    if (searchMode) this.mainState.setState('searchMode', searchMode);
 
     this.mainState.setState('settingsLock', settingsLock);
     this.mainState.setState('clearLocalStorageAfterLogout', clearLocalStorageAfterLogout);

@@ -8,17 +8,21 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { collectionStateToken } from '@client/collection/collection-store';
 import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
 import { ListItemSkeleton } from '@client/collection/list/list-item-skeleton/list-item-skeleton';
 import { ListItem } from '@client/collection/list/list-item/list-item';
 import { NewItemDialog } from '@client/collection/new-item-dialog/new-item-dialog';
-import { collectionStateToken } from '@client/collection/collection-store';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { mainStateToken } from '@client/main/main-store';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
+import { EXACT_IMDB_ID_REGEXP } from '@shared/regexps/imdb-id-regexp';
+import { affordableFuzzySearch, fuzzySearch } from '@shared/utils/fuzzy-search-util';
 import { randomInt } from '@shared/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { debounceTime, startWith } from 'rxjs';
 
 @Component({
   selector: 'ct-list',
@@ -33,12 +37,24 @@ export class List {
   private readonly apiState = inject(apiStateToken);
   private readonly collectionState = inject(collectionStateToken);
   private readonly portal = inject(PortalService);
+  private readonly debouncedSearchText = toSignal(
+    toObservable(this.collectionState.state.searchText).pipe(startWith(''), debounceTime(100))
+  );
   protected readonly filteredCollection = computed(() => {
-    const searchText = this.collectionState.state.searchText().toLowerCase();
+    const searchText = this.debouncedSearchText() || '';
+    const lowerCasedSearchText = searchText.toLowerCase();
     this.resetScrollPosition();
-    return this.mainCollectionState.state
-      .collection()
-      .filter((collectionItem) => collectionItem.rawContent.toLowerCase().includes(searchText));
+    const isExactIMDbId = searchText.match(EXACT_IMDB_ID_REGEXP) !== null;
+    const isTag = searchText.startsWith('#');
+
+    return this.mainCollectionState.state.collection().filter((collectionItem) => {
+      if (isExactIMDbId) return collectionItem.IMDbId === searchText;
+      else if (isTag) return collectionItem.tags.includes(searchText);
+      else if (this.mainState.state.searchMode() === 'fuzzy' && affordableFuzzySearch(lowerCasedSearchText)) {
+        return (fuzzySearch(lowerCasedSearchText, collectionItem.rawContent.toLowerCase()) || []).length > 0;
+      }
+      return collectionItem.rawContent.toLowerCase().includes(lowerCasedSearchText);
+    });
   });
   private readonly limit = 150;
   private readonly lastPageItem = computed(() => this.offset() + this.limit);
