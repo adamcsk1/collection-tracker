@@ -91,6 +91,18 @@
       }
     }
   }
+
+  button.input-suggestions-close {
+    z-index: 3;
+    position: absolute;
+    right: 26px;
+    top: calc(var(--input-height) - 15px);
+    background-color: var(--background-color-alt);
+    border: var(--border-style);
+    border-radius: 100%;
+    padding: 2px;
+    font-size: var(--font-size-big);
+  }
 }
 
 .input-messages {

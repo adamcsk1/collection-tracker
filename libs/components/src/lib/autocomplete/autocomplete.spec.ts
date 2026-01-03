@@ -67,7 +67,7 @@ describe('Autocomplete component', () => {
     component['onAcceptSuggestion'](0);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.control.value).toBe('alpha');
+    expect(fixture.componentInstance.control.value).toBe('alpha-formatted');
     expect(component['suggestions']()).toEqual([]);
   });
 
@@ -122,7 +122,7 @@ describe('Autocomplete component', () => {
     } as unknown as KeyboardEvent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.control.value).toBe('beta');
+    expect(fixture.componentInstance.control.value).toBe('beta-formatted');
     expect(component['suggestions']()).toEqual([]);
   });
 
@@ -280,7 +280,7 @@ describe('Autocomplete component', () => {
     } as unknown as KeyboardEvent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.control.value).toBe('alpha');
+    expect(fixture.componentInstance.control.value).toBe('alpha-formatted');
     expect(component['suggestions']()).toEqual([]);
   });
 
@@ -404,5 +404,20 @@ describe('Autocomplete component', () => {
 
     const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     expect(component['describedBy']()).toBeNull();
+  });
+
+  it('closes suggestions and refocuses the input', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
+    component['_suggestions'].set(['alpha', 'beta']);
+    const inputEl = (component as any).inputElement().nativeElement as HTMLInputElement;
+    const focusSpy = vi.spyOn(inputEl, 'focus');
+
+    component['onCloseSuggestion']();
+
+    expect(component['suggestions']()).toEqual([]);
+    expect(focusSpy).toHaveBeenCalled();
   });
 });
