@@ -1,12 +1,12 @@
 :host {
-  --pagination-height: 35px;
+  --pagination-height: calc(35px + 2 * var(--size-smaller));
   --float-button-container-size: 45px;
 }
 
 .list {
-  max-height: calc(100vh - var(--header-height) - 54px - 2 * var(--size-default) - var(--pagination-height) - 2px);
-  max-height: calc(100svh - var(--header-height) - 54px - 2 * var(--size-default) - var(--pagination-height) - 2px);
-  max-height: calc(100dvh - var(--header-height) - 54px - 2 * var(--size-default) - var(--pagination-height) - 2px);
+  max-height: calc(100vh - var(--header-height) - 54px - 2 * var(--size-default) - var(--pagination-height));
+  max-height: calc(100svh - var(--header-height) - 54px - 2 * var(--size-default) - var(--pagination-height));
+  max-height: calc(100dvh - var(--header-height) - 54px - 2 * var(--size-default) - var(--pagination-height));
   overflow: hidden auto;
 
   .list-empty {
@@ -29,6 +29,8 @@
   height: var(--pagination-height);
   display: flex;
   justify-content: center;
+  gap: var(--size-default);
+  padding: var(--size-smaller);
 }
 
 .float-button {
@@ -42,6 +44,11 @@
   justify-content: center;
   align-items: center;
   margin: var(--size-small);
+
+  button {
+    height: 100%;
+    width: 100%;
+  }
 }
 
 .random-pick {

@@ -12,6 +12,7 @@ small {
 
 .container {
   display: flex;
+  gap: var(--size-small);
 }
 
 i {
