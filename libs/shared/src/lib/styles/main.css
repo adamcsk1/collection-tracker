@@ -53,3 +53,15 @@ code {
   display: block;
   overflow: auto;
 }
+
+.app-title-style {
+  text-shadow:
+    var(--focus-border-color) 0 0 1.35px,
+    var(--focus-border-color) 0 0 1.35px,
+    var(--focus-border-color) 0 0 1.35px,
+    var(--focus-border-color) 0 0 1.35px,
+    var(--focus-border-color) 0 0 1.35px,
+    var(--focus-border-color) 0 0 1.35px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizelegibility;
+}

@@ -1,6 +1,6 @@
 <div class="about">
   <img [src]="'icons/' + themeLogo()" [title]="('Title' | signalTranslate)()" [alt]="('Title' | signalTranslate)()" />
-  <h2>{{ ('Title' | signalTranslate)() }}</h2>
+  <h2 class="app-title-style">{{ ('Title' | signalTranslate)() }}</h2>
   <h3>{{ ('Build' | signalTranslate)() }}</h3>
   <div>
     <div>{{ build }}</div>

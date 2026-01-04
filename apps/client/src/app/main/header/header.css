@@ -25,6 +25,7 @@
 
   h1 {
     margin: auto 0 auto var(--size-small);
+    color: var(--glassy-background) !important;
 
     @media (width <= 260px) {
       display: none;
@@ -36,9 +37,7 @@
   h1 {
     line-height: 1;
     font-size: var(--font-size-big);
-    -webkit-text-fill-color: transparent;
-    -webkit-text-stroke-width: 1px;
-    -webkit-text-stroke-color: var(--focus-border-color);
+    color: var(--background-color-alt);
   }
 
   img {

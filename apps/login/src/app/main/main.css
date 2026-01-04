@@ -40,8 +40,6 @@
   h1 {
     font-size: var(--font-size-big);
     line-height: 1;
-    -webkit-text-fill-color: transparent;
-    -webkit-text-stroke-width: 1px;
-    -webkit-text-stroke-color: var(--focus-border-color);
+    color: var(--background-color);
   }
 }
