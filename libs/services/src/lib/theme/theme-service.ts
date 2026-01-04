@@ -21,6 +21,10 @@ export class ThemeService {
   }
   private listened = false;
   public readonly darkTheme = computed(() => ['dark'].includes(this.usedTheme()));
+  public readonly themeLogo = computed(() => {
+    if (this.usedTheme() === 'system') return 'logo.png';
+    return this.darkTheme() ? 'logo-dark.png' : 'logo-light.png';
+  });
   public readonly themeOptions = computed(() => [
     { text: this.ngxSignalTranslate.translate('System'), value: 'system' },
     { text: this.ngxSignalTranslate.translate('Light'), value: 'light' },

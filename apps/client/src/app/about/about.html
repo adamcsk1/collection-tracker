@@ -1,5 +1,5 @@
 <div class="about">
-  <img src="icons/logo.png" [title]="('Title' | signalTranslate)()" [alt]="('Title' | signalTranslate)()" />
+  <img [src]="'icons/' + themeLogo()" [title]="('Title' | signalTranslate)()" [alt]="('Title' | signalTranslate)()" />
   <h2>{{ ('Title' | signalTranslate)() }}</h2>
   <h3>{{ ('Build' | signalTranslate)() }}</h3>
   <div>

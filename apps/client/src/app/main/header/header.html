@@ -1,6 +1,6 @@
 <div class="header" [title]="('Title' | signalTranslate)()">
   <a [routerLink]="['/', 'collection']">
-    <img src="icons/logo.png" [alt]="('Title' | signalTranslate)()" />
+    <img [src]="'icons/' + themeLogo()" [alt]="('Title' | signalTranslate)()" />
   </a>
   <h1>{{ ('Title' | signalTranslate)() }}</h1>
 </div>
@@ -27,7 +27,7 @@
   >
     <div class="menu-header">
       <div>
-        <img src="icons/logo.png" [alt]="('Title' | signalTranslate)()" />
+        <img [src]="'icons/' + themeLogo()" [alt]="('Title' | signalTranslate)()" />
         <h1>{{ ('Title' | signalTranslate)() }}</h1>
       </div>
       <button

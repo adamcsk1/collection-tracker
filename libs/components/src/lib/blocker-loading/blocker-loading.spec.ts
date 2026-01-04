@@ -1,4 +1,7 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { ThemeService } from '@services/theme/theme-service';
+import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,10 +12,13 @@ import { blockerLoadingStateToken, initialBlockerLoadingState } from './blocker-
 describe('BlockerLoading component', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+
     TestBed.configureTestingModule({
       imports: [BlockerLoading],
       providers: [
         provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
+        provideStore(initialThemeState, themeStateToken),
+        { provide: ThemeService, useValue: { themeLogo: signal('logo-mock.png') } },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
       ],
     });

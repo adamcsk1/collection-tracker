@@ -26,7 +26,7 @@
   padding: 0 var(--size-default);
   display: flex;
   align-items: center;
-  gap: var(--size-default);
+  gap: var(--size-small);
   margin-top: var(--size-default);
 
   img {
@@ -38,7 +38,10 @@
   }
 
   h1 {
-    font-size: var(--font-size-default);
+    font-size: var(--font-size-big);
     line-height: 1;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-stroke-color: var(--focus-border-color);
   }
 }
