@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { APP_VERSION, BUILD, BUILD_DATE } from '@client/main/main-const';
 import { mainStateToken } from '@client/main/main-store';
 import { toastStateToken } from '@components/toast/toast-store';
+import { ThemeService } from '@services/theme/theme-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_SETTINGS_LOCK } from '@shared/constants/storage-const';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -24,7 +25,9 @@ export class About {
   private readonly webstorage = inject(WebstorageService);
   private readonly mainState = inject(mainStateToken);
   private readonly toastState = inject(toastStateToken);
+  private readonly theme = inject(ThemeService);
   private readonly counter = new BehaviorSubject(0);
+  protected readonly themeLogo = this.theme.themeLogo;
   protected readonly build = BUILD;
   protected readonly buildDate = BUILD_DATE;
   protected readonly appVersion = APP_VERSION;

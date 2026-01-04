@@ -24,7 +24,7 @@
   }
 
   h1 {
-    margin: auto 0 auto var(--size-default);
+    margin: auto 0 auto var(--size-small);
 
     @media (width <= 260px) {
       display: none;
@@ -35,7 +35,10 @@
 :is(.header, .menu .menu-header) {
   h1 {
     line-height: 1;
-    font-size: var(--font-size-default);
+    font-size: var(--font-size-big);
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-stroke-color: var(--focus-border-color);
   }
 
   img {
@@ -97,7 +100,7 @@
       div {
         display: flex;
         align-items: center;
-        gap: var(--size-default);
+        gap: var(--size-small);
       }
     }
 

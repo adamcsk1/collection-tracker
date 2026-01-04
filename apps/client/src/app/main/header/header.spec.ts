@@ -1,9 +1,13 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionService } from '@client/collection/collection-service';
-import * as MainUtil from '@client/main/main-util';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
+import * as MainUtil from '@client/main/main-util';
 import { ApiService } from '@services/api/api-service';
+import { ThemeService } from '@services/theme/theme-service';
+import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { NgxSignalTranslateService, provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -33,6 +37,10 @@ describe('Header component', () => {
         { provide: CollectionService, useValue: collection },
         { provide: ApiService, useValue: api },
         { provide: WebstorageService, useValue: webstorage },
+        { provide: ThemeService, useValue: { themeLogo: signal('logo-mock.png') } },
+        provideStore(initialThemeState, themeStateToken),
+        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
+        provideSignalTranslateConfig({ path: '' }),
         provideStore(initialMainState, mainStateToken),
       ],
     });

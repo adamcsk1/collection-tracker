@@ -5,6 +5,7 @@ import { CollectionService } from '@client/collection/collection-service';
 import { mainStateToken } from '@client/main/main-store';
 import { redirectToLogin } from '@client/main/main-util';
 import { ApiService } from '@services/api/api-service';
+import { ThemeService } from '@services/theme/theme-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
@@ -26,8 +27,10 @@ export class Header {
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(ApiService);
   private readonly webstorage = inject(WebstorageService);
+  private readonly theme = inject(ThemeService);
   protected readonly showMenu = signal(false);
   protected readonly settingLockEnabled = this.mainState.state.settingsLock;
+  protected readonly themeLogo = this.theme.themeLogo;
 
   protected onShowMenu($event: Event): void {
     if ($event.type !== 'mouseenter' || this.document.body.offsetWidth > 450) this.showMenu.set(true);

@@ -5,6 +5,9 @@
 h1 {
   text-align: center;
   margin: 0 var(--size-default);
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: var(--focus-border-color);
 }
 
 .blocker-loading {

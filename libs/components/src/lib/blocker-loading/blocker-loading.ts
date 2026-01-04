@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { BLOCKER_LOADING_TIMEOUT_MS } from '@components/blocker-loading/blocker-loading-const';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
+import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { asyncScheduler, Subscription } from 'rxjs';
 
@@ -13,10 +14,12 @@ import { asyncScheduler, Subscription } from 'rxjs';
 })
 export class BlockerLoading {
   private readonly blockerLoadingState = inject(blockerLoadingStateToken);
+  private readonly theme = inject(ThemeService);
   private startTime: number | null = null;
   private scheduler?: Subscription;
   protected readonly showBlockerLoading = signal(false);
   protected readonly message = this.blockerLoadingState.state.message;
+  protected readonly themeLogo = this.theme.themeLogo;
 
   constructor() {
     effect(() => {

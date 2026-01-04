@@ -1,7 +1,7 @@
 @if (showBlockerLoading()) {
   <div class="blocker-loading" role="alert" aria-live="assertive" animate.leave="animation-fade-out">
     <div>
-      <img src="icons/logo.png" [alt]="('Title' | signalTranslate)()" />
+      <img [src]="'icons/' + themeLogo()" [alt]="('Title' | signalTranslate)()" />
       <h1>{{ ('Title' | signalTranslate)() }}</h1>
     </div>
     <div class="loading">

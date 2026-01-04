@@ -114,4 +114,33 @@ describe('ThemeService', () => {
     expect(document.documentElement.classList.contains('light')).toBe(true);
     expect(service.darkTheme()).toBe(false);
   });
+
+  it('derives themeLogo based on active theme', async () => {
+    // Before listen(), remains default system logo
+    expect(service.themeLogo()).toBe('logo.png');
+
+    // System theme follows media query after listen()
+    themeState.setState('theme', 'system');
+    service.listen();
+    mediaQueryMock.dispatch(true);
+    await Promise.resolve();
+    vi.runOnlyPendingTimers();
+    expect(service.themeLogo()).toBe('logo-dark.png');
+
+    mediaQueryMock.dispatch(false);
+    await Promise.resolve();
+    vi.runOnlyPendingTimers();
+    expect(service.themeLogo()).toBe('logo-light.png');
+
+    // Explicit theme selections
+    themeState.setState('theme', 'dark');
+    await Promise.resolve();
+    vi.runOnlyPendingTimers();
+    expect(service.themeLogo()).toBe('logo-dark.png');
+
+    themeState.setState('theme', 'light');
+    await Promise.resolve();
+    vi.runOnlyPendingTimers();
+    expect(service.themeLogo()).toBe('logo-light.png');
+  });
 });

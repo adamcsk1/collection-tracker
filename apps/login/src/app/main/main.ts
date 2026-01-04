@@ -29,6 +29,7 @@ export class Main implements AfterViewInit {
   private readonly apiState = inject(apiStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly blockerLoadingState = inject(blockerLoadingStateToken);
+  protected readonly themeLogo = this.theme.themeLogo;
 
   constructor() {
     const language = this.webstorage.getItem(STORAGE_LANGUAGE) || 'en';

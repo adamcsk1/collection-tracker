@@ -1,7 +1,7 @@
 <div class="header" role="banner">
-  <img src="icons/logo.png" [alt]="('Title' | signalTranslate)()" />
+  <img [src]="'icons/' + themeLogo()" [alt]="('Title' | signalTranslate)()" />
   <div>
-    <h1 class="typewriter">{{ ('Title' | signalTranslate)() }}</h1>
+    <h1>{{ ('Title' | signalTranslate)() }}</h1>
   </div>
 </div>
 <div class="content" role="main" [attr.aria-label]="('Title' | signalTranslate)()">
