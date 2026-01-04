@@ -2,7 +2,7 @@
   <a [routerLink]="['/', 'collection']">
     <img [src]="'icons/' + themeLogo()" [alt]="('Title' | signalTranslate)()" />
   </a>
-  <h1>{{ ('Title' | signalTranslate)() }}</h1>
+  <h1 class="app-title-style">{{ ('Title' | signalTranslate)() }}</h1>
 </div>
 
 <div class="menu" [class.open]="showMenu()" [attr.aria-hidden]="!showMenu()">
@@ -28,7 +28,7 @@
     <div class="menu-header">
       <div>
         <img [src]="'icons/' + themeLogo()" [alt]="('Title' | signalTranslate)()" />
-        <h1>{{ ('Title' | signalTranslate)() }}</h1>
+        <h1 class="app-title-style">{{ ('Title' | signalTranslate)() }}</h1>
       </div>
       <button
         class="button-icon material-icons"
