@@ -29,6 +29,11 @@ a {
   }
 }
 
+* {
+  scrollbar-color: var(--main-color) transparent;
+  scrollbar-width: thin;
+}
+
 *:focus-visible {
   outline: var(--outline-style);
   outline-color: var(--focus-border-color);
