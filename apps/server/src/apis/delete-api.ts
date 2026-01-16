@@ -11,7 +11,7 @@ Store.getOnce$('app').subscribe((app) =>
   app.delete(`${API_PREFIX}/delete/:name`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
       let { name } = request.params;
-      name = name.replace(/\\|\//g, '');
+      name = name.toString().replace(/\\|\//g, '');
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
 
       if (!existsSync(`${storeFolder}/${name}`)) {
