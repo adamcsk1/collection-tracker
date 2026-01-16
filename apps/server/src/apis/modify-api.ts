@@ -12,7 +12,7 @@ Store.getOnce$('app').subscribe((app) =>
   app.put(`${API_PREFIX}/modify/:name`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
       let { name } = request.params;
-      name = name.replace(/\\|\//g, '');
+      name = name.toString().replace(/\\|\//g, '');
       const { content } = request.body as ModifyApiRequestModel;
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
 
