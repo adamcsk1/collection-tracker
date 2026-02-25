@@ -21,6 +21,18 @@ describe('modify-api', () => {
     vi.clearAllMocks();
   });
 
+  it('returns 400 when content is missing', async () => {
+    const response = mockResponse();
+    const request: any = { params: { name: 'file.md' }, body: {}, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./modify-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.sendStatus).toHaveBeenCalledWith(400);
+  });
+
   it('updates an existing item', async () => {
     const response = mockResponse();
     const request: any = { params: { name: 'file.md' }, body: { content: 'updated' }, usernameHash: 'user' };

@@ -21,6 +21,18 @@ describe('create-api', () => {
     vi.clearAllMocks();
   });
 
+  it('returns 400 when content is missing', async () => {
+    const response = mockResponse();
+    const request: any = { body: {}, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.sendStatus).toHaveBeenCalledWith(400);
+  });
+
   it('creates a new file and returns name', async () => {
     const response = mockResponse();
     const request: any = {

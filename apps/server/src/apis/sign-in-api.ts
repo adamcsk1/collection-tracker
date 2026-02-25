@@ -14,6 +14,9 @@ export const register = (app: Application): void => {
   app.post(`${API_PREFIX}/sign-in`, (request, response) => {
     try {
       const { username, token } = request.body as SignInApiRequestModel;
+      if (typeof username !== 'string' || !username || typeof token !== 'string' || !token) {
+        return response.sendStatus(400);
+      }
       const users = Store.getLastValue('users');
 
       const usernameHash = hashText(username);
