@@ -112,6 +112,9 @@ DISABLE_REGISTRATION=0
 
 # Limit of registered users
 USER_LIMIT=2
+
+# Maximum file entries in the in-memory LRU cache (default: 200)
+CACHE_MAX=200
 ```
 
 ## Auth (summary)

@@ -42,6 +42,7 @@ A lightweight Express-based API server that powers Collection Tracker. It provid
 - `CORS_ORIGIN` – allowed origin or `*`
 - `DISABLE_REGISTRATION` – `1` to block sign-ups
 - `USER_LIMIT` – optional numeric limit on users
+- `CACHE_MAX` – maximum number of file entries held in the in-memory LRU cache (default `5000`)
 
 Data subfolders under the selected `dataFolder`:
 
