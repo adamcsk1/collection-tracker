@@ -8,7 +8,7 @@ export const cookieExpiration = {
 
 export const cookieConfig = (): CookieOptions => ({
   httpOnly: true,
-  secure: true,
+  secure: process.env.NODE_ENV === 'production',
   signed: true,
   sameSite: 'strict',
   expires: dayjs()
