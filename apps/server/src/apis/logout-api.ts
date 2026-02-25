@@ -9,16 +9,21 @@ import { API_PREFIX } from '@shared/constants/api-const';
 Store.getOnce$('app').subscribe((app) =>
   app.delete(`${API_PREFIX}/logout`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
-      const token = request.signedCookies[COOKIE_TOKEN];
+      const cookieToken = request.signedCookies[COOKIE_TOKEN];
+      const authorizationToken = request.headers['authorization'];
+      let token = cookieToken || authorizationToken || '';
+      if (token.includes('Bearer ')) token = token.split(' ')[1];
+
       const tokenHash = await hashText(token);
       const users = Store.getLastValue('users');
 
       users[request.usernameHash].accessTokens = users[request.usernameHash].accessTokens.filter(
-        (token) => token.tokenHash !== tokenHash
+        (accessTokens) => accessTokens.tokenHash !== tokenHash
       );
       Store.set('users', users);
 
-      response.clearCookie(COOKIE_TOKEN).sendStatus(204);
+      if (cookieToken) response.clearCookie(COOKIE_TOKEN).sendStatus(204);
+      else response.sendStatus(204);
     } catch (error: unknown) {
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
