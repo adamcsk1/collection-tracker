@@ -24,12 +24,12 @@ describe('delete-api', () => {
   it('deletes existing item', async () => {
     const request: any = { params: { name: 'file.md' }, usernameHash: 'user' };
     const response = mockResponse();
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue('/data');
     (existsSync as Mock).mockReturnValue(true);
 
-    await import('./delete-api');
+    const { register } = await import('./delete-api');
+    register(app);
 
     await handlerPromise();
     expect(removeItem).toHaveBeenCalledWith('file.md', 'user');
@@ -39,12 +39,12 @@ describe('delete-api', () => {
   it('returns 404 when file not found', async () => {
     const request: any = { params: { name: 'missing' }, usernameHash: 'user' };
     const response = mockResponse();
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue('/data');
     (existsSync as Mock).mockReturnValue(false);
 
-    await import('./delete-api');
+    const { register } = await import('./delete-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(404);
@@ -54,13 +54,13 @@ describe('delete-api', () => {
   it('returns 500 on unexpected error', async () => {
     const request: any = { params: { name: 'file.md' }, usernameHash: 'user' };
     const response = mockResponse();
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./delete-api');
+    const { register } = await import('./delete-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

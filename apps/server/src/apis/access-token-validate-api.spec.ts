@@ -33,13 +33,13 @@ describe('access-token-validate-api', () => {
       username: 'user',
       usernameHash: 'userHash',
     };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue(storeValue);
     (Store.set as Mock).mockImplementation(() => undefined);
     const setSpy = vi.spyOn(Store, 'set');
 
-    await import('./access-token-validate-api');
+    const { register } = await import('./access-token-validate-api');
+    register(app);
 
     await handlerPromise();
 
@@ -56,10 +56,10 @@ describe('access-token-validate-api', () => {
       username: 'user',
       usernameHash: 'userHash',
     };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
 
-    await import('./access-token-validate-api');
+    const { register } = await import('./access-token-validate-api');
+    register(app);
 
     await handlerPromise();
 
@@ -74,13 +74,13 @@ describe('access-token-validate-api', () => {
       username: 'user',
       usernameHash: 'userHash',
     };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./access-token-validate-api');
+    const { register } = await import('./access-token-validate-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

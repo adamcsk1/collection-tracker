@@ -30,12 +30,12 @@ describe('sign-in-api', () => {
   it('rejects when user does not exist', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as any).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as any).mockReturnValue({});
     (Store.set as any).mockImplementation(() => undefined);
 
-    await import('./sign-in-api');
+    const { register } = await import('./sign-in-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(404);
@@ -44,14 +44,14 @@ describe('sign-in-api', () => {
   it('rejects when token hash does not match', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as any).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as any).mockReturnValue({
       'hashed-neo': { userTokenHash: 'hashed-other', accessTokens: [] },
     });
     (Store.set as any).mockImplementation(() => undefined);
 
-    await import('./sign-in-api');
+    const { register } = await import('./sign-in-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(401);
@@ -60,8 +60,7 @@ describe('sign-in-api', () => {
   it('sets cookie and prunes expired tokens on success', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: { 'user-agent': 'agent' } };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as any).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as any).mockReturnValue({
       'hashed-neo': {
         userTokenHash: 'hashed-token',
@@ -71,7 +70,8 @@ describe('sign-in-api', () => {
     (Store.set as any).mockImplementation(() => undefined);
     const setSpy = vi.spyOn(Store, 'set');
 
-    await import('./sign-in-api');
+    const { register } = await import('./sign-in-api');
+    register(app);
 
     await handlerPromise();
     expect(response.cookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'access', expect.any(Object));
@@ -83,13 +83,13 @@ describe('sign-in-api', () => {
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as any).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as any).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./sign-in-api');
+    const { register } = await import('./sign-in-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

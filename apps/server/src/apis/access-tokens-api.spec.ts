@@ -14,13 +14,13 @@ describe('access-tokens-api', () => {
   it('returns access tokens for user', async () => {
     const request: any = { usernameHash: 'user' };
     const response = mockResponse();
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue({
       user: { accessTokens: [{ tokenHash: 'abc' }] },
     });
 
-    await import('./access-tokens-api');
+    const { register } = await import('./access-tokens-api');
+    register(app);
 
     await handlerPromise();
 
@@ -30,13 +30,13 @@ describe('access-tokens-api', () => {
   it('returns 500 on unexpected error', async () => {
     const request: any = { usernameHash: 'user' };
     const response = mockResponse();
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('boom');
     });
 
-    await import('./access-tokens-api');
+    const { register } = await import('./access-tokens-api');
+    register(app);
 
     await handlerPromise();
 

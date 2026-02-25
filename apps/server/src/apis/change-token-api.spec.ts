@@ -26,13 +26,13 @@ describe('change-token-api', () => {
   it('rotates user token and sets new cookie', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user', username: 'user', headers: { 'user-agent': 'agent' } };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue({ user: { accessTokens: [] } });
     (Store.set as Mock).mockImplementation(() => undefined);
     const setSpy = vi.spyOn(Store, 'set');
 
-    await import('./change-token-api');
+    const { register } = await import('./change-token-api');
+    register(app);
 
     await handlerPromise();
     expect(setSpy).toHaveBeenCalledWith(
@@ -48,13 +48,13 @@ describe('change-token-api', () => {
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user', username: 'user', headers: { 'user-agent': 'agent' } };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./change-token-api');
+    const { register } = await import('./change-token-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

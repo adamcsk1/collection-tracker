@@ -1,4 +1,3 @@
-import { BehaviorSubject } from 'rxjs';
 import { vi } from 'vitest';
 
 export const buildApp = (request: any, response: any) => {
@@ -23,7 +22,7 @@ export const buildApp = (request: any, response: any) => {
   };
 
   return {
-    app$: new BehaviorSubject(app),
+    app,
     handlerPromise: () => handlerPromise ?? Promise.resolve(),
   };
 };

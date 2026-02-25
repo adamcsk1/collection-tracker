@@ -8,21 +8,21 @@ import { CreateAccessTokenApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/user/access-token`, jwtGuard, async (request: ExtendedRequestModel, response) => {
+  app.post(`${API_PREFIX}/user/access-token`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
       const users = Store.getLastValue('users');
 
       const newAccessToken = generateAccessToken(request.username);
 
       users[request.usernameHash].accessTokens.push(
-        await getUserAccessToken(newAccessToken, request.headers['user-agent'], null)
+        getUserAccessToken(newAccessToken, request.headers['user-agent'], null)
       );
       Store.set('users', users);
 
       const result: CreateAccessTokenApiResponseModel = { accessToken: newAccessToken };
       response.send(result);
     } catch (error: unknown) {
-      if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
+      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
   });
