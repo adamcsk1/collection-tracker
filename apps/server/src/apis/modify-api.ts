@@ -23,7 +23,7 @@ export const register = (app: Application): void => {
 
       await updateItem(name, request.usernameHash, content);
 
-      response.send();
+      response.sendStatus(204);
     } catch (error: unknown) {
       if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);

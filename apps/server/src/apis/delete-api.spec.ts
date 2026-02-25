@@ -33,7 +33,7 @@ describe('delete-api', () => {
 
     await handlerPromise();
     expect(removeItem).toHaveBeenCalledWith('file.md', 'user');
-    expect(response.send).toHaveBeenCalled();
+    expect(response.sendStatus).toHaveBeenCalledWith(204);
   });
 
   it('returns 404 when file not found', async () => {

@@ -37,7 +37,7 @@ describe('modify-api', () => {
     await handlerPromise();
 
     expect(updateItem).toHaveBeenCalledWith('file.md', 'user', 'updated');
-    expect(response.send).toHaveBeenCalled();
+    expect(response.sendStatus).toHaveBeenCalledWith(204);
   });
 
   it('returns 404 when file is missing', async () => {
