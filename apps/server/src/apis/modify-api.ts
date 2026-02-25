@@ -10,7 +10,7 @@ import type { Application } from 'express';
 import { existsSync } from 'fs';
 
 export const register = (app: Application): void => {
-  app.put(`${API_PREFIX}/modify/:name`, jwtGuard, (request: ExtendedRequestModel, response) => {
+  app.put(`${API_PREFIX}/modify/:name`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
       let { name } = request.params;
       name = name.toString().replace(/\\|\//g, '');
@@ -21,11 +21,11 @@ export const register = (app: Application): void => {
         return response.sendStatus(404);
       }
 
-      updateItem(name, request.usernameHash, content);
+      await updateItem(name, request.usernameHash, content);
 
       response.send();
     } catch (error: unknown) {
-      if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
+      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
   });

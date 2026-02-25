@@ -11,7 +11,7 @@ import type { Application } from 'express';
 import { existsSync } from 'fs';
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/create`, jwtGuard, (request: ExtendedRequestModel, response) => {
+  app.post(`${API_PREFIX}/create`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
       const { content } = request.body as CreateApiRequestModel;
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
@@ -21,12 +21,12 @@ export const register = (app: Application): void => {
         return response.sendStatus(409);
       }
 
-      updateItem(name, request.usernameHash, content);
+      await updateItem(name, request.usernameHash, content);
 
       const result: CreateApiResponseModel = { name };
       response.send(result);
     } catch (error: unknown) {
-      if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
+      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
   });

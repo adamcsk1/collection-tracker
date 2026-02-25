@@ -9,7 +9,7 @@ import type { Application } from 'express';
 import { existsSync } from 'fs';
 
 export const register = (app: Application): void => {
-  app.delete(`${API_PREFIX}/delete/:name`, jwtGuard, (request: ExtendedRequestModel, response) => {
+  app.delete(`${API_PREFIX}/delete/:name`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
       let { name } = request.params;
       name = name.toString().replace(/\\|\//g, '');
@@ -19,11 +19,11 @@ export const register = (app: Application): void => {
         return response.sendStatus(404);
       }
 
-      removeItem(name, request.usernameHash);
+      await removeItem(name, request.usernameHash);
 
       response.send();
     } catch (error: unknown) {
-      if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
+      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
   });
