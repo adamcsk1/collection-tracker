@@ -7,8 +7,9 @@ import { Store } from '@server/core/store/store';
 import { getUserAccessToken } from '@server/core/utils/users-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
+import type { Application } from 'express';
 
-Store.getOnce$('app').subscribe((app) =>
+export const register = (app: Application): void => {
   app.get(`${API_PREFIX}/user/access-token/validate`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
       const tokenFrom = !!request.headers['authorization'] ? 'authorization' : 'cookie';
@@ -36,5 +37,5 @@ Store.getOnce$('app').subscribe((app) =>
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
-  })
-);
+  });
+};

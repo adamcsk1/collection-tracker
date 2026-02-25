@@ -1,4 +1,4 @@
-import '@server/apis';
+import { registerAllApis } from '@server/apis';
 import { getArgv } from '@server/core/argv/argv';
 import { debugLog, errorLog, infoLog } from '@server/core/logger';
 import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
@@ -86,7 +86,7 @@ export const main = () => {
     app.use(cookieParser(process.env.COOKIE_SECRET));
     debugLog('Applying cookie parser middleware');
 
-    Store.set('app', app);
+    registerAllApis(app);
 
     app.listen(Number(process.env.PORT), process.env.HOST, () => {
       infoLog(`[ ready ] http://${process.env.HOST}:${process.env.PORT}`);

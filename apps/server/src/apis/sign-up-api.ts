@@ -4,9 +4,10 @@ import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/api-model';
+import type { Application } from 'express';
 import { mkdirSync } from 'fs';
 
-Store.getOnce$('app').subscribe((app) =>
+export const register = (app: Application): void => {
   app.post(`${API_PREFIX}/sign-up`, async (request, response) => {
     try {
       if (Number(process.env.DISABLE_REGISTRATION)) {
@@ -40,5 +41,5 @@ Store.getOnce$('app').subscribe((app) =>
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
-  })
-);
+  });
+};

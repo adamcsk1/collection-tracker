@@ -7,9 +7,10 @@ import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
+import type { Application } from 'express';
 import { existsSync } from 'fs';
 
-Store.getOnce$('app').subscribe((app) =>
+export const register = (app: Application): void => {
   app.post(`${API_PREFIX}/create`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
       const { content } = request.body as CreateApiRequestModel;
@@ -28,5 +29,5 @@ Store.getOnce$('app').subscribe((app) =>
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
-  })
-);
+  });
+};

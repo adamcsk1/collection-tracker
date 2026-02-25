@@ -8,8 +8,9 @@ import { getUserAccessToken } from '@server/core/utils/users-util';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignInApiRequestModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
+import type { Application } from 'express';
 
-Store.getOnce$('app').subscribe((app) =>
+export const register = (app: Application): void => {
   app.post(`${API_PREFIX}/sign-in`, async (request, response) => {
     try {
       const { username, token } = request.body as SignInApiRequestModel;
@@ -38,5 +39,5 @@ Store.getOnce$('app').subscribe((app) =>
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
-  })
-);
+  });
+};

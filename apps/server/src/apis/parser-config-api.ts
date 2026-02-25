@@ -6,8 +6,9 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { MD_TEMPLATE, PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { ParserConfigApiResponseModel } from '@shared/models/api-model';
 import { serializeParserRegexp } from '@shared/utils/parser-serialize-util';
+import type { Application } from 'express';
 
-Store.getOnce$('app').subscribe((app) =>
+export const register = (app: Application): void => {
   app.get(`${API_PREFIX}/parser/config`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
       const parserConfigs = Store.getLastValue('parserConfigs');
@@ -28,5 +29,5 @@ Store.getOnce$('app').subscribe((app) =>
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
-  })
-);
+  });
+};

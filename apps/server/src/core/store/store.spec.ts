@@ -4,7 +4,6 @@ import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const createStore = (): StoreModel => ({
-  app: new BehaviorSubject(null),
   dataFolder: new BehaviorSubject<string | null>('data'),
   users: new BehaviorSubject(null),
   parserConfigs: new BehaviorSubject(null),
@@ -48,7 +47,6 @@ describe('Store', () => {
   it('resets all subjects', () => {
     Store.resetAll();
 
-    expect(Store.getLastValue('app')).toBeNull();
     expect(Store.getLastValue('dataFolder')).toBeNull();
     expect(Store.getLastValue('users')).toBeNull();
     expect(Store.getLastValue('cache')).toBeNull();
