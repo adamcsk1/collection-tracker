@@ -41,7 +41,7 @@ describe('delete-user-api', () => {
 
     expect(setSpy.mock.calls.some(([key]) => key === 'users')).toBe(true);
     expect(rmSync).toHaveBeenCalledWith(expect.stringContaining(FOLDERS.store), { recursive: true, force: true });
-    expect(response.send).toHaveBeenCalled();
+    expect(response.sendStatus).toHaveBeenCalledWith(204);
   });
 
   it('returns 500 on unexpected error', async () => {
