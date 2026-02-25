@@ -23,11 +23,11 @@ describe('logger', () => {
     vi.clearAllMocks();
   });
 
-  it('writes info logs and echoes when debug is true', () => {
+  it('writes info logs and echoes when debug is true', async () => {
     (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: true });
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-    infoLog('hello world');
+    await infoLog('hello world');
 
     const logFiles = readFileSync(
       path.join(tempDir, FOLDERS.logs, `log-${new Date().toISOString().slice(0, 10)}.txt`),
@@ -37,21 +37,21 @@ describe('logger', () => {
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[ info ] hello world'));
   });
 
-  it('skips debug logs when debug flag is false', () => {
+  it('skips debug logs when debug flag is false', async () => {
     (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false });
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-    debugLog('hidden');
+    await debugLog('hidden');
 
     expect(consoleSpy).not.toHaveBeenCalled();
     const logPath = path.join(tempDir, FOLDERS.logs, `log-${new Date().toISOString().slice(0, 10)}.txt`);
     expect(existsSync(logPath)).toBe(false);
   });
 
-  it('writes error logs', () => {
+  it('writes error logs', async () => {
     (getArgv as Mock).mockReturnValue({ dataFolder: tempDir, debug: false });
 
-    errorLog('boom');
+    await errorLog('boom');
 
     const logFiles = readFileSync(
       path.join(tempDir, FOLDERS.logs, `log-${new Date().toISOString().slice(0, 10)}.txt`),

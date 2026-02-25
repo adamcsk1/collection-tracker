@@ -31,10 +31,10 @@ describe('cache-util', () => {
     (global as any).__serverStorage = originalStorage;
   });
 
-  it('updates file contents and cache when updating an item', () => {
+  it('updates file contents and cache when updating an item', async () => {
     const storeSetSpy = vi.spyOn(Store, 'set');
 
-    updateItem('file.txt', 'notes', 'hello');
+    await updateItem('file.txt', 'notes', 'hello');
 
     const filePath = path.join(tempDir, FOLDERS.store, 'notes', 'file.txt');
     expect(readFileSync(filePath, { encoding: 'utf-8' })).toBe('hello');
@@ -42,13 +42,13 @@ describe('cache-util', () => {
     expect(storeSetSpy).toHaveBeenCalledWith('cache', { 'notes-file.txt': 'hello' });
   });
 
-  it('removes file and cache entry when removing an item', () => {
+  it('removes file and cache entry when removing an item', async () => {
     const filePath = path.join(tempDir, FOLDERS.store, 'notes', 'file.txt');
     writeFileSync(filePath, 'to delete');
     Store.set('cache', { 'notes-file.txt': 'cached' });
     const storeSetSpy = vi.spyOn(Store, 'set');
 
-    removeItem('file.txt', 'notes');
+    await removeItem('file.txt', 'notes');
 
     expect(existsSync(filePath)).toBe(false);
     expect(Store.getLastValue('cache')).toEqual({});
