@@ -8,7 +8,7 @@ import type { Application } from 'express';
 import { mkdirSync } from 'fs';
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/sign-up`, async (request, response) => {
+  app.post(`${API_PREFIX}/sign-up`, (request, response) => {
     try {
       if (Number(process.env.DISABLE_REGISTRATION)) {
         return response.sendStatus(403);
@@ -22,7 +22,7 @@ export const register = (app: Application): void => {
         return response.sendStatus(403);
       }
 
-      const usernameHash = await hashText(username);
+      const usernameHash = hashText(username);
 
       if (users[usernameHash]) {
         return response.sendStatus(409);
@@ -30,7 +30,7 @@ export const register = (app: Application): void => {
 
       const userToken = generateRandomToken(username);
 
-      users[usernameHash] = { userTokenHash: await hashText(userToken), accessTokens: [] };
+      users[usernameHash] = { userTokenHash: hashText(userToken), accessTokens: [] };
       Store.set('users', users);
 
       mkdirSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${usernameHash}`, { recursive: true });
@@ -38,7 +38,7 @@ export const register = (app: Application): void => {
       const result: SignUpApiResponseModel = { token: userToken };
       response.send(result);
     } catch (error: unknown) {
-      if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
+      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
   });

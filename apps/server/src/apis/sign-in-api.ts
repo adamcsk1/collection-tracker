@@ -11,23 +11,23 @@ import dayjs from 'dayjs';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/sign-in`, async (request, response) => {
+  app.post(`${API_PREFIX}/sign-in`, (request, response) => {
     try {
       const { username, token } = request.body as SignInApiRequestModel;
       const users = Store.getLastValue('users');
 
-      const usernameHash = await hashText(username);
+      const usernameHash = hashText(username);
 
       if (!users[usernameHash]) return response.sendStatus(404);
 
-      const userTokenHash = await hashText(token);
+      const userTokenHash = hashText(token);
 
       if (users[usernameHash].userTokenHash !== userTokenHash) return response.sendStatus(401);
 
       const cookie = cookieConfig();
       const newAccessToken = generateAccessToken(username, `${cookieExpiration.value} ${cookieExpiration.unit}`);
       users[usernameHash].accessTokens.push(
-        await getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
+        getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
       );
       users[usernameHash].accessTokens = users[usernameHash].accessTokens.filter(
         (token) => token.expiresAt === null || dayjs(token.expiresAt).isAfter(dayjs())
@@ -36,7 +36,7 @@ export const register = (app: Application): void => {
 
       response.cookie(COOKIE_TOKEN, newAccessToken, cookie).send();
     } catch (error: unknown) {
-      if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
+      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
   });

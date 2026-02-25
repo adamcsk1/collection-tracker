@@ -11,7 +11,7 @@ import { ChangeTokenApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
-  app.put(`${API_PREFIX}/user/change-token`, jwtGuard, async (request: ExtendedRequestModel, response) => {
+  app.put(`${API_PREFIX}/user/change-token`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
       const users = Store.getLastValue('users');
 
@@ -23,15 +23,15 @@ export const register = (app: Application): void => {
       );
 
       users[request.usernameHash] = {
-        userTokenHash: await hashText(newUserToken),
-        accessTokens: [await getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)],
+        userTokenHash: hashText(newUserToken),
+        accessTokens: [getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)],
       };
       Store.set('users', users);
 
       const result: ChangeTokenApiResponseModel = { newToken: newUserToken };
       response.cookie(COOKIE_TOKEN, newAccessToken, cookie).send(result);
     } catch (error: unknown) {
-      if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
+      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
   });

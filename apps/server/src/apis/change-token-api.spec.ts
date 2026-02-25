@@ -7,14 +7,14 @@ import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
   generateRandomToken: vi.fn().mockReturnValue('new-user-token'),
-  hashText: vi.fn(async (text: string) => `hashed-${text}`),
+  hashText: vi.fn((text: string) => `hashed-${text}`),
 }));
 vi.mock('@server/core/jwt', () => ({
   generateAccessToken: vi.fn().mockReturnValue('new-access'),
   jwtGuard: vi.fn((_req: any, _res: any, next: any) => next()),
 }));
 vi.mock('@server/core/utils/users-util', () => ({
-  getUserAccessToken: vi.fn(async () => ({ tokenHash: 'hashed-new-access' })),
+  getUserAccessToken: vi.fn(() => ({ tokenHash: 'hashed-new-access' })),
 }));
 
 describe('change-token-api', () => {

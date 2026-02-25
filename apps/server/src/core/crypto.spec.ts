@@ -11,10 +11,10 @@ vi.mock('random-words', () => ({
 }));
 
 describe('crypto', () => {
-  it('hashes text with salt', async () => {
+  it('hashes text with salt', () => {
     process.env.SALT = 'salt';
-    const hash = await hashText('message', 'salt');
-    const hashAgain = await hashText('message', 'salt');
+    const hash = hashText('message', 'salt');
+    const hashAgain = hashText('message', 'salt');
 
     expect(hash).toBe(hashAgain);
     expect(hash).toHaveLength(128);

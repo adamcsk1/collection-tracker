@@ -7,13 +7,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
-  hashText: vi.fn(async (text: string) => `hashed-${text}`),
+  hashText: vi.fn((text: string) => `hashed-${text}`),
 }));
 vi.mock('@server/core/jwt', () => ({
   generateAccessToken: vi.fn().mockReturnValue('access'),
 }));
 vi.mock('@server/core/utils/users-util', () => ({
-  getUserAccessToken: vi.fn(async (_token: string, _agent: string, expires: Date | null) => ({
+  getUserAccessToken: vi.fn((_token: string, _agent: string, expires: Date | null) => ({
     tokenHash: 'hashed-access',
     createdAt: dayjs().toISOString(),
     userAgent: 'agent',

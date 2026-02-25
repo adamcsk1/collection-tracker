@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
   generateRandomToken: vi.fn().mockReturnValue('generated-token'),
-  hashText: vi.fn(async (text: string) => `hashed-${text}`),
+  hashText: vi.fn((text: string) => `hashed-${text}`),
 }));
 vi.mock('fs', async () => {
   const actual = await vi.importActual<typeof import('fs')>('fs');
