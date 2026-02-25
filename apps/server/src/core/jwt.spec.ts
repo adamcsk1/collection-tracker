@@ -42,7 +42,6 @@ describe('jwt utilities', () => {
 
   it('jwtGuard validates token and sets username', async () => {
     const store: StoreModel = {
-      app: new BehaviorSubject(null),
       dataFolder: new BehaviorSubject(null),
       users: new BehaviorSubject<any>({
         ['hashed-user']: { accessTokens: [] },

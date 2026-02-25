@@ -17,7 +17,6 @@ describe('cache-util', () => {
     mkdirSync(path.join(tempDir, FOLDERS.store, 'notes'), { recursive: true });
 
     const store: StoreModel = {
-      app: new BehaviorSubject(null),
       dataFolder: new BehaviorSubject<string | null>(tempDir),
       users: new BehaviorSubject(null),
       parserConfigs: new BehaviorSubject(null),

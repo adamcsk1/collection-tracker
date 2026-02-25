@@ -1,4 +1,6 @@
-import { Store } from '@server/core/store/store';
 import { API_PREFIX } from '@shared/constants/api-const';
+import type { Application } from 'express';
 
-Store.getOnce$('app').subscribe((app) => app.get(`${API_PREFIX}/health`, (req, res) => res.send({ message: 'Ok' })));
+export const register = (app: Application): void => {
+  app.get(`${API_PREFIX}/health`, (req, res) => res.send({ message: 'Ok' }));
+};

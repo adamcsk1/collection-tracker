@@ -5,9 +5,10 @@ import { Store } from '@server/core/store/store';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { GetAllApiResponseModel } from '@shared/models/api-model';
+import type { Application } from 'express';
 import { readdirSync, readFileSync } from 'fs';
 
-Store.getOnce$('app').subscribe((app) =>
+export const register = (app: Application): void => {
   app.get(`${API_PREFIX}/get-all`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
       const limit = Number(request.query.limit) || 10;
@@ -36,5 +37,5 @@ Store.getOnce$('app').subscribe((app) =>
       if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
-  })
-);
+  });
+};
