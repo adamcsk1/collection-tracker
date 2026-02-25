@@ -1,3 +1,4 @@
+import type { Application } from 'express';
 import { vi } from 'vitest';
 
 export const buildApp = (request: any, response: any) => {
@@ -19,7 +20,7 @@ export const buildApp = (request: any, response: any) => {
       const handler = maybeHandler ?? guardOrHandler;
       handlerPromise = Promise.resolve(handler(request, response));
     }),
-  };
+  } as any as Application;
 
   return {
     app,
