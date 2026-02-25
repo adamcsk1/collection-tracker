@@ -15,6 +15,9 @@ export const register = (app: Application): void => {
       }
 
       const { username } = request.body as SignUpApiRequestModel;
+      if (typeof username !== 'string' || !username) {
+        return response.sendStatus(400);
+      }
       const users = Store.getLastValue('users');
 
       const userLimit = Number(process.env.USER_LIMIT);

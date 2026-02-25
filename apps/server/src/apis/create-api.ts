@@ -14,6 +14,9 @@ export const register = (app: Application): void => {
   app.post(`${API_PREFIX}/create`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
       const { content } = request.body as CreateApiRequestModel;
+      if (typeof content !== 'string') {
+        return response.sendStatus(400);
+      }
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
       const name = `${dayjs().toISOString().replaceAll(':', '-').replaceAll('.', '-')}.md`;
 

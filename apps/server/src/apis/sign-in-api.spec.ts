@@ -27,6 +27,18 @@ describe('sign-in-api', () => {
     vi.clearAllMocks();
   });
 
+  it('returns 400 when body is invalid', async () => {
+    const response = mockResponse();
+    const request: any = { body: { username: '', token: 'token' }, headers: {} };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./sign-in-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.sendStatus).toHaveBeenCalledWith(400);
+  });
+
   it('rejects when user does not exist', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };

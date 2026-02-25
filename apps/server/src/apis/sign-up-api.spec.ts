@@ -29,6 +29,19 @@ describe('sign-up-api', () => {
     delete process.env.USER_LIMIT;
   });
 
+  it('returns 400 when username is missing', async () => {
+    const response = mockResponse();
+    const request: any = { body: {} };
+    const { app, handlerPromise } = buildApp(request, response);
+    process.env.DISABLE_REGISTRATION = '0';
+
+    const { register } = await import('./sign-up-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.sendStatus).toHaveBeenCalledWith(400);
+  });
+
   it('returns 403 when registration disabled', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };

@@ -15,6 +15,9 @@ export const register = (app: Application): void => {
       let { name } = request.params;
       name = name.toString().replace(/\\|\//g, '');
       const { content } = request.body as ModifyApiRequestModel;
+      if (typeof content !== 'string') {
+        return response.sendStatus(400);
+      }
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
 
       if (!existsSync(`${storeFolder}/${name}`)) {
