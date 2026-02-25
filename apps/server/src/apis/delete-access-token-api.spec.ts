@@ -14,14 +14,14 @@ describe('delete-access-token-api', () => {
   it('deletes matching access token', async () => {
     const response = mockResponse();
     const request: any = { params: { tokenHash: 'remove' }, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue({
       user: { accessTokens: [{ tokenHash: 'keep' }, { tokenHash: 'remove' }] },
     });
     const setSpy = vi.spyOn(Store, 'set');
 
-    await import('./delete-access-token-api');
+    const { register } = await import('./delete-access-token-api');
+    register(app);
 
     await handlerPromise();
     expect(setSpy).toHaveBeenCalledWith('users', { user: { accessTokens: [{ tokenHash: 'keep' }] } });
@@ -31,13 +31,13 @@ describe('delete-access-token-api', () => {
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
     const request: any = { params: { tokenHash: 'remove' }, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./delete-access-token-api');
+    const { register } = await import('./delete-access-token-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

@@ -27,12 +27,12 @@ describe('create-api', () => {
       body: { content: 'body' },
       usernameHash: 'user',
     };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue('/data');
     (existsSync as Mock).mockReturnValue(false);
 
-    await import('./create-api');
+    const { register } = await import('./create-api');
+    register(app);
 
     await handlerPromise();
     expect(updateItem).toHaveBeenCalled();
@@ -42,12 +42,12 @@ describe('create-api', () => {
   it('returns conflict when file already exists', async () => {
     const response = mockResponse();
     const request: any = { body: { content: 'body' }, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue('/data');
     (existsSync as Mock).mockReturnValue(true);
 
-    await import('./create-api');
+    const { register } = await import('./create-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(409);
@@ -57,13 +57,13 @@ describe('create-api', () => {
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
     const request: any = { body: { content: 'body' }, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./create-api');
+    const { register } = await import('./create-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

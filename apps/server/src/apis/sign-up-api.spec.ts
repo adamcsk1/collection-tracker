@@ -32,11 +32,11 @@ describe('sign-up-api', () => {
   it('returns 403 when registration disabled', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as ReturnType<typeof vi.fn>).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     process.env.DISABLE_REGISTRATION = '1';
 
-    await import('./sign-up-api');
+    const { register } = await import('./sign-up-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(403);
@@ -45,14 +45,14 @@ describe('sign-up-api', () => {
   it('creates user and returns token', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as ReturnType<typeof vi.fn>).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as ReturnType<typeof vi.fn>).mockReturnValueOnce({}).mockReturnValueOnce('/data');
     (Store.set as ReturnType<typeof vi.fn>).mockImplementation(() => undefined);
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '5';
 
-    await import('./sign-up-api');
+    const { register } = await import('./sign-up-api');
+    register(app);
 
     await handlerPromise();
     expect(Store.set).toHaveBeenCalledWith('users', expect.any(Object));
@@ -63,13 +63,13 @@ describe('sign-up-api', () => {
   it('returns 409 when user already exists', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as ReturnType<typeof vi.fn>).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as ReturnType<typeof vi.fn>).mockReturnValue({ 'hashed-neo': {} });
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '5';
 
-    await import('./sign-up-api');
+    const { register } = await import('./sign-up-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(409);
@@ -78,13 +78,13 @@ describe('sign-up-api', () => {
   it('returns 403 when user limit reached', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as ReturnType<typeof vi.fn>).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as ReturnType<typeof vi.fn>).mockReturnValue({ existing: {} });
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '0';
 
-    await import('./sign-up-api');
+    const { register } = await import('./sign-up-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(403);
@@ -93,15 +93,15 @@ describe('sign-up-api', () => {
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as ReturnType<typeof vi.fn>).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as ReturnType<typeof vi.fn>).mockImplementation(() => {
       throw new Error('fail');
     });
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '5';
 
-    await import('./sign-up-api');
+    const { register } = await import('./sign-up-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

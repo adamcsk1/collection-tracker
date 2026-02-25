@@ -9,7 +9,7 @@ vi.mock('@server/core/jwt', () => ({
   jwtGuard: vi.fn((_req: any, _res: any, next: any) => next()),
 }));
 vi.mock('@server/core/utils/users-util', () => ({
-  getUserAccessToken: vi.fn(async () => ({ tokenHash: 'hashed-access' })),
+  getUserAccessToken: vi.fn(() => ({ tokenHash: 'hashed-access' })),
 }));
 
 describe('create-access-token-api', () => {
@@ -21,13 +21,13 @@ describe('create-access-token-api', () => {
   it('creates a new access token and stores it', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user', username: 'user', headers: { 'user-agent': 'agent' } };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue({ user: { accessTokens: [] } });
     (Store.set as Mock).mockImplementation(() => undefined);
     const setSpy = vi.spyOn(Store, 'set');
 
-    await import('./create-access-token-api');
+    const { register } = await import('./create-access-token-api');
+    register(app);
 
     await handlerPromise();
 
@@ -38,13 +38,13 @@ describe('create-access-token-api', () => {
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user', username: 'user', headers: { 'user-agent': 'agent' } };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./create-access-token-api');
+    const { register } = await import('./create-access-token-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

@@ -7,7 +7,11 @@ const getLogFileName = (): string => `log-${dayjs().format('YYYY-MM-DD')}.txt`;
 
 const writeLog = async (message: string): Promise<void> => {
   const { dataFolder } = getArgv();
-  await appendFile(`${dataFolder}/${FOLDERS.logs}/${getLogFileName()}`, `${message}\n`, { encoding: 'utf-8' });
+  try {
+    await appendFile(`${dataFolder}/${FOLDERS.logs}/${getLogFileName()}`, `${message}\n`, { encoding: 'utf-8' });
+  } catch {
+    // log write failures must not propagate
+  }
 };
 
 const infoLog = async (message: string): Promise<void> => {

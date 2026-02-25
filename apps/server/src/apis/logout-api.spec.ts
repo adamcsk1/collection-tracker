@@ -16,13 +16,13 @@ describe('logout-api', () => {
 
   it('clears cookie and returns 204', async () => {
     const response = mockResponse();
-    const request: any = { signedCookies: { CT: 'token' }, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const request: any = { signedCookies: { 'CT.Token': 'token' }, headers: {}, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue({ user: { accessTokens: [{ tokenHash: 'hashed-token' }] } });
     (Store.set as Mock).mockImplementation(() => undefined);
 
-    await import('./logout-api');
+    const { register } = await import('./logout-api');
+    register(app);
 
     await handlerPromise();
 
@@ -32,14 +32,14 @@ describe('logout-api', () => {
 
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
-    const request: any = { signedCookies: { CT: 'token' }, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const request: any = { signedCookies: { 'CT.Token': 'token' }, headers: {}, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./logout-api');
+    const { register } = await import('./logout-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

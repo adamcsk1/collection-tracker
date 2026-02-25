@@ -23,14 +23,14 @@ describe('get-all-api', () => {
   it('returns cached contents without rereading files', async () => {
     const response = mockResponse();
     const request: any = { query: { limit: '2', offset: '0' }, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock)
       .mockReturnValueOnce('/data') // dataFolder
       .mockReturnValueOnce({ 'user-file1': 'cached' }); // cache
     (readdirSync as Mock).mockReturnValue(['file1']);
 
-    await import('./get-all-api');
+    const { register } = await import('./get-all-api');
+    register(app);
 
     await handlerPromise();
 
@@ -40,14 +40,14 @@ describe('get-all-api', () => {
   it('reads uncached files and updates cache', async () => {
     const response = mockResponse();
     const request: any = { query: { limit: '2', offset: '0' }, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValueOnce('/data').mockReturnValueOnce({}); // cache
     (Store.set as Mock).mockImplementation((_key: string, value: any) => value);
     (readdirSync as Mock).mockReturnValue(['file1']);
     (readFileSync as Mock).mockReturnValue('content');
 
-    await import('./get-all-api');
+    const { register } = await import('./get-all-api');
+    register(app);
 
     await handlerPromise();
 
@@ -58,13 +58,13 @@ describe('get-all-api', () => {
   it('sends 500 on error', async () => {
     const response = mockResponse();
     const request: any = { query: {}, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./get-all-api');
+    const { register } = await import('./get-all-api');
+    register(app);
 
     await handlerPromise();
 

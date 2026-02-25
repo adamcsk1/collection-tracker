@@ -24,15 +24,15 @@ describe('modify-api', () => {
   it('updates an existing item', async () => {
     const response = mockResponse();
     const request: any = { params: { name: 'file.md' }, body: { content: 'updated' }, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue('/data');
     (existsSync as Mock).mockReturnValue(true);
     (Store.set as Mock).mockImplementation(() => undefined);
     (updateItem as Mock).mockImplementation(() => undefined);
     (response.sendStatus as Mock).mockReturnValue(response);
 
-    await import('./modify-api');
+    const { register } = await import('./modify-api');
+    register(app);
 
     await handlerPromise();
 
@@ -43,12 +43,12 @@ describe('modify-api', () => {
   it('returns 404 when file is missing', async () => {
     const request: any = { params: { name: 'missing.md' }, body: { content: 'updated' }, usernameHash: 'user' };
     const response = mockResponse();
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue('/data');
     (existsSync as Mock).mockReturnValue(false);
 
-    await import('./modify-api');
+    const { register } = await import('./modify-api');
+    register(app);
 
     await handlerPromise();
 
@@ -59,13 +59,13 @@ describe('modify-api', () => {
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
     const request: any = { params: { name: 'file.md' }, body: { content: 'updated' }, usernameHash: 'user' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./modify-api');
+    const { register } = await import('./modify-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);

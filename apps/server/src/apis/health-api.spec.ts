@@ -8,10 +8,10 @@ vi.mock('@server/core/store/store');
 describe('health-api', () => {
   it('responds with Ok', async () => {
     const response = mockResponse();
-    const { app$ } = buildApp({}, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app } = buildApp({}, response);
 
-    await import('./health-api');
+    const { register } = await import('./health-api');
+    register(app);
 
     expect(response.send).toHaveBeenCalledWith({ message: 'Ok' });
   });

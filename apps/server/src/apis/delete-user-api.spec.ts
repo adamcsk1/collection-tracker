@@ -24,8 +24,7 @@ describe('delete-user-api', () => {
   it('removes user and clears data folder', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user-hash' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock)
       .mockReturnValueOnce('/data') // dataFolder
       .mockReturnValueOnce({}) // cache
@@ -35,7 +34,8 @@ describe('delete-user-api', () => {
     (Store.set as Mock).mockImplementation(() => undefined);
     const setSpy = vi.spyOn(Store, 'set');
 
-    await import('./delete-user-api');
+    const { register } = await import('./delete-user-api');
+    register(app);
 
     await handlerPromise();
 
@@ -47,13 +47,13 @@ describe('delete-user-api', () => {
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user-hash' };
-    const { app$, handlerPromise } = buildApp(request, response);
-    (Store.getOnce$ as Mock).mockReturnValue(app$);
+    const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');
     });
 
-    await import('./delete-user-api');
+    const { register } = await import('./delete-user-api');
+    register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(500);
