@@ -2,6 +2,7 @@ import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { setCacheEntry } from '@server/core/utils/cache-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { GetAllApiResponseModel } from '@shared/models/api-model';
@@ -22,12 +23,9 @@ export const register = (app: Application): void => {
       const result: GetAllApiResponseModel = [];
       for (const file of files) {
         const cacheKey = `${request.usernameHash}-${file}`;
-        if (!!cache[cacheKey]) result.push({ name: file, content: cache[cacheKey] });
-        else {
-          const content = readFileSync(`${storeFolder}/${file}`, 'utf-8');
-          result.push({ name: file, content });
-          cache[cacheKey] = content;
-        }
+        const content = cache[cacheKey] ?? readFileSync(`${storeFolder}/${file}`, 'utf-8');
+        setCacheEntry(cache, cacheKey, content);
+        result.push({ name: file, content });
       }
 
       Store.set('cache', cache);
