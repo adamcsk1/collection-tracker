@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
-  hashText: vi.fn(async (text: string) => `hashed-${text}`),
+  hashText: vi.fn((text: string) => `hashed-${text}`),
 }));
 
 describe('jwt utilities', () => {

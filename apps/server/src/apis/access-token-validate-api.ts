@@ -10,20 +10,20 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
-  app.get(`${API_PREFIX}/user/access-token/validate`, jwtGuard, async (request: ExtendedRequestModel, response) => {
+  app.get(`${API_PREFIX}/user/access-token/validate`, jwtGuard, (request: ExtendedRequestModel, response) => {
     try {
       const tokenFrom = !!request.headers['authorization'] ? 'authorization' : 'cookie';
       const users = Store.getLastValue('users');
 
       if (tokenFrom === 'cookie') {
-        const tokenHash = await hashText(request.signedCookies[COOKIE_TOKEN]);
+        const tokenHash = hashText(request.signedCookies[COOKIE_TOKEN]);
         const cookie = cookieConfig();
         const newAccessToken = generateAccessToken(
           request.username,
           `${cookieExpiration.value} ${cookieExpiration.unit}`
         );
         users[request.usernameHash].accessTokens.push(
-          await getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
+          getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
         );
 
         users[request.usernameHash].accessTokens = users[request.usernameHash].accessTokens.filter(
@@ -34,7 +34,7 @@ export const register = (app: Application): void => {
         response.cookie(COOKIE_TOKEN, newAccessToken, cookie).sendStatus(204);
       } else response.sendStatus(204);
     } catch (error: unknown) {
-      if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
+      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
       response.sendStatus(500);
     }
   });

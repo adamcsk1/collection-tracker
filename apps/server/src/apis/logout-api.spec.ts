@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
-  hashText: vi.fn(async () => 'hashed-token'),
+  hashText: vi.fn(() => 'hashed-token'),
 }));
 
 describe('logout-api', () => {
