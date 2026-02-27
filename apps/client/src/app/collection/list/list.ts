@@ -5,7 +5,6 @@ import {
   effect,
   ElementRef,
   inject,
-  signal,
   viewChild,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -13,6 +12,7 @@ import { collectionStateToken } from '@client/collection/collection-store';
 import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
 import { ListItemSkeleton } from '@client/collection/list/list-item-skeleton/list-item-skeleton';
 import { ListItem } from '@client/collection/list/list-item/list-item';
+import { PaginationService } from '@client/collection/list/pagination/pagination-service';
 import { NewItemDialog } from '@client/collection/new-item-dialog/new-item-dialog';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { mainStateToken } from '@client/main/main-store';
@@ -29,6 +29,7 @@ import { debounceTime, startWith } from 'rxjs';
   imports: [NgxSignalTranslatePipe, ListItem, ListItemSkeleton],
   templateUrl: './list.html',
   styleUrl: './list.css',
+  providers: [PaginationService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class List {
@@ -37,6 +38,7 @@ export class List {
   private readonly apiState = inject(apiStateToken);
   private readonly collectionState = inject(collectionStateToken);
   private readonly portal = inject(PortalService);
+  private readonly pagination = inject(PaginationService);
   private readonly debouncedSearchText = toSignal(
     toObservable(this.collectionState.state.searchText).pipe(startWith(''), debounceTime(100))
   );
@@ -56,21 +58,18 @@ export class List {
       return collectionItem.rawContent.toLowerCase().includes(lowerCasedSearchText);
     });
   });
-  private readonly limit = 150;
-  private readonly lastPageItem = computed(() => this.offset() + this.limit);
-  protected readonly paginatedCollection = computed(() => {
-    const filteredCollection = this.filteredCollection();
-    return filteredCollection.slice(this.offset(), this.lastPageItem());
-  });
-  protected readonly disablePreviousButton = computed(() => this.offset() === 0);
-  protected readonly disableNextButton = computed(() => this.filteredCollection().length - 1 <= this.lastPageItem());
-  protected readonly offset = signal(0);
+  protected readonly paginatedCollection = this.pagination.paginatedItems;
+  protected readonly disablePreviousButton = this.pagination.disablePrevious;
+  protected readonly disableNextButton = this.pagination.disableNext;
+  protected readonly offset = this.pagination.offset;
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly collectionLength = computed(() => this.mainCollectionState.state.collection().length);
   protected readonly permissionAdd = computed(() => this.mainState.state.permissions().create);
 
   constructor() {
+    this.pagination.setCollectionSource(this.filteredCollection);
+
     effect(() => {
       this.collectionState.state.searchText();
       this.resetScrollPosition();
@@ -89,26 +88,22 @@ export class List {
   }
 
   protected onFirstPage(): void {
-    this.offset.set(0);
+    this.pagination.firstPage();
     this.resetScrollPosition();
   }
 
   protected onPreviousPage(): void {
-    this.offset.update((state) => (state -= this.limit));
-    if (this.offset() < 0) this.offset.set(0);
+    this.pagination.previousPage();
     this.resetScrollPosition();
   }
 
   protected onNextPage(): void {
-    const filteredCollectionLength = this.filteredCollection().length - 1;
-    this.offset.update((state) => (state += this.limit));
-    if (this.lastPageItem() >= filteredCollectionLength) this.offset.set(filteredCollectionLength);
+    this.pagination.nextPage();
     this.resetScrollPosition();
   }
 
   protected onLastPage(): void {
-    const filteredCollectionLength = this.filteredCollection().length - 1;
-    this.offset.set(filteredCollectionLength);
+    this.pagination.lastPage();
     this.resetScrollPosition();
   }
 

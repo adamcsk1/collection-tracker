@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/cor
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ParserModel } from '@client/parser/parser-model';
 import { ParserService } from '@client/parser/parser-service';
+import { TemplateRegenerationService } from '@client/parser/template-regeneration-service';
 import { mdTemplateValidator } from '@client/parser/validators/md-template-validator';
 import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
@@ -18,7 +19,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   selector: 'ct-parser',
   imports: [ReactiveFormsModule, NgxSignalTranslatePipe, Textarea, Input, Details],
   templateUrl: './parser.html',
-  providers: [ParserService, MdContentGeneratorService, OMDbService],
+  providers: [ParserService, TemplateRegenerationService, MdContentGeneratorService, OMDbService],
   host: {
     class: 'page',
   },
