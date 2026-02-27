@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { CollectionItemModel } from '@client/collection/collection-model';
-import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
 import { collectionStateToken } from '@client/collection/collection-store';
+import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
 import { PortalService } from '@services/portal-service';
 
 @Component({
