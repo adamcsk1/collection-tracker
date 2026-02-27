@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { searchCollection } from '@client/collection/utils/search-collection-util';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { mainStateToken } from '@client/main/main-store';
 import { affordableFuzzySearch, fuzzySearch } from '@shared/utils/fuzzy-search-util';
@@ -26,38 +27,36 @@ export class TagSuggestionService {
   }
 
   private fuzzySearch(tags: Array<string>, text: string, limit: number): Array<string> {
-    const fuzzyMatchedItems: Set<string> = new Set([]);
-
-    for (const item of this.appCollectionState.state.collection()) {
-      for (const tag of item.tags) {
-        if (['#movie', '#series'].includes(tag) || tags.includes(tag)) continue;
-        const matchResults = fuzzySearch(text, tag, 1) || [];
-        if (matchResults.length > 0) {
-          fuzzyMatchedItems.add(tag);
-          break;
+    return this.formatResult(
+      searchCollection(this.appCollectionState.state.collection(), limit, (item, results) => {
+        for (const tag of item.tags) {
+          if (['#movie', '#series'].includes(tag) || tags.includes(tag)) continue;
+          const matchResults = fuzzySearch(text, tag, 1) || [];
+          if (matchResults.length > 0) {
+            results.add(tag);
+            break;
+          }
         }
-      }
-      if (fuzzyMatchedItems.size >= limit) break;
-    }
-
-    return this.formatResult(fuzzyMatchedItems, tags, limit);
+      }),
+      tags,
+      limit
+    );
   }
 
   private standardSearch(tags: Array<string>, text: string, limit: number): Array<string> {
-    const matchedItems: Set<string> = new Set([]);
-
-    for (const item of this.appCollectionState.state.collection()) {
-      for (const tag of item.tags) {
-        if (['#movie', '#series'].includes(tag) || tags.includes(tag)) continue;
-        if (tag.startsWith(text)) {
-          matchedItems.add(tag);
-          break;
+    return this.formatResult(
+      searchCollection(this.appCollectionState.state.collection(), limit, (item, results) => {
+        for (const tag of item.tags) {
+          if (['#movie', '#series'].includes(tag) || tags.includes(tag)) continue;
+          if (tag.startsWith(text)) {
+            results.add(tag);
+            break;
+          }
         }
-      }
-      if (matchedItems.size >= limit) break;
-    }
-
-    return this.formatResult(matchedItems, tags, limit);
+      }),
+      tags,
+      limit
+    );
   }
 
   private formatResult(matchedItems: Set<string>, tags: Array<string>, limit: number): Array<string> {

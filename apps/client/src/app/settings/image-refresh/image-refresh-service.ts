@@ -33,9 +33,7 @@ export class ImageRefreshService {
   public readonly state = this._state.asReadonly();
 
   public refreshImages(): void {
-    this.confirm.open(this.ngxSignalTranslate.translate('Confirm.ImageRefresh')).subscribe((confirmed) => {
-      if (!confirmed) return;
-
+    this.confirm.ifConfirmed(this.ngxSignalTranslate.translate('Confirm.ImageRefresh')).subscribe(() => {
       this._state.set({
         running: true,
         count: this.mainCollectionState.state.collection().length,

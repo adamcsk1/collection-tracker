@@ -1,16 +1,13 @@
 import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CanActivateFn } from '@angular/router';
-import { redirectToLogin } from '@client/main/main-util';
+import { LogoutService } from '@client/main/logout-service';
 import { MainService } from '@client/main/main-service';
-import { mainStateToken } from '@client/main/main-store';
-import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { debounceTime, Observable, of } from 'rxjs';
 
 export const mainGuard: CanActivateFn = (): Observable<boolean> => {
   const main = inject(MainService);
-  const webstorage = inject(WebstorageService);
-  const mainState = inject(mainStateToken);
+  const logout = inject(LogoutService);
 
   if (main.tokenValid()) return of(true);
 
@@ -24,8 +21,7 @@ export const mainGuard: CanActivateFn = (): Observable<boolean> => {
   main.loadStoredData();
 
   if (!main.hasRequiredConfig()) {
-    if (mainState.state.clearLocalStorageAfterLogout()) webstorage.clear();
-    redirectToLogin();
+    logout.performLogout();
     return of(false);
   } else {
     main.validateAccessToken();

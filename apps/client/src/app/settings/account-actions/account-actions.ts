@@ -8,7 +8,7 @@ import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { delay, filter, tap } from 'rxjs';
+import { delay, tap } from 'rxjs';
 
 @Component({
   selector: 'ct-account-actions',
@@ -28,11 +28,8 @@ export class AccountActions {
 
   protected onCreateNewUserToken(): void {
     this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.CreateNewUserToken'))
-      .pipe(
-        filter((confirm) => confirm === true),
-        takeUntilDestroyed(this.destroyRef)
-      )
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.CreateNewUserToken'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.api
           .createNewUserToken()
@@ -50,11 +47,8 @@ export class AccountActions {
 
   protected onDeleteUser(): void {
     this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.DeleteUser'))
-      .pipe(
-        filter((confirm) => confirm === true),
-        takeUntilDestroyed(this.destroyRef)
-      )
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.DeleteUser'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.api
           .deleteUser()
