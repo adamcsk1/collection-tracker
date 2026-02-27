@@ -1,0 +1,39 @@
+import { effect, inject, Injectable, Injector } from '@angular/core';
+import { Router } from '@angular/router';
+import { CollectionService } from '@client/collection/collection-service';
+import { MainService } from '@client/main/main-service';
+import { redirectToLogin } from '@client/main/main-util';
+import { omdbStateToken } from '@services/omdb/omdb-store';
+import { ParserService } from '@services/parser/parser-service';
+
+@Injectable({ providedIn: 'root' })
+export class TokenValidationService {
+  private readonly main = inject(MainService);
+  private readonly omdbState = inject(omdbStateToken);
+  private readonly router = inject(Router);
+  private readonly collection = inject(CollectionService);
+  private readonly parser = inject(ParserService);
+  private readonly injector = inject(Injector);
+
+  public startValidation(): void {
+    const effectRef = effect(
+      () => {
+        const tokenValidated = this.main.tokenValid();
+        if (tokenValidated) {
+          if (!this.omdbState.state.apiKey()) this.router.navigate(['settings']);
+          this.parser.preloadUserParserConfig().subscribe(() => this.collection.loadCollection());
+          effectRef.destroy();
+        } else if (tokenValidated === false) {
+          redirectToLogin();
+          effectRef.destroy();
+        }
+      },
+      { injector: this.injector }
+    );
+
+    if (this.main.tokenValid() === false) {
+      redirectToLogin();
+      effectRef.destroy();
+    }
+  }
+}
