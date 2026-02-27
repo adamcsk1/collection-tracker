@@ -87,8 +87,7 @@ export class ParserService {
   }
 
   public regenerateTemplates(): void {
-    this.confirm.open(this.ngxSignalTranslate.translate('Confirm.TemplateRegeneration')).subscribe((confirmed) => {
-      if (!confirmed) return;
+    this.confirm.ifConfirmed(this.ngxSignalTranslate.translate('Confirm.TemplateRegeneration')).subscribe(() => {
       this.blockerLoadingState.patchState('withoutDelay', true);
       this.blockerLoadingState.patchState('show', true);
 

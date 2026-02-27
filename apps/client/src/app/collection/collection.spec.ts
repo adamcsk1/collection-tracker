@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collection } from './collection';
 
@@ -18,6 +20,7 @@ describe('Collection component', () => {
       providers: [
         provideStore(initialCollectionState, collectionStateToken),
         { provide: AutocompleteService, useValue: { search: vi.fn() } },
+        { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
       ],
     });
 

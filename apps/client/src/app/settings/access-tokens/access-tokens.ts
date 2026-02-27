@@ -42,10 +42,9 @@ export class AccessTokens implements OnInit {
 
   protected onCreateAccessToken(): void {
     this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.CreateNewAccessToken'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.CreateNewAccessToken'))
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((confirm) => {
-        if (confirm !== true) return;
+      .subscribe(() => {
         this.api
           .createAccessToken()
           .pipe(takeUntilDestroyed(this.destroyRef))

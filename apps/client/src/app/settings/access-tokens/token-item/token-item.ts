@@ -22,10 +22,8 @@ export class TokenItem {
 
   protected onRevokeAccessToken(tokenHash: string): void {
     this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.RevokeAccessToken'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RevokeAccessToken'))
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((confirm) => {
-        if (confirm) this.revokeAccessToken.emit(tokenHash);
-      });
+      .subscribe(() => this.revokeAccessToken.emit(tokenHash));
   }
 }

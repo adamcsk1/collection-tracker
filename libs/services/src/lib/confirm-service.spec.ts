@@ -35,4 +35,24 @@ describe('ConfirmService', () => {
     expect(confirmSpy).toHaveBeenCalledWith('Are you sure?');
     expect(result).toBe(false);
   });
+
+  describe('ifConfirmed', () => {
+    it('emits when user confirms', async () => {
+      confirmSpy.mockReturnValue(true);
+
+      const result = await firstValueFrom(service.ifConfirmed('Delete item?'));
+
+      expect(confirmSpy).toHaveBeenCalledWith('Delete item?');
+      expect(result).toBe(true);
+    });
+
+    it('does not emit when user cancels', async () => {
+      confirmSpy.mockReturnValue(false);
+      const subscriber = vi.fn();
+
+      service.ifConfirmed('Delete item?').subscribe(subscriber);
+
+      expect(subscriber).not.toHaveBeenCalled();
+    });
+  });
 });
