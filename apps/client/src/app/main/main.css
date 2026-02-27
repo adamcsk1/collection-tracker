@@ -15,4 +15,5 @@ ct-header {
   max-height: calc(100vh - var(--header-height));
   max-height: calc(100svh - var(--header-height));
   max-height: calc(100dvh - var(--header-height));
+  z-index: 1;
 }
