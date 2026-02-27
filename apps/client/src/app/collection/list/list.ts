@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  ElementRef,
-  inject,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, viewChild } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { collectionStateToken } from '@client/collection/collection-store';
 import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
@@ -47,11 +39,11 @@ export class List {
     const lowerCasedSearchText = searchText.toLowerCase();
     this.resetScrollPosition();
     const isExactIMDbId = searchText.match(EXACT_IMDB_ID_REGEXP) !== null;
-    const isTag = searchText.startsWith('#');
+    const isTagSearchQuery = searchText.startsWith('#');
 
     return this.mainCollectionState.state.collection().filter((collectionItem) => {
       if (isExactIMDbId) return collectionItem.IMDbId === searchText;
-      else if (isTag) return collectionItem.tags.includes(searchText);
+      else if (isTagSearchQuery) return collectionItem.tags.includes(searchText);
       else if (this.mainState.state.searchMode() === 'fuzzy' && affordableFuzzySearch(lowerCasedSearchText)) {
         return (fuzzySearch(lowerCasedSearchText, collectionItem.rawContent.toLowerCase()) || []).length > 0;
       }

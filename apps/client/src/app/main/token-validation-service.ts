@@ -16,16 +16,16 @@ export class TokenValidationService {
   private readonly injector = inject(Injector);
 
   public startValidation(): void {
-    const effectRef = effect(
+    const tokenValidationEffect = effect(
       () => {
         const tokenValidated = this.main.tokenValid();
         if (tokenValidated) {
           if (!this.omdbState.state.apiKey()) this.router.navigate(['settings']);
           this.parser.preloadUserParserConfig().subscribe(() => this.collection.loadCollection());
-          effectRef.destroy();
+          tokenValidationEffect.destroy();
         } else if (tokenValidated === false) {
           redirectToLogin();
-          effectRef.destroy();
+          tokenValidationEffect.destroy();
         }
       },
       { injector: this.injector }
@@ -33,7 +33,7 @@ export class TokenValidationService {
 
     if (this.main.tokenValid() === false) {
       redirectToLogin();
-      effectRef.destroy();
+      tokenValidationEffect.destroy();
     }
   }
 }
