@@ -79,7 +79,7 @@ describe('MainService', () => {
         case STORAGE_ANIMATED_BACKGROUND:
           return 'false';
         case STORAGE_LANGUAGE:
-          return 'es';
+          return 'en';
         default:
           return null;
       }
@@ -97,9 +97,38 @@ describe('MainService', () => {
     expect(mainState.state.sensitiveDataStorage()).toBe('session');
     expect(mainState.state.clearLocalStorageAfterLogout()).toBe(true);
     expect(mainState.state.animatedBackground()).toBe(false);
-    expect(mainState.state.language()).toBe('es');
+    expect(mainState.state.language()).toBe('en');
     expect(mainState.state.searchMode()).toBe('fuzzy');
     expect(setPermissionsSpy).toHaveBeenCalled();
+  });
+
+  it('ignores invalid union values from storage', () => {
+    webstorage.getItem.mockImplementation((key: string) => {
+      switch (key) {
+        case STORAGE_APP_MODE:
+          return 'invalid';
+        case STORAGE_SEARCH_MODE:
+          return 'invalid';
+        case STORAGE_THEME:
+          return 'invalid';
+        case STORAGE_SENSITIVE_DATA_STORAGE:
+          return 'invalid';
+        case STORAGE_LANGUAGE:
+          return 'es';
+        default:
+          return null;
+      }
+    });
+    const setPermissionsSpy = vi.spyOn(service, 'setPermissions');
+
+    service.loadStoredData();
+
+    expect(mainState.state.appMode()).toBe(initialMainState.appMode);
+    expect(mainState.state.searchMode()).toBe(initialMainState.searchMode);
+    expect(themeState.state.theme()).toBe(initialThemeState.theme);
+    expect(mainState.state.sensitiveDataStorage()).toBe(initialMainState.sensitiveDataStorage);
+    expect(mainState.state.language()).toBe(initialMainState.language);
+    expect(setPermissionsSpy).not.toHaveBeenCalled();
   });
 
   it('sets permissions based on app mode', () => {

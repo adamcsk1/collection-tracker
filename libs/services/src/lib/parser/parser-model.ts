@@ -11,4 +11,8 @@ export interface ParserCacheModel {
   mdTemplate?: string;
 }
 
-export type WindowParserCacheModel = typeof window & { __parserCache: ParserCacheModel };
+declare global {
+  interface Window {
+    __parserCache?: ParserCacheModel;
+  }
+}

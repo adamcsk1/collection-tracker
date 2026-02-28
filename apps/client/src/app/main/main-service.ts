@@ -1,9 +1,10 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { mainStateToken } from '@client/main/main-store';
-import { SettingsModel } from '@client/settings/settings-model';
+import { APP_MODES, SEARCH_MODES, SENSITIVE_DATA_STORAGE_MODES } from '@client/settings/settings-const';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { omdbStateToken } from '@services/omdb/omdb-store';
+import { THEMES } from '@services/theme/theme-const';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
@@ -19,7 +20,8 @@ import {
   STORAGE_SETTINGS_LOCK,
   STORAGE_THEME,
 } from '@shared/constants/storage-const';
-import { LanguageModel } from '@shared/models/language-model';
+import { LANGUAGES } from '@shared/models/language-model';
+import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { catchError, EMPTY } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
@@ -37,17 +39,18 @@ export class MainService {
   public loadStoredData(): void {
     const apiUrl = this.webstorage.getItem(STORAGE_API_URL);
     const omdbApiKey = this.webstorage.getItem(STORAGE_OMDB_API_KEY);
-    const appMode = this.webstorage.getItem(STORAGE_APP_MODE) as SettingsModel['appMode'];
-    const searchMode = this.webstorage.getItem(STORAGE_SEARCH_MODE) as SettingsModel['searchMode'];
+    const appMode = parseAllowedValue(this.webstorage.getItem(STORAGE_APP_MODE), APP_MODES);
+    const searchMode = parseAllowedValue(this.webstorage.getItem(STORAGE_SEARCH_MODE), SEARCH_MODES);
     const settingsLock = this.webstorage.getItem(STORAGE_SETTINGS_LOCK) === 'true';
     const fetchBatchSize = this.webstorage.getItem(STORAGE_FETCH_BATCH_SIZE);
-    const theme = this.webstorage.getItem(STORAGE_THEME) as SettingsModel['theme'];
-    const sensitiveDataStorage = this.webstorage.getItem(
-      STORAGE_SENSITIVE_DATA_STORAGE
-    ) as SettingsModel['sensitiveDataStorage'];
+    const theme = parseAllowedValue(this.webstorage.getItem(STORAGE_THEME), THEMES);
+    const sensitiveDataStorage = parseAllowedValue(
+      this.webstorage.getItem(STORAGE_SENSITIVE_DATA_STORAGE),
+      SENSITIVE_DATA_STORAGE_MODES
+    );
     const clearLocalStorageAfterLogout = this.webstorage.getItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT) === 'true';
     const animatedBackground = this.webstorage.getItem(STORAGE_ANIMATED_BACKGROUND) !== 'false';
-    const language = this.webstorage.getItem(STORAGE_LANGUAGE);
+    const language = parseAllowedValue(this.webstorage.getItem(STORAGE_LANGUAGE), LANGUAGES);
 
     if (apiUrl) this.apiState.setState('apiUrl', apiUrl);
     if (omdbApiKey) this.omdbState.setState('apiKey', omdbApiKey);
@@ -58,7 +61,7 @@ export class MainService {
     if (fetchBatchSize) this.apiState.setState('fetchBatchSize', Number(fetchBatchSize));
     if (theme) this.themeState.setState('theme', theme);
     if (sensitiveDataStorage) this.mainState.setState('sensitiveDataStorage', sensitiveDataStorage);
-    if (language) this.mainState.setState('language', language as LanguageModel);
+    if (language) this.mainState.setState('language', language);
     if (appMode) this.mainState.setState('appMode', appMode);
     if (searchMode) this.mainState.setState('searchMode', searchMode);
 

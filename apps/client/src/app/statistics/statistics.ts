@@ -33,7 +33,7 @@ export class Statistics implements AfterViewInit {
         .sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0))
     ),
   ]);
-  protected readonly chart = signal<Chart<'pie', (number | [number, number] | null)[], never> | null>(null);
+  protected readonly chart = signal<Chart<'pie', number[], string> | null>(null);
   protected readonly selectedTags = signal<Array<string>>([]);
   protected readonly summary = computed<StatisticsSummaryModel>(() => {
     const collection = this.mainCollectionState.state.collection();
@@ -78,7 +78,7 @@ export class Statistics implements AfterViewInit {
   private updateChartData(): void {
     const collection = this.mainCollectionState.state.collection();
     const chart = this.chart();
-    chart!.data.labels = this.selectedTags() as Array<never>;
+    chart!.data.labels = this.selectedTags();
     const data: Array<number> = [];
 
     for (const tag of this.selectedTags()) {

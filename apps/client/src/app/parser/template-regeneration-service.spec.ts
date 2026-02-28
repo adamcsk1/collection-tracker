@@ -14,18 +14,17 @@ import { provideStore } from 'ngx-simple-signal-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const buildCollectionItem = (name: string) =>
-  ({
-    name,
-    IMDbId: `tt${name}`,
-    rawContent: `raw-${name}`,
-    title: name,
-    image: '',
-    genre: [],
-    tags: [],
-    year: null,
-    rate: '',
-  }) as CollectionModel[number];
+const buildCollectionItem = (name: string): CollectionModel[number] => ({
+  name,
+  IMDbId: `tt${name}`,
+  rawContent: `raw-${name}`,
+  title: name,
+  image: '',
+  genre: [],
+  tags: [],
+  year: null,
+  rate: '',
+});
 
 describe('TemplateRegenerationService', () => {
   let service: TemplateRegenerationService;

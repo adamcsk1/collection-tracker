@@ -8,6 +8,7 @@ import { getUserAccessToken } from '@server/core/utils/users-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { Application } from 'express';
+import type jwt from 'jsonwebtoken';
 
 export const register = (app: Application): void => {
   app.get(`${API_PREFIX}/user/access-token/validate`, jwtGuard, (request: ExtendedRequestModel, response) => {
@@ -20,7 +21,7 @@ export const register = (app: Application): void => {
         const cookie = cookieConfig();
         const newAccessToken = generateAccessToken(
           request.username,
-          `${cookieExpiration.value} ${cookieExpiration.unit}`
+          `${cookieExpiration.value} ${cookieExpiration.unit}` as jwt.SignOptions['expiresIn']
         );
         users[request.usernameHash].accessTokens.push(
           getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)

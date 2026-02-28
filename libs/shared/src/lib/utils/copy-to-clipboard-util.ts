@@ -3,9 +3,11 @@ import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 type WindowExtended = Window & { clipboardData?: { setData: (format: string, data: string) => void } };
 
 export const copyToClipboard = (text: string) => {
+  const extendedWindow: WindowExtended = window;
+
   if (mobileUserAgent()) {
-    if ((window as WindowExtended)?.clipboardData?.setData) {
-      (window as WindowExtended)!.clipboardData!.setData('Text', text);
+    if (extendedWindow.clipboardData?.setData) {
+      extendedWindow.clipboardData.setData('Text', text);
     } else if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
       const textarea = document.createElement('textarea');
       textarea.textContent = text;

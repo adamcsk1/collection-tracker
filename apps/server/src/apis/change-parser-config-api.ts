@@ -22,9 +22,9 @@ export const register = (app: Application): void => {
       const parserConfigs = Store.getLastValue('parserConfigs');
       let userConfig = parserConfigs?.[request.usernameHash];
 
-      if (!userConfig) userConfig = {} as ParserConfigModel;
+      if (!userConfig) userConfig = {} satisfies ParserConfigModel;
 
-      const updatedConfig = { ...userConfig, ...body };
+      const updatedConfig = { ...userConfig, ...body } satisfies ParserConfigModel;
       parserConfigs[request.usernameHash] = updatedConfig;
       Store.set('parserConfigs', parserConfigs);
 

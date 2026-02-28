@@ -1,11 +1,6 @@
-import { WindowParserCacheModel } from '@services/parser/parser-model';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 
-const parserWindow = window as WindowParserCacheModel;
-
-if (parserWindow.__parserCache === undefined) parserWindow.__parserCache = {};
-
-const parserCache = parserWindow.__parserCache;
+const parserCache = window.__parserCache ?? (window.__parserCache = {});
 
 export const getParserTemplate = (): string => parserCache.mdTemplate!;
 

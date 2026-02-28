@@ -9,6 +9,7 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { SignInApiRequestModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
 import type { Application } from 'express';
+import type jwt from 'jsonwebtoken';
 
 export const register = (app: Application): void => {
   app.post(`${API_PREFIX}/sign-in`, (request, response) => {
@@ -28,7 +29,10 @@ export const register = (app: Application): void => {
       if (users[usernameHash].userTokenHash !== userTokenHash) return response.sendStatus(401);
 
       const cookie = cookieConfig();
-      const newAccessToken = generateAccessToken(username, `${cookieExpiration.value} ${cookieExpiration.unit}`);
+      const newAccessToken = generateAccessToken(
+        username,
+        `${cookieExpiration.value} ${cookieExpiration.unit}` as jwt.SignOptions['expiresIn']
+      );
       users[usernameHash].accessTokens.push(
         getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
       );

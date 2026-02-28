@@ -7,13 +7,14 @@ import { Select } from '@components/select/select';
 import { SignInModel } from '@login/sign-in/sign-in-model';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
-import { Themes } from '@services/theme/theme-model';
+import { THEMES } from '@services/theme/theme-const';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/constants/storage-const';
 import { Form } from '@shared/models/form-model';
+import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
@@ -53,7 +54,7 @@ export class SignIn implements OnInit {
       token: '',
       apiUrl: this.apiState.state.apiUrl() || '',
       language: this.webStorage.getItem(STORAGE_LANGUAGE) || 'en',
-      theme: (this.webStorage.getItem(STORAGE_THEME) as Themes) || 'light',
+      theme: parseAllowedValue(this.webStorage.getItem(STORAGE_THEME), THEMES) ?? 'light',
     });
 
     this.formGroup.controls.language.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((language) => {

@@ -90,8 +90,9 @@ export class ThemeService {
   }
 
   private setMetaThemeColor(): void {
-    (this.document.querySelector('meta[name="theme-color"]') as HTMLMetaElement)!.content = getComputedStyle(
-      this.document.body
-    ).getPropertyValue('--theme-color');
+    const themeColorMeta = this.document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (!themeColorMeta) return;
+
+    themeColorMeta.content = getComputedStyle(this.document.body).getPropertyValue('--theme-color');
   }
 }
