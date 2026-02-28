@@ -12,7 +12,6 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { AlertService } from '@services/alert-service';
 import { ConfirmService } from '@services/confirm-service';
 import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
-import { WindowParserCacheModel } from '@services/parser/parser-model';
 import { ParserService as MainParserService } from '@services/parser/parser-service';
 import { setParserRegexp, setParserTemplate } from '@services/parser/parser-util';
 import { restoreSerializedParserRegexp } from '@shared/utils/parser-serialize-util';
@@ -59,19 +58,19 @@ export class ParserService {
   }
 
   public generatePreviewContent(formData: ParserModel): void {
-    const originalParserCache = structuredClone((window as WindowParserCacheModel).__parserCache);
+    const originalParserCache = structuredClone(window.__parserCache);
     try {
       this.setParserCache(formData);
       const mdContentPreview = this.mdContentGenerator.getMdContent(PARSER_PREVIEW_OMDB_RESPONSE);
 
       const parsedCollectionItem = getCollectionItem({ content: mdContentPreview, name: '' });
 
-      (window as WindowParserCacheModel).__parserCache = originalParserCache;
+      window.__parserCache = originalParserCache;
       this.alert.show(
         `${this.ngxSignalTranslate.translate('TemplatePreview')}\n\n ${mdContentPreview}\n\n${this.ngxSignalTranslate.translate('ParsedAttributes')}\n\n${JSON.stringify({ ...parsedCollectionItem, rawContent: undefined, name: undefined }, null, 2)}`
       );
     } catch {
-      (window as WindowParserCacheModel).__parserCache = originalParserCache;
+      window.__parserCache = originalParserCache;
       this.alert.show(this.ngxSignalTranslate.translate('Message.PreviewGenerationError'));
     }
   }

@@ -28,6 +28,14 @@ describe('Main component', () => {
   let webStorage: { getItem: Mock; setItem: Mock };
   let themeService: { listen: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
+  const createFixture = (): void => {
+    fixture = TestBed.createComponent(Main);
+    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
+    themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<ThemeState>;
+    blockerState = TestBed.inject(blockerLoadingStateToken) as NgxSimpleSignalStoreService<BlockerLoadingState>;
+    vi.spyOn(apiState, 'setState');
+    vi.spyOn(blockerState, 'setState');
+  };
 
   beforeEach(() => {
     apiService = { validateAccessToken: vi.fn(() => EMPTY) };
@@ -56,16 +64,10 @@ describe('Main component', () => {
         provideRouter([]),
       ],
     });
-
-    fixture = TestBed.createComponent(Main);
-    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
-    themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<ThemeState>;
-    blockerState = TestBed.inject(blockerLoadingStateToken) as NgxSimpleSignalStoreService<BlockerLoadingState>;
-    vi.spyOn(apiState, 'setState');
-    vi.spyOn(blockerState, 'setState');
   });
 
   it('bootstraps language, theme, blocker state, and API URL defaults', () => {
+    createFixture();
     const expectedApiUrl = `${window.location.origin}${API_PREFIX}`;
 
     expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('fr');
@@ -77,13 +79,26 @@ describe('Main component', () => {
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, expectedApiUrl);
   });
 
+  it('falls back to light theme when stored theme is invalid', () => {
+    webStorage.getItem.mockImplementation((key: string) => {
+      if (key === STORAGE_LANGUAGE) return 'fr';
+      if (key === STORAGE_THEME) return 'invalid';
+      return null;
+    });
+    createFixture();
+
+    expect(themeState.state.theme()).toBe('light');
+  });
+
   it('calls validateAccessToken on after view init', () => {
+    createFixture();
     fixture.componentInstance.ngAfterViewInit();
 
     expect(apiService.validateAccessToken).toHaveBeenCalled();
   });
 
   it('hides the blocker loader when validation fails', () => {
+    createFixture();
     apiService.validateAccessToken.mockReturnValue(throwError(() => new Error('invalid')));
 
     fixture.componentInstance.ngAfterViewInit();

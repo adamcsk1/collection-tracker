@@ -88,7 +88,7 @@ describe('CollectionService', () => {
     getCollectionItemSpy.mockImplementation((raw: GetAllApiResponseItemModel) => buildCollectionItem(raw.name));
     mainCollectionState.setState('collection', [buildCollectionItem('existing')]);
 
-    service.addCollectionItem({ name: 'new', content: 'new' } as GetAllApiResponseItemModel, true);
+    service.addCollectionItem({ name: 'new', content: 'new' }, true);
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('new'),
@@ -100,7 +100,7 @@ describe('CollectionService', () => {
     getCollectionItemSpy.mockImplementation((raw: GetAllApiResponseItemModel) => buildCollectionItem(raw.name));
     mainCollectionState.setState('collection', [buildCollectionItem('existing')]);
 
-    service.addCollectionItem({ name: 'another', content: 'another' } as GetAllApiResponseItemModel);
+    service.addCollectionItem({ name: 'another', content: 'another' });
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('existing'),

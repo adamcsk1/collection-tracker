@@ -1,40 +1,41 @@
 import { debugLog } from '@server/core/logger';
+import { STORE_KEYS } from '@server/core/store/store-const';
 import { StoreDataModel, StoreModel } from '@server/core/store/store-model';
 import { filter, Observable, take, tap } from 'rxjs';
 
 const store = (): StoreModel => global.__serverStorage;
 
 export const Store = {
-  get$: <K extends keyof StoreModel>(key: K): Observable<StoreDataModel[K]> => {
+  get$: <K extends keyof StoreDataModel>(key: K): Observable<StoreDataModel[K]> => {
     debugLog(`Getting store value (${key})`);
     const subject = store()[key];
-    return subject.asObservable() as Observable<StoreDataModel[K]>;
+    return subject.asObservable();
   },
   getLastValue: <K extends keyof StoreDataModel>(key: K): StoreDataModel[K] => {
     debugLog(`Getting last store value (${key})`);
     return structuredClone(store()[key].value);
   },
-  getOnce$: <K extends keyof StoreModel>(key: K): Observable<StoreDataModel[K]> =>
+  getOnce$: <K extends keyof StoreDataModel>(key: K): Observable<StoreDataModel[K]> =>
     Store.get$(key).pipe(
       filter((value) => value !== null),
       tap(() => debugLog(`Getting store value once (${key})`)),
       take(1)
     ),
-  set: <K extends keyof StoreModel>(key: K, value: StoreDataModel[K]): StoreDataModel[K] => {
+  set: <K extends keyof StoreDataModel>(key: K, value: StoreDataModel[K]): StoreDataModel[K] => {
     debugLog(`Setting store value (${key})`);
     const subject = store()[key];
     subject.next(value);
     return value;
   },
-  reset: <K extends keyof StoreModel>(key: K): void => {
+  reset: <K extends keyof StoreDataModel>(key: K): void => {
     debugLog(`Resetting store value (${key})`);
     const subject = store()[key];
     subject.next(null);
   },
   resetAll: (): void => {
     debugLog(`Resetting all store values`);
-    for (const key in store()) {
-      Store.reset(key as keyof StoreModel);
+    for (const key of STORE_KEYS) {
+      Store.reset(key);
     }
   },
 };

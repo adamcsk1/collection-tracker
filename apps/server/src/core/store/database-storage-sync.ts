@@ -5,7 +5,9 @@ import { dequal } from 'dequal';
 import { writeFile } from 'fs/promises';
 import { debounceTime, filter, map, pairwise, tap } from 'rxjs';
 
-(global.__serverStorage as StoreModel).users
+const serverStorage: StoreModel = global.__serverStorage;
+
+serverStorage.users
   .pipe(
     pairwise(),
     filter(([previousUsers, nextUsers]) => !dequal(previousUsers, nextUsers)),
@@ -17,7 +19,7 @@ import { debounceTime, filter, map, pairwise, tap } from 'rxjs';
     try {
       await debugLog('Users storage sync started');
       await writeFile(
-        `${global.__serverStorage.dataFolder.value}/${FOLDERS.database}/${DATABASE_FILES.users}`,
+        `${serverStorage.dataFolder.value}/${FOLDERS.database}/${DATABASE_FILES.users}`,
         JSON.stringify(users, null, 2),
         { encoding: 'utf-8' }
       );
@@ -27,7 +29,7 @@ import { debounceTime, filter, map, pairwise, tap } from 'rxjs';
     }
   });
 
-(global.__serverStorage as StoreModel).parserConfigs
+serverStorage.parserConfigs
   .pipe(
     pairwise(),
     filter(([previousParserConfigs, nextParserConfigs]) => !dequal(previousParserConfigs, nextParserConfigs)),
@@ -39,7 +41,7 @@ import { debounceTime, filter, map, pairwise, tap } from 'rxjs';
     try {
       await debugLog('Parser configs storage sync started');
       await writeFile(
-        `${global.__serverStorage.dataFolder.value}/${FOLDERS.database}/${DATABASE_FILES.parserConfigs}`,
+        `${serverStorage.dataFolder.value}/${FOLDERS.database}/${DATABASE_FILES.parserConfigs}`,
         JSON.stringify(parserConfigs, null, 2),
         { encoding: 'utf-8' }
       );

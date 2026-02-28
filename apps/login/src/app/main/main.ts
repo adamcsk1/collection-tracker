@@ -5,12 +5,13 @@ import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-lo
 import { Toast } from '@components/toast/toast';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
-import { Themes } from '@services/theme/theme-model';
+import { THEMES } from '@services/theme/theme-const';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/constants/storage-const';
+import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { EMPTY, catchError } from 'rxjs';
 
@@ -36,7 +37,7 @@ export class Main implements AfterViewInit {
     this.signalTranslateService.setLanguage(language);
     this.blockerLoadingState.setState('withoutDelay', true);
     this.blockerLoadingState.setState('show', true);
-    this.themeState.setState('theme', (this.webstorage.getItem(STORAGE_THEME) as Themes) || 'light');
+    this.themeState.setState('theme', parseAllowedValue(this.webstorage.getItem(STORAGE_THEME), THEMES) ?? 'light');
     this.theme.listen();
 
     let apiUrl = this.webstorage.getItem(STORAGE_API_URL);

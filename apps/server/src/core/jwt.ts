@@ -7,12 +7,18 @@ import { randomUUID } from 'crypto';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 
-export const generateAccessToken = (username: string, expiresIn: string | null = null): string | null => {
+const hasUsername = (data: jwt.JwtPayload | string | undefined): data is { username: string } =>
+  typeof data === 'object' && data !== null && 'username' in data && typeof data.username === 'string';
+
+export const generateAccessToken = (
+  username: string,
+  expiresIn: jwt.SignOptions['expiresIn'] | null = null
+): string | null => {
   try {
     void debugLog('Generating access token');
     const options: jwt.SignOptions = {};
 
-    if (!!expiresIn) options.expiresIn = expiresIn as jwt.SignOptions['expiresIn'];
+    if (expiresIn) options.expiresIn = expiresIn;
 
     return jwt.sign({ username, id: randomUUID() }, `${process.env.JWT_SECRET}`, options);
   } catch (error: unknown) {
@@ -38,35 +44,42 @@ export const jwtGuard = async (
     return response.sendStatus(401);
   }
 
-  jwt.verify(
-    token,
-    process.env.JWT_SECRET as string,
-    (error: jwt.VerifyErrors | null, data: jwt.JwtPayload | string | undefined) => {
-      try {
-        if (error) {
-          void debugLog(`Access token verification failed (${error.message})`);
-          return response.sendStatus(403);
-        }
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    void errorLog('Access token validation error (JWT secret is not configured)');
+    return response.sendStatus(500);
+  }
 
-        const { username } = data as { username: string };
-        const usernameHash = hashText(username);
-        const users = Store.getLastValue('users');
-        const tokenHash = hashText(token);
-
-        if (!users[usernameHash]?.accessTokens?.map((token) => token.tokenHash)?.includes(tokenHash)) {
-          void debugLog('Access token not recognized');
-          return response.sendStatus(403);
-        }
-
-        request.username = username;
-        request.usernameHash = usernameHash;
-
-        void debugLog('Access token validated successfully');
-        next();
-      } catch (error: unknown) {
-        if (error instanceof Error) void errorLog(`Access token validation unknown error (${error.message})`);
-        response.sendStatus(500);
+  jwt.verify(token, jwtSecret, (error: jwt.VerifyErrors | null, data: jwt.JwtPayload | string | undefined) => {
+    try {
+      if (error) {
+        void debugLog(`Access token verification failed (${error.message})`);
+        return response.sendStatus(403);
       }
+
+      if (!hasUsername(data)) {
+        void debugLog('Access token payload is invalid');
+        return response.sendStatus(403);
+      }
+
+      const { username } = data;
+      const usernameHash = hashText(username);
+      const users = Store.getLastValue('users');
+      const tokenHash = hashText(token);
+
+      if (!users[usernameHash]?.accessTokens?.map((token) => token.tokenHash)?.includes(tokenHash)) {
+        void debugLog('Access token not recognized');
+        return response.sendStatus(403);
+      }
+
+      request.username = username;
+      request.usernameHash = usernameHash;
+
+      void debugLog('Access token validated successfully');
+      next();
+    } catch (error: unknown) {
+      if (error instanceof Error) void errorLog(`Access token validation unknown error (${error.message})`);
+      response.sendStatus(500);
     }
-  );
+  });
 };

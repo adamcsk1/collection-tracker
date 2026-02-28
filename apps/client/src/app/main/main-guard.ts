@@ -3,7 +3,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { CanActivateFn } from '@angular/router';
 import { LogoutService } from '@client/main/logout-service';
 import { MainService } from '@client/main/main-service';
-import { debounceTime, Observable, of } from 'rxjs';
+import { debounceTime, filter, Observable, of } from 'rxjs';
 
 export const mainGuard: CanActivateFn = (): Observable<boolean> => {
   const main = inject(MainService);
@@ -11,7 +11,10 @@ export const mainGuard: CanActivateFn = (): Observable<boolean> => {
 
   if (main.tokenValid()) return of(true);
 
-  const tokenValid$ = toObservable(main.tokenValid).pipe(debounceTime(250)) as unknown as Observable<boolean>;
+  const tokenValid$ = toObservable(main.tokenValid).pipe(
+    debounceTime(250),
+    filter((tokenValid): tokenValid is boolean => tokenValid !== null)
+  );
 
   if (main.hasRequiredConfig()) {
     main.validateAccessToken();

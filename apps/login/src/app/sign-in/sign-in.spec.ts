@@ -22,6 +22,15 @@ describe('SignIn component', () => {
   let translateService: { languageOptions: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
   let themeService: { themeOptions: Mock };
+  const createFixture = (): void => {
+    fixture = TestBed.createComponent(SignIn);
+    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
+    themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<ThemeState>;
+    vi.spyOn(apiState, 'setState');
+    vi.spyOn(themeState, 'setState');
+    apiState.setState('apiUrl', 'https://stored-api');
+    fixture.detectChanges();
+  };
 
   beforeEach(() => {
     apiService = { signIn: vi.fn(() => EMPTY) };
@@ -50,17 +59,10 @@ describe('SignIn component', () => {
         provideRouter([]),
       ],
     });
-
-    fixture = TestBed.createComponent(SignIn);
-    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
-    themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<ThemeState>;
-    vi.spyOn(apiState, 'setState');
-    vi.spyOn(themeState, 'setState');
-    apiState.setState('apiUrl', 'https://stored-api');
-    fixture.detectChanges();
   });
 
   it('initializes with stored defaults and persists language/theme updates', () => {
+    createFixture();
     const component = fixture.componentInstance;
 
     expect(component['formGroup'].value).toEqual({
@@ -81,6 +83,7 @@ describe('SignIn component', () => {
   });
 
   it('toggles token visibility through the UI control', () => {
+    createFixture();
     const component = fixture.componentInstance;
     expect(component['tokenInputType']()).toBe('password');
 
@@ -93,6 +96,7 @@ describe('SignIn component', () => {
   });
 
   it('updates API URL, stores it, and signs in before redirecting', () => {
+    createFixture();
     const component = fixture.componentInstance;
     apiState.setState('apiUrl', 'https://old-api');
 
@@ -109,5 +113,16 @@ describe('SignIn component', () => {
     expect(apiState.setState).toHaveBeenCalledWith('apiUrl', 'https://new-api');
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, 'https://new-api');
     expect(apiService.signIn).toHaveBeenCalledWith('neo', 'matrix');
+  });
+
+  it('falls back to light theme when stored theme is invalid', () => {
+    webStorage.getItem.mockImplementation((key: string) => {
+      if (key === STORAGE_LANGUAGE) return 'en';
+      if (key === STORAGE_THEME) return 'invalid';
+      return null;
+    });
+    createFixture();
+
+    expect(fixture.componentInstance['formGroup'].value.theme).toBe('light');
   });
 });

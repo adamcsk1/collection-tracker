@@ -143,4 +143,15 @@ describe('ThemeService', () => {
     vi.runOnlyPendingTimers();
     expect(service.themeLogo()).toBe('logo-light.png');
   });
+
+  it('does not throw when theme-color meta tag is missing', async () => {
+    metaThemeColor.remove();
+
+    service.listen();
+    themeState.setState('theme', 'dark');
+    await Promise.resolve();
+    vi.runOnlyPendingTimers();
+
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+  });
 });

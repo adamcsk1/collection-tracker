@@ -38,6 +38,7 @@ yarn-error.log
 testem.log
 /typings
 /**/cypress/*
+.tmp-*
 
 # System files
 .DS_Store

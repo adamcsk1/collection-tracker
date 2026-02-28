@@ -88,4 +88,42 @@ describe('jwt utilities', () => {
     expect(response.sendStatus).toHaveBeenCalledWith(403);
     expect(next).not.toHaveBeenCalled();
   });
+
+  it('jwtGuard returns 500 when JWT secret is missing', async () => {
+    delete process.env.JWT_SECRET;
+    const response: any = { sendStatus: vi.fn() };
+    const next = vi.fn();
+
+    await jwtGuard(
+      {
+        signedCookies: {},
+        headers: { authorization: 'Bearer any-token' },
+        url: '/protected',
+      } as unknown as ExtendedRequestModel,
+      response,
+      next
+    );
+
+    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('jwtGuard rejects token payloads without username', async () => {
+    const token = jwt.sign({ id: 'missing-username' }, 'secret');
+    const response: any = { sendStatus: vi.fn() };
+    const next = vi.fn();
+
+    await jwtGuard(
+      {
+        signedCookies: { [COOKIE_TOKEN]: token },
+        headers: {},
+        url: '/protected',
+      } as unknown as ExtendedRequestModel,
+      response,
+      next
+    );
+
+    expect(response.sendStatus).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
 });
