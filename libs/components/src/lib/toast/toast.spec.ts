@@ -1,10 +1,12 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideStore } from 'ngx-simple-signal-store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Toast } from './toast';
 import { initialToastState, toastStateToken } from './toast-store';
 
 describe('Toast component', () => {
+  let fixture: ComponentFixture<Toast>;
+
   beforeEach(() => {
     vi.useFakeTimers();
 
@@ -12,6 +14,9 @@ describe('Toast component', () => {
       imports: [Toast],
       providers: [provideStore(initialToastState, toastStateToken)],
     });
+
+    fixture = TestBed.createComponent(Toast);
+    fixture.detectChanges();
   });
 
   afterEach(() => {
@@ -21,8 +26,6 @@ describe('Toast component', () => {
   it('hides when clicked', () => {
     const toastStore = TestBed.inject(toastStateToken);
     toastStore.setState('message', 'Saved!');
-
-    const fixture = TestBed.createComponent(Toast);
     const component = fixture.componentInstance;
     fixture.detectChanges();
 
@@ -39,9 +42,6 @@ describe('Toast component', () => {
     toastStore.setState('timeout', 10);
     toastStore.setState('message', 'Auto hide');
 
-    const fixture = TestBed.createComponent(Toast);
-    fixture.detectChanges();
-
     expect(toastStore.state.message()).toBe('Auto hide');
 
     vi.runOnlyPendingTimers();
@@ -55,9 +55,6 @@ describe('Toast component', () => {
     const toastStore = TestBed.inject(toastStateToken);
     toastStore.setState('timeout', 5);
     toastStore.setState('message', 'First');
-
-    const fixture = TestBed.createComponent(Toast);
-    fixture.detectChanges();
 
     toastStore.setState('timeout', 20);
     toastStore.setState('message', 'Second');

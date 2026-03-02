@@ -1,5 +1,5 @@
 import { signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -10,6 +10,9 @@ import { BLOCKER_LOADING_TIMEOUT_MS } from './blocker-loading-const';
 import { blockerLoadingStateToken, initialBlockerLoadingState } from './blocker-loading-store';
 
 describe('BlockerLoading component', () => {
+  let fixture: ComponentFixture<BlockerLoading>;
+  let component: BlockerLoading;
+
   beforeEach(() => {
     vi.useFakeTimers();
 
@@ -22,6 +25,10 @@ describe('BlockerLoading component', () => {
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
       ],
     });
+
+    fixture = TestBed.createComponent(BlockerLoading);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
   afterEach(() => {
@@ -30,9 +37,6 @@ describe('BlockerLoading component', () => {
 
   it('shows after delay when withoutDelay is false', () => {
     const store = TestBed.inject(blockerLoadingStateToken);
-    const fixture = TestBed.createComponent(BlockerLoading);
-    const component = fixture.componentInstance;
-    fixture.detectChanges();
 
     store.setState('show', true);
     vi.advanceTimersByTime(BLOCKER_LOADING_TIMEOUT_MS - 1);
@@ -46,9 +50,6 @@ describe('BlockerLoading component', () => {
 
   it('shows immediately when withoutDelay is true and hides after turning off', () => {
     const store = TestBed.inject(blockerLoadingStateToken);
-    const fixture = TestBed.createComponent(BlockerLoading);
-    const component = fixture.componentInstance;
-    fixture.detectChanges();
 
     store.setState('withoutDelay', true);
     store.setState('show', true);
@@ -69,9 +70,6 @@ describe('BlockerLoading component', () => {
 
   it('cancels delayed show when toggled off before timeout', () => {
     const store = TestBed.inject(blockerLoadingStateToken);
-    const fixture = TestBed.createComponent(BlockerLoading);
-    const component = fixture.componentInstance;
-    fixture.detectChanges();
 
     store.setState('show', true);
     vi.advanceTimersByTime(BLOCKER_LOADING_TIMEOUT_MS - 10);

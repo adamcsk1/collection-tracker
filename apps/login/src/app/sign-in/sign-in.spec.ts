@@ -22,12 +22,10 @@ describe('SignIn component', () => {
   let translateService: { languageOptions: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
   let themeService: { themeOptions: Mock };
-  const createFixture = (): void => {
+  const initializeFixture = (): void => {
     fixture = TestBed.createComponent(SignIn);
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
     themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<ThemeState>;
-    vi.spyOn(apiState, 'setState');
-    vi.spyOn(themeState, 'setState');
     apiState.setState('apiUrl', 'https://stored-api');
     fixture.detectChanges();
   };
@@ -59,10 +57,13 @@ describe('SignIn component', () => {
         provideRouter([]),
       ],
     });
+
+    initializeFixture();
+    vi.spyOn(apiState, 'setState');
+    vi.spyOn(themeState, 'setState');
   });
 
   it('initializes with stored defaults and persists language/theme updates', () => {
-    createFixture();
     const component = fixture.componentInstance;
 
     expect(component['formGroup'].value).toEqual({
@@ -83,7 +84,6 @@ describe('SignIn component', () => {
   });
 
   it('toggles token visibility through the UI control', () => {
-    createFixture();
     const component = fixture.componentInstance;
     expect(component['tokenInputType']()).toBe('password');
 
@@ -96,7 +96,6 @@ describe('SignIn component', () => {
   });
 
   it('updates API URL, stores it, and signs in before redirecting', () => {
-    createFixture();
     const component = fixture.componentInstance;
     apiState.setState('apiUrl', 'https://old-api');
 
@@ -121,7 +120,7 @@ describe('SignIn component', () => {
       if (key === STORAGE_THEME) return 'invalid';
       return null;
     });
-    createFixture();
+    initializeFixture();
 
     expect(fixture.componentInstance['formGroup'].value.theme).toBe('light');
   });

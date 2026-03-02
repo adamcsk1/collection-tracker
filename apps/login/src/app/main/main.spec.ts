@@ -28,13 +28,11 @@ describe('Main component', () => {
   let webStorage: { getItem: Mock; setItem: Mock };
   let themeService: { listen: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
-  const createFixture = (): void => {
+  const initializeFixture = (): void => {
     fixture = TestBed.createComponent(Main);
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
     themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<ThemeState>;
     blockerState = TestBed.inject(blockerLoadingStateToken) as NgxSimpleSignalStoreService<BlockerLoadingState>;
-    vi.spyOn(apiState, 'setState');
-    vi.spyOn(blockerState, 'setState');
   };
 
   beforeEach(() => {
@@ -64,10 +62,11 @@ describe('Main component', () => {
         provideRouter([]),
       ],
     });
+
+    initializeFixture();
   });
 
   it('bootstraps language, theme, blocker state, and API URL defaults', () => {
-    createFixture();
     const expectedApiUrl = `${window.location.origin}${API_PREFIX}`;
 
     expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('fr');
@@ -85,20 +84,18 @@ describe('Main component', () => {
       if (key === STORAGE_THEME) return 'invalid';
       return null;
     });
-    createFixture();
+    initializeFixture();
 
     expect(themeState.state.theme()).toBe('light');
   });
 
   it('calls validateAccessToken on after view init', () => {
-    createFixture();
     fixture.componentInstance.ngAfterViewInit();
 
     expect(apiService.validateAccessToken).toHaveBeenCalled();
   });
 
   it('hides the blocker loader when validation fails', () => {
-    createFixture();
     apiService.validateAccessToken.mockReturnValue(throwError(() => new Error('invalid')));
 
     fixture.componentInstance.ngAfterViewInit();
