@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -30,17 +30,18 @@ class NoHintHostComponent {
 }
 
 describe('Select component', () => {
+  let fixture: ComponentFixture<HostComponent>;
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HostComponent, NoHintHostComponent],
       providers: [{ provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } }],
     });
+    fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
   });
 
   it('renders options and updates the control on change', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
     const component = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
     const options = component.options().map((option) => option.value);
 
@@ -55,18 +56,12 @@ describe('Select component', () => {
   });
 
   it('connects hint id to describedBy', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
     const component = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
 
     expect(component['describedBy']()).toBe(component['hintId']());
   });
 
   it('calls onTouched when blurred', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
     const componentInstance = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
     const touchedSpy = vi.fn();
     componentInstance.registerOnTouched(touchedSpy);
@@ -77,26 +72,26 @@ describe('Select component', () => {
   });
 
   it('does not set describedBy when no hint or errors present', () => {
-    const fixture = TestBed.createComponent(NoHintHostComponent);
-    fixture.componentInstance.control.setErrors(null);
-    fixture.componentInstance.control.markAsPristine();
-    fixture.componentInstance.control.markAsUntouched();
-    fixture.detectChanges();
+    const noHintFixture = TestBed.createComponent(NoHintHostComponent);
+    noHintFixture.componentInstance.control.setErrors(null);
+    noHintFixture.componentInstance.control.markAsPristine();
+    noHintFixture.componentInstance.control.markAsUntouched();
+    noHintFixture.detectChanges();
 
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
+    const component = noHintFixture.debugElement.children[0].children[0].componentInstance as Select<string>;
     expect(component['describedBy']()).toBeNull();
   });
 
   it('disables the control via setDisabledState and links error id', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.componentInstance.control.markAsTouched();
-    fixture.componentInstance.control.setErrors({ required: true });
-    fixture.detectChanges();
+    const localFixture = TestBed.createComponent(HostComponent);
+    localFixture.componentInstance.control.markAsTouched();
+    localFixture.componentInstance.control.setErrors({ required: true });
+    localFixture.detectChanges();
 
-    const componentInstance = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
+    const componentInstance = localFixture.debugElement.children[0].children[0].componentInstance as Select<string>;
 
     componentInstance.setDisabledState(true);
-    fixture.detectChanges();
+    localFixture.detectChanges();
 
     expect(componentInstance['isDisabled']()).toBe(true);
     const describedBy = componentInstance['describedBy']() ?? '';

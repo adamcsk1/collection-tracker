@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,6 +27,8 @@ class NoHintHostComponent {
 }
 
 describe('Autocomplete component', () => {
+  let fixture: ComponentFixture<HostComponent>;
+  let component: Autocomplete<string>;
   let serviceStub: {
     getSuggestion: ReturnType<typeof vi.fn>;
     formatSuggestionText?: ReturnType<typeof vi.fn>;
@@ -47,14 +49,13 @@ describe('Autocomplete component', () => {
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
       ],
     });
+
+    fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
   });
 
   it('renders suggestions and accepts a selection', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
-
     component['onKeyup']({
       code: 'KeyA',
       target: { value: 'a' },
@@ -72,11 +73,6 @@ describe('Autocomplete component', () => {
   });
 
   it('resets value when reset button is clicked', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
-
     component['onKeyup']({
       code: 'KeyX',
       target: { value: 'x' },
@@ -93,10 +89,6 @@ describe('Autocomplete component', () => {
   });
 
   it('navigates suggestions with keyboard and accepts selection on Enter', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     const baseEvent = {
       preventDefault: vi.fn(),
       stopPropagation: vi.fn(),
@@ -127,11 +119,6 @@ describe('Autocomplete component', () => {
   });
 
   it('clears suggestions when Escape is pressed', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
-
     component['onKeyup']({
       code: 'KeyA',
       target: { value: 'a' },
@@ -150,10 +137,6 @@ describe('Autocomplete component', () => {
   });
 
   it('prevents default behavior on Enter keypress', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     const keyboardEvent = {
       code: 'Enter',
       preventDefault: vi.fn(),
@@ -167,11 +150,7 @@ describe('Autocomplete component', () => {
   });
 
   it('does not show suggestions when current value already matches', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
     serviceStub.getSuggestion.mockReturnValue(['alpha']);
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
 
     component['onKeyup']({
       code: 'KeyA',
@@ -183,10 +162,6 @@ describe('Autocomplete component', () => {
   });
 
   it('skips duplicate Tab keydown events', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     component['lastKeycode'] = 'Tab';
     const keyboardEvent = {
       code: 'Tab',
@@ -202,10 +177,6 @@ describe('Autocomplete component', () => {
 
   it('navigates suggestions with arrow keys and clears on blur delay', () => {
     vi.useFakeTimers();
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     component['_suggestions'].set(['alpha', 'beta']);
 
     const baseEvent = {
@@ -233,10 +204,6 @@ describe('Autocomplete component', () => {
   });
 
   it('moves selection up when ArrowUp is pressed and a selection exists', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     component['_suggestions'].set(['alpha', 'beta']);
     component['selectedSuggestion'].set(1);
 
@@ -253,21 +220,12 @@ describe('Autocomplete component', () => {
   });
 
   it('updates internal value when control emits changes (ngOnInit path)', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
     fixture.componentInstance.control.setValue('delta');
     fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     expect(component['value']()).toBe('delta');
   });
 
   it('accepts first suggestion on Tab key when no selection set', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     component['_suggestions'].set(['alpha', 'beta']);
 
     const baseEvent = {
@@ -286,10 +244,6 @@ describe('Autocomplete component', () => {
 
   it('does not set suggestions when service returns empty array', () => {
     serviceStub.getSuggestion.mockReturnValue([]);
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     component['onKeyup']({
       code: 'KeyZ',
       target: { value: 'z' },
@@ -300,11 +254,6 @@ describe('Autocomplete component', () => {
   });
 
   it('disables input via setDisabledState', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
-
     component.setDisabledState(true);
     fixture.detectChanges();
 
@@ -312,10 +261,6 @@ describe('Autocomplete component', () => {
   });
 
   it('applies focus class when onFocus is triggered', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     component['onFocus']();
     fixture.detectChanges();
 
@@ -323,10 +268,6 @@ describe('Autocomplete component', () => {
   });
 
   it('clears value and notifies onChange when reset is clicked', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     const changeSpy = vi.fn();
     component.registerOnChange(changeSpy);
 
@@ -345,19 +286,10 @@ describe('Autocomplete component', () => {
 
   it('uses raw text when formatSuggestionText is not provided', () => {
     serviceStub.formatSuggestionText = undefined;
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     expect(component['formatSuggestionText']('plain')).toBe('plain');
   });
 
   it('uses formatted value when accepting a suggestion', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
-
     component['onKeyup']({
       code: 'KeyA',
       target: { value: 'a' },
@@ -371,10 +303,6 @@ describe('Autocomplete component', () => {
   });
 
   it('clears suggestions without calling service when input is empty', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     serviceStub.getSuggestion.mockClear();
 
     component['onKeyup']({
@@ -387,30 +315,22 @@ describe('Autocomplete component', () => {
   });
 
   it('provides hint id in describedBy when hint is set', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
-
     expect(component['describedBy']()).toBe(component['hintId']());
   });
 
   it('does not set describedBy when no hint or errors present', () => {
-    const fixture = TestBed.createComponent(NoHintHostComponent);
-    fixture.componentInstance.control.setValidators(null);
-    fixture.componentInstance.control.markAsPristine();
-    fixture.componentInstance.control.markAsUntouched();
-    fixture.detectChanges();
+    const noHintFixture = TestBed.createComponent(NoHintHostComponent);
+    noHintFixture.componentInstance.control.setValidators(null);
+    noHintFixture.componentInstance.control.markAsPristine();
+    noHintFixture.componentInstance.control.markAsUntouched();
+    noHintFixture.detectChanges();
 
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
-    expect(component['describedBy']()).toBeNull();
+    const noHintComponent = noHintFixture.debugElement.children[0].children[0]
+      .componentInstance as Autocomplete<string>;
+    expect(noHintComponent['describedBy']()).toBeNull();
   });
 
   it('closes suggestions and refocuses the input', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
-    const component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
     component['_suggestions'].set(['alpha', 'beta']);
     const inputEl = (component as any).inputElement().nativeElement as HTMLInputElement;
     const focusSpy = vi.spyOn(inputEl, 'focus');

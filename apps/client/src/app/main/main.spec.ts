@@ -18,6 +18,7 @@ import { Main } from './main';
 describe('Main component (client)', () => {
   let fixture: ComponentFixture<Main>;
   let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
+  let spinnerState: NgxSimpleSignalStoreService<{ show: boolean }>;
   let mainService: {
     tokenValid: ReturnType<typeof vi.fn>;
     loadStoredData: ReturnType<typeof vi.fn>;
@@ -58,14 +59,14 @@ describe('Main component (client)', () => {
         template: '',
       },
     });
+
+    fixture = TestBed.createComponent(Main);
+    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
+    spinnerState = TestBed.inject(spinnerLoadingStateToken) as NgxSimpleSignalStoreService<{ show: boolean }>;
+    fixture.detectChanges();
   });
 
   it('toggles the spinner based on API load status', () => {
-    fixture = TestBed.createComponent(Main);
-    fixture.detectChanges();
-    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
-    const spinnerState = TestBed.inject(spinnerLoadingStateToken) as NgxSimpleSignalStoreService<{ show: boolean }>;
-
     apiState.setState('loadNetworkStatus', 'pending');
     spinnerState.setState('show', true);
     expect(spinnerState.state.show()).toBe(true);
@@ -80,16 +81,10 @@ describe('Main component (client)', () => {
   });
 
   it('starts token validation on init', () => {
-    fixture = TestBed.createComponent(Main);
-    fixture.detectChanges();
-
     expect(tokenValidation.startValidation).toHaveBeenCalled();
   });
 
   it('sets the language and theme on init', () => {
-    fixture = TestBed.createComponent(Main);
-    fixture.detectChanges();
-
     expect(theme.listen).toHaveBeenCalled();
     expect(translate.setLanguage).toHaveBeenCalledWith(initialMainState.language);
   });

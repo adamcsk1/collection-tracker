@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,6 +18,7 @@ class HostComponent {}
 
 describe('DialogShell component', () => {
   let closeSpy: ReturnType<typeof vi.fn>;
+  let fixture: ComponentFixture<HostComponent>;
 
   beforeEach(() => {
     closeSpy = vi.fn();
@@ -28,12 +29,11 @@ describe('DialogShell component', () => {
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
       ],
     });
+    fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
   });
 
   it('focuses dialog root on init and calls portal.close on button click', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
     const dialogComponent = fixture.debugElement.children[0].componentInstance as DialogShell;
     const dialogRoot = dialogComponent['dialogRoot']?.()?.nativeElement;
     expect(document.activeElement).toBe(dialogRoot);
@@ -43,9 +43,6 @@ describe('DialogShell component', () => {
   });
 
   it('calls portal.close when Escape key is pressed', () => {
-    const fixture = TestBed.createComponent(HostComponent);
-    fixture.detectChanges();
-
     const dialogComponent = fixture.debugElement.children[0].componentInstance as DialogShell;
     const dialogRoot = dialogComponent['dialogRoot']?.()?.nativeElement;
     dialogRoot?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
