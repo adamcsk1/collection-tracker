@@ -1,23 +1,22 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { form, FormField, FormRoot, required, validate } from '@angular/forms/signals';
 import { NewItemModel, SaveMode } from '@client/collection/new-item-dialog/new-item-dialog-model';
 import { NewItemDialogService } from '@client/collection/new-item-dialog/new-item-dialog-service';
 import { TagSuggestionService } from '@client/collection/new-item-dialog/suggestion/tag-suggestion-service';
-import { knownIMDbIdValidator } from '@client/collection/new-item-dialog/validators/known-imdb-id-validator';
+import { knownIMDbIdValidationFactory } from '@client/collection/new-item-dialog/validators/known-imdb-id-validator';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
-import { Form } from '@shared/models/form-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { debounceTime } from 'rxjs';
+import { debounceTime, firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'ct-new-item-dialog',
-  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, Input, Select, DialogShell, Autocomplete],
+  imports: [FormField, FormRoot, NgxSignalTranslatePipe, Input, Select, DialogShell, Autocomplete],
   templateUrl: './new-item-dialog.html',
   styleUrl: './new-item-dialog.css',
   providers: [
@@ -31,46 +30,73 @@ import { debounceTime } from 'rxjs';
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NewItemDialog implements OnInit {
+export class NewItemDialog {
   private readonly destroyRef = inject(DestroyRef);
   private readonly service = inject(NewItemDialogService);
-  protected readonly formGroup = new FormGroup<Form<NewItemModel>>({
-    searchText: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    selectedIMDbId: new FormControl(null, { validators: [Validators.required, knownIMDbIdValidator()] }),
-    tags: new FormControl('', { nonNullable: true }),
+  private readonly knownIMDbIdValidationError = knownIMDbIdValidationFactory();
+  protected readonly submitMode = signal<SaveMode | null>(null);
+  protected readonly newItemModel = signal<NewItemModel>({
+    searchText: '',
+    selectedIMDbId: null,
+    tags: '',
   });
+  protected readonly form = form(
+    this.newItemModel,
+    (newItem) => {
+      required(newItem.searchText);
+      required(newItem.selectedIMDbId);
+      validate(newItem.selectedIMDbId, ({ value }) => this.knownIMDbIdValidationError(value()));
+    },
+    {
+      submission: {
+        action: async () => this.onSave(this.submitMode()),
+      },
+    }
+  );
+  protected readonly formErrors = {
+    selectedIMDbId: {
+      knownIMDbId: computed(() =>
+        this.form
+          .selectedIMDbId()
+          .errors()
+          .some((error) => error.kind === 'knownIMDbId')
+      ),
+    },
+  };
   protected readonly matchedContent = this.service.matchedContent;
 
   constructor() {
     effect(() => {
       const matchedContent = this.matchedContent();
+      const selectedIMDbId = this.form.selectedIMDbId();
 
       if (matchedContent.length) {
-        this.formGroup.controls.selectedIMDbId.setValue(`${matchedContent[0].value}`);
-        this.formGroup.controls.selectedIMDbId.markAsTouched();
+        selectedIMDbId.value.set(`${matchedContent[0].value}`);
+        selectedIMDbId.markAsTouched();
       } else {
-        this.formGroup.controls.selectedIMDbId.setValue(null);
-        this.formGroup.controls.selectedIMDbId.markAsUntouched();
+        selectedIMDbId.reset(null);
       }
     });
-  }
 
-  public ngOnInit(): void {
-    this.formGroup.controls.searchText.valueChanges
+    toObservable(this.form.searchText().value)
       .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
       .subscribe((searchText) => this.service.search(searchText));
   }
 
-  protected onSave(mode: SaveMode | null = null): void {
-    const selectedIMDbId = this.formGroup.controls.selectedIMDbId.value;
+  private async onSave(mode: SaveMode | null = null): Promise<void> {
+    const selectedIMDbId = this.form.selectedIMDbId().value();
     if (!selectedIMDbId) return;
 
-    this.service
-      .save(`${selectedIMDbId}`, this.formGroup.controls.tags.value, mode)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        if (mode === 'new') this.formGroup.reset();
-        else this.formGroup.controls.selectedIMDbId.reset();
+    await firstValueFrom(this.service.save(selectedIMDbId, this.form.tags().value(), mode));
+
+    if (mode === 'new') {
+      this.form().reset({
+        searchText: '',
+        selectedIMDbId: null,
+        tags: '',
       });
+    } else {
+      this.form.selectedIMDbId().reset(null);
+    }
   }
 }

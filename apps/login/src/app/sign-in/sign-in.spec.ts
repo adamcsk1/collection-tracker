@@ -9,7 +9,7 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { EMPTY } from 'rxjs';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { SignIn } from './sign-in';
 
@@ -31,7 +31,7 @@ describe('SignIn component', () => {
   };
 
   beforeEach(() => {
-    apiService = { signIn: vi.fn(() => EMPTY) };
+    apiService = { signIn: vi.fn(() => of(undefined)) };
     webStorage = {
       getItem: vi.fn((key: string) => {
         if (key === STORAGE_LANGUAGE) return 'es';
@@ -66,7 +66,7 @@ describe('SignIn component', () => {
   it('initializes with stored defaults and persists language/theme updates', () => {
     const component = fixture.componentInstance;
 
-    expect(component['formGroup'].value).toEqual({
+    expect(component['signInModel']()).toEqual({
       username: '',
       token: '',
       apiUrl: 'https://stored-api',
@@ -74,8 +74,12 @@ describe('SignIn component', () => {
       theme: 'dark',
     });
 
-    component['formGroup'].controls.language.setValue('fr');
-    component['formGroup'].controls.theme.setValue('system');
+    webStorage.setItem.mockClear();
+    ngxTranslate.setLanguage.mockClear();
+
+    component['form'].language().value.set('fr');
+    component['form'].theme().value.set('system');
+    fixture.detectChanges();
 
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_LANGUAGE, 'fr');
     expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('fr');
@@ -99,7 +103,7 @@ describe('SignIn component', () => {
     const component = fixture.componentInstance;
     apiState.setState('apiUrl', 'https://old-api');
 
-    component['formGroup'].setValue({
+    component['signInModel'].set({
       username: 'neo',
       token: 'matrix',
       apiUrl: 'https://new-api',
@@ -122,6 +126,6 @@ describe('SignIn component', () => {
     });
     initializeFixture();
 
-    expect(fixture.componentInstance['formGroup'].value.theme).toBe('light');
+    expect(fixture.componentInstance['signInModel']().theme).toBe('light');
   });
 });

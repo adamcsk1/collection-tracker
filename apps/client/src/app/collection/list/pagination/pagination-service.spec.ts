@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { PAGINATION_PAGE_SIZE } from '@client/app-const';
+import { PAGINATION_PAGE_SIZE } from '@client/collection/list/pagination/pagination-const';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { signal } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';

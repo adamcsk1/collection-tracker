@@ -1,29 +1,31 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { form, FormField, required } from '@angular/forms/signals';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Autocomplete, AutocompleteService } from './autocomplete';
 
 @Component({
-  imports: [ReactiveFormsModule, Autocomplete],
+  imports: [FormField, Autocomplete],
   template: `<libc-autocomplete
-    [formControl]="control"
+    [formField]="field"
     placeholder="Search"
     hint="Helpful"
     [showReset]="true"
   ></libc-autocomplete>`,
 })
 class HostComponent {
-  public readonly control = new FormControl('');
+  public readonly model = signal('');
+  public readonly field = form(this.model, (path) => required(path));
 }
 
 @Component({
-  imports: [ReactiveFormsModule, Autocomplete],
-  template: `<libc-autocomplete [formControl]="control" placeholder="Search" [showReset]="true"></libc-autocomplete>`,
+  imports: [FormField, Autocomplete],
+  template: `<libc-autocomplete [formField]="field" placeholder="Search" [showReset]="true"></libc-autocomplete>`,
 })
 class NoHintHostComponent {
-  public readonly control = new FormControl('');
+  public readonly model = signal('');
+  public readonly field = form(this.model);
 }
 
 describe('Autocomplete component', () => {
@@ -68,7 +70,7 @@ describe('Autocomplete component', () => {
     component['onAcceptSuggestion'](0);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.control.value).toBe('alpha-formatted');
+    expect(fixture.componentInstance.model()).toBe('alpha-formatted');
     expect(component['suggestions']()).toEqual([]);
   });
 
@@ -84,7 +86,7 @@ describe('Autocomplete component', () => {
     component['onReset']();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.control.value).toBe('');
+    expect(fixture.componentInstance.model()).toBe('');
     expect(component['value']()).toBe('');
   });
 
@@ -114,7 +116,7 @@ describe('Autocomplete component', () => {
     } as unknown as KeyboardEvent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.control.value).toBe('beta-formatted');
+    expect(fixture.componentInstance.model()).toBe('beta-formatted');
     expect(component['suggestions']()).toEqual([]);
   });
 
@@ -219,8 +221,8 @@ describe('Autocomplete component', () => {
     expect(component['selectedSuggestion']()).toBe(0);
   });
 
-  it('updates internal value when control emits changes (ngOnInit path)', () => {
-    fixture.componentInstance.control.setValue('delta');
+  it('updates internal value when model signal changes externally', () => {
+    fixture.componentInstance.model.set('delta');
     fixture.detectChanges();
     expect(component['value']()).toBe('delta');
   });
@@ -238,7 +240,7 @@ describe('Autocomplete component', () => {
     } as unknown as KeyboardEvent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.control.value).toBe('alpha-formatted');
+    expect(fixture.componentInstance.model()).toBe('alpha-formatted');
     expect(component['suggestions']()).toEqual([]);
   });
 
@@ -253,11 +255,9 @@ describe('Autocomplete component', () => {
     expect(component['suggestions']()).toEqual([]);
   });
 
-  it('disables input via setDisabledState', () => {
-    component.setDisabledState(true);
-    fixture.detectChanges();
-
-    expect(component['isDisabled']()).toBe(true);
+  it('marks component touched on blur', () => {
+    component['onBlur']();
+    expect(component.touched()).toBe(true);
   });
 
   it('applies focus class when onFocus is triggered', () => {
@@ -265,23 +265,6 @@ describe('Autocomplete component', () => {
     fixture.detectChanges();
 
     expect(component['focused']()).toBe(true);
-  });
-
-  it('clears value and notifies onChange when reset is clicked', () => {
-    const changeSpy = vi.fn();
-    component.registerOnChange(changeSpy);
-
-    component['onKeyup']({
-      code: 'KeyT',
-      target: { value: 'typed' },
-    } as unknown as KeyboardEvent);
-    fixture.detectChanges();
-
-    component['onReset']();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.control.value).toBe('');
-    expect(changeSpy).toHaveBeenCalledWith('');
   });
 
   it('uses raw text when formatSuggestionText is not provided', () => {
@@ -298,7 +281,7 @@ describe('Autocomplete component', () => {
 
     component['onAcceptSuggestion'](0);
 
-    expect(fixture.componentInstance.control.value).toBe('alpha-formatted');
+    expect(fixture.componentInstance.model()).toBe('alpha-formatted');
     expect(serviceStub.formatSuggestionValue).toHaveBeenCalledWith('alpha');
   });
 
@@ -320,9 +303,6 @@ describe('Autocomplete component', () => {
 
   it('does not set describedBy when no hint or errors present', () => {
     const noHintFixture = TestBed.createComponent(NoHintHostComponent);
-    noHintFixture.componentInstance.control.setValidators(null);
-    noHintFixture.componentInstance.control.markAsPristine();
-    noHintFixture.componentInstance.control.markAsUntouched();
     noHintFixture.detectChanges();
 
     const noHintComponent = noHintFixture.debugElement.children[0].children[0]

@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { mainStateToken } from '@client/main/main-store';
 import { AccessTokens } from '@client/settings/access-tokens/access-tokens';
 import { AccountActions } from '@client/settings/account-actions/account-actions';
@@ -15,12 +15,11 @@ import { omdbStateToken } from '@services/omdb/omdb-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
-import { Form } from '@shared/models/form-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-settings',
-  imports: [Input, Select, ReactiveFormsModule, NgxSignalTranslatePipe, Details, AccountActions, AccessTokens],
+  imports: [Input, Select, FormField, FormRoot, NgxSignalTranslatePipe, Details, AccountActions, AccessTokens],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   providers: [OMDbService, ImageRefreshService],
@@ -30,6 +29,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Settings implements OnInit {
+  protected readonly submitAction = signal<'save' | 'save-and-back'>('save');
   private readonly settings = inject(SettingsService);
   private readonly mainState = inject(mainStateToken);
   private readonly omdbState = inject(omdbStateToken);
@@ -38,25 +38,45 @@ export class Settings implements OnInit {
   private readonly imageRefresh = inject(ImageRefreshService);
   private readonly translate = inject(TranslateService);
   private readonly theme = inject(ThemeService);
-  protected readonly formGroup = new FormGroup<Form<SettingsModel>>({
-    sensitiveDataStorage: new FormControl('local', { nonNullable: true, validators: [Validators.required] }),
-    clearLocalStorageAfterLogout: new FormControl('false', { nonNullable: true, validators: [Validators.required] }),
-    omdbApiKey: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    appMode: new FormControl('basic', { nonNullable: true, validators: [Validators.required] }),
-    fetchBatchSize: new FormControl(10000, { nonNullable: true, validators: [Validators.required] }),
-    theme: new FormControl('system', { nonNullable: true, validators: [Validators.required] }),
-    settingsLock: new FormControl('false', { nonNullable: true, validators: [Validators.required] }),
-    animatedBackground: new FormControl('true', { nonNullable: true, validators: [Validators.required] }),
-    language: new FormControl('en', { nonNullable: true, validators: [Validators.required] }),
-    searchMode: new FormControl('standard', { nonNullable: true, validators: [Validators.required] }),
+  protected readonly settingsModel = signal<SettingsModel>({
+    sensitiveDataStorage: 'local',
+    clearLocalStorageAfterLogout: 'false',
+    omdbApiKey: '',
+    appMode: 'basic',
+    fetchBatchSize: 10000,
+    theme: 'system',
+    settingsLock: 'false',
+    animatedBackground: 'true',
+    language: 'en',
+    searchMode: 'standard',
   });
+  protected readonly form = form(
+    this.settingsModel,
+    (settings) => {
+      required(settings.sensitiveDataStorage);
+      required(settings.clearLocalStorageAfterLogout);
+      required(settings.omdbApiKey);
+      required(settings.appMode);
+      required(settings.fetchBatchSize);
+      required(settings.theme);
+      required(settings.settingsLock);
+      required(settings.animatedBackground);
+      required(settings.language);
+      required(settings.searchMode);
+    },
+    {
+      submission: {
+        action: async () => this.onSave(this.submitAction() === 'save-and-back'),
+      },
+    }
+  );
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly settingLockEnabled = this.mainState.state.settingsLock;
   protected readonly themeOptions = this.theme.themeOptions;
   protected readonly languageOptions = this.translate.languageOptions;
 
   public ngOnInit(): void {
-    this.formGroup.setValue({
+    this.settingsModel.set({
       sensitiveDataStorage: this.mainState.state.sensitiveDataStorage(),
       omdbApiKey: this.omdbState.state.apiKey(),
       appMode: this.mainState.state.appMode(),
@@ -70,11 +90,11 @@ export class Settings implements OnInit {
     });
   }
 
-  protected onSave(navigateBack = false): void {
-    this.settings.storeFormData(this.formGroup.getRawValue(), navigateBack);
-  }
-
   protected onStartImagesRefresh(): void {
     this.imageRefresh.refreshImages();
+  }
+
+  private onSave(navigateBack = false): void {
+    this.settings.storeFormData(this.settingsModel(), navigateBack);
   }
 }

@@ -1,29 +1,31 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { form, FormField, required } from '@angular/forms/signals';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { Select } from './select';
 
 @Component({
-  imports: [ReactiveFormsModule, Select],
-  template: `<libc-select [formControl]="control" [options]="options" label="Choose" hint="Pick one"></libc-select>`,
+  imports: [FormField, Select],
+  template: `<libc-select [formField]="field" [options]="options" label="Choose" hint="Pick one"></libc-select>`,
 })
 class HostComponent {
-  public control = new FormControl('', { validators: Validators.required });
-  public options = [
+  public readonly model = signal('');
+  public readonly field = form(this.model, (path) => required(path));
+  public readonly options = [
     { text: 'One', value: '1' },
     { text: 'Two', value: '2' },
   ];
 }
 
 @Component({
-  imports: [ReactiveFormsModule, Select],
-  template: `<libc-select [formControl]="control" [options]="options" label="Choose"></libc-select>`,
+  imports: [FormField, Select],
+  template: `<libc-select [formField]="field" [options]="options" label="Choose"></libc-select>`,
 })
 class NoHintHostComponent {
-  public control = new FormControl('', { validators: Validators.required });
-  public options = [
+  public readonly model = signal('');
+  public readonly field = form(this.model);
+  public readonly options = [
     { text: 'One', value: '1' },
     { text: 'Two', value: '2' },
   ];
@@ -41,7 +43,7 @@ describe('Select component', () => {
     fixture.detectChanges();
   });
 
-  it('renders options and updates the control on change', () => {
+  it('renders options and updates the field value on change', () => {
     const component = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
     const options = component.options().map((option) => option.value);
 
@@ -52,7 +54,7 @@ describe('Select component', () => {
     } as unknown as Event);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.control.value).toBe('2');
+    expect(fixture.componentInstance.model()).toBe('2');
   });
 
   it('connects hint id to describedBy', () => {
@@ -61,39 +63,30 @@ describe('Select component', () => {
     expect(component['describedBy']()).toBe(component['hintId']());
   });
 
-  it('calls onTouched when blurred', () => {
+  it('marks the field as touched when blurred', () => {
     const componentInstance = fixture.debugElement.children[0].children[0].componentInstance as Select<string>;
-    const touchedSpy = vi.fn();
-    componentInstance.registerOnTouched(touchedSpy);
 
     componentInstance['onBlur']();
 
-    expect(touchedSpy).toHaveBeenCalled();
+    expect(componentInstance.touched()).toBe(true);
   });
 
   it('does not set describedBy when no hint or errors present', () => {
     const noHintFixture = TestBed.createComponent(NoHintHostComponent);
-    noHintFixture.componentInstance.control.setErrors(null);
-    noHintFixture.componentInstance.control.markAsPristine();
-    noHintFixture.componentInstance.control.markAsUntouched();
     noHintFixture.detectChanges();
 
     const component = noHintFixture.debugElement.children[0].children[0].componentInstance as Select<string>;
     expect(component['describedBy']()).toBeNull();
   });
 
-  it('disables the control via setDisabledState and links error id', () => {
+  it('links error id when touched with required validation error', () => {
     const localFixture = TestBed.createComponent(HostComponent);
-    localFixture.componentInstance.control.markAsTouched();
-    localFixture.componentInstance.control.setErrors({ required: true });
     localFixture.detectChanges();
 
     const componentInstance = localFixture.debugElement.children[0].children[0].componentInstance as Select<string>;
-
-    componentInstance.setDisabledState(true);
+    componentInstance.touched.set(true);
     localFixture.detectChanges();
 
-    expect(componentInstance['isDisabled']()).toBe(true);
     const describedBy = componentInstance['describedBy']() ?? '';
     expect(describedBy).toContain('-hint');
     expect(describedBy).toContain('-error');

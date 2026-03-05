@@ -83,7 +83,7 @@ describe('ItemDialog', () => {
   });
 
   it('initializes raw content control from the input model', () => {
-    expect(component['rawContentControl'].value).toBe('raw content');
+    expect(component['rawContentModel']()).toBe('raw content');
   });
 
   it('deletes an item after confirmation', () => {
@@ -119,7 +119,7 @@ describe('ItemDialog', () => {
 
   it('saves changes after confirmation and updates state', () => {
     confirm.open.mockReturnValue(of(true));
-    component['rawContentControl'].setValue('updated content');
+    component['rawContentModel'].set('updated content');
     const updateSpy = vi.spyOn(component.collectionItem as any, 'update');
 
     component['onSaveChanges']();
@@ -134,7 +134,7 @@ describe('ItemDialog', () => {
 
   it('does not save when confirmation is declined', () => {
     confirm.open.mockReturnValue(of(false));
-    component['rawContentControl'].setValue('no change');
+    component['rawContentModel'].set('no change');
 
     component['onSaveChanges']();
 

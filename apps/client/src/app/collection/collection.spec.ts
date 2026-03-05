@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
@@ -25,7 +24,7 @@ describe('Collection component', () => {
     });
 
     TestBed.overrideComponent(Collection, {
-      set: { template: '', imports: [ReactiveFormsModule] },
+      set: { template: '' },
     });
 
     fixture = TestBed.createComponent(Collection);
@@ -39,11 +38,11 @@ describe('Collection component', () => {
     collectionState.setState('searchText', 'neo');
     fixture.detectChanges();
 
-    expect(fixture.componentInstance['searchTextControl'].value).toBe('neo');
+    expect(fixture.componentInstance['searchTextModel']()).toBe('neo');
   });
 
   it('persists search text changes back to the store', async () => {
-    fixture.componentInstance['searchTextControl'].setValue('trinity');
+    fixture.componentInstance['searchTextModel'].set('trinity');
     fixture.detectChanges();
 
     expect(collectionState.state.searchText()).toBe('trinity');

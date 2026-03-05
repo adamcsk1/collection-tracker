@@ -1,17 +1,15 @@
 import {
   Component,
   computed,
-  DestroyRef,
   ElementRef,
   inject,
   InjectionToken,
   input,
-  OnInit,
+  model,
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ControlValueAccessor, FormControl, FormsModule, NgControl, ReactiveFormsModule } from '@angular/forms';
+import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { AutocompleteServiceInterface } from '@components/autocomplete/autocomplete-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { asyncScheduler } from 'rxjs';
@@ -20,24 +18,27 @@ export const AutocompleteService = new InjectionToken<AutocompleteServiceInterfa
 
 @Component({
   selector: 'libc-autocomplete',
-  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, FormsModule],
+  imports: [NgxSignalTranslatePipe],
   templateUrl: './autocomplete.html',
   styleUrl: './autocomplete.css',
 })
-export class Autocomplete<T> implements OnInit, ControlValueAccessor {
-  private readonly destroyRef = inject(DestroyRef);
+export class Autocomplete<T> implements FormValueControl<T | null> {
   private readonly inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
   private readonly _suggestions = signal<Array<string>>([]);
   private readonly autocompleteService = inject(AutocompleteService);
-  private readonly ngControl = inject(NgControl, { optional: true, self: true });
   private lastKeycode = '';
   private lastEventWasAccept = false;
-  private onChange: (value: T | null) => void = () => {};
-  private onTouched: () => void = () => {};
   protected readonly suggestions = this._suggestions.asReadonly();
-  protected readonly value = signal('');
+  public readonly value = model<T | null>(null);
+  public readonly touched = model(false);
+  public readonly dirty = input(false);
+  public readonly disabled = input(false);
+  public readonly errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   protected readonly selectedSuggestion = signal(-1);
-  protected readonly hasValue = computed(() => !!this.value());
+  protected readonly hasValue = computed(() => {
+    const value = this.value();
+    return value !== null && `${value}`.length > 0;
+  });
   protected readonly focused = signal<boolean>(false);
   public readonly inputId = input<string>(crypto.randomUUID());
   public readonly showReset = input<boolean>(false);
@@ -45,45 +46,18 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   public readonly label = input<string>('');
   public readonly hint = input<string>();
   public readonly mandatory = input<boolean>(false);
-  protected readonly control = computed<FormControl<T> | null>(() => this.ngControl?.control as FormControl<T>);
+  protected readonly showError = computed(() => (this.touched() || this.dirty()) && this.errors().length > 0);
   protected readonly hintId = computed<string | null>(() => (this.hint() ? `${this.inputId()}-hint` : null));
   protected readonly errorId = computed<string | null>(() => {
-    const control = this.control();
-    const hasError = !!control && (control.touched || control.dirty) && !!control.errors;
-    return hasError ? `${this.inputId()}-error` : null;
+    return this.showError() ? `${this.inputId()}-error` : null;
   });
   protected readonly describedBy = computed<string | null>(() => {
     const ids = [this.hintId(), this.errorId()].filter(Boolean);
     return ids.length ? ids.join(' ') : null;
   });
-  protected readonly isDisabled = signal(false);
-
-  constructor() {
-    if (this.ngControl) this.ngControl.valueAccessor = this;
-  }
-
-  public ngOnInit(): void {
-    const control = this.control();
-    control?.valueChanges?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-      this.value.set((value as string) ?? '');
-    });
-  }
-
-  public writeValue(value: T | null): void {
-    this.value.set((value as string) ?? '');
-  }
-
-  public registerOnChange(fn: (value: T | null) => void): void {
-    this.onChange = fn;
-  }
-
-  public registerOnTouched(fn: () => void): void {
-    this.onTouched = fn;
-  }
-
-  public setDisabledState(isDisabled: boolean): void {
-    this.isDisabled.set(isDisabled);
-  }
+  protected readonly hasRequiredError = computed(
+    () => this.showError() && this.errors().some((error) => error.kind === 'required')
+  );
 
   protected onKeypress($event: KeyboardEvent): void {
     if ($event.code === 'Enter') {
@@ -124,8 +98,7 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
 
   protected onKeyup($event: KeyboardEvent): void {
     const inputText = ($event.target as HTMLInputElement).value;
-    this.value.set(inputText);
-    this.onChange(this.value() as T);
+    this.value.set(inputText as T);
     if ($event.code !== 'Escape' && !this.lastEventWasAccept) this.getSuggestions();
     else this._suggestions.set([]);
   }
@@ -142,7 +115,7 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   }
 
   protected onBlur(): void {
-    this.onTouched();
+    this.touched.set(true);
     asyncScheduler.schedule(() => this._suggestions.set([]), 100);
     this.focused.set(false);
   }
@@ -167,18 +140,18 @@ export class Autocomplete<T> implements OnInit, ControlValueAccessor {
   }
 
   private getSuggestions(): void {
-    if (this.value().trim() === '') {
+    const value = this.value();
+    if (typeof value !== 'string' || value.trim() === '') {
       this._suggestions.set([]);
       return;
     }
 
-    const suggestions = this.autocompleteService.getSuggestion(this.value());
-    if (suggestions.length > 0 && !suggestions.includes(this.value())) this._suggestions.set(suggestions);
+    const suggestions = this.autocompleteService.getSuggestion(value);
+    if (suggestions.length > 0 && !suggestions.includes(value)) this._suggestions.set(suggestions);
     else this._suggestions.set([]);
   }
 
   private setInput(value: T): void {
-    this.value.set((value as string) ?? '');
-    this.onChange(value);
+    this.value.set(value);
   }
 }

@@ -57,14 +57,14 @@ describe('SignUp component', () => {
     fixture.detectChanges();
   });
 
-  it('preloads API URL and updates it when sending the form', () => {
+  it('preloads API URL and updates it when sending the form', async () => {
     const component = fixture.componentInstance;
     apiState.setState('apiUrl', 'https://old-api');
 
-    expect(component['formGroup'].value.apiUrl).toBe('https://stored-api');
+    expect(component['signUpModel']().apiUrl).toBe('https://stored-api');
 
-    component['formGroup'].setValue({ username: 'neo', apiUrl: 'https://new-api' });
-    component['onSend']();
+    component['signUpModel'].set({ username: 'neo', apiUrl: 'https://new-api' });
+    await component['onSend']();
 
     expect(apiService.signUp).toHaveBeenCalledWith('neo');
     expect(apiState.setState).toHaveBeenCalledWith('apiUrl', 'https://new-api');

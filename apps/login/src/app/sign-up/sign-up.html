@@ -5,18 +5,13 @@
     {{ ('Message.SignUp' | signalTranslate)() }}
   </p>
 </div>
-<form role="form" [attr.aria-label]="('SignUp' | signalTranslate)()" [formGroup]="formGroup">
-  <libc-input
-    icon="person"
-    [label]="('Username' | signalTranslate)()"
-    [mandatory]="true"
-    [formControl]="formGroup.controls.username"
-  >
+<form role="form" [attr.aria-label]="('SignUp' | signalTranslate)()" [formRoot]="form">
+  <libc-input icon="person" [label]="('Username' | signalTranslate)()" [mandatory]="true" [formField]="form.username">
     <ng-container errors>
-      @if (!!formGroup.controls.username.errors?.['minlength']) {
+      @if (formErrors.username.minLength()) {
         {{ ('Validation.UsernameMinLength' | signalTranslate)() }}
       }
-      @if (!!formGroup.controls.username.errors?.['maxlength']) {
+      @if (formErrors.username.maxLength()) {
         {{ ('Validation.UsernameMaxLength' | signalTranslate)() }}
       }
     </ng-container>
@@ -44,13 +39,13 @@
       [label]="('ApiUrl' | signalTranslate)()"
       [hint]="('Message.ApiUrl' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.apiUrl"
+      [formField]="form.apiUrl"
     />
   }
 
   <div class="form-buttons">
     @if (!secret()) {
-      <button [disabled]="formGroup.invalid" (click)="onSend()">
+      <button type="submit" [disabled]="form().invalid()">
         {{ ('Continue' | signalTranslate)() }}
       </button>
     }
@@ -60,7 +55,7 @@
         {{ ('BackToSignIn' | signalTranslate)() }}
       </a>
       @if (!showApiUrlInput() && !secret()) {
-        <button class="button-basic" (click)="showApiUrlInput.set(true)">
+        <button type="button" class="button-basic" (click)="showApiUrlInput.set(true)">
           {{ ('ChangeApiUrl' | signalTranslate)() }}
         </button>
       }

@@ -1,10 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { FormControl } from '@angular/forms';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { knownIMDbIdValidator } from './known-imdb-id-validator';
+import { knownIMDbIdValidationFactory } from './known-imdb-id-validator';
 
 const buildItem = (IMDbId: string): CollectionItemModel => ({
   rawContent: '',
@@ -20,6 +19,7 @@ const buildItem = (IMDbId: string): CollectionItemModel => ({
 
 describe('knownIMDbIdValidator', () => {
   let collectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
+  let knownIMDbIdValidationError: (IMDbId: string | null) => { kind: 'knownIMDbId' } | undefined;
 
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideStore(initialMainCollectionState, mainCollectionStateToken)] });
@@ -27,23 +27,14 @@ describe('knownIMDbIdValidator', () => {
       typeof initialMainCollectionState
     >;
     collectionState.setState('collection', [buildItem('tt1')]);
+    knownIMDbIdValidationError = TestBed.runInInjectionContext(() => knownIMDbIdValidationFactory());
   });
 
   it('returns error when IMDb id is already known', () => {
-    TestBed.runInInjectionContext(() => {
-      const validator = knownIMDbIdValidator();
-      const control = new FormControl('tt1');
-
-      expect(validator(control)).toEqual({ knownIMDbId: true });
-    });
+    expect(knownIMDbIdValidationError('tt1')).toEqual({ kind: 'knownIMDbId' });
   });
 
-  it('returns null when IMDb id is new', () => {
-    TestBed.runInInjectionContext(() => {
-      const validator = knownIMDbIdValidator();
-      const control = new FormControl('tt2');
-
-      expect(validator(control)).toBeNull();
-    });
+  it('returns undefined when IMDb id is new', () => {
+    expect(knownIMDbIdValidationError('tt2')).toBeUndefined();
   });
 });

@@ -3,23 +3,23 @@
     <h3>{{ ('Title.NewCollectionItem' | signalTranslate)() }}</h3>
   </ng-container>
   <ng-container dialog-shell-content>
-    <form role="form" [formGroup]="formGroup">
+    <form role="form" [formRoot]="form">
       <libc-input
         [label]="('Search' | signalTranslate)()"
         [hint]="('Message.NewCollectionItemSearch' | signalTranslate)()"
         [mandatory]="true"
-        [formControl]="formGroup.controls.searchText"
+        [formField]="form.searchText"
         [showReset]="true"
       />
       @if (matchedContent().length) {
         <libc-select
           [mandatory]="true"
           [label]="('SelectedContent' | signalTranslate)()"
-          [formControl]="formGroup.controls.selectedIMDbId"
+          [formField]="form.selectedIMDbId"
           [options]="matchedContent()"
         >
           <ng-container errors>
-            @if (!!formGroup.controls.selectedIMDbId.errors?.['knownIMDbId']) {
+            @if (formErrors.selectedIMDbId.knownIMDbId()) {
               {{ ('Validation.KnownIMDbId' | signalTranslate)() }}
             }
           </ng-container>
@@ -27,17 +27,32 @@
         <libc-autocomplete
           [label]="('Tags' | signalTranslate)()"
           [hint]="('Message.Tags' | signalTranslate)()"
-          [formControl]="formGroup.controls.tags"
+          [formField]="form.tags"
         />
       }
       <div class="form-buttons">
-        <button [disabled]="formGroup.invalid" [title]="('Save' | signalTranslate)()" (click)="onSave()">
+        <button
+          type="submit"
+          [disabled]="form().invalid()"
+          [title]="('Save' | signalTranslate)()"
+          (click)="submitMode.set(null)"
+        >
           {{ ('Save' | signalTranslate)() }}
         </button>
-        <button [disabled]="formGroup.invalid" [title]="('SaveAndNew' | signalTranslate)()" (click)="onSave('new')">
+        <button
+          type="submit"
+          [disabled]="form().invalid()"
+          [title]="('SaveAndNew' | signalTranslate)()"
+          (click)="submitMode.set('new')"
+        >
           {{ ('SaveAndNew' | signalTranslate)() }}
         </button>
-        <button [disabled]="formGroup.invalid" [title]="('SaveAndClose' | signalTranslate)()" (click)="onSave('close')">
+        <button
+          type="submit"
+          [disabled]="form().invalid()"
+          [title]="('SaveAndClose' | signalTranslate)()"
+          (click)="submitMode.set('close')"
+        >
           {{ ('SaveAndClose' | signalTranslate)() }}
         </button>
       </div>

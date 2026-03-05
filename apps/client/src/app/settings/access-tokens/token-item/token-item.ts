@@ -1,14 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule } from '@angular/forms';
 import { ConfirmService } from '@services/confirm-service';
 import { AccessTokenModel } from '@shared/models/api-model';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-token-item',
-  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, DatePipe],
+  imports: [NgxSignalTranslatePipe, DatePipe],
   templateUrl: './token-item.html',
   styleUrl: './token-item.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
