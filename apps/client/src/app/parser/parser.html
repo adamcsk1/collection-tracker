@@ -1,20 +1,15 @@
-<form role="form" [formGroup]="formGroup">
+<form role="form" [formRoot]="form">
   <h3>{{ ('MarkdownTemplate' | signalTranslate)() }}</h3>
   <p>{{ ('Message.ParserTemplate' | signalTranslate)() }}</p>
   <libc-textarea
     [label]="('RawTemplate' | signalTranslate)()"
     [mandatory]="true"
-    [formControl]="formGroup.controls.mdTemplate"
+    [formField]="form.mdTemplate"
     [rows]="15"
   >
     <ng-container errors>
-      @if (!!formGroup.controls.mdTemplate.errors?.['mdTemplate']) {
-        {{
-          (
-            'Validation.MissingKeys'
-            | signalTranslate: { keys: formGroup.controls.mdTemplate.errors?.['mdTemplate'].missingKeys }
-          )()
-        }}
+      @if (mdTemplateError(); as mdTemplateError) {
+        {{ ('Validation.MissingKeys' | signalTranslate: { keys: mdTemplateError.missingKeys })() }}
       }
     </ng-container>
   </libc-textarea>
@@ -40,64 +35,64 @@
     <libc-input
       [label]="('IMDbIdRegexp' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.IMDbId"
+      [formField]="form.IMDbId"
       [hint]="('Message.IMDBIdRegexp' | signalTranslate)()"
     />
     <libc-input
       [label]="('GenreRegexp' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.genre"
+      [formField]="form.genre"
       [hint]="('Message.GenreRegexp' | signalTranslate)()"
     />
     <libc-input
       [label]="('GenreTokenRegexp' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.genreToken"
+      [formField]="form.genreToken"
       [hint]="('Message.GenreTokenRegexp' | signalTranslate)()"
     />
     <libc-input
       [label]="('ImageRegexp' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.image"
+      [formField]="form.image"
       [hint]="('Message.ImageRegexp' | signalTranslate)()"
     />
     <libc-input
       [label]="('IMDbRateRegexp' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.IMDbRate"
+      [formField]="form.IMDbRate"
       [hint]="('Message.IMDbRateRegexp' | signalTranslate)()"
     />
     <libc-input
       [label]="('TagsRegexp' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.tags"
+      [formField]="form.tags"
       [hint]="('Message.TagsRegexp' | signalTranslate)()"
     />
     <libc-input
       [label]="('TagTokenRegexp' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.tagToken"
+      [formField]="form.tagToken"
       [hint]="('Message.TagTokenRegexp' | signalTranslate)()"
     />
     <libc-input
       [label]="('TitleRegexp' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.title"
+      [formField]="form.title"
       [hint]="('Message.TitleRegexp' | signalTranslate)()"
     />
     <libc-input
       [label]="('YearRegexp' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.year"
+      [formField]="form.year"
       [hint]="('Message.YearRegexp' | signalTranslate)()"
     />
   </libc-details>
 
   <div class="form-buttons">
-    <button [disabled]="formGroup.invalid" (click)="onSave()">
+    <button type="submit" [disabled]="form().invalid()">
       {{ ('Save' | signalTranslate)() }}
     </button>
-    <button class="button-basic" [disabled]="formGroup.invalid" (click)="onGeneratePreview()">
+    <button type="button" class="button-basic" [disabled]="form().invalid()" (click)="onGeneratePreview()">
       {{ ('Preview' | signalTranslate)() }}
     </button>
   </div>
@@ -106,7 +101,11 @@
     <p>{{ ('Message.RefreshTemplates' | signalTranslate)() }}</p>
 
     <div class="form-buttons">
-      <button [disabled]="formGroup.invalid || apiLoadNetworkStatus() !== 'finished'" (click)="onRefreshTemplates()">
+      <button
+        type="button"
+        [disabled]="form().invalid() || apiLoadNetworkStatus() !== 'finished'"
+        (click)="onRefreshTemplates()"
+      >
         {{ ('Start' | signalTranslate)() }}
       </button>
     </div>

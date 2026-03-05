@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { CollectionService } from '@client/collection/collection-service';
 import { getCollectionItem } from '@client/collection/utils/get-collection-item-util';
@@ -17,7 +17,7 @@ import { map, mergeMap, of } from 'rxjs';
 
 @Component({
   selector: 'ct-item-dialog',
-  imports: [NgxSignalTranslatePipe, Textarea, DialogShell, ReactiveFormsModule],
+  imports: [NgxSignalTranslatePipe, Textarea, DialogShell, FormField],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
   host: {
@@ -38,14 +38,15 @@ export class ItemDialog implements OnInit {
     const rawContent = this.collectionItem().rawContent;
     return marked.parse(rawContent, { breaks: true });
   });
-  protected readonly rawContentControl = new FormControl<string>('', { nonNullable: true });
+  protected readonly rawContentModel = signal('');
+  protected readonly rawContentField = form(this.rawContentModel);
   protected readonly editMode = signal(false);
   protected readonly permissionUpdate = computed(() => this.mainState.state.permissions().update);
   protected readonly permissionDelete = computed(() => this.mainState.state.permissions().delete);
   public readonly collectionItem = model.required<CollectionItemModel>();
 
   public ngOnInit(): void {
-    this.rawContentControl.setValue(this.collectionItem().rawContent);
+    this.rawContentModel.set(this.collectionItem().rawContent);
   }
 
   protected onDelete(): void {
@@ -81,7 +82,7 @@ export class ItemDialog implements OnInit {
       .pipe(
         mergeMap((confirmed) => {
           if (confirmed) {
-            return this.api.update(this.collectionItem().name, this.rawContentControl.value).pipe(map(() => confirmed));
+            return this.api.update(this.collectionItem().name, this.rawContentModel()).pipe(map(() => confirmed));
           } else return of(confirmed);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -89,9 +90,9 @@ export class ItemDialog implements OnInit {
       .subscribe((confirmed) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
-          this.collectionService.updateCollectionItem(this.collectionItem().name, this.rawContentControl.value);
+          this.collectionService.updateCollectionItem(this.collectionItem().name, this.rawContentModel());
           this.collectionItem.update((collectionItem) =>
-            getCollectionItem({ name: collectionItem.name, content: this.rawContentControl.value })
+            getCollectionItem({ name: collectionItem.name, content: this.rawContentModel() })
           );
           this.onReadOnly();
         }

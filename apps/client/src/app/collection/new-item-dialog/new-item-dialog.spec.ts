@@ -48,34 +48,35 @@ describe('NewItemDialog component', () => {
   });
 
   it('preselects the first matched content and marks control as touched', () => {
-    const control = component['formGroup'].controls.selectedIMDbId;
+    const control = component['form'].selectedIMDbId();
 
-    expect(control.value).toBe('tt123');
-    expect(control.touched).toBe(true);
+    expect(control.value()).toBe('tt123');
+    expect(control.touched()).toBe(true);
   });
 
   it('debounces search text updates before calling search', () => {
-    const control = component['formGroup'].controls.searchText;
+    const control = component['form'].searchText();
 
-    control.setValue('matrix');
+    control.value.set('matrix');
     vi.advanceTimersByTime(500);
 
     expect(service.search).toHaveBeenCalledWith('matrix');
   });
 
-  it('invokes save and resets when mode is new', () => {
-    vi.spyOn(component['formGroup'], 'reset');
-    component['formGroup'].controls.selectedIMDbId.setValue('tt123');
-    component['formGroup'].controls.tags.setValue('#tag');
+  it('invokes save and resets when mode is new', async () => {
+    const formRoot = component['form']();
+    vi.spyOn(formRoot, 'reset');
+    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].tags().value.set('#tag');
 
-    component['onSave']('new');
+    await component['onSave']('new');
 
     expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'new');
-    expect(component['formGroup'].reset).toHaveBeenCalled();
+    expect(formRoot.reset).toHaveBeenCalled();
   });
 
   it('exits when there is no selected IMDb id', () => {
-    component['formGroup'].controls.selectedIMDbId.setValue(null);
+    component['form'].selectedIMDbId().value.set(null);
 
     component['onSave']();
 

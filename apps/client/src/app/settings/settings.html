@@ -1,23 +1,23 @@
-<form role="form" [formGroup]="formGroup">
+<form role="form" [formRoot]="form">
   <h3>{{ ('BasicSettings' | signalTranslate)() }}</h3>
   <libc-details [summary]="('Basics' | signalTranslate)()">
     <libc-select
       [label]="('Language' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.language"
+      [formField]="form.language"
       [options]="languageOptions()"
     />
     <libc-select
       [label]="('Theme' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.theme"
+      [formField]="form.theme"
       [options]="themeOptions()"
     />
     <libc-select
       [label]="('SearchMode' | signalTranslate)()"
       [hint]="('Message.SearchMode' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.searchMode"
+      [formField]="form.searchMode"
       [options]="[
         { text: ('STANDARD' | signalTranslate)(), value: 'standard' },
         { text: ('FUZZY' | signalTranslate)(), value: 'fuzzy' },
@@ -27,7 +27,7 @@
       [label]="('AnimatedBackground' | signalTranslate)()"
       [hint]="('Message.AnimatedBackground' | signalTranslate)()"
       [mandatory]="true"
-      [formControl]="formGroup.controls.animatedBackground"
+      [formField]="form.animatedBackground"
       [options]="[
         { text: ('Yes' | signalTranslate)(), value: 'true' },
         { text: ('No' | signalTranslate)(), value: 'false' },
@@ -38,19 +38,19 @@
         [label]="('AppMode' | signalTranslate)()"
         [hint]="('Message.AppMode' | signalTranslate)()"
         [mandatory]="true"
-        [formControl]="formGroup.controls.appMode"
+        [formField]="form.appMode"
         [options]="[
           { text: ('BasicAccess' | signalTranslate)(), value: 'basic' },
           { text: ('LimitedAccess' | signalTranslate)(), value: 'limited' },
           { text: ('FullAccess' | signalTranslate)(), value: 'full' },
         ]"
       />
-      @if (formGroup.controls.appMode.value !== 'full') {
+      @if (form.appMode().value() !== 'full') {
         <libc-select
           [label]="('SettingsLock' | signalTranslate)()"
           [hint]="('Message.SettingsLock' | signalTranslate)()"
           [mandatory]="true"
-          [formControl]="formGroup.controls.settingsLock"
+          [formField]="form.settingsLock"
           [options]="[
             { text: ('Yes' | signalTranslate)(), value: 'true' },
             { text: ('No' | signalTranslate)(), value: 'false' },
@@ -61,7 +61,7 @@
         [label]="('FetchBatchSize' | signalTranslate)()"
         [hint]="('Message.FetchBatchSize' | signalTranslate)()"
         [mandatory]="true"
-        [formControl]="formGroup.controls.fetchBatchSize"
+        [formField]="form.fetchBatchSize"
         [options]="[
           { text: ('Unlimited' | signalTranslate)(), value: 10000 },
           { text: '5000', value: 5000 },
@@ -75,13 +75,13 @@
   </libc-details>
 
   @if (!settingLockEnabled()) {
-    <libc-details [open]="!formGroup.controls.omdbApiKey.value" [summary]="('Integrations' | signalTranslate)()">
+    <libc-details [open]="!form.omdbApiKey().value()" [summary]="('Integrations' | signalTranslate)()">
       <p>{{ ('Message.IntegrationSettings' | signalTranslate)() }}</p>
       <libc-input
         [label]="('OMDbApiKey' | signalTranslate)()"
         [hint]="('Message.OMDbApiKey' | signalTranslate)()"
         [mandatory]="true"
-        [formControl]="formGroup.controls.omdbApiKey"
+        [formField]="form.omdbApiKey"
       />
     </libc-details>
     <libc-details [summary]="('StoragePolicies' | signalTranslate)()">
@@ -90,17 +90,17 @@
         [label]="('SensitiveDataStorage' | signalTranslate)()"
         [hint]="('Message.SensitiveDataStorage' | signalTranslate)()"
         [mandatory]="true"
-        [formControl]="formGroup.controls.sensitiveDataStorage"
+        [formField]="form.sensitiveDataStorage"
         [options]="[
           { text: ('LocalStorage' | signalTranslate)(), value: 'local' },
           { text: ('SessionStorage' | signalTranslate)(), value: 'session' },
         ]"
       />
-      @if (formGroup.controls.sensitiveDataStorage.value === 'local') {
+      @if (form.sensitiveDataStorage().value() === 'local') {
         <libc-select
           [label]="('ClearLocalStorageAfterLogout' | signalTranslate)()"
           [mandatory]="true"
-          [formControl]="formGroup.controls.clearLocalStorageAfterLogout"
+          [formField]="form.clearLocalStorageAfterLogout"
           [options]="[
             { text: ('Yes' | signalTranslate)(), value: 'true' },
             { text: ('No' | signalTranslate)(), value: 'false' },
@@ -111,10 +111,10 @@
   }
 
   <div class="form-buttons">
-    <button [disabled]="formGroup.invalid" (click)="onSave()">
+    <button type="submit" [disabled]="form().invalid()" (click)="submitAction.set('save')">
       {{ ('Save' | signalTranslate)() }}
     </button>
-    <button [disabled]="formGroup.invalid" (click)="onSave(true)">
+    <button type="submit" [disabled]="form().invalid()" (click)="submitAction.set('save-and-back')">
       {{ ('SaveAndBack' | signalTranslate)() }}
     </button>
   </div>
@@ -126,12 +126,12 @@
   }
 
   <h3>{{ ('OtherSettings' | signalTranslate)() }}</h3>
-  @if (formGroup.controls.appMode.value === 'full') {
+  @if (form.appMode().value() === 'full') {
     <libc-details [summary]="('Images' | signalTranslate)()">
       <p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
 
       <div class="form-buttons">
-        <button [disabled]="apiLoadNetworkStatus() !== 'finished'" (click)="onStartImagesRefresh()">
+        <button type="button" [disabled]="apiLoadNetworkStatus() !== 'finished'" (click)="onStartImagesRefresh()">
           {{ ('Start' | signalTranslate)() }}
         </button>
       </div>

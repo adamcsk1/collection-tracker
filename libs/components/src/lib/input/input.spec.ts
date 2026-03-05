@@ -1,24 +1,26 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { form, FormField, required } from '@angular/forms/signals';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { Input } from './input';
 
 @Component({
-  imports: [ReactiveFormsModule, Input],
-  template: `<libc-input [formControl]="control" label="Name" hint="Helpful" [showReset]="true"></libc-input>`,
+  imports: [FormField, Input],
+  template: `<libc-input [formField]="field" label="Name" hint="Helpful" [showReset]="true"></libc-input>`,
 })
 class HostComponent {
-  public control = new FormControl('');
+  public readonly model = signal('');
+  public readonly field = form(this.model, (path) => required(path));
 }
 
 @Component({
-  imports: [ReactiveFormsModule, Input],
-  template: `<libc-input [formControl]="control" label="Name"></libc-input>`,
+  imports: [FormField, Input],
+  template: `<libc-input [formField]="field" label="Name"></libc-input>`,
 })
 class NoHintHostComponent {
-  public control = new FormControl('');
+  public readonly model = signal('');
+  public readonly field = form(this.model);
 }
 
 describe('Input component', () => {
@@ -33,7 +35,7 @@ describe('Input component', () => {
     fixture.detectChanges();
   });
 
-  it('syncs value with the form control and resets via button', () => {
+  it('syncs value with the form field and resets via button', () => {
     const component = fixture.debugElement.children[0].children[0].componentInstance as Input<string>;
 
     component['onInput']({
@@ -41,13 +43,13 @@ describe('Input component', () => {
     } as unknown as Event);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.control.value).toBe('abc');
+    expect(fixture.componentInstance.model()).toBe('abc');
     expect(component['hasValue']()).toBe(true);
 
     component['onReset']();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.control.value).toBe('');
+    expect(fixture.componentInstance.model()).toBe('');
     expect(component['value']()).toBe('');
   });
 
@@ -57,40 +59,30 @@ describe('Input component', () => {
     expect(component['describedBy']()).toBe(component['hintId']());
   });
 
-  it('invokes onTouched when blurred', () => {
+  it('marks the field as touched when blurred', () => {
     const component = fixture.debugElement.children[0].children[0].componentInstance as Input<string>;
-    const touchedSpy = vi.fn();
-    component.registerOnTouched(touchedSpy);
 
     component['onBlur']();
 
-    expect(touchedSpy).toHaveBeenCalled();
+    expect(component.touched()).toBe(true);
   });
 
   it('does not set describedBy when no hint or errors present', () => {
     const noHintFixture = TestBed.createComponent(NoHintHostComponent);
-    noHintFixture.componentInstance.control.setValidators(null);
-    noHintFixture.componentInstance.control.markAsPristine();
-    noHintFixture.componentInstance.control.markAsUntouched();
     noHintFixture.detectChanges();
 
     const component = noHintFixture.debugElement.children[0].children[0].componentInstance as Input<string>;
     expect(component['describedBy']()).toBeNull();
   });
 
-  it('disables the input and exposes error id when control is touched with errors', () => {
+  it('exposes error id when touched with required validation error', () => {
     const localFixture = TestBed.createComponent(HostComponent);
-    localFixture.componentInstance.control.setValidators(Validators.required);
-    localFixture.componentInstance.control.markAsTouched();
-    localFixture.componentInstance.control.updateValueAndValidity();
     localFixture.detectChanges();
 
     const componentInstance = localFixture.debugElement.children[0].children[0].componentInstance as Input<string>;
-
-    componentInstance.setDisabledState(true);
+    componentInstance.touched.set(true);
     localFixture.detectChanges();
 
-    expect(componentInstance['isDisabled']()).toBe(true);
     const describedBy = componentInstance['describedBy']() ?? '';
     expect(describedBy).toContain('-hint');
     expect(describedBy).toContain('-error');

@@ -5,7 +5,7 @@
   <ng-container dialog-shell-content>
     @if (editMode()) {
       <div class="editor-pane">
-        <libc-textarea [formControl]="rawContentControl" [autoHeight]="true"></libc-textarea>
+        <libc-textarea [formField]="rawContentField" [autoHeight]="true"></libc-textarea>
       </div>
     } @else {
       <div class="preview-pane" [innerHTML]="parsedMdContent()"></div>

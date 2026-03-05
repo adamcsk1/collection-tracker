@@ -1,6 +1,5 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { List } from '@client/collection/list/list';
 import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
 import { SearchSuggestionService } from '@client/collection/search/search-suggestion-service';
@@ -11,7 +10,7 @@ import { provideStore } from 'ngx-simple-signal-store';
 
 @Component({
   selector: 'ct-collection',
-  imports: [List, ReactiveFormsModule, NgxSignalTranslatePipe, Autocomplete],
+  imports: [List, FormField, NgxSignalTranslatePipe, Autocomplete],
   templateUrl: './collection.html',
   styleUrl: './collection.css',
   providers: [
@@ -20,21 +19,26 @@ import { provideStore } from 'ngx-simple-signal-store';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Collection implements OnInit {
-  private readonly destroyRef = inject(DestroyRef);
+export class Collection {
   private readonly collectionState = inject(collectionStateToken);
-  protected readonly searchTextControl = new FormControl<string>('', { nonNullable: true });
+  protected readonly searchTextModel = signal('');
+  protected readonly searchTextField = form(this.searchTextModel);
 
   constructor() {
     effect(() => {
       const searchText = this.collectionState.state.searchText();
-      this.searchTextControl.setValue(searchText);
+      untracked(() => {
+        if (this.searchTextModel() !== searchText) {
+          this.searchTextModel.set(searchText);
+        }
+      });
     });
-  }
 
-  public ngOnInit(): void {
-    this.searchTextControl.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((searchText) => this.collectionState.setState('searchText', searchText));
+    effect(() => {
+      const searchText = this.searchTextModel();
+      if (this.collectionState.state.searchText() !== searchText) {
+        this.collectionState.setState('searchText', searchText);
+      }
+    });
   }
 }

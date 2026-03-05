@@ -12,8 +12,8 @@
   [attr.aria-label]="label()"
   [attr.aria-describedby]="describedBy()"
   [id]="selectId()"
-  [(ngModel)]="value"
-  [disabled]="isDisabled()"
+  [value]="value() ?? ''"
+  [disabled]="disabled()"
   (change)="onChangeSelection($event)"
   (blur)="onBlur()"
 >
@@ -26,15 +26,11 @@
   <small [id]="hintId()">{{ hint() }}</small>
 }
 
-@if (control(); as control) {
-  @if (control.touched || control.dirty) {
-    @if (control.errors; as errors) {
-      <small class="error" [id]="errorId()">
-        @if (!!errors?.['required']) {
-          {{ ('Validation.Required' | signalTranslate)() }}
-        }
-        <ng-content select="[errors]"></ng-content>
-      </small>
+@if (showError()) {
+  <small class="error" [id]="errorId()">
+    @if (hasRequiredError()) {
+      {{ ('Validation.Required' | signalTranslate)() }}
     }
-  }
+    <ng-content select="[errors]"></ng-content>
+  </small>
 }

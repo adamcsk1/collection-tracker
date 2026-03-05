@@ -1,6 +1,5 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { form, FormField, FormRoot, maxLength, minLength, required } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { Input } from '@components/input/input';
 import { toastStateToken } from '@components/toast/toast-store';
@@ -9,52 +8,66 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
-import { Form } from '@shared/models/form-model';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'lo-sign-up',
-  imports: [NgxSignalTranslatePipe, Input, ReactiveFormsModule, RouterLink],
+  imports: [NgxSignalTranslatePipe, Input, FormField, FormRoot, RouterLink],
   templateUrl: './sign-up.html',
   styleUrl: './sign-up.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignUp implements OnInit {
   private readonly apiState = inject(apiStateToken);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly webStorage = inject(WebstorageService);
   private readonly api = inject(ApiService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly toastState = inject(toastStateToken);
-  protected readonly formGroup = new FormGroup<Form<SignUpModel>>({
-    username: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(3), Validators.maxLength(32)],
-    }),
-    apiUrl: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+  protected readonly signUpModel = signal<SignUpModel>({
+    username: '',
+    apiUrl: '',
   });
+  protected readonly form = form(
+    this.signUpModel,
+    (signUp) => {
+      required(signUp.username);
+      minLength(signUp.username, 3);
+      maxLength(signUp.username, 32);
+      required(signUp.apiUrl);
+    },
+    {
+      submission: {
+        action: async () => this.onSend(),
+      },
+    }
+  );
+  protected readonly formErrors = {
+    username: {
+      minLength: computed(() =>
+        this.form
+          .username()
+          .errors()
+          .some((error) => error.kind === 'minLength')
+      ),
+      maxLength: computed(() =>
+        this.form
+          .username()
+          .errors()
+          .some((error) => error.kind === 'maxLength')
+      ),
+    },
+  };
   protected readonly showApiUrlInput = signal(false);
   protected readonly secret = signal('');
 
   public ngOnInit(): void {
-    this.formGroup.patchValue({
+    this.signUpModel.set({
       username: '',
       apiUrl: this.apiState.state.apiUrl() || '',
     });
-  }
-
-  protected onSend(): void {
-    if (this.apiState.state.apiUrl() !== this.formGroup.value.apiUrl) {
-      this.apiState.setState('apiUrl', `${this.formGroup.value.apiUrl}`);
-      this.webStorage.setItem(STORAGE_API_URL, this.apiState.state.apiUrl());
-    }
-
-    this.api
-      .signUp(`${this.formGroup.value.username}`)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => this.secret.set(response.token));
   }
 
   protected onCopyToClipboard(): void {
@@ -62,5 +75,17 @@ export class SignUp implements OnInit {
     if (!mobileUserAgent()) {
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.CopiedToClipboard'));
     }
+  }
+
+  private async onSend(): Promise<void> {
+    const formValue = this.signUpModel();
+
+    if (this.apiState.state.apiUrl() !== formValue.apiUrl) {
+      this.apiState.setState('apiUrl', formValue.apiUrl);
+      this.webStorage.setItem(STORAGE_API_URL, this.apiState.state.apiUrl());
+    }
+
+    const response = await firstValueFrom(this.api.signUp(formValue.username));
+    this.secret.set(response.token);
   }
 }

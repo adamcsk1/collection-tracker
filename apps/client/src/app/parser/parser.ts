@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { form, FormField, FormRoot, required, validate } from '@angular/forms/signals';
 import { ParserModel } from '@client/parser/parser-model';
 import { ParserService } from '@client/parser/parser-service';
 import { TemplateRegenerationService } from '@client/parser/template-regeneration-service';
-import { mdTemplateValidator } from '@client/parser/validators/md-template-validator';
+import {
+  mdTemplateValidationError,
+  type MdTemplateValidationError,
+} from '@client/parser/validators/md-template-validator';
 import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { Textarea } from '@components/textarea/textarea';
@@ -11,13 +14,12 @@ import { apiStateToken } from '@services/api/api-store';
 import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { getParserRegexp, getParserTemplate } from '@services/parser/parser-util';
-import { Form } from '@shared/models/form-model';
 import { serializeParserRegexp } from '@shared/utils/parser-serialize-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-parser',
-  imports: [ReactiveFormsModule, NgxSignalTranslatePipe, Textarea, Input, Details],
+  imports: [FormField, FormRoot, NgxSignalTranslatePipe, Textarea, Input, Details],
   templateUrl: './parser.html',
   providers: [ParserService, TemplateRegenerationService, MdContentGeneratorService, OMDbService],
   host: {
@@ -29,21 +31,48 @@ export class Parser implements OnInit {
   private readonly apiState = inject(apiStateToken);
   private readonly parser = inject(ParserService);
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
-  protected readonly formGroup = new FormGroup<Form<ParserModel>>({
-    IMDbId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    genre: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    genreToken: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    image: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    IMDbRate: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    tags: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    tagToken: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    title: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    year: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    mdTemplate: new FormControl('', { nonNullable: true, validators: [Validators.required, mdTemplateValidator()] }),
+  protected readonly parserModel = signal<ParserModel>({
+    IMDbId: '',
+    genre: '',
+    genreToken: '',
+    image: '',
+    IMDbRate: '',
+    tags: '',
+    tagToken: '',
+    title: '',
+    year: '',
+    mdTemplate: '',
+  });
+  protected readonly form = form(
+    this.parserModel,
+    (parser) => {
+      required(parser.IMDbId);
+      required(parser.genre);
+      required(parser.genreToken);
+      required(parser.image);
+      required(parser.IMDbRate);
+      required(parser.tags);
+      required(parser.tagToken);
+      required(parser.title);
+      required(parser.year);
+      required(parser.mdTemplate);
+      validate(parser.mdTemplate, ({ value }) => mdTemplateValidationError(value()));
+    },
+    {
+      submission: {
+        action: async () => this.onSave(),
+      },
+    }
+  );
+  protected readonly mdTemplateError = computed<MdTemplateValidationError | undefined>(() => {
+    return this.form
+      .mdTemplate()
+      .errors()
+      .find((error) => error.kind === 'mdTemplate') as MdTemplateValidationError | undefined;
   });
 
   public ngOnInit(): void {
-    this.formGroup.setValue({
+    this.parserModel.set({
       IMDbId: serializeParserRegexp(getParserRegexp('IMDbId')),
       genre: serializeParserRegexp(getParserRegexp('genre')),
       genreToken: serializeParserRegexp(getParserRegexp('genreToken')),
@@ -57,15 +86,15 @@ export class Parser implements OnInit {
     });
   }
 
-  protected onSave(): void {
-    this.parser.storeFormData(this.formGroup.value);
-  }
-
   protected onGeneratePreview(): void {
-    this.parser.generatePreviewContent(this.formGroup.value);
+    this.parser.generatePreviewContent(this.parserModel());
   }
 
   protected onRefreshTemplates(): void {
     this.parser.regenerateTemplates();
+  }
+
+  private onSave(): void {
+    this.parser.storeFormData(this.parserModel());
   }
 }
