@@ -6,18 +6,17 @@ import { CollectionService } from '@client/collection/collection-service';
 import { getCollectionItem } from '@client/collection/utils/get-collection-item-util';
 import { mainStateToken } from '@client/main/main-store';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
-import { Textarea } from '@components/textarea/textarea';
+import { MarkdownEditor } from '@components/markdown-editor/markdown-editor';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import { marked } from 'marked';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { map, mergeMap, of } from 'rxjs';
 
 @Component({
   selector: 'ct-item-dialog',
-  imports: [NgxSignalTranslatePipe, Textarea, DialogShell, FormField],
+  imports: [NgxSignalTranslatePipe, MarkdownEditor, DialogShell, FormField],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
   host: {
@@ -34,10 +33,6 @@ export class ItemDialog implements OnInit {
   private readonly confirm = inject(ConfirmService);
   private readonly api = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
-  protected parsedMdContent = computed(() => {
-    const rawContent = this.collectionItem().rawContent;
-    return marked.parse(rawContent, { breaks: true });
-  });
   protected readonly rawContentModel = signal('');
   protected readonly rawContentField = form(this.rawContentModel);
   protected readonly editMode = signal(false);

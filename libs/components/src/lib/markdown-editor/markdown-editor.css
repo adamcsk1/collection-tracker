@@ -1,0 +1,36 @@
+@import url("easymde/dist/easymde.min.css");
+
+.markdown-editor-shell:not([hidden]) {
+  animation: markdown-editor-reveal 50ms ease-in;
+}
+
+textarea.markdown-editor {
+  width: 100%;
+}
+
+.EasyMDEContainer .CodeMirror {
+  border-radius: var(--border-radius);
+  border-color: var(--border-color);
+  background: var(--background-color-alt);
+  color: var(--text-color);
+
+  .editor-preview {
+    background: var(--background-color-alt);
+  }
+
+  .cm-formatting,
+  .cm-link,
+  .cm-url {
+    color: var(--main-color);
+  }
+}
+
+@keyframes markdown-editor-reveal {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

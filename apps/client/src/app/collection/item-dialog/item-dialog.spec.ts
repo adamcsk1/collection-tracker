@@ -69,6 +69,11 @@ describe('ItemDialog', () => {
         provideStore(initialToastState, toastStateToken),
       ],
     });
+    TestBed.overrideComponent(ItemDialog, {
+      set: {
+        template: '',
+      },
+    });
 
     fixture = TestBed.createComponent(ItemDialog);
     component = fixture.componentInstance;
