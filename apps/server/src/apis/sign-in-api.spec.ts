@@ -89,7 +89,7 @@ describe('sign-in-api', () => {
     expect(response.cookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'access', expect.any(Object));
     expect(setSpy).toHaveBeenCalled();
     const updatedUsers = (setSpy.mock.calls[0][1] as any)['hashed-neo'].accessTokens;
-    expect(updatedUsers.some((t: any) => t.tokenHash === 'old')).toBe(false);
+    expect(updatedUsers.some((accessToken: any) => accessToken.tokenHash === 'old')).toBe(false);
   });
 
   it('returns 500 on unexpected error', async () => {
