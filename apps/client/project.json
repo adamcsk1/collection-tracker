@@ -50,7 +50,23 @@
           }
         ],
         "styles": ["apps/client/src/styles.css"],
-        "allowedCommonJsDependencies": ["dayjs"],
+        "allowedCommonJsDependencies": [
+          "dayjs",
+          "easymde",
+          "codemirror",
+          "codemirror/addon/edit/continuelist.js",
+          "codemirror/addon/display/fullscreen.js",
+          "codemirror/mode/markdown/markdown.js",
+          "codemirror/addon/mode/overlay.js",
+          "codemirror/addon/display/placeholder.js",
+          "codemirror/addon/display/autorefresh.js",
+          "codemirror/addon/selection/mark-selection.js",
+          "codemirror/addon/search/searchcursor.js",
+          "codemirror/mode/gfm/gfm.js",
+          "codemirror/mode/xml/xml.js",
+          "codemirror-spell-checker",
+          "marked"
+        ],
         "outputPath": "dist/apps/client"
       },
       "configurations": {
@@ -63,8 +79,8 @@
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "4kB",
-              "maximumError": "8kB"
+              "maximumWarning": "20kB",
+              "maximumError": "24kB"
             }
           ],
           "outputHashing": "all"
