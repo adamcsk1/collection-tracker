@@ -4,6 +4,12 @@
   "projectType": "application",
   "sourceRoot": "apps/collection-e2e/src",
   "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"
+      }
+    },
     "e2e": {
       "executor": "@nx/cypress:cypress",
       "options": {

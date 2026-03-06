@@ -10,6 +10,18 @@
   "sourceRoot": "src",
   "prefix": "ct",
   "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"
+      }
+    },
+    "typecheck-spec": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
+      }
+    },
     "test": {
       "executor": "@nx/vitest:test",
       "outputs": ["{workspaceRoot}/coverage/apps/client"],
