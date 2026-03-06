@@ -3,13 +3,13 @@
     <h3>{{ ('Title.CollectionItem' | signalTranslate)() }}</h3>
   </ng-container>
   <ng-container dialog-shell-content>
-    @if (editMode()) {
-      <div class="editor-pane">
-        <libc-textarea [formField]="rawContentField" [autoHeight]="true"></libc-textarea>
-      </div>
-    } @else {
-      <div class="preview-pane" [innerHTML]="parsedMdContent()"></div>
-    }
+    <div class="editor-pane">
+      <libc-markdown-editor
+        [formField]="rawContentField"
+        [autoHeight]="true"
+        [editMode]="editMode()"
+      ></libc-markdown-editor>
+    </div>
   </ng-container>
   <ng-container dialog-shell-bottom-content>
     @if (editMode()) {
