@@ -3,6 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EasyMdeInstance } from './markdown-editor-model';
 
 type MockCodeMirrorEvent = 'change' | 'blur';
+type MockCodeMirrorMethods = {
+  on: ((event: MockCodeMirrorEvent, callback: () => void) => void) & ReturnType<typeof vi.fn>;
+  setSize: ((width: number | string | null, height: number | string | null) => void) & ReturnType<typeof vi.fn>;
+  setOption: ((option: string, value: unknown) => void) & ReturnType<typeof vi.fn>;
+  refresh: (() => void) & ReturnType<typeof vi.fn>;
+};
 
 type MockEasyMdeInitializationOptions = {
   toolbar: boolean;
@@ -28,10 +34,10 @@ class MockEasyMde implements EasyMdeInstance {
   }
 
   public readonly codemirror: {
-    on: ReturnType<typeof vi.fn>;
-    setSize: ReturnType<typeof vi.fn>;
-    setOption: ReturnType<typeof vi.fn>;
-    refresh: ReturnType<typeof vi.fn>;
+    on: MockCodeMirrorMethods['on'];
+    setSize: MockCodeMirrorMethods['setSize'];
+    setOption: MockCodeMirrorMethods['setOption'];
+    refresh: MockCodeMirrorMethods['refresh'];
   };
 
   public readonly togglePreview = vi.fn();
@@ -57,10 +63,10 @@ class MockEasyMde implements EasyMdeInstance {
     this.codemirror = {
       on: vi.fn((event: MockCodeMirrorEvent, callback: () => void) => {
         this.eventCallbacks[event] = callback;
-      }),
-      setSize: vi.fn(),
-      setOption: vi.fn(),
-      refresh: vi.fn(),
+      }) as MockCodeMirrorMethods['on'],
+      setSize: vi.fn() as MockCodeMirrorMethods['setSize'],
+      setOption: vi.fn() as MockCodeMirrorMethods['setOption'],
+      refresh: vi.fn() as MockCodeMirrorMethods['refresh'],
     };
 
     MockEasyMde.constructorCalls += 1;

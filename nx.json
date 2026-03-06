@@ -10,6 +10,20 @@
       "cache": true,
       "inputs": ["default", "^production"]
     },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"
+      }
+    },
+    "typecheck-spec": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
+      }
+    },
     "@angular/build:application": {
       "cache": true,
       "dependsOn": ["^build"],
