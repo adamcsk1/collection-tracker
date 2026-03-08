@@ -37,12 +37,12 @@
     }
 
     &::before {
-      left: -1rem;
+      left: calc(-1 * var(--size-default));
       animation: dots-before 1s infinite linear;
     }
 
     &::after {
-      left: 1rem;
+      left: var(--size-default);
       animation: dots-after 1s infinite linear;
     }
   }
