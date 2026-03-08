@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { SelectInputModel } from '@shared/models/select-model';
+import { SelectDataModel, SelectInputModel } from '@shared/models/select-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
@@ -10,8 +10,8 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   styleUrl: './select.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Select<T> implements FormValueControl<T | null> {
-  public readonly value = model<T | null>(null);
+export class Select implements FormValueControl<SelectDataModel['value'] | null> {
+  public readonly value = model<SelectDataModel['value'] | null>(null);
   public readonly touched = model(false);
   public readonly dirty = input(false);
   public readonly disabled = input(false);
@@ -33,11 +33,21 @@ export class Select<T> implements FormValueControl<T | null> {
   protected readonly hasRequiredError = computed(
     () => this.showError() && this.errors().some((error) => error.kind === 'required')
   );
+  protected readonly normalizedValue = computed(() => this.normalizeValue(this.value()));
 
   protected onChangeSelection(event: Event): void {
     const selectedValue = (event.target as HTMLSelectElement).value;
-    const selectedOption = this.options().find((option) => `${option.value}` === selectedValue);
-    this.value.set((selectedOption?.value ?? selectedValue) as T);
+    const selectedOption = this.options().find((option) => this.normalizeValue(option.value) === selectedValue);
+    if (selectedOption?.value !== undefined) this.value.set(selectedOption.value);
+    else this.value.set(selectedValue);
+  }
+
+  protected normalizeValue(value: SelectDataModel['value']): string {
+    return `${value ?? ''}`.trim();
+  }
+
+  protected isSelected(optionValue: SelectDataModel['value']): boolean {
+    return this.normalizeValue(optionValue) === this.normalizedValue();
   }
 
   protected onBlur(): void {
