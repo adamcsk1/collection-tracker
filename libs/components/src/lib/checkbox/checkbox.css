@@ -1,0 +1,32 @@
+label {
+  display: block;
+
+  span {
+    color: var(--color-crimson);
+  }
+}
+
+small {
+  display: block;
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  min-height: var(--input-height);
+}
+
+input[type="checkbox"] {
+  margin-right: var(--size-small);
+  accent-color: var(--color-primary);
+  height: var(--size-big);
+  width: var(--size-big);
+}
+
+.error {
+  color: var(--color-crimson);
+}
+
+.hint {
+  display: block;
+}
