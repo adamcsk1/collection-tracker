@@ -28,10 +28,10 @@ import { SettingsService } from './settings-service';
 const buildFormData = (overrides: Partial<SettingsModel> = {}): SettingsModel => ({
   appMode: 'full',
   omdbApiKey: 'omdb-key',
-  settingsLock: 'false',
+  settingsLock: false,
   sensitiveDataStorage: 'local',
-  clearLocalStorageAfterLogout: 'false',
-  animatedBackground: 'true',
+  clearLocalStorageAfterLogout: false,
+  animatedBackground: true,
   language: 'en',
   searchMode: 'standard',
   fetchBatchSize: 25,
@@ -104,9 +104,9 @@ describe('SettingsService', () => {
   it('writes all configuration values to storage', () => {
     const formData = buildFormData({
       appMode: 'limited',
-      settingsLock: 'true',
-      clearLocalStorageAfterLogout: 'true',
-      animatedBackground: 'false',
+      settingsLock: true,
+      clearLocalStorageAfterLogout: true,
+      animatedBackground: false,
     });
 
     service.storeFormData(formData);

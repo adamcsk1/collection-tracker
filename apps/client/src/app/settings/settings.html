@@ -23,15 +23,11 @@
         { text: ('FUZZY' | signalTranslate)(), value: 'fuzzy' },
       ]"
     />
-    <libc-select
-      [label]="('AnimatedBackground' | signalTranslate)()"
-      [hint]="('Message.AnimatedBackground' | signalTranslate)()"
+    <libc-checkbox
       [mandatory]="true"
       [formField]="form.animatedBackground"
-      [options]="[
-        { text: ('Yes' | signalTranslate)(), value: 'true' },
-        { text: ('No' | signalTranslate)(), value: 'false' },
-      ]"
+      [label]="('AnimatedBackground' | signalTranslate)()"
+      [hint]="('Message.AnimatedBackground' | signalTranslate)()"
     />
     @if (!settingLockEnabled()) {
       <libc-select
@@ -46,15 +42,11 @@
         ]"
       />
       @if (form.appMode().value() !== 'full') {
-        <libc-select
+        <libc-checkbox
           [label]="('SettingsLock' | signalTranslate)()"
           [hint]="('Message.SettingsLock' | signalTranslate)()"
           [mandatory]="true"
           [formField]="form.settingsLock"
-          [options]="[
-            { text: ('Yes' | signalTranslate)(), value: 'true' },
-            { text: ('No' | signalTranslate)(), value: 'false' },
-          ]"
         />
       }
       <libc-select
@@ -97,14 +89,10 @@
         ]"
       />
       @if (form.sensitiveDataStorage().value() === 'local') {
-        <libc-select
+        <libc-checkbox
           [label]="('ClearLocalStorageAfterLogout' | signalTranslate)()"
           [mandatory]="true"
           [formField]="form.clearLocalStorageAfterLogout"
-          [options]="[
-            { text: ('Yes' | signalTranslate)(), value: 'true' },
-            { text: ('No' | signalTranslate)(), value: 'false' },
-          ]"
         />
       }
     </libc-details>

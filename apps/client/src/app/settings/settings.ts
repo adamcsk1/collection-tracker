@@ -6,6 +6,7 @@ import { AccountActions } from '@client/settings/account-actions/account-actions
 import { ImageRefreshService } from '@client/settings/image-refresh/image-refresh-service';
 import { SettingsModel } from '@client/settings/settings-model';
 import { SettingsService } from '@client/settings/settings-service';
+import { Checkbox } from '@components/checkbox/checkbox';
 import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
@@ -19,7 +20,17 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-settings',
-  imports: [Input, Select, FormField, FormRoot, NgxSignalTranslatePipe, Details, AccountActions, AccessTokens],
+  imports: [
+    Input,
+    Select,
+    FormField,
+    FormRoot,
+    NgxSignalTranslatePipe,
+    Details,
+    AccountActions,
+    AccessTokens,
+    Checkbox,
+  ],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   providers: [OMDbService, ImageRefreshService],
@@ -40,13 +51,13 @@ export class Settings implements OnInit {
   private readonly theme = inject(ThemeService);
   protected readonly settingsModel = signal<SettingsModel>({
     sensitiveDataStorage: 'local',
-    clearLocalStorageAfterLogout: 'false',
+    clearLocalStorageAfterLogout: false,
     omdbApiKey: '',
     appMode: 'basic',
     fetchBatchSize: 10000,
     theme: 'system',
-    settingsLock: 'false',
-    animatedBackground: 'true',
+    settingsLock: false,
+    animatedBackground: true,
     language: 'en',
     searchMode: 'standard',
   });
@@ -54,13 +65,10 @@ export class Settings implements OnInit {
     this.settingsModel,
     (settings) => {
       required(settings.sensitiveDataStorage);
-      required(settings.clearLocalStorageAfterLogout);
       required(settings.omdbApiKey);
       required(settings.appMode);
       required(settings.fetchBatchSize);
       required(settings.theme);
-      required(settings.settingsLock);
-      required(settings.animatedBackground);
       required(settings.language);
       required(settings.searchMode);
     },
@@ -82,9 +90,9 @@ export class Settings implements OnInit {
       appMode: this.mainState.state.appMode(),
       fetchBatchSize: this.apiState.state.fetchBatchSize(),
       theme: this.themeState.state.theme(),
-      settingsLock: this.mainState.state.settingsLock() ? 'true' : 'false',
-      clearLocalStorageAfterLogout: this.mainState.state.clearLocalStorageAfterLogout() ? 'true' : 'false',
-      animatedBackground: this.mainState.state.animatedBackground() ? 'true' : 'false',
+      settingsLock: this.mainState.state.settingsLock(),
+      clearLocalStorageAfterLogout: this.mainState.state.clearLocalStorageAfterLogout(),
+      animatedBackground: this.mainState.state.animatedBackground(),
       language: this.mainState.state.language(),
       searchMode: this.mainState.state.searchMode(),
     });
