@@ -12,13 +12,13 @@
   [attr.aria-label]="label()"
   [attr.aria-describedby]="describedBy()"
   [id]="selectId()"
-  [value]="value() ?? ''"
+  [value]="normalizedValue()"
   [disabled]="disabled()"
   (change)="onChangeSelection($event)"
   (blur)="onBlur()"
 >
   @for (option of options(); track $index) {
-    <option [value]="option.value">{{ option.text }}</option>
+    <option [value]="normalizeValue(option.value)" [selected]="isSelected(option.value)">{{ option.text }}</option>
   }
 </select>
 
