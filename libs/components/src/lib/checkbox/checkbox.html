@@ -1,0 +1,31 @@
+<div class="container">
+  <input
+    type="checkbox"
+    [id]="checkboxId()"
+    [attr.aria-label]="label() || 'Checkbox'"
+    [attr.aria-describedby]="describedBy()"
+    [checked]="value() === true"
+    [disabled]="disabled()"
+    (change)="onChange($event)"
+    (blur)="onBlur()"
+  />
+  <label [for]="checkboxId()">
+    {{ label() }}
+    @if (mandatory()) {
+      <span>*</span>
+    }
+  </label>
+</div>
+
+@if (hint()) {
+  <small class="hint" [id]="hintId()">{{ hint() }}</small>
+}
+
+@if (showError()) {
+  <small class="error" [id]="errorId()">
+    @if (hasRequiredError()) {
+      {{ ('Validation.Required' | signalTranslate)() }}
+    }
+    <ng-content select="[errors]"></ng-content>
+  </small>
+}
