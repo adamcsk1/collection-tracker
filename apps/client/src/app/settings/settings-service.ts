@@ -37,10 +37,10 @@ export class SettingsService {
   public storeFormData(formData: SettingsModel, navigateBack = false): void {
     this.omdbState.setState('apiKey', formData.omdbApiKey);
     this.mainState.setState('appMode', formData.appMode);
-    this.mainState.setState('settingsLock', formData.settingsLock === 'true');
+    this.mainState.setState('settingsLock', formData.settingsLock);
     this.mainState.setState('sensitiveDataStorage', formData.sensitiveDataStorage);
-    this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout === 'true');
-    this.mainState.setState('animatedBackground', formData.animatedBackground === 'true');
+    this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout);
+    this.mainState.setState('animatedBackground', formData.animatedBackground);
     this.mainState.setState('language', formData.language);
     this.mainState.setState('searchMode', formData.searchMode);
     this.apiState.setState('fetchBatchSize', formData.fetchBatchSize);
