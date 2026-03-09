@@ -55,6 +55,16 @@ export class MarkdownEditor implements FormValueControl<string | null>, OnDestro
       this.togglePreview();
     });
 
+    effect(() => {
+      if (this.easyMdeLoaded() && this.value() !== this.easyMde?.value()) {
+        this.easyMdeLoaded.set(false);
+        asyncScheduler.schedule(() => {
+          this.easyMde?.value(this.value() ?? '');
+          this.easyMdeLoaded.set(true);
+        }, 100);
+      }
+    });
+
     afterNextRender(async () => {
       await this.initEditor();
       this.updateEditorDisabledState();
@@ -80,6 +90,7 @@ export class MarkdownEditor implements FormValueControl<string | null>, OnDestro
   }
 
   private async initEditor(): Promise<void> {
+    if (this.easyMdeLoaded()) return;
     const easyMdeModule = (await import('easymde')) as unknown as { default?: EasyMdeCtor };
     const EasyMde = easyMdeModule.default ?? (easyMdeModule as unknown as EasyMdeCtor);
 
@@ -123,6 +134,7 @@ export class MarkdownEditor implements FormValueControl<string | null>, OnDestro
 
   private destroyEditor(): void {
     if (!this.easyMde) return;
+    this.easyMdeLoaded.set(false);
     this.easyMde.toTextArea();
     this.easyMde.cleanup();
     this.easyMde = null;
