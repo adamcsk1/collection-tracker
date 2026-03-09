@@ -7,6 +7,7 @@ import { initialToastState, toastStateToken } from '@components/toast/toast-stor
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
+import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -146,5 +147,56 @@ describe('ItemDialog', () => {
     expect(api.update).not.toHaveBeenCalled();
     expect(collectionService.updateCollectionItem).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('');
+  });
+
+  it('does not save when raw content contains virtual tags', () => {
+    component['rawContentModel'].set(`raw content #unwatched`);
+
+    component['onSaveChanges']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.UsedVirtualTagInContent');
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('restores unsaved content when switching back to read-only mode', () => {
+    component['rawContentModel'].set('modified content');
+    component['onReadOnly']();
+
+    expect(component['rawContentModel']()).toBe('raw content');
+    expect(component['editMode']()).toBe(false);
+  });
+
+  it('appends watched tag and saves when marking as watched', () => {
+    component['rawContentModel'].set('**Tags** #movie #action');
+    confirm.open.mockReturnValue(of(true));
+
+    component['onMarkAsWatched']();
+
+    expect(confirm.open).toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith('Item One', expect.stringContaining(WATCHED_TAG));
+    expect(toastState.state.message()).toBe('Toast.EditItem');
+  });
+
+  it('prevents marking as watched when content has no editable tag section', () => {
+    component['rawContentModel'].set('No tags present');
+
+    component['onMarkAsWatched']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.SetWatchedError');
+  });
+
+  it('removes watched tag and saves when marking as unwatched', () => {
+    component['rawContentModel'].set('**Tags** #movie #watched');
+    confirm.open.mockReturnValue(of(true));
+
+    component['onMarkAsUnwatched']();
+
+    expect(confirm.open).toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith('Item One', expect.anything());
+    expect(api.update.mock.calls[0][1].includes(WATCHED_TAG)).toBe(false);
+    expect(toastState.state.message()).toBe('Toast.EditItem');
   });
 });

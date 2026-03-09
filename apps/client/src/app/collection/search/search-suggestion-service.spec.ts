@@ -5,6 +5,7 @@ import { initialMainState, mainStateToken } from '@client/main/main-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SearchSuggestionService } from './search-suggestion-service';
+import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 
 const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
   rawContent: overrides.rawContent || '',
@@ -55,6 +56,13 @@ describe('SearchSuggestionService', () => {
 
     expect(suggestions).toEqual(expect.arrayContaining(['#action', '#adventure']));
     expect(suggestions.length).toBeLessThanOrEqual(3);
+  });
+
+  it('returns the default list of virtual and system tags when searching with hash only', () => {
+    const suggestions = service.getSuggestion('#');
+
+    expect(suggestions).toEqual(expect.arrayContaining([...VIRTUAL_TAGS, WATCHED_TAG, MOVIE_TAG, SERIES_TAG]));
+    expect(suggestions.length).toBeGreaterThanOrEqual(4);
   });
 
   it('suggests genres before titles when not using hash', () => {

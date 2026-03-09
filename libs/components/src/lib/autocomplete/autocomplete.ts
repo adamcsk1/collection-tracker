@@ -6,6 +6,7 @@ import {
   InjectionToken,
   input,
   model,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -46,6 +47,8 @@ export class Autocomplete<T> implements FormValueControl<T | null> {
   public readonly label = input<string>('');
   public readonly hint = input<string>();
   public readonly mandatory = input<boolean>(false);
+  public readonly userEvent = output<void>();
+  public readonly userAcceptSuggestionEvent = output<void>();
   protected readonly showError = computed(() => (this.touched() || this.dirty()) && this.errors().length > 0);
   protected readonly hintId = computed<string | null>(() => (this.hint() ? `${this.inputId()}-hint` : null));
   protected readonly errorId = computed<string | null>(() => {
@@ -67,6 +70,7 @@ export class Autocomplete<T> implements FormValueControl<T | null> {
   }
 
   protected onKeydown($event: KeyboardEvent): void {
+    this.userEvent.emit();
     this.lastEventWasAccept = false;
 
     if ($event.code === 'Tab' && this.lastKeycode === 'Tab') {
@@ -104,6 +108,7 @@ export class Autocomplete<T> implements FormValueControl<T | null> {
   }
 
   protected onAcceptSuggestion(index: number): void {
+    this.userAcceptSuggestionEvent.emit();
     this.lastEventWasAccept = true;
     this.selectedSuggestion.set(-1);
     if (this.autocompleteService.formatSuggestionValue) {

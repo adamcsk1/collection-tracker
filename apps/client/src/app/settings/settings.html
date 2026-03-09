@@ -124,5 +124,17 @@
         </button>
       </div>
     </libc-details>
+
+    <libc-details [summary]="('GlobalWatchStatus' | signalTranslate)()">
+      <p>{{ ('Message.GlobalWatchStatus' | signalTranslate)() }}</p>
+      <div class="form-buttons">
+        <button type="button" (click)="onMarkAllAsWatched()">
+          {{ ('MarkAllAsWatched' | signalTranslate)() }}
+        </button>
+        <button type="button" class="button-danger" (click)="onMarkAllAsUnwatched()">
+          {{ ('MarkAllAsUnwatched' | signalTranslate)() }}
+        </button>
+      </div>
+    </libc-details>
   }
 </form>

@@ -21,6 +21,15 @@
       </button>
     } @else {
       @if (permissionUpdate()) {
+        @if (watched()) {
+          <button [title]="('MarkAsUnwatched' | signalTranslate)()" (click)="onMarkAsUnwatched()">
+            {{ ('MarkAsUnwatched' | signalTranslate)() }}
+          </button>
+        } @else {
+          <button [title]="('MarkAsWatched' | signalTranslate)()" (click)="onMarkAsWatched()">
+            {{ ('MarkAsWatched' | signalTranslate)() }}
+          </button>
+        }
         <button [title]="('Edit' | signalTranslate)()" (click)="onEdit()">
           {{ ('Edit' | signalTranslate)() }}
         </button>

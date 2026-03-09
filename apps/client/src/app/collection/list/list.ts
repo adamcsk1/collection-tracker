@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { collectionStateToken } from '@client/collection/collection-store';
 import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
@@ -10,7 +19,7 @@ import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { mainStateToken } from '@client/main/main-store';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { EXACT_IMDB_ID_REGEXP } from '@shared/regexps/imdb-id-regexp';
+import { VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { affordableFuzzySearch, fuzzySearch } from '@shared/utils/fuzzy-search-util';
 import { randomInt } from '@shared/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
@@ -35,16 +44,20 @@ export class List {
     toObservable(this.collectionState.state.searchText).pipe(startWith(''), debounceTime(100))
   );
   protected readonly filteredCollection = computed(() => {
+    let forceStandardSearch = false;
+    untracked(() => (forceStandardSearch = this.collectionState.state.forceStandardSearch()));
     const searchText = this.debouncedSearchText() || '';
     const lowerCasedSearchText = searchText.toLowerCase();
     this.resetScrollPosition();
-    const isExactIMDbId = searchText.match(EXACT_IMDB_ID_REGEXP) !== null;
-    const isTagSearchQuery = searchText.startsWith('#');
 
     return this.mainCollectionState.state.collection().filter((collectionItem) => {
-      if (isExactIMDbId) return collectionItem.IMDbId === searchText;
-      else if (isTagSearchQuery) return collectionItem.tags.includes(searchText);
-      else if (this.mainState.state.searchMode() === 'fuzzy' && affordableFuzzySearch(lowerCasedSearchText)) {
+      if (searchText === VIRTUAL_UNWATCHED_TAG) return !collectionItem.rawContent.toLowerCase().includes(WATCHED_TAG);
+
+      if (
+        !forceStandardSearch &&
+        this.mainState.state.searchMode() === 'fuzzy' &&
+        affordableFuzzySearch(lowerCasedSearchText)
+      ) {
         return (fuzzySearch(lowerCasedSearchText, collectionItem.rawContent.toLowerCase()) || []).length > 0;
       }
       return collectionItem.rawContent.toLowerCase().includes(lowerCasedSearchText);

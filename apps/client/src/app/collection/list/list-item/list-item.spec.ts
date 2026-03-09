@@ -5,14 +5,15 @@ import { PortalService } from '@services/portal-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListItem } from './list-item';
+import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 
-const buildItem = (name: string): CollectionItemModel => ({
+const buildItem = (name: string, tags: Array<string> = []): CollectionItemModel => ({
   rawContent: name,
   image: '',
   title: name,
   genre: [],
   IMDbId: '',
-  tags: [],
+  tags,
   name,
   year: null,
   rate: '',
@@ -53,8 +54,37 @@ describe('ListItem', () => {
   });
 
   it('opens the item dialog with current collection item', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem('Sample', [WATCHED_TAG]));
+    fixture.detectChanges();
+
     component['onOpenDetail']();
 
-    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), { collectionItem: buildItem('Sample') });
+    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), {
+      collectionItem: expect.objectContaining(buildItem('Sample', [WATCHED_TAG])),
+    });
+  });
+
+  it('derives watched, movie, series, and non-internal tags', () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem('Sample', [WATCHED_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2'])
+    );
+    fixture.detectChanges();
+
+    expect(component['watched']()).toBe(true);
+    expect(component['movie']()).toBe(true);
+    expect(component['series']()).toBe(true);
+    expect(component['tags']()).toEqual(['#tag1', '#tag2']);
+    expect(component['WATCHED_TAG']).toBe(WATCHED_TAG);
+    expect(component['MOVIE_TAG']).toBe(MOVIE_TAG);
+    expect(component['SERIES_TAG']).toBe(SERIES_TAG);
+    expect(component['VIRTUAL_UNWATCHED_TAG']).toBe('#unwatched');
+  });
+
+  it('stores forceStandardSearch flag when setting search text', () => {
+    component['onSetSearchText']('query');
+
+    expect(collectionState.state.searchText()).toBe('query');
+    expect(collectionState.state.forceStandardSearch()).toBe(true);
   });
 });

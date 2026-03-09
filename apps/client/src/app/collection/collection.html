@@ -3,6 +3,8 @@
     [placeholder]="('Placeholder.SearchInCollection' | signalTranslate)()"
     [formField]="searchTextField"
     [showReset]="true"
+    (userEvent)="onSearchFromUser()"
+    (userAcceptSuggestionEvent)="onSearchAccepted()"
   />
 
   @defer (prefetch on idle) {
