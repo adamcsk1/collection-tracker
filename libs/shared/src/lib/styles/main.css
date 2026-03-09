@@ -3,11 +3,11 @@ body {
   font-family: "Gill Sans", sans-serif;
   background-color: var(--background-color);
   color: var(--text-color);
-  font-size: var(--font-size-default);
+  font-size: var(--font-size-base);
 }
 
 h2 {
-  margin-bottom: var(--size-default);
+  margin-bottom: var(--size-md);
 }
 
 a {
@@ -47,13 +47,13 @@ hr {
 
 a.small-text-button {
   display: block;
-  font-size: var(--font-size-small);
+  font-size: var(--font-size-sm);
 }
 
 code {
   border: var(--border-style);
   border-color: var(--text-color);
-  padding: var(--size-smaller);
+  padding: var(--size-2xs);
   border-radius: var(--border-radius);
   display: block;
   overflow: auto;

@@ -4,7 +4,7 @@
 
 h1 {
   text-align: center;
-  margin: 0 var(--size-default);
+  margin: 0 var(--size-md);
   color: var(--background-color);
 }
 
@@ -31,9 +31,9 @@ h1 {
   }
 
   .loading {
-    font-size: var(--font-size-big);
+    font-size: var(--font-size-lg);
     text-align: center;
-    margin: 0 var(--size-default);
+    margin: 0 var(--size-md);
 
     .dots {
       span {

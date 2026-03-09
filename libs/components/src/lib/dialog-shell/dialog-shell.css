@@ -1,7 +1,7 @@
 .dialog-frame {
   background-color: var(--glassy-background);
   margin: 0 auto;
-  margin-top: var(--size-default);
+  margin-top: var(--size-md);
   z-index: 1;
   display: flex;
   flex-direction: column;
@@ -10,7 +10,7 @@
   max-height: 90vh;
   height: 100%;
   border-radius: var(--border-radius);
-  padding: var(--size-default);
+  padding: var(--size-md);
 
   @media (width <= 450px) {
     width: 100vw;
@@ -24,13 +24,13 @@
   .dialog-header {
     display: flex;
     justify-content: space-between;
-    padding-bottom: var(--size-smaller);
+    padding-bottom: var(--size-2xs);
   }
 
   .dialog-footer {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--size-small);
-    padding-top: var(--size-smaller);
+    gap: var(--size-xs);
+    padding-top: var(--size-2xs);
   }
 }

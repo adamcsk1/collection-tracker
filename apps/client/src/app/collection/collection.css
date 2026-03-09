@@ -18,6 +18,6 @@
 
   libc-autocomplete {
     display: block;
-    padding: var(--size-small);
+    padding: var(--size-xs);
   }
 }

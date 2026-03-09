@@ -6,7 +6,7 @@
 details {
   border: var(--border-style);
   border-radius: var(--border-radius);
-  padding: var(--size-small);
+  padding: var(--size-xs);
 
   summary {
     cursor: pointer;
@@ -15,7 +15,7 @@ details {
   }
 
   div {
-    margin-top: var(--size-small);
+    margin-top: var(--size-xs);
   }
 
   &:hover {

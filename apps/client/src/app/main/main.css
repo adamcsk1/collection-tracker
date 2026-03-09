@@ -9,7 +9,7 @@ ct-header {
 }
 
 .main-body {
-  padding: var(--size-default);
+  padding: var(--size-md);
   overflow: auto;
   flex: 1;
   max-height: calc(100vh - var(--header-height));

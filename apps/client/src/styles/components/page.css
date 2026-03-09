@@ -4,7 +4,7 @@
   border-radius: var(--border-radius);
   max-width: var(--container-max-width);
   margin: 0 auto;
-  padding: var(--size-default);
+  padding: var(--size-md);
   z-index: 1;
   position: relative;
 

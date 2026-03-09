@@ -6,7 +6,7 @@
   justify-content: space-between;
   width: 100%;
   height: var(--header-height);
-  padding: var(--size-default) 0;
+  padding: var(--size-md) 0;
   background-color: var(--glassy-background);
 }
 
@@ -20,11 +20,11 @@
 
   img {
     display: block;
-    margin-left: var(--size-default);
+    margin-left: var(--size-md);
   }
 
   h1 {
-    margin: auto 0 auto var(--size-small);
+    margin: auto 0 auto var(--size-xs);
     color: var(--glassy-background) !important;
 
     @media (width <= 260px) {
@@ -36,7 +36,7 @@
 :is(.header, .menu .menu-header) {
   h1 {
     line-height: 1;
-    font-size: var(--font-size-big);
+    font-size: var(--font-size-lg);
     color: var(--background-color-alt);
   }
 
@@ -51,7 +51,7 @@
 
 .menu {
   position: relative;
-  padding: var(--size-default);
+  padding: var(--size-md);
 
   .menu-backdrop {
     display: none;
@@ -84,7 +84,7 @@
     background-color: var(--background-color-alt);
     border: none;
     border-radius: 0;
-    padding: var(--size-default);
+    padding: var(--size-md);
     padding-top: 10px;
     transition:
       width 140ms ease-out 60ms,
@@ -99,24 +99,24 @@
       div {
         display: flex;
         align-items: center;
-        gap: var(--size-small);
+        gap: var(--size-xs);
       }
     }
 
     a {
       display: flex;
       align-items: center;
-      padding: var(--size-smaller) var(--size-default);
+      padding: var(--size-2xs) var(--size-md);
       color: inherit;
       text-decoration: none;
       white-space: nowrap;
-      font-size: var(--font-size-big);
+      font-size: var(--font-size-lg);
       opacity: 0;
       transition: opacity 140ms ease-out 60ms;
 
       i {
-        margin-right: var(--size-small);
-        font-size: var(--font-size-big);
+        margin-right: var(--size-xs);
+        font-size: var(--font-size-lg);
       }
 
       &:is(:hover, .active) {
@@ -125,16 +125,16 @@
     }
 
     a.highlight {
-      font-size: var(--font-size-huge);
+      font-size: var(--font-size-2xl);
       font-weight: bold;
 
       i {
-        font-size: var(--font-size-huge);
+        font-size: var(--font-size-2xl);
       }
     }
 
     a.space {
-      margin-bottom: var(--size-default);
+      margin-bottom: var(--size-md);
     }
   }
 

@@ -1,16 +1,16 @@
 :host {
-  --input-width: calc(100% - 40px - var(--size-small)) !important; /* reset button space */
+  --input-width: calc(100% - 40px - var(--size-xs)) !important; /* reset button space */
 }
 
 .input {
   position: relative;
   display: flex;
-  gap: var(--size-small);
+  gap: var(--size-xs);
 
   .input-box {
     flex: 1;
     max-width: 100%;
-    padding: var(--size-smaller) var(--size-default) var(--size-smaller) var(--size-default);
+    padding: var(--size-2xs) var(--size-md) var(--size-2xs) var(--size-md);
     border: var(--border-style);
     border-radius: var(--border-radius);
     border-color: var(--border-color);
@@ -18,7 +18,7 @@
 
     input {
       width: 100%;
-      height: calc(var(--input-height) - (var(--size-smaller) * 2));
+      height: calc(var(--input-height) - (var(--size-2xs) * 2));
       border: none;
       background: transparent;
       color: var(--text-color);
@@ -62,7 +62,7 @@
     border-top: none;
     border-bottom-left-radius: var(--border-radius);
     border-bottom-right-radius: var(--border-radius);
-    margin-bottom: calc(-1 * var(--size-default));
+    margin-bottom: calc(-1 * var(--size-md));
     list-style-type: none;
     padding: 4px;
     padding-left: 5px;
@@ -103,7 +103,7 @@
       border: var(--border-style);
       border-radius: 100%;
       padding: 2px;
-      font-size: var(--font-size-big);
+      font-size: var(--font-size-lg);
     }
 
     &.input-suggestions-close-small-position {

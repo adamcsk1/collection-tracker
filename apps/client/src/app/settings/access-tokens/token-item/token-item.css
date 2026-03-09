@@ -9,6 +9,6 @@ div {
   }
 
   button {
-    margin: var(--size-small) 1px 1px 1px;
+    margin: var(--size-xs) 1px 1px 1px;
   }
 }

@@ -4,7 +4,7 @@
   flex-direction: column;
 
   h2 {
-    margin-top: var(--size-default);
+    margin-top: var(--size-md);
     text-align: center;
     color: var(--glassy-background);
   }

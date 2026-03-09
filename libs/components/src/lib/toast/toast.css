@@ -1,6 +1,6 @@
 :host {
   position: fixed;
-  bottom: var(--size-bigger);
+  bottom: var(--size-xl);
   left: 50vw;
   transform: translateX(-50%);
   z-index: 3;
@@ -11,7 +11,7 @@ p {
   border-radius: var(--border-radius);
   border: var(--outline-style);
   border-color: var(--focus-border-color);
-  padding: var(--size-small) var(--size-default);
+  padding: var(--size-xs) var(--size-md);
   font-size: 0.9rem;
   width: min(80vw, 400px);
   cursor: pointer;
