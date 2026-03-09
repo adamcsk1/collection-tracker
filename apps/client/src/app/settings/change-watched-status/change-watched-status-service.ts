@@ -23,7 +23,6 @@ export class ChangeWatchedStatusService {
   public markAllAsWatched(): void {
     this.confirm.ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllAsWatched')).subscribe(() => {
       this.blockerLoadingState.patchState('withoutDelay', true);
-      this.blockerLoadingState.patchState('message', this.ngxSignalTranslate.translate('Message.MarkingAllAsWatched'));
       this.blockerLoadingState.patchState('show', true);
       this.markAllAsWatchedHasFail = false;
       this.markAsWatchedNext(0);
@@ -33,10 +32,6 @@ export class ChangeWatchedStatusService {
   public markAllAsUnwatched(): void {
     this.confirm.ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllAsUnwatched')).subscribe(() => {
       this.blockerLoadingState.patchState('withoutDelay', true);
-      this.blockerLoadingState.patchState(
-        'message',
-        this.ngxSignalTranslate.translate('Message.MarkingAllAsUnwatched')
-      );
       this.blockerLoadingState.patchState('show', true);
       this.markAsUnwatchedNext(0);
     });
@@ -57,6 +52,14 @@ export class ChangeWatchedStatusService {
       this.collection.loadCollection();
       return;
     }
+
+    this.blockerLoadingState.patchState(
+      'message',
+      this.ngxSignalTranslate.translate('Message.MarkingAllAsWatched', {
+        count: `${collectionItems.length - index}`,
+      })
+    );
+
     const item = collectionItems[index];
     if (item.tags.includes(WATCHED_TAG)) {
       this.markAsWatchedNext(index + 1);
@@ -80,6 +83,14 @@ export class ChangeWatchedStatusService {
       this.collection.loadCollection();
       return;
     }
+
+    this.blockerLoadingState.patchState(
+      'message',
+      this.ngxSignalTranslate.translate('Message.MarkingAllAsUnwatched', {
+        count: `${collectionItems.length - index}`,
+      })
+    );
+
     const item = collectionItems[index];
     if (!item.tags.includes(WATCHED_TAG)) {
       this.markAsUnwatchedNext(index + 1);
