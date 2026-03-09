@@ -252,4 +252,14 @@ describe('MarkdownEditor component', () => {
     expect(toTextAreaSpy).toHaveBeenCalledTimes(1);
     expect(cleanupSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('updates editor value when model value changes after initialization', async () => {
+    const markdownEditor = getLastCreatedMockEasyMde();
+
+    component.value.set('updated content from parent');
+
+    await new Promise((resolve) => setTimeout(resolve, 110));
+
+    expect(markdownEditor.value).toHaveBeenCalled();
+  });
 });
