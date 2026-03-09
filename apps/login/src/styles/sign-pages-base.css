@@ -8,7 +8,7 @@
 
   i {
     padding: var(--size-2xs);
-    font-size: 3rem;
+    font-size: calc(3 * var(--size-md));
     border-radius: 35%;
     background-color: var(--main-color);
     color: var(--background-color-alt);

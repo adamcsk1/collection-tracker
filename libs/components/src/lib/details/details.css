@@ -11,7 +11,7 @@ details {
   summary {
     cursor: pointer;
     font-weight: bold;
-    font-size: 1.125rem;
+    font-size: calc(1.125 * var(--size-md));
   }
 
   div {

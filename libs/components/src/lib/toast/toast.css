@@ -12,7 +12,7 @@ p {
   border: var(--outline-style);
   border-color: var(--focus-border-color);
   padding: var(--size-xs) var(--size-md);
-  font-size: 0.9rem;
+  font-size: calc(0.9 * var(--size-md));
   width: min(80vw, 400px);
   cursor: pointer;
 }
