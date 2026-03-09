@@ -13,7 +13,7 @@
   border: var(--border-style);
   border-color: var(--focus-border-color);
   border-radius: var(--border-radius);
-  margin-top: min(10rem, 10%);
+  margin-top: min(calc(10 * var(--size-md)), 10%);
   margin-bottom: var(--size-md);
   background-color: var(--background-color-alt);
 
