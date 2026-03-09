@@ -12,7 +12,7 @@ small {
 
 .container {
   display: flex;
-  gap: var(--size-small);
+  gap: var(--size-xs);
 }
 
 i {
@@ -20,7 +20,7 @@ i {
   margin-top: 8px;
   margin-left: 5px;
   position: absolute;
-  font-size: var(--font-size-big);
+  font-size: var(--font-size-lg);
 }
 
 .has-icon {
@@ -29,7 +29,7 @@ i {
   }
 
   input {
-    padding-left: var(--size-bigger);
+    padding-left: var(--size-xl);
   }
 }
 
@@ -42,7 +42,7 @@ i {
   color: var(--text-color);
   width: 100%;
   height: var(--input-height);
-  padding: 0 var(--size-default);
+  padding: 0 var(--size-md);
 
   &:hover {
     outline: var(--outline-style);

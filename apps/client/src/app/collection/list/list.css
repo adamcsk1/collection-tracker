@@ -1,12 +1,12 @@
 :host {
-  --pagination-height: calc(35px + 2 * var(--size-smaller));
+  --pagination-height: calc(35px + 2 * var(--size-2xs));
   --float-button-container-size: 45px;
 }
 
 .list {
-  max-height: calc(100vh - var(--header-height) - 54px - 2 * var(--size-default) - var(--pagination-height));
-  max-height: calc(100svh - var(--header-height) - 54px - 2 * var(--size-default) - var(--pagination-height));
-  max-height: calc(100dvh - var(--header-height) - 54px - 2 * var(--size-default) - var(--pagination-height));
+  max-height: calc(100vh - var(--header-height) - 54px - 2 * var(--size-md) - var(--pagination-height));
+  max-height: calc(100svh - var(--header-height) - 54px - 2 * var(--size-md) - var(--pagination-height));
+  max-height: calc(100dvh - var(--header-height) - 54px - 2 * var(--size-md) - var(--pagination-height));
   overflow: hidden auto;
 
   .list-empty {
@@ -20,7 +20,7 @@
     }
 
     a {
-      margin-bottom: var(--size-default);
+      margin-bottom: var(--size-md);
     }
   }
 }
@@ -29,8 +29,8 @@
   height: var(--pagination-height);
   display: flex;
   justify-content: center;
-  gap: var(--size-default);
-  padding: var(--size-smaller);
+  gap: var(--size-md);
+  padding: var(--size-2xs);
 }
 
 .float-button {
@@ -43,7 +43,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: var(--size-small);
+  margin: var(--size-xs);
 
   button {
     height: 100%;
@@ -56,6 +56,6 @@
 }
 
 .add-new {
-  bottom: calc(2 * var(--size-small) + var(--float-button-container-size));
+  bottom: calc(2 * var(--size-xs) + var(--float-button-container-size));
   margin-bottom: 0;
 }

@@ -1,8 +1,8 @@
 :host {
   display: block;
   position: fixed;
-  right: var(--size-default);
-  top: calc(var(--header-height) + var(--size-bigger));
+  right: var(--size-md);
+  top: calc(var(--header-height) + var(--size-xl));
   z-index: 3;
 }
 
@@ -23,8 +23,8 @@
     &::before,
     &::after,
     & {
-      width: var(--size-small);
-      height: var(--size-small);
+      width: var(--size-xs);
+      height: var(--size-xs);
       border-radius: 50%;
       background-color: var(--main-color);
     }
@@ -37,12 +37,12 @@
     }
 
     &::before {
-      left: calc(-1 * var(--size-default));
+      left: calc(-1 * var(--size-md));
       animation: dots-before 1s infinite linear;
     }
 
     &::after {
-      left: var(--size-default);
+      left: var(--size-md);
       animation: dots-after 1s infinite linear;
     }
   }

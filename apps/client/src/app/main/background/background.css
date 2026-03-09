@@ -1,5 +1,5 @@
 :host {
-  filter: blur(var(--size-small));
+  filter: blur(var(--size-xs));
   pointer-events: none;
   width: 100vw;
   height: 100vh;

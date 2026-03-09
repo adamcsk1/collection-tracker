@@ -1,11 +1,11 @@
 :host {
   display: flex;
   align-items: center;
-  margin: var(--size-small);
+  margin: var(--size-xs);
 
   h3 {
     color: var(--main-color);
-    font-size: var(--font-size-medium);
+    font-size: var(--font-size-base);
   }
 
   .image {
@@ -29,10 +29,10 @@
     flex-basis: calc(100% - var(--image-width));
     display: flex;
     flex-direction: column;
-    padding: var(--size-small);
+    padding: var(--size-xs);
 
     .content-info {
-      margin-bottom: var(--size-small);
+      margin-bottom: var(--size-xs);
     }
   }
 
@@ -40,10 +40,10 @@
     display: inline-flex;
     flex-direction: row;
     align-items: center;
-    gap: var(--size-smaller);
+    gap: var(--size-2xs);
 
     i {
-      font-size: var(--font-size-small);
+      font-size: var(--font-size-sm);
     }
   }
 }

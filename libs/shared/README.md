@@ -150,7 +150,7 @@ Quick examples:
 
   <p animate.enter="animation-scale-in" animate.leave="animation-scale-out">Animated content</p>
 
-  <!-- CSS variables available, e.g.: var(--main-color), var(--text-color), var(--size-small) -->
+  <!-- CSS variables available, e.g.: var(--main-color), var(--text-color), var(--size-xs) -->
   <!-- Focus styles use var(--outline-style) and var(--outline-offset) -->
 </body>
 ```

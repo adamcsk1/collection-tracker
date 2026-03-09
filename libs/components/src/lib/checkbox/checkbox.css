@@ -17,10 +17,10 @@ small {
 }
 
 input[type="checkbox"] {
-  margin-right: var(--size-small);
+  margin-right: var(--size-xs);
   accent-color: var(--color-primary);
-  height: var(--size-big);
-  width: var(--size-big);
+  height: var(--size-lg);
+  width: var(--size-lg);
 }
 
 .error {

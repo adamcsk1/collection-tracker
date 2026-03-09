@@ -1,13 +1,13 @@
 form {
   display: flex;
   flex-direction: column;
-  gap: var(--size-default);
+  gap: var(--size-md);
   width: 100%;
 
   div.form-buttons {
     display: flex;
-    gap: var(--size-small);
-    margin-top: var(--size-small);
+    gap: var(--size-xs);
+    margin-top: var(--size-xs);
     flex-wrap: wrap;
   }
 }
