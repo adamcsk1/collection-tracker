@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { List } from '@client/collection/list/list';
 import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
+import { List } from '@client/collection/list/list';
 import { SearchSuggestionService } from '@client/collection/search/search-suggestion-service';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
@@ -40,5 +40,13 @@ export class Collection {
         this.collectionState.setState('searchText', searchText);
       }
     });
+  }
+
+  protected onSearchFromUser(): void {
+    this.collectionState.setState('forceStandardSearch', false);
+  }
+
+  protected onSearchAccepted(): void {
+    this.collectionState.setState('forceStandardSearch', true);
   }
 }

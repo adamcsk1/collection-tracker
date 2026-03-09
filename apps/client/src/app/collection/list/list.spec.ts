@@ -10,6 +10,7 @@ import { initialMainState, mainStateToken } from '@client/main/main-store';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import * as randomIntUtil from '@shared/utils/random-int-util';
+import { WATCHED_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,12 +22,13 @@ describe('List', () => {
   let fixture: ComponentFixture<List>;
   let component: List;
   let portal: { open: ReturnType<typeof vi.fn> };
+  let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
   let mainCollectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
   let collectionState: NgxSimpleSignalStoreService<typeof initialCollectionState>;
   let scrollSpy: ReturnType<typeof vi.fn>;
 
-  const buildItem = (name: string): CollectionItemModel => ({
-    rawContent: name,
+  const buildItem = (name: string, rawContent = name): CollectionItemModel => ({
+    rawContent,
     image: '',
     title: name,
     genre: [],
@@ -55,6 +57,7 @@ describe('List', () => {
 
     fixture = TestBed.createComponent(List);
     component = fixture.componentInstance;
+    mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
     mainCollectionState = TestBed.inject(mainCollectionStateToken) as NgxSimpleSignalStoreService<
       typeof initialMainCollectionState
     >;
@@ -119,6 +122,42 @@ describe('List', () => {
 
     component['onPreviousPage']();
     expect(component['offset']()).toBe(0);
+  });
+
+  it('shows only unwatched items for virtual tag search', async () => {
+    mainCollectionState.setState('collection', [
+      { ...buildItem('Item One', `Alpha ${WATCHED_TAG} watch-list`), tags: [VIRTUAL_UNWATCHED_TAG] },
+      buildItem('Item Two', 'Beta'),
+    ]);
+
+    vi.useFakeTimers();
+    try {
+      collectionState.setState('searchText', VIRTUAL_UNWATCHED_TAG);
+      await vi.runAllTimersAsync();
+
+      expect(component['filteredCollection']().map((item) => item.name)).toEqual(['Item One', 'Item Two']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('switches to standard text search when forceStandardSearch is enabled', async () => {
+    mainState.setState('searchMode', 'fuzzy');
+    mainCollectionState.setState('collection', [buildItem('Item One', 'apple'), buildItem('Item Two', 'other')]);
+
+    vi.useFakeTimers();
+    try {
+      collectionState.setState('searchText', 'applx');
+      collectionState.setState('forceStandardSearch', false);
+      await vi.runAllTimersAsync();
+
+      expect(component['filteredCollection']().map((item) => item.name)).toEqual(['Item One', 'Item Two']);
+
+      collectionState.setState('forceStandardSearch', true);
+      expect(component['filteredCollection']().map((item) => item.name)).toEqual(['Item One', 'Item Two']);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('computes next/previous disable flags', () => {

@@ -320,4 +320,30 @@ describe('Autocomplete component', () => {
     expect(component['suggestions']()).toEqual([]);
     expect(focusSpy).toHaveBeenCalled();
   });
+
+  it('emits userEvent when a key is pressed in the input', () => {
+    const userEventSpy = vi.fn();
+    const unsubscribe = component['userEvent'].subscribe(userEventSpy);
+
+    component['onKeydown']({
+      code: 'KeyA',
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    } as unknown as KeyboardEvent);
+
+    expect(userEventSpy).toHaveBeenCalled();
+    unsubscribe.unsubscribe();
+  });
+
+  it('emits userAcceptSuggestionEvent when a suggestion is accepted', () => {
+    const userAcceptSuggestionSpy = vi.fn();
+    const unsubscribe = component['userAcceptSuggestionEvent'].subscribe(userAcceptSuggestionSpy);
+    component['_suggestions'].set(['alpha', 'beta']);
+
+    component['onAcceptSuggestion'](1);
+
+    expect(userAcceptSuggestionSpy).toHaveBeenCalled();
+    expect(component['suggestions']()).toEqual([]);
+    unsubscribe.unsubscribe();
+  });
 });

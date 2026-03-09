@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { searchCollection } from '@client/collection/utils/search-collection-util';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { mainStateToken } from '@client/main/main-store';
+import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import { affordableFuzzySearch, fuzzySearch } from '@shared/utils/fuzzy-search-util';
 
 @Injectable()
@@ -30,7 +31,7 @@ export class TagSuggestionService {
     return this.formatResult(
       searchCollection(this.appCollectionState.state.collection(), limit, (item, results) => {
         for (const tag of item.tags) {
-          if (['#movie', '#series'].includes(tag) || tags.includes(tag)) continue;
+          if ([MOVIE_TAG, SERIES_TAG].includes(tag) || tags.includes(tag)) continue;
           const matchResults = fuzzySearch(text, tag, 1) || [];
           if (matchResults.length > 0) {
             results.add(tag);
@@ -47,7 +48,7 @@ export class TagSuggestionService {
     return this.formatResult(
       searchCollection(this.appCollectionState.state.collection(), limit, (item, results) => {
         for (const tag of item.tags) {
-          if (['#movie', '#series'].includes(tag) || tags.includes(tag)) continue;
+          if ([MOVIE_TAG, SERIES_TAG].includes(tag) || tags.includes(tag)) continue;
           if (tag.startsWith(text)) {
             results.add(tag);
             break;

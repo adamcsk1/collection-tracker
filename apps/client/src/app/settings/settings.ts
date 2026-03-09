@@ -3,6 +3,7 @@ import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { mainStateToken } from '@client/main/main-store';
 import { AccessTokens } from '@client/settings/access-tokens/access-tokens';
 import { AccountActions } from '@client/settings/account-actions/account-actions';
+import { ChangeWatchedStatusService } from '@client/settings/change-watched-status/change-watched-status-service';
 import { ImageRefreshService } from '@client/settings/image-refresh/image-refresh-service';
 import { SettingsModel } from '@client/settings/settings-model';
 import { SettingsService } from '@client/settings/settings-service';
@@ -33,7 +34,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   ],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
-  providers: [OMDbService, ImageRefreshService],
+  providers: [OMDbService, ImageRefreshService, ChangeWatchedStatusService],
   host: {
     class: 'page',
   },
@@ -47,6 +48,7 @@ export class Settings implements OnInit {
   private readonly themeState = inject(themeStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly imageRefresh = inject(ImageRefreshService);
+  private readonly changeWatchedStatus = inject(ChangeWatchedStatusService);
   private readonly translate = inject(TranslateService);
   private readonly theme = inject(ThemeService);
   protected readonly settingsModel = signal<SettingsModel>({
@@ -104,5 +106,13 @@ export class Settings implements OnInit {
 
   private onSave(navigateBack = false): void {
     this.settings.storeFormData(this.settingsModel(), navigateBack);
+  }
+
+  protected onMarkAllAsWatched(): void {
+    this.changeWatchedStatus.markAllAsWatched();
+  }
+
+  protected onMarkAllAsUnwatched(): void {
+    this.changeWatchedStatus.markAllAsUnwatched();
   }
 }

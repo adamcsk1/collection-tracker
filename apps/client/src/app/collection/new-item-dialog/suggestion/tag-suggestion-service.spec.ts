@@ -3,6 +3,7 @@ import { CollectionItemModel } from '@client/collection/collection-model';
 import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagSuggestionService } from './tag-suggestion-service';
 
@@ -48,6 +49,16 @@ describe('TagSuggestionService', () => {
     expect(suggestions.length).toBeLessThanOrEqual(3);
     expect(suggestions.every((text) => text.startsWith('find '))).toBe(true);
     expect(suggestions.join(' ')).not.toContain('#movie');
+  });
+
+  it('excludes internal movie and series tags from suggestions', () => {
+    collectionState.setState('collection', [buildItem(['#movie', '#series', '#space', '#series'])]);
+
+    const suggestions = service.getSuggestion('#s');
+
+    expect(suggestions).toEqual(expect.arrayContaining(['#space']));
+    expect(suggestions).not.toContain(MOVIE_TAG);
+    expect(suggestions).not.toContain(SERIES_TAG);
   });
 
   it('returns empty list when no tags match', () => {

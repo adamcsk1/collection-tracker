@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
+import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -72,6 +73,34 @@ describe('NewItemDialog component', () => {
     await component['onSave']('new');
 
     expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'new');
+    expect(formRoot.reset).toHaveBeenCalled();
+  });
+
+  it('appends watched tag before saving in new mode', async () => {
+    const formRoot = component['form']();
+    vi.spyOn(formRoot, 'reset');
+
+    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].tags().value.set('#tag');
+    component['form'].watched().value.set(true);
+
+    await component['onSave']('new');
+
+    expect(service.save).toHaveBeenCalledWith('tt123', `#tag ${WATCHED_TAG}`, 'new');
+    expect(formRoot.reset).toHaveBeenCalled();
+    expect(component['form'].watched().value()).toBe(false);
+  });
+
+  it('saves only watched tag when no tags are provided in new mode', async () => {
+    const formRoot = component['form']();
+    vi.spyOn(formRoot, 'reset');
+
+    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].watched().value.set(true);
+
+    await component['onSave']('new');
+
+    expect(service.save).toHaveBeenCalledWith('tt123', WATCHED_TAG, 'new');
     expect(formRoot.reset).toHaveBeenCalled();
   });
 

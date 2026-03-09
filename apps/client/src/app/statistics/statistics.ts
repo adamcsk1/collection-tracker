@@ -5,6 +5,7 @@ import { Details } from '@components/details/details';
 import { apiStateToken } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
+import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -38,8 +39,8 @@ export class Statistics implements AfterViewInit {
   protected readonly summary = computed<StatisticsSummaryModel>(() => {
     const collection = this.mainCollectionState.state.collection();
     const summary = {
-      movies: collection.filter((item) => item.tags.includes('#movie')).length,
-      series: collection.filter((item) => item.tags.includes('#series')).length,
+      movies: collection.filter((item) => item.tags.includes(MOVIE_TAG)).length,
+      series: collection.filter((item) => item.tags.includes(SERIES_TAG)).length,
     };
     return { ...summary, all: collection.length };
   });

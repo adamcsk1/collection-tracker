@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { searchCollection } from '@client/collection/utils/search-collection-util';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { mainStateToken } from '@client/main/main-store';
+import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 import { affordableFuzzySearch, fuzzySearch } from '@shared/utils/fuzzy-search-util';
 
 const SEPARATOR = ' ### ';
@@ -10,6 +11,7 @@ const SEPARATOR = ' ### ';
 export class SearchSuggestionService {
   private readonly appCollectionState = inject(mainCollectionStateToken);
   private readonly mainState = inject(mainStateToken);
+  private readonly basicTagList = [...VIRTUAL_TAGS, WATCHED_TAG, MOVIE_TAG, SERIES_TAG];
 
   public getSuggestion(text: string, limit = 3): Array<string> {
     const lowerCasedText = text.toLowerCase();
@@ -32,7 +34,7 @@ export class SearchSuggestionService {
     return Array.from(
       searchCollection(this.appCollectionState.state.collection(), limit, (item, results) => {
         if (text.startsWith('#')) {
-          for (const tag of item.tags) {
+          for (const tag of [...item.tags, ...this.basicTagList]) {
             const matchResults = fuzzySearch(text, tag) || [];
             if (matchResults.length > 0) {
               results.add(tag);
@@ -51,10 +53,12 @@ export class SearchSuggestionService {
   }
 
   private standardSearch(lowerCasedText: string, text: string, limit: number): Array<string> {
+    if (text === '#') return this.basicTagList;
+
     return Array.from(
       searchCollection(this.appCollectionState.state.collection(), limit, (item, results) => {
         if (text.startsWith('#')) {
-          for (const tag of item.tags) {
+          for (const tag of [...item.tags, ...this.basicTagList]) {
             if (tag.startsWith(text)) {
               results.add(tag);
               break;
