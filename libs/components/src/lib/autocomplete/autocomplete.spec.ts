@@ -58,10 +58,12 @@ describe('Autocomplete component', () => {
   });
 
   it('renders suggestions and accepts a selection', () => {
+    vi.useFakeTimers();
     component['onKeyup']({
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
+    vi.advanceTimersByTime(80);
     fixture.detectChanges();
 
     expect(component['suggestions']()).toEqual(['alpha', 'beta']);
@@ -72,6 +74,7 @@ describe('Autocomplete component', () => {
 
     expect(fixture.componentInstance.model()).toBe('alpha-formatted');
     expect(component['suggestions']()).toEqual([]);
+    vi.useRealTimers();
   });
 
   it('resets value when reset button is clicked', () => {
@@ -96,10 +99,12 @@ describe('Autocomplete component', () => {
       stopPropagation: vi.fn(),
     } as Pick<KeyboardEvent, 'preventDefault' | 'stopPropagation'>;
 
+    vi.useFakeTimers();
     component['onKeyup']({
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
+    vi.advanceTimersByTime(80);
     fixture.detectChanges();
 
     component['onKeydown']({
@@ -118,13 +123,16 @@ describe('Autocomplete component', () => {
 
     expect(fixture.componentInstance.model()).toBe('beta-formatted');
     expect(component['suggestions']()).toEqual([]);
+    vi.useRealTimers();
   });
 
   it('clears suggestions when Escape is pressed', () => {
+    vi.useFakeTimers();
     component['onKeyup']({
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
+    vi.advanceTimersByTime(80);
     fixture.detectChanges();
 
     expect(component['suggestions']()).toHaveLength(2);
@@ -136,6 +144,7 @@ describe('Autocomplete component', () => {
     fixture.detectChanges();
 
     expect(component['suggestions']()).toHaveLength(0);
+    vi.useRealTimers();
   });
 
   it('prevents default behavior on Enter keypress', () => {
@@ -273,16 +282,19 @@ describe('Autocomplete component', () => {
   });
 
   it('uses formatted value when accepting a suggestion', () => {
+    vi.useFakeTimers();
     component['onKeyup']({
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
+    vi.advanceTimersByTime(80);
     fixture.detectChanges();
 
     component['onAcceptSuggestion'](0);
 
     expect(fixture.componentInstance.model()).toBe('alpha-formatted');
     expect(serviceStub.formatSuggestionValue).toHaveBeenCalledWith('alpha');
+    vi.useRealTimers();
   });
 
   it('clears suggestions without calling service when input is empty', () => {

@@ -3,9 +3,10 @@ import { searchCollection } from '@client/collection/utils/search-collection-uti
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { mainStateToken } from '@client/main/main-store';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
-import { affordableFuzzySearch, fuzzySearch } from '@shared/utils/fuzzy-search-util';
+import { affordableFuzzySearch, hasFuzzyMatch } from '@shared/utils/fuzzy-search-util';
 
 const SEPARATOR = ' ### ';
+const FUZZY_CONTENT_MAX_LENGTH = 250;
 
 @Injectable()
 export class SearchSuggestionService {
@@ -32,21 +33,43 @@ export class SearchSuggestionService {
 
   private fuzzySearch(lowerCasedText: string, text: string, limit: number): Array<string> {
     return Array.from(
-      searchCollection(this.appCollectionState.state.collection(), limit, (item, results) => {
+      searchCollection(this.appCollectionState.state.collection(), limit, (collectionItem, results) => {
         if (text.startsWith('#')) {
-          for (const tag of [...item.tags, ...this.basicTagList]) {
-            const matchResults = fuzzySearch(text, tag) || [];
-            if (matchResults.length > 0) {
+          let hasTagMatch = false;
+          for (const tag of collectionItem.tags) {
+            if (hasFuzzyMatch(text, tag)) {
               results.add(tag);
+              hasTagMatch = true;
               break;
             }
           }
+          if (!hasTagMatch) {
+            for (const tag of this.basicTagList) {
+              if (hasFuzzyMatch(text, tag)) {
+                results.add(tag);
+                break;
+              }
+            }
+          }
         } else {
-          const matchResults =
-            fuzzySearch(lowerCasedText, item.title.toLowerCase()) ||
-            fuzzySearch(lowerCasedText, item.rawContent.toLowerCase()) ||
-            [];
-          if (matchResults.length > 0) results.add(`${item.title}${SEPARATOR}${item.IMDbId || item.title}`);
+          if (
+            collectionItem.titleLower.includes(lowerCasedText) ||
+            hasFuzzyMatch(lowerCasedText, collectionItem.titleLower)
+          ) {
+            results.add(`${collectionItem.title}${SEPARATOR}${collectionItem.IMDbId || collectionItem.title}`);
+            return;
+          }
+
+          if (collectionItem.rawContentLower.includes(lowerCasedText)) {
+            results.add(`${collectionItem.title}${SEPARATOR}${collectionItem.IMDbId || collectionItem.title}`);
+            return;
+          }
+
+          if (collectionItem.rawContentLower.length <= FUZZY_CONTENT_MAX_LENGTH) {
+            if (hasFuzzyMatch(lowerCasedText, collectionItem.rawContentLower)) {
+              results.add(`${collectionItem.title}${SEPARATOR}${collectionItem.IMDbId || collectionItem.title}`);
+            }
+          }
         }
       })
     );
@@ -56,16 +79,26 @@ export class SearchSuggestionService {
     if (text === '#') return this.basicTagList;
 
     return Array.from(
-      searchCollection(this.appCollectionState.state.collection(), limit, (item, results) => {
+      searchCollection(this.appCollectionState.state.collection(), limit, (collectionItem, results) => {
         if (text.startsWith('#')) {
-          for (const tag of [...item.tags, ...this.basicTagList]) {
+          let hasTagMatch = false;
+          for (const tag of collectionItem.tags) {
             if (tag.startsWith(text)) {
               results.add(tag);
+              hasTagMatch = true;
               break;
             }
           }
-        } else if (item.rawContent.toLowerCase().includes(lowerCasedText)) {
-          results.add(`${item.title}${SEPARATOR}${item.IMDbId || item.title}`);
+          if (!hasTagMatch) {
+            for (const tag of this.basicTagList) {
+              if (tag.startsWith(text)) {
+                results.add(tag);
+                break;
+              }
+            }
+          }
+        } else if (collectionItem.rawContentLower.includes(lowerCasedText)) {
+          results.add(`${collectionItem.title}${SEPARATOR}${collectionItem.IMDbId || collectionItem.title}`);
         }
       })
     );

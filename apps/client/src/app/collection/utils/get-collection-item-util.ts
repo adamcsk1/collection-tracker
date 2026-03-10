@@ -14,10 +14,14 @@ export const getCollectionItem = (item: Partial<GetAllApiResponseItemModel>): Co
     name: item.name || '',
   };
 
+  const title = getTitle(safeItem.content);
+
   return {
     rawContent: safeItem.content,
+    rawContentLower: safeItem.content.toLowerCase(),
     image: getImage(safeItem.content),
-    title: getTitle(safeItem.content),
+    title,
+    titleLower: title.toLowerCase(),
     genre: getGenre(safeItem.content),
     tags: getTags(safeItem.content),
     IMDbId: getIMDbId(safeItem.content),

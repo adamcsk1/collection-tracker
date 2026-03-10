@@ -26,8 +26,10 @@ describe('Background component', () => {
 
   const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
     rawContent: '',
+    rawContentLower: ''.toLowerCase(),
     image: overrides.image || '',
     title: overrides.title || '',
+    titleLower: (overrides.title || '').toLowerCase(),
     genre: [],
     IMDbId: '',
     tags: [],

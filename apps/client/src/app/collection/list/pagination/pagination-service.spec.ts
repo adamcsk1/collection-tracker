@@ -7,8 +7,10 @@ import { PaginationService } from './pagination-service';
 
 const buildItem = (name: string): CollectionItemModel => ({
   rawContent: name,
+  rawContentLower: name.toLowerCase(),
   image: '',
   title: name,
+  titleLower: name.toLowerCase(),
   genre: [],
   IMDbId: '',
   tags: [],

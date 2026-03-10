@@ -3,7 +3,7 @@ import { searchCollection } from '@client/collection/utils/search-collection-uti
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { mainStateToken } from '@client/main/main-store';
 import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
-import { affordableFuzzySearch, fuzzySearch } from '@shared/utils/fuzzy-search-util';
+import { affordableFuzzySearch, hasFuzzyMatch } from '@shared/utils/fuzzy-search-util';
 
 @Injectable()
 export class TagSuggestionService {
@@ -32,8 +32,7 @@ export class TagSuggestionService {
       searchCollection(this.appCollectionState.state.collection(), limit, (item, results) => {
         for (const tag of item.tags) {
           if ([MOVIE_TAG, SERIES_TAG].includes(tag) || tags.includes(tag)) continue;
-          const matchResults = fuzzySearch(text, tag, 1) || [];
-          if (matchResults.length > 0) {
+          if (hasFuzzyMatch(text, tag, 1)) {
             results.add(tag);
             break;
           }

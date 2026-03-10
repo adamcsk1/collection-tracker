@@ -9,8 +9,10 @@ import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const
 
 const buildItem = (name: string, tags: Array<string> = []): CollectionItemModel => ({
   rawContent: name,
+  rawContentLower: name.toLowerCase(),
   image: '',
   title: name,
+  titleLower: name.toLowerCase(),
   genre: [],
   IMDbId: '',
   tags,

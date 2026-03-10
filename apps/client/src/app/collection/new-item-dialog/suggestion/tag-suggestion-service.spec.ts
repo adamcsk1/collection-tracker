@@ -9,8 +9,10 @@ import { TagSuggestionService } from './tag-suggestion-service';
 
 const buildItem = (tags: Array<string>): CollectionItemModel => ({
   rawContent: '',
+  rawContentLower: '',
   image: '',
   title: '',
+  titleLower: '',
   genre: [],
   IMDbId: '',
   tags,

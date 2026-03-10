@@ -18,8 +18,10 @@ import { ChangeWatchedStatusService } from './change-watched-status-service';
 
 const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
   rawContent: overrides.rawContent || '',
+  rawContentLower: (overrides.rawContent || '').toLowerCase(),
   image: '',
   title: overrides.title || '',
+  titleLower: (overrides.title || '').toLowerCase(),
   genre: overrides.genre || [],
   IMDbId: overrides.IMDbId || 'tt000',
   tags: overrides.tags || [],
