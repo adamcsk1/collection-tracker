@@ -1,6 +1,9 @@
 <libc-dialog-shell>
   <ng-container dialog-shell-top-content>
-    <h3>{{ ('Title.CollectionItem' | signalTranslate)() }}</h3>
+    <h3 class="dialog-title">
+      <i class="material-icons" [title]="('Title.CollectionItem' | signalTranslate)()"> movie </i>
+      {{ ('Title.CollectionItem' | signalTranslate)() }}
+    </h3>
   </ng-container>
   <ng-container dialog-shell-content>
     <div class="editor-pane">
