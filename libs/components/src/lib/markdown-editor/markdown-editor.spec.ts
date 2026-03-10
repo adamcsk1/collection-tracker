@@ -171,15 +171,54 @@ describe('MarkdownEditor component', () => {
     expect(component.touched()).toBe(true);
   });
 
-  it('activates preview mode when edit mode is disabled and the editor is not already in preview state', () => {
+  it('activates preview mode when edit mode is disabled and the editor is not already in preview state', async () => {
     const markdownEditor = getLastCreatedMockEasyMde();
+    const markdownWrapper = document.createElement('div');
     markdownEditor.setPreviewActive(false);
+    markdownWrapper.className = 'CodeMirror';
+
+    const hostElement = component['elementRef'].nativeElement as HTMLElement;
+    const hostParentElement = document.createElement('div');
+
+    Object.defineProperty(hostParentElement, 'clientHeight', {
+      configurable: true,
+      get: () => 120,
+    });
+
+    Object.defineProperty(hostElement, 'parentElement', {
+      configurable: true,
+      value: hostParentElement,
+      writable: true,
+    });
+
+    const querySelectorSpy = vi.spyOn(document, 'querySelector').mockReturnValue(markdownWrapper);
+    const setStyleSpy = vi.spyOn(component['renderer'], 'setStyle');
 
     fixture.componentRef.setInput('editMode', false);
     fixture.detectChanges();
 
+    expect(component['easyMdeLoaded']()).toBe(false);
     expect(markdownEditor.togglePreview).toHaveBeenCalledTimes(1);
     expect(markdownEditor.codemirror.refresh).toHaveBeenCalledTimes(1);
+
+    await new Promise((resolve) => setTimeout(resolve, 110));
+
+    expect(component['easyMdeLoaded']()).toBe(true);
+    expect(setStyleSpy).toHaveBeenCalledWith(markdownWrapper, 'height', '95px');
+    querySelectorSpy.mockRestore();
+  });
+
+  it('does not set CodeMirror height when the CodeMirror wrapper cannot be found', async () => {
+    const setStyleSpy = vi.spyOn(component['renderer'], 'setStyle');
+    const querySelectorSpy = vi.spyOn(document, 'querySelector').mockReturnValue(null);
+
+    component['setFullHeight']();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(querySelectorSpy).toHaveBeenCalledWith('.CodeMirror ');
+    expect(setStyleSpy).not.toHaveBeenCalled();
+    querySelectorSpy.mockRestore();
   });
 
   it('does not activate preview mode when edit mode and editor preview state already match', () => {
@@ -233,7 +272,7 @@ describe('MarkdownEditor component', () => {
     component['setFullHeight']();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(setStyleSpy).toHaveBeenCalledWith(markdownWrapper, 'height', '104px');
+    expect(setStyleSpy).toHaveBeenCalledWith(markdownWrapper, 'height', '95px');
     querySelectorSpy.mockRestore();
   });
 

@@ -90,9 +90,11 @@
 
   <div class="form-buttons">
     <button type="submit" [disabled]="form().invalid()">
+      <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
       {{ ('Save' | signalTranslate)() }}
     </button>
     <button type="button" class="button-basic" [disabled]="form().invalid()" (click)="onGeneratePreview()">
+      <i class="material-icons" [title]="('Preview' | signalTranslate)()"> visibility </i>
       {{ ('Preview' | signalTranslate)() }}
     </button>
   </div>
@@ -106,6 +108,7 @@
         [disabled]="form().invalid() || apiLoadNetworkStatus() !== 'finished'"
         (click)="onRefreshTemplates()"
       >
+        <i class="material-icons" [title]="('Start' | signalTranslate)()"> start </i>
         {{ ('Start' | signalTranslate)() }}
       </button>
     </div>

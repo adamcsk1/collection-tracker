@@ -46,4 +46,19 @@ button {
       outline: unset;
     }
   }
+
+  &:not(.button-icon) {
+    display: flex;
+    align-items: center;
+    gap: var(--size-2xs);
+
+    i {
+      font-size: var(--font-size-base);
+    }
+
+    @media (width <= 520px) {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 }

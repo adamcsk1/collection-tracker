@@ -7,6 +7,7 @@
   <p>{{ ('Message.CreateNewAccessToken' | signalTranslate)() }}</p>
   <div class="form-buttons">
     <button (click)="onCreateAccessToken()">
+      <i class="material-icons" [title]="('CreateNewAccessToken' | signalTranslate)()"> add </i>
       {{ ('CreateNewAccessToken' | signalTranslate)() }}
     </button>
   </div>

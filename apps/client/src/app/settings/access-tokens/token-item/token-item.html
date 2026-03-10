@@ -17,6 +17,7 @@
   </div>
   <div>
     <button class="button-danger" (click)="onRevokeAccessToken(accessToken.tokenHash)">
+      <i class="material-icons" [title]="('Revoke' | signalTranslate)()"> block </i>
       {{ ('Revoke' | signalTranslate)() }}
     </button>
   </div>
