@@ -3,9 +3,11 @@
 
   <div class="form-buttons">
     <button (click)="onCreateNewUserToken()">
+      <i class="material-icons" [title]="('CreateNewUserToken' | signalTranslate)()"> add </i>
       {{ ('CreateNewUserToken' | signalTranslate)() }}
     </button>
     <button class="button-danger" (click)="onDeleteUser()">
+      <i class="material-icons" [title]="('DeleteUser' | signalTranslate)()"> delete </i>
       {{ ('DeleteUser' | signalTranslate)() }}
     </button>
   </div>

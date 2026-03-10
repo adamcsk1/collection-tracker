@@ -142,11 +142,9 @@ export class MarkdownEditor implements FormValueControl<string | null>, OnDestro
 
   private setFullHeight(): void {
     asyncScheduler.schedule(() => {
-      this.renderer.setStyle(
-        this.document.querySelector('.CodeMirror '),
-        'height',
-        `${this.elementRef!.nativeElement.parentElement!.clientHeight - 16}px`
-      );
+      const element = this.document.querySelector('.CodeMirror ');
+      if (!element) return;
+      this.renderer.setStyle(element, 'height', `${this.elementRef!.nativeElement.parentElement!.clientHeight - 25}px`);
     });
   }
 
@@ -155,8 +153,11 @@ export class MarkdownEditor implements FormValueControl<string | null>, OnDestro
       (!this.editMode() && !this.easyMde?.isPreviewActive()) ||
       (this.editMode() && this.easyMde?.isPreviewActive())
     ) {
+      this.easyMdeLoaded.set(false);
       this.easyMde?.togglePreview();
       this.easyMde?.codemirror.refresh();
+      this.setFullHeight();
+      asyncScheduler.schedule(() => this.easyMdeLoaded.set(true), 100);
     }
   }
 }

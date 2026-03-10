@@ -13,29 +13,36 @@
   </ng-container>
   <ng-container dialog-shell-bottom-content>
     @if (editMode()) {
-      <button [title]="('ReadOnly' | signalTranslate)()" (click)="onReadOnly()">
+      <button (click)="onReadOnly()">
+        <i class="material-icons" [title]="('ReadOnly' | signalTranslate)()"> visibility </i>
         {{ ('ReadOnly' | signalTranslate)() }}
       </button>
-      <button [title]="('Save' | signalTranslate)()" (click)="onSaveChanges()">
+      <button (click)="onSaveChanges()">
+        <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
         {{ ('Save' | signalTranslate)() }}
       </button>
     } @else {
       @if (permissionUpdate()) {
+        <button (click)="onEdit()">
+          <i class="material-icons" [title]="('Edit' | signalTranslate)()"> edit </i>
+          {{ ('Edit' | signalTranslate)() }}
+        </button>
         @if (watched()) {
-          <button [title]="('MarkAsUnwatched' | signalTranslate)()" (click)="onMarkAsUnwatched()">
+          <button (click)="onMarkAsUnwatched()">
+            <i class="material-icons" [title]="('MarkAsUnwatched' | signalTranslate)()"> visibility_off </i>
             {{ ('MarkAsUnwatched' | signalTranslate)() }}
           </button>
         } @else {
-          <button [title]="('MarkAsWatched' | signalTranslate)()" (click)="onMarkAsWatched()">
+          <button (click)="onMarkAsWatched()">
+            <i class="material-icons" [title]="('MarkAsWatched' | signalTranslate)()"> visibility </i>
             {{ ('MarkAsWatched' | signalTranslate)() }}
           </button>
         }
-        <button [title]="('Edit' | signalTranslate)()" (click)="onEdit()">
-          {{ ('Edit' | signalTranslate)() }}
-        </button>
       }
+
       @if (permissionDelete()) {
-        <button class="button-danger" [title]="('Delete' | signalTranslate)()" (click)="onDelete()">
+        <button class="button-danger" (click)="onDelete()">
+          <i class="material-icons" [title]="('Delete' | signalTranslate)()"> delete </i>
           {{ ('Delete' | signalTranslate)() }}
         </button>
       }
