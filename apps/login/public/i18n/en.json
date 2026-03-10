@@ -16,6 +16,7 @@
   "Light": "Light",
   "Dark": "Dark",
   "System": "System",
+  "CompanionAppReset": "Reset App",
   "Validation.Required": "Required field.",
   "Validation.UsernameMinLength": "Minimum length is 3 characters.",
   "Validation.UsernameMaxLength": "Maximum length is 32 characters.",

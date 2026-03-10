@@ -50,6 +50,14 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
+# Android
+android/.idea/
+android/.gradle/
+android/local.properties
+android/build/
+android/app/build/
+android/app/debug/
+
 # Angular
 .angular
 

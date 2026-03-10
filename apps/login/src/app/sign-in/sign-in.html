@@ -52,10 +52,16 @@
       <a [routerLink]="['/', 'sign-up']">
         {{ ('SignUp' | signalTranslate)() }}
       </a>
-      @if (!showApiUrlInput()) {
-        <button type="button" class="button-basic button-custom" (click)="showApiUrlInput.set(true)">
-          {{ ('ChangeApiUrl' | signalTranslate)() }}
+      @if (companionAppDetected) {
+        <button type="button" class="button-basic button-custom" (click)="onResetCompanionAppConfig()">
+          {{ ('CompanionAppReset' | signalTranslate)() }}
         </button>
+      } @else {
+        @if (!showApiUrlInput()) {
+          <button type="button" class="button-basic button-custom" (click)="showApiUrlInput.set(true)">
+            {{ ('ChangeApiUrl' | signalTranslate)() }}
+          </button>
+        }
       }
     </div>
   </div>

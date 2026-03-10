@@ -31,6 +31,7 @@ describe('SignIn component', () => {
   };
 
   beforeEach(() => {
+    delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
     apiService = { signIn: vi.fn(() => of(undefined)) };
     webStorage = {
       getItem: vi.fn((key: string) => {
@@ -127,5 +128,31 @@ describe('SignIn component', () => {
     initializeFixture();
 
     expect(fixture.componentInstance['signInModel']().theme).toBe('light');
+  });
+
+  it('detects whether companion app is available', () => {
+    delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
+    expect(fixture.componentInstance['companionAppDetected']).toBe(false);
+
+    window.CollectionTrackerInterface = {};
+    initializeFixture();
+    expect(fixture.componentInstance['companionAppDetected']).toBe(true);
+  });
+
+  it('calls companion app reset function when configured', () => {
+    const resetAppConfig = vi.fn(() => true);
+    window.CollectionTrackerInterface = { resetAppConfig };
+    initializeFixture();
+
+    fixture.componentInstance['onResetCompanionAppConfig']();
+
+    expect(resetAppConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing when companion app reset function is unavailable', () => {
+    window.CollectionTrackerInterface = {};
+    initializeFixture();
+
+    expect(() => fixture.componentInstance['onResetCompanionAppConfig']()).not.toThrow();
   });
 });
