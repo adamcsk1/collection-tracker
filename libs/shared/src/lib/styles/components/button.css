@@ -47,7 +47,7 @@ button {
     }
   }
 
-  &:not(.button-icon) {
+  &:not(.button-icon, .button-custom) {
     display: flex;
     align-items: center;
     gap: var(--size-2xs);
