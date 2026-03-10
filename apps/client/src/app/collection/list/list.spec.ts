@@ -29,8 +29,10 @@ describe('List', () => {
 
   const buildItem = (name: string, rawContent = name): CollectionItemModel => ({
     rawContent,
+    rawContentLower: rawContent.toLowerCase(),
     image: '',
     title: name,
+    titleLower: name.toLowerCase(),
     genre: [],
     IMDbId: '',
     tags: [],

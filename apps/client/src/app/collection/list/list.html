@@ -41,7 +41,7 @@
     <ct-list-item-skeleton />
     <ct-list-item-skeleton />
   } @else {
-    @for (collectionItem of paginatedCollection(); track $index) {
+    @for (collectionItem of paginatedCollection(); track collectionItem) {
       @defer (on viewport; prefetch on idle) {
         <ct-list-item [collectionItem]="collectionItem" />
       } @placeholder {

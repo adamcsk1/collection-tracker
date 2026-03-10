@@ -20,8 +20,10 @@ describe('CollectionService', () => {
 
   const buildCollectionItem = (name: string) => ({
     rawContent: `raw-${name}`,
+    rawContentLower: `raw-${name}`.toLowerCase(),
     image: '',
     title: name,
+    titleLower: name.toLowerCase(),
     genre: [],
     IMDbId: '',
     tags: [],

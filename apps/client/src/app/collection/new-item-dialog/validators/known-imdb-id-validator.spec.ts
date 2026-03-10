@@ -7,8 +7,10 @@ import { knownIMDbIdValidationFactory } from './known-imdb-id-validator';
 
 const buildItem = (IMDbId: string): CollectionItemModel => ({
   rawContent: '',
+  rawContentLower: '',
   image: '',
   title: '',
+  titleLower: '',
   genre: [],
   IMDbId,
   tags: [],

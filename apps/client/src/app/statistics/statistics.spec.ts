@@ -10,8 +10,10 @@ import { Statistics } from './statistics';
 
 const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
   rawContent: overrides.rawContent || '',
+  rawContentLower: (overrides.rawContent || '').toLowerCase(),
   image: overrides.image || '',
   title: overrides.title || '',
+  titleLower: (overrides.title || '').toLowerCase(),
   genre: overrides.genre || [],
   IMDbId: overrides.IMDbId || '',
   tags: overrides.tags || [],

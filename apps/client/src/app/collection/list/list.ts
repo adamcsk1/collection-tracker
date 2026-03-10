@@ -20,10 +20,12 @@ import { mainStateToken } from '@client/main/main-store';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
-import { affordableFuzzySearch, fuzzySearch } from '@shared/utils/fuzzy-search-util';
+import { affordableFuzzySearch, hasFuzzyMatch } from '@shared/utils/fuzzy-search-util';
 import { randomInt } from '@shared/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { debounceTime, startWith } from 'rxjs';
+
+const FUZZY_CONTENT_MAX_LENGTH = 250;
 
 @Component({
   selector: 'ct-list',
@@ -43,24 +45,38 @@ export class List {
   private readonly debouncedSearchText = toSignal(
     toObservable(this.collectionState.state.searchText).pipe(startWith(''), debounceTime(100))
   );
+
   protected readonly filteredCollection = computed(() => {
     let forceStandardSearch = false;
     untracked(() => (forceStandardSearch = this.collectionState.state.forceStandardSearch()));
     const searchText = this.debouncedSearchText() || '';
     const lowerCasedSearchText = searchText.toLowerCase();
+    const useFuzzySearch =
+      !forceStandardSearch &&
+      this.mainState.state.searchMode() === 'fuzzy' &&
+      affordableFuzzySearch(lowerCasedSearchText);
     this.resetScrollPosition();
 
     return this.mainCollectionState.state.collection().filter((collectionItem) => {
-      if (searchText === VIRTUAL_UNWATCHED_TAG) return !collectionItem.rawContent.toLowerCase().includes(WATCHED_TAG);
-
-      if (
-        !forceStandardSearch &&
-        this.mainState.state.searchMode() === 'fuzzy' &&
-        affordableFuzzySearch(lowerCasedSearchText)
-      ) {
-        return (fuzzySearch(lowerCasedSearchText, collectionItem.rawContent.toLowerCase()) || []).length > 0;
+      if (searchText === VIRTUAL_UNWATCHED_TAG) {
+        return !collectionItem.rawContentLower.includes(WATCHED_TAG);
       }
-      return collectionItem.rawContent.toLowerCase().includes(lowerCasedSearchText);
+
+      if (useFuzzySearch) {
+        if (collectionItem.titleLower.includes(lowerCasedSearchText)) return true;
+        if (hasFuzzyMatch(lowerCasedSearchText, collectionItem.titleLower)) return true;
+
+        if (!collectionItem.rawContentLower.includes(lowerCasedSearchText)) {
+          if (collectionItem.rawContentLower.length <= FUZZY_CONTENT_MAX_LENGTH) {
+            return hasFuzzyMatch(lowerCasedSearchText, collectionItem.rawContentLower);
+          }
+          return false;
+        }
+
+        return true;
+      }
+
+      return collectionItem.rawContentLower.includes(lowerCasedSearchText);
     });
   });
   protected readonly paginatedCollection = this.pagination.paginatedItems;

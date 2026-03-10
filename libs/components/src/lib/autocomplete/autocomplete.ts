@@ -6,6 +6,7 @@ import {
   InjectionToken,
   input,
   model,
+  OnDestroy,
   output,
   signal,
   viewChild,
@@ -13,7 +14,7 @@ import {
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { AutocompleteServiceInterface } from '@components/autocomplete/autocomplete-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { asyncScheduler } from 'rxjs';
+import { asyncScheduler, Subscription } from 'rxjs';
 
 export const AutocompleteService = new InjectionToken<AutocompleteServiceInterface>('AutocompleteService');
 
@@ -23,10 +24,11 @@ export const AutocompleteService = new InjectionToken<AutocompleteServiceInterfa
   templateUrl: './autocomplete.html',
   styleUrl: './autocomplete.css',
 })
-export class Autocomplete<T> implements FormValueControl<T | null> {
+export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
   private readonly inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
   private readonly _suggestions = signal<Array<string>>([]);
   private readonly autocompleteService = inject(AutocompleteService);
+  private suggestionDebounce: Subscription | null = null;
   private lastKeycode = '';
   private lastEventWasAccept = false;
   protected readonly suggestions = this._suggestions.asReadonly();
@@ -61,6 +63,10 @@ export class Autocomplete<T> implements FormValueControl<T | null> {
   protected readonly hasRequiredError = computed(
     () => this.showError() && this.errors().some((error) => error.kind === 'required')
   );
+
+  public ngOnDestroy(): void {
+    this.suggestionDebounce?.unsubscribe();
+  }
 
   protected onKeypress($event: KeyboardEvent): void {
     if ($event.code === 'Enter') {
@@ -103,11 +109,19 @@ export class Autocomplete<T> implements FormValueControl<T | null> {
   protected onKeyup($event: KeyboardEvent): void {
     const inputText = ($event.target as HTMLInputElement).value;
     this.value.set(inputText as T);
-    if ($event.code !== 'Escape' && !this.lastEventWasAccept) this.getSuggestions();
-    else this._suggestions.set([]);
+    if (this.suggestionDebounce) this.suggestionDebounce.unsubscribe();
+    if ($event.code !== 'Escape' && !this.lastEventWasAccept) {
+      this.suggestionDebounce = asyncScheduler.schedule(() => this.getSuggestions(), 80);
+    } else {
+      this._suggestions.set([]);
+    }
   }
 
   protected onAcceptSuggestion(index: number): void {
+    if (this.suggestionDebounce) {
+      this.suggestionDebounce.unsubscribe();
+      this.suggestionDebounce = null;
+    }
     this.userAcceptSuggestionEvent.emit();
     this.lastEventWasAccept = true;
     this.selectedSuggestion.set(-1);
@@ -120,12 +134,20 @@ export class Autocomplete<T> implements FormValueControl<T | null> {
   }
 
   protected onBlur(): void {
+    if (this.suggestionDebounce) {
+      this.suggestionDebounce.unsubscribe();
+      this.suggestionDebounce = null;
+    }
     this.touched.set(true);
     asyncScheduler.schedule(() => this._suggestions.set([]), 100);
     this.focused.set(false);
   }
 
   protected onReset(): void {
+    if (this.suggestionDebounce) {
+      this.suggestionDebounce.unsubscribe();
+      this.suggestionDebounce = null;
+    }
     this.setInput('' as T);
     this._suggestions.set([]);
   }

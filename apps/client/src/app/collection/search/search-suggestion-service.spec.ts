@@ -9,8 +9,10 @@ import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/consta
 
 const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
   rawContent: overrides.rawContent || '',
+  rawContentLower: (overrides.rawContent || '').toLowerCase(),
   image: '',
   title: overrides.title || '',
+  titleLower: (overrides.title || '').toLowerCase(),
   genre: overrides.genre || [],
   IMDbId: overrides.IMDbId || '',
   tags: overrides.tags || [],

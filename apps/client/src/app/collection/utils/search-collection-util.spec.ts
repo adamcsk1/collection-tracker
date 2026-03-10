@@ -4,8 +4,10 @@ import { searchCollection } from './search-collection-util';
 
 const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItemModel => ({
   rawContent: '',
+  rawContentLower: '',
   image: '',
   title: '',
+  titleLower: '',
   genre: [],
   IMDbId: '',
   tags: [],

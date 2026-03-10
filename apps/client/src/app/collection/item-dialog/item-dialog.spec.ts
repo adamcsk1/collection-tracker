@@ -18,8 +18,10 @@ vi.mock('marked', () => ({ marked: { parse: vi.fn(() => '<p>parsed</p>') } }));
 
 const buildItem = (name: string, rawContent = 'raw content'): CollectionItemModel => ({
   rawContent,
+  rawContentLower: rawContent.toLowerCase(),
   image: 'image',
   title: name,
+  titleLower: name.toLowerCase(),
   genre: [],
   IMDbId: 'tt123',
   tags: [],
