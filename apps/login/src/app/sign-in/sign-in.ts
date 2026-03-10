@@ -12,6 +12,7 @@ import { themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/constants/storage-const';
+import { companionApp, resetCompanionAppConfig } from '@shared/utils/companion-app-util';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { firstValueFrom } from 'rxjs';
@@ -75,6 +76,7 @@ export class SignIn implements OnInit {
   protected readonly tokenInputType = signal<'text' | 'password'>('password');
   protected readonly themeOptions = this.theme.themeOptions;
   protected readonly languageOptions = this.translate.languageOptions;
+  protected readonly companionAppDetected = companionApp();
 
   constructor() {
     effect(() => {
@@ -114,5 +116,9 @@ export class SignIn implements OnInit {
 
     await firstValueFrom(this.api.signIn(formValue.username, formValue.token));
     window.location.href = '/client/';
+  }
+
+  protected onResetCompanionAppConfig(): void {
+    resetCompanionAppConfig();
   }
 }

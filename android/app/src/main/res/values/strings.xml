@@ -1,0 +1,16 @@
+<resources>
+  <string name="app_name">Collection tracker</string>
+  <string name="config_title">Collection Tracker web config</string>
+  <string name="page_url_label">Page URL</string>
+  <string name="api_url_label">API URL</string>
+  <string name="page_url_hint">https://your-domain/client/</string>
+  <string name="api_url_hint">https://your-domain/api/</string>
+  <string name="open">Open</string>
+  <string name="error_title">Unable to load page</string>
+  <string name="error_message">The page URL is not reachable right now.</string>
+  <string name="retry">Retry</string>
+  <string name="edit_settings">Edit settings</string>
+  <string name="error_page_url_required">Enter a page URL</string>
+  <string name="error_api_url_required">Enter an API URL</string>
+  <string name="error_invalid_collection_tracker_page">Loaded page is not Collection Tracker instance!</string>
+</resources>
