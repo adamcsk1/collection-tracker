@@ -44,7 +44,7 @@
   }
 
   <div class="form-buttons">
-    <button type="submit" [disabled]="form().invalid()">
+    <button type="submit" class="button-custom" [disabled]="form().invalid()">
       {{ ('Continue' | signalTranslate)() }}
     </button>
     <hr />
@@ -53,7 +53,7 @@
         {{ ('SignUp' | signalTranslate)() }}
       </a>
       @if (!showApiUrlInput()) {
-        <button type="button" class="button-basic" (click)="showApiUrlInput.set(true)">
+        <button type="button" class="button-basic button-custom" (click)="showApiUrlInput.set(true)">
           {{ ('ChangeApiUrl' | signalTranslate)() }}
         </button>
       }
