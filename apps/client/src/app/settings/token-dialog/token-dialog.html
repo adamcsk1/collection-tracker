@@ -1,6 +1,9 @@
 <libc-dialog-shell>
   <ng-container dialog-shell-top-content>
-    <h3>{{ title() }}</h3>
+    <h3 class="dialog-title">
+      <i class="material-icons" [title]="title()"> key </i>
+      {{ title() }}
+    </h3>
   </ng-container>
   <ng-container dialog-shell-content>
     <code id="secret">{{ token() }}</code>
