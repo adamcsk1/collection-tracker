@@ -43,11 +43,14 @@
       <i class="material-icons">movie</i>
       {{ ('Collection' | signalTranslate)() }}
     </a>
-    <a [routerLink]="['/', 'settings']" routerLinkActive="active" class="highlight">
-      <i class="material-icons">settings</i>
-      {{ ('Settings' | signalTranslate)() }}
-    </a>
     @if (!settingLockEnabled()) {
+      <a [routerLink]="['/', 'tag-configs']" routerLinkActive="active" class="highlight">
+        <i class="material-icons">local_offer</i> {{ ('Tags' | signalTranslate)() }}
+      </a>
+      <a [routerLink]="['/', 'settings']" routerLinkActive="active" class="highlight">
+        <i class="material-icons">settings</i>
+        {{ ('Settings' | signalTranslate)() }}
+      </a>
       <a [routerLink]="['/', 'parser']" routerLinkActive="active" class="highlight">
         <i class="material-icons">data_object</i>
         {{ ('Parser' | signalTranslate)() }}

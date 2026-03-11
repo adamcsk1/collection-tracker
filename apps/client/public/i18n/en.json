@@ -109,6 +109,11 @@
   "MarkAllAsUnwatched": "Mark all as unwatched",
   "Unwatched": "Unwatched",
   "CollectionItemWatched": "This item is marked as watched.",
+  "Color": "Color",
+  "UseTagColorForImageBorder": "Use tag color for image border",
+  "UseTagColorForTextColor": "Use tag color for text",
+  "Weight": "Weight",
+  "ResetToDefault": "Reset to default",
   "Placeholder.SearchInCollection": "Search movies, series...",
   "Title.CollectionItem": "Collection item",
   "Title.NewCollectionItem": "New collection item",
@@ -161,6 +166,7 @@
   "Message.SearchMode": "The search mode determines how the application searches for collection items. Standard mode uses exact matches, while fuzzy mode allows for approximate matches, which can be useful for handling typos or variations in titles. The fuzzy search is limited to short search texts to avoid performance issues.",
   "Message.MarkingAllAsWatched": "Marking all items as watched, please wait. {count} items remaining",
   "Message.MarkingAllAsUnwatched": "Marking all items as unwatched, please wait. {count} items remaining",
+  "Message.TagConfig": "On this page you can set border colors for tags. These colors will be used in the collection overview and details view to make it easier to identify items with specific tags. The tags are automatically loaded from your collection, so you can start customizing them right away! You can also choose to use the tag color for the image border in the collection overview. This can help you quickly identify items with specific tags without having to read the tag labels. The weight determines the color usage order when multiple tags are applicable.",
   "Toast.SettingsLockDisable": "You are {count} clicks away from disabling the settings lock!",
   "Toast.SettingsLockDisabled": "The settings lock was disabled successfully!",
   "Toast.NewItem": "The collection item was added successfully!",
@@ -191,5 +197,6 @@
   "Confirm.TemplateRegeneration": "Do you want to regenerate the templates? This operation will reprocess all collection items based on the current parser settings. That may take a while and you could reach the OMDb rate limit. Please do not refresh or close the page until the process is complete.",
   "Confirm.ImageRefresh": "Do you want to refresh images? This operation will reprocess all collection items and refresh the missing images. That may take a while and you could reach the OMDb rate limit. Please do not refresh or close the page until the process is complete.",
   "Confirm.MarkAllAsWatched": "Do you want to mark all items as watched? This operation will add the #watched tag to all items in your collection.",
-  "Confirm.MarkAllAsUnwatched": "Do you want to mark all items as unwatched? This operation will remove the #watched tag from all items in your collection."
+  "Confirm.MarkAllAsUnwatched": "Do you want to mark all items as unwatched? This operation will remove the #watched tag from all items in your collection.",
+  "Confirm.ResetTagConfigs": "Do you want to reset all tag configs to default? This operation will remove all custom tag configs and their colors."
 }

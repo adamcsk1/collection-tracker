@@ -1,0 +1,39 @@
+<h2>{{ ('Tags' | signalTranslate)() }}</h2>
+<p>{{ ('Message.TagConfig' | signalTranslate)() }}</p>
+<div>
+  <button (click)="onResetTagConfigs()">{{ ('ResetToDefault' | signalTranslate)() }}</button>
+</div>
+<div class="tag-configs" role="list">
+  @for (tagConfig of tagConfigs(); track tagConfig.tag) {
+    <h3>{{ tagConfig.tag }}</h3>
+    <div class="tag-configs-item" role="listitem">
+      <div class="tag-configs-item-color">
+        <label for="tag-{{ tagConfig.tag.replace('#', '') }}">{{ ('Color' | signalTranslate)() }}</label>
+        <input
+          id="tag-{{ tagConfig.tag.replace('#', '') }}"
+          type="color"
+          [value]="tagConfig.color"
+          [attr.aria-label]="'Color for ' + tagConfig.tag"
+          (change)="onTagColorChange(tagConfig.tag, $event.target.value)"
+        />
+      </div>
+      <libc-input
+        [label]="('Weight' | signalTranslate)()"
+        type="number"
+        [value]="tagConfig.weight"
+        (valueChange)="onWeightChange(tagConfig.tag, $event)"
+      />
+      <libc-checkbox
+        [label]="('UseTagColorForImageBorder' | signalTranslate)()"
+        [value]="tagConfig.useForImageBorder"
+        (valueChange)="onUseForImageBorderChange(tagConfig.tag, $event || false)"
+      />
+      <libc-checkbox
+        [label]="('UseTagColorForTextColor' | signalTranslate)()"
+        [value]="tagConfig.useForTextColor"
+        (valueChange)="onUseForTextColorChange(tagConfig.tag, $event || false)"
+      />
+    </div>
+    <hr />
+  }
+</div>

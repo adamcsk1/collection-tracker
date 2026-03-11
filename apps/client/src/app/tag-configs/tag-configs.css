@@ -1,0 +1,33 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+p {
+  margin-bottom: var(--size-xs);
+}
+
+.tag-configs {
+  display: flex;
+  flex-direction: column;
+
+  h3 {
+    margin: 0;
+  }
+
+  .tag-configs-item {
+    display: flex;
+    gap: var(--size-xs);
+    flex-direction: column;
+
+    button {
+      display: block;
+    }
+
+    .tag-configs-item-color {
+      display: flex;
+      align-items: center;
+      gap: var(--size-xs);
+    }
+  }
+}

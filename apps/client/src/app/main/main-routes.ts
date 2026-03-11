@@ -14,9 +14,14 @@ export const routes: Routes = [
     canActivate: [mainGuard],
   },
   {
+    path: 'tag-configs',
+    loadComponent: () => import('../tag-configs/tag-configs').then((module) => module.TagConfigs),
+    canActivate: [mainGuard, settingsLockedGuard],
+  },
+  {
     path: 'settings',
     loadComponent: () => import('../settings/settings').then((module) => module.Settings),
-    canActivate: [mainGuard],
+    canActivate: [mainGuard, settingsLockedGuard],
   },
   {
     path: 'parser',
