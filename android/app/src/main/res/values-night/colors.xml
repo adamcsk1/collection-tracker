@@ -1,0 +1,6 @@
+<resources>
+  <color name="primary">#d5e0e2</color>
+  <color name="secondary">#9ec643</color>
+  <color name="surface">#162630</color>
+  <color name="hint">#55FFFFFF</color>
+</resources>

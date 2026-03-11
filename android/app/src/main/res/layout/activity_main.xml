@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
   android:layout_width="match_parent"
   android:layout_height="match_parent"
-  android:background="@color/white"
+  android:background="?android:windowBackground"
   android:fitsSystemWindows="true">
 
   <ScrollView
@@ -29,7 +30,7 @@
         android:layout_marginTop="16dp"
         android:gravity="center_horizontal"
         android:text="@string/config_title"
-        android:textColor="@color/black"
+        android:textColor="@color/primary"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -37,7 +38,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:textColor="@color/black"
+        android:textColor="@color/primary"
         android:text="@string/page_url_label" />
 
       <EditText
@@ -48,8 +49,8 @@
         android:inputType="textUri"
         android:layout_marginBottom="16dp"
         android:padding="12dp"
-        android:textColorHint="@color/border"
-        android:textColor="@color/black"
+        android:textColorHint="@color/hint"
+        android:textColor="@color/primary"
         android:background="@drawable/input_field_background"
         android:textSize="16sp" />
 
@@ -57,7 +58,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:textColor="@color/black"
+        android:textColor="@color/primary"
         android:text="@string/api_url_label" />
 
       <EditText
@@ -68,8 +69,8 @@
         android:inputType="textUri"
         android:layout_marginBottom="16dp"
         android:padding="12dp"
-        android:textColorHint="@color/border"
-        android:textColor="@color/black"
+        android:textColorHint="@color/hint"
+        android:textColor="@color/primary"
         android:background="@drawable/input_field_background"
         android:textSize="16sp" />
 
@@ -78,8 +79,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:backgroundTint="@color/brand"
-        android:textColor="@color/white"
+        android:background="@drawable/button_with_border"
+        android:backgroundTint="@null"
+        app:backgroundTint="@null"
+        android:textColor="@color/secondary"
         android:text="@string/open" />
     </LinearLayout>
   </ScrollView>
@@ -103,7 +106,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/error_title"
-        android:textColor="@color/black"
+        android:textColor="@color/primary"
         android:textAlignment="center"
         android:textSize="24sp"
         android:textStyle="bold" />
@@ -112,7 +115,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:textColor="@color/black"
+        android:textColor="@color/primary"
         android:text="@string/error_message"
         android:textAlignment="center" />
 
@@ -121,8 +124,8 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_marginTop="20dp"
-      android:backgroundTint="@color/brand"
-      android:textColor="@color/white"
+      android:background="@drawable/button_with_border"
+      android:textColor="@color/secondary"
       android:text="@string/retry" />
 
     <Button
@@ -130,8 +133,8 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_marginTop="12dp"
-      android:backgroundTint="@color/surface"
-      android:textColor="@color/black"
+      android:background="@drawable/button_with_border"
+      android:textColor="@color/secondary"
       android:text="@string/edit_settings" />
   </LinearLayout>
 

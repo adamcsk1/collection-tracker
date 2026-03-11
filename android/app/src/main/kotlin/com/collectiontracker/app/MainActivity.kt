@@ -1,6 +1,7 @@
 package com.collectiontracker.app
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
@@ -18,13 +19,14 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.view.inputmethod.InputMethodManager
-import androidx.core.widget.addTextChangedListener
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
+import androidx.core.view.WindowCompat
+import androidx.core.widget.addTextChangedListener
 import org.json.JSONObject
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import android.widget.Toast
 
 private const val PREFS_NAME = "collection_tracker_prefs"

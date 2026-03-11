@@ -1,10 +1,7 @@
 <resources>
-  <color name="black">#2f3d44</color>
-  <color name="white">#f8f3e7</color>
-  <color name="brand">#8f5b00</color>
-  <color name="brand_alt">#f0b429</color>
+  <color name="primary">#2f3d44</color>
+  <color name="secondary">#8f5b00</color>
   <color name="surface">#e9e2d3</color>
-  <color name="border">#4a5c63</color>
-  <color name="error">#b7322b</color>
-  <color name="status_bar_dark">#000000</color>
+  <color name="hint">#55000000</color>
 </resources>
+
