@@ -18,6 +18,9 @@
     background-repeat: no-repeat;
     background-size: var(--image-width) var(--image-height);
     cursor: pointer;
+    border-width: 3.5px;
+    border-style: solid;
+    border-color: transparent;
 
     &:hover {
       outline: var(--outline-style);

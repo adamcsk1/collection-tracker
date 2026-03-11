@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { collectionStateToken } from '@client/collection/collection-store';
 import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
+import { TagConfigColorPipe } from '@client/tag-configs/tag-configs-color-pipe';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
@@ -10,7 +11,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   selector: 'ct-list-item',
   templateUrl: './list-item.html',
   styleUrl: './list-item.css',
-  imports: [NgxSignalTranslatePipe],
+  imports: [NgxSignalTranslatePipe, TagConfigColorPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'listitem',
