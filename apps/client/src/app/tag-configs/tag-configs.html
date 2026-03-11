@@ -1,7 +1,10 @@
 <h2>{{ ('Tags' | signalTranslate)() }}</h2>
 <p>{{ ('Message.TagConfig' | signalTranslate)() }}</p>
 <div>
-  <button (click)="onResetTagConfigs()">{{ ('ResetToDefault' | signalTranslate)() }}</button>
+  <button (click)="onResetTagConfigs()">
+    <i class="material-icons" [title]="('ResetToDefault' | signalTranslate)()"> close </i>
+    {{ ('ResetToDefault' | signalTranslate)() }}
+  </button>
 </div>
 <div class="tag-configs" role="list">
   @for (tagConfig of tagConfigs(); track tagConfig.tag) {
