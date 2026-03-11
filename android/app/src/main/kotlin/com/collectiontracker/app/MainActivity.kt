@@ -25,6 +25,7 @@ import androidx.core.view.isVisible
 import org.json.JSONObject
 import androidx.core.content.edit
 import androidx.core.net.toUri
+import android.widget.Toast
 
 private const val PREFS_NAME = "collection_tracker_prefs"
 private const val PREF_PAGE_URL = "page_url"
@@ -274,7 +275,7 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun showInvalidPage() {
-    pageInput.error = getString(R.string.error_invalid_collection_tracker_page)
+    Toast.makeText(this, getString(R.string.error_invalid_collection_tracker_page), Toast.LENGTH_LONG).show()
     webView.stopLoading()
     webView.loadUrl("about:blank")
     showConfig()
