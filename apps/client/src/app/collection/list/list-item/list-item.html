@@ -4,6 +4,7 @@
     tabindex="0"
     role="button"
     [style.backgroundImage]="'url(' + collectionItem.image + ')'"
+    [style.borderColor]="collectionItem.tags | tagConfigColor: { checkUseForImageBorder: true }"
     [attr.aria-label]="collectionItem.title"
     (click)="onOpenDetail()"
     (keyup)="onOpenDetail()"
@@ -67,7 +68,12 @@
     <span>
       @for (tag of tags(); track $index) {
         <small>
-          <a href="#" role="button" (click)="onSetSearchText(tag)">{{ tag }}</a
+          <a
+            href="#"
+            role="button"
+            [style.color]="tag | tagConfigColor: { checkUseForTextColor: true }"
+            (click)="onSetSearchText(tag)"
+            >{{ tag }}</a
           >&nbsp;
         </small>
       }
