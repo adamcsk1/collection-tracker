@@ -20,7 +20,7 @@ export class Input<T> implements FormValueControl<T | null> {
     return value !== null && `${value}`.length > 0;
   });
   public readonly inputId = input<string>(crypto.randomUUID());
-  public readonly type = input<'text' | 'password'>('text');
+  public readonly type = input<'text' | 'password' | 'number'>('text');
   public readonly label = input<string>('');
   public readonly mandatory = input<boolean>(false);
   public readonly showReset = input<boolean>(false);
@@ -42,6 +42,17 @@ export class Input<T> implements FormValueControl<T | null> {
 
   protected onInput($event: Event): void {
     const target = $event.target as HTMLInputElement;
+    if (this.type() === 'number') {
+      if (target.value === '') {
+        this.value.set(null as T);
+        return;
+      }
+
+      const parsedValue = Number(target.value);
+      this.value.set((Number.isNaN(parsedValue) ? null : parsedValue) as T);
+      return;
+    }
+
     this.value.set(target.value as T);
   }
 
@@ -50,6 +61,6 @@ export class Input<T> implements FormValueControl<T | null> {
   }
 
   protected onReset(): void {
-    this.value.set('' as T);
+    this.value.set((this.type() === 'number' ? null : '') as T);
   }
 }
