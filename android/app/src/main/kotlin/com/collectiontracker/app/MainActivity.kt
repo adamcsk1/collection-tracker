@@ -14,6 +14,10 @@ import android.webkit.WebStorage
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.JsResult
+import android.webkit.WebChromeClient
+import android.app.AlertDialog
+import android.graphics.Color
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -28,6 +32,7 @@ import androidx.core.widget.addTextChangedListener
 import org.json.JSONObject
 import androidx.core.content.edit
 import android.widget.Toast
+import com.google.android.material.color.MaterialColors
 
 private const val PREFS_NAME = "collection_tracker_prefs"
 private const val PREF_PAGE_URL = "page_url"
@@ -161,6 +166,46 @@ class MainActivity : AppCompatActivity() {
     val cookieManager = CookieManager.getInstance()
     cookieManager.setAcceptCookie(true)
     cookieManager.setAcceptThirdPartyCookies(webView, true)
+
+    webView.webChromeClient = object : WebChromeClient() {
+      override fun onJsAlert(
+        view: WebView?,
+        url: String?,
+        message: String?,
+        result: JsResult,
+      ): Boolean {
+        if (isFinishing || isDestroyed) {
+          result.cancel()
+          return true
+        }
+
+        showJsDialog(
+          message = message,
+          result = result,
+          isConfirm = false,
+        )
+        return true
+      }
+
+      override fun onJsConfirm(
+        view: WebView?,
+        url: String?,
+        message: String?,
+        result: JsResult,
+      ): Boolean {
+        if (isFinishing || isDestroyed) {
+          result.cancel()
+          return true
+        }
+
+        showJsDialog(
+          message = message,
+          result = result,
+          isConfirm = true,
+        )
+        return true
+      }
+    }
 
     webView.webViewClient = object : WebViewClient() {
       override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
@@ -395,5 +440,25 @@ class MainActivity : AppCompatActivity() {
     val view = currentFocus ?: webView
     val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
     imm.hideSoftInputFromWindow(view.windowToken, 0)
+  }
+
+  private fun showJsDialog(message: String?, result: JsResult, isConfirm: Boolean) {
+    val accentColor = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSecondary, Color.BLACK)
+    val dialog = AlertDialog.Builder(this)
+      .setMessage(message.orEmpty())
+      .setOnCancelListener { result.cancel() }
+      .apply {
+        if (!isConfirm) {
+          setCancelable(false)
+        }
+        setPositiveButton(android.R.string.ok) { _, _ -> result.confirm() }
+        if (isConfirm) {
+          setNegativeButton(android.R.string.cancel) { _, _ -> result.cancel() }
+        }
+      }
+      .show()
+
+    dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(accentColor)
+    dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(accentColor)
   }
 }
