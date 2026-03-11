@@ -9,6 +9,7 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
+import android.webkit.WebStorage
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -290,12 +291,24 @@ class MainActivity : AppCompatActivity() {
     apiUrl = ""
     pageInput.setText("")
     apiInput.setText("")
+
+    clearWebViewStoredData()
+    showConfig()
+  }
+
+  private fun clearWebViewStoredData() {
+    val cookieManager = CookieManager.getInstance()
+    cookieManager.removeAllCookies(null)
+    cookieManager.flush()
+
+    WebStorage.getInstance().deleteAllData()
+
     webView.stopLoading()
     webView.loadUrl("about:blank")
     webView.clearHistory()
+    webView.clearFormData()
     webView.clearCache(true)
-    showConfig()
-    webView.evaluateJavascript("localStorage.removeItem('${PREFS_API_URL}');", null)
+    webView.clearSslPreferences()
   }
 
   private fun launchWebView() {
