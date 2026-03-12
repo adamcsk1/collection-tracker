@@ -1,4 +1,16 @@
 @if (collectionItem(); as collectionItem) {
+  @if (imageBadgeTag(); as imageBadgeTag) {
+    <a
+      href="#"
+      role="button"
+      class="badge"
+      [style.backgroundColor]="badgeBackgroundColor()"
+      [style.color]="badgeTextColor()"
+      (click)="onSetSearchText(collectionItem.rate)"
+    >
+      {{ imageBadgeTag }}
+    </a>
+  }
   <div
     class="image"
     tabindex="0"

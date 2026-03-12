@@ -113,6 +113,7 @@
   "UseTagColorForImageBorder": "Use tag color for image border",
   "UseTagColorForTextColor": "Use tag color for text",
   "Weight": "Weight",
+  "UseTagForImageBadge": "Use tag for image badge",
   "ResetToDefault": "Reset to default",
   "Placeholder.SearchInCollection": "Search movies, series...",
   "Title.CollectionItem": "Collection item",

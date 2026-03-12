@@ -11,9 +11,9 @@
     <h3>{{ tagConfig.tag }}</h3>
     <div class="tag-configs-item" role="listitem">
       <div class="tag-configs-item-color">
-        <label for="tag-{{ tagConfig.tag.replace('#', '') }}">{{ ('Color' | signalTranslate)() }}</label>
+        <label for="tag-{{ $index }}">{{ ('Color' | signalTranslate)() }}</label>
         <input
-          id="tag-{{ tagConfig.tag.replace('#', '') }}"
+          id="tag-{{ $index }}"
           type="color"
           [value]="tagConfig.color"
           [attr.aria-label]="'Color for ' + tagConfig.tag"
@@ -29,12 +29,17 @@
       <libc-checkbox
         [label]="('UseTagColorForImageBorder' | signalTranslate)()"
         [value]="tagConfig.useForImageBorder"
-        (valueChange)="onUseForImageBorderChange(tagConfig.tag, $event || false)"
+        (valueChange)="onUseForImageBorderChange(tagConfig.tag, !!$event)"
       />
       <libc-checkbox
         [label]="('UseTagColorForTextColor' | signalTranslate)()"
         [value]="tagConfig.useForTextColor"
-        (valueChange)="onUseForTextColorChange(tagConfig.tag, $event || false)"
+        (valueChange)="onUseForTextColorChange(tagConfig.tag, !!$event)"
+      />
+      <libc-checkbox
+        [label]="('UseTagForImageBadge' | signalTranslate)()"
+        [value]="tagConfig.useForImageBadge"
+        (valueChange)="onUseForImageBadgeChange(tagConfig.tag, !!$event)"
       />
     </div>
     <hr />

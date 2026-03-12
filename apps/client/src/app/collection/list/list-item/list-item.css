@@ -2,10 +2,20 @@
   display: flex;
   align-items: center;
   margin: var(--size-xs);
+  position: relative;
 
   h3 {
     color: var(--main-color);
     font-size: var(--font-size-base);
+  }
+
+  .badge {
+    position: absolute;
+    top: -5%;
+    font-size: var(--font-size-xs);
+    left: 12.5%;
+    padding: 0 var(--size-2xs);
+    border-radius: var(--border-radius);
   }
 
   .image {

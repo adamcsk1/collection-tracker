@@ -29,6 +29,7 @@ const normalizeHexColor = (hex: string): string => {
   const blue = parseInt(normalized.substring(4, 6), 16);
   return `rgb(${red}, ${green}, ${blue})`;
 };
+const normalizeStyleValue = (value: string): string => value.replace(/\s/g, '').toLowerCase();
 
 vi.mock('marked', () => ({ marked: { parse: () => '' } }));
 
@@ -106,8 +107,22 @@ describe('ListItem', () => {
 
   it('applies tag-config-driven colors to image border and tag text', () => {
     tagConfigsState.setState('configs', [
-      { tag: '#blue', color: '#112233', useForImageBorder: true, useForTextColor: true, weight: 1 },
-      { tag: '#red', color: '#ff0000', useForImageBorder: true, useForTextColor: false, weight: 2 },
+      {
+        tag: '#blue',
+        color: '#112233',
+        useForImageBorder: true,
+        useForTextColor: true,
+        useForImageBadge: false,
+        weight: 1,
+      },
+      {
+        tag: '#red',
+        color: '#ff0000',
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 2,
+      },
     ]);
     fixture.componentRef.setInput('collectionItem', buildItem('Sample', ['#blue', '#red']));
     fixture.detectChanges();
@@ -122,7 +137,14 @@ describe('ListItem', () => {
     expect(['#112233', normalizeHexColor('#112233')]).toContain(getBlueTagAnchor()?.style.color);
 
     tagConfigsState.setState('configs', [
-      { tag: '#blue', color: '#112233', useForImageBorder: false, useForTextColor: false, weight: 1 },
+      {
+        tag: '#blue',
+        color: '#112233',
+        useForImageBorder: false,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 1,
+      },
     ]);
     fixture.detectChanges();
     fixture.componentRef.setInput('collectionItem', buildItem('Sample', ['#blue', '#red']));
@@ -132,5 +154,63 @@ describe('ListItem', () => {
       image.style.borderColor
     );
     expect(getBlueTagAnchor()?.getAttribute('style') ?? '').not.toContain('112233');
+  });
+
+  it('renders image badge for the first matching image-badge tag and hides it from secondary tags', () => {
+    tagConfigsState.setState('configs', [
+      {
+        tag: '#badge-red',
+        color: '#ff0000',
+        useForImageBorder: false,
+        useForTextColor: false,
+        useForImageBadge: true,
+        weight: 1,
+      },
+      {
+        tag: '#normal',
+        color: '#111111',
+        useForImageBorder: true,
+        useForTextColor: true,
+        useForImageBadge: false,
+        weight: 1,
+      },
+    ]);
+    fixture.componentRef.setInput('collectionItem', buildItem('Sample', ['#normal', '#badge-red', '#other']));
+    fixture.detectChanges();
+
+    const badge = fixture.nativeElement.querySelector('.badge') as HTMLAnchorElement;
+    expect(badge).not.toBeNull();
+    expect(badge.textContent?.trim()).toBe('#badge-red');
+    expect(component['imageBadgeTag']()).toBe('#badge-red');
+    expect(component['tags']()).toEqual(['#normal', '#other']);
+    expect(['#ff0000', normalizeHexColor('#ff0000')]).toContain(badge.style.backgroundColor);
+    expect(['#ffffff', 'rgb(255,255,255)', 'rgb(255, 255, 255)']).toContain(normalizeStyleValue(badge.style.color));
+    expect(['#111111', normalizeHexColor('#111111')]).toContain(
+      fixture.nativeElement.querySelector('.image')?.style.borderColor
+    );
+  });
+
+  it('sets search text when image badge is clicked', () => {
+    const collectionItem = buildItem('Sample', ['#badge']);
+    collectionItem.rate = '8.7';
+    tagConfigsState.setState('configs', [
+      {
+        tag: '#badge',
+        color: '#fefefe',
+        useForImageBorder: false,
+        useForTextColor: false,
+        useForImageBadge: true,
+        weight: 1,
+      },
+    ]);
+
+    fixture.componentRef.setInput('collectionItem', collectionItem);
+    fixture.detectChanges();
+
+    const badge = fixture.nativeElement.querySelector('.badge') as HTMLAnchorElement;
+    badge.click();
+
+    expect(collectionState.state.searchText()).toBe('8.7');
+    expect(collectionState.state.forceStandardSearch()).toBe(true);
   });
 });

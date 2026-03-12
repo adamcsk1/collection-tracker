@@ -51,6 +51,7 @@ export class TagConfigs {
           color: storedConfig?.color ? storedConfig.color : 'transparent',
           useForImageBorder: storedConfig?.useForImageBorder ? storedConfig.useForImageBorder : false,
           useForTextColor: storedConfig?.useForTextColor ? storedConfig.useForTextColor : false,
+          useForImageBadge: storedConfig?.useForImageBadge ? storedConfig.useForImageBadge : false,
           weight: storedConfig?.weight ? storedConfig.weight : 0,
         };
       });
@@ -81,6 +82,10 @@ export class TagConfigs {
     this.updateTagConfig(tag, { useForTextColor });
   }
 
+  protected onUseForImageBadgeChange(tag: string, useForImageBadge: boolean): void {
+    this.updateTagConfig(tag, { useForImageBadge });
+  }
+
   protected onWeightChange(tag: string, weight: number | null): void {
     const sanitizedWeight = Number.isFinite(weight) ? Number(weight) : 0;
     this.updateTagConfig(tag, { weight: sanitizedWeight });
@@ -94,7 +99,13 @@ export class TagConfigs {
 
   private updateTagConfig(
     tag: string,
-    changes: { color?: string; useForImageBorder?: boolean; useForTextColor?: boolean; weight?: number }
+    changes: {
+      color?: string;
+      useForImageBorder?: boolean;
+      useForTextColor?: boolean;
+      useForImageBadge?: boolean;
+      weight?: number;
+    }
   ): void {
     const storedTagConfigs = this.tagConfigsState.state.configs();
     const existingConfigIndex = storedTagConfigs.findIndex((config) => config.tag === tag);
@@ -107,6 +118,7 @@ export class TagConfigs {
               color: changes.color ?? 'transparent',
               useForImageBorder: changes.useForImageBorder ?? false,
               useForTextColor: changes.useForTextColor ?? false,
+              useForImageBadge: changes.useForImageBadge ?? false,
               weight: changes.weight ?? 0,
             },
           ]
