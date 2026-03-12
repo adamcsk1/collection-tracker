@@ -53,8 +53,9 @@ export class ListItem {
   protected readonly VIRTUAL_UNWATCHED_TAG = VIRTUAL_UNWATCHED_TAG;
   public readonly collectionItem = input.required<CollectionItemModel>();
 
-  protected onSetSearchText(searchValue: string | number | null): void {
+  protected onSetSearchText(searchValue: string | number | null, event?: Event): void {
     if (searchValue !== null) {
+      event?.stopPropagation();
       this.collectionState.setState('forceStandardSearch', true);
       this.collectionState.setState('searchText', `${searchValue}`);
     }

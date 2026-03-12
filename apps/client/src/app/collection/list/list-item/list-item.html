@@ -1,16 +1,4 @@
 @if (collectionItem(); as collectionItem) {
-  @if (imageBadgeTag(); as imageBadgeTag) {
-    <a
-      href="#"
-      role="button"
-      class="badge"
-      [style.backgroundColor]="badgeBackgroundColor()"
-      [style.color]="badgeTextColor()"
-      (click)="onSetSearchText(collectionItem.rate)"
-    >
-      {{ imageBadgeTag }}
-    </a>
-  }
   <div
     class="image"
     tabindex="0"
@@ -20,14 +8,27 @@
     [attr.aria-label]="collectionItem.title"
     (click)="onOpenDetail()"
     (keyup)="onOpenDetail()"
-  ></div>
+  >
+    @if (imageBadgeTag(); as imageBadgeTag) {
+      <a
+        href="#"
+        role="button"
+        class="badge"
+        [style.backgroundColor]="badgeBackgroundColor()"
+        [style.color]="badgeTextColor()"
+        (click)="onSetSearchText(imageBadgeTag, $event)"
+      >
+        {{ imageBadgeTag }}
+      </a>
+    }
+  </div>
   <div class="content">
     <h3>
       <a href="#" role="button" (click)="onOpenDetail()" (keyup)="onOpenDetail()">
         {{ collectionItem.title }}
       </a>
     </h3>
-    <span class="content-info">
+    <span>
       <small>
         @if (movie()) {
           <a href="#" role="button" (click)="onSetSearchText(MOVIE_TAG)">
