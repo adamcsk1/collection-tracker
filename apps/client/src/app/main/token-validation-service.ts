@@ -3,8 +3,10 @@ import { Router } from '@angular/router';
 import { CollectionService } from '@client/collection/collection-service';
 import { MainService } from '@client/main/main-service';
 import { redirectToLogin } from '@client/main/main-util';
+import { TagConfigsService } from '@client/tag-configs/tag-configs-service';
 import { omdbStateToken } from '@services/omdb/omdb-store';
 import { ParserService } from '@services/parser/parser-service';
+import { forkJoin } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class TokenValidationService {
@@ -13,6 +15,7 @@ export class TokenValidationService {
   private readonly router = inject(Router);
   private readonly collection = inject(CollectionService);
   private readonly parser = inject(ParserService);
+  private readonly tagConfigs = inject(TagConfigsService);
   private readonly injector = inject(Injector);
 
   public startValidation(): void {
@@ -21,7 +24,9 @@ export class TokenValidationService {
         const tokenValidated = this.main.tokenValid();
         if (tokenValidated) {
           if (!this.omdbState.state.apiKey()) this.router.navigate(['settings']);
-          this.parser.preloadUserParserConfig().subscribe(() => this.collection.loadCollection());
+          forkJoin([this.parser.preloadUserParserConfig(), this.tagConfigs.preloadUserTagConfigs()]).subscribe(() =>
+            this.collection.loadCollection()
+          );
           tokenValidationEffect.destroy();
         } else if (tokenValidated === false) {
           redirectToLogin();

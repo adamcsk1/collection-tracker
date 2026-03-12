@@ -50,3 +50,25 @@ serverStorage.parserConfigs
       if (error instanceof Error) void errorLog(`Parser configs storage sync error (${error.message})`);
     }
   });
+
+serverStorage.tagConfigs
+  .pipe(
+    pairwise(),
+    filter(([previousTagConfigs, nextTagConfigs]) => !dequal(previousTagConfigs, nextTagConfigs)),
+    map(([, nextTagConfigs]) => nextTagConfigs),
+    tap(() => void debugLog('Tag configs changed')),
+    debounceTime(2500)
+  )
+  .subscribe(async (tagConfigs) => {
+    try {
+      await debugLog('Tag configs storage sync started');
+      await writeFile(
+        `${serverStorage.dataFolder.value}/${FOLDERS.database}/${DATABASE_FILES.tagConfigs}`,
+        JSON.stringify(tagConfigs, null, 2),
+        { encoding: 'utf-8' }
+      );
+      await debugLog('Tag configs synced');
+    } catch (error: unknown) {
+      if (error instanceof Error) void errorLog(`Tag configs storage sync error (${error.message})`);
+    }
+  });

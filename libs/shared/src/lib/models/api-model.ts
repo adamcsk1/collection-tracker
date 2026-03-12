@@ -60,3 +60,15 @@ export interface ParserConfigApiResponseModel {
 }
 
 export type ParserConfigApiRequestModel = ParserConfigApiResponseModel;
+
+export interface TagConfigApiModel {
+  tag: string;
+  color: string;
+  useForImageBorder: boolean;
+  useForTextColor: boolean;
+  useForImageBadge: boolean;
+  weight: number;
+}
+
+export type TagConfigsApiResponseModel = Array<TagConfigApiModel>;
+export type TagConfigsApiRequestModel = TagConfigsApiResponseModel;

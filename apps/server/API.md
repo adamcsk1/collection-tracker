@@ -150,6 +150,23 @@ POST `/parser/change-config`
 - 200: full updated parser config (same shape as GET)
 - 500: server error
 
+## Tag config (per-user)
+
+GET `/tag/config`
+
+- Auth: Bearer required
+- Behavior: Returns the caller's tag configurations. If none exist yet, returns an empty array.
+- 200: `Array<{ tag: string; color: string; useForImageBorder: boolean; useForTextColor: boolean; useForImageBadge: boolean; weight: number }>`
+- 500: server error
+
+POST `/tag/change-config`
+
+- Auth: Bearer required
+- Body: full array of tag config items (same shape as GET response)
+- Behavior: Replaces the caller's stored tag configuration and persists it under their user hash
+- 200: full updated tag config array
+- 500: server error
+
 DELETE `/delete/:name`
 
 - Auth: Bearer required

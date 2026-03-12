@@ -190,7 +190,7 @@ describe('ListItem', () => {
     );
   });
 
-  it('sets search text when image badge is clicked', () => {
+  it('sets search text to image badge tag when image badge is clicked', () => {
     const collectionItem = buildItem('Sample', ['#badge']);
     collectionItem.rate = '8.7';
     tagConfigsState.setState('configs', [
@@ -210,7 +210,7 @@ describe('ListItem', () => {
     const badge = fixture.nativeElement.querySelector('.badge') as HTMLAnchorElement;
     badge.click();
 
-    expect(collectionState.state.searchText()).toBe('8.7');
+    expect(collectionState.state.searchText()).toBe('#badge');
     expect(collectionState.state.forceStandardSearch()).toBe(true);
   });
 });
