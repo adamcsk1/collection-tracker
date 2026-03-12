@@ -3,6 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, validate } from '@angular/forms/signals';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { CollectionService } from '@client/collection/collection-service';
+import { internalTagValidation } from '@client/collection/item-dialog/validators/internal-tag-validator';
+import { rawContentValidation } from '@client/collection/item-dialog/validators/raw-content-validator';
 import { virtualTagValidation } from '@client/collection/item-dialog/validators/virtual-tag-validator';
 import { getCollectionItem } from '@client/collection/utils/get-collection-item-util';
 import { mainStateToken } from '@client/main/main-store';
@@ -40,6 +42,7 @@ export class ItemDialog implements OnInit {
   protected readonly rawContentModel = signal('');
   protected readonly rawContentField = form(this.rawContentModel, (content) => {
     validate(content, ({ value }) => virtualTagValidation(value()));
+    validate(content, ({ value }) => internalTagValidation(value()));
   });
   protected readonly formErrors = {
     rawContent: {
@@ -47,6 +50,11 @@ export class ItemDialog implements OnInit {
         this.rawContentField()
           .errors()
           .some((error) => error.kind === 'usedVirtualTag')
+      ),
+      unusedInternalTag: computed(() =>
+        this.rawContentField()
+          .errors()
+          .some((error) => error.kind === 'unusedInternalTag')
       ),
     },
   };
@@ -95,6 +103,14 @@ export class ItemDialog implements OnInit {
       if (this.formErrors.rawContent.usedVirtualTag()) {
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UsedVirtualTagInContent'));
       }
+      if (this.formErrors.rawContent.unusedInternalTag()) {
+        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UnusedInternalTagInContent'));
+      }
+      return;
+    }
+
+    if (rawContentValidation(this.rawContentModel())) {
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.BadRawContent'));
       return;
     }
 

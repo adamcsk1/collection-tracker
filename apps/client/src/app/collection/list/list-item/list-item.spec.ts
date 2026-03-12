@@ -3,10 +3,10 @@ import { CollectionItemModel } from '@client/collection/collection-model';
 import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
 import { initialTagConfigsState, tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
 import { PortalService } from '@services/portal-service';
+import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListItem } from './list-item';
-import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 
 const buildItem = (name: string, tags: Array<string> = []): CollectionItemModel => ({
   rawContent: name,
@@ -113,8 +113,8 @@ describe('ListItem', () => {
     fixture.detectChanges();
 
     const image = fixture.nativeElement.querySelector('.image') as HTMLElement;
-    const getBlueTagAnchor = () =>
-      Array.from(fixture.nativeElement.querySelectorAll('a')).find(
+    const getBlueTagAnchor = (): HTMLAnchorElement | undefined =>
+      Array.from<HTMLAnchorElement>(fixture.nativeElement.querySelectorAll('a')).find(
         (link: HTMLAnchorElement) => link.textContent?.trim() === '#blue'
       );
 
@@ -131,6 +131,6 @@ describe('ListItem', () => {
     expect(['', 'transparent', 'rgb(0, 0, 0)', 'rgba(0, 0, 0, 0)', 'rgb(0,0,0)', 'rgba(0,0,0,0)']).toContain(
       image.style.borderColor
     );
-    expect((getBlueTagAnchor()?.getAttribute('style') ?? '')).not.toContain('112233');
+    expect(getBlueTagAnchor()?.getAttribute('style') ?? '').not.toContain('112233');
   });
 });

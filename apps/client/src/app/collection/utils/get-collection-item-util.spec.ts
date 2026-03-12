@@ -54,7 +54,18 @@ describe('getCollectionItem', () => {
     expect(item.tags).toEqual([]);
     expect(item.IMDbId).toBe('');
     expect(item.year).toBeNull();
-    expect(item.rate).toBe('');
+    expect(item.rate).toBe('N/A');
     expect(item.name).toBe('');
+  });
+
+  it('sets IMDb rate to N/A when the rate is not present', () => {
+    const item = getCollectionItem({
+      content: ['### My Movie', '**Genre**', 'Action, Comedy', '**Tags**', '#movie'].join('\n'),
+      name: 'My Movie',
+    });
+
+    expect(item.rate).toBe('N/A');
+    expect(item.IMDbId).toBe('');
+    expect(item.tags).toEqual(['#movie']);
   });
 });
