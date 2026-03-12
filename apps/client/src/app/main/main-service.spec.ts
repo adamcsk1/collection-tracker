@@ -89,7 +89,14 @@ describe('MainService', () => {
           return 'en';
         case STORAGE_TAG_CONFIGS:
           return JSON.stringify([
-            { tag: '#blue', color: '#123456', useForImageBorder: true, useForTextColor: false, weight: 4 },
+            {
+              tag: '#blue',
+              color: '#123456',
+              useForImageBorder: true,
+              useForTextColor: false,
+              useForImageBadge: false,
+              weight: 4,
+            },
           ]);
         default:
           return null;
@@ -111,7 +118,14 @@ describe('MainService', () => {
     expect(mainState.state.language()).toBe('en');
     expect(mainState.state.searchMode()).toBe('fuzzy');
     expect(tagConfigsState.state.configs()).toEqual([
-      { tag: '#blue', color: '#123456', useForImageBorder: true, useForTextColor: false, weight: 4 },
+      {
+        tag: '#blue',
+        color: '#123456',
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 4,
+      },
     ]);
     expect(setPermissionsSpy).toHaveBeenCalled();
   });
@@ -147,7 +161,14 @@ describe('MainService', () => {
 
   it('resets tag configs when stored JSON is malformed', () => {
     tagConfigsState.setState('configs', [
-      { tag: '#blue', color: '#123456', useForImageBorder: true, useForTextColor: false, weight: 1 },
+      {
+        tag: '#blue',
+        color: '#123456',
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 1,
+      },
     ]);
     webstorage.getItem.mockImplementation((key: string) => {
       switch (key) {

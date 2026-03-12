@@ -32,6 +32,7 @@ const buildTagConfig = (tag: string, overrides: Partial<TagConfigsModel[number]>
   color: 'transparent',
   useForImageBorder: false,
   useForTextColor: false,
+  useForImageBadge: false,
   weight: 0,
   ...overrides,
 });
@@ -114,6 +115,24 @@ describe('TagConfigs component', () => {
         weight: 5,
         useForImageBorder: true,
         useForTextColor: true,
+      }),
+    ]);
+  });
+
+  it('updates only image badge flag and keeps existing values', () => {
+    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
+    fixture.detectChanges();
+
+    tagConfigsState.setState('configs', [buildTagConfig('#tag', { color: '#123456', useForTextColor: true })]);
+    fixture.detectChanges();
+
+    component['onUseForImageBadgeChange']('#tag', true);
+
+    expect(tagConfigsState.state.configs()).toEqual([
+      buildTagConfig('#tag', {
+        color: '#123456',
+        useForTextColor: true,
+        useForImageBadge: true,
       }),
     ]);
   });

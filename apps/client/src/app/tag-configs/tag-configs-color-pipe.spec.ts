@@ -21,7 +21,14 @@ describe('TagConfigColorPipe', () => {
 
   it('returns matching tag color by default', () => {
     tagConfigsState.setState('configs', [
-      { tag: '#blue', color: '#112233', useForImageBorder: true, useForTextColor: true, weight: 1 },
+      {
+        tag: '#blue',
+        color: '#112233',
+        useForImageBorder: true,
+        useForTextColor: true,
+        useForImageBadge: false,
+        weight: 1,
+      },
     ]);
 
     expect(pipe.transform('#blue')).toBe('#112233');
@@ -29,9 +36,30 @@ describe('TagConfigColorPipe', () => {
 
   it('respects image border/text usage flags and ignores non-compatible entries', () => {
     tagConfigsState.setState('configs', [
-      { tag: '#blue', color: '#112233', useForImageBorder: false, useForTextColor: true, weight: 1 },
-      { tag: '#red', color: '#ff0000', useForImageBorder: true, useForTextColor: false, weight: 1 },
-      { tag: '#gray', color: 'transparent', useForImageBorder: true, useForTextColor: true, weight: 1 },
+      {
+        tag: '#blue',
+        color: '#112233',
+        useForImageBorder: false,
+        useForTextColor: true,
+        useForImageBadge: false,
+        weight: 1,
+      },
+      {
+        tag: '#red',
+        color: '#ff0000',
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 1,
+      },
+      {
+        tag: '#gray',
+        color: 'transparent',
+        useForImageBorder: true,
+        useForTextColor: true,
+        useForImageBadge: false,
+        weight: 1,
+      },
     ]);
 
     expect(pipe.transform('#blue', { checkUseForImageBorder: true })).toBeNull();
@@ -42,8 +70,22 @@ describe('TagConfigColorPipe', () => {
 
   it('supports tag arrays and still respects flags', () => {
     tagConfigsState.setState('configs', [
-      { tag: '#blue', color: '#112233', useForImageBorder: true, useForTextColor: false, weight: 1 },
-      { tag: '#orange', color: '#ffaa00', useForImageBorder: false, useForTextColor: true, weight: 2 },
+      {
+        tag: '#blue',
+        color: '#112233',
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 1,
+      },
+      {
+        tag: '#orange',
+        color: '#ffaa00',
+        useForImageBorder: false,
+        useForTextColor: true,
+        useForImageBadge: false,
+        weight: 2,
+      },
     ]);
 
     expect(pipe.transform(['#missing', '#orange'], { checkUseForTextColor: true })).toBe('#ffaa00');
@@ -52,9 +94,50 @@ describe('TagConfigColorPipe', () => {
 
   it('returns null when color is transparent', () => {
     tagConfigsState.setState('configs', [
-      { tag: '#blue', color: 'transparent', useForImageBorder: true, useForTextColor: true, weight: 1 },
+      {
+        tag: '#blue',
+        color: 'transparent',
+        useForImageBorder: true,
+        useForTextColor: true,
+        useForImageBadge: false,
+        weight: 1,
+      },
     ]);
 
     expect(pipe.transform('#blue')).toBeNull();
+  });
+
+  it('supports image badge flag and ignores non-badge configs', () => {
+    tagConfigsState.setState('configs', [
+      {
+        tag: '#badge',
+        color: '#112233',
+        useForImageBorder: true,
+        useForTextColor: true,
+        useForImageBadge: false,
+        weight: 1,
+      },
+      {
+        tag: '#image-badge',
+        color: '#fefefe',
+        useForImageBorder: false,
+        useForTextColor: false,
+        useForImageBadge: true,
+        weight: 1,
+      },
+      {
+        tag: '#transparent-badge',
+        color: 'transparent',
+        useForImageBorder: false,
+        useForTextColor: false,
+        useForImageBadge: true,
+        weight: 1,
+      },
+    ]);
+
+    expect(pipe.transform('#badge', { useForImageBadge: true })).toBeNull();
+    expect(pipe.transform('#image-badge', { useForImageBadge: true })).toBe('#fefefe');
+    expect(pipe.transform(['#badge', '#image-badge'], { useForImageBadge: true })).toBe('#fefefe');
+    expect(pipe.transform(['#badge', '#transparent-badge'], { useForImageBadge: true })).toBeNull();
   });
 });

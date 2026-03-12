@@ -3,6 +3,7 @@ export interface TagConfigModel {
   color: string;
   useForImageBorder: boolean;
   useForTextColor: boolean;
+  useForImageBadge: boolean;
   weight: number;
 }
 
