@@ -22,9 +22,9 @@ const buildItem = (name: string, rawContent = 'raw content'): CollectionItemMode
   image: 'image',
   title: name,
   titleLower: name.toLowerCase(),
-  genre: [],
+  genre: ['Drama'],
   IMDbId: 'tt123',
-  tags: [],
+  tags: ['#movie'],
   name,
   year: 2020,
   rate: '9.0',
@@ -127,14 +127,14 @@ describe('ItemDialog', () => {
 
   it('saves changes after confirmation and updates state', () => {
     confirm.open.mockReturnValue(of(true));
-    component['rawContentModel'].set('updated content');
+    component['rawContentModel'].set('updated content #movie');
     const updateSpy = vi.spyOn(component.collectionItem as any, 'update');
 
     component['onSaveChanges']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalledWith('Item One', 'updated content');
-    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith('Item One', 'updated content');
+    expect(api.update).toHaveBeenCalledWith('Item One', 'updated content #movie');
+    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith('Item One', 'updated content #movie');
     expect(updateSpy).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.EditItem');
     expect(component['editMode']()).toBe(false);
@@ -142,7 +142,7 @@ describe('ItemDialog', () => {
 
   it('does not save when confirmation is declined', () => {
     confirm.open.mockReturnValue(of(false));
-    component['rawContentModel'].set('no change');
+    component['rawContentModel'].set('#movie no change');
 
     component['onSaveChanges']();
 
@@ -151,8 +151,58 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('');
   });
 
+  it('does not save when parsed raw content is invalid', () => {
+    getCollectionItemSpy.mockImplementationOnce(() => ({
+      rawContent: '',
+      rawContentLower: '',
+      image: '',
+      title: '',
+      titleLower: '',
+      genre: [],
+      IMDbId: '',
+      tags: [],
+      name: 'Item One',
+      year: null,
+      rate: '',
+    }));
+
+    component['rawContentModel'].set('#movie bad content');
+
+    component['onSaveChanges']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
+    expect(collectionService.updateCollectionItem).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.BadRawContent');
+  });
+
+  it('does not save when raw content is missing required parsed fields', () => {
+    getCollectionItemSpy.mockImplementationOnce(() => ({
+      rawContent: '',
+      rawContentLower: '',
+      image: '',
+      title: '',
+      titleLower: '',
+      genre: [],
+      tags: ['#movie'],
+      IMDbId: '',
+      year: null,
+      rate: '',
+      name: 'Item One',
+    }));
+
+    component['rawContentModel'].set('#movie another bad content');
+
+    component['onSaveChanges']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
+    expect(collectionService.updateCollectionItem).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.BadRawContent');
+  });
+
   it('does not save when raw content contains virtual tags', () => {
-    component['rawContentModel'].set(`raw content #unwatched`);
+    component['rawContentModel'].set(`#movie #unwatched`);
 
     component['onSaveChanges']();
 

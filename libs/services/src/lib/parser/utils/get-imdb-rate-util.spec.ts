@@ -13,7 +13,7 @@ describe('getIMDbRate', () => {
     expect(getIMDbRate(content)).toBe('8.7');
   });
 
-  it('returns an empty string when no IMDb block is present', () => {
-    expect(getIMDbRate('no imdb here')).toBe('');
+  it('returns "N/A" when no IMDb block is present', () => {
+    expect(getIMDbRate('no imdb here')).toBe('N/A');
   });
 });
