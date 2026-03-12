@@ -4,7 +4,6 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
-import { initialTagConfigsState, tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_ANIMATED_BACKGROUND,
@@ -14,7 +13,6 @@ import {
   STORAGE_FETCH_BATCH_SIZE,
   STORAGE_LANGUAGE,
   STORAGE_OMDB_API_KEY,
-  STORAGE_TAG_CONFIGS,
   STORAGE_SEARCH_MODE,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
@@ -33,7 +31,6 @@ describe('MainService', () => {
   let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
   let omdbState: NgxSimpleSignalStoreService<typeof initialOMDbState>;
   let themeState: NgxSimpleSignalStoreService<typeof initialThemeState>;
-  let tagConfigsState: NgxSimpleSignalStoreService<typeof initialTagConfigsState>;
 
   beforeEach(() => {
     api = { validateAccessToken: vi.fn(() => of(undefined)) };
@@ -48,7 +45,6 @@ describe('MainService', () => {
         provideStore(initialApiState, apiStateToken),
         provideStore(initialOMDbState, omdbStateToken),
         provideStore(initialThemeState, themeStateToken),
-        provideStore(initialTagConfigsState, tagConfigsStateToken),
       ],
     });
 
@@ -57,9 +53,6 @@ describe('MainService', () => {
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
     omdbState = TestBed.inject(omdbStateToken) as NgxSimpleSignalStoreService<typeof initialOMDbState>;
     themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<typeof initialThemeState>;
-    tagConfigsState = TestBed.inject(tagConfigsStateToken) as NgxSimpleSignalStoreService<
-      typeof initialTagConfigsState
-    >;
   });
 
   it('hydrates stores from web storage and sets permissions', () => {
@@ -87,17 +80,6 @@ describe('MainService', () => {
           return 'false';
         case STORAGE_LANGUAGE:
           return 'en';
-        case STORAGE_TAG_CONFIGS:
-          return JSON.stringify([
-            {
-              tag: '#blue',
-              color: '#123456',
-              useForImageBorder: true,
-              useForTextColor: false,
-              useForImageBadge: false,
-              weight: 4,
-            },
-          ]);
         default:
           return null;
       }
@@ -117,16 +99,6 @@ describe('MainService', () => {
     expect(mainState.state.animatedBackground()).toBe(false);
     expect(mainState.state.language()).toBe('en');
     expect(mainState.state.searchMode()).toBe('fuzzy');
-    expect(tagConfigsState.state.configs()).toEqual([
-      {
-        tag: '#blue',
-        color: '#123456',
-        useForImageBorder: true,
-        useForTextColor: false,
-        useForImageBadge: false,
-        weight: 4,
-      },
-    ]);
     expect(setPermissionsSpy).toHaveBeenCalled();
   });
 
@@ -157,31 +129,6 @@ describe('MainService', () => {
     expect(mainState.state.sensitiveDataStorage()).toBe(initialMainState.sensitiveDataStorage);
     expect(mainState.state.language()).toBe(initialMainState.language);
     expect(setPermissionsSpy).not.toHaveBeenCalled();
-  });
-
-  it('resets tag configs when stored JSON is malformed', () => {
-    tagConfigsState.setState('configs', [
-      {
-        tag: '#blue',
-        color: '#123456',
-        useForImageBorder: true,
-        useForTextColor: false,
-        useForImageBadge: false,
-        weight: 1,
-      },
-    ]);
-    webstorage.getItem.mockImplementation((key: string) => {
-      switch (key) {
-        case STORAGE_TAG_CONFIGS:
-          return '{malformed-json';
-        default:
-          return null;
-      }
-    });
-
-    service.loadStoredData();
-
-    expect(tagConfigsState.state.configs()).toEqual([]);
   });
 
   it('sets permissions based on app mode', () => {

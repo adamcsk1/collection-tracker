@@ -1,7 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { mainStateToken } from '@client/main/main-store';
 import { APP_MODES, SEARCH_MODES, SENSITIVE_DATA_STORAGE_MODES } from '@client/settings/settings-const';
-import { tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { omdbStateToken } from '@services/omdb/omdb-store';
@@ -19,7 +18,6 @@ import {
   STORAGE_SEARCH_MODE,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
-  STORAGE_TAG_CONFIGS,
   STORAGE_THEME,
 } from '@shared/constants/storage-const';
 import { LANGUAGES } from '@shared/models/language-model';
@@ -34,7 +32,6 @@ export class MainService {
   private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly apiState = inject(apiStateToken);
-  private readonly tagConfigsState = inject(tagConfigsStateToken);
   private readonly _tokenValid = signal<boolean | null>(null);
   public readonly hasRequiredConfig = computed(() => !!this.apiState.state.apiUrl());
   public readonly tokenValid = this._tokenValid.asReadonly();
@@ -54,17 +51,9 @@ export class MainService {
     const clearLocalStorageAfterLogout = this.webstorage.getItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT) === 'true';
     const animatedBackground = this.webstorage.getItem(STORAGE_ANIMATED_BACKGROUND) !== 'false';
     const language = parseAllowedValue(this.webstorage.getItem(STORAGE_LANGUAGE), LANGUAGES);
-    const tagConfigs = this.webstorage.getItem(STORAGE_TAG_CONFIGS);
 
     if (apiUrl) this.apiState.setState('apiUrl', apiUrl);
     if (omdbApiKey) this.omdbState.setState('apiKey', omdbApiKey);
-    if (tagConfigs) {
-      try {
-        this.tagConfigsState.setState('configs', JSON.parse(tagConfigs));
-      } catch {
-        this.tagConfigsState.setState('configs', []);
-      }
-    }
     if (appMode) {
       this.mainState.setState('appMode', appMode);
       this.setPermissions();

@@ -191,6 +191,7 @@
   "Toast.UsedVirtualTagInContent": " The content contains a virtual tag that is reserved for internal use. Please remove it and try again.",
   "Toast.UnusedInternalTagInContent": " The content does not contain an #movie or #series tag that is required for proper item processing. Please add it and try again.",
   "Toast.BadRawContent": " The content is missing required attributes or contains empty attributes based on the current parser settings. Please check your content and try again.",
+  "Toast.TagConfigSyncError": "Could not synchronize the tag config changes! Please try again.",
   "Confirm.Delete": "Do you want to delete the {name} item?",
   "Confirm.Change": "Do you want to save the the {name} item changes?",
   "Confirm.RevokeAccessToken": "Do you want to revoke the selected access token?",

@@ -4,12 +4,13 @@ import { TagConfigsModel } from '@client/tag-configs/tag-configs-model';
 import { tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Input } from '@components/input/input';
+import { toastStateToken } from '@components/toast/toast-store';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
-import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { STORAGE_TAG_CONFIGS } from '@shared/constants/storage-const';
 import { INTERNAL_USED_TAGS, VIRTUAL_TAGS } from '@shared/constants/tags-const';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { EMPTY, catchError } from 'rxjs';
+import { TagConfigsService } from './tag-configs-service';
 
 @Component({
   selector: 'ct-tag-configs',
@@ -22,8 +23,9 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TagConfigs {
-  private readonly webstorage = inject(WebstorageService);
+  private readonly tagConfigsService = inject(TagConfigsService);
   private readonly confirm = inject(ConfirmService);
+  private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly apiState = inject(apiStateToken);
@@ -136,10 +138,14 @@ export class TagConfigs {
   }
 
   private storeTagConfigs(configs: TagConfigsModel): void {
-    this.tagConfigsState.setState(
-      'configs',
-      configs.sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
-    );
-    this.webstorage.setItem(STORAGE_TAG_CONFIGS, JSON.stringify(configs));
+    this.tagConfigsService
+      .syncUserTagConfigs(configs)
+      .pipe(
+        catchError(() => {
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.TagConfigSyncError'));
+          return EMPTY;
+        })
+      )
+      .subscribe();
   }
 }

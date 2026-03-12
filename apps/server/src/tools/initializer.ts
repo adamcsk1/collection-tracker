@@ -25,6 +25,12 @@ export const initializeFolders = () => {
       debugLog(`Created initial ${parserConfigsFilePath} file in ${databaseFolder}`);
     }
 
+    const tagConfigsFilePath = `${databaseFolder}/${DATABASE_FILES.tagConfigs}`;
+    if (!existsSync(tagConfigsFilePath)) {
+      writeFileSync(tagConfigsFilePath, '{}', { encoding: 'utf-8' });
+      debugLog(`Created initial ${tagConfigsFilePath} file in ${databaseFolder}`);
+    }
+
     if (!existsSync(`${dataFolder}/${FOLDERS.store}`)) {
       mkdirSync(`${dataFolder}/${FOLDERS.store}`);
       debugLog(`Created store folder in ${dataFolder}/${FOLDERS.store}`);

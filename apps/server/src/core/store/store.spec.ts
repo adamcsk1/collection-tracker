@@ -7,6 +7,7 @@ const createStore = (): StoreModel => ({
   dataFolder: new BehaviorSubject<string | null>('data'),
   users: new BehaviorSubject(null),
   parserConfigs: new BehaviorSubject(null),
+  tagConfigs: new BehaviorSubject(null),
   cache: new BehaviorSubject<{ [key: string]: string }>({ cached: 'x' }),
 });
 
@@ -49,6 +50,8 @@ describe('Store', () => {
 
     expect(Store.getLastValue('dataFolder')).toBeNull();
     expect(Store.getLastValue('users')).toBeNull();
+    expect(Store.getLastValue('parserConfigs')).toBeNull();
+    expect(Store.getLastValue('tagConfigs')).toBeNull();
     expect(Store.getLastValue('cache')).toBeNull();
   });
 });

@@ -3,14 +3,14 @@ import { CollectionItemModel } from '@client/collection/collection-model';
 import { mainCollectionStateToken, initialMainCollectionState } from '@client/main/main-collection-store';
 import { TagConfigsModel } from '@client/tag-configs/tag-configs-model';
 import { TagConfigs } from './tag-configs';
+import { TagConfigsService } from './tag-configs-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { ConfirmService } from '@services/confirm-service';
-import { STORAGE_TAG_CONFIGS } from '@shared/constants/storage-const';
-import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { tagConfigsStateToken, initialTagConfigsState } from './tag-configs-store';
 
 const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
@@ -42,21 +42,31 @@ describe('TagConfigs component', () => {
   let component: TagConfigs;
   let mainCollectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
   let tagConfigsState: NgxSimpleSignalStoreService<typeof initialTagConfigsState>;
-  let webstorage: { setItem: ReturnType<typeof vi.fn> };
+  let toastState: NgxSimpleSignalStoreService<typeof initialToastState>;
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
+  let tagConfigsService: { syncUserTagConfigs: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    webstorage = { setItem: vi.fn() };
     confirm = { ifConfirmed: vi.fn(() => of(true)) };
+    tagConfigsService = {
+      syncUserTagConfigs: vi.fn((configs: TagConfigsModel) => {
+        tagConfigsState.setState(
+          'configs',
+          [...configs].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+        );
+        return of(void 0);
+      }),
+    };
 
     TestBed.configureTestingModule({
       imports: [TagConfigs],
       providers: [
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
-        { provide: WebstorageService, useValue: webstorage },
         { provide: ConfirmService, useValue: confirm },
+        { provide: TagConfigsService, useValue: tagConfigsService },
         provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialApiState, apiStateToken),
+        provideStore(initialToastState, toastStateToken),
         provideStore(initialTagConfigsState, tagConfigsStateToken),
       ],
     });
@@ -69,6 +79,7 @@ describe('TagConfigs component', () => {
     tagConfigsState = TestBed.inject(tagConfigsStateToken) as NgxSimpleSignalStoreService<
       typeof initialTagConfigsState
     >;
+    toastState = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<typeof initialToastState>;
 
     fixture.detectChanges();
   });
@@ -148,7 +159,7 @@ describe('TagConfigs component', () => {
     expect(tagConfigsState.state.configs()).toEqual([buildTagConfig('#tag', { weight: 0 })]);
   });
 
-  it('stores configs sorted by descending weight and writes them to local storage', () => {
+  it('stores configs sorted by descending weight and syncs them via service', () => {
     mainCollectionState.setState('collection', [buildItem({ tags: ['#low', '#high'] })]);
     fixture.detectChanges();
 
@@ -162,13 +173,10 @@ describe('TagConfigs component', () => {
       buildTagConfig('#low', { color: '#111111', weight: 1 }),
     ]);
 
-    expect(webstorage.setItem).toHaveBeenLastCalledWith(
-      STORAGE_TAG_CONFIGS,
-      JSON.stringify([
-        buildTagConfig('#high', { color: '#222222', weight: 9 }),
-        buildTagConfig('#low', { color: '#111111', weight: 1 }),
-      ])
-    );
+    expect(tagConfigsService.syncUserTagConfigs).toHaveBeenLastCalledWith([
+      buildTagConfig('#low', { color: '#111111', weight: 1 }),
+      buildTagConfig('#high', { color: '#222222', weight: 9 }),
+    ]);
   });
 
   it('adds a new config with defaults when color changes for unknown tag', () => {
@@ -180,7 +188,7 @@ describe('TagConfigs component', () => {
     expect(tagConfigsState.state.configs()).toEqual([buildTagConfig('#new', { color: '#abc' })]);
   });
 
-  it('resets tag configs after confirmation and clears storage', () => {
+  it('resets tag configs after confirmation and syncs empty list', () => {
     mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
     tagConfigsState.setState('configs', [buildTagConfig('#tag', { color: '#123456', useForImageBorder: true })]);
     fixture.detectChanges();
@@ -188,7 +196,7 @@ describe('TagConfigs component', () => {
     component['onResetTagConfigs']();
 
     expect(tagConfigsState.state.configs()).toEqual([]);
-    expect(webstorage.setItem).toHaveBeenLastCalledWith(STORAGE_TAG_CONFIGS, JSON.stringify([]));
+    expect(tagConfigsService.syncUserTagConfigs).toHaveBeenLastCalledWith([]);
   });
 
   it('does not clear configs when reset is not confirmed', () => {
@@ -197,11 +205,21 @@ describe('TagConfigs component', () => {
     const initialConfigs = [buildTagConfig('#tag', { color: '#123456', useForImageBorder: true })];
     tagConfigsState.setState('configs', initialConfigs);
     fixture.detectChanges();
-    webstorage.setItem.mockClear();
+    tagConfigsService.syncUserTagConfigs.mockClear();
 
     component['onResetTagConfigs']();
 
     expect(tagConfigsState.state.configs()).toEqual(initialConfigs);
-    expect(webstorage.setItem).not.toHaveBeenCalled();
+    expect(tagConfigsService.syncUserTagConfigs).not.toHaveBeenCalled();
+  });
+
+  it('shows toast message when syncing tag configs fails', () => {
+    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
+    fixture.detectChanges();
+    tagConfigsService.syncUserTagConfigs.mockReturnValueOnce(throwError(() => new Error('fail')));
+
+    component['onTagColorChange']('#tag', '#123456');
+
+    expect(toastState.state.message()).toBe('Toast.TagConfigSyncError');
   });
 });

@@ -5,6 +5,7 @@ const initialStore = (): StoreModel => ({
   dataFolder: new BehaviorSubject(null),
   users: new BehaviorSubject(null),
   parserConfigs: new BehaviorSubject(null),
+  tagConfigs: new BehaviorSubject(null),
   cache: new BehaviorSubject({}),
 });
 

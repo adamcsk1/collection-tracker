@@ -4,6 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 import { CollectionService } from '@client/collection/collection-service';
 import { MainService } from '@client/main/main-service';
 import { TokenValidationService } from '@client/main/token-validation-service';
+import { TagConfigsService } from '@client/tag-configs/tag-configs-service';
 import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
 import { ParserService } from '@services/parser/parser-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -21,11 +22,15 @@ describe('TokenValidationService', () => {
   let router: { navigate: ReturnType<typeof vi.fn> };
   let omdbState: NgxSimpleSignalStoreService<typeof initialOMDbState>;
   let mainService: { tokenValid: ReturnType<typeof vi.fn> };
+  let parserService: { preloadUserParserConfig: ReturnType<typeof vi.fn> };
+  let tagConfigsService: { preloadUserTagConfigs: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     mainService = { tokenValid: vi.fn(() => null) };
     collectionService = { loadCollection: vi.fn() };
     router = { navigate: vi.fn() };
+    parserService = { preloadUserParserConfig: vi.fn(() => of(void 0)) };
+    tagConfigsService = { preloadUserTagConfigs: vi.fn(() => of(void 0)) };
 
     TestBed.configureTestingModule({
       imports: [TestHostComponent],
@@ -33,7 +38,8 @@ describe('TokenValidationService', () => {
         TokenValidationService,
         { provide: MainService, useValue: mainService },
         { provide: CollectionService, useValue: collectionService },
-        { provide: ParserService, useValue: { preloadUserParserConfig: vi.fn(() => of(void 0)) } },
+        { provide: ParserService, useValue: parserService },
+        { provide: TagConfigsService, useValue: tagConfigsService },
         provideStore(initialOMDbState, omdbStateToken),
         provideRouter([]),
         { provide: Router, useValue: router },
@@ -53,6 +59,8 @@ describe('TokenValidationService', () => {
 
     expect(router.navigate).toHaveBeenCalledWith(['settings']);
     expect(collectionService.loadCollection).toHaveBeenCalled();
+    expect(parserService.preloadUserParserConfig).toHaveBeenCalled();
+    expect(tagConfigsService.preloadUserTagConfigs).toHaveBeenCalled();
   });
 
   it('loads collection without navigating when token is valid and OMDb key exists', () => {
@@ -64,6 +72,8 @@ describe('TokenValidationService', () => {
 
     expect(router.navigate).not.toHaveBeenCalled();
     expect(collectionService.loadCollection).toHaveBeenCalled();
+    expect(parserService.preloadUserParserConfig).toHaveBeenCalled();
+    expect(tagConfigsService.preloadUserTagConfigs).toHaveBeenCalled();
   });
 
   it('redirects to login when token validation fails', () => {
@@ -71,6 +81,7 @@ describe('TokenValidationService', () => {
     const redirectSpy = vi.spyOn(MainUtil, 'redirectToLogin').mockImplementation(() => {});
 
     service.startValidation();
+    fixture.detectChanges();
 
     expect(redirectSpy).toHaveBeenCalled();
     redirectSpy.mockRestore();

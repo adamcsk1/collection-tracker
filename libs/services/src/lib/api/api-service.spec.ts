@@ -247,6 +247,86 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({});
   });
 
+  it('retrieves user tag configs', async () => {
+    const promise = lastValueFrom(service.getUserTagConfigs());
+
+    const tagConfigsRequest = httpMock.expectOne('https://api.test/tag/config');
+    expect(tagConfigsRequest.request.method).toBe('GET');
+    tagConfigsRequest.flush([
+      {
+        tag: '#a',
+        color: '#111111',
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 1,
+      },
+    ]);
+
+    await expect(promise).resolves.toEqual([
+      {
+        tag: '#a',
+        color: '#111111',
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 1,
+      },
+    ]);
+  });
+
+  it('updates user tag configs', async () => {
+    const payload = [
+      {
+        tag: '#a',
+        color: '#111111',
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 1,
+      },
+    ];
+    const promise = lastValueFrom(service.updateUserTagConfigs(payload));
+
+    const updateTagConfigsRequest = httpMock.expectOne('https://api.test/tag/change-config');
+    expect(updateTagConfigsRequest.request.method).toBe('POST');
+    expect(updateTagConfigsRequest.request.body).toEqual(payload);
+    updateTagConfigsRequest.flush({});
+
+    await expect(promise).resolves.toEqual({});
+  });
+
+  it('alerts and rethrows when retrieving user tag configs fails', async () => {
+    const promise = lastValueFrom(service.getUserTagConfigs());
+
+    const tagConfigsRequest = httpMock.expectOne('https://api.test/tag/config');
+    tagConfigsRequest.flush('bad', { status: 500, statusText: 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status: 500 });
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('alerts and rethrows when updating user tag configs fails', async () => {
+    const promise = lastValueFrom(
+      service.updateUserTagConfigs([
+        {
+          tag: '#a',
+          color: '#111111',
+          useForImageBorder: true,
+          useForTextColor: false,
+          useForImageBadge: false,
+          weight: 1,
+        },
+      ])
+    );
+
+    const updateTagConfigsRequest = httpMock.expectOne('https://api.test/tag/change-config');
+    updateTagConfigsRequest.flush('bad', { status: 400, statusText: 'Bad Request' });
+
+    await expect(promise).rejects.toMatchObject({ status: 400 });
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('alerts and rethrows when signUp fails', async () => {
     const promise = lastValueFrom(service.signUp('neo'));
 

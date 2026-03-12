@@ -1,4 +1,5 @@
 import { ParserConfigsModel } from '@server/models/parser-config-model';
+import { TagConfigsModel } from '@server/models/tag-configs-model';
 import { UsersModel } from '@server/models/users-model';
 import { BehaviorSubject } from 'rxjs';
 
@@ -6,6 +7,7 @@ export interface StoreDataModel {
   dataFolder: string | null;
   users: UsersModel | null;
   parserConfigs: ParserConfigsModel | null;
+  tagConfigs: TagConfigsModel | null;
   cache: { [key: string]: string };
 }
 
