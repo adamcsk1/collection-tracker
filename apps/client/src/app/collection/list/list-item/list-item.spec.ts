@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
+import { initialTagConfigsState, tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
 import { PortalService } from '@services/portal-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,12 +22,21 @@ const buildItem = (name: string, tags: Array<string> = []): CollectionItemModel 
   rate: '',
 });
 
+const normalizeHexColor = (hex: string): string => {
+  const normalized = hex.replace('#', '');
+  const red = parseInt(normalized.substring(0, 2), 16);
+  const green = parseInt(normalized.substring(2, 4), 16);
+  const blue = parseInt(normalized.substring(4, 6), 16);
+  return `rgb(${red}, ${green}, ${blue})`;
+};
+
 vi.mock('marked', () => ({ marked: { parse: () => '' } }));
 
 describe('ListItem', () => {
   let fixture: ComponentFixture<ListItem>;
   let component: ListItem;
   let collectionState: NgxSimpleSignalStoreService<typeof initialCollectionState>;
+  let tagConfigsState: NgxSimpleSignalStoreService<typeof initialTagConfigsState>;
   let portal: { open: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
@@ -36,6 +46,7 @@ describe('ListItem', () => {
       providers: [
         { provide: PortalService, useValue: portal },
         provideStore(initialCollectionState, collectionStateToken),
+        provideStore(initialTagConfigsState, tagConfigsStateToken),
       ],
     });
 
@@ -43,6 +54,9 @@ describe('ListItem', () => {
     component = fixture.componentInstance;
     collectionState = TestBed.inject(collectionStateToken) as NgxSimpleSignalStoreService<
       typeof initialCollectionState
+    >;
+    tagConfigsState = TestBed.inject(tagConfigsStateToken) as NgxSimpleSignalStoreService<
+      typeof initialTagConfigsState
     >;
 
     fixture.componentRef.setInput('collectionItem', buildItem('Sample'));
@@ -88,5 +102,35 @@ describe('ListItem', () => {
 
     expect(collectionState.state.searchText()).toBe('query');
     expect(collectionState.state.forceStandardSearch()).toBe(true);
+  });
+
+  it('applies tag-config-driven colors to image border and tag text', () => {
+    tagConfigsState.setState('configs', [
+      { tag: '#blue', color: '#112233', useForImageBorder: true, useForTextColor: true, weight: 1 },
+      { tag: '#red', color: '#ff0000', useForImageBorder: true, useForTextColor: false, weight: 2 },
+    ]);
+    fixture.componentRef.setInput('collectionItem', buildItem('Sample', ['#blue', '#red']));
+    fixture.detectChanges();
+
+    const image = fixture.nativeElement.querySelector('.image') as HTMLElement;
+    const getBlueTagAnchor = () =>
+      Array.from(fixture.nativeElement.querySelectorAll('a')).find(
+        (link: HTMLAnchorElement) => link.textContent?.trim() === '#blue'
+      );
+
+    expect(['#112233', normalizeHexColor('#112233')]).toContain(image.style.borderColor);
+    expect(['#112233', normalizeHexColor('#112233')]).toContain(getBlueTagAnchor()?.style.color);
+
+    tagConfigsState.setState('configs', [
+      { tag: '#blue', color: '#112233', useForImageBorder: false, useForTextColor: false, weight: 1 },
+    ]);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('collectionItem', buildItem('Sample', ['#blue', '#red']));
+    fixture.detectChanges();
+
+    expect(['', 'transparent', 'rgb(0, 0, 0)', 'rgba(0, 0, 0, 0)', 'rgb(0,0,0)', 'rgba(0,0,0,0)']).toContain(
+      image.style.borderColor
+    );
+    expect((getBlueTagAnchor()?.getAttribute('style') ?? '')).not.toContain('112233');
   });
 });

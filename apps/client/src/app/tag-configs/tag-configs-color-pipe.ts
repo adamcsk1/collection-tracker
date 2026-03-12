@@ -13,7 +13,6 @@ export class TagConfigColorPipe implements PipeTransform {
   ): string | null {
     const { checkUseForImageBorder = false, checkUseForTextColor = false } = options;
     const tagConfigs = this.tagConfigsState.state.configs();
-    console.log('TagConfigColorPipe - tag:', tag, 'options:', options, 'tagConfigs:', tagConfigs);
     const borderColorConfig = tagConfigs.find(
       (config) =>
         (!checkUseForImageBorder || (checkUseForImageBorder && config.useForImageBorder)) &&
