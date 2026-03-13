@@ -1,7 +1,13 @@
+.dialog-overlay {
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(var(--size-md));
+}
+
 .dialog-frame {
   background-color: var(--glassy-background);
   margin: 0 auto;
-  margin-top: var(--size-md);
+  top: var(--size-md);
   z-index: 1;
   display: flex;
   flex-direction: column;
@@ -17,7 +23,7 @@
     height: 100vh;
     max-height: none;
     max-width: none;
-    margin: unset;
+    top: unset;
     border-radius: 0;
   }
 
