@@ -31,3 +31,10 @@ p {
     }
   }
 }
+
+.color-input {
+  pointer-events: none;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}

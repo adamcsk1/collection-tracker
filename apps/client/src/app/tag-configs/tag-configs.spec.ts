@@ -29,7 +29,7 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
 
 const buildTagConfig = (tag: string, overrides: Partial<TagConfigsModel[number]>): TagConfigsModel[number] => ({
   tag,
-  color: 'transparent',
+  color: null,
   useForImageBorder: false,
   useForTextColor: false,
   useForImageBadge: false,
@@ -148,6 +148,20 @@ describe('TagConfigs component', () => {
     ]);
   });
 
+  it('keeps color as null when creating a new config from a non-color change', () => {
+    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
+    fixture.detectChanges();
+
+    component['onUseForImageBorderChange']('#tag', true);
+
+    expect(tagConfigsState.state.configs()).toEqual([
+      buildTagConfig('#tag', {
+        color: null,
+        useForImageBorder: true,
+      }),
+    ]);
+  });
+
   it('coerces text input into numeric weight and falls back to zero on invalid values', () => {
     mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
     fixture.detectChanges();
@@ -186,6 +200,29 @@ describe('TagConfigs component', () => {
     component['onTagColorChange']('#new', '#abc');
 
     expect(tagConfigsState.state.configs()).toEqual([buildTagConfig('#new', { color: '#abc' })]);
+  });
+
+  it('seeds a black color when the color picker is opened for an uncolored tag', () => {
+    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('.tag-configs-item-color button') as HTMLButtonElement;
+    button.click();
+
+    expect(tagConfigsState.state.configs()).toEqual([buildTagConfig('#tag', { color: '#000000' })]);
+  });
+
+  it('does not overwrite an existing color when the color picker button is clicked', () => {
+    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
+    tagConfigsState.setState('configs', [buildTagConfig('#tag', { color: '#123456' })]);
+    fixture.detectChanges();
+    tagConfigsService.syncUserTagConfigs.mockClear();
+
+    const button = fixture.nativeElement.querySelector('.tag-configs-item-color button') as HTMLButtonElement;
+    button.click();
+
+    expect(tagConfigsState.state.configs()).toEqual([buildTagConfig('#tag', { color: '#123456' })]);
+    expect(tagConfigsService.syncUserTagConfigs).not.toHaveBeenCalled();
   });
 
   it('resets tag configs after confirmation and syncs empty list', () => {

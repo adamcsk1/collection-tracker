@@ -1,5 +1,5 @@
 // https://stackoverflow.com/a/35970186
-export const invertColorHex = (hex: string): string | null => {
+export const getContrastColorHex = (hex: string): string | null => {
   if (hex === 'transparent') return null;
 
   let normalizedHex = hex.replace('#', '');

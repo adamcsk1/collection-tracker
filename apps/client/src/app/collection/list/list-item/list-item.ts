@@ -5,7 +5,7 @@ import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
 import { TagConfigColorPipe } from '@client/tag-configs/tag-configs-color-pipe';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
-import { invertColorHex } from '@shared/utils/invert-color-hex-util';
+import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
@@ -45,7 +45,7 @@ export class ListItem {
       return null;
     }
 
-    return invertColorHex(badgeBackgroundColor);
+    return getContrastColorHex(badgeBackgroundColor);
   });
   protected readonly WATCHED_TAG = WATCHED_TAG;
   protected readonly MOVIE_TAG = MOVIE_TAG;
