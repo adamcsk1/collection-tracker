@@ -8,6 +8,7 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { INTERNAL_USED_TAGS, VIRTUAL_TAGS } from '@shared/constants/tags-const';
+import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { EMPTY, catchError } from 'rxjs';
 import { TagConfigsService } from './tag-configs-service';
@@ -23,6 +24,7 @@ import { TagConfigsService } from './tag-configs-service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TagConfigs {
+  [x: string]: any;
   private readonly tagConfigsService = inject(TagConfigsService);
   private readonly confirm = inject(ConfirmService);
   private readonly toastState = inject(toastStateToken);
@@ -50,11 +52,11 @@ export class TagConfigs {
         const storedConfig = storedConfigs.find((config) => config.tag === tag);
         return {
           tag,
-          color: storedConfig?.color ? storedConfig.color : 'transparent',
-          useForImageBorder: storedConfig?.useForImageBorder ? storedConfig.useForImageBorder : false,
-          useForTextColor: storedConfig?.useForTextColor ? storedConfig.useForTextColor : false,
-          useForImageBadge: storedConfig?.useForImageBadge ? storedConfig.useForImageBadge : false,
-          weight: storedConfig?.weight ? storedConfig.weight : 0,
+          color: storedConfig?.color ?? null,
+          useForImageBorder: storedConfig?.useForImageBorder ?? false,
+          useForTextColor: storedConfig?.useForTextColor ?? false,
+          useForImageBadge: storedConfig?.useForImageBadge ?? false,
+          weight: storedConfig?.weight ?? 0,
         };
       });
   });
@@ -99,6 +101,17 @@ export class TagConfigs {
       .subscribe(() => this.storeTagConfigs([]));
   }
 
+  protected contrastColor(hex: string | null): string | null {
+    if (hex === null) return null;
+    return getContrastColorHex(hex);
+  }
+
+  protected onSetDefaultTagColor(tag: string, color: string | null): void {
+    if (color === null) {
+      this.onTagColorChange(tag, '#000000');
+    }
+  }
+
   private updateTagConfig(
     tag: string,
     changes: {
@@ -117,7 +130,7 @@ export class TagConfigs {
             ...storedTagConfigs,
             {
               tag,
-              color: changes.color ?? 'transparent',
+              color: changes.color ?? null,
               useForImageBorder: changes.useForImageBorder ?? false,
               useForTextColor: changes.useForTextColor ?? false,
               useForImageBadge: changes.useForImageBadge ?? false,

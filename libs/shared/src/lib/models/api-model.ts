@@ -77,7 +77,7 @@ export type UserSettingsApiRequestModel = UserSettingsApiResponseModel;
 
 export interface TagConfigApiModel {
   tag: string;
-  color: string;
+  color: string | null;
   useForImageBorder: boolean;
   useForTextColor: boolean;
   useForImageBadge: boolean;

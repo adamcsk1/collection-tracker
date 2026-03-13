@@ -1,6 +1,6 @@
 export interface TagConfigModel {
   tag: string;
-  color: string;
+  color: string | null;
   useForImageBorder: boolean;
   useForTextColor: boolean;
   useForImageBadge: boolean;

@@ -11,14 +11,29 @@
     <h3>{{ tagConfig.tag }}</h3>
     <div class="tag-configs-item" role="listitem">
       <div class="tag-configs-item-color">
-        <label for="tag-{{ $index }}">{{ ('Color' | signalTranslate)() }}</label>
-        <input
-          id="tag-{{ $index }}"
-          type="color"
-          [value]="tagConfig.color"
-          [attr.aria-label]="'Color for ' + tagConfig.tag"
-          (change)="onTagColorChange(tagConfig.tag, $event.target.value)"
-        />
+        <button
+          [style.color]="tagConfig.color"
+          [style.borderColor]="tagConfig.color"
+          [style.backgroundColor]="contrastColor(tagConfig.color)"
+          [attr.aria-label]="('SelectColor' | signalTranslate)()"
+          (click)="colorInput.click(); onSetDefaultTagColor(tagConfig.tag, tagConfig.color)"
+        >
+          <i class="material-icons" [title]="('SelectColor' | signalTranslate)()"> palette </i>
+          @if (tagConfig.color === null) {
+            {{ ('SelectColor' | signalTranslate)() }}
+          } @else {
+            {{ tagConfig.color }}
+          }
+
+          <input
+            #colorInput
+            type="color"
+            class="color-input"
+            [value]="tagConfig.color"
+            [attr.aria-hidden]="true"
+            (change)="onTagColorChange(tagConfig.tag, $event.target.value)"
+          />
+        </button>
       </div>
       <libc-input
         [label]="('Weight' | signalTranslate)()"
