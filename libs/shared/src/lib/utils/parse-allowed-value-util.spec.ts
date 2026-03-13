@@ -1,5 +1,5 @@
-import { THEMES } from '@services/theme/theme-const';
 import { LANGUAGES } from '@shared/models/language-model';
+import { THEMES } from '@shared/models/theme-model';
 import { parseAllowedValue } from './parse-allowed-value-util';
 
 describe('parseAllowedValue', () => {

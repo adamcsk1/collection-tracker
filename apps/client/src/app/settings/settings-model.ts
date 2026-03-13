@@ -1,6 +1,7 @@
-import { APP_MODES, SEARCH_MODES, SENSITIVE_DATA_STORAGE_MODES } from '@client/settings/settings-const';
-import { Themes } from '@services/theme/theme-model';
+import { APP_MODES, SENSITIVE_DATA_STORAGE_MODES } from '@client/settings/settings-const';
 import { LanguageModel } from '@shared/models/language-model';
+import { SearchModeModel } from '@shared/models/search-mode-model';
+import { ThemeModel } from '@shared/models/theme-model';
 
 export interface SettingsModel {
   omdbApiKey: string;
@@ -9,8 +10,8 @@ export interface SettingsModel {
   animatedBackground: boolean;
   fetchBatchSize: number;
   appMode: (typeof APP_MODES)[number];
-  theme: Themes;
+  theme: ThemeModel;
   settingsLock: boolean;
   language: LanguageModel;
-  searchMode: (typeof SEARCH_MODES)[number];
+  searchMode: SearchModeModel;
 }

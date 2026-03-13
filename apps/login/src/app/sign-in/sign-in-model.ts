@@ -1,9 +1,10 @@
-import { Themes } from '@services/theme/theme-model';
+import { LanguageModel } from '@shared/models/language-model';
+import { ThemeModel } from '@shared/models/theme-model';
 
 export interface SignInModel {
   username: string;
   token: string;
   apiUrl: string;
-  language: string;
-  theme: Themes;
+  language: LanguageModel;
+  theme: ThemeModel;
 }

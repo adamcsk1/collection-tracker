@@ -24,6 +24,10 @@ export const register = (app: Application): void => {
       delete users[request.usernameHash];
       Store.set('users', users);
 
+      const userSettings = Store.getLastValue('userSettings');
+      delete userSettings[request.usernameHash];
+      Store.set('userSettings', userSettings);
+
       response.sendStatus(204);
     } catch (error: unknown) {
       if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);

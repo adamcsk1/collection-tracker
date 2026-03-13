@@ -17,6 +17,8 @@ import {
   SignUpApiResponseModel,
   TagConfigsApiRequestModel,
   TagConfigsApiResponseModel,
+  UserSettingsApiRequestModel,
+  UserSettingsApiResponseModel,
 } from '@shared/models/api-model';
 import { catchError, EMPTY, filter, Observable, of, Subject, tap, throwError } from 'rxjs';
 
@@ -207,6 +209,24 @@ export class ApiService {
 
   public updateUserParserConfig(parserConfig: ParserConfigApiRequestModel): Observable<void> {
     return this.httpClient.post<void>(`${this.apiState.state.apiUrl()}/parser/change-config`, parserConfig).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  public getUserSettings(): Observable<UserSettingsApiResponseModel> {
+    return this.httpClient.get<UserSettingsApiResponseModel>(`${this.apiState.state.apiUrl()}/user/settings`).pipe(
+      catchError((error) => {
+        this.alert.show(error.message);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  public updateUserSettings(userSettings: UserSettingsApiRequestModel): Observable<void> {
+    return this.httpClient.post<void>(`${this.apiState.state.apiUrl()}/user/settings`, userSettings).pipe(
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);

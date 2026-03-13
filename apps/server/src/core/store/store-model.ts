@@ -1,5 +1,6 @@
 import { ParserConfigsModel } from '@server/models/parser-config-model';
 import { TagConfigsModel } from '@server/models/tag-configs-model';
+import { UserSettingsMapModel } from '@server/models/user-settings-model';
 import { UsersModel } from '@server/models/users-model';
 import { BehaviorSubject } from 'rxjs';
 
@@ -8,6 +9,7 @@ export interface StoreDataModel {
   users: UsersModel | null;
   parserConfigs: ParserConfigsModel | null;
   tagConfigs: TagConfigsModel | null;
+  userSettings: UserSettingsMapModel | null;
   cache: { [key: string]: string };
 }
 

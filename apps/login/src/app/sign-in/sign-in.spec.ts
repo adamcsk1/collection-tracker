@@ -6,7 +6,7 @@ import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, ThemeState, themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/constants/storage-const';
+import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -17,7 +17,7 @@ describe('SignIn component', () => {
   let fixture: ComponentFixture<SignIn>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
-  let apiService: { signIn: Mock };
+  let apiService: { signIn: Mock; updateUserSettings: Mock };
   let webStorage: { getItem: Mock; setItem: Mock };
   let translateService: { languageOptions: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
@@ -32,13 +32,12 @@ describe('SignIn component', () => {
 
   beforeEach(() => {
     delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
-    apiService = { signIn: vi.fn(() => of(undefined)) };
+    apiService = {
+      signIn: vi.fn(() => of(undefined)),
+      updateUserSettings: vi.fn(() => of(undefined)),
+    };
     webStorage = {
-      getItem: vi.fn((key: string) => {
-        if (key === STORAGE_LANGUAGE) return 'es';
-        if (key === STORAGE_THEME) return 'dark';
-        return null;
-      }),
+      getItem: vi.fn(() => null),
       setItem: vi.fn(),
     };
     translateService = { languageOptions: vi.fn(() => [{ text: 'English', value: 'en' }]) };
@@ -71,20 +70,18 @@ describe('SignIn component', () => {
       username: '',
       token: '',
       apiUrl: 'https://stored-api',
-      language: 'es',
-      theme: 'dark',
+      language: 'en',
+      theme: 'light',
     });
 
-    webStorage.setItem.mockClear();
-    ngxTranslate.setLanguage.mockClear();
+    expect(webStorage.getItem).not.toHaveBeenCalled();
+    expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('en');
 
-    component['form'].language().value.set('fr');
+    ngxTranslate.setLanguage.mockClear();
     component['form'].theme().value.set('system');
     fixture.detectChanges();
 
-    expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_LANGUAGE, 'fr');
-    expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('fr');
-    expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_THEME, 'system');
+    expect(ngxTranslate.setLanguage).not.toHaveBeenCalled();
     expect(themeState.state.theme()).toBe('system');
   });
 
@@ -100,7 +97,7 @@ describe('SignIn component', () => {
     expect(component['tokenInputType']()).toBe('password');
   });
 
-  it('updates API URL, stores it, and signs in before redirecting', () => {
+  it('updates API URL, stores it, signs in, and persists login settings', async () => {
     const component = fixture.componentInstance;
     apiState.setState('apiUrl', 'https://old-api');
 
@@ -112,22 +109,15 @@ describe('SignIn component', () => {
       theme: 'light',
     });
 
-    component['onSend']();
+    await component['onSend']();
 
     expect(apiState.setState).toHaveBeenCalledWith('apiUrl', 'https://new-api');
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, 'https://new-api');
     expect(apiService.signIn).toHaveBeenCalledWith('neo', 'matrix');
-  });
-
-  it('falls back to light theme when stored theme is invalid', () => {
-    webStorage.getItem.mockImplementation((key: string) => {
-      if (key === STORAGE_LANGUAGE) return 'en';
-      if (key === STORAGE_THEME) return 'invalid';
-      return null;
+    expect(apiService.updateUserSettings).toHaveBeenCalledWith({
+      language: 'en',
+      theme: 'light',
     });
-    initializeFixture();
-
-    expect(fixture.componentInstance['signInModel']().theme).toBe('light');
   });
 
   it('detects whether companion app is available', () => {

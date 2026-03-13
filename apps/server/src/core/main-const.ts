@@ -8,4 +8,5 @@ export const DATABASE_FILES = {
   users: 'users.json',
   parserConfigs: 'parser-configs.json',
   tagConfigs: 'tag-configs.json',
+  userSettings: 'user-settings.json',
 };

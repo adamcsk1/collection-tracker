@@ -21,6 +21,7 @@ describe('cache-util', () => {
       users: new BehaviorSubject(null),
       parserConfigs: new BehaviorSubject(null),
       tagConfigs: new BehaviorSubject(null),
+      userSettings: new BehaviorSubject(null),
       cache: new BehaviorSubject<{ [key: string]: string }>({}),
     };
 

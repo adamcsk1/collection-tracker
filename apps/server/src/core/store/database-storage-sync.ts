@@ -72,3 +72,25 @@ serverStorage.tagConfigs
       if (error instanceof Error) void errorLog(`Tag configs storage sync error (${error.message})`);
     }
   });
+
+serverStorage.userSettings
+  .pipe(
+    pairwise(),
+    filter(([previousUserSettings, nextUserSettings]) => !dequal(previousUserSettings, nextUserSettings)),
+    map(([, nextUserSettings]) => nextUserSettings),
+    tap(() => void debugLog('User settings changed')),
+    debounceTime(2500)
+  )
+  .subscribe(async (userSettings) => {
+    try {
+      await debugLog('User settings storage sync started');
+      await writeFile(
+        `${serverStorage.dataFolder.value}/${FOLDERS.database}/${DATABASE_FILES.userSettings}`,
+        JSON.stringify(userSettings, null, 2),
+        { encoding: 'utf-8' }
+      );
+      await debugLog('User settings synced');
+    } catch (error: unknown) {
+      if (error instanceof Error) void errorLog(`User settings storage sync error (${error.message})`);
+    }
+  });

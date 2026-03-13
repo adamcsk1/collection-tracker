@@ -1,3 +1,7 @@
+import { LanguageModel } from '@shared/models/language-model';
+import { SearchModeModel } from '@shared/models/search-mode-model';
+import { ThemeModel } from '@shared/models/theme-model';
+
 export interface GetAllApiResponseItemModel {
   name: string;
   content: string;
@@ -60,6 +64,16 @@ export interface ParserConfigApiResponseModel {
 }
 
 export type ParserConfigApiRequestModel = ParserConfigApiResponseModel;
+
+export interface UserSettingsApiResponseModel {
+  fetchBatchSize?: number;
+  theme?: ThemeModel;
+  animatedBackground?: boolean;
+  language?: LanguageModel;
+  searchMode?: SearchModeModel;
+}
+
+export type UserSettingsApiRequestModel = UserSettingsApiResponseModel;
 
 export interface TagConfigApiModel {
   tag: string;

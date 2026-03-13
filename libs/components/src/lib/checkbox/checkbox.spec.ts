@@ -7,7 +7,14 @@ import { Checkbox } from './checkbox';
 
 @Component({
   imports: [FormField, Checkbox],
-  template: `<libc-checkbox [formField]="field" label="Watched" hint="Hint" [mandatory]="true"></libc-checkbox>`,
+  template: `<libc-checkbox
+    [formField]="field"
+    label="Watched"
+    [labelIcon]="'info'"
+    [labelIconHint]="'Checkbox help'"
+    hint="Hint"
+    [mandatory]="true"
+  ></libc-checkbox>`,
 })
 class HostComponent {
   public readonly model = signal(false);
@@ -78,5 +85,14 @@ describe('Checkbox component', () => {
     const describedBy = componentInstance['describedBy']() ?? '';
     expect(describedBy).toContain('-hint');
     expect(describedBy).toContain('-error');
+  });
+
+  it('renders label icon with accessible hint attributes', () => {
+    const iconElement = fixture.nativeElement.querySelector('label [role="img"]') as HTMLElement | null;
+
+    expect(iconElement).not.toBeNull();
+    expect(iconElement.textContent?.trim()).toBe('info');
+    expect(iconElement.getAttribute('title')).toBe('Checkbox help');
+    expect(iconElement.getAttribute('aria-label')).toBe('Checkbox help');
   });
 });
