@@ -296,6 +296,46 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({});
   });
 
+  it('retrieves user settings', async () => {
+    const promise = lastValueFrom(service.getUserSettings());
+
+    const userSettingsRequest = httpMock.expectOne('https://api.test/user/settings');
+    expect(userSettingsRequest.request.method).toBe('GET');
+    userSettingsRequest.flush({
+      fetchBatchSize: 50,
+      theme: 'dark',
+      animatedBackground: false,
+      language: 'en',
+      searchMode: 'fuzzy',
+    });
+
+    await expect(promise).resolves.toEqual({
+      fetchBatchSize: 50,
+      theme: 'dark',
+      animatedBackground: false,
+      language: 'en',
+      searchMode: 'fuzzy',
+    });
+  });
+
+  it('updates user settings', async () => {
+    const payload = {
+      fetchBatchSize: 50,
+      theme: 'dark' as const,
+      animatedBackground: false,
+      language: 'en' as const,
+      searchMode: 'fuzzy' as const,
+    };
+    const promise = lastValueFrom(service.updateUserSettings(payload));
+
+    const updateUserSettingsRequest = httpMock.expectOne('https://api.test/user/settings');
+    expect(updateUserSettingsRequest.request.method).toBe('POST');
+    expect(updateUserSettingsRequest.request.body).toEqual(payload);
+    updateUserSettingsRequest.flush({});
+
+    await expect(promise).resolves.toEqual({});
+  });
+
   it('alerts and rethrows when retrieving user tag configs fails', async () => {
     const promise = lastValueFrom(service.getUserTagConfigs());
 
@@ -322,6 +362,34 @@ describe('ApiService', () => {
 
     const updateTagConfigsRequest = httpMock.expectOne('https://api.test/tag/change-config');
     updateTagConfigsRequest.flush('bad', { status: 400, statusText: 'Bad Request' });
+
+    await expect(promise).rejects.toMatchObject({ status: 400 });
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('alerts and rethrows when retrieving user settings fails', async () => {
+    const promise = lastValueFrom(service.getUserSettings());
+
+    const userSettingsRequest = httpMock.expectOne('https://api.test/user/settings');
+    userSettingsRequest.flush('bad', { status: 500, statusText: 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status: 500 });
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('alerts and rethrows when updating user settings fails', async () => {
+    const promise = lastValueFrom(
+      service.updateUserSettings({
+        fetchBatchSize: 50,
+        theme: 'dark',
+        animatedBackground: false,
+        language: 'en',
+        searchMode: 'fuzzy',
+      })
+    );
+
+    const updateUserSettingsRequest = httpMock.expectOne('https://api.test/user/settings');
+    updateUserSettingsRequest.flush('bad', { status: 400, statusText: 'Bad Request' });
 
     await expect(promise).rejects.toMatchObject({ status: 400 });
     expect(alertSpy).toHaveBeenCalledTimes(1);

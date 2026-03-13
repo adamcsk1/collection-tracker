@@ -30,7 +30,10 @@ describe('delete-user-api', () => {
       .mockReturnValueOnce({}) // cache
       .mockReturnValueOnce({
         'user-hash': { accessTokens: [] },
-      }); // users
+      }) // users
+      .mockReturnValueOnce({
+        'user-hash': { theme: 'dark' },
+      }); // userSettings
     (Store.set as Mock).mockImplementation(() => undefined);
     const setSpy = vi.spyOn(Store, 'set');
 
@@ -40,6 +43,7 @@ describe('delete-user-api', () => {
     await handlerPromise();
 
     expect(setSpy.mock.calls.some(([key]) => key === 'users')).toBe(true);
+    expect(setSpy.mock.calls.some(([key]) => key === 'userSettings')).toBe(true);
     expect(rmSync).toHaveBeenCalledWith(expect.stringContaining(FOLDERS.store), { recursive: true, force: true });
     expect(response.sendStatus).toHaveBeenCalledWith(204);
   });

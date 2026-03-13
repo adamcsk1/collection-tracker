@@ -3,20 +3,14 @@ import { initialMainState, mainStateToken } from '@client/main/main-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
-import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
-  STORAGE_ANIMATED_BACKGROUND,
   STORAGE_API_URL,
   STORAGE_APP_MODE,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
-  STORAGE_FETCH_BATCH_SIZE,
-  STORAGE_LANGUAGE,
   STORAGE_OMDB_API_KEY,
-  STORAGE_SEARCH_MODE,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
-  STORAGE_THEME,
 } from '@shared/constants/storage-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, throwError } from 'rxjs';
@@ -30,7 +24,6 @@ describe('MainService', () => {
   let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
   let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
   let omdbState: NgxSimpleSignalStoreService<typeof initialOMDbState>;
-  let themeState: NgxSimpleSignalStoreService<typeof initialThemeState>;
 
   beforeEach(() => {
     api = { validateAccessToken: vi.fn(() => of(undefined)) };
@@ -44,7 +37,6 @@ describe('MainService', () => {
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
         provideStore(initialOMDbState, omdbStateToken),
-        provideStore(initialThemeState, themeStateToken),
       ],
     });
 
@@ -52,10 +44,9 @@ describe('MainService', () => {
     mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
     omdbState = TestBed.inject(omdbStateToken) as NgxSimpleSignalStoreService<typeof initialOMDbState>;
-    themeState = TestBed.inject(themeStateToken) as NgxSimpleSignalStoreService<typeof initialThemeState>;
   });
 
-  it('hydrates stores from web storage and sets permissions', () => {
+  it('hydrates browser-backed stores and sets permissions', () => {
     webstorage.getItem.mockImplementation((key: string) => {
       switch (key) {
         case STORAGE_API_URL:
@@ -64,22 +55,12 @@ describe('MainService', () => {
           return 'omdb-key';
         case STORAGE_APP_MODE:
           return 'limited';
-        case STORAGE_SEARCH_MODE:
-          return 'fuzzy';
         case STORAGE_SETTINGS_LOCK:
           return 'true';
-        case STORAGE_FETCH_BATCH_SIZE:
-          return '25';
-        case STORAGE_THEME:
-          return 'dark';
         case STORAGE_SENSITIVE_DATA_STORAGE:
           return 'session';
         case STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT:
           return 'true';
-        case STORAGE_ANIMATED_BACKGROUND:
-          return 'false';
-        case STORAGE_LANGUAGE:
-          return 'en';
         default:
           return null;
       }
@@ -92,13 +73,8 @@ describe('MainService', () => {
     expect(omdbState.state.apiKey()).toBe('omdb-key');
     expect(mainState.state.appMode()).toBe('limited');
     expect(mainState.state.settingsLock()).toBe(true);
-    expect(apiState.state.fetchBatchSize()).toBe(25);
-    expect(themeState.state.theme()).toBe('dark');
     expect(mainState.state.sensitiveDataStorage()).toBe('session');
     expect(mainState.state.clearLocalStorageAfterLogout()).toBe(true);
-    expect(mainState.state.animatedBackground()).toBe(false);
-    expect(mainState.state.language()).toBe('en');
-    expect(mainState.state.searchMode()).toBe('fuzzy');
     expect(setPermissionsSpy).toHaveBeenCalled();
   });
 
@@ -107,14 +83,8 @@ describe('MainService', () => {
       switch (key) {
         case STORAGE_APP_MODE:
           return 'invalid';
-        case STORAGE_SEARCH_MODE:
-          return 'invalid';
-        case STORAGE_THEME:
-          return 'invalid';
         case STORAGE_SENSITIVE_DATA_STORAGE:
           return 'invalid';
-        case STORAGE_LANGUAGE:
-          return 'es';
         default:
           return null;
       }
@@ -124,10 +94,7 @@ describe('MainService', () => {
     service.loadStoredData();
 
     expect(mainState.state.appMode()).toBe(initialMainState.appMode);
-    expect(mainState.state.searchMode()).toBe(initialMainState.searchMode);
-    expect(themeState.state.theme()).toBe(initialThemeState.theme);
     expect(mainState.state.sensitiveDataStorage()).toBe(initialMainState.sensitiveDataStorage);
-    expect(mainState.state.language()).toBe(initialMainState.language);
     expect(setPermissionsSpy).not.toHaveBeenCalled();
   });
 

@@ -1,8 +1,14 @@
 label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--size-2xs);
 
   span {
     color: var(--color-crimson);
+  }
+
+  i {
+    font-size: var(--font-size-base);
   }
 }
 
@@ -13,14 +19,14 @@ small {
 .container {
   display: flex;
   gap: var(--size-xs);
-}
 
-i {
-  display: none;
-  margin-top: 8px;
-  margin-left: 5px;
-  position: absolute;
-  font-size: var(--font-size-lg);
+  i {
+    display: none;
+    margin-top: 8px;
+    margin-left: 5px;
+    position: absolute;
+    font-size: var(--font-size-lg);
+  }
 }
 
 .has-icon {

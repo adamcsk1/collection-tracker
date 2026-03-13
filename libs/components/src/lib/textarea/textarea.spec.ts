@@ -9,7 +9,14 @@ import { Textarea } from './textarea';
   imports: [FormField, Textarea],
   template: `
     <div style="height: 120px;">
-      <libc-textarea [formField]="field" label="Bio" hint="Hint" [autoHeight]="autoHeight"></libc-textarea>
+      <libc-textarea
+        [formField]="field"
+        label="Bio"
+        [labelIcon]="'info'"
+        [labelIconHint]="'Textarea help'"
+        hint="Hint"
+        [autoHeight]="autoHeight"
+      ></libc-textarea>
     </div>
   `,
 })
@@ -87,5 +94,14 @@ describe('Textarea component', () => {
 
     const component = noHintFixture.debugElement.children[0].children[0].componentInstance as Textarea<string>;
     expect(component['describedBy']()).toBeNull();
+  });
+
+  it('renders label icon with accessible hint attributes', () => {
+    const iconElement = fixture.nativeElement.querySelector('label [role="img"]') as HTMLElement | null;
+
+    expect(iconElement).not.toBeNull();
+    expect(iconElement.textContent?.trim()).toBe('info');
+    expect(iconElement.getAttribute('title')).toBe('Textarea help');
+    expect(iconElement.getAttribute('aria-label')).toBe('Textarea help');
   });
 });

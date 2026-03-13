@@ -12,7 +12,7 @@ import { ThemeService } from '@services/theme/theme-service';
 import { ThemeState, initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { API_PREFIX } from '@shared/constants/api-const';
-import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/constants/storage-const';
+import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { EMPTY, throwError } from 'rxjs';
@@ -38,11 +38,7 @@ describe('Main component', () => {
   beforeEach(() => {
     apiService = { validateAccessToken: vi.fn(() => EMPTY) };
     webStorage = {
-      getItem: vi.fn((key: string) => {
-        if (key === STORAGE_LANGUAGE) return 'fr';
-        if (key === STORAGE_THEME) return 'dark';
-        return null;
-      }),
+      getItem: vi.fn(() => null),
       setItem: vi.fn(),
     };
     themeService = { listen: vi.fn() };
@@ -69,24 +65,23 @@ describe('Main component', () => {
   it('bootstraps language, theme, blocker state, and API URL defaults', () => {
     const expectedApiUrl = `${window.location.origin}${API_PREFIX}`;
 
-    expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('fr');
+    expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('en');
     expect(blockerState.state.show()).toBe(true);
     expect(blockerState.state.withoutDelay()).toBe(true);
-    expect(themeState.state.theme()).toBe('dark');
+    expect(themeState.state.theme()).toBe('light');
     expect(themeService.listen).toHaveBeenCalled();
     expect(apiState.state.apiUrl()).toBe(expectedApiUrl);
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, expectedApiUrl);
+    expect(webStorage.getItem).toHaveBeenCalledWith(STORAGE_API_URL);
   });
 
-  it('falls back to light theme when stored theme is invalid', () => {
-    webStorage.getItem.mockImplementation((key: string) => {
-      if (key === STORAGE_LANGUAGE) return 'fr';
-      if (key === STORAGE_THEME) return 'invalid';
-      return null;
-    });
+  it('uses a stored API URL when available', () => {
+    webStorage.getItem.mockReturnValue('https://stored-api');
+    webStorage.setItem.mockClear();
     initializeFixture();
 
-    expect(themeState.state.theme()).toBe('light');
+    expect(apiState.state.apiUrl()).toBe('https://stored-api');
+    expect(webStorage.setItem).not.toHaveBeenCalled();
   });
 
   it('calls validateAccessToken on after view init', () => {

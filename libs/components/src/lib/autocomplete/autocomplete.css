@@ -2,6 +2,20 @@
   --input-width: calc(100% - 40px - var(--size-xs)) !important; /* reset button space */
 }
 
+label {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2xs);
+
+  span {
+    color: var(--color-crimson);
+  }
+
+  i {
+    font-size: var(--font-size-base);
+  }
+}
+
 .input {
   position: relative;
   display: flex;

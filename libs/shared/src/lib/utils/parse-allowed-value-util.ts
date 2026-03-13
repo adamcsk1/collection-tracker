@@ -1,4 +1,4 @@
-const isAllowedValue = <T extends string>(value: string, allowed: ReadonlyArray<T>): value is T =>
+export const isAllowedValue = <T extends string>(value: string, allowed: ReadonlyArray<T>): value is T =>
   allowed.some((item) => item === value);
 
 export const parseAllowedValue = <T extends string>(value: string | null, allowed: ReadonlyArray<T>): T | null => {

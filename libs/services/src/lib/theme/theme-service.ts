@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { computed, effect, inject, Injectable, NgZone, signal, untracked } from '@angular/core';
-import { Themes } from '@services/theme/theme-model';
 import { themeStateToken } from '@services/theme/theme-store';
+import { ThemeModel } from '@shared/models/theme-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { fromEvent } from 'rxjs';
 
@@ -11,8 +11,8 @@ export class ThemeService {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly themeStore = inject(themeStateToken);
   private readonly document = inject(DOCUMENT);
-  private readonly selectedTheme = signal<Themes>('system');
-  private readonly usedTheme = signal<Themes>('system');
+  private readonly selectedTheme = signal<ThemeModel>('system');
+  private readonly usedTheme = signal<ThemeModel>('system');
   private get htmlElement(): HTMLHtmlElement {
     return this.document.getElementsByTagName('html')[0];
   }
@@ -52,7 +52,7 @@ export class ThemeService {
     }
   }
 
-  private switchTheme(theme: Themes): void {
+  private switchTheme(theme: ThemeModel): void {
     switch (theme) {
       case 'dark':
         return this.setDarkTheme();

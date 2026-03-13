@@ -20,6 +20,8 @@ export class Select implements FormValueControl<SelectDataModel['value'] | null>
   public readonly options = input.required<SelectInputModel>();
   public readonly mandatory = input<boolean>(false);
   public readonly label = input<string>();
+  public readonly labelIcon = input<string>();
+  public readonly labelIconHint = input<string>();
   public readonly hint = input<string>();
   protected readonly showError = computed(() => (this.touched() || this.dirty()) && this.errors().length > 0);
   protected readonly hintId = computed<string | null>(() => (this.hint() ? `${this.selectId()}-hint` : null));

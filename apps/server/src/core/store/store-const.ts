@@ -5,5 +5,6 @@ export const STORE_KEYS = [
   'users',
   'parserConfigs',
   'tagConfigs',
+  'userSettings',
   'cache',
 ] as const satisfies ReadonlyArray<keyof StoreDataModel>;

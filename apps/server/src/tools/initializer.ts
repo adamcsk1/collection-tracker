@@ -31,6 +31,12 @@ export const initializeFolders = () => {
       debugLog(`Created initial ${tagConfigsFilePath} file in ${databaseFolder}`);
     }
 
+    const userSettingsFilePath = `${databaseFolder}/${DATABASE_FILES.userSettings}`;
+    if (!existsSync(userSettingsFilePath)) {
+      writeFileSync(userSettingsFilePath, '{}', { encoding: 'utf-8' });
+      debugLog(`Created initial ${userSettingsFilePath} file in ${databaseFolder}`);
+    }
+
     if (!existsSync(`${dataFolder}/${FOLDERS.store}`)) {
       mkdirSync(`${dataFolder}/${FOLDERS.store}`);
       debugLog(`Created store folder in ${dataFolder}/${FOLDERS.store}`);

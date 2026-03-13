@@ -28,6 +28,21 @@ class NoHintHostComponent {
   public readonly field = form(this.model);
 }
 
+@Component({
+  imports: [FormField, Autocomplete],
+  template: `<libc-autocomplete
+    [formField]="field"
+    label="Search"
+    [labelIcon]="'info'"
+    [labelIconHint]="'Autocomplete help'"
+    placeholder="Search"
+  ></libc-autocomplete>`,
+})
+class LabelIconHostComponent {
+  public readonly model = signal('');
+  public readonly field = form(this.model);
+}
+
 describe('Autocomplete component', () => {
   let fixture: ComponentFixture<HostComponent>;
   let component: Autocomplete<string>;
@@ -45,7 +60,7 @@ describe('Autocomplete component', () => {
     };
 
     TestBed.configureTestingModule({
-      imports: [HostComponent, NoHintHostComponent],
+      imports: [HostComponent, NoHintHostComponent, LabelIconHostComponent],
       providers: [
         { provide: AutocompleteService, useValue: serviceStub },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
@@ -357,5 +372,17 @@ describe('Autocomplete component', () => {
     expect(userAcceptSuggestionSpy).toHaveBeenCalled();
     expect(component['suggestions']()).toEqual([]);
     unsubscribe.unsubscribe();
+  });
+
+  it('renders label icon with accessible hint attributes', () => {
+    const labelIconFixture = TestBed.createComponent(LabelIconHostComponent);
+    labelIconFixture.detectChanges();
+
+    const iconElement = labelIconFixture.nativeElement.querySelector('label [role="img"]') as HTMLElement | null;
+
+    expect(iconElement).not.toBeNull();
+    expect(iconElement.textContent?.trim()).toBe('info');
+    expect(iconElement.getAttribute('title')).toBe('Autocomplete help');
+    expect(iconElement.getAttribute('aria-label')).toBe('Autocomplete help');
   });
 });

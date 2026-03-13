@@ -1,8 +1,8 @@
-import { Themes } from '@services/theme/theme-model';
+import { ThemeModel } from '@shared/models/theme-model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
 
 export interface ThemeState {
-  theme: Themes;
+  theme: ThemeModel;
 }
 
 export const initialThemeState: ThemeState = {

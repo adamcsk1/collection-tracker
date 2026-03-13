@@ -48,6 +48,7 @@ describe('jwt utilities', () => {
       }),
       parserConfigs: new BehaviorSubject(null),
       tagConfigs: new BehaviorSubject(null),
+      userSettings: new BehaviorSubject(null),
       cache: new BehaviorSubject({}),
     };
     (Store.getLastValue as Mock).mockImplementation((key: keyof StoreModel) => store[key].value);

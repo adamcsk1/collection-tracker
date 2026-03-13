@@ -6,16 +6,14 @@ import { Select } from '@components/select/select';
 import { SignInModel } from '@login/sign-in/sign-in-model';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
-import { THEMES } from '@services/theme/theme-const';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { STORAGE_API_URL, STORAGE_LANGUAGE, STORAGE_THEME } from '@shared/constants/storage-const';
+import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { companionApp, resetCompanionAppConfig } from '@shared/utils/companion-app-util';
-import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, of } from 'rxjs';
 
 @Component({
   selector: 'lo-sign-in',
@@ -81,13 +79,11 @@ export class SignIn implements OnInit {
   constructor() {
     effect(() => {
       const language = this.form.language().value();
-      this.webStorage.setItem(STORAGE_LANGUAGE, language);
       this.ngxSignalTranslate.setLanguage(language);
     });
 
     effect(() => {
       const theme = this.form.theme().value();
-      this.webStorage.setItem(STORAGE_THEME, theme);
       this.themeState.setState('theme', theme);
     });
   }
@@ -97,8 +93,8 @@ export class SignIn implements OnInit {
       username: '',
       token: '',
       apiUrl: this.apiState.state.apiUrl() || '',
-      language: this.webStorage.getItem(STORAGE_LANGUAGE) || 'en',
-      theme: parseAllowedValue(this.webStorage.getItem(STORAGE_THEME), THEMES) ?? 'light',
+      language: 'en',
+      theme: 'light',
     });
   }
 
@@ -115,6 +111,14 @@ export class SignIn implements OnInit {
     }
 
     await firstValueFrom(this.api.signIn(formValue.username, formValue.token));
+    await firstValueFrom(
+      this.api
+        .updateUserSettings({
+          language: formValue.language,
+          theme: formValue.theme,
+        })
+        .pipe(catchError(() => of(void 0)))
+    );
     window.location.href = '/client/';
   }
 

@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { CollectionService } from '@client/collection/collection-service';
 import { MainService } from '@client/main/main-service';
+import { SettingsService } from '@client/settings/settings-service';
 import { TokenValidationService } from '@client/main/token-validation-service';
 import { TagConfigsService } from '@client/tag-configs/tag-configs-service';
 import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
@@ -23,6 +24,7 @@ describe('TokenValidationService', () => {
   let omdbState: NgxSimpleSignalStoreService<typeof initialOMDbState>;
   let mainService: { tokenValid: ReturnType<typeof vi.fn> };
   let parserService: { preloadUserParserConfig: ReturnType<typeof vi.fn> };
+  let settingsService: { preloadUserSettings: ReturnType<typeof vi.fn> };
   let tagConfigsService: { preloadUserTagConfigs: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
@@ -30,6 +32,7 @@ describe('TokenValidationService', () => {
     collectionService = { loadCollection: vi.fn() };
     router = { navigate: vi.fn() };
     parserService = { preloadUserParserConfig: vi.fn(() => of(void 0)) };
+    settingsService = { preloadUserSettings: vi.fn(() => of(void 0)) };
     tagConfigsService = { preloadUserTagConfigs: vi.fn(() => of(void 0)) };
 
     TestBed.configureTestingModule({
@@ -39,6 +42,7 @@ describe('TokenValidationService', () => {
         { provide: MainService, useValue: mainService },
         { provide: CollectionService, useValue: collectionService },
         { provide: ParserService, useValue: parserService },
+        { provide: SettingsService, useValue: settingsService },
         { provide: TagConfigsService, useValue: tagConfigsService },
         provideStore(initialOMDbState, omdbStateToken),
         provideRouter([]),
@@ -59,6 +63,7 @@ describe('TokenValidationService', () => {
 
     expect(router.navigate).toHaveBeenCalledWith(['settings']);
     expect(collectionService.loadCollection).toHaveBeenCalled();
+    expect(settingsService.preloadUserSettings).toHaveBeenCalled();
     expect(parserService.preloadUserParserConfig).toHaveBeenCalled();
     expect(tagConfigsService.preloadUserTagConfigs).toHaveBeenCalled();
   });
@@ -72,6 +77,7 @@ describe('TokenValidationService', () => {
 
     expect(router.navigate).not.toHaveBeenCalled();
     expect(collectionService.loadCollection).toHaveBeenCalled();
+    expect(settingsService.preloadUserSettings).toHaveBeenCalled();
     expect(parserService.preloadUserParserConfig).toHaveBeenCalled();
     expect(tagConfigsService.preloadUserTagConfigs).toHaveBeenCalled();
   });
