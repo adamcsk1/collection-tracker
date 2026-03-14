@@ -1,5 +1,16 @@
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+
 plugins {
   id("com.android.application")
+}
+
+val apkBuildTimestamp: String = ZonedDateTime.now(ZoneOffset.UTC)
+  .format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
+
+base {
+  archivesName.set("collection-tracker-0.1.0-$apkBuildTimestamp")
 }
 
 android {
@@ -28,7 +39,7 @@ android {
 }
 
 dependencies {
-  implementation("androidx.core:core-ktx:1.17.0")
+  implementation("androidx.core:core-ktx:1.18.0")
   implementation("androidx.appcompat:appcompat:1.7.1")
   implementation("com.google.android.material:material:1.13.0")
 }
