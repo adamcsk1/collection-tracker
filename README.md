@@ -1,181 +1,107 @@
 # Collection Tracker
 
-<p align="center">
-  <img src="./libs/public/src/icons/logo.png" alt="Collection Tracker Logo" width="128" />
-  <br/>
-</p>
+Collection Tracker is an Nx monorepo for a self-hosted movie and series catalog. The workspace combines Angular applications for authentication and collection management, an Express API, shared libraries, Cypress coverage, and delivery assets for Docker and Android.
 
-[![Nx Workspace](https://img.shields.io/badge/Monorepo-Nx-143055?logo=nx&logoColor=white)](https://nx.dev)
-[![Angular](https://img.shields.io/badge/Angular-20-dd0031?logo=angular&logoColor=white)](https://angular.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+## Project Goal
 
-Collection Tracker is a small Angular + Node/Express workspace for cataloging movies and series without vendor lock-in. It stores items as Markdown so you can sync or edit them with other tools (e.g., Obsidian), while the UI layers on search, pagination, dialogs, and background visuals.
+Collection Tracker started as an experimental project for trying new ideas quickly while solving a practical need: keeping a family movie and series collection organized in one place. The goal is to provide a self-hosted tracker for physical and digital media that stays simple to run, flexible to extend, and easy to adapt to different collection workflows.
 
-## Apps & Libraries
+The project is open to contributions, feedback, and suggestions that improve usability, maintainability, and long-term value for people who want a practical way to manage their collections.
 
-- Client app: `apps/client` (Client)
-- Login app: `apps/login` (Angular auth-only: sign in & sign up)
-- Server: `apps/server` (Node/Express backend via esbuild)
-- Libraries:
-  - Components — UI elements
-  - Services — cross-app services and stores
-  - Shared — models, animations, utilities
-  - Public — PWA manifest, icons, and shared static assets
+## Technology
 
-## More docs
+- Angular with Nx
+- Express for the API
+- Vitest for unit tests and Cypress for end-to-end coverage
+- Flat-file persistence in a configurable data directory
+- Android WebView wrapper for mobile distribution
 
-- Client app: [apps/client/README.md](./apps/client/README.md)
-- Login app: [apps/login/README.md](./apps/login/README.md)
-- Server app: [apps/server/README.md](./apps/server/README.md)
-- Server API: [apps/server/API.md](./apps/server/API.md)
-- Dev proxy: [apps/dev-proxy/README.md](./apps/dev-proxy/README.md)
+## Workspace
 
-- Components lib: [libs/components/README.md](./libs/components/README.md)
-- Services lib: [libs/services/README.md](./libs/services/README.md)
-- Shared lib: [libs/shared/README.md](./libs/shared/README.md)
-- Public lib: [libs/public/README.md](./libs/public/README.md)
+- `apps/client`: main application for collection management, statistics, parser configuration, tag configuration, and user settings
+- `apps/login`: authentication-only application for sign-up and sign-in
+- `apps/server`: API, authentication, and flat-file persistence
+- `apps/dev-proxy`: single-origin development gateway on `http://localhost:4200`
+- `apps/collection-e2e`: Cypress smoke-test project
+- `libs/components`: shared standalone Angular UI components
+- `libs/services`: shared Angular services and signal stores
+- `libs/shared`: models, constants, styles, animations, and utilities
+- `libs/public`: shared static assets and PWA metadata
+- `android`: native Android WebView wrapper for deployed Collection Tracker instances
 
-## Prerequisites
+## Requirements
 
-- Node.js >= 24
+- Node.js `>= 24.14.0`
+- npm
+- Docker, only for container builds
+- Android studio
 
-## Quick start (Nx)
+## Quick Start
 
 ```powershell
-# Install deps
 npm install
-
-# Start client and server (dev)
 npm start
-
-# Build both apps (includes client pre/post build hooks)
-npm run build
-
-# Lint & format
-npm run lint
-npm run stylelint
-npm run format
 ```
 
-Direct Nx targets
-```powershell
-# Client
-npx nx serve client
-npx nx build client --configuration=production
+`npm start` bootstraps `.data/.env` when needed and starts the local development stack:
 
-# Server
-npx nx serve server
-npx nx build server --configuration=production
+- gateway: `http://localhost:4200/`
+- login: `http://localhost:4200/login/`
+- client: `http://localhost:4200/client/`
+- API: `http://localhost:4200/api/v1/`
+
+Common workspace commands:
+
+```powershell
+npm run build
+npm run test
+npm run e2e
+npm run lint
+npm run stylelint
+npm run typecheck
+npm run typecheck:spec
+npm run format:check
 ```
 
 ## Environment
 
-The server reads environment from `/data/.env` (the data folder). If missing in Docker, a minimal default is created automatically.
+The server reads runtime configuration from `.data/.env` by default. `npm start` runs `server:preserve`, which creates that file from [apps/server/scripts/.env.dev](./apps/server/scripts/.env.dev) when it is missing.
 
-Minimal example
+Minimal runtime example:
 
 ```dotenv
-# /data/.env
 JWT_SECRET="your_jwt_secret"
-SALT="your_salt"
 COOKIE_SECRET="your_cookie_secret"
-USER_LIMIT=2
+SALT="your_salt"
+USER_LIMIT=1
 DISABLE_REGISTRATION=0
 ```
 
-Full example
+Full runtime example:
 
 ```dotenv
-# /data/.env
-
-# Server
-HOST=0.0.0.0
 PORT=3000
-
-# CORS
-# Use '*' for any origin, or set your SPA origin (e.g., http://localhost:4200)
-CORS_ORIGIN=*
-
-# Auth & security
-# Required for JWT signing/verification (use a strong, random value)
-JWT_SECRET=change-me-to-a-secure-random-string
-
-# Used for hashing (pepper); set a strong, random string
-SALT=change-me-to-another-secure-random-string
-
-# Used to sign auth cookies; must be set to enable cookie-based auth
-COOKIE_SECRET=change-me-to-a-secure-random-string
-
-# Registration controls
-# 1 disables new registrations, 0 enables them
-DISABLE_REGISTRATION=0
-
-# Limit of registered users
+HOST="127.0.0.1"
+JWT_SECRET="your_jwt_secret"
+COOKIE_SECRET="your_cookie_secret"
+SALT="your_salt"
 USER_LIMIT=2
-
-# Maximum file entries in the in-memory LRU cache (default: 200)
+DISABLE_REGISTRATION=0
+CORS_ORIGIN="*"
 CACHE_MAX=200
 ```
 
-## Auth (summary)
+See the server documentation for the full runtime model and data layout.
 
-- No passwords. Sign-up issues a user token. Sign-in exchanges the user token for a JWT access token.
-- Access token is returned via a signed HTTP-only cookie named `token` with a 15-day expiry (preferred). Each cookie-authenticated request rotates the token and refreshes the cookie (sliding).
-- The API also accepts `Authorization: Bearer <token>`; tokens created specifically for header use are not rotated and are tracked with `expiresAt: null`.
+## Documentation
 
-See the server docs for details: [apps/server/README.md](./apps/server/README.md) and [apps/server/API.md](./apps/server/API.md).
-
-## Docker
-
-The container serves the built Angular app with Nginx on port 3001 and runs the Node server behind it. Build artifacts must exist in `dist/`.
-
-```powershell
-# Build apps
-npm run build
-
-# Build image (BuildKit)
-docker buildx build --load -t collection-tracker .
-
-# Run (foreground)
-docker run --rm -p 3001:3001 -v ${PWD}/.data:/data collection-tracker
-
-# Or detached
-docker run --rm -p 3001:3001 -v ${PWD}/.data:/data -d collection-tracker
-```
+- [Documentation index](./docs/README.md)
+- [Server API documentation](./docs/server-api.md)
 
 ## Release
 
-Create a self-contained release folder with built artifacts and Docker files:
-
-```powershell
-# Bump version in package.json as needed, then:
-npm run release:create
-```
-
-The script builds apps (via `npm run build`) and creates `release/release-<version>/` containing:
-- `dist/` — built client and server
-- `Dockerfile` and `docker/` — ready to build an image from the release folder
-
-Build an image directly from a release folder:
-
-```powershell
-cd release/release-<version>
-docker buildx build --load -t collection-tracker:<version> .
-```
-
-## Contributing
-
-Contributions are welcome! Please:
-
-- Use small, focused PRs with clear descriptions.
-- Follow workspace conventions: UI in Components, cross-cutting logic in Services/Shared.
-- Update relevant README(s) when adding components/services/utils.
-
-Workflow
-1) Branch from `main`.
-2) Implement changes and run checks/build.
-3) Open a PR with screenshots/GIFs when UI changes.
+`npm run release:create` builds the applications and creates `release/release-<version>/` with the build output and Docker assets required for packaging.
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT. See [LICENSE](./LICENSE).

@@ -4,11 +4,16 @@ const { mkdirSync, existsSync, cpSync, rmSync, readFileSync, writeFileSync, rena
 const distFolder = `${__dirname}/../dist`;
 const dockerFolder = `${__dirname}/../docker`;
 const dockerFile = `${__dirname}/../Dockerfile`;
+const dockerReadme = `${__dirname}/../docs/docker.md`;
 const startScript = `${dockerFolder}/scripts/start.sh`;
 const stopScript = `${dockerFolder}/scripts/stop.sh`;
 const buildScript = `${dockerFolder}/scripts/build.sh`;
-const minimalEnvFile = `${__dirname}/../.env.min.example`;
 const releaseFolder = `${__dirname}/../release`;
+const minimalEnv = `JWT_SECRET="${randomUUID().toString('hex').replace(/-/g, '')}}"
+COOKIE_SECRET="${randomUUID().toString('hex').replace(/-/g, '')}"
+SALT="${randomUUID().toString('hex').replace(/-/g, '')}}"
+USER_LIMIT=1
+DISABLE_REGISTRATION=0`;
 
 if (!existsSync(releaseFolder)) {
   mkdirSync(releaseFolder);
@@ -27,14 +32,9 @@ if (existsSync(releaseVersionFolder)) {
 mkdirSync(releaseVersionFolder, { recursive: true });
 mkdirSync(`${releaseVersionFolder}/data`, { recursive: true });
 
-let minimalEnv = readFileSync(minimalEnvFile, 'utf-8');
-minimalEnv = minimalEnv.replace('your_jwt_secret', randomUUID().toString('hex').replace(/-/g, ''));
-minimalEnv = minimalEnv.replace('your_salt', randomUUID().toString('hex').replace(/-/g, ''));
-minimalEnv = minimalEnv.replace('your_cookie_secret', randomUUID().toString('hex').replace(/-/g, ''));
-
 cpSync(distFolder, `${releaseVersionFolder}/dist`, { recursive: true });
 cpSync(dockerFolder, `${releaseVersionFolder}/docker`, { recursive: true });
-renameSync(`${releaseVersionFolder}/docker/README.md`, `${releaseVersionFolder}/README.md`, { recursive: true });
+cpSync(dockerReadme, `${releaseVersionFolder}/README.md`);
 cpSync(dockerFile, `${releaseVersionFolder}/Dockerfile`);
 cpSync(startScript, `${releaseVersionFolder}/start.sh`);
 cpSync(stopScript, `${releaseVersionFolder}/stop.sh`);
