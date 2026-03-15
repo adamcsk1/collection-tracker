@@ -172,3 +172,12 @@
     }
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    .menu-panel,
+    .menu-panel a {
+      transition: none;
+    }
+  }
+}

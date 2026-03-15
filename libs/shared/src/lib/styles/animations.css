@@ -14,6 +14,26 @@
   animation: fade-out 0.2s ease-in forwards;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animation-scale-in,
+  .animation-scale-out,
+  .animation-fade-in,
+  .animation-fade-out {
+    animation-duration: 1ms;
+    animation-timing-function: linear;
+  }
+
+  .animation-scale-in,
+  .animation-fade-in {
+    animation-name: reduced-motion-show;
+  }
+
+  .animation-scale-out,
+  .animation-fade-out {
+    animation-name: reduced-motion-hide;
+  }
+}
+
 @keyframes scale-in {
   from {
     transform: scale(0);
@@ -54,6 +74,30 @@
   }
 
   to {
+    opacity: 0;
+  }
+}
+
+@keyframes reduced-motion-show {
+  from {
+    transform: none;
+    opacity: 1;
+  }
+
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes reduced-motion-hide {
+  from {
+    transform: none;
+    opacity: 1;
+  }
+
+  to {
+    transform: none;
     opacity: 0;
   }
 }
