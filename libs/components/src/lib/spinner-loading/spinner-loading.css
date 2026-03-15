@@ -113,3 +113,14 @@
     transform: scale(1, 1);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner-loading {
+    .spinner-dots,
+    .spinner-dots::before,
+    .spinner-dots::after {
+      animation: none;
+      transform: none;
+    }
+  }
+}

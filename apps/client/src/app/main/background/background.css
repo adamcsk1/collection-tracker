@@ -48,3 +48,9 @@ img {
     transform: translate3d(0, 0, 0);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  img {
+    animation: none;
+  }
+}

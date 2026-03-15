@@ -57,3 +57,10 @@
     background-position: right;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .shine {
+    animation: none;
+    background: var(--base-color-darker);
+  }
+}

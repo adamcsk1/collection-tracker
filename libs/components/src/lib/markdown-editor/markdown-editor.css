@@ -34,3 +34,9 @@ textarea.markdown-editor {
     opacity: 1;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .markdown-editor-shell:not([hidden]) {
+    animation: none;
+  }
+}

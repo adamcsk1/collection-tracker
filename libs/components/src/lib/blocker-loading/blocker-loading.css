@@ -73,3 +73,13 @@ h1 {
     transform: translateY(0);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .blocker-loading {
+    .loading .dots span {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
