@@ -13,7 +13,7 @@ import { AlertService } from '@services/alert-service';
 import { ConfirmService } from '@services/confirm-service';
 import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { ParserService as MainParserService } from '@services/parser/parser-service';
-import { setParserRegexp, setParserTemplate } from '@services/parser/parser-util';
+import { setParserFilenamePattern, setParserRegexp, setParserTemplate } from '@services/parser/parser-util';
 import { restoreSerializedParserRegexp } from '@shared/utils/parser-serialize-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, delay, tap, throwError } from 'rxjs';
@@ -85,6 +85,7 @@ export class ParserService {
 
   private setParserCache(formData: ParserModel): void {
     setParserTemplate(formData.mdTemplate!);
+    setParserFilenamePattern(formData.filenamePattern!);
     setParserRegexp('IMDbId', restoreSerializedParserRegexp(formData.IMDbId!));
     setParserRegexp('genre', restoreSerializedParserRegexp(formData.genre!));
     setParserRegexp('genreToken', restoreSerializedParserRegexp(formData.genreToken!));

@@ -7,7 +7,7 @@ import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { GetAllApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
-import { readdirSync, readFileSync } from 'fs';
+import { readdirSync, readFileSync, statSync } from 'fs';
 
 export const register = (app: Application): void => {
   app.get(`${API_PREFIX}/get-all`, jwtGuard, (request: ExtendedRequestModel, response) => {
@@ -17,7 +17,11 @@ export const register = (app: Application): void => {
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
       const cache = Store.getLastValue('cache');
       const files = readdirSync(storeFolder)
-        .sort((a, b) => -a.localeCompare(b))
+        .sort(
+          (a, b) =>
+            statSync(`${storeFolder}/${b}`).birthtimeMs - statSync(`${storeFolder}/${a}`).birthtimeMs ||
+            b.localeCompare(a)
+        )
         .slice(offset, offset + limit);
 
       const result: GetAllApiResponseModel = [];

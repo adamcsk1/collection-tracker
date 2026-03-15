@@ -8,11 +8,28 @@
     [rows]="15"
   >
     <ng-container errors>
-      @if (mdTemplateError(); as mdTemplateError) {
-        {{ ('Validation.MissingKeys' | signalTranslate: { keys: mdTemplateError.missingKeys })() }}
+      @if (formErrors.mdTemplate.invalidMdTemplate()) {
+        {{
+          (
+            'Validation.MissingKeys'
+            | signalTranslate: { keys: formErrors.mdTemplate.invalidMdTemplate()?.missingKeys || '' }
+          )()
+        }}
       }
     </ng-container>
   </libc-textarea>
+  <libc-input
+    [label]="('FilenamePattern' | signalTranslate)()"
+    [mandatory]="true"
+    [formField]="form.filenamePattern"
+    [hint]="('Message.FilenamePattern' | signalTranslate)()"
+  >
+    <ng-container errors>
+      @if (formErrors.filenamePattern.invalidExtension()) {
+        {{ ('Validation.EndsWithMd' | signalTranslate)() }}
+      }
+    </ng-container>
+  </libc-input>
   <h3>{{ ('TemplateVariables' | signalTranslate)() }}</h3>
   <p>{{ ('Message.TemplateVariables' | signalTranslate)() }}</p>
   <code>

@@ -11,6 +11,7 @@ export type GetAllApiResponseModel = Array<GetAllApiResponseItemModel>;
 
 export interface CreateApiRequestModel {
   content: string;
+  name: string;
 }
 
 export interface CreateApiResponseModel {
@@ -61,6 +62,7 @@ export interface ParserConfigApiResponseModel {
   title?: string;
   year?: string;
   mdTemplate?: string;
+  filenamePattern?: string;
 }
 
 export type ParserConfigApiRequestModel = ParserConfigApiResponseModel;

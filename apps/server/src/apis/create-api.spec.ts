@@ -36,7 +36,7 @@ describe('create-api', () => {
   it('creates a new file and returns name', async () => {
     const response = mockResponse();
     const request: any = {
-      body: { content: 'body' },
+      body: { content: 'body', name: 'custom-file.md' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -47,28 +47,41 @@ describe('create-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(updateItem).toHaveBeenCalled();
-    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ name: expect.any(String) }));
+    expect(updateItem).toHaveBeenCalledWith('custom-file.md', 'user', 'body');
+    expect(response.send).toHaveBeenCalledWith({ name: 'custom-file.md' });
   });
 
-  it('returns conflict when file already exists', async () => {
+  it('adds an index suffix when file already exists', async () => {
     const response = mockResponse();
-    const request: any = { body: { content: 'body' }, usernameHash: 'user' };
+    const request: any = { body: { content: 'body', name: 'custom-file.md' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue('/data');
-    (existsSync as Mock).mockReturnValue(true);
+    (existsSync as Mock).mockReturnValueOnce(true).mockReturnValueOnce(false);
 
     const { register } = await import('./create-api');
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(409);
+    expect(updateItem).toHaveBeenCalledWith('custom-file-1.md', 'user', 'body');
+    expect(response.send).toHaveBeenCalledWith({ name: 'custom-file-1.md' });
+  });
+
+  it('returns 400 when name is invalid', async () => {
+    const response = mockResponse();
+    const request: any = { body: { content: 'body', name: 'custom-file.txt' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.sendStatus).toHaveBeenCalledWith(400);
     expect(updateItem).not.toHaveBeenCalled();
   });
 
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
-    const request: any = { body: { content: 'body' }, usernameHash: 'user' };
+    const request: any = { body: { content: 'body', name: 'custom-file.md' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockImplementation(() => {
       throw new Error('fail');

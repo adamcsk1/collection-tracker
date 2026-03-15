@@ -1,5 +1,5 @@
 export type MdTemplateValidationError = {
-  kind: 'mdTemplate';
+  kind: 'invalidMdTemplate';
   missingKeys: string;
 };
 
@@ -45,5 +45,5 @@ export const mdTemplateValidationError = (template: string): MdTemplateValidatio
     missingKeys.push('{{Tags}}');
   }
 
-  return missingKeys.length > 0 ? { kind: 'mdTemplate', missingKeys: missingKeys.join(', ') } : undefined;
+  return missingKeys.length > 0 ? { kind: 'invalidMdTemplate', missingKeys: missingKeys.join(', ') } : undefined;
 };

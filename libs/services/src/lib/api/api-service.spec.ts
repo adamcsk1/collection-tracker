@@ -92,14 +92,14 @@ describe('ApiService', () => {
   });
 
   it('creates an item with provided content', async () => {
-    const promise = lastValueFrom(service.create('note text'));
+    const promise = lastValueFrom(service.create('note text', 'note.md'));
 
     const createRequest = httpMock.expectOne('https://api.test/create');
     expect(createRequest.request.method).toBe('POST');
-    expect(createRequest.request.body).toEqual({ content: 'note text' });
-    createRequest.flush({ id: '1' });
+    expect(createRequest.request.body).toEqual({ content: 'note text', name: 'note.md' });
+    createRequest.flush({ name: 'note.md' });
 
-    await expect(promise).resolves.toEqual({ id: '1' });
+    await expect(promise).resolves.toEqual({ name: 'note.md' });
   });
 
   it('updates an item and alerts on error', async () => {
@@ -426,7 +426,7 @@ describe('ApiService', () => {
   });
 
   it('alerts and rethrows when create fails', async () => {
-    const promise = lastValueFrom(service.create('note'));
+    const promise = lastValueFrom(service.create('note', 'note.md'));
 
     const createRequest = httpMock.expectOne('https://api.test/create');
     createRequest.flush('bad', { status: 400, statusText: 'Bad Request' });

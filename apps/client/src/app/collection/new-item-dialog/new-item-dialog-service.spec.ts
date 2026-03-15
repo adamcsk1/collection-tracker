@@ -9,6 +9,7 @@ import { initialToastState, toastStateToken } from '@components/toast/toast-stor
 import { ApiService } from '@services/api/api-service';
 import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
+import { setParserFilenamePattern } from '@services/parser/parser-util';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -68,6 +69,7 @@ describe('NewItemDialogService', () => {
     service = TestBed.inject(NewItemDialogService);
     spinnerStore = TestBed.inject(spinnerLoadingStateToken);
     toastStore = TestBed.inject(toastStateToken);
+    setParserFilenamePattern('{{Year}}-{{Type}}-{{Title}}.md');
   });
 
   it('search triggers OMDb lookup and shows spinner', () => {
@@ -84,7 +86,7 @@ describe('NewItemDialogService', () => {
     await firstValueFrom(service.save('tt123', '#tag', 'close'));
 
     expect(mdContent.getMdContent).toHaveBeenCalledWith(expect.objectContaining({ Tags: '#tag' }));
-    expect(api.create).toHaveBeenCalledWith('md-content');
+    expect(api.create).toHaveBeenCalledWith('md-content', '2020-movie-Title.md');
     expect(collection.addCollectionItem).toHaveBeenCalledWith({ name: 'generated-name', content: 'md-content' }, true);
     expect(toastStore.state.message()).toBe('t:Toast.NewItem');
     expect(portal.close).toHaveBeenCalled();

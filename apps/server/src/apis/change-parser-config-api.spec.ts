@@ -25,7 +25,10 @@ describe('change-parser-config-api', () => {
 
   it('updates parser config and returns updated config', async () => {
     const response = mockResponse();
-    const request: any = { body: { title: 'My Title', genre: 'Drama' }, usernameHash: 'user' };
+    const request: any = {
+      body: { title: 'My Title', genre: 'Drama', filenamePattern: '{{Year}}-{{Title}}.md' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue({ user: { year: '2020' } });
     (Store.set as Mock).mockImplementation(() => undefined);
@@ -35,7 +38,24 @@ describe('change-parser-config-api', () => {
 
     await handlerPromise();
     expect(Store.set).toHaveBeenCalledWith('parserConfigs', expect.any(Object));
-    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'My Title', genre: 'Drama' }));
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'My Title', genre: 'Drama', filenamePattern: '{{Year}}-{{Title}}.md' })
+    );
+  });
+
+  it('returns 400 when filename pattern is invalid', async () => {
+    const response = mockResponse();
+    const request: any = {
+      body: { title: 'My Title', genre: 'Drama', filenamePattern: ' ' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-parser-config-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.sendStatus).toHaveBeenCalledWith(400);
   });
 
   it('returns 500 on unexpected error', async () => {

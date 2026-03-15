@@ -8,7 +8,7 @@ Source: [`libs/services`](../libs/services)
 
 - `api/`: HTTP client, auth/session integration, pagination, and API store
 - `omdb/`: OMDb lookup logic and shared state
-- `parser/`: parser configuration, template regeneration, and parser utilities
+- `parser/`: parser configuration, template regeneration, parser cache helpers, and filename/tag parsing utilities
 - `md-content-generator/`: Markdown generation from OMDb payloads
 - `theme/`: theme state and DOM class management
 - `webstorage/`: local and session storage abstraction

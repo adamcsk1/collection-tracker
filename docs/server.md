@@ -8,7 +8,8 @@ Source: [`apps/server`](../apps/server)
 
 - sign-up, sign-in, logout, and access-token lifecycle management
 - CRUD for per-user Markdown entries stored on disk
-- parser configuration, tag configuration, and user-settings persistence
+- parser configuration, including user-defined collection filename patterns
+- tag configuration and user-settings persistence
 - flat-file database initialization and synchronization
 - runtime safeguards such as Helmet, no-cache, CORS validation, request limits, and cookie parsing
 
@@ -28,6 +29,18 @@ Source: [`apps/server`](../apps/server)
 - `database/user-settings.json`
 - `store/<userHash>/`
 - `logs/`
+
+Parser config records store the Markdown template, parsing regexps, and the user-specific `filenamePattern` used when creating new collection items.
+
+## Why Markdown Files
+
+This app stores collection items as Markdown files on disk instead of in a traditional database.
+
+Originally, this information was managed in Obsidian. That worked for simple note-taking, but it became less convenient as the number of files grew and the vault loaded more slowly. This app keeps the same Markdown-based storage model while adding a dedicated UI and server layer that are better suited for collection management.
+
+Keeping the data in `.md` files also preserves portability. The files can still be moved back into an Obsidian- or Joplin-based workflow if needed, instead of locking the data into a database-specific format.
+
+The current functionality does not require strong database features such as joins, migrations, or complex transactional logic, so flat-file storage remains a simpler and more practical fit.
 
 ## Important Paths
 

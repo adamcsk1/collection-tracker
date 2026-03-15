@@ -1,7 +1,7 @@
 import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
-import { readdirSync, readFileSync } from 'fs';
+import { readdirSync, readFileSync, statSync } from 'fs';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 vi.mock('@server/core/store/store');
@@ -11,6 +11,7 @@ vi.mock('fs', async () => {
     ...fs,
     readdirSync: vi.fn(),
     readFileSync: vi.fn(),
+    statSync: vi.fn(),
   };
 });
 
@@ -28,6 +29,7 @@ describe('get-all-api', () => {
       .mockReturnValueOnce('/data') // dataFolder
       .mockReturnValueOnce({ 'user-file1': 'cached' }); // cache
     (readdirSync as Mock).mockReturnValue(['file1']);
+    (statSync as Mock).mockReturnValue({ birthtimeMs: 1000 });
 
     const { register } = await import('./get-all-api');
     register(app);
@@ -45,6 +47,7 @@ describe('get-all-api', () => {
     (Store.set as Mock).mockImplementation((_key: string, value: any) => value);
     (readdirSync as Mock).mockReturnValue(['file1']);
     (readFileSync as Mock).mockReturnValue('content');
+    (statSync as Mock).mockReturnValue({ birthtimeMs: 1000 });
 
     const { register } = await import('./get-all-api');
     register(app);
@@ -69,5 +72,29 @@ describe('get-all-api', () => {
     await handlerPromise();
 
     expect(response.sendStatus).toHaveBeenCalledWith(500);
+  });
+
+  it('orders files by creation date descending before pagination', async () => {
+    const response = mockResponse();
+    const request: any = { query: { limit: '2', offset: '0' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    (Store.getLastValue as Mock).mockReturnValueOnce('/data').mockReturnValueOnce({});
+    (Store.set as Mock).mockImplementation((_key: string, value: any) => value);
+    (readdirSync as Mock).mockReturnValue(['old.md', 'new.md', 'middle.md']);
+    (readFileSync as Mock).mockImplementation((filePath: string) => filePath);
+    (statSync as Mock).mockImplementation((filePath: string) => ({
+      birthtimeMs:
+        filePath === '/data/store/user/new.md' ? 3000 : filePath === '/data/store/user/middle.md' ? 2000 : 1000,
+    }));
+
+    const { register } = await import('./get-all-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith([
+      { name: 'new.md', content: '/data/store/user/new.md' },
+      { name: 'middle.md', content: '/data/store/user/middle.md' },
+    ]);
   });
 });
