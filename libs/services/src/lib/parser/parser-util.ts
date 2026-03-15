@@ -5,11 +5,16 @@ const cacheContainer = window as Window & { __parserCache?: ParserCacheModel };
 const parserCache: ParserCacheModel = cacheContainer.__parserCache ?? (cacheContainer.__parserCache = {});
 
 export const getParserTemplate = (): string => parserCache.mdTemplate!;
+export const getParserFilenamePattern = (): string => parserCache.filenamePattern!;
 
 export const getParserRegexp = (key: keyof typeof PARSER_REGEXPS): RegExp => parserCache[key]!;
 
 export const setParserTemplate = (template: string): void => {
   parserCache.mdTemplate = template;
+};
+
+export const setParserFilenamePattern = (filenamePattern: string): void => {
+  parserCache.filenamePattern = filenamePattern;
 };
 
 export const setParserRegexp = (key: keyof typeof PARSER_REGEXPS, regexp: RegExp): void => {

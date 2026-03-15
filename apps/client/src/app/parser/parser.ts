@@ -3,17 +3,15 @@ import { form, FormField, FormRoot, required, validate } from '@angular/forms/si
 import { ParserModel } from '@client/parser/parser-model';
 import { ParserService } from '@client/parser/parser-service';
 import { TemplateRegenerationService } from '@client/parser/template-regeneration-service';
-import {
-  mdTemplateValidationError,
-  type MdTemplateValidationError,
-} from '@client/parser/validators/md-template-validator';
+import { filenamePatternValidationError } from '@client/parser/validators/filename-pattern-validator';
+import { MdTemplateValidationError, mdTemplateValidationError } from '@client/parser/validators/md-template-validator';
 import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { Textarea } from '@components/textarea/textarea';
 import { apiStateToken } from '@services/api/api-store';
 import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
-import { getParserRegexp, getParserTemplate } from '@services/parser/parser-util';
+import { getParserFilenamePattern, getParserRegexp, getParserTemplate } from '@services/parser/parser-util';
 import { serializeParserRegexp } from '@shared/utils/parser-serialize-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
@@ -42,6 +40,7 @@ export class Parser implements OnInit {
     title: '',
     year: '',
     mdTemplate: '',
+    filenamePattern: '',
   });
   protected readonly form = form(
     this.parserModel,
@@ -56,7 +55,9 @@ export class Parser implements OnInit {
       required(parser.title);
       required(parser.year);
       required(parser.mdTemplate);
+      required(parser.filenamePattern);
       validate(parser.mdTemplate, ({ value }) => mdTemplateValidationError(value()));
+      validate(parser.filenamePattern, ({ value }) => filenamePatternValidationError(value()));
     },
     {
       submission: {
@@ -64,12 +65,25 @@ export class Parser implements OnInit {
       },
     }
   );
-  protected readonly mdTemplateError = computed<MdTemplateValidationError | undefined>(() => {
-    return this.form
-      .mdTemplate()
-      .errors()
-      .find((error) => error.kind === 'mdTemplate') as MdTemplateValidationError | undefined;
-  });
+  protected readonly formErrors = {
+    filenamePattern: {
+      invalidExtension: computed(() =>
+        this.form
+          .filenamePattern()
+          .errors()
+          .some((error) => error.kind === 'filenamePattern')
+      ),
+    },
+    mdTemplate: {
+      invalidMdTemplate: computed(
+        () =>
+          this.form
+            .mdTemplate()
+            .errors()
+            .find((error) => error.kind === 'invalidMdTemplate') as unknown as MdTemplateValidationError | undefined
+      ),
+    },
+  };
 
   public ngOnInit(): void {
     this.parserModel.set({
@@ -83,6 +97,7 @@ export class Parser implements OnInit {
       title: serializeParserRegexp(getParserRegexp('title')),
       year: serializeParserRegexp(getParserRegexp('year')),
       mdTemplate: getParserTemplate(),
+      filenamePattern: getParserFilenamePattern(),
     });
   }
 

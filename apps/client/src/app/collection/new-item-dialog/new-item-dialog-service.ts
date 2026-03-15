@@ -6,7 +6,9 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
+import { buildCollectionItemFilename } from '@services/parser/utils/filename-pattern-util';
 import { PortalService } from '@services/portal-service';
+import { getParserFilenamePattern } from '@services/parser/parser-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
 
@@ -41,15 +43,21 @@ export class NewItemDialogService {
       take(1),
       filter((selectedContent) => !!selectedContent),
       filter((selectedContent) => !!selectedContent?.imdbID),
-      map((selectedContent) =>
-        this.mdContentGenerator.getMdContent({
+      map((selectedContent) => ({
+        content: this.mdContentGenerator.getMdContent({
           ...selectedContent,
           Tags: tags.trim(),
-        })
-      ),
+        }),
+        name: buildCollectionItemFilename({
+          pattern: getParserFilenamePattern(),
+          selectedContent,
+        }),
+      })),
       tap(() => this.spinnerLoadingState.setState('show', true)),
-      mergeMap((mdContent) =>
-        this.api.create(mdContent).pipe(map((response) => ({ name: response.name, content: mdContent })))
+      mergeMap((collectionItem) =>
+        this.api
+          .create(collectionItem.content, collectionItem.name)
+          .pipe(map((response) => ({ name: response.name, content: collectionItem.content })))
       ),
       catchError((error) => {
         this.spinnerLoadingState.setState('show', false);

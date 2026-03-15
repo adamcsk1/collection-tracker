@@ -118,8 +118,8 @@ export class ApiService {
     return results.asObservable();
   }
 
-  public create(content: string): Observable<CreateApiResponseModel> {
-    const body: CreateApiRequestModel = { content };
+  public create(content: string, name: string): Observable<CreateApiResponseModel> {
+    const body: CreateApiRequestModel = { content, name };
     return this.httpClient.post<CreateApiResponseModel>(`${this.apiState.state.apiUrl()}/create`, body).pipe(
       catchError((error) => {
         this.alert.show(error.message);

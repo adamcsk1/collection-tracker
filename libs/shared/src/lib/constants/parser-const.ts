@@ -30,3 +30,5 @@ export const MD_TEMPLATE = `### {{Title}}
 **Tags**
 #{{Type}} {{Tags}}
 `;
+
+export const FILENAME_PATTERN = '{{Year}}-{{Type}}-{{Title}}.md';

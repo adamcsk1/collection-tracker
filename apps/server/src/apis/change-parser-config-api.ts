@@ -18,6 +18,9 @@ export const register = (app: Application): void => {
       ) {
         return response.sendStatus(400);
       }
+      if (body.filenamePattern !== undefined && !body.filenamePattern.trim()) {
+        return response.sendStatus(400);
+      }
 
       const parserConfigs = Store.getLastValue('parserConfigs');
       let userConfig = parserConfigs?.[request.usernameHash];

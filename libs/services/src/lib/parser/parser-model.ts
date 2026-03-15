@@ -9,6 +9,7 @@ export interface ParserCacheModel {
   title?: RegExp;
   year?: RegExp;
   mdTemplate?: string;
+  filenamePattern?: string;
 }
 
 declare global {

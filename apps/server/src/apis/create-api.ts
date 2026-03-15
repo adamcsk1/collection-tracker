@@ -6,23 +6,35 @@ import { updateItem } from '@server/core/utils/cache-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
-import dayjs from 'dayjs';
 import type { Application } from 'express';
 import { existsSync } from 'fs';
+
+const getAvailableFileName = (storeFolder: string, name: string): string => {
+  if (!existsSync(`${storeFolder}/${name}`)) return name;
+
+  const baseName = name.slice(0, -3);
+  let index = 1;
+
+  while (true) {
+    const nextName = `${baseName}-${index}.md`;
+    if (!existsSync(`${storeFolder}/${nextName}`)) return nextName;
+    index += 1;
+  }
+};
 
 export const register = (app: Application): void => {
   app.post(`${API_PREFIX}/create`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
-      const { content } = request.body as CreateApiRequestModel;
-      if (typeof content !== 'string') {
+      let { content, name } = request.body as CreateApiRequestModel;
+      if (typeof content !== 'string' || typeof name !== 'string') {
+        return response.sendStatus(400);
+      }
+      name = name.toString().trim().replace(/\\|\//g, '');
+      if (!name || !name.toLowerCase().endsWith('.md')) {
         return response.sendStatus(400);
       }
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
-      const name = `${dayjs().toISOString().replaceAll(':', '-').replaceAll('.', '-')}.md`;
-
-      if (existsSync(`${storeFolder}/${name}`)) {
-        return response.sendStatus(409);
-      }
+      name = getAvailableFileName(storeFolder, name);
 
       await updateItem(name, request.usernameHash, content);
 

@@ -49,8 +49,8 @@ Valid values for `POST /user/settings`:
 
 | Method   | Path                            | Notes                                                             |
 | -------- | ------------------------------- | ----------------------------------------------------------------- |
-| `GET`    | `/get-all?limit=<n>&offset=<n>` | Returns `Array<{ name, content }>` sorted by filename descending. |
-| `POST`   | `/create`                       | Body: `{ "content": string }`. Returns `{ "name": string }`.      |
+| `GET`    | `/get-all?limit=<n>&offset=<n>` | Returns `Array<{ name, content }>` sorted by file creation date descending. |
+| `POST`   | `/create`                       | Body: `{ "content": string, "name": string }`. Returns `{ "name": string }`, where `name` is the final stored filename after collision handling. |
 | `PUT`    | `/modify/:name`                 | Body: `{ "content": string }`. Updates one Markdown file.         |
 | `DELETE` | `/delete/:name`                 | Deletes one Markdown file.                                        |
 
@@ -58,8 +58,8 @@ Valid values for `POST /user/settings`:
 
 | Method | Path                    | Notes                                                                                                                                                         |
 | ------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`  | `/parser/config`        | Returns the current parser template and regexp fields, falling back to defaults when no user config exists.                                                   |
-| `POST` | `/parser/change-config` | Accepts any subset of `IMDbId`, `genre`, `genreToken`, `image`, `IMDbRate`, `tags`, `tagToken`, `title`, `year`, and `mdTemplate`. Returns the merged config. |
+| `GET`  | `/parser/config`        | Returns the current parser template, filename pattern, and regexp fields, falling back to defaults when no user config exists.                                |
+| `POST` | `/parser/change-config` | Accepts any subset of `IMDbId`, `genre`, `genreToken`, `image`, `IMDbRate`, `tags`, `tagToken`, `title`, `year`, `mdTemplate`, and `filenamePattern`. Returns the merged config. |
 | `GET`  | `/tag/config`           | Returns the current tag configuration array.                                                                                                                  |
 | `POST` | `/tag/change-config`    | Replaces the full tag configuration array and returns the stored result.                                                                                      |
 
@@ -79,5 +79,7 @@ Each tag configuration entry has the shape:
 ## Operational Notes
 
 - All protected endpoints require a valid access token.
+- Collection filename patterns are user-configurable. The default pattern is `{{Year}}-{{Type}}-{{ClearedName}}-{{index}}.md`.
+- The server keeps unresolved placeholders such as `{{index}}` available for collision handling when a file already exists.
 - The server applies `helmet`, `nocache`, JSON body parsing, CORS validation against `CORS_ORIGIN`, and request limiting of 100 requests per 15 minutes per IP.
 - Runtime data lives under the active data folder, which defaults to `.data`.
