@@ -63,3 +63,6 @@ android/app/debug/
 
 # Development folders
 .data
+
+# Claude
+.claude
