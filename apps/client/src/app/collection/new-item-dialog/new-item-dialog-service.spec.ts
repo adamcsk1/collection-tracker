@@ -3,9 +3,10 @@ import { CollectionService } from '@client/collection/collection-service';
 import { NewItemDialogService } from '@client/collection/new-item-dialog/new-item-dialog-service';
 import {
   initialSpinnerLoadingState,
+  SpinnerLoadingState,
   spinnerLoadingStateToken,
 } from '@components/spinner-loading/spinner-loading-store';
-import { initialToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
@@ -38,8 +39,8 @@ describe('NewItemDialogService', () => {
     getSelectedContent: ReturnType<typeof vi.fn>;
   };
   let collection: { addCollectionItem: ReturnType<typeof vi.fn> };
-  let spinnerStore: NgxSimpleSignalStoreService<typeof initialSpinnerLoadingState>;
-  let toastStore: NgxSimpleSignalStoreService<typeof initialToastState>;
+  let spinnerStore: NgxSimpleSignalStoreService<SpinnerLoadingState>;
+  let toastStore: NgxSimpleSignalStoreService<ToastState>;
   let portal: { close: ReturnType<typeof vi.fn> };
   let mdContent: { getMdContent: ReturnType<typeof vi.fn> };
   let translate: { translate: ReturnType<typeof vi.fn> };

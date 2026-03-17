@@ -89,6 +89,8 @@ SALT="your_salt"
 USER_LIMIT=2
 DISABLE_REGISTRATION=0
 OMDB_API_KEY="your_omdb_api_key"
+CLAUDE_API_KEY="your_claude_api_key"
+CLAUDE_MODEL="claude-haiku-4-5-20251001"
 CORS_ORIGIN="*"
 CACHE_MAX=200
 ```

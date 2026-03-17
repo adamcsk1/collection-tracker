@@ -1,5 +1,5 @@
 export interface AutocompleteServiceInterface {
-  getSuggestion(text: string): Array<string>;
+  getSuggestion(text: string): string[];
   formatSuggestionText?(text: string): string;
   formatSuggestionValue?(text: string): string;
 }

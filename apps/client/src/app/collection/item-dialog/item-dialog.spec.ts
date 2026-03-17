@@ -3,7 +3,7 @@ import { CollectionItemModel } from '@client/collection/collection-model';
 import { CollectionService } from '@client/collection/collection-service';
 import * as collectionUtils from '@client/collection/utils/get-collection-item-util';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
-import { initialToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
@@ -40,7 +40,7 @@ describe('ItemDialog', () => {
   let portal: { close: ReturnType<typeof vi.fn> };
   let confirm: { open: ReturnType<typeof vi.fn> };
   let api: { delete: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
-  let toastState: NgxSimpleSignalStoreService<typeof initialToastState>;
+  let toastState: NgxSimpleSignalStoreService<ToastState>;
   let translate: { translate: ReturnType<typeof vi.fn> };
   let getCollectionItemSpy: ReturnType<typeof vi.spyOn>;
 
@@ -80,7 +80,7 @@ describe('ItemDialog', () => {
 
     fixture = TestBed.createComponent(ItemDialog);
     component = fixture.componentInstance;
-    toastState = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<typeof initialToastState>;
+    toastState = TestBed.inject(toastStateToken);
 
     (component.collectionItem as any).set(buildItem('Item One'));
     fixture.detectChanges();

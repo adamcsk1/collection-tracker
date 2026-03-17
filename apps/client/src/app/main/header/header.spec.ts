@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionService } from '@client/collection/collection-service';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
+import { initialMainState, MainState, mainStateToken } from '@client/main/main-store';
 import * as MainUtil from '@client/main/main-util';
 import { ApiService } from '@services/api/api-service';
 import { ThemeService } from '@services/theme/theme-service';
@@ -22,7 +22,7 @@ describe('Header component', () => {
   let collection: { loadCollection: ReturnType<typeof vi.fn> };
   let api: { logout: ReturnType<typeof vi.fn> };
   let webstorage: { clear: ReturnType<typeof vi.fn> };
-  let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
+  let mainState: NgxSimpleSignalStoreService<MainState>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
   let redirectSpy: ReturnType<typeof vi.spyOn>;
 
@@ -49,7 +49,7 @@ describe('Header component', () => {
 
     fixture = TestBed.createComponent(Header);
     component = fixture.componentInstance;
-    mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
+    mainState = TestBed.inject(mainStateToken);
     fixture.detectChanges();
 
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});

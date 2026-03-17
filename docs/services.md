@@ -6,7 +6,7 @@ Source: [`libs/services`](../libs/services)
 
 ## Modules
 
-- `api/`: HTTP client, auth/session integration, pagination, and API store
+- `api/`: HTTP client, auth/session integration, pagination, API store, and Claude AI query (`getClaudeQueryData`)
 - `omdb/`: OMDb lookup logic (search and item fetch via server proxy)
 - `parser/`: parser configuration, template regeneration, parser cache helpers, and filename/tag parsing utilities
 - `md-content-generator/`: Markdown generation from OMDb payloads

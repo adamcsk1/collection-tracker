@@ -1,6 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
-import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
+import {
+  initialMainCollectionState,
+  MainCollectionState,
+  mainCollectionStateToken,
+} from '@client/main/main-collection-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { knownIMDbIdValidationFactory } from './known-imdb-id-validator';
@@ -20,14 +24,12 @@ const buildItem = (IMDbId: string): CollectionItemModel => ({
 });
 
 describe('knownIMDbIdValidator', () => {
-  let collectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
+  let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let knownIMDbIdValidationError: (IMDbId: string | null) => { kind: 'knownIMDbId' } | undefined;
 
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideStore(initialMainCollectionState, mainCollectionStateToken)] });
-    collectionState = TestBed.inject(mainCollectionStateToken) as NgxSimpleSignalStoreService<
-      typeof initialMainCollectionState
-    >;
+    collectionState = TestBed.inject(mainCollectionStateToken);
     collectionState.setState('collection', [buildItem('tt1')]);
     knownIMDbIdValidationError = TestBed.runInInjectionContext(() => knownIMDbIdValidationFactory());
   });

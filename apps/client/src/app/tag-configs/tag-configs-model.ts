@@ -7,4 +7,4 @@ export interface TagConfigModel {
   weight: number;
 }
 
-export type TagConfigsModel = Array<TagConfigModel>;
+export type TagConfigsModel = TagConfigModel[];

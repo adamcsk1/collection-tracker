@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { AlertService } from '@services/alert-service';
-import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { getParserRegexp, setParserRegexp } from '@services/parser/parser-util';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { OMDbResponseItemModel } from '@shared/models/omdb-model';
@@ -16,7 +16,7 @@ const API_URL = 'https://api.test/api/v1';
 describe('OMDbService', () => {
   let service: OMDbService;
   let httpMock: HttpTestingController;
-  let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
+  let apiState: NgxSimpleSignalStoreService<ApiState>;
   let alertSpy: ReturnType<typeof vi.fn>;
 
   beforeAll(() => {
@@ -38,7 +38,7 @@ describe('OMDbService', () => {
 
     service = TestBed.inject(OMDbService);
     httpMock = TestBed.inject(HttpTestingController);
-    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
+    apiState = TestBed.inject(apiStateToken);
     apiState.setState('apiUrl', API_URL);
   });
 

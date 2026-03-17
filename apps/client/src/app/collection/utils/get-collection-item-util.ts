@@ -16,7 +16,7 @@ export const getCollectionItem = (item: Partial<GetAllApiResponseItemModel>): Co
 
   const title = getTitle(safeItem.content);
 
-  return {
+  const collectionItem = {
     rawContent: safeItem.content,
     rawContentLower: safeItem.content.toLowerCase(),
     image: getImage(safeItem.content),
@@ -29,4 +29,6 @@ export const getCollectionItem = (item: Partial<GetAllApiResponseItemModel>): Co
     rate: getIMDbRate(safeItem.content),
     name: safeItem.name,
   };
+
+  return collectionItem;
 };

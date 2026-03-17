@@ -8,6 +8,7 @@ export const PARSER_REGEXPS = {
   tagToken: /\S+/g,
   title: /#{3}\s(?<title>.*)/,
   year: /\*\*Year\*\*\s*(?<year>\d+)\s*/,
+  content: /\(https:\/\/www\.imdb\.com\/title\/[^)]+\)[^\n]*\n(?<content>.+)/,
 };
 
 export const MD_TEMPLATE = `### {{Title}}

@@ -8,6 +8,7 @@ export interface ParserCacheModel {
   tagToken?: RegExp;
   title?: RegExp;
   year?: RegExp;
+  content?: RegExp;
   mdTemplate?: string;
   filenamePattern?: string;
 }

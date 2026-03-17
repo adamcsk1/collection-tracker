@@ -14,7 +14,7 @@ type MatchMediaMock = {
 };
 
 const createMatchMediaMock = (): MatchMediaMock => {
-  const listeners: Array<(event: MediaQueryListEvent) => void> = [];
+  const listeners: ((event: MediaQueryListEvent) => void)[] = [];
   const mock: MatchMediaMock = {
     matches: false,
     media: '(prefers-color-scheme: dark)',

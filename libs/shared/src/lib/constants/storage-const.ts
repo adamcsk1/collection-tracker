@@ -11,3 +11,4 @@ export const STORAGE_ANIMATED_BACKGROUND = `${STORAGE_PREFIX}AnimatedBackground`
 export const STORAGE_STATISTICS_SELECTED_TAGS = `${STORAGE_PREFIX}StatisticsSelectedTags`;
 export const STORAGE_LANGUAGE = `${STORAGE_PREFIX}Language`;
 export const STORAGE_SEARCH_MODE = `${STORAGE_PREFIX}SearchMode`;
+export const STORAGE_USE_CLAUDE_AI = `${STORAGE_PREFIX}UseClaudeAi`;

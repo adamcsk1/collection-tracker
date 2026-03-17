@@ -1,17 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
-import { mainCollectionStateToken, initialMainCollectionState } from '@client/main/main-collection-store';
+import {
+  initialMainCollectionState,
+  MainCollectionState,
+  mainCollectionStateToken,
+} from '@client/main/main-collection-store';
 import { TagConfigsModel } from '@client/tag-configs/tag-configs-model';
+import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { ConfirmService } from '@services/confirm-service';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { EMPTY, of, throwError } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TagConfigs } from './tag-configs';
 import { TagConfigsService } from './tag-configs-service';
-import { apiStateToken, initialApiState } from '@services/api/api-store';
-import { initialToastState, toastStateToken } from '@components/toast/toast-store';
-import { ConfirmService } from '@services/confirm-service';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EMPTY, of, throwError } from 'rxjs';
-import { tagConfigsStateToken, initialTagConfigsState } from './tag-configs-store';
+import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from './tag-configs-store';
 
 const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
   rawContent: overrides.rawContent || '',
@@ -40,9 +44,9 @@ const buildTagConfig = (tag: string, overrides: Partial<TagConfigsModel[number]>
 describe('TagConfigs component', () => {
   let fixture: ComponentFixture<TagConfigs>;
   let component: TagConfigs;
-  let mainCollectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
-  let tagConfigsState: NgxSimpleSignalStoreService<typeof initialTagConfigsState>;
-  let toastState: NgxSimpleSignalStoreService<typeof initialToastState>;
+  let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
+  let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
+  let toastState: NgxSimpleSignalStoreService<ToastState>;
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
   let tagConfigsService: { syncUserTagConfigs: ReturnType<typeof vi.fn> };
 
@@ -73,13 +77,9 @@ describe('TagConfigs component', () => {
 
     fixture = TestBed.createComponent(TagConfigs);
     component = fixture.componentInstance;
-    mainCollectionState = TestBed.inject(mainCollectionStateToken) as NgxSimpleSignalStoreService<
-      typeof initialMainCollectionState
-    >;
-    tagConfigsState = TestBed.inject(tagConfigsStateToken) as NgxSimpleSignalStoreService<
-      typeof initialTagConfigsState
-    >;
-    toastState = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<typeof initialToastState>;
+    mainCollectionState = TestBed.inject(mainCollectionStateToken);
+    tagConfigsState = TestBed.inject(tagConfigsStateToken);
+    toastState = TestBed.inject(toastStateToken);
 
     fixture.detectChanges();
   });

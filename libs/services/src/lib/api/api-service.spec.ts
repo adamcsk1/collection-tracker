@@ -117,7 +117,7 @@ describe('ApiService', () => {
   it('paginates getAll results and updates network status', () => {
     apiState.setState('fetchBatchSize', 2);
 
-    const pages: Array<{ name: string; content: string }[]> = [];
+    const pages: { name: string; content: string }[][] = [];
     service.getAll().subscribe((items) => pages.push(items));
 
     expect(apiState.state.loadNetworkStatus()).toBe('pending');
@@ -177,7 +177,7 @@ describe('ApiService', () => {
   it('uses default fetchBatchSize and finishes when first page is empty', () => {
     apiState.setState('fetchBatchSize', null as number);
 
-    const pages: Array<{ name: string; content: string }[]> = [];
+    const pages: { name: string; content: string }[][] = [];
     service.getAll().subscribe((items) => pages.push(items));
 
     const initialRequest = httpMock.expectOne('https://api.test/get-all?offset=0&limit=10');
@@ -306,7 +306,7 @@ describe('ApiService', () => {
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
-      searchMode: 'fuzzy',
+      claudeAiAvailable: true,
     });
 
     await expect(promise).resolves.toEqual({
@@ -314,7 +314,7 @@ describe('ApiService', () => {
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
-      searchMode: 'fuzzy',
+      claudeAiAvailable: true,
     });
   });
 
@@ -324,7 +324,6 @@ describe('ApiService', () => {
       theme: 'dark' as const,
       animatedBackground: false,
       language: 'en' as const,
-      searchMode: 'fuzzy' as const,
     };
     const promise = lastValueFrom(service.updateUserSettings(payload));
 
@@ -334,6 +333,27 @@ describe('ApiService', () => {
     updateUserSettingsRequest.flush({});
 
     await expect(promise).resolves.toEqual({});
+  });
+
+  it('posts a prompt to the Claude query endpoint and returns matched IDs', async () => {
+    const promise = lastValueFrom(service.getClaudeQueryData('sci-fi movies'));
+
+    const claudeRequest = httpMock.expectOne('https://api.test/proxy/claude/query');
+    expect(claudeRequest.request.method).toBe('POST');
+    expect(claudeRequest.request.body).toEqual({ prompt: 'sci-fi movies' });
+    claudeRequest.flush({ matchedIds: ['tt0133093', 'tt0372784'] });
+
+    await expect(promise).resolves.toEqual({ matchedIds: ['tt0133093', 'tt0372784'] });
+  });
+
+  it('alerts and rethrows when Claude query fails', async () => {
+    const promise = lastValueFrom(service.getClaudeQueryData('sci-fi movies'));
+
+    const claudeRequest = httpMock.expectOne('https://api.test/proxy/claude/query');
+    claudeRequest.flush('bad', { status: 502, statusText: 'Bad Gateway' });
+
+    await expect(promise).rejects.toMatchObject({ status: 502 });
+    expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
   it('alerts and rethrows when retrieving user tag configs fails', async () => {
@@ -384,7 +404,6 @@ describe('ApiService', () => {
         theme: 'dark',
         animatedBackground: false,
         language: 'en',
-        searchMode: 'fuzzy',
       })
     );
 

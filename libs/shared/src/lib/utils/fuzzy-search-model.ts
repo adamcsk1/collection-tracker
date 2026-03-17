@@ -4,4 +4,4 @@ export interface FuzzyModel {
   distance: number;
 }
 
-export type FuzzySearchResultModel = Array<FuzzyModel> | null;
+export type FuzzySearchResultModel = FuzzyModel[] | null;

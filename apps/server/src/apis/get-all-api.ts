@@ -2,37 +2,20 @@ import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
-import { setCacheEntry } from '@server/core/utils/cache-util';
+import { readStoreFiles } from '@server/core/utils/cache-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { GetAllApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
-import { readdirSync, readFileSync, statSync } from 'fs';
 
 export const register = (app: Application): void => {
-  app.get(`${API_PREFIX}/get-all`, jwtGuard, (request: ExtendedRequestModel, response) => {
+  app.get(`${API_PREFIX}/get-all`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
       const limit = Number(request.query.limit) || 10;
       const offset = Number(request.query.offset) || 0;
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
-      const cache = Store.getLastValue('cache');
-      const files = readdirSync(storeFolder)
-        .sort(
-          (a, b) =>
-            statSync(`${storeFolder}/${b}`).birthtimeMs - statSync(`${storeFolder}/${a}`).birthtimeMs ||
-            b.localeCompare(a)
-        )
-        .slice(offset, offset + limit);
 
-      const result: GetAllApiResponseModel = [];
-      for (const file of files) {
-        const cacheKey = `${request.usernameHash}-${file}`;
-        const content = cache[cacheKey] ?? readFileSync(`${storeFolder}/${file}`, 'utf-8');
-        setCacheEntry(cache, cacheKey, content);
-        result.push({ name: file, content });
-      }
-
-      Store.set('cache', cache);
+      const result: GetAllApiResponseModel = await readStoreFiles(storeFolder, request.usernameHash, offset, limit);
 
       response.send(result);
     } catch (error: unknown) {

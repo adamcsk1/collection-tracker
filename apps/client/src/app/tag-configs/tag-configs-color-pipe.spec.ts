@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { initialTagConfigsState, tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
+import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagConfigColorPipe } from './tag-configs-color-pipe';
 
 describe('TagConfigColorPipe', () => {
   let pipe: TagConfigColorPipe;
-  let tagConfigsState: NgxSimpleSignalStoreService<typeof initialTagConfigsState>;
+  let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -14,9 +14,7 @@ describe('TagConfigColorPipe', () => {
     });
 
     pipe = TestBed.inject(TagConfigColorPipe);
-    tagConfigsState = TestBed.inject(tagConfigsStateToken) as NgxSimpleSignalStoreService<
-      typeof initialTagConfigsState
-    >;
+    tagConfigsState = TestBed.inject(tagConfigsStateToken);
   });
 
   it('returns matching tag color by default', () => {

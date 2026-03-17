@@ -26,7 +26,7 @@ export const AutocompleteService = new InjectionToken<AutocompleteServiceInterfa
 })
 export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
   private readonly inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
-  private readonly _suggestions = signal<Array<string>>([]);
+  private readonly _suggestions = signal<string[]>([]);
   private readonly autocompleteService = inject(AutocompleteService);
   private suggestionDebounce: Subscription | null = null;
   private lastKeycode = '';

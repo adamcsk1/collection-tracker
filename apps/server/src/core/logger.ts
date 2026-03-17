@@ -21,6 +21,13 @@ const infoLog = async (message: string): Promise<void> => {
   await writeLog(message);
 };
 
+const warningLog = async (message: string): Promise<void> => {
+  const { debug } = getArgv();
+  message = `[ warning ] ${message}`;
+  if (debug) console.log(message);
+  await writeLog(message);
+};
+
 const errorLog = async (message: string): Promise<void> => {
   const { debug } = getArgv();
   message = `[ error ] ${message}`;
@@ -36,4 +43,4 @@ const debugLog = async (message: string): Promise<void> => {
   await writeLog(message);
 };
 
-export { debugLog, errorLog, infoLog };
+export { debugLog, errorLog, infoLog, warningLog };

@@ -20,6 +20,7 @@ import {
   UserSettingsApiRequestModel,
   UserSettingsApiResponseModel,
 } from '@shared/models/api-model';
+import { ClaudeQueryRequestModel, ClaudeQueryResponseModel } from '@shared/models/claude-model';
 import { OMDbResponseItemModel, OMDbResponseModel } from '@shared/models/omdb-model';
 import { catchError, EMPTY, filter, Observable, of, Subject, tap, throwError } from 'rxjs';
 
@@ -267,6 +268,18 @@ export class ApiService {
   public getOMDbSearchData(queryParams: { s: string | null }): Observable<OMDbResponseModel> {
     return this.httpClient
       .get<OMDbResponseModel>(`${this.apiState.state.apiUrl()}/proxy/omdb/search?s=${queryParams.s}`)
+      .pipe(
+        catchError((error) => {
+          this.alert.show(error.message);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  public getClaudeQueryData(prompt: string): Observable<ClaudeQueryResponseModel> {
+    const body: ClaudeQueryRequestModel = { prompt };
+    return this.httpClient
+      .post<ClaudeQueryResponseModel>(`${this.apiState.state.apiUrl()}/proxy/claude/query`, body)
       .pipe(
         catchError((error) => {
           this.alert.show(error.message);

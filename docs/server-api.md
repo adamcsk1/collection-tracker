@@ -36,14 +36,13 @@ Base path: `/api/v1`
 | Method   | Path             | Notes                                                                                                                                    |
 | -------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `DELETE` | `/user`          | Deletes the current user, the stored Markdown entries, and related configuration.                                                        |
-| `GET`    | `/user/settings` | Returns persisted user settings or `{}` when none have been stored yet.                                                                  |
-| `POST`   | `/user/settings` | Accepts any subset of `fetchBatchSize`, `theme`, `animatedBackground`, `language`, and `searchMode`. Returns the merged settings object. |
+| `GET`    | `/user/settings` | Returns persisted user settings. Always includes `claudeAiAvailable: boolean` indicating whether `CLAUDE_API_KEY` is configured on the server. Returns `{ claudeAiAvailable: false }` when no settings have been stored yet. |
+| `POST`   | `/user/settings` | Accepts any subset of `fetchBatchSize`, `theme`, `animatedBackground`, and `language`. Returns the merged settings object. |
 
 Valid values for `POST /user/settings`:
 
 - `theme`: `system`, `dark`, `light`
 - `language`: `en`
-- `searchMode`: `standard`, `fuzzy`
 
 ## Collection Endpoints
 
@@ -62,6 +61,35 @@ These endpoints proxy requests to the OMDb API using the `OMDB_API_KEY` environm
 | ------ | ---------------------- | ------------------------------------------------------------ |
 | `GET`  | `/proxy/omdb/search`   | Query param: `s` (title search). Returns `OMDbResponseModel`. |
 | `GET`  | `/proxy/omdb/item`     | Query param: `i` (IMDb ID). Returns `OMDbResponseItemModel`. |
+
+## Claude Proxy Endpoint
+
+This endpoint proxies a natural-language query to the Claude API using the optional `CLAUDE_API_KEY` environment variable. The key is never exposed to the client. Responds with `503` if the variable is not set.
+
+| Method | Path                    | Notes                                                                   |
+| ------ | ----------------------- | ----------------------------------------------------------------------- |
+| `POST` | `/proxy/claude/query`   | Body: `ClaudeQueryRequestModel`. Returns `ClaudeQueryResponseModel`.    |
+
+Request body:
+
+```json
+{ "prompt": "Which are sci-fi movies?" }
+```
+
+Response body:
+
+```json
+{ "matchedIds": ["tt0133093"] }
+```
+
+The server reads the caller's collection from flat files, extracts IMDb IDs and metadata, and builds the prompt internally. Only the natural-language question is supplied by the client.
+
+Error responses:
+
+- `400` — missing or empty `prompt`
+- `503` — `CLAUDE_API_KEY` not configured
+- `502` — Claude returned an unparseable or truncated response
+- The model used is controlled by the optional `CLAUDE_MODEL` env variable; defaults to `claude-haiku-4-5-20251001`
 
 ## Parser And Tag Configuration
 

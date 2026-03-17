@@ -3,3 +3,7 @@ code {
   max-height: 75vh;
   overflow-wrap: break-word;
 }
+
+a.text-button {
+  font-size: var(--font-size-sm);
+}

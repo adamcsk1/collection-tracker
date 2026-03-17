@@ -3,4 +3,4 @@ export interface SelectDataModel {
   value: string | boolean | number | null;
 }
 
-export type SelectInputModel = Array<SelectDataModel>;
+export type SelectInputModel = SelectDataModel[];

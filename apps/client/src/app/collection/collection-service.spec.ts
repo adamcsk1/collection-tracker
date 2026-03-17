@@ -1,8 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import * as collectionUtils from '@client/collection/utils/get-collection-item-util';
-import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
+import {
+  initialMainCollectionState,
+  MainCollectionState,
+  mainCollectionStateToken,
+} from '@client/main/main-collection-store';
 import { ApiService } from '@services/api/api-service';
-import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { GetAllApiResponseItemModel, GetAllApiResponseModel } from '@shared/models/api-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { Subject } from 'rxjs';
@@ -13,8 +17,8 @@ import { CollectionService } from './collection-service';
 describe('CollectionService', () => {
   let service: CollectionService;
   let api: { getAll: ReturnType<typeof vi.fn> };
-  let mainCollectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
-  let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
+  let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
+  let apiState: NgxSimpleSignalStoreService<ApiState>;
   let getCollectionItemSpy: ReturnType<typeof vi.spyOn>;
   const originalStructuredClone = global.structuredClone;
 
@@ -45,10 +49,8 @@ describe('CollectionService', () => {
     });
 
     service = TestBed.inject(CollectionService);
-    mainCollectionState = TestBed.inject(mainCollectionStateToken) as NgxSimpleSignalStoreService<
-      typeof initialMainCollectionState
-    >;
-    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
+    mainCollectionState = TestBed.inject(mainCollectionStateToken);
+    apiState = TestBed.inject(apiStateToken);
     getCollectionItemSpy = vi.spyOn(collectionUtils, 'getCollectionItem');
   });
 

@@ -1,0 +1,34 @@
+a {
+  text-decoration: none;
+  color: var(--main-color);
+
+  &:visited {
+    text-decoration: none;
+    color: var(--main-color);
+  }
+
+  &:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  &:focus-visible {
+    outline-offset: var(--outline-offset);
+  }
+
+  &.silent-disabled {
+    pointer-events: none;
+    text-decoration: none;
+    cursor: default;
+  }
+
+  .text-button {
+    display: block;
+
+    &.disabled {
+      pointer-events: none;
+      cursor: default;
+      filter: grayscale(1);
+    }
+  }
+}

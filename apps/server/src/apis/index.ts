@@ -14,6 +14,7 @@ import { register as registerHealth } from '@server/apis/health-api';
 import { register as registerLogout } from '@server/apis/logout-api';
 import { register as registerModify } from '@server/apis/modify-api';
 import { register as registerParserConfig } from '@server/apis/parser-config-api';
+import { register as registerProxyClaude } from '@server/apis/proxy-claude-api';
 import { register as registerProxyOMDbItem } from '@server/apis/proxy-omdb-item-api';
 import { register as registerProxyOMDbSearch } from '@server/apis/proxy-omdb-search-api';
 import { register as registerSignIn } from '@server/apis/sign-in-api';
@@ -45,4 +46,5 @@ export const registerAllApis = (app: Application): void => {
   registerChangeUserSettings(app);
   registerProxyOMDbSearch(app);
   registerProxyOMDbItem(app);
+  registerProxyClaude(app);
 };

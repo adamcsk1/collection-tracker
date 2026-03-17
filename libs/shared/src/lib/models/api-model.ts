@@ -1,5 +1,4 @@
 import { LanguageModel } from '@shared/models/language-model';
-import { SearchModeModel } from '@shared/models/search-mode-model';
 import { ThemeModel } from '@shared/models/theme-model';
 
 export interface GetAllApiResponseItemModel {
@@ -7,7 +6,7 @@ export interface GetAllApiResponseItemModel {
   content: string;
 }
 
-export type GetAllApiResponseModel = Array<GetAllApiResponseItemModel>;
+export type GetAllApiResponseModel = GetAllApiResponseItemModel[];
 
 export interface CreateApiRequestModel {
   content: string;
@@ -46,7 +45,7 @@ export interface AccessTokenModel {
   expiresAt: string | null;
 }
 
-export type AccessTokensApiResponseModel = Array<AccessTokenModel>;
+export type AccessTokensApiResponseModel = AccessTokenModel[];
 
 export interface CreateAccessTokenApiResponseModel {
   accessToken: string;
@@ -61,6 +60,7 @@ export interface ParserConfigApiResponseModel {
   tagToken?: string;
   title?: string;
   year?: string;
+  content?: string;
   mdTemplate?: string;
   filenamePattern?: string;
 }
@@ -72,7 +72,7 @@ export interface UserSettingsApiResponseModel {
   theme?: ThemeModel;
   animatedBackground?: boolean;
   language?: LanguageModel;
-  searchMode?: SearchModeModel;
+  claudeAiAvailable?: boolean; // This field is determined by the presence of the CLAUDE_API_KEY on the server and indicates whether Claude AI search is available for the user.
 }
 
 export type UserSettingsApiRequestModel = UserSettingsApiResponseModel;
@@ -86,5 +86,5 @@ export interface TagConfigApiModel {
   weight: number;
 }
 
-export type TagConfigsApiResponseModel = Array<TagConfigApiModel>;
+export type TagConfigsApiResponseModel = TagConfigApiModel[];
 export type TagConfigsApiRequestModel = TagConfigsApiResponseModel;

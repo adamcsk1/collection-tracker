@@ -11,25 +11,24 @@ import {
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { collectionStateToken } from '@client/collection/collection-store';
 import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
+import { FloatButtons } from '@client/collection/list/float-buttons/float-buttons';
 import { ListItemSkeleton } from '@client/collection/list/list-item-skeleton/list-item-skeleton';
 import { ListItem } from '@client/collection/list/list-item/list-item';
 import { PaginationService } from '@client/collection/list/pagination/pagination-service';
+import { matchesSearch } from '@client/collection/list/utils/matches-search-util';
 import { NewItemDialog } from '@client/collection/new-item-dialog/new-item-dialog';
+import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
-import { mainStateToken } from '@client/main/main-store';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
-import { affordableFuzzySearch, hasFuzzyMatch } from '@shared/utils/fuzzy-search-util';
+import { affordableFuzzySearch } from '@shared/utils/fuzzy-search-util';
 import { randomInt } from '@shared/utils/random-int-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { debounceTime, startWith } from 'rxjs';
-
-const FUZZY_CONTENT_MAX_LENGTH = 250;
+import { debounceTime, startWith, switchMap } from 'rxjs';
 
 @Component({
   selector: 'ct-list',
-  imports: [NgxSignalTranslatePipe, ListItem, ListItemSkeleton],
+  imports: [NgxSignalTranslatePipe, ListItem, ListItemSkeleton, FloatButtons],
   templateUrl: './list.html',
   styleUrl: './list.css',
   providers: [PaginationService],
@@ -37,56 +36,52 @@ const FUZZY_CONTENT_MAX_LENGTH = 250;
 })
 export class List {
   private readonly mainCollectionState = inject(mainCollectionStateToken);
-  private readonly mainState = inject(mainStateToken);
-  private readonly apiState = inject(apiStateToken);
   private readonly collectionState = inject(collectionStateToken);
+  private readonly apiState = inject(apiStateToken);
   private readonly portal = inject(PortalService);
   private readonly pagination = inject(PaginationService);
+  private readonly claudeSearch = inject(ClaudeSearchService);
   private readonly debouncedSearchText = toSignal(
     toObservable(this.collectionState.state.searchText).pipe(startWith(''), debounceTime(100))
   );
-
+  private readonly claudeAiSendTrigger = computed(() => ({
+    promptText: this.collectionState.state.claudeAiPromptText(),
+    version: this.collectionState.state.claudeAiSendVersion(),
+  }));
+  private readonly claudeAiMatchedIds = toSignal(
+    toObservable(this.claudeAiSendTrigger).pipe(
+      debounceTime(500),
+      switchMap(({ promptText }) => this.claudeSearch.getMatchedIds(promptText)),
+      startWith(null)
+    ),
+    { initialValue: null }
+  );
   protected readonly filteredCollection = computed(() => {
-    let forceStandardSearch = false;
-    untracked(() => (forceStandardSearch = this.collectionState.state.forceStandardSearch()));
+    const aiIds = this.claudeAiMatchedIds();
+
+    if (this.claudeSearch.useClaudeAi()) {
+      if (this.collectionState.state.claudeAiPromptText().trim() === '' || aiIds === null) {
+        return this.mainCollectionState.state.collection();
+      }
+
+      return this.mainCollectionState.state.collection().filter((item) => aiIds.includes(item.IMDbId));
+    }
+
+    const forceStandardSearch = untracked(() => this.collectionState.state.forceStandardSearch());
     const searchText = this.debouncedSearchText() || '';
-    const lowerCasedSearchText = searchText.toLowerCase();
-    const useFuzzySearch =
-      !forceStandardSearch &&
-      this.mainState.state.searchMode() === 'fuzzy' &&
-      affordableFuzzySearch(lowerCasedSearchText);
-    this.resetScrollPosition();
+    const useFuzzySearch = !forceStandardSearch && affordableFuzzySearch(searchText.toLowerCase());
 
-    return this.mainCollectionState.state.collection().filter((collectionItem) => {
-      if (searchText === VIRTUAL_UNWATCHED_TAG) {
-        return !collectionItem.rawContentLower.includes(WATCHED_TAG);
-      }
-
-      if (useFuzzySearch) {
-        if (collectionItem.titleLower.includes(lowerCasedSearchText)) return true;
-        if (hasFuzzyMatch(lowerCasedSearchText, collectionItem.titleLower)) return true;
-
-        if (!collectionItem.rawContentLower.includes(lowerCasedSearchText)) {
-          if (collectionItem.rawContentLower.length <= FUZZY_CONTENT_MAX_LENGTH) {
-            return hasFuzzyMatch(lowerCasedSearchText, collectionItem.rawContentLower);
-          }
-          return false;
-        }
-
-        return true;
-      }
-
-      return collectionItem.rawContentLower.includes(lowerCasedSearchText);
-    });
+    return this.mainCollectionState.state
+      .collection()
+      .filter((item) => matchesSearch(item, searchText, useFuzzySearch));
   });
+  protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
+  protected readonly collectionLength = computed(() => this.mainCollectionState.state.collection().length);
   protected readonly paginatedCollection = this.pagination.paginatedItems;
   protected readonly disablePreviousButton = this.pagination.disablePrevious;
   protected readonly disableNextButton = this.pagination.disableNext;
   protected readonly offset = this.pagination.offset;
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
-  protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
-  protected readonly collectionLength = computed(() => this.mainCollectionState.state.collection().length);
-  protected readonly permissionAdd = computed(() => this.mainState.state.permissions().create);
 
   constructor() {
     this.pagination.setCollectionSource(this.filteredCollection);
@@ -126,6 +121,11 @@ export class List {
   protected onLastPage(): void {
     this.pagination.lastPage();
     this.resetScrollPosition();
+  }
+
+  protected onToggleClaudeAi(): void {
+    this.claudeSearch.useClaudeAi.set(!this.claudeSearch.useClaudeAi());
+    this.collectionState.setState('searchText', '');
   }
 
   private resetScrollPosition(): void {

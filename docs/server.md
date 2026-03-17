@@ -12,13 +12,14 @@ Source: [`apps/server`](../apps/server)
 - tag configuration and user-settings persistence
 - flat-file database initialization and synchronization
 - OMDb API proxying — forwards search and item lookups to OMDb using the server-side `OMDB_API_KEY` environment variable
+- Claude AI proxying — forwards IMDB-ID-based queries to Claude using the optional `CLAUDE_API_KEY` environment variable; model is configurable via `CLAUDE_MODEL` (defaults to `claude-haiku-4-5-20251001`)
 - runtime safeguards such as Helmet, no-cache, CORS validation, request limits, and cookie parsing
 
 ## Runtime Model
 
 - Default data folder: `.data`
 - CLI flags: `--dataFolder=<path>` and `--debug=true|false`
-- Startup expects `.env` in the active data folder and loads it before registering APIs; set `OMDB_API_KEY` there to enable OMDb proxy endpoints
+- Startup expects `.env` in the active data folder and loads it before registering APIs; set `OMDB_API_KEY` there to enable OMDb proxy endpoints; `CLAUDE_API_KEY` is optional — omitting it does not block startup but disables the Claude proxy endpoint
 - `nx run server:preserve` creates `.data/.env` from [`apps/server/scripts/.env.dev`](../apps/server/scripts/.env.dev) for local development
 - Production deployments should run behind an HTTPS reverse proxy; see [Docker deployment](./docker.md)
 

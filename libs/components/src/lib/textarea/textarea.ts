@@ -40,6 +40,7 @@ export class Textarea<T> implements FormValueControl<T | null>, OnInit {
   public readonly textareaId = input<string>(crypto.randomUUID());
   public readonly label = input<string>('');
   public readonly mandatory = input<boolean>(false);
+  public readonly placeholder = input<string>();
   public readonly hint = input<string>();
   public readonly rows = input<number | undefined>();
   public readonly cols = input<number | undefined>();

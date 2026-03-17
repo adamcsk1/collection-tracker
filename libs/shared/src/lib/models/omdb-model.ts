@@ -12,5 +12,5 @@ export interface OMDbResponseItemModel {
 }
 
 export interface OMDbResponseModel {
-  Search: Array<OMDbResponseItemModel>;
+  Search: OMDbResponseItemModel[];
 }

@@ -6,7 +6,6 @@ import { UserSettingsModel } from '@server/models/user-settings-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { UserSettingsApiRequestModel } from '@shared/models/api-model';
 import { LANGUAGES } from '@shared/models/language-model';
-import { SEARCH_MODES } from '@shared/models/search-mode-model';
 import { THEMES } from '@shared/models/theme-model';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import type { Application } from 'express';
@@ -17,8 +16,6 @@ const isAllowedTheme = (value: unknown): value is UserSettingsModel['theme'] =>
   typeof value === 'string' && isAllowedValue(value, THEMES);
 const isAllowedLanguage = (value: unknown): value is UserSettingsModel['language'] =>
   typeof value === 'string' && isAllowedValue(value, LANGUAGES);
-const isAllowedSearchMode = (value: unknown): value is UserSettingsModel['searchMode'] =>
-  typeof value === 'string' && isAllowedValue(value, SEARCH_MODES);
 
 const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel => {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return false;
@@ -35,8 +32,6 @@ const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel
         return isAllowedBoolean(value);
       case 'language':
         return isAllowedLanguage(value);
-      case 'searchMode':
-        return isAllowedSearchMode(value);
       default:
         return false;
     }

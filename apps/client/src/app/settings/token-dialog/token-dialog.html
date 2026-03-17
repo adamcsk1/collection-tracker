@@ -7,7 +7,13 @@
   </ng-container>
   <ng-container dialog-shell-content>
     <code id="secret">{{ token() }}</code>
-    <a class="small-text-button" tabindex="0" (click)="onCopyToClipboard()" (keyup.enter)="onCopyToClipboard()">
+    <a
+      class="text-button"
+      tabindex="0"
+      [attr.aria-label]="('CopyToClipboard' | signalTranslate)()"
+      (click)="onCopyToClipboard()"
+      (keyup.enter)="onCopyToClipboard()"
+    >
       {{ ('CopyToClipboard' | signalTranslate)() }}
     </a>
     <small>

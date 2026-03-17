@@ -95,5 +95,6 @@ export class ParserService {
     setParserRegexp('tagToken', restoreSerializedParserRegexp(formData.tagToken!));
     setParserRegexp('title', restoreSerializedParserRegexp(formData.title!));
     setParserRegexp('year', restoreSerializedParserRegexp(formData.year!));
+    setParserRegexp('content', restoreSerializedParserRegexp(formData.content!));
   }
 }

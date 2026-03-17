@@ -1,6 +1,8 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
+import { CollectionState, collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
+import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -11,7 +13,7 @@ vi.mock('marked', () => ({ marked: vi.fn(() => '') }));
 
 describe('Collection component', () => {
   let fixture: ComponentFixture<Collection>;
-  let collectionState: NgxSimpleSignalStoreService<typeof initialCollectionState>;
+  let collectionState: NgxSimpleSignalStoreService<CollectionState>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -24,13 +26,25 @@ describe('Collection component', () => {
     });
 
     TestBed.overrideComponent(Collection, {
-      set: { template: '' },
+      set: {
+        template: '',
+        providers: [
+          provideStore(initialCollectionState, collectionStateToken),
+          { provide: AutocompleteService, useValue: { search: vi.fn() } },
+          {
+            provide: ClaudeSearchService,
+            useFactory: () => ({
+              useClaudeAi: signal(false),
+              getMatchedIds: () => of(null),
+              searchInProgress: signal(false),
+            }),
+          },
+        ],
+      },
     });
 
     fixture = TestBed.createComponent(Collection);
-    collectionState = fixture.debugElement.injector.get(collectionStateToken) as NgxSimpleSignalStoreService<
-      typeof initialCollectionState
-    >;
+    collectionState = fixture.debugElement.injector.get(collectionStateToken);
     fixture.detectChanges();
   });
 

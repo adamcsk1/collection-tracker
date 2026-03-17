@@ -14,3 +14,7 @@
     flex-basis: 50%;
   }
 }
+
+a.text-button {
+  font-size: var(--font-size-sm);
+}

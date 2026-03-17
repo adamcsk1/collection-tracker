@@ -33,6 +33,7 @@ export class ParserService {
           setParserRegexp('tagToken', restoreSerializedParserRegexp(parserConfig.tagToken!));
           setParserRegexp('title', restoreSerializedParserRegexp(parserConfig.title!));
           setParserRegexp('year', restoreSerializedParserRegexp(parserConfig.year!));
+          setParserRegexp('content', restoreSerializedParserRegexp(parserConfig.content!));
         }
       }),
       map(() => void 0)
@@ -52,6 +53,7 @@ export class ParserService {
       tagToken: serializeParserRegexp(getParserRegexp('tagToken')),
       title: serializeParserRegexp(getParserRegexp('title')),
       year: serializeParserRegexp(getParserRegexp('year')),
+      content: serializeParserRegexp(getParserRegexp('content')),
     };
 
     return this.api.updateUserParserConfig(parserConfig);

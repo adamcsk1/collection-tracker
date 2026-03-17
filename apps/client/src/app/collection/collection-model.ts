@@ -4,12 +4,12 @@ export interface CollectionItemModel {
   image: string;
   title: string;
   titleLower: string; // The lowercase cached version of title for faster searching.
-  genre: Array<string>;
+  genre: string[];
   IMDbId: string;
-  tags: Array<string>;
+  tags: string[];
   name: string;
   year: number | null;
   rate: string;
 }
 
-export type CollectionModel = Array<CollectionItemModel>;
+export type CollectionModel = CollectionItemModel[];
