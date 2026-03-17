@@ -2,4 +2,5 @@
 .idea/
 /build
 /app/build
+/app/release
 local.properties
