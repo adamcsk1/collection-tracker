@@ -49,7 +49,7 @@
             "output": "."
           }
         ],
-        "styles": ["apps/client/src/styles.css"],
+        "styles": ["node_modules/@fontsource/material-icons/index.css", "apps/client/src/styles.css"],
         "allowedCommonJsDependencies": [
           "dayjs",
           "easymde",
