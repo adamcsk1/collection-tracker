@@ -7,14 +7,7 @@ import { Select } from './select';
 
 @Component({
   imports: [FormField, Select],
-  template: `<libc-select
-    [formField]="field"
-    [options]="options"
-    label="Choose"
-    [labelIcon]="'info'"
-    [labelIconHint]="'Select help'"
-    hint="Pick one"
-  ></libc-select>`,
+  template: `<libc-select [formField]="field" [options]="options" label="Choose" hint="Pick one"></libc-select>`,
 })
 class HostComponent {
   public readonly model = signal('');
@@ -184,14 +177,5 @@ describe('Select component', () => {
     whitespaceFixture.detectChanges();
 
     expect(whitespaceFixture.componentInstance.model()).toBe('Missing');
-  });
-
-  it('renders label icon with accessible hint attributes', () => {
-    const iconElement = fixture.nativeElement.querySelector('label [role="img"]') as HTMLElement | null;
-
-    expect(iconElement).not.toBeNull();
-    expect(iconElement.textContent?.trim()).toBe('info');
-    expect(iconElement.getAttribute('title')).toBe('Select help');
-    expect(iconElement.getAttribute('aria-label')).toBe('Select help');
   });
 });

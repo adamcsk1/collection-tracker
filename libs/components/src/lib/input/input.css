@@ -6,10 +6,6 @@ label {
   span {
     color: var(--color-crimson);
   }
-
-  i {
-    font-size: var(--font-size-base);
-  }
 }
 
 small {

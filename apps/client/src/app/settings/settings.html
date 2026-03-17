@@ -3,24 +3,18 @@
   <libc-details [summary]="('Basics' | signalTranslate)()">
     <libc-select
       [label]="('Language' | signalTranslate)()"
-      labelIcon="api"
-      [labelIconHint]="('Message.BackendStored' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.language"
       [options]="languageOptions()"
     />
     <libc-select
       [label]="('Theme' | signalTranslate)()"
-      labelIcon="api"
-      [labelIconHint]="('Message.BackendStored' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.theme"
       [options]="themeOptions()"
     />
     <libc-select
       [label]="('SearchMode' | signalTranslate)()"
-      labelIcon="storage"
-      [labelIconHint]="('Message.LocallyStored' | signalTranslate)()"
       [hint]="('Message.SearchMode' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.searchMode"
@@ -30,8 +24,6 @@
       ]"
     />
     <libc-checkbox
-      labelIcon="api"
-      [labelIconHint]="('Message.BackendStored' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.animatedBackground"
       [label]="('AnimatedBackground' | signalTranslate)()"
@@ -40,8 +32,6 @@
     @if (!settingLockEnabled()) {
       <libc-select
         [label]="('AppMode' | signalTranslate)()"
-        labelIcon="api"
-        [labelIconHint]="('Message.LocallyStored' | signalTranslate)()"
         [hint]="('Message.AppMode' | signalTranslate)()"
         [mandatory]="true"
         [formField]="form.appMode"
@@ -54,8 +44,6 @@
       @if (form.appMode().value() !== 'full') {
         <libc-checkbox
           [label]="('SettingsLock' | signalTranslate)()"
-          labelIcon="storage"
-          [labelIconHint]="('Message.LocallyStored' | signalTranslate)()"
           [hint]="('Message.SettingsLock' | signalTranslate)()"
           [mandatory]="true"
           [formField]="form.settingsLock"
@@ -63,8 +51,6 @@
       }
       <libc-select
         [label]="('FetchBatchSize' | signalTranslate)()"
-        labelIcon="api"
-        [labelIconHint]="('Message.BackendStored' | signalTranslate)()"
         [hint]="('Message.FetchBatchSize' | signalTranslate)()"
         [mandatory]="true"
         [formField]="form.fetchBatchSize"
@@ -85,8 +71,6 @@
       <p>{{ ('Message.StorageSettings' | signalTranslate)() }}</p>
       <libc-select
         [label]="('SensitiveDataStorage' | signalTranslate)()"
-        labelIcon="storage"
-        [labelIconHint]="('Message.LocallyStored' | signalTranslate)()"
         [hint]="('Message.SensitiveDataStorage' | signalTranslate)()"
         [mandatory]="true"
         [formField]="form.sensitiveDataStorage"
@@ -98,8 +82,6 @@
       @if (form.sensitiveDataStorage().value() === 'local') {
         <libc-checkbox
           [label]="('ClearLocalStorageAfterLogout' | signalTranslate)()"
-          labelIcon="storage"
-          [labelIconHint]="('Message.LocallyStored' | signalTranslate)()"
           [mandatory]="true"
           [formField]="form.clearLocalStorageAfterLogout"
         />

@@ -10,11 +10,6 @@
     (blur)="onBlur()"
   />
   <label [for]="checkboxId()">
-    @if (labelIcon(); as labelIcon) {
-      <i class="material-icons" role="img" [attr.aria-label]="labelIconHint()" [title]="labelIconHint()">
-        {{ labelIcon }}
-      </i>
-    }
     {{ label() }}
     @if (mandatory()) {
       <span>*</span>

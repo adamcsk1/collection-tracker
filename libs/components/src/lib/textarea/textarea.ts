@@ -39,8 +39,6 @@ export class Textarea<T> implements FormValueControl<T | null>, OnInit {
   public readonly errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public readonly textareaId = input<string>(crypto.randomUUID());
   public readonly label = input<string>('');
-  public readonly labelIcon = input<string>();
-  public readonly labelIconHint = input<string>();
   public readonly mandatory = input<boolean>(false);
   public readonly hint = input<string>();
   public readonly rows = input<number | undefined>();
