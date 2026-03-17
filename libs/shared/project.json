@@ -34,9 +34,15 @@
       }
     },
     "stylelint": {
-      "executor": "nx-stylelint:lint",
+      "executor": "nx:run-commands",
       "options": {
-        "lintFilePatterns": ["libs/shared/src/**/*.css"]
+        "command": "stylelint \"libs/shared/src/**/*.css\""
+      }
+    },
+    "stylelint-fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "stylelint --fix \"libs/shared/src/**/*.css\""
       }
     },
     "format": {
