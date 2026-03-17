@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { collectionStateToken } from '@client/collection/collection-store';
 import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
+import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
 import { TagConfigColorPipe } from '@client/tag-configs/tag-configs-color-pipe';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
@@ -23,6 +24,7 @@ export class ListItem {
   private readonly collectionState = inject(collectionStateToken);
   private readonly portal = inject(PortalService);
   private readonly tagConfigColorPipe = inject(TagConfigColorPipe);
+  private readonly claudeSearch = inject(ClaudeSearchService);
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG) ?? false);
   protected readonly movie = computed(() => this.collectionItem().tags.includes(MOVIE_TAG) ?? false);
   protected readonly series = computed(() => this.collectionItem().tags.includes(SERIES_TAG) ?? false);
@@ -47,6 +49,7 @@ export class ListItem {
 
     return getContrastColorHex(badgeBackgroundColor);
   });
+  protected readonly useClaudeAi = this.claudeSearch.useClaudeAi.asReadonly();
   protected readonly WATCHED_TAG = WATCHED_TAG;
   protected readonly MOVIE_TAG = MOVIE_TAG;
   protected readonly SERIES_TAG = SERIES_TAG;
@@ -54,6 +57,8 @@ export class ListItem {
   public readonly collectionItem = input.required<CollectionItemModel>();
 
   protected onSetSearchText(searchValue: string | number | null, event?: Event): void {
+    if (this.useClaudeAi()) return;
+
     if (searchValue !== null) {
       event?.stopPropagation();
       this.collectionState.setState('forceStandardSearch', true);

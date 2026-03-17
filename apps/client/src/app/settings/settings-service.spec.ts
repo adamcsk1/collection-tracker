@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { MainService } from '@client/main/main-service';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
+import { initialMainState, MainState, mainStateToken } from '@client/main/main-store';
 import { SettingsModel } from '@client/settings/settings-model';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
-import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
@@ -27,7 +27,6 @@ const buildFormData = (overrides: Partial<SettingsModel> = {}): SettingsModel =>
   clearLocalStorageAfterLogout: false,
   animatedBackground: true,
   language: 'en',
-  searchMode: 'standard',
   fetchBatchSize: 25,
   theme: 'dark',
   ...overrides,
@@ -47,8 +46,8 @@ describe('SettingsService', () => {
   };
   let translate: { translate: ReturnType<typeof vi.fn>; setLanguage: ReturnType<typeof vi.fn> };
   let main: { setPermissions: ReturnType<typeof vi.fn> };
-  let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
-  let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
+  let mainState: NgxSimpleSignalStoreService<MainState>;
+  let apiState: NgxSimpleSignalStoreService<ApiState>;
 
   beforeEach(() => {
     router = { navigate: vi.fn() };
@@ -73,19 +72,17 @@ describe('SettingsService', () => {
     });
 
     service = TestBed.inject(SettingsService);
-    mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
-    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
+    mainState = TestBed.inject(mainStateToken);
+    apiState = TestBed.inject(apiStateToken);
   });
 
   it('stores form data, syncs settings to the API', () => {
-    const formData = buildFormData({ searchMode: 'fuzzy', sensitiveDataStorage: 'session' });
+    const formData = buildFormData({ sensitiveDataStorage: 'session' });
 
     service.storeFormData(formData);
 
-    expect(mainState.state.searchMode()).toBe('fuzzy');
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_SENSITIVE_DATA_STORAGE, 'session');
     expect(api.updateUserSettings).toHaveBeenCalledWith({
-      searchMode: 'fuzzy',
       fetchBatchSize: 25,
       theme: 'dark',
       animatedBackground: true,
@@ -96,7 +93,7 @@ describe('SettingsService', () => {
   });
 
   it('navigates back to collection when requested', () => {
-    const formData = buildFormData({ searchMode: 'fuzzy' });
+    const formData = buildFormData();
 
     service.storeFormData(formData, true);
 
@@ -117,7 +114,6 @@ describe('SettingsService', () => {
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_SETTINGS_LOCK, 'true');
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT, 'true');
     expect(api.updateUserSettings).toHaveBeenCalledWith({
-      searchMode: 'standard',
       fetchBatchSize: 25,
       theme: 'dark',
       animatedBackground: false,
@@ -128,7 +124,6 @@ describe('SettingsService', () => {
   it('preloads migrated settings from the API and leaves defaults for missing values', () => {
     api.getUserSettings.mockReturnValue(
       of({
-        searchMode: 'fuzzy',
         fetchBatchSize: 50,
         theme: 'dark',
       })
@@ -136,7 +131,6 @@ describe('SettingsService', () => {
 
     service.preloadUserSettings().subscribe();
 
-    expect(mainState.state.searchMode()).toBe('fuzzy');
     expect(apiState.state.fetchBatchSize()).toBe(50);
     expect(translate.setLanguage).not.toHaveBeenCalled();
     expect(mainState.state.language()).toBe('en');

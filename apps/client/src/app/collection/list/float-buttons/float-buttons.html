@@ -1,0 +1,48 @@
+<div class="float-button random-pick">
+  <button
+    class="button-icon material-icons"
+    [attr.aria-label]="('RandomPick' | signalTranslate)()"
+    [title]="('RandomPick' | signalTranslate)()"
+    [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
+    (click)="randomPick.emit()"
+  >
+    casino
+  </button>
+</div>
+@if (claudeAiAvailable()) {
+  <div class="float-button claude-ai-toggle">
+    <button
+      class="button-icon material-icons"
+      [attr.aria-label]="
+        useClaudeAi() ? ('SwitchToStandardSearch' | signalTranslate)() : ('SwitchToClaudeAiSearch' | signalTranslate)()
+      "
+      [title]="
+        useClaudeAi() ? ('SwitchToStandardSearch' | signalTranslate)() : ('SwitchToClaudeAiSearch' | signalTranslate)()
+      "
+      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      (click)="toggleClaudeAi.emit()"
+    >
+      @if (useClaudeAi()) {
+        <libc-image-icon
+          [ariaLabel]="('ClaudeAi' | signalTranslate)()"
+          imageUrl="/client/images/claude-ai-icon-transparent.png"
+        />
+      } @else {
+        search
+      }
+    </button>
+  </div>
+}
+@if (permissionAdd()) {
+  <div class="float-button add-new">
+    <button
+      class="button-icon material-icons"
+      [attr.aria-label]="('AddNew' | signalTranslate)()"
+      [title]="('AddNew' | signalTranslate)()"
+      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      (click)="addNew.emit()"
+    >
+      add
+    </button>
+  </div>
+}

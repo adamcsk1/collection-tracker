@@ -20,4 +20,12 @@
     display: block;
     padding: var(--size-xs);
   }
+
+  .search-input {
+    padding: var(--size-xs);
+
+    ct-claude-ai-input {
+      display: block;
+    }
+  }
 }

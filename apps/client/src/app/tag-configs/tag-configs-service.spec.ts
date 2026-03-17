@@ -3,8 +3,8 @@ import { ApiService } from '@services/api/api-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initialTagConfigsState, tagConfigsStateToken } from './tag-configs-store';
 import { TagConfigsService } from './tag-configs-service';
+import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from './tag-configs-store';
 
 describe('TagConfigsService', () => {
   let service: TagConfigsService;
@@ -12,7 +12,7 @@ describe('TagConfigsService', () => {
     getUserTagConfigs: ReturnType<typeof vi.fn>;
     updateUserTagConfigs: ReturnType<typeof vi.fn>;
   };
-  let tagConfigsState: NgxSimpleSignalStoreService<typeof initialTagConfigsState>;
+  let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
 
   beforeEach(() => {
     api = {
@@ -48,9 +48,7 @@ describe('TagConfigsService', () => {
     });
 
     service = TestBed.inject(TagConfigsService);
-    tagConfigsState = TestBed.inject(tagConfigsStateToken) as NgxSimpleSignalStoreService<
-      typeof initialTagConfigsState
-    >;
+    tagConfigsState = TestBed.inject(tagConfigsStateToken);
   });
 
   it('preloads user configs and stores them sorted by weight', () => {

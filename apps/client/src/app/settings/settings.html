@@ -13,16 +13,6 @@
       [formField]="form.theme"
       [options]="themeOptions()"
     />
-    <libc-select
-      [label]="('SearchMode' | signalTranslate)()"
-      [hint]="('Message.SearchMode' | signalTranslate)()"
-      [mandatory]="true"
-      [formField]="form.searchMode"
-      [options]="[
-        { text: ('STANDARD' | signalTranslate)(), value: 'standard' },
-        { text: ('FUZZY' | signalTranslate)(), value: 'fuzzy' },
-      ]"
-    />
     <libc-checkbox
       [mandatory]="true"
       [formField]="form.animatedBackground"
@@ -64,10 +54,7 @@
         ]"
       />
     }
-  </libc-details>
-
-  @if (!settingLockEnabled()) {
-    <libc-details [summary]="('StoragePolicies' | signalTranslate)()">
+    @if (!settingLockEnabled()) {
       <p>{{ ('Message.StorageSettings' | signalTranslate)() }}</p>
       <libc-select
         [label]="('SensitiveDataStorage' | signalTranslate)()"
@@ -86,19 +73,19 @@
           [formField]="form.clearLocalStorageAfterLogout"
         />
       }
-    </libc-details>
-  }
+    }
 
-  <div class="form-buttons">
-    <button type="submit" [disabled]="form().invalid()" (click)="submitAction.set('save')">
-      <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
-      {{ ('Save' | signalTranslate)() }}
-    </button>
-    <button type="submit" [disabled]="form().invalid()" (click)="submitAction.set('save-and-back')">
-      <i class="material-icons" [title]="('SaveAndBack' | signalTranslate)()"> door_back </i>
-      {{ ('SaveAndBack' | signalTranslate)() }}
-    </button>
-  </div>
+    <div class="form-buttons">
+      <button type="submit" [disabled]="form().invalid()" (click)="submitAction.set('save')">
+        <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
+        {{ ('Save' | signalTranslate)() }}
+      </button>
+      <button type="submit" [disabled]="form().invalid()" (click)="submitAction.set('save-and-back')">
+        <i class="material-icons" [title]="('SaveAndBack' | signalTranslate)()"> door_back </i>
+        {{ ('SaveAndBack' | signalTranslate)() }}
+      </button>
+    </div>
+  </libc-details>
 
   @if (!settingLockEnabled()) {
     <h3>{{ ('UserSettings' | signalTranslate)() }}</h3>

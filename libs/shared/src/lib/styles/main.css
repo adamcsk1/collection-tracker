@@ -27,25 +27,6 @@ h2 {
   margin-bottom: var(--size-md);
 }
 
-a {
-  text-decoration: none;
-  color: var(--main-color);
-
-  &:visited {
-    text-decoration: none;
-    color: var(--main-color);
-  }
-
-  &:hover {
-    text-decoration: underline;
-    cursor: pointer;
-  }
-
-  &:focus-visible {
-    outline-offset: var(--outline-offset);
-  }
-}
-
 * {
   scrollbar-color: var(--main-color) transparent;
   scrollbar-width: thin;
@@ -60,11 +41,6 @@ a {
 hr {
   opacity: 0.3;
   width: 100%;
-}
-
-a.small-text-button {
-  display: block;
-  font-size: var(--font-size-sm);
 }
 
 code {

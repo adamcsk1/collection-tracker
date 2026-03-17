@@ -1,6 +1,5 @@
 :host {
   --pagination-height: calc(35px + 2 * var(--size-2xs));
-  --float-button-container-size: 45px;
 }
 
 .list {
@@ -31,31 +30,4 @@
   justify-content: center;
   gap: var(--size-md);
   padding: var(--size-2xs);
-}
-
-.float-button {
-  position: fixed;
-  right: 0;
-  height: var(--float-button-container-size);
-  width: var(--float-button-container-size);
-  background-color: var(--background-color);
-  border-radius: var(--border-radius);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: var(--size-xs);
-
-  button {
-    height: 100%;
-    width: 100%;
-  }
-}
-
-.random-pick {
-  bottom: 0;
-}
-
-.add-new {
-  bottom: calc(2 * var(--size-xs) + var(--float-button-container-size));
-  margin-bottom: 0;
 }

@@ -11,6 +11,7 @@ Source: [`libs/components`](../libs/components)
 - `checkbox`: reusable boolean form control
 - `details`: wrapper around native expandable panels
 - `dialog-shell`: shared dialog layout for portal-driven overlays
+- `image-icon`: icon rendered as a `<span>` with a CSS background image; accepts `imageUrl` and `ariaLabel` inputs
 - `input`: reusable text and password input
 - `markdown-editor`: EasyMDE-based Markdown editor
 - `select`: typed select component

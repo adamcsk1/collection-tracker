@@ -1,14 +1,16 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
-import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
-import { initialTagConfigsState, tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
+import { CollectionState, collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
+import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
+import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListItem } from './list-item';
 
-const buildItem = (name: string, tags: Array<string> = []): CollectionItemModel => ({
+const buildItem = (name: string, tags: string[] = []): CollectionItemModel => ({
   rawContent: name,
   rawContentLower: name.toLowerCase(),
   image: '',
@@ -36,16 +38,19 @@ vi.mock('marked', () => ({ marked: { parse: () => '' } }));
 describe('ListItem', () => {
   let fixture: ComponentFixture<ListItem>;
   let component: ListItem;
-  let collectionState: NgxSimpleSignalStoreService<typeof initialCollectionState>;
-  let tagConfigsState: NgxSimpleSignalStoreService<typeof initialTagConfigsState>;
+  let collectionState: NgxSimpleSignalStoreService<CollectionState>;
+  let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
   let portal: { open: ReturnType<typeof vi.fn> };
+  let useClaudeAi: ReturnType<typeof signal<boolean | null>>;
 
   beforeEach(() => {
     portal = { open: vi.fn() };
+    useClaudeAi = signal<boolean | null>(false);
     TestBed.configureTestingModule({
       imports: [ListItem],
       providers: [
         { provide: PortalService, useValue: portal },
+        { provide: ClaudeSearchService, useValue: { useClaudeAi } },
         provideStore(initialCollectionState, collectionStateToken),
         provideStore(initialTagConfigsState, tagConfigsStateToken),
       ],
@@ -53,12 +58,8 @@ describe('ListItem', () => {
 
     fixture = TestBed.createComponent(ListItem);
     component = fixture.componentInstance;
-    collectionState = TestBed.inject(collectionStateToken) as NgxSimpleSignalStoreService<
-      typeof initialCollectionState
-    >;
-    tagConfigsState = TestBed.inject(tagConfigsStateToken) as NgxSimpleSignalStoreService<
-      typeof initialTagConfigsState
-    >;
+    collectionState = TestBed.inject(collectionStateToken);
+    tagConfigsState = TestBed.inject(tagConfigsStateToken);
 
     fixture.componentRef.setInput('collectionItem', buildItem('Sample'));
     fixture.detectChanges();
@@ -188,6 +189,44 @@ describe('ListItem', () => {
     expect(['#111111', normalizeHexColor('#111111')]).toContain(
       fixture.nativeElement.querySelector('.image')?.style.borderColor
     );
+  });
+
+  it('does nothing when Claude AI search is active', () => {
+    useClaudeAi.set(true);
+
+    component['onSetSearchText']('query');
+
+    expect(collectionState.state.searchText()).toBe('');
+    expect(collectionState.state.forceStandardSearch()).toBe(false);
+  });
+
+  it('does nothing when search value is null', () => {
+    component['onSetSearchText'](null);
+
+    expect(collectionState.state.searchText()).toBe('');
+    expect(collectionState.state.forceStandardSearch()).toBe(false);
+  });
+
+  it('stops event propagation when search value is not null', () => {
+    const event = { stopPropagation: vi.fn() } as unknown as Event;
+
+    component['onSetSearchText']('query', event);
+
+    expect(event.stopPropagation).toHaveBeenCalled();
+  });
+
+  it('does not stop event propagation when search value is null', () => {
+    const event = { stopPropagation: vi.fn() } as unknown as Event;
+
+    component['onSetSearchText'](null, event);
+
+    expect(event.stopPropagation).not.toHaveBeenCalled();
+  });
+
+  it('converts number search value to string', () => {
+    component['onSetSearchText'](42);
+
+    expect(collectionState.state.searchText()).toBe('42');
   });
 
   it('sets search text to image badge tag when image badge is clicked', () => {

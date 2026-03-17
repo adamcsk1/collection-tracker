@@ -21,7 +21,6 @@ describe('user-settings-api', () => {
         theme: 'dark',
         animatedBackground: false,
         language: 'en',
-        searchMode: 'fuzzy',
       },
     });
 
@@ -34,7 +33,7 @@ describe('user-settings-api', () => {
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
-      searchMode: 'fuzzy',
+      claudeAiAvailable: false,
     });
   });
 
@@ -48,7 +47,7 @@ describe('user-settings-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({});
+    expect(response.send).toHaveBeenCalledWith({ claudeAiAvailable: false });
   });
 
   it('returns 500 on unexpected error', async () => {

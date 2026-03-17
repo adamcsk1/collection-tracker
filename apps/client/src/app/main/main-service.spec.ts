@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
+import { initialMainState, MainState, mainStateToken } from '@client/main/main-store';
 import { ApiService } from '@services/api/api-service';
-import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_API_URL,
@@ -19,8 +19,8 @@ describe('MainService', () => {
   let service: MainService;
   let api: { validateAccessToken: ReturnType<typeof vi.fn> };
   let webstorage: { getItem: ReturnType<typeof vi.fn> };
-  let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
-  let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
+  let mainState: NgxSimpleSignalStoreService<MainState>;
+  let apiState: NgxSimpleSignalStoreService<ApiState>;
 
   beforeEach(() => {
     api = { validateAccessToken: vi.fn(() => of(undefined)) };
@@ -37,8 +37,8 @@ describe('MainService', () => {
     });
 
     service = TestBed.inject(MainService);
-    mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
-    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
+    mainState = TestBed.inject(mainStateToken);
+    apiState = TestBed.inject(apiStateToken);
   });
 
   it('hydrates browser-backed stores and sets permissions', () => {

@@ -1,6 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
-import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
+import {
+  initialMainCollectionState,
+  MainCollectionState,
+  mainCollectionStateToken,
+} from '@client/main/main-collection-store';
 import * as mobileUserAgentUtil from '@shared/utils/mobile-user-agent.util';
 import * as coarsePointerUtil from '@shared/utils/prefer-coarse-pointer-util';
 import * as randomIntUtil from '@shared/utils/random-int-util';
@@ -19,7 +23,7 @@ vi.mock('@shared/utils/prefer-coarse-pointer-util', () => ({
 describe('Background component', () => {
   let fixture: ComponentFixture<Background>;
   let component: Background;
-  let collectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
+  let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let randomSpy: ReturnType<typeof vi.spyOn>;
   let orientationTarget: EventTarget;
   let setImagesSpy: ReturnType<typeof vi.spyOn>;
@@ -67,9 +71,7 @@ describe('Background component', () => {
 
     fixture = TestBed.createComponent(Background);
     component = fixture.componentInstance;
-    collectionState = TestBed.inject(mainCollectionStateToken) as NgxSimpleSignalStoreService<
-      typeof initialMainCollectionState
-    >;
+    collectionState = TestBed.inject(mainCollectionStateToken);
   });
 
   afterEach(() => {

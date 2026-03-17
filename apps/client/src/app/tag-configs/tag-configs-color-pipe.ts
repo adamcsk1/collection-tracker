@@ -8,7 +8,7 @@ export class TagConfigColorPipe implements PipeTransform {
   private readonly tagConfigsState = inject(tagConfigsStateToken);
 
   public transform(
-    tag: string | Array<string>,
+    tag: string | string[],
     options: { checkUseForImageBorder?: boolean; checkUseForTextColor?: boolean; useForImageBadge?: boolean } = {}
   ): string | null {
     const { checkUseForImageBorder = false, checkUseForTextColor = false, useForImageBadge = false } = options;

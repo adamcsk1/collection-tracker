@@ -1,23 +1,20 @@
 import { inject, Injectable } from '@angular/core';
 import { searchCollection } from '@client/collection/utils/search-collection-util';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
-import { mainStateToken } from '@client/main/main-store';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
-import { affordableFuzzySearch, hasFuzzyMatch } from '@shared/utils/fuzzy-search-util';
+import { affordableFuzzySearch, FUZZY_CONTENT_MAX_LENGTH, hasFuzzyMatch } from '@shared/utils/fuzzy-search-util';
 
 const SEPARATOR = ' ### ';
-const FUZZY_CONTENT_MAX_LENGTH = 250;
 
 @Injectable()
 export class SearchSuggestionService {
   private readonly appCollectionState = inject(mainCollectionStateToken);
-  private readonly mainState = inject(mainStateToken);
   private readonly basicTagList = [...VIRTUAL_TAGS, WATCHED_TAG, MOVIE_TAG, SERIES_TAG];
 
-  public getSuggestion(text: string, limit = 3): Array<string> {
+  public getSuggestion(text: string, limit = 3): string[] {
     const lowerCasedText = text.toLowerCase();
 
-    if (this.mainState.state.searchMode() === 'fuzzy' && affordableFuzzySearch(lowerCasedText)) {
+    if (affordableFuzzySearch(lowerCasedText)) {
       return this.fuzzySearch(lowerCasedText, text, limit);
     }
     return this.standardSearch(lowerCasedText, text, limit);
@@ -31,76 +28,48 @@ export class SearchSuggestionService {
     return text.includes(SEPARATOR) ? text.split(SEPARATOR)[1] : text;
   }
 
-  private fuzzySearch(lowerCasedText: string, text: string, limit: number): Array<string> {
+  private fuzzySearch(lowerCasedText: string, text: string, limit: number): string[] {
     return Array.from(
       searchCollection(this.appCollectionState.state.collection(), limit, (collectionItem, results) => {
         if (text.startsWith('#')) {
-          let hasTagMatch = false;
-          for (const tag of collectionItem.tags) {
-            if (hasFuzzyMatch(text, tag)) {
-              results.add(tag);
-              hasTagMatch = true;
-              break;
-            }
-          }
-          if (!hasTagMatch) {
-            for (const tag of this.basicTagList) {
-              if (hasFuzzyMatch(text, tag)) {
-                results.add(tag);
-                break;
-              }
-            }
-          }
+          this.addTagMatch(results, [...collectionItem.tags, ...this.basicTagList], (tag) => hasFuzzyMatch(text, tag));
         } else {
-          if (
+          const matchesTitle =
             collectionItem.titleLower.includes(lowerCasedText) ||
-            hasFuzzyMatch(lowerCasedText, collectionItem.titleLower)
-          ) {
-            results.add(`${collectionItem.title}${SEPARATOR}${collectionItem.IMDbId || collectionItem.title}`);
-            return;
-          }
+            hasFuzzyMatch(lowerCasedText, collectionItem.titleLower);
+          const matchesContent =
+            collectionItem.rawContentLower.includes(lowerCasedText) ||
+            (collectionItem.rawContentLower.length <= FUZZY_CONTENT_MAX_LENGTH &&
+              hasFuzzyMatch(lowerCasedText, collectionItem.rawContentLower));
 
-          if (collectionItem.rawContentLower.includes(lowerCasedText)) {
-            results.add(`${collectionItem.title}${SEPARATOR}${collectionItem.IMDbId || collectionItem.title}`);
-            return;
-          }
-
-          if (collectionItem.rawContentLower.length <= FUZZY_CONTENT_MAX_LENGTH) {
-            if (hasFuzzyMatch(lowerCasedText, collectionItem.rawContentLower)) {
-              results.add(`${collectionItem.title}${SEPARATOR}${collectionItem.IMDbId || collectionItem.title}`);
-            }
+          if (matchesTitle || matchesContent) {
+            results.add(this.formatItemSuggestion(collectionItem));
           }
         }
       })
     );
   }
 
-  private standardSearch(lowerCasedText: string, text: string, limit: number): Array<string> {
+  private standardSearch(lowerCasedText: string, text: string, limit: number): string[] {
     if (text === '#') return this.basicTagList;
 
     return Array.from(
       searchCollection(this.appCollectionState.state.collection(), limit, (collectionItem, results) => {
         if (text.startsWith('#')) {
-          let hasTagMatch = false;
-          for (const tag of collectionItem.tags) {
-            if (tag.startsWith(text)) {
-              results.add(tag);
-              hasTagMatch = true;
-              break;
-            }
-          }
-          if (!hasTagMatch) {
-            for (const tag of this.basicTagList) {
-              if (tag.startsWith(text)) {
-                results.add(tag);
-                break;
-              }
-            }
-          }
+          this.addTagMatch(results, [...collectionItem.tags, ...this.basicTagList], (tag) => tag.startsWith(text));
         } else if (collectionItem.rawContentLower.includes(lowerCasedText)) {
-          results.add(`${collectionItem.title}${SEPARATOR}${collectionItem.IMDbId || collectionItem.title}`);
+          results.add(this.formatItemSuggestion(collectionItem));
         }
       })
     );
+  }
+
+  private addTagMatch(results: Set<string>, tags: string[], matches: (tag: string) => boolean): void {
+    const match = tags.find(matches);
+    if (match) results.add(match);
+  }
+
+  private formatItemSuggestion(collectionItem: { title: string; IMDbId: string }): string {
+    return `${collectionItem.title}${SEPARATOR}${collectionItem.IMDbId || collectionItem.title}`;
   }
 }

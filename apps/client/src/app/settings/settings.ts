@@ -47,7 +47,6 @@ export class Settings implements OnInit {
     settingsLock: false,
     animatedBackground: true,
     language: 'en',
-    searchMode: 'standard',
   });
   protected readonly form = form(
     this.settingsModel,
@@ -57,7 +56,6 @@ export class Settings implements OnInit {
       required(settings.fetchBatchSize);
       required(settings.theme);
       required(settings.language);
-      required(settings.searchMode);
     },
     {
       submission: {
@@ -80,7 +78,6 @@ export class Settings implements OnInit {
       clearLocalStorageAfterLogout: this.mainState.state.clearLocalStorageAfterLogout(),
       animatedBackground: this.mainState.state.animatedBackground(),
       language: this.mainState.state.language(),
-      searchMode: this.mainState.state.searchMode(),
     });
   }
 

@@ -39,6 +39,7 @@ export class Parser implements OnInit {
     tagToken: '',
     title: '',
     year: '',
+    content: '',
     mdTemplate: '',
     filenamePattern: '',
   });
@@ -54,6 +55,7 @@ export class Parser implements OnInit {
       required(parser.tagToken);
       required(parser.title);
       required(parser.year);
+      required(parser.content);
       required(parser.mdTemplate);
       required(parser.filenamePattern);
       validate(parser.mdTemplate, ({ value }) => mdTemplateValidationError(value()));
@@ -96,6 +98,7 @@ export class Parser implements OnInit {
       tagToken: serializeParserRegexp(getParserRegexp('tagToken')),
       title: serializeParserRegexp(getParserRegexp('title')),
       year: serializeParserRegexp(getParserRegexp('year')),
+      content: serializeParserRegexp(getParserRegexp('content')),
       mdTemplate: getParserTemplate(),
       filenamePattern: getParserFilenamePattern(),
     });

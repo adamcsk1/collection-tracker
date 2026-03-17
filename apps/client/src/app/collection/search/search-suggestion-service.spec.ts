@@ -1,11 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
-import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
+import {
+  initialMainCollectionState,
+  MainCollectionState,
+  mainCollectionStateToken,
+} from '@client/main/main-collection-store';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
+import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SearchSuggestionService } from './search-suggestion-service';
-import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 
 const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
   rawContent: overrides.rawContent || '',
@@ -23,8 +27,7 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
 
 describe('SearchSuggestionService', () => {
   let service: SearchSuggestionService;
-  let collectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
-  let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
+  let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -36,10 +39,7 @@ describe('SearchSuggestionService', () => {
     });
 
     service = TestBed.inject(SearchSuggestionService);
-    collectionState = TestBed.inject(mainCollectionStateToken) as NgxSimpleSignalStoreService<
-      typeof initialMainCollectionState
-    >;
-    mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
+    collectionState = TestBed.inject(mainCollectionStateToken);
 
     collectionState.setState('collection', [
       buildItem({
@@ -84,7 +84,6 @@ describe('SearchSuggestionService', () => {
   });
 
   it('returns fuzzy matches and formats values when search mode is fuzzy', () => {
-    mainState.setState('searchMode', 'fuzzy');
     collectionState.setState('collection', [
       buildItem({ title: 'Gravity', rawContent: 'space thriller', IMDbId: 'tt1234567' }),
     ]);

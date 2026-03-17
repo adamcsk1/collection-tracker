@@ -1,7 +1,7 @@
 import { CollectionItemModel } from '@client/collection/collection-model';
 
 export function searchCollection(
-  collection: ReadonlyArray<CollectionItemModel>,
+  collection: readonly CollectionItemModel[],
   limit: number,
   matcher: (item: CollectionItemModel, results: Set<string>) => void
 ): Set<string> {

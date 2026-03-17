@@ -16,6 +16,7 @@
         class="badge"
         [style.backgroundColor]="badgeBackgroundColor()"
         [style.color]="badgeTextColor()"
+        [class.silent-disabled]="useClaudeAi()"
         (click)="onSetSearchText(imageBadgeTag, $event)"
       >
         {{ imageBadgeTag }}
@@ -31,39 +32,54 @@
     <span>
       <small>
         @if (movie()) {
-          <a href="#" role="button" (click)="onSetSearchText(MOVIE_TAG)">
+          <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(MOVIE_TAG)">
             <i class="material-icons" [title]="('Movie' | signalTranslate)()"> movie </i>
             {{ ('Movie' | signalTranslate)() }}
           </a>
           &nbsp;
         }
         @if (series()) {
-          <a href="#" role="button" (click)="onSetSearchText(SERIES_TAG)">
+          <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(SERIES_TAG)">
             <i class="material-icons" [title]="('Series' | signalTranslate)()"> tv </i>
             {{ ('Series' | signalTranslate)() }}
           </a>
           &nbsp;
         }
         @if (collectionItem.year) {
-          <a href="#" role="button" (click)="onSetSearchText(collectionItem.year)">
+          <a
+            href="#"
+            role="button"
+            [class.silent-disabled]="useClaudeAi()"
+            (click)="onSetSearchText(collectionItem.year)"
+          >
             <i class="material-icons"> calendar_today </i> {{ collectionItem.year }}
           </a>
           &nbsp;
         }
         @if (collectionItem.rate) {
-          <a href="#" role="button" (click)="onSetSearchText(collectionItem.rate)">
+          <a
+            href="#"
+            role="button"
+            [class.silent-disabled]="useClaudeAi()"
+            (click)="onSetSearchText(collectionItem.rate)"
+          >
             <i class="material-icons"> star_rate </i> {{ collectionItem.rate }}</a
           >
           &nbsp;
         }
         @if (watched()) {
-          <a href="#" role="button" (click)="onSetSearchText(WATCHED_TAG)">
+          <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(WATCHED_TAG)">
             <i class="material-icons" [title]="('Watched' | signalTranslate)()"> visibility </i>
             {{ ('Watched' | signalTranslate)() }}
           </a>
           &nbsp;
         } @else {
-          <a href="#" role="button" (click)="onSetSearchText(VIRTUAL_UNWATCHED_TAG)">
+          <a
+            href="#"
+            role="button"
+            [class.silent-disabled]="useClaudeAi()"
+            (click)="onSetSearchText(VIRTUAL_UNWATCHED_TAG)"
+          >
             <i class="material-icons" [title]="('Unwatched' | signalTranslate)()"> visibility_off </i>
             {{ ('Unwatched' | signalTranslate)() }}
           </a>
@@ -73,7 +89,9 @@
     <span>
       @for (genre of collectionItem.genre; track $index) {
         <small>
-          <a href="#" role="button" (click)="onSetSearchText(genre)">{{ genre }}</a
+          <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(genre)">{{
+            genre
+          }}</a
           >&nbsp;
         </small>
       }
@@ -84,6 +102,7 @@
           <a
             href="#"
             role="button"
+            [class.silent-disabled]="useClaudeAi()"
             [style.color]="tag | tagConfigColor: { checkUseForTextColor: true }"
             (click)="onSetSearchText(tag)"
             >{{ tag }}</a

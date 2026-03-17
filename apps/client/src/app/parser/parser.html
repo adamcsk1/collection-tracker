@@ -103,6 +103,12 @@
       [formField]="form.year"
       [hint]="('Message.YearRegexp' | signalTranslate)()"
     />
+    <libc-input
+      [label]="('ContentRegexp' | signalTranslate)()"
+      [mandatory]="true"
+      [formField]="form.content"
+      [hint]="('Message.ContentRegexp' | signalTranslate)()"
+    />
   </libc-details>
 
   <div class="form-buttons">

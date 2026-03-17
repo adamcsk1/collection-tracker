@@ -7,7 +7,7 @@ import {
   spinnerLoadingStateToken,
 } from '@components/spinner-loading/spinner-loading-store';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
-import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -17,7 +17,7 @@ import { Main } from './main';
 
 describe('Main component (client)', () => {
   let fixture: ComponentFixture<Main>;
-  let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
+  let apiState: NgxSimpleSignalStoreService<ApiState>;
   let spinnerState: NgxSimpleSignalStoreService<{ show: boolean }>;
   let mainService: {
     tokenValid: ReturnType<typeof vi.fn>;
@@ -61,7 +61,7 @@ describe('Main component (client)', () => {
     });
 
     fixture = TestBed.createComponent(Main);
-    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
+    apiState = TestBed.inject(apiStateToken);
     spinnerState = TestBed.inject(spinnerLoadingStateToken) as NgxSimpleSignalStoreService<{ show: boolean }>;
     fixture.detectChanges();
   });

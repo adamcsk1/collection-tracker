@@ -13,10 +13,10 @@ import {
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
+  STORAGE_USE_CLAUDE_AI,
 } from '@shared/constants/storage-const';
 import { UserSettingsApiRequestModel } from '@shared/models/api-model';
 import { LANGUAGES } from '@shared/models/language-model';
-import { SEARCH_MODES } from '@shared/models/search-mode-model';
 import { THEMES } from '@shared/models/theme-model';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -54,8 +54,8 @@ export class SettingsService {
           this.ngxSignalTranslate.setLanguage(language);
         }
 
-        const searchMode = parseAllowedValue(settings.searchMode ?? null, SEARCH_MODES);
-        if (searchMode) this.mainState.setState('searchMode', searchMode);
+        this.mainState.setState('claudeAiAvailable', !!settings.claudeAiAvailable);
+        if (!settings.claudeAiAvailable) this.webstorage.removeItem(STORAGE_USE_CLAUDE_AI);
       }),
       map(() => void 0)
     );
@@ -68,7 +68,6 @@ export class SettingsService {
     this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout);
     this.mainState.setState('animatedBackground', formData.animatedBackground);
     this.mainState.setState('language', formData.language);
-    this.mainState.setState('searchMode', formData.searchMode);
     this.apiState.setState('fetchBatchSize', formData.fetchBatchSize);
     this.themeState.setState('theme', formData.theme);
 
@@ -81,7 +80,6 @@ export class SettingsService {
     this.main.setPermissions();
 
     const userSettings: UserSettingsApiRequestModel = {
-      searchMode: formData.searchMode,
       fetchBatchSize: formData.fetchBatchSize,
       theme: formData.theme,
       animatedBackground: formData.animatedBackground,

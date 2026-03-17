@@ -38,6 +38,7 @@
     "@angular/platform-browser": "^21.2.4",
     "@angular/platform-browser-dynamic": "^21.2.4",
     "@angular/router": "^21.2.4",
+    "@anthropic-ai/sdk": "^0.79.0",
     "@fontsource/material-icons": "^5.2.7",
     "angular-eslint": "^21.3.1",
     "body-parser": "^2.2.2",

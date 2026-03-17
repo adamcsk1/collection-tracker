@@ -1,18 +1,24 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ElementRef } from '@angular/core';
+import { ElementRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
-import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
+import { CollectionState, collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
 import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
-import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
+import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
+import {
+  initialMainCollectionState,
+  MainCollectionState,
+  mainCollectionStateToken,
+} from '@client/main/main-collection-store';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
+import { VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import * as randomIntUtil from '@shared/utils/random-int-util';
-import { WATCHED_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { List } from './list';
 
@@ -22,9 +28,8 @@ describe('List', () => {
   let fixture: ComponentFixture<List>;
   let component: List;
   let portal: { open: ReturnType<typeof vi.fn> };
-  let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
-  let mainCollectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
-  let collectionState: NgxSimpleSignalStoreService<typeof initialCollectionState>;
+  let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
+  let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let scrollSpy: ReturnType<typeof vi.fn>;
 
   const buildItem = (name: string, rawContent = name): CollectionItemModel => ({
@@ -47,6 +52,14 @@ describe('List', () => {
       imports: [List],
       providers: [
         { provide: PortalService, useValue: portal },
+        {
+          provide: ClaudeSearchService,
+          useFactory: () => ({
+            useClaudeAi: signal(false),
+            getMatchedIds: () => of(null),
+            searchInProgress: signal(false),
+          }),
+        },
         provideHttpClient(),
         provideHttpClientTesting(),
         provideStore(initialMainCollectionState, mainCollectionStateToken),
@@ -59,13 +72,8 @@ describe('List', () => {
 
     fixture = TestBed.createComponent(List);
     component = fixture.componentInstance;
-    mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
-    mainCollectionState = TestBed.inject(mainCollectionStateToken) as NgxSimpleSignalStoreService<
-      typeof initialMainCollectionState
-    >;
-    collectionState = TestBed.inject(collectionStateToken) as NgxSimpleSignalStoreService<
-      typeof initialCollectionState
-    >;
+    mainCollectionState = TestBed.inject(mainCollectionStateToken);
+    collectionState = TestBed.inject(collectionStateToken);
 
     scrollSpy = vi.fn();
     (component as any).scrollContainer = () => ({ nativeElement: { scrollTo: scrollSpy } }) as ElementRef;
@@ -79,6 +87,7 @@ describe('List', () => {
       collectionState.setState('searchText', 'be');
 
       await vi.runAllTimersAsync();
+      fixture.detectChanges();
 
       const filtered = component['filteredCollection']();
 
@@ -144,7 +153,6 @@ describe('List', () => {
   });
 
   it('switches to standard text search when forceStandardSearch is enabled', async () => {
-    mainState.setState('searchMode', 'fuzzy');
     mainCollectionState.setState('collection', [buildItem('Item One', 'apple'), buildItem('Item Two', 'other')]);
 
     vi.useFakeTimers();

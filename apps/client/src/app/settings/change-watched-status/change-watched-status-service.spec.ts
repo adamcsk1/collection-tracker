@@ -1,12 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { CollectionService } from '@client/collection/collection-service';
-import { mainCollectionStateToken, initialMainCollectionState } from '@client/main/main-collection-store';
+import {
+  initialMainCollectionState,
+  MainCollectionState,
+  mainCollectionStateToken,
+} from '@client/main/main-collection-store';
 import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,
 } from '@components/blocker-loading/blocker-loading-store';
-import { initialToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
@@ -32,7 +36,7 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
 
 describe('ChangeWatchedStatusService', () => {
   let service: ChangeWatchedStatusService;
-  let mainCollectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
+  let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let collectionService: { loadCollection: ReturnType<typeof vi.fn> };
   let api: { update: ReturnType<typeof vi.fn> };
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
@@ -56,9 +60,7 @@ describe('ChangeWatchedStatusService', () => {
     });
 
     service = TestBed.inject(ChangeWatchedStatusService);
-    mainCollectionState = TestBed.inject(mainCollectionStateToken) as NgxSimpleSignalStoreService<
-      typeof initialMainCollectionState
-    >;
+    mainCollectionState = TestBed.inject(mainCollectionStateToken);
   });
 
   it('marks only untagged items as watched and reports errors when tagging fails', () => {
@@ -72,7 +74,7 @@ describe('ChangeWatchedStatusService', () => {
     expect(api.update).toHaveBeenCalledTimes(1);
     expect(api.update).toHaveBeenCalledWith('first', expect.stringContaining(WATCHED_TAG));
     expect(collectionService.loadCollection).toHaveBeenCalledTimes(1);
-    const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<typeof initialToastState>;
+    const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.MarkingAllAsWatchedWithErrors');
   });
 
@@ -81,16 +83,14 @@ describe('ChangeWatchedStatusService', () => {
       buildItem({ name: 'first', rawContent: '**Tags** #action #watched', tags: ['#action', '#watched'] }),
       buildItem({ name: 'second', rawContent: '**Tags** #adventure', tags: ['#adventure'] }),
     ]);
-    const blocker = TestBed.inject(blockerLoadingStateToken) as NgxSimpleSignalStoreService<
-      typeof initialBlockerLoadingState
-    >;
+    const blocker = TestBed.inject(blockerLoadingStateToken);
 
     service.markAllAsUnwatched();
 
     expect(api.update).toHaveBeenCalledTimes(1);
     expect(api.update).toHaveBeenCalledWith('first', '**Tags** #action ');
     expect(collectionService.loadCollection).toHaveBeenCalledTimes(1);
-    const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<typeof initialToastState>;
+    const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.MarkedAllAsUnwatched');
     expect(blocker.state.show()).toBe(false);
   });

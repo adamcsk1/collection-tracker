@@ -35,7 +35,7 @@ export class Statistics implements AfterViewInit {
     ),
   ]);
   protected readonly chart = signal<Chart<'pie', number[], string> | null>(null);
-  protected readonly selectedTags = signal<Array<string>>([]);
+  protected readonly selectedTags = signal<string[]>([]);
   protected readonly summary = computed<StatisticsSummaryModel>(() => {
     const collection = this.mainCollectionState.state.collection();
     const summary = {
@@ -80,7 +80,7 @@ export class Statistics implements AfterViewInit {
     const collection = this.mainCollectionState.state.collection();
     const chart = this.chart();
     chart!.data.labels = this.selectedTags();
-    const data: Array<number> = [];
+    const data: number[] = [];
 
     for (const tag of this.selectedTags()) {
       const count = collection.filter((item) => item.tags.includes(tag)).length;

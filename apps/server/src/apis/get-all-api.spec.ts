@@ -1,18 +1,13 @@
 import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { readdir, readFile, stat } from 'fs/promises';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 vi.mock('@server/core/store/store');
-vi.mock('fs', async () => {
-  const fs = await vi.importActual<typeof import('fs')>('fs');
-  return {
-    ...fs,
-    readdirSync: vi.fn(),
-    readFileSync: vi.fn(),
-    statSync: vi.fn(),
-  };
+vi.mock('fs/promises', async () => {
+  const actual = await vi.importActual<typeof import('fs/promises')>('fs/promises');
+  return { ...actual, readdir: vi.fn(), readFile: vi.fn(), stat: vi.fn() };
 });
 
 describe('get-all-api', () => {
@@ -28,8 +23,8 @@ describe('get-all-api', () => {
     (Store.getLastValue as Mock)
       .mockReturnValueOnce('/data') // dataFolder
       .mockReturnValueOnce({ 'user-file1': 'cached' }); // cache
-    (readdirSync as Mock).mockReturnValue(['file1']);
-    (statSync as Mock).mockReturnValue({ birthtimeMs: 1000 });
+    (readdir as Mock).mockResolvedValue(['file1']);
+    (stat as Mock).mockResolvedValue({ birthtimeMs: 1000 });
 
     const { register } = await import('./get-all-api');
     register(app);
@@ -45,9 +40,9 @@ describe('get-all-api', () => {
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValueOnce('/data').mockReturnValueOnce({}); // cache
     (Store.set as Mock).mockImplementation((_key: string, value: any) => value);
-    (readdirSync as Mock).mockReturnValue(['file1']);
-    (readFileSync as Mock).mockReturnValue('content');
-    (statSync as Mock).mockReturnValue({ birthtimeMs: 1000 });
+    (readdir as Mock).mockResolvedValue(['file1']);
+    (readFile as Mock).mockResolvedValue('content');
+    (stat as Mock).mockResolvedValue({ birthtimeMs: 1000 });
 
     const { register } = await import('./get-all-api');
     register(app);
@@ -80,12 +75,14 @@ describe('get-all-api', () => {
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValueOnce('/data').mockReturnValueOnce({});
     (Store.set as Mock).mockImplementation((_key: string, value: any) => value);
-    (readdirSync as Mock).mockReturnValue(['old.md', 'new.md', 'middle.md']);
-    (readFileSync as Mock).mockImplementation((filePath: string) => filePath);
-    (statSync as Mock).mockImplementation((filePath: string) => ({
-      birthtimeMs:
-        filePath === '/data/store/user/new.md' ? 3000 : filePath === '/data/store/user/middle.md' ? 2000 : 1000,
-    }));
+    (readdir as Mock).mockResolvedValue(['old.md', 'new.md', 'middle.md']);
+    (readFile as Mock).mockImplementation((filePath: string) => Promise.resolve(filePath));
+    (stat as Mock).mockImplementation((filePath: string) =>
+      Promise.resolve({
+        birthtimeMs:
+          filePath === '/data/store/user/new.md' ? 3000 : filePath === '/data/store/user/middle.md' ? 2000 : 1000,
+      })
+    );
 
     const { register } = await import('./get-all-api');
     register(app);

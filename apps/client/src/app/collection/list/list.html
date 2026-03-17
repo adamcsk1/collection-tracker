@@ -1,27 +1,4 @@
-<div class="float-button random-pick">
-  <button
-    class="button-icon material-icons"
-    [attr.aria-label]="('RandomPick' | signalTranslate)()"
-    [title]="('RandomPick' | signalTranslate)()"
-    [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
-    (click)="onRandomPick()"
-  >
-    casino
-  </button>
-</div>
-@if (permissionAdd()) {
-  <div class="float-button add-new">
-    <button
-      class="button-icon material-icons"
-      [attr.aria-label]="('AddNew' | signalTranslate)()"
-      [title]="('AddNew' | signalTranslate)()"
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
-      (click)="onAddNew()"
-    >
-      add
-    </button>
-  </div>
-}
+<ct-float-buttons (randomPick)="onRandomPick()" (toggleClaudeAi)="onToggleClaudeAi()" (addNew)="onAddNew()" />
 <div
   #scrollContainer
   class="list"

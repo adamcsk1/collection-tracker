@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
+import { initialMainState, MainState, mainStateToken } from '@client/main/main-store';
 import * as MainUtil from '@client/main/main-util';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -9,7 +9,7 @@ import { LogoutService } from './logout-service';
 describe('LogoutService', () => {
   let service: LogoutService;
   let webstorage: { clear: ReturnType<typeof vi.fn> };
-  let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
+  let mainState: NgxSimpleSignalStoreService<MainState>;
   let redirectSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('LogoutService', () => {
     });
 
     service = TestBed.inject(LogoutService);
-    mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
+    mainState = TestBed.inject(mainStateToken);
     redirectSpy = vi.spyOn(MainUtil, 'redirectToLogin').mockImplementation(() => {});
   });
 

@@ -1,13 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
-import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
+import {
+  initialMainCollectionState,
+  MainCollectionState,
+  mainCollectionStateToken,
+} from '@client/main/main-collection-store';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagSuggestionService } from './tag-suggestion-service';
 
-const buildItem = (tags: Array<string>): CollectionItemModel => ({
+const buildItem = (tags: string[]): CollectionItemModel => ({
   rawContent: '',
   rawContentLower: '',
   image: '',
@@ -23,8 +27,7 @@ const buildItem = (tags: Array<string>): CollectionItemModel => ({
 
 describe('TagSuggestionService', () => {
   let service: TagSuggestionService;
-  let collectionState: NgxSimpleSignalStoreService<typeof initialMainCollectionState>;
-  let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
+  let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -37,7 +40,6 @@ describe('TagSuggestionService', () => {
 
     service = TestBed.inject(TagSuggestionService);
     collectionState = TestBed.inject(mainCollectionStateToken);
-    mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
   });
 
   it('suggests up to three unique tags replacing the last token', () => {
@@ -74,7 +76,6 @@ describe('TagSuggestionService', () => {
   });
 
   it('uses fuzzy search mode and honors the limit', () => {
-    mainState.setState('searchMode', 'fuzzy');
     collectionState.setState('collection', [
       buildItem(['#movie', '#space', '#spice']),
       buildItem(['#series', '#span', '#spoke', '#spike']),

@@ -9,7 +9,7 @@ export interface MainState {
   animatedBackground: boolean;
   sensitiveDataStorage: SettingsModel['sensitiveDataStorage'];
   language: LanguageModel;
-  searchMode: SettingsModel['searchMode'];
+  claudeAiAvailable: boolean;
   permissions: {
     create: boolean;
     update: boolean;
@@ -24,7 +24,7 @@ export const initialMainState: MainState = {
   animatedBackground: true,
   sensitiveDataStorage: 'local',
   language: 'en',
-  searchMode: 'standard',
+  claudeAiAvailable: false,
   permissions: {
     create: false,
     update: false,

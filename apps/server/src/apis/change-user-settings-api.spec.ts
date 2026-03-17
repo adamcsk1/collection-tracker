@@ -25,7 +25,7 @@ describe('change-user-settings-api', () => {
 
   it('updates user settings and returns merged config', async () => {
     const response = mockResponse();
-    const request: any = { body: { theme: 'dark', searchMode: 'fuzzy' }, usernameHash: 'user' };
+    const request: any = { body: { theme: 'dark' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue({ user: { fetchBatchSize: 25 } });
     (Store.set as Mock).mockImplementation(() => undefined);
@@ -38,7 +38,6 @@ describe('change-user-settings-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       fetchBatchSize: 25,
       theme: 'dark',
-      searchMode: 'fuzzy',
     });
   });
 

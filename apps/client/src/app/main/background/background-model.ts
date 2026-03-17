@@ -5,4 +5,4 @@ export interface BackgroundImageModel {
   animationDuration: number;
 }
 
-export type BackgroundImagesModel = Array<BackgroundImageModel>;
+export type BackgroundImagesModel = BackgroundImageModel[];

@@ -21,6 +21,7 @@ describe('Parser component', () => {
     setParserRegexp('tagToken', PARSER_REGEXPS.tagToken);
     setParserRegexp('title', PARSER_REGEXPS.title);
     setParserRegexp('year', PARSER_REGEXPS.year);
+    setParserRegexp('content', PARSER_REGEXPS.content);
 
     TestBed.configureTestingModule({
       imports: [Parser],

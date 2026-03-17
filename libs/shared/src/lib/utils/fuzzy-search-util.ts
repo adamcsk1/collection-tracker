@@ -24,6 +24,8 @@ const levenshtein = (a: string, b: string): number => {
   return previousRow[aLength];
 };
 
+export const FUZZY_CONTENT_MAX_LENGTH = 250;
+
 export const fuzzySearch = (pattern: string, text: string, maxDistance = 2): FuzzySearchResultModel => {
   const results = [];
   const patternLength = pattern.length;
