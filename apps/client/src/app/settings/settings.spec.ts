@@ -3,7 +3,6 @@ import { ChangeWatchedStatusService } from '@client/settings/change-watched-stat
 import { initialMainState, mainStateToken } from '@client/main/main-store';
 import { ImageRefreshService } from '@client/settings/image-refresh/image-refresh-service';
 import { initialApiState, apiStateToken } from '@services/api/api-store';
-import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { TranslateService } from '@services/translate-service';
@@ -34,7 +33,6 @@ describe('Settings component', () => {
         { provide: TranslateService, useValue: { languageOptions: ['en', 'de'], setLanguage: vi.fn() } },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         provideStore(initialMainState, mainStateToken),
-        provideStore(initialOMDbState, omdbStateToken),
         provideStore(initialThemeState, themeStateToken),
         provideStore(initialApiState, apiStateToken),
       ],

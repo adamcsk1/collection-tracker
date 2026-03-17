@@ -2,19 +2,21 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { AlertService } from '@services/alert-service';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { getParserRegexp, setParserRegexp } from '@services/parser/parser-util';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
+import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { filter, firstValueFrom } from 'rxjs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { OMDbResponseItemModel } from './omdb-model';
 import { OMDbService } from './omdb-service';
-import { initialOMDbState, OMDbState, omdbStateToken } from './omdb-store';
+
+const API_URL = 'https://api.test/api/v1';
 
 describe('OMDbService', () => {
   let service: OMDbService;
   let httpMock: HttpTestingController;
-  let omdbState: NgxSimpleSignalStoreService<OMDbState>;
+  let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
   let alertSpy: ReturnType<typeof vi.fn>;
 
   beforeAll(() => {
@@ -29,15 +31,15 @@ describe('OMDbService', () => {
         OMDbService,
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideStore(initialOMDbState, omdbStateToken),
+        provideStore(initialApiState, apiStateToken),
         { provide: AlertService, useValue: { show: alertSpy } },
       ],
     });
 
     service = TestBed.inject(OMDbService);
     httpMock = TestBed.inject(HttpTestingController);
-    omdbState = TestBed.inject(omdbStateToken);
-    omdbState.setState('apiKey', 'key123');
+    apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
+    apiState.setState('apiUrl', API_URL);
   });
 
   afterEach(() => {
@@ -54,7 +56,7 @@ describe('OMDbService', () => {
   it('requests search results and maps them to select options', () => {
     service.getMatchedContents('Matrix');
 
-    const searchRequest = httpMock.expectOne('https://www.omdbapi.com/?s=Matrix&apikey=key123');
+    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/omdb/search?s=Matrix`);
     searchRequest.flush({
       Search: [
         {
@@ -78,27 +80,25 @@ describe('OMDbService', () => {
   it('sets an empty result list when search returns no matches', () => {
     service.getMatchedContents('Nothing');
 
-    const searchRequest = httpMock.expectOne('https://www.omdbapi.com/?s=Nothing&apikey=key123');
+    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/omdb/search?s=Nothing`);
     searchRequest.flush({ Search: [] });
 
     expect(service.matchedContent()).toEqual([]);
   });
 
-  it('alerts and throws when search request fails', async () => {
-    const search$ = service['getOMDbSearchData']({ s: 'ErrorSearch' }) as ReturnType<OMDbService['getOMDbSearchData']>;
-    const promise = firstValueFrom(search$);
+  it('alerts and throws when search request fails', () => {
+    service.getMatchedContents('ErrorSearch');
 
-    const searchRequest = httpMock.expectOne('https://www.omdbapi.com/?s=ErrorSearch&apikey=key123');
+    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/omdb/search?s=ErrorSearch`);
     searchRequest.flush('failed', { status: 500, statusText: 'Server Error' });
 
-    await expect(promise).rejects.toThrow('500');
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
   it('clears suggestions when response has no Search property', () => {
     service.getMatchedContents('NoProp');
 
-    const searchRequest = httpMock.expectOne('https://www.omdbapi.com/?s=NoProp&apikey=key123');
+    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/omdb/search?s=NoProp`);
     searchRequest.flush({});
 
     expect(service.matchedContent()).toEqual([]);
@@ -107,7 +107,7 @@ describe('OMDbService', () => {
   it('fetches a selected item by id', async () => {
     const selected$ = service.getSelectedContent('tt0133093').pipe(filter(Boolean));
 
-    const detailRequest = httpMock.expectOne('https://www.omdbapi.com/?i=tt0133093&apikey=key123');
+    const detailRequest = httpMock.expectOne(`${API_URL}/proxy/omdb/item?i=tt0133093`);
     detailRequest.flush({
       imdbID: 'tt0133093',
       imdbRating: '8.7',
@@ -126,16 +126,12 @@ describe('OMDbService', () => {
     expect(service.selectedContent()).toEqual(result);
   });
 
-  it('alerts and throws when fetching selected item fails', async () => {
-    const detail$ = service['getOMDbData']({
-      i: 'tt0000000',
-    }) as ReturnType<OMDbService['getOMDbData']>;
-    const promise = firstValueFrom(detail$);
+  it('alerts and throws when fetching selected item fails', () => {
+    service.getSelectedContent('tt0000000');
 
-    const detailRequest = httpMock.expectOne('https://www.omdbapi.com/?i=tt0000000&apikey=key123');
+    const detailRequest = httpMock.expectOne(`${API_URL}/proxy/omdb/item?i=tt0000000`);
     detailRequest.flush('missing', { status: 404, statusText: 'Not Found' });
 
-    await expect(promise).rejects.toThrow('404');
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 });

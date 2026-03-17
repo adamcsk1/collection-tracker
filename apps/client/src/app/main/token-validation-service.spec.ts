@@ -6,9 +6,7 @@ import { MainService } from '@client/main/main-service';
 import { SettingsService } from '@client/settings/settings-service';
 import { TokenValidationService } from '@client/main/token-validation-service';
 import { TagConfigsService } from '@client/tag-configs/tag-configs-service';
-import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
 import { ParserService } from '@services/parser/parser-service';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as MainUtil from './main-util';
@@ -21,7 +19,6 @@ describe('TokenValidationService', () => {
   let service: TokenValidationService;
   let collectionService: { loadCollection: ReturnType<typeof vi.fn> };
   let router: { navigate: ReturnType<typeof vi.fn> };
-  let omdbState: NgxSimpleSignalStoreService<typeof initialOMDbState>;
   let mainService: { tokenValid: ReturnType<typeof vi.fn> };
   let parserService: { preloadUserParserConfig: ReturnType<typeof vi.fn> };
   let settingsService: { preloadUserSettings: ReturnType<typeof vi.fn> };
@@ -44,33 +41,17 @@ describe('TokenValidationService', () => {
         { provide: ParserService, useValue: parserService },
         { provide: SettingsService, useValue: settingsService },
         { provide: TagConfigsService, useValue: tagConfigsService },
-        provideStore(initialOMDbState, omdbStateToken),
         provideRouter([]),
         { provide: Router, useValue: router },
       ],
     });
 
-    omdbState = TestBed.inject(omdbStateToken) as NgxSimpleSignalStoreService<typeof initialOMDbState>;
     service = TestBed.inject(TokenValidationService);
     fixture = TestBed.createComponent(TestHostComponent);
   });
 
-  it('navigates to settings and loads collection when token is valid without OMDb key', () => {
+  it('loads collection when token is valid', () => {
     mainService.tokenValid.mockReturnValue(true);
-
-    service.startValidation();
-    fixture.detectChanges();
-
-    expect(router.navigate).toHaveBeenCalledWith(['settings']);
-    expect(collectionService.loadCollection).toHaveBeenCalled();
-    expect(settingsService.preloadUserSettings).toHaveBeenCalled();
-    expect(parserService.preloadUserParserConfig).toHaveBeenCalled();
-    expect(tagConfigsService.preloadUserTagConfigs).toHaveBeenCalled();
-  });
-
-  it('loads collection without navigating when token is valid and OMDb key exists', () => {
-    mainService.tokenValid.mockReturnValue(true);
-    omdbState.setState('apiKey', 'abc123');
 
     service.startValidation();
     fixture.detectChanges();

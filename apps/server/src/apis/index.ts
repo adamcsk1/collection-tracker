@@ -2,8 +2,8 @@ import { register as registerAccessTokenValidate } from '@server/apis/access-tok
 import { register as registerAccessTokens } from '@server/apis/access-tokens-api';
 import { register as registerChangeParserConfig } from '@server/apis/change-parser-config-api';
 import { register as registerChangeTagConfig } from '@server/apis/change-tag-config-api';
-import { register as registerChangeUserSettings } from '@server/apis/change-user-settings-api';
 import { register as registerChangeToken } from '@server/apis/change-token-api';
+import { register as registerChangeUserSettings } from '@server/apis/change-user-settings-api';
 import { register as registerCreateAccessToken } from '@server/apis/create-access-token-api';
 import { register as registerCreate } from '@server/apis/create-api';
 import { register as registerDeleteAccessToken } from '@server/apis/delete-access-token-api';
@@ -14,9 +14,11 @@ import { register as registerHealth } from '@server/apis/health-api';
 import { register as registerLogout } from '@server/apis/logout-api';
 import { register as registerModify } from '@server/apis/modify-api';
 import { register as registerParserConfig } from '@server/apis/parser-config-api';
-import { register as registerTagConfig } from '@server/apis/tag-config-api';
+import { register as registerProxyOMDbItem } from '@server/apis/proxy-omdb-item-api';
+import { register as registerProxyOMDbSearch } from '@server/apis/proxy-omdb-search-api';
 import { register as registerSignIn } from '@server/apis/sign-in-api';
 import { register as registerSignUp } from '@server/apis/sign-up-api';
+import { register as registerTagConfig } from '@server/apis/tag-config-api';
 import { register as registerUserSettings } from '@server/apis/user-settings-api';
 import type { Application } from 'express';
 
@@ -41,4 +43,6 @@ export const registerAllApis = (app: Application): void => {
   registerChangeTagConfig(app);
   registerUserSettings(app);
   registerChangeUserSettings(app);
+  registerProxyOMDbSearch(app);
+  registerProxyOMDbItem(app);
 };

@@ -9,11 +9,9 @@ import { SettingsModel } from '@client/settings/settings-model';
 import { SettingsService } from '@client/settings/settings-service';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Details } from '@components/details/details';
-import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { apiStateToken } from '@services/api/api-store';
 import { OMDbService } from '@services/omdb/omdb-service';
-import { omdbStateToken } from '@services/omdb/omdb-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
@@ -21,17 +19,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-settings',
-  imports: [
-    Input,
-    Select,
-    FormField,
-    FormRoot,
-    NgxSignalTranslatePipe,
-    Details,
-    AccountActions,
-    AccessTokens,
-    Checkbox,
-  ],
+  imports: [Select, FormField, FormRoot, NgxSignalTranslatePipe, Details, AccountActions, AccessTokens, Checkbox],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   providers: [OMDbService, ImageRefreshService, ChangeWatchedStatusService],
@@ -44,7 +32,6 @@ export class Settings implements OnInit {
   protected readonly submitAction = signal<'save' | 'save-and-back'>('save');
   private readonly settings = inject(SettingsService);
   private readonly mainState = inject(mainStateToken);
-  private readonly omdbState = inject(omdbStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly imageRefresh = inject(ImageRefreshService);
@@ -54,7 +41,6 @@ export class Settings implements OnInit {
   protected readonly settingsModel = signal<SettingsModel>({
     sensitiveDataStorage: 'local',
     clearLocalStorageAfterLogout: false,
-    omdbApiKey: '',
     appMode: 'basic',
     fetchBatchSize: 10000,
     theme: 'system',
@@ -67,7 +53,6 @@ export class Settings implements OnInit {
     this.settingsModel,
     (settings) => {
       required(settings.sensitiveDataStorage);
-      required(settings.omdbApiKey);
       required(settings.appMode);
       required(settings.fetchBatchSize);
       required(settings.theme);
@@ -88,7 +73,6 @@ export class Settings implements OnInit {
   public ngOnInit(): void {
     this.settingsModel.set({
       sensitiveDataStorage: this.mainState.state.sensitiveDataStorage(),
-      omdbApiKey: this.omdbState.state.apiKey(),
       appMode: this.mainState.state.appMode(),
       fetchBatchSize: this.apiState.state.fetchBatchSize(),
       theme: this.themeState.state.theme(),

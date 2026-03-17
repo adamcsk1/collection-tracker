@@ -1,5 +1,5 @@
+import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 import dayjs from 'dayjs';
-import { OMDbResponseItemModel } from '@services/omdb/omdb-model';
 
 export const buildCollectionItemFilename = ({
   pattern,

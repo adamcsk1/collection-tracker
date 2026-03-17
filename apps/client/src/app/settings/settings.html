@@ -40,7 +40,7 @@
     @if (!settingLockEnabled()) {
       <libc-select
         [label]="('AppMode' | signalTranslate)()"
-        labelIcon="storage"
+        labelIcon="api"
         [labelIconHint]="('Message.LocallyStored' | signalTranslate)()"
         [hint]="('Message.AppMode' | signalTranslate)()"
         [mandatory]="true"
@@ -81,17 +81,6 @@
   </libc-details>
 
   @if (!settingLockEnabled()) {
-    <libc-details [open]="!form.omdbApiKey().value()" [summary]="('Integrations' | signalTranslate)()">
-      <p>{{ ('Message.IntegrationSettings' | signalTranslate)() }}</p>
-      <libc-input
-        [label]="('OMDbApiKey' | signalTranslate)()"
-        labelIcon="storage"
-        [labelIconHint]="('Message.LocallyStored' | signalTranslate)()"
-        [hint]="('Message.OMDbApiKey' | signalTranslate)()"
-        [mandatory]="true"
-        [formField]="form.omdbApiKey"
-      />
-    </libc-details>
     <libc-details [summary]="('StoragePolicies' | signalTranslate)()">
       <p>{{ ('Message.StorageSettings' | signalTranslate)() }}</p>
       <libc-select

@@ -75,6 +75,7 @@ COOKIE_SECRET="your_cookie_secret"
 SALT="your_salt"
 USER_LIMIT=1
 DISABLE_REGISTRATION=0
+OMDB_API_KEY="your_omdb_api_key"
 ```
 
 Full runtime example:
@@ -87,6 +88,7 @@ COOKIE_SECRET="your_cookie_secret"
 SALT="your_salt"
 USER_LIMIT=2
 DISABLE_REGISTRATION=0
+OMDB_API_KEY="your_omdb_api_key"
 CORS_ORIGIN="*"
 CACHE_MAX=200
 ```

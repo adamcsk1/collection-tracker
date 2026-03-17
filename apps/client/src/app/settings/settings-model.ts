@@ -4,7 +4,6 @@ import { SearchModeModel } from '@shared/models/search-mode-model';
 import { ThemeModel } from '@shared/models/theme-model';
 
 export interface SettingsModel {
-  omdbApiKey: string;
   sensitiveDataStorage: (typeof SENSITIVE_DATA_STORAGE_MODES)[number];
   clearLocalStorageAfterLogout: boolean;
   animatedBackground: boolean;
