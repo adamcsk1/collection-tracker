@@ -11,13 +11,14 @@ Source: [`apps/server`](../apps/server)
 - parser configuration, including user-defined collection filename patterns
 - tag configuration and user-settings persistence
 - flat-file database initialization and synchronization
+- OMDb API proxying — forwards search and item lookups to OMDb using the server-side `OMDB_API_KEY` environment variable
 - runtime safeguards such as Helmet, no-cache, CORS validation, request limits, and cookie parsing
 
 ## Runtime Model
 
 - Default data folder: `.data`
 - CLI flags: `--dataFolder=<path>` and `--debug=true|false`
-- Startup expects `.env` in the active data folder and loads it before registering APIs
+- Startup expects `.env` in the active data folder and loads it before registering APIs; set `OMDB_API_KEY` there to enable OMDb proxy endpoints
 - `nx run server:preserve` creates `.data/.env` from [`apps/server/scripts/.env.dev`](../apps/server/scripts/.env.dev) for local development
 - Production deployments should run behind an HTTPS reverse proxy; see [Docker deployment](./docker.md)
 
