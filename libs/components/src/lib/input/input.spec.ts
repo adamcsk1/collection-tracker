@@ -7,14 +7,7 @@ import { Input } from './input';
 
 @Component({
   imports: [FormField, Input],
-  template: `<libc-input
-    [formField]="field"
-    label="Name"
-    [labelIcon]="'info'"
-    [labelIconHint]="'Input help'"
-    hint="Helpful"
-    [showReset]="true"
-  ></libc-input>`,
+  template: `<libc-input [formField]="field" label="Name" hint="Helpful" [showReset]="true"></libc-input>`,
 })
 class HostComponent {
   public readonly model = signal('');
@@ -93,14 +86,5 @@ describe('Input component', () => {
     const describedBy = componentInstance['describedBy']() ?? '';
     expect(describedBy).toContain('-hint');
     expect(describedBy).toContain('-error');
-  });
-
-  it('renders label icon with accessible hint attributes', () => {
-    const iconElement = fixture.nativeElement.querySelector('label [role="img"]') as HTMLElement | null;
-
-    expect(iconElement).not.toBeNull();
-    expect(iconElement.textContent?.trim()).toBe('info');
-    expect(iconElement.getAttribute('title')).toBe('Input help');
-    expect(iconElement.getAttribute('aria-label')).toBe('Input help');
   });
 });

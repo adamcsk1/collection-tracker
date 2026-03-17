@@ -47,8 +47,6 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
   public readonly showReset = input<boolean>(false);
   public readonly placeholder = input<string>('');
   public readonly label = input<string>('');
-  public readonly labelIcon = input<string>();
-  public readonly labelIconHint = input<string>();
   public readonly hint = input<string>();
   public readonly mandatory = input<boolean>(false);
   public readonly userEvent = output<void>();

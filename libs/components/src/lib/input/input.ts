@@ -27,8 +27,6 @@ export class Input<T> implements FormValueControl<T | null> {
   public readonly placeholder = input<string>('');
   public readonly icon = input<string>('');
   public readonly hint = input<string>();
-  public readonly labelIcon = input<string>();
-  public readonly labelIconHint = input<string>();
   protected readonly showError = computed(() => (this.touched() || this.dirty()) && this.errors().length > 0);
   protected readonly hintId = computed<string | null>(() => (this.hint() ? `${this.inputId()}-hint` : null));
   protected readonly errorId = computed<string | null>(() => {

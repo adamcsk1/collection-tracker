@@ -17,8 +17,6 @@ export class Checkbox implements FormValueControl<boolean | null> {
   public readonly errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public readonly checkboxId = input<string>(crypto.randomUUID());
   public readonly label = input.required<string>();
-  public readonly labelIcon = input<string>();
-  public readonly labelIconHint = input<string>();
   public readonly mandatory = input<boolean>(false);
   public readonly hint = input<string>();
   protected readonly showError = computed(() => (this.touched() || this.dirty()) && this.errors().length > 0);
