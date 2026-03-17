@@ -13,7 +13,8 @@ const minimalEnv = `JWT_SECRET="${randomUUID().toString('hex').replace(/-/g, '')
 COOKIE_SECRET="${randomUUID().toString('hex').replace(/-/g, '')}"
 SALT="${randomUUID().toString('hex').replace(/-/g, '')}}"
 USER_LIMIT=1
-DISABLE_REGISTRATION=0`;
+DISABLE_REGISTRATION=0
+OMDB_API_KEY=""`;
 
 if (!existsSync(releaseFolder)) {
   mkdirSync(releaseFolder);

@@ -6,13 +6,11 @@ import { SettingsModel } from '@client/settings/settings-model';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
-import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_APP_MODE,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
-  STORAGE_OMDB_API_KEY,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
 } from '@shared/constants/storage-const';
@@ -24,7 +22,6 @@ import { SettingsService } from './settings-service';
 
 const buildFormData = (overrides: Partial<SettingsModel> = {}): SettingsModel => ({
   appMode: 'full',
-  omdbApiKey: 'omdb-key',
   settingsLock: false,
   sensitiveDataStorage: 'local',
   clearLocalStorageAfterLogout: false,
@@ -69,7 +66,6 @@ describe('SettingsService', () => {
         { provide: NgxSignalTranslateService, useValue: translate },
         { provide: MainService, useValue: main },
         provideStore(initialMainState, mainStateToken),
-        provideStore(initialOMDbState, omdbStateToken),
         provideStore(initialThemeState, themeStateToken),
         provideStore(initialApiState, apiStateToken),
         provideStore(initialToastState, toastStateToken),
@@ -81,19 +77,13 @@ describe('SettingsService', () => {
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
   });
 
-  it('stores form data, syncs migrated settings to the API, and clears local OMDb key when using session storage', () => {
-    const formData = buildFormData({
-      searchMode: 'fuzzy',
-      sensitiveDataStorage: 'session',
-      omdbApiKey: 'secure-key',
-    });
+  it('stores form data, syncs settings to the API', () => {
+    const formData = buildFormData({ searchMode: 'fuzzy', sensitiveDataStorage: 'session' });
 
     service.storeFormData(formData);
 
     expect(mainState.state.searchMode()).toBe('fuzzy');
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_SENSITIVE_DATA_STORAGE, 'session');
-    expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_OMDB_API_KEY, 'secure-key', 'session');
-    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_OMDB_API_KEY, 'local');
     expect(api.updateUserSettings).toHaveBeenCalledWith({
       searchMode: 'fuzzy',
       fetchBatchSize: 25,

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { OMDbResponseItemModel } from '@services/omdb/omdb-model';
 import { getParserTemplate } from '@services/parser/parser-util';
+import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 
 @Injectable()
 export class MdContentGeneratorService {

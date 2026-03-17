@@ -2,13 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
-import { initialOMDbState, omdbStateToken } from '@services/omdb/omdb-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_API_URL,
   STORAGE_APP_MODE,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
-  STORAGE_OMDB_API_KEY,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
 } from '@shared/constants/storage-const';
@@ -23,7 +21,6 @@ describe('MainService', () => {
   let webstorage: { getItem: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<typeof initialMainState>;
   let apiState: NgxSimpleSignalStoreService<typeof initialApiState>;
-  let omdbState: NgxSimpleSignalStoreService<typeof initialOMDbState>;
 
   beforeEach(() => {
     api = { validateAccessToken: vi.fn(() => of(undefined)) };
@@ -36,14 +33,12 @@ describe('MainService', () => {
         { provide: WebstorageService, useValue: webstorage },
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
-        provideStore(initialOMDbState, omdbStateToken),
       ],
     });
 
     service = TestBed.inject(MainService);
     mainState = TestBed.inject(mainStateToken) as NgxSimpleSignalStoreService<typeof initialMainState>;
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<typeof initialApiState>;
-    omdbState = TestBed.inject(omdbStateToken) as NgxSimpleSignalStoreService<typeof initialOMDbState>;
   });
 
   it('hydrates browser-backed stores and sets permissions', () => {
@@ -51,8 +46,6 @@ describe('MainService', () => {
       switch (key) {
         case STORAGE_API_URL:
           return 'https://api.test';
-        case STORAGE_OMDB_API_KEY:
-          return 'omdb-key';
         case STORAGE_APP_MODE:
           return 'limited';
         case STORAGE_SETTINGS_LOCK:
@@ -70,7 +63,6 @@ describe('MainService', () => {
     service.loadStoredData();
 
     expect(apiState.state.apiUrl()).toBe('https://api.test');
-    expect(omdbState.state.apiKey()).toBe('omdb-key');
     expect(mainState.state.appMode()).toBe('limited');
     expect(mainState.state.settingsLock()).toBe(true);
     expect(mainState.state.sensitiveDataStorage()).toBe('session');

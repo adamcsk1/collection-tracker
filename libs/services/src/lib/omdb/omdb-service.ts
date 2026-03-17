@@ -1,21 +1,17 @@
-import { HttpClient } from '@angular/common/http';
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { AlertService } from '@services/alert-service';
+import { ApiService } from '@services/api/api-service';
 import { getIMDbId } from '@services/omdb/get-imdb-id-util';
-import { OMDbResponseItemModel, OMDbResponseModel } from '@services/omdb/omdb-model';
-import { omdbStateToken } from '@services/omdb/omdb-store';
+import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 import { SelectInputModel } from '@shared/models/select-model';
-import { catchError, Observable } from 'rxjs';
-
-const OMDB_API = 'https://www.omdbapi.com/';
+import { catchError, EMPTY, Observable } from 'rxjs';
 
 @Injectable()
 export class OMDbService {
   private readonly alert = inject(AlertService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly httpClient = inject(HttpClient);
-  private readonly omdbSate = inject(omdbStateToken);
+  private readonly api = inject(ApiService);
   private searchText = '';
   private IMDbId: string | null = null;
   private readonly _matchedContent = signal<SelectInputModel>([]);
@@ -34,8 +30,15 @@ export class OMDbService {
   public getSelectedContent(IMDbId: string): Observable<OMDbResponseItemModel | null> {
     this.IMDbId = IMDbId;
 
-    this.getOMDbData({ i: this.IMDbId })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.api
+      .getOMDbData({ i: this.IMDbId })
+      .pipe(
+        catchError(() => {
+          this._selectedContent.set({} as OMDbResponseItemModel);
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe((response) => this._selectedContent.set(response));
 
     return this.selectedContent$;
@@ -44,8 +47,15 @@ export class OMDbService {
   private fetchOMDbData(): void {
     if (this.IMDbId) this._matchedContent.set([{ text: `IMDb id: ${this.IMDbId}`, value: this.IMDbId }]);
     else {
-      this.getOMDbSearchData({ s: this.searchText })
-        .pipe(takeUntilDestroyed(this.destroyRef))
+      this.api
+        .getOMDbSearchData({ s: this.searchText })
+        .pipe(
+          catchError(() => {
+            this._selectedContent.set({} as OMDbResponseItemModel);
+            return EMPTY;
+          }),
+          takeUntilDestroyed(this.destroyRef)
+        )
         .subscribe((response) => {
           const result: SelectInputModel = [];
           if (Array.isArray(response?.Search)) {
@@ -60,35 +70,5 @@ export class OMDbService {
           this._matchedContent.set(result);
         });
     }
-  }
-
-  private getOMDbData(queryParams: { i: string | null }): Observable<OMDbResponseItemModel> {
-    const url = new URL(OMDB_API);
-
-    url.searchParams.append('i', `${queryParams.i}`);
-    url.searchParams.append('apikey', this.omdbSate.state.apiKey());
-
-    return this.httpClient.get<OMDbResponseItemModel>(url.href).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        this._selectedContent.set({} as OMDbResponseItemModel);
-        throw new Error(error.message);
-      })
-    );
-  }
-
-  private getOMDbSearchData(queryParams: { s: string | null }): Observable<OMDbResponseModel> {
-    const url = new URL(OMDB_API);
-
-    url.searchParams.append('s', `${queryParams.s}`);
-    url.searchParams.append('apikey', this.omdbSate.state.apiKey());
-
-    return this.httpClient.get<OMDbResponseModel>(url.href).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        this._selectedContent.set({} as OMDbResponseItemModel);
-        throw new Error(error.message);
-      })
-    );
   }
 }

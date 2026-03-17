@@ -20,6 +20,7 @@ import {
   UserSettingsApiRequestModel,
   UserSettingsApiResponseModel,
 } from '@shared/models/api-model';
+import { OMDbResponseItemModel, OMDbResponseModel } from '@shared/models/omdb-model';
 import { catchError, EMPTY, filter, Observable, of, Subject, tap, throwError } from 'rxjs';
 
 @Injectable({
@@ -250,5 +251,27 @@ export class ApiService {
         return throwError(() => error);
       })
     );
+  }
+
+  public getOMDbData(queryParams: { i: string | null }): Observable<OMDbResponseItemModel> {
+    return this.httpClient
+      .get<OMDbResponseItemModel>(`${this.apiState.state.apiUrl()}/proxy/omdb/item?i=${queryParams.i}`)
+      .pipe(
+        catchError((error) => {
+          this.alert.show(error.message);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  public getOMDbSearchData(queryParams: { s: string | null }): Observable<OMDbResponseModel> {
+    return this.httpClient
+      .get<OMDbResponseModel>(`${this.apiState.state.apiUrl()}/proxy/omdb/search?s=${queryParams.s}`)
+      .pipe(
+        catchError((error) => {
+          this.alert.show(error.message);
+          return throwError(() => error);
+        })
+      );
   }
 }
