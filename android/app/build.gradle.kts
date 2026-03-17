@@ -6,11 +6,11 @@ plugins {
   id("com.android.application")
 }
 
-val apkBuildTimestamp: String = ZonedDateTime.now(ZoneOffset.UTC)
-  .format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
+val versionCodeTimestamp: Int = ZonedDateTime.now(ZoneOffset.UTC)
+  .format(DateTimeFormatter.ofPattern("yyMMddHH")).toInt()
 
 base {
-  archivesName.set("collection-tracker-0.1.0-$apkBuildTimestamp")
+  archivesName.set("collection-tracker")
 }
 
 android {
@@ -21,7 +21,7 @@ android {
     applicationId = "com.collectiontracker.app"
     minSdk = 35
     targetSdk = 36
-    versionCode = 1
+    versionCode = versionCodeTimestamp
     versionName = "0.1.0"
   }
 

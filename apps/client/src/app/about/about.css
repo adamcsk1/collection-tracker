@@ -14,4 +14,11 @@
     max-width: 200px;
     margin: 0 auto;
   }
+
+  .about-links {
+    display: flex;
+    gap: var(--size-xs);
+    margin-top: var(--size-xs);
+    margin-bottom: var(--size-xs);
+  }
 }

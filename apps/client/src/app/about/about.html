@@ -19,12 +19,23 @@
   >
     <div>{{ appVersion }}</div>
   </div>
-  <h3>{{ ('Repository' | signalTranslate)() }}</h3>
-  <div>
-    <div>
-      <a href="https://github.com/adamcsk1/collection-tracker" target="_blank" role="link">{{
-        ('GitHub' | signalTranslate)()
-      }}</a>
-    </div>
+  <h3>{{ ('Links' | signalTranslate)() }}</h3>
+  <div class="about-links">
+    <a
+      href="https://github.com/adamcsk1/collection-tracker"
+      target="_blank"
+      role="link"
+      [attr.aria-label]="('ViewOnGitHub' | signalTranslate)()"
+    >
+      <img src="images/view-on-github.svg" [alt]="('ViewOnGitHub' | signalTranslate)()" />
+    </a>
+    <a
+      href="https://github.com/adamcsk1/collection-tracker/releases/latest/download/collection-tracker-release.apk"
+      target="_blank"
+      role="link"
+      [attr.aria-label]="('DownloadApk' | signalTranslate)()"
+    >
+      <img src="images/download-apk.svg" [alt]="('DownloadApk' | signalTranslate)()" />
+    </a>
   </div>
 </div>
