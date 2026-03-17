@@ -122,9 +122,15 @@
       }
     },
     "stylelint": {
-      "executor": "nx-stylelint:lint",
+      "executor": "nx:run-commands",
       "options": {
-        "lintFilePatterns": ["apps/client/src/**/*.css"]
+        "command": "stylelint \"apps/client/src/**/*.css\""
+      }
+    },
+    "stylelint-fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "stylelint --fix \"apps/client/src/**/*.css\""
       }
     },
     "format": {

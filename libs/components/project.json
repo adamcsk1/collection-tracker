@@ -35,9 +35,15 @@
       }
     },
     "stylelint": {
-      "executor": "nx-stylelint:lint",
+      "executor": "nx:run-commands",
       "options": {
-        "lintFilePatterns": ["libs/components/src/**/*.css"]
+        "command": "stylelint \"libs/components/src/**/*.css\""
+      }
+    },
+    "stylelint-fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "stylelint --fix \"libs/components/src/**/*.css\""
       }
     },
     "format": {
