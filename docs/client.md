@@ -9,7 +9,7 @@ Source: [`apps/client`](../apps/client)
 - `collection`: search and browse the stored Markdown entries
 - `statistics`: tag-driven summaries and Chart.js visualizations
 - `tag-configs`: per-tag color, weight, and presentation rules
-- `settings`: API, theme, OMDb, search, and account-level preferences
+- `settings`: API, theme, search, and account-level preferences
 - `parser`: user-specific Markdown template and regular-expression configuration
 - `about`: build metadata and settings-lock release flow
 

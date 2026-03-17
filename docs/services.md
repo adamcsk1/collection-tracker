@@ -7,7 +7,7 @@ Source: [`libs/services`](../libs/services)
 ## Modules
 
 - `api/`: HTTP client, auth/session integration, pagination, and API store
-- `omdb/`: OMDb lookup logic and shared state
+- `omdb/`: OMDb lookup logic (search and item fetch via server proxy)
 - `parser/`: parser configuration, template regeneration, parser cache helpers, and filename/tag parsing utilities
 - `md-content-generator/`: Markdown generation from OMDb payloads
 - `theme/`: theme state and DOM class management
@@ -17,7 +17,7 @@ Source: [`libs/services`](../libs/services)
 ## Integration Notes
 
 - Import through the `@services/*` path alias.
-- `apiStateToken`, `omdbStateToken`, and `themeStateToken` are the primary cross-application stores.
+- `apiStateToken` and `themeStateToken` are the primary cross-application stores.
 - `PortalService` is the common primitive for dialog and dynamic component hosting.
 - The client uses the full library; the login app uses the API, theme, translation, and notification subset.
 

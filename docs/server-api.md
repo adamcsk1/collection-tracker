@@ -54,6 +54,15 @@ Valid values for `POST /user/settings`:
 | `PUT`    | `/modify/:name`                 | Body: `{ "content": string }`. Updates one Markdown file.         |
 | `DELETE` | `/delete/:name`                 | Deletes one Markdown file.                                        |
 
+## OMDb Proxy Endpoints
+
+These endpoints proxy requests to the OMDb API using the `OMDB_API_KEY` environment variable. The key is never exposed to the client. Respond with `503` if the variable is not set.
+
+| Method | Path                   | Notes                                                        |
+| ------ | ---------------------- | ------------------------------------------------------------ |
+| `GET`  | `/proxy/omdb/search`   | Query param: `s` (title search). Returns `OMDbResponseModel`. |
+| `GET`  | `/proxy/omdb/item`     | Query param: `i` (IMDb ID). Returns `OMDbResponseItemModel`. |
+
 ## Parser And Tag Configuration
 
 | Method | Path                    | Notes                                                                                                                                                         |
