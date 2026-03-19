@@ -1,7 +1,7 @@
 package com.collectiontracker.app
 
 import android.annotation.SuppressLint
-import android.content.res.Configuration
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
@@ -27,7 +27,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
-import androidx.core.view.WindowCompat
 import androidx.core.widget.addTextChangedListener
 import org.json.JSONObject
 import androidx.core.content.edit
@@ -51,6 +50,7 @@ class MainActivity : AppCompatActivity() {
 
   private var pageUrl: String = ""
   private var apiUrl: String = ""
+  private var isShowingInvalidPage = false
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -208,6 +208,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     webView.webViewClient = object : WebViewClient() {
+      override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+        val url = request?.url?.toString() ?: return false
+        if (isLikelyCollectionTrackerPage(url)) return false
+        startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+        return true
+      }
+
       override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
         hideError()
         super.onPageStarted(view, url, favicon)
@@ -215,6 +222,8 @@ class MainActivity : AppCompatActivity() {
 
       override fun onPageFinished(view: WebView?, url: String?) {
         super.onPageFinished(view, url)
+
+        if (url.isNullOrBlank() || url == "about:blank") return
 
         if (!isLikelyCollectionTrackerPage(url)) {
           showInvalidPage()
@@ -322,6 +331,8 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun showInvalidPage() {
+    if (isShowingInvalidPage) return
+    isShowingInvalidPage = true
     Toast.makeText(this, getString(R.string.error_invalid_collection_tracker_page), Toast.LENGTH_LONG).show()
     webView.stopLoading()
     webView.loadUrl("about:blank")
@@ -367,6 +378,7 @@ class MainActivity : AppCompatActivity() {
       return
     }
 
+    isShowingInvalidPage = false
     errorContainer.isVisible = false
     configContainer.isVisible = false
     webView.isVisible = true
