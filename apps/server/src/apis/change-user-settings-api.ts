@@ -49,6 +49,11 @@ export const register = (app: Application): void => {
 
       if (!userConfig) userConfig = {} satisfies UserSettingsModel;
 
+      if (body.fromLogin) {
+        if (body.language && userConfig.language) delete body.language;
+        if (body.theme && userConfig.theme) delete body.theme;
+      }
+
       const updatedConfig = { ...userConfig, ...body } satisfies UserSettingsModel;
       userSettings[request.usernameHash] = updatedConfig;
       Store.set('userSettings', userSettings);
