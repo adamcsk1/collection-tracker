@@ -180,7 +180,7 @@ describe('ApiService', () => {
     const pages: { name: string; content: string }[][] = [];
     service.getAll().subscribe((items) => pages.push(items));
 
-    const initialRequest = httpMock.expectOne('https://api.test/get-all?offset=0&limit=10');
+    const initialRequest = httpMock.expectOne('https://api.test/get-all?offset=0&limit=100');
     initialRequest.flush([]);
 
     expect(pages).toEqual([]);

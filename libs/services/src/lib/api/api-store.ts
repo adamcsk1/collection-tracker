@@ -9,7 +9,7 @@ export interface ApiState {
 
 export const initialApiState: ApiState = {
   apiUrl: '',
-  fetchBatchSize: 10000,
+  fetchBatchSize: 500,
   loadNetworkStatus: null,
 };
 
