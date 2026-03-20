@@ -85,7 +85,7 @@ export class ApiService {
   public getAll(): Observable<GetAllApiResponseModel> {
     this.apiState.setState('loadNetworkStatus', 'pending');
     const results = new Subject<GetAllApiResponseModel>();
-    const fetchBatchSize = this.apiState.state.fetchBatchSize() || 10;
+    const fetchBatchSize = this.apiState.state.fetchBatchSize() || 100;
 
     const lazyLoad = (offset = 0) =>
       this.httpClient
