@@ -75,7 +75,9 @@ export interface UserSettingsApiResponseModel {
   claudeAiAvailable?: boolean; // This field is determined by the presence of the CLAUDE_API_KEY on the server and indicates whether Claude AI search is available for the user.
 }
 
-export type UserSettingsApiRequestModel = UserSettingsApiResponseModel;
+export interface UserSettingsApiRequestModel extends UserSettingsApiResponseModel {
+  fromLogin?: boolean; // To initialize language and theme after first login, as the client won't have the user settings yet.
+}
 
 export interface TagConfigApiModel {
   tag: string;
