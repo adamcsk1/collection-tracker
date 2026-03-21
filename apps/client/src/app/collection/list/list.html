@@ -5,6 +5,7 @@
   role="list"
   [attr.aria-label]="('Collection' | signalTranslate)()"
   [attr.aria-busy]="apiLoadNetworkStatus() === 'pending'"
+  (scroll)="onScroll()"
 >
   @if (!apiLoadNetworkStatus() || apiLoadNetworkStatus() === 'pending') {
     <ct-list-item-skeleton />
@@ -18,7 +19,7 @@
     <ct-list-item-skeleton />
     <ct-list-item-skeleton />
   } @else {
-    @for (collectionItem of paginatedCollection(); track collectionItem) {
+    @for (collectionItem of visibleCollection(); track collectionItem) {
       @defer (on viewport; prefetch on idle) {
         <ct-list-item [collectionItem]="collectionItem" />
       } @placeholder {
@@ -38,42 +39,4 @@
       </div>
     }
   }
-</div>
-<div class="pagination">
-  <button
-    class="button-icon material-icons"
-    [attr.aria-label]="('First' | signalTranslate)()"
-    [title]="('First' | signalTranslate)()"
-    [disabled]="disablePreviousButton()"
-    (click)="onFirstPage()"
-  >
-    first_page
-  </button>
-  <button
-    class="button-icon material-icons"
-    [attr.aria-label]="('Previous' | signalTranslate)()"
-    [title]="('Previous' | signalTranslate)()"
-    [disabled]="disablePreviousButton()"
-    (click)="onPreviousPage()"
-  >
-    chevron_left
-  </button>
-  <button
-    class="button-icon material-icons"
-    [attr.aria-label]="('Next' | signalTranslate)()"
-    [title]="('Next' | signalTranslate)()"
-    [disabled]="disableNextButton()"
-    (click)="onNextPage()"
-  >
-    chevron_right
-  </button>
-  <button
-    class="button-icon material-icons"
-    [attr.aria-label]="('Last' | signalTranslate)()"
-    [title]="('Last' | signalTranslate)()"
-    [disabled]="disableNextButton()"
-    (click)="onLastPage()"
-  >
-    last_page
-  </button>
 </div>
