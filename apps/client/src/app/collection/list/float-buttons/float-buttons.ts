@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { mainStateToken } from '@client/main/main-store';
@@ -24,6 +24,7 @@ export class FloatButtons {
   protected readonly claudeAiAvailable = this.mainState.state.claudeAiAvailable;
   protected readonly useClaudeAi = this.claudeSearch.useClaudeAi.asReadonly();
   protected readonly permissionAdd = computed(() => this.mainState.state.permissions().create);
+  protected readonly showFloatButtons = signal(false);
 
   public readonly scrollToTopAvailable = input<boolean>(false);
 
@@ -31,4 +32,24 @@ export class FloatButtons {
   public readonly toggleClaudeAi = output<void>();
   public readonly addNew = output<void>();
   public readonly scrollToTop = output<void>();
+
+  public onRandomPick(): void {
+    this.randomPick.emit();
+    this.showFloatButtons.set(false);
+  }
+
+  public onToggleClaudeAi(): void {
+    this.toggleClaudeAi.emit();
+    this.showFloatButtons.set(false);
+  }
+
+  public onAddNew(): void {
+    this.addNew.emit();
+    this.showFloatButtons.set(false);
+  }
+
+  public onScrollToTop(): void {
+    this.scrollToTop.emit();
+    this.showFloatButtons.set(false);
+  }
 }
