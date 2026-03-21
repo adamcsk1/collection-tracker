@@ -14,7 +14,7 @@ import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
 import { FloatButtons } from '@client/collection/list/float-buttons/float-buttons';
 import { ListItemSkeleton } from '@client/collection/list/list-item-skeleton/list-item-skeleton';
 import { ListItem } from '@client/collection/list/list-item/list-item';
-import { PaginationService } from '@client/collection/list/pagination/pagination-service';
+import { InfiniteScrollService } from '@client/collection/list/infinite-scroll/infinite-scroll-service';
 import { matchesSearch } from '@client/collection/list/utils/matches-search-util';
 import { NewItemDialog } from '@client/collection/new-item-dialog/new-item-dialog';
 import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
@@ -31,7 +31,7 @@ import { debounceTime, startWith, switchMap } from 'rxjs';
   imports: [NgxSignalTranslatePipe, ListItem, ListItemSkeleton, FloatButtons],
   templateUrl: './list.html',
   styleUrl: './list.css',
-  providers: [PaginationService],
+  providers: [InfiniteScrollService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class List {
@@ -39,7 +39,7 @@ export class List {
   private readonly collectionState = inject(collectionStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly portal = inject(PortalService);
-  private readonly pagination = inject(PaginationService);
+  private readonly infiniteScroll = inject(InfiniteScrollService);
   private readonly claudeSearch = inject(ClaudeSearchService);
   private readonly debouncedSearchText = toSignal(
     toObservable(this.collectionState.state.searchText).pipe(startWith(''), debounceTime(100))
@@ -77,17 +77,16 @@ export class List {
   });
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly collectionLength = computed(() => this.mainCollectionState.state.collection().length);
-  protected readonly paginatedCollection = this.pagination.paginatedItems;
-  protected readonly disablePreviousButton = this.pagination.disablePrevious;
-  protected readonly disableNextButton = this.pagination.disableNext;
-  protected readonly offset = this.pagination.offset;
+  protected readonly visibleCollection = this.infiniteScroll.visibleItems;
+  protected readonly hasMore = this.infiniteScroll.hasMore;
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
 
   constructor() {
-    this.pagination.setCollectionSource(this.filteredCollection);
+    this.infiniteScroll.setCollectionSource(this.filteredCollection);
 
     effect(() => {
       this.collectionState.state.searchText();
+      this.infiniteScroll.reset();
       this.resetScrollPosition();
     });
   }
@@ -103,24 +102,14 @@ export class List {
     this.portal.open(NewItemDialog);
   }
 
-  protected onFirstPage(): void {
-    this.pagination.firstPage();
-    this.resetScrollPosition();
-  }
+  protected onScroll(): void {
+    const element = this.scrollContainer()?.nativeElement;
+    if (!element || !this.infiniteScroll.hasMore()) return;
 
-  protected onPreviousPage(): void {
-    this.pagination.previousPage();
-    this.resetScrollPosition();
-  }
-
-  protected onNextPage(): void {
-    this.pagination.nextPage();
-    this.resetScrollPosition();
-  }
-
-  protected onLastPage(): void {
-    this.pagination.lastPage();
-    this.resetScrollPosition();
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+    if (distanceFromBottom < 200) {
+      this.infiniteScroll.loadMore();
+    }
   }
 
   protected onToggleClaudeAi(): void {
@@ -129,7 +118,7 @@ export class List {
   }
 
   private resetScrollPosition(): void {
-    this.scrollContainer()!.nativeElement.scrollTo({
+    this.scrollContainer()?.nativeElement.scrollTo({
       top: 0,
       left: 1000,
       behavior: 'smooth',

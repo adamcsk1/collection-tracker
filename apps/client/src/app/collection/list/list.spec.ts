@@ -5,6 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '@client/collection/collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
 import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
+import { INFINITE_SCROLL_PAGE_SIZE } from '@client/collection/list/infinite-scroll/infinite-scroll-const';
 import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
 import {
   initialMainCollectionState,
@@ -110,29 +111,53 @@ describe('List', () => {
     });
   });
 
-  it('paginates forward and backward with bounds enforced', () => {
-    const largeCollection = Array.from({ length: 200 }, (_, index) => buildItem(`Item ${index}`));
+  it('loads more items when scrolled near the bottom', () => {
+    const largeCollection = Array.from({ length: INFINITE_SCROLL_PAGE_SIZE * 2 }, (_, index) =>
+      buildItem(`Item ${index}`)
+    );
     mainCollectionState.setState('collection', largeCollection);
 
-    component['onNextPage']();
-    expect(component['offset']()).toBe(199);
+    const initialCount = component['visibleCollection']().length;
+    const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100 };
+    (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
 
-    component['onPreviousPage']();
-    expect(component['offset']()).toBe(49);
+    component['onScroll']();
 
-    component['onFirstPage']();
-    expect(component['offset']()).toBe(0);
+    expect(component['visibleCollection']().length).toBeGreaterThan(initialCount);
   });
 
-  it('clamps pagination when navigating beyond bounds', () => {
-    const smallCollection = [buildItem('Only'), buildItem('Two')];
-    mainCollectionState.setState('collection', smallCollection);
+  it('does not load more when all items are already visible', () => {
+    mainCollectionState.setState('collection', [buildItem('Only')]);
 
-    component['onNextPage']();
-    expect(component['offset']()).toBe(1);
+    const element = { scrollHeight: 100, scrollTop: 0, clientHeight: 100 };
+    (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
 
-    component['onPreviousPage']();
-    expect(component['offset']()).toBe(0);
+    component['onScroll']();
+
+    expect(component['visibleCollection']().length).toBe(1);
+  });
+
+  it('resets visible count and scroll position when search text changes', async () => {
+    vi.useFakeTimers();
+    try {
+      const largeCollection = Array.from({ length: INFINITE_SCROLL_PAGE_SIZE * 2 }, (_, index) =>
+        buildItem(`Item ${index}`)
+      );
+      mainCollectionState.setState('collection', largeCollection);
+
+      const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100, scrollTo: scrollSpy };
+      (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
+      component['onScroll']();
+      const countAfterScroll = component['visibleCollection']().length;
+
+      collectionState.setState('searchText', 'item');
+      await vi.runAllTimersAsync();
+
+      expect(component['visibleCollection']().length).toBeLessThan(countAfterScroll);
+      expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 1000, behavior: 'smooth' });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('shows only unwatched items for virtual tag search', async () => {
@@ -168,26 +193,5 @@ describe('List', () => {
     } finally {
       vi.useRealTimers();
     }
-  });
-
-  it('computes next/previous disable flags', () => {
-    const largeCollection = Array.from({ length: 200 }, (_, index) => buildItem(`Item ${index}`));
-    mainCollectionState.setState('collection', largeCollection);
-
-    expect(component['disablePreviousButton']()).toBe(true);
-    expect(component['disableNextButton']()).toBe(false);
-
-    component['onNextPage']();
-
-    expect(component['disablePreviousButton']()).toBe(false);
-    expect(component['disableNextButton']()).toBe(true);
-  });
-
-  it('resets scroll position with expected options', () => {
-    mainCollectionState.setState('collection', [buildItem('Alpha')]);
-
-    component['onFirstPage']();
-
-    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 1000, behavior: 'smooth' });
   });
 });
