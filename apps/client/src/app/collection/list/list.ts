@@ -5,6 +5,7 @@ import {
   effect,
   ElementRef,
   inject,
+  signal,
   untracked,
   viewChild,
 } from '@angular/core';
@@ -12,9 +13,9 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { collectionStateToken } from '@client/collection/collection-store';
 import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
 import { FloatButtons } from '@client/collection/list/float-buttons/float-buttons';
+import { InfiniteScrollService } from '@client/collection/list/infinite-scroll/infinite-scroll-service';
 import { ListItemSkeleton } from '@client/collection/list/list-item-skeleton/list-item-skeleton';
 import { ListItem } from '@client/collection/list/list-item/list-item';
-import { InfiniteScrollService } from '@client/collection/list/infinite-scroll/infinite-scroll-service';
 import { matchesSearch } from '@client/collection/list/utils/matches-search-util';
 import { NewItemDialog } from '@client/collection/new-item-dialog/new-item-dialog';
 import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
@@ -80,14 +81,14 @@ export class List {
   protected readonly visibleCollection = this.infiniteScroll.visibleItems;
   protected readonly hasMore = this.infiniteScroll.hasMore;
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
+  protected readonly scrollToTopAvailable = signal(false);
 
   constructor() {
     this.infiniteScroll.setCollectionSource(this.filteredCollection);
 
     effect(() => {
       this.collectionState.state.searchText();
-      this.infiniteScroll.reset();
-      this.resetScrollPosition();
+      this.onResetScrollPosition();
     });
   }
 
@@ -104,8 +105,11 @@ export class List {
 
   protected onScroll(): void {
     const element = this.scrollContainer()?.nativeElement;
-    if (!element || !this.infiniteScroll.hasMore()) return;
+    if (!element) return;
 
+    this.scrollToTopAvailable.set(element.scrollTop !== 0);
+
+    if (!this.infiniteScroll.hasMore()) return;
     const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
     if (distanceFromBottom < 200) {
       this.infiniteScroll.loadMore();
@@ -117,7 +121,9 @@ export class List {
     this.collectionState.setState('searchText', '');
   }
 
-  private resetScrollPosition(): void {
+  protected onResetScrollPosition(): void {
+    this.scrollToTopAvailable.set(false);
+    this.infiniteScroll.reset();
     this.scrollContainer()?.nativeElement.scrollTo({
       top: 0,
       left: 1000,

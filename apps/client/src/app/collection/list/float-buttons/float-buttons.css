@@ -24,6 +24,11 @@
   bottom: 0;
 }
 
+.scroll-to-top {
+  bottom: calc(4 * var(--size-xs) + 3 * var(--float-button-container-size));
+  margin-bottom: 0;
+}
+
 .add-new {
   bottom: calc(3 * var(--size-xs) + 2 * var(--float-button-container-size));
   margin-bottom: 0;
