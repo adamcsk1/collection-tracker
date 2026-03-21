@@ -9,6 +9,18 @@
     casino
   </button>
 </div>
+@if (scrollToTopAvailable()) {
+  <div class="float-button scroll-to-top" animate.enter="animation-fade-in" animate.leave="animation-fade-out">
+    <button
+      class="button-icon material-icons"
+      [attr.aria-label]="('ScrollToTop' | signalTranslate)()"
+      [title]="('ScrollToTop' | signalTranslate)()"
+      (click)="scrollToTop.emit()"
+    >
+      arrow_upward
+    </button>
+  </div>
+}
 @if (claudeAiAvailable()) {
   <div class="float-button claude-ai-toggle">
     <button

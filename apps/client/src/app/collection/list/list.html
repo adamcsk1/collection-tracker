@@ -1,4 +1,10 @@
-<ct-float-buttons (randomPick)="onRandomPick()" (toggleClaudeAi)="onToggleClaudeAi()" (addNew)="onAddNew()" />
+<ct-float-buttons
+  [scrollToTopAvailable]="scrollToTopAvailable()"
+  (randomPick)="onRandomPick()"
+  (toggleClaudeAi)="onToggleClaudeAi()"
+  (addNew)="onAddNew()"
+  (scrollToTop)="onResetScrollPosition()"
+/>
 <div
   #scrollContainer
   class="list"
