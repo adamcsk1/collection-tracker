@@ -17,7 +17,7 @@ export interface CreateApiResponseModel {
   name: string;
 }
 
-export interface ModifyApiRequestModel {
+export interface ChangeApiRequestModel {
   content: string;
 }
 

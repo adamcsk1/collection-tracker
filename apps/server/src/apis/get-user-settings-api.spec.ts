@@ -1,11 +1,11 @@
 import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
-import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
+import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 vi.mock('@server/core/store/store');
 
-describe('user-settings-api', () => {
+describe('get-user-settings-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -24,7 +24,7 @@ describe('user-settings-api', () => {
       },
     });
 
-    const { register } = await import('./user-settings-api');
+    const { register } = await import('./get-user-settings-api');
     register(app);
 
     await handlerPromise();
@@ -43,7 +43,7 @@ describe('user-settings-api', () => {
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue({});
 
-    const { register } = await import('./user-settings-api');
+    const { register } = await import('./get-user-settings-api');
     register(app);
 
     await handlerPromise();
@@ -58,7 +58,7 @@ describe('user-settings-api', () => {
       throw new Error('fail');
     });
 
-    const { register } = await import('./user-settings-api');
+    const { register } = await import('./get-user-settings-api');
     register(app);
 
     await handlerPromise();

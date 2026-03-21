@@ -1,10 +1,10 @@
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
-import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
+import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');
 
-describe('proxy-omdb-item-api', () => {
+describe('proxy-get-omdb-item-api', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -28,7 +28,7 @@ describe('proxy-omdb-item-api', () => {
       const omdbData = { imdbID: 'tt0133093', Title: 'The Matrix' };
       vi.mocked(fetch).mockResolvedValue({ json: () => Promise.resolve(omdbData) } as any);
 
-      const { register } = await import('./proxy-omdb-item-api');
+      const { register } = await import('./proxy-get-omdb-item-api');
       register(app);
 
       await handlerPromise();
@@ -43,7 +43,7 @@ describe('proxy-omdb-item-api', () => {
       const request: any = { query: { i: 'tt0133093' } };
       const { app, handlerPromise } = buildApp(request, response);
 
-      const { register } = await import('./proxy-omdb-item-api');
+      const { register } = await import('./proxy-get-omdb-item-api');
       register(app);
 
       await handlerPromise();
@@ -57,7 +57,7 @@ describe('proxy-omdb-item-api', () => {
       const { app, handlerPromise } = buildApp(request, response);
       vi.mocked(fetch).mockRejectedValue(new Error('network error'));
 
-      const { register } = await import('./proxy-omdb-item-api');
+      const { register } = await import('./proxy-get-omdb-item-api');
       register(app);
 
       await handlerPromise();

@@ -5,16 +5,16 @@ import { Store } from '@server/core/store/store';
 import { updateItem } from '@server/core/utils/cache-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
-import { ModifyApiRequestModel } from '@shared/models/api-model';
+import { ChangeApiRequestModel } from '@shared/models/api-model';
 import type { Application } from 'express';
 import { existsSync } from 'fs';
 
 export const register = (app: Application): void => {
-  app.put(`${API_PREFIX}/modify/:name`, jwtGuard, async (request: ExtendedRequestModel, response) => {
+  app.put(`${API_PREFIX}/change/:name`, jwtGuard, async (request: ExtendedRequestModel, response) => {
     try {
       let { name } = request.params;
       name = name.toString().replace(/\\|\//g, '');
-      const { content } = request.body as ModifyApiRequestModel;
+      const { content } = request.body as ChangeApiRequestModel;
       if (typeof content !== 'string') {
         return response.sendStatus(400);
       }

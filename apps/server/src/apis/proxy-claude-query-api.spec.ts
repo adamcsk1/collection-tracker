@@ -1,6 +1,6 @@
 import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
-import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
+import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import { readdir, readFile, stat } from 'fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
@@ -11,7 +11,7 @@ vi.mock('fs/promises', async () => {
   return { ...actual, readdir: vi.fn(), readFile: vi.fn(), stat: vi.fn() };
 });
 
-describe('proxy-claude-api', () => {
+describe('proxy-claude-query-api', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -76,7 +76,7 @@ The origin story of Batman.`;
       ]);
       await mockStream('["tt0133093"]');
 
-      const { register } = await import('./proxy-claude-api');
+      const { register } = await import('./proxy-claude-query-api');
       register(app);
 
       await handlerPromise();
@@ -90,7 +90,7 @@ The origin story of Batman.`;
       setupStore([{ name: 'matrix.md', content: matrixContent }]);
       await mockStream('["tt0133093", "tt9999999"]');
 
-      const { register } = await import('./proxy-claude-api');
+      const { register } = await import('./proxy-claude-query-api');
       register(app);
 
       await handlerPromise();
@@ -103,7 +103,7 @@ The origin story of Batman.`;
       const { app, handlerPromise } = buildApp(request('Which are sci-fi movies?'), response);
       setupStore([]);
 
-      const { register } = await import('./proxy-claude-api');
+      const { register } = await import('./proxy-claude-query-api');
       register(app);
 
       await handlerPromise();
@@ -115,7 +115,7 @@ The origin story of Batman.`;
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
 
-      const { register } = await import('./proxy-claude-api');
+      const { register } = await import('./proxy-claude-query-api');
       register(app);
 
       await handlerPromise();
@@ -128,7 +128,7 @@ The origin story of Batman.`;
       const response = mockResponse();
       const { app, handlerPromise } = buildApp({ body: { prompt: '' }, usernameHash: 'user' }, response);
 
-      const { register } = await import('./proxy-claude-api');
+      const { register } = await import('./proxy-claude-query-api');
       register(app);
 
       await handlerPromise();
@@ -143,7 +143,7 @@ The origin story of Batman.`;
       setupStore([{ name: 'matrix.md', content: matrixContent }]);
       await mockStream('not valid json');
 
-      const { register } = await import('./proxy-claude-api');
+      const { register } = await import('./proxy-claude-query-api');
       register(app);
 
       await handlerPromise();
@@ -157,7 +157,7 @@ The origin story of Batman.`;
       setupStore([{ name: 'matrix.md', content: matrixContent }]);
       await mockStream('["tt0133093"]', 'max_tokens');
 
-      const { register } = await import('./proxy-claude-api');
+      const { register } = await import('./proxy-claude-query-api');
       register(app);
 
       await handlerPromise();
@@ -179,7 +179,7 @@ The origin story of Batman.`;
         },
       } as any);
 
-      const { register } = await import('./proxy-claude-api');
+      const { register } = await import('./proxy-claude-query-api');
       register(app);
 
       await handlerPromise();

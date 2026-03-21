@@ -1,5 +1,6 @@
 import { register as registerAccessTokenValidate } from '@server/apis/access-token-validate-api';
 import { register as registerAccessTokens } from '@server/apis/access-tokens-api';
+import { register as registerModify } from '@server/apis/change-api';
 import { register as registerChangeParserConfig } from '@server/apis/change-parser-config-api';
 import { register as registerChangeTagConfig } from '@server/apis/change-tag-config-api';
 import { register as registerChangeToken } from '@server/apis/change-token-api';
@@ -10,17 +11,16 @@ import { register as registerDeleteAccessToken } from '@server/apis/delete-acces
 import { register as registerDelete } from '@server/apis/delete-api';
 import { register as registerDeleteUser } from '@server/apis/delete-user-api';
 import { register as registerGetAll } from '@server/apis/get-all-api';
+import { register as registerParserConfig } from '@server/apis/get-parser-config-api';
+import { register as registerTagConfig } from '@server/apis/get-tag-config-api';
+import { register as registerUserSettings } from '@server/apis/get-user-settings-api';
 import { register as registerHealth } from '@server/apis/health-api';
 import { register as registerLogout } from '@server/apis/logout-api';
-import { register as registerModify } from '@server/apis/modify-api';
-import { register as registerParserConfig } from '@server/apis/parser-config-api';
-import { register as registerProxyClaude } from '@server/apis/proxy-claude-api';
-import { register as registerProxyOMDbItem } from '@server/apis/proxy-omdb-item-api';
+import { register as registerProxyClaude } from '@server/apis/proxy-claude-query-api';
+import { register as registerProxyOMDbItem } from '@server/apis/proxy-get-omdb-item-api';
 import { register as registerProxyOMDbSearch } from '@server/apis/proxy-omdb-search-api';
 import { register as registerSignIn } from '@server/apis/sign-in-api';
 import { register as registerSignUp } from '@server/apis/sign-up-api';
-import { register as registerTagConfig } from '@server/apis/tag-config-api';
-import { register as registerUserSettings } from '@server/apis/user-settings-api';
 import type { Application } from 'express';
 
 export const registerAllApis = (app: Application): void => {

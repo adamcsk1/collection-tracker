@@ -1,11 +1,11 @@
 import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
-import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
+import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 vi.mock('@server/core/store/store');
 
-describe('tag-config-api', () => {
+describe('get-tag-config-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -28,7 +28,7 @@ describe('tag-config-api', () => {
       ],
     });
 
-    const { register } = await import('./tag-config-api');
+    const { register } = await import('./get-tag-config-api');
     register(app);
 
     await handlerPromise();
@@ -50,7 +50,7 @@ describe('tag-config-api', () => {
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue({});
 
-    const { register } = await import('./tag-config-api');
+    const { register } = await import('./get-tag-config-api');
     register(app);
 
     await handlerPromise();
@@ -63,7 +63,7 @@ describe('tag-config-api', () => {
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue(null);
 
-    const { register } = await import('./tag-config-api');
+    const { register } = await import('./get-tag-config-api');
     register(app);
 
     await handlerPromise();
@@ -78,7 +78,7 @@ describe('tag-config-api', () => {
       throw new Error('fail');
     });
 
-    const { register } = await import('./tag-config-api');
+    const { register } = await import('./get-tag-config-api');
     register(app);
 
     await handlerPromise();
@@ -93,7 +93,7 @@ describe('tag-config-api', () => {
       throw 'fail';
     });
 
-    const { register } = await import('./tag-config-api');
+    const { register } = await import('./get-tag-config-api');
     register(app);
 
     await handlerPromise();

@@ -1,7 +1,7 @@
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
-import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
+import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import { rmSync } from 'fs';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 

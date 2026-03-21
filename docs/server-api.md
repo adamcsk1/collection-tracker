@@ -50,7 +50,7 @@ Valid values for `POST /user/settings`:
 | -------- | ------------------------------- | ----------------------------------------------------------------- |
 | `GET`    | `/get-all?limit=<n>&offset=<n>` | Returns `Array<{ name, content }>` sorted by file creation date descending. |
 | `POST`   | `/create`                       | Body: `{ "content": string, "name": string }`. Returns `{ "name": string }`, where `name` is the final stored filename after collision handling. |
-| `PUT`    | `/modify/:name`                 | Body: `{ "content": string }`. Updates one Markdown file.         |
+| `PUT`    | `/change/:name`                 | Body: `{ "content": string }`. Updates one Markdown file.         |
 | `DELETE` | `/delete/:name`                 | Deletes one Markdown file.                                        |
 
 ## OMDb Proxy Endpoints

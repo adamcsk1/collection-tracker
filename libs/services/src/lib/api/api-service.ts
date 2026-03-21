@@ -4,12 +4,12 @@ import { AlertService } from '@services/alert-service';
 import { apiStateToken } from '@services/api/api-store';
 import {
   AccessTokensApiResponseModel,
+  ChangeApiRequestModel,
   ChangeTokenApiResponseModel,
   CreateAccessTokenApiResponseModel,
   CreateApiRequestModel,
   CreateApiResponseModel,
   GetAllApiResponseModel,
-  ModifyApiRequestModel,
   ParserConfigApiRequestModel,
   ParserConfigApiResponseModel,
   SignInApiRequestModel,
@@ -131,8 +131,8 @@ export class ApiService {
   }
 
   public update(name: string, content: string): Observable<void> {
-    const body: ModifyApiRequestModel = { content };
-    return this.httpClient.put<void>(`${this.apiState.state.apiUrl()}/modify/${name}`, body).pipe(
+    const body: ChangeApiRequestModel = { content };
+    return this.httpClient.put<void>(`${this.apiState.state.apiUrl()}/change/${name}`, body).pipe(
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);

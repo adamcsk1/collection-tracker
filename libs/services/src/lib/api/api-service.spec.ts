@@ -105,7 +105,7 @@ describe('ApiService', () => {
   it('updates an item and alerts on error', async () => {
     const promise = lastValueFrom(service.update('item', 'updated').pipe(defaultIfEmpty(undefined)));
 
-    const updateRequest = httpMock.expectOne('https://api.test/modify/item');
+    const updateRequest = httpMock.expectOne('https://api.test/change/item');
     expect(updateRequest.request.method).toBe('PUT');
     expect(updateRequest.request.body).toEqual({ content: 'updated' });
     updateRequest.flush('failed', { status: 500, statusText: 'Server Error' });

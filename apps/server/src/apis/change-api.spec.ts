@@ -1,7 +1,7 @@
 import { Store } from '@server/core/store/store';
 import { updateItem } from '@server/core/utils/cache-util';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
-import { mockResponse } from 'apps/server/test/mocks/repsonse-mock';
+import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import { existsSync } from 'fs';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
@@ -15,7 +15,7 @@ vi.mock('fs', async () => {
   };
 });
 
-describe('modify-api', () => {
+describe('change-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -26,7 +26,7 @@ describe('modify-api', () => {
     const request: any = { params: { name: 'file.md' }, body: {}, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./modify-api');
+    const { register } = await import('./change-api');
     register(app);
 
     await handlerPromise();
@@ -43,7 +43,7 @@ describe('modify-api', () => {
     (updateItem as Mock).mockImplementation(() => undefined);
     (response.sendStatus as Mock).mockReturnValue(response);
 
-    const { register } = await import('./modify-api');
+    const { register } = await import('./change-api');
     register(app);
 
     await handlerPromise();
@@ -59,7 +59,7 @@ describe('modify-api', () => {
     (Store.getLastValue as Mock).mockReturnValue('/data');
     (existsSync as Mock).mockReturnValue(false);
 
-    const { register } = await import('./modify-api');
+    const { register } = await import('./change-api');
     register(app);
 
     await handlerPromise();
@@ -76,7 +76,7 @@ describe('modify-api', () => {
       throw new Error('fail');
     });
 
-    const { register } = await import('./modify-api');
+    const { register } = await import('./change-api');
     register(app);
 
     await handlerPromise();
