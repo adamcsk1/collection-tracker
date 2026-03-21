@@ -83,7 +83,7 @@ describe('List', () => {
   it('filters collection based on search text and resets scroll position', async () => {
     vi.useFakeTimers();
     try {
-      vi.spyOn(component as any, 'resetScrollPosition');
+      vi.spyOn(component as any, 'onResetScrollPosition');
       mainCollectionState.setState('collection', [buildItem('Alpha'), buildItem('Beta')]);
       collectionState.setState('searchText', 'be');
 
@@ -93,7 +93,7 @@ describe('List', () => {
       const filtered = component['filteredCollection']();
 
       expect(filtered).toEqual([buildItem('Alpha'), buildItem('Beta')]);
-      expect(component['resetScrollPosition']).toHaveBeenCalled();
+      expect(component['onResetScrollPosition']).toHaveBeenCalled();
       expect(scrollSpy).toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
@@ -152,6 +152,7 @@ describe('List', () => {
 
       collectionState.setState('searchText', 'item');
       await vi.runAllTimersAsync();
+      fixture.detectChanges();
 
       expect(component['visibleCollection']().length).toBeLessThan(countAfterScroll);
       expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 1000, behavior: 'smooth' });

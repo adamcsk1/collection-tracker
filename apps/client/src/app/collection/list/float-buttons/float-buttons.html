@@ -1,60 +1,79 @@
-<div class="float-button random-pick">
-  <button
-    class="button-icon material-icons"
-    [attr.aria-label]="('RandomPick' | signalTranslate)()"
-    [title]="('RandomPick' | signalTranslate)()"
-    [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
-    (click)="randomPick.emit()"
-  >
-    casino
-  </button>
-</div>
-@if (scrollToTopAvailable()) {
-  <div class="float-button scroll-to-top" animate.enter="animation-fade-in" animate.leave="animation-fade-out">
-    <button
-      class="button-icon material-icons"
-      [attr.aria-label]="('ScrollToTop' | signalTranslate)()"
-      [title]="('ScrollToTop' | signalTranslate)()"
-      (click)="scrollToTop.emit()"
-    >
-      arrow_upward
-    </button>
+@if (showFloatButtons()) {
+  <div class="float-buttons-container" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
+    @if (scrollToTopAvailable()) {
+      <div class="float-button" animate.enter="animation-fade-in" animate.leave="animation-fade-out">
+        <button
+          class="button-icon material-icons"
+          [attr.aria-label]="('ScrollToTop' | signalTranslate)()"
+          [title]="('ScrollToTop' | signalTranslate)()"
+          (click)="onScrollToTop()"
+        >
+          arrow_upward
+        </button>
+      </div>
+    }
+    @if (permissionAdd()) {
+      <div class="float-button">
+        <button
+          class="button-icon material-icons"
+          [attr.aria-label]="('AddNew' | signalTranslate)()"
+          [title]="('AddNew' | signalTranslate)()"
+          [disabled]="apiLoadNetworkStatus() === 'pending'"
+          (click)="onAddNew()"
+        >
+          add
+        </button>
+      </div>
+    }
+    @if (claudeAiAvailable()) {
+      <div class="float-button">
+        <button
+          class="button-icon material-icons"
+          [attr.aria-label]="
+            useClaudeAi()
+              ? ('SwitchToStandardSearch' | signalTranslate)()
+              : ('SwitchToClaudeAiSearch' | signalTranslate)()
+          "
+          [title]="
+            useClaudeAi()
+              ? ('SwitchToStandardSearch' | signalTranslate)()
+              : ('SwitchToClaudeAiSearch' | signalTranslate)()
+          "
+          [disabled]="apiLoadNetworkStatus() === 'pending'"
+          (click)="onToggleClaudeAi()"
+        >
+          @if (useClaudeAi()) {
+            <libc-image-icon
+              [ariaLabel]="('ClaudeAi' | signalTranslate)()"
+              imageUrl="/client/images/claude-ai-icon-transparent.png"
+            />
+          } @else {
+            search
+          }
+        </button>
+      </div>
+    }
+    <div class="float-button">
+      <button
+        class="button-icon material-icons"
+        [attr.aria-label]="('RandomPick' | signalTranslate)()"
+        [title]="('RandomPick' | signalTranslate)()"
+        [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
+        (click)="onRandomPick()"
+      >
+        casino
+      </button>
+    </div>
   </div>
-}
-@if (claudeAiAvailable()) {
-  <div class="float-button claude-ai-toggle">
+} @else {
+  <div class="float-button float-show-button" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
     <button
       class="button-icon material-icons"
-      [attr.aria-label]="
-        useClaudeAi() ? ('SwitchToStandardSearch' | signalTranslate)() : ('SwitchToClaudeAiSearch' | signalTranslate)()
-      "
-      [title]="
-        useClaudeAi() ? ('SwitchToStandardSearch' | signalTranslate)() : ('SwitchToClaudeAiSearch' | signalTranslate)()
-      "
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
-      (click)="toggleClaudeAi.emit()"
+      [attr.aria-label]="('ShowFunctions' | signalTranslate)()"
+      [title]="('ShowFunctions' | signalTranslate)()"
+      (click)="showFloatButtons.set(true)"
     >
-      @if (useClaudeAi()) {
-        <libc-image-icon
-          [ariaLabel]="('ClaudeAi' | signalTranslate)()"
-          imageUrl="/client/images/claude-ai-icon-transparent.png"
-        />
-      } @else {
-        search
-      }
-    </button>
-  </div>
-}
-@if (permissionAdd()) {
-  <div class="float-button add-new">
-    <button
-      class="button-icon material-icons"
-      [attr.aria-label]="('AddNew' | signalTranslate)()"
-      [title]="('AddNew' | signalTranslate)()"
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
-      (click)="addNew.emit()"
-    >
-      add
+      apps
     </button>
   </div>
 }
