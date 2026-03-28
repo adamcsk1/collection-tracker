@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { Input } from '@components/input/input';
 import { toastStateToken } from '@components/toast/toast-store';
 import { SignUpModel } from '@login/sign-up/sign-up-model';
-import { ApiService } from '@services/api/api-service';
+import { PublicApiService } from '@services/api/public-api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
@@ -23,7 +23,7 @@ import { firstValueFrom } from 'rxjs';
 export class SignUp implements OnInit {
   private readonly apiState = inject(apiStateToken);
   private readonly webStorage = inject(WebstorageService);
-  private readonly api = inject(ApiService);
+  private readonly api = inject(PublicApiService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly toastState = inject(toastStateToken);
   protected readonly signUpModel = signal<SignUpModel>({

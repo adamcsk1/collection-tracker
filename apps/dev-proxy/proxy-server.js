@@ -6,6 +6,7 @@ const TARGETS = {
   api: 'http://localhost:3000/api',
   login: 'http://localhost:4201/login',
   client: 'http://localhost:4202/client',
+  health: 'http://localhost:4203/health',
 };
 
 const app = express();
@@ -80,10 +81,17 @@ const clientProxy = createProxyMiddleware(
   })
 );
 
+const healthProxy = createProxyMiddleware(
+  commonProxy({
+    target: TARGETS.health,
+    pathRewrite: { '^/health': '' },
+  })
+);
+
 app.use('/api', apiProxy);
 app.use('/login', loginProxy);
 app.use('/client', clientProxy);
-app.get('/health', (_request, response) => response.status(200).send('ok'));
+app.use('/health', healthProxy);
 app.get('/', (_request, response) => response.redirect(302, '/login'));
 
 const server = app.listen(PORT, () => {
@@ -91,6 +99,7 @@ const server = app.listen(PORT, () => {
   console.log(`[proxy] /api    -> ${TARGETS.api}`);
   console.log(`[proxy] /login  -> ${TARGETS.login}`);
   console.log(`[proxy] /client -> ${TARGETS.client}`);
+  console.log(`[proxy] /health -> ${TARGETS.health}`);
 });
 
 const pickAppFromReferer = (referer = '') => {
@@ -98,6 +107,7 @@ const pickAppFromReferer = (referer = '') => {
     const { pathname = '' } = new URL(referer);
     if (pathname.startsWith('/login')) return 'login';
     if (pathname.startsWith('/client')) return 'client';
+    if (pathname.startsWith('/health')) return 'health';
   } catch {
     // ignore bad referer
   }
@@ -110,10 +120,12 @@ server.on('upgrade', (req, socket, head) => {
 
   if (url.startsWith('/login') || fromReferer === 'login') return loginProxy.upgrade(req, socket, head);
   if (url.startsWith('/client') || fromReferer === 'client') return clientProxy.upgrade(req, socket, head);
+  if (url.startsWith('/health') || fromReferer === 'health') return healthProxy.upgrade(req, socket, head);
   if (url.startsWith('/api')) return apiProxy.upgrade(req, socket, head);
 
   if (url.includes('ng-cli-ws') || url.startsWith('/ng-cli-ws')) {
     if (fromReferer === 'login') return loginProxy.upgrade(req, socket, head);
+    if (fromReferer === 'health') return healthProxy.upgrade(req, socket, head);
     return clientProxy.upgrade(req, socket, head);
   }
 });

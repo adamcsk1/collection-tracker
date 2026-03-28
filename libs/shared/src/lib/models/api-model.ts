@@ -97,7 +97,6 @@ export interface HealthApiResponseModel {
     usedPercent: number;
   };
   cpu: {
-    cores: number;
     usagePercent: number;
   };
   disk: {

@@ -4,7 +4,8 @@ import { RouterLink } from '@angular/router';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { SignInModel } from '@login/sign-in/sign-in-model';
-import { ApiService } from '@services/api/api-service';
+import { PublicApiService } from '@services/api/public-api-service';
+import { SharedApiService } from '@services/api/shared-api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
@@ -29,7 +30,8 @@ export class SignIn implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly themeState = inject(themeStateToken);
   private readonly theme = inject(ThemeService);
-  private readonly api = inject(ApiService);
+  private readonly publicApi = inject(PublicApiService);
+  private readonly sharedApi = inject(SharedApiService);
   protected readonly signInModel = signal<SignInModel>({
     username: '',
     token: '',
@@ -110,9 +112,9 @@ export class SignIn implements OnInit {
       this.webStorage.setItem(STORAGE_API_URL, this.apiState.state.apiUrl());
     }
 
-    await firstValueFrom(this.api.signIn(formValue.username, formValue.token));
+    await firstValueFrom(this.publicApi.signIn(formValue.username, formValue.token));
     await firstValueFrom(
-      this.api
+      this.sharedApi
         .updateUserSettings({
           language: formValue.language,
           theme: formValue.theme,

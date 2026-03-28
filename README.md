@@ -19,6 +19,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 ## Workspace
 
 - `apps/client`: main application for collection management, statistics, parser configuration, tag configuration, and user settings
+- `apps/health`: server health status dashboard — memory, CPU, disk, load, and frontend status
 - `apps/login`: authentication-only application for sign-up and sign-in
 - `apps/server`: API, authentication, and flat-file persistence
 - `apps/dev-proxy`: single-origin development gateway on `http://localhost:4200`
@@ -48,6 +49,7 @@ npm start
 - gateway: `http://localhost:4200/`
 - login: `http://localhost:4200/login/`
 - client: `http://localhost:4200/client/`
+- health: `http://localhost:4200/health/`
 - API: `http://localhost:4200/api/v1/`
 
 Common workspace commands:
