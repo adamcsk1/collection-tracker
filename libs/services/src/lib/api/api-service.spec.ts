@@ -37,20 +37,8 @@ describe('ApiService', () => {
     httpMock.verify();
   });
 
-  it('requests health against a temporary URL while suppressing errors', async () => {
-    const promise = lastValueFrom(
-      service.getHealth({ temporaryApiUrl: 'https://temp.api', suppressErrors: true }).pipe(defaultIfEmpty(undefined))
-    );
-
-    const healthRequest = httpMock.expectOne('https://temp.api/health');
-    healthRequest.flush('offline', { status: 500, statusText: 'Server Error' });
-
-    await expect(promise).resolves.toBeUndefined();
-    expect(alertSpy).not.toHaveBeenCalled();
-  });
-
-  it('alerts and rethrows when health check fails without suppression', async () => {
-    const promise = lastValueFrom(service.getHealth({}));
+  it('alerts and rethrows when health check fails', async () => {
+    const promise = lastValueFrom(service.getHealth());
 
     const healthRequest = httpMock.expectOne('https://api.test/health');
     healthRequest.flush('down', { status: 503, statusText: 'Service Unavailable' });

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 vi.mock('@server/core/store/store');
 vi.mock('@server/core/jwt', () => ({
   generateAccessToken: vi.fn().mockReturnValue('access'),
-  jwtGuard: vi.fn((_req: any, _res: any, next: any) => next()),
+  jwtGuard: vi.fn((_request: any, _response: any, next: any) => next()),
 }));
 vi.mock('@server/core/utils/users-util', () => ({
   getUserAccessToken: vi.fn(() => ({ tokenHash: 'hashed-access' })),

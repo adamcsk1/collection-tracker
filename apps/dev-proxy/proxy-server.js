@@ -83,8 +83,8 @@ const clientProxy = createProxyMiddleware(
 app.use('/api', apiProxy);
 app.use('/login', loginProxy);
 app.use('/client', clientProxy);
-app.get('/health', (_req, res) => res.status(200).send('ok'));
-app.get('/', (_req, res) => res.redirect(302, '/login'));
+app.get('/health', (_request, response) => response.status(200).send('ok'));
+app.get('/', (_request, response) => response.redirect(302, '/login'));
 
 const server = app.listen(PORT, () => {
   console.log(`[proxy] Dev gateway ready at http://localhost:${PORT}`);
