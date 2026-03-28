@@ -90,3 +90,25 @@ export interface TagConfigApiModel {
 
 export type TagConfigsApiResponseModel = TagConfigApiModel[];
 export type TagConfigsApiRequestModel = TagConfigsApiResponseModel;
+
+export interface HealthApiResponseModel {
+  status: 'ok' | 'warn' | 'error';
+  memory: {
+    usedPercent: number;
+  };
+  cpu: {
+    cores: number;
+    usagePercent: number;
+  };
+  disk: {
+    usedPercent: number;
+  } | null;
+  load: {
+    avg1m: number;
+    avg5m: number;
+    avg15m: number;
+  };
+  frontend: {
+    status: 'up' | 'down';
+  };
+}

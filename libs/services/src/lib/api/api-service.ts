@@ -22,7 +22,7 @@ import {
 } from '@shared/models/api-model';
 import { ClaudeQueryRequestModel, ClaudeQueryResponseModel } from '@shared/models/claude-model';
 import { OMDbResponseItemModel, OMDbResponseModel } from '@shared/models/omdb-model';
-import { catchError, EMPTY, filter, Observable, of, Subject, tap, throwError } from 'rxjs';
+import { catchError, EMPTY, filter, Observable, Subject, tap, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -32,19 +32,11 @@ export class ApiService {
   private readonly httpClient = inject(HttpClient);
   private readonly apiState = inject(apiStateToken);
 
-  public getHealth({
-    temporaryApiUrl,
-    suppressErrors,
-  }: {
-    temporaryApiUrl?: string;
-    suppressErrors?: boolean;
-  }): Observable<void> {
-    return this.httpClient.get<void>(`${temporaryApiUrl || this.apiState.state.apiUrl()}/health`).pipe(
+  public getHealth(): Observable<void> {
+    return this.httpClient.get<void>(`${this.apiState.state.apiUrl()}/health`).pipe(
       catchError((error) => {
-        if (!suppressErrors) {
-          this.alert.show(error.message);
-          return throwError(() => error);
-        } else return of();
+        this.alert.show(error.message);
+        return throwError(() => error);
       })
     );
   }

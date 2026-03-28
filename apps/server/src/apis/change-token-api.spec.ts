@@ -11,7 +11,7 @@ vi.mock('@server/core/crypto', () => ({
 }));
 vi.mock('@server/core/jwt', () => ({
   generateAccessToken: vi.fn().mockReturnValue('new-access'),
-  jwtGuard: vi.fn((_req: any, _res: any, next: any) => next()),
+  jwtGuard: vi.fn((_request: any, _response: any, next: any) => next()),
 }));
 vi.mock('@server/core/utils/users-util', () => ({
   getUserAccessToken: vi.fn(() => ({ tokenHash: 'hashed-new-access' })),
