@@ -8,46 +8,40 @@
 <form role="form" [attr.aria-label]="('SignUp' | signalTranslate)()" [formRoot]="form">
   <libc-input icon="person" [label]="('Username' | signalTranslate)()" [mandatory]="true" [formField]="form.username">
     <ng-container errors>
-      @if (formErrors.username.minLength()) {
-        {{ ('Validation.UsernameMinLength' | signalTranslate)() }}
-      }
-      @if (formErrors.username.maxLength()) {
-        {{ ('Validation.UsernameMaxLength' | signalTranslate)() }}
-      }
+      @if (formErrors.username.minLength()) { {{ ('Validation.UsernameMinLength' | signalTranslate)() }} } @if
+      (formErrors.username.maxLength()) { {{ ('Validation.UsernameMaxLength' | signalTranslate)() }} }
     </ng-container>
   </libc-input>
   @if (secret()) {
-    <label for="secret">{{ ('Secret' | signalTranslate)() }}</label>
-    <code id="secret">{{ secret() }}</code>
-    <a
-      tabindex="0"
-      role="button"
-      class="text-button"
-      [attr.aria-label]="('CopyToClipboard' | signalTranslate)()"
-      (click)="onCopyToClipboard()"
-      (keyup.enter)="onCopyToClipboard()"
-    >
-      {{ ('CopyToClipboard' | signalTranslate)() }}
-    </a>
-    <small>
-      {{ ('Message.SignUpSecret' | signalTranslate)() }}
-    </small>
-  }
-
-  @if (showApiUrlInput()) {
-    <libc-input
-      [label]="('ApiUrl' | signalTranslate)()"
-      [hint]="('Message.ApiUrl' | signalTranslate)()"
-      [mandatory]="true"
-      [formField]="form.apiUrl"
-    />
+  <label for="secret">{{ ('Secret' | signalTranslate)() }}</label>
+  <code id="secret">{{ secret() }}</code>
+  <a
+    tabindex="0"
+    role="button"
+    class="text-button"
+    [attr.aria-label]="('CopyToClipboard' | signalTranslate)()"
+    (click)="onCopyToClipboard()"
+    (keyup.enter)="onCopyToClipboard()"
+  >
+    {{ ('CopyToClipboard' | signalTranslate)() }}
+  </a>
+  <small>
+    {{ ('Message.SignUpSecret' | signalTranslate)() }}
+  </small>
+  } @if (showApiUrlInput()) {
+  <libc-input
+    [label]="('ApiUrl' | signalTranslate)()"
+    [hint]="('Message.ApiUrl' | signalTranslate)()"
+    [mandatory]="true"
+    [formField]="form.apiUrl"
+  />
   }
 
   <div class="form-buttons">
     @if (!secret()) {
-      <button type="submit" class="button-custom" [disabled]="form().invalid()">
-        {{ ('Continue' | signalTranslate)() }}
-      </button>
+    <button type="submit" class="button-custom" [disabled]="form().invalid()">
+      {{ ('Continue' | signalTranslate)() }}
+    </button>
     }
     <hr />
     <div>
@@ -55,9 +49,9 @@
         {{ ('BackToSignIn' | signalTranslate)() }}
       </a>
       @if (!showApiUrlInput() && !secret()) {
-        <button type="button" class="button-basic button-custom" (click)="showApiUrlInput.set(true)">
-          {{ ('ChangeApiUrl' | signalTranslate)() }}
-        </button>
+      <button type="button" class="button-basic button-custom" (click)="showApiUrlInput.set(true)">
+        {{ ('ChangeApiUrl' | signalTranslate)() }}
+      </button>
       }
     </div>
   </div>

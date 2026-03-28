@@ -28,7 +28,7 @@ label {
 
     input {
       width: 100%;
-      height: calc(var(--input-height) - (var(--size-2xs) * 2));
+      height: calc(var(--input-height) - var(--size-2xs) * 2);
       border: none;
       background: transparent;
       color: var(--text-color);

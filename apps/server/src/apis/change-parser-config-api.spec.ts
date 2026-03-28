@@ -1,7 +1,7 @@
 import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/response-mock';
-import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');
 
@@ -39,7 +39,7 @@ describe('change-parser-config-api', () => {
     await handlerPromise();
     expect(Store.set).toHaveBeenCalledWith('parserConfigs', expect.any(Object));
     expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'My Title', genre: 'Drama', filenamePattern: '{{Year}}-{{Title}}.md' })
+      expect.objectContaining({ title: 'My Title', genre: 'Drama', filenamePattern: '{{Year}}-{{Title}}.md' }),
     );
   });
 

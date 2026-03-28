@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { SharedApiService } from '@services/api/shared-api-service';
-import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, ThemeState, themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
@@ -11,19 +11,19 @@ import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { SignIn } from './sign-in';
 
 describe('SignIn component', () => {
   let fixture: ComponentFixture<SignIn>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
-  let publicApiService: { signIn: Mock };
-  let sharedApiService: { updateUserSettings: Mock };
-  let webStorage: { getItem: Mock; setItem: Mock };
-  let translateService: { languageOptions: Mock };
-  let ngxTranslate: { translate: Mock; setLanguage: Mock };
-  let themeService: { themeOptions: Mock };
+  let publicApiService: { signIn: Mock; };
+  let sharedApiService: { updateUserSettings: Mock; };
+  let webStorage: { getItem: Mock; setItem: Mock; };
+  let translateService: { languageOptions: Mock; };
+  let ngxTranslate: { translate: Mock; setLanguage: Mock; };
+  let themeService: { themeOptions: Mock; };
   const initializeFixture = (): void => {
     fixture = TestBed.createComponent(SignIn);
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;
@@ -33,7 +33,7 @@ describe('SignIn component', () => {
   };
 
   beforeEach(() => {
-    delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
+    delete (window as { CollectionTrackerInterface?: unknown; }).CollectionTrackerInterface;
     publicApiService = { signIn: vi.fn(() => of(undefined)) };
     sharedApiService = { updateUserSettings: vi.fn(() => of(undefined)) };
     webStorage = {
@@ -122,7 +122,7 @@ describe('SignIn component', () => {
   });
 
   it('detects whether companion app is available', () => {
-    delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
+    delete (window as { CollectionTrackerInterface?: unknown; }).CollectionTrackerInterface;
     expect(fixture.componentInstance['companionAppDetected']).toBe(false);
 
     window.CollectionTrackerInterface = {};

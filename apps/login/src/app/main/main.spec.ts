@@ -6,17 +6,17 @@ import {
   initialBlockerLoadingState,
 } from '@components/blocker-loading/blocker-loading-store';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
-import { PublicApiService } from '@services/api/public-api-service';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { PublicApiService } from '@services/api/public-api-service';
 import { ThemeService } from '@services/theme/theme-service';
-import { ThemeState, initialThemeState, themeStateToken } from '@services/theme/theme-store';
+import { initialThemeState, ThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { EMPTY, throwError } from 'rxjs';
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Main } from './main';
 
 describe('Main component', () => {
@@ -24,10 +24,10 @@ describe('Main component', () => {
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
   let blockerState: NgxSimpleSignalStoreService<BlockerLoadingState>;
-  let apiService: { validateAccessToken: Mock };
-  let webStorage: { getItem: Mock; setItem: Mock };
-  let themeService: { listen: Mock };
-  let ngxTranslate: { translate: Mock; setLanguage: Mock };
+  let apiService: { validateAccessToken: Mock; };
+  let webStorage: { getItem: Mock; setItem: Mock; };
+  let themeService: { listen: Mock; };
+  let ngxTranslate: { translate: Mock; setLanguage: Mock; };
   const initializeFixture = (): void => {
     fixture = TestBed.createComponent(Main);
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;

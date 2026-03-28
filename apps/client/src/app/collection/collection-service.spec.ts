@@ -16,7 +16,7 @@ import { CollectionService } from './collection-service';
 
 describe('CollectionService', () => {
   let service: CollectionService;
-  let api: { getAll: ReturnType<typeof vi.fn> };
+  let api: { getAll: ReturnType<typeof vi.fn>; };
   let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let getCollectionItemSpy: ReturnType<typeof vi.spyOn>;

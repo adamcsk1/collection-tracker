@@ -2,7 +2,7 @@ import { Store } from '@server/core/store/store';
 import { FILENAME_PATTERN, MD_TEMPLATE } from '@shared/constants/parser-const';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/response-mock';
-import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');
 
@@ -26,7 +26,7 @@ describe('get-parser-config-api', () => {
       expect.objectContaining({
         mdTemplate: MD_TEMPLATE,
         filenamePattern: FILENAME_PATTERN,
-      })
+      }),
     );
   });
 

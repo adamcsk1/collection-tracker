@@ -18,14 +18,14 @@ export const readStoreFiles = async (
   storeFolder: string,
   usernameHash: string,
   offset?: number,
-  limit?: number
-): Promise<Array<{ name: string; content: string }>> => {
+  limit?: number,
+): Promise<Array<{ name: string; content: string; }>> => {
   const allFiles = await readdir(storeFolder);
   const withStats = await Promise.all(
     allFiles.map(async (fileName) => ({
       fileName,
       birthtimeMs: (await stat(`${storeFolder}/${fileName}`)).birthtimeMs,
-    }))
+    })),
   );
 
   let sortedFileList = withStats.sort((a, b) => b.birthtimeMs - a.birthtimeMs || b.fileName.localeCompare(a.fileName));
@@ -41,7 +41,7 @@ export const readStoreFiles = async (
       const content = cache[cacheKey] ?? (await readFile(`${storeFolder}/${file}`, 'utf-8'));
       setCacheEntry(cache, cacheKey, content);
       return { name: file, content };
-    })
+    }),
   );
   Store.set('cache', cache);
   return files;

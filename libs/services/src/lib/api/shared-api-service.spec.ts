@@ -61,7 +61,7 @@ describe('SharedApiService', () => {
         theme: 'dark',
         animatedBackground: false,
         language: 'en',
-      })
+      }),
     );
 
     const request = httpMock.expectOne('https://api.test/user/settings');

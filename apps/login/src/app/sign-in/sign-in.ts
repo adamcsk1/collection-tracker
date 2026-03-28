@@ -4,9 +4,9 @@ import { RouterLink } from '@angular/router';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { SignInModel } from '@login/sign-in/sign-in-model';
+import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { SharedApiService } from '@services/api/shared-api-service';
-import { apiStateToken } from '@services/api/api-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
@@ -54,7 +54,7 @@ export class SignIn implements OnInit {
       submission: {
         action: async () => this.onSend(),
       },
-    }
+    },
   );
   protected readonly formErrors = {
     username: {
@@ -119,7 +119,7 @@ export class SignIn implements OnInit {
           language: formValue.language,
           theme: formValue.theme,
         })
-        .pipe(catchError(() => of(void 0)))
+        .pipe(catchError(() => of(void 0))),
     );
     window.location.href = '/client/';
   }

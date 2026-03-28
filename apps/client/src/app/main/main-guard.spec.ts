@@ -2,8 +2,8 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { MainService } from '@client/main/main-service';
-import * as MainUtil from '@client/main/main-util';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
+import * as MainUtil from '@client/main/main-util';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { provideStore } from 'ngx-simple-signal-store';
 import { firstValueFrom, isObservable } from 'rxjs';
@@ -18,7 +18,7 @@ describe('mainGuard', () => {
     validateAccessToken: ReturnType<typeof vi.fn>;
     loadStoredData: ReturnType<typeof vi.fn>;
   };
-  let webstorage: { clear: ReturnType<typeof vi.fn> };
+  let webstorage: { clear: ReturnType<typeof vi.fn>; };
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
   let redirectSpy: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {

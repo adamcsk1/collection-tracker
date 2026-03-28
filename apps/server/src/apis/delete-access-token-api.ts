@@ -12,7 +12,7 @@ export const register = (app: Application): void => {
       const users = Store.getLastValue('users');
 
       users[request.usernameHash].accessTokens = users[request.usernameHash].accessTokens.filter(
-        (token) => token.tokenHash !== tokenHash
+        (token) => token.tokenHash !== tokenHash,
       );
       Store.set('users', users);
 

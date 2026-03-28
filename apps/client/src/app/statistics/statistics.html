@@ -1,35 +1,30 @@
-@if (apiLoadNetworkStatus() === 'pending') {
-  {{ ('Message.LoadStatistics' | signalTranslate)() }}
-} @else if (tags().length === 0) {
-  {{ ('Message.EmptyStatistics' | signalTranslate)() }}
-} @else {
-  <h2>{{ ('Summary' | signalTranslate)() }}</h2>
-  @if (summary(); as summary) {
-    <div>{{ ('ItemsInCollection' | signalTranslate)() }}: {{ summary.all }}</div>
-    <div>{{ ('Movies' | signalTranslate)() }}: {{ summary.movies }}</div>
-    <div>{{ ('Series' | signalTranslate)() }}: {{ summary.series }}</div>
-  }
-
-  <hr />
-
-  <h2>{{ ('Chart' | signalTranslate)() }}</h2>
-  <libc-details [summary]="('SelectedTags' | signalTranslate)()" [open]="defaultOpenSelectedTags">
-    <div class="tags">
-      @for (tag of tags(); track tag) {
-        <button
-          [class.button-basic]="!selectedTags().includes(tag)"
-          [attr.aria-pressed]="selectedTags().includes(tag)"
-          (click)="onToggleTag(tag)"
-        >
-          {{ tag }}
-        </button>
-      }
-    </div>
-  </libc-details>
+@if (apiLoadNetworkStatus() === 'pending') { {{ ('Message.LoadStatistics' | signalTranslate)() }} } @else if
+(tags().length === 0) { {{ ('Message.EmptyStatistics' | signalTranslate)() }} } @else {
+<h2>{{ ('Summary' | signalTranslate)() }}</h2>
+@if (summary(); as summary) {
+<div>{{ ('ItemsInCollection' | signalTranslate)() }}: {{ summary.all }}</div>
+<div>{{ ('Movies' | signalTranslate)() }}: {{ summary.movies }}</div>
+<div>{{ ('Series' | signalTranslate)() }}: {{ summary.series }}</div>
 }
 
-@if (selectedTags().length === 0) {
-  <div class="tags-empty">{{ ('Message.EmptySelectTagsForChart' | signalTranslate)() }}</div>
+<hr />
+
+<h2>{{ ('Chart' | signalTranslate)() }}</h2>
+<libc-details [summary]="('SelectedTags' | signalTranslate)()" [open]="defaultOpenSelectedTags">
+  <div class="tags">
+    @for (tag of tags(); track tag) {
+    <button
+      [class.button-basic]="!selectedTags().includes(tag)"
+      [attr.aria-pressed]="selectedTags().includes(tag)"
+      (click)="onToggleTag(tag)"
+    >
+      {{ tag }}
+    </button>
+    }
+  </div>
+</libc-details>
+} @if (selectedTags().length === 0) {
+<div class="tags-empty">{{ ('Message.EmptySelectTagsForChart' | signalTranslate)() }}</div>
 }
 
 <canvas id="statistics" [style.display]="selectedTags().length > 0 ? 'block' : 'none'">{{ chart() }}</canvas>

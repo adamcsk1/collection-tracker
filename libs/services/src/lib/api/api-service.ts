@@ -33,7 +33,7 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -53,14 +53,14 @@ export class ApiService {
                   catchError(() => {
                     this.apiState.setState('loadNetworkStatus', 'error');
                     return EMPTY;
-                  })
+                  }),
                 )
                 .subscribe((items) => results.next(items));
             } else {
               this.apiState.setState('loadNetworkStatus', 'finished');
             }
           }),
-          filter((response) => response.length > 0)
+          filter((response) => response.length > 0),
         );
 
     lazyLoad()
@@ -68,7 +68,7 @@ export class ApiService {
         catchError(() => {
           this.apiState.setState('loadNetworkStatus', 'error');
           return EMPTY;
-        })
+        }),
       )
       .subscribe((items) => results.next(items));
 
@@ -81,7 +81,7 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -91,7 +91,7 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -100,7 +100,7 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -109,7 +109,7 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -118,7 +118,7 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -129,7 +129,7 @@ export class ApiService {
         catchError((error) => {
           this.alert.show(error.message);
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -140,7 +140,7 @@ export class ApiService {
         catchError((error) => {
           this.alert.show(error.message);
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -149,7 +149,7 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -160,7 +160,7 @@ export class ApiService {
         catchError((error) => {
           this.alert.show(error.message);
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -169,7 +169,7 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -178,7 +178,7 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -187,7 +187,7 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -196,29 +196,29 @@ export class ApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
-  public getOMDbData(queryParams: { i: string | null }): Observable<OMDbResponseItemModel> {
+  public getOMDbData(queryParams: { i: string | null; }): Observable<OMDbResponseItemModel> {
     return this.httpClient
       .get<OMDbResponseItemModel>(`${this.apiState.state.apiUrl()}/proxy/omdb/item?i=${queryParams.i}`)
       .pipe(
         catchError((error) => {
           this.alert.show(error.message);
           return throwError(() => error);
-        })
+        }),
       );
   }
 
-  public getOMDbSearchData(queryParams: { s: string | null }): Observable<OMDbResponseModel> {
+  public getOMDbSearchData(queryParams: { s: string | null; }): Observable<OMDbResponseModel> {
     return this.httpClient
       .get<OMDbResponseModel>(`${this.apiState.state.apiUrl()}/proxy/omdb/search?s=${queryParams.s}`)
       .pipe(
         catchError((error) => {
           this.alert.show(error.message);
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -230,7 +230,7 @@ export class ApiService {
         catchError((error) => {
           this.alert.show(error.message);
           return throwError(() => error);
-        })
+        }),
       );
   }
 }

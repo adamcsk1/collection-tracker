@@ -37,7 +37,7 @@ export class Input<T> implements FormValueControl<T | null> {
     return ids.length ? ids.join(' ') : null;
   });
   protected readonly hasRequiredError = computed(
-    () => this.showError() && this.errors().some((error) => error.kind === 'required')
+    () => this.showError() && this.errors().some((error) => error.kind === 'required'),
   );
 
   protected onInput($event: Event): void {

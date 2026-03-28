@@ -2,7 +2,7 @@ import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
 import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/response-mock';
-import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({

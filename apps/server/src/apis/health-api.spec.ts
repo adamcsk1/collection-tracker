@@ -2,14 +2,14 @@ import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');
 vi.mock('node:timers/promises', () => ({ setTimeout: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('node:os', () => ({ cpus: vi.fn(), totalmem: vi.fn(), freemem: vi.fn(), loadavg: vi.fn() }));
 vi.mock('node:fs', () => ({ statfsSync: vi.fn() }));
 
-const makeCpu = (times: { user: number; nice: number; sys: number; idle: number; irq: number }) => ({
+const makeCpu = (times: { user: number; nice: number; sys: number; idle: number; irq: number; }) => ({
   model: 'Test CPU',
   speed: 0,
   times,
@@ -78,7 +78,7 @@ describe('health-api', () => {
     await handlerPromise();
 
     expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'error', frontend: { status: 'down' } })
+      expect.objectContaining({ status: 'error', frontend: { status: 'down' } }),
     );
   });
 
@@ -98,7 +98,7 @@ describe('health-api', () => {
       expect.objectContaining({
         memory: { usedPercent: 50 },
         cpu: { usagePercent: 50 },
-      })
+      }),
     );
   });
 
@@ -126,7 +126,7 @@ describe('health-api', () => {
     await handlerPromise();
 
     expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({ load: { avg1m: 1.23, avg5m: 0.57, avg15m: 0.89 } })
+      expect.objectContaining({ load: { avg1m: 1.23, avg5m: 0.57, avg15m: 0.89 } }),
     );
   });
 });

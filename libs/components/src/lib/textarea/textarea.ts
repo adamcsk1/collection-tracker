@@ -55,7 +55,7 @@ export class Textarea<T> implements FormValueControl<T | null>, OnInit {
     return ids.length ? ids.join(' ') : null;
   });
   protected readonly hasRequiredError = computed(
-    () => this.showError() && this.errors().some((error) => error.kind === 'required')
+    () => this.showError() && this.errors().some((error) => error.kind === 'required'),
   );
 
   public ngOnInit(): void {
@@ -89,7 +89,7 @@ export class Textarea<T> implements FormValueControl<T | null>, OnInit {
       this.renderer.setStyle(
         this.textAreaWrapElement()?.nativeElement,
         'height',
-        `${this.elementRef!.nativeElement.parentElement!.clientHeight - 16}px`
+        `${this.elementRef!.nativeElement.parentElement!.clientHeight - 16}px`,
       );
     });
   }

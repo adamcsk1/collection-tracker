@@ -32,18 +32,18 @@ const buildSelectedContent = () => ({
 
 describe('NewItemDialogService', () => {
   let service: NewItemDialogService;
-  let api: { create: ReturnType<typeof vi.fn> };
+  let api: { create: ReturnType<typeof vi.fn>; };
   let omdb: {
     matchedContent: ReturnType<typeof vi.fn>;
     getMatchedContents: ReturnType<typeof vi.fn>;
     getSelectedContent: ReturnType<typeof vi.fn>;
   };
-  let collection: { addCollectionItem: ReturnType<typeof vi.fn> };
+  let collection: { addCollectionItem: ReturnType<typeof vi.fn>; };
   let spinnerStore: NgxSimpleSignalStoreService<SpinnerLoadingState>;
   let toastStore: NgxSimpleSignalStoreService<ToastState>;
-  let portal: { close: ReturnType<typeof vi.fn> };
-  let mdContent: { getMdContent: ReturnType<typeof vi.fn> };
-  let translate: { translate: ReturnType<typeof vi.fn> };
+  let portal: { close: ReturnType<typeof vi.fn>; };
+  let mdContent: { getMdContent: ReturnType<typeof vi.fn>; };
+  let translate: { translate: ReturnType<typeof vi.fn>; };
 
   beforeEach(() => {
     api = { create: vi.fn() };

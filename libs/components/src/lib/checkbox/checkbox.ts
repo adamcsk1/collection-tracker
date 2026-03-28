@@ -29,7 +29,7 @@ export class Checkbox implements FormValueControl<boolean | null> {
     return ids.length ? ids.join(' ') : null;
   });
   protected readonly hasRequiredError = computed(
-    () => this.showError() && this.errors().some((error) => error.kind === 'required')
+    () => this.showError() && this.errors().some((error) => error.kind === 'required'),
   );
 
   protected onChange(event: Event): void {

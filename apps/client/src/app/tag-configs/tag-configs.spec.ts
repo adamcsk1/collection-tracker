@@ -47,8 +47,8 @@ describe('TagConfigs component', () => {
   let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
   let toastState: NgxSimpleSignalStoreService<ToastState>;
-  let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
-  let tagConfigsService: { syncUserTagConfigs: ReturnType<typeof vi.fn> };
+  let confirm: { ifConfirmed: ReturnType<typeof vi.fn>; };
+  let tagConfigsService: { syncUserTagConfigs: ReturnType<typeof vi.fn>; };
 
   beforeEach(() => {
     confirm = { ifConfirmed: vi.fn(() => of(true)) };
@@ -56,7 +56,7 @@ describe('TagConfigs component', () => {
       syncUserTagConfigs: vi.fn((configs: TagConfigsModel) => {
         tagConfigsState.setState(
           'configs',
-          [...configs].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+          [...configs].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0)),
         );
         return of(void 0);
       }),

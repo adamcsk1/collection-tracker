@@ -6,8 +6,8 @@ export const getContrastColorHex = (hex: string): string | null => {
 
   // convert 3-digit hex to 6-digits.
   if (normalizedHex.length === 3) {
-    normalizedHex =
-      normalizedHex[0] + normalizedHex[0] + normalizedHex[1] + normalizedHex[1] + normalizedHex[2] + normalizedHex[2];
+    normalizedHex = normalizedHex[0] + normalizedHex[0] + normalizedHex[1] + normalizedHex[1] + normalizedHex[2]
+      + normalizedHex[2];
   }
 
   if (normalizedHex.length !== 6) return null;

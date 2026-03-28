@@ -8,7 +8,8 @@ export const PARSER_PREVIEW_OMDB_RESPONSE = {
   Director: 'Lana Wachowski, Lilly Wachowski',
   Writer: 'Lilly Wachowski, Lana Wachowski',
   Actors: 'Keanu Reeves, Laurence Fishburne, Carrie-Anne Moss',
-  Plot: 'When a beautiful stranger leads computer hacker Neo to a forbidding underworld, he discovers the shocking truth--the life he knows is the elaborate deception of an evil cyber-intelligence.',
+  Plot:
+    'When a beautiful stranger leads computer hacker Neo to a forbidding underworld, he discovers the shocking truth--the life he knows is the elaborate deception of an evil cyber-intelligence.',
   Language: 'English',
   Country: 'United States, Australia',
   Awards: 'Won 4 Oscars. 42 wins & 52 nominations total',

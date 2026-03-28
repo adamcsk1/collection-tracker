@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { CollectionService } from '@client/collection/collection-service';
 import { mainCollectionStateToken } from '@client/main/main-collection-store';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
@@ -57,7 +57,7 @@ export class ChangeWatchedStatusService {
       'message',
       this.ngxSignalTranslate.translate('Message.MarkingAllAsWatched', {
         count: `${collectionItems.length - index}`,
-      })
+      }),
     );
 
     const item = collectionItems[index];
@@ -88,7 +88,7 @@ export class ChangeWatchedStatusService {
       'message',
       this.ngxSignalTranslate.translate('Message.MarkingAllAsUnwatched', {
         count: `${collectionItems.length - index}`,
-      })
+      }),
     );
 
     const item = collectionItems[index];

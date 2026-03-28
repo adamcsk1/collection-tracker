@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { ToastState, initialToastState, toastStateToken } from '@components/toast/toast-store';
-import { PublicApiService } from '@services/api/public-api-service';
+import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { PublicApiService } from '@services/api/public-api-service';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
@@ -11,7 +11,7 @@ import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { SignUp } from './sign-up';
 
 vi.mock('@shared/utils/copy-to-clipboard-util', () => ({ copyToClipboard: vi.fn() }));
@@ -21,10 +21,10 @@ describe('SignUp component', () => {
   let fixture: ComponentFixture<SignUp>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let toastState: NgxSimpleSignalStoreService<ToastState>;
-  let publicApiService: { signUp: Mock };
-  let webStorage: { getItem: Mock; setItem: Mock };
-  let translateService: { languageOptions: Mock };
-  let ngxTranslate: { translate: Mock; setLanguage: Mock };
+  let publicApiService: { signUp: Mock; };
+  let webStorage: { getItem: Mock; setItem: Mock; };
+  let translateService: { languageOptions: Mock; };
+  let ngxTranslate: { translate: Mock; setLanguage: Mock; };
 
   beforeEach(() => {
     publicApiService = { signUp: vi.fn(() => of({ token: 'new-token' })) };

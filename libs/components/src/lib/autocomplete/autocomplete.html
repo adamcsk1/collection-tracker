@@ -1,46 +1,45 @@
 @if (label(); as label) {
-  <label [for]="inputId()">
-    {{ label }}
-    @if (mandatory()) {
-      <span>*</span>
-    }
-  </label>
+<label [for]="inputId()">
+  {{ label }} @if (mandatory()) {
+  <span>*</span>
+  }
+</label>
 }
 <div class="input">
   @if (suggestions().length) {
-    <button
-      class="input-suggestions-close button-icon material-icons"
-      [attr.aria-label]="('CloseSuggestions' | signalTranslate)()"
-      [title]="('CloseSuggestions' | signalTranslate)()"
-      [class.input-suggestions-close-small-position]="showReset()"
-      (click)="onCloseSuggestion()"
-    >
-      close
-    </button>
-    <ul
-      class="input-suggestions"
-      role="listbox"
-      id="autocomplete-suggestions-list"
-      [attr.aria-label]="('Suggestions' | signalTranslate)()"
-      [class.input-suggestions-small]="showReset()"
-    >
-      @for (suggestion of suggestions(); track $index) {
-        <li>
-          <button
-            type="button"
-            role="option"
-            class="button-custom"
-            [class.input-suggestion-selected]="$index === selectedSuggestion()"
-            [attr.id]="'autocomplete-suggestion-' + $index"
-            [attr.aria-selected]="$index === selectedSuggestion()"
-            [attr.aria-label]="suggestion"
-            (click)="onAcceptSuggestion($index)"
-          >
-            {{ formatSuggestionText(suggestion) }}
-          </button>
-        </li>
-      }
-    </ul>
+  <button
+    class="input-suggestions-close button-icon material-icons"
+    [attr.aria-label]="('CloseSuggestions' | signalTranslate)()"
+    [title]="('CloseSuggestions' | signalTranslate)()"
+    [class.input-suggestions-close-small-position]="showReset()"
+    (click)="onCloseSuggestion()"
+  >
+    close
+  </button>
+  <ul
+    class="input-suggestions"
+    role="listbox"
+    id="autocomplete-suggestions-list"
+    [attr.aria-label]="('Suggestions' | signalTranslate)()"
+    [class.input-suggestions-small]="showReset()"
+  >
+    @for (suggestion of suggestions(); track $index) {
+    <li>
+      <button
+        type="button"
+        role="option"
+        class="button-custom"
+        [class.input-suggestion-selected]="$index === selectedSuggestion()"
+        [attr.id]="'autocomplete-suggestion-' + $index"
+        [attr.aria-selected]="$index === selectedSuggestion()"
+        [attr.aria-label]="suggestion"
+        (click)="onAcceptSuggestion($index)"
+      >
+        {{ formatSuggestionText(suggestion) }}
+      </button>
+    </li>
+    }
+  </ul>
   }
 
   <div class="input-box" [class.input-box-with-pane]="suggestions().length" [class.input-box-focused]="focused()">
@@ -71,28 +70,24 @@
   </div>
 
   @if (showReset()) {
-    <button
-      class="button-icon material-icons"
-      [attr.aria-label]="('ResetInput' | signalTranslate)()"
-      [title]="('ResetInput' | signalTranslate)()"
-      [disabled]="!hasValue() || disabled()"
-      (click)="onReset()"
-    >
-      backspace
-    </button>
+  <button
+    class="button-icon material-icons"
+    [attr.aria-label]="('ResetInput' | signalTranslate)()"
+    [title]="('ResetInput' | signalTranslate)()"
+    [disabled]="!hasValue() || disabled()"
+    (click)="onReset()"
+  >
+    backspace
+  </button>
   }
 </div>
 <div class="input-messages">
   @if (hint()) {
-    <small [id]="hintId()">{{ hint() }}</small>
-  }
-
-  @if (showError()) {
-    <small class="error" [id]="errorId()">
-      @if (hasRequiredError()) {
-        {{ ('Validation.Required' | signalTranslate)() }}
-      }
-      <ng-content select="[errors]"></ng-content>
-    </small>
+  <small [id]="hintId()">{{ hint() }}</small>
+  } @if (showError()) {
+  <small class="error" [id]="errorId()">
+    @if (hasRequiredError()) { {{ ('Validation.Required' | signalTranslate)() }} }
+    <ng-content select="[errors]"></ng-content>
+  </small>
   }
 </div>

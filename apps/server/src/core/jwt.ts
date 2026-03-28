@@ -7,12 +7,12 @@ import { randomUUID } from 'crypto';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 
-const hasUsername = (data: jwt.JwtPayload | string | undefined): data is { username: string } =>
+const hasUsername = (data: jwt.JwtPayload | string | undefined): data is { username: string; } =>
   typeof data === 'object' && data !== null && 'username' in data && typeof data.username === 'string';
 
 export const generateAccessToken = (
   username: string,
-  expiresIn: jwt.SignOptions['expiresIn'] | null = null
+  expiresIn: jwt.SignOptions['expiresIn'] | null = null,
 ): string | null => {
   try {
     void debugLog('Generating access token');
@@ -30,7 +30,7 @@ export const generateAccessToken = (
 export const jwtGuard = async (
   request: ExtendedRequestModel,
   response: express.Response,
-  next: () => void
+  next: () => void,
 ): Promise<express.Response | undefined> => {
   void debugLog(`Validating access token (${request.url})`);
 

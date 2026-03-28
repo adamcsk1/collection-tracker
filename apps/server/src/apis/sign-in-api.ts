@@ -31,13 +31,13 @@ export const register = (app: Application): void => {
       const cookie = cookieConfig();
       const newAccessToken = generateAccessToken(
         username,
-        `${cookieExpiration.value} ${cookieExpiration.unit}` as jwt.SignOptions['expiresIn']
+        `${cookieExpiration.value} ${cookieExpiration.unit}` as jwt.SignOptions['expiresIn'],
       );
       users[usernameHash].accessTokens.push(
-        getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
+        getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires),
       );
       users[usernameHash].accessTokens = users[usernameHash].accessTokens.filter(
-        (token) => token.expiresAt === null || dayjs(token.expiresAt).isAfter(dayjs())
+        (token) => token.expiresAt === null || dayjs(token.expiresAt).isAfter(dayjs()),
       );
       Store.set('users', users);
 

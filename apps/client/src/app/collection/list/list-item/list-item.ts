@@ -34,7 +34,7 @@ export class ListItem {
   protected readonly tags = computed(() => {
     const imageBadgeTag = this.imageBadgeTag();
     return this.collectionItem().tags.filter(
-      (tag) => ![WATCHED_TAG, MOVIE_TAG, SERIES_TAG, imageBadgeTag].includes(tag)
+      (tag) => ![WATCHED_TAG, MOVIE_TAG, SERIES_TAG, imageBadgeTag].includes(tag),
     );
   });
   protected readonly badgeBackgroundColor = computed(() => {

@@ -5,8 +5,8 @@ import { mainStateToken } from '@client/main/main-store';
 import { SettingsModel } from '@client/settings/settings-model';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
-import { SharedApiService } from '@services/api/shared-api-service';
 import { apiStateToken } from '@services/api/api-store';
+import { SharedApiService } from '@services/api/shared-api-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
@@ -59,7 +59,7 @@ export class SettingsService {
         this.mainState.setState('claudeAiAvailable', !!settings.claudeAiAvailable);
         if (!settings.claudeAiAvailable) this.webstorage.removeItem(STORAGE_USE_CLAUDE_AI);
       }),
-      map(() => void 0)
+      map(() => void 0),
     );
   }
 
@@ -97,7 +97,7 @@ export class SettingsService {
           if (navigateBack) this.router.navigate(['collection']);
         }),
         map(() => void 0),
-        catchError(() => EMPTY)
+        catchError(() => EMPTY),
       )
       .subscribe();
   }

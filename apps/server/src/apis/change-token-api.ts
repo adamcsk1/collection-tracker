@@ -20,7 +20,7 @@ export const register = (app: Application): void => {
       const cookie = cookieConfig();
       const newAccessToken = generateAccessToken(
         request.username,
-        `${cookieExpiration.value} ${cookieExpiration.unit}` as jwt.SignOptions['expiresIn']
+        `${cookieExpiration.value} ${cookieExpiration.unit}` as jwt.SignOptions['expiresIn'],
       );
 
       users[request.usernameHash] = {

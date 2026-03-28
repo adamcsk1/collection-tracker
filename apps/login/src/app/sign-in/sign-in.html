@@ -6,14 +6,14 @@
   </p>
 </div>
 <form role="form" [attr.aria-label]="('SignIn' | signalTranslate)()" [formRoot]="form">
-  <libc-input icon="person" [label]="('Username' | signalTranslate)()" [mandatory]="true" [formField]="form.username"
-    ><ng-container errors>
-      @if (formErrors.username.minLength()) {
-        {{ ('Validation.UsernameMinLength' | signalTranslate)() }}
-      }
-      @if (formErrors.username.maxLength()) {
-        {{ ('Validation.UsernameMaxLength' | signalTranslate)() }}
-      }
+  <libc-input
+    icon="person"
+    [label]="('Username' | signalTranslate)()"
+    [mandatory]="true"
+    [formField]="form.username"
+  ><ng-container errors>
+      @if (formErrors.username.minLength()) { {{ ('Validation.UsernameMinLength' | signalTranslate)() }} } @if
+      (formErrors.username.maxLength()) { {{ ('Validation.UsernameMaxLength' | signalTranslate)() }} }
     </ng-container>
   </libc-input>
   <libc-input
@@ -35,12 +35,12 @@
     {{ ((tokenInputType() === 'text' ? 'ShowSecret' : 'HideSecret') | signalTranslate)() }}
   </a>
   @if (showApiUrlInput()) {
-    <libc-input
-      [label]="('ApiUrl' | signalTranslate)()"
-      [hint]="('Message.ApiUrl' | signalTranslate)()"
-      [mandatory]="true"
-      [formField]="form.apiUrl"
-    />
+  <libc-input
+    [label]="('ApiUrl' | signalTranslate)()"
+    [hint]="('Message.ApiUrl' | signalTranslate)()"
+    [mandatory]="true"
+    [formField]="form.apiUrl"
+  />
   }
 
   <div class="form-buttons">
@@ -53,16 +53,14 @@
         {{ ('SignUp' | signalTranslate)() }}
       </a>
       @if (companionAppDetected) {
-        <button type="button" class="button-basic button-custom" (click)="onResetCompanionAppConfig()">
-          {{ ('CompanionAppReset' | signalTranslate)() }}
-        </button>
-      } @else {
-        @if (!showApiUrlInput()) {
-          <button type="button" class="button-basic button-custom" (click)="showApiUrlInput.set(true)">
-            {{ ('ChangeApiUrl' | signalTranslate)() }}
-          </button>
-        }
-      }
+      <button type="button" class="button-basic button-custom" (click)="onResetCompanionAppConfig()">
+        {{ ('CompanionAppReset' | signalTranslate)() }}
+      </button>
+      } @else { @if (!showApiUrlInput()) {
+      <button type="button" class="button-basic button-custom" (click)="showApiUrlInput.set(true)">
+        {{ ('ChangeApiUrl' | signalTranslate)() }}
+      </button>
+      } }
     </div>
   </div>
 

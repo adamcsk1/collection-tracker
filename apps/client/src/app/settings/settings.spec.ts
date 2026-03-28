@@ -1,20 +1,23 @@
 import { TestBed } from '@angular/core/testing';
-import { ChangeWatchedStatusService } from '@client/settings/change-watched-status/change-watched-status-service';
 import { initialMainState, mainStateToken } from '@client/main/main-store';
+import { ChangeWatchedStatusService } from '@client/settings/change-watched-status/change-watched-status-service';
 import { ImageRefreshService } from '@client/settings/image-refresh/image-refresh-service';
-import { initialApiState, apiStateToken } from '@services/api/api-store';
-import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ThemeService } from '@services/theme/theme-service';
+import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Settings } from './settings';
-import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { SettingsService } from './settings-service';
 
 describe('Settings component', () => {
   let component: Settings;
-  let changeWatchedStatus: { markAllAsWatched: ReturnType<typeof vi.fn>; markAllAsUnwatched: ReturnType<typeof vi.fn> };
+  let changeWatchedStatus: {
+    markAllAsWatched: ReturnType<typeof vi.fn>;
+    markAllAsUnwatched: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     changeWatchedStatus = {

@@ -8,7 +8,7 @@ import { HealthApiResponseModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, throwError } from 'rxjs';
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Main } from './main';
 
 const healthData: HealthApiResponseModel = {
@@ -22,9 +22,9 @@ const healthData: HealthApiResponseModel = {
 
 describe('Main component', () => {
   let apiState: NgxSimpleSignalStoreService<ApiState>;
-  let publicApiService: { getHealth: Mock };
-  let webStorage: { getItem: Mock; setItem: Mock };
-  let ngxTranslate: { translate: Mock; setLanguage: Mock };
+  let publicApiService: { getHealth: Mock; };
+  let webStorage: { getItem: Mock; setItem: Mock; };
+  let ngxTranslate: { translate: Mock; setLanguage: Mock; };
 
   beforeEach(() => {
     publicApiService = { getHealth: vi.fn(() => of(healthData)) };

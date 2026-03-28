@@ -1,13 +1,13 @@
 @if (message(); as message) {
-  <p
-    tabindex="0"
-    role="status"
-    aria-live="assertive"
-    animate.enter="animation-scale-in"
-    animate.leave="animation-scale-out"
-    (click)="onToastClick()"
-    (keydown)="onToastClick()"
-  >
-    {{ message }}
-  </p>
+<p
+  tabindex="0"
+  role="status"
+  aria-live="assertive"
+  animate.enter="animation-scale-in"
+  animate.leave="animation-scale-out"
+  (click)="onToastClick()"
+  (keydown)="onToastClick()"
+>
+  {{ message }}
+</p>
 }

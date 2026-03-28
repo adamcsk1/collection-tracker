@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionService } from '@client/collection/collection-service';
 import { CollectionModel } from '@client/collection/collection-model';
+import { CollectionService } from '@client/collection/collection-service';
 import { TemplateRegenerationService } from '@client/parser/template-regeneration-service';
 import {
   blockerLoadingStateToken,
@@ -10,10 +10,10 @@ import { initialToastState, toastStateToken } from '@components/toast/toast-stor
 import { ApiService } from '@services/api/api-service';
 import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
-import { provideStore } from 'ngx-simple-signal-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const buildCollectionItem = (name: string): CollectionModel[number] => ({
   name,
@@ -31,8 +31,8 @@ const buildCollectionItem = (name: string): CollectionModel[number] => ({
 
 describe('TemplateRegenerationService', () => {
   let service: TemplateRegenerationService;
-  let collectionService: { loadCollection: ReturnType<typeof vi.fn> };
-  let omdbService: { getSelectedContent: ReturnType<typeof vi.fn> };
+  let collectionService: { loadCollection: ReturnType<typeof vi.fn>; };
+  let omdbService: { getSelectedContent: ReturnType<typeof vi.fn>; };
 
   beforeEach(() => {
     collectionService = { loadCollection: vi.fn() };
@@ -93,7 +93,7 @@ describe('TemplateRegenerationService', () => {
         imdbID: `ttA`,
         Title: 'title',
         Year: '2000',
-      } as never)
+      } as never),
     );
     vi.useFakeTimers();
 
@@ -106,7 +106,7 @@ describe('TemplateRegenerationService', () => {
         Title: 'title',
         Year: '2000',
         Tags: '#space #action',
-      }) as never
+      }) as never,
     );
     vi.useRealTimers();
   });

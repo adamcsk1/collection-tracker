@@ -56,7 +56,7 @@ export class NewItemDialog {
       submission: {
         action: async () => this.onSave(this.submitMode()),
       },
-    }
+    },
   );
   protected readonly formErrors = {
     selectedIMDbId: {

@@ -9,7 +9,7 @@ const createStore = (): StoreModel => ({
   parserConfigs: new BehaviorSubject(null),
   tagConfigs: new BehaviorSubject(null),
   userSettings: new BehaviorSubject(null),
-  cache: new BehaviorSubject<{ [key: string]: string }>({ cached: 'x' }),
+  cache: new BehaviorSubject<{ [key: string]: string; }>({ cached: 'x' }),
 });
 
 describe('Store', () => {

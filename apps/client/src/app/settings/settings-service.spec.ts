@@ -5,8 +5,8 @@ import { initialMainState, MainState, mainStateToken } from '@client/main/main-s
 import { SettingsModel } from '@client/settings/settings-model';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
-import { SharedApiService } from '@services/api/shared-api-service';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { SharedApiService } from '@services/api/shared-api-service';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
@@ -35,16 +35,16 @@ const buildFormData = (overrides: Partial<SettingsModel> = {}): SettingsModel =>
 
 describe('SettingsService', () => {
   let service: SettingsService;
-  let router: { navigate: ReturnType<typeof vi.fn> };
+  let router: { navigate: ReturnType<typeof vi.fn>; };
   let webstorage: {
     getItem: ReturnType<typeof vi.fn>;
     setItem: ReturnType<typeof vi.fn>;
     removeItem: ReturnType<typeof vi.fn>;
   };
-  let api: { getUserSettings: ReturnType<typeof vi.fn> };
-  let sharedApi: { updateUserSettings: ReturnType<typeof vi.fn> };
-  let translate: { translate: ReturnType<typeof vi.fn>; setLanguage: ReturnType<typeof vi.fn> };
-  let main: { setPermissions: ReturnType<typeof vi.fn> };
+  let api: { getUserSettings: ReturnType<typeof vi.fn>; };
+  let sharedApi: { updateUserSettings: ReturnType<typeof vi.fn>; };
+  let translate: { translate: ReturnType<typeof vi.fn>; setLanguage: ReturnType<typeof vi.fn>; };
+  let main: { setPermissions: ReturnType<typeof vi.fn>; };
   let mainState: NgxSimpleSignalStoreService<MainState>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
 
@@ -127,7 +127,7 @@ describe('SettingsService', () => {
       of({
         fetchBatchSize: 50,
         theme: 'dark',
-      })
+      }),
     );
 
     service.preloadUserSettings().subscribe();

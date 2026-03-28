@@ -30,26 +30,29 @@ export const main = () => {
     Store.set(
       'users',
       JSON.parse(
-        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.users}`, 'utf-8')
-      )
+        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.users}`, 'utf-8'),
+      ),
     );
     Store.set(
       'parserConfigs',
       JSON.parse(
-        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.parserConfigs}`, 'utf-8')
-      )
+        readFileSync(
+          `${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.parserConfigs}`,
+          'utf-8',
+        ),
+      ),
     );
     Store.set(
       'tagConfigs',
       JSON.parse(
-        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.tagConfigs}`, 'utf-8')
-      )
+        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.tagConfigs}`, 'utf-8'),
+      ),
     );
     Store.set(
       'userSettings',
       JSON.parse(
-        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.userSettings}`, 'utf-8')
-      )
+        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.userSettings}`, 'utf-8'),
+      ),
     );
 
     const app = express();
@@ -80,7 +83,7 @@ export const main = () => {
 
           return ipKeyGenerator(request.ip.replace(/:\d+[^:]*$/, ''));
         },
-      })
+      }),
     );
     debugLog('Applying rate limiting middleware');
     app.use(
@@ -90,7 +93,7 @@ export const main = () => {
           else callback(new Error(`Not allowed by CORS (invalid origin: ${requestOrigin})`), false);
         },
         optionsSuccessStatus: 200,
-      })
+      }),
     );
     debugLog('Applying CORS middleware');
 

@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { setParserRegexp } from '@services/parser/parser-util';
+import { PARSER_REGEXPS } from '@shared/constants/parser-const';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { addNewTagToRawContent, removeTagFromRawContent } from './manage-tags-util';
 
 beforeEach(() => {
