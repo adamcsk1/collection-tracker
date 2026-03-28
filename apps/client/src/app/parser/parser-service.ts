@@ -52,7 +52,7 @@ export class ParserService {
           this.collection.loadCollection();
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ParserSettingsSaved'));
         }),
-        delay(500)
+        delay(500),
       )
       .subscribe();
   }
@@ -67,7 +67,9 @@ export class ParserService {
 
       window.__parserCache = originalParserCache;
       this.alert.show(
-        `${this.ngxSignalTranslate.translate('TemplatePreview')}\n\n ${mdContentPreview}\n\n${this.ngxSignalTranslate.translate('ParsedAttributes')}\n\n${JSON.stringify({ ...parsedCollectionItem, rawContent: undefined, name: undefined }, null, 2)}`
+        `${this.ngxSignalTranslate.translate('TemplatePreview')}\n\n ${mdContentPreview}\n\n${
+          this.ngxSignalTranslate.translate('ParsedAttributes')
+        }\n\n${JSON.stringify({ ...parsedCollectionItem, rawContent: undefined, name: undefined }, null, 2)}`,
       );
     } catch {
       window.__parserCache = originalParserCache;

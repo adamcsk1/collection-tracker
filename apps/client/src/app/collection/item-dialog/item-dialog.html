@@ -16,39 +16,34 @@
   </ng-container>
   <ng-container dialog-shell-bottom-content>
     @if (editMode()) {
-      <button (click)="onReadOnly()">
-        <i class="material-icons" [title]="('ReadOnly' | signalTranslate)()"> visibility </i>
-        {{ ('ReadOnly' | signalTranslate)() }}
-      </button>
-      <button (click)="onSaveChanges()">
-        <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
-        {{ ('Save' | signalTranslate)() }}
-      </button>
+    <button (click)="onReadOnly()">
+      <i class="material-icons" [title]="('ReadOnly' | signalTranslate)()"> visibility </i>
+      {{ ('ReadOnly' | signalTranslate)() }}
+    </button>
+    <button (click)="onSaveChanges()">
+      <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
+      {{ ('Save' | signalTranslate)() }}
+    </button>
+    } @else { @if (permissionUpdate()) {
+    <button (click)="onEdit()">
+      <i class="material-icons" [title]="('Edit' | signalTranslate)()"> edit </i>
+      {{ ('Edit' | signalTranslate)() }}
+    </button>
+    @if (watched()) {
+    <button (click)="onMarkAsUnwatched()">
+      <i class="material-icons" [title]="('MarkAsUnwatched' | signalTranslate)()"> visibility_off </i>
+      {{ ('MarkAsUnwatched' | signalTranslate)() }}
+    </button>
     } @else {
-      @if (permissionUpdate()) {
-        <button (click)="onEdit()">
-          <i class="material-icons" [title]="('Edit' | signalTranslate)()"> edit </i>
-          {{ ('Edit' | signalTranslate)() }}
-        </button>
-        @if (watched()) {
-          <button (click)="onMarkAsUnwatched()">
-            <i class="material-icons" [title]="('MarkAsUnwatched' | signalTranslate)()"> visibility_off </i>
-            {{ ('MarkAsUnwatched' | signalTranslate)() }}
-          </button>
-        } @else {
-          <button (click)="onMarkAsWatched()">
-            <i class="material-icons" [title]="('MarkAsWatched' | signalTranslate)()"> visibility </i>
-            {{ ('MarkAsWatched' | signalTranslate)() }}
-          </button>
-        }
-      }
-
-      @if (permissionDelete()) {
-        <button class="button-danger" (click)="onDelete()">
-          <i class="material-icons" [title]="('Delete' | signalTranslate)()"> delete </i>
-          {{ ('Delete' | signalTranslate)() }}
-        </button>
-      }
-    }
+    <button (click)="onMarkAsWatched()">
+      <i class="material-icons" [title]="('MarkAsWatched' | signalTranslate)()"> visibility </i>
+      {{ ('MarkAsWatched' | signalTranslate)() }}
+    </button>
+    } } @if (permissionDelete()) {
+    <button class="button-danger" (click)="onDelete()">
+      <i class="material-icons" [title]="('Delete' | signalTranslate)()"> delete </i>
+      {{ ('Delete' | signalTranslate)() }}
+    </button>
+    } }
   </ng-container>
 </libc-dialog-shell>

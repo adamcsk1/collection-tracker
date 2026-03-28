@@ -4,8 +4,8 @@ import { RouterLink } from '@angular/router';
 import { Input } from '@components/input/input';
 import { toastStateToken } from '@components/toast/toast-store';
 import { SignUpModel } from '@login/sign-up/sign-up-model';
-import { PublicApiService } from '@services/api/public-api-service';
 import { apiStateToken } from '@services/api/api-store';
+import { PublicApiService } from '@services/api/public-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
@@ -42,7 +42,7 @@ export class SignUp implements OnInit {
       submission: {
         action: async () => this.onSend(),
       },
-    }
+    },
   );
   protected readonly formErrors = {
     username: {

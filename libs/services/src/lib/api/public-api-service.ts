@@ -23,7 +23,7 @@ export class PublicApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -33,7 +33,7 @@ export class PublicApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -47,7 +47,7 @@ export class PublicApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      })
+      }),
     );
   }
 }

@@ -61,7 +61,7 @@ export class Settings implements OnInit {
       submission: {
         action: async () => this.onSave(this.submitAction() === 'save-and-back'),
       },
-    }
+    },
   );
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly settingLockEnabled = this.mainState.state.settingsLock;

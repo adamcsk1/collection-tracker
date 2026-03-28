@@ -10,13 +10,15 @@ export const getAnthropicModel = (): string | ClaudeModel | undefined => {
 
   if (envModel && !CLAUDE_MODELS.includes(envModel)) {
     warningLog(
-      `Unknown Claude model specified in environment variable: ${envModel}. Maybe that could work, but it's safer to use a known model. Please check the available models and update your configuration.`
+      `Unknown Claude model specified in environment variable: ${envModel}. Maybe that could work, but it's safer to use a known model. Please check the available models and update your configuration.`,
     );
   }
 
   if (!envModel) {
     warningLog(
-      `No Claude model specified in environment variable. Defaulting to ${DEFAULT_MODEL}. If you want to use a different model, please set the CLAUDE_MODEL environment variable to one of the following: ${CLAUDE_MODELS.join(', ')}.`
+      `No Claude model specified in environment variable. Defaulting to ${DEFAULT_MODEL}. If you want to use a different model, please set the CLAUDE_MODEL environment variable to one of the following: ${
+        CLAUDE_MODELS.join(', ')
+      }.`,
     );
   }
 

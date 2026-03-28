@@ -43,7 +43,7 @@ export class List {
   private readonly infiniteScroll = inject(InfiniteScrollService);
   private readonly claudeSearch = inject(ClaudeSearchService);
   private readonly debouncedSearchText = toSignal(
-    toObservable(this.collectionState.state.searchText).pipe(startWith(''), debounceTime(100))
+    toObservable(this.collectionState.state.searchText).pipe(startWith(''), debounceTime(100)),
   );
   private readonly claudeAiSendTrigger = computed(() => ({
     promptText: this.collectionState.state.claudeAiPromptText(),
@@ -53,9 +53,9 @@ export class List {
     toObservable(this.claudeAiSendTrigger).pipe(
       debounceTime(500),
       switchMap(({ promptText }) => this.claudeSearch.getMatchedIds(promptText)),
-      startWith(null)
+      startWith(null),
     ),
-    { initialValue: null }
+    { initialValue: null },
   );
   protected readonly filteredCollection = computed(() => {
     const aiIds = this.claudeAiMatchedIds();

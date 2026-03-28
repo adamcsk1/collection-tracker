@@ -14,35 +14,28 @@
   (scroll)="onScroll()"
 >
   @if (!apiLoadNetworkStatus() || apiLoadNetworkStatus() === 'pending') {
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-  } @else {
-    @for (collectionItem of visibleCollection(); track collectionItem) {
-      @defer (on viewport; prefetch on idle) {
-        <ct-list-item [collectionItem]="collectionItem" />
-      } @placeholder {
-        <ct-list-item-skeleton />
-      }
-    } @empty {
-      <div class="list-empty">
-        <i class="material-icons">movie</i>
-        @if (collectionLength() === 0) {
-          {{ ('Message.EmptyCollection' | signalTranslate)() }}<br />
-          <a href="#" role="button" (click)="onAddNew()">{{
-            ('Message.AddFirstCollectionItem' | signalTranslate)()
-          }}</a>
-        } @else {
-          {{ ('Message.EmptySearch' | signalTranslate)() }}<br />
-        }
-      </div>
+  <ct-list-item-skeleton />
+  <ct-list-item-skeleton />
+  <ct-list-item-skeleton />
+  <ct-list-item-skeleton />
+  <ct-list-item-skeleton />
+  <ct-list-item-skeleton />
+  <ct-list-item-skeleton />
+  <ct-list-item-skeleton />
+  <ct-list-item-skeleton />
+  <ct-list-item-skeleton />
+  } @else { @for (collectionItem of visibleCollection(); track collectionItem) { @defer (on viewport; prefetch on idle)
+  {
+  <ct-list-item [collectionItem]="collectionItem" />
+  } @placeholder {
+  <ct-list-item-skeleton />
+  } } @empty {
+  <div class="list-empty">
+    <i class="material-icons">movie</i>
+    @if (collectionLength() === 0) { {{ ('Message.EmptyCollection' | signalTranslate)() }}<br />
+    <a href="#" role="button" (click)="onAddNew()">{{ ('Message.AddFirstCollectionItem' | signalTranslate)() }}</a>
+    } @else { {{ ('Message.EmptySearch' | signalTranslate)() }}<br />
     }
-  }
+  </div>
+  } }
 </div>

@@ -1,12 +1,12 @@
 @if (spinnerLoading$ | async) {
-  <div
-    class="spinner-loading"
-    role="status"
-    aria-live="polite"
-    animate.enter="animation-scale-in"
-    animate.leave="animation-scale-out"
-    [title]="('Loading' | signalTranslate)()"
-  >
-    <div class="spinner-dots"></div>
-  </div>
+<div
+  class="spinner-loading"
+  role="status"
+  aria-live="polite"
+  animate.enter="animation-scale-in"
+  animate.leave="animation-scale-out"
+  [title]="('Loading' | signalTranslate)()"
+>
+  <div class="spinner-dots"></div>
+</div>
 }

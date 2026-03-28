@@ -6,9 +6,9 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
+import { getParserFilenamePattern } from '@services/parser/parser-util';
 import { buildCollectionItemFilename } from '@services/parser/utils/filename-pattern-util';
 import { PortalService } from '@services/portal-service';
-import { getParserFilenamePattern } from '@services/parser/parser-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
 
@@ -68,7 +68,7 @@ export class NewItemDialogService {
         this.collection.addCollectionItem(collectionItem, true);
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewItem'));
         if (mode === 'close') this.portal.close();
-      })
+      }),
     );
   }
 }

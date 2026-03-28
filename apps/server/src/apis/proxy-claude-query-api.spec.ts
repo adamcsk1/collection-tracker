@@ -2,7 +2,7 @@ import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import { readdir, readFile, stat } from 'fs/promises';
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');
 vi.mock('@server/core/anthropic', () => ({ createAnthropicClient: vi.fn(), getAnthropicModel: vi.fn() }));
@@ -35,7 +35,7 @@ describe('proxy-claude-query-api', () => {
     } as any);
   };
 
-  const setupStore = (files: { name: string; content: string }[]) => {
+  const setupStore = (files: { name: string; content: string; }[]) => {
     const cache: Record<string, string> = {};
     (Store.getLastValue as Mock).mockImplementation((key: string) => {
       if (key === 'dataFolder') return '/data';

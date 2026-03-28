@@ -1,8 +1,8 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { mainStateToken } from '@client/main/main-store';
 import { APP_MODES, SENSITIVE_DATA_STORAGE_MODES } from '@client/settings/settings-const';
-import { PublicApiService } from '@services/api/public-api-service';
 import { apiStateToken } from '@services/api/api-store';
+import { PublicApiService } from '@services/api/public-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_API_URL,
@@ -30,7 +30,7 @@ export class MainService {
     const settingsLock = this.webstorage.getItem(STORAGE_SETTINGS_LOCK) === 'true';
     const sensitiveDataStorage = parseAllowedValue(
       this.webstorage.getItem(STORAGE_SENSITIVE_DATA_STORAGE),
-      SENSITIVE_DATA_STORAGE_MODES
+      SENSITIVE_DATA_STORAGE_MODES,
     );
     const clearLocalStorageAfterLogout = this.webstorage.getItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT) === 'true';
 
@@ -63,7 +63,7 @@ export class MainService {
         catchError(() => {
           this._tokenValid.set(false);
           return EMPTY;
-        })
+        }),
       )
       .subscribe(() => this._tokenValid.set(true));
   }

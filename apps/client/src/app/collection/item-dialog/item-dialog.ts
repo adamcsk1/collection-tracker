@@ -77,7 +77,7 @@ export class ItemDialog implements OnInit {
           if (confirmed) return this.api.delete(this.collectionItem().name).pipe(map(() => confirmed));
           else return of(confirmed);
         }),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((confirmed) => {
         if (confirmed) {
@@ -122,7 +122,7 @@ export class ItemDialog implements OnInit {
             return this.api.update(this.collectionItem().name, this.rawContentModel()).pipe(map(() => confirmed));
           } else return of(confirmed);
         }),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((confirmed) => {
         if (confirmed) {

@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, NgZone, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, NgZone, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CollectionModel } from '@client/collection/collection-model';
 import { DESKTOP_HEIGHT_BUFFER, HEIGHT_BUFFER, WIDTH_BUFFER } from '@client/main/background/background-const';
@@ -57,7 +57,7 @@ export class Background {
           debounceTime(getCoarsePointerBasedDebounceTime()),
           map(() => ({ height: this.viewportHeight, width: this.viewportWidth })),
           filter(({ height, width }) => this.shouldHandleHeight(height) || this.shouldHandleWidth(width)),
-          takeUntilDestroyed(this.destroyRef)
+          takeUntilDestroyed(this.destroyRef),
         )
         .subscribe(({ height, width }) =>
           this.ngZone.run(() => {

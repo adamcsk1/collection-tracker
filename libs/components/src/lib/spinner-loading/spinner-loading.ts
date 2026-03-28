@@ -25,9 +25,9 @@ export class SpinnerLoading {
       status
         ? of(true)
         : of(false).pipe(
-            filter(() => this.counter === 0),
-            delay(250)
-          )
-    )
+          filter(() => this.counter === 0),
+          delay(250),
+        )
+    ),
   );
 }

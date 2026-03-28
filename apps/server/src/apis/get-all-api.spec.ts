@@ -2,7 +2,7 @@ import { Store } from '@server/core/store/store';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import { readdir, readFile, stat } from 'fs/promises';
-import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');
 vi.mock('fs/promises', async () => {
@@ -79,8 +79,11 @@ describe('get-all-api', () => {
     (readFile as Mock).mockImplementation((filePath: string) => Promise.resolve(filePath));
     (stat as Mock).mockImplementation((filePath: string) =>
       Promise.resolve({
-        birthtimeMs:
-          filePath === '/data/store/user/new.md' ? 3000 : filePath === '/data/store/user/middle.md' ? 2000 : 1000,
+        birthtimeMs: filePath === '/data/store/user/new.md'
+          ? 3000
+          : filePath === '/data/store/user/middle.md'
+          ? 2000
+          : 1000,
       })
     );
 

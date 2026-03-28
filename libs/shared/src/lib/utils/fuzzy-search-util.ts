@@ -72,7 +72,7 @@ const levenshteinWithLimit = (
   text: string,
   textOffset: number,
   previousRow: Int16Array,
-  currentRow: Int16Array
+  currentRow: Int16Array,
 ): number => {
   const patternLength = pattern.length;
   let previous = previousRow;

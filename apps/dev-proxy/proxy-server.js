@@ -62,7 +62,7 @@ const apiProxy = createProxyMiddleware(
       const rewritten = Array.isArray(setCookie) ? setCookie : [setCookie];
       proxyRes.headers['set-cookie'] = rewritten.map((cookie) => cookie.replace(/;\s*Secure/gi, ''));
     },
-  })
+  }),
 );
 
 const loginProxy = createProxyMiddleware(
@@ -71,21 +71,21 @@ const loginProxy = createProxyMiddleware(
     pathRewrite: {
       '^/login(/|$)': '',
     },
-  })
+  }),
 );
 
 const clientProxy = createProxyMiddleware(
   commonProxy({
     target: TARGETS.client,
     pathRewrite: { '^/client': '' },
-  })
+  }),
 );
 
 const healthProxy = createProxyMiddleware(
   commonProxy({
     target: TARGETS.health,
     pathRewrite: { '^/health': '' },
-  })
+  }),
 );
 
 app.use('/api', apiProxy);

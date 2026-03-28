@@ -10,22 +10,17 @@
     (blur)="onBlur()"
   />
   <label [for]="checkboxId()">
-    {{ label() }}
-    @if (mandatory()) {
-      <span>*</span>
+    {{ label() }} @if (mandatory()) {
+    <span>*</span>
     }
   </label>
 </div>
 
 @if (hint()) {
-  <small class="hint" [id]="hintId()">{{ hint() }}</small>
-}
-
-@if (showError()) {
-  <small class="error" [id]="errorId()">
-    @if (hasRequiredError()) {
-      {{ ('Validation.Required' | signalTranslate)() }}
-    }
-    <ng-content select="[errors]"></ng-content>
-  </small>
+<small class="hint" [id]="hintId()">{{ hint() }}</small>
+} @if (showError()) {
+<small class="error" [id]="errorId()">
+  @if (hasRequiredError()) { {{ ('Validation.Required' | signalTranslate)() }} }
+  <ng-content select="[errors]"></ng-content>
+</small>
 }

@@ -65,7 +65,7 @@ export class Parser implements OnInit {
       submission: {
         action: async () => this.onSave(),
       },
-    }
+    },
   );
   protected readonly formErrors = {
     filenamePattern: {
@@ -82,7 +82,7 @@ export class Parser implements OnInit {
           this.form
             .mdTemplate()
             .errors()
-            .find((error) => error.kind === 'invalidMdTemplate') as unknown as MdTemplateValidationError | undefined
+            .find((error) => error.kind === 'invalidMdTemplate') as unknown as MdTemplateValidationError | undefined,
       ),
     },
   };

@@ -42,12 +42,11 @@
 
 .shine {
   background: linear-gradient(
-      90deg,
-      var(--base-color-darker) 33%,
-      var(--base-color-lighter) 50%,
-      var(--base-color-darker) 66%
-    )
-    var(--base-color-darker);
+    90deg,
+    var(--base-color-darker) 33%,
+    var(--base-color-lighter) 50%,
+    var(--base-color-darker) 66%
+  ) var(--base-color-darker);
   background-size: 300% 100%;
   animation: shine 0.75s infinite;
 }

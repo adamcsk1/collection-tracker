@@ -6,7 +6,7 @@ import { ExtendedRequestModel } from '@server/models/express-model';
 import { AccessTokenModel } from '@shared/models/api-model';
 import jwt from 'jsonwebtoken';
 import { BehaviorSubject } from 'rxjs';
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
@@ -65,7 +65,7 @@ describe('jwt utilities', () => {
         () => {
           next();
           resolve();
-        }
+        },
       );
     });
 
@@ -84,7 +84,7 @@ describe('jwt utilities', () => {
         url: '/protected',
       } as unknown as ExtendedRequestModel,
       response,
-      next
+      next,
     );
 
     expect(response.sendStatus).toHaveBeenCalledWith(403);
@@ -103,7 +103,7 @@ describe('jwt utilities', () => {
         url: '/protected',
       } as unknown as ExtendedRequestModel,
       response,
-      next
+      next,
     );
 
     expect(response.sendStatus).toHaveBeenCalledWith(500);
@@ -122,7 +122,7 @@ describe('jwt utilities', () => {
         url: '/protected',
       } as unknown as ExtendedRequestModel,
       response,
-      next
+      next,
     );
 
     expect(response.sendStatus).toHaveBeenCalledWith(403);

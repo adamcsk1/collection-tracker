@@ -13,7 +13,7 @@ serverStorage.users
     filter(([previousUsers, nextUsers]) => !dequal(previousUsers, nextUsers)),
     map(([, nextUsers]) => nextUsers),
     tap(() => void debugLog('Users changed')),
-    debounceTime(2500)
+    debounceTime(2500),
   )
   .subscribe(async (users) => {
     try {
@@ -21,7 +21,7 @@ serverStorage.users
       await writeFile(
         `${serverStorage.dataFolder.value}/${FOLDERS.database}/${DATABASE_FILES.users}`,
         JSON.stringify(users, null, 2),
-        { encoding: 'utf-8' }
+        { encoding: 'utf-8' },
       );
       await debugLog('Users synced');
     } catch (error: unknown) {
@@ -35,7 +35,7 @@ serverStorage.parserConfigs
     filter(([previousParserConfigs, nextParserConfigs]) => !dequal(previousParserConfigs, nextParserConfigs)),
     map(([, nextParserConfigs]) => nextParserConfigs),
     tap(() => void debugLog('Parser configs changed')),
-    debounceTime(2500)
+    debounceTime(2500),
   )
   .subscribe(async (parserConfigs) => {
     try {
@@ -43,7 +43,7 @@ serverStorage.parserConfigs
       await writeFile(
         `${serverStorage.dataFolder.value}/${FOLDERS.database}/${DATABASE_FILES.parserConfigs}`,
         JSON.stringify(parserConfigs, null, 2),
-        { encoding: 'utf-8' }
+        { encoding: 'utf-8' },
       );
       await debugLog('Parser configs synced');
     } catch (error: unknown) {
@@ -57,7 +57,7 @@ serverStorage.tagConfigs
     filter(([previousTagConfigs, nextTagConfigs]) => !dequal(previousTagConfigs, nextTagConfigs)),
     map(([, nextTagConfigs]) => nextTagConfigs),
     tap(() => void debugLog('Tag configs changed')),
-    debounceTime(2500)
+    debounceTime(2500),
   )
   .subscribe(async (tagConfigs) => {
     try {
@@ -65,7 +65,7 @@ serverStorage.tagConfigs
       await writeFile(
         `${serverStorage.dataFolder.value}/${FOLDERS.database}/${DATABASE_FILES.tagConfigs}`,
         JSON.stringify(tagConfigs, null, 2),
-        { encoding: 'utf-8' }
+        { encoding: 'utf-8' },
       );
       await debugLog('Tag configs synced');
     } catch (error: unknown) {
@@ -79,7 +79,7 @@ serverStorage.userSettings
     filter(([previousUserSettings, nextUserSettings]) => !dequal(previousUserSettings, nextUserSettings)),
     map(([, nextUserSettings]) => nextUserSettings),
     tap(() => void debugLog('User settings changed')),
-    debounceTime(2500)
+    debounceTime(2500),
   )
   .subscribe(async (userSettings) => {
     try {
@@ -87,7 +87,7 @@ serverStorage.userSettings
       await writeFile(
         `${serverStorage.dataFolder.value}/${FOLDERS.database}/${DATABASE_FILES.userSettings}`,
         JSON.stringify(userSettings, null, 2),
-        { encoding: 'utf-8' }
+        { encoding: 'utf-8' },
       );
       await debugLog('User settings synced');
     } catch (error: unknown) {

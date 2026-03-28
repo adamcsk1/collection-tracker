@@ -38,7 +38,7 @@ export class ClaudeSearchService {
         this.spinnerLoadingState.setState('show', false);
         this.searchInProgress.set(false);
         return of(null);
-      })
+      }),
     );
   }
 }

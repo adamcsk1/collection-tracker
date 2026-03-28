@@ -47,12 +47,12 @@ export class About {
             } else {
               this.toastState.setState(
                 'message',
-                this.ngxSignalTranslate.translate('Toast.SettingsLockDisable', { count: `${10 - value}` })
+                this.ngxSignalTranslate.translate('Toast.SettingsLockDisable', { count: `${10 - value}` }),
               );
             }
           }),
           debounceTime(1000),
-          takeUntilDestroyed(this.destroyRef)
+          takeUntilDestroyed(this.destroyRef),
         )
         .subscribe(() => this.counter.next(0));
     }

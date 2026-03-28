@@ -26,7 +26,7 @@ describe('filename-pattern-util', () => {
       buildCollectionItemFilename({
         pattern: '{{Year}}-{{Type}}-{{imdbID}}-{{ClearedName}}.md',
         selectedContent: buildSelectedContent(),
-      })
+      }),
     ).toBe('1999-movie-tt0133093-The-Matrix.md');
   });
 
@@ -46,7 +46,7 @@ describe('filename-pattern-util', () => {
           Genre: 'Comedy, Romance',
           Actors: 'Audrey Tautou',
         },
-      })
+      }),
     ).toBe('Jean-Pierre-Jeunet-Amelie-Le-Fabuleux-Destin.md');
   });
 
@@ -55,7 +55,7 @@ describe('filename-pattern-util', () => {
       buildCollectionItemFilename({
         pattern: '{{Year}}-{{ClearedName}}-{{index}}.md',
         selectedContent: buildSelectedContent(),
-      })
+      }),
     ).toBe('1999-The-Matrix-{{index}}.md');
   });
 });

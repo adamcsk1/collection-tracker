@@ -2,12 +2,12 @@ import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { StoreModel } from '@server/core/store/store-model';
 import { CACHE_MAX, readStoreFiles, removeItem, updateItem } from '@server/core/utils/cache-util';
-import { stat } from 'fs/promises';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import path from 'path';
 import { BehaviorSubject } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('fs/promises', async () => {
   const actual = await vi.importActual<typeof import('fs/promises')>('fs/promises');
@@ -28,7 +28,7 @@ describe('cache-util', () => {
       parserConfigs: new BehaviorSubject(null),
       tagConfigs: new BehaviorSubject(null),
       userSettings: new BehaviorSubject(null),
-      cache: new BehaviorSubject<{ [key: string]: string }>({}),
+      cache: new BehaviorSubject<{ [key: string]: string; }>({}),
     };
 
     (global as any).__serverStorage = store;
@@ -113,7 +113,7 @@ describe('readStoreFiles', () => {
       parserConfigs: new BehaviorSubject(null),
       tagConfigs: new BehaviorSubject(null),
       userSettings: new BehaviorSubject(null),
-      cache: new BehaviorSubject<{ [key: string]: string }>({}),
+      cache: new BehaviorSubject<{ [key: string]: string; }>({}),
     };
     (global as any).__serverStorage = store;
     (stat as Mock).mockResolvedValue({ birthtimeMs: 0 });

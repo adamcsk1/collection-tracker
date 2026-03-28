@@ -37,9 +37,9 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
 describe('ChangeWatchedStatusService', () => {
   let service: ChangeWatchedStatusService;
   let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
-  let collectionService: { loadCollection: ReturnType<typeof vi.fn> };
-  let api: { update: ReturnType<typeof vi.fn> };
-  let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
+  let collectionService: { loadCollection: ReturnType<typeof vi.fn>; };
+  let api: { update: ReturnType<typeof vi.fn>; };
+  let confirm: { ifConfirmed: ReturnType<typeof vi.fn>; };
 
   beforeEach(() => {
     collectionService = { loadCollection: vi.fn() };

@@ -15,30 +15,25 @@
         [showReset]="true"
       />
       @if (matchedContent().length) {
-        <libc-select
-          [mandatory]="true"
-          [label]="('SelectedContent' | signalTranslate)()"
-          [formField]="form.selectedIMDbId"
-          [options]="matchedContent()"
-        >
-          <ng-container errors>
-            @if (formErrors.selectedIMDbId.knownIMDbId()) {
-              {{ ('Validation.KnownIMDbId' | signalTranslate)() }}
-            }
-          </ng-container>
-        </libc-select>
-        <libc-autocomplete
-          [label]="('Tags' | signalTranslate)()"
-          [hint]="('Message.Tags' | signalTranslate)()"
-          [formField]="form.tags"
-        >
-          <ng-container errors>
-            @if (formErrors.tags.usedInternalTag()) {
-              {{ ('Validation.UsedInternalTag' | signalTranslate)() }}
-            }
-          </ng-container></libc-autocomplete
-        >
-        <libc-checkbox [formField]="form.watched" [label]="('CollectionItemWatched' | signalTranslate)()" />
+      <libc-select
+        [mandatory]="true"
+        [label]="('SelectedContent' | signalTranslate)()"
+        [formField]="form.selectedIMDbId"
+        [options]="matchedContent()"
+      >
+        <ng-container errors>
+          @if (formErrors.selectedIMDbId.knownIMDbId()) { {{ ('Validation.KnownIMDbId' | signalTranslate)() }} }
+        </ng-container>
+      </libc-select>
+      <libc-autocomplete
+        [label]="('Tags' | signalTranslate)()"
+        [hint]="('Message.Tags' | signalTranslate)()"
+        [formField]="form.tags"
+      >
+        <ng-container errors>
+          @if (formErrors.tags.usedInternalTag()) { {{ ('Validation.UsedInternalTag' | signalTranslate)() }} }
+        </ng-container></libc-autocomplete>
+      <libc-checkbox [formField]="form.watched" [label]="('CollectionItemWatched' | signalTranslate)()" />
       }
       <div class="form-buttons">
         <button type="submit" [disabled]="form().invalid()" (click)="submitMode.set(null)">

@@ -3,15 +3,15 @@ import { RouterOutlet } from '@angular/router';
 import { BlockerLoading } from '@components/blocker-loading/blocker-loading';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
 import { Toast } from '@components/toast/toast';
-import { PublicApiService } from '@services/api/public-api-service';
 import { apiStateToken } from '@services/api/api-store';
+import { PublicApiService } from '@services/api/public-api-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { EMPTY, catchError } from 'rxjs';
+import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'lo-root',
@@ -53,7 +53,7 @@ export class Main implements AfterViewInit {
         catchError(() => {
           this.blockerLoadingState.setState('show', false);
           return EMPTY;
-        })
+        }),
       )
       .subscribe(() => (window.location.href = '/client/'));
   }

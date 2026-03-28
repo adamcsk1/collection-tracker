@@ -13,17 +13,16 @@ const getCpuUsagePercent = async (): Promise<number> => {
   for (const [index, cpu] of os.cpus().entries()) {
     const start = startTimes[index];
     totalIdle += cpu.times.idle - start.idle;
-    totalTick +=
-      cpu.times.user -
-      start.user +
-      cpu.times.nice -
-      start.nice +
-      cpu.times.sys -
-      start.sys +
-      cpu.times.idle -
-      start.idle +
-      cpu.times.irq -
-      start.irq;
+    totalTick += cpu.times.user
+      - start.user
+      + cpu.times.nice
+      - start.nice
+      + cpu.times.sys
+      - start.sys
+      + cpu.times.idle
+      - start.idle
+      + cpu.times.irq
+      - start.irq;
   }
   return totalTick === 0 ? 0 : Math.round(((totalTick - totalIdle) / totalTick) * 1000) / 10;
 };
@@ -53,7 +52,7 @@ const deriveStatus = (
   memoryUsedPercent: number,
   cpuUsagePercent: number,
   disk: HealthApiResponseModel['disk'],
-  frontendStatus: HealthApiResponseModel['frontend']['status']
+  frontendStatus: HealthApiResponseModel['frontend']['status'],
 ): HealthApiResponseModel['status'] => {
   if (frontendStatus === 'down') return 'error';
   if (memoryUsedPercent > 95 || cpuUsagePercent > 95 || (disk !== null && disk.usedPercent > 95)) return 'error';

@@ -1,7 +1,7 @@
 <libc-details [summary]="('AccessTokens' | signalTranslate)()">
   <p>{{ ('Message.AccessTokenSettings' | signalTranslate)() }}</p>
   @for (accessToken of accessTokens(); track $index) {
-    <ct-token-item [accessToken]="accessToken" (revokeAccessToken)="onRevokeAccessToken($event)" />
+  <ct-token-item [accessToken]="accessToken" (revokeAccessToken)="onRevokeAccessToken($event)" />
   }
   <br />
   <p>{{ ('Message.CreateNewAccessToken' | signalTranslate)() }}</p>

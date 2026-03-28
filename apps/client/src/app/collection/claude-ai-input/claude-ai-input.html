@@ -10,49 +10,50 @@
 </button>
 
 @if (isExpanded()) {
-  <button
-    type="button"
-    class="backdrop"
-    animate.enter="animation-fade-in"
-    animate.leave="animation-fade-out"
-    aria-label="Close search panel"
-    (click)="onCollapse()"
-    (keydown.enter)="onCollapse()"
-    (keydown.space)="onCollapse()"
-  ></button>
-  <div
-    #expandedPanel
-    class="expanded-panel"
-    animate.enter="animation-claude-ai-expand"
-    animate.leave="animation-claude-ai-collapse"
-    tabindex="0"
-    (keydown.escape)="onCollapse()"
-  >
-    <libc-textarea [formField]="formField()" [placeholder]="placeholder()" [rows]="5" />
-    <div class="panel-actions">
-      <button
-        class="button-icon"
-        [attr.aria-label]="('SendPrompt' | signalTranslate)()"
-        [title]="('SendPrompt' | signalTranslate)()"
-        (click)="onSend()"
-        (keydown.enter)="onSend()"
-      >
-        <i class="material-icons">send</i>
-      </button>
-      <a
-        class="text-button"
-        href="#"
-        role="button"
-        [title]="('Message.ClaudeAiSearch' | signalTranslate)()"
-        [attr.aria-description]="('Message.ClaudeAiSearch' | signalTranslate)()"
-        (click)="onShowMessage()"
-      >
-        <libc-image-icon
-          [ariaLabel]="('ClaudeAi' | signalTranslate)()"
-          imageUrl="/client/images/claude-ai-icon-transparent.png"
-        />
-        <span>{{ ('ClaudeAiSearchInfo' | signalTranslate)() }}</span>
-      </a>
-    </div>
+<button
+  type="button"
+  class="backdrop"
+  animate.enter="animation-fade-in"
+  animate.leave="animation-fade-out"
+  aria-label="Close search panel"
+  (click)="onCollapse()"
+  (keydown.enter)="onCollapse()"
+  (keydown.space)="onCollapse()"
+>
+</button>
+<div
+  #expandedPanel
+  class="expanded-panel"
+  animate.enter="animation-claude-ai-expand"
+  animate.leave="animation-claude-ai-collapse"
+  tabindex="0"
+  (keydown.escape)="onCollapse()"
+>
+  <libc-textarea [formField]="formField()" [placeholder]="placeholder()" [rows]="5" />
+  <div class="panel-actions">
+    <button
+      class="button-icon"
+      [attr.aria-label]="('SendPrompt' | signalTranslate)()"
+      [title]="('SendPrompt' | signalTranslate)()"
+      (click)="onSend()"
+      (keydown.enter)="onSend()"
+    >
+      <i class="material-icons">send</i>
+    </button>
+    <a
+      class="text-button"
+      href="#"
+      role="button"
+      [title]="('Message.ClaudeAiSearch' | signalTranslate)()"
+      [attr.aria-description]="('Message.ClaudeAiSearch' | signalTranslate)()"
+      (click)="onShowMessage()"
+    >
+      <libc-image-icon
+        [ariaLabel]="('ClaudeAi' | signalTranslate)()"
+        imageUrl="/client/images/claude-ai-icon-transparent.png"
+      />
+      <span>{{ ('ClaudeAiSearchInfo' | signalTranslate)() }}</span>
+    </a>
   </div>
+</div>
 }

@@ -108,18 +108,20 @@ describe('OMDbService', () => {
     const selected$ = service.getSelectedContent('tt0133093').pipe(filter(Boolean));
 
     const detailRequest = httpMock.expectOne(`${API_URL}/proxy/omdb/item?i=tt0133093`);
-    detailRequest.flush({
-      imdbID: 'tt0133093',
-      imdbRating: '8.7',
-      Plot: 'Plot text',
-      Poster: '',
-      Type: 'movie',
-      Title: 'The Matrix',
-      Year: '1999',
-      Director: 'The Wachowskis',
-      Genre: 'Sci-Fi',
-      Actors: 'Keanu Reeves',
-    } satisfies OMDbResponseItemModel);
+    detailRequest.flush(
+      {
+        imdbID: 'tt0133093',
+        imdbRating: '8.7',
+        Plot: 'Plot text',
+        Poster: '',
+        Type: 'movie',
+        Title: 'The Matrix',
+        Year: '1999',
+        Director: 'The Wachowskis',
+        Genre: 'Sci-Fi',
+        Actors: 'Keanu Reeves',
+      } satisfies OMDbResponseItemModel,
+    );
 
     const result = await firstValueFrom(selected$);
     expect(result?.Title).toBe('The Matrix');

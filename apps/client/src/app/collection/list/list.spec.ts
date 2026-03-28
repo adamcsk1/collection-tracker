@@ -28,7 +28,7 @@ vi.mock('marked', () => ({ marked: { parse: () => '' } }));
 describe('List', () => {
   let fixture: ComponentFixture<List>;
   let component: List;
-  let portal: { open: ReturnType<typeof vi.fn> };
+  let portal: { open: ReturnType<typeof vi.fn>; };
   let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let scrollSpy: ReturnType<typeof vi.fn>;
@@ -112,8 +112,9 @@ describe('List', () => {
   });
 
   it('loads more items when scrolled near the bottom', () => {
-    const largeCollection = Array.from({ length: INFINITE_SCROLL_PAGE_SIZE * 2 }, (_, index) =>
-      buildItem(`Item ${index}`)
+    const largeCollection = Array.from(
+      { length: INFINITE_SCROLL_PAGE_SIZE * 2 },
+      (_, index) => buildItem(`Item ${index}`),
     );
     mainCollectionState.setState('collection', largeCollection);
 
@@ -140,8 +141,9 @@ describe('List', () => {
   it('resets visible count and scroll position when search text changes', async () => {
     vi.useFakeTimers();
     try {
-      const largeCollection = Array.from({ length: INFINITE_SCROLL_PAGE_SIZE * 2 }, (_, index) =>
-        buildItem(`Item ${index}`)
+      const largeCollection = Array.from(
+        { length: INFINITE_SCROLL_PAGE_SIZE * 2 },
+        (_, index) => buildItem(`Item ${index}`),
       );
       mainCollectionState.setState('collection', largeCollection);
 

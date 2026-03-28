@@ -4,7 +4,7 @@ import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 
 @Injectable()
 export class MdContentGeneratorService {
-  public getMdContent(omdbData: OMDbResponseItemModel & { Tags: string }): string {
+  public getMdContent(omdbData: OMDbResponseItemModel & { Tags: string; }): string {
     let resultContent = getParserTemplate();
 
     for (const [key, value] of Object.entries(omdbData)) {
@@ -13,7 +13,7 @@ export class MdContentGeneratorService {
 
     resultContent = resultContent.replace(
       '{{YoutubeQuery}}',
-      encodeURIComponent(`${omdbData.Title} ${omdbData.Year} trailer`)
+      encodeURIComponent(`${omdbData.Title} ${omdbData.Year} trailer`),
     );
     resultContent = resultContent.replace('{{WebQuery}}', encodeURIComponent(`${omdbData.Title} ${omdbData.Year}`));
 

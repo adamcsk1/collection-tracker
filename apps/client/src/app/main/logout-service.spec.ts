@@ -8,7 +8,7 @@ import { LogoutService } from './logout-service';
 
 describe('LogoutService', () => {
   let service: LogoutService;
-  let webstorage: { clear: ReturnType<typeof vi.fn> };
+  let webstorage: { clear: ReturnType<typeof vi.fn>; };
   let mainState: NgxSimpleSignalStoreService<MainState>;
   let redirectSpy: ReturnType<typeof vi.spyOn>;
 

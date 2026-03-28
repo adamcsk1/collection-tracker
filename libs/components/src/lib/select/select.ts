@@ -31,7 +31,7 @@ export class Select implements FormValueControl<SelectDataModel['value'] | null>
     return ids.length ? ids.join(' ') : null;
   });
   protected readonly hasRequiredError = computed(
-    () => this.showError() && this.errors().some((error) => error.kind === 'required')
+    () => this.showError() && this.errors().some((error) => error.kind === 'required'),
   );
   protected readonly normalizedValue = computed(() => this.normalizeValue(this.value()));
 

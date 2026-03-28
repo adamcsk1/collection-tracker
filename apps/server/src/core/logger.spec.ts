@@ -4,7 +4,7 @@ import { FOLDERS } from '@server/core/main-const';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('@server/core/argv/argv', () => ({
   getArgv: vi.fn(),
@@ -31,7 +31,7 @@ describe('logger', () => {
 
     const logFiles = readFileSync(
       path.join(tempDir, FOLDERS.logs, `log-${new Date().toISOString().slice(0, 10)}.txt`),
-      { encoding: 'utf-8' }
+      { encoding: 'utf-8' },
     );
     expect(logFiles).toContain('[ info ] hello world');
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[ info ] hello world'));
@@ -55,7 +55,7 @@ describe('logger', () => {
 
     const logFiles = readFileSync(
       path.join(tempDir, FOLDERS.logs, `log-${new Date().toISOString().slice(0, 10)}.txt`),
-      { encoding: 'utf-8' }
+      { encoding: 'utf-8' },
     );
     expect(logFiles).toContain('[ error ] boom');
   });
