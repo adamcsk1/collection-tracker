@@ -5,6 +5,7 @@ import { initialMainState, MainState, mainStateToken } from '@client/main/main-s
 import { SettingsModel } from '@client/settings/settings-model';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
+import { SharedApiService } from '@services/api/shared-api-service';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -40,10 +41,8 @@ describe('SettingsService', () => {
     setItem: ReturnType<typeof vi.fn>;
     removeItem: ReturnType<typeof vi.fn>;
   };
-  let api: {
-    getUserSettings: ReturnType<typeof vi.fn>;
-    updateUserSettings: ReturnType<typeof vi.fn>;
-  };
+  let api: { getUserSettings: ReturnType<typeof vi.fn> };
+  let sharedApi: { updateUserSettings: ReturnType<typeof vi.fn> };
   let translate: { translate: ReturnType<typeof vi.fn>; setLanguage: ReturnType<typeof vi.fn> };
   let main: { setPermissions: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
@@ -52,7 +51,8 @@ describe('SettingsService', () => {
   beforeEach(() => {
     router = { navigate: vi.fn() };
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn(), removeItem: vi.fn() };
-    api = { getUserSettings: vi.fn(() => of({})), updateUserSettings: vi.fn(() => of(void 0)) };
+    api = { getUserSettings: vi.fn(() => of({})) };
+    sharedApi = { updateUserSettings: vi.fn(() => of(void 0)) };
     translate = { translate: vi.fn((value: string) => value), setLanguage: vi.fn() };
     main = { setPermissions: vi.fn() };
 
@@ -61,6 +61,7 @@ describe('SettingsService', () => {
         SettingsService,
         { provide: Router, useValue: router },
         { provide: ApiService, useValue: api },
+        { provide: SharedApiService, useValue: sharedApi },
         { provide: WebstorageService, useValue: webstorage },
         { provide: NgxSignalTranslateService, useValue: translate },
         { provide: MainService, useValue: main },
@@ -82,7 +83,7 @@ describe('SettingsService', () => {
     service.storeFormData(formData);
 
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_SENSITIVE_DATA_STORAGE, 'session');
-    expect(api.updateUserSettings).toHaveBeenCalledWith({
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({
       fetchBatchSize: 25,
       theme: 'dark',
       animatedBackground: true,
@@ -113,7 +114,7 @@ describe('SettingsService', () => {
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_APP_MODE, 'limited');
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_SETTINGS_LOCK, 'true');
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT, 'true');
-    expect(api.updateUserSettings).toHaveBeenCalledWith({
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({
       fetchBatchSize: 25,
       theme: 'dark',
       animatedBackground: false,

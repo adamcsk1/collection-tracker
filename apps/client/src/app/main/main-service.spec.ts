@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { initialMainState, MainState, mainStateToken } from '@client/main/main-store';
-import { ApiService } from '@services/api/api-service';
+import { PublicApiService } from '@services/api/public-api-service';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
@@ -29,7 +29,7 @@ describe('MainService', () => {
     TestBed.configureTestingModule({
       providers: [
         MainService,
-        { provide: ApiService, useValue: api },
+        { provide: PublicApiService, useValue: api },
         { provide: WebstorageService, useValue: webstorage },
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),

@@ -1,0 +1,132 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "health",
+  "projectType": "application",
+  "generators": {
+    "@schematics/angular:component": {
+      "style": "css"
+    }
+  },
+  "sourceRoot": "src",
+  "prefix": "he",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"
+      }
+    },
+    "typecheck-spec": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{workspaceRoot}/coverage/apps/health"],
+      "options": {
+        "config": "apps/health/vitest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "build": {
+      "executor": "@angular/build:application",
+      "options": {
+        "browser": "apps/health/src/bootstrap.ts",
+        "index": "apps/health/src/index.html",
+        "tsConfig": "apps/health/tsconfig.app.json",
+        "inlineStyleLanguage": "css",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/health/public",
+            "output": "."
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/public/src",
+            "output": "."
+          }
+        ],
+        "styles": ["node_modules/@fontsource/material-icons/index.css", "apps/health/src/styles.css"],
+        "outputPath": "dist/apps/health"
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kB",
+              "maximumError": "1MB"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kB",
+              "maximumError": "8kB"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "baseHref": "/health/"
+        }
+      },
+      "defaultConfiguration": "production",
+      "outputs": ["{options.outputPath}"]
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "health:build:production"
+        },
+        "development": {
+          "buildTarget": "health:build:development"
+        }
+      },
+      "options": {
+        "port": 4203
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular/build:extract-i18n"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/health/src/**/*.ts", "apps/health/src/**/*.html"],
+        "tsConfig": ["apps/health/tsconfig.app.json"],
+        "eslintConfig": "apps/health/eslint.config.cjs"
+      }
+    },
+    "stylelint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "stylelint \"apps/health/src/**/*.css\""
+      }
+    },
+    "stylelint-fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "stylelint --fix \"apps/health/src/**/*.css\""
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write apps/health/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+      }
+    },
+    "format-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --check apps/health/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+      }
+    }
+  }
+}

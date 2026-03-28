@@ -40,6 +40,7 @@
   "BuildDate": "Build date",
   "AppVersion": "App version",
   "Links": "Links",
+  "NavigateToServerHealth": "Go to server status page",
   "ViewOnGitHub": "View on GitHub",
   "FetchBatchSize": "Fetch batch size",
   "Unlimited": "Unlimited",

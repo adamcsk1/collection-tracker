@@ -6,7 +6,7 @@ import {
   initialBlockerLoadingState,
 } from '@components/blocker-loading/blocker-loading-store';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
-import { ApiService } from '@services/api/api-service';
+import { PublicApiService } from '@services/api/public-api-service';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { ThemeState, initialThemeState, themeStateToken } from '@services/theme/theme-store';
@@ -47,7 +47,7 @@ describe('Main component', () => {
     TestBed.configureTestingModule({
       imports: [Main],
       providers: [
-        { provide: ApiService, useValue: apiService },
+        { provide: PublicApiService, useValue: apiService },
         { provide: WebstorageService, useValue: webStorage },
         { provide: ThemeService, useValue: themeService },
         { provide: NgxSignalTranslateService, useValue: ngxTranslate },

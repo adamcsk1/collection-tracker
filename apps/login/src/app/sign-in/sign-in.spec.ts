@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { ApiService } from '@services/api/api-service';
+import { PublicApiService } from '@services/api/public-api-service';
+import { SharedApiService } from '@services/api/shared-api-service';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, ThemeState, themeStateToken } from '@services/theme/theme-store';
@@ -17,7 +18,8 @@ describe('SignIn component', () => {
   let fixture: ComponentFixture<SignIn>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
-  let apiService: { signIn: Mock; updateUserSettings: Mock };
+  let publicApiService: { signIn: Mock };
+  let sharedApiService: { updateUserSettings: Mock };
   let webStorage: { getItem: Mock; setItem: Mock };
   let translateService: { languageOptions: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
@@ -32,10 +34,8 @@ describe('SignIn component', () => {
 
   beforeEach(() => {
     delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
-    apiService = {
-      signIn: vi.fn(() => of(undefined)),
-      updateUserSettings: vi.fn(() => of(undefined)),
-    };
+    publicApiService = { signIn: vi.fn(() => of(undefined)) };
+    sharedApiService = { updateUserSettings: vi.fn(() => of(undefined)) };
     webStorage = {
       getItem: vi.fn(() => null),
       setItem: vi.fn(),
@@ -47,7 +47,8 @@ describe('SignIn component', () => {
     TestBed.configureTestingModule({
       imports: [SignIn],
       providers: [
-        { provide: ApiService, useValue: apiService },
+        { provide: PublicApiService, useValue: publicApiService },
+        { provide: SharedApiService, useValue: sharedApiService },
         { provide: WebstorageService, useValue: webStorage },
         { provide: TranslateService, useValue: translateService },
         { provide: ThemeService, useValue: themeService },
@@ -113,8 +114,8 @@ describe('SignIn component', () => {
 
     expect(apiState.setState).toHaveBeenCalledWith('apiUrl', 'https://new-api');
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, 'https://new-api');
-    expect(apiService.signIn).toHaveBeenCalledWith('neo', 'matrix');
-    expect(apiService.updateUserSettings).toHaveBeenCalledWith({
+    expect(publicApiService.signIn).toHaveBeenCalledWith('neo', 'matrix');
+    expect(sharedApiService.updateUserSettings).toHaveBeenCalledWith({
       language: 'en',
       theme: 'light',
     });

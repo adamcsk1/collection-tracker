@@ -65,7 +65,6 @@ export const register = (app: Application): void => {
   app.get(`${API_PREFIX}/health`, async (_request, response) => {
     const totalMemory = os.totalmem();
     const freeMemory = os.freemem();
-    const cpus = os.cpus();
     const [avg1m, avg5m, avg15m] = os.loadavg();
 
     const [cpuUsagePercent, frontend] = await Promise.all([getCpuUsagePercent(), checkFrontendStatus()]);
@@ -76,7 +75,7 @@ export const register = (app: Application): void => {
     const result: HealthApiResponseModel = {
       status: deriveStatus(memoryUsedPercent, cpuUsagePercent, disk, frontend.status),
       memory: { usedPercent: memoryUsedPercent },
-      cpu: { cores: cpus.length, usagePercent: cpuUsagePercent },
+      cpu: { usagePercent: cpuUsagePercent },
       disk,
       load: {
         avg1m: Math.round(avg1m * 100) / 100,

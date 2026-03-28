@@ -12,12 +12,8 @@ import {
   GetAllApiResponseModel,
   ParserConfigApiRequestModel,
   ParserConfigApiResponseModel,
-  SignInApiRequestModel,
-  SignUpApiRequestModel,
-  SignUpApiResponseModel,
   TagConfigsApiRequestModel,
   TagConfigsApiResponseModel,
-  UserSettingsApiRequestModel,
   UserSettingsApiResponseModel,
 } from '@shared/models/api-model';
 import { ClaudeQueryRequestModel, ClaudeQueryResponseModel } from '@shared/models/claude-model';
@@ -32,35 +28,6 @@ export class ApiService {
   private readonly httpClient = inject(HttpClient);
   private readonly apiState = inject(apiStateToken);
 
-  public getHealth(): Observable<void> {
-    return this.httpClient.get<void>(`${this.apiState.state.apiUrl()}/health`).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  public signUp(username: string): Observable<SignUpApiResponseModel> {
-    const body: SignUpApiRequestModel = { username };
-    return this.httpClient.post<SignUpApiResponseModel>(`${this.apiState.state.apiUrl()}/sign-up`, body).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  public signIn(username: string, token: string): Observable<void> {
-    const body: SignInApiRequestModel = { username, token };
-    return this.httpClient.post<void>(`${this.apiState.state.apiUrl()}/sign-in`, body).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
-  }
-
   public logout(): Observable<void> {
     return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/logout`).pipe(
       catchError((error) => {
@@ -68,10 +35,6 @@ export class ApiService {
         return throwError(() => error);
       })
     );
-  }
-
-  public validateAccessToken(): Observable<void> {
-    return this.httpClient.get<void>(`${this.apiState.state.apiUrl()}/user/access-token/validate`);
   }
 
   public getAll(): Observable<GetAllApiResponseModel> {
@@ -212,15 +175,6 @@ export class ApiService {
 
   public getUserSettings(): Observable<UserSettingsApiResponseModel> {
     return this.httpClient.get<UserSettingsApiResponseModel>(`${this.apiState.state.apiUrl()}/user/settings`).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  public updateUserSettings(userSettings: UserSettingsApiRequestModel): Observable<void> {
-    return this.httpClient.post<void>(`${this.apiState.state.apiUrl()}/user/settings`, userSettings).pipe(
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);

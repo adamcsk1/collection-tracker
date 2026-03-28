@@ -7,6 +7,7 @@ A self-hosted media catalog application for managing personal movie and series c
 | App | Purpose |
 |-----|---------|
 | `apps/client` | Main collection management UI |
+| `apps/health` | Server health status dashboard |
 | `apps/login` | Authentication UI (sign-in / sign-up) |
 | `apps/server` | Express REST API |
 | `apps/dev-proxy` | Local dev gateway — serves everything through `localhost:4200` |
@@ -25,6 +26,7 @@ A self-hosted media catalog application for managing personal movie and series c
 
 ```
 @client/*   → apps/client/src/app/*
+@health/*   → apps/health/src/app/*
 @login/*    → apps/login/src/app/*
 @server/*   → apps/server/src/*
 @components/* → libs/components/src/lib/*
@@ -55,12 +57,20 @@ npm run e2e             # Cypress E2E tests
 
 - Gateway: `http://localhost:4200/`
 - Client: `http://localhost:4200/client/`
+- Health: `http://localhost:4200/health/`
 - Login: `http://localhost:4200/login/`
 - API: `http://localhost:4200/api/v1/`
 
 ## Working in This Codebase
 
 Always read the relevant source files before making changes. Do not suggest or apply modifications based on assumptions — understand the existing code first.
+
+When adding or removing apps, libraries, routes, Nx targets, or runtime requirements, keep all of the following in sync:
+
+- `CLAUDE.md` — Apps table, Path Aliases, Dev URLs
+- `README.md` — Workspace section, Quick Start URLs
+- `docs/README.md` — Documentation index
+- The relevant page in `docs/` (create one if the app or library has none yet)
 
 ## Testing
 

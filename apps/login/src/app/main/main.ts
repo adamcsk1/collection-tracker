@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { BlockerLoading } from '@components/blocker-loading/blocker-loading';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
 import { Toast } from '@components/toast/toast';
-import { ApiService } from '@services/api/api-service';
+import { PublicApiService } from '@services/api/public-api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
@@ -23,7 +23,7 @@ import { EMPTY, catchError } from 'rxjs';
 export class Main implements AfterViewInit {
   private readonly signalTranslateService = inject(NgxSignalTranslateService);
   private readonly webstorage = inject(WebstorageService);
-  private readonly api = inject(ApiService);
+  private readonly api = inject(PublicApiService);
   private readonly theme = inject(ThemeService);
   private readonly apiState = inject(apiStateToken);
   private readonly themeState = inject(themeStateToken);

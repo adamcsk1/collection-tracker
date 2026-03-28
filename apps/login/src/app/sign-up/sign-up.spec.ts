@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ToastState, initialToastState, toastStateToken } from '@components/toast/toast-store';
-import { ApiService } from '@services/api/api-service';
+import { PublicApiService } from '@services/api/public-api-service';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -21,13 +21,13 @@ describe('SignUp component', () => {
   let fixture: ComponentFixture<SignUp>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let toastState: NgxSimpleSignalStoreService<ToastState>;
-  let apiService: { signUp: Mock };
+  let publicApiService: { signUp: Mock };
   let webStorage: { getItem: Mock; setItem: Mock };
   let translateService: { languageOptions: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
 
   beforeEach(() => {
-    apiService = { signUp: vi.fn(() => of({ token: 'new-token' })) };
+    publicApiService = { signUp: vi.fn(() => of({ token: 'new-token' })) };
     webStorage = {
       getItem: vi.fn(() => null),
       setItem: vi.fn(),
@@ -38,7 +38,7 @@ describe('SignUp component', () => {
     TestBed.configureTestingModule({
       imports: [SignUp],
       providers: [
-        { provide: ApiService, useValue: apiService },
+        { provide: PublicApiService, useValue: publicApiService },
         { provide: WebstorageService, useValue: webStorage },
         { provide: TranslateService, useValue: translateService },
         { provide: NgxSignalTranslateService, useValue: ngxTranslate },
@@ -66,7 +66,7 @@ describe('SignUp component', () => {
     component['signUpModel'].set({ username: 'neo', apiUrl: 'https://new-api' });
     await component['onSend']();
 
-    expect(apiService.signUp).toHaveBeenCalledWith('neo');
+    expect(publicApiService.signUp).toHaveBeenCalledWith('neo');
     expect(apiState.setState).toHaveBeenCalledWith('apiUrl', 'https://new-api');
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, 'https://new-api');
     expect(component['secret']()).toBe('new-token');

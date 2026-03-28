@@ -97,7 +97,7 @@ describe('health-api', () => {
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
         memory: { usedPercent: 50 },
-        cpu: { cores: 1, usagePercent: 50 },
+        cpu: { usagePercent: 50 },
       })
     );
   });

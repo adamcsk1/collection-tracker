@@ -10,9 +10,9 @@ Source: [`apps/dev-proxy`](../apps/dev-proxy)
 | --------- | ------------------------------ | ------------------------------------------------------- |
 | `/login`  | `http://localhost:4201/login`  | Removes the `/login` prefix before proxying.            |
 | `/client` | `http://localhost:4202/client` | Removes the `/client` prefix before proxying.           |
+| `/health` | `http://localhost:4203/health` | Removes the `/health` prefix before proxying.           |
 | `/api`    | `http://localhost:3000/api`    | Proxies API traffic without changing the `/api` prefix. |
 | `/`       | local redirect                 | Redirects to `/login`.                                  |
-| `/health` | local handler                  | Returns `ok`.                                           |
 
 ## Proxy Behavior
 

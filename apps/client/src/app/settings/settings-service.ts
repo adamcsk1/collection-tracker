@@ -5,6 +5,7 @@ import { mainStateToken } from '@client/main/main-store';
 import { SettingsModel } from '@client/settings/settings-model';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
+import { SharedApiService } from '@services/api/shared-api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -26,6 +27,7 @@ import { catchError, EMPTY, map, Observable, tap } from 'rxjs';
 export class SettingsService {
   private readonly router = inject(Router);
   private readonly api = inject(ApiService);
+  private readonly sharedApi = inject(SharedApiService);
   private readonly webstorage = inject(WebstorageService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly main = inject(MainService);
@@ -86,7 +88,7 @@ export class SettingsService {
       language: formData.language,
     };
 
-    this.api
+    this.sharedApi
       .updateUserSettings(userSettings)
       .pipe(
         tap(() => {

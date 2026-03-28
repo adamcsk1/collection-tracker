@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { mainStateToken } from '@client/main/main-store';
 import { APP_MODES, SENSITIVE_DATA_STORAGE_MODES } from '@client/settings/settings-const';
-import { ApiService } from '@services/api/api-service';
+import { PublicApiService } from '@services/api/public-api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
@@ -16,7 +16,7 @@ import { catchError, EMPTY } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class MainService {
-  private readonly api = inject(ApiService);
+  private readonly api = inject(PublicApiService);
   private readonly webstorage = inject(WebstorageService);
   private readonly mainState = inject(mainStateToken);
   private readonly apiState = inject(apiStateToken);

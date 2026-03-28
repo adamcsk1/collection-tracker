@@ -5,6 +5,7 @@ This directory contains the maintained project documentation. The root [`README.
 ## Applications
 
 - [Client](./client.md)
+- [Health](./health.md)
 - [Login](./login.md)
 - [Server](./server.md)
 - [Server API reference](./server-api.md)

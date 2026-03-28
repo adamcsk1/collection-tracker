@@ -37,44 +37,12 @@ describe('ApiService', () => {
     httpMock.verify();
   });
 
-  it('alerts and rethrows when health check fails', async () => {
-    const promise = lastValueFrom(service.getHealth());
-
-    const healthRequest = httpMock.expectOne('https://api.test/health');
-    healthRequest.flush('down', { status: 503, statusText: 'Service Unavailable' });
-
-    await expect(promise).rejects.toMatchObject({ status: 503 });
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-    expect(alertSpy.mock.calls[0][0]).toContain('Service Unavailable');
-  });
-
-  it('posts signIn request with credentials', async () => {
-    const promise = lastValueFrom(service.signIn('neo', 'matrix'));
-
-    const signInRequest = httpMock.expectOne('https://api.test/sign-in');
-    expect(signInRequest.request.method).toBe('POST');
-    expect(signInRequest.request.body).toEqual({ username: 'neo', token: 'matrix' });
-    signInRequest.flush({});
-
-    await expect(promise).resolves.toEqual({});
-  });
-
   it('sends logout request', async () => {
     const promise = lastValueFrom(service.logout());
 
     const logoutRequest = httpMock.expectOne('https://api.test/logout');
     expect(logoutRequest.request.method).toBe('DELETE');
     logoutRequest.flush({});
-
-    await expect(promise).resolves.toEqual({});
-  });
-
-  it('validates access token', async () => {
-    const promise = lastValueFrom(service.validateAccessToken());
-
-    const validateRequest = httpMock.expectOne('https://api.test/user/access-token/validate');
-    expect(validateRequest.request.method).toBe('GET');
-    validateRequest.flush({});
 
     await expect(promise).resolves.toEqual({});
   });
@@ -306,23 +274,6 @@ describe('ApiService', () => {
     });
   });
 
-  it('updates user settings', async () => {
-    const payload = {
-      fetchBatchSize: 50,
-      theme: 'dark' as const,
-      animatedBackground: false,
-      language: 'en' as const,
-    };
-    const promise = lastValueFrom(service.updateUserSettings(payload));
-
-    const updateUserSettingsRequest = httpMock.expectOne('https://api.test/user/settings');
-    expect(updateUserSettingsRequest.request.method).toBe('POST');
-    expect(updateUserSettingsRequest.request.body).toEqual(payload);
-    updateUserSettingsRequest.flush({});
-
-    await expect(promise).resolves.toEqual({});
-  });
-
   it('posts a prompt to the Claude query endpoint and returns matched IDs', async () => {
     const promise = lastValueFrom(service.getClaudeQueryData('sci-fi movies'));
 
@@ -382,43 +333,6 @@ describe('ApiService', () => {
     userSettingsRequest.flush('bad', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('alerts and rethrows when updating user settings fails', async () => {
-    const promise = lastValueFrom(
-      service.updateUserSettings({
-        fetchBatchSize: 50,
-        theme: 'dark',
-        animatedBackground: false,
-        language: 'en',
-      })
-    );
-
-    const updateUserSettingsRequest = httpMock.expectOne('https://api.test/user/settings');
-    updateUserSettingsRequest.flush('bad', { status: 400, statusText: 'Bad Request' });
-
-    await expect(promise).rejects.toMatchObject({ status: 400 });
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('alerts and rethrows when signUp fails', async () => {
-    const promise = lastValueFrom(service.signUp('neo'));
-
-    const signUpRequest = httpMock.expectOne('https://api.test/sign-up');
-    signUpRequest.flush('invalid', { status: 400, statusText: 'Bad Request' });
-
-    await expect(promise).rejects.toMatchObject({ status: 400 });
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('alerts and rethrows when signIn fails', async () => {
-    const promise = lastValueFrom(service.signIn('neo', 'invalid'));
-
-    const signInRequest = httpMock.expectOne('https://api.test/sign-in');
-    signInRequest.flush('bad', { status: 401, statusText: 'Unauthorized' });
-
-    await expect(promise).rejects.toMatchObject({ status: 401 });
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 

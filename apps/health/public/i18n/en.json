@@ -1,0 +1,14 @@
+{
+  "Title": "Collection tracker",
+  "SubTitle": "status",
+  "Loading": "Loading…",
+  "Memory": "Memory",
+  "Cpu": "CPU",
+  "Disk": "Disk",
+  "LoadAverage": "Load average",
+  "Frontend": "Frontend",
+  "Load.1min": "1 min",
+  "Load.5min": "5 min",
+  "Load.15min": "15 min",
+  "NavigateToLogin": "Go to login page"
+}

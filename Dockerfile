@@ -6,10 +6,12 @@ RUN apk add --no-cache nginx bash su-exec
 
 # Copy pre-built artifacts produced outside of Docker (nx build ...)
 # - Angular client build -> dist/apps/client/browser
+# - Angular health build -> dist/apps/health/browser
 # - Angular login build  -> dist/apps/login/browser
 # - Node server build    -> dist/apps/server (with generated package.json)
-RUN mkdir -p /usr/share/nginx/html/client /usr/share/nginx/html/login
+RUN mkdir -p /usr/share/nginx/html/client /usr/share/nginx/html/health /usr/share/nginx/html/login
 COPY dist/apps/client/browser/ /usr/share/nginx/html/client/
+COPY dist/apps/health/browser/ /usr/share/nginx/html/health/
 COPY dist/apps/login/browser/ /usr/share/nginx/html/login/
 COPY dist/apps/server/ /app/server/
 
