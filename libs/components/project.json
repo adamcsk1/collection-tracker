@@ -49,13 +49,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --write libs/components/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "dprint fmt libs/components/**"
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --check libs/components/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "dprint check libs/components/**"
       }
     }
   }

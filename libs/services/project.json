@@ -36,13 +36,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --write libs/services/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "dprint fmt libs/services/**"
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --check libs/services/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "dprint check libs/services/**"
       }
     }
   }

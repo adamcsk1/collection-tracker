@@ -4,23 +4,23 @@ A self-hosted media catalog application for managing personal movie and series c
 
 ## Apps
 
-| App | Purpose |
-|-----|---------|
-| `apps/client` | Main collection management UI |
-| `apps/health` | Server health status dashboard |
-| `apps/login` | Authentication UI (sign-in / sign-up) |
-| `apps/server` | Express REST API |
-| `apps/dev-proxy` | Local dev gateway — serves everything through `localhost:4200` |
-| `apps/collection-e2e` | Cypress E2E tests |
+| App                   | Purpose                                                        |
+| --------------------- | -------------------------------------------------------------- |
+| `apps/client`         | Main collection management UI                                  |
+| `apps/health`         | Server health status dashboard                                 |
+| `apps/login`          | Authentication UI (sign-in / sign-up)                          |
+| `apps/server`         | Express REST API                                               |
+| `apps/dev-proxy`      | Local dev gateway — serves everything through `localhost:4200` |
+| `apps/collection-e2e` | Cypress E2E tests                                              |
 
 ## Shared Libraries
 
-| Library | Purpose |
-|---------|---------|
-| `libs/components` | Standalone Angular UI components |
-| `libs/services` | Angular services and signal stores |
-| `libs/shared` | Models, constants, styles, animations, utilities |
-| `libs/public` | Static assets and PWA metadata |
+| Library           | Purpose                                          |
+| ----------------- | ------------------------------------------------ |
+| `libs/components` | Standalone Angular UI components                 |
+| `libs/services`   | Angular services and signal stores               |
+| `libs/shared`     | Models, constants, styles, animations, utilities |
+| `libs/public`     | Static assets and PWA metadata                   |
 
 ## TypeScript Path Aliases
 

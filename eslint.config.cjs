@@ -1,10 +1,7 @@
 // @ts-check
-const prettierPlugin = require('eslint-plugin-prettier');
 const typescriptParser = require('@typescript-eslint/parser');
 const tsPlugin = require('@typescript-eslint/eslint-plugin');
 const angularPlugin = require('@angular-eslint/eslint-plugin');
-const angularTemplateParser = require('@angular-eslint/template-parser');
-const eslintPluginPrettierRecommended = require('eslint-plugin-prettier/recommended');
 const nx = require('@nx/eslint-plugin');
 
 module.exports = [
@@ -30,12 +27,10 @@ module.exports = [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      prettier: prettierPlugin,
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
       ...angularPlugin.configs.recommended.rules,
-      ...prettierPlugin.configs?.rules,
       '@angular-eslint/directive-selector': [
         'warn',
         {
@@ -63,18 +58,6 @@ module.exports = [
     },
   },
   {
-    files: ['apps/client/**/*.html', 'apps/login/**/*.html', 'libs/components/**/*.html'],
-    languageOptions: {
-      parser: angularTemplateParser,
-    },
-    plugins: {
-      prettier: prettierPlugin,
-    },
-    rules: {
-      'prettier/prettier': ['error', { parser: 'angular' }],
-    },
-  },
-  {
     files: ['apps/server/**/*.ts'],
     languageOptions: {
       parser: typescriptParser,
@@ -85,11 +68,9 @@ module.exports = [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      prettier: prettierPlugin,
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      ...prettierPlugin.configs?.rules,
       'import/order': 'off',
       '@typescript-eslint/no-explicit-any': ['off'],
       '@typescript-eslint/member-ordering': 0,
@@ -98,5 +79,4 @@ module.exports = [
       '@typescript-eslint/no-inferrable-types': 'off',
     },
   },
-  eslintPluginPrettierRecommended,
 ];
