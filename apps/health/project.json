@@ -119,13 +119,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --write apps/health/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "dprint fmt apps/health/**"
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --check apps/health/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "dprint check apps/health/**"
       }
     }
   }

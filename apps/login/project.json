@@ -120,13 +120,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --write apps/login/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "dprint fmt apps/login/**"
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --check apps/login/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "dprint check apps/login/**"
       }
     }
   }

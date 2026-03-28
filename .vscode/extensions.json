@@ -3,7 +3,7 @@
     "angular.ng-template",
     "nrwl.angular-console",
     "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
+    "dprint.dprint",
     "stylelint.vscode-stylelint"
   ]
 }

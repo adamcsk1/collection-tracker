@@ -48,13 +48,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --write libs/shared/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "dprint fmt libs/shared/**"
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "prettier --check libs/shared/**/*.{ts,tsx,js,jsx,css,scss,html,json,md}"
+        "command": "dprint check libs/shared/**"
       }
     }
   }

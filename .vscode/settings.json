@@ -1,6 +1,6 @@
 {
   "[html]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "dprint.dprint",
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "explicit"
     },
@@ -12,18 +12,16 @@
     }
   ],
   "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "dprint.dprint",
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit",
-      "source.fixAll.eslint": "explicit",
-      "source.fixAll.tslint": "explicit",
-      "source.fixAll.stylelint": "explicit"
+      "source.fixAll.eslint": "explicit"
     },
     "editor.formatOnSave": true
   },
-  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "js/ts.preferences.importModuleSpecifier": "non-relative",
   "[css]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "dprint.dprint",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
       "source.fixAll.stylelint": "explicit"
@@ -32,7 +30,5 @@
   "stylelint.validate": ["css", "scss"],
   "editor.suggest.snippetsPreventQuickSuggestions": false,
   "editor.inlineSuggest.enabled": true,
-  "nxConsole.generateAiAgentRules": true,
-  "angular.enable-strict-mode-prompt": true,
-  "chatgpt.openOnStartup": true
+  "angular.enable-strict-mode-prompt": true
 }
