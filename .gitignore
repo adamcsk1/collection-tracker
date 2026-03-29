@@ -61,6 +61,11 @@ android/app/debug/
 # Angular
 .angular
 
+# Environment files
+.env
+.env.*
+*.env.local
+
 # Development folders
 .data
 
