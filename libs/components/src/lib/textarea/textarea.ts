@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   DestroyRef,
   ElementRef,
   inject,
@@ -14,6 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
+import { createFormControlA11y } from '@shared/utils/form-control-a11y-util';
 import { getCoarsePointerBasedDebounceTime } from '@shared/utils/prefer-coarse-pointer-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { asyncScheduler, debounceTime, fromEvent, Subject } from 'rxjs';
@@ -45,18 +45,12 @@ export class Textarea<T> implements FormValueControl<T | null>, OnInit {
   public readonly rows = input<number | undefined>();
   public readonly cols = input<number | undefined>();
   public readonly autoHeight = input<boolean>(false);
-  protected readonly showError = computed(() => (this.touched() || this.dirty()) && this.errors().length > 0);
-  protected readonly hintId = computed<string | null>(() => (this.hint() ? `${this.textareaId()}-hint` : null));
-  protected readonly errorId = computed<string | null>(() => {
-    return this.showError() ? `${this.textareaId()}-error` : null;
-  });
-  protected readonly describedBy = computed<string | null>(() => {
-    const ids = [this.hintId(), this.errorId()].filter(Boolean);
-    return ids.length ? ids.join(' ') : null;
-  });
-  protected readonly hasRequiredError = computed(
-    () => this.showError() && this.errors().some((error) => error.kind === 'required'),
-  );
+  private readonly _a11y = createFormControlA11y(this.textareaId, this.hint, this.touched, this.dirty, this.errors);
+  protected readonly showError = this._a11y.showError;
+  protected readonly hintId = this._a11y.hintId;
+  protected readonly errorId = this._a11y.errorId;
+  protected readonly describedBy = this._a11y.describedBy;
+  protected readonly hasRequiredError = this._a11y.hasRequiredError;
 
   public ngOnInit(): void {
     if (this.autoHeight()) {
