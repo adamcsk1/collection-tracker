@@ -13,6 +13,7 @@ module.exports = [
   {
     files: [
       'apps/client/**/*.ts',
+      'apps/health/**/*.ts',
       'apps/login/**/*.ts',
       'libs/components/**/*.ts',
       'libs/services/**/*.ts',
@@ -35,7 +36,7 @@ module.exports = [
         'warn',
         {
           type: 'attribute',
-          prefix: ['ct', 'libc', 'lo'],
+          prefix: ['ct', 'he', 'libc', 'lo'],
           style: 'camelCase',
         },
       ],
@@ -43,7 +44,7 @@ module.exports = [
         'warn',
         {
           type: 'element',
-          prefix: ['ct', 'libc', 'lo'],
+          prefix: ['ct', 'he', 'libc', 'lo'],
           style: 'kebab-case',
         },
       ],
