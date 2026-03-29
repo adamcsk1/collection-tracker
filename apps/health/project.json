@@ -99,21 +99,9 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["apps/health/src/**/*.ts", "apps/health/src/**/*.html"],
+        "lintFilePatterns": ["apps/health/src/**/*.ts", "apps/health/src/**/*.html", "apps/health/src/**/*.css"],
         "tsConfig": ["apps/health/tsconfig.app.json"],
         "eslintConfig": "apps/health/eslint.config.cjs"
-      }
-    },
-    "stylelint": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "stylelint \"apps/health/src/**/*.css\""
-      }
-    },
-    "stylelint-fix": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "stylelint --fix \"apps/health/src/**/*.css\""
       }
     },
     "format": {

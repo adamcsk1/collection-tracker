@@ -5,7 +5,6 @@ FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
 
 npm run format
 npm run lint:affected:fix
-npm run stylelint:affected:fix
 npm run typecheck:affected
 npm run typecheck:spec:affected
 
