@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
+import { createFormControlA11y } from '@shared/utils/form-control-a11y-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
@@ -27,18 +28,12 @@ export class Input<T> implements FormValueControl<T | null> {
   public readonly placeholder = input<string>('');
   public readonly icon = input<string>('');
   public readonly hint = input<string>();
-  protected readonly showError = computed(() => (this.touched() || this.dirty()) && this.errors().length > 0);
-  protected readonly hintId = computed<string | null>(() => (this.hint() ? `${this.inputId()}-hint` : null));
-  protected readonly errorId = computed<string | null>(() => {
-    return this.showError() ? `${this.inputId()}-error` : null;
-  });
-  protected readonly describedBy = computed<string | null>(() => {
-    const ids = [this.hintId(), this.errorId()].filter(Boolean);
-    return ids.length ? ids.join(' ') : null;
-  });
-  protected readonly hasRequiredError = computed(
-    () => this.showError() && this.errors().some((error) => error.kind === 'required'),
-  );
+  private readonly _a11y = createFormControlA11y(this.inputId, this.hint, this.touched, this.dirty, this.errors);
+  protected readonly showError = this._a11y.showError;
+  protected readonly hintId = this._a11y.hintId;
+  protected readonly errorId = this._a11y.errorId;
+  protected readonly describedBy = this._a11y.describedBy;
+  protected readonly hasRequiredError = this._a11y.hasRequiredError;
 
   protected onInput($event: Event): void {
     const target = $event.target as HTMLInputElement;
