@@ -1,22 +1,23 @@
 // @ts-check
-const typescriptParser = require('@typescript-eslint/parser');
-const tsPlugin = require('@typescript-eslint/eslint-plugin');
-const nx = require('@nx/eslint-plugin');
+const typescriptParser = require("@typescript-eslint/parser");
+const tsPlugin = require("@typescript-eslint/eslint-plugin");
+const nx = require("@nx/eslint-plugin");
+const css = require("@eslint/css");
 
 module.exports = [
-  ...nx.configs['flat/angular'],
-  ...nx.configs['flat/angular-template'],
+  ...nx.configs["flat/angular"],
+  ...nx.configs["flat/angular-template"],
   {
-    ignores: ['.cache/', '.git/', 'node_modules/', '.angular/', '.nx/', 'dist'],
+    ignores: [".cache/", ".git/", "node_modules/", ".angular/", ".nx/", "dist"],
   },
   {
     files: [
-      'apps/client/**/*.ts',
-      'apps/health/**/*.ts',
-      'apps/login/**/*.ts',
-      'libs/components/**/*.ts',
-      'libs/services/**/*.ts',
-      'libs/shared/**/*.ts',
+      "apps/client/**/*.ts",
+      "apps/health/**/*.ts",
+      "apps/login/**/*.ts",
+      "libs/components/**/*.ts",
+      "libs/services/**/*.ts",
+      "libs/shared/**/*.ts",
     ],
     languageOptions: {
       parser: typescriptParser,
@@ -26,38 +27,38 @@ module.exports = [
       },
     },
     plugins: {
-      '@typescript-eslint': tsPlugin,
+      "@typescript-eslint": tsPlugin,
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      '@angular-eslint/directive-selector': [
-        'warn',
+      "@angular-eslint/directive-selector": [
+        "warn",
         {
-          type: 'attribute',
-          prefix: ['ct', 'he', 'libc', 'lo'],
-          style: 'camelCase',
+          type: "attribute",
+          prefix: ["ct", "he", "libc", "lo"],
+          style: "camelCase",
         },
       ],
-      '@angular-eslint/component-selector': [
-        'warn',
+      "@angular-eslint/component-selector": [
+        "warn",
         {
-          type: 'element',
-          prefix: ['ct', 'he', 'libc', 'lo'],
-          style: 'kebab-case',
+          type: "element",
+          prefix: ["ct", "he", "libc", "lo"],
+          style: "kebab-case",
         },
       ],
-      'import/order': 'off',
-      '@typescript-eslint/no-explicit-any': ['off'],
-      '@typescript-eslint/member-ordering': 0,
-      '@typescript-eslint/naming-convention': 0,
-      '@angular-eslint/no-host-metadata-property': 'off',
-      '@angular-eslint/no-output-on-prefix': 'off',
-      '@typescript-eslint/ban-types': 'off',
-      '@typescript-eslint/no-inferrable-types': 'off',
+      "import/order": "off",
+      "@typescript-eslint/no-explicit-any": ["off"],
+      "@typescript-eslint/member-ordering": 0,
+      "@typescript-eslint/naming-convention": 0,
+      "@angular-eslint/no-host-metadata-property": "off",
+      "@angular-eslint/no-output-on-prefix": "off",
+      "@typescript-eslint/ban-types": "off",
+      "@typescript-eslint/no-inferrable-types": "off",
     },
   },
   {
-    files: ['apps/server/**/*.ts'],
+    files: ["apps/server/**/*.ts"],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -66,16 +67,30 @@ module.exports = [
       },
     },
     plugins: {
-      '@typescript-eslint': tsPlugin,
+      "@typescript-eslint": tsPlugin,
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      'import/order': 'off',
-      '@typescript-eslint/no-explicit-any': ['off'],
-      '@typescript-eslint/member-ordering': 0,
-      '@typescript-eslint/naming-convention': 0,
-      '@typescript-eslint/ban-types': 'off',
-      '@typescript-eslint/no-inferrable-types': 'off',
+      "import/order": "off",
+      "@typescript-eslint/no-explicit-any": ["off"],
+      "@typescript-eslint/member-ordering": 0,
+      "@typescript-eslint/naming-convention": 0,
+      "@typescript-eslint/ban-types": "off",
+      "@typescript-eslint/no-inferrable-types": "off",
+    },
+  },
+  {
+    files: ["**/*.css"],
+    plugins: { css: css.default },
+    language: "css/css",
+    rules: {
+      ...css.default.configs.recommended.rules,
+      "css/no-important": "off",
+      "css/no-invalid-properties": ["error", { allowUnknownVariables: true }],
+      "css/use-baseline": [
+        "error",
+        { available: "newly", allowProperties: ["accent-color", "resize"] },
+      ],
     },
   },
 ];

@@ -7,8 +7,7 @@ body {
 }
 
 .material-icons {
-  /* stylelint-disable-next-line font-family-no-missing-generic-family-keyword */
-  font-family: "Material Icons";
+  font-family: "Material Icons", sans-serif;
   font-weight: normal;
   font-style: normal;
   font-size: 1.5rem;
