@@ -3,8 +3,8 @@
 FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
 [ -z "$FILES" ] && exit 0
 
-npm run format
-npm run lint:affected:fix
+npm run format:affected
+npm run lint:affected
 npm run typecheck:affected
 npm run typecheck:spec:affected
 
