@@ -1,7 +1,6 @@
 // @ts-check
 const typescriptParser = require('@typescript-eslint/parser');
 const tsPlugin = require('@typescript-eslint/eslint-plugin');
-const angularPlugin = require('@angular-eslint/eslint-plugin');
 const nx = require('@nx/eslint-plugin');
 
 module.exports = [
@@ -31,7 +30,6 @@ module.exports = [
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      ...angularPlugin.configs.recommended.rules,
       '@angular-eslint/directive-selector': [
         'warn',
         {
