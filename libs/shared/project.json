@@ -28,21 +28,9 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/shared/src/**/*.ts"],
+        "lintFilePatterns": ["libs/shared/src/**/*.ts", "libs/shared/src/**/*.css"],
         "tsConfig": ["libs/shared/tsconfig.app.json"],
         "eslintConfig": "libs/shared/eslint.config.cjs"
-      }
-    },
-    "stylelint": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "stylelint \"libs/shared/src/**/*.css\""
-      }
-    },
-    "stylelint-fix": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "stylelint --fix \"libs/shared/src/**/*.css\""
       }
     },
     "format": {

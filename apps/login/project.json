@@ -100,21 +100,9 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["apps/login/src/**/*.ts", "apps/login/src/**/*.html"],
+        "lintFilePatterns": ["apps/login/src/**/*.ts", "apps/login/src/**/*.html", "apps/login/src/**/*.css"],
         "tsConfig": ["apps/login/tsconfig.app.json"],
         "eslintConfig": "apps/login/eslint.config.cjs"
-      }
-    },
-    "stylelint": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "stylelint \"apps/login/src/**/*.css\""
-      }
-    },
-    "stylelint-fix": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "stylelint --fix \"apps/login/src/**/*.css\""
       }
     },
     "format": {

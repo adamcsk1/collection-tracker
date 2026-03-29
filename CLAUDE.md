@@ -41,10 +41,8 @@ A self-hosted media catalog application for managing personal movie and series c
 npm start               # Start all services (dev)
 npm run build           # Production build
 
-npm run lint            # ESLint check
+npm run lint            # ESLint check (includes CSS via @eslint/css)
 npm run lint:fix        # ESLint fix
-npm run stylelint       # CSS lint
-npm run stylelint:fix   # CSS lint fix
 npm run typecheck       # TypeScript check
 npm run format:check    # Prettier check
 
