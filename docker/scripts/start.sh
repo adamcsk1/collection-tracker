@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
-docker run --rm -p $1:$1 -v ${PWD}/.data:/data -d collection-tracker > ./.container_id && cat ./.container_id
+DATA_FOLDER=${1:-${PWD}/.data}
+IMAGE=${2:-collection-tracker}
+PORT=${3:-3000}
+
+docker run --rm -p $PORT:3001 -v ${DATA_FOLDER}:/data -d ${IMAGE}

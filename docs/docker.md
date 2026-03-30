@@ -43,18 +43,16 @@ This is the recommended deployment model for secure cookie handling, TLS certifi
 The repository also includes shell helpers in [`docker/scripts`](../docker/scripts):
 
 - [`docker/scripts/build.sh`](../docker/scripts/build.sh): builds the `collection-tracker` image from the current directory. Run it from the repo root or from a release folder that contains the copied Docker assets.
-- [`docker/scripts/start.sh`](../docker/scripts/start.sh): starts the container in detached mode, stores the container id in `./.container_id`, and mounts `${PWD}/.data` to `/data`.
-- [`docker/scripts/stop.sh`](../docker/scripts/stop.sh): stops the container recorded in `./.container_id` and removes that file.
+- [`docker/scripts/start.sh`](../docker/scripts/start.sh): starts the container in detached mode. Accepts three positional arguments: `DATA_FOLDER` (default `${PWD}/.data`), `IMAGE` (default `collection-tracker`), and `HOST_PORT` (default `3000`). Maps `HOST_PORT` on the host to container port `3001` (Nginx).
+- [`docker/scripts/stop.sh`](../docker/scripts/stop.sh): stops any running container from the given image (default `collection-tracker`).
 
 Example:
 
 ```bash
 ./docker/scripts/build.sh
-./docker/scripts/start.sh 3001
+./docker/scripts/start.sh .data collection-tracker 3001
 ./docker/scripts/stop.sh
 ```
-
-Use `3001` with `start.sh`. The script maps the same host and container port, and the image serves traffic on port `3001`.
 
 ## Operational Notes
 
