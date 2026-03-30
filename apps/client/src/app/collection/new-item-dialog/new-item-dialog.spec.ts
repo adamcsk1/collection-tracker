@@ -104,6 +104,17 @@ describe('NewItemDialog component', () => {
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
+  it('resets only the IMDb ID field when mode is not new', async () => {
+    const selectedIMDbId = component['form'].selectedIMDbId();
+    vi.spyOn(selectedIMDbId, 'reset');
+    selectedIMDbId.value.set('tt456');
+
+    await component['onSave']('close');
+
+    expect(service.save).toHaveBeenCalledWith('tt456', '', 'close');
+    expect(selectedIMDbId.reset).toHaveBeenCalledWith(null);
+  });
+
   it('exits when there is no selected IMDb id', () => {
     component['form'].selectedIMDbId().value.set(null);
 
