@@ -1,29 +1,16 @@
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
+import { coverageExclude } from './vitest.config';
 
 const require = createRequire(import.meta.url);
 const angular = require('@analogjs/vite-plugin-angular').default;
 const tsconfigPaths = require('vite-tsconfig-paths').default;
 
-const coverageExclude = [
-  '**/coverage/*',
-  '**/mocks/*',
-  '**/index.ts',
-  '**/*-model.ts',
-  '**/*-config.ts',
-  '**/bootstrap.ts',
-  '**/*-routes.ts',
-  '**/*-const.ts',
-  '**/*.config.ts',
-  '**/*.config.cjs',
-  '**/scripts/*',
-];
-
-export function defineAngularAppConfig(appName: string, dirname: string) {
-  return defineConfig({
+const defineAngularConfig = (appName: string, dirname: string, target: 'apps' | 'lib' = 'apps') =>
+  defineConfig({
     root: dirname,
-    cacheDir: `../../node_modules/.vitest/apps/${appName}`,
+    cacheDir: `../../node_modules/.vitest/${target}/${appName}`,
     plugins: [angular(), tsconfigPaths()],
     test: {
       globals: true,
@@ -35,9 +22,14 @@ export function defineAngularAppConfig(appName: string, dirname: string) {
         enabled: true,
         provider: 'v8',
         reporter: ['text', 'lcov'],
-        reportsDirectory: `../../coverage/apps/${appName}`,
+        reportsDirectory: `../../coverage/${target}/${appName}`,
         exclude: coverageExclude,
       },
     },
   });
-}
+
+export const defineAngularAppConfig = (appName: 'client' | 'login' | 'health', dirname: string) =>
+  defineAngularConfig(appName, dirname);
+
+export const defineAngularLibConfig = (appName: 'components' | 'services' | 'shared', dirname: string) =>
+  defineAngularConfig(appName, dirname, 'lib');
