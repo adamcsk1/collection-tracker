@@ -15,7 +15,13 @@
       "options": {
         "cypressConfig": "apps/collection-e2e/cypress.config.ts",
         "testingType": "e2e",
-        "devServerTarget": "client:serve:development"
+        "browser": "chrome"
+      }
+    },
+    "prepare": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run build && bash apps/collection-e2e/scripts/prepare.sh"
       }
     }
   },
