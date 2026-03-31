@@ -3,6 +3,7 @@ import { getArgv } from '@server/core/argv/argv';
 import { debugLog, errorLog, infoLog } from '@server/core/logger';
 import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { initializeFileHashes } from '@server/core/utils/hash-util';
 import { initializeFolders } from '@server/tools/initializer';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
@@ -14,7 +15,7 @@ import { existsSync, readFileSync } from 'fs';
 import helmet from 'helmet';
 import nocache from 'nocache';
 
-export const main = () => {
+export const main = async () => {
   try {
     const { dataFolder } = getArgv();
     Store.set('dataFolder', dataFolder);
@@ -26,6 +27,7 @@ export const main = () => {
     if (!process.env.OMDB_API_KEY?.trim()) throw new Error('OMDB_API_KEY is not set. Please add it to your .env file.');
 
     initializeFolders();
+    await initializeFileHashes();
 
     Store.set(
       'users',

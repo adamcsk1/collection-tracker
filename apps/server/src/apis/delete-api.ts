@@ -3,6 +3,7 @@ import { errorLog } from '@server/core/logger';
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { removeItem } from '@server/core/utils/cache-util';
+import { getMemoryHash } from '@server/core/utils/hash-util';
 import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { Application } from 'express';
@@ -13,10 +14,19 @@ export const register = (app: Application): void => {
     try {
       let { name } = request.params;
       name = name.toString().replace(/\\|\//g, '');
+      const { hash } = request.query as { hash: string; };
+      if (typeof hash !== 'string') {
+        return response.sendStatus(400);
+      }
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
 
       if (!existsSync(`${storeFolder}/${name}`)) {
         return response.sendStatus(404);
+      }
+
+      const storedHash = getMemoryHash(request.usernameHash, name);
+      if (storedHash !== hash) {
+        return response.sendStatus(409);
       }
 
       await removeItem(name, request.usernameHash);

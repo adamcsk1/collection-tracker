@@ -40,6 +40,7 @@ describe('Background component', () => {
     name: overrides.name || '',
     year: null,
     rate: '',
+    hash: '',
   });
 
   beforeEach(() => {

@@ -5,6 +5,7 @@ import { apiStateToken } from '@services/api/api-store';
 import {
   AccessTokensApiResponseModel,
   ChangeApiRequestModel,
+  ChangeApiResponseModel,
   ChangeTokenApiResponseModel,
   CreateAccessTokenApiResponseModel,
   CreateApiRequestModel,
@@ -85,9 +86,9 @@ export class ApiService {
     );
   }
 
-  public update(name: string, content: string): Observable<void> {
-    const body: ChangeApiRequestModel = { content };
-    return this.httpClient.put<void>(`${this.apiState.state.apiUrl()}/change/${name}`, body).pipe(
+  public update(name: string, content: string, hash: string): Observable<ChangeApiResponseModel> {
+    const body: ChangeApiRequestModel = { content, hash };
+    return this.httpClient.put<ChangeApiResponseModel>(`${this.apiState.state.apiUrl()}/change/${name}`, body).pipe(
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
@@ -95,8 +96,8 @@ export class ApiService {
     );
   }
 
-  public delete(name: string): Observable<void> {
-    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/delete/${name}`).pipe(
+  public delete(name: string, hash: string): Observable<void> {
+    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/delete/${name}?hash=${hash}`).pipe(
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);

@@ -34,10 +34,10 @@ export class CollectionService {
     this.mainCollectionState.patchState('collection', (state) => state.filter((item) => item.name !== itemName));
   }
 
-  public updateCollectionItem(itemName: string, rawContent: string): void {
+  public updateCollectionItem(itemName: string, rawContent: string, hash: string): void {
     this.mainCollectionState.patchState('collection', (state) => {
       const index = state.findIndex((item) => item.name === itemName);
-      if (index !== -1) state[index] = getCollectionItem({ name: itemName, content: rawContent });
+      if (index !== -1) state[index] = getCollectionItem({ name: itemName, content: rawContent, hash });
       return state;
     });
   }

@@ -27,6 +27,7 @@ const buildCollectionItem = (name: string): CollectionModel[number] => ({
   tags: [],
   year: null,
   rate: '',
+  hash: '',
 });
 
 describe('TemplateRegenerationService', () => {

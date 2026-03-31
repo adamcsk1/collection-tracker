@@ -57,7 +57,7 @@ export class NewItemDialogService {
       mergeMap((collectionItem) =>
         this.api
           .create(collectionItem.content, collectionItem.name)
-          .pipe(map((response) => ({ name: response.name, content: collectionItem.content })))
+          .pipe(map((response) => ({ name: response.name, content: collectionItem.content, hash: '' })))
       ),
       catchError((error) => {
         this.spinnerLoadingState.setState('show', false);

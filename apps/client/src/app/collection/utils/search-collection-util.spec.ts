@@ -14,6 +14,7 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
   name: '',
   year: null,
   rate: '',
+  hash: '',
   ...overrides,
 });
 

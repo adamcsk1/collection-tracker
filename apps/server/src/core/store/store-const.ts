@@ -7,4 +7,5 @@ export const STORE_KEYS = [
   'tagConfigs',
   'userSettings',
   'cache',
+  'fileHashes',
 ] as const satisfies readonly (keyof StoreDataModel)[];

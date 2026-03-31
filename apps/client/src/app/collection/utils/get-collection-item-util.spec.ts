@@ -31,7 +31,7 @@ const markdownContent = [
 
 describe('getCollectionItem', () => {
   it('maps markdown content into a collection item model', () => {
-    const item = getCollectionItem({ content: markdownContent, name: 'My Movie' });
+    const item = getCollectionItem({ content: markdownContent, name: 'My Movie', hash: 'abc123' });
 
     expect(item.rawContent).toBe(markdownContent);
     expect(item.image).toBe('https://image.example/poster.jpg');
@@ -42,6 +42,7 @@ describe('getCollectionItem', () => {
     expect(item.year).toBe(2021);
     expect(item.rate).toBe('8.7');
     expect(item.name).toBe('My Movie');
+    expect(item.hash).toBe('abc123');
   });
 
   it('falls back to safe defaults when fields are missing', () => {
@@ -56,6 +57,7 @@ describe('getCollectionItem', () => {
     expect(item.year).toBeNull();
     expect(item.rate).toBe('N/A');
     expect(item.name).toBe('');
+    expect(item.hash).toBe('');
   });
 
   it('sets IMDb rate to N/A when the rate is not present', () => {

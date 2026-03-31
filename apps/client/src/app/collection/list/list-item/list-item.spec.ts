@@ -22,6 +22,7 @@ const buildItem = (name: string, tags: string[] = []): CollectionItemModel => ({
   name,
   year: null,
   rate: '',
+  hash: '',
 });
 
 const normalizeHexColor = (hex: string): string => {

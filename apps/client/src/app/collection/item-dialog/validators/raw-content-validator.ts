@@ -5,7 +5,8 @@ export type RawContentValidationError = {
 };
 
 export const rawContentValidation = (content: string | null): RawContentValidationError | undefined => {
-  const parsedItem = getCollectionItem({ name: 'TestName', content: content || '' });
+  const parsedItem = getCollectionItem({ name: 'TestName', content: content || '', hash: 'TestHash' });
+
   return Object.values(parsedItem).some((value) => value === '' || (Array.isArray(value) && value.length === 0))
     ? { kind: 'badRawContent' }
     : undefined;

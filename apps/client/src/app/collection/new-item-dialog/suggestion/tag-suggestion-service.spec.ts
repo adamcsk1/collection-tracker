@@ -23,6 +23,7 @@ const buildItem = (tags: string[]): CollectionItemModel => ({
   name: '',
   year: null,
   rate: '',
+  hash: '',
 });
 
 describe('TagSuggestionService', () => {

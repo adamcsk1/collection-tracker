@@ -33,6 +33,7 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
   name: overrides.name ?? 'test-movie.md',
   year: overrides.year ?? 2020,
   rate: overrides.rate ?? '7.5',
+  hash: overrides.hash ?? 'hash-abc',
 });
 
 describe('ImageRefreshService', () => {

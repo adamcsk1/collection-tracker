@@ -32,6 +32,7 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
   name: overrides.name || 'item',
   year: null,
   rate: '',
+  hash: overrides.hash || 'hash-abc',
 });
 
 describe('ChangeWatchedStatusService', () => {
@@ -72,7 +73,7 @@ describe('ChangeWatchedStatusService', () => {
     service.markAllAsWatched();
 
     expect(api.update).toHaveBeenCalledTimes(1);
-    expect(api.update).toHaveBeenCalledWith('first', expect.stringContaining(WATCHED_TAG));
+    expect(api.update).toHaveBeenCalledWith('first', expect.stringContaining(WATCHED_TAG), 'hash-abc');
     expect(collectionService.loadCollection).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.MarkingAllAsWatchedWithErrors');
@@ -88,7 +89,7 @@ describe('ChangeWatchedStatusService', () => {
     service.markAllAsUnwatched();
 
     expect(api.update).toHaveBeenCalledTimes(1);
-    expect(api.update).toHaveBeenCalledWith('first', '**Tags** #action ');
+    expect(api.update).toHaveBeenCalledWith('first', '**Tags** #action ', 'hash-abc');
     expect(collectionService.loadCollection).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.MarkedAllAsUnwatched');

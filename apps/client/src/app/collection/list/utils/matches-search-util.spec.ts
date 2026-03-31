@@ -19,6 +19,7 @@ const buildItem = (overrides: { title?: string; rawContent?: string; tags?: stri
     name: '',
     year: null,
     rate: '',
+    hash: '',
   };
 };
 
