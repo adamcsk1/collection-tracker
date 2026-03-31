@@ -1,5 +1,6 @@
 import { Store } from '@server/core/store/store';
 import { updateItem } from '@server/core/utils/cache-util';
+import { hashFileExists } from '@server/core/utils/hash-util';
 import { buildApp } from 'apps/server/test/mocks/build-app-mock';
 import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import { existsSync } from 'fs';
@@ -7,6 +8,7 @@ import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');
 vi.mock('@server/core/utils/cache-util');
+vi.mock('@server/core/utils/hash-util');
 vi.mock('fs', async () => {
   const fs = await vi.importActual<typeof import('fs')>('fs');
   return {
@@ -42,6 +44,7 @@ describe('create-api', () => {
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue('/data');
     (existsSync as Mock).mockReturnValue(false);
+    (hashFileExists as Mock).mockReturnValue(false);
 
     const { register } = await import('./create-api');
     register(app);
@@ -57,6 +60,7 @@ describe('create-api', () => {
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock).mockReturnValue('/data');
     (existsSync as Mock).mockReturnValueOnce(true).mockReturnValueOnce(false);
+    (hashFileExists as Mock).mockReturnValue(false);
 
     const { register } = await import('./create-api');
     register(app);
@@ -64,6 +68,22 @@ describe('create-api', () => {
     await handlerPromise();
     expect(updateItem).toHaveBeenCalledWith('custom-file-1.md', 'user', 'body');
     expect(response.send).toHaveBeenCalledWith({ name: 'custom-file-1.md' });
+  });
+
+  it('returns 409 when a hash file already exists for the resolved filename', async () => {
+    const response = mockResponse();
+    const request: any = { body: { content: 'body', name: 'custom-file.md' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    (Store.getLastValue as Mock).mockReturnValue('/data');
+    (existsSync as Mock).mockReturnValue(false);
+    (hashFileExists as Mock).mockReturnValue(true);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.sendStatus).toHaveBeenCalledWith(409);
+    expect(updateItem).not.toHaveBeenCalled();
   });
 
   it('returns 400 when name is invalid', async () => {

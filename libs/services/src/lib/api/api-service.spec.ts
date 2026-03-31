@@ -58,12 +58,21 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ name: 'note.md' });
   });
 
-  it('updates an item and alerts on error', async () => {
-    const promise = lastValueFrom(service.update('item', 'updated').pipe(defaultIfEmpty(undefined)));
+  it('updates an item and returns new hash', async () => {
+    const promise = lastValueFrom(service.update('item', 'updated', 'old-hash'));
 
     const updateRequest = httpMock.expectOne('https://api.test/change/item');
     expect(updateRequest.request.method).toBe('PUT');
-    expect(updateRequest.request.body).toEqual({ content: 'updated' });
+    expect(updateRequest.request.body).toEqual({ content: 'updated', hash: 'old-hash' });
+    updateRequest.flush({ hash: 'new-hash' });
+
+    await expect(promise).resolves.toEqual({ hash: 'new-hash' });
+  });
+
+  it('alerts and rethrows when update fails', async () => {
+    const promise = lastValueFrom(service.update('item', 'updated', 'old-hash').pipe(defaultIfEmpty(undefined)));
+
+    const updateRequest = httpMock.expectOne('https://api.test/change/item');
     updateRequest.flush('failed', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
@@ -143,10 +152,10 @@ describe('ApiService', () => {
     expect(apiState.state.loadNetworkStatus()).toBe('finished');
   });
 
-  it('deletes an item', async () => {
-    const promise = lastValueFrom(service.delete('item-1'));
+  it('deletes an item with hash as query param', async () => {
+    const promise = lastValueFrom(service.delete('item-1', 'abc123'));
 
-    const deleteRequest = httpMock.expectOne('https://api.test/delete/item-1');
+    const deleteRequest = httpMock.expectOne('https://api.test/delete/item-1?hash=abc123');
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush({});
 
@@ -397,9 +406,9 @@ describe('ApiService', () => {
   });
 
   it('alerts and rethrows when delete fails', async () => {
-    const promise = lastValueFrom(service.delete('missing'));
+    const promise = lastValueFrom(service.delete('missing', 'somehash'));
 
-    const deleteRequest = httpMock.expectOne('https://api.test/delete/missing');
+    const deleteRequest = httpMock.expectOne('https://api.test/delete/missing?hash=somehash');
     deleteRequest.flush('bad', { status: 404, statusText: 'Not Found' });
 
     await expect(promise).rejects.toMatchObject({ status: 404 });

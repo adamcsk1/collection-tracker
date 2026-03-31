@@ -74,8 +74,9 @@ export class ItemDialog implements OnInit {
       .open(this.ngxSignalTranslate.translate('Confirm.Delete', { name: this.collectionItem().title }))
       .pipe(
         mergeMap((confirmed) => {
-          if (confirmed) return this.api.delete(this.collectionItem().name).pipe(map(() => confirmed));
-          else return of(confirmed);
+          if (confirmed) {
+            return this.api.delete(this.collectionItem().name, this.collectionItem().hash).pipe(map(() => confirmed));
+          } else return of(confirmed);
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -119,17 +120,19 @@ export class ItemDialog implements OnInit {
       .pipe(
         mergeMap((confirmed) => {
           if (confirmed) {
-            return this.api.update(this.collectionItem().name, this.rawContentModel()).pipe(map(() => confirmed));
-          } else return of(confirmed);
+            return this.api
+              .update(this.collectionItem().name, this.rawContentModel(), this.collectionItem().hash)
+              .pipe(map((result) => ({ confirmed, hash: result.hash })));
+          } else return of({ confirmed, hash: '' });
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((confirmed) => {
+      .subscribe(({ confirmed, hash }) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
-          this.collectionService.updateCollectionItem(this.collectionItem().name, this.rawContentModel());
+          this.collectionService.updateCollectionItem(this.collectionItem().name, this.rawContentModel(), hash);
           this.collectionItem.update((collectionItem) =>
-            getCollectionItem({ name: collectionItem.name, content: this.rawContentModel() })
+            getCollectionItem({ name: collectionItem.name, content: this.rawContentModel(), hash })
           );
           this.lastSavedRawContent.set(this.collectionItem().rawContent);
           this.onReadOnly();

@@ -29,6 +29,7 @@ describe('cache-util', () => {
       tagConfigs: new BehaviorSubject(null),
       userSettings: new BehaviorSubject(null),
       cache: new BehaviorSubject<{ [key: string]: string; }>({}),
+      fileHashes: new BehaviorSubject<{ [key: string]: string; }>({}),
     };
 
     (global as any).__serverStorage = store;
@@ -48,6 +49,21 @@ describe('cache-util', () => {
     expect(readFileSync(filePath, { encoding: 'utf-8' })).toBe('hello');
     expect(Store.getLastValue('cache')).toEqual({ 'notes-file.txt': 'hello' });
     expect(storeSetSpy).toHaveBeenCalledWith('cache', { 'notes-file.txt': 'hello' });
+  });
+
+  it('writes a hash file next to the markdown file when updating', async () => {
+    await updateItem('file.txt', 'notes', 'hello');
+
+    const hashFilePath = path.join(tempDir, FOLDERS.store, 'notes', 'file.txt.hash');
+    expect(existsSync(hashFilePath)).toBe(true);
+    expect(readFileSync(hashFilePath, 'utf-8')).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('stores hash in memory when updating', async () => {
+    await updateItem('file.txt', 'notes', 'hello');
+
+    const fileHashes = Store.getLastValue('fileHashes');
+    expect(fileHashes['notes-file.txt']).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('evicts oldest entries when cache exceeds CACHE_MAX on update', async () => {
@@ -97,6 +113,19 @@ describe('cache-util', () => {
     expect(Store.getLastValue('cache')).toEqual({});
     expect(storeSetSpy).toHaveBeenCalledWith('cache', {});
   });
+
+  it('removes hash file and memory entry when removing an item', async () => {
+    const filePath = path.join(tempDir, FOLDERS.store, 'notes', 'file.txt');
+    const hashFilePath = `${filePath}.hash`;
+    writeFileSync(filePath, 'to delete');
+    writeFileSync(hashFilePath, 'abc123');
+    Store.set('fileHashes', { 'notes-file.txt': 'abc123' });
+
+    await removeItem('file.txt', 'notes');
+
+    expect(existsSync(hashFilePath)).toBe(false);
+    expect(Store.getLastValue('fileHashes')['notes-file.txt']).toBeUndefined();
+  });
 });
 
 describe('readStoreFiles', () => {
@@ -114,6 +143,7 @@ describe('readStoreFiles', () => {
       tagConfigs: new BehaviorSubject(null),
       userSettings: new BehaviorSubject(null),
       cache: new BehaviorSubject<{ [key: string]: string; }>({}),
+      fileHashes: new BehaviorSubject<{ [key: string]: string; }>({}),
     };
     (global as any).__serverStorage = store;
     (stat as Mock).mockResolvedValue({ birthtimeMs: 0 });
@@ -137,6 +167,36 @@ describe('readStoreFiles', () => {
     expect(result.map((file) => file.name)).toContain('b.txt');
     expect(result.find((file) => file.name === 'a.txt')?.content).toBe('content-a');
     expect(result.find((file) => file.name === 'b.txt')?.content).toBe('content-b');
+  });
+
+  it('excludes .hash sidecar files from results', async () => {
+    const storeFolder = path.join(tempDir, FOLDERS.store, 'user');
+    writeFileSync(path.join(storeFolder, 'a.txt'), 'content-a');
+    writeFileSync(path.join(storeFolder, 'a.txt.hash'), 'somehash');
+
+    const result = await readStoreFiles(storeFolder, 'user');
+
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('a.txt');
+  });
+
+  it('returns hash from memory alongside name and content', async () => {
+    const storeFolder = path.join(tempDir, FOLDERS.store, 'user');
+    writeFileSync(path.join(storeFolder, 'file.txt'), 'content');
+    Store.set('fileHashes', { 'user-file.txt': 'abc123hash' });
+
+    const result = await readStoreFiles(storeFolder, 'user');
+
+    expect(result[0].hash).toBe('abc123hash');
+  });
+
+  it('returns empty string hash when no hash is in memory', async () => {
+    const storeFolder = path.join(tempDir, FOLDERS.store, 'user');
+    writeFileSync(path.join(storeFolder, 'file.txt'), 'content');
+
+    const result = await readStoreFiles(storeFolder, 'user');
+
+    expect(result[0].hash).toBe('');
   });
 
   it('sorts files by birth time descending', async () => {

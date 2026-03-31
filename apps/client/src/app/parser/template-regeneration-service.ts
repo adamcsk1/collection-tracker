@@ -95,7 +95,9 @@ export class TemplateRegenerationService {
           return mdContent;
         }),
         filter((mdContent) => mdContent.length > 0),
-        mergeMap((mdContent) => this.api.update(this.collectionList[index].name, mdContent)),
+        mergeMap((mdContent) =>
+          this.api.update(this.collectionList[index].name, mdContent, this.collectionList[index].hash)
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => {

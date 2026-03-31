@@ -11,6 +11,7 @@ export interface StoreDataModel {
   tagConfigs: TagConfigsModel | null;
   userSettings: UserSettingsMapModel | null;
   cache: { [key: string]: string; };
+  fileHashes: { [key: string]: string; };
 }
 
 export type StoreModel<T = StoreDataModel> = {

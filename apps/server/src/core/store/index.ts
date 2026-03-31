@@ -8,6 +8,7 @@ const initialStore = (): StoreModel => ({
   tagConfigs: new BehaviorSubject(null),
   userSettings: new BehaviorSubject(null),
   cache: new BehaviorSubject({}),
+  fileHashes: new BehaviorSubject({}),
 });
 
 if (!global.__serverStorage) global.__serverStorage = initialStore();

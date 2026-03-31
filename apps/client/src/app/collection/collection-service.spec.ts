@@ -34,6 +34,7 @@ describe('CollectionService', () => {
     name,
     year: null,
     rate: '',
+    hash: '',
   });
 
   beforeEach(() => {
@@ -77,10 +78,10 @@ describe('CollectionService', () => {
 
     service.loadCollection();
 
-    subject.next([{ name: 'first', content: 'first' }]);
+    subject.next([{ name: 'first', content: 'first', hash: '' }]);
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('first')]);
 
-    subject.next([{ name: 'second', content: 'second' }]);
+    subject.next([{ name: 'second', content: 'second', hash: '' }]);
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('first'),
       buildCollectionItem('second'),
@@ -92,7 +93,7 @@ describe('CollectionService', () => {
     getCollectionItemSpy.mockImplementation((raw: GetAllApiResponseItemModel) => buildCollectionItem(raw.name));
     mainCollectionState.setState('collection', [buildCollectionItem('existing')]);
 
-    service.addCollectionItem({ name: 'new', content: 'new' }, true);
+    service.addCollectionItem({ name: 'new', content: 'new', hash: '' }, true);
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('new'),
@@ -104,7 +105,7 @@ describe('CollectionService', () => {
     getCollectionItemSpy.mockImplementation((raw: GetAllApiResponseItemModel) => buildCollectionItem(raw.name));
     mainCollectionState.setState('collection', [buildCollectionItem('existing')]);
 
-    service.addCollectionItem({ name: 'another', content: 'another' });
+    service.addCollectionItem({ name: 'another', content: 'another', hash: '' });
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('existing'),
@@ -124,9 +125,9 @@ describe('CollectionService', () => {
     getCollectionItemSpy.mockImplementation(() => buildCollectionItem('updated'));
     mainCollectionState.setState('collection', [buildCollectionItem('target')]);
 
-    service.updateCollectionItem('target', 'new content');
+    service.updateCollectionItem('target', 'new content', 'newhash');
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('updated')]);
-    expect(getCollectionItemSpy).toHaveBeenCalledWith({ name: 'target', content: 'new content' });
+    expect(getCollectionItemSpy).toHaveBeenCalledWith({ name: 'target', content: 'new content', hash: 'newhash' });
   });
 });

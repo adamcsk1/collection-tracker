@@ -4,6 +4,7 @@ import { ThemeModel } from '@shared/models/theme-model';
 export interface GetAllApiResponseItemModel {
   name: string;
   content: string;
+  hash: string;
 }
 
 export type GetAllApiResponseModel = GetAllApiResponseItemModel[];
@@ -19,6 +20,11 @@ export interface CreateApiResponseModel {
 
 export interface ChangeApiRequestModel {
   content: string;
+  hash: string;
+}
+
+export interface ChangeApiResponseModel {
+  hash: string;
 }
 
 export interface ChangeTokenApiResponseModel {

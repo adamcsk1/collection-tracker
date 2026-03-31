@@ -45,6 +45,7 @@ describe('List', () => {
     name,
     year: null,
     rate: '',
+    hash: '',
   });
 
   beforeEach(() => {

@@ -85,6 +85,7 @@ export class ImageRefreshService {
           return this.api.update(
             collectionItem.name,
             collectionItem.rawContent.replace(collectionItem.image, omdbItem.Poster),
+            collectionItem.hash,
           );
         } else return EMPTY;
       }),

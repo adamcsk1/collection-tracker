@@ -23,6 +23,7 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
   name: overrides.name || '',
   year: null,
   rate: '',
+  hash: '',
 });
 
 describe('SearchSuggestionService', () => {

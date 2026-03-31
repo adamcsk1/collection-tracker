@@ -22,7 +22,8 @@ describe('get-all-api', () => {
     const { app, handlerPromise } = buildApp(request, response);
     (Store.getLastValue as Mock)
       .mockReturnValueOnce('/data') // dataFolder
-      .mockReturnValueOnce({ 'user-file1': 'cached' }); // cache
+      .mockReturnValueOnce({ 'user-file1': 'cached' }) // cache
+      .mockReturnValueOnce({ 'user-file1': 'hash1' }); // fileHashes
     (readdir as Mock).mockResolvedValue(['file1']);
     (stat as Mock).mockResolvedValue({ birthtimeMs: 1000 });
 
@@ -31,14 +32,17 @@ describe('get-all-api', () => {
 
     await handlerPromise();
 
-    expect(response.send).toHaveBeenCalledWith([{ name: 'file1', content: 'cached' }]);
+    expect(response.send).toHaveBeenCalledWith([{ name: 'file1', content: 'cached', hash: 'hash1' }]);
   });
 
   it('reads uncached files and updates cache', async () => {
     const response = mockResponse();
     const request: any = { query: { limit: '2', offset: '0' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValueOnce('/data').mockReturnValueOnce({}); // cache
+    (Store.getLastValue as Mock)
+      .mockReturnValueOnce('/data')
+      .mockReturnValueOnce({}) // cache
+      .mockReturnValueOnce({}); // fileHashes
     (Store.set as Mock).mockImplementation((_key: string, value: any) => value);
     (readdir as Mock).mockResolvedValue(['file1']);
     (readFile as Mock).mockResolvedValue('content');
@@ -50,7 +54,7 @@ describe('get-all-api', () => {
     await handlerPromise();
 
     expect(Store.set).toHaveBeenCalledWith('cache', { 'user-file1': 'content' });
-    expect(response.send).toHaveBeenCalledWith([{ name: 'file1', content: 'content' }]);
+    expect(response.send).toHaveBeenCalledWith([{ name: 'file1', content: 'content', hash: '' }]);
   });
 
   it('sends 500 on error', async () => {
@@ -73,7 +77,10 @@ describe('get-all-api', () => {
     const response = mockResponse();
     const request: any = { query: { limit: '2', offset: '0' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValueOnce('/data').mockReturnValueOnce({});
+    (Store.getLastValue as Mock)
+      .mockReturnValueOnce('/data')
+      .mockReturnValueOnce({}) // cache
+      .mockReturnValueOnce({}); // fileHashes
     (Store.set as Mock).mockImplementation((_key: string, value: any) => value);
     (readdir as Mock).mockResolvedValue(['old.md', 'new.md', 'middle.md']);
     (readFile as Mock).mockImplementation((filePath: string) => Promise.resolve(filePath));
@@ -93,8 +100,8 @@ describe('get-all-api', () => {
     await handlerPromise();
 
     expect(response.send).toHaveBeenCalledWith([
-      { name: 'new.md', content: '/data/store/user/new.md' },
-      { name: 'middle.md', content: '/data/store/user/middle.md' },
+      { name: 'new.md', content: '/data/store/user/new.md', hash: '' },
+      { name: 'middle.md', content: '/data/store/user/middle.md', hash: '' },
     ]);
   });
 });

@@ -16,7 +16,7 @@ import { ItemDialog } from './item-dialog';
 
 vi.mock('marked', () => ({ marked: { parse: vi.fn(() => '<p>parsed</p>') } }));
 
-const buildItem = (name: string, rawContent = 'raw content'): CollectionItemModel => ({
+const buildItem = (name: string, rawContent = 'raw content', hash = 'testhash'): CollectionItemModel => ({
   rawContent,
   rawContentLower: rawContent.toLowerCase(),
   image: 'image',
@@ -28,6 +28,7 @@ const buildItem = (name: string, rawContent = 'raw content'): CollectionItemMode
   name,
   year: 2020,
   rate: '9.0',
+  hash,
 });
 
 describe('ItemDialog', () => {
@@ -53,7 +54,7 @@ describe('ItemDialog', () => {
     confirm = { open: vi.fn() };
     api = {
       delete: vi.fn(() => of(undefined)),
-      update: vi.fn(() => of(undefined)),
+      update: vi.fn(() => of({ hash: 'newhash' })),
     };
     translate = { translate: vi.fn((key: string) => key) };
     getCollectionItemSpy = vi
@@ -100,7 +101,7 @@ describe('ItemDialog', () => {
     component['onDelete']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.delete).toHaveBeenCalledWith('Item One');
+    expect(api.delete).toHaveBeenCalledWith('Item One', 'testhash');
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('Item One');
     expect(portal.close).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.DeleteItem');
@@ -133,8 +134,12 @@ describe('ItemDialog', () => {
     component['onSaveChanges']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalledWith('Item One', 'updated content #movie');
-    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith('Item One', 'updated content #movie');
+    expect(api.update).toHaveBeenCalledWith('Item One', 'updated content #movie', 'testhash');
+    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith(
+      'Item One',
+      'updated content #movie',
+      'newhash',
+    );
     expect(updateSpy).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.EditItem');
     expect(component['editMode']()).toBe(false);
@@ -164,6 +169,7 @@ describe('ItemDialog', () => {
       name: 'Item One',
       year: null,
       rate: '',
+      hash: '',
     }));
 
     component['rawContentModel'].set('#movie bad content');
@@ -189,6 +195,7 @@ describe('ItemDialog', () => {
       year: null,
       rate: '',
       name: 'Item One',
+      hash: '',
     }));
 
     component['rawContentModel'].set('#movie another bad content');
@@ -226,7 +233,7 @@ describe('ItemDialog', () => {
     component['onMarkAsWatched']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalledWith('Item One', expect.stringContaining(WATCHED_TAG));
+    expect(api.update).toHaveBeenCalledWith('Item One', expect.stringContaining(WATCHED_TAG), 'testhash');
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });
 
@@ -247,7 +254,7 @@ describe('ItemDialog', () => {
     component['onMarkAsUnwatched']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalledWith('Item One', expect.anything());
+    expect(api.update).toHaveBeenCalledWith('Item One', expect.anything(), 'testhash');
     expect(api.update.mock.calls[0][1].includes(WATCHED_TAG)).toBe(false);
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });

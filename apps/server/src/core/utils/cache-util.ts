@@ -1,6 +1,7 @@
 import { debugLog } from '@server/core/logger';
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
+import { removeFileHash, setFileHash } from '@server/core/utils/hash-util';
 import { readdir, readFile, stat, unlink, writeFile } from 'fs/promises';
 
 export const CACHE_MAX = Number(process.env.CACHE_MAX) || 5000;
@@ -19,8 +20,8 @@ export const readStoreFiles = async (
   usernameHash: string,
   offset?: number,
   limit?: number,
-): Promise<Array<{ name: string; content: string; }>> => {
-  const allFiles = await readdir(storeFolder);
+): Promise<Array<{ name: string; content: string; hash: string; }>> => {
+  const allFiles = (await readdir(storeFolder)).filter((fileName) => !fileName.endsWith('.hash'));
   const withStats = await Promise.all(
     allFiles.map(async (fileName) => ({
       fileName,
@@ -35,12 +36,14 @@ export const readStoreFiles = async (
   const fileList = sortedFileList.map(({ fileName }) => fileName);
 
   const cache = Store.getLastValue('cache');
+  const fileHashes = Store.getLastValue('fileHashes');
   const files = await Promise.all(
     fileList.map(async (file) => {
       const cacheKey = `${usernameHash}-${file}`;
       const content = cache[cacheKey] ?? (await readFile(`${storeFolder}/${file}`, 'utf-8'));
       setCacheEntry(cache, cacheKey, content);
-      return { name: file, content };
+      const hash = fileHashes[cacheKey] ?? '';
+      return { name: file, content, hash };
     }),
   );
   Store.set('cache', cache);
@@ -51,6 +54,7 @@ export const removeItem = async (fileName: string, folderName: string): Promise<
   void debugLog(`Removing item (${fileName}) from folder (${folderName})`);
   const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${folderName}`;
   await unlink(`${storeFolder}/${fileName}`);
+  await removeFileHash(storeFolder, folderName, fileName);
   const cache = Store.getLastValue('cache');
   delete cache[`${folderName}-${fileName}`];
   Store.set('cache', cache);
@@ -60,6 +64,7 @@ export const updateItem = async (fileName: string, folderName: string, content: 
   void debugLog(`Updating item (${fileName}) in folder (${folderName})`);
   const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${folderName}`;
   await writeFile(`${storeFolder}/${fileName}`, content, { encoding: 'utf-8' });
+  await setFileHash(storeFolder, folderName, fileName, content);
   const cache = Store.getLastValue('cache');
   setCacheEntry(cache, `${folderName}-${fileName}`, content);
   Store.set('cache', cache);

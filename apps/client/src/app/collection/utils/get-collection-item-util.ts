@@ -12,6 +12,7 @@ export const getCollectionItem = (item: Partial<GetAllApiResponseItemModel>): Co
   const safeItem: GetAllApiResponseItemModel = {
     content: item.content || '',
     name: item.name || '',
+    hash: item.hash || '',
   };
 
   const title = getTitle(safeItem.content);
@@ -28,6 +29,7 @@ export const getCollectionItem = (item: Partial<GetAllApiResponseItemModel>): Co
     year: getYear(safeItem.content),
     rate: getIMDbRate(safeItem.content),
     name: safeItem.name,
+    hash: safeItem.hash,
   };
 
   return collectionItem;

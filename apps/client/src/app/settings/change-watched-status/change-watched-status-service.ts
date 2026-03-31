@@ -72,7 +72,7 @@ export class ChangeWatchedStatusService {
       this.markAsWatchedNext(index + 1);
       return;
     }
-    this.api.update(item.name, updatedRawContent).subscribe(() => this.markAsWatchedNext(index + 1));
+    this.api.update(item.name, updatedRawContent, item.hash).subscribe(() => this.markAsWatchedNext(index + 1));
   }
 
   private markAsUnwatchedNext(index: number): void {
@@ -98,6 +98,6 @@ export class ChangeWatchedStatusService {
     }
 
     const updatedRawContent = removeTagFromRawContent(item.rawContent, WATCHED_TAG);
-    this.api.update(item.name, updatedRawContent).subscribe(() => this.markAsUnwatchedNext(index + 1));
+    this.api.update(item.name, updatedRawContent, item.hash).subscribe(() => this.markAsUnwatchedNext(index + 1));
   }
 }

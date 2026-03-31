@@ -21,6 +21,7 @@ const buildItem = (IMDbId: string): CollectionItemModel => ({
   name: '',
   year: null,
   rate: '',
+  hash: '',
 });
 
 describe('knownIMDbIdValidator', () => {

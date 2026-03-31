@@ -10,6 +10,7 @@ export interface CollectionItemModel {
   name: string;
   year: number | null;
   rate: string;
+  hash: string;
 }
 
 export type CollectionModel = CollectionItemModel[];
