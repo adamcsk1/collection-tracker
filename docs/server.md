@@ -10,7 +10,7 @@ Source: [`apps/server`](../apps/server)
 - CRUD for per-user Markdown entries stored on disk
 - parser configuration, including user-defined collection filename patterns
 - tag configuration and user-settings persistence
-- flat-file database initialization and synchronization
+- flat-file database initialization and synchronization, including SHA-512 hash generation for all Markdown files at startup
 - OMDb API proxying — forwards search and item lookups to OMDb using the server-side `OMDB_API_KEY` environment variable
 - Claude AI proxying — forwards IMDB-ID-based queries to Claude using the optional `CLAUDE_API_KEY` environment variable; model is configurable via `CLAUDE_MODEL` (defaults to `claude-haiku-4-5-20251001`)
 - runtime safeguards such as Helmet, no-cache, CORS validation, request limits, and cookie parsing
@@ -29,7 +29,7 @@ Source: [`apps/server`](../apps/server)
 - `database/parser-configs.json`
 - `database/tag-configs.json`
 - `database/user-settings.json`
-- `store/<userHash>/`
+- `store/<userHash>/` — Markdown files, each accompanied by a `<filename>.hash` sidecar containing its SHA-512 content hash
 - `logs/`
 
 Parser config records store the Markdown template, parsing regexps, and the user-specific `filenamePattern` used when creating new collection items.

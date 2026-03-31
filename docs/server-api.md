@@ -46,12 +46,12 @@ Valid values for `POST /user/settings`:
 
 ## Collection Endpoints
 
-| Method   | Path                            | Notes                                                                                                                                            |
-| -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `GET`    | `/get-all?limit=<n>&offset=<n>` | Returns `Array<{ name, content }>` sorted by file creation date descending.                                                                      |
-| `POST`   | `/create`                       | Body: `{ "content": string, "name": string }`. Returns `{ "name": string }`, where `name` is the final stored filename after collision handling. |
-| `PUT`    | `/change/:name`                 | Body: `{ "content": string }`. Updates one Markdown file.                                                                                        |
-| `DELETE` | `/delete/:name`                 | Deletes one Markdown file.                                                                                                                       |
+| Method   | Path                            | Notes                                                                                                                                                                                                   |
+| -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/get-all?limit=<n>&offset=<n>` | Returns `Array<{ name, content, hash }>` sorted by file creation date descending. `hash` is the SHA-512 hash of the file content.                                                                       |
+| `POST`   | `/create`                       | Body: `{ "content": string, "name": string }`. Returns `{ "name": string }`, where `name` is the final stored filename after collision handling. Returns `409` if a stale hash file exists (sync needed). |
+| `PUT`    | `/change/:name`                 | Body: `{ "content": string, "hash": string }`. Updates one Markdown file. Returns `{ "hash": string }` with the new content hash. Returns `409` if `hash` does not match the stored hash.               |
+| `DELETE` | `/delete/:name`                 | Query param: `hash=<string>`. Deletes one Markdown file. Returns `409` if `hash` does not match the stored hash.                                                                                        |
 
 ## OMDb Proxy Endpoints
 
