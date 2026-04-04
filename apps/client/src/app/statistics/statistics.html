@@ -1,19 +1,23 @@
 @if (apiLoadNetworkStatus() === 'pending') { {{ ('Message.LoadStatistics' | signalTranslate)() }} } @else if
-(tags().length === 0) { {{ ('Message.EmptyStatistics' | signalTranslate)() }} } @else {
+(tags().length === 0) { <span data-test-id="statistics-empty"
+>{{ ('Message.EmptyStatistics' | signalTranslate)() }}</span> } @else {
 <h2>{{ ('Summary' | signalTranslate)() }}</h2>
 @if (summary(); as summary) {
-<div>{{ ('ItemsInCollection' | signalTranslate)() }}: {{ summary.all }}</div>
-<div>{{ ('Movies' | signalTranslate)() }}: {{ summary.movies }}</div>
-<div>{{ ('Series' | signalTranslate)() }}: {{ summary.series }}</div>
+<div data-test-id="statistics-summary">
+  <div data-test-id="statistics-summary-all">{{ ('ItemsInCollection' | signalTranslate)() }}: {{ summary.all }}</div>
+  <div data-test-id="statistics-summary-movies">{{ ('Movies' | signalTranslate)() }}: {{ summary.movies }}</div>
+  <div data-test-id="statistics-summary-series">{{ ('Series' | signalTranslate)() }}: {{ summary.series }}</div>
+</div>
 }
 
 <hr />
 
 <h2>{{ ('Chart' | signalTranslate)() }}</h2>
 <libc-details [summary]="('SelectedTags' | signalTranslate)()" [open]="defaultOpenSelectedTags">
-  <div class="tags">
+  <div data-test-id="statistics-tags" class="tags">
     @for (tag of tags(); track tag) {
     <button
+      [attr.data-test-id]="'statistics-tag-' + tag"
       [class.button-basic]="!selectedTags().includes(tag)"
       [attr.aria-pressed]="selectedTags().includes(tag)"
       (click)="onToggleTag(tag)"
@@ -24,7 +28,10 @@
   </div>
 </libc-details>
 } @if (selectedTags().length === 0) {
-<div class="tags-empty">{{ ('Message.EmptySelectTagsForChart' | signalTranslate)() }}</div>
+<div data-test-id="statistics-tags-empty" class="tags-empty">
+  {{ ('Message.EmptySelectTagsForChart' | signalTranslate)() }}
+</div>
 }
 
-<canvas id="statistics" [style.display]="selectedTags().length > 0 ? 'block' : 'none'">{{ chart() }}</canvas>
+<canvas data-test-id="statistics-chart" id="statistics" [style.display]="selectedTags().length > 0 ? 'block' : 'none'"
+>{{ chart() }}</canvas>

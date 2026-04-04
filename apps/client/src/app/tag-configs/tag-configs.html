@@ -1,17 +1,18 @@
 <h2>{{ ('Tags' | signalTranslate)() }}</h2>
 <p>{{ ('Message.TagConfig' | signalTranslate)() }}</p>
 <div>
-  <button (click)="onResetTagConfigs()">
+  <button data-test-id="tag-configs-reset" (click)="onResetTagConfigs()">
     <i class="material-icons" [title]="('ResetToDefault' | signalTranslate)()"> close </i>
     {{ ('ResetToDefault' | signalTranslate)() }}
   </button>
 </div>
-<div class="tag-configs" role="list">
+<div data-test-id="tag-configs-list" class="tag-configs" role="list">
   @for (tagConfig of tagConfigs(); track tagConfig.tag) {
   <h3>{{ tagConfig.tag }}</h3>
   <div class="tag-configs-item" role="listitem">
     <div class="tag-configs-item-color">
       <button
+        [attr.data-test-id]="'tag-config-color-' + tagConfig.tag"
         [style.color]="tagConfig.color"
         [style.borderColor]="tagConfig.color"
         [style.backgroundColor]="contrastColor(tagConfig.color)"
@@ -32,22 +33,26 @@
       </button>
     </div>
     <libc-input
+      [attr.data-test-id]="'tag-config-weight-' + tagConfig.tag"
       [label]="('Weight' | signalTranslate)()"
       type="number"
       [value]="tagConfig.weight"
       (valueChange)="onWeightChange(tagConfig.tag, $event)"
     />
     <libc-checkbox
+      [attr.data-test-id]="'tag-config-image-border-' + tagConfig.tag"
       [label]="('UseTagColorForImageBorder' | signalTranslate)()"
       [value]="tagConfig.useForImageBorder"
       (valueChange)="onUseForImageBorderChange(tagConfig.tag, !!$event)"
     />
     <libc-checkbox
+      [attr.data-test-id]="'tag-config-text-color-' + tagConfig.tag"
       [label]="('UseTagColorForTextColor' | signalTranslate)()"
       [value]="tagConfig.useForTextColor"
       (valueChange)="onUseForTextColorChange(tagConfig.tag, !!$event)"
     />
     <libc-checkbox
+      [attr.data-test-id]="'tag-config-image-badge-' + tagConfig.tag"
       [label]="('UseTagForImageBadge' | signalTranslate)()"
       [value]="tagConfig.useForImageBadge"
       (valueChange)="onUseForImageBadgeChange(tagConfig.tag, !!$event)"
