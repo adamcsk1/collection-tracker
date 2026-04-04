@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const { randomUUID } = require('crypto');
 const { mkdirSync, existsSync, cpSync, rmSync, readFileSync, writeFileSync, renameSync } = require('fs');
 
