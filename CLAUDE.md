@@ -82,6 +82,48 @@ Patterns by type:
 
 Always follow the existing test style in the file being tested.
 
+## E2E Tests (Cypress)
+
+E2E tests live in `apps/collection-e2e/src/` and run against the Docker test container on port `2999`.
+
+### Structure
+
+```
+apps/collection-e2e/src/
+├── e2e/                     # Spec files — one per page/feature
+│   ├── auth.cy.ts
+│   ├── collection.cy.ts
+│   ├── health.cy.ts
+│   └── about.cy.ts
+├── fixtures/                # Mock data factories for proxy responses
+│   ├── collection-item.ts   # buildCollectionItem / buildCollectionItems
+│   └── omdb.ts              # buildOmdbSearchResult / buildOmdbItem
+├── page-objects/            # Page Object files — one per page
+│   ├── sign-in.po.ts
+│   ├── sign-up.po.ts
+│   ├── collection.po.ts
+│   ├── health.po.ts
+│   └── about.po.ts
+├── support/
+│   ├── commands.ts          # Custom Cypress commands
+│   ├── commands.d.ts        # TypeScript types for custom commands
+│   └── e2e.ts               # Global support entry — imports commands
+└── test-setup.ts            # Pre-test bootstrap hook
+```
+
+### Rules
+
+- **Element selection** — always use `data-test-id` attributes; never target CSS classes or element types directly. Use `cy.getByTestId('...')` (the custom command wraps `cy.get('[data-test-id="..."]')`).
+- **Inputs inside `libc-input`/`libc-select`** — the `data-test-id` is on the host element; use `.find('input')` or `.find('select')` inside the PO method to reach the actual control.
+- **Page Objects** — every page/dialog gets a PO file in `page-objects/`. PO files export a plain object of arrow functions — no classes, no state. Test files import from the PO; they never call `cy.get()` directly.
+- **Mocking — proxy only** — only `/api/v1/proxy/*` calls (OMDB, Claude AI) are mocked with `cy.intercept`. All other `/api/v1/` endpoints hit the real Docker test server. Never mock sign-in, sign-up, get-all, settings, parser config, tag config, or other real API endpoints.
+- **autoLogin** — `cy.autoLogin()` creates a fresh unique user via sign-up (real API), reads the generated secret from the page, then signs in. Each test gets an isolated user with an empty collection. No credentials need to be passed.
+- **Seeding test data** — after `cy.autoLogin()`, add pre-existing collection items via `cy.request('POST', '/api/v1/create', { name, content })`. The browser session cookie is shared, so requests are authenticated automatically. Then call `CollectionPage.visit()` to reload with the seeded items.
+- **Fixtures** — use factory functions from `fixtures/` to build proxy mock payloads and collection item content strings. The `random-words` package (`generate(...)`) is available for generating random titles in bulk tests.
+- **Routes use hash routing** — all Angular apps use `#/route` format. Visit pages with `cy.visit('/login/#/sign-in')`, `cy.visit('/client/#/collection')`, etc.
+- **Adding new pages** — when a new page is added to any app, add `data-test-id` attributes to its interactive and landmark elements, create a PO file, and add coverage in the relevant spec file.
+- **Adding `data-test-id`** — place the attribute on the host element of `libc-input`, `libc-select`, `libc-autocomplete`, buttons, and semantic container elements (lists, dialogs, banners). Do not add them to purely decorative or repeated structural divs.
+
 ## Code Conventions
 
 - **Angular**: standalone components only, no NgModules
