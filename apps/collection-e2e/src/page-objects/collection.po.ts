@@ -1,5 +1,8 @@
 export const CollectionPage = {
-  visit: () => cy.visit('/client/#/collection'),
+  visit: () => {
+    cy.visit('/client/#/collection');
+    cy.reload();
+  },
 
   // Search
   getSearchInput: () => cy.getByTestId('collection-search').find('input'),
@@ -8,7 +11,7 @@ export const CollectionPage = {
   getList: () => cy.getByTestId('collection-list'),
   getListItems: () => cy.getByTestId('list-item-title'),
   getListItemImages: () => cy.getByTestId('list-item-image'),
-  getAllItems: () => cy.getByTestId('collection-list').find('[role="listitem"]:not([aria-hidden="true"])'),
+  getAllItems: () => cy.getByTestId('collection-list').find('[role="listitem"]'),
   getEmptyState: () => cy.getByTestId('list-empty'),
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
 

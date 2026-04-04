@@ -8,6 +8,7 @@ USER_HASH="6882164e2121e7219a4170a678025cb9aea2504a5ae141b1e25dbe707b897210d4d57
 ${PWD}/docker/scripts/stop.sh collection-tracker-cypress
 ${PWD}/docker/scripts/build.sh collection-tracker-cypress
 
+rm -rf "${DATABASE_DIR}" "${STORE_DIR}"
 mkdir -p "${DATABASE_DIR}"
 mkdir -p "${STORE_DIR}/${USER_HASH}"
 cat > "${DATABASE_DIR}/users.json" << 'EOF'
