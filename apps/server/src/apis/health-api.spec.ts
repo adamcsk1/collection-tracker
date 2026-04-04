@@ -1,5 +1,5 @@
-import { buildApp } from 'apps/server/test/mocks/build-app-mock';
-import { mockResponse } from 'apps/server/test/mocks/response-mock';
+import { buildApp } from '@server-mocks/build-app-mock';
+import { mockResponse } from '@server-mocks/response-mock';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';

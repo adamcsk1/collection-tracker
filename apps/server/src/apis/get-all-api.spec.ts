@@ -1,6 +1,6 @@
+import { buildApp } from '@server-mocks/build-app-mock';
+import { mockResponse } from '@server-mocks/response-mock';
 import { Store } from '@server/core/store/store';
-import { buildApp } from 'apps/server/test/mocks/build-app-mock';
-import { mockResponse } from 'apps/server/test/mocks/response-mock';
 import { readdir, readFile, stat } from 'fs/promises';
 import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 
