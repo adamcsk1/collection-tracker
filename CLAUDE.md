@@ -25,14 +25,15 @@ A self-hosted media catalog application for managing personal movie and series c
 ## TypeScript Path Aliases
 
 ```
-@client/*   → apps/client/src/app/*
-@health/*   → apps/health/src/app/*
-@login/*    → apps/login/src/app/*
-@server/*   → apps/server/src/*
+@client/*     → apps/client/src/app/*
+@health/*     → apps/health/src/app/*
+@login/*      → apps/login/src/app/*
+@server/*     → apps/server/src/*
 @components/* → libs/components/src/lib/*
-@services/* → libs/services/src/lib/*
-@shared/*   → libs/shared/src/lib/*
-@public/*   → libs/public/src/lib/*
+@services/*   → libs/services/src/lib/*
+@shared/*     → libs/shared/src/lib/*
+@public/*     → libs/public/src/lib/*
+@server-mocks/*      → apps/server/test/mocks/*
 ```
 
 ## Commands
@@ -138,3 +139,9 @@ apps/collection-e2e/src/
 - **No database** — persistence is flat-file only; do not introduce a database dependency
 - **No NgModules** — all Angular code uses standalone components
 - **Monorepo boundaries** — respect Nx project boundaries; shared code belongs in `libs/`
+
+## TypeScript Error Policy
+
+- **Never suppress errors** — do not use `ignoreDeprecations`, `@ts-ignore`, `@ts-expect-error`, or path-alias hacks to silence TypeScript errors. Fix the root cause.
+- **`baseUrl` is removed** — `tsconfig.json` no longer uses `baseUrl`. All `paths` values use explicit `./` prefixes. All imports must use a declared `@alias/*` path or a single-level relative path (`./foo` or `../foo`). Deeper relative paths (`../../`) are not allowed — add a path alias instead.
+- **Server spec imports** — imports in `apps/server/src/apis/*.spec.ts` use `@mocks/build-app-mock` and `@mocks/response-mock`.
