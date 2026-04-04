@@ -7,6 +7,7 @@
 
 <div class="menu" [class.open]="showMenu()" [attr.aria-hidden]="!showMenu()">
   <button
+    data-test-id="nav-menu-button"
     class="button-icon material-icons"
     [attr.aria-label]="('Menu' | signalTranslate)()"
     [attr.aria-pressed]="showMenu()"
@@ -39,7 +40,7 @@
         close
       </button>
     </div>
-    <a [routerLink]="['/', 'collection']" routerLinkActive="active" class="highlight">
+    <a data-test-id="nav-collection" [routerLink]="['/', 'collection']" routerLinkActive="active" class="highlight">
       <i class="material-icons">movie</i>
       {{ ('Collection' | signalTranslate)() }}
     </a>
@@ -63,9 +64,11 @@
       <i class="material-icons">sync</i>
       {{ ('Sync' | signalTranslate)() }}
     </a>
-    <a [routerLink]="['/', 'about']" routerLinkActive="active">
+    <a data-test-id="nav-about" [routerLink]="['/', 'about']" routerLinkActive="active">
       <i class="material-icons">info</i> {{ ('About' | signalTranslate)() }}
     </a>
-    <a href="#" (click)="onLogout()"> <i class="material-icons">logout</i> {{ ('Logout' | signalTranslate)() }} </a>
+    <a data-test-id="nav-logout" href="#" (click)="onLogout()">
+      <i class="material-icons">logout</i> {{ ('Logout' | signalTranslate)() }}
+    </a>
   </div>
 </div>

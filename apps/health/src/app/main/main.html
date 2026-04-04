@@ -5,19 +5,20 @@
     <h2>{{ ('SubTitle' | signalTranslate)() }}</h2>
   </div>
 
-  <a class="login-link" href="/login/">{{ ('NavigateToLogin' | signalTranslate)() }}</a>
+  <a data-test-id="health-login-link" class="login-link" href="/login/"
+  >{{ ('NavigateToLogin' | signalTranslate)() }}</a>
 
   @if (loading() && !health()) {
   <p>{{ ('Loading' | signalTranslate)() }}</p>
   } @if (health(); as data) {
-  <div class="status-banner" [attr.data-status]="data.status">
+  <div data-test-id="health-status-banner" class="status-banner" [attr.data-status]="data.status">
     <span class="status-indicator"></span>
     <span class="status-label">{{ data.status | uppercase }}</span>
     <span class="loaded-at">{{ loadedAt() | date: 'medium' }}</span>
   </div>
 
-  <div class="metrics-grid">
-    <div class="metric-card">
+  <div data-test-id="health-metrics-grid" class="metrics-grid">
+    <div data-test-id="health-memory-card" class="metric-card">
       <p class="metric-title">{{ ('Memory' | signalTranslate)() }}</p>
       <div class="metric-bar-wrap">
         <div
@@ -30,7 +31,7 @@
       <p>{{ data.memory.usedPercent }}%</p>
     </div>
 
-    <div class="metric-card">
+    <div data-test-id="health-cpu-card" class="metric-card">
       <p class="metric-title">{{ ('Cpu' | signalTranslate)() }}</p>
       <div class="metric-bar-wrap">
         <div

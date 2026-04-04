@@ -1,8 +1,8 @@
 <div class="about">
   <img [src]="'icons/' + themeLogo()" [title]="('Title' | signalTranslate)()" [alt]="('Title' | signalTranslate)()" />
-  <h2 class="app-title-style">{{ ('Title' | signalTranslate)() }}</h2>
+  <h2 data-test-id="about-title" class="app-title-style">{{ ('Title' | signalTranslate)() }}</h2>
   <h3>{{ ('Build' | signalTranslate)() }}</h3>
-  <div>
+  <div data-test-id="about-build">
     <div>{{ build }}</div>
   </div>
   <h3>{{ ('BuildDate' | signalTranslate)() }}</h3>
@@ -11,6 +11,7 @@
   </div>
   <h3>{{ ('AppVersion' | signalTranslate)() }}</h3>
   <div
+    data-test-id="about-version"
     tabindex="0"
     role="button"
     [attr.aria-label]="('AppVersion' | signalTranslate)()"
@@ -22,6 +23,7 @@
   <h3>{{ ('Links' | signalTranslate)() }}</h3>
   <div class="about-links">
     <a
+      data-test-id="about-github-link"
       href="https://github.com/adamcsk1/collection-tracker"
       target="_blank"
       role="link"
@@ -39,6 +41,7 @@
     </a>
   </div>
   <div>
-    <a href="/health/" role="link">{{ ('NavigateToServerHealth' | signalTranslate)() }}</a>
+    <a data-test-id="about-health-link" href="/health/" role="link"
+    >{{ ('NavigateToServerHealth' | signalTranslate)() }}</a>
   </div>
 </div>

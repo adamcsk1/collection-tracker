@@ -8,6 +8,7 @@
   <ng-container dialog-shell-content>
     <form role="form" [formRoot]="form">
       <libc-input
+        data-test-id="new-item-search"
         [label]="('Search' | signalTranslate)()"
         [hint]="('Message.NewCollectionItemSearch' | signalTranslate)()"
         [mandatory]="true"
@@ -16,6 +17,7 @@
       />
       @if (matchedContent().length) {
       <libc-select
+        data-test-id="new-item-content-select"
         [mandatory]="true"
         [label]="('SelectedContent' | signalTranslate)()"
         [formField]="form.selectedIMDbId"
@@ -36,7 +38,7 @@
       <libc-checkbox [formField]="form.watched" [label]="('CollectionItemWatched' | signalTranslate)()" />
       }
       <div class="form-buttons">
-        <button type="submit" [disabled]="form().invalid()" (click)="submitMode.set(null)">
+        <button data-test-id="new-item-save" type="submit" [disabled]="form().invalid()" (click)="submitMode.set(null)">
           <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
           {{ ('Save' | signalTranslate)() }}
         </button>

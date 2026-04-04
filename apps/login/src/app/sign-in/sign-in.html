@@ -7,6 +7,7 @@
 </div>
 <form role="form" [attr.aria-label]="('SignIn' | signalTranslate)()" [formRoot]="form">
   <libc-input
+    data-test-id="sign-in-username"
     icon="person"
     [label]="('Username' | signalTranslate)()"
     [mandatory]="true"
@@ -17,6 +18,7 @@
     </ng-container>
   </libc-input>
   <libc-input
+    data-test-id="sign-in-token"
     icon="lock"
     [label]="('Secret' | signalTranslate)()"
     [mandatory]="true"
@@ -24,6 +26,7 @@
     [formField]="form.token"
   />
   <a
+    data-test-id="sign-in-toggle-secret"
     class="text-button"
     tabindex="0"
     role="button"
@@ -36,6 +39,7 @@
   </a>
   @if (showApiUrlInput()) {
   <libc-input
+    data-test-id="sign-in-api-url"
     [label]="('ApiUrl' | signalTranslate)()"
     [hint]="('Message.ApiUrl' | signalTranslate)()"
     [mandatory]="true"
@@ -44,12 +48,12 @@
   }
 
   <div class="form-buttons">
-    <button type="submit" class="button-custom" [disabled]="form().invalid()">
+    <button data-test-id="sign-in-submit" type="submit" class="button-custom" [disabled]="form().invalid()">
       {{ ('Continue' | signalTranslate)() }}
     </button>
     <hr />
     <div>
-      <a [routerLink]="['/', 'sign-up']">
+      <a data-test-id="sign-up-link" [routerLink]="['/', 'sign-up']">
         {{ ('SignUp' | signalTranslate)() }}
       </a>
       @if (companionAppDetected) {
@@ -57,7 +61,12 @@
         {{ ('CompanionAppReset' | signalTranslate)() }}
       </button>
       } @else { @if (!showApiUrlInput()) {
-      <button type="button" class="button-basic button-custom" (click)="showApiUrlInput.set(true)">
+      <button
+        data-test-id="sign-in-change-api-url"
+        type="button"
+        class="button-basic button-custom"
+        (click)="showApiUrlInput.set(true)"
+      >
         {{ ('ChangeApiUrl' | signalTranslate)() }}
       </button>
       } }
@@ -67,7 +76,17 @@
   <hr class="options-divider" />
 
   <div class="quick-options">
-    <libc-select [label]="('Language' | signalTranslate)()" [formField]="form.language" [options]="languageOptions()" />
-    <libc-select [label]="('Theme' | signalTranslate)()" [formField]="form.theme" [options]="themeOptions()" />
+    <libc-select
+      data-test-id="sign-in-language"
+      [label]="('Language' | signalTranslate)()"
+      [formField]="form.language"
+      [options]="languageOptions()"
+    />
+    <libc-select
+      data-test-id="sign-in-theme"
+      [label]="('Theme' | signalTranslate)()"
+      [formField]="form.theme"
+      [options]="themeOptions()"
+    />
   </div>
 </form>

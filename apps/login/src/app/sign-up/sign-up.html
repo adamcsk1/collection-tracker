@@ -6,7 +6,13 @@
   </p>
 </div>
 <form role="form" [attr.aria-label]="('SignUp' | signalTranslate)()" [formRoot]="form">
-  <libc-input icon="person" [label]="('Username' | signalTranslate)()" [mandatory]="true" [formField]="form.username">
+  <libc-input
+    data-test-id="sign-up-username"
+    icon="person"
+    [label]="('Username' | signalTranslate)()"
+    [mandatory]="true"
+    [formField]="form.username"
+  >
     <ng-container errors>
       @if (formErrors.username.minLength()) { {{ ('Validation.UsernameMinLength' | signalTranslate)() }} } @if
       (formErrors.username.maxLength()) { {{ ('Validation.UsernameMaxLength' | signalTranslate)() }} }
@@ -14,7 +20,7 @@
   </libc-input>
   @if (secret()) {
   <label for="secret">{{ ('Secret' | signalTranslate)() }}</label>
-  <code id="secret">{{ secret() }}</code>
+  <code id="secret" data-test-id="sign-up-secret-value">{{ secret() }}</code>
   <a
     tabindex="0"
     role="button"
@@ -39,13 +45,13 @@
 
   <div class="form-buttons">
     @if (!secret()) {
-    <button type="submit" class="button-custom" [disabled]="form().invalid()">
+    <button data-test-id="sign-up-submit" type="submit" class="button-custom" [disabled]="form().invalid()">
       {{ ('Continue' | signalTranslate)() }}
     </button>
     }
     <hr />
     <div>
-      <a [routerLink]="['/', 'sign-in']">
+      <a data-test-id="sign-in-link" [routerLink]="['/', 'sign-in']">
         {{ ('BackToSignIn' | signalTranslate)() }}
       </a>
       @if (!showApiUrlInput() && !secret()) {

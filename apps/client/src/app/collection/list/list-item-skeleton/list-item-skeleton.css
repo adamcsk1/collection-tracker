@@ -1,3 +1,7 @@
+:host {
+  display: block;
+}
+
 .skeleton {
   height: var(--image-height);
   width: 100%;
