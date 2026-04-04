@@ -30,5 +30,6 @@
   "stylelint.validate": ["css", "scss"],
   "editor.suggest.snippetsPreventQuickSuggestions": false,
   "editor.inlineSuggest.enabled": true,
-  "angular.enable-strict-mode-prompt": true
+  "angular.enable-strict-mode-prompt": true,
+  "typescript.tsdk": "node_modules/typescript/lib"
 }
