@@ -4,7 +4,6 @@ import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { updateItem } from '@server/core/utils/cache-util';
 import { hashFileExists } from '@server/core/utils/hash-util';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
@@ -24,7 +23,7 @@ const getAvailableFileName = (storeFolder: string, name: string): string => {
 };
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/create`, jwtGuard, async (request: ExtendedRequestModel, response) => {
+  app.post(`${API_PREFIX}/create`, jwtGuard, async (request, response) => {
     try {
       let { content, name } = request.body as CreateApiRequestModel;
       if (typeof content !== 'string' || typeof name !== 'string') {

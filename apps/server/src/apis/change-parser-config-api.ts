@@ -1,13 +1,12 @@
 import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { ParserConfigModel } from '@server/models/parser-config-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/parser/change-config`, jwtGuard, async (request: ExtendedRequestModel, response) => {
+  app.post(`${API_PREFIX}/parser/change-config`, jwtGuard, async (request, response) => {
     try {
       const body = request.body as ParserConfigModel;
       if (

@@ -4,13 +4,12 @@ import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { removeItem } from '@server/core/utils/cache-util';
 import { getMemoryHash } from '@server/core/utils/hash-util';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { Application } from 'express';
 import { existsSync } from 'fs';
 
 export const register = (app: Application): void => {
-  app.delete(`${API_PREFIX}/delete/:name`, jwtGuard, async (request: ExtendedRequestModel, response) => {
+  app.delete(`${API_PREFIX}/delete/:name`, jwtGuard, async (request, response) => {
     try {
       let { name } = request.params;
       name = name.toString().replace(/\\|\//g, '');

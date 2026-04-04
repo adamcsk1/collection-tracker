@@ -1,7 +1,6 @@
 import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { TagConfigsApiRequestModel } from '@shared/models/api-model';
 import type { Application } from 'express';
@@ -21,7 +20,7 @@ const isTagConfig = (tagConfig: unknown): tagConfig is TagConfigsApiRequestModel
 };
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/tag/change-config`, jwtGuard, async (request: ExtendedRequestModel, response) => {
+  app.post(`${API_PREFIX}/tag/change-config`, jwtGuard, async (request, response) => {
     try {
       const body = request.body as TagConfigsApiRequestModel;
       if (!Array.isArray(body) || body.some((tagConfig) => !isTagConfig(tagConfig))) {

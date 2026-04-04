@@ -5,13 +5,12 @@ import { generateAccessToken, jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
 import { getUserAccessToken } from '@server/core/utils/users-util';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { Application } from 'express';
 import type jwt from 'jsonwebtoken';
 
 export const register = (app: Application): void => {
-  app.get(`${API_PREFIX}/user/access-token/validate`, jwtGuard, (request: ExtendedRequestModel, response) => {
+  app.get(`${API_PREFIX}/user/access-token/validate`, jwtGuard, (request, response) => {
     try {
       const tokenFrom = !!request.headers['authorization'] ? 'authorization' : 'cookie';
       const users = Store.getLastValue('users');
