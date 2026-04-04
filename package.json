@@ -31,7 +31,6 @@
     "release:create": "npm run build && node ./scripts/create-release.js",
     "check-i18n": "node scripts/check-i18n.js",
     "sort-i18n": "node scripts/sort-i18n.js",
-    "fix-eol": "node scripts/fix-eol.js",
     "prepare": "husky"
   },
   "dependencies": {
