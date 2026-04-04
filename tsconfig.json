@@ -7,16 +7,16 @@
     "target": "ES2023",
     "module": "preserve",
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
-      "@client/*": ["apps/client/src/app/*"],
-      "@health/*": ["apps/health/src/app/*"],
-      "@login/*": ["apps/login/src/app/*"],
-      "@components/*": ["libs/components/src/lib/*"],
-      "@public/*": ["libs/public/src/lib/*"],
-      "@server/*": ["apps/server/src/*"],
-      "@services/*": ["libs/services/src/lib/*"],
-      "@shared/*": ["libs/shared/src/lib/*"]
+      "@client/*": ["./apps/client/src/app/*"],
+      "@health/*": ["./apps/health/src/app/*"],
+      "@login/*": ["./apps/login/src/app/*"],
+      "@components/*": ["./libs/components/src/lib/*"],
+      "@public/*": ["./libs/public/src/lib/*"],
+      "@server/*": ["./apps/server/src/*"],
+      "@services/*": ["./libs/services/src/lib/*"],
+      "@shared/*": ["./libs/shared/src/lib/*"],
+      "@server-mocks/*": ["./apps/server/test/mocks/*"]
     }
   },
   "angularCompilerOptions": {
