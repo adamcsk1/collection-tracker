@@ -2,7 +2,7 @@ import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
 import { hashText } from '@server/core/crypto';
 import { debugLog, errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { ExtendedRequestModel } from '@server/models/express-model';
+import '@server/models/express-model';
 import { randomUUID } from 'crypto';
 import express from 'express';
 import jwt from 'jsonwebtoken';
@@ -28,7 +28,7 @@ export const generateAccessToken = (
 };
 
 export const jwtGuard = async (
-  request: ExtendedRequestModel,
+  request: express.Request,
   response: express.Response,
   next: () => void,
 ): Promise<express.Response | undefined> => {
@@ -67,7 +67,7 @@ export const jwtGuard = async (
       const users = Store.getLastValue('users');
       const tokenHash = hashText(token);
 
-      if (!users[usernameHash]?.accessTokens?.map((token) => token.tokenHash)?.includes(tokenHash)) {
+      if (!users?.[usernameHash]?.accessTokens?.map((token) => token.tokenHash)?.includes(tokenHash)) {
         void debugLog('Access token not recognized');
         return response.sendStatus(403);
       }

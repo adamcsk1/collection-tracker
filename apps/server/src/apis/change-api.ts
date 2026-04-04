@@ -4,14 +4,13 @@ import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { updateItem } from '@server/core/utils/cache-util';
 import { getMemoryHash } from '@server/core/utils/hash-util';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { ChangeApiRequestModel, ChangeApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
 import { existsSync } from 'fs';
 
 export const register = (app: Application): void => {
-  app.put(`${API_PREFIX}/change/:name`, jwtGuard, async (request: ExtendedRequestModel, response) => {
+  app.put(`${API_PREFIX}/change/:name`, jwtGuard, async (request, response) => {
     try {
       let { name } = request.params;
       name = name.toString().replace(/\\|\//g, '');

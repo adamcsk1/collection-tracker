@@ -4,7 +4,6 @@ import { errorLog } from '@server/core/logger';
 import { FOLDERS } from '@server/core/main-const';
 import { Store } from '@server/core/store/store';
 import { readStoreFiles } from '@server/core/utils/cache-util';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { ProxyClaudeCollectionItems } from '@server/models/proxy-claude-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
@@ -51,7 +50,7 @@ const readCollectionItems = async (storeFolder: string, usernameHash: string): P
 };
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/proxy/claude/query`, jwtGuard, async (request: ExtendedRequestModel, response) => {
+  app.post(`${API_PREFIX}/proxy/claude/query`, jwtGuard, async (request, response) => {
     try {
       const apiKey = process.env.CLAUDE_API_KEY;
       if (!apiKey) {

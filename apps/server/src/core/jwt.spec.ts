@@ -2,8 +2,8 @@ import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
 import { generateAccessToken, jwtGuard } from '@server/core/jwt';
 import { Store } from '@server/core/store/store';
 import { StoreModel } from '@server/core/store/store-model';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { AccessTokenModel } from '@shared/models/api-model';
+import type { Request } from 'express';
 import jwt from 'jsonwebtoken';
 import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -34,7 +34,7 @@ describe('jwt utilities', () => {
     const response: any = { sendStatus: vi.fn() };
     const next = vi.fn();
 
-    await jwtGuard({ signedCookies: {}, headers: {}, url: '/x' } as unknown as ExtendedRequestModel, response, next);
+    await jwtGuard({ signedCookies: {}, headers: {}, url: '/x' } as unknown as Request, response, next);
 
     expect(response.sendStatus).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();
@@ -61,7 +61,7 @@ describe('jwt utilities', () => {
 
     await new Promise<void>((resolve) => {
       jwtGuard(
-        { signedCookies: { [COOKIE_TOKEN]: token }, headers: {}, url: '/protected' } as unknown as ExtendedRequestModel,
+        { signedCookies: { [COOKIE_TOKEN]: token }, headers: {}, url: '/protected' } as unknown as Request,
         response,
         () => {
           next();
@@ -83,7 +83,7 @@ describe('jwt utilities', () => {
         signedCookies: {},
         headers: { authorization: 'Bearer invalid' },
         url: '/protected',
-      } as unknown as ExtendedRequestModel,
+      } as unknown as Request,
       response,
       next,
     );
@@ -102,7 +102,7 @@ describe('jwt utilities', () => {
         signedCookies: {},
         headers: { authorization: 'Bearer any-token' },
         url: '/protected',
-      } as unknown as ExtendedRequestModel,
+      } as unknown as Request,
       response,
       next,
     );
@@ -121,7 +121,7 @@ describe('jwt utilities', () => {
         signedCookies: { [COOKIE_TOKEN]: token },
         headers: {},
         url: '/protected',
-      } as unknown as ExtendedRequestModel,
+      } as unknown as Request,
       response,
       next,
     );

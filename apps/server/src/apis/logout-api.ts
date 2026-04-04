@@ -3,12 +3,11 @@ import { hashText } from '@server/core/crypto';
 import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
-  app.delete(`${API_PREFIX}/logout`, jwtGuard, (request: ExtendedRequestModel, response) => {
+  app.delete(`${API_PREFIX}/logout`, jwtGuard, (request, response) => {
     try {
       const cookieToken = request.signedCookies[COOKIE_TOKEN];
       const authorizationToken = request.headers['authorization'];

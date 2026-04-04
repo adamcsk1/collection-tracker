@@ -1,13 +1,12 @@
 import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { AccessTokensApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
-  app.get(`${API_PREFIX}/user/access-tokens`, jwtGuard, (request: ExtendedRequestModel, response) => {
+  app.get(`${API_PREFIX}/user/access-tokens`, jwtGuard, (request, response) => {
     try {
       const users = Store.getLastValue('users');
       const result: AccessTokensApiResponseModel = users[request.usernameHash].accessTokens;

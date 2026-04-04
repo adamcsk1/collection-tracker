@@ -1,15 +1,14 @@
 import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { ExtendedRequestModel } from '@server/models/express-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { FILENAME_PATTERN, MD_TEMPLATE, PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { ParserConfigApiResponseModel } from '@shared/models/api-model';
 import { serializeParserRegexp } from '@shared/utils/parser-serialize-util';
-import type { Application } from 'express';
+import type { Application, Request, Response } from 'express';
 
 export const register = (app: Application): void => {
-  app.get(`${API_PREFIX}/parser/config`, jwtGuard, (request: ExtendedRequestModel, response) => {
+  app.get(`${API_PREFIX}/parser/config`, jwtGuard, (request: Request, response: Response) => {
     try {
       const parserConfigs = Store.getLastValue('parserConfigs');
       const result: ParserConfigApiResponseModel = parserConfigs?.[request.usernameHash] || {
@@ -23,6 +22,7 @@ export const register = (app: Application): void => {
         tagToken: serializeParserRegexp(PARSER_REGEXPS.tagToken),
         title: serializeParserRegexp(PARSER_REGEXPS.title),
         year: serializeParserRegexp(PARSER_REGEXPS.year),
+        content: serializeParserRegexp(PARSER_REGEXPS.content),
         filenamePattern: FILENAME_PATTERN,
       };
       response.send(result);
