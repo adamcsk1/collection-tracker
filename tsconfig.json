@@ -2,6 +2,7 @@
   "compileOnSave": false,
   "compilerOptions": {
     "experimentalDecorators": true,
+    "strictFunctionTypes": true,
     "importHelpers": true,
     "target": "ES2023",
     "module": "preserve",
