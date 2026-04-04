@@ -49,7 +49,7 @@ npm run format:check    # Prettier check
 
 npm run test            # Unit tests (Vitest)
 npm run test:affected   # Test only affected projects
-npm run e2e             # Cypress E2E tests
+npm run cypress:chrome  # Cypress E2E tests
 ```
 
 ## Dev URLs

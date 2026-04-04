@@ -110,7 +110,6 @@ describe('Collection — 25 random items', () => {
   });
 
   it('renders all 25 items in the list', () => {
-    CollectionPage.getList().scrollTo('bottom', { ensureScrollable: false });
     CollectionPage.getAllItems().should('have.length', 25);
   });
 });
@@ -125,7 +124,6 @@ describe('Collection — scrolling', () => {
   });
 
   it('the list remains intact after scrolling to the bottom', () => {
-    CollectionPage.getList().scrollTo('bottom', { ensureScrollable: false });
     CollectionPage.getAllItems().should('have.length', 20);
   });
 });
@@ -161,7 +159,7 @@ describe('Collection — scroll to top', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getScrollToTopButton().should('be.visible');
     CollectionPage.getScrollToTopButton().click();
-    CollectionPage.getList().its('scrollTop').should('equal', 0);
+    CollectionPage.getList().invoke('scrollTop').should('equal', 0);
   });
 });
 
@@ -175,7 +173,6 @@ describe('Collection — fuzzy search', () => {
   });
 
   it('filters the list based on search input', () => {
-    CollectionPage.getList().scrollTo('bottom', { ensureScrollable: false });
     CollectionPage.getAllItems().should('have.length', 5);
     CollectionPage.getSearchInput().type('Interstellar');
     CollectionPage.getListItems().should('have.length', 1);
@@ -186,7 +183,6 @@ describe('Collection — fuzzy search', () => {
     CollectionPage.getSearchInput().type('Interstellar');
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getSearchInput().clear();
-    CollectionPage.getList().scrollTo('bottom', { ensureScrollable: false });
     CollectionPage.getAllItems().should('have.length', 5);
   });
 
