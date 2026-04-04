@@ -3,6 +3,7 @@
   @if (scrollToTopAvailable()) {
   <div class="float-button" animate.enter="animation-fade-in" animate.leave="animation-fade-out">
     <button
+      data-test-id="scroll-to-top"
       class="button-icon material-icons"
       [attr.aria-label]="('ScrollToTop' | signalTranslate)()"
       [title]="('ScrollToTop' | signalTranslate)()"
@@ -14,6 +15,7 @@
   } @if (permissionAdd()) {
   <div class="float-button">
     <button
+      data-test-id="add-new"
       class="button-icon material-icons"
       [attr.aria-label]="('AddNew' | signalTranslate)()"
       [title]="('AddNew' | signalTranslate)()"
@@ -51,6 +53,7 @@
   }
   <div class="float-button">
     <button
+      data-test-id="random-pick"
       class="button-icon material-icons"
       [attr.aria-label]="('RandomPick' | signalTranslate)()"
       [title]="('RandomPick' | signalTranslate)()"
@@ -64,6 +67,7 @@
 } @else {
 <div class="float-button float-show-button" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
   <button
+    data-test-id="show-functions"
     class="button-icon material-icons"
     [attr.aria-label]="('ShowFunctions' | signalTranslate)()"
     [title]="('ShowFunctions' | signalTranslate)()"

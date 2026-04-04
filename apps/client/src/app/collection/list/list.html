@@ -7,6 +7,7 @@
 />
 <div
   #scrollContainer
+  data-test-id="collection-list"
   class="list"
   role="list"
   [attr.aria-label]="('Collection' | signalTranslate)()"
@@ -30,10 +31,11 @@
   } @placeholder {
   <ct-list-item-skeleton />
   } } @empty {
-  <div class="list-empty">
+  <div data-test-id="list-empty" class="list-empty">
     <i class="material-icons">movie</i>
     @if (collectionLength() === 0) { {{ ('Message.EmptyCollection' | signalTranslate)() }}<br />
-    <a href="#" role="button" (click)="onAddNew()">{{ ('Message.AddFirstCollectionItem' | signalTranslate)() }}</a>
+    <a data-test-id="add-first-item" href="#" role="button" (click)="onAddNew()"
+    >{{ ('Message.AddFirstCollectionItem' | signalTranslate)() }}</a>
     } @else { {{ ('Message.EmptySearch' | signalTranslate)() }}<br />
     }
   </div>

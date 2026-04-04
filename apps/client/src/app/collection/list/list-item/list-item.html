@@ -1,5 +1,6 @@
 @if (collectionItem(); as collectionItem) {
 <div
+  data-test-id="list-item-image"
   class="image"
   tabindex="0"
   role="button"
@@ -24,7 +25,7 @@
   }
 </div>
 <div class="content">
-  <h3>
+  <h3 data-test-id="list-item-title">
     <a href="#" role="button" (click)="onOpenDetail()" (keyup)="onOpenDetail()">
       {{ collectionItem.title }}
     </a>
