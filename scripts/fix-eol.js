@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-'use strict';
-
 const { readFileSync, writeFileSync } = require('fs');
 const { execSync } = require('child_process');
 
