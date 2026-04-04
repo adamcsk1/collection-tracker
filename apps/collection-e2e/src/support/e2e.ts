@@ -1,4 +1,9 @@
 // Global support for Cypress e2e tests
 import '../test-setup';
+import './commands';
 
-// You can add custom commands here if needed
+// Suppress uncaught Angular HttpErrorResponse exceptions so that server errors
+// triggered by the app (e.g. a 404 on a stale item) do not fail unrelated tests.
+Cypress.on('uncaught:exception', (error) => {
+  if (error.message.includes('HttpErrorResponse')) return false;
+});
