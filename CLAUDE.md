@@ -95,7 +95,9 @@ apps/collection-e2e/src/
 │   ├── auth.cy.ts
 │   ├── collection.cy.ts
 │   ├── health.cy.ts
-│   └── about.cy.ts
+│   ├── about.cy.ts
+│   ├── statistics.cy.ts
+│   └── tag-configs.cy.ts
 ├── fixtures/                # Mock data factories for proxy responses
 │   ├── collection-item.ts   # buildCollectionItem / buildCollectionItems
 │   └── omdb.ts              # buildOmdbSearchResult / buildOmdbItem
@@ -104,7 +106,9 @@ apps/collection-e2e/src/
 │   ├── sign-up.po.ts
 │   ├── collection.po.ts
 │   ├── health.po.ts
-│   └── about.po.ts
+│   ├── about.po.ts
+│   ├── statistics.po.ts
+│   └── tag-configs.po.ts
 ├── support/
 │   ├── commands.ts          # Custom Cypress commands
 │   ├── commands.d.ts        # TypeScript types for custom commands
@@ -124,6 +128,11 @@ apps/collection-e2e/src/
 - **Routes use hash routing** — all Angular apps use `#/route` format. Visit pages with `cy.visit('/login/#/sign-in')`, `cy.visit('/client/#/collection')`, etc.
 - **Adding new pages** — when a new page is added to any app, add `data-test-id` attributes to its interactive and landmark elements, create a PO file, and add coverage in the relevant spec file.
 - **Adding `data-test-id`** — place the attribute on the host element of `libc-input`, `libc-select`, `libc-autocomplete`, buttons, and semantic container elements (lists, dialogs, banners). Do not add them to purely decorative or repeated structural divs.
+- **Dynamic `data-test-id` in `@for` loops** — use `[attr.data-test-id]="'prefix-' + item.key"` to give each repeated element a unique, stable test ID. PO methods accept the key as a parameter (e.g., `getWeightInput(tag: string)`). This pattern is used in `tag-configs.html` where every control is namespaced by tag name.
+- **`libc-checkbox` access** — the `data-test-id` is on the `<libc-checkbox>` host; reach the underlying control with `.find('input[type="checkbox"]')`. Use `.check()` / `.uncheck()` rather than `.click()`.
+- **Seeding tag configs** — use `cy.request('POST', '/api/v1/tag/change-config', [...TagConfigModel])` to pre-configure tag settings before visiting a page. The GET endpoint is `/api/v1/tag/config`. **Do not seed tag configs via API before visiting the tag-configs page** — the component's constructor effect may run before `preloadUserTagConfigs` resolves, immediately re-POSTing an empty list that overwrites the seeded values. Instead, set config state via the UI after the page has loaded.
+- **Internal tags are excluded from tag-configs** — `#movie`, `#series`, and `#watched` are filtered out of the tag-configs page. When writing tag-config tests, seed items that carry a custom tag (e.g., `#action`, `#scifi`) in addition to the type tag. Do **not** use the `buildCollectionItem` default alone; add extra tags on the same line as `#movie`, space-separated (e.g., replace `#movie\n` with `#movie #action\n`). The tags parser regex `/\*\*Tags\*\*\s*(?<tags>.*)/` captures only one line — tags on a separate line are silently ignored.
+- **Confirming `window.confirm` dialogs** — stub the native confirm dialog with `cy.on('window:confirm', () => true)` before triggering the action. This is required for any feature that calls `ConfirmService` (e.g., delete, reset tag configs).
 
 ## Code Conventions
 
