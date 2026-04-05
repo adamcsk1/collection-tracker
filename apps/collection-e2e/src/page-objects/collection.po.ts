@@ -41,6 +41,4 @@ export const CollectionPage = {
   getItemDialogMarkWatchedButton: () => cy.getByTestId('item-dialog-mark-watched'),
   getItemDialogMarkUnwatchedButton: () => cy.getByTestId('item-dialog-mark-unwatched'),
 
-  // Nav
-  getNavMenuButton: () => cy.getByTestId('nav-menu-button'),
 };
