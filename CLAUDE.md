@@ -150,6 +150,15 @@ apps/collection-e2e/src/
 - **Settings — scrollable page / collapsible sections** — the settings page lives inside `.main-body` (overflow: auto, max-height viewport-relative). Always add `.scrollIntoView()` in PO methods before interacting with elements that may be below the fold. The `<libc-details>` sections persist their open/closed state in localStorage under keys `CT.Details{translated-summary}`: `CT.DetailsBasics`, `CT.DetailsUser`, `CT.DetailsAccess tokens`, `CT.DetailsImages`, `CT.DetailsGlobal watch status`. For fresh users all sections start closed — a closed section renders its content with no height, so Cypress interaction fails with "covered by another element". Call `openSettingsSections()` (sets all five keys to `'true'`) before `SettingsPage.visit()` in any test that needs to interact with section contents. Note: the Images and GlobalWatchStatus sections are only rendered when `form.appMode === 'full'`.
 - **Logout** — the logout link (`data-test-id="nav-logout"`) is in the header menu. Clicking it sends `DELETE /api/v1/logout` (returns 204) and then redirects to `/login/`. The menu must be opened first with `data-test-id="nav-menu-button"`. Logout tests live in `auth.cy.ts`.
 - **Sync** — the sync link (`data-test-id="nav-sync"`) is in the header menu. Clicking it reloads the collection by calling `GET /api/v1/get-all*`. Use `cy.intercept('GET', '/api/v1/get-all*').as('getAll')` to assert it fires. Sync tests live in `collection.cy.ts`.
+## Commit Conventions
+
+Format: `type(scope): short imperative summary`
+
+**Types**: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`
+
+**Scopes** — app/lib names: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`; cross-cutting: `tsconfig`, `build`, `claude`, `git`, `vscode`, `hooks`, `i18n`
+
+**Rules**: imperative mood, lowercase after colon, no trailing period, ≤72 chars on subject line. Body explains *why*, not *what*.
 
 ## Code Conventions
 
