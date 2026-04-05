@@ -2,6 +2,7 @@
   <h3>{{ ('MarkdownTemplate' | signalTranslate)() }}</h3>
   <p>{{ ('Message.ParserTemplate' | signalTranslate)() }}</p>
   <libc-textarea
+    data-test-id="parser-md-template"
     [label]="('RawTemplate' | signalTranslate)()"
     [mandatory]="true"
     [formField]="form.mdTemplate"
@@ -13,6 +14,7 @@
     </ng-container>
   </libc-textarea>
   <libc-input
+    data-test-id="parser-filename-pattern"
     [label]="('FilenamePattern' | signalTranslate)()"
     [mandatory]="true"
     [formField]="form.filenamePattern"
@@ -42,60 +44,70 @@
   <libc-details [summary]="('TemplateRegexps' | signalTranslate)()" [open]="true">
     <p>{{ ('Message.TemplateRegexps' | signalTranslate)() }}</p>
     <libc-input
+      data-test-id="parser-imdb-id"
       [label]="('IMDbIdRegexp' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.IMDbId"
       [hint]="('Message.IMDBIdRegexp' | signalTranslate)()"
     />
     <libc-input
+      data-test-id="parser-genre"
       [label]="('GenreRegexp' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.genre"
       [hint]="('Message.GenreRegexp' | signalTranslate)()"
     />
     <libc-input
+      data-test-id="parser-genre-token"
       [label]="('GenreTokenRegexp' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.genreToken"
       [hint]="('Message.GenreTokenRegexp' | signalTranslate)()"
     />
     <libc-input
+      data-test-id="parser-image"
       [label]="('ImageRegexp' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.image"
       [hint]="('Message.ImageRegexp' | signalTranslate)()"
     />
     <libc-input
+      data-test-id="parser-imdb-rate"
       [label]="('IMDbRateRegexp' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.IMDbRate"
       [hint]="('Message.IMDbRateRegexp' | signalTranslate)()"
     />
     <libc-input
+      data-test-id="parser-tags"
       [label]="('TagsRegexp' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.tags"
       [hint]="('Message.TagsRegexp' | signalTranslate)()"
     />
     <libc-input
+      data-test-id="parser-tag-token"
       [label]="('TagTokenRegexp' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.tagToken"
       [hint]="('Message.TagTokenRegexp' | signalTranslate)()"
     />
     <libc-input
+      data-test-id="parser-title"
       [label]="('TitleRegexp' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.title"
       [hint]="('Message.TitleRegexp' | signalTranslate)()"
     />
     <libc-input
+      data-test-id="parser-year"
       [label]="('YearRegexp' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.year"
       [hint]="('Message.YearRegexp' | signalTranslate)()"
     />
     <libc-input
+      data-test-id="parser-content"
       [label]="('ContentRegexp' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.content"
@@ -104,11 +116,17 @@
   </libc-details>
 
   <div class="form-buttons">
-    <button type="submit" [disabled]="form().invalid()">
+    <button data-test-id="parser-save" type="submit" [disabled]="form().invalid()">
       <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
       {{ ('Save' | signalTranslate)() }}
     </button>
-    <button type="button" class="button-basic" [disabled]="form().invalid()" (click)="onGeneratePreview()">
+    <button
+      data-test-id="parser-preview"
+      type="button"
+      class="button-basic"
+      [disabled]="form().invalid()"
+      (click)="onGeneratePreview()"
+    >
       <i class="material-icons" [title]="('Preview' | signalTranslate)()"> visibility </i>
       {{ ('Preview' | signalTranslate)() }}
     </button>
@@ -119,6 +137,7 @@
 
     <div class="form-buttons">
       <button
+        data-test-id="parser-refresh-start"
         type="button"
         [disabled]="form().invalid() || apiLoadNetworkStatus() !== 'finished'"
         (click)="onRefreshTemplates()"

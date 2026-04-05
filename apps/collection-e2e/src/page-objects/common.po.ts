@@ -5,11 +5,17 @@ export const CommonPage = {
   getNavSyncLink: () => cy.getByTestId('nav-sync'),
   getNavSettingsLink: () => cy.getByTestId('nav-settings'),
   getNavTagsLink: () => cy.getByTestId('nav-tags'),
+  getNavParserLink: () => cy.getByTestId('nav-parser'),
   getNavAboutLink: () => cy.getByTestId('nav-about'),
   getNavLogoutLink: () => cy.getByTestId('nav-logout'),
 
   navigateToSettingsViaMenu: () => {
     cy.getByTestId('nav-menu-button').click();
     cy.getByTestId('nav-settings').click();
+  },
+
+  navigateToParserViaMenu: () => {
+    cy.getByTestId('nav-menu-button').click();
+    cy.getByTestId('nav-parser').click();
   },
 };
