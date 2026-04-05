@@ -1,12 +1,12 @@
-<libc-details [summary]="('User' | signalTranslate)()">
+<libc-details data-test-id="settings-account-actions" [summary]="('User' | signalTranslate)()">
   <p>{{ ('Message.UserSettings' | signalTranslate)() }}</p>
 
   <div class="form-buttons">
-    <button (click)="onCreateNewUserToken()">
+    <button data-test-id="settings-create-user-token" (click)="onCreateNewUserToken()">
       <i class="material-icons" [title]="('CreateNewUserToken' | signalTranslate)()"> add </i>
       {{ ('CreateNewUserToken' | signalTranslate)() }}
     </button>
-    <button class="button-danger" (click)="onDeleteUser()">
+    <button data-test-id="settings-delete-user" class="button-danger" (click)="onDeleteUser()">
       <i class="material-icons" [title]="('DeleteUser' | signalTranslate)()"> delete </i>
       {{ ('DeleteUser' | signalTranslate)() }}
     </button>

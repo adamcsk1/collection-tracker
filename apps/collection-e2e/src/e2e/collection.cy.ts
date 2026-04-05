@@ -2,6 +2,7 @@ import { generate } from 'random-words';
 import { buildCollectionItem, buildCollectionItems } from '../fixtures/collection-item';
 import { buildOmdbItem, buildOmdbSearchResult } from '../fixtures/omdb';
 import { CollectionPage } from '../page-objects/collection.po';
+import { CommonPage } from '../page-objects/common.po';
 
 /** Creates collection items on the real server via the authenticated session. */
 const seedItems = (items: ReturnType<typeof buildCollectionItem>[]) => {
@@ -190,5 +191,20 @@ describe('Collection — fuzzy search', () => {
     CollectionPage.getSearchInput().type('stellr');
     CollectionPage.getListItems().should('have.length.at.least', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Interstellar');
+  });
+});
+
+describe('Collection - sync', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+  });
+
+  it('triggers a collection reload when sync is clicked', () => {
+    cy.intercept('GET', '/api/v1/get-all*').as('getAll');
+
+    CommonPage.openMenu();
+    CommonPage.getNavSyncLink().click();
+
+    cy.wait('@getAll').its('response.statusCode').should('eq', 200);
   });
 });

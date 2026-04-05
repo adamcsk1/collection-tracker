@@ -20,6 +20,7 @@ Source: [`apps/server`](../apps/server)
 - Default data folder: `.data`
 - CLI flags: `--dataFolder=<path>` and `--debug=true|false`
 - Startup expects `.env` in the active data folder and loads it before registering APIs; set `OMDB_API_KEY` there to enable OMDb proxy endpoints; `CLAUDE_API_KEY` is optional — omitting it does not block startup but disables the Claude proxy endpoint
+- `RATE_LIMIT` — maximum number of failed requests per 15-minute window per IP. Defaults to `100` when not set. Set a big enough number to avoid rate limiting (used by the E2E test container)
 - `nx run server:preserve` creates `.data/.env` from [`apps/server/scripts/.env.dev`](../apps/server/scripts/.env.dev) for local development
 - Production deployments should run behind an HTTPS reverse proxy; see [Docker deployment](./docker.md)
 

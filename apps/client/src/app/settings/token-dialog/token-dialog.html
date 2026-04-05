@@ -6,8 +6,9 @@
     </h3>
   </ng-container>
   <ng-container dialog-shell-content>
-    <code id="secret">{{ token() }}</code>
+    <code data-test-id="token-dialog-value" id="secret">{{ token() }}</code>
     <a
+      data-test-id="token-dialog-copy"
       class="text-button"
       tabindex="0"
       [attr.aria-label]="('CopyToClipboard' | signalTranslate)()"

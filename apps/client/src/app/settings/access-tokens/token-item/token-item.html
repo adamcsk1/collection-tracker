@@ -16,7 +16,11 @@
   {{ accessToken.userAgent }}
 </div>
 <div>
-  <button class="button-danger" (click)="onRevokeAccessToken(accessToken.tokenHash)">
+  <button
+    [attr.data-test-id]="'settings-revoke-token-' + accessToken.tokenHash"
+    class="button-danger"
+    (click)="onRevokeAccessToken(accessToken.tokenHash)"
+  >
     <i class="material-icons" [title]="('Revoke' | signalTranslate)()"> block </i>
     {{ ('Revoke' | signalTranslate)() }}
   </button>

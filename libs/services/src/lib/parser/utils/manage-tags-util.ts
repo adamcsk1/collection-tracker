@@ -9,8 +9,7 @@ export const addNewTagToRawContent = (rawContent: string, newTag: string): strin
   if (!tagsRawContent) return null;
 
   const tagsContent = tagsRegexp.exec(rawContent)?.groups?.['tags'] || '';
-  const extractedTagToken = tagsContent.split(tagTokenRegexp).filter(Boolean)[0];
-  if (!extractedTagToken) return null;
+  const extractedTagToken = tagsContent.split(tagTokenRegexp).filter(Boolean)[0] || ' ';
 
   return rawContent.replace(
     tagsRawContent,

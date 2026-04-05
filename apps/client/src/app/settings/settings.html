@@ -2,18 +2,21 @@
   <h3>{{ ('BasicSettings' | signalTranslate)() }}</h3>
   <libc-details [summary]="('Basics' | signalTranslate)()">
     <libc-select
+      data-test-id="settings-language"
       [label]="('Language' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.language"
       [options]="languageOptions()"
     />
     <libc-select
+      data-test-id="settings-theme"
       [label]="('Theme' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.theme"
       [options]="themeOptions()"
     />
     <libc-checkbox
+      data-test-id="settings-animated-background"
       [mandatory]="true"
       [formField]="form.animatedBackground"
       [label]="('AnimatedBackground' | signalTranslate)()"
@@ -21,6 +24,7 @@
     />
     @if (!settingLockEnabled()) {
     <libc-select
+      data-test-id="settings-app-mode"
       [label]="('AppMode' | signalTranslate)()"
       [hint]="('Message.AppMode' | signalTranslate)()"
       [mandatory]="true"
@@ -33,6 +37,7 @@
     />
     @if (form.appMode().value() !== 'full') {
     <libc-checkbox
+      data-test-id="settings-settings-lock"
       [label]="('SettingsLock' | signalTranslate)()"
       [hint]="('Message.SettingsLock' | signalTranslate)()"
       [mandatory]="true"
@@ -40,6 +45,7 @@
     />
     }
     <libc-select
+      data-test-id="settings-fetch-batch-size"
       [label]="('FetchBatchSize' | signalTranslate)()"
       [hint]="('Message.FetchBatchSize' | signalTranslate)()"
       [mandatory]="true"
@@ -56,6 +62,7 @@
     } @if (!settingLockEnabled()) {
     <p>{{ ('Message.StorageSettings' | signalTranslate)() }}</p>
     <libc-select
+      data-test-id="settings-sensitive-data-storage"
       [label]="('SensitiveDataStorage' | signalTranslate)()"
       [hint]="('Message.SensitiveDataStorage' | signalTranslate)()"
       [mandatory]="true"
@@ -67,6 +74,7 @@
     />
     @if (form.sensitiveDataStorage().value() === 'local') {
     <libc-checkbox
+      data-test-id="settings-clear-local-storage-after-logout"
       [label]="('ClearLocalStorageAfterLogout' | signalTranslate)()"
       [mandatory]="true"
       [formField]="form.clearLocalStorageAfterLogout"
@@ -74,11 +82,21 @@
     } }
 
     <div class="form-buttons">
-      <button type="submit" [disabled]="form().invalid()" (click)="submitAction.set('save')">
+      <button
+        data-test-id="settings-save"
+        type="submit"
+        [disabled]="form().invalid()"
+        (click)="submitAction.set('save')"
+      >
         <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
         {{ ('Save' | signalTranslate)() }}
       </button>
-      <button type="submit" [disabled]="form().invalid()" (click)="submitAction.set('save-and-back')">
+      <button
+        data-test-id="settings-save-and-back"
+        type="submit"
+        [disabled]="form().invalid()"
+        (click)="submitAction.set('save-and-back')"
+      >
         <i class="material-icons" [title]="('SaveAndBack' | signalTranslate)()"> door_back </i>
         {{ ('SaveAndBack' | signalTranslate)() }}
       </button>
@@ -97,7 +115,12 @@
     <p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
 
     <div class="form-buttons">
-      <button type="button" [disabled]="apiLoadNetworkStatus() !== 'finished'" (click)="onStartImagesRefresh()">
+      <button
+        data-test-id="settings-images-refresh-start"
+        type="button"
+        [disabled]="apiLoadNetworkStatus() !== 'finished'"
+        (click)="onStartImagesRefresh()"
+      >
         <i class="material-icons" [title]="('Start' | signalTranslate)()"> start </i>
         {{ ('Start' | signalTranslate)() }}
       </button>
@@ -107,11 +130,16 @@
   <libc-details [summary]="('GlobalWatchStatus' | signalTranslate)()">
     <p>{{ ('Message.GlobalWatchStatus' | signalTranslate)() }}</p>
     <div class="form-buttons">
-      <button type="button" (click)="onMarkAllAsWatched()">
+      <button data-test-id="settings-mark-all-watched" type="button" (click)="onMarkAllAsWatched()">
         <i class="material-icons" [title]="('MarkAllAsWatched' | signalTranslate)()"> visibility </i>
         {{ ('MarkAllAsWatched' | signalTranslate)() }}
       </button>
-      <button type="button" class="button-danger" (click)="onMarkAllAsUnwatched()">
+      <button
+        data-test-id="settings-mark-all-unwatched"
+        type="button"
+        class="button-danger"
+        (click)="onMarkAllAsUnwatched()"
+      >
         <i class="material-icons" [title]="('MarkAllAsUnwatched' | signalTranslate)()"> visibility_off </i>
         {{ ('MarkAllAsUnwatched' | signalTranslate)() }}
       </button>
