@@ -329,6 +329,9 @@ describe('Settings - access tokens', () => {
 describe('Settings - appMode: basic (read-only)', () => {
   beforeEach(() => {
     cy.autoLogin();
+    // Seed the item before applyAppMode — the page visit inside applyAppMode
+    // triggers a token rotation that would invalidate the cookie for cy.request.
+    cy.request('POST', '/api/v1/create', buildCollectionItem('Basic Mode Movie'));
     applyAppMode('basic');
   });
 
@@ -338,9 +341,6 @@ describe('Settings - appMode: basic (read-only)', () => {
   });
 
   it('the item dialog has no edit, delete, or mark-watched buttons', () => {
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Basic Mode Movie'));
-    CollectionPage.visit();
-
     CollectionPage.getListItemImages().first().click();
 
     cy.getByTestId('item-dialog-edit').should('not.exist');
@@ -353,6 +353,9 @@ describe('Settings - appMode: basic (read-only)', () => {
 describe('Settings - appMode: limited (create only)', () => {
   beforeEach(() => {
     cy.autoLogin();
+    // Seed the item before applyAppMode — the page visit inside applyAppMode
+    // triggers a token rotation that would invalidate the cookie for cy.request.
+    cy.request('POST', '/api/v1/create', buildCollectionItem('Limited Mode Movie'));
     applyAppMode('limited');
   });
 
@@ -362,9 +365,6 @@ describe('Settings - appMode: limited (create only)', () => {
   });
 
   it('the item dialog has no edit, delete, or mark-watched buttons', () => {
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Limited Mode Movie'));
-    CollectionPage.visit();
-
     CollectionPage.getListItemImages().first().click();
 
     cy.getByTestId('item-dialog-edit').should('not.exist');
