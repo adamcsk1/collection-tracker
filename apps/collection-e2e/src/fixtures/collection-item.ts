@@ -6,8 +6,7 @@ export interface CollectionItemFixture {
   hash: string;
 }
 
-export const buildCollectionItemContent = (title: string, type: ItemType = 'movie'): string => {
-  const imdbId = 'tt1234567';
+export const buildCollectionItemContent = (title: string, type: ItemType = 'movie', imdbId = 'tt1234567'): string => {
   const encodedTitle = encodeURIComponent(title);
   return `### ${title}
 [IMDb (${imdbId})](https://www.imdb.com/title/${imdbId}/) (**8.5** / 10)
@@ -31,9 +30,9 @@ Actor One, Actor Two
 `;
 };
 
-export const buildCollectionItem = (title: string, type: ItemType = 'movie'): CollectionItemFixture => ({
+export const buildCollectionItem = (title: string, type: ItemType = 'movie', imdbId?: string): CollectionItemFixture => ({
   name: `${title.toLowerCase().replace(/\s+/g, '-')}.md`,
-  content: buildCollectionItemContent(title, type),
+  content: buildCollectionItemContent(title, type, imdbId),
   hash: `hash-${Math.random().toString(36).slice(2)}`,
 });
 

@@ -20,6 +20,12 @@ export const CollectionPage = {
   getAddNewButton: () => cy.getByTestId('add-new'),
   getRandomPickButton: () => cy.getByTestId('random-pick'),
   getScrollToTopButton: () => cy.getByTestId('scroll-to-top'),
+  getClaudeAiToggleButton: () => cy.getByTestId('claude-ai-toggle'),
+
+  // Claude AI search input
+  getClaudeAiTrigger: () => cy.getByTestId('claude-ai-trigger'),
+  getClaudeAiTextarea: () => cy.getByTestId('claude-ai-textarea').find('textarea'),
+  getClaudeAiSendButton: () => cy.getByTestId('claude-ai-send'),
 
   openFloatButtons: () => {
     cy.getByTestId('show-functions').then(($btn) => {
