@@ -40,5 +40,6 @@ export const CollectionPage = {
   getItemDialogDeleteButton: () => cy.getByTestId('item-dialog-delete'),
   getItemDialogMarkWatchedButton: () => cy.getByTestId('item-dialog-mark-watched'),
   getItemDialogMarkUnwatchedButton: () => cy.getByTestId('item-dialog-mark-unwatched'),
+  getItemDialogEditorContent: () => cy.get('.CodeMirror-code'),
 
 };
