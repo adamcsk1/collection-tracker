@@ -31,13 +31,17 @@ Optional body explaining why, not what.
 
 ### Scope
 
-Use the app or lib name: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`.
+**Always include a scope.** Use one of:
+
+- App/lib names: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`
+- Cross-cutting concerns: `tsconfig`, `build`, `claude`, `git`, `vscode`, `hooks`, `i18n`
+
+Pick the most specific scope that covers the primary area of change. A commit that touches only `tsconfig.spec.json` files across multiple apps uses `tsconfig`, not the individual app names.
 
 ### Rules
 
 - Summary line: imperative mood, lowercase after colon, no period, ≤72 chars
 - Body: explain *why*, not *what* — the diff shows the what
-- Do not include `Co-Authored-By` unless the user asks
 
 ## Steps
 
