@@ -1,4 +1,5 @@
 <button
+  data-test-id="claude-ai-trigger"
   type="button"
   class="compact-trigger"
   [class.is-expanded]="isExpanded()"
@@ -29,9 +30,10 @@
   tabindex="0"
   (keydown.escape)="onCollapse()"
 >
-  <libc-textarea [formField]="formField()" [placeholder]="placeholder()" [rows]="5" />
+  <libc-textarea data-test-id="claude-ai-textarea" [formField]="formField()" [placeholder]="placeholder()" [rows]="5" />
   <div class="panel-actions">
     <button
+      data-test-id="claude-ai-send"
       class="button-icon"
       [attr.aria-label]="('SendPrompt' | signalTranslate)()"
       [title]="('SendPrompt' | signalTranslate)()"
