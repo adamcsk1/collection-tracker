@@ -17,6 +17,11 @@ describe('Collection — empty state', () => {
   });
 
   it('shows the empty state message when collection has no items', () => {
+    // Intercept get-all and reload to ensure the collection API call completes
+    // before asserting — the token rotation during page load can delay the response.
+    cy.intercept('GET', '/api/v1/get-all*').as('getAll');
+    cy.reload();
+    cy.wait('@getAll');
     CollectionPage.getEmptyState().should('be.visible');
   });
 
