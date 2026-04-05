@@ -21,3 +21,4 @@ npx nx run collection-e2e:e2e
 
 - Cypress uses `http://localhost:4200` as its base URL.
 - The tests target the proxy origin, so the full local stack must be available for meaningful end-to-end coverage.
+- The test container's `.env` (`apps/collection-e2e/env/.env`) sets `RATE_LIMIT=10000` to avoid server-side rate limiting. Without this, the ~100 `autoLogin()` calls across the suite would exhaust the default 100-request budget (each login page visit triggers a `validateAccessToken()` → 401 that counts as a failed request).

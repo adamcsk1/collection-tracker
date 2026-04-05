@@ -8,7 +8,7 @@ declare global {
       getByTestId(testId: string): Chainable<JQuery<HTMLElement>>;
       /**
        * Signs in with the pre-created cypress user and wipes its collection.
-       * Fast — no sign-up round-trip. Use this for the majority of tests.
+       * Fast - no sign-up round-trip. Use this for the majority of tests.
        */
       autoLogin(): Chainable<void>;
       /**
@@ -37,7 +37,7 @@ Cypress.Commands.add('autoLogin', () => {
   cy.url().should('include', '/client/');
 
   cy.request('GET', '/api/v1/get-all?limit=1000&offset=0').then((response) => {
-    const items = response.body as Array<{ name: string; hash: string }>;
+    const items = response.body as Array<{ name: string; hash: string; }>;
     items.forEach((item) => {
       cy.request('DELETE', `/api/v1/delete/${encodeURIComponent(item.name)}?hash=${encodeURIComponent(item.hash)}`);
     });

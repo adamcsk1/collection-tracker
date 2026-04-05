@@ -45,10 +45,10 @@
       {{ ('Collection' | signalTranslate)() }}
     </a>
     @if (!settingLockEnabled()) {
-    <a [routerLink]="['/', 'tag-configs']" routerLinkActive="active" class="highlight">
+    <a data-test-id="nav-tags" [routerLink]="['/', 'tag-configs']" routerLinkActive="active" class="highlight">
       <i class="material-icons">local_offer</i> {{ ('Tags' | signalTranslate)() }}
     </a>
-    <a [routerLink]="['/', 'settings']" routerLinkActive="active" class="highlight">
+    <a data-test-id="nav-settings" [routerLink]="['/', 'settings']" routerLinkActive="active" class="highlight">
       <i class="material-icons">settings</i>
       {{ ('Settings' | signalTranslate)() }}
     </a>
@@ -60,7 +60,7 @@
     <a [routerLink]="['/', 'statistics']" routerLinkActive="active" class="highlight space">
       <i class="material-icons">bar_chart</i> {{ ('Statistics' | signalTranslate)() }}
     </a>
-    <a href="#" (click)="onSync()">
+    <a data-test-id="nav-sync" href="#" (click)="onSync()">
       <i class="material-icons">sync</i>
       {{ ('Sync' | signalTranslate)() }}
     </a>

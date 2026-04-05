@@ -70,10 +70,11 @@ export const main = async () => {
     debugLog('Applying security middleware');
     app.use(nocache());
     debugLog('Applying no-cache middleware');
+    const rateLimitValue = process.env.RATE_LIMIT !== undefined ? Number(process.env.RATE_LIMIT) : 100;
     app.use(
       rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
-        limit: 100,
+        limit: rateLimitValue,
         standardHeaders: 'draft-8',
         legacyHeaders: false,
         skipSuccessfulRequests: true,

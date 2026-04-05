@@ -120,7 +120,14 @@ describe('Tag Configs — effect on collection item', () => {
 
   it('applies the tag color as an image border when useForImageBorder is enabled', () => {
     cy.request('POST', '/api/v1/tag/change-config', [
-      { tag: customTag, color: tagColor, useForImageBorder: true, useForTextColor: false, useForImageBadge: false, weight: 0 },
+      {
+        tag: customTag,
+        color: tagColor,
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 0,
+      },
     ]);
     CollectionPage.visit();
     CollectionPage.getListItemImages()
@@ -131,7 +138,14 @@ describe('Tag Configs — effect on collection item', () => {
 
   it('applies the tag color to the tag text when useForTextColor is enabled', () => {
     cy.request('POST', '/api/v1/tag/change-config', [
-      { tag: customTag, color: tagColor, useForImageBorder: false, useForTextColor: true, useForImageBadge: false, weight: 0 },
+      {
+        tag: customTag,
+        color: tagColor,
+        useForImageBorder: false,
+        useForTextColor: true,
+        useForImageBadge: false,
+        weight: 0,
+      },
     ]);
     CollectionPage.visit();
     // The custom tag link should have an inline color style applied
@@ -140,7 +154,14 @@ describe('Tag Configs — effect on collection item', () => {
 
   it('shows the image badge when useForImageBadge is enabled', () => {
     cy.request('POST', '/api/v1/tag/change-config', [
-      { tag: customTag, color: tagColor, useForImageBorder: false, useForTextColor: false, useForImageBadge: true, weight: 0 },
+      {
+        tag: customTag,
+        color: tagColor,
+        useForImageBorder: false,
+        useForTextColor: false,
+        useForImageBadge: true,
+        weight: 0,
+      },
     ]);
     CollectionPage.visit();
     // The badge anchor appears inside the image container

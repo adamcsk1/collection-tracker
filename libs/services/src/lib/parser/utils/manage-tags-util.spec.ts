@@ -33,6 +33,14 @@ describe('manage-tags-util', () => {
     expect(updatedContent).toBe(`${rawContent} #watched`);
   });
 
+  it('appends a new tag when only one tag exists, defaulting to space separator', () => {
+    const rawContent = '**Tags**\n#movie\n';
+
+    const updatedContent = addNewTagToRawContent(rawContent, '#watched');
+
+    expect(updatedContent).toBe('**Tags**\n#movie #watched\n');
+  });
+
   it('removes all matching tags in raw content', () => {
     const rawContent = '**Tags** #alpha #watched #beta #watched';
 

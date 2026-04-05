@@ -1,3 +1,4 @@
+import { CommonPage } from '../page-objects/common.po';
 import { SignInPage } from '../page-objects/sign-in.po';
 import { SignUpPage } from '../page-objects/sign-up.po';
 
@@ -121,5 +122,21 @@ describe('Auth — Language and theme override from login', () => {
           SignInPage.getThemeSelect().should('have.value', secondValue);
         }
       });
+  });
+});
+
+describe('Auth - Logout', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+  });
+
+  it('logs the user out and redirects to the login page', () => {
+    cy.intercept('DELETE', '/api/v1/logout').as('logoutRequest');
+
+    CommonPage.openMenu();
+    CommonPage.getNavLogoutLink().click();
+
+    cy.wait('@logoutRequest').its('response.statusCode').should('eq', 204);
+    cy.url().should('include', '/login/');
   });
 });
