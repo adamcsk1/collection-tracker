@@ -17,8 +17,8 @@ import { MainService } from './main-service';
 
 describe('MainService', () => {
   let service: MainService;
-  let api: { validateAccessToken: ReturnType<typeof vi.fn>; };
-  let webstorage: { getItem: ReturnType<typeof vi.fn>; };
+  let api: { validateAccessToken: ReturnType<typeof vi.fn> };
+  let webstorage: { getItem: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
 

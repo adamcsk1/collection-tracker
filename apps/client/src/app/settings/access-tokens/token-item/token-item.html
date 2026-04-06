@@ -1,29 +1,29 @@
 @if (accessToken(); as accessToken) {
-<div [title]="accessToken.tokenHash">
-  <span>{{ ('TokenHash' | signalTranslate)() }}:</span>
-  {{ accessToken.tokenHash }}
-</div>
-<div [title]="accessToken.createdAt | date: 'full'">
-  <span>{{ ('Created' | signalTranslate)() }}:</span>
-  {{ accessToken.createdAt | date: 'medium' }}
-</div>
-<div [title]="!accessToken.expiresAt ? '-' : (accessToken.expiresAt | date: 'full')">
-  <span>{{ ('Expires' | signalTranslate)() }}:</span>
-  {{ !accessToken.expiresAt ? '-' : (accessToken.expiresAt | date: 'medium') }}
-</div>
-<div [title]="accessToken.userAgent">
-  <span>{{ ('UserAgent' | signalTranslate)() }}:</span>
-  {{ accessToken.userAgent }}
-</div>
-<div>
-  <button
-    [attr.data-test-id]="'settings-revoke-token-' + accessToken.tokenHash"
-    class="button-danger"
-    (click)="onRevokeAccessToken(accessToken.tokenHash)"
-  >
-    <i class="material-icons" [title]="('Revoke' | signalTranslate)()"> block </i>
-    {{ ('Revoke' | signalTranslate)() }}
-  </button>
-</div>
-<hr />
+  <div [title]="accessToken.tokenHash">
+    <span>{{ ('TokenHash' | signalTranslate)() }}:</span>
+    {{ accessToken.tokenHash }}
+  </div>
+  <div [title]="accessToken.createdAt | date: 'full'">
+    <span>{{ ('Created' | signalTranslate)() }}:</span>
+    {{ accessToken.createdAt | date: 'medium' }}
+  </div>
+  <div [title]="!accessToken.expiresAt ? '-' : (accessToken.expiresAt | date: 'full')">
+    <span>{{ ('Expires' | signalTranslate)() }}:</span>
+    {{ !accessToken.expiresAt ? '-' : (accessToken.expiresAt | date: 'medium') }}
+  </div>
+  <div [title]="accessToken.userAgent">
+    <span>{{ ('UserAgent' | signalTranslate)() }}:</span>
+    {{ accessToken.userAgent }}
+  </div>
+  <div>
+    <button
+      [attr.data-test-id]="'settings-revoke-token-' + accessToken.tokenHash"
+      class="button-danger"
+      (click)="onRevokeAccessToken(accessToken.tokenHash)"
+    >
+      <i class="material-icons" [title]="('Revoke' | signalTranslate)()"> block </i>
+      {{ ('Revoke' | signalTranslate)() }}
+    </button>
+  </div>
+  <hr />
 }

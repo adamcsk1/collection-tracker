@@ -19,7 +19,7 @@ export const setFileHash = async (
   storeFolder: string,
   usernameHash: string,
   fileName: string,
-  content: string,
+  content: string
 ): Promise<string> => {
   const hash = hashText(content);
   await writeFile(hashFilePath(storeFolder, fileName), hash, { encoding: 'utf-8' });

@@ -82,7 +82,7 @@ describe('ApiService', () => {
   it('paginates getAll results and updates network status', () => {
     apiState.setState('fetchBatchSize', 2);
 
-    const pages: { name: string; content: string; }[][] = [];
+    const pages: { name: string; content: string }[][] = [];
     service.getAll().subscribe((items) => pages.push(items));
 
     expect(apiState.state.loadNetworkStatus()).toBe('pending');
@@ -142,7 +142,7 @@ describe('ApiService', () => {
   it('uses default fetchBatchSize and finishes when first page is empty', () => {
     apiState.setState('fetchBatchSize', null as number);
 
-    const pages: { name: string; content: string; }[][] = [];
+    const pages: { name: string; content: string }[][] = [];
     service.getAll().subscribe((items) => pages.push(items));
 
     const initialRequest = httpMock.expectOne('https://api.test/get-all?offset=0&limit=100');
@@ -325,7 +325,7 @@ describe('ApiService', () => {
           useForImageBadge: false,
           weight: 1,
         },
-      ]),
+      ])
     );
 
     const updateTagConfigsRequest = httpMock.expectOne('https://api.test/tag/change-config');

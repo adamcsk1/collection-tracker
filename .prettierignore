@@ -1,0 +1,8 @@
+dist/
+coverage/
+.nx/
+.angular/
+node_modules/
+release/
+android/
+tmp/

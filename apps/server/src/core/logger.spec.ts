@@ -31,7 +31,7 @@ describe('logger', () => {
 
     const logFiles = readFileSync(
       path.join(tempDir, FOLDERS.logs, `log-${new Date().toISOString().slice(0, 10)}.txt`),
-      { encoding: 'utf-8' },
+      { encoding: 'utf-8' }
     );
     expect(logFiles).toContain('[ info ] hello world');
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[ info ] hello world'));
@@ -55,7 +55,7 @@ describe('logger', () => {
 
     const logFiles = readFileSync(
       path.join(tempDir, FOLDERS.logs, `log-${new Date().toISOString().slice(0, 10)}.txt`),
-      { encoding: 'utf-8' },
+      { encoding: 'utf-8' }
     );
     expect(logFiles).toContain('[ error ] boom');
   });

@@ -18,7 +18,7 @@ describe('mainGuard', () => {
     validateAccessToken: ReturnType<typeof vi.fn>;
     loadStoredData: ReturnType<typeof vi.fn>;
   };
-  let webstorage: { clear: ReturnType<typeof vi.fn>; };
+  let webstorage: { clear: ReturnType<typeof vi.fn> };
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
   let redirectSpy: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {

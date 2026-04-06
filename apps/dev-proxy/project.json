@@ -14,13 +14,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint fmt apps/dev-proxy/**"
+        "command": "prettier --write \"apps/dev-proxy\""
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint check apps/dev-proxy/**"
+        "command": "prettier --check \"apps/dev-proxy\""
       }
     }
   }

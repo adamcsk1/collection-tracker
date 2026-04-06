@@ -8,7 +8,7 @@ describe('companionApp', () => {
   });
 
   it('returns false when CollectionTrackerInterface does not exist', () => {
-    delete (window as { CollectionTrackerInterface?: unknown; }).CollectionTrackerInterface;
+    delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
     expect(companionApp()).toBe(false);
   });
 });
@@ -25,7 +25,7 @@ describe('resetCompanionAppConfig', () => {
   });
 
   it('returns undefined when interface is missing', () => {
-    delete (window as { CollectionTrackerInterface?: unknown; }).CollectionTrackerInterface;
+    delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
     expect(resetCompanionAppConfig()).toBeUndefined();
   });
 });

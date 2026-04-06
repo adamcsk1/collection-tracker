@@ -57,7 +57,7 @@ export class ChangeWatchedStatusService {
       'message',
       this.ngxSignalTranslate.translate('Message.MarkingAllAsWatched', {
         count: `${collectionItems.length - index}`,
-      }),
+      })
     );
 
     const item = collectionItems[index];
@@ -88,7 +88,7 @@ export class ChangeWatchedStatusService {
       'message',
       this.ngxSignalTranslate.translate('Message.MarkingAllAsUnwatched', {
         count: `${collectionItems.length - index}`,
-      }),
+      })
     );
 
     const item = collectionItems[index];

@@ -37,7 +37,7 @@ export class OMDbService {
           this._selectedContent.set({} as OMDbResponseItemModel);
           return EMPTY;
         }),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((response) => this._selectedContent.set(response));
 
@@ -54,7 +54,7 @@ export class OMDbService {
             this._selectedContent.set({} as OMDbResponseItemModel);
             return EMPTY;
           }),
-          takeUntilDestroyed(this.destroyRef),
+          takeUntilDestroyed(this.destroyRef)
         )
         .subscribe((response) => {
           const result: SelectInputModel = [];

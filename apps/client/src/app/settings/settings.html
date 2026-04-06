@@ -23,34 +23,34 @@
       [hint]="('Message.AnimatedBackground' | signalTranslate)()"
     />
     @if (!settingLockEnabled()) {
-    <libc-select
-      data-test-id="settings-app-mode"
-      [label]="('AppMode' | signalTranslate)()"
-      [hint]="('Message.AppMode' | signalTranslate)()"
-      [mandatory]="true"
-      [formField]="form.appMode"
-      [options]="[
+      <libc-select
+        data-test-id="settings-app-mode"
+        [label]="('AppMode' | signalTranslate)()"
+        [hint]="('Message.AppMode' | signalTranslate)()"
+        [mandatory]="true"
+        [formField]="form.appMode"
+        [options]="[
           { text: ('BasicAccess' | signalTranslate)(), value: 'basic' },
           { text: ('LimitedAccess' | signalTranslate)(), value: 'limited' },
           { text: ('FullAccess' | signalTranslate)(), value: 'full' },
         ]"
-    />
-    @if (form.appMode().value() !== 'full') {
-    <libc-checkbox
-      data-test-id="settings-settings-lock"
-      [label]="('SettingsLock' | signalTranslate)()"
-      [hint]="('Message.SettingsLock' | signalTranslate)()"
-      [mandatory]="true"
-      [formField]="form.settingsLock"
-    />
-    }
-    <libc-select
-      data-test-id="settings-fetch-batch-size"
-      [label]="('FetchBatchSize' | signalTranslate)()"
-      [hint]="('Message.FetchBatchSize' | signalTranslate)()"
-      [mandatory]="true"
-      [formField]="form.fetchBatchSize"
-      [options]="[
+      />
+      @if (form.appMode().value() !== 'full') {
+        <libc-checkbox
+          data-test-id="settings-settings-lock"
+          [label]="('SettingsLock' | signalTranslate)()"
+          [hint]="('Message.SettingsLock' | signalTranslate)()"
+          [mandatory]="true"
+          [formField]="form.settingsLock"
+        />
+      }
+      <libc-select
+        data-test-id="settings-fetch-batch-size"
+        [label]="('FetchBatchSize' | signalTranslate)()"
+        [hint]="('Message.FetchBatchSize' | signalTranslate)()"
+        [mandatory]="true"
+        [formField]="form.fetchBatchSize"
+        [options]="[
           { text: ('Unlimited' | signalTranslate)(), value: 10000 },
           { text: '5000', value: 5000 },
           { text: '1000', value: 1000 },
@@ -58,28 +58,30 @@
           { text: '100', value: 100 },
           { text: '50', value: 50 },
         ]"
-    />
-    } @if (!settingLockEnabled()) {
-    <p>{{ ('Message.StorageSettings' | signalTranslate)() }}</p>
-    <libc-select
-      data-test-id="settings-sensitive-data-storage"
-      [label]="('SensitiveDataStorage' | signalTranslate)()"
-      [hint]="('Message.SensitiveDataStorage' | signalTranslate)()"
-      [mandatory]="true"
-      [formField]="form.sensitiveDataStorage"
-      [options]="[
+      />
+    }
+    @if (!settingLockEnabled()) {
+      <p>{{ ('Message.StorageSettings' | signalTranslate)() }}</p>
+      <libc-select
+        data-test-id="settings-sensitive-data-storage"
+        [label]="('SensitiveDataStorage' | signalTranslate)()"
+        [hint]="('Message.SensitiveDataStorage' | signalTranslate)()"
+        [mandatory]="true"
+        [formField]="form.sensitiveDataStorage"
+        [options]="[
           { text: ('LocalStorage' | signalTranslate)(), value: 'local' },
           { text: ('SessionStorage' | signalTranslate)(), value: 'session' },
         ]"
-    />
-    @if (form.sensitiveDataStorage().value() === 'local') {
-    <libc-checkbox
-      data-test-id="settings-clear-local-storage-after-logout"
-      [label]="('ClearLocalStorageAfterLogout' | signalTranslate)()"
-      [mandatory]="true"
-      [formField]="form.clearLocalStorageAfterLogout"
-    />
-    } }
+      />
+      @if (form.sensitiveDataStorage().value() === 'local') {
+        <libc-checkbox
+          data-test-id="settings-clear-local-storage-after-logout"
+          [label]="('ClearLocalStorageAfterLogout' | signalTranslate)()"
+          [mandatory]="true"
+          [formField]="form.clearLocalStorageAfterLogout"
+        />
+      }
+    }
 
     <div class="form-buttons">
       <button
@@ -104,46 +106,46 @@
   </libc-details>
 
   @if (!settingLockEnabled()) {
-  <h3>{{ ('UserSettings' | signalTranslate)() }}</h3>
-  <ct-account-actions />
-  <ct-access-tokens />
+    <h3>{{ ('UserSettings' | signalTranslate)() }}</h3>
+    <ct-account-actions />
+    <ct-access-tokens />
   }
 
   <h3>{{ ('Others' | signalTranslate)() }}</h3>
   @if (form.appMode().value() === 'full') {
-  <libc-details [summary]="('Images' | signalTranslate)()">
-    <p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
+    <libc-details [summary]="('Images' | signalTranslate)()">
+      <p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
 
-    <div class="form-buttons">
-      <button
-        data-test-id="settings-images-refresh-start"
-        type="button"
-        [disabled]="apiLoadNetworkStatus() !== 'finished'"
-        (click)="onStartImagesRefresh()"
-      >
-        <i class="material-icons" [title]="('Start' | signalTranslate)()"> start </i>
-        {{ ('Start' | signalTranslate)() }}
-      </button>
-    </div>
-  </libc-details>
+      <div class="form-buttons">
+        <button
+          data-test-id="settings-images-refresh-start"
+          type="button"
+          [disabled]="apiLoadNetworkStatus() !== 'finished'"
+          (click)="onStartImagesRefresh()"
+        >
+          <i class="material-icons" [title]="('Start' | signalTranslate)()"> start </i>
+          {{ ('Start' | signalTranslate)() }}
+        </button>
+      </div>
+    </libc-details>
 
-  <libc-details [summary]="('GlobalWatchStatus' | signalTranslate)()">
-    <p>{{ ('Message.GlobalWatchStatus' | signalTranslate)() }}</p>
-    <div class="form-buttons">
-      <button data-test-id="settings-mark-all-watched" type="button" (click)="onMarkAllAsWatched()">
-        <i class="material-icons" [title]="('MarkAllAsWatched' | signalTranslate)()"> visibility </i>
-        {{ ('MarkAllAsWatched' | signalTranslate)() }}
-      </button>
-      <button
-        data-test-id="settings-mark-all-unwatched"
-        type="button"
-        class="button-danger"
-        (click)="onMarkAllAsUnwatched()"
-      >
-        <i class="material-icons" [title]="('MarkAllAsUnwatched' | signalTranslate)()"> visibility_off </i>
-        {{ ('MarkAllAsUnwatched' | signalTranslate)() }}
-      </button>
-    </div>
-  </libc-details>
+    <libc-details [summary]="('GlobalWatchStatus' | signalTranslate)()">
+      <p>{{ ('Message.GlobalWatchStatus' | signalTranslate)() }}</p>
+      <div class="form-buttons">
+        <button data-test-id="settings-mark-all-watched" type="button" (click)="onMarkAllAsWatched()">
+          <i class="material-icons" [title]="('MarkAllAsWatched' | signalTranslate)()"> visibility </i>
+          {{ ('MarkAllAsWatched' | signalTranslate)() }}
+        </button>
+        <button
+          data-test-id="settings-mark-all-unwatched"
+          type="button"
+          class="button-danger"
+          (click)="onMarkAllAsUnwatched()"
+        >
+          <i class="material-icons" [title]="('MarkAllAsUnwatched' | signalTranslate)()"> visibility_off </i>
+          {{ ('MarkAllAsUnwatched' | signalTranslate)() }}
+        </button>
+      </div>
+    </libc-details>
   }
 </form>

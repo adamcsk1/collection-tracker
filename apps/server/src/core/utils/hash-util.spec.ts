@@ -28,8 +28,8 @@ describe('hash-util', () => {
       parserConfigs: new BehaviorSubject(null),
       tagConfigs: new BehaviorSubject(null),
       userSettings: new BehaviorSubject(null),
-      cache: new BehaviorSubject<{ [key: string]: string; }>({}),
-      fileHashes: new BehaviorSubject<{ [key: string]: string; }>({}),
+      cache: new BehaviorSubject<{ [key: string]: string }>({}),
+      fileHashes: new BehaviorSubject<{ [key: string]: string }>({}),
     };
     (global as any).__serverStorage = store;
   });

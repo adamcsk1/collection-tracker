@@ -3,7 +3,7 @@ import { CollectionItemModel } from '@client/collection/collection-model';
 export function searchCollection(
   collection: readonly CollectionItemModel[],
   limit: number,
-  matcher: (item: CollectionItemModel, results: Set<string>) => void,
+  matcher: (item: CollectionItemModel, results: Set<string>) => void
 ): Set<string> {
   const results = new Set<string>();
   for (const item of collection) {

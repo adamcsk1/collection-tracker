@@ -36,7 +36,7 @@ export class ParserService {
           setParserRegexp('content', restoreSerializedParserRegexp(parserConfig.content!));
         }
       }),
-      map(() => void 0),
+      map(() => void 0)
     );
   }
 

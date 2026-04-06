@@ -52,7 +52,7 @@ describe('FloatButtons', () => {
 
   const findButton = (text: string): HTMLButtonElement | undefined =>
     Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button')).find(
-      (button) => button.textContent?.trim() === text,
+      (button) => button.textContent?.trim() === text
     );
 
   it('shows the toggle button and hides the buttons container by default', () => {

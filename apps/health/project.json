@@ -107,13 +107,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint fmt apps/health/**"
+        "command": "prettier --write \"apps/health\""
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint check apps/health/**"
+        "command": "prettier --check \"apps/health\""
       }
     }
   }

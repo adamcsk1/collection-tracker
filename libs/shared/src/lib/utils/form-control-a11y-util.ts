@@ -6,7 +6,7 @@ export const createFormControlA11y = (
   hint: Signal<string | undefined>,
   touched: Signal<boolean>,
   dirty: Signal<boolean>,
-  errors: Signal<readonly ValidationError.WithOptionalFieldTree[]>,
+  errors: Signal<readonly ValidationError.WithOptionalFieldTree[]>
 ) => {
   const showError = computed(() => (touched() || dirty()) && errors().length > 0);
   const hintId = computed<string | null>(() => (hint() ? `${elementId()}-hint` : null));

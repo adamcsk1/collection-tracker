@@ -20,14 +20,14 @@ export const register = (app: Application): void => {
         const cookie = cookieConfig();
         const newAccessToken = generateAccessToken(
           request.username,
-          `${cookieExpiration.value} ${cookieExpiration.unit}` as jwt.SignOptions['expiresIn'],
+          `${cookieExpiration.value} ${cookieExpiration.unit}` as jwt.SignOptions['expiresIn']
         );
         users[request.usernameHash].accessTokens.push(
-          getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires),
+          getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
         );
 
         users[request.usernameHash].accessTokens = users[request.usernameHash].accessTokens.filter(
-          (token) => token.tokenHash !== tokenHash,
+          (token) => token.tokenHash !== tokenHash
         );
         Store.set('users', users);
 

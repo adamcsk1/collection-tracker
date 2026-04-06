@@ -68,7 +68,7 @@ export class NewItemDialogService {
         this.collection.addCollectionItem(collectionItem, true);
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewItem'));
         if (mode === 'close') this.portal.close();
-      }),
+      })
     );
   }
 }

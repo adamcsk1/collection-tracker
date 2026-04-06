@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('random-words', () => ({
   __esModule: true,
-  generate: vi.fn(({ exactly, seed }: { exactly: number; seed?: string; }) =>
+  generate: vi.fn(({ exactly, seed }: { exactly: number; seed?: string }) =>
     Array(exactly)
       .fill(seed ? `seed-${seed}` : 'word')
       .join(' ')

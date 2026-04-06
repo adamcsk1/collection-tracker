@@ -35,7 +35,7 @@ describe('proxy-claude-query-api', () => {
     } as any);
   };
 
-  const setupStore = (files: { name: string; content: string; }[]) => {
+  const setupStore = (files: { name: string; content: string }[]) => {
     const cache: Record<string, string> = {};
     (Store.getLastValue as Mock).mockImplementation((key: string) => {
       if (key === 'dataFolder') return '/data';

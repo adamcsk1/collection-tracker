@@ -18,7 +18,7 @@ small {
   min-height: var(--input-height);
 }
 
-input[type="checkbox"] {
+input[type='checkbox'] {
   margin-right: var(--size-xs);
   accent-color: var(--color-primary);
   height: var(--size-lg);

@@ -21,10 +21,10 @@ describe('SignUp component', () => {
   let fixture: ComponentFixture<SignUp>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let toastState: NgxSimpleSignalStoreService<ToastState>;
-  let publicApiService: { signUp: Mock; };
-  let webStorage: { getItem: Mock; setItem: Mock; };
-  let translateService: { languageOptions: Mock; };
-  let ngxTranslate: { translate: Mock; setLanguage: Mock; };
+  let publicApiService: { signUp: Mock };
+  let webStorage: { getItem: Mock; setItem: Mock };
+  let translateService: { languageOptions: Mock };
+  let ngxTranslate: { translate: Mock; setLanguage: Mock };
 
   beforeEach(() => {
     publicApiService = { signUp: vi.fn(() => of({ token: 'new-token' })) };

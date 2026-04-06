@@ -18,7 +18,7 @@ export class SharedApiService {
       catchError((error) => {
         this.alert.show(error.message);
         return throwError(() => error);
-      }),
+      })
     );
   }
 }

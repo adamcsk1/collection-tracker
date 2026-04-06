@@ -86,7 +86,10 @@
     border-radius: 0;
     padding: var(--size-md);
     padding-top: 10px;
-    transition: width 140ms ease-out 60ms, height 140ms ease-out 60ms, opacity 140ms ease-out 60ms;
+    transition:
+      width 140ms ease-out 60ms,
+      height 140ms ease-out 60ms,
+      opacity 140ms ease-out 60ms;
 
     .menu-header {
       display: flex;

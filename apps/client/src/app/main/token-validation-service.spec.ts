@@ -17,12 +17,12 @@ class TestHostComponent {}
 describe('TokenValidationService', () => {
   let fixture: ComponentFixture<TestHostComponent>;
   let service: TokenValidationService;
-  let collectionService: { loadCollection: ReturnType<typeof vi.fn>; };
-  let router: { navigate: ReturnType<typeof vi.fn>; };
-  let mainService: { tokenValid: ReturnType<typeof vi.fn>; };
-  let parserService: { preloadUserParserConfig: ReturnType<typeof vi.fn>; };
-  let settingsService: { preloadUserSettings: ReturnType<typeof vi.fn>; };
-  let tagConfigsService: { preloadUserTagConfigs: ReturnType<typeof vi.fn>; };
+  let collectionService: { loadCollection: ReturnType<typeof vi.fn> };
+  let router: { navigate: ReturnType<typeof vi.fn> };
+  let mainService: { tokenValid: ReturnType<typeof vi.fn> };
+  let parserService: { preloadUserParserConfig: ReturnType<typeof vi.fn> };
+  let settingsService: { preloadUserSettings: ReturnType<typeof vi.fn> };
+  let tagConfigsService: { preloadUserTagConfigs: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     mainService = { tokenValid: vi.fn(() => null) };

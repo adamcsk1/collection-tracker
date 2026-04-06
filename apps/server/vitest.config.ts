@@ -21,9 +21,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       reportsDirectory: '../../coverage/apps/server',
-      exclude: [
-        ...coverageExclude,
-      ],
+      exclude: [...coverageExclude],
     },
   },
 });

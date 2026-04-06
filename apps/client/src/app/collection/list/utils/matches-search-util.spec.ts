@@ -4,7 +4,7 @@ import { FUZZY_CONTENT_MAX_LENGTH } from '@shared/utils/fuzzy-search-util';
 import { describe, expect, it } from 'vitest';
 import { matchesSearch } from './matches-search-util';
 
-const buildItem = (overrides: { title?: string; rawContent?: string; tags?: string[]; } = {}): CollectionItemModel => {
+const buildItem = (overrides: { title?: string; rawContent?: string; tags?: string[] } = {}): CollectionItemModel => {
   const rawContent = overrides.rawContent ?? '';
   const title = overrides.title ?? '';
   return {

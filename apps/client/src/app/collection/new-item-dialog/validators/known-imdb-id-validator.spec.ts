@@ -26,7 +26,7 @@ const buildItem = (IMDbId: string): CollectionItemModel => ({
 
 describe('knownIMDbIdValidator', () => {
   let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
-  let knownIMDbIdValidationError: (IMDbId: string | null) => { kind: 'knownIMDbId'; } | undefined;
+  let knownIMDbIdValidationError: (IMDbId: string | null) => { kind: 'knownIMDbId' } | undefined;
 
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideStore(initialMainCollectionState, mainCollectionStateToken)] });

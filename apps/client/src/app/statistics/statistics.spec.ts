@@ -31,7 +31,7 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
 describe('Statistics component', () => {
   let component: Statistics;
   let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
-  let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn>; };
+  let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
@@ -100,7 +100,7 @@ describe('Statistics component', () => {
   });
 
   it('sets defaultOpenSelectedTags to false when tags are stored', () => {
-    webstorage.getItem = vi.fn((key: string) => key === STORAGE_STATISTICS_SELECTED_TAGS ? '["#action"]' : null);
+    webstorage.getItem = vi.fn((key: string) => (key === STORAGE_STATISTICS_SELECTED_TAGS ? '["#action"]' : null));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [Statistics],
@@ -134,9 +134,6 @@ describe('Statistics component', () => {
   it('persists selected tags to webstorage when toggling', () => {
     component['onToggleTag']('#action');
 
-    expect(webstorage.setItem).toHaveBeenCalledWith(
-      STORAGE_STATISTICS_SELECTED_TAGS,
-      JSON.stringify(['#action']),
-    );
+    expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify(['#action']));
   });
 });

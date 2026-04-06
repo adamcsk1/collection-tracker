@@ -1,80 +1,84 @@
 @if (showFloatButtons()) {
-<div class="float-buttons-container" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
-  @if (scrollToTopAvailable()) {
-  <div class="float-button" animate.enter="animation-fade-in" animate.leave="animation-fade-out">
-    <button
-      data-test-id="scroll-to-top"
-      class="button-icon material-icons"
-      [attr.aria-label]="('ScrollToTop' | signalTranslate)()"
-      [title]="('ScrollToTop' | signalTranslate)()"
-      (click)="onScrollToTop()"
-    >
-      arrow_upward
-    </button>
-  </div>
-  } @if (permissionAdd()) {
-  <div class="float-button">
-    <button
-      data-test-id="add-new"
-      class="button-icon material-icons"
-      [attr.aria-label]="('AddNew' | signalTranslate)()"
-      [title]="('AddNew' | signalTranslate)()"
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
-      (click)="onAddNew()"
-    >
-      add
-    </button>
-  </div>
-  } @if (claudeAiAvailable()) {
-  <div class="float-button">
-    <button
-      data-test-id="claude-ai-toggle"
-      class="button-icon material-icons"
-      [attr.aria-label]="
+  <div class="float-buttons-container" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
+    @if (scrollToTopAvailable()) {
+      <div class="float-button" animate.enter="animation-fade-in" animate.leave="animation-fade-out">
+        <button
+          data-test-id="scroll-to-top"
+          class="button-icon material-icons"
+          [attr.aria-label]="('ScrollToTop' | signalTranslate)()"
+          [title]="('ScrollToTop' | signalTranslate)()"
+          (click)="onScrollToTop()"
+        >
+          arrow_upward
+        </button>
+      </div>
+    }
+    @if (permissionAdd()) {
+      <div class="float-button">
+        <button
+          data-test-id="add-new"
+          class="button-icon material-icons"
+          [attr.aria-label]="('AddNew' | signalTranslate)()"
+          [title]="('AddNew' | signalTranslate)()"
+          [disabled]="apiLoadNetworkStatus() === 'pending'"
+          (click)="onAddNew()"
+        >
+          add
+        </button>
+      </div>
+    }
+    @if (claudeAiAvailable()) {
+      <div class="float-button">
+        <button
+          data-test-id="claude-ai-toggle"
+          class="button-icon material-icons"
+          [attr.aria-label]="
             useClaudeAi()
               ? ('SwitchToStandardSearch' | signalTranslate)()
               : ('SwitchToClaudeAiSearch' | signalTranslate)()
           "
-      [title]="
+          [title]="
             useClaudeAi()
               ? ('SwitchToStandardSearch' | signalTranslate)()
               : ('SwitchToClaudeAiSearch' | signalTranslate)()
           "
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
-      (click)="onToggleClaudeAi()"
-    >
-      @if (useClaudeAi()) {
-      <libc-image-icon
-        [ariaLabel]="('ClaudeAi' | signalTranslate)()"
-        imageUrl="/client/images/claude-ai-icon-transparent.png"
-      />
-      } @else { search }
-    </button>
+          [disabled]="apiLoadNetworkStatus() === 'pending'"
+          (click)="onToggleClaudeAi()"
+        >
+          @if (useClaudeAi()) {
+            <libc-image-icon
+              [ariaLabel]="('ClaudeAi' | signalTranslate)()"
+              imageUrl="/client/images/claude-ai-icon-transparent.png"
+            />
+          } @else {
+            search
+          }
+        </button>
+      </div>
+    }
+    <div class="float-button">
+      <button
+        data-test-id="random-pick"
+        class="button-icon material-icons"
+        [attr.aria-label]="('RandomPick' | signalTranslate)()"
+        [title]="('RandomPick' | signalTranslate)()"
+        [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
+        (click)="onRandomPick()"
+      >
+        casino
+      </button>
+    </div>
   </div>
-  }
-  <div class="float-button">
-    <button
-      data-test-id="random-pick"
-      class="button-icon material-icons"
-      [attr.aria-label]="('RandomPick' | signalTranslate)()"
-      [title]="('RandomPick' | signalTranslate)()"
-      [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
-      (click)="onRandomPick()"
-    >
-      casino
-    </button>
-  </div>
-</div>
 } @else {
-<div class="float-button float-show-button" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
-  <button
-    data-test-id="show-functions"
-    class="button-icon material-icons"
-    [attr.aria-label]="('ShowFunctions' | signalTranslate)()"
-    [title]="('ShowFunctions' | signalTranslate)()"
-    (click)="showFloatButtons.set(true)"
-  >
-    apps
-  </button>
-</div>
+  <div class="float-button float-show-button" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
+    <button
+      data-test-id="show-functions"
+      class="button-icon material-icons"
+      [attr.aria-label]="('ShowFunctions' | signalTranslate)()"
+      [title]="('ShowFunctions' | signalTranslate)()"
+      (click)="showFloatButtons.set(true)"
+    >
+      apps
+    </button>
+  </div>
 }

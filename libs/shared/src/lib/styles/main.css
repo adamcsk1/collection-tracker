@@ -1,13 +1,13 @@
 html,
 body {
-  font-family: "Gill Sans", sans-serif;
+  font-family: 'Gill Sans', sans-serif;
   background-color: var(--background-color);
   color: var(--text-color);
   font-size: var(--font-size-base);
 }
 
 .material-icons {
-  font-family: "Material Icons", sans-serif;
+  font-family: 'Material Icons', sans-serif;
   font-weight: normal;
   font-style: normal;
   font-size: 1.5rem;
@@ -18,7 +18,7 @@ body {
   white-space: nowrap;
   overflow-wrap: normal;
   direction: ltr;
-  font-feature-settings: "liga";
+  font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
 

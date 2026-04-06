@@ -4,7 +4,7 @@ import { CookieOptions } from 'express';
 export const cookieExpiration = {
   value: 15,
   unit: 'days',
-} satisfies { value: number; unit: ManipulateType; };
+} satisfies { value: number; unit: ManipulateType };
 
 export const cookieConfig = (): CookieOptions => ({
   httpOnly: true,

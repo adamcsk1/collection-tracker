@@ -19,7 +19,7 @@ export const Store = {
     Store.get$(key).pipe(
       filter((value) => value !== null),
       tap(() => debugLog(`Getting store value once (${key})`)),
-      take(1),
+      take(1)
     ),
   set: <K extends keyof StoreDataModel>(key: K, value: StoreDataModel[K]): StoreDataModel[K] => {
     debugLog(`Setting store value (${key})`);

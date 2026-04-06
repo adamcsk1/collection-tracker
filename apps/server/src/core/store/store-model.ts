@@ -10,8 +10,8 @@ export interface StoreDataModel {
   parserConfigs: ParserConfigsModel | null;
   tagConfigs: TagConfigsModel | null;
   userSettings: UserSettingsMapModel | null;
-  cache: { [key: string]: string; };
-  fileHashes: { [key: string]: string; };
+  cache: { [key: string]: string };
+  fileHashes: { [key: string]: string };
 }
 
 export type StoreModel<T = StoreDataModel> = {

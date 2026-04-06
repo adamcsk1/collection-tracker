@@ -12,10 +12,10 @@ import { AccountActions } from './account-actions';
 
 describe('AccountActions component', () => {
   let component: AccountActions;
-  let api: { createNewUserToken: ReturnType<typeof vi.fn>; deleteUser: ReturnType<typeof vi.fn>; };
-  let confirm: { ifConfirmed: ReturnType<typeof vi.fn>; };
-  let portal: { open: ReturnType<typeof vi.fn>; };
-  let webstorage: { clear: ReturnType<typeof vi.fn>; };
+  let api: { createNewUserToken: ReturnType<typeof vi.fn>; deleteUser: ReturnType<typeof vi.fn> };
+  let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
+  let portal: { open: ReturnType<typeof vi.fn> };
+  let webstorage: { clear: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     api = {

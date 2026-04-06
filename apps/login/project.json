@@ -108,13 +108,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint fmt apps/login/**"
+        "command": "prettier --write \"apps/login\""
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint check apps/login/**"
+        "command": "prettier --check \"apps/login\""
       }
     }
   }

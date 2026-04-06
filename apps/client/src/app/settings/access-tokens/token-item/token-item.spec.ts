@@ -7,7 +7,7 @@ import { TokenItem } from './token-item';
 
 describe('TokenItem component', () => {
   let component: TokenItem;
-  let confirm: { ifConfirmed: ReturnType<typeof vi.fn>; };
+  let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     confirm = { ifConfirmed: vi.fn(() => of(true)) };

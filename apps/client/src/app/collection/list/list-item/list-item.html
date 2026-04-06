@@ -1,102 +1,113 @@
 @if (collectionItem(); as collectionItem) {
-<div
-  data-test-id="list-item-image"
-  class="image"
-  tabindex="0"
-  role="button"
-  [style.backgroundImage]="'url(' + collectionItem.image + ')'"
-  [style.borderColor]="collectionItem.tags | tagConfigColor: { checkUseForImageBorder: true }"
-  [attr.aria-label]="collectionItem.title"
-  (click)="onOpenDetail()"
-  (keyup)="onOpenDetail()"
->
-  @if (imageBadgeTag(); as imageBadgeTag) {
-  <a
-    href="#"
+  <div
+    data-test-id="list-item-image"
+    class="image"
+    tabindex="0"
     role="button"
-    class="badge"
-    [style.backgroundColor]="badgeBackgroundColor()"
-    [style.color]="badgeTextColor()"
-    [class.silent-disabled]="useClaudeAi()"
-    (click)="onSetSearchText(imageBadgeTag, $event)"
+    [style.backgroundImage]="'url(' + collectionItem.image + ')'"
+    [style.borderColor]="collectionItem.tags | tagConfigColor: { checkUseForImageBorder: true }"
+    [attr.aria-label]="collectionItem.title"
+    (click)="onOpenDetail()"
+    (keyup)="onOpenDetail()"
   >
-    {{ imageBadgeTag }}
-  </a>
-  }
-</div>
-<div class="content">
-  <h3 data-test-id="list-item-title">
-    <a href="#" role="button" (click)="onOpenDetail()" (keyup)="onOpenDetail()">
-      {{ collectionItem.title }}
-    </a>
-  </h3>
-  <span>
-    <small>
-      @if (movie()) {
-      <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(MOVIE_TAG)">
-        <i class="material-icons" [title]="('Movie' | signalTranslate)()"> movie </i>
-        {{ ('Movie' | signalTranslate)() }}
-      </a>
-      &nbsp; } @if (series()) {
-      <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(SERIES_TAG)">
-        <i class="material-icons" [title]="('Series' | signalTranslate)()"> tv </i>
-        {{ ('Series' | signalTranslate)() }}
-      </a>
-      &nbsp; } @if (collectionItem.year) {
+    @if (imageBadgeTag(); as imageBadgeTag) {
       <a
         href="#"
         role="button"
+        class="badge"
+        [style.backgroundColor]="badgeBackgroundColor()"
+        [style.color]="badgeTextColor()"
         [class.silent-disabled]="useClaudeAi()"
-        (click)="onSetSearchText(collectionItem.year)"
+        (click)="onSetSearchText(imageBadgeTag, $event)"
       >
-        <i class="material-icons"> calendar_today </i> {{ collectionItem.year }}
+        {{ imageBadgeTag }}
       </a>
-      &nbsp; } @if (collectionItem.rate) {
-      <a
-        href="#"
-        role="button"
-        [class.silent-disabled]="useClaudeAi()"
-        (click)="onSetSearchText(collectionItem.rate)"
-      >
-        <i class="material-icons"> star_rate </i> {{ collectionItem.rate }}</a>
-      &nbsp; } @if (watched()) {
-      <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(WATCHED_TAG)">
-        <i class="material-icons" [title]="('Watched' | signalTranslate)()"> visibility </i>
-        {{ ('Watched' | signalTranslate)() }}
-      </a>
-      &nbsp; } @else {
-      <a
-        href="#"
-        role="button"
-        [class.silent-disabled]="useClaudeAi()"
-        (click)="onSetSearchText(VIRTUAL_UNWATCHED_TAG)"
-      >
-        <i class="material-icons" [title]="('Unwatched' | signalTranslate)()"> visibility_off </i>
-        {{ ('Unwatched' | signalTranslate)() }}
-      </a>
+    }
+  </div>
+  <div class="content">
+    <h3 data-test-id="list-item-title">
+      <a href="#" role="button" (click)="onOpenDetail()" (keyup)="onOpenDetail()"> {{ collectionItem.title }} </a>
+    </h3>
+    <span>
+      <small>
+        @if (movie()) {
+          <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(MOVIE_TAG)">
+            <i class="material-icons" [title]="('Movie' | signalTranslate)()"> movie </i>
+            {{ ('Movie' | signalTranslate)() }}
+          </a>
+          &nbsp;
+        }
+        @if (series()) {
+          <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(SERIES_TAG)">
+            <i class="material-icons" [title]="('Series' | signalTranslate)()"> tv </i>
+            {{ ('Series' | signalTranslate)() }}
+          </a>
+          &nbsp;
+        }
+        @if (collectionItem.year) {
+          <a
+            href="#"
+            role="button"
+            [class.silent-disabled]="useClaudeAi()"
+            (click)="onSetSearchText(collectionItem.year)"
+          >
+            <i class="material-icons"> calendar_today </i> {{ collectionItem.year }}
+          </a>
+          &nbsp;
+        }
+        @if (collectionItem.rate) {
+          <a
+            href="#"
+            role="button"
+            [class.silent-disabled]="useClaudeAi()"
+            (click)="onSetSearchText(collectionItem.rate)"
+          >
+            <i class="material-icons"> star_rate </i> {{ collectionItem.rate }}</a
+          >
+          &nbsp;
+        }
+        @if (watched()) {
+          <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(WATCHED_TAG)">
+            <i class="material-icons" [title]="('Watched' | signalTranslate)()"> visibility </i>
+            {{ ('Watched' | signalTranslate)() }}
+          </a>
+          &nbsp;
+        } @else {
+          <a
+            href="#"
+            role="button"
+            [class.silent-disabled]="useClaudeAi()"
+            (click)="onSetSearchText(VIRTUAL_UNWATCHED_TAG)"
+          >
+            <i class="material-icons" [title]="('Unwatched' | signalTranslate)()"> visibility_off </i>
+            {{ ('Unwatched' | signalTranslate)() }}
+          </a>
+        }
+      </small>
+    </span>
+    <span>
+      @for (genre of collectionItem.genre; track $index) {
+        <small>
+          <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(genre)">{{
+            genre
+          }}</a
+          >&nbsp;
+        </small>
       }
-    </small>
-  </span>
-  <span>
-    @for (genre of collectionItem.genre; track $index) {
-    <small>
-      <a href="#" role="button" [class.silent-disabled]="useClaudeAi()" (click)="onSetSearchText(genre)"
-      >{{ genre }}</a>&nbsp;
-    </small>
-    }
-  </span>
-  <span>
-    @for (tag of tags(); track $index) {
-    <small>
-      <a
-        href="#"
-        role="button"
-        [class.silent-disabled]="useClaudeAi()"
-        [style.color]="tag | tagConfigColor: { checkUseForTextColor: true }"
-        (click)="onSetSearchText(tag)"
-      >{{ tag }}</a>&nbsp;
-    </small>
-    }
-  </span>
-</div>
+    </span>
+    <span>
+      @for (tag of tags(); track $index) {
+        <small>
+          <a
+            href="#"
+            role="button"
+            [class.silent-disabled]="useClaudeAi()"
+            [style.color]="tag | tagConfigColor: { checkUseForTextColor: true }"
+            (click)="onSetSearchText(tag)"
+            >{{ tag }}</a
+          >&nbsp;
+        </small>
+      }
+    </span>
+  </div>
 }

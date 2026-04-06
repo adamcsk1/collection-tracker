@@ -13,7 +13,7 @@ export const addNewTagToRawContent = (rawContent: string, newTag: string): strin
 
   return rawContent.replace(
     tagsRawContent,
-    `${tagsRawContent}${tagsRawContent.at(-1) !== extractedTagToken ? `${extractedTagToken}${newTag}` : newTag}`,
+    `${tagsRawContent}${tagsRawContent.at(-1) !== extractedTagToken ? `${extractedTagToken}${newTag}` : newTag}`
   );
 };
 

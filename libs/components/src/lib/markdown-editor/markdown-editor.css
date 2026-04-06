@@ -1,4 +1,4 @@
-@import url("easymde/dist/easymde.min.css");
+@import url('easymde/dist/easymde.min.css');
 
 .markdown-editor-shell:not([hidden]) {
   animation: markdown-editor-reveal 50ms ease-in;

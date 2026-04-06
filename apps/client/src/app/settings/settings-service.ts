@@ -59,7 +59,7 @@ export class SettingsService {
         this.mainState.setState('claudeAiAvailable', !!settings.claudeAiAvailable);
         if (!settings.claudeAiAvailable) this.webstorage.removeItem(STORAGE_USE_CLAUDE_AI);
       }),
-      map(() => void 0),
+      map(() => void 0)
     );
   }
 
@@ -97,7 +97,7 @@ export class SettingsService {
           if (navigateBack) this.router.navigate(['collection']);
         }),
         map(() => void 0),
-        catchError(() => EMPTY),
+        catchError(() => EMPTY)
       )
       .subscribe();
   }

@@ -24,10 +24,10 @@ describe('Main component', () => {
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
   let blockerState: NgxSimpleSignalStoreService<BlockerLoadingState>;
-  let apiService: { validateAccessToken: Mock; };
-  let webStorage: { getItem: Mock; setItem: Mock; };
-  let themeService: { listen: Mock; };
-  let ngxTranslate: { translate: Mock; setLanguage: Mock; };
+  let apiService: { validateAccessToken: Mock };
+  let webStorage: { getItem: Mock; setItem: Mock };
+  let themeService: { listen: Mock };
+  let ngxTranslate: { translate: Mock; setLanguage: Mock };
   const initializeFixture = (): void => {
     fixture = TestBed.createComponent(Main);
     apiState = TestBed.inject(apiStateToken) as NgxSimpleSignalStoreService<ApiState>;

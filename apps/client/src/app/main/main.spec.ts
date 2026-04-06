@@ -18,15 +18,15 @@ import { Main } from './main';
 describe('Main component (client)', () => {
   let fixture: ComponentFixture<Main>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
-  let spinnerState: NgxSimpleSignalStoreService<{ show: boolean; }>;
+  let spinnerState: NgxSimpleSignalStoreService<{ show: boolean }>;
   let mainService: {
     tokenValid: ReturnType<typeof vi.fn>;
     loadStoredData: ReturnType<typeof vi.fn>;
   };
-  let theme: { listen: ReturnType<typeof vi.fn>; };
-  let translate: { setLanguage: ReturnType<typeof vi.fn>; };
-  let portal: { setViewContainerRef: ReturnType<typeof vi.fn>; };
-  let tokenValidation: { startValidation: ReturnType<typeof vi.fn>; };
+  let theme: { listen: ReturnType<typeof vi.fn> };
+  let translate: { setLanguage: ReturnType<typeof vi.fn> };
+  let portal: { setViewContainerRef: ReturnType<typeof vi.fn> };
+  let tokenValidation: { startValidation: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     mainService = {
@@ -62,7 +62,7 @@ describe('Main component (client)', () => {
 
     fixture = TestBed.createComponent(Main);
     apiState = TestBed.inject(apiStateToken);
-    spinnerState = TestBed.inject(spinnerLoadingStateToken) as NgxSimpleSignalStoreService<{ show: boolean; }>;
+    spinnerState = TestBed.inject(spinnerLoadingStateToken) as NgxSimpleSignalStoreService<{ show: boolean }>;
     fixture.detectChanges();
   });
 

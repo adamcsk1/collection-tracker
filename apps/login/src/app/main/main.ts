@@ -53,7 +53,7 @@ export class Main implements AfterViewInit {
         catchError(() => {
           this.blockerLoadingState.setState('show', false);
           return EMPTY;
-        }),
+        })
       )
       .subscribe(() => (window.location.href = '/client/'));
   }

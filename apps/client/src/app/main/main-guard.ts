@@ -13,7 +13,7 @@ export const mainGuard: CanActivateFn = (): Observable<boolean> => {
 
   const tokenValid$ = toObservable(main.tokenValid).pipe(
     debounceTime(250),
-    filter((tokenValid): tokenValid is boolean => tokenValid !== null),
+    filter((tokenValid): tokenValid is boolean => tokenValid !== null)
   );
 
   if (main.hasRequiredConfig()) {

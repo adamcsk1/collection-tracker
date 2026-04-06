@@ -40,11 +40,11 @@ const buildFormData = (): ParserModel => ({
 
 describe('ParserService (client)', () => {
   let service: ParserService;
-  let mainParserService: { syncUserParserConfig: ReturnType<typeof vi.fn>; };
-  let collection: { loadCollection: ReturnType<typeof vi.fn>; };
-  let alert: { show: ReturnType<typeof vi.fn>; };
-  let confirm: { ifConfirmed: ReturnType<typeof vi.fn>; };
-  let mdContentGenerator: { getMdContent: ReturnType<typeof vi.fn>; };
+  let mainParserService: { syncUserParserConfig: ReturnType<typeof vi.fn> };
+  let collection: { loadCollection: ReturnType<typeof vi.fn> };
+  let alert: { show: ReturnType<typeof vi.fn> };
+  let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
+  let mdContentGenerator: { getMdContent: ReturnType<typeof vi.fn> };
   let templateRegenerationStart: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {

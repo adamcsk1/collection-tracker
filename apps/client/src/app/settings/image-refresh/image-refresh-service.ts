@@ -53,7 +53,7 @@ export class ImageRefreshService {
       'message',
       this.ngxSignalTranslate.translate('Message.RefreshImages', {
         count: `${this._state().count - this._state().checked}`,
-      }),
+      })
     );
 
     const collectionItem = this.mainCollectionState.state.collection()[index];
@@ -71,7 +71,7 @@ export class ImageRefreshService {
             checked: state.checked + 1,
             fixed: !status ? state.fixed + 1 : state.fixed,
           }))
-        ),
+        )
       )
       .subscribe(() => this.next(index));
   }
@@ -85,7 +85,7 @@ export class ImageRefreshService {
           return this.api.update(
             collectionItem.name,
             collectionItem.rawContent.replace(collectionItem.image, omdbItem.Poster),
-            collectionItem.hash,
+            collectionItem.hash
           );
         } else return EMPTY;
       }),
@@ -97,7 +97,7 @@ export class ImageRefreshService {
           errors: state.errors + 1,
         }));
         return of(false);
-      }),
+      })
     );
   }
 

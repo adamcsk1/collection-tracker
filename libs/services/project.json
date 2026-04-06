@@ -36,13 +36,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint fmt libs/services/**"
+        "command": "prettier --write \"libs/services\""
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint check libs/services/**"
+        "command": "prettier --check \"libs/services\""
       }
     }
   }

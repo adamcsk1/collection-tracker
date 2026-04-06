@@ -91,7 +91,7 @@ export class MarkdownEditor implements FormValueControl<string | null>, OnDestro
 
   private async initEditor(): Promise<void> {
     if (this.easyMdeLoaded()) return;
-    const easyMdeModule = (await import('easymde')) as unknown as { default?: EasyMdeCtor; };
+    const easyMdeModule = (await import('easymde')) as unknown as { default?: EasyMdeCtor };
     const EasyMde = easyMdeModule.default ?? (easyMdeModule as unknown as EasyMdeCtor);
 
     this.easyMde = new EasyMde({
@@ -150,8 +150,8 @@ export class MarkdownEditor implements FormValueControl<string | null>, OnDestro
 
   private togglePreview(): void {
     if (
-      (!this.editMode() && !this.easyMde?.isPreviewActive())
-      || (this.editMode() && this.easyMde?.isPreviewActive())
+      (!this.editMode() && !this.easyMde?.isPreviewActive()) ||
+      (this.editMode() && this.easyMde?.isPreviewActive())
     ) {
       this.easyMdeLoaded.set(false);
       this.easyMde?.togglePreview();
