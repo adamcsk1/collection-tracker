@@ -1,6 +1,0 @@
-#!/bin/sh
-
-npm run check-i18n
-npm run test:affected
-npm run cypress:chrome:affected
-npm run cypress:firefox:affected
