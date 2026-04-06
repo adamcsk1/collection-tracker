@@ -39,7 +39,7 @@ describe('change-parser-config-api', () => {
     await handlerPromise();
     expect(Store.set).toHaveBeenCalledWith('parserConfigs', expect.any(Object));
     expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'My Title', genre: 'Drama', filenamePattern: '{{Year}}-{{Title}}.md' }),
+      expect.objectContaining({ title: 'My Title', genre: 'Drama', filenamePattern: '{{Year}}-{{Title}}.md' })
     );
   });
 

@@ -37,7 +37,7 @@ export class TagConfigs {
       this.mainCollectionState.state
         .collection()
         .flatMap((item) => item.tags)
-        .sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0)),
+        .sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0))
     ),
   ]);
   private readonly tagIgnoreList = [...INTERNAL_USED_TAGS, ...VIRTUAL_TAGS];
@@ -120,31 +120,32 @@ export class TagConfigs {
       useForTextColor?: boolean;
       useForImageBadge?: boolean;
       weight?: number;
-    },
+    }
   ): void {
     const storedTagConfigs = this.tagConfigsState.state.configs();
     const existingConfigIndex = storedTagConfigs.findIndex((config) => config.tag === tag);
-    const updatedConfigs = existingConfigIndex === -1
-      ? [
-        ...storedTagConfigs,
-        {
-          tag,
-          color: changes.color ?? null,
-          useForImageBorder: changes.useForImageBorder ?? false,
-          useForTextColor: changes.useForTextColor ?? false,
-          useForImageBadge: changes.useForImageBadge ?? false,
-          weight: changes.weight ?? 0,
-        },
-      ]
-      : storedTagConfigs.map((config) =>
-        config.tag === tag
-          ? {
-            ...config,
-            weight: config.weight ?? 0,
-            ...changes,
-          }
-          : config
-      );
+    const updatedConfigs =
+      existingConfigIndex === -1
+        ? [
+            ...storedTagConfigs,
+            {
+              tag,
+              color: changes.color ?? null,
+              useForImageBorder: changes.useForImageBorder ?? false,
+              useForTextColor: changes.useForTextColor ?? false,
+              useForImageBadge: changes.useForImageBadge ?? false,
+              weight: changes.weight ?? 0,
+            },
+          ]
+        : storedTagConfigs.map((config) =>
+            config.tag === tag
+              ? {
+                  ...config,
+                  weight: config.weight ?? 0,
+                  ...changes,
+                }
+              : config
+          );
 
     this.storeTagConfigs(updatedConfigs);
   }
@@ -156,7 +157,7 @@ export class TagConfigs {
         catchError(() => {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.TagConfigSyncError'));
           return EMPTY;
-        }),
+        })
       )
       .subscribe();
   }

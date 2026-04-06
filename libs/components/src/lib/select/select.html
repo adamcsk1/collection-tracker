@@ -1,9 +1,10 @@
 @if (label(); as label) {
-<label [for]="selectId()">
-  {{ label }} @if (mandatory()) {
-  <span>*</span>
-  }
-</label>
+  <label [for]="selectId()">
+    {{ label }}
+    @if (mandatory()) {
+      <span>*</span>
+    }
+  </label>
 }
 
 <select
@@ -17,15 +18,18 @@
   (blur)="onBlur()"
 >
   @for (option of options(); track $index) {
-  <option [value]="normalizeValue(option.value)" [selected]="isSelected(option.value)">{{ option.text }}</option>
+    <option [value]="normalizeValue(option.value)" [selected]="isSelected(option.value)">{{ option.text }}</option>
   }
 </select>
 
 @if (hint()) {
-<small [id]="hintId()">{{ hint() }}</small>
-} @if (showError()) {
-<small class="error" [id]="errorId()">
-  @if (hasRequiredError()) { {{ ('Validation.Required' | signalTranslate)() }} }
-  <ng-content select="[errors]"></ng-content>
-</small>
+  <small [id]="hintId()">{{ hint() }}</small>
+}
+@if (showError()) {
+  <small class="error" [id]="errorId()">
+    @if (hasRequiredError()) {
+      {{ ('Validation.Required' | signalTranslate)() }}
+    }
+    <ng-content select="[errors]"></ng-content>
+  </small>
 }

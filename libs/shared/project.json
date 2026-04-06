@@ -36,13 +36,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint fmt libs/shared/**"
+        "command": "prettier --write \"libs/shared\""
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint check libs/shared/**"
+        "command": "prettier --check \"libs/shared\""
       }
     }
   }

@@ -83,7 +83,7 @@ export class Textarea<T> implements FormValueControl<T | null>, OnInit {
       this.renderer.setStyle(
         this.textAreaWrapElement()?.nativeElement,
         'height',
-        `${this.elementRef!.nativeElement.parentElement!.clientHeight - 16}px`,
+        `${this.elementRef!.nativeElement.parentElement!.clientHeight - 16}px`
       );
     });
   }

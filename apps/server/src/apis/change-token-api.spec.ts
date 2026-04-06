@@ -39,7 +39,7 @@ describe('change-token-api', () => {
       'users',
       expect.objectContaining({
         user: expect.objectContaining({ userTokenHash: 'hashed-new-user-token' }),
-      }),
+      })
     );
     expect(response.cookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'new-access', expect.any(Object));
     expect(response.send).toHaveBeenCalledWith({ newToken: 'new-user-token' });

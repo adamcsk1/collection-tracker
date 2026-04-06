@@ -10,10 +10,10 @@ export const register = (app: Application): void => {
     try {
       const body = request.body as ParserConfigModel;
       if (
-        typeof body !== 'object'
-        || body === null
-        || Array.isArray(body)
-        || Object.values(body).some((value) => value !== undefined && typeof value !== 'string')
+        typeof body !== 'object' ||
+        body === null ||
+        Array.isArray(body) ||
+        Object.values(body).some((value) => value !== undefined && typeof value !== 'string')
       ) {
         return response.sendStatus(400);
       }

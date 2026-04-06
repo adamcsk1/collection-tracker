@@ -86,11 +86,8 @@ describe('get-all-api', () => {
     (readFile as Mock).mockImplementation((filePath: string) => Promise.resolve(filePath));
     (stat as Mock).mockImplementation((filePath: string) =>
       Promise.resolve({
-        birthtimeMs: filePath === '/data/store/user/new.md'
-          ? 3000
-          : filePath === '/data/store/user/middle.md'
-          ? 2000
-          : 1000,
+        birthtimeMs:
+          filePath === '/data/store/user/new.md' ? 3000 : filePath === '/data/store/user/middle.md' ? 2000 : 1000,
       })
     );
 

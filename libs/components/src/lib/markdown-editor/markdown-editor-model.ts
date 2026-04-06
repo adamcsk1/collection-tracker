@@ -12,7 +12,7 @@ export type EasyMdeInstance = {
   cleanup: () => void;
 };
 
-export type EasyMdeCtor = new(options: {
+export type EasyMdeCtor = new (options: {
   element: HTMLElement;
   initialValue: string;
   spellChecker: boolean;

@@ -28,12 +28,12 @@ export class TagSuggestionService {
     return this.formatResult(
       searchCollection(this.appCollectionState.state.collection(), limit, (item, results) => {
         const match = item.tags.find(
-          (tag) => ![MOVIE_TAG, SERIES_TAG].includes(tag) && !tags.includes(tag) && matches(tag),
+          (tag) => ![MOVIE_TAG, SERIES_TAG].includes(tag) && !tags.includes(tag) && matches(tag)
         );
         if (match) results.add(match);
       }),
       tags,
-      limit,
+      limit
     );
   }
 

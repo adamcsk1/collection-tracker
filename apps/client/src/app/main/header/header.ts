@@ -51,7 +51,7 @@ export class Header {
           this.logout.performLogout();
           return EMPTY;
         }),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => this.logout.performLogout());
   }

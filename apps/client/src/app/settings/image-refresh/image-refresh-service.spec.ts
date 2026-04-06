@@ -40,10 +40,10 @@ describe('ImageRefreshService', () => {
   let service: ImageRefreshService;
   let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let httpClientGet: ReturnType<typeof vi.fn>;
-  let api: { update: ReturnType<typeof vi.fn>; };
-  let omdb: { getSelectedContent: ReturnType<typeof vi.fn>; };
-  let collection: { loadCollection: ReturnType<typeof vi.fn>; };
-  let confirm: { ifConfirmed: ReturnType<typeof vi.fn>; };
+  let api: { update: ReturnType<typeof vi.fn> };
+  let omdb: { getSelectedContent: ReturnType<typeof vi.fn> };
+  let collection: { loadCollection: ReturnType<typeof vi.fn> };
+  let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     httpClientGet = vi.fn(() => of('ok'));

@@ -38,11 +38,11 @@ describe('ItemDialog', () => {
     deleteCollectionItem: ReturnType<typeof vi.fn>;
     updateCollectionItem: ReturnType<typeof vi.fn>;
   };
-  let portal: { close: ReturnType<typeof vi.fn>; };
-  let confirm: { open: ReturnType<typeof vi.fn>; };
-  let api: { delete: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn>; };
+  let portal: { close: ReturnType<typeof vi.fn> };
+  let confirm: { open: ReturnType<typeof vi.fn> };
+  let api: { delete: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
-  let translate: { translate: ReturnType<typeof vi.fn>; };
+  let translate: { translate: ReturnType<typeof vi.fn> };
   let getCollectionItemSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
@@ -138,7 +138,7 @@ describe('ItemDialog', () => {
     expect(collectionService.updateCollectionItem).toHaveBeenCalledWith(
       'Item One',
       'updated content #movie',
-      'newhash',
+      'newhash'
     );
     expect(updateSpy).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.EditItem');

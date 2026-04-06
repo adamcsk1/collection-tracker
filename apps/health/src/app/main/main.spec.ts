@@ -22,9 +22,9 @@ const healthData: HealthApiResponseModel = {
 
 describe('Main component', () => {
   let apiState: NgxSimpleSignalStoreService<ApiState>;
-  let publicApiService: { getHealth: Mock; };
-  let webStorage: { getItem: Mock; setItem: Mock; };
-  let ngxTranslate: { translate: Mock; setLanguage: Mock; };
+  let publicApiService: { getHealth: Mock };
+  let webStorage: { getItem: Mock; setItem: Mock };
+  let ngxTranslate: { translate: Mock; setLanguage: Mock };
 
   beforeEach(() => {
     publicApiService = { getHealth: vi.fn(() => of(healthData)) };

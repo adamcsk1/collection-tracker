@@ -87,13 +87,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint fmt apps/server/**"
+        "command": "prettier --write \"apps/server\""
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint check apps/server/**"
+        "command": "prettier --check \"apps/server\""
       }
     },
     "preserve": {

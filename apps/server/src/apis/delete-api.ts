@@ -13,7 +13,7 @@ export const register = (app: Application): void => {
     try {
       let { name } = request.params;
       name = name.toString().replace(/\\|\//g, '');
-      const { hash } = request.query as { hash: string; };
+      const { hash } = request.query as { hash: string };
       if (typeof hash !== 'string') {
         return response.sendStatus(400);
       }

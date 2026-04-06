@@ -66,7 +66,7 @@ describe('jwt utilities', () => {
         () => {
           next();
           resolve();
-        },
+        }
       );
     });
 
@@ -85,7 +85,7 @@ describe('jwt utilities', () => {
         url: '/protected',
       } as unknown as Request,
       response,
-      next,
+      next
     );
 
     expect(response.sendStatus).toHaveBeenCalledWith(403);
@@ -104,7 +104,7 @@ describe('jwt utilities', () => {
         url: '/protected',
       } as unknown as Request,
       response,
-      next,
+      next
     );
 
     expect(response.sendStatus).toHaveBeenCalledWith(500);
@@ -123,7 +123,7 @@ describe('jwt utilities', () => {
         url: '/protected',
       } as unknown as Request,
       response,
-      next,
+      next
     );
 
     expect(response.sendStatus).toHaveBeenCalledWith(403);

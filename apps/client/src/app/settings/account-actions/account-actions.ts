@@ -58,7 +58,7 @@ export class AccountActions {
               this.webstorage.clear();
             }),
             delay(2000),
-            takeUntilDestroyed(this.destroyRef),
+            takeUntilDestroyed(this.destroyRef)
           )
           .subscribe(() => (window.location.href = '/login/'));
       });

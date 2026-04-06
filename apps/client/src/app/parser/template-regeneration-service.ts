@@ -46,7 +46,7 @@ export class TemplateRegenerationService {
       'message',
       this.ngxSignalTranslate.translate('Message.RegeneratingTemplates', {
         count: `${this._state().count - this._state().checked}`,
-      }),
+      })
     );
 
     if (index >= this.collectionList.length) {
@@ -98,7 +98,7 @@ export class TemplateRegenerationService {
         mergeMap((mdContent) =>
           this.api.update(this.collectionList[index].name, mdContent, this.collectionList[index].hash)
         ),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => {
         this._state.update((state) => ({ ...state, checked: state.checked + 1 }));

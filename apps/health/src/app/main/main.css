@@ -32,17 +32,17 @@ h2 {
   border: var(--border-style);
   border-radius: var(--border-radius);
 
-  &[data-status="ok"] {
+  &[data-status='ok'] {
     border-color: var(--color-olive);
     background-color: color-mix(in srgb, var(--color-olive) 10%, transparent);
   }
 
-  &[data-status="warn"] {
+  &[data-status='warn'] {
     border-color: var(--color-darkgoldenrod);
     background-color: color-mix(in srgb, var(--color-darkgoldenrod) 10%, transparent);
   }
 
-  &[data-status="error"] {
+  &[data-status='error'] {
     border-color: var(--color-crimson);
     background-color: color-mix(in srgb, var(--color-crimson) 10%, transparent);
   }
@@ -54,15 +54,15 @@ h2 {
   border-radius: 50%;
   flex-shrink: 0;
 
-  .status-banner[data-status="ok"] & {
+  .status-banner[data-status='ok'] & {
     background-color: var(--color-olive);
   }
 
-  .status-banner[data-status="warn"] & {
+  .status-banner[data-status='warn'] & {
     background-color: var(--color-darkgoldenrod);
   }
 
-  .status-banner[data-status="error"] & {
+  .status-banner[data-status='error'] & {
     background-color: var(--color-crimson);
   }
 }
@@ -114,15 +114,15 @@ h2 {
   border-radius: 4px;
   transition: width 0.4s ease;
 
-  &[data-level="ok"] {
+  &[data-level='ok'] {
     background-color: var(--color-olive);
   }
 
-  &[data-level="warn"] {
+  &[data-level='warn'] {
     background-color: var(--color-darkgoldenrod);
   }
 
-  &[data-level="error"] {
+  &[data-level='error'] {
     background-color: var(--color-crimson);
   }
 }
@@ -141,11 +141,11 @@ h2 {
 .frontend-status {
   font-weight: bold;
 
-  &[data-status="up"] {
+  &[data-status='up'] {
     color: var(--color-olive);
   }
 
-  &[data-status="down"] {
+  &[data-status='down'] {
     color: var(--color-crimson);
   }
 }

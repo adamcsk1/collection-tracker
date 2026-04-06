@@ -1,9 +1,9 @@
 @for (image of images(); track $index) {
-<img
-  alt=""
-  style="--x: {{ image.x }}px; --y: {{ image.y }}px; --animation-duration: {{ image.animationDuration }}s"
-  animate.enter="animation-fade-in"
-  animate.leave="animation-fade-out"
-  [src]="image.url"
-/>
+  <img
+    alt=""
+    style="--x: {{ image.x }}px; --y: {{ image.y }}px; --animation-duration: {{ image.animationDuration }}s"
+    animate.enter="animation-fade-in"
+    animate.leave="animation-fade-out"
+    [src]="image.url"
+  />
 }

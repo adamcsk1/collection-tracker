@@ -31,7 +31,7 @@ export class Statistics implements AfterViewInit {
       this.mainCollectionState.state
         .collection()
         .flatMap((item) => item.tags)
-        .sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0)),
+        .sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0))
     ),
   ]);
   protected readonly chart = signal<Chart<'pie', number[], string> | null>(null);
@@ -60,7 +60,7 @@ export class Statistics implements AfterViewInit {
           labels: [],
           datasets: [],
         },
-      }),
+      })
     );
 
     if (this.selectedTags().length > 0) this.updateChartData();

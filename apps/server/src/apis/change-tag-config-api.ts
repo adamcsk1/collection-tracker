@@ -9,13 +9,13 @@ const isTagConfig = (tagConfig: unknown): tagConfig is TagConfigsApiRequestModel
   if (typeof tagConfig !== 'object' || tagConfig === null || Array.isArray(tagConfig)) return false;
   const candidate = tagConfig as Record<string, unknown>;
   return (
-    typeof candidate.tag === 'string'
-    && typeof candidate.color === 'string'
-    && typeof candidate.useForImageBorder === 'boolean'
-    && typeof candidate.useForTextColor === 'boolean'
-    && typeof candidate.useForImageBadge === 'boolean'
-    && typeof candidate.weight === 'number'
-    && Number.isFinite(candidate.weight)
+    typeof candidate.tag === 'string' &&
+    typeof candidate.color === 'string' &&
+    typeof candidate.useForImageBorder === 'boolean' &&
+    typeof candidate.useForTextColor === 'boolean' &&
+    typeof candidate.useForImageBadge === 'boolean' &&
+    typeof candidate.weight === 'number' &&
+    Number.isFinite(candidate.weight)
   );
 };
 

@@ -16,7 +16,7 @@ describe('settingsLockedGuard', () => {
   const resolveGuard = () =>
     TestBed.runInInjectionContext(() =>
       firstValueFrom(
-        settingsLockedGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot) as Observable<boolean>,
+        settingsLockedGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot) as Observable<boolean>
       )
     );
 

@@ -57,7 +57,7 @@ export class Background {
           debounceTime(getCoarsePointerBasedDebounceTime()),
           map(() => ({ height: this.viewportHeight, width: this.viewportWidth })),
           filter(({ height, width }) => this.shouldHandleHeight(height) || this.shouldHandleWidth(width)),
-          takeUntilDestroyed(this.destroyRef),
+          takeUntilDestroyed(this.destroyRef)
         )
         .subscribe(({ height, width }) =>
           this.ngZone.run(() => {

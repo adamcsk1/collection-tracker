@@ -18,7 +18,7 @@ export const register = (app: Application): void => {
       const users = Store.getLastValue('users');
 
       users[request.usernameHash].accessTokens = users[request.usernameHash].accessTokens.filter(
-        (accessTokens) => accessTokens.tokenHash !== tokenHash,
+        (accessTokens) => accessTokens.tokenHash !== tokenHash
       );
       Store.set('users', users);
 

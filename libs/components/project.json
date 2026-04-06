@@ -41,13 +41,13 @@
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint fmt libs/components/**"
+        "command": "prettier --write \"libs/components\""
       }
     },
     "format-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dprint check libs/components/**"
+        "command": "prettier --check \"libs/components\""
       }
     }
   }

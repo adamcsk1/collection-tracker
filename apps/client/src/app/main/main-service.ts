@@ -30,7 +30,7 @@ export class MainService {
     const settingsLock = this.webstorage.getItem(STORAGE_SETTINGS_LOCK) === 'true';
     const sensitiveDataStorage = parseAllowedValue(
       this.webstorage.getItem(STORAGE_SENSITIVE_DATA_STORAGE),
-      SENSITIVE_DATA_STORAGE_MODES,
+      SENSITIVE_DATA_STORAGE_MODES
     );
     const clearLocalStorageAfterLogout = this.webstorage.getItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT) === 'true';
 
@@ -63,7 +63,7 @@ export class MainService {
         catchError(() => {
           this._tokenValid.set(false);
           return EMPTY;
-        }),
+        })
       )
       .subscribe(() => this._tokenValid.set(true));
   }

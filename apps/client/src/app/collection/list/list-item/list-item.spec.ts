@@ -41,7 +41,7 @@ describe('ListItem', () => {
   let component: ListItem;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
-  let portal: { open: ReturnType<typeof vi.fn>; };
+  let portal: { open: ReturnType<typeof vi.fn> };
   let useClaudeAi: ReturnType<typeof signal<boolean | null>>;
 
   beforeEach(() => {
@@ -86,7 +86,7 @@ describe('ListItem', () => {
   it('derives watched, movie, series, and non-internal tags', () => {
     fixture.componentRef.setInput(
       'collectionItem',
-      buildItem('Sample', [WATCHED_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2']),
+      buildItem('Sample', [WATCHED_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2'])
     );
     fixture.detectChanges();
 
@@ -132,7 +132,7 @@ describe('ListItem', () => {
     const image = fixture.nativeElement.querySelector('.image') as HTMLElement;
     const getBlueTagAnchor = (): HTMLAnchorElement | undefined =>
       Array.from<HTMLAnchorElement>(fixture.nativeElement.querySelectorAll('a')).find(
-        (link: HTMLAnchorElement) => link.textContent?.trim() === '#blue',
+        (link: HTMLAnchorElement) => link.textContent?.trim() === '#blue'
       );
 
     expect(['#112233', normalizeHexColor('#112233')]).toContain(image.style.borderColor);
@@ -153,7 +153,7 @@ describe('ListItem', () => {
     fixture.detectChanges();
 
     expect(['', 'transparent', 'rgb(0, 0, 0)', 'rgba(0, 0, 0, 0)', 'rgb(0,0,0)', 'rgba(0,0,0,0)']).toContain(
-      image.style.borderColor,
+      image.style.borderColor
     );
     expect(getBlueTagAnchor()?.getAttribute('style') ?? '').not.toContain('112233');
   });
@@ -188,7 +188,7 @@ describe('ListItem', () => {
     expect(['#ff0000', normalizeHexColor('#ff0000')]).toContain(badge.style.backgroundColor);
     expect(['#ffffff', 'rgb(255,255,255)', 'rgb(255, 255, 255)']).toContain(normalizeStyleValue(badge.style.color));
     expect(['#111111', normalizeHexColor('#111111')]).toContain(
-      fixture.nativeElement.querySelector('.image')?.style.borderColor,
+      fixture.nativeElement.querySelector('.image')?.style.borderColor
     );
   });
 

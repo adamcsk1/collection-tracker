@@ -21,8 +21,8 @@ describe('AccessTokens component', () => {
     deleteAccessToken: ReturnType<typeof vi.fn>;
     createAccessToken: ReturnType<typeof vi.fn>;
   };
-  let confirm: { ifConfirmed: ReturnType<typeof vi.fn>; };
-  let portal: { open: ReturnType<typeof vi.fn>; };
+  let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
+  let portal: { open: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     api = {

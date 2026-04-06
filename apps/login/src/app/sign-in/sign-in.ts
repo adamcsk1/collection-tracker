@@ -54,7 +54,7 @@ export class SignIn implements OnInit {
       submission: {
         action: async () => this.onSend(),
       },
-    },
+    }
   );
   protected readonly formErrors = {
     username: {
@@ -119,7 +119,7 @@ export class SignIn implements OnInit {
           language: formValue.language,
           theme: formValue.theme,
         })
-        .pipe(catchError(() => of(void 0))),
+        .pipe(catchError(() => of(void 0)))
     );
     window.location.href = '/client/';
   }

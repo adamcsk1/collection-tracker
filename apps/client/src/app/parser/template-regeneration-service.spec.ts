@@ -32,8 +32,8 @@ const buildCollectionItem = (name: string): CollectionModel[number] => ({
 
 describe('TemplateRegenerationService', () => {
   let service: TemplateRegenerationService;
-  let collectionService: { loadCollection: ReturnType<typeof vi.fn>; };
-  let omdbService: { getSelectedContent: ReturnType<typeof vi.fn>; };
+  let collectionService: { loadCollection: ReturnType<typeof vi.fn> };
+  let omdbService: { getSelectedContent: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     collectionService = { loadCollection: vi.fn() };
@@ -94,7 +94,7 @@ describe('TemplateRegenerationService', () => {
         imdbID: `ttA`,
         Title: 'title',
         Year: '2000',
-      } as never),
+      } as never)
     );
     vi.useFakeTimers();
 
@@ -107,7 +107,7 @@ describe('TemplateRegenerationService', () => {
         Title: 'title',
         Year: '2000',
         Tags: '#space #action',
-      }) as never,
+      }) as never
     );
     vi.useRealTimers();
   });

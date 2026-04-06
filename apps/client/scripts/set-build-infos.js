@@ -15,7 +15,7 @@ writeFileSync(
     .replace('localhost-build', `${commitHash} (${branch})`)
     .replace('localhost-build-date', dayjs().toISOString())
     .replace('localhost-version', appVersion),
-  'utf-8',
+  'utf-8'
 );
 
 console.log(`Build info updated in ${appConstantFilePath}`);

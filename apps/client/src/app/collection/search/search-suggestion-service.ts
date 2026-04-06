@@ -34,17 +34,19 @@ export class SearchSuggestionService {
         if (text.startsWith('#')) {
           this.addTagMatch(results, [...collectionItem.tags, ...this.basicTagList], (tag) => hasFuzzyMatch(text, tag));
         } else {
-          const matchesTitle = collectionItem.titleLower.includes(lowerCasedText)
-            || hasFuzzyMatch(lowerCasedText, collectionItem.titleLower);
-          const matchesContent = collectionItem.rawContentLower.includes(lowerCasedText)
-            || (collectionItem.rawContentLower.length <= FUZZY_CONTENT_MAX_LENGTH
-              && hasFuzzyMatch(lowerCasedText, collectionItem.rawContentLower));
+          const matchesTitle =
+            collectionItem.titleLower.includes(lowerCasedText) ||
+            hasFuzzyMatch(lowerCasedText, collectionItem.titleLower);
+          const matchesContent =
+            collectionItem.rawContentLower.includes(lowerCasedText) ||
+            (collectionItem.rawContentLower.length <= FUZZY_CONTENT_MAX_LENGTH &&
+              hasFuzzyMatch(lowerCasedText, collectionItem.rawContentLower));
 
           if (matchesTitle || matchesContent) {
             results.add(this.formatItemSuggestion(collectionItem));
           }
         }
-      }),
+      })
     );
   }
 
@@ -58,7 +60,7 @@ export class SearchSuggestionService {
         } else if (collectionItem.rawContentLower.includes(lowerCasedText)) {
           results.add(this.formatItemSuggestion(collectionItem));
         }
-      }),
+      })
     );
   }
 
@@ -67,7 +69,7 @@ export class SearchSuggestionService {
     if (match) results.add(match);
   }
 
-  private formatItemSuggestion(collectionItem: { title: string; IMDbId: string; }): string {
+  private formatItemSuggestion(collectionItem: { title: string; IMDbId: string }): string {
     return `${collectionItem.title}${SEPARATOR}${collectionItem.IMDbId || collectionItem.title}`;
   }
 }

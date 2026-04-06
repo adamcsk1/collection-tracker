@@ -26,7 +26,7 @@ describe('get-parser-config-api', () => {
       expect.objectContaining({
         mdTemplate: MD_TEMPLATE,
         filenamePattern: FILENAME_PATTERN,
-      }),
+      })
     );
   });
 

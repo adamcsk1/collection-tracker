@@ -12,7 +12,7 @@ export class TagConfigsService {
   public preloadUserTagConfigs(): Observable<void> {
     return this.api.getUserTagConfigs().pipe(
       tap((configs) => this.tagConfigsState.setState('configs', this.sortTagConfigs(configs))),
-      map(() => void 0),
+      map(() => void 0)
     );
   }
 

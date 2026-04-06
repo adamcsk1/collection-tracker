@@ -45,17 +45,17 @@
       {{ ('Collection' | signalTranslate)() }}
     </a>
     @if (!settingLockEnabled()) {
-    <a data-test-id="nav-tags" [routerLink]="['/', 'tag-configs']" routerLinkActive="active" class="highlight">
-      <i class="material-icons">local_offer</i> {{ ('Tags' | signalTranslate)() }}
-    </a>
-    <a data-test-id="nav-settings" [routerLink]="['/', 'settings']" routerLinkActive="active" class="highlight">
-      <i class="material-icons">settings</i>
-      {{ ('Settings' | signalTranslate)() }}
-    </a>
-    <a data-test-id="nav-parser" [routerLink]="['/', 'parser']" routerLinkActive="active" class="highlight">
-      <i class="material-icons">data_object</i>
-      {{ ('Parser' | signalTranslate)() }}
-    </a>
+      <a data-test-id="nav-tags" [routerLink]="['/', 'tag-configs']" routerLinkActive="active" class="highlight">
+        <i class="material-icons">local_offer</i> {{ ('Tags' | signalTranslate)() }}
+      </a>
+      <a data-test-id="nav-settings" [routerLink]="['/', 'settings']" routerLinkActive="active" class="highlight">
+        <i class="material-icons">settings</i>
+        {{ ('Settings' | signalTranslate)() }}
+      </a>
+      <a data-test-id="nav-parser" [routerLink]="['/', 'parser']" routerLinkActive="active" class="highlight">
+        <i class="material-icons">data_object</i>
+        {{ ('Parser' | signalTranslate)() }}
+      </a>
     }
     <a [routerLink]="['/', 'statistics']" routerLinkActive="active" class="highlight space">
       <i class="material-icons">bar_chart</i> {{ ('Statistics' | signalTranslate)() }}

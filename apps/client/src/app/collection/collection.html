@@ -1,22 +1,23 @@
 <div class="collection-container">
   @if (useClaudeAi()) {
-  <div class="search-input">
-    <ct-claude-ai-input
-      [formField]="claudeAiPromptTextField"
-      [placeholder]="('Placeholder.Reply' | signalTranslate)()"
-      (sendEvent)="onClaudeAiSend()"
-    />
-  </div>
+    <div class="search-input">
+      <ct-claude-ai-input
+        [formField]="claudeAiPromptTextField"
+        [placeholder]="('Placeholder.Reply' | signalTranslate)()"
+        (sendEvent)="onClaudeAiSend()"
+      />
+    </div>
   } @else {
-  <libc-autocomplete
-    data-test-id="collection-search"
-    [placeholder]="('Placeholder.SearchInCollection' | signalTranslate)()"
-    [formField]="searchTextField"
-    [showReset]="true"
-    (userEvent)="onSearchFromUser()"
-    (userAcceptSuggestionEvent)="onSearchAccepted()"
-  />
-  } @defer (prefetch on idle) {
-  <ct-list />
+    <libc-autocomplete
+      data-test-id="collection-search"
+      [placeholder]="('Placeholder.SearchInCollection' | signalTranslate)()"
+      [formField]="searchTextField"
+      [showReset]="true"
+      (userEvent)="onSearchFromUser()"
+      (userAcceptSuggestionEvent)="onSearchAccepted()"
+    />
+  }
+  @defer (prefetch on idle) {
+    <ct-list />
   }
 </div>

@@ -1,6 +1,6 @@
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 
-type WindowExtended = Window & { clipboardData?: { setData: (format: string, data: string) => void; }; };
+type WindowExtended = Window & { clipboardData?: { setData: (format: string, data: string) => void } };
 
 export const copyToClipboard = (text: string) => {
   const extendedWindow: WindowExtended = window;

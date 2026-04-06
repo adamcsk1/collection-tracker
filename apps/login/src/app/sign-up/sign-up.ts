@@ -42,7 +42,7 @@ export class SignUp implements OnInit {
       submission: {
         action: async () => this.onSend(),
       },
-    },
+    }
   );
   protected readonly formErrors = {
     username: {

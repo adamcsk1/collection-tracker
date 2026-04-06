@@ -41,9 +41,9 @@ const readCollectionItems = async (storeFolder: string, usernameHash: string): P
     const imdbId = imdbIdRegexp.exec(content)?.groups?.['id'] ?? '';
     const title = titleRegexp.exec(content)?.groups?.['title'] ?? '';
     const plot = contentRegexp.exec(content)?.groups?.['content'] ?? '';
-    const sanitizedContent = `IMDbId\n${imdbId}\n${
-      sanitizeMdContent(content.replace(plot, `Plot\n${plot}`).replace(title, `Title\n${title}`))
-    }`;
+    const sanitizedContent = `IMDbId\n${imdbId}\n${sanitizeMdContent(
+      content.replace(plot, `Plot\n${plot}`).replace(title, `Title\n${title}`)
+    )}`;
     if (imdbId) items.push({ imdbId, content: sanitizedContent });
     return items;
   }, []);
@@ -98,7 +98,7 @@ export const register = (app: Application): void => {
 
       const rawText = message.content
         .filter((block) => block.type === 'text')
-        .map((block) => (block as { type: 'text'; text: string; }).text)
+        .map((block) => (block as { type: 'text'; text: string }).text)
         .join('');
 
       let parsed: unknown;
@@ -120,7 +120,7 @@ export const register = (app: Application): void => {
 
       const inputImdbIds = new Set(items.map((item) => item.imdbId)); // Ensure we only return IDs that were in the input list
       const matchedIds = (parsed as unknown[]).filter(
-        (imdbId): imdbId is string => typeof imdbId === 'string' && inputImdbIds.has(imdbId),
+        (imdbId): imdbId is string => typeof imdbId === 'string' && inputImdbIds.has(imdbId)
       );
 
       response.send({ matchedIds } as ClaudeQueryResponseModel);

@@ -14,7 +14,7 @@ export const register = (app: Application): void => {
       const newAccessToken = generateAccessToken(request.username);
 
       users[request.usernameHash].accessTokens.push(
-        getUserAccessToken(newAccessToken, request.headers['user-agent'], null),
+        getUserAccessToken(newAccessToken, request.headers['user-agent'], null)
       );
       Store.set('users', users);
 

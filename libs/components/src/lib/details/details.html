@@ -1,7 +1,5 @@
 <details [open]="open() || storedOpened()">
-  <summary (click)="onToggle($event)">
-    {{ summary() }}
-  </summary>
+  <summary (click)="onToggle($event)">{{ summary() }}</summary>
 
   <div>
     <ng-content></ng-content>

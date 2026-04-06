@@ -93,9 +93,9 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
     } else if ($event.code === 'ArrowUp' && this._suggestions().length && this.selectedSuggestion() > 0) {
       this.selectedSuggestion.update((state) => state - 1);
     } else if (
-      $event.code === 'ArrowDown'
-      && this._suggestions().length
-      && this.selectedSuggestion() < this._suggestions().length - 1
+      $event.code === 'ArrowDown' &&
+      this._suggestions().length &&
+      this.selectedSuggestion() < this._suggestions().length - 1
     ) {
       this.selectedSuggestion.update((state) => state + 1);
     }

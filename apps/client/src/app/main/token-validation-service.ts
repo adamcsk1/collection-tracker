@@ -34,7 +34,7 @@ export class TokenValidationService {
           tokenValidationEffect.destroy();
         }
       },
-      { injector: this.injector },
+      { injector: this.injector }
     );
 
     if (this.main.tokenValid() === false) {
