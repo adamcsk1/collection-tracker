@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { createFormControlA11y } from '@shared/utils/form-control-a11y-util';
+import { createFormControlA11y } from '../utils/form-control-a11y-util';
 import { getCoarsePointerBasedDebounceTime } from '@shared/utils/prefer-coarse-pointer-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { asyncScheduler, debounceTime, fromEvent, Subject } from 'rxjs';
