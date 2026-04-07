@@ -17,6 +17,8 @@ const defineAngularConfig = (appName: string, dirname: string, target: 'apps' | 
       environment: 'jsdom',
       include: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
       setupFiles: [resolve(dirname, 'src/test-setup.ts'), resolve(dirname, '../../vitest.setup.ts')],
+      pool: 'forks',
+      poolOptions: { forks: { isolate: true } },
       reporters: ['default', 'verbose'],
       coverage: {
         enabled: true,
