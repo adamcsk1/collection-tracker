@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { createFormControlA11y } from '@shared/utils/form-control-a11y-util';
+import { createFormControlA11y } from '../utils/form-control-a11y-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
