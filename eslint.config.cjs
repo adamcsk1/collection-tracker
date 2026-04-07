@@ -11,6 +11,38 @@ module.exports = [
     ignores: [".cache/", ".git/", "node_modules/", ".angular/", ".nx/", "dist"],
   },
   {
+    plugins: {
+      "@nx": nx,
+    },
+    rules: {
+      "@nx/enforce-module-boundaries": [
+        "error",
+        {
+          enforceBuildableLibDependency: true,
+          allow: [],
+          depConstraints: [
+            {
+              sourceTag: "scope:node",
+              onlyDependOnLibsWithTags: ["scope:node", "scope:universal"],
+            },
+            {
+              sourceTag: "scope:angular",
+              onlyDependOnLibsWithTags: ["scope:angular", "scope:universal"],
+            },
+            {
+              sourceTag: "scope:universal",
+              onlyDependOnLibsWithTags: ["scope:universal"],
+            },
+            {
+              sourceTag: "scope:e2e",
+              onlyDependOnLibsWithTags: ["*"],
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: [
       "apps/client/**/*.ts",
       "apps/health/**/*.ts",
