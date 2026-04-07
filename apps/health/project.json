@@ -2,6 +2,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "health",
   "projectType": "application",
+  "tags": ["type:app", "scope:angular"],
   "generators": {
     "@schematics/angular:component": {
       "style": "css"

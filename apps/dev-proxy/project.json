@@ -2,6 +2,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "dev-proxy",
   "projectType": "application",
+  "tags": ["type:app", "scope:node"],
   "generators": {},
   "sourceRoot": "./",
   "targets": {
