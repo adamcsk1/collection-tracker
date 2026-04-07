@@ -1,14 +1,14 @@
 import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { ParserConfigModel } from '@server/models/parser-config-model';
 import { API_PREFIX } from '@shared/constants/api-const';
+import { ParserConfigApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
   app.post(`${API_PREFIX}/parser/change-config`, jwtGuard, async (request, response) => {
     try {
-      const body = request.body as ParserConfigModel;
+      const body = request.body as ParserConfigApiResponseModel;
       if (
         typeof body !== 'object' ||
         body === null ||
@@ -24,9 +24,9 @@ export const register = (app: Application): void => {
       const parserConfigs = Store.getLastValue('parserConfigs');
       let userConfig = parserConfigs?.[request.usernameHash];
 
-      if (!userConfig) userConfig = {} satisfies ParserConfigModel;
+      if (!userConfig) userConfig = {} satisfies ParserConfigApiResponseModel;
 
-      const updatedConfig = { ...userConfig, ...body } satisfies ParserConfigModel;
+      const updatedConfig = { ...userConfig, ...body } satisfies ParserConfigApiResponseModel;
       parserConfigs[request.usernameHash] = updatedConfig;
       Store.set('parserConfigs', parserConfigs);
 

@@ -1,9 +1,8 @@
 import { jwtGuard } from '@server/core/jwt';
 import { errorLog } from '@server/core/logger';
 import { Store } from '@server/core/store/store';
-import { UserSettingsModel } from '@server/models/user-settings-model';
 import { API_PREFIX } from '@shared/constants/api-const';
-import { UserSettingsApiRequestModel } from '@shared/models/api-model';
+import { UserSettingsApiRequestModel, UserSettingsApiResponseModel } from '@shared/models/api-model';
 import { LANGUAGES } from '@shared/models/language-model';
 import { THEMES } from '@shared/models/theme-model';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
@@ -11,9 +10,9 @@ import type { Application } from 'express';
 
 const isAllowedNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 const isAllowedBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
-const isAllowedTheme = (value: unknown): value is UserSettingsModel['theme'] =>
+const isAllowedTheme = (value: unknown): value is UserSettingsApiResponseModel['theme'] =>
   typeof value === 'string' && isAllowedValue(value, THEMES);
-const isAllowedLanguage = (value: unknown): value is UserSettingsModel['language'] =>
+const isAllowedLanguage = (value: unknown): value is UserSettingsApiResponseModel['language'] =>
   typeof value === 'string' && isAllowedValue(value, LANGUAGES);
 
 const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel => {
@@ -46,14 +45,14 @@ export const register = (app: Application): void => {
       const userSettings = Store.getLastValue('userSettings');
       let userConfig = userSettings?.[request.usernameHash];
 
-      if (!userConfig) userConfig = {} satisfies UserSettingsModel;
+      if (!userConfig) userConfig = {} satisfies UserSettingsApiResponseModel;
 
       if (body.fromLogin) {
         if (body.language && userConfig.language) delete body.language;
         if (body.theme && userConfig.theme) delete body.theme;
       }
 
-      const updatedConfig = { ...userConfig, ...body } satisfies UserSettingsModel;
+      const updatedConfig = { ...userConfig, ...body } satisfies UserSettingsApiResponseModel;
       userSettings[request.usernameHash] = updatedConfig;
       Store.set('userSettings', userSettings);
 
