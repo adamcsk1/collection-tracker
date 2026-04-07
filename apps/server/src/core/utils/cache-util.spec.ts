@@ -56,14 +56,14 @@ describe('cache-util', () => {
 
     const hashFilePath = path.join(tempDir, FOLDERS.store, 'notes', 'file.txt.hash');
     expect(existsSync(hashFilePath)).toBe(true);
-    expect(readFileSync(hashFilePath, 'utf-8')).toMatch(/^[a-f0-9]{64}$/);
+    expect(readFileSync(hashFilePath, 'utf-8')).toMatch(/^[a-f0-9]{128}$/);
   });
 
   it('stores hash in memory when updating', async () => {
     await updateItem('file.txt', 'notes', 'hello');
 
     const fileHashes = Store.getLastValue('fileHashes');
-    expect(fileHashes['notes-file.txt']).toMatch(/^[a-f0-9]{64}$/);
+    expect(fileHashes['notes-file.txt']).toMatch(/^[a-f0-9]{128}$/);
   });
 
   it('evicts oldest entries when cache exceeds CACHE_MAX on update', async () => {
