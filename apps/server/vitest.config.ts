@@ -1,7 +1,22 @@
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
-import { coverageExclude } from '../../vitest.config';
+
+const coverageExclude = [
+  '**/coverage/*',
+  '**/mocks/*',
+  '**/index.ts',
+  '**/*-model.ts',
+  '**/*-config.ts',
+  '**/bootstrap.ts',
+  '**/*-routes.ts',
+  '**/*-const.ts',
+  '**/*.config.ts',
+  '**/*.config.cjs',
+  '**/scripts/*',
+  '**/*.html',
+  '**/*.css',
+];
 
 const require = createRequire(import.meta.url);
 const tsconfigPaths = require('vite-tsconfig-paths').default;
