@@ -40,6 +40,7 @@ describe('proxy-claude-query-api', () => {
     (Store.getLastValue as Mock).mockImplementation((key: string) => {
       if (key === 'dataFolder') return '/data';
       if (key === 'cache') return cache;
+      if (key === 'fileHashes') return {};
       if (key === 'parserConfigs') return {};
       return null;
     });
