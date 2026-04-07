@@ -1,18 +1,18 @@
-import { getParserRegexp, setParserRegexp } from '@services/parser/parser-util';
+import { setParserRegexp } from '@services/parser/parser-util';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { getCollectionItem } from './get-collection-item-util';
 
 beforeAll(() => {
-  setParserRegexp('image', getParserRegexp('image') ?? PARSER_REGEXPS.image);
-  setParserRegexp('title', getParserRegexp('title') ?? PARSER_REGEXPS.title);
-  setParserRegexp('IMDbId', getParserRegexp('IMDbId') ?? PARSER_REGEXPS.IMDbId);
-  setParserRegexp('IMDbRate', getParserRegexp('IMDbRate') ?? PARSER_REGEXPS.IMDbRate);
-  setParserRegexp('genre', getParserRegexp('genre') ?? PARSER_REGEXPS.genre);
-  setParserRegexp('genreToken', getParserRegexp('genreToken') ?? PARSER_REGEXPS.genreToken);
-  setParserRegexp('tags', getParserRegexp('tags') ?? PARSER_REGEXPS.tags);
-  setParserRegexp('tagToken', getParserRegexp('tagToken') ?? PARSER_REGEXPS.tagToken);
-  setParserRegexp('year', getParserRegexp('year') ?? PARSER_REGEXPS.year);
+  setParserRegexp('image', PARSER_REGEXPS.image);
+  setParserRegexp('title', PARSER_REGEXPS.title);
+  setParserRegexp('IMDbId', PARSER_REGEXPS.IMDbId);
+  setParserRegexp('IMDbRate', PARSER_REGEXPS.IMDbRate);
+  setParserRegexp('genre', PARSER_REGEXPS.genre);
+  setParserRegexp('genreToken', PARSER_REGEXPS.genreToken);
+  setParserRegexp('tags', PARSER_REGEXPS.tags);
+  setParserRegexp('tagToken', PARSER_REGEXPS.tagToken);
+  setParserRegexp('year', PARSER_REGEXPS.year);
 });
 
 const markdownContent = [

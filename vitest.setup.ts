@@ -18,6 +18,13 @@ if (typeof window !== 'undefined' && window.location) {
   }
 }
 
+if (typeof navigator !== 'undefined' && !navigator.clipboard) {
+  Object.defineProperty(navigator, 'clipboard', {
+    value: { writeText: vi.fn().mockResolvedValue(undefined), readText: vi.fn().mockResolvedValue('') },
+    configurable: true,
+  });
+}
+
 const requireFn = createRequire(import.meta.url);
 const tsconfig = requireFn('./tsconfig.json');
 const baseUrl = path.resolve(__dirname, tsconfig?.compilerOptions?.baseUrl ?? '.');
