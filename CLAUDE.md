@@ -190,5 +190,5 @@ Format: `type(scope): short imperative summary`
 ## TypeScript Error Policy
 
 - **Never suppress errors** — do not use `ignoreDeprecations`, `@ts-ignore`, `@ts-expect-error`, or path-alias hacks to silence TypeScript errors. Fix the root cause.
-- **`baseUrl` is removed** — `tsconfig.json` no longer uses `baseUrl`. All `paths` values use explicit `./` prefixes. All imports must use a declared `@alias/*` path or a single-level relative path (`./foo` or `../foo`). Deeper relative paths (`../../`) are not allowed — add a path alias instead.
-- **Server spec imports** — imports in `apps/server/src/apis/*.spec.ts` use `@mocks/build-app-mock` and `@mocks/response-mock`.
+- **`baseUrl` is removed** — `tsconfig.json` no longer uses `baseUrl`. All `paths` values use explicit `./` prefixes. All imports must use a declared `@alias/*` path or a relative path. For cross-project imports (importing from a different app or lib), use a declared `@alias/*` path — do not navigate the filesystem with `../../`. Within the same project (same app or lib), relative paths of any depth (`../`, `../../`, `../../../`) are acceptable.
+- **Server spec imports** — imports in `apps/server/src/apis/*.spec.ts` use relative paths `../../test/mocks/build-app-mock` and `../../test/mocks/response-mock`.

@@ -1,8 +1,8 @@
-import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
-import { hashText } from '@server/core/crypto';
-import { debugLog, errorLog } from '@server/core/logger';
-import { Store } from '@server/core/store/store';
-import '@server/models/express-model';
+import { COOKIE_TOKEN } from './cookie/cookie-const';
+import { hashText } from './crypto';
+import { debugLog, errorLog } from './logger';
+import { Store } from './store/store';
+import '../models/express-model';
 import { randomUUID } from 'crypto';
 import express from 'express';
 import jwt from 'jsonwebtoken';
