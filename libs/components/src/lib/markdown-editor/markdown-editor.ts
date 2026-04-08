@@ -19,7 +19,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { EasyMdeCtor, EasyMdeInstance } from '@components/markdown-editor/markdown-editor-model';
+import { EasyMdeCtor, EasyMdeInstance } from './markdown-editor-model';
 import { getCoarsePointerBasedDebounceTime } from '@shared/utils/prefer-coarse-pointer-util';
 import { asyncScheduler, debounceTime, fromEvent, Subject } from 'rxjs';
 
