@@ -1,4 +1,4 @@
-import { setParserTemplate } from '@services/parser/parser-util';
+import { setParserTemplate } from '../parser/parser-util';
 import { MD_TEMPLATE } from '@shared/constants/parser-const';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { MdContentGeneratorService } from './md-content-generator-service';

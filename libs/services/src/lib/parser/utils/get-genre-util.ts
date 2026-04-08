@@ -1,4 +1,4 @@
-import { getParserRegexp } from '@services/parser/parser-util';
+import { getParserRegexp } from '../parser-util';
 
 export const getGenre = (content: string): string[] => {
   const genre = getParserRegexp('genre').exec(content)?.groups?.['genre'];

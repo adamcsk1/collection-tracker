@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { computed, effect, inject, Injectable, NgZone, signal, untracked } from '@angular/core';
-import { themeStateToken } from '@services/theme/theme-store';
+import { themeStateToken } from './theme-store';
 import { ThemeModel } from '@shared/models/theme-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { fromEvent } from 'rxjs';

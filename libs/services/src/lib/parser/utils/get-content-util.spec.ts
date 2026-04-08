@@ -1,4 +1,4 @@
-import { getParserRegexp, setParserRegexp } from '@services/parser/parser-util';
+import { getParserRegexp, setParserRegexp } from '../parser-util';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { getContent } from './get-content-util';

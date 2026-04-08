@@ -1,4 +1,4 @@
-import { ApiLoadNetworkStatus } from '@services/api/api-model';
+import { ApiLoadNetworkStatus } from './api-model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
 
 export interface ApiState {

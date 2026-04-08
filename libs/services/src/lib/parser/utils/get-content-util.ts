@@ -1,4 +1,4 @@
-import { getParserRegexp } from '@services/parser/parser-util';
+import { getParserRegexp } from '../parser-util';
 
 export const getContent = (content: string): string =>
   getParserRegexp('content').exec(content)?.groups?.['content'] ?? '';

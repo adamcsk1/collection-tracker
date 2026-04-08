@@ -1,4 +1,4 @@
-import { getParserRegexp } from '@services/parser/parser-util';
+import { getParserRegexp } from '../parser-util';
 
 export const getYear = (content: string): number | null => {
   const match = getParserRegexp('year').exec(content)?.groups?.['year'] ?? null;

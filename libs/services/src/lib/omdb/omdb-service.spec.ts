@@ -1,9 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { AlertService } from '@services/alert-service';
-import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
-import { getParserRegexp, setParserRegexp } from '@services/parser/parser-util';
+import { AlertService } from '../alert-service';
+import { ApiState, apiStateToken, initialApiState } from '../api/api-store';
+import { getParserRegexp, setParserRegexp } from '../parser/parser-util';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { getParserTemplate } from '@services/parser/parser-util';
+import { getParserTemplate } from '../parser/parser-util';
 import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 
 @Injectable()
