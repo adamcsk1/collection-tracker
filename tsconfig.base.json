@@ -1,0 +1,24 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "strictFunctionTypes": true,
+    "importHelpers": true,
+    "target": "ES2023",
+    "module": "preserve",
+    "skipLibCheck": true,
+    "paths": {
+      "@client/*": ["./apps/client/src/app/*"],
+      "@health/*": ["./apps/health/src/app/*"],
+      "@login/*": ["./apps/login/src/app/*"],
+      "@components/*": ["./libs/components/src/lib/*"],
+      "@public/*": ["./libs/public/src/lib/*"],
+      "@server/*": ["./apps/server/src/*"],
+      "@services/*": ["./libs/services/src/lib/*"],
+      "@shared/*": ["./libs/shared/src/lib/*"]
+    }
+  },
+  "angularCompilerOptions": {
+    "strictTemplates": true
+  }
+}
