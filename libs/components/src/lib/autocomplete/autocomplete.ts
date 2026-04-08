@@ -12,7 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { AutocompleteServiceInterface } from '@components/autocomplete/autocomplete-model';
+import { AutocompleteServiceInterface } from './autocomplete-model';
 import { createFormControlA11y } from '../utils/form-control-a11y-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { asyncScheduler, Subscription } from 'rxjs';

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
-import { BLOCKER_LOADING_TIMEOUT_MS } from '@components/blocker-loading/blocker-loading-const';
-import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
+import { BLOCKER_LOADING_TIMEOUT_MS } from './blocker-loading-const';
+import { blockerLoadingStateToken } from './blocker-loading-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { asyncScheduler, Subscription } from 'rxjs';

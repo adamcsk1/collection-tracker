@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
-import { initialToastState, toastStateToken } from '@components/toast/toast-store';
+import { initialToastState, toastStateToken } from './toast-store';
 import { asyncScheduler, Subscription } from 'rxjs';
 
 @Component({
