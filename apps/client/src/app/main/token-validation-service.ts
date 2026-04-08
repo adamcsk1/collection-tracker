@@ -1,10 +1,10 @@
 import { effect, inject, Injectable, Injector } from '@angular/core';
 import { Router } from '@angular/router';
-import { CollectionService } from '@client/collection/collection-service';
-import { MainService } from '@client/main/main-service';
-import { redirectToLogin } from '@client/main/main-util';
-import { SettingsService } from '@client/settings/settings-service';
-import { TagConfigsService } from '@client/tag-configs/tag-configs-service';
+import { CollectionService } from '../collection/collection-service';
+import { MainService } from './main-service';
+import { redirectToLogin } from './main-util';
+import { SettingsService } from '../settings/settings-service';
+import { TagConfigsService } from '../tag-configs/tag-configs-service';
 import { ParserService } from '@services/parser/parser-service';
 import { forkJoin } from 'rxjs';
 

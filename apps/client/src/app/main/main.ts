@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Background } from '@client/main/background/background';
-import { Header } from '@client/main/header/header';
-import { MainService } from '@client/main/main-service';
-import { mainStateToken } from '@client/main/main-store';
-import { TokenValidationService } from '@client/main/token-validation-service';
+import { Background } from './background/background';
+import { Header } from './header/header';
+import { MainService } from './main-service';
+import { mainStateToken } from './main-store';
+import { TokenValidationService } from './token-validation-service';
 import { BlockerLoading } from '@components/blocker-loading/blocker-loading';
 import { SpinnerLoading } from '@components/spinner-loading/spinner-loading';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';

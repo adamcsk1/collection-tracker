@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionService } from '@client/collection/collection-service';
-import { NewItemDialogService } from '@client/collection/new-item-dialog/new-item-dialog-service';
+import { CollectionService } from '../collection-service';
+import { NewItemDialogService } from './new-item-dialog-service';
 import {
   initialSpinnerLoadingState,
   SpinnerLoadingState,

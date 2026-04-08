@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import * as collectionUtils from '@client/collection/utils/get-collection-item-util';
+import * as collectionUtils from './utils/get-collection-item-util';
 import {
   initialMainCollectionState,
   MainCollectionState,
   mainCollectionStateToken,
-} from '@client/main/main-collection-store';
+} from '../main/main-collection-store';
 import { ApiService } from '@services/api/api-service';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { GetAllApiResponseItemModel, GetAllApiResponseModel } from '@shared/models/api-model';

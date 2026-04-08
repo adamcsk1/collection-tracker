@@ -1,11 +1,11 @@
 import { DestroyRef, inject, Injectable, Signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CollectionService } from '@client/collection/collection-service';
-import { getCollectionItem } from '@client/collection/utils/get-collection-item-util';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
-import { ParserModel, TemplateRefreshStateModel } from '@client/parser/parser-model';
-import { PARSER_PREVIEW_OMDB_RESPONSE } from '@client/parser/parser-preview-const';
-import { TemplateRegenerationService } from '@client/parser/template-regeneration-service';
+import { CollectionService } from '../collection/collection-service';
+import { getCollectionItem } from '../collection/utils/get-collection-item-util';
+import { mainCollectionStateToken } from '../main/main-collection-store';
+import { ParserModel, TemplateRefreshStateModel } from './parser-model';
+import { PARSER_PREVIEW_OMDB_RESPONSE } from './parser-preview-const';
+import { TemplateRegenerationService } from './template-regeneration-service';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';

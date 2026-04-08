@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionModel } from '@client/collection/collection-model';
-import { CollectionService } from '@client/collection/collection-service';
-import { TemplateRegenerationService } from '@client/parser/template-regeneration-service';
+import { CollectionModel } from '../collection/collection-model';
+import { CollectionService } from '../collection/collection-service';
+import { TemplateRegenerationService } from './template-regeneration-service';
 import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,

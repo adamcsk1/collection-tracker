@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '@client/collection/collection-model';
+import { CollectionItemModel } from '../collection-model';
 import {
   initialMainCollectionState,
   MainCollectionState,
   mainCollectionStateToken,
-} from '@client/main/main-collection-store';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
+} from '../../main/main-collection-store';
+import { initialMainState, mainStateToken } from '../../main/main-store';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';

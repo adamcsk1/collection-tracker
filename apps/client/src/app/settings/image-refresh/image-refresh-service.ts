@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { CollectionItemModel } from '@client/collection/collection-model';
-import { CollectionService } from '@client/collection/collection-service';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
-import { ImageRefreshStateModel } from '@client/settings/image-refresh/image-refresh-model';
+import { CollectionItemModel } from '../../collection/collection-model';
+import { CollectionService } from '../../collection/collection-service';
+import { mainCollectionStateToken } from '../../main/main-collection-store';
+import { ImageRefreshStateModel } from './image-refresh-model';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';

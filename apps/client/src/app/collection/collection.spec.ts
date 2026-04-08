@@ -1,8 +1,8 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { CollectionState, collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
-import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
+import { CollectionState, collectionStateToken, initialCollectionState } from './collection-store';
+import { ClaudeSearchService } from './search/claude-search-service';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';

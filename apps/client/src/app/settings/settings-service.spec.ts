@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { MainService } from '@client/main/main-service';
-import { initialMainState, MainState, mainStateToken } from '@client/main/main-store';
-import { SettingsModel } from '@client/settings/settings-model';
+import { MainService } from '../main/main-service';
+import { initialMainState, MainState, mainStateToken } from '../main/main-store';
+import { SettingsModel } from './settings-model';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';

@@ -1,6 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
-import { StatisticsSummaryModel } from '@client/statistics/statistics-model';
+import { mainCollectionStateToken } from '../main/main-collection-store';
+import { StatisticsSummaryModel } from './statistics-model';
 import { Details } from '@components/details/details';
 import { apiStateToken } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';

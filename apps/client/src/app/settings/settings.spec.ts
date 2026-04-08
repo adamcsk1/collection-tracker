@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
-import { ChangeWatchedStatusService } from '@client/settings/change-watched-status/change-watched-status-service';
-import { ImageRefreshService } from '@client/settings/image-refresh/image-refresh-service';
+import { initialMainState, mainStateToken } from '../main/main-store';
+import { ChangeWatchedStatusService } from './change-watched-status/change-watched-status-service';
+import { ImageRefreshService } from './image-refresh/image-refresh-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';

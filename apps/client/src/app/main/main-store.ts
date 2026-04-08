@@ -1,4 +1,4 @@
-import { SettingsModel } from '@client/settings/settings-model';
+import { SettingsModel } from '../settings/settings-model';
 import { LanguageModel } from '@shared/models/language-model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
 

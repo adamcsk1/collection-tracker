@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { MainService } from '@client/main/main-service';
-import { mainStateToken } from '@client/main/main-store';
-import { SettingsModel } from '@client/settings/settings-model';
+import { MainService } from '../main/main-service';
+import { mainStateToken } from '../main/main-store';
+import { SettingsModel } from './settings-model';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';

@@ -1,4 +1,4 @@
-import { CollectionItemModel } from '@client/collection/collection-model';
+import { CollectionItemModel } from '../collection-model';
 import { describe, expect, it, vi } from 'vitest';
 import { searchCollection } from './search-collection-util';
 

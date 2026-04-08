@@ -1,12 +1,12 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
+import { ClaudeSearchService } from '../../search/claude-search-service';
 import {
   initialMainCollectionState,
   MainCollectionState,
   mainCollectionStateToken,
-} from '@client/main/main-collection-store';
-import { initialMainState, MainState, mainStateToken } from '@client/main/main-store';
+} from '../../../main/main-collection-store';
+import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';

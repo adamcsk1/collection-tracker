@@ -1,5 +1,5 @@
 import { inject, Pipe, PipeTransform } from '@angular/core';
-import { tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
+import { tagConfigsStateToken } from './tag-configs-store';
 
 @Pipe({
   name: 'tagConfigColor',

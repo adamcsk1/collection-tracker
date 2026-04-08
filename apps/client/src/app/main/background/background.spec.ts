@@ -1,10 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '@client/collection/collection-model';
-import {
-  initialMainCollectionState,
-  MainCollectionState,
-  mainCollectionStateToken,
-} from '@client/main/main-collection-store';
+import { CollectionItemModel } from '../../collection/collection-model';
+import { initialMainCollectionState, MainCollectionState, mainCollectionStateToken } from '../main-collection-store';
 import * as mobileUserAgentUtil from '@shared/utils/mobile-user-agent.util';
 import * as coarsePointerUtil from '@shared/utils/prefer-coarse-pointer-util';
 import * as randomIntUtil from '@shared/utils/random-int-util';

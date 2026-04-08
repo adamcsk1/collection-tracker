@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '@client/collection/collection-model';
+import { CollectionItemModel } from '../../collection-model';
 import {
   initialMainCollectionState,
   MainCollectionState,
   mainCollectionStateToken,
-} from '@client/main/main-collection-store';
+} from '../../../main/main-collection-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { knownIMDbIdValidationFactory } from './known-imdb-id-validator';

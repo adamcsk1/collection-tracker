@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '@client/collection/collection-model';
+import { CollectionItemModel } from '../../collection-model';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { INFINITE_SCROLL_PAGE_SIZE } from './infinite-scroll-const';
 import { InfiniteScrollService } from './infinite-scroll-service';

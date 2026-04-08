@@ -1,4 +1,4 @@
-import * as collectionItemUtil from '@client/collection/utils/get-collection-item-util';
+import * as collectionItemUtil from '../../utils/get-collection-item-util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { rawContentValidation } from './raw-content-validator';
 

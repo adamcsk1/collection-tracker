@@ -1,6 +1,6 @@
 import { computed, Injectable, Signal, signal } from '@angular/core';
-import { CollectionItemModel } from '@client/collection/collection-model';
-import { INFINITE_SCROLL_PAGE_SIZE } from '@client/collection/list/infinite-scroll/infinite-scroll-const';
+import { CollectionItemModel } from '../../collection-model';
+import { INFINITE_SCROLL_PAGE_SIZE } from './infinite-scroll-const';
 
 @Injectable()
 export class InfiniteScrollService {

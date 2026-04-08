@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { CollectionItemModel } from '@client/collection/collection-model';
-import { collectionStateToken } from '@client/collection/collection-store';
-import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
-import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
-import { TagConfigColorPipe } from '@client/tag-configs/tag-configs-color-pipe';
+import { CollectionItemModel } from '../../collection-model';
+import { collectionStateToken } from '../../collection-store';
+import { ItemDialog } from '../../item-dialog/item-dialog';
+import { ClaudeSearchService } from '../../search/claude-search-service';
+import { TagConfigColorPipe } from '../../../tag-configs/tag-configs-color-pipe';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';

@@ -1,4 +1,4 @@
-import { CollectionItemModel } from '@client/collection/collection-model';
+import { CollectionItemModel } from '../../collection-model';
 import { VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { FUZZY_CONTENT_MAX_LENGTH, hasFuzzyMatch } from '@shared/utils/fuzzy-search-util';
 

@@ -1,12 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '@client/collection/collection-model';
-import { CollectionService } from '@client/collection/collection-service';
+import { CollectionItemModel } from '../../collection/collection-model';
+import { CollectionService } from '../../collection/collection-service';
 import {
   initialMainCollectionState,
   MainCollectionState,
   mainCollectionStateToken,
-} from '@client/main/main-collection-store';
+} from '../../main/main-collection-store';
 import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,

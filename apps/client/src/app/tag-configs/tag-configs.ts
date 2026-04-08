@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, untracked } from '@angular/core';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
-import { TagConfigsModel } from '@client/tag-configs/tag-configs-model';
-import { tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
+import { mainCollectionStateToken } from '../main/main-collection-store';
+import { TagConfigsModel } from './tag-configs-model';
+import { tagConfigsStateToken } from './tag-configs-store';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Input } from '@components/input/input';
 import { toastStateToken } from '@components/toast/toast-store';

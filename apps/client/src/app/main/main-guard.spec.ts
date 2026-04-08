@@ -1,9 +1,9 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { MainService } from '@client/main/main-service';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
-import * as MainUtil from '@client/main/main-util';
+import { MainService } from './main-service';
+import { initialMainState, mainStateToken } from './main-store';
+import * as MainUtil from './main-util';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { provideStore } from 'ngx-simple-signal-store';
 import { firstValueFrom, isObservable } from 'rxjs';

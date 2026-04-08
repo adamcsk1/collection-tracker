@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionService } from '@client/collection/collection-service';
-import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
-import { ParserModel } from '@client/parser/parser-model';
-import { TemplateRegenerationService } from '@client/parser/template-regeneration-service';
+import { CollectionService } from '../collection/collection-service';
+import { initialMainCollectionState, mainCollectionStateToken } from '../main/main-collection-store';
+import { ParserModel } from './parser-model';
+import { TemplateRegenerationService } from './template-regeneration-service';
 import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,

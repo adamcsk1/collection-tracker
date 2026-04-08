@@ -1,9 +1,9 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '@client/collection/collection-model';
-import { CollectionState, collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
-import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
-import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
+import { CollectionItemModel } from '../../collection-model';
+import { CollectionState, collectionStateToken, initialCollectionState } from '../../collection-store';
+import { ClaudeSearchService } from '../../search/claude-search-service';
+import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from '../../../tag-configs/tag-configs-store';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';

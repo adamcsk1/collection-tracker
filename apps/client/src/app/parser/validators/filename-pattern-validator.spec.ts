@@ -1,4 +1,4 @@
-import { filenamePatternValidationError } from '@client/parser/validators/filename-pattern-validator';
+import { filenamePatternValidationError } from './filename-pattern-validator';
 import { describe, expect, it } from 'vitest';
 
 describe('filename-pattern-validator', () => {

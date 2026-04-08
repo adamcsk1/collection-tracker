@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { CollectionService } from '@client/collection/collection-service';
-import { MainService } from '@client/main/main-service';
-import { TokenValidationService } from '@client/main/token-validation-service';
-import { SettingsService } from '@client/settings/settings-service';
-import { TagConfigsService } from '@client/tag-configs/tag-configs-service';
+import { CollectionService } from '../collection/collection-service';
+import { MainService } from './main-service';
+import { TokenValidationService } from './token-validation-service';
+import { SettingsService } from '../settings/settings-service';
+import { TagConfigsService } from '../tag-configs/tag-configs-service';
 import { ParserService } from '@services/parser/parser-service';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

@@ -1,8 +1,8 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CollectionService } from '@client/collection/collection-service';
-import { initialMainState, MainState, mainStateToken } from '@client/main/main-store';
-import * as MainUtil from '@client/main/main-util';
+import { CollectionService } from '../../collection/collection-service';
+import { initialMainState, MainState, mainStateToken } from '../main-store';
+import * as MainUtil from '../main-util';
 import { ApiService } from '@services/api/api-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
+import { initialMainState, mainStateToken } from '../main/main-store';
 import { provideStore } from 'ngx-simple-signal-store';
 import { firstValueFrom, Observable } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';

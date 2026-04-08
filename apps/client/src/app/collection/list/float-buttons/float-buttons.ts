@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
-import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
-import { mainStateToken } from '@client/main/main-store';
+import { ClaudeSearchService } from '../../search/claude-search-service';
+import { mainCollectionStateToken } from '../../../main/main-collection-store';
+import { mainStateToken } from '../../../main/main-store';
 import { ImageIcon } from '@components/image-icon/image-icon';
 import { apiStateToken } from '@services/api/api-store';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';

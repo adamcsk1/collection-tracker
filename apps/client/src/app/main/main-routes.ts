@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { mainGuard } from '@client/main/main-guard';
-import { settingsLockedGuard } from '@client/settings/settings-locked-guard';
+import { mainGuard } from './main-guard';
+import { settingsLockedGuard } from '../settings/settings-locked-guard';
 
 export const routes: Routes = [
   {

@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { ClaudeAiInput } from '@client/collection/claude-ai-input/claude-ai-input';
-import { collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
-import { List } from '@client/collection/list/list';
-import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
-import { SearchSuggestionService } from '@client/collection/search/search-suggestion-service';
+import { ClaudeAiInput } from './claude-ai-input/claude-ai-input';
+import { collectionStateToken, initialCollectionState } from './collection-store';
+import { List } from './list/list';
+import { ClaudeSearchService } from './search/claude-search-service';
+import { SearchSuggestionService } from './search/search-suggestion-service';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
