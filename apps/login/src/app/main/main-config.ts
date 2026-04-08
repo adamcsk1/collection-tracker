@@ -6,7 +6,7 @@ import {
   initialBlockerLoadingState,
 } from '@components/blocker-loading/blocker-loading-store';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
-import { mainRoutes } from '@login/main/main-routes';
+import { mainRoutes } from './main-routes';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
