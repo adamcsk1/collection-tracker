@@ -1,4 +1,4 @@
-import { generateRandomToken, hashText } from '@server/core/crypto';
+import { generateRandomToken, hashText } from './crypto';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('random-words', () => ({

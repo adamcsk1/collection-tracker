@@ -1,6 +1,6 @@
-import { getArgv } from '@server/core/argv/argv';
-import { debugLog, errorLog, infoLog } from '@server/core/logger';
-import { FOLDERS } from '@server/core/main-const';
+import { getArgv } from './argv/argv';
+import { debugLog, errorLog, infoLog } from './logger';
+import { FOLDERS } from './main-const';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';

@@ -1,5 +1,5 @@
-import { getArgv } from '@server/core/argv/argv';
-import { FOLDERS } from '@server/core/main-const';
+import { getArgv } from './argv/argv';
+import { FOLDERS } from './main-const';
 import dayjs from 'dayjs';
 import { appendFile } from 'fs/promises';
 

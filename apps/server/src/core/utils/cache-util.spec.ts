@@ -1,7 +1,7 @@
-import { FOLDERS } from '@server/core/main-const';
-import { Store } from '@server/core/store/store';
-import { StoreModel } from '@server/core/store/store-model';
-import { CACHE_MAX, readStoreFiles, removeItem, updateItem } from '@server/core/utils/cache-util';
+import { FOLDERS } from '../main-const';
+import { Store } from '../store/store';
+import { StoreModel } from '../store/store-model';
+import { CACHE_MAX, readStoreFiles, removeItem, updateItem } from './cache-util';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { stat } from 'fs/promises';
 import { tmpdir } from 'os';

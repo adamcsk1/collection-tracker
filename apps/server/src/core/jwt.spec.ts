@@ -1,7 +1,7 @@
-import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
-import { generateAccessToken, jwtGuard } from '@server/core/jwt';
-import { Store } from '@server/core/store/store';
-import { StoreModel } from '@server/core/store/store-model';
+import { COOKIE_TOKEN } from './cookie/cookie-const';
+import { generateAccessToken, jwtGuard } from './jwt';
+import { Store } from './store/store';
+import { StoreModel } from './store/store-model';
 import { AccessTokenModel } from '@shared/models/api-model';
 import type { Request } from 'express';
 import jwt from 'jsonwebtoken';

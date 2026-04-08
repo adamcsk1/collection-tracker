@@ -1,6 +1,6 @@
-import { debugLog, errorLog } from '@server/core/logger';
-import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
-import { Store } from '@server/core/store/store';
+import { debugLog, errorLog } from '../core/logger';
+import { DATABASE_FILES, FOLDERS } from '../core/main-const';
+import { Store } from '../core/store/store';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 
 export const initializeFolders = () => {

@@ -1,7 +1,7 @@
-import { hashText } from '@server/core/crypto';
-import { debugLog } from '@server/core/logger';
-import { FOLDERS } from '@server/core/main-const';
-import { Store } from '@server/core/store/store';
+import { hashText } from '../crypto';
+import { debugLog } from '../logger';
+import { FOLDERS } from '../main-const';
+import { Store } from '../store/store';
 import { existsSync } from 'fs';
 import { readdir, readFile, unlink, writeFile } from 'fs/promises';
 

@@ -1,6 +1,6 @@
-import { debugLog } from '@server/core/logger';
-import { STORE_KEYS } from '@server/core/store/store-const';
-import { StoreDataModel, StoreModel } from '@server/core/store/store-model';
+import { debugLog } from '../logger';
+import { STORE_KEYS } from './store-const';
+import { StoreDataModel, StoreModel } from './store-model';
 import { filter, Observable, take, tap } from 'rxjs';
 
 const store = (): StoreModel => global.__serverStorage;

@@ -1,6 +1,6 @@
-import { buildApp } from '@server-mocks/build-app-mock';
-import { mockResponse } from '@server-mocks/response-mock';
-import { Store } from '@server/core/store/store';
+import { buildApp } from '../../test/mocks/build-app-mock';
+import { mockResponse } from '../../test/mocks/response-mock';
+import { Store } from '../core/store/store';
 import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 vi.mock('@server/core/store/store');

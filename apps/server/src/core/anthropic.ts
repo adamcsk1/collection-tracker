@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { DEFAULT_MODEL } from '@server/core/anthropic-const';
-import { warningLog } from '@server/core/logger';
+import { DEFAULT_MODEL } from './anthropic-const';
+import { warningLog } from './logger';
 import { CLAUDE_MODELS, ClaudeModel } from '@shared/models/claude-model';
 
 export const createAnthropicClient = (apiKey: string): Anthropic => new Anthropic({ apiKey, maxRetries: 5 });

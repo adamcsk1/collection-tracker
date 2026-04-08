@@ -1,8 +1,8 @@
-import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
-import { hashText } from '@server/core/crypto';
-import { jwtGuard } from '@server/core/jwt';
-import { errorLog } from '@server/core/logger';
-import { Store } from '@server/core/store/store';
+import { COOKIE_TOKEN } from '../core/cookie/cookie-const';
+import { hashText } from '../core/crypto';
+import { jwtGuard } from '../core/jwt';
+import { errorLog } from '../core/logger';
+import { Store } from '../core/store/store';
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { Application } from 'express';
 

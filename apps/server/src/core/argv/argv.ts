@@ -1,4 +1,4 @@
-import { ArgvModel } from '@server/core/argv/argv-model';
+import { ArgvModel } from './argv-model';
 
 let _argv: ArgvModel | null = null;
 

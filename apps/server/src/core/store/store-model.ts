@@ -1,6 +1,6 @@
-import { ParserConfigsModel } from '@server/models/parser-config-model';
-import { UserSettingsMapModel } from '@server/models/user-settings-model';
-import { UsersModel } from '@server/models/users-model';
+import { ParserConfigsModel } from '../../models/parser-config-model';
+import { UserSettingsMapModel } from '../../models/user-settings-model';
+import { UsersModel } from '../../models/users-model';
 import { TagConfigsApiResponseModel } from '@shared/models/api-model';
 import { BehaviorSubject } from 'rxjs';
 

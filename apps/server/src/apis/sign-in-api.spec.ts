@@ -1,7 +1,7 @@
-import { buildApp } from '@server-mocks/build-app-mock';
-import { mockResponse } from '@server-mocks/response-mock';
-import { COOKIE_TOKEN } from '@server/core/cookie/cookie-const';
-import { Store } from '@server/core/store/store';
+import { buildApp } from '../../test/mocks/build-app-mock';
+import { mockResponse } from '../../test/mocks/response-mock';
+import { COOKIE_TOKEN } from '../core/cookie/cookie-const';
+import { Store } from '../core/store/store';
 import dayjs from 'dayjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
