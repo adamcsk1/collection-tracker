@@ -1,8 +1,8 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CollectionModel } from '@client/collection/collection-model';
-import { CollectionService } from '@client/collection/collection-service';
-import { TemplateRefreshStateModel } from '@client/parser/parser-model';
+import { CollectionModel } from '../collection/collection-model';
+import { CollectionService } from '../collection/collection-service';
+import { TemplateRefreshStateModel } from './parser-model';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';

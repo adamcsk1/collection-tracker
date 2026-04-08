@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { APP_VERSION, BUILD, BUILD_DATE } from '@client/main/main-const';
-import { mainStateToken } from '@client/main/main-store';
+import { APP_VERSION, BUILD, BUILD_DATE } from '../main/main-const';
+import { mainStateToken } from '../main/main-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';

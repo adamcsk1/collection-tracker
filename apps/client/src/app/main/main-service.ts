@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { mainStateToken } from '@client/main/main-store';
-import { APP_MODES, SENSITIVE_DATA_STORAGE_MODES } from '@client/settings/settings-const';
+import { mainStateToken } from './main-store';
+import { APP_MODES, SENSITIVE_DATA_STORAGE_MODES } from '../settings/settings-const';
 import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';

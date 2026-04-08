@@ -1,4 +1,4 @@
-import { APP_MODES, SENSITIVE_DATA_STORAGE_MODES } from '@client/settings/settings-const';
+import { APP_MODES, SENSITIVE_DATA_STORAGE_MODES } from './settings-const';
 import { LanguageModel } from '@shared/models/language-model';
 import { ThemeModel } from '@shared/models/theme-model';
 

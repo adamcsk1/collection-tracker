@@ -1,4 +1,4 @@
-import { CollectionItemModel } from '@client/collection/collection-model';
+import { CollectionItemModel } from '../collection-model';
 import { getIMDbId } from '@services/omdb/get-imdb-id-util';
 import { getGenre } from '@services/parser/utils/get-genre-util';
 import { getImage } from '@services/parser/utils/get-image-util';

@@ -1,4 +1,4 @@
-import { getCollectionItem } from '@client/collection/utils/get-collection-item-util';
+import { getCollectionItem } from '../../utils/get-collection-item-util';
 
 export type RawContentValidationError = {
   kind: 'badRawContent';

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MainService } from '@client/main/main-service';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
-import { TokenValidationService } from '@client/main/token-validation-service';
+import { MainService } from './main-service';
+import { initialMainState, mainStateToken } from './main-store';
+import { TokenValidationService } from './token-validation-service';
 import {
   initialSpinnerLoadingState,
   spinnerLoadingStateToken,

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { initialMainState, MainState, mainStateToken } from '@client/main/main-store';
-import * as MainUtil from '@client/main/main-util';
+import { initialMainState, MainState, mainStateToken } from './main-store';
+import * as MainUtil from './main-util';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

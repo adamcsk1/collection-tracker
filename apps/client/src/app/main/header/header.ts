@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, DOCUMENT, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { CollectionService } from '@client/collection/collection-service';
-import { LogoutService } from '@client/main/logout-service';
-import { mainStateToken } from '@client/main/main-store';
+import { CollectionService } from '../../collection/collection-service';
+import { LogoutService } from '../logout-service';
+import { mainStateToken } from '../main-store';
 import { ApiService } from '@services/api/api-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';

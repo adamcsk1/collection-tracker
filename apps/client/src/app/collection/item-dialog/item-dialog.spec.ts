@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '@client/collection/collection-model';
-import { CollectionService } from '@client/collection/collection-service';
-import * as collectionUtils from '@client/collection/utils/get-collection-item-util';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
+import { CollectionItemModel } from '../collection-model';
+import { CollectionService } from '../collection-service';
+import * as collectionUtils from '../utils/get-collection-item-util';
+import { initialMainState, mainStateToken } from '../../main/main-store';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';

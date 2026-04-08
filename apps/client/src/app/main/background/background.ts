@@ -1,10 +1,10 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, NgZone, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CollectionModel } from '@client/collection/collection-model';
-import { DESKTOP_HEIGHT_BUFFER, HEIGHT_BUFFER, WIDTH_BUFFER } from '@client/main/background/background-const';
-import { BackgroundImagesModel } from '@client/main/background/background-model';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
+import { CollectionModel } from '../../collection/collection-model';
+import { DESKTOP_HEIGHT_BUFFER, HEIGHT_BUFFER, WIDTH_BUFFER } from './background-const';
+import { BackgroundImagesModel } from './background-model';
+import { mainCollectionStateToken } from '../main-collection-store';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { getCoarsePointerBasedDebounceTime } from '@shared/utils/prefer-coarse-pointer-util';
 import { randomInt } from '@shared/utils/random-int-util';

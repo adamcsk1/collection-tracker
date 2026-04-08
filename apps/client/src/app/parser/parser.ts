@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { form, FormField, FormRoot, required, validate } from '@angular/forms/signals';
-import { ParserModel } from '@client/parser/parser-model';
-import { ParserService } from '@client/parser/parser-service';
-import { TemplateRegenerationService } from '@client/parser/template-regeneration-service';
-import { filenamePatternValidationError } from '@client/parser/validators/filename-pattern-validator';
-import { MdTemplateValidationError, mdTemplateValidationError } from '@client/parser/validators/md-template-validator';
+import { ParserModel } from './parser-model';
+import { ParserService } from './parser-service';
+import { TemplateRegenerationService } from './template-regeneration-service';
+import { filenamePatternValidationError } from './validators/filename-pattern-validator';
+import { MdTemplateValidationError, mdTemplateValidationError } from './validators/md-template-validator';
 import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { Textarea } from '@components/textarea/textarea';

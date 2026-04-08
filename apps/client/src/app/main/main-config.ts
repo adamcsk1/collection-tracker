@@ -1,9 +1,9 @@
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withHashLocation } from '@angular/router';
-import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
-import { initialTagConfigsState, tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
+import { initialMainCollectionState, mainCollectionStateToken } from './main-collection-store';
+import { initialMainState, mainStateToken } from './main-store';
+import { initialTagConfigsState, tagConfigsStateToken } from '../tag-configs/tag-configs-store';
 import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,

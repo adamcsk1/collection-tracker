@@ -1,8 +1,8 @@
 import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CanActivateFn } from '@angular/router';
-import { LogoutService } from '@client/main/logout-service';
-import { MainService } from '@client/main/main-service';
+import { LogoutService } from './logout-service';
+import { MainService } from './main-service';
 import { debounceTime, filter, Observable, of } from 'rxjs';
 
 export const mainGuard: CanActivateFn = (): Observable<boolean> => {

@@ -10,16 +10,16 @@ import {
   viewChild,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { collectionStateToken } from '@client/collection/collection-store';
-import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
-import { FloatButtons } from '@client/collection/list/float-buttons/float-buttons';
-import { InfiniteScrollService } from '@client/collection/list/infinite-scroll/infinite-scroll-service';
-import { ListItemSkeleton } from '@client/collection/list/list-item-skeleton/list-item-skeleton';
-import { ListItem } from '@client/collection/list/list-item/list-item';
-import { matchesSearch } from '@client/collection/list/utils/matches-search-util';
-import { NewItemDialog } from '@client/collection/new-item-dialog/new-item-dialog';
-import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
+import { collectionStateToken } from '../collection-store';
+import { ItemDialog } from '../item-dialog/item-dialog';
+import { FloatButtons } from './float-buttons/float-buttons';
+import { InfiniteScrollService } from './infinite-scroll/infinite-scroll-service';
+import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
+import { ListItem } from './list-item/list-item';
+import { matchesSearch } from './utils/matches-search-util';
+import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
+import { ClaudeSearchService } from '../search/claude-search-service';
+import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { affordableFuzzySearch } from '@shared/utils/fuzzy-search-util';

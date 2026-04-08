@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { searchCollection } from '@client/collection/utils/search-collection-util';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
+import { searchCollection } from '../utils/search-collection-util';
+import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 import { affordableFuzzySearch, FUZZY_CONTENT_MAX_LENGTH, hasFuzzyMatch } from '@shared/utils/fuzzy-search-util';
 

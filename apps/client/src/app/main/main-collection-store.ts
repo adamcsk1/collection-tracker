@@ -1,4 +1,4 @@
-import { CollectionModel } from '@client/collection/collection-model';
+import { CollectionModel } from '../collection/collection-model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
 
 export interface MainCollectionState {

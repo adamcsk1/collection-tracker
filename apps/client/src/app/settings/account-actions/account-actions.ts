@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { TokenDialog } from '@client/settings/token-dialog/token-dialog';
+import { TokenDialog } from '../token-dialog/token-dialog';
 import { Details } from '@components/details/details';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';

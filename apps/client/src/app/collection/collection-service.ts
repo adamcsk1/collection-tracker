@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { getCollectionItem } from '@client/collection/utils/get-collection-item-util';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
+import { getCollectionItem } from './utils/get-collection-item-util';
+import { mainCollectionStateToken } from '../main/main-collection-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { GetAllApiResponseItemModel } from '@shared/models/api-model';

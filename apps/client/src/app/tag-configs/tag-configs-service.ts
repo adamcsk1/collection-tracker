@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { TagConfigsModel } from '@client/tag-configs/tag-configs-model';
-import { tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
+import { TagConfigsModel } from './tag-configs-model';
+import { tagConfigsStateToken } from './tag-configs-store';
 import { ApiService } from '@services/api/api-service';
 import { map, Observable, tap } from 'rxjs';
 

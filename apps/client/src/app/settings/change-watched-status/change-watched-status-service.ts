@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { CollectionService } from '@client/collection/collection-service';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
+import { CollectionService } from '../../collection/collection-service';
+import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { Parser } from '@client/parser/parser';
-import { ParserService } from '@client/parser/parser-service';
+import { Parser } from './parser';
+import { ParserService } from './parser-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { setParserFilenamePattern, setParserRegexp, setParserTemplate } from '@services/parser/parser-util';
 import { MD_TEMPLATE, PARSER_REGEXPS } from '@shared/constants/parser-const';

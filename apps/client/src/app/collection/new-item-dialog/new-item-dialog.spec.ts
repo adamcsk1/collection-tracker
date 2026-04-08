@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { initialMainCollectionState, mainCollectionStateToken } from '@client/main/main-collection-store';
+import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { provideStore } from 'ngx-simple-signal-store';

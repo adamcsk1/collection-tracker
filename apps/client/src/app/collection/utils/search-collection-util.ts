@@ -1,4 +1,4 @@
-import { CollectionItemModel } from '@client/collection/collection-model';
+import { CollectionItemModel } from '../collection-model';
 
 export function searchCollection(
   collection: readonly CollectionItemModel[],

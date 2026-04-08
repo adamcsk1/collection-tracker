@@ -2,17 +2,17 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ElementRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '@client/collection/collection-model';
-import { CollectionState, collectionStateToken, initialCollectionState } from '@client/collection/collection-store';
-import { ItemDialog } from '@client/collection/item-dialog/item-dialog';
-import { INFINITE_SCROLL_PAGE_SIZE } from '@client/collection/list/infinite-scroll/infinite-scroll-const';
-import { ClaudeSearchService } from '@client/collection/search/claude-search-service';
+import { CollectionItemModel } from '../collection-model';
+import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
+import { ItemDialog } from '../item-dialog/item-dialog';
+import { INFINITE_SCROLL_PAGE_SIZE } from './infinite-scroll/infinite-scroll-const';
+import { ClaudeSearchService } from '../search/claude-search-service';
 import {
   initialMainCollectionState,
   MainCollectionState,
   mainCollectionStateToken,
-} from '@client/main/main-collection-store';
-import { initialMainState, mainStateToken } from '@client/main/main-store';
+} from '../../main/main-collection-store';
+import { initialMainState, mainStateToken } from '../../main/main-store';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';

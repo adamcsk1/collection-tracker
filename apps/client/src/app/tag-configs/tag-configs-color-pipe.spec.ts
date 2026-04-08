@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from '@client/tag-configs/tag-configs-store';
+import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from './tag-configs-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagConfigColorPipe } from './tag-configs-color-pipe';

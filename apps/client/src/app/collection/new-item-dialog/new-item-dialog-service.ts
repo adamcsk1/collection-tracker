@@ -1,6 +1,6 @@
 import { effect, inject, Injectable } from '@angular/core';
-import { CollectionService } from '@client/collection/collection-service';
-import { SaveMode } from '@client/collection/new-item-dialog/new-item-dialog-model';
+import { CollectionService } from '../collection-service';
+import { SaveMode } from './new-item-dialog-model';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';

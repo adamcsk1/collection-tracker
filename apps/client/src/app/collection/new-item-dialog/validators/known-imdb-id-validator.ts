@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { mainCollectionStateToken } from '@client/main/main-collection-store';
+import { mainCollectionStateToken } from '../../../main/main-collection-store';
 
 export type KnownIMDbIdValidationError = {
   kind: 'knownIMDbId';

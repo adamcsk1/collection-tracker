@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { form, FormField, FormRoot, required, validate } from '@angular/forms/signals';
-import { NewItemModel, SaveMode } from '@client/collection/new-item-dialog/new-item-dialog-model';
-import { NewItemDialogService } from '@client/collection/new-item-dialog/new-item-dialog-service';
-import { TagSuggestionService } from '@client/collection/new-item-dialog/suggestion/tag-suggestion-service';
-import { internalTagValidation } from '@client/collection/new-item-dialog/validators/internal-tag-validator';
-import { knownIMDbIdValidationFactory } from '@client/collection/new-item-dialog/validators/known-imdb-id-validator';
+import { NewItemModel, SaveMode } from './new-item-dialog-model';
+import { NewItemDialogService } from './new-item-dialog-service';
+import { TagSuggestionService } from './suggestion/tag-suggestion-service';
+import { internalTagValidation } from './validators/internal-tag-validator';
+import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';

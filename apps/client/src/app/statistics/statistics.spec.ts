@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '@client/collection/collection-model';
+import { CollectionItemModel } from '../collection/collection-model';
 import {
   initialMainCollectionState,
   MainCollectionState,
   mainCollectionStateToken,
-} from '@client/main/main-collection-store';
+} from '../main/main-collection-store';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { initialMainState, MainState, mainStateToken } from '@client/main/main-store';
+import { initialMainState, MainState, mainStateToken } from './main-store';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
