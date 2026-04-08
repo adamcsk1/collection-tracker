@@ -3,7 +3,7 @@ import { form, FormField, FormRoot, maxLength, minLength, required } from '@angu
 import { RouterLink } from '@angular/router';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
-import { SignInModel } from '@login/sign-in/sign-in-model';
+import { SignInModel } from './sign-in-model';
 import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { SharedApiService } from '@services/api/shared-api-service';

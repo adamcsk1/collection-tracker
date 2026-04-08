@@ -3,7 +3,7 @@ import { form, FormField, FormRoot, maxLength, minLength, required } from '@angu
 import { RouterLink } from '@angular/router';
 import { Input } from '@components/input/input';
 import { toastStateToken } from '@components/toast/toast-store';
-import { SignUpModel } from '@login/sign-up/sign-up-model';
+import { SignUpModel } from './sign-up-model';
 import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
