@@ -1,4 +1,4 @@
-import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
+import { mobileUserAgent } from './mobile-user-agent.util';
 
 type WindowExtended = Window & { clipboardData?: { setData: (format: string, data: string) => void } };
 

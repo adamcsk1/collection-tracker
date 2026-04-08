@@ -1,4 +1,4 @@
-import { FuzzySearchResultModel } from '@shared/utils/fuzzy-search-model';
+import { FuzzySearchResultModel } from './fuzzy-search-model';
 
 const levenshtein = (a: string, b: string): number => {
   const aLength = a.length;

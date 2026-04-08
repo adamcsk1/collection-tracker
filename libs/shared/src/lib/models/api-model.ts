@@ -1,5 +1,5 @@
-import { LanguageModel } from '@shared/models/language-model';
-import { ThemeModel } from '@shared/models/theme-model';
+import { LanguageModel } from './language-model';
+import { ThemeModel } from './theme-model';
 
 export interface GetAllApiResponseItemModel {
   name: string;
