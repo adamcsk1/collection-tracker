@@ -33,7 +33,6 @@ A self-hosted media catalog application for managing personal movie and series c
 @services/*   → libs/services/src/lib/*
 @shared/*     → libs/shared/src/lib/*
 @public/*     → libs/public/src/lib/*
-@server-mocks/*      → apps/server/test/mocks/*
 ```
 
 ## Commands

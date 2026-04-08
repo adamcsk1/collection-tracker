@@ -44,7 +44,6 @@ You are the architecture advisor for the Collection Tracker — an Nx monorepo w
 @services/*      → libs/services/src/lib/*
 @shared/*        → libs/shared/src/lib/*
 @public/*        → libs/public/src/lib/*
-@server-mocks/*  → apps/server/test/mocks/*
 ```
 
 ## When new pages / apps / libs are added, keep in sync

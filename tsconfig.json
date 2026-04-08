@@ -15,8 +15,7 @@
       "@public/*": ["./libs/public/src/lib/*"],
       "@server/*": ["./apps/server/src/*"],
       "@services/*": ["./libs/services/src/lib/*"],
-      "@shared/*": ["./libs/shared/src/lib/*"],
-      "@server-mocks/*": ["./apps/server/test/mocks/*"]
+      "@shared/*": ["./libs/shared/src/lib/*"]
     }
   },
   "angularCompilerOptions": {
