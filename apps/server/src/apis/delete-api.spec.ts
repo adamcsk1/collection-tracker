@@ -1,8 +1,8 @@
-import { buildApp } from '@server-mocks/build-app-mock';
-import { mockResponse } from '@server-mocks/response-mock';
-import { Store } from '@server/core/store/store';
-import { removeItem } from '@server/core/utils/cache-util';
-import { getMemoryHash } from '@server/core/utils/hash-util';
+import { buildApp } from '../../test/mocks/build-app-mock';
+import { mockResponse } from '../../test/mocks/response-mock';
+import { Store } from '../core/store/store';
+import { removeItem } from '../core/utils/cache-util';
+import { getMemoryHash } from '../core/utils/hash-util';
 import { existsSync } from 'fs';
 import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 

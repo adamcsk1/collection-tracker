@@ -1,10 +1,10 @@
-import { createAnthropicClient, getAnthropicModel } from '@server/core/anthropic';
-import { jwtGuard } from '@server/core/jwt';
-import { errorLog } from '@server/core/logger';
-import { FOLDERS } from '@server/core/main-const';
-import { Store } from '@server/core/store/store';
-import { readStoreFiles } from '@server/core/utils/cache-util';
-import { ProxyClaudeCollectionItems } from '@server/models/proxy-claude-model';
+import { createAnthropicClient, getAnthropicModel } from '../core/anthropic';
+import { jwtGuard } from '../core/jwt';
+import { errorLog } from '../core/logger';
+import { FOLDERS } from '../core/main-const';
+import { Store } from '../core/store/store';
+import { readStoreFiles } from '../core/utils/cache-util';
+import { ProxyClaudeCollectionItems } from '../models/proxy-claude-model';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { ClaudeQueryRequestModel, ClaudeQueryResponseModel } from '@shared/models/claude-model';

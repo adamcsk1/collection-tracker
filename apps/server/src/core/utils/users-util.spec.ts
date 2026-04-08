@@ -1,4 +1,4 @@
-import { getUserAccessToken } from '@server/core/utils/users-util';
+import { getUserAccessToken } from './users-util';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@server/core/crypto', () => ({

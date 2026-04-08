@@ -1,4 +1,4 @@
-import { StoreModel } from '@server/core/store/store-model';
+import { StoreModel } from './store-model';
 import { BehaviorSubject } from 'rxjs';
 
 const initialStore = (): StoreModel => ({

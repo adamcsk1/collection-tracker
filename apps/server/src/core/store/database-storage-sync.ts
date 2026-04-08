@@ -1,6 +1,6 @@
-import { debugLog, errorLog } from '@server/core/logger';
-import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
-import { StoreModel } from '@server/core/store/store-model';
+import { debugLog, errorLog } from '../logger';
+import { DATABASE_FILES, FOLDERS } from '../main-const';
+import { StoreModel } from './store-model';
 import { dequal } from 'dequal';
 import { writeFile } from 'fs/promises';
 import { debounceTime, filter, map, pairwise, tap } from 'rxjs';

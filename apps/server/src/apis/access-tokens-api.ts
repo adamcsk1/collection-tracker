@@ -1,6 +1,6 @@
-import { jwtGuard } from '@server/core/jwt';
-import { errorLog } from '@server/core/logger';
-import { Store } from '@server/core/store/store';
+import { jwtGuard } from '../core/jwt';
+import { errorLog } from '../core/logger';
+import { Store } from '../core/store/store';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { AccessTokensApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';

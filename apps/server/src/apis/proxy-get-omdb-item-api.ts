@@ -1,6 +1,6 @@
-import { OMDB_API } from '@server/core/constants/omdb-const';
-import { jwtGuard } from '@server/core/jwt';
-import { errorLog } from '@server/core/logger';
+import { OMDB_API } from '../core/constants/omdb-const';
+import { jwtGuard } from '../core/jwt';
+import { errorLog } from '../core/logger';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 import type { Application } from 'express';

@@ -1,3 +1,3 @@
 /// <reference types="vitest" />
 
-import '@server/core/store';
+import '../src/core/store';

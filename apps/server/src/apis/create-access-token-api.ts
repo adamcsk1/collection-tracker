@@ -1,7 +1,7 @@
-import { generateAccessToken, jwtGuard } from '@server/core/jwt';
-import { errorLog } from '@server/core/logger';
-import { Store } from '@server/core/store/store';
-import { getUserAccessToken } from '@server/core/utils/users-util';
+import { generateAccessToken, jwtGuard } from '../core/jwt';
+import { errorLog } from '../core/logger';
+import { Store } from '../core/store/store';
+import { getUserAccessToken } from '../core/utils/users-util';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { CreateAccessTokenApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';

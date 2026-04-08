@@ -1,7 +1,7 @@
-import { debugLog } from '@server/core/logger';
-import { FOLDERS } from '@server/core/main-const';
-import { Store } from '@server/core/store/store';
-import { removeFileHash, setFileHash } from '@server/core/utils/hash-util';
+import { debugLog } from '../logger';
+import { FOLDERS } from '../main-const';
+import { Store } from '../store/store';
+import { removeFileHash, setFileHash } from './hash-util';
 import { readdir, readFile, stat, unlink, writeFile } from 'fs/promises';
 
 export const CACHE_MAX = Number(process.env.CACHE_MAX) || 5000;

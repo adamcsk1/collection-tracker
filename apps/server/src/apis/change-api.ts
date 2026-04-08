@@ -1,9 +1,9 @@
-import { jwtGuard } from '@server/core/jwt';
-import { errorLog } from '@server/core/logger';
-import { FOLDERS } from '@server/core/main-const';
-import { Store } from '@server/core/store/store';
-import { updateItem } from '@server/core/utils/cache-util';
-import { getMemoryHash } from '@server/core/utils/hash-util';
+import { jwtGuard } from '../core/jwt';
+import { errorLog } from '../core/logger';
+import { FOLDERS } from '../core/main-const';
+import { Store } from '../core/store/store';
+import { updateItem } from '../core/utils/cache-util';
+import { getMemoryHash } from '../core/utils/hash-util';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { ChangeApiRequestModel, ChangeApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';

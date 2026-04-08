@@ -1,4 +1,4 @@
-import { StoreDataModel } from '@server/core/store/store-model';
+import { StoreDataModel } from './store-model';
 
 export const STORE_KEYS = [
   'dataFolder',

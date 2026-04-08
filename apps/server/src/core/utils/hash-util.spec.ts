@@ -1,13 +1,7 @@
-import { FOLDERS } from '@server/core/main-const';
-import { Store } from '@server/core/store/store';
-import { StoreModel } from '@server/core/store/store-model';
-import {
-  getMemoryHash,
-  hashFileExists,
-  initializeFileHashes,
-  removeFileHash,
-  setFileHash,
-} from '@server/core/utils/hash-util';
+import { FOLDERS } from '../main-const';
+import { Store } from '../store/store';
+import { StoreModel } from '../store/store-model';
+import { getMemoryHash, hashFileExists, initializeFileHashes, removeFileHash, setFileHash } from './hash-util';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';

@@ -1,4 +1,4 @@
-import { hashText } from '@server/core/crypto';
+import { hashText } from '../crypto';
 import { AccessTokenModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
 

@@ -1,10 +1,10 @@
-import { registerAllApis } from '@server/apis';
-import { getArgv } from '@server/core/argv/argv';
-import { debugLog, errorLog, infoLog } from '@server/core/logger';
-import { DATABASE_FILES, FOLDERS } from '@server/core/main-const';
-import { Store } from '@server/core/store/store';
-import { initializeFileHashes } from '@server/core/utils/hash-util';
-import { initializeFolders } from '@server/tools/initializer';
+import { registerAllApis } from '../apis';
+import { getArgv } from './argv/argv';
+import { debugLog, errorLog, infoLog } from './logger';
+import { DATABASE_FILES, FOLDERS } from './main-const';
+import { Store } from './store/store';
+import { initializeFileHashes } from './utils/hash-util';
+import { initializeFolders } from '../tools/initializer';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';

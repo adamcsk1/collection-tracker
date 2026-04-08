@@ -1,7 +1,7 @@
-import { generateRandomToken, hashText } from '@server/core/crypto';
-import { errorLog } from '@server/core/logger';
-import { FOLDERS } from '@server/core/main-const';
-import { Store } from '@server/core/store/store';
+import { generateRandomToken, hashText } from '../core/crypto';
+import { errorLog } from '../core/logger';
+import { FOLDERS } from '../core/main-const';
+import { Store } from '../core/store/store';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
