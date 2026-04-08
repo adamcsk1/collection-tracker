@@ -1,11 +1,11 @@
-import { buildApp } from '@server-mocks/build-app-mock';
-import { mockResponse } from '@server-mocks/response-mock';
-import { Store } from '@server/core/store/store';
+import { buildApp } from '../../test/mocks/build-app-mock';
+import { mockResponse } from '../../test/mocks/response-mock';
+import { Store } from '../core/store/store';
 import { readdir, readFile, stat } from 'fs/promises';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
-vi.mock('@server/core/store/store');
-vi.mock('@server/core/anthropic', () => ({ createAnthropicClient: vi.fn(), getAnthropicModel: vi.fn() }));
+vi.mock('../core/store/store');
+vi.mock('../core/anthropic', () => ({ createAnthropicClient: vi.fn(), getAnthropicModel: vi.fn() }));
 vi.mock('fs/promises', async () => {
   const actual = await vi.importActual<typeof import('fs/promises')>('fs/promises');
   return { ...actual, readdir: vi.fn(), readFile: vi.fn(), stat: vi.fn() };
@@ -25,7 +25,7 @@ describe('proxy-claude-query-api', () => {
   });
 
   const mockStream = async (text: string, stop_reason = 'end_turn') => {
-    const { createAnthropicClient } = await import('@server/core/anthropic');
+    const { createAnthropicClient } = await import('../core/anthropic');
     vi.mocked(createAnthropicClient).mockReturnValue({
       messages: {
         stream: vi.fn().mockReturnValue({
@@ -171,7 +171,7 @@ The origin story of Batman.`;
       const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
       setupStore([{ name: 'matrix.md', content: matrixContent }]);
 
-      const { createAnthropicClient } = await import('@server/core/anthropic');
+      const { createAnthropicClient } = await import('../core/anthropic');
       vi.mocked(createAnthropicClient).mockReturnValue({
         messages: {
           stream: vi.fn().mockReturnValue({
