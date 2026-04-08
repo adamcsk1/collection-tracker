@@ -95,6 +95,7 @@ CLAUDE_API_KEY="your_claude_api_key"
 CLAUDE_MODEL="claude-haiku-4-5-20251001"
 CORS_ORIGIN="*"
 CACHE_MAX=200
+RATE_LIMIT=100
 ```
 
 See the server documentation for the full runtime model and data layout.
