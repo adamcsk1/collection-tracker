@@ -20,7 +20,7 @@
     "editor.formatOnSave": true,
     "editor.formatOnSaveMode": "modificationsIfAvailable"
   },
-  "js/ts.preferences.importModuleSpecifier": "non-relative",
+  "js/ts.preferences.importModuleSpecifier": "shortest",
   "[css]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
