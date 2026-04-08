@@ -1,4 +1,4 @@
-import { getParserRegexp, setParserRegexp } from '@services/parser/parser-util';
+import { getParserRegexp, setParserRegexp } from '../parser/parser-util';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { beforeAll } from 'vitest';
 import { getIMDbId } from './get-imdb-id-util';

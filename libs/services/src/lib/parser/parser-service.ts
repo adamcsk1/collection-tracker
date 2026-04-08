@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { ApiService } from '@services/api/api-service';
+import { ApiService } from '../api/api-service';
 import {
   getParserFilenamePattern,
   getParserRegexp,
@@ -7,7 +7,7 @@ import {
   setParserFilenamePattern,
   setParserRegexp,
   setParserTemplate,
-} from '@services/parser/parser-util';
+} from './parser-util';
 import { ParserConfigApiRequestModel } from '@shared/models/api-model';
 import { restoreSerializedParserRegexp, serializeParserRegexp } from '@shared/utils/parser-serialize-util';
 import { map, Observable, tap } from 'rxjs';

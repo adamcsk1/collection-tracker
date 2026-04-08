@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { WebStorageTypes } from '@services/webstorage/webstorage-model';
+import { WebStorageTypes } from './webstorage-model';
 
 @Injectable({
   providedIn: 'root',

@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { AlertService } from '@services/alert-service';
+import { AlertService } from '../alert-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { lastValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

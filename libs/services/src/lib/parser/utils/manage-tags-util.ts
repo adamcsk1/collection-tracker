@@ -1,4 +1,4 @@
-import { getParserRegexp } from '@services/parser/parser-util';
+import { getParserRegexp } from '../parser-util';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 
 export const addNewTagToRawContent = (rawContent: string, newTag: string): string | null => {

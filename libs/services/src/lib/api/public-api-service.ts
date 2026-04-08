@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { AlertService } from '@services/alert-service';
-import { apiStateToken } from '@services/api/api-store';
+import { AlertService } from '../alert-service';
+import { apiStateToken } from './api-store';
 import {
   type HealthApiResponseModel,
   SignInApiRequestModel,

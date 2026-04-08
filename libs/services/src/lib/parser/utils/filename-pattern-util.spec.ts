@@ -1,4 +1,4 @@
-import { buildCollectionItemFilename } from '@services/parser/utils/filename-pattern-util';
+import { buildCollectionItemFilename } from './filename-pattern-util';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('dayjs', () => ({
