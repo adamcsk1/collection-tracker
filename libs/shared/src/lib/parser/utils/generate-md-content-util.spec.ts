@@ -1,16 +1,10 @@
-import { setParserTemplate } from '../parser/parser-util';
-import { MD_TEMPLATE } from '@shared/constants/parser-const';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { MdContentGeneratorService } from './md-content-generator-service';
+import { MD_TEMPLATE } from '../../constants/parser-const';
+import { generateMdContent } from './generate-md-content-util';
+import { describe, expect, it } from 'vitest';
 
-beforeAll(() => {
-  setParserTemplate(MD_TEMPLATE);
-});
-
-describe('MdContentGeneratorService', () => {
+describe('generateMdContent', () => {
   it('builds markdown content with substituted fields and encoded queries', () => {
-    const service = new MdContentGeneratorService();
-    const content = service.getMdContent({
+    const content = generateMdContent(MD_TEMPLATE, {
       Title: 'Test Title',
       imdbID: 'tt999',
       imdbRating: '8.1',
@@ -22,7 +16,7 @@ describe('MdContentGeneratorService', () => {
       Actors: 'An Actor',
       Type: 'movie',
       Tags: '#tag',
-    } as any);
+    });
 
     expect(content).toContain('### Test Title');
     expect(content).toContain('[IMDb (tt999)](https://www.imdb.com/title/tt999/) (**8.1** / 10)');
