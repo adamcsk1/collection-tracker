@@ -1,14 +1,9 @@
-import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
-import { AlertService } from '../alert-service';
-import { apiStateToken } from './api-store';
+import { Injectable } from '@angular/core';
 import {
   AccessTokensApiResponseModel,
-  ChangeApiRequestModel,
   ChangeApiResponseModel,
   ChangeTokenApiResponseModel,
   CreateAccessTokenApiResponseModel,
-  CreateApiRequestModel,
   CreateApiResponseModel,
   GetAllApiResponseModel,
   ParserConfigApiRequestModel,
@@ -19,23 +14,15 @@ import {
 } from '@shared/models/api-model';
 import { ClaudeQueryRequestModel, ClaudeQueryResponseModel } from '@shared/models/claude-model';
 import { OMDbResponseItemModel, OMDbResponseModel } from '@shared/models/omdb-model';
-import { catchError, EMPTY, filter, Observable, Subject, tap, throwError } from 'rxjs';
+import { catchError, EMPTY, filter, Observable, Subject, tap } from 'rxjs';
+import { BaseApiService } from './base-api-service';
 
 @Injectable({
   providedIn: 'root',
 })
-export class ApiService {
-  private readonly alert = inject(AlertService);
-  private readonly httpClient = inject(HttpClient);
-  private readonly apiState = inject(apiStateToken);
-
+export class ApiService extends BaseApiService {
   public logout(): Observable<void> {
-    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/logout`).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('DELETE', '/logout');
   }
 
   public getAll(): Observable<GetAllApiResponseModel> {
@@ -45,7 +32,7 @@ export class ApiService {
 
     const lazyLoad = (offset = 0) =>
       this.httpClient
-        .get<GetAllApiResponseModel>(`${this.apiState.state.apiUrl()}/get-all?offset=${offset}&limit=${fetchBatchSize}`)
+        .get<GetAllApiResponseModel>(`${this.apiUrl}/get-all?offset=${offset}&limit=${fetchBatchSize}`)
         .pipe(
           tap((response) => {
             if (response.length > 0) {
@@ -77,161 +64,67 @@ export class ApiService {
   }
 
   public create(content: string, name: string): Observable<CreateApiResponseModel> {
-    const body: CreateApiRequestModel = { content, name };
-    return this.httpClient.post<CreateApiResponseModel>(`${this.apiState.state.apiUrl()}/create`, body).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('POST', '/create', { content, name });
   }
 
   public update(name: string, content: string, hash: string): Observable<ChangeApiResponseModel> {
-    const body: ChangeApiRequestModel = { content, hash };
-    return this.httpClient.put<ChangeApiResponseModel>(`${this.apiState.state.apiUrl()}/change/${name}`, body).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('PUT', `/change/${name}`, { content, hash });
   }
 
   public delete(name: string, hash: string): Observable<void> {
-    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/delete/${name}?hash=${hash}`).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('DELETE', `/delete/${name}?hash=${hash}`);
   }
 
   public getAccessTokens(): Observable<AccessTokensApiResponseModel> {
-    return this.httpClient.get<AccessTokensApiResponseModel>(`${this.apiState.state.apiUrl()}/user/access-tokens`).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('GET', '/user/access-tokens');
   }
 
   public deleteAccessToken(tokenHash: string): Observable<void> {
-    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/user/access-token/${tokenHash}`).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('DELETE', `/user/access-token/${tokenHash}`);
   }
 
   public createAccessToken(): Observable<CreateAccessTokenApiResponseModel> {
-    return this.httpClient
-      .post<CreateAccessTokenApiResponseModel>(`${this.apiState.state.apiUrl()}/user/access-token`, {})
-      .pipe(
-        catchError((error) => {
-          this.alert.show(error.message);
-          return throwError(() => error);
-        })
-      );
+    return this.request('POST', '/user/access-token', {});
   }
 
   public createNewUserToken(): Observable<ChangeTokenApiResponseModel> {
-    return this.httpClient
-      .put<ChangeTokenApiResponseModel>(`${this.apiState.state.apiUrl()}/user/change-token`, {})
-      .pipe(
-        catchError((error) => {
-          this.alert.show(error.message);
-          return throwError(() => error);
-        })
-      );
+    return this.request('PUT', '/user/change-token', {});
   }
 
   public deleteUser(): Observable<void> {
-    return this.httpClient.delete<void>(`${this.apiState.state.apiUrl()}/user`).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('DELETE', '/user');
   }
 
   public getUserParserConfig(): Observable<ParserConfigApiResponseModel | null> {
-    return this.httpClient
-      .get<ParserConfigApiResponseModel | null>(`${this.apiState.state.apiUrl()}/parser/config`)
-      .pipe(
-        catchError((error) => {
-          this.alert.show(error.message);
-          return throwError(() => error);
-        })
-      );
+    return this.request('GET', '/parser/config');
   }
 
   public updateUserParserConfig(parserConfig: ParserConfigApiRequestModel): Observable<void> {
-    return this.httpClient.post<void>(`${this.apiState.state.apiUrl()}/parser/change-config`, parserConfig).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('POST', '/parser/change-config', parserConfig);
   }
 
   public getUserSettings(): Observable<UserSettingsApiResponseModel> {
-    return this.httpClient.get<UserSettingsApiResponseModel>(`${this.apiState.state.apiUrl()}/user/settings`).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('GET', '/user/settings');
   }
 
   public getUserTagConfigs(): Observable<TagConfigsApiResponseModel> {
-    return this.httpClient.get<TagConfigsApiResponseModel>(`${this.apiState.state.apiUrl()}/tag/config`).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('GET', '/tag/config');
   }
 
   public updateUserTagConfigs(tagConfigs: TagConfigsApiRequestModel): Observable<void> {
-    return this.httpClient.post<void>(`${this.apiState.state.apiUrl()}/tag/change-config`, tagConfigs).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('POST', '/tag/change-config', tagConfigs);
   }
 
   public getOMDbData(queryParams: { i: string | null }): Observable<OMDbResponseItemModel> {
-    return this.httpClient
-      .get<OMDbResponseItemModel>(`${this.apiState.state.apiUrl()}/proxy/omdb/item?i=${queryParams.i}`)
-      .pipe(
-        catchError((error) => {
-          this.alert.show(error.message);
-          return throwError(() => error);
-        })
-      );
+    return this.request('GET', `/proxy/omdb/item?i=${queryParams.i}`);
   }
 
   public getOMDbSearchData(queryParams: { s: string | null }): Observable<OMDbResponseModel> {
-    return this.httpClient
-      .get<OMDbResponseModel>(`${this.apiState.state.apiUrl()}/proxy/omdb/search?s=${queryParams.s}`)
-      .pipe(
-        catchError((error) => {
-          this.alert.show(error.message);
-          return throwError(() => error);
-        })
-      );
+    return this.request('GET', `/proxy/omdb/search?s=${queryParams.s}`);
   }
 
   public getClaudeQueryData(prompt: string): Observable<ClaudeQueryResponseModel> {
     const body: ClaudeQueryRequestModel = { prompt };
-    return this.httpClient
-      .post<ClaudeQueryResponseModel>(`${this.apiState.state.apiUrl()}/proxy/claude/query`, body)
-      .pipe(
-        catchError((error) => {
-          this.alert.show(error.message);
-          return throwError(() => error);
-        })
-      );
+    return this.request('POST', '/proxy/claude/query', { prompt: body.prompt });
   }
 }
