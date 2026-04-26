@@ -37,6 +37,7 @@ describe('Background component', () => {
     year: null,
     rate: '',
     hash: '',
+    plot: '',
   });
 
   beforeEach(() => {

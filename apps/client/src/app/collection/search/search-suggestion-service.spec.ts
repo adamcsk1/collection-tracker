@@ -24,6 +24,7 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
   year: null,
   rate: '',
   hash: '',
+  plot: '',
 });
 
 describe('SearchSuggestionService', () => {

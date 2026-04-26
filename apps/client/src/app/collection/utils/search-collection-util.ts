@@ -1,14 +1,14 @@
 import { CollectionItemModel } from '../collection-model';
 
-export function searchCollection(
+export const searchCollection = (
   collection: readonly CollectionItemModel[],
   limit: number,
   matcher: (item: CollectionItemModel, results: Set<string>) => void
-): Set<string> {
+): Set<string> => {
   const results = new Set<string>();
   for (const item of collection) {
     matcher(item, results);
     if (results.size >= limit) break;
   }
   return results;
-}
+};

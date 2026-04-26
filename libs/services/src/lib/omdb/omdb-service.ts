@@ -2,7 +2,7 @@ import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { AlertService } from '../alert-service';
 import { ApiService } from '../api/api-service';
-import { getIMDbId } from './get-imdb-id-util';
+import { getIMDbId } from '@shared/omdb/get-imdb-id-util';
 import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 import { SelectInputModel } from '@shared/models/select-model';
 import { catchError, EMPTY, Observable } from 'rxjs';

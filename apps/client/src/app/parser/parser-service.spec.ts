@@ -15,8 +15,10 @@ import {
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { AlertService } from '@services/alert-service';
 import { ConfirmService } from '@services/confirm-service';
-import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { ParserService as MainParserService } from '@services/parser/parser-service';
+import { generateMdContent } from '@shared/parser/utils/generate-md-content-util';
+
+vi.mock('@shared/parser/utils/generate-md-content-util', () => ({ generateMdContent: vi.fn(() => '# Preview') }));
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { EMPTY, of, throwError } from 'rxjs';
@@ -44,7 +46,6 @@ describe('ParserService (client)', () => {
   let collection: { loadCollection: ReturnType<typeof vi.fn> };
   let alert: { show: ReturnType<typeof vi.fn> };
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
-  let mdContentGenerator: { getMdContent: ReturnType<typeof vi.fn> };
   let templateRegenerationStart: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -52,8 +53,8 @@ describe('ParserService (client)', () => {
     collection = { loadCollection: vi.fn() };
     alert = { show: vi.fn() };
     confirm = { ifConfirmed: vi.fn(() => of(true)) };
-    mdContentGenerator = { getMdContent: vi.fn(() => '# Preview') };
     templateRegenerationStart = vi.fn();
+    vi.mocked(generateMdContent).mockReturnValue('# Preview');
 
     TestBed.configureTestingModule({
       providers: [
@@ -62,7 +63,6 @@ describe('ParserService (client)', () => {
         { provide: CollectionService, useValue: collection },
         { provide: AlertService, useValue: alert },
         { provide: ConfirmService, useValue: confirm },
-        { provide: MdContentGeneratorService, useValue: mdContentGenerator },
         {
           provide: TemplateRegenerationService,
           useValue: {
@@ -131,7 +131,7 @@ describe('ParserService (client)', () => {
 
   describe('generatePreviewContent', () => {
     it('calls alert.show with the preview content on success', () => {
-      mdContentGenerator.getMdContent = vi.fn(() => '# Title\nsome content');
+      vi.mocked(generateMdContent).mockReturnValue('# Title\nsome content');
 
       service.generatePreviewContent(buildFormData());
 
@@ -139,7 +139,7 @@ describe('ParserService (client)', () => {
     });
 
     it('shows error message and restores parser cache when content generation fails', () => {
-      mdContentGenerator.getMdContent = vi.fn(() => {
+      vi.mocked(generateMdContent).mockImplementation(() => {
         throw new Error('generation failed');
       });
 

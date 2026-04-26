@@ -1,4 +1,4 @@
-import { ParserCacheModel } from '@services/parser/parser-model';
+import { ParserCacheModel } from '@shared/parser/parser-model';
 
 export type ParserModel = {
   [key in keyof ParserCacheModel]-?: string;

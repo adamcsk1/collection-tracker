@@ -8,9 +8,13 @@ import {
 } from '@components/spinner-loading/spinner-loading-store';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
-import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
-import { setParserFilenamePattern } from '@services/parser/parser-util';
+import { setParserFilenamePattern, setParserTemplate } from '@shared/parser/parser-util';
+import { generateMdContent } from '@shared/parser/utils/generate-md-content-util';
+
+vi.mock('@shared/parser/utils/generate-md-content-util', () => ({
+  generateMdContent: vi.fn().mockReturnValue('md-content'),
+}));
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -42,7 +46,6 @@ describe('NewItemDialogService', () => {
   let spinnerStore: NgxSimpleSignalStoreService<SpinnerLoadingState>;
   let toastStore: NgxSimpleSignalStoreService<ToastState>;
   let portal: { close: ReturnType<typeof vi.fn> };
-  let mdContent: { getMdContent: ReturnType<typeof vi.fn> };
   let translate: { translate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
@@ -50,7 +53,6 @@ describe('NewItemDialogService', () => {
     omdb = { matchedContent: vi.fn(() => []), getMatchedContents: vi.fn(), getSelectedContent: vi.fn() };
     collection = { addCollectionItem: vi.fn() };
     portal = { close: vi.fn() };
-    mdContent = { getMdContent: vi.fn().mockReturnValue('md-content') };
     translate = { translate: vi.fn((key) => `t:${key}`) };
 
     TestBed.configureTestingModule({
@@ -59,7 +61,6 @@ describe('NewItemDialogService', () => {
         { provide: ApiService, useValue: api },
         { provide: OMDbService, useValue: omdb },
         { provide: CollectionService, useValue: collection },
-        { provide: MdContentGeneratorService, useValue: mdContent },
         { provide: PortalService, useValue: portal },
         { provide: NgxSignalTranslateService, useValue: translate },
         provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
@@ -71,6 +72,7 @@ describe('NewItemDialogService', () => {
     spinnerStore = TestBed.inject(spinnerLoadingStateToken);
     toastStore = TestBed.inject(toastStateToken);
     setParserFilenamePattern('{{Year}}-{{Type}}-{{Title}}.md');
+    setParserTemplate('{{Title}} {{Tags}}');
   });
 
   it('search triggers OMDb lookup and shows spinner', () => {
@@ -86,7 +88,7 @@ describe('NewItemDialogService', () => {
 
     await firstValueFrom(service.save('tt123', '#tag', 'close'));
 
-    expect(mdContent.getMdContent).toHaveBeenCalledWith(expect.objectContaining({ Tags: '#tag' }));
+    expect(generateMdContent).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ Tags: '#tag' }));
     expect(api.create).toHaveBeenCalledWith('md-content', '2020-movie-Title.md');
     expect(collection.addCollectionItem).toHaveBeenCalledWith(
       {

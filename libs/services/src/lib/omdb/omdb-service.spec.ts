@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { AlertService } from '../alert-service';
 import { ApiState, apiStateToken, initialApiState } from '../api/api-store';
-import { getParserRegexp, setParserRegexp } from '../parser/parser-util';
+import { getParserRegexp, setParserRegexp } from '@shared/parser/parser-util';
 import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -53,7 +53,7 @@ describe('OMDbService', () => {
     httpMock.expectNone(() => true);
   });
 
-  it('requests search results and maps them to select options', () => {
+  it('requests search results and maps them to select options', async () => {
     service.getMatchedContents('Matrix');
 
     const searchRequest = httpMock.expectOne(`${API_URL}/proxy/omdb/search?s=Matrix`);
@@ -74,6 +74,7 @@ describe('OMDbService', () => {
       ],
     });
 
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(service.matchedContent()).toEqual([{ text: '(movie) The Matrix (1999)', value: 'tt0133093' }]);
   });
 

@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
-import { getCollectionItem } from './utils/get-collection-item-util';
-import { mainCollectionStateToken } from '../main/main-collection-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { GetAllApiResponseItemModel } from '@shared/models/api-model';
+import { getCollectionItem } from '@shared/utils/get-collection-item-util';
+import { mainCollectionStateToken } from '../main/main-collection-store';
 
 @Injectable({ providedIn: 'root' })
 export class CollectionService {

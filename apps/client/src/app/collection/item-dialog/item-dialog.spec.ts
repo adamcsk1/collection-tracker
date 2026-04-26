@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '../collection-model';
-import { CollectionService } from '../collection-service';
-import * as collectionUtils from '../utils/get-collection-item-util';
-import { initialMainState, mainStateToken } from '../../main/main-store';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
+import { getCollectionItem } from '@shared/utils/get-collection-item-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { initialMainState, mainStateToken } from '../../main/main-store';
+import { CollectionItemModel } from '../collection-model';
+import { CollectionService } from '../collection-service';
 import { ItemDialog } from './item-dialog';
 
 vi.mock('marked', () => ({ marked: { parse: vi.fn(() => '<p>parsed</p>') } }));
@@ -29,6 +29,7 @@ const buildItem = (name: string, rawContent = 'raw content', hash = 'testhash'):
   year: 2020,
   rate: '9.0',
   hash,
+  plot: '',
 });
 
 describe('ItemDialog', () => {
@@ -58,7 +59,7 @@ describe('ItemDialog', () => {
     };
     translate = { translate: vi.fn((key: string) => key) };
     getCollectionItemSpy = vi
-      .spyOn(collectionUtils, 'getCollectionItem')
+      .spyOn({ getCollectionItem }, 'getCollectionItem')
       .mockImplementation((input) => buildItem(input.name as string, input.content as string));
 
     TestBed.configureTestingModule({

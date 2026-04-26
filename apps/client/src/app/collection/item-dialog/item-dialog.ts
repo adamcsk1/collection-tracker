@@ -1,23 +1,23 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, validate } from '@angular/forms/signals';
-import { CollectionItemModel } from '../collection-model';
-import { CollectionService } from '../collection-service';
-import { internalTagValidation } from './validators/internal-tag-validator';
-import { rawContentValidation } from './validators/raw-content-validator';
-import { virtualTagValidation } from './validators/virtual-tag-validator';
-import { getCollectionItem } from '../utils/get-collection-item-util';
-import { mainStateToken } from '../../main/main-store';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { MarkdownEditor } from '@components/markdown-editor/markdown-editor';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
-import { addNewTagToRawContent, removeTagFromRawContent } from '@services/parser/utils/manage-tags-util';
 import { PortalService } from '@services/portal-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
+import { addNewTagToRawContent, removeTagFromRawContent } from '@shared/parser/utils/manage-tags-util';
+import { getCollectionItem } from '@shared/utils/get-collection-item-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { map, mergeMap, of } from 'rxjs';
+import { mainStateToken } from '../../main/main-store';
+import { CollectionItemModel } from '../collection-model';
+import { CollectionService } from '../collection-service';
+import { missingInternalTagValidation } from './validators/internal-tag-validator';
+import { rawContentValidation } from './validators/raw-content-validator';
+import { virtualTagValidation } from './validators/virtual-tag-validator';
 
 @Component({
   selector: 'ct-item-dialog',
@@ -42,7 +42,7 @@ export class ItemDialog implements OnInit {
   protected readonly rawContentModel = signal('');
   protected readonly rawContentField = form(this.rawContentModel, (content) => {
     validate(content, ({ value }) => virtualTagValidation(value()));
-    validate(content, ({ value }) => internalTagValidation(value()));
+    validate(content, ({ value }) => missingInternalTagValidation(value()));
   });
   protected readonly formErrors = {
     rawContent: {

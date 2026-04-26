@@ -30,6 +30,7 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
   year: null,
   rate: '',
   hash: '',
+  plot: '',
 });
 
 const buildTagConfig = (tag: string, overrides: Partial<TagConfigsModel[number]>): TagConfigsModel[number] => ({

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionModel } from '../collection/collection-model';
+import { CollectionModel } from '@shared/models/collection-item-model';
 import { CollectionService } from '../collection/collection-service';
 import { TemplateRegenerationService } from './template-regeneration-service';
 import {
@@ -8,8 +8,11 @@ import {
 } from '@components/blocker-loading/blocker-loading-store';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
-import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
+import { generateMdContent } from '@shared/parser/utils/generate-md-content-util';
+
+vi.mock('@shared/parser/utils/generate-md-content-util', () => ({ generateMdContent: vi.fn() }));
+import { setParserTemplate } from '@shared/parser/parser-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -28,6 +31,7 @@ const buildCollectionItem = (name: string): CollectionModel[number] => ({
   year: null,
   rate: '',
   hash: '',
+  plot: '',
 });
 
 describe('TemplateRegenerationService', () => {
@@ -38,6 +42,7 @@ describe('TemplateRegenerationService', () => {
   beforeEach(() => {
     collectionService = { loadCollection: vi.fn() };
     omdbService = { getSelectedContent: vi.fn() };
+    setParserTemplate('{{Title}} {{Tags}}');
 
     TestBed.configureTestingModule({
       providers: [
@@ -45,7 +50,6 @@ describe('TemplateRegenerationService', () => {
         { provide: CollectionService, useValue: collectionService },
         { provide: OMDbService, useValue: omdbService },
         { provide: ApiService, useValue: { update: vi.fn(() => of(undefined)) } },
-        { provide: MdContentGeneratorService, useValue: { getMdContent: vi.fn() } },
         { provide: NgxSignalTranslateService, useValue: { translate: vi.fn(() => '') } },
         provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
         provideStore(initialToastState, toastStateToken),
@@ -83,11 +87,7 @@ describe('TemplateRegenerationService', () => {
     const collectionItem = buildCollectionItem('A');
     collectionItem.tags = ['#movie', '#space', '#series', '#action'];
 
-    const mdContentGenerator = TestBed.inject(MdContentGeneratorService) as {
-      getMdContent: ReturnType<typeof vi.fn>;
-    };
-    const mdContentGeneratorSpy = vi.spyOn(mdContentGenerator, 'getMdContent');
-    mdContentGeneratorSpy.mockReturnValue('generated-content');
+    vi.mocked(generateMdContent).mockReturnValue('generated-content');
 
     omdbService.getSelectedContent.mockReturnValue(
       of(null, {
@@ -101,7 +101,8 @@ describe('TemplateRegenerationService', () => {
     service.start([collectionItem]);
 
     await vi.advanceTimersByTimeAsync(600);
-    expect(mdContentGeneratorSpy).toHaveBeenCalledWith(
+    expect(generateMdContent).toHaveBeenCalledWith(
+      expect.any(String),
       expect.objectContaining({
         imdbID: `ttA`,
         Title: 'title',
