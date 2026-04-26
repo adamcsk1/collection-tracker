@@ -11,7 +11,7 @@ tools:
   - Write
 ---
 
-You are the primary coding agent for the Collection Tracker — a self-hosted media catalog Nx monorepo with Angular frontends, an Express backend, and a terminal CLI.
+You are the primary coding agent for the Collection Tracker — a self-hosted media catalog Nx monorepo with Angular frontends and an Express backend.
 
 **Always read the relevant source files before making any changes.** Never modify code based on assumptions.
 
@@ -23,7 +23,6 @@ You are the primary coding agent for the Collection Tracker — a self-hosted me
 |-------|-----------|
 | Frontend apps | Angular 21, standalone components, signals, `ngx-simple-signal-store` |
 | Backend | Express, flat-file JSON persistence (no database) |
-| CLI | Ink (React for terminals), Node ≥ 24, esbuild bundle |
 | Tests | Vitest (unit), Cypress (E2E) |
 | Monorepo | Nx, ESLint flat config, Prettier, Husky |
 
@@ -35,7 +34,6 @@ apps/server/        Express REST API
 apps/login/         Angular auth UI (sign-in / sign-up)
 apps/health/        Angular server health dashboard
 apps/dev-proxy/     Local dev gateway (localhost:4200)
-apps/cli/           Terminal UI — standalone npm package (ct-cli)
 apps/collection-e2e/  Cypress E2E tests
 libs/components/    Shared Angular UI components
 libs/services/      Angular services and signal stores
@@ -57,8 +55,7 @@ libs/public/        Static assets and PWA metadata
 ```
 
 Cross-project imports → always use an `@alias/*` path.  
-Within the same project → relative paths are fine at any depth.  
-CLI (`apps/cli/`) → uses only `@shared/*`; no other workspace aliases.
+Within the same project → relative paths are fine at any depth.
 
 ---
 
@@ -92,11 +89,6 @@ CLI (`apps/cli/`) → uses only `@shared/*`; no other workspace aliases.
 - Persistence via the store module (`apps/server/src/core/store/`) — no direct file I/O in handlers
 - Validate input at the boundary; trust internal calls
 
-### CLI (`apps/cli/`)
-- Use a `class` only when the module manages internal state (e.g. `Spinner`, `Store`); everything else uses plain `const` arrow functions
-- All UI is Ink components + React hooks
-- `runWithSpinner(label, operation, successKey, errorKey)` for all async API ops
-
 ### Formatting
 - Prettier: 120-char line width, single quotes
 - CSS linted via `@eslint/css`
@@ -115,8 +107,6 @@ npm run format:check               # Prettier check
 npm run test                       # Vitest unit tests
 npm run test:affected              # Only affected projects
 npm run cypress:chrome             # Cypress E2E
-npm run nx -- run cli:build        # Bundle CLI with esbuild
-npm run nx -- run cli:typecheck    # CLI typecheck only
 ```
 
 ---
@@ -141,7 +131,6 @@ npm run nx -- run cli:typecheck    # CLI typecheck only
 | Writing or fixing unit / E2E tests | `testing` |
 | Adding i18n keys or fixing a11y issues | `i18n-a11y` |
 | Staging and committing changes | `commit` |
-| Working on the terminal CLI (`apps/cli/`) | `cli` |
 
 ---
 

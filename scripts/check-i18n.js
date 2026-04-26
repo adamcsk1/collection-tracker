@@ -17,9 +17,6 @@ const resolveAppSourceFiles = (appName) => {
   return [...appSrc, ...libsSrc];
 };
 
-const resolveCliSourceFiles = () =>
-  globSync('apps/cli/src/**/*.{ts}', { cwd: root, ignore: ['**/*.spec.ts'] });
-
 const extractKeysFromHtml = (content, used) => {
   let searchFrom = 0;
 
@@ -93,8 +90,6 @@ const extractAppUsedKeys = (files) => {
   return used;
 };
 
-const extractCliUsedKeys = (files) => extractKeysWithPattern(files, CLI_ANY_KEY_PATTERN);
-
 // --------------------------------------------------------------------------
 // Target descriptors — one entry per i18n file to check
 // --------------------------------------------------------------------------
@@ -107,15 +102,7 @@ const buildAppTargets = () =>
     extractUsedKeys: extractAppUsedKeys,
   }));
 
-const buildCliTargets = () =>
-  globSync('apps/cli/src/i18n/public/*.json', { cwd: root }).map((i18nPath) => ({
-    name: 'cli',
-    i18nPath,
-    getSourceFiles: resolveCliSourceFiles,
-    extractUsedKeys: extractCliUsedKeys,
-  }));
-
-const targets = [...buildAppTargets(), ...buildCliTargets()];
+const targets = [...buildAppTargets()];
 
 if (targets.length === 0) {
   console.log('No i18n files found.');
