@@ -1,25 +1,32 @@
 <div class="about">
   <img [src]="'icons/' + themeLogo()" [title]="('Title' | signalTranslate)()" [alt]="('Title' | signalTranslate)()" />
   <h2 data-test-id="about-title" class="app-title-style">{{ ('Title' | signalTranslate)() }}</h2>
-  <h3>{{ ('Build' | signalTranslate)() }}</h3>
-  <div data-test-id="about-build">
-    <div>{{ build }}</div>
-  </div>
-  <h3>{{ ('BuildDate' | signalTranslate)() }}</h3>
-  <div>
-    <div>{{ buildDate }}</div>
-  </div>
-  <h3>{{ ('AppVersion' | signalTranslate)() }}</h3>
-  <div
-    data-test-id="about-version"
-    tabindex="0"
-    role="button"
-    [attr.aria-label]="('AppVersion' | signalTranslate)()"
-    (click)="onClickAppVersion()"
-    (keydown)="onClickAppVersion()"
-  >
-    <div>{{ appVersion }}</div>
-  </div>
+  <p class="about-description">{{ ('About.Description' | signalTranslate)() }}</p>
+  <hr />
+  <dl class="about-info">
+    <div>
+      <dt>{{ ('Build' | signalTranslate)() }}</dt>
+      <dd data-test-id="about-build">{{ build }}</dd>
+    </div>
+    <div>
+      <dt>{{ ('BuildDate' | signalTranslate)() }}</dt>
+      <dd>{{ buildDate }}</dd>
+    </div>
+    <div>
+      <dt>{{ ('AppVersion' | signalTranslate)() }}</dt>
+      <dd
+        data-test-id="about-version"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="('AppVersion' | signalTranslate)()"
+        (click)="onClickAppVersion()"
+        (keydown)="onClickAppVersion()"
+      >
+        {{ appVersion }}
+      </dd>
+    </div>
+  </dl>
+  <hr />
   <h3>{{ ('Links' | signalTranslate)() }}</h3>
   <div class="about-links">
     <a
@@ -40,12 +47,10 @@
       <img src="images/download-apk.svg" [alt]="('DownloadApk' | signalTranslate)()" />
     </a>
   </div>
-  <div>
+  <div class="about-nav-links">
     <a data-test-id="about-health-link" href="/health/" role="link">{{
       ('NavigateToServerHealth' | signalTranslate)()
     }}</a>
-  </div>
-  <div>
     <a data-test-id="about-api-docs-link" href="/api/docs" target="_blank" role="link">{{
       ('NavigateToApiDocs' | signalTranslate)()
     }}</a>
