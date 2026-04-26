@@ -70,5 +70,6 @@ android/app/debug/
 # Development folders
 .data
 
-# Claude Code
-.claude/settings.local.json
+# Mempalace
+entities.json
+mempalace.yaml

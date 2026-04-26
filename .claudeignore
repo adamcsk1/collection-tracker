@@ -1,9 +1,0 @@
-node_modules/
-.next/
-dist/
-build/
-*.lock
-*.log
-coverage/
-tmp/
-release/
