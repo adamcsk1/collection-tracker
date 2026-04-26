@@ -67,5 +67,5 @@ npx nx run server:preserve
 
 ## Related Documentation
 
-- [Server API reference](./server-api.md)
+- [Server API reference](../apps/server/public/server-api.yaml) — also served interactively at `/api/docs` when the server is running
 - [Docker deployment](./docker.md)

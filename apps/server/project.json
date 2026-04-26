@@ -36,7 +36,7 @@
         "bundle": false,
         "main": "apps/server/src/bootstrap.ts",
         "tsConfig": "apps/server/tsconfig.app.json",
-        "assets": ["apps/server/src/assets"],
+        "assets": ["apps/server/src/assets", { "input": "apps/server/public", "glob": "**/*", "output": "public" }],
         "generatePackageJson": true,
         "esbuildOptions": {
           "sourcemap": true,

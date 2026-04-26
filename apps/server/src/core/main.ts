@@ -1,10 +1,3 @@
-import { registerAllApis } from '../apis';
-import { getArgv } from './argv/argv';
-import { debugLog, errorLog, infoLog } from './logger';
-import { DATABASE_FILES, FOLDERS } from './main-const';
-import { Store } from './store/store';
-import { initializeFileHashes } from './utils/hash-util';
-import { initializeFolders } from '../tools/initializer';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -14,6 +7,14 @@ import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { existsSync, readFileSync } from 'fs';
 import helmet from 'helmet';
 import nocache from 'nocache';
+import { registerAllApis } from '../apis';
+import { register as registerDocsApi } from '../apis/docs-api';
+import { initializeFolders } from '../tools/initializer';
+import { getArgv } from './argv/argv';
+import { debugLog, errorLog, infoLog } from './logger';
+import { DATABASE_FILES, FOLDERS } from './main-const';
+import { Store } from './store/store';
+import { initializeFileHashes } from './utils/hash-util';
 
 export const main = async () => {
   try {
@@ -57,6 +58,9 @@ export const main = async () => {
     const app = express();
     app.set('trust proxy', 1);
     debugLog('Initializing express server');
+
+    // Registered before global middleware so helmet's CSP does not block Swagger UI assets.
+    registerDocsApi(app);
 
     app.use((request, _response, next) => {
       debugLog(`Incoming request: ${request.url}`);
@@ -105,7 +109,7 @@ export const main = async () => {
 
     registerAllApis(app);
 
-    app.listen(Number(process.env.PORT), process.env.HOST, () => {
+    app.listen(Number(process.env.PORT), `${process.env.HOST}`, () => {
       infoLog(`[ ready ] http://${process.env.HOST}:${process.env.PORT}`);
     });
   } catch (error: unknown) {
