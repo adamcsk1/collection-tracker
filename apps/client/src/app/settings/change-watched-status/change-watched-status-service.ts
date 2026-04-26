@@ -1,13 +1,13 @@
 import { inject, Injectable } from '@angular/core';
-import { CollectionService } from '../../collection/collection-service';
-import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
-import { addNewTagToRawContent, removeTagFromRawContent } from '@services/parser/utils/manage-tags-util';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
+import { addNewTagToRawContent, removeTagFromRawContent } from '@shared/parser/utils/manage-tags-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { CollectionService } from '../../collection/collection-service';
+import { mainCollectionStateToken } from '../../main/main-collection-store';
 
 @Injectable()
 export class ChangeWatchedStatusService {

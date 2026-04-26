@@ -1,9 +1,9 @@
-import { TestBed } from '@angular/core/testing';
+﻿import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Parser } from './parser';
 import { ParserService } from './parser-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
-import { setParserFilenamePattern, setParserRegexp, setParserTemplate } from '@services/parser/parser-util';
+import { setParserFilenamePattern, setParserRegexp, setParserTemplate } from '@shared/parser/parser-util';
 import { MD_TEMPLATE, PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -24,7 +24,6 @@ describe('Parser component', () => {
     setParserRegexp('content', PARSER_REGEXPS.content);
 
     TestBed.configureTestingModule({
-      imports: [Parser],
       providers: [provideRouter([]), provideStore(initialApiState, apiStateToken)],
     });
 
@@ -47,7 +46,7 @@ describe('Parser component', () => {
 
   it('loads the filename pattern from parser cache on init', async () => {
     const fixture = TestBed.createComponent(Parser);
-    fixture.detectChanges();
+    await fixture.whenStable();
     await fixture.whenStable();
 
     expect(fixture.componentInstance['form'].filenamePattern().value()).toBe('{{Year}}-{{Type}}-{{Title}}.md');
@@ -55,11 +54,11 @@ describe('Parser component', () => {
 
   it('marks the form invalid when filename pattern does not end with .md', async () => {
     const fixture = TestBed.createComponent(Parser);
-    fixture.detectChanges();
+    await fixture.whenStable();
     await fixture.whenStable();
 
     fixture.componentInstance['form'].filenamePattern().value.set('{{Year}}-{{Title}}');
-    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(fixture.componentInstance['formErrors'].filenamePattern.invalidExtension()).toBe(true);
     expect(fixture.componentInstance['form']().invalid()).toBe(true);

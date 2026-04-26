@@ -1,13 +1,14 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CollectionModel } from '../collection/collection-model';
+import { CollectionModel } from '@shared/models/collection-item-model';
 import { CollectionService } from '../collection/collection-service';
 import { TemplateRefreshStateModel } from './parser-model';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
-import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
+import { generateMdContent } from '@shared/parser/utils/generate-md-content-util';
+import { getParserTemplate } from '@shared/parser/parser-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { delay, filter, map, mergeMap, skip, take } from 'rxjs';
 
@@ -20,7 +21,6 @@ export class TemplateRegenerationService {
   private readonly omdb = inject(OMDbService);
   private readonly api = inject(ApiService);
   private readonly collection = inject(CollectionService);
-  private readonly mdContentGenerator = inject(MdContentGeneratorService);
   private readonly _state = signal<TemplateRefreshStateModel>({
     running: false,
     count: 0,
@@ -71,7 +71,7 @@ export class TemplateRegenerationService {
         delay(500),
         map((omdbItem) => {
           if (!!omdbItem?.imdbID) {
-            return this.mdContentGenerator.getMdContent({
+            return generateMdContent(getParserTemplate(), {
               ...omdbItem,
               Tags: this.collectionList[index].tags.filter((tag) => !['#movie', '#series'].includes(tag)).join(' '),
             });

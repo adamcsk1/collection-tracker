@@ -4,14 +4,13 @@ import { form, FormField, FormRoot, required, validate } from '@angular/forms/si
 import { NewItemModel, SaveMode } from './new-item-dialog-model';
 import { NewItemDialogService } from './new-item-dialog-service';
 import { TagSuggestionService } from './suggestion/tag-suggestion-service';
-import { internalTagValidation } from './validators/internal-tag-validator';
+import { forbiddenInternalTagValidation } from './validators/internal-tag-validator';
 import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
-import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
@@ -22,12 +21,7 @@ import { debounceTime, firstValueFrom } from 'rxjs';
   imports: [FormField, FormRoot, NgxSignalTranslatePipe, Input, Select, DialogShell, Autocomplete, Checkbox],
   templateUrl: './new-item-dialog.html',
   styleUrl: './new-item-dialog.css',
-  providers: [
-    OMDbService,
-    MdContentGeneratorService,
-    NewItemDialogService,
-    { provide: AutocompleteService, useClass: TagSuggestionService },
-  ],
+  providers: [OMDbService, NewItemDialogService, { provide: AutocompleteService, useClass: TagSuggestionService }],
   host: {
     class: 'dialog',
   },
@@ -50,7 +44,7 @@ export class NewItemDialog {
       required(newItem.searchText);
       required(newItem.selectedIMDbId);
       validate(newItem.selectedIMDbId, ({ value }) => this.knownIMDbIdValidationError(value()));
-      validate(newItem.tags, ({ value }) => internalTagValidation(value()));
+      validate(newItem.tags, ({ value }) => forbiddenInternalTagValidation(value()));
     },
     {
       submission: {

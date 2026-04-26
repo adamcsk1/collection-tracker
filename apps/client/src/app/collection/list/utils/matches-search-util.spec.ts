@@ -20,6 +20,7 @@ const buildItem = (overrides: { title?: string; rawContent?: string; tags?: stri
     year: null,
     rate: '',
     hash: '',
+    plot: '',
   };
 };
 
@@ -29,9 +30,14 @@ describe('matchesSearch — virtual unwatched tag', () => {
     expect(matchesSearch(item, VIRTUAL_UNWATCHED_TAG, false)).toBe(true);
   });
 
-  it('returns false when item contains the watched tag', () => {
-    const item = buildItem({ rawContent: `some content ${WATCHED_TAG}` });
+  it('returns false when item has the watched tag', () => {
+    const item = buildItem({ rawContent: `some content ${WATCHED_TAG}`, tags: [WATCHED_TAG] });
     expect(matchesSearch(item, VIRTUAL_UNWATCHED_TAG, false)).toBe(false);
+  });
+
+  it('returns true when item mentions the watched tag in content but is tagged as unwatched', () => {
+    const item = buildItem({ rawContent: `some content ${WATCHED_TAG} watch-list`, tags: [VIRTUAL_UNWATCHED_TAG] });
+    expect(matchesSearch(item, VIRTUAL_UNWATCHED_TAG, false)).toBe(true);
   });
 });
 

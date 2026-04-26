@@ -9,9 +9,8 @@ import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { Textarea } from '@components/textarea/textarea';
 import { apiStateToken } from '@services/api/api-store';
-import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
-import { getParserFilenamePattern, getParserRegexp, getParserTemplate } from '@services/parser/parser-util';
+import { getParserFilenamePattern, getParserRegexp, getParserTemplate } from '@shared/parser/parser-util';
 import { serializeParserRegexp } from '@shared/utils/parser-serialize-util';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
@@ -19,7 +18,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   selector: 'ct-parser',
   imports: [FormField, FormRoot, NgxSignalTranslatePipe, Textarea, Input, Details],
   templateUrl: './parser.html',
-  providers: [ParserService, TemplateRegenerationService, MdContentGeneratorService, OMDbService],
+  providers: [ParserService, TemplateRegenerationService, OMDbService],
   host: {
     class: 'page',
   },

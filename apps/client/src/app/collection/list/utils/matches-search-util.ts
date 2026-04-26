@@ -1,9 +1,9 @@
-import { CollectionItemModel } from '../../collection-model';
 import { VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { FUZZY_CONTENT_MAX_LENGTH, hasFuzzyMatch } from '@shared/utils/fuzzy-search-util';
+import { CollectionItemModel } from '../../collection-model';
 
-export function matchesSearch(item: CollectionItemModel, searchText: string, useFuzzySearch: boolean): boolean {
-  if (searchText === VIRTUAL_UNWATCHED_TAG) return !item.rawContentLower.includes(WATCHED_TAG);
+export const matchesSearch = (item: CollectionItemModel, searchText: string, useFuzzySearch: boolean): boolean => {
+  if (searchText === VIRTUAL_UNWATCHED_TAG) return !item.tags.includes(WATCHED_TAG);
 
   const lower = searchText.toLowerCase();
 
@@ -17,4 +17,4 @@ export function matchesSearch(item: CollectionItemModel, searchText: string, use
   }
 
   return item.rawContentLower.includes(lower);
-}
+};

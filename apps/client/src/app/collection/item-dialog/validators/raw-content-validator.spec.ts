@@ -1,4 +1,4 @@
-import * as collectionItemUtil from '../../utils/get-collection-item-util';
+import { getCollectionItem } from '@shared/utils/get-collection-item-util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { rawContentValidation } from './raw-content-validator';
 
@@ -14,13 +14,15 @@ const validParsedItem = (): any => ({
   year: 2021,
   rate: '8.7',
   name: 'My Movie',
+  hash: 'abc123',
+  plot: '',
 });
 
 describe('rawContentValidation', () => {
   let getCollectionItemSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    getCollectionItemSpy = vi.spyOn(collectionItemUtil, 'getCollectionItem').mockReturnValue(validParsedItem());
+    getCollectionItemSpy = vi.spyOn({ getCollectionItem }, 'getCollectionItem').mockReturnValue(validParsedItem());
   });
 
   afterEach(() => {
@@ -33,6 +35,15 @@ describe('rawContentValidation', () => {
 
   it('passes when content is null', () => {
     expect(rawContentValidation(null)).toBeUndefined();
+  });
+
+  it('passes when plot is empty', () => {
+    getCollectionItemSpy.mockReturnValueOnce({
+      ...validParsedItem(),
+      plot: '',
+    });
+
+    expect(rawContentValidation('### My Movie #movie')).toBeUndefined();
   });
 
   it('returns badRawContent when a parsed field is empty', () => {

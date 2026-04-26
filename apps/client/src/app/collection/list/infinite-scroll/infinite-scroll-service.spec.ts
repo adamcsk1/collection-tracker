@@ -18,6 +18,7 @@ const buildItem = (name: string): CollectionItemModel => ({
   year: null,
   rate: '',
   hash: '',
+  plot: '',
 });
 
 describe('InfiniteScrollService', () => {

@@ -11,6 +11,7 @@ export interface CollectionItemModel {
   year: number | null;
   rate: string;
   hash: string;
+  plot: string;
 }
 
 export type CollectionModel = CollectionItemModel[];

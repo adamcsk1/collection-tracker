@@ -1,16 +1,16 @@
 import { effect, inject, Injectable } from '@angular/core';
-import { CollectionService } from '../collection-service';
-import { SaveMode } from './new-item-dialog-model';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
-import { MdContentGeneratorService } from '@services/md-content-generator/md-content-generator-service';
 import { OMDbService } from '@services/omdb/omdb-service';
-import { getParserFilenamePattern } from '@services/parser/parser-util';
-import { buildCollectionItemFilename } from '@services/parser/utils/filename-pattern-util';
 import { PortalService } from '@services/portal-service';
+import { getParserFilenamePattern, getParserTemplate } from '@shared/parser/parser-util';
+import { buildCollectionItemFilename } from '@shared/parser/utils/filename-pattern-util';
+import { generateMdContent } from '@shared/parser/utils/generate-md-content-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
+import { CollectionService } from '../collection-service';
+import { SaveMode } from './new-item-dialog-model';
 
 @Injectable()
 export class NewItemDialogService {
@@ -20,7 +20,6 @@ export class NewItemDialogService {
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly mdContentGenerator = inject(MdContentGeneratorService);
   private readonly portal = inject(PortalService);
 
   constructor() {
@@ -44,7 +43,7 @@ export class NewItemDialogService {
       filter((selectedContent) => !!selectedContent),
       filter((selectedContent) => !!selectedContent?.imdbID),
       map((selectedContent) => ({
-        content: this.mdContentGenerator.getMdContent({
+        content: generateMdContent(getParserTemplate(), {
           ...selectedContent,
           Tags: tags.trim(),
         }),

@@ -26,6 +26,7 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
   year: overrides.year || null,
   rate: overrides.rate || '',
   hash: '',
+  plot: '',
 });
 
 describe('Statistics component', () => {

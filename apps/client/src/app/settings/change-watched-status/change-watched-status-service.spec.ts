@@ -33,6 +33,7 @@ const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel
   year: null,
   rate: '',
   hash: overrides.hash || 'hash-abc',
+  plot: '',
 });
 
 describe('ChangeWatchedStatusService', () => {

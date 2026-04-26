@@ -34,6 +34,7 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
   year: overrides.year ?? 2020,
   rate: overrides.rate ?? '7.5',
   hash: overrides.hash ?? 'hash-abc',
+  plot: overrides.plot ?? '',
 });
 
 describe('ImageRefreshService', () => {

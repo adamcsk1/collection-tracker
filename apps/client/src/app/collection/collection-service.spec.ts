@@ -1,16 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import * as collectionUtils from './utils/get-collection-item-util';
+import { ApiService } from '@services/api/api-service';
+import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { GetAllApiResponseItemModel, GetAllApiResponseModel } from '@shared/models/api-model';
+import { getCollectionItem } from '@shared/utils/get-collection-item-util';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { Subject } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   initialMainCollectionState,
   MainCollectionState,
   mainCollectionStateToken,
 } from '../main/main-collection-store';
-import { ApiService } from '@services/api/api-service';
-import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
-import { GetAllApiResponseItemModel, GetAllApiResponseModel } from '@shared/models/api-model';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { Subject } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectionModel } from './collection-model';
 import { CollectionService } from './collection-service';
 
@@ -35,6 +35,7 @@ describe('CollectionService', () => {
     year: null,
     rate: '',
     hash: '',
+    plot: '',
   });
 
   beforeEach(() => {
@@ -52,7 +53,7 @@ describe('CollectionService', () => {
     service = TestBed.inject(CollectionService);
     mainCollectionState = TestBed.inject(mainCollectionStateToken);
     apiState = TestBed.inject(apiStateToken);
-    getCollectionItemSpy = vi.spyOn(collectionUtils, 'getCollectionItem');
+    getCollectionItemSpy = vi.spyOn({ getCollectionItem }, 'getCollectionItem');
   });
 
   afterEach(() => {
