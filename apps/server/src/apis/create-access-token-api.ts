@@ -1,14 +1,16 @@
 import { generateAccessToken, jwtGuard } from '../core/jwt';
-import { errorLog } from '../core/logger';
 import { Store } from '../core/store/store';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getUserAccessToken } from '../core/utils/users-util';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { CreateAccessTokenApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/user/access-token`, jwtGuard, (request, response) => {
-    try {
+  app.post(
+    `${API_PREFIX}/user/access-token`,
+    jwtGuard,
+    withErrorHandler((request, response) => {
       const users = Store.getLastValue('users');
 
       const newAccessToken = generateAccessToken(request.username);
@@ -20,9 +22,6 @@ export const register = (app: Application): void => {
 
       const result: CreateAccessTokenApiResponseModel = { accessToken: newAccessToken };
       response.send(result);
-    } catch (error: unknown) {
-      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
-      response.sendStatus(500);
-    }
-  });
+    })
+  );
 };

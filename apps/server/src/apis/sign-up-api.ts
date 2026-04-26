@@ -1,15 +1,16 @@
 import { generateRandomToken, hashText } from '../core/crypto';
-import { errorLog } from '../core/logger';
 import { FOLDERS } from '../core/main-const';
 import { Store } from '../core/store/store';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
 import { mkdirSync } from 'fs';
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/sign-up`, (request, response) => {
-    try {
+  app.post(
+    `${API_PREFIX}/sign-up`,
+    withErrorHandler((request, response) => {
       if (Number(process.env.DISABLE_REGISTRATION)) {
         return response.sendStatus(403);
       }
@@ -40,9 +41,6 @@ export const register = (app: Application): void => {
 
       const result: SignUpApiResponseModel = { token: userToken };
       response.send(result);
-    } catch (error: unknown) {
-      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
-      response.sendStatus(500);
-    }
-  });
+    })
+  );
 };

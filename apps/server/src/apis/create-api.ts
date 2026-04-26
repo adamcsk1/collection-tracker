@@ -1,9 +1,10 @@
 import { jwtGuard } from '../core/jwt';
-import { errorLog } from '../core/logger';
 import { FOLDERS } from '../core/main-const';
 import { Store } from '../core/store/store';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 import { updateItem } from '../core/utils/cache-util';
 import { hashFileExists } from '../core/utils/hash-util';
+import { sanitizeFileName } from '../core/utils/sanitize-file-name-util';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
@@ -23,13 +24,15 @@ const getAvailableFileName = (storeFolder: string, name: string): string => {
 };
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/create`, jwtGuard, async (request, response) => {
-    try {
+  app.post(
+    `${API_PREFIX}/create`,
+    jwtGuard,
+    withErrorHandler(async (request, response) => {
       let { content, name } = request.body as CreateApiRequestModel;
       if (typeof content !== 'string' || typeof name !== 'string') {
         return response.sendStatus(400);
       }
-      name = name.toString().trim().replace(/\\|\//g, '');
+      name = sanitizeFileName(name.trim());
       if (!name || !name.toLowerCase().endsWith('.md')) {
         return response.sendStatus(400);
       }
@@ -44,9 +47,6 @@ export const register = (app: Application): void => {
 
       const result: CreateApiResponseModel = { name };
       response.send(result);
-    } catch (error: unknown) {
-      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
-      response.sendStatus(500);
-    }
-  });
+    })
+  );
 };

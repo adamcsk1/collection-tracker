@@ -30,7 +30,9 @@ export const Store = {
   reset: <K extends keyof StoreDataModel>(key: K): void => {
     debugLog(`Resetting store value (${key})`);
     const subject = store()[key];
-    subject.next(null);
+    const emptyValue: StoreDataModel[K] =
+      key === 'cache' || key === 'fileHashes' ? ({} as StoreDataModel[K]) : (null as StoreDataModel[K]);
+    subject.next(emptyValue);
   },
   resetAll: (): void => {
     debugLog(`Resetting all store values`);
