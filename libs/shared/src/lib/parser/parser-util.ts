@@ -1,7 +1,7 @@
-import { PARSER_REGEXPS } from '@shared/constants/parser-const';
+import { PARSER_REGEXPS } from '../constants/parser-const';
 import { ParserCacheModel } from './parser-model';
 
-const cacheContainer = window as Window & { __parserCache?: ParserCacheModel };
+const cacheContainer = globalThis as { __parserCache?: ParserCacheModel };
 const parserCache: ParserCacheModel = cacheContainer.__parserCache ?? (cacheContainer.__parserCache = {});
 
 export const getParserTemplate = (): string => parserCache.mdTemplate!;
@@ -20,3 +20,5 @@ export const setParserFilenamePattern = (filenamePattern: string): void => {
 export const setParserRegexp = (key: keyof typeof PARSER_REGEXPS, regexp: RegExp): void => {
   parserCache[key] = regexp;
 };
+
+export const getParserRegexps = (): ParserCacheModel => ({ ...parserCache });

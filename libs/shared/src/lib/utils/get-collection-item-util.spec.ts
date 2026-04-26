@@ -1,19 +1,7 @@
-import { setParserRegexp } from '@services/parser/parser-util';
-import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { PARSER_REGEXPS } from '../constants/parser-const';
+import { getParserRegexp, setParserRegexp } from '../parser/parser-util';
 import { getCollectionItem } from './get-collection-item-util';
-
-beforeAll(() => {
-  setParserRegexp('image', PARSER_REGEXPS.image);
-  setParserRegexp('title', PARSER_REGEXPS.title);
-  setParserRegexp('IMDbId', PARSER_REGEXPS.IMDbId);
-  setParserRegexp('IMDbRate', PARSER_REGEXPS.IMDbRate);
-  setParserRegexp('genre', PARSER_REGEXPS.genre);
-  setParserRegexp('genreToken', PARSER_REGEXPS.genreToken);
-  setParserRegexp('tags', PARSER_REGEXPS.tags);
-  setParserRegexp('tagToken', PARSER_REGEXPS.tagToken);
-  setParserRegexp('year', PARSER_REGEXPS.year);
-});
 
 const markdownContent = [
   '### My Movie',
@@ -28,6 +16,12 @@ const markdownContent = [
   'tag-one tag-two',
   '[IMDb (tt1234567)](https://imdb.example/title/tt1234567) (**8.7** / 10)',
 ].join('\n');
+
+beforeAll(() => {
+  for (const key of Object.keys(PARSER_REGEXPS) as (keyof typeof PARSER_REGEXPS)[]) {
+    setParserRegexp(key, getParserRegexp(key) ?? PARSER_REGEXPS[key]);
+  }
+});
 
 describe('getCollectionItem', () => {
   it('maps markdown content into a collection item model', () => {

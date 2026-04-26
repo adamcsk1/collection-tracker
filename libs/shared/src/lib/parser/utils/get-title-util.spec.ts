@@ -1,5 +1,5 @@
 import { getParserRegexp, setParserRegexp } from '../parser-util';
-import { PARSER_REGEXPS } from '@shared/constants/parser-const';
+import { PARSER_REGEXPS } from '../../constants/parser-const';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { getTitle } from './get-title-util';
 
