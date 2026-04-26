@@ -112,6 +112,7 @@
   "Message.YearRegexp": "This regexp extracts the year from the template.",
   "Movie": "Movie",
   "Movies": "Movies",
+  "NavigateToApiDocs": "API Docs",
   "NavigateToServerHealth": "Go to server status page",
   "Others": "Others",
   "ParsedAttributes": "Parsed attributes",
