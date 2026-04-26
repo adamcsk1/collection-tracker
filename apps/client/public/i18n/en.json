@@ -1,5 +1,6 @@
 {
   "About": "About",
+  "About.Description": "A self-hosted media catalog for managing your personal movie and series collections. Store everything locally - no database, no cloud storage.",
   "AccessTokens": "Access tokens",
   "AddNew": "Add new",
   "AnimatedBackground": "Animated background",
