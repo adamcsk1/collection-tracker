@@ -1,0 +1,760 @@
+openapi: 3.1.0
+info:
+  title: Collection Tracker API
+  version: 1.0.0
+  description: REST API for the Collection Tracker server.
+
+servers:
+  - url: '{scheme}://{host}/api/v1'
+    description: API base path
+    variables:
+      scheme:
+        default: http
+        enum: [http, https]
+      host:
+        default: localhost:4200
+        description: Host and port of the server.
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: Signed HTTP-only cookie set by POST /sign-in. Automatically rotates on each authenticated request.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token obtained via POST /user/access-token for header-based clients.
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, memory, cpu, disk, load, frontend]
+      properties:
+        status:
+          type: string
+          enum: [ok, warn, error]
+        memory:
+          type: object
+          required: [usedPercent]
+          properties:
+            usedPercent:
+              type: number
+        cpu:
+          type: object
+          required: [usagePercent]
+          properties:
+            usagePercent:
+              type: number
+        disk:
+          oneOf:
+            - type: object
+              required: [usedPercent]
+              properties:
+                usedPercent:
+                  type: number
+            - type: 'null'
+        load:
+          type: object
+          required: [avg1m, avg5m, avg15m]
+          properties:
+            avg1m:
+              type: number
+            avg5m:
+              type: number
+            avg15m:
+              type: number
+        frontend:
+          type: object
+          required: [status]
+          properties:
+            status:
+              type: string
+              enum: [up, down]
+
+    SignUpRequest:
+      type: object
+      required: [username]
+      properties:
+        username:
+          type: string
+
+    SignUpResponse:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          description: Long-lived user token for this account.
+
+    SignInRequest:
+      type: object
+      required: [username, token]
+      properties:
+        username:
+          type: string
+        token:
+          type: string
+
+    ChangeTokenResponse:
+      type: object
+      required: [newToken]
+      properties:
+        newToken:
+          type: string
+
+    AccessToken:
+      type: object
+      required: [tokenHash, createdAt, userAgent, expiresAt]
+      properties:
+        tokenHash:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        userAgent:
+          type: string
+        expiresAt:
+          type: ['string', 'null']
+          format: date-time
+          description: Null for tokens created via POST /user/access-token (intended for header-based usage).
+
+    AccessTokensResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/AccessToken'
+
+    CreateAccessTokenResponse:
+      type: object
+      required: [accessToken]
+      properties:
+        accessToken:
+          type: string
+
+    UserSettingsResponse:
+      type: object
+      properties:
+        fetchBatchSize:
+          type: integer
+        theme:
+          type: string
+          enum: [system, dark, light]
+        animatedBackground:
+          type: boolean
+        language:
+          type: string
+          enum: [en]
+        claudeAiAvailable:
+          type: boolean
+          description: Set by the server based on whether CLAUDE_API_KEY is configured. Always present in the response.
+
+    UserSettingsRequest:
+      type: object
+      properties:
+        fetchBatchSize:
+          type: integer
+        theme:
+          type: string
+          enum: [system, dark, light]
+        animatedBackground:
+          type: boolean
+        language:
+          type: string
+          enum: [en]
+
+    CollectionItem:
+      type: object
+      required: [name, content, hash]
+      properties:
+        name:
+          type: string
+        content:
+          type: string
+        hash:
+          type: string
+          description: SHA-512 hash of the file content.
+
+    CreateRequest:
+      type: object
+      required: [content, name]
+      properties:
+        content:
+          type: string
+        name:
+          type: string
+
+    CreateResponse:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: Final stored filename after collision handling.
+
+    ChangeRequest:
+      type: object
+      required: [content, hash]
+      properties:
+        content:
+          type: string
+        hash:
+          type: string
+          description: Current SHA-512 hash of the file. Must match the stored hash.
+
+    ChangeResponse:
+      type: object
+      required: [hash]
+      properties:
+        hash:
+          type: string
+          description: New SHA-512 hash of the updated content.
+
+    OMDbItem:
+      type: object
+      required: [imdbID, imdbRating, Plot, Poster, Type, Title, Year, Director, Genre, Actors]
+      properties:
+        imdbID:
+          type: string
+        imdbRating:
+          type: string
+        Plot:
+          type: string
+        Poster:
+          type: string
+        Type:
+          type: string
+        Title:
+          type: string
+        Year:
+          type: string
+        Director:
+          type: string
+        Genre:
+          type: string
+        Actors:
+          type: string
+
+    OMDbSearchResponse:
+      type: object
+      required: [Search]
+      properties:
+        Search:
+          type: array
+          items:
+            $ref: '#/components/schemas/OMDbItem'
+
+    ClaudeQueryRequest:
+      type: object
+      required: [prompt]
+      properties:
+        prompt:
+          type: string
+          description: Natural-language question about the caller's collection.
+          examples:
+            - Which are sci-fi movies?
+
+    ClaudeQueryResponse:
+      type: object
+      required: [matchedIds]
+      properties:
+        matchedIds:
+          type: array
+          items:
+            type: string
+          description: IMDb IDs matched by Claude from the caller's collection.
+          examples:
+            - - tt0133093
+
+    ParserConfig:
+      type: object
+      properties:
+        IMDbId:
+          type: string
+        genre:
+          type: string
+        genreToken:
+          type: string
+        image:
+          type: string
+        IMDbRate:
+          type: string
+        tags:
+          type: string
+        tagToken:
+          type: string
+        title:
+          type: string
+        year:
+          type: string
+        content:
+          type: string
+        mdTemplate:
+          type: string
+        filenamePattern:
+          type: string
+          description: Default pattern is {{Year}}-{{Type}}-{{ClearedName}}-{{index}}.md
+
+    TagConfig:
+      type: object
+      required: [tag, color, useForImageBorder, useForTextColor, useForImageBadge, weight]
+      properties:
+        tag:
+          type: string
+          examples:
+            - '#example'
+        color:
+          type: ['string', 'null']
+          examples:
+            - '#112233'
+        useForImageBorder:
+          type: boolean
+        useForTextColor:
+          type: boolean
+        useForImageBadge:
+          type: boolean
+        weight:
+          type: integer
+
+    TagConfigsResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/TagConfig'
+
+security:
+  - cookieAuth: []
+  - bearerAuth: []
+
+tags:
+  - name: Public
+    description: Endpoints that do not require authentication.
+  - name: Session
+    description: Access token and session management.
+  - name: User
+    description: User account and settings.
+  - name: Collection
+    description: CRUD operations for collection items (Markdown files).
+  - name: OMDb Proxy
+    description: Proxy endpoints for the OMDb API. Require `OMDB_API_KEY` on the server.
+  - name: Claude Proxy
+    description: Proxy endpoint for the Claude AI API. Requires `CLAUDE_API_KEY` on the server.
+  - name: Parser & Tag
+    description: Parser template and tag colour configuration.
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Server health check
+      security: []
+      tags: [Public]
+      responses:
+        '200':
+          description: Health status of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /sign-up:
+    post:
+      operationId: signUp
+      summary: Create a new account
+      security: []
+      tags: [Public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequest'
+      responses:
+        '200':
+          description: Account created. Returns the long-lived user token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignUpResponse'
+
+  /sign-in:
+    post:
+      operationId: signIn
+      summary: Sign in and obtain an access token
+      security: []
+      tags: [Public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+      responses:
+        '200':
+          description: Authenticated. Sets a signed HTTP-only `token` cookie valid for 15 days.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              examples:
+                default:
+                  value: token=<jwt>; HttpOnly; Secure; SameSite=Strict; Max-Age=1296000
+
+  /logout:
+    delete:
+      operationId: logout
+      summary: Revoke the current access token and clear the auth cookie
+      tags: [Session]
+      responses:
+        '200':
+          description: Logged out successfully.
+
+  /user/change-token:
+    put:
+      operationId: changeUserToken
+      summary: Rotate the long-lived user token
+      description: Rotates the user's long-lived token and replaces the active access-token set.
+      tags: [Session]
+      responses:
+        '200':
+          description: Token rotated. Returns the new long-lived token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeTokenResponse'
+
+  /user/access-token:
+    post:
+      operationId: createAccessToken
+      summary: Create an additional access token for header-based clients
+      description: Created tokens are stored with `expiresAt` set to null.
+      tags: [Session]
+      responses:
+        '200':
+          description: New access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAccessTokenResponse'
+
+  /user/access-tokens:
+    get:
+      operationId: listAccessTokens
+      summary: List all stored access tokens
+      description: Returns token hashes, creation dates, user agents, and expiresAt values.
+      tags: [Session]
+      responses:
+        '200':
+          description: Array of stored access token metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokensResponse'
+
+  /user/access-token/{tokenHash}:
+    delete:
+      operationId: deleteAccessToken
+      summary: Delete one access token by hash
+      tags: [Session]
+      parameters:
+        - name: tokenHash
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Token deleted.
+
+  /user/access-token/validate:
+    get:
+      operationId: validateAccessToken
+      summary: Validate the current access token
+      description: Cookie-based requests also rotate the cookie token and refresh the 15-day window.
+      tags: [Session]
+      responses:
+        '200':
+          description: Token is valid.
+
+  /user:
+    delete:
+      operationId: deleteUser
+      summary: Delete the current user account
+      description: Deletes the user, all stored Markdown entries, and related configuration.
+      tags: [User]
+      responses:
+        '200':
+          description: User deleted.
+
+  /user/settings:
+    get:
+      operationId: getUserSettings
+      summary: Get user settings
+      description: 'Always includes `claudeAiAvailable` indicating whether `CLAUDE_API_KEY` is configured on the server. Returns `{ claudeAiAvailable: false }` when no settings have been stored yet.'
+      tags: [User]
+      responses:
+        '200':
+          description: Current user settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSettingsResponse'
+    post:
+      operationId: updateUserSettings
+      summary: Update user settings
+      description: Accepts any subset of `fetchBatchSize`, `theme`, `animatedBackground`, and `language`. Returns the merged settings object.
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSettingsRequest'
+      responses:
+        '200':
+          description: Merged settings after update.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSettingsResponse'
+
+  /get-all:
+    get:
+      operationId: getAllItems
+      summary: Get all collection items
+      description: Returns items sorted by file creation date descending. `hash` is the SHA-512 hash of the file content.
+      tags: [Collection]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Array of collection items.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionItem'
+
+  /create:
+    post:
+      operationId: createItem
+      summary: Create a collection item
+      tags: [Collection]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+      responses:
+        '200':
+          description: Item created. Returns the final stored filename after collision handling.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+        '409':
+          description: A stale hash file exists; sync required.
+
+  /change/{name}:
+    put:
+      operationId: changeItem
+      summary: Update a collection item
+      tags: [Collection]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeRequest'
+      responses:
+        '200':
+          description: Item updated. Returns the new SHA-512 content hash.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeResponse'
+        '409':
+          description: Hash mismatch — the stored content has changed.
+
+  /delete/{name}:
+    delete:
+      operationId: deleteItem
+      summary: Delete a collection item
+      tags: [Collection]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: hash
+          in: query
+          required: true
+          description: Current SHA-512 hash of the file. Must match the stored hash.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item deleted.
+        '409':
+          description: Hash mismatch — the stored content has changed.
+
+  /proxy/omdb/search:
+    get:
+      operationId: proxyOmdbSearch
+      summary: Search OMDb by title
+      description: Proxies to the OMDb API using the server's `OMDB_API_KEY`. The key is never exposed to the client.
+      tags: [OMDb Proxy]
+      parameters:
+        - name: s
+          in: query
+          required: true
+          description: Title search string.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OMDb search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OMDbSearchResponse'
+        '503':
+          description: OMDB_API_KEY not configured on the server.
+
+  /proxy/omdb/item:
+    get:
+      operationId: proxyOmdbItem
+      summary: Get an OMDb item by IMDb ID
+      description: Proxies to the OMDb API using the server's `OMDB_API_KEY`. The key is never exposed to the client.
+      tags: [OMDb Proxy]
+      parameters:
+        - name: i
+          in: query
+          required: true
+          description: IMDb ID.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OMDb item detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OMDbItem'
+        '503':
+          description: OMDB_API_KEY not configured on the server.
+
+  /proxy/claude/query:
+    post:
+      operationId: proxyClaudeQuery
+      summary: Natural-language collection search via Claude
+      description: |
+        Proxies a prompt to the Claude API using the server's `CLAUDE_API_KEY`. The key is never exposed to the client.
+        The server reads the caller's collection from flat files, extracts IMDb IDs and metadata, and builds the prompt internally.
+        Only the natural-language question is supplied by the client.
+        The model is controlled by the optional `CLAUDE_MODEL` env variable; defaults to `claude-haiku-4-5-20251001`.
+      tags: [Claude Proxy]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaudeQueryRequest'
+      responses:
+        '200':
+          description: IMDb IDs matched by Claude from the caller's collection.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaudeQueryResponse'
+        '400':
+          description: Missing or empty `prompt`.
+        '502':
+          description: Claude returned an unparseable or truncated response.
+        '503':
+          description: CLAUDE_API_KEY not configured on the server.
+
+  /parser/config:
+    get:
+      operationId: getParserConfig
+      summary: Get parser configuration
+      description: Returns the current parser template, filename pattern, and regexp fields. Falls back to defaults when no user config exists.
+      tags: [Parser & Tag]
+      responses:
+        '200':
+          description: Current parser config.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParserConfig'
+
+  /parser/change-config:
+    post:
+      operationId: changeParserConfig
+      summary: Update parser configuration
+      description: Accepts any subset of the parser config fields. Returns the merged config.
+      tags: [Parser & Tag]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParserConfig'
+      responses:
+        '200':
+          description: Merged parser config after update.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParserConfig'
+
+  /tag/config:
+    get:
+      operationId: getTagConfig
+      summary: Get tag configuration
+      tags: [Parser & Tag]
+      responses:
+        '200':
+          description: Current tag configuration array.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagConfigsResponse'
+
+  /tag/change-config:
+    post:
+      operationId: changeTagConfig
+      summary: Replace tag configuration
+      description: Replaces the full tag configuration array and returns the stored result.
+      tags: [Parser & Tag]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagConfigsResponse'
+      responses:
+        '200':
+          description: Stored tag configuration.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagConfigsResponse'

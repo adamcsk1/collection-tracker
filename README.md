@@ -103,7 +103,7 @@ See the server documentation for the full runtime model and data layout.
 ## Documentation
 
 - [Documentation index](./docs/README.md)
-- [Server API documentation](./docs/server-api.md)
+- [Server API documentation](./apps/server/public/server-api.yaml)
 
 ## Release
 
