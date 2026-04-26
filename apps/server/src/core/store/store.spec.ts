@@ -55,6 +55,7 @@ describe('Store', () => {
     expect(Store.getLastValue('parserConfigs')).toBeNull();
     expect(Store.getLastValue('tagConfigs')).toBeNull();
     expect(Store.getLastValue('userSettings')).toBeNull();
-    expect(Store.getLastValue('cache')).toBeNull();
+    expect(Store.getLastValue('cache')).toEqual({});
+    expect(Store.getLastValue('fileHashes')).toEqual({});
   });
 });

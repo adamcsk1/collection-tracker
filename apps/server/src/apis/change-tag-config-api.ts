@@ -1,6 +1,6 @@
 import { jwtGuard } from '../core/jwt';
-import { errorLog } from '../core/logger';
 import { Store } from '../core/store/store';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { TagConfigsApiRequestModel } from '@shared/models/api-model';
 import type { Application } from 'express';
@@ -20,8 +20,10 @@ const isTagConfig = (tagConfig: unknown): tagConfig is TagConfigsApiRequestModel
 };
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/tag/change-config`, jwtGuard, async (request, response) => {
-    try {
+  app.post(
+    `${API_PREFIX}/tag/change-config`,
+    jwtGuard,
+    withErrorHandler(async (request, response) => {
       const body = request.body as TagConfigsApiRequestModel;
       if (!Array.isArray(body) || body.some((tagConfig) => !isTagConfig(tagConfig))) {
         return response.sendStatus(400);
@@ -32,9 +34,6 @@ export const register = (app: Application): void => {
       Store.set('tagConfigs', tagConfigs);
 
       response.send(body);
-    } catch (error: unknown) {
-      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
-      response.sendStatus(500);
-    }
-  });
+    })
+  );
 };

@@ -1,14 +1,16 @@
 import { jwtGuard } from '../core/jwt';
-import { errorLog } from '../core/logger';
 import { FOLDERS } from '../core/main-const';
 import { Store } from '../core/store/store';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { Application } from 'express';
 import { existsSync, rmSync } from 'fs';
 
 export const register = (app: Application): void => {
-  app.delete(`${API_PREFIX}/user`, jwtGuard, (request, response) => {
-    try {
+  app.delete(
+    `${API_PREFIX}/user`,
+    jwtGuard,
+    withErrorHandler((request, response) => {
       const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
 
       if (existsSync(storeFolder)) rmSync(storeFolder, { recursive: true, force: true });
@@ -28,9 +30,6 @@ export const register = (app: Application): void => {
       Store.set('userSettings', userSettings);
 
       response.sendStatus(204);
-    } catch (error: unknown) {
-      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
-      response.sendStatus(500);
-    }
-  });
+    })
+  );
 };

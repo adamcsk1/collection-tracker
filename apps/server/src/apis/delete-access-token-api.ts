@@ -1,12 +1,14 @@
 import { jwtGuard } from '../core/jwt';
-import { errorLog } from '../core/logger';
 import { Store } from '../core/store/store';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
-  app.delete(`${API_PREFIX}/user/access-token/:tokenHash`, jwtGuard, (request, response) => {
-    try {
+  app.delete(
+    `${API_PREFIX}/user/access-token/:tokenHash`,
+    jwtGuard,
+    withErrorHandler((request, response) => {
       const { tokenHash } = request.params;
       const users = Store.getLastValue('users');
 
@@ -16,9 +18,6 @@ export const register = (app: Application): void => {
       Store.set('users', users);
 
       response.sendStatus(204);
-    } catch (error: unknown) {
-      if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
-      response.sendStatus(500);
-    }
-  });
+    })
+  );
 };

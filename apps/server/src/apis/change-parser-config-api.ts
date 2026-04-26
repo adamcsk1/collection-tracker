@@ -1,13 +1,15 @@
 import { jwtGuard } from '../core/jwt';
-import { errorLog } from '../core/logger';
 import { Store } from '../core/store/store';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { ParserConfigApiResponseModel } from '@shared/models/api-model';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/parser/change-config`, jwtGuard, async (request, response) => {
-    try {
+  app.post(
+    `${API_PREFIX}/parser/change-config`,
+    jwtGuard,
+    withErrorHandler(async (request, response) => {
       const body = request.body as ParserConfigApiResponseModel;
       if (
         typeof body !== 'object' ||
@@ -31,9 +33,6 @@ export const register = (app: Application): void => {
       Store.set('parserConfigs', parserConfigs);
 
       response.send(updatedConfig);
-    } catch (error: unknown) {
-      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
-      response.sendStatus(500);
-    }
-  });
+    })
+  );
 };

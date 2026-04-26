@@ -2,8 +2,8 @@ import { cookieConfig, cookieExpiration } from '../core/cookie/cookie-config';
 import { COOKIE_TOKEN } from '../core/cookie/cookie-const';
 import { hashText } from '../core/crypto';
 import { generateAccessToken } from '../core/jwt';
-import { errorLog } from '../core/logger';
 import { Store } from '../core/store/store';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getUserAccessToken } from '../core/utils/users-util';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignInApiRequestModel } from '@shared/models/api-model';
@@ -12,8 +12,9 @@ import type { Application } from 'express';
 import type jwt from 'jsonwebtoken';
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/sign-in`, (request, response) => {
-    try {
+  app.post(
+    `${API_PREFIX}/sign-in`,
+    withErrorHandler((request, response) => {
       const { username, token } = request.body as SignInApiRequestModel;
       if (typeof username !== 'string' || !username || typeof token !== 'string' || !token) {
         return response.sendStatus(400);
@@ -42,9 +43,6 @@ export const register = (app: Application): void => {
       Store.set('users', users);
 
       response.cookie(COOKIE_TOKEN, newAccessToken, cookie).send();
-    } catch (error: unknown) {
-      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
-      response.sendStatus(500);
-    }
-  });
+    })
+  );
 };

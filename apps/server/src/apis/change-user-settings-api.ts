@@ -1,6 +1,6 @@
 import { jwtGuard } from '../core/jwt';
-import { errorLog } from '../core/logger';
 import { Store } from '../core/store/store';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { UserSettingsApiRequestModel, UserSettingsApiResponseModel } from '@shared/models/api-model';
 import { LANGUAGES } from '@shared/models/language-model';
@@ -37,8 +37,10 @@ const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel
 };
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/user/settings`, jwtGuard, async (request, response) => {
-    try {
+  app.post(
+    `${API_PREFIX}/user/settings`,
+    jwtGuard,
+    withErrorHandler(async (request, response) => {
       const body = request.body as UserSettingsApiRequestModel;
       if (!isValidUserSettings(body)) return response.sendStatus(400);
 
@@ -57,9 +59,6 @@ export const register = (app: Application): void => {
       Store.set('userSettings', userSettings);
 
       response.send(updatedConfig);
-    } catch (error: unknown) {
-      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
-      response.sendStatus(500);
-    }
-  });
+    })
+  );
 };

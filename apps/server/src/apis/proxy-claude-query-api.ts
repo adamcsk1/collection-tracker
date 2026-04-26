@@ -3,6 +3,7 @@ import { jwtGuard } from '../core/jwt';
 import { errorLog } from '../core/logger';
 import { FOLDERS } from '../core/main-const';
 import { Store } from '../core/store/store';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 import { readStoreFiles } from '../core/utils/cache-util';
 import { ProxyClaudeCollectionItems } from '../models/proxy-claude-model';
 import { API_PREFIX } from '@shared/constants/api-const';
@@ -50,8 +51,10 @@ const readCollectionItems = async (storeFolder: string, usernameHash: string): P
 };
 
 export const register = (app: Application): void => {
-  app.post(`${API_PREFIX}/proxy/claude/query`, jwtGuard, async (request, response) => {
-    try {
+  app.post(
+    `${API_PREFIX}/proxy/claude/query`,
+    jwtGuard,
+    withErrorHandler(async (request, response) => {
       const apiKey = process.env.CLAUDE_API_KEY;
       if (!apiKey) {
         response.status(503).send({ error: 'Claude API key not configured' });
@@ -124,9 +127,6 @@ export const register = (app: Application): void => {
       );
 
       response.send({ matchedIds } as ClaudeQueryResponseModel);
-    } catch (error: unknown) {
-      if (error instanceof Error) errorLog(`Unknown error (${error.message})`);
-      response.sendStatus(500);
-    }
-  });
+    })
+  );
 };
