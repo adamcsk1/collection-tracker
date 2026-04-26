@@ -19,7 +19,7 @@ module.exports = [
         "error",
         {
           enforceBuildableLibDependency: true,
-          allow: [],
+          allow: ['^(?!@(?:client|health|login|server|components|services|shared|public)/)(?!apps/|libs/)(?!\\.{1,2}/).+', 'vitest.config'],
           depConstraints: [
             {
               sourceTag: "scope:node",
