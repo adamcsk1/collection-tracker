@@ -38,11 +38,6 @@ Only report issues that genuinely matter — bugs, security vulnerabilities, log
 - No command injection, XSS, path traversal, or other OWASP Top 10 issues.
 - Internal code is trusted — don't add defensive checks for impossible internal states.
 
-## CLI (`apps/cli/`)
-
-- Use a `class` only when the file manages internal state (e.g. `Spinner`, `Store`). All other modules export plain `const` arrow functions.
-- CLI shares only `@shared/*` with the monorepo — no other workspace aliases.
-
 ## Testing
 
 - Unit tests live next to the source file: `foo.ts` → `foo.spec.ts`.
@@ -67,4 +62,4 @@ Only report issues that genuinely matter — bugs, security vulnerabilities, log
 
 Format: `type(scope): short imperative summary` — imperative mood, lowercase after colon, no trailing period, ≤72 chars.
 **Types**: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`
-**Scopes**: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`, `cli`; cross-cutting: `tsconfig`, `build`, `git`, `vscode`, `hooks`, `i18n`
+**Scopes**: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`; cross-cutting: `tsconfig`, `build`, `git`, `vscode`, `hooks`, `i18n`
