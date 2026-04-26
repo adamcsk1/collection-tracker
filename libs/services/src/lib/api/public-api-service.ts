@@ -1,53 +1,26 @@
-import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
-import { AlertService } from '../alert-service';
-import { apiStateToken } from './api-store';
-import {
-  type HealthApiResponseModel,
-  SignInApiRequestModel,
-  SignUpApiRequestModel,
-  SignUpApiResponseModel,
-} from '@shared/models/api-model';
-import { catchError, Observable, throwError } from 'rxjs';
+import { Injectable } from '@angular/core';
+import type { HealthApiResponseModel, SignUpApiResponseModel } from '@shared/models/api-model';
+import { Observable } from 'rxjs';
+import { BaseApiService } from './base-api-service';
 
 @Injectable({
   providedIn: 'root',
 })
-export class PublicApiService {
-  private readonly alert = inject(AlertService);
-  private readonly httpClient = inject(HttpClient);
-  private readonly apiState = inject(apiStateToken);
-
+export class PublicApiService extends BaseApiService {
   public getHealth(): Observable<HealthApiResponseModel> {
-    return this.httpClient.get<HealthApiResponseModel>(`${this.apiState.state.apiUrl()}/health`).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('GET', '/health');
   }
 
   public signUp(username: string): Observable<SignUpApiResponseModel> {
-    const body: SignUpApiRequestModel = { username };
-    return this.httpClient.post<SignUpApiResponseModel>(`${this.apiState.state.apiUrl()}/sign-up`, body).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('POST', '/sign-up', { username });
   }
 
   public validateAccessToken(): Observable<void> {
-    return this.httpClient.get<void>(`${this.apiState.state.apiUrl()}/user/access-token/validate`);
+    // No error handling wrapper — callers handle 401 themselves.
+    return this.httpClient.get<void>(`${this.apiUrl}/user/access-token/validate`);
   }
 
   public signIn(username: string, token: string): Observable<void> {
-    const body: SignInApiRequestModel = { username, token };
-    return this.httpClient.post<void>(`${this.apiState.state.apiUrl()}/sign-in`, body).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.request('POST', '/sign-in', { username, token });
   }
 }
