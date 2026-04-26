@@ -27,4 +27,8 @@ describe('About page', () => {
   it('has a link to the server health page', () => {
     AboutPage.getHealthLink().should('be.visible').and('have.attr', 'href', '/health/');
   });
+
+  it('has a link to the API docs', () => {
+    AboutPage.getApiDocsLink().should('be.visible').and('have.attr', 'href', '/api/docs');
+  });
 });
