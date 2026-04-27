@@ -1,4 +1,4 @@
-import { getCollectionItem } from '@shared/utils/get-collection-item-util';
+import * as collectionItemUtil from '@shared/utils/get-collection-item-util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { rawContentValidation } from './raw-content-validator';
 
@@ -22,7 +22,7 @@ describe('rawContentValidation', () => {
   let getCollectionItemSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    getCollectionItemSpy = vi.spyOn({ getCollectionItem }, 'getCollectionItem').mockReturnValue(validParsedItem());
+    getCollectionItemSpy = vi.spyOn(collectionItemUtil, 'getCollectionItem').mockReturnValue(validParsedItem());
   });
 
   afterEach(() => {

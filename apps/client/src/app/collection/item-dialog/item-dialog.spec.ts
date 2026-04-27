@@ -4,7 +4,7 @@ import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
-import { getCollectionItem } from '@shared/utils/get-collection-item-util';
+import * as collectionUtils from '@shared/utils/get-collection-item-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -59,7 +59,7 @@ describe('ItemDialog', () => {
     };
     translate = { translate: vi.fn((key: string) => key) };
     getCollectionItemSpy = vi
-      .spyOn({ getCollectionItem }, 'getCollectionItem')
+      .spyOn(collectionUtils, 'getCollectionItem')
       .mockImplementation((input) => buildItem(input.name as string, input.content as string));
 
     TestBed.configureTestingModule({
