@@ -26,6 +26,39 @@ docker buildx build --load -t collection-tracker .
 docker run --rm -p 3001:3001 -v ${PWD}/.data:/data collection-tracker
 ```
 
+## Docker Compose (Recommended for VPS)
+
+A simple `docker-compose.yml` is included in the repo root. After building the app (`npm run build`), start the container with:
+
+```bash
+docker compose up -d
+```
+
+This will:
+- Build the image if it doesn't exist (or run `docker compose up -d --build` to force a rebuild)
+- Map host port `3001` (override with `APP_PORT` env var, e.g. `APP_PORT=8080 docker compose up -d`)
+- Mount `./.data` on the host to `/data` in the container
+- Automatically restart the container unless you stop it manually
+
+To stop:
+
+```bash
+docker compose down
+```
+
+### One-shot VPS deploy example
+
+```bash
+# 1. Build locally (or on the VPS if node is installed)
+npm run build
+
+# 2. Start with Compose
+docker compose up -d
+
+# 3. View logs
+docker compose logs -f
+```
+
 ## Production Recommendation
 
 Do not expose the container directly on the public internet in production. Put it behind an HTTPS reverse proxy such as Nginx, Caddy, or Traefik, terminate TLS at that layer, and forward traffic to the container on its internal HTTP port.
