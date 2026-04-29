@@ -1,0 +1,12 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: collection-tracker:latest
+    container_name: collection-tracker
+    ports:
+      - "${APP_PORT:-3001}:3001"
+    volumes:
+      - ./.data:/data
+    restart: unless-stopped
