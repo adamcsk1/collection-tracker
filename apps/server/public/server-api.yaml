@@ -20,8 +20,8 @@ components:
     cookieAuth:
       type: apiKey
       in: cookie
-      name: token
-      description: Signed HTTP-only cookie set by POST /sign-in. Automatically rotates on each authenticated request.
+      name: CT.Token
+      description: Signed HTTP-only access-token cookie set by POST /sign-in. Valid for 15 minutes. Automatically refreshed via POST /session/refresh when expired.
     bearerAuth:
       type: http
       scheme: bearer
@@ -120,6 +120,21 @@ components:
           type: ['string', 'null']
           format: date-time
           description: Null for tokens created via POST /user/access-token (intended for header-based usage).
+
+    RefreshToken:
+      type: object
+      required: [tokenHash, createdAt, userAgent, expiresAt]
+      properties:
+        tokenHash:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        userAgent:
+          type: string
+        expiresAt:
+          type: ['string', 'null']
+          format: date-time
 
     AccessTokensResponse:
       type: array
@@ -391,33 +406,35 @@ paths:
               $ref: '#/components/schemas/SignInRequest'
       responses:
         '200':
-          description: Authenticated. Sets a signed HTTP-only `token` cookie valid for 15 days.
+          description: Authenticated. Sets signed HTTP-only `CT.Token` (15 minutes) and `CT.RefreshToken` (7 days) cookies.
           headers:
             Set-Cookie:
               schema:
                 type: string
               examples:
-                default:
-                  value: token=<jwt>; HttpOnly; Secure; SameSite=Strict; Max-Age=1296000
+                access:
+                  value: CT.Token=<jwt>; HttpOnly; Secure; SameSite=Strict; Max-Age=900
+                refresh:
+                  value: CT.RefreshToken=<jwt>; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
 
   /logout:
     delete:
       operationId: logout
-      summary: Revoke the current access token and clear the auth cookie
+      summary: Revoke the current access token and clear both auth cookies
       tags: [Session]
       responses:
-        '200':
-          description: Logged out successfully.
+        '204':
+          description: Logged out successfully. Both CT.Token and CT.RefreshToken cookies are cleared.
 
   /user/change-token:
     put:
       operationId: changeUserToken
       summary: Rotate the long-lived user token
-      description: Rotates the user's long-lived token and replaces the active access-token set.
+      description: Rotates the user's long-lived token and replaces both the active access and refresh token sets.
       tags: [Session]
       responses:
         '200':
-          description: Token rotated. Returns the new long-lived token.
+          description: Token rotated. Returns the new long-lived token. Both CT.Token and CT.RefreshToken cookies are updated.
           content:
             application/json:
               schema:
@@ -466,15 +483,19 @@ paths:
         '200':
           description: Token deleted.
 
-  /user/access-token/validate:
-    get:
-      operationId: validateAccessToken
-      summary: Validate the current access token
-      description: Cookie-based requests also rotate the cookie token and refresh the 15-day window.
+  /session/refresh:
+    post:
+      operationId: refreshAccessToken
+      summary: Refresh the access token using the refresh token
+      description: Validates the CT.RefreshToken cookie (or Authorization header) and issues a new CT.Token access-token cookie.
       tags: [Session]
       responses:
-        '200':
-          description: Token is valid.
+        '204':
+          description: Access token refreshed. New CT.Token cookie is set.
+        '401':
+          description: No refresh token provided.
+        '403':
+          description: Refresh token is invalid, expired, or not recognized.
 
   /user:
     delete:

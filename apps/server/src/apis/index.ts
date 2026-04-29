@@ -1,4 +1,3 @@
-import { register as registerAccessTokenValidate } from './access-token-validate-api';
 import { register as registerAccessTokens } from './access-tokens-api';
 import { register as registerModify } from './change-api';
 import { register as registerChangeParserConfig } from './change-parser-config-api';
@@ -12,6 +11,7 @@ import { register as registerDelete } from './delete-api';
 import { register as registerDeleteUser } from './delete-user-api';
 import { register as registerGetAll } from './get-all-api';
 import { register as registerParserConfig } from './get-parser-config-api';
+import { register as registerRefreshToken } from './refresh-token-api';
 import { register as registerTagConfig } from './get-tag-config-api';
 import { register as registerUserSettings } from './get-user-settings-api';
 import { register as registerHealth } from './health-api';
@@ -27,11 +27,11 @@ export const registerAllApis = (app: Application): void => {
   registerHealth(app);
   registerSignUp(app);
   registerSignIn(app);
+  registerRefreshToken(app);
   registerLogout(app);
   registerCreateAccessToken(app);
   registerAccessTokens(app);
   registerDeleteAccessToken(app);
-  registerAccessTokenValidate(app);
   registerChangeToken(app);
   registerDeleteUser(app);
   registerGetAll(app);

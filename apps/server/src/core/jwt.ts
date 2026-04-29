@@ -1,4 +1,4 @@
-import { COOKIE_TOKEN } from './cookie/cookie-const';
+import { COOKIE_REFRESH_TOKEN, COOKIE_TOKEN } from './cookie/cookie-const';
 import { hashText } from './crypto';
 import { debugLog, errorLog } from './logger';
 import { Store } from './store/store';
@@ -23,6 +23,23 @@ export const generateAccessToken = (
     return jwt.sign({ username, id: randomUUID() }, `${process.env.JWT_SECRET}`, options);
   } catch (error: unknown) {
     if (error instanceof Error) void errorLog(`Access token generation unknown error (${error.message})`);
+    return null;
+  }
+};
+
+export const generateRefreshToken = (
+  username: string,
+  expiresIn: jwt.SignOptions['expiresIn'] | null = null
+): string | null => {
+  try {
+    void debugLog('Generating refresh token');
+    const options: jwt.SignOptions = {};
+
+    if (expiresIn) options.expiresIn = expiresIn;
+
+    return jwt.sign({ username, id: randomUUID(), type: 'refresh' }, `${process.env.JWT_SECRET}`, options);
+  } catch (error: unknown) {
+    if (error instanceof Error) void errorLog(`Refresh token generation unknown error (${error.message})`);
     return null;
   }
 };
@@ -54,6 +71,9 @@ export const jwtGuard = async (
     try {
       if (error) {
         void debugLog(`Access token verification failed (${error.message})`);
+        if (error.name === 'TokenExpiredError') {
+          return response.sendStatus(401);
+        }
         return response.sendStatus(403);
       }
 

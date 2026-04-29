@@ -1,5 +1,5 @@
 import { COOKIE_TOKEN } from './cookie/cookie-const';
-import { generateAccessToken, jwtGuard } from './jwt';
+import { generateAccessToken, generateRefreshToken, jwtGuard } from './jwt';
 import { Store } from './store/store';
 import { StoreModel } from './store/store-model';
 import { AccessTokenModel } from '@shared/models/api-model';
@@ -27,6 +27,17 @@ describe('jwt utilities', () => {
       throw new Error('fail');
     });
     expect(generateAccessToken('neo')).toBeNull();
+    signSpy.mockRestore();
+  });
+
+  it('generates a refresh token and returns null on errors', () => {
+    const token = generateRefreshToken('neo', '1h');
+    expect(token).toBeTruthy();
+
+    const signSpy = vi.spyOn(jwt, 'sign').mockImplementation(() => {
+      throw new Error('fail');
+    });
+    expect(generateRefreshToken('neo')).toBeNull();
     signSpy.mockRestore();
   });
 
@@ -74,7 +85,26 @@ describe('jwt utilities', () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it('jwtGuard rejects invalid token', async () => {
+  it('jwtGuard rejects expired token with 401', async () => {
+    const token = jwt.sign({ username: 'user' }, 'secret', { expiresIn: '-1s' });
+    const response: any = { sendStatus: vi.fn() };
+    const next = vi.fn();
+
+    await jwtGuard(
+      {
+        signedCookies: { [COOKIE_TOKEN]: token },
+        headers: {},
+        url: '/protected',
+      } as unknown as Request,
+      response,
+      next
+    );
+
+    expect(response.sendStatus).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('jwtGuard rejects invalid token with 403', async () => {
     const response: any = { sendStatus: vi.fn() };
     const next = vi.fn();
 

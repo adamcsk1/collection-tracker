@@ -1,7 +1,8 @@
-import { AccessTokenModel } from '@shared/models/api-model';
+import { AccessTokenModel, RefreshTokenModel } from '@shared/models/api-model';
 
 export interface UserModel {
   accessTokens: AccessTokenModel[];
+  refreshTokens: RefreshTokenModel[];
   userTokenHash: string;
 }
 

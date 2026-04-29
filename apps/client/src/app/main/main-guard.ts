@@ -17,7 +17,7 @@ export const mainGuard: CanActivateFn = (): Observable<boolean> => {
   );
 
   if (main.hasRequiredConfig()) {
-    main.validateAccessToken();
+    main.validateSession();
     return tokenValid$;
   }
 
@@ -27,7 +27,7 @@ export const mainGuard: CanActivateFn = (): Observable<boolean> => {
     logout.performLogout();
     return of(false);
   } else {
-    main.validateAccessToken();
+    main.validateSession();
     return tokenValid$;
   }
 };

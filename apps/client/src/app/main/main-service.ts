@@ -56,9 +56,9 @@ export class MainService {
     });
   }
 
-  public validateAccessToken(): void {
+  public validateSession(): void {
     this.api
-      .validateAccessToken()
+      .validateSession()
       .pipe(
         catchError(() => {
           this._tokenValid.set(false);

@@ -17,13 +17,13 @@ import { MainService } from './main-service';
 
 describe('MainService', () => {
   let service: MainService;
-  let api: { validateAccessToken: ReturnType<typeof vi.fn> };
+  let api: { validateSession: ReturnType<typeof vi.fn> };
   let webstorage: { getItem: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
 
   beforeEach(() => {
-    api = { validateAccessToken: vi.fn(() => of(undefined)) };
+    api = { validateSession: vi.fn(() => of(undefined)) };
     webstorage = { getItem: vi.fn() };
 
     TestBed.configureTestingModule({
@@ -105,15 +105,15 @@ describe('MainService', () => {
   });
 
   it('validates access token and marks it as valid', () => {
-    service.validateAccessToken();
+    service.validateSession();
     expect(service.tokenValid()).toBe(true);
-    expect(api.validateAccessToken).toHaveBeenCalled();
+    expect(api.validateSession).toHaveBeenCalled();
   });
 
   it('marks token as invalid when validation fails and rethrows the error', () => {
-    api.validateAccessToken.mockReturnValue(throwError(() => new Error('fail')));
+    api.validateSession.mockReturnValue(throwError(() => new Error('fail')));
 
-    expect(() => service.validateAccessToken()).not.toThrow();
+    expect(() => service.validateSession()).not.toThrow();
     expect(service.tokenValid()).toBe(false);
   });
 });

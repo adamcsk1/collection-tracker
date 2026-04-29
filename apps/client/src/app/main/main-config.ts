@@ -1,4 +1,4 @@
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withHashLocation } from '@angular/router';
 import { initialMainCollectionState, mainCollectionStateToken } from './main-collection-store';
@@ -17,6 +17,7 @@ import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
+import { refreshTokenInterceptor } from '@services/api/refresh-token-interceptor';
 import { routes } from './main-routes';
 
 export const mainConfig: ApplicationConfig = {
@@ -24,7 +25,7 @@ export const mainConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideRouter(routes, withHashLocation()),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([refreshTokenInterceptor])),
     provideStore(initialThemeState, themeStateToken),
     provideStore(initialToastState, toastStateToken),
     provideStore(initialApiState, apiStateToken),
