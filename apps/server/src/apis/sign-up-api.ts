@@ -34,7 +34,7 @@ export const register = (app: Application): void => {
 
       const userToken = generateRandomToken(username);
 
-      users[usernameHash] = { userTokenHash: hashText(userToken), accessTokens: [] };
+      users[usernameHash] = { userTokenHash: hashText(userToken), accessTokens: [], refreshTokens: [] };
       Store.set('users', users);
 
       mkdirSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${usernameHash}`, { recursive: true });

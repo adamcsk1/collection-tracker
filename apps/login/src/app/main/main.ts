@@ -48,7 +48,7 @@ export class Main implements AfterViewInit {
 
   public ngAfterViewInit(): void {
     this.api
-      .validateAccessToken()
+      .validateSession()
       .pipe(
         catchError(() => {
           this.blockerLoadingState.setState('show', false);

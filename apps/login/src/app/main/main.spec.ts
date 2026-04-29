@@ -24,7 +24,7 @@ describe('Main component', () => {
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
   let blockerState: NgxSimpleSignalStoreService<BlockerLoadingState>;
-  let apiService: { validateAccessToken: Mock };
+  let apiService: { validateSession: Mock };
   let webStorage: { getItem: Mock; setItem: Mock };
   let themeService: { listen: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
@@ -36,7 +36,7 @@ describe('Main component', () => {
   };
 
   beforeEach(() => {
-    apiService = { validateAccessToken: vi.fn(() => EMPTY) };
+    apiService = { validateSession: vi.fn(() => EMPTY) };
     webStorage = {
       getItem: vi.fn(() => null),
       setItem: vi.fn(),
@@ -84,14 +84,14 @@ describe('Main component', () => {
     expect(webStorage.setItem).not.toHaveBeenCalled();
   });
 
-  it('calls validateAccessToken on after view init', () => {
+  it('calls validateSession on after view init', () => {
     fixture.componentInstance.ngAfterViewInit();
 
-    expect(apiService.validateAccessToken).toHaveBeenCalled();
+    expect(apiService.validateSession).toHaveBeenCalled();
   });
 
   it('hides the blocker loader when validation fails', () => {
-    apiService.validateAccessToken.mockReturnValue(throwError(() => new Error('invalid')));
+    apiService.validateSession.mockReturnValue(throwError(() => new Error('invalid')));
 
     fixture.componentInstance.ngAfterViewInit();
 

@@ -1,6 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { COOKIE_TOKEN } from '../core/cookie/cookie-const';
+import { COOKIE_REFRESH_TOKEN, COOKIE_TOKEN } from '../core/cookie/cookie-const';
 import { Store } from '../core/store/store';
 import dayjs from 'dayjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -11,10 +11,17 @@ vi.mock('@server/core/crypto', () => ({
 }));
 vi.mock('@server/core/jwt', () => ({
   generateAccessToken: vi.fn().mockReturnValue('access'),
+  generateRefreshToken: vi.fn().mockReturnValue('refresh'),
 }));
 vi.mock('@server/core/utils/users-util', () => ({
   getUserAccessToken: vi.fn((_token: string, _agent: string, expires: Date | null) => ({
     tokenHash: 'hashed-access',
+    createdAt: dayjs().toISOString(),
+    userAgent: 'agent',
+    expiresAt: expires?.toISOString() || null,
+  })),
+  getUserRefreshToken: vi.fn((_token: string, _agent: string, expires: Date | null) => ({
+    tokenHash: 'hashed-refresh',
     createdAt: dayjs().toISOString(),
     userAgent: 'agent',
     expiresAt: expires?.toISOString() || null,
@@ -69,7 +76,7 @@ describe('sign-in-api', () => {
     expect(response.sendStatus).toHaveBeenCalledWith(401);
   });
 
-  it('sets cookie and prunes expired tokens on success', async () => {
+  it('sets both cookies and prunes expired tokens on success', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: { 'user-agent': 'agent' } };
     const { app, handlerPromise } = buildApp(request, response);
@@ -77,6 +84,7 @@ describe('sign-in-api', () => {
       'hashed-neo': {
         userTokenHash: 'hashed-token',
         accessTokens: [{ tokenHash: 'old', expiresAt: dayjs().subtract(1, 'day').toISOString() }],
+        refreshTokens: [{ tokenHash: 'old-refresh', expiresAt: dayjs().subtract(1, 'day').toISOString() }],
       },
     });
     (Store.set as any).mockImplementation(() => undefined);
@@ -87,9 +95,13 @@ describe('sign-in-api', () => {
 
     await handlerPromise();
     expect(response.cookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'access', expect.any(Object));
+    expect(response.cookie).toHaveBeenCalledWith(COOKIE_REFRESH_TOKEN, 'refresh', expect.any(Object));
     expect(setSpy).toHaveBeenCalled();
-    const updatedUsers = (setSpy.mock.calls[0][1] as any)['hashed-neo'].accessTokens;
-    expect(updatedUsers.some((accessToken: any) => accessToken.tokenHash === 'old')).toBe(false);
+    const updatedUsers = (setSpy.mock.calls[0][1] as any)['hashed-neo'];
+    expect(updatedUsers.accessTokens.some((accessToken: any) => accessToken.tokenHash === 'old')).toBe(false);
+    expect(updatedUsers.refreshTokens.some((refreshToken: any) => refreshToken.tokenHash === 'old-refresh')).toBe(
+      false
+    );
   });
 
   it('returns 500 on unexpected error', async () => {

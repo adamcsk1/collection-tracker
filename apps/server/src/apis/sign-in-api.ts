@@ -1,10 +1,15 @@
-import { cookieConfig, cookieExpiration } from '../core/cookie/cookie-config';
-import { COOKIE_TOKEN } from '../core/cookie/cookie-const';
+import {
+  accessCookieConfig,
+  accessCookieExpiration,
+  refreshCookieConfig,
+  refreshCookieExpiration,
+} from '../core/cookie/cookie-config';
+import { COOKIE_REFRESH_TOKEN, COOKIE_TOKEN } from '../core/cookie/cookie-const';
 import { hashText } from '../core/crypto';
-import { generateAccessToken } from '../core/jwt';
+import { generateAccessToken, generateRefreshToken } from '../core/jwt';
 import { Store } from '../core/store/store';
 import { withErrorHandler } from '../core/utils/api-error-handler';
-import { getUserAccessToken } from '../core/utils/users-util';
+import { getUserAccessToken, getUserRefreshToken } from '../core/utils/users-util';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignInApiRequestModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
@@ -29,20 +34,36 @@ export const register = (app: Application): void => {
 
       if (users[usernameHash].userTokenHash !== userTokenHash) return response.sendStatus(401);
 
-      const cookie = cookieConfig();
+      if (!users[usernameHash].refreshTokens) users[usernameHash].refreshTokens = [];
+
+      const accessCookie = accessCookieConfig();
+      const refreshCookie = refreshCookieConfig();
       const newAccessToken = generateAccessToken(
         username,
-        `${cookieExpiration.value} ${cookieExpiration.unit}` as jwt.SignOptions['expiresIn']
+        `${accessCookieExpiration.value} ${accessCookieExpiration.unit}` as jwt.SignOptions['expiresIn']
+      );
+      const newRefreshToken = generateRefreshToken(
+        username,
+        `${refreshCookieExpiration.value} ${refreshCookieExpiration.unit}` as jwt.SignOptions['expiresIn']
       );
       users[usernameHash].accessTokens.push(
-        getUserAccessToken(newAccessToken, request.headers['user-agent'], cookie.expires)
+        getUserAccessToken(newAccessToken, request.headers['user-agent'], accessCookie.expires)
+      );
+      users[usernameHash].refreshTokens.push(
+        getUserRefreshToken(newRefreshToken, request.headers['user-agent'], refreshCookie.expires)
       );
       users[usernameHash].accessTokens = users[usernameHash].accessTokens.filter(
         (token) => token.expiresAt === null || dayjs(token.expiresAt).isAfter(dayjs())
       );
+      users[usernameHash].refreshTokens = users[usernameHash].refreshTokens.filter(
+        (token) => token.expiresAt === null || dayjs(token.expiresAt).isAfter(dayjs())
+      );
       Store.set('users', users);
 
-      response.cookie(COOKIE_TOKEN, newAccessToken, cookie).send();
+      response
+        .cookie(COOKIE_TOKEN, newAccessToken, accessCookie)
+        .cookie(COOKIE_REFRESH_TOKEN, newRefreshToken, refreshCookie)
+        .send();
     })
   );
 };

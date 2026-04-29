@@ -88,11 +88,12 @@ describe('PublicApiService', () => {
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('validates access token', async () => {
-    const promise = lastValueFrom(service.validateAccessToken());
+  it('validates session by refreshing the access token', async () => {
+    const promise = lastValueFrom(service.validateSession());
 
-    const request = httpMock.expectOne('https://api.test/user/access-token/validate');
-    expect(request.request.method).toBe('GET');
+    const request = httpMock.expectOne('https://api.test/session/refresh');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({});
     request.flush({});
 
     await expect(promise).resolves.toEqual({});

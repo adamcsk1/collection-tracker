@@ -1,4 +1,4 @@
-import { COOKIE_TOKEN } from '../core/cookie/cookie-const';
+import { COOKIE_REFRESH_TOKEN, COOKIE_TOKEN } from '../core/cookie/cookie-const';
 import { hashText } from '../core/crypto';
 import { jwtGuard } from '../core/jwt';
 import { Store } from '../core/store/store';
@@ -19,13 +19,20 @@ export const register = (app: Application): void => {
       const tokenHash = hashText(token);
       const users = Store.getLastValue('users');
 
+      const refreshCookieToken = request.signedCookies[COOKIE_REFRESH_TOKEN];
+      let refreshToken = refreshCookieToken || '';
+      if (refreshToken.includes('Bearer ')) refreshToken = refreshToken.split(' ')[1];
+      const refreshTokenHash = hashText(refreshToken);
+
       users[request.usernameHash].accessTokens = users[request.usernameHash].accessTokens.filter(
-        (accessTokens) => accessTokens.tokenHash !== tokenHash
+        (accessToken) => accessToken.tokenHash !== tokenHash
+      );
+      users[request.usernameHash].refreshTokens = (users[request.usernameHash].refreshTokens || []).filter(
+        (rt) => rt.tokenHash !== refreshTokenHash
       );
       Store.set('users', users);
 
-      if (cookieToken) response.clearCookie(COOKIE_TOKEN).sendStatus(204);
-      else response.sendStatus(204);
+      response.clearCookie(COOKIE_TOKEN).clearCookie(COOKIE_REFRESH_TOKEN).sendStatus(204);
     })
   );
 };

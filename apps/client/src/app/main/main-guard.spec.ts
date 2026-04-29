@@ -15,19 +15,19 @@ describe('mainGuard', () => {
   let main: {
     tokenValid: typeof tokenValid;
     hasRequiredConfig: ReturnType<typeof vi.fn>;
-    validateAccessToken: ReturnType<typeof vi.fn>;
+    validateSession: ReturnType<typeof vi.fn>;
     loadStoredData: ReturnType<typeof vi.fn>;
   };
   let webstorage: { clear: ReturnType<typeof vi.fn> };
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
   let redirectSpy: ReturnType<typeof vi.spyOn>;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     tokenValid = signal<boolean | null>(null);
     main = {
       tokenValid,
-      hasRequiredConfig: vi.fn(() => true),
-      validateAccessToken: vi.fn(() => tokenValid.set(true)),
+      hasRequiredConfig: vi.fn(),
+      validateSession: vi.fn(() => tokenValid.set(true)),
       loadStoredData: vi.fn(),
     };
     webstorage = { clear: vi.fn() };
@@ -41,6 +41,7 @@ describe('mainGuard', () => {
     });
 
     redirectSpy = vi.spyOn(MainUtil, 'redirectToLogin').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -59,7 +60,7 @@ describe('mainGuard', () => {
     tokenValid.set(true);
 
     await expect(resolveGuard()).resolves.toBe(true);
-    expect(main.validateAccessToken).not.toHaveBeenCalled();
+    expect(main.validateSession).not.toHaveBeenCalled();
   });
 
   it('validates access token when config is present and waits for result', async () => {
@@ -67,7 +68,7 @@ describe('mainGuard', () => {
     main.hasRequiredConfig.mockReturnValue(true);
 
     await expect(resolveGuard()).resolves.toBe(true);
-    expect(main.validateAccessToken).toHaveBeenCalled();
+    expect(main.validateSession).toHaveBeenCalled();
   });
 
   it('clears storage and redirects to login when config is missing', async () => {
@@ -89,7 +90,7 @@ describe('mainGuard', () => {
     const allowed = await resolveGuard();
 
     expect(main.loadStoredData).toHaveBeenCalled();
-    expect(main.validateAccessToken).toHaveBeenCalled();
+    expect(main.validateSession).toHaveBeenCalled();
     expect(allowed).toBe(true);
   });
 });

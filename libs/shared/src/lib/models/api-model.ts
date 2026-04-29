@@ -51,6 +51,13 @@ export interface AccessTokenModel {
   expiresAt: string | null;
 }
 
+export interface RefreshTokenModel {
+  tokenHash: string;
+  createdAt: string;
+  userAgent: string;
+  expiresAt: string | null;
+}
+
 export type AccessTokensApiResponseModel = AccessTokenModel[];
 
 export interface CreateAccessTokenApiResponseModel {

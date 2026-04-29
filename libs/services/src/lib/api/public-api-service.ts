@@ -15,9 +15,10 @@ export class PublicApiService extends BaseApiService {
     return this.request('POST', '/sign-up', { username });
   }
 
-  public validateAccessToken(): Observable<void> {
-    // No error handling wrapper — callers handle 401 themselves.
-    return this.httpClient.get<void>(`${this.apiUrl}/user/access-token/validate`);
+  public validateSession(): Observable<void> {
+    // Validates the session by attempting a refresh. On success the server sets a new access-token cookie.
+    // No error handling wrapper - callers handle 401/403 themselves.
+    return this.httpClient.post<void>(`${this.apiUrl}/session/refresh`, {});
   }
 
   public signIn(username: string, token: string): Observable<void> {
