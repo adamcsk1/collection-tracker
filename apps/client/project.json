@@ -51,23 +51,7 @@
           }
         ],
         "styles": ["node_modules/@fontsource/material-icons/index.css", "apps/client/src/styles.css"],
-        "allowedCommonJsDependencies": [
-          "dayjs",
-          "easymde",
-          "codemirror",
-          "codemirror/addon/edit/continuelist.js",
-          "codemirror/addon/display/fullscreen.js",
-          "codemirror/mode/markdown/markdown.js",
-          "codemirror/addon/mode/overlay.js",
-          "codemirror/addon/display/placeholder.js",
-          "codemirror/addon/display/autorefresh.js",
-          "codemirror/addon/selection/mark-selection.js",
-          "codemirror/addon/search/searchcursor.js",
-          "codemirror/mode/gfm/gfm.js",
-          "codemirror/mode/xml/xml.js",
-          "codemirror-spell-checker",
-          "marked"
-        ],
+        "allowedCommonJsDependencies": ["dayjs"],
         "outputPath": "dist/apps/client"
       },
       "configurations": {

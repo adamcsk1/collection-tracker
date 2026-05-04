@@ -42,7 +42,6 @@ export class Settings implements OnInit {
     sensitiveDataStorage: 'local',
     clearLocalStorageAfterLogout: false,
     appMode: 'basic',
-    fetchBatchSize: 10000,
     theme: 'system',
     settingsLock: false,
     animatedBackground: true,
@@ -53,7 +52,6 @@ export class Settings implements OnInit {
     (settings) => {
       required(settings.sensitiveDataStorage);
       required(settings.appMode);
-      required(settings.fetchBatchSize);
       required(settings.theme);
       required(settings.language);
     },
@@ -72,7 +70,6 @@ export class Settings implements OnInit {
     this.settingsModel.set({
       sensitiveDataStorage: this.mainState.state.sensitiveDataStorage(),
       appMode: this.mainState.state.appMode(),
-      fetchBatchSize: this.apiState.state.fetchBatchSize(),
       theme: this.themeState.state.theme(),
       settingsLock: this.mainState.state.settingsLock(),
       clearLocalStorageAfterLogout: this.mainState.state.clearLocalStorageAfterLogout(),

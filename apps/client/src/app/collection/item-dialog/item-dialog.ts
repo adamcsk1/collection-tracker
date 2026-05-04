@@ -1,29 +1,31 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, model, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { form, FormField, validate } from '@angular/forms/signals';
+import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
-import { MarkdownEditor } from '@components/markdown-editor/markdown-editor';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
+import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
-import { addNewTagToRawContent, removeTagFromRawContent } from '@shared/parser/utils/manage-tags-util';
-import { getCollectionItem } from '@shared/utils/get-collection-item-util';
+import { CollectionItemChangeApiModel } from '@shared/models/api-model';
+import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
+import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { map, mergeMap, of } from 'rxjs';
 import { mainStateToken } from '../../main/main-store';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionService } from '../collection-service';
-import { missingInternalTagValidation } from './validators/internal-tag-validator';
-import { rawContentValidation } from './validators/raw-content-validator';
-import { virtualTagValidation } from './validators/virtual-tag-validator';
+import { TagSuggestionService } from '../new-item-dialog/suggestion/tag-suggestion-service';
+import { getProxyImageUrl } from '../utils/proxy-image-url-util';
+import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
 
 @Component({
   selector: 'ct-item-dialog',
-  imports: [NgxSignalTranslatePipe, MarkdownEditor, DialogShell, FormField],
+  imports: [NgxSignalTranslatePipe, DialogShell, Autocomplete],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
+  providers: [TagSuggestionService, GenreSuggestionService],
   host: {
     class: 'dialog',
   },
@@ -37,36 +39,69 @@ export class ItemDialog implements OnInit {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
   private readonly api = inject(ApiService);
+  private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly lastSavedRawContent = signal('');
-  protected readonly rawContentModel = signal('');
-  protected readonly rawContentField = form(this.rawContentModel, (content) => {
-    validate(content, ({ value }) => virtualTagValidation(value()));
-    validate(content, ({ value }) => missingInternalTagValidation(value()));
+  protected readonly tagSuggestionService = inject(TagSuggestionService);
+  protected readonly genreSuggestionService = inject(GenreSuggestionService);
+  private readonly lastSavedItem = signal<CollectionItemChangeApiModel | null>(null);
+  protected readonly draftItem = signal<CollectionItemChangeApiModel>({
+    image: '',
+    title: '',
+    genre: [],
+    IMDbId: '',
+    tags: [],
+    year: null,
+    rate: '',
+    actors: '',
+    plot: '',
   });
-  protected readonly formErrors = {
-    rawContent: {
-      usedVirtualTag: computed(() =>
-        this.rawContentField()
-          .errors()
-          .some((error) => error.kind === 'usedVirtualTag')
-      ),
-      unusedInternalTag: computed(() =>
-        this.rawContentField()
-          .errors()
-          .some((error) => error.kind === 'unusedInternalTag')
-      ),
-    },
-  };
+  protected readonly genreText = computed(() => this.draftItem().genre.join(', '));
+  protected readonly tagsText = computed(() => this.draftItem().tags.join(' '));
   protected readonly editMode = signal(false);
+  protected readonly posterImageFailed = signal(false);
   protected readonly permissionUpdate = computed(() => this.mainState.state.permissions().update);
   protected readonly permissionDelete = computed(() => this.mainState.state.permissions().delete);
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG));
+  protected readonly draftImageUrl = computed(() =>
+    getProxyImageUrl(this.apiState.state.apiUrl(), this.draftItem().image)
+  );
+  protected readonly imageUrl = computed(() =>
+    getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
+  );
+  protected readonly trailerUrl = computed(() => {
+    const item = this.collectionItem();
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${item.title} ${item.year ?? ''} trailer`.trim())}`;
+  });
+  protected readonly imdbUrl = computed(() => `https://www.imdb.com/title/${this.collectionItem().IMDbId}/`);
+  protected readonly webSearchUrl = computed(() => {
+    const item = this.collectionItem();
+    return `https://duckduckgo.com/?q=${encodeURIComponent(`${item.title} ${item.year ?? ''}`.trim())}`;
+  });
   public readonly collectionItem = model.required<CollectionItemModel>();
 
   public ngOnInit(): void {
-    this.rawContentModel.set(this.collectionItem().rawContent);
-    this.lastSavedRawContent.set(this.collectionItem().rawContent);
+    const item = toCollectionItemChange(this.collectionItem());
+    this.draftItem.set(item);
+    this.lastSavedItem.set(item);
+  }
+
+  protected updateDraft<K extends keyof CollectionItemChangeApiModel>(
+    key: K,
+    value: CollectionItemChangeApiModel[K]
+  ): void {
+    this.draftItem.update((item) => ({ ...item, [key]: value }));
+  }
+
+  protected updateGenre(value: string): void {
+    this.updateDraft('genre', parseGenreText(value));
+  }
+
+  protected updateTags(value: string): void {
+    this.updateDraft('tags', parseTagText(value));
+  }
+
+  protected updateYear(value: string): void {
+    this.updateDraft('year', value ? Number(value) || null : null);
   }
 
   protected onDelete(): void {
@@ -75,7 +110,7 @@ export class ItemDialog implements OnInit {
       .pipe(
         mergeMap((confirmed) => {
           if (confirmed) {
-            return this.api.delete(this.collectionItem().name, this.collectionItem().hash).pipe(map(() => confirmed));
+            return this.api.delete(this.collectionItem().IMDbId, this.collectionItem().hash).pipe(map(() => confirmed));
           } else return of(confirmed);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -83,7 +118,7 @@ export class ItemDialog implements OnInit {
       .subscribe((confirmed) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
-          this.collectionService.deleteCollectionItem(this.collectionItem().name);
+          this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId);
           this.portal.close();
         }
       });
@@ -94,23 +129,18 @@ export class ItemDialog implements OnInit {
   }
 
   protected onReadOnly(): void {
-    if (this.rawContentModel() !== this.lastSavedRawContent()) this.rawContentModel.set(this.lastSavedRawContent());
-
+    const lastSavedItem = this.lastSavedItem();
+    if (lastSavedItem) this.draftItem.set(lastSavedItem);
     this.editMode.set(false);
   }
 
-  protected onSaveChanges(): void {
-    if (this.rawContentField().invalid()) {
-      if (this.formErrors.rawContent.usedVirtualTag()) {
-        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UsedVirtualTagInContent'));
-      }
-      if (this.formErrors.rawContent.unusedInternalTag()) {
-        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UnusedInternalTagInContent'));
-      }
-      return;
-    }
+  protected onPosterImageError(): void {
+    this.posterImageFailed.set(true);
+  }
 
-    if (rawContentValidation(this.rawContentModel())) {
+  protected onSaveChanges(): void {
+    const item = this.draftItem();
+    if (!item.title.trim() || !item.IMDbId.trim()) {
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.BadRawContent'));
       return;
     }
@@ -121,39 +151,35 @@ export class ItemDialog implements OnInit {
         mergeMap((confirmed) => {
           if (confirmed) {
             return this.api
-              .update(this.collectionItem().name, this.rawContentModel(), this.collectionItem().hash)
-              .pipe(map((result) => ({ confirmed, hash: result.hash })));
-          } else return of({ confirmed, hash: '' });
+              .update(this.collectionItem().IMDbId, item, this.collectionItem().hash)
+              .pipe(map((result) => ({ confirmed, item: result.item })));
+          } else return of({ confirmed, item: null });
         }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(({ confirmed, hash }) => {
-        if (confirmed) {
+      .subscribe(({ confirmed, item }) => {
+        if (confirmed && item) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
-          this.collectionService.updateCollectionItem(this.collectionItem().name, this.rawContentModel(), hash);
-          this.collectionItem.update((collectionItem) =>
-            getCollectionItem({ name: collectionItem.name, content: this.rawContentModel(), hash })
-          );
-          this.lastSavedRawContent.set(this.collectionItem().rawContent);
+          this.collectionService.updateCollectionItem(this.collectionItem().IMDbId, item);
+          this.collectionItem.set(item);
+          this.lastSavedItem.set(toCollectionItemChange(item));
+          this.posterImageFailed.set(false);
           this.onReadOnly();
         }
       });
   }
 
   protected onMarkAsWatched(): void {
-    const updatedRawContent = addNewTagToRawContent(this.rawContentModel(), WATCHED_TAG);
-    if (!updatedRawContent) {
-      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SetWatchedError'));
-      return;
-    }
-
-    this.rawContentModel.set(updatedRawContent);
+    if (this.draftItem().tags.includes(WATCHED_TAG)) return;
+    this.updateDraft('tags', [...this.draftItem().tags, WATCHED_TAG]);
     this.onSaveChanges();
   }
 
   protected onMarkAsUnwatched(): void {
-    const updatedRawContent = removeTagFromRawContent(this.rawContentModel(), WATCHED_TAG);
-    this.rawContentModel.set(updatedRawContent);
+    this.updateDraft(
+      'tags',
+      this.draftItem().tags.filter((tag) => tag !== WATCHED_TAG)
+    );
     this.onSaveChanges();
   }
 }

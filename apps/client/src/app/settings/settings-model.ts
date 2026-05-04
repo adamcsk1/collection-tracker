@@ -6,7 +6,6 @@ export interface SettingsModel {
   sensitiveDataStorage: (typeof SENSITIVE_DATA_STORAGE_MODES)[number];
   clearLocalStorageAfterLogout: boolean;
   animatedBackground: boolean;
-  fetchBatchSize: number;
   appMode: (typeof APP_MODES)[number];
   theme: ThemeModel;
   settingsLock: boolean;

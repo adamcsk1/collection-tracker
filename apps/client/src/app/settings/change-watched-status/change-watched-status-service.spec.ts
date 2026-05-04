@@ -1,11 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '../../collection/collection-model';
 import { CollectionService } from '../../collection/collection-service';
-import {
-  initialMainCollectionState,
-  MainCollectionState,
-  mainCollectionStateToken,
-} from '../../main/main-collection-store';
 import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,
@@ -13,39 +7,24 @@ import {
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
-import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChangeWatchedStatusService } from './change-watched-status-service';
 
-const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
-  rawContent: overrides.rawContent || '',
-  rawContentLower: (overrides.rawContent || '').toLowerCase(),
-  image: '',
-  title: overrides.title || '',
-  titleLower: (overrides.title || '').toLowerCase(),
-  genre: overrides.genre || [],
-  IMDbId: overrides.IMDbId || 'tt000',
-  tags: overrides.tags || [],
-  name: overrides.name || 'item',
-  year: null,
-  rate: '',
-  hash: overrides.hash || 'hash-abc',
-  plot: '',
-});
-
 describe('ChangeWatchedStatusService', () => {
   let service: ChangeWatchedStatusService;
-  let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let collectionService: { loadCollection: ReturnType<typeof vi.fn> };
-  let api: { update: ReturnType<typeof vi.fn> };
+  let api: { markAllAsWatched: ReturnType<typeof vi.fn>; markAllAsUnwatched: ReturnType<typeof vi.fn> };
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    collectionService = { loadCollection: vi.fn() };
-    api = { update: vi.fn(() => of(undefined)) };
+    collectionService = { loadCollection: vi.fn(() => of(undefined)) };
+    api = {
+      markAllAsWatched: vi.fn(() => of({ changedCount: 2 })),
+      markAllAsUnwatched: vi.fn(() => of({ changedCount: 1 })),
+    };
     confirm = { ifConfirmed: vi.fn(() => of(true)) };
 
     TestBed.configureTestingModule({
@@ -55,54 +34,50 @@ describe('ChangeWatchedStatusService', () => {
         { provide: ApiService, useValue: api },
         { provide: ConfirmService, useValue: confirm },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
-        provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
         provideStore(initialToastState, toastStateToken),
       ],
     });
 
     service = TestBed.inject(ChangeWatchedStatusService);
-    mainCollectionState = TestBed.inject(mainCollectionStateToken);
   });
 
-  it('marks only untagged items as watched and reports errors when tagging fails', () => {
-    mainCollectionState.setState('collection', [
-      buildItem({ name: 'first', rawContent: '**Tags** #action #adventure', tags: ['#action', '#adventure'] }),
-      buildItem({ name: 'second', rawContent: 'no tags here', tags: [] }),
-    ]);
-
+  it('marks all items as watched and completes successfully', () => {
     service.markAllAsWatched();
 
-    expect(api.update).toHaveBeenCalledTimes(1);
-    expect(api.update).toHaveBeenCalledWith('first', expect.stringContaining(WATCHED_TAG), 'hash-abc');
+    expect(api.markAllAsWatched).toHaveBeenCalledTimes(1);
     expect(collectionService.loadCollection).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
-    expect(toast.state.message()).toBe('Toast.MarkingAllAsWatchedWithErrors');
+    expect(toast.state.message()).toBe('Toast.MarkedAllAsWatched');
   });
 
-  it('unmarks only watched items and completes without errors', () => {
-    mainCollectionState.setState('collection', [
-      buildItem({ name: 'first', rawContent: '**Tags** #action #watched', tags: ['#action', '#watched'] }),
-      buildItem({ name: 'second', rawContent: '**Tags** #adventure', tags: ['#adventure'] }),
-    ]);
+  it('marks all items as unwatched and completes successfully', () => {
     const blocker = TestBed.inject(blockerLoadingStateToken);
 
     service.markAllAsUnwatched();
 
-    expect(api.update).toHaveBeenCalledTimes(1);
-    expect(api.update).toHaveBeenCalledWith('first', '**Tags** #action ', 'hash-abc');
+    expect(api.markAllAsUnwatched).toHaveBeenCalledTimes(1);
     expect(collectionService.loadCollection).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.MarkedAllAsUnwatched');
     expect(blocker.state.show()).toBe(false);
   });
 
-  it('does nothing when user declines watching all as watched', () => {
-    confirm.ifConfirmed = vi.fn(() => of(false));
-    mainCollectionState.setState('collection', []);
+  it('does nothing when user declines marking all as watched', () => {
+    confirm.ifConfirmed = vi.fn(() => EMPTY);
     service.markAllAsWatched();
 
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.markAllAsWatched).not.toHaveBeenCalled();
+    expect(collectionService.loadCollection).not.toHaveBeenCalled();
+  });
+
+  it('shows error toast when mark all as watched fails', () => {
+    api.markAllAsWatched = vi.fn(() => throwError(() => new Error('fail')));
+    service.markAllAsWatched();
+
+    expect(api.markAllAsWatched).toHaveBeenCalledTimes(1);
+    const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
+    expect(toast.state.message()).toBe('Toast.MarkingAllAsWatchedWithErrors');
     expect(collectionService.loadCollection).toHaveBeenCalledTimes(1);
   });
 });

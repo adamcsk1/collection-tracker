@@ -1,20 +1,21 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { form, FormField, FormRoot, required, validate } from '@angular/forms/signals';
-import { NewItemModel, SaveMode } from './new-item-dialog-model';
-import { NewItemDialogService } from './new-item-dialog-service';
-import { TagSuggestionService } from './suggestion/tag-suggestion-service';
-import { forbiddenInternalTagValidation } from './validators/internal-tag-validator';
-import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
+import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { debounceTime, firstValueFrom } from 'rxjs';
+import { catchError, debounceTime, filter, firstValueFrom, of, switchMap } from 'rxjs';
+import { NewItemModel, SaveMode } from './new-item-dialog-model';
+import { NewItemDialogService } from './new-item-dialog-service';
+import { TagSuggestionService } from './suggestion/tag-suggestion-service';
+import { forbiddenInternalTagValidation } from './validators/internal-tag-validator';
+import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
 
 @Component({
   selector: 'ct-new-item-dialog',
@@ -29,8 +30,10 @@ import { debounceTime, firstValueFrom } from 'rxjs';
 })
 export class NewItemDialog {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly api = inject(ApiService);
   private readonly service = inject(NewItemDialogService);
-  private readonly knownIMDbIdValidationError = knownIMDbIdValidationFactory();
+  private readonly knownIMDbIdExists = signal(false);
+  private readonly knownIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownIMDbIdExists);
   protected readonly submitMode = signal<SaveMode | null>(null);
   protected readonly newItemModel = signal<NewItemModel>({
     searchText: '',
@@ -86,8 +89,21 @@ export class NewItemDialog {
     });
 
     toObservable(this.form.searchText().value)
-      .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        debounceTime(500),
+        filter((value) => !!value),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe((searchText) => this.service.search(searchText));
+
+    toObservable(this.form.selectedIMDbId().value)
+      .pipe(
+        debounceTime(150),
+        switchMap((imdbId) => (imdbId ? this.api.collectionItemExists(imdbId) : of({ exists: false }))),
+        catchError(() => of({ exists: false })),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((response) => this.knownIMDbIdExists.set(response.exists));
   }
 
   private async onSave(mode: SaveMode | null = null): Promise<void> {

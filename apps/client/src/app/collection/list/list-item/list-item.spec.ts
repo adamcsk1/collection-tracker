@@ -4,25 +4,25 @@ import { CollectionItemModel } from '../../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../../collection-store';
 import { ClaudeSearchService } from '../../search/claude-search-service';
 import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from '../../../tag-configs/tag-configs-store';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListItem } from './list-item';
 
-const buildItem = (name: string, tags: string[] = []): CollectionItemModel => ({
-  rawContent: name,
-  rawContentLower: name.toLowerCase(),
+const buildItem = (title: string, tags: string[] = []): CollectionItemModel => ({
   image: '',
-  title: name,
-  titleLower: name.toLowerCase(),
+  title,
+  titleLower: title.toLowerCase(),
+  searchableTextLower: title.toLowerCase(),
   genre: [],
   IMDbId: '',
   tags,
-  name,
   year: null,
   rate: '',
   hash: '',
+  actors: '',
   plot: '',
 });
 
@@ -53,6 +53,7 @@ describe('ListItem', () => {
       providers: [
         { provide: PortalService, useValue: portal },
         { provide: ClaudeSearchService, useValue: { useClaudeAi } },
+        provideStore(initialApiState, apiStateToken),
         provideStore(initialCollectionState, collectionStateToken),
         provideStore(initialTagConfigsState, tagConfigsStateToken),
       ],

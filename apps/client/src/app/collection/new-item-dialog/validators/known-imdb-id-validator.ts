@@ -1,16 +1,11 @@
-import { inject } from '@angular/core';
-import { mainCollectionStateToken } from '../../../main/main-collection-store';
+import { Signal } from '@angular/core';
 
 export type KnownIMDbIdValidationError = {
   kind: 'knownIMDbId';
 };
 
-export const knownIMDbIdValidationFactory = () => {
-  const mainCollectionState = inject(mainCollectionStateToken);
-
+export const knownIMDbIdValidationFactory = (knownIMDbIdExists: Signal<boolean>) => {
   return (IMDbId: string | null): KnownIMDbIdValidationError | undefined => {
-    const collection = mainCollectionState.state.collection();
-
-    return collection.find((collectionItem) => collectionItem.IMDbId === IMDbId) ? { kind: 'knownIMDbId' } : undefined;
+    return IMDbId && knownIMDbIdExists() ? { kind: 'knownIMDbId' } : undefined;
   };
 };

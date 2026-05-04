@@ -2,48 +2,51 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
   signal,
-  untracked,
   viewChild,
 } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { collectionStateToken } from '../collection-store';
-import { ItemDialog } from '../item-dialog/item-dialog';
-import { FloatButtons } from './float-buttons/float-buttons';
-import { InfiniteScrollService } from './infinite-scroll/infinite-scroll-service';
-import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
-import { ListItem } from './list-item/list-item';
-import { matchesSearch } from './utils/matches-search-util';
-import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
-import { ClaudeSearchService } from '../search/claude-search-service';
-import { mainCollectionStateToken } from '../../main/main-collection-store';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { affordableFuzzySearch } from '@shared/utils/fuzzy-search-util';
-import { randomInt } from '@shared/utils/random-int-util';
+import { CollectionItemFiltersApiModel } from '@shared/models/api-model';
+import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { debounceTime, startWith, switchMap } from 'rxjs';
+import { CollectionItemModel } from '../collection-model';
+import { catchError, debounceTime, EMPTY, fromEvent, startWith, switchMap } from 'rxjs';
+import { mainCollectionStateToken } from '../../main/main-collection-store';
+import { collectionStateToken } from '../collection-store';
+import { ItemDialog } from '../item-dialog/item-dialog';
+import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
+import { ClaudeSearchService } from '../search/claude-search-service';
+import { FloatButtons } from './float-buttons/float-buttons';
+import { INFINITE_SCROLL_PAGE_SIZE } from './infinite-scroll/infinite-scroll-const';
+import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
+import { ListItem } from './list-item/list-item';
 
 @Component({
   selector: 'ct-list',
   imports: [NgxSignalTranslatePipe, ListItem, ListItemSkeleton, FloatButtons],
   templateUrl: './list.html',
   styleUrl: './list.css',
-  providers: [InfiniteScrollService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class List {
   private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly collectionState = inject(collectionStateToken);
+  private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
   private readonly portal = inject(PortalService);
-  private readonly infiniteScroll = inject(InfiniteScrollService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly claudeSearch = inject(ClaudeSearchService);
+  private requestVersion = 0;
   private readonly debouncedSearchText = toSignal(
-    toObservable(this.collectionState.state.searchText).pipe(startWith(''), debounceTime(100))
+    toObservable(this.collectionState.state.searchText).pipe(debounceTime(100)),
+    { initialValue: '' }
   );
   private readonly claudeAiSendTrigger = computed(() => ({
     promptText: this.collectionState.state.claudeAiPromptText(),
@@ -57,46 +60,34 @@ export class List {
     ),
     { initialValue: null }
   );
-  protected readonly filteredCollection = computed(() => {
-    const aiIds = this.claudeAiMatchedIds();
-
-    if (this.claudeSearch.useClaudeAi()) {
-      if (this.collectionState.state.claudeAiPromptText().trim() === '' || aiIds === null) {
-        return this.mainCollectionState.state.collection();
-      }
-
-      return this.mainCollectionState.state.collection().filter((item) => aiIds.includes(item.IMDbId));
-    }
-
-    const forceStandardSearch = untracked(() => this.collectionState.state.forceStandardSearch());
-    const searchText = this.debouncedSearchText() || '';
-    const useFuzzySearch = !forceStandardSearch && affordableFuzzySearch(searchText.toLowerCase());
-
-    return this.mainCollectionState.state
-      .collection()
-      .filter((item) => matchesSearch(item, searchText, useFuzzySearch));
-  });
+  protected readonly visibleCollection = signal<CollectionItemModel[]>([]);
+  protected readonly collectionLength = signal(0);
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
-  protected readonly collectionLength = computed(() => this.mainCollectionState.state.collection().length);
-  protected readonly visibleCollection = this.infiniteScroll.visibleItems;
-  protected readonly hasMore = this.infiniteScroll.hasMore;
+  protected readonly hasMore = computed(() => this.visibleCollection().length < this.collectionLength());
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly scrollToTopAvailable = signal(false);
 
   constructor() {
-    this.infiniteScroll.setCollectionSource(this.filteredCollection);
+    effect(() => {
+      this.debouncedSearchText();
+      this.claudeAiMatchedIds();
+      this.claudeSearch.useClaudeAi();
+      this.collectionState.state.claudeAiPromptText();
+      this.mainCollectionState.state.reloadTrigger();
+      this.loadItems(true);
+    });
 
     effect(() => {
-      this.collectionState.state.searchText();
+      this.debouncedSearchText();
       this.onResetScrollPosition();
     });
   }
 
   protected onRandomPick(): void {
-    const filteredCollection = this.filteredCollection();
-    const randomIndex = randomInt(0, filteredCollection.length - 1);
-
-    this.portal.open(ItemDialog, { collectionItem: filteredCollection[randomIndex] });
+    this.api
+      .getRandomItem()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((item) => this.portal.open(ItemDialog, { collectionItem: item }));
   }
 
   protected onAddNew(): void {
@@ -109,10 +100,10 @@ export class List {
 
     this.scrollToTopAvailable.set(element.scrollTop !== 0);
 
-    if (!this.infiniteScroll.hasMore()) return;
+    if (!this.hasMore() || this.apiLoadNetworkStatus() === 'pending') return;
     const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
     if (distanceFromBottom < 200) {
-      this.infiniteScroll.loadMore();
+      this.loadItems(false);
     }
   }
 
@@ -122,12 +113,64 @@ export class List {
   }
 
   protected onResetScrollPosition(): void {
-    this.scrollToTopAvailable.set(false);
-    this.infiniteScroll.reset();
-    this.scrollContainer()?.nativeElement.scrollTo({
+    const element = this.scrollContainer()?.nativeElement;
+    if (!element) return;
+
+    element.scrollTo({
       top: 0,
       left: 1000,
       behavior: 'smooth',
     });
+    if (typeof element.addEventListener === 'function') {
+      const subscription = fromEvent(element, 'scroll')
+        .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          this.scrollToTopAvailable.set(false);
+          subscription.unsubscribe();
+        });
+    }
+  }
+
+  private loadItems(reset: boolean): void {
+    const requestVersion = ++this.requestVersion;
+    const offset = reset ? 0 : this.visibleCollection().length;
+    const limit = INFINITE_SCROLL_PAGE_SIZE;
+
+    this.apiState.setState('loadNetworkStatus', 'pending');
+
+    const request = this.claudeSearch.useClaudeAi()
+      ? this.loadClaudeItems(offset, limit)
+      : this.api.searchItems(this.buildFilters(), offset, limit);
+
+    request
+      .pipe(
+        catchError(() => {
+          if (requestVersion === this.requestVersion) this.apiState.setState('loadNetworkStatus', 'error');
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((response) => {
+        if (requestVersion !== this.requestVersion) return;
+
+        this.visibleCollection.set(reset ? response.items : [...this.visibleCollection(), ...response.items]);
+        this.collectionLength.set(response.total);
+        this.apiState.setState('loadNetworkStatus', 'finished');
+      });
+  }
+
+  private loadClaudeItems(offset: number, limit: number) {
+    const promptText = this.collectionState.state.claudeAiPromptText().trim();
+    const aiIds = this.claudeAiMatchedIds();
+    if (!promptText || aiIds === null) return this.api.searchItems({}, offset, limit);
+
+    return this.api.getMatchedItems({ imdbIds: aiIds, offset, limit });
+  }
+
+  private buildFilters(): CollectionItemFiltersApiModel {
+    const search = this.collectionState.state.searchText().trim();
+    if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false };
+    if (search.startsWith('#')) return { tags: [search], tagMode: 'all' };
+    return search ? { search } : {};
   }
 }

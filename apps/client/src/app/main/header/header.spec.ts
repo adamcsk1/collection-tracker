@@ -19,7 +19,7 @@ const setBodyWidth = (width: number) =>
 describe('Header component', () => {
   let fixture: ComponentFixture<Header>;
   let component: Header;
-  let collection: { loadCollection: ReturnType<typeof vi.fn> };
+  let collection: { triggerReload: ReturnType<typeof vi.fn> };
   let api: { logout: ReturnType<typeof vi.fn> };
   let webstorage: { clear: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
@@ -27,7 +27,7 @@ describe('Header component', () => {
   let redirectSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    collection = { loadCollection: vi.fn() };
+    collection = { triggerReload: vi.fn() };
     api = { logout: vi.fn(() => of(void 0)) };
     webstorage = { clear: vi.fn() };
 
@@ -74,10 +74,10 @@ describe('Header component', () => {
     expect(component['showMenu']()).toBe(false);
   });
 
-  it('triggers collection sync', () => {
+  it('triggers collection reload', () => {
     component['onSync']();
 
-    expect(collection.loadCollection).toHaveBeenCalled();
+    expect(collection.triggerReload).toHaveBeenCalled();
   });
 
   it('logs out successfully and clears storage when configured', () => {

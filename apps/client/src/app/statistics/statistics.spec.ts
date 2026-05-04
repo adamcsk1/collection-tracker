@@ -1,47 +1,41 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '../collection/collection-model';
-import {
-  initialMainCollectionState,
-  MainCollectionState,
-  mainCollectionStateToken,
-} from '../main/main-collection-store';
+import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { provideStore } from 'ngx-simple-signal-store';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Statistics } from './statistics';
 
-const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
-  rawContent: overrides.rawContent || '',
-  rawContentLower: (overrides.rawContent || '').toLowerCase(),
-  image: overrides.image || '',
-  title: overrides.title || '',
-  titleLower: (overrides.title || '').toLowerCase(),
-  genre: overrides.genre || [],
-  IMDbId: overrides.IMDbId || '',
-  tags: overrides.tags || [],
-  name: overrides.name || '',
-  year: overrides.year || null,
-  rate: overrides.rate || '',
-  hash: '',
-  plot: '',
-});
-
 describe('Statistics component', () => {
   let component: Statistics;
-  let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
+  let api: { getStatistics: ReturnType<typeof vi.fn> };
   let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
 
+  const statistics = {
+    totalItems: 2,
+    movieCount: 1,
+    seriesCount: 1,
+    watchedCount: 1,
+    unwatchedCount: 1,
+    tagCounts: [
+      { tag: '#drama', count: 1 },
+      { tag: '#action', count: 2 },
+    ],
+    genreCounts: [],
+  };
+
   beforeEach(() => {
+    api = { getStatistics: vi.fn(() => of(statistics)) };
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
 
     TestBed.configureTestingModule({
       imports: [Statistics],
       providers: [
-        provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialApiState, apiStateToken),
+        { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: WebstorageService, useValue: webstorage },
       ],
@@ -50,54 +44,17 @@ describe('Statistics component', () => {
     TestBed.overrideComponent(Statistics, { set: { template: '' } });
 
     component = TestBed.createComponent(Statistics).componentInstance;
-    collectionState = TestBed.inject(mainCollectionStateToken);
-
-    // Set a mock chart so that onToggleTag → updateChartData() does not throw.
     component['chart'].set({ data: { labels: [], datasets: [] }, update: vi.fn() } as any);
   });
 
-  it('computes movie and series summary from collection tags', () => {
-    collectionState.setState('collection', [
-      buildItem({ tags: ['#movie', '#action'], name: 'Movie One' }),
-      buildItem({ tags: ['#series', '#drama'], name: 'Series One' }),
-    ]);
-
-    expect(component['summary']()).toEqual({
-      movies: 1,
-      series: 1,
-      all: 2,
-    });
-  });
-
-  it('computes deduplicated tags sorted by length ascending', () => {
-    collectionState.setState('collection', [
-      buildItem({ tags: ['#drama', '#action'] }),
-      buildItem({ tags: ['#action', '#sci-fi'] }),
-    ]);
-
-    const tags = component['tags']();
-    // #drama = 6 chars, #action and #sci-fi = 7 chars each; duplicates removed
-    expect(tags).toEqual(['#drama', '#action', '#sci-fi']);
-    expect(new Set(tags).size).toBe(tags.length);
+  it('loads summary and tags from the statistics endpoint', () => {
+    expect(api.getStatistics).toHaveBeenCalled();
+    expect(component['summary']()).toEqual({ movies: 1, series: 1, all: 2 });
+    expect(component['tags']()).toEqual(['#drama', '#action']);
   });
 
   it('sets defaultOpenSelectedTags to true when no tags are stored', () => {
-    webstorage.getItem = vi.fn(() => null);
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      imports: [Statistics],
-      providers: [
-        provideStore(initialMainCollectionState, mainCollectionStateToken),
-        provideStore(initialApiState, apiStateToken),
-        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
-        { provide: WebstorageService, useValue: webstorage },
-      ],
-    });
-    TestBed.overrideComponent(Statistics, { set: { template: '' } });
-
-    const freshComponent = TestBed.createComponent(Statistics).componentInstance;
-
-    expect(freshComponent['defaultOpenSelectedTags']).toBe(true);
+    expect(component['defaultOpenSelectedTags']).toBe(true);
   });
 
   it('sets defaultOpenSelectedTags to false when tags are stored', () => {
@@ -106,8 +63,8 @@ describe('Statistics component', () => {
     TestBed.configureTestingModule({
       imports: [Statistics],
       providers: [
-        provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialApiState, apiStateToken),
+        { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: WebstorageService, useValue: webstorage },
       ],

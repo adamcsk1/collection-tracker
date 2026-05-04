@@ -1,5 +1,6 @@
 <ct-float-buttons
   [scrollToTopAvailable]="scrollToTopAvailable()"
+  [collectionLength]="collectionLength()"
   (randomPick)="onRandomPick()"
   (toggleClaudeAi)="onToggleClaudeAi()"
   (addNew)="onAddNew()"
@@ -14,7 +15,7 @@
   [attr.aria-busy]="apiLoadNetworkStatus() === 'pending'"
   (scroll)="onScroll()"
 >
-  @if (!apiLoadNetworkStatus() || apiLoadNetworkStatus() === 'pending') {
+  @if ((!apiLoadNetworkStatus() || apiLoadNetworkStatus() === 'pending') && visibleCollection().length === 0) {
     <ct-list-item-skeleton />
     <ct-list-item-skeleton />
     <ct-list-item-skeleton />
@@ -25,14 +26,16 @@
     <ct-list-item-skeleton />
     <ct-list-item-skeleton />
     <ct-list-item-skeleton />
-  } @else {
-    @for (collectionItem of visibleCollection(); track collectionItem) {
-      @defer (on viewport; prefetch on idle) {
-        <ct-list-item [collectionItem]="collectionItem" />
-      } @placeholder {
-        <ct-list-item-skeleton />
-      }
-    } @empty {
+  }
+
+  @for (collectionItem of visibleCollection(); track collectionItem.IMDbId) {
+    @defer (on viewport; prefetch on idle) {
+      <ct-list-item [collectionItem]="collectionItem" />
+    } @placeholder {
+      <ct-list-item-skeleton />
+    }
+  } @empty {
+    @if (apiLoadNetworkStatus() !== 'pending') {
       <div data-test-id="list-empty" class="list-empty">
         <i class="material-icons">movie</i>
         @if (collectionLength() === 0) {
@@ -45,5 +48,10 @@
         }
       </div>
     }
+  }
+
+  @if (apiLoadNetworkStatus() === 'pending' && visibleCollection().length > 0) {
+    <ct-list-item-skeleton />
+    <ct-list-item-skeleton />
   }
 </div>

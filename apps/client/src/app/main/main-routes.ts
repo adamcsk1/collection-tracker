@@ -24,11 +24,6 @@ export const routes: Routes = [
     canActivate: [mainGuard, settingsLockedGuard],
   },
   {
-    path: 'parser',
-    loadComponent: () => import('../parser/parser').then((module) => module.Parser),
-    canActivate: [mainGuard, settingsLockedGuard],
-  },
-  {
     path: 'about',
     loadComponent: () => import('../about/about').then((module) => module.About),
     canActivate: [mainGuard],

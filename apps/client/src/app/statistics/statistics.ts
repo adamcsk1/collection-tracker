@@ -1,14 +1,15 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { mainCollectionStateToken } from '../main/main-collection-store';
 import { StatisticsSummaryModel } from './statistics-model';
 import { Details } from '@components/details/details';
+import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
-import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
+import { CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
 import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'ct-statistics',
@@ -21,28 +22,22 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Statistics implements AfterViewInit {
+  private readonly api = inject(ApiService);
   private readonly webstorage = inject(WebstorageService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly apiState = inject(apiStateToken);
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
-  protected readonly tags = computed(() => [
-    ...new Set(
-      this.mainCollectionState.state
-        .collection()
-        .flatMap((item) => item.tags)
-        .sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0))
-    ),
-  ]);
+  protected readonly statistics = signal<CollectionStatisticsApiResponseModel | null>(null);
+  protected readonly tags = computed(() => this.statistics()?.tagCounts.map((tagCount) => tagCount.tag) ?? []);
   protected readonly chart = signal<Chart<'pie', number[], string> | null>(null);
   protected readonly selectedTags = signal<string[]>([]);
   protected readonly summary = computed<StatisticsSummaryModel>(() => {
-    const collection = this.mainCollectionState.state.collection();
-    const summary = {
-      movies: collection.filter((item) => item.tags.includes(MOVIE_TAG)).length,
-      series: collection.filter((item) => item.tags.includes(SERIES_TAG)).length,
+    const statistics = this.statistics();
+    return {
+      movies: statistics?.movieCount ?? 0,
+      series: statistics?.seriesCount ?? 0,
+      all: statistics?.totalItems ?? 0,
     };
-    return { ...summary, all: collection.length };
   });
   protected readonly defaultOpenSelectedTags: boolean;
 
@@ -50,6 +45,7 @@ export class Statistics implements AfterViewInit {
     const storedTags = this.webstorage.getItem(STORAGE_STATISTICS_SELECTED_TAGS);
     if (storedTags) this.selectedTags.set(JSON.parse(storedTags));
     this.defaultOpenSelectedTags = this.selectedTags().length === 0;
+    this.loadStatistics();
   }
 
   public ngAfterViewInit(): void {
@@ -77,13 +73,13 @@ export class Statistics implements AfterViewInit {
   }
 
   private updateChartData(): void {
-    const collection = this.mainCollectionState.state.collection();
     const chart = this.chart();
+    const tagCounts = this.statistics()?.tagCounts ?? [];
     chart!.data.labels = this.selectedTags();
     const data: number[] = [];
 
     for (const tag of this.selectedTags()) {
-      const count = collection.filter((item) => item.tags.includes(tag)).length;
+      const count = tagCounts.find((tagCount) => tagCount.tag === tag)?.count ?? 0;
       data.push(count);
     }
 
@@ -95,5 +91,22 @@ export class Statistics implements AfterViewInit {
       },
     ];
     chart!.update();
+  }
+
+  private loadStatistics(): void {
+    this.apiState.setState('loadNetworkStatus', 'pending');
+    this.api
+      .getStatistics()
+      .pipe(
+        catchError(() => {
+          this.apiState.setState('loadNetworkStatus', 'error');
+          return EMPTY;
+        })
+      )
+      .subscribe((statistics) => {
+        this.statistics.set(statistics);
+        this.apiState.setState('loadNetworkStatus', 'finished');
+        if (this.chart()) this.updateChartData();
+      });
   }
 }

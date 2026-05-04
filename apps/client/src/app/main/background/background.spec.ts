@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '../../collection/collection-model';
-import { initialMainCollectionState, MainCollectionState, mainCollectionStateToken } from '../main-collection-store';
+import { ApiService } from '@services/api/api-service';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
 import * as mobileUserAgentUtil from '@shared/utils/mobile-user-agent.util';
 import * as coarsePointerUtil from '@shared/utils/prefer-coarse-pointer-util';
 import * as randomIntUtil from '@shared/utils/random-int-util';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Background } from './background';
 
@@ -19,26 +20,16 @@ vi.mock('@shared/utils/prefer-coarse-pointer-util', () => ({
 describe('Background component', () => {
   let fixture: ComponentFixture<Background>;
   let component: Background;
-  let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
+  let api: { getRandomImages: ReturnType<typeof vi.fn> };
   let randomSpy: ReturnType<typeof vi.spyOn>;
   let orientationTarget: EventTarget;
   let setImagesSpy: ReturnType<typeof vi.spyOn>;
 
-  const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
-    rawContent: '',
-    rawContentLower: ''.toLowerCase(),
-    image: overrides.image || '',
-    title: overrides.title || '',
-    titleLower: (overrides.title || '').toLowerCase(),
-    genre: [],
-    IMDbId: '',
-    tags: [],
-    name: overrides.name || '',
-    year: null,
-    rate: '',
-    hash: '',
-    plot: '',
-  });
+  const createComponent = () => {
+    fixture = TestBed.createComponent(Background);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  };
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -60,16 +51,20 @@ describe('Background component', () => {
     (mobileUserAgentUtil.mobileUserAgent as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
     (coarsePointerUtil.getCoarsePointerBasedDebounceTime as unknown as ReturnType<typeof vi.fn>).mockReturnValue(0);
 
+    api = {
+      getRandomImages: vi.fn(() =>
+        of({
+          images: ['img-1', 'img-2'],
+        })
+      ),
+    };
+
     setImagesSpy = vi.spyOn(Background.prototype as any, 'setImages');
 
     TestBed.configureTestingModule({
       imports: [Background],
-      providers: [provideStore(initialMainCollectionState, mainCollectionStateToken)],
+      providers: [{ provide: ApiService, useValue: api }, provideStore(initialApiState, apiStateToken)],
     });
-
-    fixture = TestBed.createComponent(Background);
-    component = fixture.componentInstance;
-    collectionState = TestBed.inject(mainCollectionStateToken);
   });
 
   afterEach(() => {
@@ -78,30 +73,35 @@ describe('Background component', () => {
     vi.useRealTimers();
   });
 
-  it('keeps images empty when there is no collection', () => {
-    collectionState.setState('collection', []);
-
-    fixture.detectChanges();
+  it('keeps images empty when the API returns no images', () => {
+    api.getRandomImages.mockReturnValue(of({ images: [] }));
+    createComponent();
 
     expect(component['images']()).toEqual([]);
   });
 
-  it('generates background images when collection exists', () => {
-    collectionState.setState('collection', [
-      buildItem({ name: 'one', image: 'img-1' }),
-      buildItem({ name: 'two', image: 'img-2' }),
-    ]);
-
-    fixture.detectChanges();
+  it('generates background images when API returns images', () => {
+    createComponent();
 
     const images = component['images']();
     expect(images.length).toBeGreaterThan(0);
     expect(images.every((img: any) => ['img-1', 'img-2'].includes(img.url))).toBe(true);
   });
 
+  it('proxies external background image URLs', () => {
+    api.getRandomImages.mockReturnValue(
+      of({
+        images: ['https://images.example/poster.png'],
+      })
+    );
+    TestBed.inject(apiStateToken).setState('apiUrl', '/api');
+    createComponent();
+
+    expect(component['images']()[0].url).toBe('/api/proxy/image?url=https%3A%2F%2Fimages.example%2Fposter.png');
+  });
+
   it('recomputes images on resize', () => {
-    collectionState.setState('collection', [buildItem({ name: 'one', image: 'img-1' })]);
-    fixture.detectChanges();
+    createComponent();
 
     Object.assign(window.visualViewport as any, { height: 1200, width: 500 });
     Object.defineProperty(window, 'innerHeight', { value: 1200, writable: true });
@@ -113,6 +113,7 @@ describe('Background component', () => {
   });
 
   it('flags large height and width deltas for handling', () => {
+    createComponent();
     component['lastViewportHeight'] = 800;
     component['lastViewportWidth'] = 500;
 
@@ -126,8 +127,7 @@ describe('Background component', () => {
   });
 
   it('skips recompute when keyboard is likely open', () => {
-    collectionState.setState('collection', [buildItem({ name: 'one', image: 'img-1' })]);
-    fixture.detectChanges();
+    createComponent();
     setImagesSpy.mockClear();
 
     Object.assign(window.visualViewport as any, { height: 600, width: 500 });
@@ -139,8 +139,7 @@ describe('Background component', () => {
   });
 
   it('skips recompute when a text input is focused', () => {
-    collectionState.setState('collection', [buildItem({ name: 'one', image: 'img-1' })]);
-    fixture.detectChanges();
+    createComponent();
     setImagesSpy.mockClear();
 
     const input = document.createElement('input');

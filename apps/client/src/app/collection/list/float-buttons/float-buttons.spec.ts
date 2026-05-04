@@ -1,11 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ClaudeSearchService } from '../../search/claude-search-service';
-import {
-  initialMainCollectionState,
-  MainCollectionState,
-  mainCollectionStateToken,
-} from '../../../main/main-collection-store';
 import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -16,7 +11,6 @@ describe('FloatButtons', () => {
   let fixture: ComponentFixture<FloatButtons>;
   let component: FloatButtons;
   let mainState: NgxSimpleSignalStoreService<MainState>;
-  let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let useClaudeAi: ReturnType<typeof signal<boolean | null>>;
 
@@ -28,7 +22,6 @@ describe('FloatButtons', () => {
       providers: [
         { provide: ClaudeSearchService, useValue: { useClaudeAi } },
         provideStore(initialMainState, mainStateToken),
-        provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialApiState, apiStateToken),
       ],
     });
@@ -36,9 +29,9 @@ describe('FloatButtons', () => {
     fixture = TestBed.createComponent(FloatButtons);
     component = fixture.componentInstance;
     mainState = TestBed.inject(mainStateToken);
-    mainCollectionState = TestBed.inject(mainCollectionStateToken);
     apiState = TestBed.inject(apiStateToken);
 
+    fixture.componentRef.setInput('collectionLength', 0);
     fixture.detectChanges();
   });
 
@@ -68,7 +61,7 @@ describe('FloatButtons', () => {
   });
 
   it('emits randomPick and collapses the panel when the random pick button is clicked', () => {
-    mainCollectionState.setState('collection', [{}] as any);
+    fixture.componentRef.setInput('collectionLength', 1);
     fixture.detectChanges();
     showButtons();
 
@@ -115,7 +108,6 @@ describe('FloatButtons', () => {
   it('emits scrollToTop when the scroll to top button is clicked', () => {
     fixture.componentRef.setInput('scrollToTopAvailable', true);
     fixture.detectChanges();
-    showButtons();
 
     const emitted: void[] = [];
     component.scrollToTop.subscribe(() => emitted.push(undefined));
@@ -126,9 +118,15 @@ describe('FloatButtons', () => {
     expect(emitted).toHaveLength(1);
   });
 
-  it('hides the scroll to top button when scrollToTopAvailable is false', () => {
-    showButtons();
+  it('shows the scroll to top button even when the function panel is collapsed', () => {
+    fixture.componentRef.setInput('scrollToTopAvailable', true);
+    fixture.detectChanges();
 
+    expect(findButton('arrow_upward')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.float-show-button')).toBeTruthy();
+  });
+
+  it('hides the scroll to top button when scrollToTopAvailable is false', () => {
     expect(findButton('arrow_upward')).toBeUndefined();
   });
 
@@ -151,7 +149,7 @@ describe('FloatButtons', () => {
   });
 
   it('enables the random pick button when the collection has items', () => {
-    mainCollectionState.setState('collection', [{}] as any);
+    fixture.componentRef.setInput('collectionLength', 1);
     fixture.detectChanges();
     showButtons();
 
@@ -161,7 +159,7 @@ describe('FloatButtons', () => {
   it('disables action buttons when the API load is pending', () => {
     mainState.setState('claudeAiAvailable', true);
     mainState.setState('permissions', { create: true, update: false, delete: false });
-    mainCollectionState.setState('collection', [{}] as any);
+    fixture.componentRef.setInput('collectionLength', 1);
     apiState.setState('loadNetworkStatus', 'pending');
     fixture.detectChanges();
     showButtons();

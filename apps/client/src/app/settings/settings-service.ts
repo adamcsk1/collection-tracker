@@ -39,10 +39,6 @@ export class SettingsService {
   public preloadUserSettings(): Observable<void> {
     return this.api.getUserSettings().pipe(
       tap((settings) => {
-        if (typeof settings.fetchBatchSize === 'number' && Number.isFinite(settings.fetchBatchSize)) {
-          this.apiState.setState('fetchBatchSize', settings.fetchBatchSize);
-        }
-
         const theme = parseAllowedValue(settings.theme ?? null, THEMES);
         if (theme) this.themeState.setState('theme', theme);
 
@@ -70,7 +66,6 @@ export class SettingsService {
     this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout);
     this.mainState.setState('animatedBackground', formData.animatedBackground);
     this.mainState.setState('language', formData.language);
-    this.apiState.setState('fetchBatchSize', formData.fetchBatchSize);
     this.themeState.setState('theme', formData.theme);
 
     this.webstorage.setItem(STORAGE_SENSITIVE_DATA_STORAGE, formData.sensitiveDataStorage);
@@ -82,7 +77,6 @@ export class SettingsService {
     this.main.setPermissions();
 
     const userSettings: UserSettingsApiRequestModel = {
-      fetchBatchSize: formData.fetchBatchSize,
       theme: formData.theme,
       animatedBackground: formData.animatedBackground,
       language: formData.language,

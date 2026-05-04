@@ -5,19 +5,18 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { INFINITE_SCROLL_PAGE_SIZE } from './infinite-scroll-const';
 import { InfiniteScrollService } from './infinite-scroll-service';
 
-const buildItem = (name: string): CollectionItemModel => ({
-  rawContent: name,
-  rawContentLower: name.toLowerCase(),
+const buildItem = (title: string): CollectionItemModel => ({
   image: '',
-  title: name,
-  titleLower: name.toLowerCase(),
+  title,
+  titleLower: title.toLowerCase(),
+  searchableTextLower: title.toLowerCase(),
   genre: [],
   IMDbId: '',
   tags: [],
-  name,
   year: null,
   rate: '',
   hash: '',
+  actors: '',
   plot: '',
 });
 
@@ -36,7 +35,7 @@ describe('InfiniteScrollService', () => {
     service.setCollectionSource(makeCollection(INFINITE_SCROLL_PAGE_SIZE + 10));
 
     expect(service.visibleItems().length).toBe(INFINITE_SCROLL_PAGE_SIZE);
-    expect(service.visibleItems()[0].name).toBe('Item 0');
+    expect(service.visibleItems()[0].title).toBe('Item 0');
   });
 
   it('hasMore is true when collection exceeds visible count', () => {

@@ -1,10 +1,11 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, NgZone, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, NgZone, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CollectionModel } from '../../collection/collection-model';
+import { ApiService } from '@services/api/api-service';
+import { apiStateToken } from '@services/api/api-store';
+import { getProxyImageUrl } from '../../collection/utils/proxy-image-url-util';
 import { DESKTOP_HEIGHT_BUFFER, HEIGHT_BUFFER, WIDTH_BUFFER } from './background-const';
 import { BackgroundImagesModel } from './background-model';
-import { mainCollectionStateToken } from '../main-collection-store';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { getCoarsePointerBasedDebounceTime } from '@shared/utils/prefer-coarse-pointer-util';
 import { randomInt } from '@shared/utils/random-int-util';
@@ -23,7 +24,8 @@ import { debounceTime, filter, fromEvent, map } from 'rxjs';
   },
 })
 export class Background {
-  private readonly mainCollectionState = inject(mainCollectionStateToken);
+  private readonly api = inject(ApiService);
+  private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngZone = inject(NgZone);
   private readonly document = inject(DOCUMENT);
@@ -44,12 +46,16 @@ export class Background {
   protected windowWidth = this.viewportWidth;
   private lastViewportHeight = this.windowHeight;
   private lastViewportWidth = this.windowWidth;
+  private imageUrls: string[] = [];
 
   constructor() {
-    const effectRef = effect(() => {
-      this.setImages(this.mainCollectionState.state.collection(), this.windowHeight, this.windowWidth);
-      if (this.mainCollectionState.state.collection().length > 0) effectRef.destroy();
-    });
+    this.api
+      .getRandomImages(50)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        this.imageUrls = response.images;
+        this.setImages(this.windowHeight, this.windowWidth);
+      });
 
     this.ngZone.runOutsideAngular(() =>
       (mobileUserAgent() ? fromEvent(screen.orientation, 'change') : fromEvent(window, 'resize'))
@@ -68,36 +74,43 @@ export class Background {
 
             if (this.isKeyboardLikely(height) || this.isTextInputFocused) return;
 
-            this.setImages(this.mainCollectionState.state.collection(), height, width);
+            this.setImages(height, width);
           })
         )
     );
   }
 
-  private setImages(collection: CollectionModel, viewportHeight: number, viewportWidth: number): void {
-    if (!collection.length) this.images.set([]);
-    else {
-      const images: BackgroundImagesModel = [];
-      const startY = -Math.ceil(viewportHeight / 2);
-      const targetY = Math.ceil(viewportHeight * 1.5);
-      let x = 0;
-      let y = startY;
-      let animationDuration = randomInt(100, 150);
-
-      while (true) {
-        const randomIndex = randomInt(0, collection.length - 1);
-        images.push({ url: collection[randomIndex].image, x, y, animationDuration });
-
-        if (y > targetY) {
-          x += this.imageWidth;
-          y = startY;
-          animationDuration = randomInt(100, 150);
-        } else y += this.imageHeight - 1;
-
-        if (x > viewportWidth) break;
-      }
-      this.images.set(images);
+  private setImages(viewportHeight: number, viewportWidth: number): void {
+    if (!this.imageUrls.length) {
+      this.images.set([]);
+      return;
     }
+
+    const images: BackgroundImagesModel = [];
+    const startY = -Math.ceil(viewportHeight / 2);
+    const targetY = Math.ceil(viewportHeight * 1.5);
+    let x = 0;
+    let y = startY;
+    let animationDuration = randomInt(100, 150);
+
+    while (true) {
+      const randomIndex = randomInt(0, this.imageUrls.length - 1);
+      images.push({
+        url: getProxyImageUrl(this.apiState.state.apiUrl(), this.imageUrls[randomIndex]),
+        x,
+        y,
+        animationDuration,
+      });
+
+      if (y > targetY) {
+        x += this.imageWidth;
+        y = startY;
+        animationDuration = randomInt(100, 150);
+      } else y += this.imageHeight - 1;
+
+      if (x > viewportWidth) break;
+    }
+    this.images.set(images);
   }
 
   private shouldHandleHeight(nextHeight: number): boolean {

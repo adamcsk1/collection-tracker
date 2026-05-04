@@ -1,13 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '../collection/collection-model';
-import {
-  initialMainCollectionState,
-  MainCollectionState,
-  mainCollectionStateToken,
-} from '../main/main-collection-store';
+import { initialMainCollectionState, mainCollectionStateToken } from '../main/main-collection-store';
 import { TagConfigsModel } from './tag-configs-model';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -16,22 +12,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TagConfigs } from './tag-configs';
 import { TagConfigsService } from './tag-configs-service';
 import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from './tag-configs-store';
-
-const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
-  rawContent: overrides.rawContent || '',
-  rawContentLower: (overrides.rawContent || '').toLowerCase(),
-  image: '',
-  title: overrides.title || '',
-  titleLower: (overrides.title || '').toLowerCase(),
-  genre: [],
-  IMDbId: overrides.IMDbId || 'tt0000001',
-  tags: overrides.tags || [],
-  name: overrides.name || 'Item',
-  year: null,
-  rate: '',
-  hash: '',
-  plot: '',
-});
 
 const buildTagConfig = (tag: string, overrides: Partial<TagConfigsModel[number]>): TagConfigsModel[number] => ({
   tag,
@@ -43,14 +23,32 @@ const buildTagConfig = (tag: string, overrides: Partial<TagConfigsModel[number]>
   ...overrides,
 });
 
+const mockStatistics = (tags: string[]) =>
+  of({
+    totalItems: tags.length,
+    movieCount: 0,
+    seriesCount: 0,
+    watchedCount: 0,
+    unwatchedCount: 0,
+    tagCounts: tags.map((tag) => ({ tag, count: 1 })),
+    genreCounts: [],
+  });
+
 describe('TagConfigs component', () => {
   let fixture: ComponentFixture<TagConfigs>;
   let component: TagConfigs;
-  let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
   let toastState: NgxSimpleSignalStoreService<ToastState>;
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
   let tagConfigsService: { syncUserTagConfigs: ReturnType<typeof vi.fn> };
+  let api: { getStatistics: ReturnType<typeof vi.fn> };
+
+  const createComponent = (tags: string[] = []) => {
+    api.getStatistics.mockReturnValue(mockStatistics(tags));
+    fixture = TestBed.createComponent(TagConfigs);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  };
 
   beforeEach(() => {
     confirm = { ifConfirmed: vi.fn(() => of(true)) };
@@ -63,6 +61,7 @@ describe('TagConfigs component', () => {
         return of(void 0);
       }),
     };
+    api = { getStatistics: vi.fn(() => mockStatistics([])) };
 
     TestBed.configureTestingModule({
       imports: [TagConfigs],
@@ -70,6 +69,7 @@ describe('TagConfigs component', () => {
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: ConfirmService, useValue: confirm },
         { provide: TagConfigsService, useValue: tagConfigsService },
+        { provide: ApiService, useValue: api },
         provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialApiState, apiStateToken),
         provideStore(initialToastState, toastStateToken),
@@ -77,21 +77,12 @@ describe('TagConfigs component', () => {
       ],
     });
 
-    fixture = TestBed.createComponent(TagConfigs);
-    component = fixture.componentInstance;
-    mainCollectionState = TestBed.inject(mainCollectionStateToken);
     tagConfigsState = TestBed.inject(tagConfigsStateToken);
     toastState = TestBed.inject(toastStateToken);
-
-    fixture.detectChanges();
   });
 
   it('builds tag configurations from collection tags while ignoring internal/virtual tags', () => {
-    mainCollectionState.setState('collection', [
-      buildItem({
-        tags: ['#a', '#b', '#series', '#movie', '#unwatched', '#a', '#tag-with-weight'],
-      }),
-    ]);
+    createComponent(['#a', '#b', '#series', '#movie', '#unwatched', '#a', '#tag-with-weight']);
 
     tagConfigsState.setState('configs', [buildTagConfig('#tag-with-weight', { color: '#aabbcc', weight: 7 })]);
     fixture.detectChanges();
@@ -104,8 +95,7 @@ describe('TagConfigs component', () => {
   });
 
   it('updates only one field and keeps existing values', () => {
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
-    fixture.detectChanges();
+    createComponent(['#tag']);
 
     tagConfigsState.setState('configs', [buildTagConfig('#tag', { color: '#123456', weight: 5 })]);
     fixture.detectChanges();
@@ -133,8 +123,7 @@ describe('TagConfigs component', () => {
   });
 
   it('updates only image badge flag and keeps existing values', () => {
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
-    fixture.detectChanges();
+    createComponent(['#tag']);
 
     tagConfigsState.setState('configs', [buildTagConfig('#tag', { color: '#123456', useForTextColor: true })]);
     fixture.detectChanges();
@@ -151,8 +140,7 @@ describe('TagConfigs component', () => {
   });
 
   it('keeps color as null when creating a new config from a non-color change', () => {
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
-    fixture.detectChanges();
+    createComponent(['#tag']);
 
     component['onUseForImageBorderChange']('#tag', true);
 
@@ -165,8 +153,7 @@ describe('TagConfigs component', () => {
   });
 
   it('coerces text input into numeric weight and falls back to zero on invalid values', () => {
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
-    fixture.detectChanges();
+    createComponent(['#tag']);
 
     component['onWeightChange']('#tag', 42);
     expect(tagConfigsState.state.configs()).toEqual([buildTagConfig('#tag', { weight: 42 })]);
@@ -176,8 +163,7 @@ describe('TagConfigs component', () => {
   });
 
   it('stores configs sorted by descending weight and syncs them via service', () => {
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#low', '#high'] })]);
-    fixture.detectChanges();
+    createComponent(['#low', '#high']);
 
     component['onTagColorChange']('#low', '#111111');
     component['onTagColorChange']('#high', '#222222');
@@ -196,8 +182,7 @@ describe('TagConfigs component', () => {
   });
 
   it('adds a new config with defaults when color changes for unknown tag', () => {
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#new'] })]);
-    fixture.detectChanges();
+    createComponent(['#new']);
 
     component['onTagColorChange']('#new', '#abc');
 
@@ -205,8 +190,7 @@ describe('TagConfigs component', () => {
   });
 
   it('seeds a black color when the color picker is opened for an uncolored tag', () => {
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
-    fixture.detectChanges();
+    createComponent(['#tag']);
 
     const button = fixture.nativeElement.querySelector('.tag-configs-item-color button') as HTMLButtonElement;
     button.click();
@@ -215,7 +199,7 @@ describe('TagConfigs component', () => {
   });
 
   it('does not overwrite an existing color when the color picker button is clicked', () => {
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
+    createComponent(['#tag']);
     tagConfigsState.setState('configs', [buildTagConfig('#tag', { color: '#123456' })]);
     fixture.detectChanges();
     tagConfigsService.syncUserTagConfigs.mockClear();
@@ -228,7 +212,7 @@ describe('TagConfigs component', () => {
   });
 
   it('resets tag configs after confirmation and syncs empty list', () => {
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
+    createComponent(['#tag']);
     tagConfigsState.setState('configs', [buildTagConfig('#tag', { color: '#123456', useForImageBorder: true })]);
     fixture.detectChanges();
 
@@ -240,7 +224,7 @@ describe('TagConfigs component', () => {
 
   it('does not clear configs when reset is not confirmed', () => {
     confirm.ifConfirmed = vi.fn(() => EMPTY);
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
+    createComponent(['#tag']);
     const initialConfigs = [buildTagConfig('#tag', { color: '#123456', useForImageBorder: true })];
     tagConfigsState.setState('configs', initialConfigs);
     fixture.detectChanges();
@@ -253,8 +237,7 @@ describe('TagConfigs component', () => {
   });
 
   it('shows toast message when syncing tag configs fails', () => {
-    mainCollectionState.setState('collection', [buildItem({ tags: ['#tag'] })]);
-    fixture.detectChanges();
+    createComponent(['#tag']);
     tagConfigsService.syncUserTagConfigs.mockReturnValueOnce(throwError(() => new Error('fail')));
 
     component['onTagColorChange']('#tag', '#123456');

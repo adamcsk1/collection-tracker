@@ -3,18 +3,17 @@ import { describe, expect, it, vi } from 'vitest';
 import { searchCollection } from './search-collection-util';
 
 const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItemModel => ({
-  rawContent: '',
-  rawContentLower: '',
   image: '',
   title: '',
   titleLower: '',
+  searchableTextLower: '',
   genre: [],
   IMDbId: '',
   tags: [],
-  name: '',
   year: null,
   rate: '',
   hash: '',
+  actors: '',
   plot: '',
   ...overrides,
 });

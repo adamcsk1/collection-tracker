@@ -4,9 +4,8 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
-import { getParserFilenamePattern, getParserTemplate } from '@shared/parser/parser-util';
-import { buildCollectionItemFilename } from '@shared/parser/utils/filename-pattern-util';
-import { generateMdContent } from '@shared/parser/utils/generate-md-content-util';
+import { CollectionItemChangeApiModel } from '@shared/models/api-model';
+import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
 import { CollectionService } from '../collection-service';
@@ -42,22 +41,21 @@ export class NewItemDialogService {
       take(1),
       filter((selectedContent) => !!selectedContent),
       filter((selectedContent) => !!selectedContent?.imdbID),
-      map((selectedContent) => ({
-        content: generateMdContent(getParserTemplate(), {
-          ...selectedContent,
-          Tags: tags.trim(),
-        }),
-        name: buildCollectionItemFilename({
-          pattern: getParserFilenamePattern(),
-          selectedContent,
-        }),
-      })),
-      tap(() => this.spinnerLoadingState.setState('show', true)),
-      mergeMap((collectionItem) =>
-        this.api
-          .create(collectionItem.content, collectionItem.name)
-          .pipe(map((response) => ({ name: response.name, content: collectionItem.content, hash: '' })))
+      map(
+        (selectedContent): CollectionItemChangeApiModel => ({
+          image: selectedContent.Poster,
+          title: selectedContent.Title,
+          genre: parseGenreText(selectedContent.Genre),
+          IMDbId: selectedContent.imdbID,
+          tags: parseTagText(tags),
+          year: Number(selectedContent.Year) || null,
+          rate: selectedContent.imdbRating,
+          actors: selectedContent.Actors,
+          plot: selectedContent.Plot,
+        })
       ),
+      tap(() => this.spinnerLoadingState.setState('show', true)),
+      mergeMap((collectionItem) => this.api.create(collectionItem).pipe(map((response) => response.item))),
       catchError((error) => {
         this.spinnerLoadingState.setState('show', false);
         return throwError(() => error);
