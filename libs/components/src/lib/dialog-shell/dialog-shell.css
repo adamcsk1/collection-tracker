@@ -6,15 +6,15 @@
 
 .dialog-frame {
   background-color: var(--glassy-background);
+  box-sizing: border-box;
   margin: 0 auto;
   top: var(--size-md);
   z-index: 1;
   display: flex;
   flex-direction: column;
   position: relative;
-  max-width: 500px;
+  max-width: var(--dialog-max-width, 500px);
   max-height: 90vh;
-  height: 100%;
   border-radius: var(--border-radius);
   padding: var(--size-md);
 
@@ -29,15 +29,25 @@
 
   .dialog-header {
     display: flex;
+    flex: 0 0 auto;
     justify-content: space-between;
     align-items: center;
     padding-bottom: var(--size-2xs);
   }
 
+  .dialog-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: var(--size-2xs);
+  }
+
   .dialog-footer {
     display: flex;
+    flex: 0 0 auto;
     flex-wrap: wrap;
     gap: var(--size-xs);
-    padding-top: var(--size-2xs);
+    padding-top: var(--size-md);
   }
 }

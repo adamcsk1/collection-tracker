@@ -47,115 +47,75 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({});
   });
 
-  it('creates an item with provided content', async () => {
-    const promise = lastValueFrom(service.create('note text', 'note.md'));
+  it('creates an item with provided data', async () => {
+    const item = {
+      image: '',
+      title: 'note',
+      genre: [],
+      IMDbId: 'tt123',
+      tags: [],
+      year: null,
+      rate: '',
+      actors: '',
+      plot: '',
+    };
+    const promise = lastValueFrom(service.create(item));
 
     const createRequest = httpMock.expectOne('https://api.test/create');
     expect(createRequest.request.method).toBe('POST');
-    expect(createRequest.request.body).toEqual({ content: 'note text', name: 'note.md' });
-    createRequest.flush({ name: 'note.md' });
+    expect(createRequest.request.body).toEqual(item);
+    createRequest.flush({ item });
 
-    await expect(promise).resolves.toEqual({ name: 'note.md' });
+    await expect(promise).resolves.toEqual({ item });
   });
 
   it('updates an item and returns new hash', async () => {
-    const promise = lastValueFrom(service.update('item', 'updated', 'old-hash'));
+    const item = {
+      image: '',
+      title: 'updated',
+      genre: [],
+      IMDbId: 'tt123',
+      tags: [],
+      year: null,
+      rate: '',
+      actors: '',
+      plot: '',
+    };
+    const promise = lastValueFrom(service.update('tt123', item, 'old-hash'));
 
-    const updateRequest = httpMock.expectOne('https://api.test/change/item');
+    const updateRequest = httpMock.expectOne('https://api.test/change/tt123');
     expect(updateRequest.request.method).toBe('PUT');
-    expect(updateRequest.request.body).toEqual({ content: 'updated', hash: 'old-hash' });
-    updateRequest.flush({ hash: 'new-hash' });
+    expect(updateRequest.request.body).toEqual({ ...item, hash: 'old-hash' });
+    updateRequest.flush({ item: { ...item, hash: 'new-hash' } });
 
-    await expect(promise).resolves.toEqual({ hash: 'new-hash' });
+    await expect(promise).resolves.toEqual({ item: { ...item, hash: 'new-hash' } });
   });
 
   it('alerts and rethrows when update fails', async () => {
-    const promise = lastValueFrom(service.update('item', 'updated', 'old-hash').pipe(defaultIfEmpty(undefined)));
+    const item = {
+      image: '',
+      title: 'updated',
+      genre: [],
+      IMDbId: 'tt123',
+      tags: [],
+      year: null,
+      rate: '',
+      actors: '',
+      plot: '',
+    };
+    const promise = lastValueFrom(service.update('tt123', item, 'old-hash').pipe(defaultIfEmpty(undefined)));
 
-    const updateRequest = httpMock.expectOne('https://api.test/change/item');
+    const updateRequest = httpMock.expectOne('https://api.test/change/tt123');
     updateRequest.flush('failed', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('paginates getAll results and updates network status', () => {
-    apiState.setState('fetchBatchSize', 2);
-
-    const pages: { name: string; content: string }[][] = [];
-    service.getAll().subscribe((items) => pages.push(items));
-
-    expect(apiState.state.loadNetworkStatus()).toBe('pending');
-
-    const page1Request = httpMock.expectOne('https://api.test/get-all?offset=0&limit=2');
-    page1Request.flush([
-      { name: 'a', content: '1' },
-      { name: 'b', content: '2' },
-    ]);
-
-    const page2Request = httpMock.expectOne('https://api.test/get-all?offset=2&limit=2');
-    page2Request.flush([{ name: 'c', content: '3' }]);
-
-    const page3Request = httpMock.expectOne('https://api.test/get-all?offset=4&limit=2');
-    page3Request.flush([]);
-
-    expect(pages).toEqual([
-      [
-        { name: 'a', content: '1' },
-        { name: 'b', content: '2' },
-      ],
-      [{ name: 'c', content: '3' }],
-    ]);
-    expect(apiState.state.loadNetworkStatus()).toBe('finished');
-  });
-
-  it('sets loadNetworkStatus to error when getAll fails', () => {
-    apiState.setState('fetchBatchSize', 1);
-
-    service.getAll().subscribe({
-      error: () => {},
-    });
-
-    const failingRequest = httpMock.expectOne('https://api.test/get-all?offset=0&limit=1');
-    failingRequest.flush('boom', { status: 500, statusText: 'Server Error' });
-
-    expect(apiState.state.loadNetworkStatus()).toBe('error');
-  });
-
-  it('sets loadNetworkStatus to error when a subsequent page fails', () => {
-    apiState.setState('fetchBatchSize', 1);
-
-    service.getAll().subscribe({
-      next: () => {},
-      error: () => {},
-    });
-
-    const firstPageRequest = httpMock.expectOne('https://api.test/get-all?offset=0&limit=1');
-    firstPageRequest.flush([{ name: 'a', content: '1' }]);
-
-    const secondPageRequest = httpMock.expectOne('https://api.test/get-all?offset=1&limit=1');
-    secondPageRequest.flush('fail', { status: 500, statusText: 'Server Error' });
-
-    expect(apiState.state.loadNetworkStatus()).toBe('error');
-  });
-
-  it('uses default fetchBatchSize and finishes when first page is empty', () => {
-    apiState.setState('fetchBatchSize', null as number);
-
-    const pages: { name: string; content: string }[][] = [];
-    service.getAll().subscribe((items) => pages.push(items));
-
-    const initialRequest = httpMock.expectOne('https://api.test/get-all?offset=0&limit=100');
-    initialRequest.flush([]);
-
-    expect(pages).toEqual([]);
-    expect(apiState.state.loadNetworkStatus()).toBe('finished');
-  });
-
   it('deletes an item with hash as query param', async () => {
-    const promise = lastValueFrom(service.delete('item-1', 'abc123'));
+    const promise = lastValueFrom(service.delete('tt123', 'abc123'));
 
-    const deleteRequest = httpMock.expectOne('https://api.test/delete/item-1?hash=abc123');
+    const deleteRequest = httpMock.expectOne('https://api.test/delete/tt123?hash=abc123');
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush({});
 
@@ -167,9 +127,9 @@ describe('ApiService', () => {
 
     const accessTokensRequest = httpMock.expectOne('https://api.test/user/access-tokens');
     expect(accessTokensRequest.request.method).toBe('GET');
-    accessTokensRequest.flush([{ name: 'token' }]);
+    accessTokensRequest.flush([{ tokenHash: 'token' }]);
 
-    await expect(promise).resolves.toEqual([{ name: 'token' }]);
+    await expect(promise).resolves.toEqual([{ tokenHash: 'token' }]);
   });
 
   it('deletes an access token by hash', async () => {
@@ -267,7 +227,6 @@ describe('ApiService', () => {
     const userSettingsRequest = httpMock.expectOne('https://api.test/user/settings');
     expect(userSettingsRequest.request.method).toBe('GET');
     userSettingsRequest.flush({
-      fetchBatchSize: 50,
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
@@ -275,7 +234,6 @@ describe('ApiService', () => {
     });
 
     await expect(promise).resolves.toEqual({
-      fetchBatchSize: 50,
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
@@ -356,7 +314,18 @@ describe('ApiService', () => {
   });
 
   it('alerts and rethrows when create fails', async () => {
-    const promise = lastValueFrom(service.create('note', 'note.md'));
+    const item = {
+      image: '',
+      title: 'note',
+      genre: [],
+      IMDbId: 'tt123',
+      tags: [],
+      year: null,
+      rate: '',
+      actors: '',
+      plot: '',
+    };
+    const promise = lastValueFrom(service.create(item));
 
     const createRequest = httpMock.expectOne('https://api.test/create');
     createRequest.flush('bad', { status: 400, statusText: 'Bad Request' });
@@ -406,12 +375,32 @@ describe('ApiService', () => {
   });
 
   it('alerts and rethrows when delete fails', async () => {
-    const promise = lastValueFrom(service.delete('missing', 'somehash'));
+    const promise = lastValueFrom(service.delete('tt123', 'somehash'));
 
-    const deleteRequest = httpMock.expectOne('https://api.test/delete/missing?hash=somehash');
+    const deleteRequest = httpMock.expectOne('https://api.test/delete/tt123?hash=somehash');
     deleteRequest.flush('bad', { status: 404, statusText: 'Not Found' });
 
     await expect(promise).rejects.toMatchObject({ status: 404 });
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes images and returns summary', async () => {
+    const promise = lastValueFrom(service.refreshImages());
+
+    const refreshRequest = httpMock.expectOne('https://api.test/items/refresh-images');
+    expect(refreshRequest.request.method).toBe('POST');
+    refreshRequest.flush({ count: 5, checked: 5, fixed: 1, errors: 0 });
+
+    await expect(promise).resolves.toEqual({ count: 5, checked: 5, fixed: 1, errors: 0 });
+  });
+
+  it('alerts and rethrows when refreshImages fails', async () => {
+    const promise = lastValueFrom(service.refreshImages());
+
+    const refreshRequest = httpMock.expectOne('https://api.test/items/refresh-images');
+    refreshRequest.flush('bad', { status: 500, statusText: 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status: 500 });
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 

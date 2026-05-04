@@ -3,76 +3,112 @@ import {
   AccessTokensApiResponseModel,
   ChangeApiResponseModel,
   ChangeTokenApiResponseModel,
+  CollectionItemApiModel,
+  CollectionItemChangeApiModel,
+  CollectionItemExistsApiResponseModel,
+  CollectionItemFiltersApiModel,
+  CollectionItemsApiResponseModel,
+  CollectionItemSuggestionsApiResponseModel,
+  CollectionMatchedItemsApiRequestModel,
+  CollectionStatisticsApiResponseModel,
   CreateAccessTokenApiResponseModel,
   CreateApiResponseModel,
-  GetAllApiResponseModel,
-  ParserConfigApiRequestModel,
-  ParserConfigApiResponseModel,
+  GenreSuggestionsApiResponseModel,
+  MarkAllUnwatchedApiResponseModel,
+  MarkAllWatchedApiResponseModel,
+  RandomImagesApiResponseModel,
+  RefreshImagesApiResponseModel,
   TagConfigsApiRequestModel,
   TagConfigsApiResponseModel,
+  TagSuggestionsApiResponseModel,
   UserSettingsApiResponseModel,
 } from '@shared/models/api-model';
 import { ClaudeQueryRequestModel, ClaudeQueryResponseModel } from '@shared/models/claude-model';
 import { OMDbResponseItemModel, OMDbResponseModel } from '@shared/models/omdb-model';
-import { catchError, EMPTY, filter, Observable, Subject, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { BaseApiService } from './base-api-service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService extends BaseApiService {
+  private buildQuery(params: Record<string, string | number | boolean | string[] | undefined>): string {
+    const queryParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value === undefined) continue;
+      queryParams.set(key, Array.isArray(value) ? value.join(',') : `${value}`);
+    }
+    const query = queryParams.toString();
+    return query ? `?${query}` : '';
+  }
+
   public logout(): Observable<void> {
     return this.request('DELETE', '/logout');
   }
 
-  public getAll(): Observable<GetAllApiResponseModel> {
-    this.apiState.setState('loadNetworkStatus', 'pending');
-    const results = new Subject<GetAllApiResponseModel>();
-    const fetchBatchSize = this.apiState.state.fetchBatchSize() || 100;
-
-    const lazyLoad = (offset = 0) =>
-      this.httpClient
-        .get<GetAllApiResponseModel>(`${this.apiUrl}/get-all?offset=${offset}&limit=${fetchBatchSize}`)
-        .pipe(
-          tap((response) => {
-            if (response.length > 0) {
-              lazyLoad(offset + fetchBatchSize)
-                .pipe(
-                  catchError(() => {
-                    this.apiState.setState('loadNetworkStatus', 'error');
-                    return EMPTY;
-                  })
-                )
-                .subscribe((items) => results.next(items));
-            } else {
-              this.apiState.setState('loadNetworkStatus', 'finished');
-            }
-          }),
-          filter((response) => response.length > 0)
-        );
-
-    lazyLoad()
-      .pipe(
-        catchError(() => {
-          this.apiState.setState('loadNetworkStatus', 'error');
-          return EMPTY;
-        })
-      )
-      .subscribe((items) => results.next(items));
-
-    return results.asObservable();
+  public searchItems(
+    filters: CollectionItemFiltersApiModel = {},
+    offset = 0,
+    limit = 50
+  ): Observable<CollectionItemsApiResponseModel> {
+    const query = this.buildQuery({ offset, limit, ...filters });
+    return this.request('GET', `/items${query}`);
   }
 
-  public create(content: string, name: string): Observable<CreateApiResponseModel> {
-    return this.request('POST', '/create', { content, name });
+  public getMatchedItems(request: CollectionMatchedItemsApiRequestModel): Observable<CollectionItemsApiResponseModel> {
+    return this.request('POST', '/items/matched', request);
   }
 
-  public update(name: string, content: string, hash: string): Observable<ChangeApiResponseModel> {
-    return this.request('PUT', `/change/${name}`, { content, hash });
+  public getRandomItem(): Observable<CollectionItemApiModel> {
+    return this.request('GET', '/items/random');
   }
 
-  public delete(name: string, hash: string): Observable<void> {
-    return this.request('DELETE', `/delete/${name}?hash=${hash}`);
+  public getRandomImages(count = 10): Observable<RandomImagesApiResponseModel> {
+    return this.request('GET', `/items/random-images${this.buildQuery({ count })}`);
+  }
+
+  public markAllAsWatched(): Observable<MarkAllWatchedApiResponseModel> {
+    return this.request('POST', '/items/mark-all-watched');
+  }
+
+  public markAllAsUnwatched(): Observable<MarkAllUnwatchedApiResponseModel> {
+    return this.request('POST', '/items/mark-all-unwatched');
+  }
+
+  public refreshImages(): Observable<RefreshImagesApiResponseModel> {
+    return this.request('POST', '/items/refresh-images');
+  }
+
+  public getItemSearchSuggestions(query: string, limit = 10): Observable<CollectionItemSuggestionsApiResponseModel> {
+    return this.request('GET', `/items/search-suggestions${this.buildQuery({ query, limit })}`);
+  }
+
+  public getTagSuggestions(query: string, limit = 10): Observable<TagSuggestionsApiResponseModel> {
+    return this.request('GET', `/tags/suggestions${this.buildQuery({ query, limit })}`);
+  }
+
+  public getGenreSuggestions(query: string, limit = 10): Observable<GenreSuggestionsApiResponseModel> {
+    return this.request('GET', `/genres/suggestions${this.buildQuery({ query, limit })}`);
+  }
+
+  public collectionItemExists(imdbId: string): Observable<CollectionItemExistsApiResponseModel> {
+    return this.request('GET', `/items/exists${this.buildQuery({ imdbId })}`);
+  }
+
+  public getStatistics(filters: CollectionItemFiltersApiModel = {}): Observable<CollectionStatisticsApiResponseModel> {
+    return this.request('GET', `/statistics${this.buildQuery({ ...filters })}`);
+  }
+
+  public create(item: CollectionItemChangeApiModel): Observable<CreateApiResponseModel> {
+    return this.request('POST', '/create', item);
+  }
+
+  public update(imdbId: string, item: CollectionItemChangeApiModel, hash: string): Observable<ChangeApiResponseModel> {
+    return this.request('PUT', `/change/${imdbId}`, { ...item, hash });
+  }
+
+  public delete(imdbId: string, hash: string): Observable<void> {
+    return this.request('DELETE', `/delete/${imdbId}?hash=${hash}`);
   }
 
   public getAccessTokens(): Observable<AccessTokensApiResponseModel> {
@@ -93,14 +129,6 @@ export class ApiService extends BaseApiService {
 
   public deleteUser(): Observable<void> {
     return this.request('DELETE', '/user');
-  }
-
-  public getUserParserConfig(): Observable<ParserConfigApiResponseModel | null> {
-    return this.request('GET', '/parser/config');
-  }
-
-  public updateUserParserConfig(parserConfig: ParserConfigApiRequestModel): Observable<void> {
-    return this.request('POST', '/parser/change-config', parserConfig);
   }
 
   public getUserSettings(): Observable<UserSettingsApiResponseModel> {

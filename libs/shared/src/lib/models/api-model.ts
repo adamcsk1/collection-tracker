@@ -1,30 +1,88 @@
+import { CollectionItemModel } from './collection-item-model';
 import { LanguageModel } from './language-model';
 import { ThemeModel } from './theme-model';
 
-export interface GetAllApiResponseItemModel {
-  name: string;
-  content: string;
-  hash: string;
+export type CollectionItemApiModel = CollectionItemModel;
+
+export type CollectionItemTypeFilter = 'movie' | 'series';
+export type CollectionItemTagMode = 'any' | 'all';
+
+export interface CollectionItemFiltersApiModel {
+  search?: string;
+  tags?: string[];
+  genres?: string[];
+  tagMode?: CollectionItemTagMode;
+  type?: CollectionItemTypeFilter;
+  watched?: boolean;
 }
 
-export type GetAllApiResponseModel = GetAllApiResponseItemModel[];
-
-export interface CreateApiRequestModel {
-  content: string;
-  name: string;
+export interface CollectionItemsApiResponseModel {
+  items: CollectionItemApiModel[];
+  total: number;
+  offset: number;
+  limit: number;
 }
+
+export interface CollectionMatchedItemsApiRequestModel {
+  imdbIds: string[];
+  offset?: number;
+  limit?: number;
+  filters?: CollectionItemFiltersApiModel;
+}
+
+export interface CollectionItemSuggestionApiModel {
+  label: string;
+  value: string;
+  kind: 'title' | 'tag' | 'genre' | 'actor' | 'imdbId';
+}
+
+export interface CollectionItemSuggestionsApiResponseModel {
+  suggestions: CollectionItemSuggestionApiModel[];
+}
+
+export interface TagSuggestionsApiResponseModel {
+  tags: string[];
+}
+
+export interface GenreSuggestionsApiResponseModel {
+  genres: string[];
+}
+
+export interface CollectionItemExistsApiResponseModel {
+  exists: boolean;
+}
+
+export interface RandomImagesApiResponseModel {
+  images: string[];
+}
+
+export interface CollectionStatisticsApiResponseModel {
+  totalItems: number;
+  movieCount: number;
+  seriesCount: number;
+  watchedCount: number;
+  unwatchedCount: number;
+  tagCounts: Array<{ tag: string; count: number }>;
+  genreCounts: Array<{ genre: string; count: number }>;
+}
+
+export type CollectionItemChangeApiModel = Pick<
+  CollectionItemModel,
+  'image' | 'title' | 'genre' | 'IMDbId' | 'tags' | 'year' | 'rate' | 'actors' | 'plot'
+>;
+
+export type CreateApiRequestModel = CollectionItemChangeApiModel;
 
 export interface CreateApiResponseModel {
-  name: string;
+  item: CollectionItemApiModel;
 }
 
-export interface ChangeApiRequestModel {
-  content: string;
+export interface ChangeApiRequestModel extends CollectionItemChangeApiModel {
   hash: string;
 }
 
 export interface ChangeApiResponseModel {
-  hash: string;
+  item: CollectionItemApiModel;
 }
 
 export interface ChangeTokenApiResponseModel {
@@ -69,6 +127,7 @@ export interface ParserConfigApiResponseModel {
   genreToken?: string;
   image?: string;
   IMDbRate?: string;
+  actors?: string;
   tags?: string;
   tagToken?: string;
   title?: string;
@@ -81,7 +140,6 @@ export interface ParserConfigApiResponseModel {
 export type ParserConfigApiRequestModel = ParserConfigApiResponseModel;
 
 export interface UserSettingsApiResponseModel {
-  fetchBatchSize?: number;
   theme?: ThemeModel;
   animatedBackground?: boolean;
   language?: LanguageModel;
@@ -103,6 +161,21 @@ export interface TagConfigApiModel {
 
 export type TagConfigsApiResponseModel = TagConfigApiModel[];
 export type TagConfigsApiRequestModel = TagConfigsApiResponseModel;
+
+export interface MarkAllWatchedApiResponseModel {
+  changedCount: number;
+}
+
+export interface MarkAllUnwatchedApiResponseModel {
+  changedCount: number;
+}
+
+export interface RefreshImagesApiResponseModel {
+  count: number;
+  checked: number;
+  fixed: number;
+  errors: number;
+}
 
 export interface HealthApiResponseModel {
   status: 'ok' | 'warn' | 'error';

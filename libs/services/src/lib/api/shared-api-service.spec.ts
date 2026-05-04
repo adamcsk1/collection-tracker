@@ -39,7 +39,6 @@ describe('SharedApiService', () => {
 
   it('updates user settings', async () => {
     const payload = {
-      fetchBatchSize: 50,
       theme: 'dark' as const,
       animatedBackground: false,
       language: 'en' as const,
@@ -57,7 +56,6 @@ describe('SharedApiService', () => {
   it('alerts and rethrows when updating user settings fails', async () => {
     const promise = lastValueFrom(
       service.updateUserSettings({
-        fetchBatchSize: 50,
         theme: 'dark',
         animatedBackground: false,
         language: 'en',

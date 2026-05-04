@@ -1,0 +1,6 @@
+.chip {
+  border: var(--border-style);
+  border-radius: calc(100 * var(--size-md));
+  padding: var(--size-2xs) var(--size-xs);
+  background: color-mix(in srgb, var(--background-color-alt) 80%, transparent);
+}
