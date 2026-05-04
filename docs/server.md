@@ -2,15 +2,14 @@
 
 Source: [`apps/server`](../apps/server)
 
-`apps/server` is the Express backend for Collection Tracker. It exposes the `/api/v1` HTTP API, manages authentication, and persists user content and configuration in flat files.
+`apps/server` is the Express backend for Collection Tracker. It exposes the `/api/v1` HTTP API, manages authentication, and persists user content and configuration in SQLite.
 
 ## Responsibilities
 
 - sign-up, sign-in, logout, and access-token lifecycle management
-- CRUD for per-user Markdown entries stored on disk
-- parser configuration, including user-defined collection filename patterns
+- CRUD for per-user collection items stored in SQLite
 - tag configuration and user-settings persistence
-- flat-file database initialization and synchronization, including SHA-512 hash generation for all Markdown files at startup
+- SQLite database initialization and schema migrations
 - OMDb API proxying — forwards search and item lookups to OMDb using the server-side `OMDB_API_KEY` environment variable
 - Claude AI proxying — forwards IMDB-ID-based queries to Claude using the optional `CLAUDE_API_KEY` environment variable; model is configurable via `CLAUDE_MODEL` (defaults to `claude-haiku-4-5-20251001`)
 - runtime safeguards such as Helmet, no-cache, CORS validation, request limits, and cookie parsing
@@ -21,29 +20,17 @@ Source: [`apps/server`](../apps/server)
 - CLI flags: `--dataFolder=<path>` and `--debug=true|false`
 - Startup expects `.env` in the active data folder and loads it before registering APIs; set `OMDB_API_KEY` there to enable OMDb proxy endpoints; `CLAUDE_API_KEY` is optional — omitting it does not block startup but disables the Claude proxy endpoint
 - `RATE_LIMIT` — maximum number of failed requests per 15-minute window per IP. Defaults to `100` when not set. Set a big enough number to avoid rate limiting (used by the E2E test container)
+- `LOG_LEVEL` — controls console log verbosity. Defaults to `info` when not set. Set to `DEBUG` to echo all log levels (info, warning, error, debug) to the console, equivalent to `--debug=true`
 - `nx run server:preserve` creates `.data/.env` from [`apps/server/scripts/.env.dev`](../apps/server/scripts/.env.dev) for local development
 - Production deployments should run behind an HTTPS reverse proxy; see [Docker deployment](./docker.md)
 
 ## Data Layout
 
-- `database/users.json`
-- `database/parser-configs.json`
-- `database/tag-configs.json`
-- `database/user-settings.json`
-- `store/<userHash>/` — Markdown files, each accompanied by a `<filename>.hash` sidecar containing its SHA-512 content hash
+- `database/collection-tracker.sqlite`
 - `logs/`
+- `cache/` — image proxy cache files and metadata
 
-Parser config records store the Markdown template, parsing regexps, and the user-specific `filenamePattern` used when creating new collection items.
-
-## Why Markdown Files
-
-This app stores collection items as Markdown files on disk instead of in a traditional database.
-
-Originally, this information was managed in Obsidian. That worked for simple note-taking, but it became less convenient as the number of files grew and the vault loaded more slowly. This app keeps the same Markdown-based storage model while adding a dedicated UI and server layer that are better suited for collection management.
-
-Keeping the data in `.md` files also preserves portability. The files can still be moved back into an Obsidian- or Joplin-based workflow if needed, instead of locking the data into a database-specific format.
-
-The current functionality does not require strong database features such as joins, migrations, or complex transactional logic, so flat-file storage remains a simpler and more practical fit.
+Collection items, users, tokens, settings, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations).
 
 ## Important Paths
 

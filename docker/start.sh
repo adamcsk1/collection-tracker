@@ -39,7 +39,9 @@ if [ ! -f "/data/.env" ]; then
 HOST=0.0.0.0
 PORT=3000
 CORS_ORIGIN=*
+OMDB_API_KEY=
 EOF
+  chmod 600 /data/.env
 fi
 
 # Run node server
