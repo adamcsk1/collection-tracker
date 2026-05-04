@@ -3,13 +3,11 @@ import { createInjectionToken } from 'ngx-simple-signal-store';
 
 export interface ApiState {
   apiUrl: string;
-  fetchBatchSize: number;
   loadNetworkStatus: ApiLoadNetworkStatus;
 }
 
 export const initialApiState: ApiState = {
   apiUrl: '',
-  fetchBatchSize: 500,
   loadNetworkStatus: null,
 };
 

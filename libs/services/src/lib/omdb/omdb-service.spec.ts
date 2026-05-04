@@ -3,12 +3,10 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { AlertService } from '../alert-service';
 import { ApiState, apiStateToken, initialApiState } from '../api/api-store';
-import { getParserRegexp, setParserRegexp } from '@shared/parser/parser-util';
-import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { filter, firstValueFrom } from 'rxjs';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OMDbService } from './omdb-service';
 
 const API_URL = 'https://api.test/api/v1';
@@ -18,10 +16,6 @@ describe('OMDbService', () => {
   let httpMock: HttpTestingController;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
   let alertSpy: ReturnType<typeof vi.fn>;
-
-  beforeAll(() => {
-    setParserRegexp('IMDbId', getParserRegexp('IMDbId') ?? PARSER_REGEXPS.IMDbId);
-  });
 
   beforeEach(() => {
     alertSpy = vi.fn();

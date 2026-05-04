@@ -2,7 +2,6 @@ export const STORAGE_PREFIX = 'CT.';
 
 export const STORAGE_API_URL = `${STORAGE_PREFIX}ApiUrl`;
 export const STORAGE_APP_MODE = `${STORAGE_PREFIX}AppMode`;
-export const STORAGE_FETCH_BATCH_SIZE = `${STORAGE_PREFIX}FetchBatchSize`;
 export const STORAGE_THEME = `${STORAGE_PREFIX}Theme`;
 export const STORAGE_SETTINGS_LOCK = `${STORAGE_PREFIX}SettingLock`;
 export const STORAGE_SENSITIVE_DATA_STORAGE = `${STORAGE_PREFIX}SensitiveDataStorage`;

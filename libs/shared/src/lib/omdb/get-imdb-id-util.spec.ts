@@ -1,12 +1,5 @@
-import { getParserRegexp, setParserRegexp } from '../parser/parser-util';
-import { PARSER_REGEXPS } from '../constants/parser-const';
-import { beforeAll } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { getIMDbId } from './get-imdb-id-util';
-
-beforeAll(() => {
-  // Seed parser cache with default IMDbId regexp for isolated test environment
-  setParserRegexp('IMDbId', getParserRegexp('IMDbId') ?? PARSER_REGEXPS.IMDbId);
-});
 
 describe('getIMDbId', () => {
   it('extracts the IMDb id when present', () => {
@@ -15,5 +8,9 @@ describe('getIMDbId', () => {
 
   it('returns empty string when no id is present', () => {
     expect(getIMDbId('No id here')).toBe('');
+  });
+
+  it('extracts a standalone id', () => {
+    expect(getIMDbId('see tt0133093 now')).toBe('tt0133093');
   });
 });

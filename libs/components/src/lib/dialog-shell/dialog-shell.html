@@ -22,7 +22,9 @@
         close
       </button>
     </div>
-    <ng-content select="[dialog-shell-content]" />
+    <div class="dialog-body">
+      <ng-content select="[dialog-shell-content]" />
+    </div>
     <div class="dialog-footer">
       <ng-content select="[dialog-shell-bottom-content]" />
     </div>
