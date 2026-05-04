@@ -1,0 +1,35 @@
+import { API_PREFIX } from '@shared/constants/api-const';
+import { CollectionMatchedItemsApiRequestModel } from '@shared/models/api-model';
+import type { Application } from 'express';
+import { getDatabase } from '../core/database/database';
+import { searchCollectionItems } from '../core/database/repositories/collection-repository';
+import { jwtGuard } from '../core/jwt';
+import { withErrorHandler } from '../core/utils/api-error-handler';
+
+const parseNumber = (value: unknown, fallback: number): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+export const register = (app: Application): void => {
+  app.post(
+    `${API_PREFIX}/items/matched`,
+    jwtGuard,
+    withErrorHandler(async (request, response) => {
+      const body = request.body as CollectionMatchedItemsApiRequestModel;
+      if (!Array.isArray(body?.imdbIds) || body.imdbIds.some((imdbId) => typeof imdbId !== 'string')) {
+        response.sendStatus(400);
+        return;
+      }
+
+      response.send(
+        searchCollectionItems(getDatabase(), request.usernameHash, {
+          filters: body.filters,
+          offset: parseNumber(body.offset, 0),
+          limit: parseNumber(body.limit, 50),
+          matchedImdbIds: body.imdbIds,
+        })
+      );
+    })
+  );
+};

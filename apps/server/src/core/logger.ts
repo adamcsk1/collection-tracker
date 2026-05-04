@@ -5,6 +5,14 @@ import { appendFile } from 'fs/promises';
 
 const getLogFileName = (): string => `log-${dayjs().format('YYYY-MM-DD')}.txt`;
 
+const isDebugEnabled = (): boolean => {
+  const { debug } = getArgv();
+  return debug || process.env.LOG_LEVEL?.toUpperCase() === 'DEBUG';
+};
+
+const formatLogMessage = (level: string, message: string): string =>
+  `[ ${level} ][ ${dayjs().toISOString()} ] ${message}`;
+
 const writeLog = async (message: string): Promise<void> => {
   const { dataFolder } = getArgv();
   try {
@@ -15,32 +23,28 @@ const writeLog = async (message: string): Promise<void> => {
 };
 
 const infoLog = async (message: string): Promise<void> => {
-  const { debug } = getArgv();
-  message = `[ info ] ${message}`;
-  if (debug) console.log(message);
-  await writeLog(message);
+  const formatted = formatLogMessage('info', message);
+  if (isDebugEnabled()) console.log(formatted);
+  await writeLog(formatted);
 };
 
 const warningLog = async (message: string): Promise<void> => {
-  const { debug } = getArgv();
-  message = `[ warning ] ${message}`;
-  if (debug) console.log(message);
-  await writeLog(message);
+  const formatted = formatLogMessage('warning', message);
+  if (isDebugEnabled()) console.log(formatted);
+  await writeLog(formatted);
 };
 
 const errorLog = async (message: string): Promise<void> => {
-  const { debug } = getArgv();
-  message = `[ error ] ${message}`;
-  if (debug) console.log(message);
-  await writeLog(message);
+  const formatted = formatLogMessage('error', message);
+  if (isDebugEnabled()) console.log(formatted);
+  await writeLog(formatted);
 };
 
 const debugLog = async (message: string): Promise<void> => {
-  const { debug } = getArgv();
-  if (!debug) return;
-  message = `[ debug ] ${message}`;
-  console.log(message);
-  await writeLog(message);
+  if (!isDebugEnabled()) return;
+  const formatted = formatLogMessage('debug', message);
+  console.log(formatted);
+  await writeLog(formatted);
 };
 
 export { debugLog, errorLog, infoLog, warningLog };

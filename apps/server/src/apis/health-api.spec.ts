@@ -4,7 +4,6 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
-vi.mock('@server/core/store/store');
 vi.mock('node:timers/promises', () => ({ setTimeout: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('node:os', () => ({ cpus: vi.fn(), totalmem: vi.fn(), freemem: vi.fn(), loadavg: vi.fn() }));
 vi.mock('node:fs', () => ({ statfsSync: vi.fn() }));

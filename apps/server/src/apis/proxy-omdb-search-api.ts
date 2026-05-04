@@ -1,9 +1,9 @@
-import { OMDB_API } from '../core/constants/omdb-const';
-import { jwtGuard } from '../core/jwt';
-import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { OMDbResponseModel } from '@shared/models/omdb-model';
 import type { Application } from 'express';
+import { OMDB_API } from '../core/constants/omdb-const';
+import { jwtGuard } from '../core/jwt';
+import { withErrorHandler } from '../core/utils/api-error-handler';
 
 export const register = (app: Application): void => {
   app.get(
@@ -13,6 +13,11 @@ export const register = (app: Application): void => {
       const apiKey = process.env.OMDB_API_KEY;
       if (!apiKey) {
         response.sendStatus(503);
+        return;
+      }
+
+      if (typeof request.query.s !== 'string' || request.query.s.trim() === '') {
+        response.sendStatus(400);
         return;
       }
 

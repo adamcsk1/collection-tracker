@@ -1,10 +1,9 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { COOKIE_REFRESH_TOKEN, COOKIE_TOKEN } from '../core/cookie/cookie-const';
-import { Store } from '../core/store/store';
-import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { getDatabase } from '../core/database/database';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
   hashText: vi.fn(() => 'hashed-token'),
 }));
@@ -23,10 +22,14 @@ describe('logout-api', () => {
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue({
-      user: { accessTokens: [{ tokenHash: 'hashed-token' }], refreshTokens: [{ tokenHash: 'hashed-token' }] },
-    });
-    (Store.set as Mock).mockImplementation(() => undefined);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare(
+      'INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('user', 'hashed-token', 'now', 'agent', null);
+    db.prepare(
+      'INSERT INTO refresh_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('user', 'hashed-token', 'now', 'agent', null);
 
     const { register } = await import('./logout-api');
     register(app);
@@ -38,18 +41,15 @@ describe('logout-api', () => {
     expect(response.sendStatus).toHaveBeenCalledWith(204);
   });
 
-  it('returns 500 on unexpected error', async () => {
+  it('returns 204 when token rows are already absent', async () => {
     const response = mockResponse();
     const request: any = { signedCookies: { [COOKIE_TOKEN]: 'token' }, headers: {}, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockImplementation(() => {
-      throw new Error('fail');
-    });
 
     const { register } = await import('./logout-api');
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.sendStatus).toHaveBeenCalledWith(204);
   });
 });

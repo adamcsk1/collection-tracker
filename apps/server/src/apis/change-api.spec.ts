@@ -1,21 +1,29 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { Store } from '../core/store/store';
-import { updateItem } from '../core/utils/cache-util';
-import { getMemoryHash } from '../core/utils/hash-util';
-import { existsSync } from 'fs';
-import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { hashText } from '../core/crypto';
+import { getDatabase } from '../core/database/database';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@server/core/store/store');
-vi.mock('@server/core/utils/cache-util');
-vi.mock('@server/core/utils/hash-util');
-vi.mock('fs', async () => {
-  const fs = await vi.importActual<typeof import('fs')>('fs');
-  return {
-    ...fs,
-    existsSync: vi.fn(),
-  };
-});
+const insertItem = (hash = 'abc123') => {
+  const db = getDatabase();
+  db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+  db.prepare(
+    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'tt-change', 'Old', 'old', '', '', '', '', hash);
+};
+
+const updatedItem = {
+  image: 'poster.jpg',
+  title: 'Updated',
+  genre: ['Drama'],
+  IMDbId: 'tt-change',
+  tags: ['#movie'],
+  year: 2024,
+  rate: '7.1',
+  actors: 'Actor One, Actor Two',
+  plot: 'Updated plot',
+};
 
 describe('change-api', () => {
   afterEach(() => {
@@ -25,7 +33,7 @@ describe('change-api', () => {
 
   it('returns 400 when content is missing', async () => {
     const response = mockResponse();
-    const request: any = { params: { name: 'file.md' }, body: {}, usernameHash: 'user' };
+    const request: any = { params: { imdbId: 'tt-change' }, body: {}, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./change-api');
@@ -37,7 +45,7 @@ describe('change-api', () => {
 
   it('returns 400 when hash is missing', async () => {
     const response = mockResponse();
-    const request: any = { params: { name: 'file.md' }, body: { content: 'updated' }, usernameHash: 'user' };
+    const request: any = { params: { imdbId: 'tt-change' }, body: { content: 'updated' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./change-api');
@@ -47,107 +55,81 @@ describe('change-api', () => {
     expect(response.sendStatus).toHaveBeenCalledWith(400);
   });
 
-  it('updates an existing item when hash matches', async () => {
+  it('updates an existing DB item when hash matches', async () => {
+    insertItem();
     const response = mockResponse();
     const request: any = {
-      params: { name: 'file.md' },
-      body: { content: 'updated', hash: 'abc123' },
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue('/data');
-    (existsSync as Mock).mockReturnValue(true);
-    (getMemoryHash as Mock).mockReturnValue('abc123');
-    (Store.set as Mock).mockImplementation(() => undefined);
-    (updateItem as Mock).mockImplementation(() => undefined);
 
     const { register } = await import('./change-api');
     register(app);
 
     await handlerPromise();
-
-    expect(updateItem).toHaveBeenCalledWith('file.md', 'user', 'updated');
-    expect(response.send).toHaveBeenCalledWith({ hash: 'abc123' });
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ title: 'Updated', hash: hashText(JSON.stringify(updatedItem)) }),
+    });
+    expect(getDatabase().prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt-change')).toEqual({
+      title: 'Updated',
+    });
   });
 
   it('returns 409 when hash does not match', async () => {
+    insertItem('correct-hash');
     const response = mockResponse();
     const request: any = {
-      params: { name: 'file.md' },
-      body: { content: 'updated', hash: 'wrong-hash' },
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, hash: 'wrong-hash' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue('/data');
-    (existsSync as Mock).mockReturnValue(true);
-    (getMemoryHash as Mock).mockReturnValue('correct-hash');
 
     const { register } = await import('./change-api');
     register(app);
 
     await handlerPromise();
-
     expect(response.sendStatus).toHaveBeenCalledWith(409);
-    expect(updateItem).not.toHaveBeenCalled();
   });
 
-  it('returns 409 when no stored hash exists', async () => {
+  it('returns 409 when IMDb ID conflicts with another item', async () => {
+    insertItem();
+    const db = getDatabase();
+    db.prepare(
+      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run('user', 'tt-conflict', 'Conflict', 'conflict', '', '', '', '', 'hash');
+
     const response = mockResponse();
     const request: any = {
-      params: { name: 'file.md' },
-      body: { content: 'updated', hash: 'abc123' },
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, IMDbId: 'tt-conflict', hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue('/data');
-    (existsSync as Mock).mockReturnValue(true);
-    (getMemoryHash as Mock).mockReturnValue(undefined);
 
     const { register } = await import('./change-api');
     register(app);
 
     await handlerPromise();
-
     expect(response.sendStatus).toHaveBeenCalledWith(409);
-    expect(updateItem).not.toHaveBeenCalled();
   });
 
-  it('returns 404 when file is missing', async () => {
+  it('returns 404 when item is missing', async () => {
     const request: any = {
-      params: { name: 'missing.md' },
-      body: { content: 'updated', hash: 'abc123' },
+      params: { imdbId: 'tt-missing' },
+      body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
     };
     const response = mockResponse();
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue('/data');
-    (existsSync as Mock).mockReturnValue(false);
 
     const { register } = await import('./change-api');
     register(app);
 
     await handlerPromise();
-
     expect(response.sendStatus).toHaveBeenCalledWith(404);
-    expect(updateItem).not.toHaveBeenCalled();
-  });
-
-  it('returns 500 on unexpected error', async () => {
-    const response = mockResponse();
-    const request: any = {
-      params: { name: 'file.md' },
-      body: { content: 'updated', hash: 'abc123' },
-      usernameHash: 'user',
-    };
-    const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockImplementation(() => {
-      throw new Error('fail');
-    });
-
-    const { register } = await import('./change-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
   });
 });

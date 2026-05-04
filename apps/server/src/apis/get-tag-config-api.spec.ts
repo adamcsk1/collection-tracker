@@ -1,9 +1,7 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { Store } from '../core/store/store';
-import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
-
-vi.mock('@server/core/store/store');
+import { getDatabase } from '../core/database/database';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 describe('get-tag-config-api', () => {
   afterEach(() => {
@@ -15,18 +13,11 @@ describe('get-tag-config-api', () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue({
-      user: [
-        {
-          tag: '#a',
-          color: '#111111',
-          useForImageBorder: true,
-          useForTextColor: false,
-          useForImageBadge: false,
-          weight: 1,
-        },
-      ],
-    });
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare(
+      'INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run('user', '#a', '#111111', 1, 0, 0, 1);
 
     const { register } = await import('./get-tag-config-api');
     register(app);
@@ -48,7 +39,6 @@ describe('get-tag-config-api', () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue({});
 
     const { register } = await import('./get-tag-config-api');
     register(app);
@@ -61,7 +51,6 @@ describe('get-tag-config-api', () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue(null);
 
     const { register } = await import('./get-tag-config-api');
     register(app);
@@ -70,33 +59,25 @@ describe('get-tag-config-api', () => {
     expect(response.send).toHaveBeenCalledWith([]);
   });
 
-  it('returns 500 on unexpected error', async () => {
+  it('returns empty array when DB has no rows', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockImplementation(() => {
-      throw new Error('fail');
-    });
-
     const { register } = await import('./get-tag-config-api');
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.send).toHaveBeenCalledWith([]);
   });
 
-  it('returns 500 when a non-Error value is thrown', async () => {
+  it('returns empty array when DB user is absent', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockImplementation(() => {
-      throw 'fail';
-    });
-
     const { register } = await import('./get-tag-config-api');
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.send).toHaveBeenCalledWith([]);
   });
 });

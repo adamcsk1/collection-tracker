@@ -1,8 +1,9 @@
 import { jwtGuard } from '../core/jwt';
-import { Store } from '../core/store/store';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { UserSettingsApiResponseModel } from '@shared/models/api-model';
+import { getDatabase } from '../core/database/database';
+import { findUserSettings } from '../core/database/repositories/user-repository';
 import type { Application } from 'express';
 
 export const register = (app: Application): void => {
@@ -10,9 +11,10 @@ export const register = (app: Application): void => {
     `${API_PREFIX}/user/settings`,
     jwtGuard,
     withErrorHandler((request, response) => {
-      const userSettings = Store.getLastValue('userSettings');
+      const dbSettings = findUserSettings(getDatabase(), request.usernameHash);
+
       const result: UserSettingsApiResponseModel = {
-        ...userSettings?.[request.usernameHash],
+        ...(dbSettings || {}),
         claudeAiAvailable: !!process.env.CLAUDE_API_KEY,
       };
       response.send(result);

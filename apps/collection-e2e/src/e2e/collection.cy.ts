@@ -162,7 +162,6 @@ describe('Collection — scroll to top', () => {
 
   it('scroll-to-top button appears after scrolling and returns to top', () => {
     CollectionPage.getList().scrollTo('bottom', { ensureScrollable: false });
-    CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getScrollToTopButton().should('be.visible');
     CollectionPage.getScrollToTopButton().click();
     CollectionPage.getList().invoke('scrollTop').should('equal', 0);

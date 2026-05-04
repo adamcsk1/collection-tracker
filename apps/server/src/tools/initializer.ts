@@ -1,11 +1,9 @@
 import { debugLog, errorLog } from '../core/logger';
-import { DATABASE_FILES, FOLDERS } from '../core/main-const';
-import { Store } from '../core/store/store';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { FOLDERS } from '../core/main-const';
+import { existsSync, mkdirSync } from 'fs';
 
-export const initializeFolders = () => {
+export const initializeFolders = (dataFolder: string) => {
   try {
-    const dataFolder = Store.getLastValue('dataFolder');
     const databaseFolder = `${dataFolder}/${FOLDERS.database}`;
 
     if (!existsSync(databaseFolder)) {
@@ -13,37 +11,14 @@ export const initializeFolders = () => {
       debugLog(`Created database folder${databaseFolder}`);
     }
 
-    const usersFilePath = `${databaseFolder}/${DATABASE_FILES.users}`;
-    if (!existsSync(usersFilePath)) {
-      writeFileSync(usersFilePath, '{}', { encoding: 'utf-8' });
-      debugLog(`Created initial ${usersFilePath} file in ${databaseFolder}`);
-    }
-
-    const parserConfigsFilePath = `${databaseFolder}/${DATABASE_FILES.parserConfigs}`;
-    if (!existsSync(parserConfigsFilePath)) {
-      writeFileSync(parserConfigsFilePath, '{}', { encoding: 'utf-8' });
-      debugLog(`Created initial ${parserConfigsFilePath} file in ${databaseFolder}`);
-    }
-
-    const tagConfigsFilePath = `${databaseFolder}/${DATABASE_FILES.tagConfigs}`;
-    if (!existsSync(tagConfigsFilePath)) {
-      writeFileSync(tagConfigsFilePath, '{}', { encoding: 'utf-8' });
-      debugLog(`Created initial ${tagConfigsFilePath} file in ${databaseFolder}`);
-    }
-
-    const userSettingsFilePath = `${databaseFolder}/${DATABASE_FILES.userSettings}`;
-    if (!existsSync(userSettingsFilePath)) {
-      writeFileSync(userSettingsFilePath, '{}', { encoding: 'utf-8' });
-      debugLog(`Created initial ${userSettingsFilePath} file in ${databaseFolder}`);
-    }
-
-    if (!existsSync(`${dataFolder}/${FOLDERS.store}`)) {
-      mkdirSync(`${dataFolder}/${FOLDERS.store}`);
-      debugLog(`Created store folder in ${dataFolder}/${FOLDERS.store}`);
-    }
     if (!existsSync(`${dataFolder}/${FOLDERS.logs}`)) {
       mkdirSync(`${dataFolder}/${FOLDERS.logs}`);
       debugLog(`Created logs folder in ${dataFolder}/${FOLDERS.logs}`);
+    }
+
+    if (!existsSync(`${dataFolder}/${FOLDERS.cache}`)) {
+      mkdirSync(`${dataFolder}/${FOLDERS.cache}`);
+      debugLog(`Created cache folder in ${dataFolder}/${FOLDERS.cache}`);
     }
   } catch (error: unknown) {
     if (error instanceof Error) errorLog(`Initialization unknown error (${error.message})`);

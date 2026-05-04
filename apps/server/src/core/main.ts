@@ -3,8 +3,8 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
-import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
-import { existsSync, readFileSync } from 'fs';
+import { rateLimit } from 'express-rate-limit';
+import { existsSync } from 'fs';
 import helmet from 'helmet';
 import nocache from 'nocache';
 import { registerAllApis } from '../apis';
@@ -12,14 +12,15 @@ import { register as registerDocsApi } from '../apis/docs-api';
 import { initializeFolders } from '../tools/initializer';
 import { getArgv } from './argv/argv';
 import { debugLog, errorLog, infoLog } from './logger';
-import { DATABASE_FILES, FOLDERS } from './main-const';
-import { Store } from './store/store';
-import { initializeFileHashes } from './utils/hash-util';
+import { initializeDatabase } from './database/database';
+import { runMigrations } from './database/migrations';
+import { join } from 'path';
+import { RATE_LIMIT_EXCLUDED_PATHS } from './constants/rate-limit-const';
+import { getRateLimitKey } from './utils/rate-limit-util';
 
 export const main = async () => {
   try {
     const { dataFolder } = getArgv();
-    Store.set('dataFolder', dataFolder);
 
     if (!existsSync(`${dataFolder}/.env`)) throw new Error(`.env file not found in ${dataFolder}. Please create it.`);
 
@@ -27,33 +28,22 @@ export const main = async () => {
 
     if (!process.env.OMDB_API_KEY?.trim()) throw new Error('OMDB_API_KEY is not set. Please add it to your .env file.');
 
-    initializeFolders();
-    await initializeFileHashes();
+    initializeFolders(dataFolder);
 
-    Store.set(
-      'users',
-      JSON.parse(
-        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.users}`, 'utf-8')
-      )
-    );
-    Store.set(
-      'parserConfigs',
-      JSON.parse(
-        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.parserConfigs}`, 'utf-8')
-      )
-    );
-    Store.set(
-      'tagConfigs',
-      JSON.parse(
-        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.tagConfigs}`, 'utf-8')
-      )
-    );
-    Store.set(
-      'userSettings',
-      JSON.parse(
-        readFileSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.database}/${DATABASE_FILES.userSettings}`, 'utf-8')
-      )
-    );
+    const db = initializeDatabase(dataFolder);
+    const possibleMigrationDirs = [
+      join(__dirname, '..', 'migrations'),
+      join(__dirname, '..', '..', 'migrations'),
+      join(__dirname, 'migrations'),
+      join(process.cwd(), 'migrations'),
+      join(process.cwd(), 'apps', 'server', 'src', 'migrations'),
+    ];
+    const migrationsDir = possibleMigrationDirs.find((dir) => existsSync(dir));
+    if (migrationsDir) {
+      runMigrations(db, migrationsDir);
+    } else {
+      throw new Error('Could not find migrations directory. Database schema may not be up to date.');
+    }
 
     const app = express();
     app.set('trust proxy', 1);
@@ -79,14 +69,8 @@ export const main = async () => {
         standardHeaders: 'draft-8',
         legacyHeaders: false,
         skipSuccessfulRequests: true,
-        keyGenerator: (request: express.Request): string => {
-          if (!request.ip) {
-            errorLog('request.ip is missing!');
-            return ipKeyGenerator(request.socket.remoteAddress);
-          }
-
-          return ipKeyGenerator(request.ip.replace(/:\d+[^:]*$/, ''));
-        },
+        skip: (request) => RATE_LIMIT_EXCLUDED_PATHS.includes(request.path),
+        keyGenerator: getRateLimitKey,
       })
     );
     debugLog('Applying rate limiting middleware');

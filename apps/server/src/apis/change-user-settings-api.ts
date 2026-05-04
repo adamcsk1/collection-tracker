@@ -1,14 +1,14 @@
 import { jwtGuard } from '../core/jwt';
-import { Store } from '../core/store/store';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { UserSettingsApiRequestModel, UserSettingsApiResponseModel } from '@shared/models/api-model';
 import { LANGUAGES } from '@shared/models/language-model';
 import { THEMES } from '@shared/models/theme-model';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
+import { getDatabase } from '../core/database/database';
+import { findUserSettings, upsertUserSettings } from '../core/database/repositories/user-repository';
 import type { Application } from 'express';
 
-const isAllowedNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 const isAllowedBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 const isAllowedTheme = (value: unknown): value is UserSettingsApiResponseModel['theme'] =>
   typeof value === 'string' && isAllowedValue(value, THEMES);
@@ -22,14 +22,14 @@ const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel
 
   return Object.entries(candidate).every(([key, value]) => {
     switch (key) {
-      case 'fetchBatchSize':
-        return isAllowedNumber(value);
       case 'theme':
         return isAllowedTheme(value);
       case 'animatedBackground':
         return isAllowedBoolean(value);
       case 'language':
         return isAllowedLanguage(value);
+      case 'fromLogin':
+        return typeof value === 'boolean';
       default:
         return false;
     }
@@ -44,10 +44,8 @@ export const register = (app: Application): void => {
       const body = request.body as UserSettingsApiRequestModel;
       if (!isValidUserSettings(body)) return response.sendStatus(400);
 
-      const userSettings = Store.getLastValue('userSettings');
-      let userConfig = userSettings?.[request.usernameHash];
-
-      if (!userConfig) userConfig = {} satisfies UserSettingsApiResponseModel;
+      const db = getDatabase();
+      const userConfig = findUserSettings(db, request.usernameHash) || ({} satisfies UserSettingsApiResponseModel);
 
       if (body.fromLogin) {
         if (body.language && userConfig.language) delete body.language;
@@ -55,8 +53,7 @@ export const register = (app: Application): void => {
       }
 
       const updatedConfig = { ...userConfig, ...body } satisfies UserSettingsApiResponseModel;
-      userSettings[request.usernameHash] = updatedConfig;
-      Store.set('userSettings', userSettings);
+      upsertUserSettings(db, request.usernameHash, updatedConfig);
 
       response.send(updatedConfig);
     })

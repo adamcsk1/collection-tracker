@@ -1,21 +1,23 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { Store } from '../core/store/store';
-import { updateItem } from '../core/utils/cache-util';
-import { hashFileExists } from '../core/utils/hash-util';
-import { existsSync } from 'fs';
-import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { getDatabase } from '../core/database/database';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@server/core/store/store');
-vi.mock('@server/core/utils/cache-util');
-vi.mock('@server/core/utils/hash-util');
-vi.mock('fs', async () => {
-  const fs = await vi.importActual<typeof import('fs')>('fs');
-  return {
-    ...fs,
-    existsSync: vi.fn(),
-  };
-});
+const insertUser = () => {
+  getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+};
+
+const item = {
+  image: 'poster.jpg',
+  title: 'Custom File',
+  genre: ['Drama'],
+  IMDbId: 'tt0000001',
+  tags: ['#movie'],
+  year: 2024,
+  rate: '7.1',
+  actors: 'Actor One, Actor Two',
+  plot: 'Plot',
+};
 
 describe('create-api', () => {
   afterEach(() => {
@@ -35,60 +37,44 @@ describe('create-api', () => {
     expect(response.sendStatus).toHaveBeenCalledWith(400);
   });
 
-  it('creates a new file and returns name', async () => {
+  it('creates a DB item and returns it', async () => {
+    insertUser();
     const response = mockResponse();
-    const request: any = {
-      body: { content: 'body', name: 'custom-file.md' },
-      usernameHash: 'user',
-    };
+    const request: any = { body: item, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue('/data');
-    (existsSync as Mock).mockReturnValue(false);
-    (hashFileExists as Mock).mockReturnValue(false);
 
     const { register } = await import('./create-api');
     register(app);
 
     await handlerPromise();
-    expect(updateItem).toHaveBeenCalledWith('custom-file.md', 'user', 'body');
-    expect(response.send).toHaveBeenCalledWith({ name: 'custom-file.md' });
+    expect(response.send).toHaveBeenCalledWith({ item: expect.objectContaining({ title: 'Custom File' }) });
+    expect(getDatabase().prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt0000001')).toEqual({
+      title: 'Custom File',
+    });
   });
 
-  it('adds an index suffix when file already exists', async () => {
+  it('returns 409 when DB imdb_id already exists', async () => {
+    insertUser();
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run('user', 'tt0000001', 'Existing', '', '', '', '', '', 'hash');
     const response = mockResponse();
-    const request: any = { body: { content: 'body', name: 'custom-file.md' }, usernameHash: 'user' };
+    const request: any = { body: item, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue('/data');
-    (existsSync as Mock).mockReturnValueOnce(true).mockReturnValueOnce(false);
-    (hashFileExists as Mock).mockReturnValue(false);
-
-    const { register } = await import('./create-api');
-    register(app);
-
-    await handlerPromise();
-    expect(updateItem).toHaveBeenCalledWith('custom-file-1.md', 'user', 'body');
-    expect(response.send).toHaveBeenCalledWith({ name: 'custom-file-1.md' });
-  });
-
-  it('returns 409 when a hash file already exists for the resolved filename', async () => {
-    const response = mockResponse();
-    const request: any = { body: { content: 'body', name: 'custom-file.md' }, usernameHash: 'user' };
-    const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue('/data');
-    (existsSync as Mock).mockReturnValue(false);
-    (hashFileExists as Mock).mockReturnValue(true);
 
     const { register } = await import('./create-api');
     register(app);
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(409);
-    expect(updateItem).not.toHaveBeenCalled();
   });
 
-  it('returns 400 when name is invalid', async () => {
+  it('returns 400 when title is invalid', async () => {
     const response = mockResponse();
-    const request: any = { body: { content: 'body', name: 'custom-file.txt' }, usernameHash: 'user' };
+    const request: any = { body: { ...item, title: '' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');
@@ -96,16 +82,12 @@ describe('create-api', () => {
 
     await handlerPromise();
     expect(response.sendStatus).toHaveBeenCalledWith(400);
-    expect(updateItem).not.toHaveBeenCalled();
   });
 
-  it('returns 500 on unexpected error', async () => {
+  it('returns 500 on unexpected DB error', async () => {
     const response = mockResponse();
-    const request: any = { body: { content: 'body', name: 'custom-file.md' }, usernameHash: 'user' };
+    const request: any = { body: item, usernameHash: 'missing-user' };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockImplementation(() => {
-      throw new Error('fail');
-    });
 
     const { register } = await import('./create-api');
     register(app);
