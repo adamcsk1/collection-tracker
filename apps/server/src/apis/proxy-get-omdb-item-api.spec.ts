@@ -2,8 +2,6 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@server/core/store/store');
-
 describe('proxy-get-omdb-item-api', () => {
   const originalEnv = process.env;
 

@@ -37,9 +37,9 @@ Cypress.Commands.add('autoLogin', () => {
   cy.url().should('include', '/client/');
 
   cy.request('GET', '/api/v1/get-all?limit=1000&offset=0').then((response) => {
-    const items = response.body as Array<{ name: string; hash: string; }>;
+    const items = response.body as Array<{ IMDbId: string; hash: string; }>;
     items.forEach((item) => {
-      cy.request('DELETE', `/api/v1/delete/${encodeURIComponent(item.name)}?hash=${encodeURIComponent(item.hash)}`);
+      cy.request('DELETE', `/api/v1/delete/${encodeURIComponent(item.IMDbId)}?hash=${encodeURIComponent(item.hash)}`);
     });
   });
 

@@ -1,14 +1,10 @@
 import { COOKIE_TOKEN } from './cookie/cookie-const';
+import { getDatabase } from './database/database';
 import { generateAccessToken, generateRefreshToken, jwtGuard } from './jwt';
-import { Store } from './store/store';
-import { StoreModel } from './store/store-model';
-import { AccessTokenModel } from '@shared/models/api-model';
 import type { Request } from 'express';
 import jwt from 'jsonwebtoken';
-import { BehaviorSubject } from 'rxjs';
-import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
   hashText: vi.fn((text: string) => `hashed-${text}`),
 }));
@@ -52,21 +48,12 @@ describe('jwt utilities', () => {
   });
 
   it('jwtGuard validates token and sets username', async () => {
-    const store: StoreModel = {
-      dataFolder: new BehaviorSubject(null),
-      users: new BehaviorSubject<any>({
-        ['hashed-user']: { accessTokens: [] },
-      }),
-      parserConfigs: new BehaviorSubject(null),
-      tagConfigs: new BehaviorSubject(null),
-      userSettings: new BehaviorSubject(null),
-      cache: new BehaviorSubject({}),
-      fileHashes: new BehaviorSubject({}),
-    };
-    (Store.getLastValue as Mock).mockImplementation((key: keyof StoreModel) => store[key].value);
-
     const token = jwt.sign({ username: 'user' }, 'secret');
-    store.users.value!['hashed-user'].accessTokens = [{ tokenHash: `hashed-${token}` } as unknown as AccessTokenModel];
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('hashed-user', 'token');
+    db.prepare(
+      'INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('hashed-user', `hashed-${token}`, 'now', 'agent', null);
     const response: any = { sendStatus: vi.fn() };
     const next = vi.fn();
 

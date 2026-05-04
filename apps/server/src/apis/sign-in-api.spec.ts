@@ -1,11 +1,10 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { COOKIE_REFRESH_TOKEN, COOKIE_TOKEN } from '../core/cookie/cookie-const';
-import { Store } from '../core/store/store';
+import { getDatabase } from '../core/database/database';
 import dayjs from 'dayjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
   hashText: vi.fn((text: string) => `hashed-${text}`),
 }));
@@ -50,8 +49,6 @@ describe('sign-in-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as any).mockReturnValue({});
-    (Store.set as any).mockImplementation(() => undefined);
 
     const { register } = await import('./sign-in-api');
     register(app);
@@ -64,10 +61,9 @@ describe('sign-in-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as any).mockReturnValue({
-      'hashed-neo': { userTokenHash: 'hashed-other', accessTokens: [] },
-    });
-    (Store.set as any).mockImplementation(() => undefined);
+    getDatabase()
+      .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
+      .run('hashed-neo', 'hashed-other');
 
     const { register } = await import('./sign-in-api');
     register(app);
@@ -80,15 +76,14 @@ describe('sign-in-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: { 'user-agent': 'agent' } };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as any).mockReturnValue({
-      'hashed-neo': {
-        userTokenHash: 'hashed-token',
-        accessTokens: [{ tokenHash: 'old', expiresAt: dayjs().subtract(1, 'day').toISOString() }],
-        refreshTokens: [{ tokenHash: 'old-refresh', expiresAt: dayjs().subtract(1, 'day').toISOString() }],
-      },
-    });
-    (Store.set as any).mockImplementation(() => undefined);
-    const setSpy = vi.spyOn(Store, 'set');
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('hashed-neo', 'hashed-token');
+    db.prepare(
+      'INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('hashed-neo', 'old', 'now', 'agent', dayjs().subtract(1, 'day').toISOString());
+    db.prepare(
+      'INSERT INTO refresh_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('hashed-neo', 'old-refresh', 'now', 'agent', dayjs().subtract(1, 'day').toISOString());
 
     const { register } = await import('./sign-in-api');
     register(app);
@@ -96,26 +91,22 @@ describe('sign-in-api', () => {
     await handlerPromise();
     expect(response.cookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'access', expect.any(Object));
     expect(response.cookie).toHaveBeenCalledWith(COOKIE_REFRESH_TOKEN, 'refresh', expect.any(Object));
-    expect(setSpy).toHaveBeenCalled();
-    const updatedUsers = (setSpy.mock.calls[0][1] as any)['hashed-neo'];
-    expect(updatedUsers.accessTokens.some((accessToken: any) => accessToken.tokenHash === 'old')).toBe(false);
-    expect(updatedUsers.refreshTokens.some((refreshToken: any) => refreshToken.tokenHash === 'old-refresh')).toBe(
-      false
-    );
+    expect(db.prepare('SELECT COUNT(*) as count FROM access_tokens WHERE token_hash = ?').get('old')).toEqual({
+      count: 0,
+    });
+    expect(db.prepare('SELECT COUNT(*) as count FROM refresh_tokens WHERE token_hash = ?').get('old-refresh')).toEqual({
+      count: 0,
+    });
   });
 
-  it('returns 500 on unexpected error', async () => {
+  it('returns 404 when no DB user exists', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo', token: 'token' }, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as any).mockImplementation(() => {
-      throw new Error('fail');
-    });
-
     const { register } = await import('./sign-in-api');
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.sendStatus).toHaveBeenCalledWith(404);
   });
 });

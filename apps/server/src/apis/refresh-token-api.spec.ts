@@ -1,12 +1,11 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { COOKIE_REFRESH_TOKEN, COOKIE_TOKEN } from '../core/cookie/cookie-const';
-import { Store } from '../core/store/store';
+import { getDatabase } from '../core/database/database';
 import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
-import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
   hashText: vi.fn((text: string) => `hashed-${text}`),
 }));
@@ -61,9 +60,11 @@ describe('refresh-token-api', () => {
     const token = jwt.sign({ username: 'user' }, 'secret');
     const request: any = { signedCookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue({
-      'hashed-user': { refreshTokens: [{ tokenHash: 'other' }] },
-    });
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('hashed-user', 'token');
+    db.prepare(
+      'INSERT INTO refresh_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('hashed-user', 'other', 'now', 'agent', null);
 
     const { register } = await import('./refresh-token-api');
     register(app);
@@ -77,15 +78,11 @@ describe('refresh-token-api', () => {
     const token = jwt.sign({ username: 'user' }, 'secret');
     const request: any = { signedCookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: { 'user-agent': 'agent' } };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue({
-      'hashed-user': {
-        accessTokens: [],
-        refreshTokens: [
-          { tokenHash: `hashed-${token}`, createdAt: dayjs().toISOString(), userAgent: 'agent', expiresAt: null },
-        ],
-      },
-    });
-    (Store.set as Mock).mockImplementation(() => undefined);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('hashed-user', 'token');
+    db.prepare(
+      'INSERT INTO refresh_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('hashed-user', `hashed-${token}`, dayjs().toISOString(), 'agent', null);
 
     const { register } = await import('./refresh-token-api');
     register(app);
@@ -100,19 +97,11 @@ describe('refresh-token-api', () => {
     const token = jwt.sign({ username: 'user' }, 'secret');
     const request: any = { signedCookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: { 'user-agent': 'agent' } };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue({
-      'hashed-user': {
-        accessTokens: [],
-        refreshTokens: [
-          {
-            tokenHash: `hashed-${token}`,
-            createdAt: dayjs().toISOString(),
-            userAgent: 'agent',
-            expiresAt: dayjs().subtract(1, 'day').toISOString(),
-          },
-        ],
-      },
-    });
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('hashed-user', 'token');
+    db.prepare(
+      'INSERT INTO refresh_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('hashed-user', `hashed-${token}`, dayjs().toISOString(), 'agent', dayjs().subtract(1, 'day').toISOString());
 
     const { register } = await import('./refresh-token-api');
     register(app);
@@ -121,19 +110,15 @@ describe('refresh-token-api', () => {
     expect(response.sendStatus).toHaveBeenCalledWith(403);
   });
 
-  it('returns 500 on unexpected error', async () => {
+  it('returns 403 when the user has no stored refresh token', async () => {
     const response = mockResponse();
     const token = jwt.sign({ username: 'user' }, 'secret');
     const request: any = { signedCookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockImplementation(() => {
-      throw new Error('fail');
-    });
-
     const { register } = await import('./refresh-token-api');
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.sendStatus).toHaveBeenCalledWith(403);
   });
 });

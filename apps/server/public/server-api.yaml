@@ -178,53 +178,267 @@ components:
         language:
           type: string
           enum: [en]
+        fromLogin:
+          type: boolean
+          description: When true, language and theme are only initialized if the user has not already stored those settings.
 
     CollectionItem:
       type: object
-      required: [name, content, hash]
+      required: [image, title, titleLower, searchableTextLower, genre, IMDbId, tags, year, rate, hash, actors, plot]
       properties:
-        name:
+        image:
           type: string
-        content:
+        title:
+          type: string
+        titleLower:
+          type: string
+          description: Lowercase cached title for faster searching.
+        searchableTextLower:
+          type: string
+        genre:
+          type: array
+          items:
+            type: string
+        IMDbId:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        year:
+          type: ['number', 'null']
+        rate:
           type: string
         hash:
           type: string
-          description: SHA-512 hash of the file content.
+          description: SHA-512 hash of the structured item content.
+        actors:
+          type: string
+        plot:
+          type: string
+
+    CollectionItemChange:
+      type: object
+      required: [image, title, genre, IMDbId, tags, year, rate, actors, plot]
+      properties:
+        image:
+          type: string
+        title:
+          type: string
+        genre:
+          type: array
+          items:
+            type: string
+        IMDbId:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        year:
+          type: ['number', 'null']
+        rate:
+          type: string
+        actors:
+          type: string
+        plot:
+          type: string
+
+    CollectionItemsResponse:
+      type: object
+      required: [items, total, offset, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionItem'
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    CollectionMatchedItemsRequest:
+      type: object
+      required: [imdbIds]
+      properties:
+        imdbIds:
+          type: array
+          items:
+            type: string
+        offset:
+          type: integer
+          default: 0
+        limit:
+          type: integer
+          default: 50
+        filters:
+          type: object
+          properties:
+            search:
+              type: string
+            tags:
+              type: array
+              items:
+                type: string
+            genres:
+              type: array
+              items:
+                type: string
+            tagMode:
+              type: string
+              enum: [any, all]
+            type:
+              type: string
+              enum: [movie, series]
+            watched:
+              type: boolean
+
+    CollectionItemSuggestionsResponse:
+      type: object
+      required: [suggestions]
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: object
+            required: [label, value, kind]
+            properties:
+              label:
+                type: string
+              value:
+                type: string
+              kind:
+                type: string
+                enum: [title, tag, genre, actor, imdbId]
+
+    TagSuggestionsResponse:
+      type: object
+      required: [tags]
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
+
+    GenreSuggestionsResponse:
+      type: object
+      required: [genres]
+      properties:
+        genres:
+          type: array
+          items:
+            type: string
+
+    CollectionItemExistsResponse:
+      type: object
+      required: [exists]
+      properties:
+        exists:
+          type: boolean
+
+    RandomImagesResponse:
+      type: object
+      required: [images]
+      properties:
+        images:
+          type: array
+          items:
+            type: string
+
+    CollectionStatisticsResponse:
+      type: object
+      required: [totalItems, movieCount, seriesCount, watchedCount, unwatchedCount, tagCounts, genreCounts]
+      properties:
+        totalItems:
+          type: integer
+        movieCount:
+          type: integer
+        seriesCount:
+          type: integer
+        watchedCount:
+          type: integer
+        unwatchedCount:
+          type: integer
+        tagCounts:
+          type: array
+          items:
+            type: object
+            required: [tag, count]
+            properties:
+              tag:
+                type: string
+              count:
+                type: integer
+        genreCounts:
+          type: array
+          items:
+            type: object
+            required: [genre, count]
+            properties:
+              genre:
+                type: string
+              count:
+                type: integer
 
     CreateRequest:
-      type: object
-      required: [content, name]
-      properties:
-        content:
-          type: string
-        name:
-          type: string
+      $ref: '#/components/schemas/CollectionItemChange'
 
     CreateResponse:
       type: object
-      required: [name]
+      required: [item]
       properties:
-        name:
-          type: string
-          description: Final stored filename after collision handling.
+        item:
+          $ref: '#/components/schemas/CollectionItem'
 
     ChangeRequest:
-      type: object
-      required: [content, hash]
-      properties:
-        content:
-          type: string
-        hash:
-          type: string
-          description: Current SHA-512 hash of the file. Must match the stored hash.
+      allOf:
+        - $ref: '#/components/schemas/CollectionItemChange'
+        - type: object
+          required: [hash]
+          properties:
+            hash:
+              type: string
+              description: Current SHA-512 hash of the item. Must match the stored hash.
 
     ChangeResponse:
       type: object
-      required: [hash]
+      required: [item]
       properties:
-        hash:
-          type: string
-          description: New SHA-512 hash of the updated content.
+        item:
+          $ref: '#/components/schemas/CollectionItem'
+
+    MarkAllWatchedResponse:
+      type: object
+      required: [changedCount]
+      properties:
+        changedCount:
+          type: integer
+
+    MarkAllUnwatchedResponse:
+      type: object
+      required: [changedCount]
+      properties:
+        changedCount:
+          type: integer
+
+    RefreshImagesResponse:
+      type: object
+      required: [count, checked, fixed, errors]
+      properties:
+        count:
+          type: integer
+          description: Total number of collection items processed.
+        checked:
+          type: integer
+          description: Number of images checked.
+        fixed:
+          type: integer
+          description: Number of images updated from OMDb.
+        errors:
+          type: integer
+          description: Number of images that could not be fixed.
 
     OMDbItem:
       type: object
@@ -282,35 +496,6 @@ components:
           examples:
             - - tt0133093
 
-    ParserConfig:
-      type: object
-      properties:
-        IMDbId:
-          type: string
-        genre:
-          type: string
-        genreToken:
-          type: string
-        image:
-          type: string
-        IMDbRate:
-          type: string
-        tags:
-          type: string
-        tagToken:
-          type: string
-        title:
-          type: string
-        year:
-          type: string
-        content:
-          type: string
-        mdTemplate:
-          type: string
-        filenamePattern:
-          type: string
-          description: Default pattern is {{Year}}-{{Type}}-{{ClearedName}}-{{index}}.md
-
     TagConfig:
       type: object
       required: [tag, color, useForImageBorder, useForTextColor, useForImageBadge, weight]
@@ -349,13 +534,15 @@ tags:
   - name: User
     description: User account and settings.
   - name: Collection
-    description: CRUD operations for collection items (Markdown files).
+    description: CRUD operations for structured collection items.
   - name: OMDb Proxy
     description: Proxy endpoints for the OMDb API. Require `OMDB_API_KEY` on the server.
+  - name: Image Proxy
+    description: Cached proxy endpoint for external collection item images.
   - name: Claude Proxy
     description: Proxy endpoint for the Claude AI API. Requires `CLAUDE_API_KEY` on the server.
-  - name: Parser & Tag
-    description: Parser template and tag colour configuration.
+  - name: Tag
+    description: Tag colour configuration.
 
 paths:
   /health:
@@ -391,6 +578,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignUpResponse'
+        '400':
+          description: Missing or invalid username.
+        '403':
+          description: Registration is disabled or the configured user limit has been reached.
+        '409':
+          description: A user with this username already exists.
 
   /sign-in:
     post:
@@ -416,6 +609,12 @@ paths:
                   value: CT.Token=<jwt>; HttpOnly; Secure; SameSite=Strict; Max-Age=900
                 refresh:
                   value: CT.RefreshToken=<jwt>; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
+        '400':
+          description: Missing or invalid username or token.
+        '401':
+          description: User token is invalid.
+        '404':
+          description: User not found.
 
   /logout:
     delete:
@@ -480,7 +679,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        '204':
           description: Token deleted.
 
   /session/refresh:
@@ -501,10 +700,10 @@ paths:
     delete:
       operationId: deleteUser
       summary: Delete the current user account
-      description: Deletes the user, all stored Markdown entries, and related configuration.
+      description: Deletes the user, all stored collection items, and related configuration.
       tags: [User]
       responses:
-        '200':
+        '204':
           description: User deleted.
 
   /user/settings:
@@ -523,7 +722,7 @@ paths:
     post:
       operationId: updateUserSettings
       summary: Update user settings
-      description: Accepts any subset of `fetchBatchSize`, `theme`, `animatedBackground`, and `language`. Returns the merged settings object.
+      description: Accepts any subset of `fetchBatchSize`, `theme`, `animatedBackground`, `language`, and `fromLogin`. Returns the merged settings object.
       tags: [User]
       requestBody:
         required: true
@@ -539,37 +738,301 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserSettingsResponse'
 
-  /get-all:
+  /items:
     get:
-      operationId: getAllItems
-      summary: Get all collection items
-      description: Returns items sorted by file creation date descending. `hash` is the SHA-512 hash of the file content.
+      operationId: searchItems
+      summary: Search collection items
+      description: Returns a server-filtered and paginated collection result. System tag filters use `type` and `watched`; custom tags use `tags`.
       tags: [Collection]
       parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 10
         - name: offset
           in: query
           schema:
             type: integer
             default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: tags
+          in: query
+          description: Comma-separated custom tags.
+          schema:
+            type: string
+        - name: genres
+          in: query
+          description: Comma-separated genres.
+          schema:
+            type: string
+        - name: tagMode
+          in: query
+          schema:
+            type: string
+            enum: [any, all]
+            default: any
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [movie, series]
+        - name: watched
+          in: query
+          schema:
+            type: boolean
       responses:
         '200':
-          description: Array of collection items.
+          description: Filtered collection result.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CollectionItem'
+                $ref: '#/components/schemas/CollectionItemsResponse'
+
+  /items/matched:
+    post:
+      operationId: getMatchedItems
+      summary: Get collection items from matched IMDb IDs
+      description: Returns paginated items from an IMDb ID set, preserving the request order by default for AI search results.
+      tags: [Collection]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionMatchedItemsRequest'
+      responses:
+        '200':
+          description: Filtered matched collection result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionItemsResponse'
+        '400':
+          description: Invalid IMDb ID list.
+
+  /items/search-suggestions:
+    get:
+      operationId: getItemSearchSuggestions
+      summary: Get item search suggestions
+      tags: [Collection]
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Search suggestions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionItemSuggestionsResponse'
+
+  /items/exists:
+    get:
+      operationId: itemExists
+      summary: Check whether an IMDb ID already exists
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Existing item status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionItemExistsResponse'
+        '400':
+          description: Missing IMDb ID.
+
+  /items/random:
+    get:
+      operationId: getRandomItem
+      summary: Get a random collection item
+      description: Returns one random item from the user's collection.
+      tags: [Collection]
+      responses:
+        '200':
+          description: Random collection item.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionItem'
+        '404':
+          description: Collection is empty.
+
+  /items/random-images:
+    get:
+      operationId: getRandomImages
+      summary: Get random collection image URLs
+      description: Returns a list of random image URLs from the user's collection.
+      tags: [Collection]
+      parameters:
+        - name: count
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Random image URLs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RandomImagesResponse'
+
+  /items/mark-all-watched:
+    post:
+      operationId: markAllAsWatched
+      summary: Mark all collection items as watched
+      description: Adds the #watched tag to every item in the user's collection that does not already have it.
+      tags: [Collection]
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllWatchedResponse'
+
+  /items/mark-all-unwatched:
+    post:
+      operationId: markAllAsUnwatched
+      summary: Mark all collection items as unwatched
+      description: Removes the #watched tag from every item in the user's collection that has it.
+      tags: [Collection]
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+
+  /items/refresh-images:
+    post:
+      operationId: refreshImages
+      summary: Refresh collection item images
+      description: Checks every collection item image through the image proxy, caches available images, and fetches updated poster URLs from OMDb for broken images.
+      tags: [Collection]
+      responses:
+        '200':
+          description: Summary of the refresh operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshImagesResponse'
+
+  /tags/suggestions:
+    get:
+      operationId: getTagSuggestions
+      summary: Get custom tag suggestions
+      description: Internal and virtual tags are excluded unless `includeInternal=true` is provided.
+      tags: [Collection]
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: includeInternal
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Tag suggestions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagSuggestionsResponse'
+
+  /genres/suggestions:
+    get:
+      operationId: getGenreSuggestions
+      summary: Get genre suggestions
+      tags: [Collection]
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Genre suggestions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenreSuggestionsResponse'
+
+  /statistics:
+    get:
+      operationId: getStatistics
+      summary: Get collection statistics
+      tags: [Collection]
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: tags
+          in: query
+          schema:
+            type: string
+        - name: genres
+          in: query
+          schema:
+            type: string
+        - name: tagMode
+          in: query
+          schema:
+            type: string
+            enum: [any, all]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [movie, series]
+        - name: watched
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Collection statistics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionStatisticsResponse'
 
   /create:
     post:
       operationId: createItem
       summary: Create a collection item
+      description: Creates a structured collection item. `IMDbId` must be unique for the authenticated user.
       tags: [Collection]
       requestBody:
         required: true
@@ -579,23 +1042,26 @@ paths:
               $ref: '#/components/schemas/CreateRequest'
       responses:
         '200':
-          description: Item created. Returns the final stored filename after collision handling.
+          description: Item created. Returns the stored collection item.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateResponse'
+        '400':
+          description: Request body is missing required item fields or contains invalid values.
         '409':
-          description: A stale hash file exists; sync required.
+          description: An item with this IMDb ID already exists.
 
-  /change/{name}:
+  /change/{imdbId}:
     put:
       operationId: changeItem
       summary: Update a collection item
       tags: [Collection]
       parameters:
-        - name: name
+        - name: imdbId
           in: path
           required: true
+          description: IMDb ID of the item to update.
           schema:
             type: string
       requestBody:
@@ -606,34 +1072,43 @@ paths:
               $ref: '#/components/schemas/ChangeRequest'
       responses:
         '200':
-          description: Item updated. Returns the new SHA-512 content hash.
+          description: Item updated. Returns the stored collection item.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChangeResponse'
+        '400':
+          description: Request body is missing required item fields or contains invalid values.
+        '404':
+          description: Item not found.
         '409':
           description: Hash mismatch — the stored content has changed.
 
-  /delete/{name}:
+  /delete/{imdbId}:
     delete:
       operationId: deleteItem
       summary: Delete a collection item
       tags: [Collection]
       parameters:
-        - name: name
+        - name: imdbId
           in: path
           required: true
+          description: IMDb ID of the item to delete.
           schema:
             type: string
         - name: hash
           in: query
           required: true
-          description: Current SHA-512 hash of the file. Must match the stored hash.
+          description: Current SHA-512 hash of the item. Must match the stored hash.
           schema:
             type: string
       responses:
-        '200':
+        '204':
           description: Item deleted.
+        '400':
+          description: Missing or invalid hash query parameter.
+        '404':
+          description: Item not found.
         '409':
           description: Hash mismatch — the stored content has changed.
 
@@ -683,13 +1158,63 @@ paths:
         '503':
           description: OMDB_API_KEY not configured on the server.
 
+  /proxy/image:
+    get:
+      operationId: proxyImage
+      summary: Proxy and cache an external image
+      description: Fetches a public HTTP or HTTPS image URL, caches the bytes on the server, and returns the image with long-lived cache headers. Localhost, private-network targets, redirects, and oversized responses are rejected.
+      tags: [Image Proxy]
+      parameters:
+        - name: url
+          in: query
+          required: true
+          description: Source image URL to proxy. Must use the http or https protocol.
+          schema:
+            type: string
+            format: uri
+      responses:
+        '200':
+          description: Proxied image bytes.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: public, max-age=31536000, immutable
+          content:
+            image/avif:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: URL is missing, invalid, uses an unsupported protocol, points at a private/local target, or redirects.
+        '413':
+          description: The upstream image is too large to proxy.
+        '415':
+          description: The upstream response is not an image content type.
+
   /proxy/claude/query:
     post:
       operationId: proxyClaudeQuery
       summary: Natural-language collection search via Claude
       description: |
         Proxies a prompt to the Claude API using the server's `CLAUDE_API_KEY`. The key is never exposed to the client.
-        The server reads the caller's collection from flat files, extracts IMDb IDs and metadata, and builds the prompt internally.
+        The server reads the caller's collection metadata from the database and builds the prompt internally.
         Only the natural-language question is supplied by the client.
         The model is controlled by the optional `CLAUDE_MODEL` env variable; defaults to `claude-haiku-4-5-20251001`.
       tags: [Claude Proxy]
@@ -713,45 +1238,11 @@ paths:
         '503':
           description: CLAUDE_API_KEY not configured on the server.
 
-  /parser/config:
-    get:
-      operationId: getParserConfig
-      summary: Get parser configuration
-      description: Returns the current parser template, filename pattern, and regexp fields. Falls back to defaults when no user config exists.
-      tags: [Parser & Tag]
-      responses:
-        '200':
-          description: Current parser config.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ParserConfig'
-
-  /parser/change-config:
-    post:
-      operationId: changeParserConfig
-      summary: Update parser configuration
-      description: Accepts any subset of the parser config fields. Returns the merged config.
-      tags: [Parser & Tag]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ParserConfig'
-      responses:
-        '200':
-          description: Merged parser config after update.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ParserConfig'
-
   /tag/config:
     get:
       operationId: getTagConfig
       summary: Get tag configuration
-      tags: [Parser & Tag]
+      tags: [Tag]
       responses:
         '200':
           description: Current tag configuration array.
@@ -765,7 +1256,7 @@ paths:
       operationId: changeTagConfig
       summary: Replace tag configuration
       description: Replaces the full tag configuration array and returns the stored result.
-      tags: [Parser & Tag]
+      tags: [Tag]
       requestBody:
         required: true
         content:

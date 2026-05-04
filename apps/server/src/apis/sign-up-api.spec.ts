@@ -1,30 +1,16 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { FOLDERS } from '../core/main-const';
-import { Store } from '../core/store/store';
-import { mkdirSync } from 'fs';
+import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@server/core/store/store');
 vi.mock('@server/core/crypto', () => ({
   generateRandomToken: vi.fn().mockReturnValue('generated-token'),
   hashText: vi.fn((text: string) => `hashed-${text}`),
 }));
-vi.mock('fs', async () => {
-  const actual = await vi.importActual<typeof import('fs')>('fs');
-
-  return {
-    ...actual,
-    mkdirSync: vi.fn(),
-    writeFileSync: vi.fn(),
-  };
-});
-
 describe('sign-up-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    (Store.set as ReturnType<typeof vi.fn> | undefined)?.mockReset?.();
     delete process.env.DISABLE_REGISTRATION;
     delete process.env.USER_LIMIT;
   });
@@ -59,8 +45,6 @@ describe('sign-up-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as ReturnType<typeof vi.fn>).mockReturnValueOnce({}).mockReturnValueOnce('/data');
-    (Store.set as ReturnType<typeof vi.fn>).mockImplementation(() => undefined);
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '5';
 
@@ -68,16 +52,21 @@ describe('sign-up-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(Store.set).toHaveBeenCalledWith('users', expect.any(Object));
-    expect(mkdirSync).toHaveBeenCalledWith(expect.stringContaining(FOLDERS.store), { recursive: true });
     expect(response.send).toHaveBeenCalledWith({ token: 'generated-token' });
+    expect(
+      getDatabase().prepare('SELECT user_token_hash FROM users WHERE username_hash = ?').get('hashed-neo')
+    ).toEqual({
+      user_token_hash: 'hashed-generated-token',
+    });
   });
 
   it('returns 409 when user already exists', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as ReturnType<typeof vi.fn>).mockReturnValue({ 'hashed-neo': {} });
+    getDatabase()
+      .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
+      .run('hashed-neo', 'token');
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '5';
 
@@ -92,7 +81,6 @@ describe('sign-up-api', () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as ReturnType<typeof vi.fn>).mockReturnValue({ existing: {} });
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '0';
 
@@ -103,13 +91,13 @@ describe('sign-up-api', () => {
     expect(response.sendStatus).toHaveBeenCalledWith(403);
   });
 
-  it('returns 500 on unexpected error', async () => {
+  it('returns 409 when DB insert conflicts', async () => {
     const response = mockResponse();
     const request: any = { body: { username: 'neo' } };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as ReturnType<typeof vi.fn>).mockImplementation(() => {
-      throw new Error('fail');
-    });
+    getDatabase()
+      .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
+      .run('hashed-neo', 'token');
     process.env.DISABLE_REGISTRATION = '0';
     process.env.USER_LIMIT = '5';
 
@@ -117,6 +105,6 @@ describe('sign-up-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.sendStatus).toHaveBeenCalledWith(409);
   });
 });

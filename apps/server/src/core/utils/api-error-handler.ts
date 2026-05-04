@@ -1,5 +1,5 @@
-import { errorLog } from '../logger';
 import type { Request, Response } from 'express';
+import { errorLog } from '../logger';
 
 export const withErrorHandler =
   (handler: (request: Request, response: Response) => unknown) =>
@@ -7,7 +7,9 @@ export const withErrorHandler =
     try {
       await handler(request, response);
     } catch (error: unknown) {
-      if (error instanceof Error) void errorLog(`Unknown error (${error.message})`);
+      if (error instanceof Error) {
+        await errorLog(`Unknown error at ${request.method} ${request.originalUrl} (${error.stack ?? error.message})`);
+      }
       response.sendStatus(500);
     }
   };

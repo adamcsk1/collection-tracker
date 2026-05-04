@@ -1,3 +1,8 @@
+import { API_PREFIX } from '@shared/constants/api-const';
+import { SignInApiRequestModel } from '@shared/models/api-model';
+import dayjs from 'dayjs';
+import type { Application } from 'express';
+import type jwt from 'jsonwebtoken';
 import {
   accessCookieConfig,
   accessCookieExpiration,
@@ -6,59 +11,64 @@ import {
 } from '../core/cookie/cookie-config';
 import { COOKIE_REFRESH_TOKEN, COOKIE_TOKEN } from '../core/cookie/cookie-const';
 import { hashText } from '../core/crypto';
+import { getDatabase } from '../core/database/database';
+import {
+  deleteExpiredAccessTokens,
+  deleteExpiredRefreshTokens,
+  findUserByHash,
+  insertAccessToken,
+  insertRefreshToken,
+} from '../core/database/repositories/user-repository';
 import { generateAccessToken, generateRefreshToken } from '../core/jwt';
-import { Store } from '../core/store/store';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getUserAccessToken, getUserRefreshToken } from '../core/utils/users-util';
-import { API_PREFIX } from '@shared/constants/api-const';
-import { SignInApiRequestModel } from '@shared/models/api-model';
-import dayjs from 'dayjs';
-import type { Application } from 'express';
-import type jwt from 'jsonwebtoken';
 
 export const register = (app: Application): void => {
   app.post(
     `${API_PREFIX}/sign-in`,
-    withErrorHandler((request, response) => {
+    withErrorHandler(async (request, response) => {
       const { username, token } = request.body as SignInApiRequestModel;
       if (typeof username !== 'string' || !username || typeof token !== 'string' || !token) {
         return response.sendStatus(400);
       }
-      const users = Store.getLastValue('users');
-
+      const db = getDatabase();
       const usernameHash = hashText(username);
 
-      if (!users[usernameHash]) return response.sendStatus(404);
+      const dbUser = findUserByHash(db, usernameHash);
+
+      if (!dbUser) return response.sendStatus(404);
 
       const userTokenHash = hashText(token);
 
-      if (users[usernameHash].userTokenHash !== userTokenHash) return response.sendStatus(401);
-
-      if (!users[usernameHash].refreshTokens) users[usernameHash].refreshTokens = [];
+      if (dbUser.user_token_hash !== userTokenHash) return response.sendStatus(401);
 
       const accessCookie = accessCookieConfig();
       const refreshCookie = refreshCookieConfig();
-      const newAccessToken = generateAccessToken(
+      const newAccessToken = await generateAccessToken(
         username,
         `${accessCookieExpiration.value} ${accessCookieExpiration.unit}` as jwt.SignOptions['expiresIn']
       );
-      const newRefreshToken = generateRefreshToken(
+      const newRefreshToken = await generateRefreshToken(
         username,
         `${refreshCookieExpiration.value} ${refreshCookieExpiration.unit}` as jwt.SignOptions['expiresIn']
       );
-      users[usernameHash].accessTokens.push(
-        getUserAccessToken(newAccessToken, request.headers['user-agent'], accessCookie.expires)
+
+      if (!newAccessToken || !newRefreshToken) {
+        return response.sendStatus(500);
+      }
+
+      const accessTokenData = getUserAccessToken(newAccessToken, request.headers['user-agent']!, accessCookie.expires!);
+      const refreshTokenData = getUserRefreshToken(
+        newRefreshToken,
+        request.headers['user-agent']!,
+        refreshCookie.expires!
       );
-      users[usernameHash].refreshTokens.push(
-        getUserRefreshToken(newRefreshToken, request.headers['user-agent'], refreshCookie.expires)
-      );
-      users[usernameHash].accessTokens = users[usernameHash].accessTokens.filter(
-        (token) => token.expiresAt === null || dayjs(token.expiresAt).isAfter(dayjs())
-      );
-      users[usernameHash].refreshTokens = users[usernameHash].refreshTokens.filter(
-        (token) => token.expiresAt === null || dayjs(token.expiresAt).isAfter(dayjs())
-      );
-      Store.set('users', users);
+
+      const now = dayjs().toISOString();
+      deleteExpiredAccessTokens(db, usernameHash, now);
+      deleteExpiredRefreshTokens(db, usernameHash, now);
+      insertAccessToken(db, usernameHash, accessTokenData);
+      insertRefreshToken(db, usernameHash, refreshTokenData);
 
       response
         .cookie(COOKIE_TOKEN, newAccessToken, accessCookie)

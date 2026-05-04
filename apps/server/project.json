@@ -36,7 +36,11 @@
         "bundle": false,
         "main": "apps/server/src/bootstrap.ts",
         "tsConfig": "apps/server/tsconfig.app.json",
-        "assets": ["apps/server/src/assets", { "input": "apps/server/public", "glob": "**/*", "output": "public" }],
+        "assets": [
+          "apps/server/src/assets",
+          { "input": "apps/server/public", "glob": "**/*", "output": "public" },
+          { "input": "apps/server/src/migrations", "glob": "**/*.sql", "output": "migrations" }
+        ],
         "generatePackageJson": true,
         "esbuildOptions": {
           "sourcemap": true,

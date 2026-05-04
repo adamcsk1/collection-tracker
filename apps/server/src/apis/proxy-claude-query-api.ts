@@ -1,17 +1,13 @@
 import { createAnthropicClient, getAnthropicModel } from '../core/anthropic';
 import { jwtGuard } from '../core/jwt';
 import { errorLog } from '../core/logger';
-import { FOLDERS } from '../core/main-const';
-import { Store } from '../core/store/store';
 import { withErrorHandler } from '../core/utils/api-error-handler';
-import { readStoreFiles } from '../core/utils/cache-util';
 import { ProxyClaudeCollectionItems } from '../models/proxy-claude-model';
 import { API_PREFIX } from '@shared/constants/api-const';
-import { PARSER_REGEXPS } from '@shared/constants/parser-const';
 import { ClaudeQueryRequestModel, ClaudeQueryResponseModel } from '@shared/models/claude-model';
-import { restoreSerializedParserRegexp } from '@shared/utils/parser-serialize-util';
-import { sanitizeMdContent } from '@shared/utils/sanitize-md-content-util';
 import { debug } from 'console';
+import { getDatabase } from '../core/database/database';
+import { findCollectionItemsForPrompt } from '../core/database/repositories/collection-repository';
 import type { Application } from 'express';
 
 const SYSTEM_PROMPT = `
@@ -22,32 +18,9 @@ If no items match, respond with an empty array.
 Respond with nothing else — just the raw JSON array, no markdown.
 `;
 
-const readCollectionItems = async (storeFolder: string, usernameHash: string): Promise<ProxyClaudeCollectionItems> => {
-  const parserConfigs = Store.getLastValue('parserConfigs');
-  const userParserConfig = parserConfigs?.[usernameHash];
-
-  const imdbIdRegexp = userParserConfig?.IMDbId
-    ? restoreSerializedParserRegexp(userParserConfig.IMDbId)
-    : PARSER_REGEXPS.IMDbId;
-  const titleRegexp = userParserConfig?.title
-    ? restoreSerializedParserRegexp(userParserConfig.title)
-    : PARSER_REGEXPS.title;
-  const contentRegexp = userParserConfig?.content
-    ? restoreSerializedParserRegexp(userParserConfig.content)
-    : PARSER_REGEXPS.content;
-
-  const rawFiles = await readStoreFiles(storeFolder, usernameHash);
-
-  return rawFiles.reduce<ProxyClaudeCollectionItems>((items, { content }) => {
-    const imdbId = imdbIdRegexp.exec(content)?.groups?.['id'] ?? '';
-    const title = titleRegexp.exec(content)?.groups?.['title'] ?? '';
-    const plot = contentRegexp.exec(content)?.groups?.['content'] ?? '';
-    const sanitizedContent = `IMDbId\n${imdbId}\n${sanitizeMdContent(
-      content.replace(plot, `Plot\n${plot}`).replace(title, `Title\n${title}`)
-    )}`;
-    if (imdbId) items.push({ imdbId, content: sanitizedContent });
-    return items;
-  }, []);
+const readCollectionItems = (usernameHash: string): ProxyClaudeCollectionItems => {
+  const db = getDatabase();
+  return findCollectionItemsForPrompt(db, usernameHash);
 };
 
 export const register = (app: Application): void => {
@@ -68,8 +41,7 @@ export const register = (app: Application): void => {
         return;
       }
 
-      const storeFolder = `${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${request.usernameHash}`;
-      const items = await readCollectionItems(storeFolder, request.usernameHash);
+      const items = await readCollectionItems(request.usernameHash);
 
       if (!items.length) {
         response.send({ matchedIds: [] } as ClaudeQueryResponseModel);

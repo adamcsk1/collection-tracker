@@ -1,9 +1,7 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { Store } from '../core/store/store';
-import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
-
-vi.mock('@server/core/store/store');
+import { getDatabase } from '../core/database/database';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 describe('change-tag-config-api', () => {
   afterEach(() => {
@@ -78,15 +76,17 @@ describe('change-tag-config-api', () => {
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockReturnValue({});
-    (Store.set as Mock).mockImplementation(() => undefined);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
 
     const { register } = await import('./change-tag-config-api');
     register(app);
 
     await handlerPromise();
-    expect(Store.set).toHaveBeenCalledWith('tagConfigs', expect.any(Object));
     expect(response.send).toHaveBeenCalledWith(request.body);
+    expect(db.prepare('SELECT COUNT(*) as count FROM tag_configs WHERE username_hash = ?').get('user')).toEqual({
+      count: 1,
+    });
   });
 
   it('returns 500 on unexpected error', async () => {
@@ -105,9 +105,6 @@ describe('change-tag-config-api', () => {
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockImplementation(() => {
-      throw new Error('fail');
-    });
 
     const { register } = await import('./change-tag-config-api');
     register(app);
@@ -132,9 +129,6 @@ describe('change-tag-config-api', () => {
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
-    (Store.getLastValue as Mock).mockImplementation(() => {
-      throw 'fail';
-    });
 
     const { register } = await import('./change-tag-config-api');
     register(app);

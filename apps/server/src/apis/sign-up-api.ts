@@ -1,11 +1,10 @@
 import { generateRandomToken, hashText } from '../core/crypto';
-import { FOLDERS } from '../core/main-const';
-import { Store } from '../core/store/store';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/api-model';
+import { getDatabase } from '../core/database/database';
+import { countUsers, findUserByHash, insertUser } from '../core/database/repositories/user-repository';
 import type { Application } from 'express';
-import { mkdirSync } from 'fs';
 
 export const register = (app: Application): void => {
   app.post(
@@ -19,25 +18,24 @@ export const register = (app: Application): void => {
       if (typeof username !== 'string' || !username) {
         return response.sendStatus(400);
       }
-      const users = Store.getLastValue('users');
+      const db = getDatabase();
+      const usernameHash = hashText(username);
+
+      const userCount = countUsers(db);
 
       const userLimit = Number(process.env.USER_LIMIT);
-      if (!isNaN(userLimit) && userLimit <= Object.keys(users).length) {
+      if (!isNaN(userLimit) && userLimit <= userCount) {
         return response.sendStatus(403);
       }
 
-      const usernameHash = hashText(username);
-
-      if (users[usernameHash]) {
+      if (findUserByHash(db, usernameHash)) {
         return response.sendStatus(409);
       }
 
       const userToken = generateRandomToken(username);
+      const userTokenHash = hashText(userToken);
 
-      users[usernameHash] = { userTokenHash: hashText(userToken), accessTokens: [], refreshTokens: [] };
-      Store.set('users', users);
-
-      mkdirSync(`${Store.getLastValue('dataFolder')}/${FOLDERS.store}/${usernameHash}`, { recursive: true });
+      insertUser(db, usernameHash, userTokenHash);
 
       const result: SignUpApiResponseModel = { token: userToken };
       response.send(result);
