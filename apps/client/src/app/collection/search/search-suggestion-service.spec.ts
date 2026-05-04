@@ -1,99 +1,43 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '../collection-model';
-import {
-  initialMainCollectionState,
-  MainCollectionState,
-  mainCollectionStateToken,
-} from '../../main/main-collection-store';
-import { initialMainState, mainStateToken } from '../../main/main-store';
-import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { ApiService } from '@services/api/api-service';
+import { firstValueFrom, of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchSuggestionService } from './search-suggestion-service';
-
-const buildItem = (overrides: Partial<CollectionItemModel>): CollectionItemModel => ({
-  rawContent: overrides.rawContent || '',
-  rawContentLower: (overrides.rawContent || '').toLowerCase(),
-  image: '',
-  title: overrides.title || '',
-  titleLower: (overrides.title || '').toLowerCase(),
-  genre: overrides.genre || [],
-  IMDbId: overrides.IMDbId || '',
-  tags: overrides.tags || [],
-  name: overrides.name || '',
-  year: null,
-  rate: '',
-  hash: '',
-  plot: '',
-});
 
 describe('SearchSuggestionService', () => {
   let service: SearchSuggestionService;
-  let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
+  let api: { getItemSearchSuggestions: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
+    api = {
+      getItemSearchSuggestions: vi.fn(() =>
+        of({
+          suggestions: [
+            { label: 'Gravity', value: 'tt1234567', kind: 'title' },
+            { label: '#space', value: '#space', kind: 'tag' },
+          ],
+        })
+      ),
+    };
+
     TestBed.configureTestingModule({
-      providers: [
-        SearchSuggestionService,
-        provideStore(initialMainCollectionState, mainCollectionStateToken),
-        provideStore(initialMainState, mainStateToken),
-      ],
+      providers: [SearchSuggestionService, { provide: ApiService, useValue: api }],
     });
 
     service = TestBed.inject(SearchSuggestionService);
-    collectionState = TestBed.inject(mainCollectionStateToken);
-
-    collectionState.setState('collection', [
-      buildItem({
-        tags: ['#action', '#space'],
-        genre: ['Drama', 'Sci-Fi'],
-        rawContent: 'Space drama content',
-        title: 'Space Drama',
-      }),
-      buildItem({ tags: ['#action', '#spy'], genre: ['Thriller'], rawContent: 'Spy thriller', title: 'Spy' }),
-      buildItem({ tags: ['#adventure'], genre: ['Documentary'], rawContent: 'Docu', title: 'Docu' }),
-    ]);
   });
 
-  it('suggests tags when searching with hash prefix', () => {
-    const suggestions = service.getSuggestion('#a');
+  it('returns server suggestions with formatted title values', async () => {
+    const suggestions = await firstValueFrom(service.getSuggestion('gra'));
 
-    expect(suggestions).toEqual(expect.arrayContaining(['#action', '#adventure']));
-    expect(suggestions.length).toBeLessThanOrEqual(3);
-  });
-
-  it('returns the default list of virtual and system tags when searching with hash only', () => {
-    const suggestions = service.getSuggestion('#');
-
-    expect(suggestions).toEqual(expect.arrayContaining([...VIRTUAL_TAGS, WATCHED_TAG, MOVIE_TAG, SERIES_TAG]));
-    expect(suggestions.length).toBeGreaterThanOrEqual(4);
-  });
-
-  it('suggests genres before titles when not using hash', () => {
-    const suggestions = service.getSuggestion('dr');
-
-    const formattedSuggestions = suggestions.map((suggestion) => service.formatSuggestionText(suggestion));
-
-    expect(formattedSuggestions).toEqual(expect.arrayContaining(['Space Drama']));
-  });
-
-  it('falls back to raw content matches when genres miss', () => {
-    const suggestions = service.getSuggestion('spy');
-
-    const formattedSuggestions = suggestions.map((suggestion) => service.formatSuggestionText(suggestion));
-
-    expect(formattedSuggestions).toContain('Spy');
-  });
-
-  it('returns fuzzy matches and formats values when search mode is fuzzy', () => {
-    collectionState.setState('collection', [
-      buildItem({ title: 'Gravity', rawContent: 'space thriller', IMDbId: 'tt1234567' }),
-    ]);
-
-    const suggestions = service.getSuggestion('gra');
-
-    expect(suggestions.length).toBeGreaterThan(0);
+    expect(api.getItemSearchSuggestions).toHaveBeenCalledWith('gra', 3);
     expect(service.formatSuggestionText(suggestions[0])).toBe('Gravity');
     expect(service.formatSuggestionValue(suggestions[0])).toBe('tt1234567');
+    expect(suggestions[1]).toBe('#space');
+  });
+
+  it('keeps raw suggestion values when no separator is present', () => {
+    expect(service.formatSuggestionText('#space')).toBe('#space');
+    expect(service.formatSuggestionValue('#space')).toBe('#space');
   });
 });

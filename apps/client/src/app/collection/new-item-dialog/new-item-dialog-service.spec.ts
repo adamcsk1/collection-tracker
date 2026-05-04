@@ -9,12 +9,6 @@ import {
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
-import { setParserFilenamePattern, setParserTemplate } from '@shared/parser/parser-util';
-import { generateMdContent } from '@shared/parser/utils/generate-md-content-util';
-
-vi.mock('@shared/parser/utils/generate-md-content-util', () => ({
-  generateMdContent: vi.fn().mockReturnValue('md-content'),
-}));
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -29,7 +23,7 @@ const buildSelectedContent = () => ({
   Plot: 'Plot',
   Poster: 'poster-url',
   Director: 'Director',
-  Genre: 'Genre',
+  Genre: 'Drama, Action',
   Actors: 'Actors',
   Type: 'movie',
 });
@@ -71,8 +65,6 @@ describe('NewItemDialogService', () => {
     service = TestBed.inject(NewItemDialogService);
     spinnerStore = TestBed.inject(spinnerLoadingStateToken);
     toastStore = TestBed.inject(toastStateToken);
-    setParserFilenamePattern('{{Year}}-{{Type}}-{{Title}}.md');
-    setParserTemplate('{{Title}} {{Tags}}');
   });
 
   it('search triggers OMDb lookup and shows spinner', () => {
@@ -84,20 +76,22 @@ describe('NewItemDialogService', () => {
 
   it('save persists selected content and closes when requested', async () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
-    api.create.mockReturnValue(of({ name: 'generated-name' }));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
     await firstValueFrom(service.save('tt123', '#tag', 'close'));
 
-    expect(generateMdContent).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ Tags: '#tag' }));
-    expect(api.create).toHaveBeenCalledWith('md-content', '2020-movie-Title.md');
-    expect(collection.addCollectionItem).toHaveBeenCalledWith(
-      {
-        name: 'generated-name',
-        content: 'md-content',
-        hash: '',
-      },
-      true
-    );
+    expect(api.create).toHaveBeenCalledWith({
+      image: 'poster-url',
+      title: 'Title',
+      genre: ['Drama', 'Action'],
+      IMDbId: 'tt123',
+      tags: ['#tag'],
+      year: 2020,
+      rate: '9.0',
+      actors: 'Actors',
+      plot: 'Plot',
+    });
+    expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
     expect(toastStore.state.message()).toBe('t:Toast.NewItem');
     expect(portal.close).toHaveBeenCalled();
     expect(spinnerStore.state.show()).toBe(false);

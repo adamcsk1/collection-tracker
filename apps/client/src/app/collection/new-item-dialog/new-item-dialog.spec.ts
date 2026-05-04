@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
+import { ApiService } from '@services/api/api-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -35,6 +36,7 @@ describe('NewItemDialog component', () => {
         template: '',
         providers: [
           { provide: NewItemDialogService, useValue: service },
+          { provide: ApiService, useValue: { collectionItemExists: vi.fn(() => of({ exists: false })) } },
           {
             provide: AutocompleteService,
             useValue: { getSuggestion: vi.fn(), formatSuggestionText: vi.fn() },

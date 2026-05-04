@@ -1,22 +1,15 @@
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ElementRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { ItemDialog } from '../item-dialog/item-dialog';
-import { INFINITE_SCROLL_PAGE_SIZE } from './infinite-scroll/infinite-scroll-const';
 import { ClaudeSearchService } from '../search/claude-search-service';
-import {
-  initialMainCollectionState,
-  MainCollectionState,
-  mainCollectionStateToken,
-} from '../../main/main-collection-store';
+import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { initialMainState, mainStateToken } from '../../main/main-store';
+import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
-import * as randomIntUtil from '@shared/utils/random-int-util';
+import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -29,42 +22,49 @@ describe('List', () => {
   let fixture: ComponentFixture<List>;
   let component: List;
   let portal: { open: ReturnType<typeof vi.fn> };
-  let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
+  let api: { searchItems: ReturnType<typeof vi.fn>; getMatchedItems: ReturnType<typeof vi.fn> };
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let scrollSpy: ReturnType<typeof vi.fn>;
 
-  const buildItem = (name: string, rawContent = name): CollectionItemModel => ({
-    rawContent,
-    rawContentLower: rawContent.toLowerCase(),
+  const buildItem = (title: string, IMDbId = title): CollectionItemModel => ({
     image: '',
-    title: name,
-    titleLower: name.toLowerCase(),
+    title,
+    titleLower: title.toLowerCase(),
+    searchableTextLower: title.toLowerCase(),
     genre: [],
-    IMDbId: '',
+    IMDbId,
     tags: [],
-    name,
     year: null,
     rate: '',
     hash: '',
+    actors: '',
     plot: '',
   });
 
   beforeEach(() => {
     portal = { open: vi.fn() };
+    api = {
+      searchItems: vi.fn((_filters, offset = 0, limit = 50) => {
+        const items = [buildItem('Alpha'), buildItem('Beta'), buildItem('Gamma')];
+        return of({ items: items.slice(offset, offset + limit), total: items.length, offset, limit });
+      }),
+      getMatchedItems: vi.fn(() => of({ items: [buildItem('AI Match', 'tt-ai')], total: 1, offset: 0, limit: 50 })),
+      getRandomItem: vi.fn(() => of(buildItem('Random Pick', 'tt-random'))),
+    };
+
     TestBed.configureTestingModule({
       imports: [List],
       providers: [
         { provide: PortalService, useValue: portal },
+        { provide: ApiService, useValue: api },
         {
           provide: ClaudeSearchService,
           useFactory: () => ({
             useClaudeAi: signal(false),
-            getMatchedIds: () => of(null),
+            getMatchedIds: () => of(['tt-ai']),
             searchInProgress: signal(false),
           }),
         },
-        provideHttpClient(),
-        provideHttpClientTesting(),
         provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
@@ -73,128 +73,85 @@ describe('List', () => {
       ],
     });
 
+    TestBed.overrideComponent(List, { set: { template: '' } });
+
     fixture = TestBed.createComponent(List);
     component = fixture.componentInstance;
-    mainCollectionState = TestBed.inject(mainCollectionStateToken);
     collectionState = TestBed.inject(collectionStateToken);
 
     scrollSpy = vi.fn();
     (component as any).scrollContainer = () => ({ nativeElement: { scrollTo: scrollSpy } }) as ElementRef;
   });
 
-  it('filters collection based on search text and resets scroll position', async () => {
+  it('fires only one initial items request on creation', async () => {
     vi.useFakeTimers();
     try {
-      vi.spyOn(component as any, 'onResetScrollPosition');
-      mainCollectionState.setState('collection', [buildItem('Alpha'), buildItem('Beta')]);
-      collectionState.setState('searchText', 'be');
-
       await vi.runAllTimersAsync();
       fixture.detectChanges();
 
-      const filtered = component['filteredCollection']();
+      expect(api.searchItems).toHaveBeenCalledTimes(1);
+      expect(api.searchItems).toHaveBeenCalledWith({}, 0, 50);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 
-      expect(filtered).toEqual([buildItem('Alpha'), buildItem('Beta')]);
-      expect(component['onResetScrollPosition']).toHaveBeenCalled();
+  it('loads items from the server and resets scroll position for search text', async () => {
+    vi.useFakeTimers();
+    try {
+      collectionState.setState('searchText', 'be');
+      await vi.runAllTimersAsync();
+      fixture.detectChanges();
+
+      expect(api.searchItems).toHaveBeenLastCalledWith({ search: 'be' }, 0, 50);
+      expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Alpha', 'Beta', 'Gamma']);
       expect(scrollSpy).toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it('opens a random item from the filtered collection', () => {
-    vi.spyOn(randomIntUtil, 'randomInt').mockReturnValue(1);
-    mainCollectionState.setState('collection', [buildItem('First'), buildItem('Second'), buildItem('Third')]);
-
-    component['onRandomPick']();
-
-    expect(portal.open).toHaveBeenCalledWith(ItemDialog, {
-      collectionItem: expect.objectContaining({ name: 'Second' }),
-    });
-  });
-
-  it('loads more items when scrolled near the bottom', () => {
-    const largeCollection = Array.from({ length: INFINITE_SCROLL_PAGE_SIZE * 2 }, (_, index) =>
-      buildItem(`Item ${index}`)
-    );
-    mainCollectionState.setState('collection', largeCollection);
-
-    const initialCount = component['visibleCollection']().length;
-    const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100 };
-    (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
-
-    component['onScroll']();
-
-    expect(component['visibleCollection']().length).toBeGreaterThan(initialCount);
-  });
-
-  it('does not load more when all items are already visible', () => {
-    mainCollectionState.setState('collection', [buildItem('Only')]);
-
-    const element = { scrollHeight: 100, scrollTop: 0, clientHeight: 100 };
-    (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
-
-    component['onScroll']();
-
-    expect(component['visibleCollection']().length).toBe(1);
-  });
-
-  it('resets visible count and scroll position when search text changes', async () => {
-    vi.useFakeTimers();
-    try {
-      const largeCollection = Array.from({ length: INFINITE_SCROLL_PAGE_SIZE * 2 }, (_, index) =>
-        buildItem(`Item ${index}`)
-      );
-      mainCollectionState.setState('collection', largeCollection);
-
-      const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100, scrollTo: scrollSpy };
-      (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
-      component['onScroll']();
-      const countAfterScroll = component['visibleCollection']().length;
-
-      collectionState.setState('searchText', 'item');
-      await vi.runAllTimersAsync();
-      fixture.detectChanges();
-
-      expect(component['visibleCollection']().length).toBeLessThan(countAfterScroll);
-      expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 1000, behavior: 'smooth' });
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('shows only unwatched items for virtual tag search', async () => {
-    mainCollectionState.setState('collection', [
-      { ...buildItem('Item One', `Alpha ${WATCHED_TAG} watch-list`), tags: [VIRTUAL_UNWATCHED_TAG] },
-      buildItem('Item Two', 'Beta'),
-    ]);
-
+  it('maps virtual unwatched search to watched=false server filter', async () => {
     vi.useFakeTimers();
     try {
       collectionState.setState('searchText', VIRTUAL_UNWATCHED_TAG);
       await vi.runAllTimersAsync();
 
-      expect(component['filteredCollection']().map((item) => item.name)).toEqual(['Item One', 'Item Two']);
+      expect(api.searchItems).toHaveBeenLastCalledWith({ watched: false }, 0, 50);
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it('switches to standard text search when forceStandardSearch is enabled', async () => {
-    mainCollectionState.setState('collection', [buildItem('Item One', 'apple'), buildItem('Item Two', 'other')]);
+  it('opens a random item from the server', async () => {
+    fixture.detectChanges();
 
-    vi.useFakeTimers();
-    try {
-      collectionState.setState('searchText', 'applx');
-      collectionState.setState('forceStandardSearch', false);
-      await vi.runAllTimersAsync();
+    component['onRandomPick']();
 
-      expect(component['filteredCollection']().map((item) => item.name)).toEqual(['Item One', 'Item Two']);
+    expect(api.getRandomItem).toHaveBeenCalled();
+    expect(portal.open).toHaveBeenCalledWith(ItemDialog, {
+      collectionItem: expect.objectContaining({ title: 'Random Pick' }),
+    });
+  });
 
-      collectionState.setState('forceStandardSearch', true);
-      expect(component['filteredCollection']().map((item) => item.name)).toEqual(['Item One', 'Item Two']);
-    } finally {
-      vi.useRealTimers();
-    }
+  it('loads more items when scrolled near the bottom', () => {
+    component['collectionLength'].set(6);
+    component['visibleCollection'].set([buildItem('One')]);
+    const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100 };
+    (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
+
+    component['onScroll']();
+
+    expect(api.searchItems).toHaveBeenCalledWith({}, 1, 50);
+  });
+
+  it('requests matched items for Claude AI results', () => {
+    const claudeSearch = TestBed.inject(ClaudeSearchService);
+    claudeSearch.useClaudeAi.set(true);
+    collectionState.setState('claudeAiPromptText', 'space');
+    (component as any).claudeAiMatchedIds = () => ['tt-ai'];
+    component['loadItems'](true);
+
+    expect(api.getMatchedItems).toHaveBeenCalled();
   });
 });

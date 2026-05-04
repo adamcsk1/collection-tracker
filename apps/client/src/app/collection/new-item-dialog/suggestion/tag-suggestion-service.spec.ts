@@ -1,92 +1,43 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '../../collection-model';
-import {
-  initialMainCollectionState,
-  MainCollectionState,
-  mainCollectionStateToken,
-} from '../../../main/main-collection-store';
-import { initialMainState, mainStateToken } from '../../../main/main-store';
-import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { ApiService } from '@services/api/api-service';
+import { firstValueFrom, of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TagSuggestionService } from './tag-suggestion-service';
-
-const buildItem = (tags: string[]): CollectionItemModel => ({
-  rawContent: '',
-  rawContentLower: '',
-  image: '',
-  title: '',
-  titleLower: '',
-  genre: [],
-  IMDbId: '',
-  tags,
-  name: '',
-  year: null,
-  rate: '',
-  hash: '',
-  plot: '',
-});
 
 describe('TagSuggestionService', () => {
   let service: TagSuggestionService;
-  let collectionState: NgxSimpleSignalStoreService<MainCollectionState>;
+  let api: { getTagSuggestions: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
+    api = { getTagSuggestions: vi.fn(() => of({ tags: ['#scifi', '#space', '#scary'] })) };
+
     TestBed.configureTestingModule({
-      providers: [
-        TagSuggestionService,
-        provideStore(initialMainCollectionState, mainCollectionStateToken),
-        provideStore(initialMainState, mainStateToken),
-      ],
+      providers: [TagSuggestionService, { provide: ApiService, useValue: api }],
     });
 
     service = TestBed.inject(TagSuggestionService);
-    collectionState = TestBed.inject(mainCollectionStateToken);
   });
 
-  it('suggests up to three unique tags replacing the last token', () => {
-    collectionState.setState('collection', [
-      buildItem(['#movie', '#scifi', '#scary', '#space']),
-      buildItem(['#series', '#scifi', '#science', '#scary']),
-    ]);
+  it('requests server tag suggestions and replaces the last token', async () => {
+    const suggestions = await firstValueFrom(service.getSuggestion('find #sc'));
 
-    const suggestions = service.getSuggestion('find #sc');
-
-    expect(suggestions.length).toBeLessThanOrEqual(3);
-    expect(suggestions.every((text) => text.startsWith('find '))).toBe(true);
-    expect(suggestions.join(' ')).not.toContain('#movie');
+    expect(api.getTagSuggestions).toHaveBeenCalledWith('#sc', 3);
+    expect(suggestions).toEqual(['find #scifi', 'find #space', 'find #scary']);
   });
 
-  it('excludes internal movie and series tags from suggestions', () => {
-    collectionState.setState('collection', [buildItem(['#movie', '#series', '#space', '#series'])]);
+  it('filters out already-entered tags', async () => {
+    const suggestions = await firstValueFrom(service.getSuggestion('#space #s'));
 
-    const suggestions = service.getSuggestion('#s');
-
-    expect(suggestions).toEqual(expect.arrayContaining(['#space']));
-    expect(suggestions).not.toContain(MOVIE_TAG);
-    expect(suggestions).not.toContain(SERIES_TAG);
+    expect(suggestions).not.toContain('#space #space');
   });
 
-  it('returns empty list when no tags match', () => {
-    collectionState.setState('collection', [buildItem(['#movie'])]);
+  it('returns empty list when no tags are provided', async () => {
+    const suggestions = await firstValueFrom(service.getSuggestion(''));
 
-    expect(service.getSuggestion('')).toEqual([]);
+    expect(suggestions).toEqual([]);
   });
 
   it('formats suggestion by taking the last token', () => {
     expect(service.formatSuggestionText('alpha beta gamma')).toBe('gamma');
-  });
-
-  it('uses fuzzy search mode and honors the limit', () => {
-    collectionState.setState('collection', [
-      buildItem(['#movie', '#space', '#spice']),
-      buildItem(['#series', '#span', '#spoke', '#spike']),
-    ]);
-
-    const suggestions = service.getSuggestion('find #spa');
-
-    expect(suggestions.length).toBeLessThanOrEqual(3);
-    expect(suggestions.every((text) => text.startsWith('find '))).toBe(true);
-    expect(suggestions.join(' ')).not.toContain('#movie');
   });
 });

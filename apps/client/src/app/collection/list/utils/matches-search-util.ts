@@ -6,15 +6,16 @@ export const matchesSearch = (item: CollectionItemModel, searchText: string, use
   if (searchText === VIRTUAL_UNWATCHED_TAG) return !item.tags.includes(WATCHED_TAG);
 
   const lower = searchText.toLowerCase();
+  const searchableTextLower = item.searchableTextLower ?? '';
 
   if (useFuzzySearch) {
     if (item.titleLower.includes(lower) || hasFuzzyMatch(lower, item.titleLower)) return true;
-    if (!item.rawContentLower.includes(lower)) {
-      return item.rawContentLower.length <= FUZZY_CONTENT_MAX_LENGTH && hasFuzzyMatch(lower, item.rawContentLower);
+    if (!searchableTextLower.includes(lower)) {
+      return searchableTextLower.length <= FUZZY_CONTENT_MAX_LENGTH && hasFuzzyMatch(lower, searchableTextLower);
     }
 
     return true;
   }
 
-  return item.rawContentLower.includes(lower);
+  return searchableTextLower.includes(lower);
 };

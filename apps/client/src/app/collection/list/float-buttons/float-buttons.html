@@ -1,18 +1,23 @@
+@if (scrollToTopAvailable()) {
+  <div
+    class="float-button float-button-scroll-to-top"
+    [class.float-button-scroll-to-top-offset]="showFloatButtons()"
+    animate.enter="animation-fade-in"
+    animate.leave="animation-fade-out"
+  >
+    <button
+      data-test-id="scroll-to-top"
+      class="button-icon material-icons"
+      [attr.aria-label]="('ScrollToTop' | signalTranslate)()"
+      [title]="('ScrollToTop' | signalTranslate)()"
+      (click)="onScrollToTop()"
+    >
+      arrow_upward
+    </button>
+  </div>
+}
 @if (showFloatButtons()) {
   <div class="float-buttons-container" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
-    @if (scrollToTopAvailable()) {
-      <div class="float-button" animate.enter="animation-fade-in" animate.leave="animation-fade-out">
-        <button
-          data-test-id="scroll-to-top"
-          class="button-icon material-icons"
-          [attr.aria-label]="('ScrollToTop' | signalTranslate)()"
-          [title]="('ScrollToTop' | signalTranslate)()"
-          (click)="onScrollToTop()"
-        >
-          arrow_upward
-        </button>
-      </div>
-    }
     @if (permissionAdd()) {
       <div class="float-button">
         <button

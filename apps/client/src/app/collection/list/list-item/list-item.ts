@@ -3,7 +3,9 @@ import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
 import { ItemDialog } from '../../item-dialog/item-dialog';
 import { ClaudeSearchService } from '../../search/claude-search-service';
+import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
 import { TagConfigColorPipe } from '../../../tag-configs/tag-configs-color-pipe';
+import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
@@ -23,9 +25,13 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 export class ListItem {
   private readonly collectionState = inject(collectionStateToken);
   private readonly portal = inject(PortalService);
+  private readonly apiState = inject(apiStateToken);
   private readonly tagConfigColorPipe = inject(TagConfigColorPipe);
   private readonly claudeSearch = inject(ClaudeSearchService);
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG) ?? false);
+  protected readonly imageUrl = computed(() =>
+    getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
+  );
   protected readonly movie = computed(() => this.collectionItem().tags.includes(MOVIE_TAG) ?? false);
   protected readonly series = computed(() => this.collectionItem().tags.includes(SERIES_TAG) ?? false);
   protected readonly imageBadgeTag = computed(() =>

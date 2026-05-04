@@ -34,3 +34,18 @@
   gap: var(--size-xs);
   margin: var(--size-xs);
 }
+
+.float-button-scroll-to-top {
+  position: fixed;
+  right: 0;
+  bottom: calc(var(--float-button-container-size) + var(--size-xs));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--size-xs);
+  margin: var(--size-xs);
+
+  &.float-button-scroll-to-top-offset {
+    bottom: calc(3 * var(--float-button-container-size) + 3 * var(--size-xs)) !important;
+  }
+}

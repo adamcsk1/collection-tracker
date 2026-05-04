@@ -6,13 +6,123 @@
     </h3>
   </ng-container>
   <ng-container dialog-shell-content>
-    <div class="editor-pane">
-      <libc-markdown-editor
-        [formField]="rawContentField"
-        [autoHeight]="true"
-        [editMode]="editMode()"
-      ></libc-markdown-editor>
-    </div>
+    @if (editMode()) {
+      <div class="item-form">
+        <label>
+          {{ ('Label.Title' | signalTranslate)() }}
+          <input [value]="draftItem().title" (input)="updateDraft('title', $any($event.target).value)" />
+        </label>
+        <label>
+          {{ ('Label.IMDbId' | signalTranslate)() }}
+          <input [value]="draftItem().IMDbId" (input)="updateDraft('IMDbId', $any($event.target).value)" />
+        </label>
+        <label>
+          {{ ('Label.Year' | signalTranslate)() }}
+          <input type="number" [value]="draftItem().year ?? ''" (input)="updateYear($any($event.target).value)" />
+        </label>
+        <label>
+          {{ ('Label.IMDbRate' | signalTranslate)() }}
+          <input [value]="draftItem().rate" (input)="updateDraft('rate', $any($event.target).value)" />
+        </label>
+        <label class="full-width image-url-field">
+          {{ ('Label.ImageUrl' | signalTranslate)() }}
+          <input [value]="draftItem().image" (input)="updateDraft('image', $any($event.target).value)" />
+          @if (draftItem().image) {
+            <img class="image-example" [src]="draftImageUrl()" [attr.alt]="('Alt.ImageExample' | signalTranslate)()" />
+          }
+        </label>
+        <libc-autocomplete
+          [label]="('Genre' | signalTranslate)()"
+          [hint]="('Hint.SeparateGenres' | signalTranslate)()"
+          [value]="genreText()"
+          [autocompleteService]="genreSuggestionService"
+          (valueChange)="updateGenre($any($event))"
+        />
+        <libc-autocomplete
+          [label]="('Tags' | signalTranslate)()"
+          [hint]="('Hint.SeparateTags' | signalTranslate)()"
+          [value]="tagsText()"
+          [autocompleteService]="tagSuggestionService"
+          (valueChange)="updateTags($any($event))"
+        />
+        <label class="full-width">
+          {{ ('Actors' | signalTranslate)() }}
+          <input [value]="draftItem().actors" (input)="updateDraft('actors', $any($event.target).value)" />
+        </label>
+        <label class="full-width">
+          {{ ('Plot' | signalTranslate)() }}
+          <textarea [value]="draftItem().plot" (input)="updateDraft('plot', $any($event.target).value)"></textarea>
+        </label>
+      </div>
+    } @else {
+      <article class="item-detail">
+        @if (collectionItem().image && !posterImageFailed()) {
+          <div class="poster-card">
+            <img [src]="imageUrl()" [alt]="collectionItem().title + ' poster'" (error)="onPosterImageError()" />
+          </div>
+        }
+        <div class="detail-content">
+          <header class="detail-header">
+            <p class="eyebrow">{{ collectionItem().year || ('Fallback.UnknownYear' | signalTranslate)() }}</p>
+            <h2>{{ collectionItem().title }}</h2>
+            <div class="metadata-row">
+              <span class="chip rating"
+                >IMDb {{ collectionItem().rate || ('Fallback.NotAvailable' | signalTranslate)() }}</span
+              >
+              <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
+            </div>
+          </header>
+
+          @if (collectionItem().genre.length) {
+            <section>
+              <h4>{{ ('Genre' | signalTranslate)() }}</h4>
+              <div class="chip-list">
+                @for (genre of collectionItem().genre; track genre) {
+                  <span class="chip">{{ genre }}</span>
+                }
+              </div>
+            </section>
+          }
+
+          @if (collectionItem().actors) {
+            <section>
+              <h4>{{ ('Actors' | signalTranslate)() }}</h4>
+              <p>{{ collectionItem().actors }}</p>
+            </section>
+          }
+
+          @if (collectionItem().tags.length) {
+            <section>
+              <h4>{{ ('Tags' | signalTranslate)() }}</h4>
+              <div class="chip-list">
+                @for (tag of collectionItem().tags; track tag) {
+                  <span class="chip">{{ tag }}</span>
+                }
+              </div>
+            </section>
+          }
+
+          @if (collectionItem().plot) {
+            <section>
+              <h4>{{ ('Plot' | signalTranslate)() }}</h4>
+              <p>{{ collectionItem().plot }}</p>
+            </section>
+          }
+
+          <section>
+            <h4>{{ ('Links' | signalTranslate)() }}</h4>
+            <div class="external-links">
+              <a [href]="trailerUrl()" target="_blank" rel="noopener noreferrer">{{
+                ('Link.YouTubeTrailer' | signalTranslate)()
+              }}</a>
+              <a [href]="webSearchUrl()" target="_blank" rel="noopener noreferrer">{{
+                ('Link.WebSearch' | signalTranslate)()
+              }}</a>
+            </div>
+          </section>
+        </div>
+      </article>
+    }
   </ng-container>
   <ng-container dialog-shell-bottom-content>
     @if (editMode()) {

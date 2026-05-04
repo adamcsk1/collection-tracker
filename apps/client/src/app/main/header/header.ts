@@ -40,7 +40,7 @@ export class Header {
   }
 
   protected onSync(): void {
-    this.collection.loadCollection();
+    this.collection.triggerReload();
   }
 
   protected onLogout(): void {

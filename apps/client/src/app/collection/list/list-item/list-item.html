@@ -4,7 +4,7 @@
     class="image"
     tabindex="0"
     role="button"
-    [style.backgroundImage]="'url(' + collectionItem.image + ')'"
+    [style.backgroundImage]="'url(' + imageUrl() + ')'"
     [style.borderColor]="collectionItem.tags | tagConfigColor: { checkUseForImageBorder: true }"
     [attr.aria-label]="collectionItem.title"
     (click)="onOpenDetail()"

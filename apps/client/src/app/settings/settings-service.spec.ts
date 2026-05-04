@@ -28,7 +28,6 @@ const buildFormData = (overrides: Partial<SettingsModel> = {}): SettingsModel =>
   clearLocalStorageAfterLogout: false,
   animatedBackground: true,
   language: 'en',
-  fetchBatchSize: 25,
   theme: 'dark',
   ...overrides,
 });
@@ -84,7 +83,6 @@ describe('SettingsService', () => {
 
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_SENSITIVE_DATA_STORAGE, 'session');
     expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({
-      fetchBatchSize: 25,
       theme: 'dark',
       animatedBackground: true,
       language: 'en',
@@ -115,7 +113,6 @@ describe('SettingsService', () => {
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_SETTINGS_LOCK, 'true');
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT, 'true');
     expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({
-      fetchBatchSize: 25,
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
@@ -125,14 +122,12 @@ describe('SettingsService', () => {
   it('preloads migrated settings from the API and leaves defaults for missing values', () => {
     api.getUserSettings.mockReturnValue(
       of({
-        fetchBatchSize: 50,
         theme: 'dark',
       })
     );
 
     service.preloadUserSettings().subscribe();
 
-    expect(apiState.state.fetchBatchSize()).toBe(50);
     expect(translate.setLanguage).not.toHaveBeenCalled();
     expect(mainState.state.language()).toBe('en');
     expect(mainState.state.animatedBackground()).toBe(true);

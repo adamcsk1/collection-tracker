@@ -1,8 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ApiService } from '@services/api/api-service';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
-import { GetAllApiResponseItemModel, GetAllApiResponseModel } from '@shared/models/api-model';
-import * as collectionUtils from '@shared/utils/get-collection-item-util';
+import { CollectionItemApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,30 +15,35 @@ import { CollectionService } from './collection-service';
 
 describe('CollectionService', () => {
   let service: CollectionService;
-  let api: { getAll: ReturnType<typeof vi.fn> };
+  let api: { searchItems: ReturnType<typeof vi.fn> };
   let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
-  let getCollectionItemSpy: ReturnType<typeof vi.spyOn>;
   const originalStructuredClone = global.structuredClone;
 
-  const buildCollectionItem = (name: string) => ({
-    rawContent: `raw-${name}`,
-    rawContentLower: `raw-${name}`.toLowerCase(),
+  const buildCollectionItem = (title: string): CollectionItemApiModel => ({
     image: '',
-    title: name,
-    titleLower: name.toLowerCase(),
+    title,
+    titleLower: title.toLowerCase(),
+    searchableTextLower: title.toLowerCase(),
     genre: [],
-    IMDbId: '',
+    IMDbId: `tt-${title}`,
     tags: [],
-    name,
     year: null,
     rate: '',
     hash: '',
+    actors: '',
     plot: '',
   });
 
+  const buildResponse = (items: CollectionItemApiModel[]): CollectionItemsApiResponseModel => ({
+    items,
+    total: items.length,
+    offset: 0,
+    limit: 100,
+  });
+
   beforeEach(() => {
-    api = { getAll: vi.fn() };
+    api = { searchItems: vi.fn() };
     (global as any).structuredClone = (value: unknown) => JSON.parse(JSON.stringify(value));
     TestBed.configureTestingModule({
       providers: [
@@ -53,11 +57,9 @@ describe('CollectionService', () => {
     service = TestBed.inject(CollectionService);
     mainCollectionState = TestBed.inject(mainCollectionStateToken);
     apiState = TestBed.inject(apiStateToken);
-    getCollectionItemSpy = vi.spyOn(collectionUtils, 'getCollectionItem');
   });
 
   afterEach(() => {
-    getCollectionItemSpy.mockRestore();
     (global as any).structuredClone = originalStructuredClone;
   });
 
@@ -66,35 +68,29 @@ describe('CollectionService', () => {
 
     service.loadCollection();
 
-    expect(api.getAll).not.toHaveBeenCalled();
+    expect(api.searchItems).not.toHaveBeenCalled();
     expect(mainCollectionState.state.collection()).toEqual([]);
   });
 
   it('replaces collection with first batch then appends subsequent batches', () => {
-    const subject = new Subject<GetAllApiResponseModel>();
-    api.getAll.mockReturnValue(subject.asObservable());
-    getCollectionItemSpy
-      .mockImplementationOnce(() => buildCollectionItem('first'))
-      .mockImplementationOnce(() => buildCollectionItem('second'));
-
+    const subject = new Subject<CollectionItemsApiResponseModel>();
+    api.searchItems.mockReturnValue(subject.asObservable());
     service.loadCollection();
 
-    subject.next([{ name: 'first', content: 'first', hash: '' }]);
+    subject.next(buildResponse([buildCollectionItem('first')]));
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('first')]);
 
-    subject.next([{ name: 'second', content: 'second', hash: '' }]);
+    subject.next(buildResponse([buildCollectionItem('second')]));
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('first'),
       buildCollectionItem('second'),
     ]);
-    expect(getCollectionItemSpy).toHaveBeenCalledTimes(2);
   });
 
   it('adds a collection item to the front when first flag is true', () => {
-    getCollectionItemSpy.mockImplementation((raw: GetAllApiResponseItemModel) => buildCollectionItem(raw.name));
     mainCollectionState.setState('collection', [buildCollectionItem('existing')]);
 
-    service.addCollectionItem({ name: 'new', content: 'new', hash: '' }, true);
+    service.addCollectionItem(buildCollectionItem('new'), true);
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('new'),
@@ -103,10 +99,9 @@ describe('CollectionService', () => {
   });
 
   it('adds a collection item to the end when first flag is false', () => {
-    getCollectionItemSpy.mockImplementation((raw: GetAllApiResponseItemModel) => buildCollectionItem(raw.name));
     mainCollectionState.setState('collection', [buildCollectionItem('existing')]);
 
-    service.addCollectionItem({ name: 'another', content: 'another', hash: '' });
+    service.addCollectionItem(buildCollectionItem('another'));
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('existing'),
@@ -117,18 +112,16 @@ describe('CollectionService', () => {
   it('deletes a collection item by name', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('keep'), buildCollectionItem('remove')]);
 
-    service.deleteCollectionItem('remove');
+    service.deleteCollectionItem('tt-remove');
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('keep')]);
   });
 
   it('updates an existing collection item by name', () => {
-    getCollectionItemSpy.mockImplementation(() => buildCollectionItem('updated'));
     mainCollectionState.setState('collection', [buildCollectionItem('target')]);
 
-    service.updateCollectionItem('target', 'new content', 'newhash');
+    service.updateCollectionItem('tt-target', buildCollectionItem('updated'));
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('updated')]);
-    expect(getCollectionItemSpy).toHaveBeenCalledWith({ name: 'target', content: 'new content', hash: 'newhash' });
   });
 });

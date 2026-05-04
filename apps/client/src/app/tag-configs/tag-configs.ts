@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, untracked } from '@angular/core';
-import { mainCollectionStateToken } from '../main/main-collection-store';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ApiService } from '@services/api/api-service';
 import { TagConfigsModel } from './tag-configs-model';
 import { tagConfigsStateToken } from './tag-configs-store';
 import { Checkbox } from '@components/checkbox/checkbox';
@@ -24,22 +24,14 @@ import { TagConfigsService } from './tag-configs-service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TagConfigs {
-  [x: string]: any;
   private readonly tagConfigsService = inject(TagConfigsService);
   private readonly confirm = inject(ConfirmService);
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly mainCollectionState = inject(mainCollectionStateToken);
+  private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
   private readonly tagConfigsState = inject(tagConfigsStateToken);
-  private readonly uniqueTags = computed(() => [
-    ...new Set(
-      this.mainCollectionState.state
-        .collection()
-        .flatMap((item) => item.tags)
-        .sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0))
-    ),
-  ]);
+  private readonly uniqueTags = signal<string[]>([]);
   private readonly tagIgnoreList = [...INTERNAL_USED_TAGS, ...VIRTUAL_TAGS];
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly tagConfigs = computed<TagConfigsModel>(() => {
@@ -62,6 +54,11 @@ export class TagConfigs {
   });
 
   constructor() {
+    this.api.getStatistics().subscribe((statistics) => {
+      const tags = statistics.tagCounts.map((tagCount) => tagCount.tag);
+      this.uniqueTags.set([...new Set(tags)].sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0)));
+    });
+
     const effectRef = effect(() => {
       let storedConfigs = this.tagConfigsState.state.configs();
       const uniqueTags = this.uniqueTags();
