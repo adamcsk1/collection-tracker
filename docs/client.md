@@ -6,11 +6,10 @@ Source: [`apps/client`](../apps/client)
 
 ## Functional Areas
 
-- `collection`: search and browse the stored Markdown entries; includes Claude AI natural-language search via `ClaudeSearchService` and `ClaudeAiInput` when `CLAUDE_API_KEY` is configured on the server
+- `collection`: search and browse stored collection items; includes Claude AI natural-language search via `ClaudeSearchService` and `ClaudeAiInput` when `CLAUDE_API_KEY` is configured on the server
 - `statistics`: tag-driven summaries and Chart.js visualizations
 - `tag-configs`: per-tag color, weight, and presentation rules
 - `settings`: API, theme, search, and account-level preferences
-- `parser`: user-specific Markdown template and regular-expression configuration
 - `about`: build metadata and settings-lock release flow
 
 ## Technical Notes

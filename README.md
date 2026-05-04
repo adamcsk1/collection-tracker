@@ -13,15 +13,15 @@ The project is open to contributions, feedback, and suggestions that improve usa
 - Angular with Nx
 - Express for the API
 - Vitest for unit tests and Cypress for end-to-end coverage
-- Flat-file persistence in a configurable data directory
+- SQLite persistence in a configurable data directory
 - Android WebView wrapper for mobile distribution
 
 ## Workspace
 
-- `apps/client`: main application for collection management, statistics, parser configuration, tag configuration, and user settings
+- `apps/client`: main application for collection management, statistics, tag configuration, and user settings
 - `apps/health`: server health status dashboard — memory, CPU, disk, load, and frontend status
 - `apps/login`: authentication-only application for sign-up and sign-in
-- `apps/server`: API, authentication, and flat-file persistence
+- `apps/server`: API, authentication, and SQLite persistence
 - `apps/dev-proxy`: single-origin development gateway on `http://localhost:4200`
 - `apps/collection-e2e`: Cypress smoke-test project
 - `libs/components`: shared standalone Angular UI components

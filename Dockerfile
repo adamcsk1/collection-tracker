@@ -1,8 +1,10 @@
 # Runtime image that serves the built Angular app with Nginx and runs the built Node.js server
-FROM node:24-alpine AS runtime
+FROM node:24-slim AS runtime
 
-# Install Nginx, bash (for scripts) and su-exec (to drop privileges at runtime)
-RUN apk add --no-cache nginx bash su-exec
+# Install Nginx, bash (for scripts), and gosu (to drop privileges at runtime)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends nginx bash gosu && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy pre-built artifacts produced outside of Docker (nx build ...)
 # - Angular client build -> dist/apps/client/browser
@@ -22,11 +24,10 @@ RUN if [ -f package-lock.json ]; then npm ci --omit=dev; \
   else echo "No package.json in server dist. Ensure Nx 'generatePackageJson' is enabled." && exit 1; fi
 
 # Create non-root user and required folders
-RUN addgroup -S app && adduser -S app -G app && \
+RUN groupadd -r app && useradd -r -g app app && \
   mkdir -p /data && \
-  chown -R app:app \
-    /app \
-    /data
+  chown -R app:app /app /data && \
+  chmod 700 /data
 
 # Copy Nginx config and startup scripts
 WORKDIR /app

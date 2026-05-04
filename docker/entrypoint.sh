@@ -15,6 +15,8 @@ mkdir -p "$DATA_DIR"
 # If running with a mounted volume from host, permissions may be wrong.
 # Fix ownership to the app user so the Node server can write.
 chown -R ${APP_USER}:${APP_GROUP} "$DATA_DIR" || true
+chmod 700 "$DATA_DIR" || true
+chmod -R u=rwX,go= "$DATA_DIR" || true
 
 # Also ensure Nginx writable directories are owned by app
 for p in \
@@ -38,4 +40,4 @@ for p in \
  done
 
 # Drop privileges and run the app's startup script
-exec su-exec ${APP_USER}:${APP_GROUP} /app/start.sh
+exec gosu ${APP_USER}:${APP_GROUP} /app/start.sh

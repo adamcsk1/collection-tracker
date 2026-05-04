@@ -6,11 +6,11 @@ Source: [`libs/shared`](../libs/shared)
 
 ## Contents
 
-- `constants/`: API prefix, parser defaults, storage keys, and tag constants
+- `constants/`: API prefix, storage keys, and tag constants
 - `models/`: API DTOs and shared language, theme, search, select, and OMDb types
 - `regexps/`: reusable regexp helpers such as IMDb ID extraction
 - `styles/`: reset styles, design tokens, shared component CSS, and animation styles
-- `utils/`: parser serialization, search helpers, color helpers, clipboard helpers, device heuristics, and general utilities
+- `utils/`: search helpers, color helpers, clipboard helpers, device heuristics, and general utilities
 - `animations/`: shared animation helpers used by the frontend
 
 ## Integration Notes

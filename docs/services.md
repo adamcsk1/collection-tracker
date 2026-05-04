@@ -8,7 +8,6 @@ Source: [`libs/services`](../libs/services)
 
 - `api/`: HTTP client, auth/session integration, pagination, API store, and Claude AI query (`getClaudeQueryData`)
 - `omdb/`: OMDb lookup logic (search and item fetch via server proxy)
-- `parser/`: parser configuration, template regeneration, parser cache helpers, and filename/tag parsing utilities
 - `md-content-generator/`: Markdown generation from OMDb payloads
 - `theme/`: theme state and DOM class management
 - `webstorage/`: local and session storage abstraction

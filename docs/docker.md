@@ -8,7 +8,7 @@ The Docker image serves the built Angular applications with Nginx and runs the b
 - The login application is served from `/login/`.
 - The client application is served from `/client/`.
 - `/api/` is proxied to the Node server on `127.0.0.1:3000`.
-- `/data` is the writable volume for `.env`, flat-file databases, logs, and stored Markdown entries.
+- `/data` is the writable volume for `.env`, the SQLite database, logs, and image cache files.
 
 ## Build Prerequisites
 
@@ -25,6 +25,8 @@ npm run build
 docker buildx build --load -t collection-tracker .
 docker run --rm -p 3001:3001 -v ${PWD}/.data:/data collection-tracker
 ```
+
+> The server requires `OMDB_API_KEY` in `/data/.env`. If you mount an existing `.data` folder with a configured `.env`, the container uses it. Otherwise, the startup script creates a minimal default `/data/.env` with an empty `OMDB_API_KEY=` placeholder; you must set the key before OMDb proxying will work.
 
 ## Docker Compose (Recommended for VPS)
 
