@@ -8,7 +8,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
       <div class="skeleton-body">
         <span class="skeleton-line shine"></span>
         <span class="skeleton-line shine"></span>
-        <span class="skeleton-line shine"></span>
       </div>
     </div>
   `,

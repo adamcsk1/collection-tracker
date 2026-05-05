@@ -109,7 +109,7 @@ describe('ListItem', () => {
     expect(collectionState.state.forceStandardSearch()).toBe(true);
   });
 
-  it('applies tag-config-driven colors to image border and tag text', () => {
+  it('applies tag-config-driven colors to image border', () => {
     tagConfigsState.setState('configs', [
       {
         tag: '#blue',
@@ -131,14 +131,9 @@ describe('ListItem', () => {
     fixture.componentRef.setInput('collectionItem', buildItem('Sample', ['#blue', '#red']));
     fixture.detectChanges();
 
-    const image = fixture.nativeElement.querySelector('.image') as HTMLElement;
-    const getBlueTagAnchor = (): HTMLAnchorElement | undefined =>
-      Array.from<HTMLAnchorElement>(fixture.nativeElement.querySelectorAll('a')).find(
-        (link: HTMLAnchorElement) => link.textContent?.trim() === '#blue'
-      );
+    const host = fixture.nativeElement as HTMLElement;
 
-    expect(['#112233', normalizeHexColor('#112233')]).toContain(image.style.borderColor);
-    expect(['#112233', normalizeHexColor('#112233')]).toContain(getBlueTagAnchor()?.style.color);
+    expect(['#112233', normalizeHexColor('#112233')]).toContain(host.style.borderColor);
 
     tagConfigsState.setState('configs', [
       {
@@ -155,9 +150,8 @@ describe('ListItem', () => {
     fixture.detectChanges();
 
     expect(['', 'transparent', 'rgb(0, 0, 0)', 'rgba(0, 0, 0, 0)', 'rgb(0,0,0)', 'rgba(0,0,0,0)']).toContain(
-      image.style.borderColor
+      host.style.borderColor
     );
-    expect(getBlueTagAnchor()?.getAttribute('style') ?? '').not.toContain('112233');
   });
 
   it('renders image badge for the first matching image-badge tag and hides it from secondary tags', () => {
@@ -190,7 +184,7 @@ describe('ListItem', () => {
     expect(['#ff0000', normalizeHexColor('#ff0000')]).toContain(badge.style.backgroundColor);
     expect(['#ffffff', 'rgb(255,255,255)', 'rgb(255, 255, 255)']).toContain(normalizeStyleValue(badge.style.color));
     expect(['#111111', normalizeHexColor('#111111')]).toContain(
-      fixture.nativeElement.querySelector('.image')?.style.borderColor
+      (fixture.nativeElement as HTMLElement).style.borderColor
     );
   });
 

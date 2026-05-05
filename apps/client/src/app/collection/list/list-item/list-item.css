@@ -1,65 +1,85 @@
 :host {
-  --image-border-width: 3.5px;
-
   display: flex;
-  align-items: center;
-  margin: var(--size-xs);
+  flex-direction: column;
+  background-color: var(--background-color-alt);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
+  cursor: pointer;
+  border: 2px solid transparent;
 
-  h3 {
-    color: var(--main-color);
-    font-size: var(--font-size-base);
+  &:hover,
+  &:focus-within {
+    transform: translateY(var(--card-hover-translate));
+    box-shadow: var(--card-hover-shadow);
   }
 
   .badge {
     position: absolute;
-    top: -5%;
+    top: var(--size-xs);
+    right: var(--size-xs);
     font-size: var(--font-size-sm);
-    left: calc(var(--image-width) / 2 - var(--image-border-width));
-    padding: 0 var(--size-2xs);
+    padding: var(--size-2xs) var(--size-xs);
     border-radius: var(--border-radius);
-    transform: translateX(-50%);
 
     @media (width <= 520px) {
-      font-size: 0.6rem;
+      font-size: var(--font-size-sm);
     }
   }
 
   .image {
-    flex-basis: var(--image-width);
-    display: block;
-    width: var(--image-width);
-    height: var(--image-height);
-    border-radius: var(--border-radius);
+    width: 100%;
+    aspect-ratio: var(--card-aspect-ratio);
     background-position: center;
     background-repeat: no-repeat;
-    background-size: var(--image-width) var(--image-height);
-    cursor: pointer;
-    border-width: var(--image-border-width);
-    border-style: solid;
-    border-color: transparent;
+    background-size: cover;
     position: relative;
 
     &:hover {
-      outline: var(--outline-style);
-      outline-color: var(--focus-border-color);
+      outline: none;
     }
   }
 
   .content {
-    flex-basis: calc(100% - var(--image-width));
+    padding: var(--size-xs);
     display: flex;
     flex-direction: column;
-    padding: var(--size-xs);
+    gap: var(--size-2xs);
   }
 
-  a {
-    display: inline-flex;
-    flex-direction: row;
-    align-items: center;
-    gap: var(--size-2xs);
+  h3 {
+    color: var(--main-color);
+    font-size: var(--font-size-base);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
-    i {
-      font-size: var(--font-size-sm);
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: var(--size-xs);
+    font-size: var(--font-size-sm);
+    color: var(--text-color);
+    line-height: 1;
+
+    .rating {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--size-2xs);
+
+      i {
+        font-size: var(--font-size-sm);
+      }
     }
   }
 }

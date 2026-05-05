@@ -20,6 +20,7 @@ import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'listitem',
+    '[style.borderColor]': 'imageBorderColor()',
   },
 })
 export class ListItem {
@@ -34,6 +35,9 @@ export class ListItem {
   );
   protected readonly movie = computed(() => this.collectionItem().tags.includes(MOVIE_TAG) ?? false);
   protected readonly series = computed(() => this.collectionItem().tags.includes(SERIES_TAG) ?? false);
+  protected readonly imageBorderColor = computed(() =>
+    this.tagConfigColorPipe.transform(this.collectionItem().tags, { checkUseForImageBorder: true })
+  );
   protected readonly imageBadgeTag = computed(() =>
     this.collectionItem().tags.find((tag) => this.tagConfigColorPipe.transform(tag, { useForImageBadge: true }))
   );
