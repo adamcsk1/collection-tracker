@@ -1,44 +1,27 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CollectionService } from '../../collection/collection-service';
-import { initialMainState, MainState, mainStateToken } from '../main-store';
-import * as MainUtil from '../main-util';
-import { ApiService } from '@services/api/api-service';
+import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
-import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
-import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSignalTranslateService, provideSignalTranslateConfig } from 'ngx-signal-translate';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of, throwError } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Header } from './header';
+import { MenuDialog } from '../menu-dialog/menu-dialog';
 
 describe('Header component', () => {
   let fixture: ComponentFixture<Header>;
   let component: Header;
-  let collection: { triggerReload: ReturnType<typeof vi.fn> };
-  let api: { logout: ReturnType<typeof vi.fn> };
-  let webstorage: { clear: ReturnType<typeof vi.fn> };
-  let mainState: NgxSimpleSignalStoreService<MainState>;
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  let redirectSpy: ReturnType<typeof vi.spyOn>;
+  let portal: { open: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    collection = { triggerReload: vi.fn() };
-    api = { logout: vi.fn(() => of(void 0)) };
-    webstorage = { clear: vi.fn() };
+    portal = { open: vi.fn() };
 
     TestBed.configureTestingModule({
       imports: [Header],
       providers: [
-        { provide: CollectionService, useValue: collection },
-        { provide: ApiService, useValue: api },
-        { provide: WebstorageService, useValue: webstorage },
+        { provide: PortalService, useValue: portal },
         { provide: ThemeService, useValue: { themeLogo: signal('logo-mock.png') } },
-        provideStore(initialThemeState, themeStateToken),
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         provideSignalTranslateConfig({ path: '' }),
-        provideStore(initialMainState, mainStateToken),
       ],
     });
 
@@ -46,48 +29,13 @@ describe('Header component', () => {
 
     fixture = TestBed.createComponent(Header);
     component = fixture.componentInstance;
-    mainState = TestBed.inject(mainStateToken);
     fixture.detectChanges();
-
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    redirectSpy = vi.spyOn(MainUtil, 'redirectToLogin').mockImplementation(() => {});
   });
 
-  afterEach(() => {
-    consoleErrorSpy.mockRestore();
-    redirectSpy.mockRestore();
-  });
+  it('opens menu dialog when menu button is clicked', () => {
+    component['onOpenMenu']();
 
-  it('toggles the menu visibility on click', () => {
-    component['onShowMenu'](new Event('click'));
-    expect(component['showMenu']()).toBe(true);
-
-    component['onHideMenu']();
-    expect(component['showMenu']()).toBe(false);
-  });
-
-  it('triggers collection reload', () => {
-    component['onSync']();
-
-    expect(collection.triggerReload).toHaveBeenCalled();
-  });
-
-  it('logs out successfully and clears storage when configured', () => {
-    mainState.setState('clearLocalStorageAfterLogout', true);
-
-    component['onLogout']();
-
-    expect(webstorage.clear).toHaveBeenCalled();
-    expect(api.logout).toHaveBeenCalled();
-  });
-
-  it('handles logout errors and still redirects', () => {
-    mainState.setState('clearLocalStorageAfterLogout', true);
-    api.logout.mockReturnValue(throwError(() => new Error('fail')));
-
-    component['onLogout']();
-
-    expect(webstorage.clear).toHaveBeenCalled();
-    expect(api.logout).toHaveBeenCalled();
+    expect(portal.open).toHaveBeenCalledTimes(1);
+    expect(portal.open).toHaveBeenCalledWith(MenuDialog);
   });
 });

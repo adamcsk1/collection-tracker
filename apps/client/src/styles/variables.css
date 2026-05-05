@@ -6,10 +6,9 @@
   --container-max-width: 1200px;
   --container-max-width-mobile: 95vw;
 
+  /* Customs */
   --card-width: 160px;
   --card-aspect-ratio: 2 / 3;
-  --card-border-radius: 12px;
-  --card-shadow: 0 4px 12px rgb(from var(--base-color-darker) r g b / 0.15);
-  --card-hover-shadow: 0 12px 28px rgb(from var(--base-color-darker) r g b / 0.25);
-  --card-hover-translate: -6px;
+  --grid-gap: var(--size-md);
+  --grid-padding: var(--size-md);
 }

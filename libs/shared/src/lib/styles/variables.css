@@ -15,4 +15,10 @@
   --outline-style: 2px solid var(--border-color);
   --outline-offset: 2px;
   --input-height: 36px;
+
+  /* Customs */
+  --card-border-radius: 12px;
+  --card-shadow: 0 4px 12px rgb(from var(--base-color-darker) r g b / 0.15);
+  --card-hover-shadow: 0 12px 28px rgb(from var(--base-color-darker) r g b / 0.25);
+  --card-hover-translate: -6px;
 }
