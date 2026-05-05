@@ -4,14 +4,13 @@
 
   h2 {
     font-weight: bold;
+    margin-bottom: var(--size-xs);
   }
 
-  i {
-    padding: var(--size-2xs);
-    font-size: calc(3 * var(--size-md));
-    border-radius: 35%;
-    background-color: var(--main-color);
-    color: var(--background-color-alt);
+  p {
+    color: var(--text-color);
+    opacity: 0.8;
+    margin: 0;
   }
 }
 
@@ -23,13 +22,15 @@ form {
     gap: var(--size-md);
 
     hr {
-      margin-top: var(--size-md);
+      margin: 0;
+      opacity: 0.2;
     }
 
     div {
       display: flex;
       text-align: center;
       align-items: center;
+      gap: var(--size-xs);
 
       button,
       a {
