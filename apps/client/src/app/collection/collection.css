@@ -9,7 +9,7 @@
   z-index: 1;
   display: block;
   position: relative;
-  max-width: var(--container-max-width);
+  max-width: min(var(--container-max-width), 95vw);
   border-radius: var(--border-radius);
 
   @media (width <= 520px) {

@@ -3,11 +3,16 @@
   max-height: calc(100svh - var(--header-height) - 54px - 2 * var(--size-md));
   max-height: calc(100dvh - var(--header-height) - 54px - 2 * var(--size-md));
   overflow: hidden auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
+  gap: var(--size-md);
+  padding: var(--size-md);
 
   .list-empty {
     display: flex;
     flex-direction: column;
     text-align: center;
+    grid-column: 1 / -1;
 
     i {
       text-align: center;
