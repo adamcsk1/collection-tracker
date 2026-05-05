@@ -150,6 +150,7 @@
   "Toast.EditItem": "The collection item was changed successfully!",
   "Toast.ImagesRegenerated": "Images were regenerated successfully!",
   "Toast.ImagesRegeneratedWithErrors": "Images regeneration could not be completed!",
+  "Toast.LoadStatisticsError": "Could not load statistics. Please try again.",
   "Toast.MarkedAllAsUnwatched": "All items were marked as unwatched successfully!",
   "Toast.MarkedAllAsWatched": "All items were marked as watched successfully!",
   "Toast.MarkingAllAsWatchedWithErrors": "Marking all items as watched was completed with some errors!",
