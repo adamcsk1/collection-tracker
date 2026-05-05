@@ -4,7 +4,7 @@ import { apiStateToken, initialApiState } from '@services/api/api-store';
 import * as mobileUserAgentUtil from '@shared/utils/mobile-user-agent.util';
 import * as coarsePointerUtil from '@shared/utils/prefer-coarse-pointer-util';
 import * as randomIntUtil from '@shared/utils/random-int-util';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Background } from './background';
