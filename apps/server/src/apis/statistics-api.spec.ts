@@ -1,0 +1,82 @@
+import { buildApp } from '../../test/mocks/build-app-mock';
+import { mockResponse } from '../../test/mocks/response-mock';
+import { getDatabase } from '../core/database/database';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const insertUserAndItems = () => {
+  const db = getDatabase();
+  db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+  db.prepare(
+    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'tt001', 'Movie One', 'movie one', '1999', '8.0', 'Plot one', 'img1.jpg', 'hash1');
+  const item1Id = Number(db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt001')!.id);
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#movie');
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#watched');
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, 'sci-fi');
+  db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item1Id, 'Action');
+
+  db.prepare(
+    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'tt002', 'Series One', 'series one', '2000', '7.5', 'Plot two', 'img2.jpg', 'hash2');
+  const item2Id = Number(db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt002')!.id);
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item2Id, '#series');
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item2Id, 'drama');
+  db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item2Id, 'Drama');
+};
+
+describe('statistics-api', () => {
+  afterEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it('returns collection statistics', async () => {
+    insertUserAndItems();
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: {} };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./statistics-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        totalItems: 2,
+        movieCount: 1,
+        seriesCount: 1,
+        watchedCount: 1,
+        unwatchedCount: 1,
+        tagCounts: expect.arrayContaining([
+          expect.objectContaining({ tag: 'sci-fi', count: 1 }),
+          expect.objectContaining({ tag: 'drama', count: 1 }),
+        ]),
+        genreCounts: expect.arrayContaining([
+          expect.objectContaining({ genre: 'Action', count: 1 }),
+          expect.objectContaining({ genre: 'Drama', count: 1 }),
+        ]),
+      })
+    );
+  });
+
+  it('applies filters to statistics', async () => {
+    insertUserAndItems();
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { type: 'movie' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./statistics-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        totalItems: 1,
+        movieCount: 1,
+        seriesCount: 0,
+      })
+    );
+  });
+});
