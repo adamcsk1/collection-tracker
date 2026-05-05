@@ -378,13 +378,13 @@ describe('Autocomplete component', () => {
     expect(component['suggestions']()).toEqual([]);
     unsubscribe.unsubscribe();
   });
+});
 
-  it('uses input autocompleteService over injected service', () => {
-    const inputServiceStub = {
-      getSuggestion: vi.fn().mockReturnValue(['gamma', 'delta']),
-      formatSuggestionValue: vi.fn((value: string) => `${value}-input`),
-    };
+describe('Autocomplete component with input service', () => {
+  let inputFixture: ComponentFixture<InputServiceHostComponent>;
+  let inputComponent: Autocomplete<string>;
 
+  beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [InputServiceHostComponent],
       providers: [
@@ -392,12 +392,19 @@ describe('Autocomplete component', () => {
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
       ],
     });
+  });
 
-    const inputFixture = TestBed.createComponent(InputServiceHostComponent);
+  it('uses input autocompleteService over injected service', () => {
+    const inputServiceStub = {
+      getSuggestion: vi.fn().mockReturnValue(['gamma', 'delta']),
+      formatSuggestionValue: vi.fn((value: string) => `${value}-input`),
+    };
+
+    inputFixture = TestBed.createComponent(InputServiceHostComponent);
     inputFixture.componentRef.setInput('autocompleteService', inputServiceStub);
     inputFixture.detectChanges();
 
-    const inputComponent = inputFixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
+    inputComponent = inputFixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
 
     vi.useFakeTimers();
     inputComponent['onKeyup']({
@@ -422,30 +429,21 @@ describe('Autocomplete component', () => {
       getSuggestion: vi.fn().mockReturnValue(of(['zeta', 'eta'])),
     };
 
-    TestBed.configureTestingModule({
-      imports: [InputServiceHostComponent],
-      providers: [
-        { provide: AutocompleteService, useValue: { getSuggestion: vi.fn(), formatSuggestionText: vi.fn() } },
-        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
-      ],
-    });
+    inputFixture = TestBed.createComponent(InputServiceHostComponent);
+    inputFixture.componentRef.setInput('autocompleteService', observableServiceStub);
+    inputFixture.detectChanges();
 
-    const observableFixture = TestBed.createComponent(InputServiceHostComponent);
-    observableFixture.componentRef.setInput('autocompleteService', observableServiceStub);
-    observableFixture.detectChanges();
-
-    const observableComponent = observableFixture.debugElement.children[0].children[0]
-      .componentInstance as Autocomplete<string>;
+    inputComponent = inputFixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
 
     vi.useFakeTimers();
-    observableComponent['onKeyup']({
+    inputComponent['onKeyup']({
       code: 'KeyZ',
       target: { value: 'z' },
     } as unknown as KeyboardEvent);
     vi.advanceTimersByTime(80);
-    observableFixture.detectChanges();
+    inputFixture.detectChanges();
 
-    expect(observableComponent['suggestions']()).toEqual(['zeta', 'eta']);
+    expect(inputComponent['suggestions']()).toEqual(['zeta', 'eta']);
     vi.useRealTimers();
   });
 });

@@ -1,4 +1,5 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { StatisticsSummaryModel } from './statistics-model';
 import { Details } from '@components/details/details';
 import { ApiService } from '@services/api/api-service';
@@ -9,7 +10,7 @@ import { CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
 import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY, takeUntilDestroyed } from 'rxjs';
+import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'ct-statistics',
