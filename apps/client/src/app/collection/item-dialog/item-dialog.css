@@ -1,7 +1,3 @@
-:host {
-  --dialog-max-width: min(calc(2 * var(--container-max-width)), calc(100vw - 2 * var(--size-md)));
-}
-
 .item-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(calc(14 * var(--size-md)), 1fr));
