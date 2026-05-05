@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { StatisticsSummaryModel } from './statistics-model';
 import { Details } from '@components/details/details';
 import { ApiService } from '@services/api/api-service';
@@ -9,7 +9,7 @@ import { CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
 import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY } from 'rxjs';
+import { catchError, EMPTY, takeUntilDestroyed } from 'rxjs';
 
 @Component({
   selector: 'ct-statistics',
@@ -26,6 +26,7 @@ export class Statistics implements AfterViewInit {
   private readonly webstorage = inject(WebstorageService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly apiState = inject(apiStateToken);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly statistics = signal<CollectionStatisticsApiResponseModel | null>(null);
   protected readonly tags = computed(() => this.statistics()?.tagCounts.map((tagCount) => tagCount.tag) ?? []);
@@ -98,6 +99,7 @@ export class Statistics implements AfterViewInit {
     this.api
       .getStatistics()
       .pipe(
+        takeUntilDestroyed(this.destroyRef),
         catchError(() => {
           this.apiState.setState('loadNetworkStatus', 'error');
           return EMPTY;

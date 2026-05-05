@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { ApiService } from '@services/api/api-service';
 import { TagConfigsModel } from './tag-configs-model';
 import { tagConfigsStateToken } from './tag-configs-store';
@@ -10,7 +19,7 @@ import { ConfirmService } from '@services/confirm-service';
 import { INTERNAL_USED_TAGS, VIRTUAL_TAGS } from '@shared/constants/tags-const';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY } from 'rxjs';
+import { catchError, EMPTY, takeUntilDestroyed } from 'rxjs';
 import { TagConfigsService } from './tag-configs-service';
 
 @Component({
@@ -31,6 +40,7 @@ export class TagConfigs {
   private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
   private readonly tagConfigsState = inject(tagConfigsStateToken);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly uniqueTags = signal<string[]>([]);
   private readonly tagIgnoreList = [...INTERNAL_USED_TAGS, ...VIRTUAL_TAGS];
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
@@ -54,10 +64,21 @@ export class TagConfigs {
   });
 
   constructor() {
-    this.api.getStatistics().subscribe((statistics) => {
-      const tags = statistics.tagCounts.map((tagCount) => tagCount.tag);
-      this.uniqueTags.set([...new Set(tags)].sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0)));
-    });
+    this.api
+      .getStatistics()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(() => {
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.LoadStatisticsError'));
+          return EMPTY;
+        })
+      )
+      .subscribe((statistics) => {
+        const tags = statistics.tagCounts.map((tagCount) => tagCount.tag);
+        this.uniqueTags.set(
+          [...new Set(tags)].sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0))
+        );
+      });
 
     const effectRef = effect(() => {
       let storedConfigs = this.tagConfigsState.state.configs();
