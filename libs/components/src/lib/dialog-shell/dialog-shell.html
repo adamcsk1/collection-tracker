@@ -1,32 +1,40 @@
-<div class="dialog-overlay" animate.enter="animation-fade-in" animate.leave="animation-fade-out">
-  <div
-    #dialogRoot
-    class="dialog-frame"
-    role="dialog"
-    aria-modal="true"
-    tabindex="-1"
-    animate.enter="animation-slide-in-right"
-    animate.leave="animation-slide-out-right"
-    (keydown.escape)="onClose()"
-  >
-    <div class="dialog-header">
-      <div>
-        <ng-content select="[dialog-shell-top-content]" />
-      </div>
-      <button
-        class="button-icon material-icons"
-        [attr.aria-label]="('Close' | signalTranslate)()"
-        [title]="('Close' | signalTranslate)()"
-        (click)="onClose()"
-      >
-        close
-      </button>
+<button
+  type="button"
+  class="dialog-overlay"
+  animate.enter="animation-fade-in"
+  animate.leave="animation-fade-out"
+  [attr.aria-label]="('Close' | signalTranslate)()"
+  (click)="onClose()"
+  (keydown.enter)="onClose()"
+  (keydown.space)="onClose()"
+></button>
+<div
+  #dialogRoot
+  class="dialog-frame"
+  role="dialog"
+  aria-modal="true"
+  tabindex="-1"
+  animate.enter="animation-slide-in-right"
+  animate.leave="animation-slide-out-right"
+  (keydown.escape)="onClose()"
+>
+  <div class="dialog-header">
+    <div>
+      <ng-content select="[dialog-shell-top-content]" />
     </div>
-    <div class="dialog-body">
-      <ng-content select="[dialog-shell-content]" />
-    </div>
-    <div class="dialog-footer">
-      <ng-content select="[dialog-shell-bottom-content]" />
-    </div>
+    <button
+      class="button-icon material-icons"
+      [attr.aria-label]="('Close' | signalTranslate)()"
+      [title]="('Close' | signalTranslate)()"
+      (click)="onClose()"
+    >
+      close
+    </button>
+  </div>
+  <div class="dialog-body">
+    <ng-content select="[dialog-shell-content]" />
+  </div>
+  <div class="dialog-footer">
+    <ng-content select="[dialog-shell-bottom-content]" />
   </div>
 </div>
