@@ -29,11 +29,7 @@
   }
 
   @for (collectionItem of visibleCollection(); track collectionItem.IMDbId) {
-    @defer (on viewport; prefetch on idle) {
-      <ct-list-item [collectionItem]="collectionItem" />
-    } @placeholder {
-      <ct-list-item-skeleton />
-    }
+    <ct-list-item [collectionItem]="collectionItem" />
   } @empty {
     @if (apiLoadNetworkStatus() !== 'pending') {
       <div data-test-id="list-empty" class="list-empty">

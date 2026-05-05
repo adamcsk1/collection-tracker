@@ -1,22 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { apiStateToken } from '@services/api/api-store';
+import { PortalService } from '@services/portal-service';
+import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
+import { TagConfigColorPipe } from '../../../tag-configs/tag-configs-color-pipe';
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
 import { ItemDialog } from '../../item-dialog/item-dialog';
 import { ClaudeSearchService } from '../../search/claude-search-service';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
-import { TagConfigColorPipe } from '../../../tag-configs/tag-configs-color-pipe';
-import { apiStateToken } from '@services/api/api-store';
-import { PortalService } from '@services/portal-service';
-import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
-import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-list-item',
   templateUrl: './list-item.html',
   styleUrl: './list-item.css',
   providers: [TagConfigColorPipe],
-  imports: [NgxSignalTranslatePipe, TagConfigColorPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'listitem',

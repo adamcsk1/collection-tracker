@@ -13,12 +13,12 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { CollectionItemFiltersApiModel } from '@shared/models/api-model';
 import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
+import { CollectionItemFiltersApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
-import { CollectionItemModel } from '../collection-model';
 import { catchError, debounceTime, EMPTY, fromEvent, startWith, switchMap } from 'rxjs';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
+import { CollectionItemModel } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
 import { ItemDialog } from '../item-dialog/item-dialog';
 import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
@@ -135,6 +135,10 @@ export class List {
     const requestVersion = ++this.requestVersion;
     const offset = reset ? 0 : this.visibleCollection().length;
     const limit = INFINITE_SCROLL_PAGE_SIZE;
+
+    if (reset) {
+      this.visibleCollection.set([]);
+    }
 
     this.apiState.setState('loadNetworkStatus', 'pending');
 
