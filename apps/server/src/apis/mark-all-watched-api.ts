@@ -10,9 +10,9 @@ export const register = (app: Application): void => {
   app.post(
     `${API_PREFIX}/items/mark-all-watched`,
     jwtGuard,
-    withErrorHandler(async (_request, response) => {
+    withErrorHandler(async (request, response) => {
       const db = getDatabase();
-      const changedCount = markAllAsWatched(db, _request.usernameHash);
+      const changedCount = markAllAsWatched(db, request.usernameHash);
 
       const result: MarkAllWatchedApiResponseModel = { changedCount };
       response.send(result);
