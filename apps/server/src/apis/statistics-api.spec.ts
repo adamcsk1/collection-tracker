@@ -10,7 +10,9 @@ const insertUserAndItems = () => {
     `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run('user', 'tt001', 'Movie One', 'movie one', '1999', '8.0', 'Plot one', 'img1.jpg', 'hash1');
-  const item1Id = Number(db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt001')!.id);
+  const item1Id = Number(
+    (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt001')! as { id: number }).id
+  );
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#movie');
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#watched');
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, 'sci-fi');
@@ -20,7 +22,9 @@ const insertUserAndItems = () => {
     `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run('user', 'tt002', 'Series One', 'series one', '2000', '7.5', 'Plot two', 'img2.jpg', 'hash2');
-  const item2Id = Number(db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt002')!.id);
+  const item2Id = Number(
+    (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt002')! as { id: number }).id
+  );
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item2Id, '#series');
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item2Id, 'drama');
   db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item2Id, 'Drama');
