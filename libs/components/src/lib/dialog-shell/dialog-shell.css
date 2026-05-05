@@ -7,23 +7,22 @@
 .dialog-frame {
   background-color: var(--glassy-background);
   box-sizing: border-box;
-  margin: 0 auto;
-  top: var(--size-md);
+  position: absolute;
+  top: 0;
+  right: 0;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  position: relative;
-  max-width: var(--dialog-max-width, 500px);
-  max-height: 90vh;
-  border-radius: var(--border-radius);
+  width: min(500px, 100vw);
+  height: 100vh;
+  max-height: none;
+  max-width: none;
+  border-radius: 0;
   padding: var(--size-md);
 
   @media (width <= 450px) {
     width: 100vw;
     height: 100vh;
-    max-height: none;
-    max-width: none;
-    top: unset;
     border-radius: 0;
   }
 
