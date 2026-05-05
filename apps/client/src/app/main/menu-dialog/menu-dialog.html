@@ -1,0 +1,54 @@
+<libc-dialog-shell>
+  <ng-container dialog-shell-content>
+    <nav class="menu-nav" role="navigation" [attr.aria-label]="('Menu' | signalTranslate)()">
+      <a
+        data-test-id="nav-collection"
+        [routerLink]="['/', 'collection']"
+        routerLinkActive="active"
+        class="highlight"
+        (click)="onClose()"
+      >
+        <i class="material-icons">movie</i>
+        {{ ('Collection' | signalTranslate)() }}
+      </a>
+      @if (!settingLockEnabled()) {
+        <a
+          data-test-id="nav-tags"
+          [routerLink]="['/', 'tag-configs']"
+          routerLinkActive="active"
+          class="highlight"
+          (click)="onClose()"
+        >
+          <i class="material-icons">local_offer</i>
+          {{ ('Tags' | signalTranslate)() }}
+        </a>
+        <a
+          data-test-id="nav-settings"
+          [routerLink]="['/', 'settings']"
+          routerLinkActive="active"
+          class="highlight"
+          (click)="onClose()"
+        >
+          <i class="material-icons">settings</i>
+          {{ ('Settings' | signalTranslate)() }}
+        </a>
+      }
+      <a [routerLink]="['/', 'statistics']" routerLinkActive="active" class="highlight space" (click)="onClose()">
+        <i class="material-icons">bar_chart</i>
+        {{ ('Statistics' | signalTranslate)() }}
+      </a>
+      <a data-test-id="nav-sync" href="#" (click)="onSync()">
+        <i class="material-icons">sync</i>
+        {{ ('Sync' | signalTranslate)() }}
+      </a>
+      <a data-test-id="nav-about" [routerLink]="['/', 'about']" routerLinkActive="active" (click)="onClose()">
+        <i class="material-icons">info</i>
+        {{ ('About' | signalTranslate)() }}
+      </a>
+      <a data-test-id="nav-logout" href="#" (click)="onLogout()">
+        <i class="material-icons">logout</i>
+        {{ ('Logout' | signalTranslate)() }}
+      </a>
+    </nav>
+  </ng-container>
+</libc-dialog-shell>
