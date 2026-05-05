@@ -5,7 +5,7 @@ import { initialMainState, MainState, mainStateToken } from '../main/main-store'
 import { SettingsModel } from './settings-model';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
-import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { SharedApiService } from '@services/api/shared-api-service';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -45,7 +45,6 @@ describe('SettingsService', () => {
   let translate: { translate: ReturnType<typeof vi.fn>; setLanguage: ReturnType<typeof vi.fn> };
   let main: { setPermissions: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
-  let apiState: NgxSimpleSignalStoreService<ApiState>;
 
   beforeEach(() => {
     router = { navigate: vi.fn() };
@@ -73,7 +72,6 @@ describe('SettingsService', () => {
 
     service = TestBed.inject(SettingsService);
     mainState = TestBed.inject(mainStateToken);
-    apiState = TestBed.inject(apiStateToken);
   });
 
   it('stores form data, syncs settings to the API', () => {

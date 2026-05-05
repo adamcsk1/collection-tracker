@@ -1,5 +1,3 @@
-/// <reference types="vitest" />
-
 import { initializeDatabase } from '../src/core/database/database';
 import { runMigrations } from '../src/core/database/migrations';
 import { mkdtempSync } from 'fs';

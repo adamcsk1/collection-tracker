@@ -2,7 +2,6 @@ import Database from 'better-sqlite3';
 import {
   AccessTokenModel,
   RefreshTokenModel,
-  SignUpApiResponseModel,
   UserSettingsApiResponseModel,
   UserSettingsApiRequestModel,
 } from '@shared/models/api-model';

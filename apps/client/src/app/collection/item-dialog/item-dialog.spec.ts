@@ -9,7 +9,7 @@ import { CollectionItemApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainState, mainStateToken } from '../../main/main-store';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionService } from '../collection-service';
