@@ -7,7 +7,7 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import { WATCHED_TAG } from '@shared/constants/tags-const';
+import { INTERNAL_USED_TAGS, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
@@ -142,6 +142,18 @@ export class ItemDialog implements OnInit {
     const item = this.draftItem();
     if (!item.title.trim() || !item.IMDbId.trim()) {
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.BadRawContent'));
+      return;
+    }
+
+    const hasVirtualTag = item.tags.some((tag) => VIRTUAL_TAGS.includes(tag));
+    if (hasVirtualTag) {
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UsedVirtualTagInContent'));
+      return;
+    }
+
+    const hasTypeTag = item.tags.some((tag) => tag === '#movie' || tag === '#series');
+    if (!hasTypeTag) {
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UnusedInternalTagInContent'));
       return;
     }
 
