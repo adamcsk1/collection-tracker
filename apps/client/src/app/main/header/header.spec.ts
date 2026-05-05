@@ -13,9 +13,6 @@ import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Header } from './header';
 
-const setBodyWidth = (width: number) =>
-  Object.defineProperty(document.body, 'offsetWidth', { value: width, configurable: true });
-
 describe('Header component', () => {
   let fixture: ComponentFixture<Header>;
   let component: Header;
@@ -61,16 +58,11 @@ describe('Header component', () => {
     redirectSpy.mockRestore();
   });
 
-  it('toggles the menu visibility based on event and viewport width', () => {
-    setBodyWidth(500);
-    component['onShowMenu'](new Event('mouseenter'));
+  it('toggles the menu visibility on click', () => {
+    component['onShowMenu'](new Event('click'));
     expect(component['showMenu']()).toBe(true);
 
     component['onHideMenu']();
-    expect(component['showMenu']()).toBe(false);
-
-    setBodyWidth(300);
-    component['onShowMenu'](new Event('mouseenter'));
     expect(component['showMenu']()).toBe(false);
   });
 
