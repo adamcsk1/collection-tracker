@@ -10,7 +10,9 @@ const insertUserAndItems = () => {
     `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run('user', 'tt001', 'Item', 'item', '1999', '8.0', 'Plot', 'img.jpg', 'hash');
-  const itemId = Number(db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt001')!.id);
+  const itemId = Number(
+    (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt001')! as { id: number }).id
+  );
   db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(itemId, 'Action');
   db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(itemId, 'Adventure');
 };
