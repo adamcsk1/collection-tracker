@@ -117,6 +117,7 @@ export class TagConfigs {
   protected onResetTagConfigs(): void {
     this.confirm
       .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.ResetTagConfigs'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.storeTagConfigs([]));
   }
 
@@ -173,6 +174,7 @@ export class TagConfigs {
     this.tagConfigsService
       .syncUserTagConfigs(configs)
       .pipe(
+        takeUntilDestroyed(this.destroyRef),
         catchError(() => {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.TagConfigSyncError'));
           return EMPTY;
