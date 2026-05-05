@@ -121,23 +121,6 @@ export type AccessTokensApiResponseModel = AccessTokenModel[];
 export interface CreateAccessTokenApiResponseModel {
   accessToken: string;
 }
-export interface ParserConfigApiResponseModel {
-  IMDbId?: string;
-  genre?: string;
-  genreToken?: string;
-  image?: string;
-  IMDbRate?: string;
-  actors?: string;
-  tags?: string;
-  tagToken?: string;
-  title?: string;
-  year?: string;
-  content?: string;
-  mdTemplate?: string;
-  filenamePattern?: string;
-}
-
-export type ParserConfigApiRequestModel = ParserConfigApiResponseModel;
 
 export interface UserSettingsApiResponseModel {
   theme?: ThemeModel;
