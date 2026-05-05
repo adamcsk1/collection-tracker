@@ -10,33 +10,55 @@
       <div class="item-form">
         <label>
           {{ ('Label.Title' | signalTranslate)() }}
-          <input [value]="draftItem().title" (input)="updateDraft('title', $any($event.target).value)" />
+          <input
+            data-test-id="item-dialog-title"
+            [value]="draftItem().title"
+            (input)="updateDraft('title', $any($event.target).value)"
+          />
         </label>
         <label>
           {{ ('Label.IMDbId' | signalTranslate)() }}
-          <input [value]="draftItem().IMDbId" (input)="updateDraft('IMDbId', $any($event.target).value)" />
+          <input
+            data-test-id="item-dialog-imdb-id"
+            [value]="draftItem().IMDbId"
+            (input)="updateDraft('IMDbId', $any($event.target).value)"
+          />
         </label>
         <label>
           {{ ('Label.Year' | signalTranslate)() }}
-          <input type="number" [value]="draftItem().year ?? ''" (input)="updateYear($any($event.target).value)" />
+          <input
+            data-test-id="item-dialog-year"
+            type="number"
+            [value]="draftItem().year ?? ''"
+            (input)="updateYear($any($event.target).value)"
+          />
         </label>
         <label>
           {{ ('Label.IMDbRate' | signalTranslate)() }}
-          <input [value]="draftItem().rate" (input)="updateDraft('rate', $any($event.target).value)" />
+          <input
+            data-test-id="item-dialog-rate"
+            [value]="draftItem().rate"
+            (input)="updateDraft('rate', $any($event.target).value)"
+          />
         </label>
         <label class="full-width image-url-field">
           {{ ('Label.ImageUrl' | signalTranslate)() }}
-          <input [value]="draftItem().image" (input)="updateDraft('image', $any($event.target).value)" />
+          <input
+            data-test-id="item-dialog-image"
+            [value]="draftItem().image"
+            (input)="updateDraft('image', $any($event.target).value)"
+          />
           @if (draftItem().image) {
             <img class="image-example" [src]="draftImageUrl()" [attr.alt]="('Alt.ImageExample' | signalTranslate)()" />
           }
         </label>
         <libc-autocomplete
-          [label]="('Genre' | signalTranslate)()"
-          [hint]="('Hint.SeparateGenres' | signalTranslate)()"
-          [value]="genreText()"
-          [autocompleteService]="genreSuggestionService"
-          (valueChange)="updateGenre($any($event))"
+          data-test-id="item-dialog-tags"
+          [label]="('Tags' | signalTranslate)()"
+          [hint]="('Hint.SeparateTags' | signalTranslate)()"
+          [value]="tagsText()"
+          [autocompleteService]="tagSuggestionService"
+          (valueChange)="updateTags($any($event))"
         />
         <libc-autocomplete
           [label]="('Tags' | signalTranslate)()"
@@ -47,11 +69,19 @@
         />
         <label class="full-width">
           {{ ('Actors' | signalTranslate)() }}
-          <input [value]="draftItem().actors" (input)="updateDraft('actors', $any($event.target).value)" />
+          <input
+            data-test-id="item-dialog-actors"
+            [value]="draftItem().actors"
+            (input)="updateDraft('actors', $any($event.target).value)"
+          />
         </label>
         <label class="full-width">
           {{ ('Plot' | signalTranslate)() }}
-          <textarea [value]="draftItem().plot" (input)="updateDraft('plot', $any($event.target).value)"></textarea>
+          <textarea
+            data-test-id="item-dialog-plot"
+            [value]="draftItem().plot"
+            (input)="updateDraft('plot', $any($event.target).value)"
+          ></textarea>
         </label>
       </div>
     } @else {
