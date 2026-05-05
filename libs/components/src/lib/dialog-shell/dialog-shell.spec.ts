@@ -34,18 +34,24 @@ describe('DialogShell component', () => {
   });
 
   it('focuses dialog root on init and calls portal.close on button click', () => {
-    const dialogComponent = fixture.debugElement.children[0].componentInstance as DialogShell;
-    const dialogRoot = dialogComponent['dialogRoot']?.()?.nativeElement;
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
     expect(document.activeElement).toBe(dialogRoot);
 
-    dialogComponent['onClose']();
+    const closeButton = fixture.nativeElement.querySelector('.dialog-header button') as HTMLButtonElement;
+    closeButton?.click();
     expect(closeSpy).toHaveBeenCalled();
   });
 
   it('calls portal.close when Escape key is pressed', () => {
-    const dialogComponent = fixture.debugElement.children[0].componentInstance as DialogShell;
-    const dialogRoot = dialogComponent['dialogRoot']?.()?.nativeElement;
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
     dialogRoot?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls portal.close when backdrop is clicked', () => {
+    const overlay = fixture.nativeElement.querySelector('.dialog-overlay') as HTMLButtonElement;
+    overlay?.click();
 
     expect(closeSpy).toHaveBeenCalledTimes(1);
   });
