@@ -1,7 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Autocomplete, AutocompleteService } from './autocomplete';
 
@@ -26,6 +27,25 @@ class HostComponent {
 class NoHintHostComponent {
   public readonly model = signal('');
   public readonly field = form(this.model);
+}
+
+@Component({
+  imports: [FormField, Autocomplete],
+  template: `<libc-autocomplete
+    [formField]="field"
+    placeholder="Search"
+    [showReset]="true"
+    [autocompleteService]="autocompleteService()"
+  ></libc-autocomplete>`,
+})
+class InputServiceHostComponent {
+  public readonly model = signal('');
+  public readonly field = form(this.model);
+  public readonly autocompleteService = input<{
+    getSuggestion: ReturnType<typeof vi.fn>;
+    formatSuggestionText?: ReturnType<typeof vi.fn>;
+    formatSuggestionValue?: ReturnType<typeof vi.fn>;
+  } | null>(null);
 }
 
 describe('Autocomplete component', () => {
@@ -357,5 +377,75 @@ describe('Autocomplete component', () => {
     expect(userAcceptSuggestionSpy).toHaveBeenCalled();
     expect(component['suggestions']()).toEqual([]);
     unsubscribe.unsubscribe();
+  });
+
+  it('uses input autocompleteService over injected service', () => {
+    const inputServiceStub = {
+      getSuggestion: vi.fn().mockReturnValue(['gamma', 'delta']),
+      formatSuggestionValue: vi.fn((value: string) => `${value}-input`),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [InputServiceHostComponent],
+      providers: [
+        { provide: AutocompleteService, useValue: { getSuggestion: vi.fn(), formatSuggestionText: vi.fn() } },
+        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
+      ],
+    });
+
+    const inputFixture = TestBed.createComponent(InputServiceHostComponent);
+    inputFixture.componentRef.setInput('autocompleteService', inputServiceStub);
+    inputFixture.detectChanges();
+
+    const inputComponent = inputFixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
+
+    vi.useFakeTimers();
+    inputComponent['onKeyup']({
+      code: 'KeyG',
+      target: { value: 'g' },
+    } as unknown as KeyboardEvent);
+    vi.advanceTimersByTime(80);
+    inputFixture.detectChanges();
+
+    expect(inputComponent['suggestions']()).toEqual(['gamma', 'delta']);
+
+    inputComponent['onAcceptSuggestion'](0);
+    inputFixture.detectChanges();
+
+    expect(inputFixture.componentInstance.model()).toBe('gamma-input');
+    expect(inputServiceStub.getSuggestion).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('handles observable suggestions from autocompleteService', () => {
+    const observableServiceStub = {
+      getSuggestion: vi.fn().mockReturnValue(of(['zeta', 'eta'])),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [InputServiceHostComponent],
+      providers: [
+        { provide: AutocompleteService, useValue: { getSuggestion: vi.fn(), formatSuggestionText: vi.fn() } },
+        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
+      ],
+    });
+
+    const observableFixture = TestBed.createComponent(InputServiceHostComponent);
+    observableFixture.componentRef.setInput('autocompleteService', observableServiceStub);
+    observableFixture.detectChanges();
+
+    const observableComponent = observableFixture.debugElement.children[0].children[0]
+      .componentInstance as Autocomplete<string>;
+
+    vi.useFakeTimers();
+    observableComponent['onKeyup']({
+      code: 'KeyZ',
+      target: { value: 'z' },
+    } as unknown as KeyboardEvent);
+    vi.advanceTimersByTime(80);
+    observableFixture.detectChanges();
+
+    expect(observableComponent['suggestions']()).toEqual(['zeta', 'eta']);
+    vi.useRealTimers();
   });
 });
