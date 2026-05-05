@@ -19,7 +19,8 @@ import { ConfirmService } from '@services/confirm-service';
 import { INTERNAL_USED_TAGS, VIRTUAL_TAGS } from '@shared/constants/tags-const';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY, takeUntilDestroyed } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, EMPTY } from 'rxjs';
 import { TagConfigsService } from './tag-configs-service';
 
 @Component({
