@@ -24,6 +24,11 @@ export const routes: Routes = [
     canActivate: [mainGuard],
   },
   {
+    path: 'tag-configs',
+    redirectTo: 'settings/tag-configs',
+    pathMatch: 'full',
+  },
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'collection',

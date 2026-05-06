@@ -17,15 +17,15 @@
         } @else {
           {{ tagConfig().color }}
         }
-        <input
-          #colorInput
-          type="color"
-          class="color-input"
-          [value]="tagConfig().color ?? ''"
-          [attr.aria-hidden]="true"
-          (change)="onColorInputChange($event)"
-        />
       </button>
+      <input
+        #colorInput
+        type="color"
+        class="color-input"
+        [value]="tagConfig().color ?? ''"
+        [attr.aria-hidden]="true"
+        (change)="onColorInputChange($event)"
+      />
     </div>
     <libc-input
       [attr.data-test-id]="'tag-config-weight-' + tagConfig().tag"
