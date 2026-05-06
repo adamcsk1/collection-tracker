@@ -29,6 +29,7 @@ export class GlobalWatchStatusService {
           next: () => {
             this.blockerLoadingState.patchState('show', false);
             this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.MarkedAllAsWatched'));
+            this.collection.triggerReload();
           },
           error: () => {
             this.blockerLoadingState.patchState('show', false);
@@ -58,6 +59,7 @@ export class GlobalWatchStatusService {
           next: () => {
             this.blockerLoadingState.patchState('show', false);
             this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.MarkedAllAsUnwatched'));
+            this.collection.triggerReload();
           },
           error: () => {
             this.blockerLoadingState.patchState('show', false);
