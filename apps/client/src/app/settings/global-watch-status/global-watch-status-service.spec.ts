@@ -15,12 +15,12 @@ import { GlobalWatchStatusService } from './global-watch-status-service';
 
 describe('GlobalWatchStatusService', () => {
   let service: GlobalWatchStatusService;
-  let collectionService: { loadCollection: ReturnType<typeof vi.fn> };
+  let collectionService: { triggerReload: ReturnType<typeof vi.fn> };
   let api: { markAllAsWatched: ReturnType<typeof vi.fn>; markAllAsUnwatched: ReturnType<typeof vi.fn> };
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    collectionService = { loadCollection: vi.fn(() => of(undefined)) };
+    collectionService = { triggerReload: vi.fn() };
     api = {
       markAllAsWatched: vi.fn(() => of({ changedCount: 2 })),
       markAllAsUnwatched: vi.fn(() => of({ changedCount: 1 })),
@@ -46,7 +46,7 @@ describe('GlobalWatchStatusService', () => {
     service.markAllAsWatched();
 
     expect(api.markAllAsWatched).toHaveBeenCalledTimes(1);
-    expect(collectionService.loadCollection).toHaveBeenCalledTimes(1);
+    expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.MarkedAllAsWatched');
   });
@@ -57,7 +57,7 @@ describe('GlobalWatchStatusService', () => {
     service.markAllAsUnwatched();
 
     expect(api.markAllAsUnwatched).toHaveBeenCalledTimes(1);
-    expect(collectionService.loadCollection).toHaveBeenCalledTimes(1);
+    expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.MarkedAllAsUnwatched');
     expect(blocker.state.show()).toBe(false);
@@ -68,7 +68,7 @@ describe('GlobalWatchStatusService', () => {
     service.markAllAsWatched();
 
     expect(api.markAllAsWatched).not.toHaveBeenCalled();
-    expect(collectionService.loadCollection).not.toHaveBeenCalled();
+    expect(collectionService.triggerReload).not.toHaveBeenCalled();
   });
 
   it('shows error toast when mark all as watched fails', () => {
@@ -78,6 +78,6 @@ describe('GlobalWatchStatusService', () => {
     expect(api.markAllAsWatched).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.MarkingAllAsWatchedWithErrors');
-    expect(collectionService.loadCollection).toHaveBeenCalledTimes(1);
+    expect(collectionService.triggerReload).not.toHaveBeenCalled();
   });
 });
