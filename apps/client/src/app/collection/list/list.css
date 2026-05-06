@@ -1,5 +1,5 @@
 .list {
-  max-height: calc(100vh - var(--header-height) - 54px - 2 * var(--size-md));
+  max-height: calc(100vh - 54px - 2 * var(--size-md));
   max-height: calc(100svh - var(--header-height) - 54px - 2 * var(--size-md));
   max-height: calc(100dvh - var(--header-height) - 54px - 2 * var(--size-md));
   overflow: hidden auto;
@@ -22,5 +22,13 @@
     a {
       margin-bottom: var(--size-md);
     }
+  }
+}
+
+@media (width > 768px) {
+  .list {
+    max-height: calc(100vh - 54px - 2 * var(--size-md));
+    max-height: calc(100svh - 54px - 2 * var(--size-md));
+    max-height: calc(100dvh - 54px - 2 * var(--size-md));
   }
 }

@@ -1,11 +1,3 @@
-<ct-float-buttons
-  [scrollToTopAvailable]="scrollToTopAvailable()"
-  [collectionLength]="collectionLength()"
-  (randomPick)="onRandomPick()"
-  (toggleClaudeAi)="onToggleClaudeAi()"
-  (addNew)="onAddNew()"
-  (scrollToTop)="onResetScrollPosition()"
-/>
 <div
   #scrollContainer
   data-test-id="collection-list"
@@ -51,3 +43,11 @@
     <ct-list-item-skeleton />
   }
 </div>
+<ct-float-buttons
+  [scrollToTopAvailable]="scrollToTopAvailable()"
+  [collectionLength]="collectionLength()"
+  (randomPick)="onRandomPick()"
+  (toggleClaudeAi)="onToggleClaudeAi()"
+  (addNew)="onAddNew()"
+  (scrollToTop)="onResetScrollPosition()"
+/>

@@ -1,6 +1,9 @@
-<ct-header />
-<div class="main-body" role="main">
-  <router-outlet />
+<ct-header class="main-header" />
+<div class="layout-body">
+  <ct-menu-nav class="sidebar" />
+  <div class="main-body" role="main">
+    <router-outlet />
+  </div>
 </div>
 @if (useAnimatedBackground()) {
   <ct-background />
