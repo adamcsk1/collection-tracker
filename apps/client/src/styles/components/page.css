@@ -2,7 +2,7 @@
   display: flex;
   background-color: var(--glassy-background);
   border-radius: var(--border-radius);
-  max-width: var(--container-max-width);
+  max-width: min(var(--container-max-width), 95vw);
   margin: 0 auto;
   padding: var(--size-md);
   z-index: 1;
