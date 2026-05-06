@@ -121,15 +121,18 @@ textarea {
   align-items: center;
 }
 
-.metadata-row a,
-.external-links a {
+.metadata-row a {
   color: var(--main-color, currentColor);
   text-decoration: none;
 }
 
 .metadata-row a:hover,
-.metadata-row a:focus-visible,
-.external-links a:hover,
-.external-links a:focus-visible {
+.metadata-row a:focus-visible {
   text-decoration: underline;
+}
+
+.external-links {
+  libc-link-button {
+    width: 100%;
+  }
 }
