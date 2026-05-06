@@ -1,9 +1,6 @@
 :host {
-  --logo-size: 40px;
-
   display: flex;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   height: var(--header-height);
   padding: var(--size-md) 0;
@@ -27,18 +24,7 @@
     }
   }
 
-  img {
-    display: block;
-    margin-left: var(--size-md);
-    width: var(--logo-size);
-    height: var(--logo-size);
-    border-radius: 35%;
-    border: var(--outline-style);
-    border-color: var(--focus-border-color);
-  }
-
   h1 {
-    margin: auto 0 auto var(--size-xs);
     line-height: 1;
     font-size: var(--font-size-lg);
     color: var(--glassy-background) !important;
@@ -49,6 +35,13 @@
   }
 }
 
-button {
-  margin-right: var(--size-md);
+.menu-button {
+  margin-left: var(--size-xs);
+  margin-right: var(--size-xs);
+}
+
+@media (width > 768px) {
+  .menu-button {
+    display: none;
+  }
 }

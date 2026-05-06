@@ -1,11 +1,3 @@
-<div class="header" role="banner">
-  <a [routerLink]="['/']" class="logo-link">
-    <img [src]="'icons/' + themeLogo()" [alt]="('Title' | signalTranslate)()" />
-    <div>
-      <h1 class="app-title-style">{{ ('Title' | signalTranslate)() }}</h1>
-    </div>
-  </a>
-</div>
 <button
   data-test-id="nav-menu-button"
   class="menu-button button-icon material-icons"
@@ -15,3 +7,8 @@
 >
   menu
 </button>
+<div class="header" role="banner">
+  <a [routerLink]="['/']" class="logo-link">
+    <h1 class="app-title-style">{{ ('Title' | signalTranslate)() }}</h1>
+  </a>
+</div>

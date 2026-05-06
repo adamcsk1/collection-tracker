@@ -1,11 +1,41 @@
 :host {
   width: 100%;
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
+  height: 100vh;
 }
 
-ct-header {
+.main-header {
   z-index: 2;
+}
+
+@media (width > 768px) {
+  .main-header {
+    display: none;
+  }
+}
+
+.layout-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  display: none;
+  width: 250px;
+  flex-shrink: 0;
+  background-color: var(--glassy-background);
+  overflow-y: auto;
+  padding: var(--size-md);
+  z-index: 1;
+}
+
+@media (width > 768px) {
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 .main-body {
@@ -16,4 +46,12 @@ ct-header {
   max-height: calc(100svh - var(--header-height));
   max-height: calc(100dvh - var(--header-height));
   z-index: 1;
+}
+
+@media (width > 768px) {
+  .main-body {
+    max-height: 100vh;
+    max-height: 100svh;
+    max-height: 100dvh;
+  }
 }
