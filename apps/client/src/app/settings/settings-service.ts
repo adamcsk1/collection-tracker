@@ -1,8 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { Router } from '@angular/router';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
-import { apiStateToken } from '@services/api/api-store';
 import { SharedApiService } from '@services/api/shared-api-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -25,7 +23,6 @@ import { SettingsModel } from './settings-model';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
-  private readonly router = inject(Router);
   private readonly api = inject(ApiService);
   private readonly sharedApi = inject(SharedApiService);
   private readonly webstorage = inject(WebstorageService);
@@ -33,7 +30,6 @@ export class SettingsService {
   private readonly main = inject(MainService);
   private readonly mainState = inject(mainStateToken);
   private readonly themeState = inject(themeStateToken);
-  private readonly apiState = inject(apiStateToken);
   private readonly toastState = inject(toastStateToken);
 
   public preloadUserSettings(): Observable<void> {

@@ -85,7 +85,6 @@
 .tags-empty {
   text-align: center;
   margin-top: var(--size-md);
-  color: var(--border-color);
 }
 
 .charts-grid {
