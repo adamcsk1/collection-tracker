@@ -1,5 +1,7 @@
 :host {
   display: block;
+  opacity: 0;
+  animation: skeleton-fade-in 500ms ease forwards;
 }
 
 .skeleton {
@@ -57,9 +59,20 @@
   }
 }
 
+@keyframes skeleton-fade-in {
+  to {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .shine {
     animation: none;
     background: var(--base-color-darker);
+  }
+
+  :host {
+    opacity: 1;
+    animation: none;
   }
 }
