@@ -23,7 +23,7 @@
   background-color: var(--background-color-alt);
   box-shadow: var(--card-shadow);
 
-  @media (width <= 450px) {
+  @media (width <= 520px) {
     padding: var(--size-md);
   }
 }
