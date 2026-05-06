@@ -1,58 +1,81 @@
 <div class="about">
-  <img [src]="'icons/' + themeLogo()" [title]="('Title' | signalTranslate)()" [alt]="('Title' | signalTranslate)()" />
-  <h2 data-test-id="about-title" class="app-title-style">{{ ('Title' | signalTranslate)() }}</h2>
-  <p class="about-description">{{ ('About.Description' | signalTranslate)() }}</p>
-  <hr />
-  <dl class="about-info">
-    <div>
-      <dt>{{ ('Build' | signalTranslate)() }}</dt>
-      <dd data-test-id="about-build">{{ build }}</dd>
+  <section class="about-hero">
+    <img
+      class="about-logo"
+      [src]="'icons/' + themeLogo()"
+      [title]="('Title' | signalTranslate)()"
+      [alt]="('Title' | signalTranslate)()"
+    />
+    <h2 data-test-id="about-title" class="about-title app-title-style">{{ ('Title' | signalTranslate)() }}</h2>
+    <p class="about-description">{{ ('About.Description' | signalTranslate)() }}</p>
+  </section>
+
+  <section class="about-section">
+    <div class="about-cards">
+      <div class="about-card">
+        <i class="material-icons">construction</i>
+        <div class="about-card-body">
+          <span class="about-card-label">{{ ('Build' | signalTranslate)() }}</span>
+          <span data-test-id="about-build" class="about-card-value">{{ build }}</span>
+        </div>
+      </div>
+      <div class="about-card">
+        <i class="material-icons">event</i>
+        <div class="about-card-body">
+          <span class="about-card-label">{{ ('BuildDate' | signalTranslate)() }}</span>
+          <span class="about-card-value">{{ buildDate }}</span>
+        </div>
+      </div>
+      <div class="about-card about-card-interactive">
+        <i class="material-icons">tag</i>
+        <div class="about-card-body">
+          <span class="about-card-label">{{ ('AppVersion' | signalTranslate)() }}</span>
+          <span
+            data-test-id="about-version"
+            class="about-card-value"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="('AppVersion' | signalTranslate)()"
+            (click)="onClickAppVersion()"
+            (keydown.enter)="onClickAppVersion()"
+            (keydown.space)="onClickAppVersion(); $event.preventDefault()"
+          >
+            {{ appVersion }}
+          </span>
+        </div>
+      </div>
     </div>
-    <div>
-      <dt>{{ ('BuildDate' | signalTranslate)() }}</dt>
-      <dd>{{ buildDate }}</dd>
+  </section>
+
+  <section class="about-section">
+    <h3 class="about-section-title">{{ ('Links' | signalTranslate)() }}</h3>
+    <div class="about-nav-links">
+      <libc-link-button
+        href="/health/"
+        icon="monitoring"
+        [label]="('NavigateToServerHealth' | signalTranslate)()"
+        dataTestId="about-health-link"
+      ></libc-link-button>
+      <libc-link-button
+        href="https://github.com/adamcsk1/collection-tracker"
+        icon="code"
+        [label]="('ViewOnGitHub' | signalTranslate)()"
+        [external]="true"
+        dataTestId="about-github-link"
+      ></libc-link-button>
+      <libc-link-button
+        href="https://github.com/adamcsk1/collection-tracker/releases/latest/download/collection-tracker-release.apk"
+        icon="download"
+        [label]="('DownloadApk' | signalTranslate)()"
+        [external]="true"
+      ></libc-link-button>
+      <libc-link-button
+        href="/api/docs"
+        icon="description"
+        [label]="('NavigateToApiDocs' | signalTranslate)()"
+        [external]="true"
+        dataTestId="about-api-docs-link"
+      ></libc-link-button>
     </div>
-    <div>
-      <dt>{{ ('AppVersion' | signalTranslate)() }}</dt>
-      <dd
-        data-test-id="about-version"
-        tabindex="0"
-        role="button"
-        [attr.aria-label]="('AppVersion' | signalTranslate)()"
-        (click)="onClickAppVersion()"
-        (keydown)="onClickAppVersion()"
-      >
-        {{ appVersion }}
-      </dd>
-    </div>
-  </dl>
-  <hr />
-  <h3>{{ ('Links' | signalTranslate)() }}</h3>
-  <div class="about-links">
-    <a
-      data-test-id="about-github-link"
-      href="https://github.com/adamcsk1/collection-tracker"
-      target="_blank"
-      role="link"
-      [attr.aria-label]="('ViewOnGitHub' | signalTranslate)()"
-    >
-      <img src="images/view-on-github.svg" [alt]="('ViewOnGitHub' | signalTranslate)()" />
-    </a>
-    <a
-      href="https://github.com/adamcsk1/collection-tracker/releases/latest/download/collection-tracker-release.apk"
-      target="_blank"
-      role="link"
-      [attr.aria-label]="('DownloadApk' | signalTranslate)()"
-    >
-      <img src="images/download-apk.svg" [alt]="('DownloadApk' | signalTranslate)()" />
-    </a>
-  </div>
-  <div class="about-nav-links">
-    <a data-test-id="about-health-link" href="/health/" role="link">{{
-      ('NavigateToServerHealth' | signalTranslate)()
-    }}</a>
-    <a data-test-id="about-api-docs-link" href="/api/docs" target="_blank" role="link">{{
-      ('NavigateToApiDocs' | signalTranslate)()
-    }}</a>
-  </div>
+  </section>
 </div>
