@@ -1,0 +1,13 @@
+<a
+  class="link-button"
+  [href]="href()"
+  [attr.data-test-id]="dataTestId() || null"
+  [attr.target]="external() ? '_blank' : null"
+  [attr.rel]="external() ? 'noopener noreferrer' : null"
+>
+  <i class="material-icons">{{ icon() }}</i>
+  <span>{{ label() }}</span>
+  @if (external()) {
+    <i class="material-icons link-button-external">open_in_new</i>
+  }
+</a>
