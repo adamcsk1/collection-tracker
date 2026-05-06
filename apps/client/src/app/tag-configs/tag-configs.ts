@@ -11,21 +11,20 @@ import {
 import { ApiService } from '@services/api/api-service';
 import { TagConfigsModel } from './tag-configs-model';
 import { tagConfigsStateToken } from './tag-configs-store';
-import { Checkbox } from '@components/checkbox/checkbox';
 import { Input } from '@components/input/input';
 import { toastStateToken } from '@components/toast/toast-store';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { INTERNAL_USED_TAGS, VIRTUAL_TAGS } from '@shared/constants/tags-const';
-import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY } from 'rxjs';
 import { TagConfigsService } from './tag-configs-service';
+import { TagConfigCard } from './tag-config-card/tag-config-card';
 
 @Component({
   selector: 'ct-tag-configs',
-  imports: [NgxSignalTranslatePipe, Checkbox, Input],
+  imports: [NgxSignalTranslatePipe, Input, TagConfigCard],
   templateUrl: './tag-configs.html',
   styleUrl: './tag-configs.css',
   host: {
@@ -45,12 +44,15 @@ export class TagConfigs {
   private readonly uniqueTags = signal<string[]>([]);
   private readonly tagIgnoreList = [...INTERNAL_USED_TAGS, ...VIRTUAL_TAGS];
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
+  protected readonly filterText = signal('');
   protected readonly tagConfigs = computed<TagConfigsModel>(() => {
     const storedConfigs = this.tagConfigsState.state.configs();
     const uniqueTags = this.uniqueTags();
+    const filter = this.filterText().trim().toLowerCase();
 
     return uniqueTags
       .filter((tag) => !this.tagIgnoreList.includes(tag))
+      .filter((tag) => tag.toLowerCase().includes(filter))
       .map((tag) => {
         const storedConfig = storedConfigs.find((config) => config.tag === tag);
         return {
@@ -121,15 +123,8 @@ export class TagConfigs {
       .subscribe(() => this.storeTagConfigs([]));
   }
 
-  protected contrastColor(hex: string | null): string | null {
-    if (hex === null) return null;
-    return getContrastColorHex(hex);
-  }
-
-  protected onSetDefaultTagColor(tag: string, color: string | null): void {
-    if (color === null) {
-      this.onTagColorChange(tag, '#000000');
-    }
+  protected onFilterChange(value: string | null): void {
+    this.filterText.set(value ?? '');
   }
 
   private updateTagConfig(
