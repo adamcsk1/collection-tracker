@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, model
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
+import { LinkButton } from '@components/link-button/link-button';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
@@ -22,7 +23,7 @@ import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
 
 @Component({
   selector: 'ct-item-dialog',
-  imports: [NgxSignalTranslatePipe, DialogShell, Autocomplete],
+  imports: [NgxSignalTranslatePipe, DialogShell, Autocomplete, LinkButton],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
   providers: [TagSuggestionService, GenreSuggestionService],

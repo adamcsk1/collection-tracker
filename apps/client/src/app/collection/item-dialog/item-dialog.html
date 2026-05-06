@@ -142,12 +142,20 @@
           <section>
             <h4>{{ ('Links' | signalTranslate)() }}</h4>
             <div class="external-links">
-              <a [href]="trailerUrl()" target="_blank" rel="noopener noreferrer">{{
-                ('Link.YouTubeTrailer' | signalTranslate)()
-              }}</a>
-              <a [href]="webSearchUrl()" target="_blank" rel="noopener noreferrer">{{
-                ('Link.WebSearch' | signalTranslate)()
-              }}</a>
+              <libc-link-button
+                [href]="trailerUrl()"
+                icon="play_circle"
+                [label]="('Link.YouTubeTrailer' | signalTranslate)()"
+                [external]="true"
+                dataTestId="video"
+              ></libc-link-button>
+              <libc-link-button
+                [href]="webSearchUrl()"
+                icon="search"
+                [label]="('Link.WebSearch' | signalTranslate)()"
+                [external]="true"
+                dataTestId="about-web-search-link"
+              ></libc-link-button>
             </div>
           </section>
         </div>
