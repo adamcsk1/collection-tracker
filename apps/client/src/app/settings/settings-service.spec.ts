@@ -89,14 +89,6 @@ describe('SettingsService', () => {
     expect(translate.setLanguage).toHaveBeenCalledWith('en');
   });
 
-  it('navigates back to collection when requested', () => {
-    const formData = buildFormData();
-
-    service.storeFormData(formData, true);
-
-    expect(router.navigate).toHaveBeenCalledWith(['collection']);
-  });
-
   it('writes all configuration values to storage', () => {
     const formData = buildFormData({
       appMode: 'limited',

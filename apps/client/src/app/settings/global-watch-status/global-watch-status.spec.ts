@@ -44,14 +44,14 @@ describe('SettingsGlobalWatchStatus component', () => {
   });
 
   it('calls service to mark all items as watched', () => {
-    component.onMarkAllAsWatched();
+    component['onMarkAllAsWatched']();
 
     expect(globalWatchStatus.markAllAsWatched).toHaveBeenCalled();
     expect(globalWatchStatus.markAllAsUnwatched).not.toHaveBeenCalled();
   });
 
   it('calls service to mark all items as unwatched', () => {
-    component.onMarkAllAsUnwatched();
+    component['onMarkAllAsUnwatched']();
 
     expect(globalWatchStatus.markAllAsUnwatched).toHaveBeenCalled();
   });

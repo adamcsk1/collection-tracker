@@ -22,7 +22,11 @@ describe('List', () => {
   let fixture: ComponentFixture<List>;
   let component: List;
   let portal: { open: ReturnType<typeof vi.fn> };
-  let api: { searchItems: ReturnType<typeof vi.fn>; getMatchedItems: ReturnType<typeof vi.fn> };
+  let api: {
+    searchItems: ReturnType<typeof vi.fn>;
+    getMatchedItems: ReturnType<typeof vi.fn>;
+    getRandomItem: ReturnType<typeof vi.fn>;
+  };
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let scrollSpy: ReturnType<typeof vi.fn>;
 

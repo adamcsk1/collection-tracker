@@ -36,16 +36,9 @@ describe('SettingsBasics component', () => {
   });
 
   it('calls service to store form data on save', () => {
-    const model = component.settingsModel();
+    const model = component['settingsModel']();
     component['onSave']();
 
-    expect(settingsService.storeFormData).toHaveBeenCalledWith(model, false);
-  });
-
-  it('calls service to store form data and navigate back on save-and-back', () => {
-    const model = component.settingsModel();
-    component['onSave'](true);
-
-    expect(settingsService.storeFormData).toHaveBeenCalledWith(model, true);
+    expect(settingsService.storeFormData).toHaveBeenCalledWith(model);
   });
 });
