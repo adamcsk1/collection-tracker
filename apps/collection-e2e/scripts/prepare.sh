@@ -2,17 +2,23 @@
 
 DATA_DIR="${PWD}/apps/collection-e2e/env"
 DATABASE_DIR="${DATA_DIR}/database"
-STORE_DIR="${DATA_DIR}/store"
-USER_HASH="6882164e2121e7219a4170a678025cb9aea2504a5ae141b1e25dbe707b897210d4d57edb75dfccb0951ac127807a04a64b0b38829bd01540427471b70ea31c99"
 
-${PWD}/docker/scripts/stop.sh collection-tracker-cypress
-${PWD}/docker/scripts/build.sh collection-tracker-cypress
+${PWD}/apps/collection-e2e/scripts/stop.sh collection-tracker-cypress
+${PWD}/apps/collection-e2e/scripts/build.sh collection-tracker-cypress
 
-rm -rf "${DATABASE_DIR}" "${STORE_DIR}"
-mkdir -p "${DATABASE_DIR}"
-mkdir -p "${STORE_DIR}/${USER_HASH}"
-cat > "${DATABASE_DIR}/users.json" << 'EOF'
-{"6882164e2121e7219a4170a678025cb9aea2504a5ae141b1e25dbe707b897210d4d57edb75dfccb0951ac127807a04a64b0b38829bd01540427471b70ea31c99":{"userTokenHash":"7b3e4ae98675fc646d90b4336680d70ae9ff8d929a41243cc54721278b390072d63a3a237b0a0e5a6b6ded5c5025fe5bcebb38561205e736113ed968362cc007","accessTokens":[]}}
-EOF
+# Seed the SQLite database with the cypress test user before the container starts.
+# We run the script inside a temporary container so the native better-sqlite3
+# module matches the Linux runtime (avoids "invalid ELF header" on WSL/Windows).
+# The host data folder is mounted as /data; the server node_modules provide
+# better-sqlite3 and dotenv.
+# Clean up inside the container as root to avoid permission issues on WSL/Windows mounts.
+docker run --rm \
+  --entrypoint "" \
+  --user root \
+  -v "${DATA_DIR}:/data" \
+  -v "${PWD}/apps/collection-e2e/scripts/seed-e2e-db.js:/seed.js:ro" \
+  -v "${PWD}/apps/server/src/migrations:/app/server/migrations:ro" \
+  collection-tracker-cypress \
+  bash -c "rm -rf /data/database && mkdir -p /data/database && DATA_DIR=/data NODE_PATH=/app/server/node_modules node /seed.js"
 
-${PWD}/docker/scripts/start.sh "${DATA_DIR}" collection-tracker-cypress "2999"
+${PWD}/apps/collection-e2e/scripts/start.sh "${DATA_DIR}" collection-tracker-cypress "2999"
