@@ -199,7 +199,7 @@ describe('ItemDialog', () => {
 
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.update).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.BadRawContent');
+    expect(toastState.state.message()).toBe('Toast.MissingRequiredField');
   });
 
   it('does not save when IMDbId is empty', () => {
@@ -209,7 +209,7 @@ describe('ItemDialog', () => {
 
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.update).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.BadRawContent');
+    expect(toastState.state.message()).toBe('Toast.MissingRequiredField');
   });
 
   it('does not save when tags contain virtual tags', () => {
@@ -218,7 +218,7 @@ describe('ItemDialog', () => {
     component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.UsedVirtualTagInContent');
+    expect(toastState.state.message()).toBe('Toast.VirtualTagNotAllowed');
     expect(api.update).not.toHaveBeenCalled();
   });
 
@@ -228,7 +228,7 @@ describe('ItemDialog', () => {
     component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.UnusedInternalTagInContent');
+    expect(toastState.state.message()).toBe('Toast.MissingTypeTag');
     expect(api.update).not.toHaveBeenCalled();
   });
 

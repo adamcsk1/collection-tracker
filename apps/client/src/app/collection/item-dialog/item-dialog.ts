@@ -142,19 +142,19 @@ export class ItemDialog implements OnInit {
   protected onSaveChanges(): void {
     const item = this.draftItem();
     if (!item.title.trim() || !item.IMDbId.trim()) {
-      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.BadRawContent'));
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.MissingRequiredField'));
       return;
     }
 
     const hasVirtualTag = item.tags.some((tag) => VIRTUAL_TAGS.includes(tag));
     if (hasVirtualTag) {
-      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UsedVirtualTagInContent'));
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.VirtualTagNotAllowed'));
       return;
     }
 
     const hasTypeTag = item.tags.some((tag) => tag === '#movie' || tag === '#series');
     if (!hasTypeTag) {
-      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UnusedInternalTagInContent'));
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.MissingTypeTag'));
       return;
     }
 
