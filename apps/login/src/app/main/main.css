@@ -34,15 +34,15 @@
   gap: var(--size-xs);
 
   img {
-    width: var(--logo-size);
-    height: var(--logo-size);
+    width: calc(var(--logo-size) * 2);
+    height: calc(var(--logo-size) * 2);
     border-radius: 35%;
     border: var(--outline-style);
     border-color: var(--focus-border-color);
   }
 
   h1 {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-4xl);
     line-height: 1;
     color: var(--background-color);
   }

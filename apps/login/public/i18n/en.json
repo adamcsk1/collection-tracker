@@ -15,7 +15,7 @@
   "Loading": "Loading",
   "Message.ApiUrl": "The API URL should include the API prefix and the version (e.g., /api/v1).",
   "Message.Loading": "Loading",
-  "Message.SignIn": "Please sign in to unlock effortless, lightning-fast collection tracking.",
+  "Message.SignIn": "Sign in to explore your collection.",
   "Message.SignUp": "Please sign up to begin using the Collection tracker. To do this, you need to select a username.",
   "Message.SignUpSecret": "This is your secret key for your user account. You can use it to authenticate yourself in the Collection tracker. Please ensure you keep it safe.",
   "ResetInput": "Reset input",
@@ -31,5 +31,6 @@
   "Username": "Username",
   "Validation.Required": "Required field.",
   "Validation.UsernameMaxLength": "Maximum length is 32 characters.",
-  "Validation.UsernameMinLength": "Minimum length is 3 characters."
+  "Validation.UsernameMinLength": "Minimum length is 3 characters.",
+  "WelcomeBack": "Welcome back!"
 }
