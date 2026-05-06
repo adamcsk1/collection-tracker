@@ -410,11 +410,6 @@ describe('Settings - settings lock: enabled', () => {
     CommonPage.getNavSettingsLink().should('not.exist');
   });
 
-  it('hides the tags nav link', () => {
-    CommonPage.openMenu();
-    CommonPage.getNavTagsLink().should('not.exist');
-  });
-
   it('still shows collection, statistics, sync, about and logout nav links', () => {
     CommonPage.openMenu();
     CommonPage.getNavCollectionLink().should('be.visible');

@@ -1,4 +1,5 @@
-.form-buttons {
+.actions {
   display: flex;
   gap: var(--size-xs);
+  margin-top: var(--size-xs);
 }

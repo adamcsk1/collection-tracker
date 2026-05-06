@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { initialMainCollectionState, mainCollectionStateToken } from '../main/main-collection-store';
+import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { TagConfigsModel } from './tag-configs-model';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { apiStateToken, initialApiState } from '@services/api/api-store';

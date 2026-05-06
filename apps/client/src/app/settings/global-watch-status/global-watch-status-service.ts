@@ -8,7 +8,7 @@ import { take } from 'rxjs';
 import { CollectionService } from '../../collection/collection-service';
 
 @Injectable()
-export class ChangeWatchedStatusService {
+export class GlobalWatchStatusService {
   private readonly blockerLoadingState = inject(blockerLoadingStateToken);
   private readonly toastState = inject(toastStateToken);
   private readonly confirm = inject(ConfirmService);

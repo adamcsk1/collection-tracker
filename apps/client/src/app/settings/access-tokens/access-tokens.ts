@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { TokenItem } from './token-item/token-item';
 import { TokenDialog } from '../token-dialog/token-dialog';
-import { Details } from '@components/details/details';
+import { TokenItem } from './token-item/token-item';
+
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
@@ -12,7 +12,7 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
 
 @Component({
   selector: 'ct-access-tokens',
-  imports: [Details, TokenItem, NgxSignalTranslatePipe],
+  imports: [TokenItem, NgxSignalTranslatePipe],
   templateUrl: './access-tokens.html',
   styleUrl: './access-tokens.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

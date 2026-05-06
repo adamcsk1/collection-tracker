@@ -4,7 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 import { MainService } from './main-service';
 import { TokenValidationService } from './token-validation-service';
 import { SettingsService } from '../settings/settings-service';
-import { TagConfigsService } from '../tag-configs/tag-configs-service';
+import { TagConfigsService } from '../settings/tag-configs/tag-configs-service';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as MainUtil from './main-util';

@@ -3,7 +3,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessC
 import { provideRouter, withHashLocation } from '@angular/router';
 import { initialMainCollectionState, mainCollectionStateToken } from './main-collection-store';
 import { initialMainState, mainStateToken } from './main-store';
-import { initialTagConfigsState, tagConfigsStateToken } from '../tag-configs/tag-configs-store';
+import { initialTagConfigsState, tagConfigsStateToken } from '../settings/tag-configs/tag-configs-store';
 import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,

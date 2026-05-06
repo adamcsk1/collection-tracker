@@ -1,14 +1,12 @@
-<libc-details data-test-id="settings-account-actions" [summary]="('User' | signalTranslate)()">
-  <p>{{ ('Message.UserSettings' | signalTranslate)() }}</p>
+<p>{{ ('Message.UserSettings' | signalTranslate)() }}</p>
 
-  <div class="form-buttons">
-    <button data-test-id="settings-create-user-token" (click)="onCreateNewUserToken()">
-      <i class="material-icons" [title]="('CreateNewUserToken' | signalTranslate)()"> add </i>
-      {{ ('CreateNewUserToken' | signalTranslate)() }}
-    </button>
-    <button data-test-id="settings-delete-user" class="button-danger" (click)="onDeleteUser()">
-      <i class="material-icons" [title]="('DeleteUser' | signalTranslate)()"> delete </i>
-      {{ ('DeleteUser' | signalTranslate)() }}
-    </button>
-  </div>
-</libc-details>
+<div class="actions">
+  <button data-test-id="settings-create-user-token" (click)="onCreateNewUserToken()">
+    <i class="material-icons" [title]="('CreateNewUserToken' | signalTranslate)()"> add </i>
+    {{ ('CreateNewUserToken' | signalTranslate)() }}
+  </button>
+  <button data-test-id="settings-delete-user" class="button-danger" (click)="onDeleteUser()">
+    <i class="material-icons" [title]="('DeleteUser' | signalTranslate)()"> delete </i>
+    {{ ('DeleteUser' | signalTranslate)() }}
+  </button>
+</div>

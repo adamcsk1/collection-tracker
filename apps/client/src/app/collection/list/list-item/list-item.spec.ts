@@ -3,7 +3,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../../collection-store';
 import { ClaudeSearchService } from '../../search/claude-search-service';
-import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from '../../../tag-configs/tag-configs-store';
+import {
+  initialTagConfigsState,
+  TagConfigsState,
+  tagConfigsStateToken,
+} from '../../../settings/tag-configs/tag-configs-store';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';

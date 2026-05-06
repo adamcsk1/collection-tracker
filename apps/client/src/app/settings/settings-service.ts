@@ -1,8 +1,5 @@
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { MainService } from '../main/main-service';
-import { mainStateToken } from '../main/main-store';
-import { SettingsModel } from './settings-model';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
@@ -22,6 +19,9 @@ import { THEMES } from '@shared/models/theme-model';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY, map, Observable, tap } from 'rxjs';
+import { MainService } from '../main/main-service';
+import { mainStateToken } from '../main/main-store';
+import { SettingsModel } from './settings-model';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
@@ -59,7 +59,7 @@ export class SettingsService {
     );
   }
 
-  public storeFormData(formData: SettingsModel, navigateBack = false): void {
+  public storeFormData(formData: SettingsModel): void {
     this.mainState.setState('appMode', formData.appMode);
     this.mainState.setState('settingsLock', formData.settingsLock);
     this.mainState.setState('sensitiveDataStorage', formData.sensitiveDataStorage);
@@ -85,11 +85,7 @@ export class SettingsService {
     this.sharedApi
       .updateUserSettings(userSettings)
       .pipe(
-        tap(() => {
-          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'));
-
-          if (navigateBack) this.router.navigate(['collection']);
-        }),
+        tap(() => this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'))),
         map(() => void 0),
         catchError(() => EMPTY)
       )

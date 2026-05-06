@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TokenDialog } from '../token-dialog/token-dialog';
-import { Details } from '@components/details/details';
+
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
@@ -12,7 +12,7 @@ import { delay, tap } from 'rxjs';
 
 @Component({
   selector: 'ct-account-actions',
-  imports: [Details, NgxSignalTranslatePipe],
+  imports: [NgxSignalTranslatePipe],
   templateUrl: './account-actions.html',
   styleUrl: './account-actions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

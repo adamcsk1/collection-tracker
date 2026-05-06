@@ -8,28 +8,25 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ApiService } from '@services/api/api-service';
-import { TagConfigsModel } from './tag-configs-model';
-import { tagConfigsStateToken } from './tag-configs-store';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Input } from '@components/input/input';
 import { toastStateToken } from '@components/toast/toast-store';
+import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { INTERNAL_USED_TAGS, VIRTUAL_TAGS } from '@shared/constants/tags-const';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY } from 'rxjs';
-import { TagConfigsService } from './tag-configs-service';
 import { TagConfigCard } from './tag-config-card/tag-config-card';
+import { TagConfigsModel } from './tag-configs-model';
+import { TagConfigsService } from './tag-configs-service';
+import { tagConfigsStateToken } from './tag-configs-store';
 
 @Component({
   selector: 'ct-tag-configs',
   imports: [NgxSignalTranslatePipe, Input, TagConfigCard],
   templateUrl: './tag-configs.html',
   styleUrl: './tag-configs.css',
-  host: {
-    class: 'page',
-  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TagConfigs {
