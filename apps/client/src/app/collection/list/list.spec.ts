@@ -34,7 +34,6 @@ describe('List', () => {
     image: '',
     title,
     titleLower: title.toLowerCase(),
-    searchableTextLower: title.toLowerCase(),
     genre: [],
     IMDbId,
     tags: [],

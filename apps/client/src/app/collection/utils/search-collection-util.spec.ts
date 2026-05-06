@@ -6,7 +6,6 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
   image: '',
   title: '',
   titleLower: '',
-  searchableTextLower: '',
   genre: [],
   IMDbId: '',
   tags: [],

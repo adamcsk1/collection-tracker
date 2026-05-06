@@ -184,7 +184,7 @@ components:
 
     CollectionItem:
       type: object
-      required: [image, title, titleLower, searchableTextLower, genre, IMDbId, tags, year, rate, hash, actors, plot]
+      required: [image, title, titleLower, genre, IMDbId, tags, year, rate, hash, actors, plot]
       properties:
         image:
           type: string
@@ -193,8 +193,6 @@ components:
         titleLower:
           type: string
           description: Lowercase cached title for faster searching.
-        searchableTextLower:
-          type: string
         genre:
           type: array
           items:

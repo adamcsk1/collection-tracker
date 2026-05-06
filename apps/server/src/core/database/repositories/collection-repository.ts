@@ -147,20 +147,6 @@ const buildItemWhere = (
   return queryParts;
 };
 
-const buildSearchableTextLower = (item: CollectionItemChangeApiModel): string =>
-  [
-    item.title,
-    item.genre.join(' '),
-    item.IMDbId,
-    item.tags.join(' '),
-    item.year ?? '',
-    item.rate,
-    item.actors,
-    item.plot,
-  ]
-    .join(' ')
-    .toLowerCase();
-
 const getItemRelations = (db: Database.Database, itemId: number): { genre: string[]; tags: string[] } => ({
   genre: (
     db.prepare('SELECT genre FROM collection_item_genres WHERE item_id = ? ORDER BY genre').all(itemId) as Array<{
@@ -191,7 +177,6 @@ const toApiItem = (db: Database.Database, row: CollectionItemRow): CollectionIte
   return {
     ...item,
     titleLower: row.title_lower,
-    searchableTextLower: buildSearchableTextLower(item),
     hash: row.content_hash,
   };
 };

@@ -18,7 +18,6 @@ describe('CollectionService', () => {
     image: '',
     title,
     titleLower: title.toLowerCase(),
-    searchableTextLower: title.toLowerCase(),
     genre: [],
     IMDbId: `tt-${title}`,
     tags: [],

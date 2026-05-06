@@ -19,7 +19,6 @@ const buildItem = (title: string, tags: string[] = []): CollectionItemModel => (
   image: '',
   title,
   titleLower: title.toLowerCase(),
-  searchableTextLower: title.toLowerCase(),
   genre: [],
   IMDbId: '',
   tags,
