@@ -38,7 +38,7 @@ describe('refresh-images-api', () => {
   it('returns zero counts for an empty collection', async () => {
     insertUser();
 
-    vi.doMock('../core/image/image-proxy-service', () => ({
+    vi.doMock('../core/image/image-proxy', () => ({
       fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
     }));
 
@@ -58,7 +58,7 @@ describe('refresh-images-api', () => {
     insertItem('tt-1', 'https://images.example/poster1.jpg');
     insertItem('tt-2', 'https://images.example/poster2.jpg');
 
-    vi.doMock('../core/image/image-proxy-service', () => ({
+    vi.doMock('../core/image/image-proxy', () => ({
       fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
     }));
 
@@ -89,7 +89,7 @@ describe('refresh-images-api', () => {
       }))
     );
 
-    vi.doMock('../core/image/image-proxy-service', () => ({
+    vi.doMock('../core/image/image-proxy', () => ({
       fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
     }));
 
@@ -124,7 +124,7 @@ describe('refresh-images-api', () => {
       }))
     );
 
-    vi.doMock('../core/image/image-proxy-service', () => ({
+    vi.doMock('../core/image/image-proxy', () => ({
       fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
     }));
 
@@ -146,7 +146,7 @@ describe('refresh-images-api', () => {
     fetchAndCacheImageResult = false;
     delete process.env.OMDB_API_KEY;
 
-    vi.doMock('../core/image/image-proxy-service', () => ({
+    vi.doMock('../core/image/image-proxy', () => ({
       fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
     }));
 

@@ -12,28 +12,28 @@ vi.mock('@server/core/crypto', () => ({
 describe('jwt utilities', () => {
   beforeEach(() => {
     process.env.JWT_SECRET = 'secret';
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
-  it('generates an access token and returns null on errors', () => {
-    const token = generateAccessToken('neo', '1h');
+  it('generates an access token and returns empty string on errors', async () => {
+    const token = await generateAccessToken('neo', '1h');
     expect(token).toBeTruthy();
 
     const signSpy = vi.spyOn(jwt, 'sign').mockImplementation(() => {
       throw new Error('fail');
     });
-    expect(generateAccessToken('neo')).toBeNull();
+    expect(await generateAccessToken('neo')).toBe('');
     signSpy.mockRestore();
   });
 
-  it('generates a refresh token and returns null on errors', () => {
-    const token = generateRefreshToken('neo', '1h');
+  it('generates a refresh token and returns empty string on errors', async () => {
+    const token = await generateRefreshToken('neo', '1h');
     expect(token).toBeTruthy();
 
     const signSpy = vi.spyOn(jwt, 'sign').mockImplementation(() => {
       throw new Error('fail');
     });
-    expect(generateRefreshToken('neo')).toBeNull();
+    expect(await generateRefreshToken('neo')).toBe('');
     signSpy.mockRestore();
   });
 
