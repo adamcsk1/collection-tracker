@@ -15,6 +15,7 @@ small {
 .container {
   display: flex;
   gap: var(--size-xs);
+  position: relative;
 
   i {
     display: none;
