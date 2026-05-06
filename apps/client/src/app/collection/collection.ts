@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ClaudeAiInput } from './claude-ai-input/claude-ai-input';
 import { collectionStateToken, initialCollectionState } from './collection-store';
 import { List } from './list/list';
@@ -25,6 +26,8 @@ import { provideStore } from 'ngx-simple-signal-store';
 export class Collection {
   private readonly collectionState = inject(collectionStateToken);
   private readonly claudeSearch = inject(ClaudeSearchService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   protected readonly searchTextModel = signal('');
   protected readonly claudeAiPromptTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
@@ -33,6 +36,16 @@ export class Collection {
   protected readonly useClaudeAi = this.claudeSearch.useClaudeAi.asReadonly();
 
   constructor() {
+    const querySearch = this.route.snapshot.queryParams['search'];
+    if (typeof querySearch === 'string' && querySearch.trim()) {
+      this.collectionState.setState('searchText', querySearch.trim());
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { search: null },
+        replaceUrl: true,
+      });
+    }
+
     effect(() => {
       const searchText = this.collectionState.state.searchText();
       untracked(() => {

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -13,6 +14,7 @@ describe('Statistics component', () => {
   let component: Statistics;
   let api: { getStatistics: ReturnType<typeof vi.fn> };
   let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
+  let routerNavigate: ReturnType<typeof vi.fn>;
 
   const statistics = {
     totalItems: 2,
@@ -24,12 +26,15 @@ describe('Statistics component', () => {
       { tag: '#drama', count: 1 },
       { tag: '#action', count: 2 },
     ],
-    genreCounts: [],
+    genreCounts: [{ genre: 'Action', count: 2 }],
   };
+
+  const mockChart = () => ({ data: { labels: [], datasets: [] }, update: vi.fn() }) as any;
 
   beforeEach(() => {
     api = { getStatistics: vi.fn(() => of(statistics)) };
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
+    routerNavigate = vi.fn(() => Promise.resolve(true));
 
     TestBed.configureTestingModule({
       imports: [Statistics],
@@ -38,18 +43,28 @@ describe('Statistics component', () => {
         { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: WebstorageService, useValue: webstorage },
+        { provide: Router, useValue: { navigate: routerNavigate } },
       ],
     });
 
     TestBed.overrideComponent(Statistics, { set: { template: '' } });
 
     component = TestBed.createComponent(Statistics).componentInstance;
-    component['chart'].set({ data: { labels: [], datasets: [] }, update: vi.fn() } as any);
+    component['tagChart'].set(mockChart());
+    component['watchedChart'].set(mockChart());
+    component['typeChart'].set(mockChart());
+    component['genreChart'].set(mockChart());
   });
 
   it('loads summary and tags from the statistics endpoint', () => {
     expect(api.getStatistics).toHaveBeenCalled();
-    expect(component['summary']()).toEqual({ movies: 1, series: 1, all: 2 });
+    expect(component['summary']()).toEqual({
+      movies: 1,
+      series: 1,
+      all: 2,
+      watched: 1,
+      unwatched: 1,
+    });
     expect(component['tags']()).toEqual(['#drama', '#action']);
   });
 
@@ -67,6 +82,7 @@ describe('Statistics component', () => {
         { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: WebstorageService, useValue: webstorage },
+        { provide: Router, useValue: { navigate: routerNavigate } },
       ],
     });
     TestBed.overrideComponent(Statistics, { set: { template: '' } });
@@ -93,5 +109,17 @@ describe('Statistics component', () => {
     component['onToggleTag']('#action');
 
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify(['#action']));
+  });
+
+  it('navigates to collection without search when clicking total stat card', () => {
+    component['onNavigateToCollection']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection']);
+  });
+
+  it('navigates to collection with search query when clicking a stat card', () => {
+    component['onNavigateToCollection']('#movie');
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection'], { queryParams: { search: '#movie' } });
   });
 });
