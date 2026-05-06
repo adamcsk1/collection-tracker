@@ -1,0 +1,1 @@
+export const COLLECTION_LIST_PAGE_SIZE = 50;
