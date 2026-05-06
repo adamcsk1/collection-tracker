@@ -3,48 +3,121 @@
 }
 
 .page {
-  max-width: 700px;
+  max-width: 800px;
   margin: 0 auto;
   padding: var(--size-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-xl);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--size-md);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--size-sm);
+}
+
+.brand-icon {
+  font-size: var(--font-size-3xl);
+  color: var(--main-color);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2xs);
+}
+
+.brand-text h1 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  line-height: 1.2;
+}
+
+.brand-subtitle {
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.loading-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--size-md);
+  padding: var(--size-xl) 0;
+}
+
+.loading-text {
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid color-mix(in srgb, var(--main-color) 20%, transparent);
+  border-top-color: var(--main-color);
+  border-radius: 50%;
+  animation: health-spin 0.8s linear infinite;
+}
+
+@keyframes health-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.content {
   display: flex;
   flex-direction: column;
   gap: var(--size-lg);
 }
 
-h1 {
-  margin-bottom: 0;
-  font-size: var(--font-size-lg);
-  display: inline-block;
-}
-
-h2 {
-  margin-bottom: 0;
-  font-size: var(--font-size-base);
-  opacity: 0.8;
-  display: inline-block;
-}
-
 .status-banner {
   display: flex;
   align-items: center;
-  gap: var(--size-xs);
-  padding: var(--size-xs) var(--size-md);
-  border: var(--border-style);
-  border-radius: var(--border-radius);
+  gap: var(--size-sm);
+  padding: var(--size-sm) var(--size-md);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-shadow);
+  font-weight: bold;
 
   &[data-status='ok'] {
-    border-color: var(--color-olive);
-    background-color: color-mix(in srgb, var(--color-olive) 10%, transparent);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-olive) 15%, transparent) 0%,
+      color-mix(in srgb, var(--color-olive) 5%, transparent) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--color-olive) 40%, transparent);
   }
 
   &[data-status='warn'] {
-    border-color: var(--color-darkgoldenrod);
-    background-color: color-mix(in srgb, var(--color-darkgoldenrod) 10%, transparent);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-darkgoldenrod) 15%, transparent) 0%,
+      color-mix(in srgb, var(--color-darkgoldenrod) 5%, transparent) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--color-darkgoldenrod) 40%, transparent);
   }
 
   &[data-status='error'] {
-    border-color: var(--color-crimson);
-    background-color: color-mix(in srgb, var(--color-crimson) 10%, transparent);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-crimson) 15%, transparent) 0%,
+      color-mix(in srgb, var(--color-crimson) 5%, transparent) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--color-crimson) 40%, transparent);
   }
 }
 
@@ -56,41 +129,82 @@ h2 {
 
   .status-banner[data-status='ok'] & {
     background-color: var(--color-olive);
+    box-shadow: 0 0 8px var(--color-olive);
+    animation: health-pulse 2s infinite;
   }
 
   .status-banner[data-status='warn'] & {
     background-color: var(--color-darkgoldenrod);
+    box-shadow: 0 0 8px var(--color-darkgoldenrod);
+    animation: health-pulse 2s infinite;
   }
 
   .status-banner[data-status='error'] & {
     background-color: var(--color-crimson);
+    box-shadow: 0 0 8px var(--color-crimson);
+    animation: health-pulse 2s infinite;
+  }
+}
+
+@keyframes health-pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: scale(1.15);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
 .status-label {
   font-weight: bold;
+  letter-spacing: 0.04em;
 }
 
 .loaded-at {
   margin-left: auto;
   font-size: var(--font-size-sm);
+  opacity: 0.8;
+  font-weight: normal;
 }
 
 .metrics-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--size-md);
 }
 
 .metric-card {
-  flex: 1 1 280px;
-  padding: var(--size-md);
-  border: var(--border-style);
-  border-radius: var(--border-radius);
-  background-color: var(--background-color-alt);
   display: flex;
   flex-direction: column;
+  gap: var(--size-sm);
+  padding: var(--size-md);
+  background-color: var(--background-color-alt);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-shadow);
+  border: 2px solid transparent;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease;
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
   gap: var(--size-xs);
+}
+
+.metric-icon {
+  font-size: var(--font-size-lg);
+  color: var(--main-color);
 }
 
 .metric-title {
@@ -98,19 +212,26 @@ h2 {
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  flex: 1;
+}
+
+.metric-value {
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  color: var(--main-color);
 }
 
 .metric-bar-wrap {
-  height: 8px;
+  height: 10px;
   background-color: var(--background-color);
-  border-radius: 4px;
+  border-radius: 5px;
   overflow: hidden;
 }
 
 .metric-bar {
   height: 100%;
-  border-radius: 4px;
-  transition: width 0.4s ease;
+  border-radius: 5px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 
   &[data-level='ok'] {
     background-color: var(--color-olive);
@@ -134,9 +255,16 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: var(--size-2xs);
+  flex: 1;
+}
+
+.load-value {
+  font-size: var(--font-size-lg);
+  font-weight: bold;
 }
 
 .frontend-status {
+  font-size: var(--font-size-lg);
   font-weight: bold;
 
   &[data-status='up'] {
@@ -148,7 +276,20 @@ h2 {
   }
 }
 
-.login-link {
-  align-self: flex-end;
-  font-size: var(--font-size-sm);
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+
+  .status-indicator {
+    animation: none;
+  }
+
+  .metric-bar {
+    transition: none;
+  }
+
+  .metric-card {
+    transition: none;
+  }
 }
