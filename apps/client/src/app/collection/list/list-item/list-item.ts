@@ -3,7 +3,7 @@ import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
-import { TagConfigColorPipe } from '../../../tag-configs/tag-configs-color-pipe';
+import { TagConfigColorPipe } from '../../../settings/tag-configs/tag-configs-color-pipe';
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
 import { ItemDialog } from '../../item-dialog/item-dialog';

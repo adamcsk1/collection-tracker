@@ -1,0 +1,13 @@
+<p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
+
+<div class="actions">
+  <button
+    data-test-id="settings-images-refresh-start"
+    type="button"
+    [disabled]="apiLoadNetworkStatus() === 'pending'"
+    (click)="onStartImagesRefresh()"
+  >
+    <i class="material-icons" [title]="('Start' | signalTranslate)()"> start </i>
+    {{ ('Start' | signalTranslate)() }}
+  </button>
+</div>

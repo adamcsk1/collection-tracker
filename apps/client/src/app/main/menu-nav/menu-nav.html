@@ -18,16 +18,6 @@
   </a>
   @if (!settingLockEnabled()) {
     <a
-      data-test-id="nav-tags"
-      [routerLink]="['/', 'tag-configs']"
-      routerLinkActive="active"
-      class="highlight"
-      (click)="onClose()"
-    >
-      <i class="material-icons">local_offer</i>
-      {{ ('TagConfig' | signalTranslate)() }}
-    </a>
-    <a
       data-test-id="nav-settings"
       [routerLink]="['/', 'settings']"
       routerLinkActive="active"

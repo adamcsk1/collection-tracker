@@ -4,7 +4,7 @@ export const CommonPage = {
   getNavCollectionLink: () => cy.getByTestId('nav-collection'),
   getNavSyncLink: () => cy.getByTestId('nav-sync'),
   getNavSettingsLink: () => cy.getByTestId('nav-settings'),
-  getNavTagsLink: () => cy.getByTestId('nav-tags'),
+
   getNavParserLink: () => cy.getByTestId('nav-parser'),
   getNavAboutLink: () => cy.getByTestId('nav-about'),
   getNavLogoutLink: () => cy.getByTestId('nav-logout'),

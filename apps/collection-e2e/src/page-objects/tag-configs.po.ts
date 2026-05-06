@@ -1,6 +1,6 @@
 export const TagConfigsPage = {
   visit: () => {
-    cy.visit('/client/#/tag-configs');
+    cy.visit('/client/#/settings/tag-configs');
     cy.reload();
   },
 

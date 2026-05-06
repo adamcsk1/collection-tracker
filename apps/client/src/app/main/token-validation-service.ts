@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { MainService } from './main-service';
 import { redirectToLogin } from './main-util';
 import { SettingsService } from '../settings/settings-service';
-import { TagConfigsService } from '../tag-configs/tag-configs-service';
+import { TagConfigsService } from '../settings/tag-configs/tag-configs-service';
 import { forkJoin } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })

@@ -1,136 +1,40 @@
-<form role="form" [formRoot]="form">
-  <h3>{{ ('BasicSettings' | signalTranslate)() }}</h3>
-  <libc-details [summary]="('Basics' | signalTranslate)()">
-    <libc-select
-      data-test-id="settings-language"
-      [label]="('Language' | signalTranslate)()"
-      [mandatory]="true"
-      [formField]="form.language"
-      [options]="languageOptions()"
-    />
-    <libc-select
-      data-test-id="settings-theme"
-      [label]="('Theme' | signalTranslate)()"
-      [mandatory]="true"
-      [formField]="form.theme"
-      [options]="themeOptions()"
-    />
-    <libc-checkbox
-      data-test-id="settings-animated-background"
-      [mandatory]="true"
-      [formField]="form.animatedBackground"
-      [label]="('AnimatedBackground' | signalTranslate)()"
-      [hint]="('Message.AnimatedBackground' | signalTranslate)()"
-    />
+<div class="settings-layout">
+  <nav class="settings-nav" role="navigation" [attr.aria-label]="('Settings' | signalTranslate)()">
+    <a data-test-id="settings-nav-basics" [routerLink]="['/', 'settings', 'basics']" routerLinkActive="active">
+      {{ ('Basics' | signalTranslate)() }}
+    </a>
     @if (!settingLockEnabled()) {
-      <libc-select
-        data-test-id="settings-app-mode"
-        [label]="('AppMode' | signalTranslate)()"
-        [hint]="('Message.AppMode' | signalTranslate)()"
-        [mandatory]="true"
-        [formField]="form.appMode"
-        [options]="[
-          { text: ('BasicAccess' | signalTranslate)(), value: 'basic' },
-          { text: ('LimitedAccess' | signalTranslate)(), value: 'limited' },
-          { text: ('FullAccess' | signalTranslate)(), value: 'full' },
-        ]"
-      />
-      @if (form.appMode().value() !== 'full') {
-        <libc-checkbox
-          data-test-id="settings-settings-lock"
-          [label]="('SettingsLock' | signalTranslate)()"
-          [hint]="('Message.SettingsLock' | signalTranslate)()"
-          [mandatory]="true"
-          [formField]="form.settingsLock"
-        />
-      }
-    }
-    @if (!settingLockEnabled()) {
-      <p>{{ ('Message.StorageSettings' | signalTranslate)() }}</p>
-      <libc-select
-        data-test-id="settings-sensitive-data-storage"
-        [label]="('SensitiveDataStorage' | signalTranslate)()"
-        [hint]="('Message.SensitiveDataStorage' | signalTranslate)()"
-        [mandatory]="true"
-        [formField]="form.sensitiveDataStorage"
-        [options]="[
-          { text: ('LocalStorage' | signalTranslate)(), value: 'local' },
-          { text: ('SessionStorage' | signalTranslate)(), value: 'session' },
-        ]"
-      />
-      @if (form.sensitiveDataStorage().value() === 'local') {
-        <libc-checkbox
-          data-test-id="settings-clear-local-storage-after-logout"
-          [label]="('ClearLocalStorageAfterLogout' | signalTranslate)()"
-          [mandatory]="true"
-          [formField]="form.clearLocalStorageAfterLogout"
-        />
-      }
-    }
-
-    <div class="form-buttons">
-      <button
-        data-test-id="settings-save"
-        type="submit"
-        [disabled]="form().invalid()"
-        (click)="submitAction.set('save')"
+      <a data-test-id="settings-nav-account" [routerLink]="['/', 'settings', 'account']" routerLinkActive="active">
+        {{ ('User' | signalTranslate)() }}
+      </a>
+      <a
+        data-test-id="settings-nav-access-tokens"
+        [routerLink]="['/', 'settings', 'access-tokens']"
+        routerLinkActive="active"
       >
-        <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
-        {{ ('Save' | signalTranslate)() }}
-      </button>
-      <button
-        data-test-id="settings-save-and-back"
-        type="submit"
-        [disabled]="form().invalid()"
-        (click)="submitAction.set('save-and-back')"
+        {{ ('AccessTokens' | signalTranslate)() }}
+      </a>
+      <a
+        data-test-id="settings-nav-tag-configs"
+        [routerLink]="['/', 'settings', 'tag-configs']"
+        routerLinkActive="active"
       >
-        <i class="material-icons" [title]="('SaveAndBack' | signalTranslate)()"> door_back </i>
-        {{ ('SaveAndBack' | signalTranslate)() }}
-      </button>
-    </div>
-  </libc-details>
-
-  @if (!settingLockEnabled()) {
-    <h3>{{ ('UserSettings' | signalTranslate)() }}</h3>
-    <ct-account-actions />
-    <ct-access-tokens />
-  }
-
-  <h3>{{ ('Others' | signalTranslate)() }}</h3>
-  @if (form.appMode().value() === 'full') {
-    <libc-details [summary]="('Images' | signalTranslate)()">
-      <p>{{ ('Message.MissingImages' | signalTranslate)() }}</p>
-
-      <div class="form-buttons">
-        <button
-          data-test-id="settings-images-refresh-start"
-          type="button"
-          [disabled]="apiLoadNetworkStatus() !== 'finished'"
-          (click)="onStartImagesRefresh()"
-        >
-          <i class="material-icons" [title]="('Start' | signalTranslate)()"> start </i>
-          {{ ('Start' | signalTranslate)() }}
-        </button>
-      </div>
-    </libc-details>
-
-    <libc-details [summary]="('GlobalWatchStatus' | signalTranslate)()">
-      <p>{{ ('Message.GlobalWatchStatus' | signalTranslate)() }}</p>
-      <div class="form-buttons">
-        <button data-test-id="settings-mark-all-watched" type="button" (click)="onMarkAllAsWatched()">
-          <i class="material-icons" [title]="('MarkAllAsWatched' | signalTranslate)()"> visibility </i>
-          {{ ('MarkAllAsWatched' | signalTranslate)() }}
-        </button>
-        <button
-          data-test-id="settings-mark-all-unwatched"
-          type="button"
-          class="button-danger"
-          (click)="onMarkAllAsUnwatched()"
-        >
-          <i class="material-icons" [title]="('MarkAllAsUnwatched' | signalTranslate)()"> visibility_off </i>
-          {{ ('MarkAllAsUnwatched' | signalTranslate)() }}
-        </button>
-      </div>
-    </libc-details>
-  }
-</form>
+        {{ ('TagConfig' | signalTranslate)() }}
+      </a>
+    }
+    <a data-test-id="settings-nav-images" [routerLink]="['/', 'settings', 'images']" routerLinkActive="active">
+      {{ ('Images' | signalTranslate)() }}
+    </a>
+    <a
+      data-test-id="settings-nav-global-watch-status"
+      [routerLink]="['/', 'settings', 'global-watch-status']"
+      routerLinkActive="active"
+    >
+      {{ ('GlobalWatchStatus' | signalTranslate)() }}
+    </a>
+  </nav>
+  <hr />
+  <div class="settings-content">
+    <router-outlet />
+  </div>
+</div>

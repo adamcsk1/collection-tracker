@@ -14,13 +14,8 @@ export const routes: Routes = [
     canActivate: [mainGuard],
   },
   {
-    path: 'tag-configs',
-    loadComponent: () => import('../tag-configs/tag-configs').then((module) => module.TagConfigs),
-    canActivate: [mainGuard, settingsLockedGuard],
-  },
-  {
     path: 'settings',
-    loadComponent: () => import('../settings/settings').then((module) => module.Settings),
+    loadChildren: () => import('../settings/settings-routes').then((module) => module.settingsRoutes),
     canActivate: [mainGuard, settingsLockedGuard],
   },
   {

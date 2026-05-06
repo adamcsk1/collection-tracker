@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { CollectionService } from '../../collection/collection-service';
 import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,
@@ -11,10 +10,11 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { EMPTY, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChangeWatchedStatusService } from './change-watched-status-service';
+import { CollectionService } from '../../collection/collection-service';
+import { GlobalWatchStatusService } from './global-watch-status-service';
 
-describe('ChangeWatchedStatusService', () => {
-  let service: ChangeWatchedStatusService;
+describe('GlobalWatchStatusService', () => {
+  let service: GlobalWatchStatusService;
   let collectionService: { loadCollection: ReturnType<typeof vi.fn> };
   let api: { markAllAsWatched: ReturnType<typeof vi.fn>; markAllAsUnwatched: ReturnType<typeof vi.fn> };
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
@@ -29,7 +29,7 @@ describe('ChangeWatchedStatusService', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        ChangeWatchedStatusService,
+        GlobalWatchStatusService,
         { provide: CollectionService, useValue: collectionService },
         { provide: ApiService, useValue: api },
         { provide: ConfirmService, useValue: confirm },
@@ -39,7 +39,7 @@ describe('ChangeWatchedStatusService', () => {
       ],
     });
 
-    service = TestBed.inject(ChangeWatchedStatusService);
+    service = TestBed.inject(GlobalWatchStatusService);
   });
 
   it('marks all items as watched and completes successfully', () => {

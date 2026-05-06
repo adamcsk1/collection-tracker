@@ -1,14 +1,12 @@
-<libc-details data-test-id="settings-access-tokens" [summary]="('AccessTokens' | signalTranslate)()">
-  <p>{{ ('Message.AccessTokenSettings' | signalTranslate)() }}</p>
-  @for (accessToken of accessTokens(); track $index) {
-    <ct-token-item [accessToken]="accessToken" (revokeAccessToken)="onRevokeAccessToken($event)" />
-  }
-  <br />
-  <p>{{ ('Message.CreateNewAccessToken' | signalTranslate)() }}</p>
-  <div class="form-buttons">
-    <button data-test-id="settings-create-access-token" (click)="onCreateAccessToken()">
-      <i class="material-icons" [title]="('CreateNewAccessToken' | signalTranslate)()"> add </i>
-      {{ ('CreateNewAccessToken' | signalTranslate)() }}
-    </button>
-  </div>
-</libc-details>
+<p>{{ ('Message.AccessTokenSettings' | signalTranslate)() }}</p>
+@for (accessToken of accessTokens(); track $index) {
+  <ct-token-item [accessToken]="accessToken" (revokeAccessToken)="onRevokeAccessToken($event)" />
+}
+<br />
+<p>{{ ('Message.CreateNewAccessToken' | signalTranslate)() }}</p>
+<div class="actions">
+  <button data-test-id="settings-create-access-token" (click)="onCreateAccessToken()">
+    <i class="material-icons" [title]="('CreateNewAccessToken' | signalTranslate)()"> add </i>
+    {{ ('CreateNewAccessToken' | signalTranslate)() }}
+  </button>
+</div>
