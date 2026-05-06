@@ -24,7 +24,7 @@ import { ItemDialog } from '../item-dialog/item-dialog';
 import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
 import { ClaudeSearchService } from '../search/claude-search-service';
 import { FloatButtons } from './float-buttons/float-buttons';
-import { INFINITE_SCROLL_PAGE_SIZE } from './infinite-scroll/infinite-scroll-const';
+import { COLLECTION_LIST_PAGE_SIZE } from './list-const';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
 import { ListItem } from './list-item/list-item';
 
@@ -134,7 +134,7 @@ export class List {
   private loadItems(reset: boolean): void {
     const requestVersion = ++this.requestVersion;
     const offset = reset ? 0 : this.visibleCollection().length;
-    const limit = INFINITE_SCROLL_PAGE_SIZE;
+    const limit = COLLECTION_LIST_PAGE_SIZE;
 
     if (reset) {
       this.visibleCollection.set([]);
