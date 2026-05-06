@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { APP_VERSION, BUILD, BUILD_DATE } from '../main/main-const';
 import { mainStateToken } from '../main/main-store';
+import { LinkButton } from '@components/link-button/link-button';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -11,7 +12,7 @@ import { BehaviorSubject, debounceTime, filter, tap } from 'rxjs';
 
 @Component({
   selector: 'ct-about',
-  imports: [NgxSignalTranslatePipe],
+  imports: [NgxSignalTranslatePipe, LinkButton],
   templateUrl: './about.html',
   styleUrl: './about.css',
   host: {
