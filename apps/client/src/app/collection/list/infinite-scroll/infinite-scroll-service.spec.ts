@@ -9,7 +9,6 @@ const buildItem = (title: string): CollectionItemModel => ({
   image: '',
   title,
   titleLower: title.toLowerCase(),
-  searchableTextLower: title.toLowerCase(),
   genre: [],
   IMDbId: '',
   tags: [],

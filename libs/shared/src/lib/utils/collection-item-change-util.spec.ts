@@ -7,7 +7,6 @@ describe('toCollectionItemChange', () => {
         image: 'poster-url',
         title: 'Title',
         titleLower: 'title',
-        searchableTextLower: 'title drama',
         genre: ['Drama'],
         IMDbId: 'tt123',
         tags: ['#owned'],
