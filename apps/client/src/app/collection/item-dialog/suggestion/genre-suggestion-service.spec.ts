@@ -53,7 +53,7 @@ describe('GenreSuggestionService', () => {
   });
 
   it('handles trailing comma and whitespace', async () => {
-    const suggestions = await firstValueFrom(service.getSuggestion('Drama, '));
+    await firstValueFrom(service.getSuggestion('Drama, '));
 
     expect(api.getGenreSuggestions).toHaveBeenCalledWith('', 3);
   });

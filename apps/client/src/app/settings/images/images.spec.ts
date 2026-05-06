@@ -38,7 +38,7 @@ describe('SettingsImages component', () => {
   });
 
   it('calls service to refresh images', () => {
-    component.onStartImagesRefresh();
+    component['onStartImagesRefresh']();
 
     expect(imageRefresh.refreshImages).toHaveBeenCalled();
   });

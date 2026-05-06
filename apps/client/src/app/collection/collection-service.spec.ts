@@ -1,24 +1,18 @@
 import { TestBed } from '@angular/core/testing';
-import { ApiService } from '@services/api/api-service';
-import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
-import { CollectionItemApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { Subject } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   initialMainCollectionState,
   MainCollectionState,
   mainCollectionStateToken,
 } from '../main/main-collection-store';
+import { CollectionItemApiModel } from '@shared/models/api-model';
 import { CollectionModel } from './collection-model';
 import { CollectionService } from './collection-service';
 
 describe('CollectionService', () => {
   let service: CollectionService;
-  let api: { searchItems: ReturnType<typeof vi.fn> };
   let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
-  let apiState: NgxSimpleSignalStoreService<ApiState>;
-  const originalStructuredClone = global.structuredClone;
 
   const buildCollectionItem = (title: string): CollectionItemApiModel => ({
     image: '',
@@ -35,56 +29,21 @@ describe('CollectionService', () => {
     plot: '',
   });
 
-  const buildResponse = (items: CollectionItemApiModel[]): CollectionItemsApiResponseModel => ({
-    items,
-    total: items.length,
-    offset: 0,
-    limit: 100,
-  });
-
   beforeEach(() => {
-    api = { searchItems: vi.fn() };
-    (global as any).structuredClone = (value: unknown) => JSON.parse(JSON.stringify(value));
     TestBed.configureTestingModule({
-      providers: [
-        CollectionService,
-        { provide: ApiService, useValue: api },
-        provideStore(initialMainCollectionState, mainCollectionStateToken),
-        provideStore(initialApiState, apiStateToken),
-      ],
+      providers: [CollectionService, provideStore(initialMainCollectionState, mainCollectionStateToken)],
     });
 
     service = TestBed.inject(CollectionService);
     mainCollectionState = TestBed.inject(mainCollectionStateToken);
-    apiState = TestBed.inject(apiStateToken);
   });
 
-  afterEach(() => {
-    (global as any).structuredClone = originalStructuredClone;
-  });
+  it('increments reload trigger', () => {
+    const initial = mainCollectionState.state.reloadTrigger();
 
-  it('does not load collection when network status is pending', () => {
-    apiState.setState('loadNetworkStatus', 'pending');
+    service.triggerReload();
 
-    service.loadCollection();
-
-    expect(api.searchItems).not.toHaveBeenCalled();
-    expect(mainCollectionState.state.collection()).toEqual([]);
-  });
-
-  it('replaces collection with first batch then appends subsequent batches', () => {
-    const subject = new Subject<CollectionItemsApiResponseModel>();
-    api.searchItems.mockReturnValue(subject.asObservable());
-    service.loadCollection();
-
-    subject.next(buildResponse([buildCollectionItem('first')]));
-    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('first')]);
-
-    subject.next(buildResponse([buildCollectionItem('second')]));
-    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
-      buildCollectionItem('first'),
-      buildCollectionItem('second'),
-    ]);
+    expect(mainCollectionState.state.reloadTrigger()).toBe(initial + 1);
   });
 
   it('adds a collection item to the front when first flag is true', () => {

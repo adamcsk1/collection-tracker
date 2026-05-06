@@ -121,7 +121,7 @@ describe('ItemDialog', () => {
 
   it('restores last saved item when switching back to read-only', () => {
     component['onEdit']();
-    component.updateDraft('title', 'Modified Title');
+    component['updateDraft']('title', 'Modified Title');
     expect(component['draftItem']().title).toBe('Modified Title');
 
     component['onReadOnly']();
@@ -168,7 +168,7 @@ describe('ItemDialog', () => {
 
   it('saves changes after confirmation and updates state', () => {
     confirm.open.mockReturnValue(of(true));
-    component.updateDraft('title', 'Updated Title');
+    component['updateDraft']('title', 'Updated Title');
 
     component['onSaveChanges']();
 
@@ -185,7 +185,7 @@ describe('ItemDialog', () => {
 
   it('does not save when confirmation is declined', () => {
     confirm.open.mockReturnValue(of(false));
-    component.updateDraft('title', 'Updated Title');
+    component['updateDraft']('title', 'Updated Title');
 
     component['onSaveChanges']();
 
@@ -195,7 +195,7 @@ describe('ItemDialog', () => {
   });
 
   it('does not save when title is empty', () => {
-    component.updateDraft('title', '  ');
+    component['updateDraft']('title', '  ');
 
     component['onSaveChanges']();
 
@@ -205,7 +205,7 @@ describe('ItemDialog', () => {
   });
 
   it('does not save when IMDbId is empty', () => {
-    component.updateDraft('IMDbId', '  ');
+    component['updateDraft']('IMDbId', '  ');
 
     component['onSaveChanges']();
 
@@ -215,7 +215,7 @@ describe('ItemDialog', () => {
   });
 
   it('does not save when tags contain virtual tags', () => {
-    component.updateDraft('tags', [MOVIE_TAG, VIRTUAL_UNWATCHED_TAG]);
+    component['updateDraft']('tags', [MOVIE_TAG, VIRTUAL_UNWATCHED_TAG]);
 
     component['onSaveChanges']();
 
@@ -225,7 +225,7 @@ describe('ItemDialog', () => {
   });
 
   it('does not save when tags lack a type tag', () => {
-    component.updateDraft('tags', ['#action']);
+    component['updateDraft']('tags', ['#action']);
 
     component['onSaveChanges']();
 
@@ -236,7 +236,7 @@ describe('ItemDialog', () => {
 
   it('allows series tag as valid type tag', () => {
     confirm.open.mockReturnValue(of(true));
-    component.updateDraft('tags', [SERIES_TAG, '#drama']);
+    component['updateDraft']('tags', [SERIES_TAG, '#drama']);
 
     component['onSaveChanges']();
 
