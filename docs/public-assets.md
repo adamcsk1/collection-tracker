@@ -8,7 +8,7 @@ Source: [`libs/public`](../libs/public)
 
 - [`src/manifest.json`](../libs/public/src/manifest.json): shared web app manifest
 - [`src/icons/`](../libs/public/src/icons): logos, favicons, Apple touch icon, and PWA icons
-- [`src/images/`](../libs/public/src/images): badge SVGs used in the about page (`download-apk.svg`, `view-on-github.svg`)
+- [`src/images/`](../libs/public/src/images): shared image assets
 
 ## Usage
 

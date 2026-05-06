@@ -1,12 +1,11 @@
 <button
   type="button"
   class="dialog-overlay"
+  tabindex="-1"
   animate.enter="animation-fade-in"
   animate.leave="animation-fade-out"
   [attr.aria-label]="('Close' | signalTranslate)()"
   (click)="onClose()"
-  (keydown.enter)="onClose()"
-  (keydown.space)="onClose()"
 ></button>
 <div
   #dialogRoot
