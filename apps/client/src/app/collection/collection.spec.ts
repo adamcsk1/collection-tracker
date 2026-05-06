@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CollectionState, collectionStateToken, initialCollectionState } from './collection-store';
 import { ClaudeSearchService } from './search/claude-search-service';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
@@ -15,13 +15,14 @@ describe('Collection component', () => {
   let fixture: ComponentFixture<Collection>;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
 
-  beforeEach(() => {
+  const createFixture = (queryParams: Record<string, unknown> = {}) => {
     TestBed.configureTestingModule({
       imports: [Collection],
       providers: [
         provideStore(initialCollectionState, collectionStateToken),
         { provide: AutocompleteService, useValue: { search: vi.fn() } },
-        { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParams } } },
+        { provide: Router, useValue: { navigate: vi.fn(() => Promise.resolve(true)) } },
       ],
     });
 
@@ -46,6 +47,10 @@ describe('Collection component', () => {
     fixture = TestBed.createComponent(Collection);
     collectionState = fixture.debugElement.injector.get(collectionStateToken);
     fixture.detectChanges();
+  };
+
+  beforeEach(() => {
+    createFixture();
   });
 
   it('syncs search text from store to the control', async () => {
@@ -60,5 +65,48 @@ describe('Collection component', () => {
     fixture.detectChanges();
 
     expect(collectionState.state.searchText()).toBe('trinity');
+  });
+
+  it('initializes search text from query params and clears the URL', () => {
+    const routerNavigate = vi.fn(() => Promise.resolve(true));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [Collection],
+      providers: [
+        provideStore(initialCollectionState, collectionStateToken),
+        { provide: AutocompleteService, useValue: { search: vi.fn() } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParams: { search: '#action' } } } },
+        { provide: Router, useValue: { navigate: routerNavigate } },
+      ],
+    });
+
+    TestBed.overrideComponent(Collection, {
+      set: {
+        template: '',
+        providers: [
+          provideStore(initialCollectionState, collectionStateToken),
+          { provide: AutocompleteService, useValue: { search: vi.fn() } },
+          {
+            provide: ClaudeSearchService,
+            useFactory: () => ({
+              useClaudeAi: signal(false),
+              getMatchedIds: () => of(null),
+              searchInProgress: signal(false),
+            }),
+          },
+        ],
+      },
+    });
+
+    const freshFixture = TestBed.createComponent(Collection);
+    const freshState = freshFixture.debugElement.injector.get(collectionStateToken);
+    freshFixture.detectChanges();
+
+    expect(freshState.state.searchText()).toBe('#action');
+    expect(routerNavigate).toHaveBeenCalledWith([], {
+      relativeTo: expect.anything(),
+      queryParams: { search: null },
+      replaceUrl: true,
+    });
   });
 });

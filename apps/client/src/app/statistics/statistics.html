@@ -5,12 +5,52 @@
 } @else {
   <h2>{{ ('Summary' | signalTranslate)() }}</h2>
   @if (summary(); as summary) {
-    <div data-test-id="statistics-summary">
-      <div data-test-id="statistics-summary-all">
-        {{ ('ItemsInCollection' | signalTranslate)() }}: {{ summary.all }}
-      </div>
-      <div data-test-id="statistics-summary-movies">{{ ('Movies' | signalTranslate)() }}: {{ summary.movies }}</div>
-      <div data-test-id="statistics-summary-series">{{ ('Series' | signalTranslate)() }}: {{ summary.series }}</div>
+    <div data-test-id="statistics-summary" class="summary-grid">
+      <button
+        data-test-id="statistics-summary-all"
+        class="stat-card"
+        (click)="onNavigateToCollection()"
+        [attr.aria-label]="('ItemsInCollection' | signalTranslate)() + ': ' + summary.all"
+      >
+        <span class="stat-value">{{ summary.all }}</span>
+        <span class="stat-label">{{ ('ItemsInCollection' | signalTranslate)() }}</span>
+      </button>
+      <button
+        data-test-id="statistics-summary-movies"
+        class="stat-card"
+        (click)="onNavigateToCollection('#movie')"
+        [attr.aria-label]="('Movies' | signalTranslate)() + ': ' + summary.movies"
+      >
+        <span class="stat-value">{{ summary.movies }}</span>
+        <span class="stat-label">{{ ('Movies' | signalTranslate)() }}</span>
+      </button>
+      <button
+        data-test-id="statistics-summary-series"
+        class="stat-card"
+        (click)="onNavigateToCollection('#series')"
+        [attr.aria-label]="('Series' | signalTranslate)() + ': ' + summary.series"
+      >
+        <span class="stat-value">{{ summary.series }}</span>
+        <span class="stat-label">{{ ('Series' | signalTranslate)() }}</span>
+      </button>
+      <button
+        data-test-id="statistics-summary-watched"
+        class="stat-card"
+        (click)="onNavigateToCollection('#watched')"
+        [attr.aria-label]="('Watched' | signalTranslate)() + ': ' + summary.watched"
+      >
+        <span class="stat-value">{{ summary.watched }}</span>
+        <span class="stat-label">{{ ('Watched' | signalTranslate)() }}</span>
+      </button>
+      <button
+        data-test-id="statistics-summary-unwatched"
+        class="stat-card"
+        (click)="onNavigateToCollection('#unwatched')"
+        [attr.aria-label]="('Unwatched' | signalTranslate)() + ': ' + summary.unwatched"
+      >
+        <span class="stat-value">{{ summary.unwatched }}</span>
+        <span class="stat-label">{{ ('Unwatched' | signalTranslate)() }}</span>
+      </button>
     </div>
   }
 
@@ -22,25 +62,50 @@
       @for (tag of tags(); track tag) {
         <button
           [attr.data-test-id]="'statistics-tag-' + tag"
-          [class.button-basic]="!selectedTags().includes(tag)"
+          class="tag-chip"
+          [class.tag-chip-selected]="selectedTags().includes(tag)"
           [attr.aria-pressed]="selectedTags().includes(tag)"
           (click)="onToggleTag(tag)"
+          [style.--tag-color]="textToHexColor(tag.replace('#', ''))"
         >
           {{ tag }}
         </button>
       }
     </div>
   </libc-details>
-}
-@if (selectedTags().length === 0) {
-  <div data-test-id="statistics-tags-empty" class="tags-empty">
-    {{ ('Message.EmptySelectTagsForChart' | signalTranslate)() }}
-  </div>
+  @if (selectedTags().length === 0) {
+    <div data-test-id="statistics-tags-empty" class="tags-empty">
+      {{ ('Message.EmptySelectTagsForChart' | signalTranslate)() }}
+    </div>
+  }
 }
 
-<canvas
-  data-test-id="statistics-chart"
-  id="statistics"
-  [style.display]="selectedTags().length > 0 ? 'block' : 'none'"
-  >{{ chart() }}</canvas
->
+<div class="charts-grid" [class.chart-hidden]="apiLoadNetworkStatus() !== 'finished' || tags().length === 0">
+  <div class="chart-card" [class.chart-hidden]="selectedTags().length === 0">
+    <h3>{{ ('Tags' | signalTranslate)() }}</h3>
+    <div class="chart-container">
+      <canvas id="statistics-tag-chart">{{ tagChart() }}</canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h3>{{ ('GlobalWatchStatus' | signalTranslate)() }}</h3>
+    <div class="chart-container">
+      <canvas id="statistics-watched-chart">{{ watchedChart() }}</canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h3>{{ ('Type' | signalTranslate)() }}</h3>
+    <div class="chart-container">
+      <canvas id="statistics-type-chart">{{ typeChart() }}</canvas>
+    </div>
+  </div>
+
+  <div class="chart-card chart-card-wide" [class.chart-hidden]="(statistics()?.genreCounts ?? []).length === 0">
+    <h3>{{ ('Genre' | signalTranslate)() }}</h3>
+    <div class="chart-container">
+      <canvas id="statistics-genre-chart">{{ genreChart() }}</canvas>
+    </div>
+  </div>
+</div>
