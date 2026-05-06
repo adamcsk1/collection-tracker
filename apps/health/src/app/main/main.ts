@@ -1,5 +1,6 @@
 import { DatePipe, UpperCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { LinkButton } from '@components/link-button/link-button';
 import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
@@ -10,7 +11,7 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
 
 @Component({
   selector: 'he-root',
-  imports: [UpperCasePipe, DatePipe, NgxSignalTranslatePipe],
+  imports: [UpperCasePipe, DatePipe, NgxSignalTranslatePipe, LinkButton],
   templateUrl: './main.html',
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,84 +1,113 @@
 <div class="page">
-  <div>
-    <h1>{{ ('Title' | signalTranslate)() }}</h1>
-    -
-    <h2>{{ ('SubTitle' | signalTranslate)() }}</h2>
-  </div>
-
-  <a data-test-id="health-login-link" class="login-link" href="/login/">{{
-    ('NavigateToLogin' | signalTranslate)()
-  }}</a>
+  <header class="page-header">
+    <div class="brand">
+      <span class="brand-icon material-icons">monitor_heart</span>
+      <div class="brand-text">
+        <h1>{{ ('Title' | signalTranslate)() }}</h1>
+        <span class="brand-subtitle">{{ ('SubTitle' | signalTranslate)() }}</span>
+      </div>
+    </div>
+    <libc-link-button
+      dataTestId="health-login-link"
+      href="/login/"
+      icon="login"
+      [label]="('NavigateToLogin' | signalTranslate)()"
+    />
+  </header>
 
   @if (loading() && !health()) {
-    <p>{{ ('Loading' | signalTranslate)() }}</p>
-  }
-  @if (health(); as data) {
-    <div data-test-id="health-status-banner" class="status-banner" [attr.data-status]="data.status">
-      <span class="status-indicator"></span>
-      <span class="status-label">{{ data.status | uppercase }}</span>
-      <span class="loaded-at">{{ loadedAt() | date: 'medium' }}</span>
+    <div class="loading-block" role="status" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <span class="loading-text">{{ ('Loading' | signalTranslate)() }}</span>
     </div>
+  }
 
-    <div data-test-id="health-metrics-grid" class="metrics-grid">
-      <div data-test-id="health-memory-card" class="metric-card">
-        <p class="metric-title">{{ ('Memory' | signalTranslate)() }}</p>
-        <div class="metric-bar-wrap">
-          <div
-            class="metric-bar"
-            [style.width.%]="data.memory.usedPercent"
-            [attr.data-level]="barLevel(data.memory.usedPercent)"
-          ></div>
-        </div>
-        <p>{{ data.memory.usedPercent }}%</p>
+  @if (health(); as data) {
+    <div class="content animation-fade-in">
+      <div data-test-id="health-status-banner" class="status-banner" [attr.data-status]="data.status">
+        <span class="status-indicator" aria-hidden="true"></span>
+        <span class="status-label">{{ data.status | uppercase }}</span>
+        <span class="loaded-at">{{ loadedAt() | date: 'medium' }}</span>
       </div>
 
-      <div data-test-id="health-cpu-card" class="metric-card">
-        <p class="metric-title">{{ ('Cpu' | signalTranslate)() }}</p>
-        <div class="metric-bar-wrap">
-          <div
-            class="metric-bar"
-            [style.width.%]="data.cpu.usagePercent"
-            [attr.data-level]="barLevel(data.cpu.usagePercent)"
-          ></div>
-        </div>
-        <p>{{ data.cpu.usagePercent }}%</p>
-      </div>
-
-      @if (data.disk) {
-        <div class="metric-card">
-          <p class="metric-title">{{ ('Disk' | signalTranslate)() }}</p>
+      <div data-test-id="health-metrics-grid" class="metrics-grid">
+        <div data-test-id="health-memory-card" class="metric-card">
+          <div class="metric-header">
+            <span class="material-icons metric-icon">memory</span>
+            <span class="metric-title">{{ ('Memory' | signalTranslate)() }}</span>
+            <span class="metric-value">{{ data.memory.usedPercent }}%</span>
+          </div>
           <div class="metric-bar-wrap">
             <div
               class="metric-bar"
-              [style.width.%]="data.disk.usedPercent"
-              [attr.data-level]="barLevel(data.disk.usedPercent)"
+              [style.width.%]="data.memory.usedPercent"
+              [attr.data-level]="barLevel(data.memory.usedPercent)"
             ></div>
           </div>
-          <p>{{ data.disk.usedPercent }}%</p>
         </div>
-      }
 
-      <div class="metric-card">
-        <p class="metric-title">{{ ('LoadAverage' | signalTranslate)() }}</p>
-        <div class="load-row">
-          <div class="load-item">
-            <span class="metric-title">{{ ('Load.1min' | signalTranslate)() }}</span>
-            <span>{{ data.load.avg1m }}</span>
+        <div data-test-id="health-cpu-card" class="metric-card">
+          <div class="metric-header">
+            <span class="material-icons metric-icon">developer_board</span>
+            <span class="metric-title">{{ ('Cpu' | signalTranslate)() }}</span>
+            <span class="metric-value">{{ data.cpu.usagePercent }}%</span>
           </div>
-          <div class="load-item">
-            <span class="metric-title">{{ ('Load.5min' | signalTranslate)() }}</span>
-            <span>{{ data.load.avg5m }}</span>
-          </div>
-          <div class="load-item">
-            <span class="metric-title">{{ ('Load.15min' | signalTranslate)() }}</span>
-            <span>{{ data.load.avg15m }}</span>
+          <div class="metric-bar-wrap">
+            <div
+              class="metric-bar"
+              [style.width.%]="data.cpu.usagePercent"
+              [attr.data-level]="barLevel(data.cpu.usagePercent)"
+            ></div>
           </div>
         </div>
-      </div>
 
-      <div class="metric-card">
-        <p class="metric-title">{{ ('Frontend' | signalTranslate)() }}</p>
-        <p class="frontend-status" [attr.data-status]="data.frontend.status">{{ data.frontend.status | uppercase }}</p>
+        @if (data.disk) {
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="material-icons metric-icon">storage</span>
+              <span class="metric-title">{{ ('Disk' | signalTranslate)() }}</span>
+              <span class="metric-value">{{ data.disk.usedPercent }}%</span>
+            </div>
+            <div class="metric-bar-wrap">
+              <div
+                class="metric-bar"
+                [style.width.%]="data.disk.usedPercent"
+                [attr.data-level]="barLevel(data.disk.usedPercent)"
+              ></div>
+            </div>
+          </div>
+        }
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="material-icons metric-icon">speed</span>
+            <span class="metric-title">{{ ('LoadAverage' | signalTranslate)() }}</span>
+          </div>
+          <div class="load-row">
+            <div class="load-item">
+              <span class="metric-title">{{ ('Load.1min' | signalTranslate)() }}</span>
+              <span class="load-value">{{ data.load.avg1m }}</span>
+            </div>
+            <div class="load-item">
+              <span class="metric-title">{{ ('Load.5min' | signalTranslate)() }}</span>
+              <span class="load-value">{{ data.load.avg5m }}</span>
+            </div>
+            <div class="load-item">
+              <span class="metric-title">{{ ('Load.15min' | signalTranslate)() }}</span>
+              <span class="load-value">{{ data.load.avg15m }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="material-icons metric-icon">web</span>
+            <span class="metric-title">{{ ('Frontend' | signalTranslate)() }}</span>
+          </div>
+          <span class="frontend-status" [attr.data-status]="data.frontend.status">
+            {{ data.frontend.status | uppercase }}
+          </span>
+        </div>
       </div>
     </div>
   }
