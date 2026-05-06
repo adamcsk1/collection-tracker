@@ -10,7 +10,6 @@ export class LinkButton {
   public readonly href = input.required<string>();
   public readonly icon = input.required<string>();
   public readonly label = input.required<string>();
-  public readonly variant = input<'action' | 'nav'>('nav');
   public readonly external = input(false);
   public readonly dataTestId = input<string>('');
 }

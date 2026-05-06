@@ -1,66 +1,95 @@
 import { Component } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { LinkButton } from './link-button';
 
 @Component({
   imports: [LinkButton],
   template: `
-    <libc-link-button href="/health/" icon="monitoring" label="Health" dataTestId="health-link"></libc-link-button>
+    <libc-link-button [href]="href" [icon]="icon" [label]="label" [external]="external" [dataTestId]="dataTestId" />
   `,
 })
-class NavHostComponent {}
+class HostComponent {
+  public href = '/home';
+  public icon = 'home';
+  public label = 'Home';
+  public external = false;
+  public dataTestId = '';
+}
 
-@Component({
-  imports: [LinkButton],
-  template: `
-    <libc-link-button
-      href="https://github.com"
-      icon="code"
-      label="GitHub"
-      variant="action"
-      [external]="true"
-      dataTestId="github-link"
-    ></libc-link-button>
-  `,
-})
-class ActionHostComponent {}
+describe('LinkButton component', () => {
+  let fixture: ComponentFixture<HostComponent>;
 
-describe('LinkButton', () => {
-  it('renders nav variant with correct attributes', () => {
-    TestBed.configureTestingModule({ imports: [NavHostComponent] });
-    const fixture = TestBed.createComponent(NavHostComponent);
-    fixture.detectChanges();
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HostComponent],
+    });
 
-    const anchor = fixture.nativeElement.querySelector('a');
-    expect(anchor.getAttribute('href')).toBe('/health/');
-    expect(anchor.getAttribute('data-test-id')).toBe('health-link');
-    expect(anchor.classList.contains('link-button-nav')).toBe(true);
-    expect(anchor.querySelector('i')?.textContent?.trim()).toBe('monitoring');
-    expect(anchor.querySelector('span')?.textContent).toBe('Health');
-    expect(anchor.querySelectorAll('i').length).toBe(1);
+    fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.href = '/home';
+    fixture.componentInstance.icon = 'home';
+    fixture.componentInstance.label = 'Home';
+    fixture.componentInstance.external = false;
+    fixture.componentInstance.dataTestId = '';
   });
 
-  it('renders action variant with external link attributes', () => {
-    TestBed.configureTestingModule({ imports: [ActionHostComponent] });
-    const fixture = TestBed.createComponent(ActionHostComponent);
+  it('renders the anchor with correct href, icon, and label', () => {
     fixture.detectChanges();
 
-    const anchor = fixture.nativeElement.querySelector('a');
-    expect(anchor.getAttribute('href')).toBe('https://github.com');
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+    expect(anchor).toBeTruthy();
+    expect(anchor.getAttribute('href')).toBe('/home');
+    expect(anchor.textContent).toContain('home');
+    expect(anchor.textContent).toContain('Home');
+  });
+
+  it('sets data-test-id attribute when provided', () => {
+    fixture.componentInstance.dataTestId = 'nav-home';
+    fixture.detectChanges();
+
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+    expect(anchor.getAttribute('data-test-id')).toBe('nav-home');
+  });
+
+  it('does not set data-test-id attribute when empty', () => {
+    fixture.detectChanges();
+
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+    expect(anchor.hasAttribute('data-test-id')).toBe(false);
+  });
+
+  it('adds target and rel attributes for external links', () => {
+    fixture.componentInstance.external = true;
+    fixture.detectChanges();
+
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
     expect(anchor.getAttribute('target')).toBe('_blank');
     expect(anchor.getAttribute('rel')).toBe('noopener noreferrer');
-    expect(anchor.classList.contains('link-button-action')).toBe(true);
-    expect(anchor.querySelectorAll('i').length).toBe(2);
   });
 
-  it('does not render target or rel for internal links', () => {
-    TestBed.configureTestingModule({ imports: [NavHostComponent] });
-    const fixture = TestBed.createComponent(NavHostComponent);
+  it('does not add target or rel attributes for internal links', () => {
     fixture.detectChanges();
 
-    const anchor = fixture.nativeElement.querySelector('a');
-    expect(anchor.getAttribute('target')).toBeNull();
-    expect(anchor.getAttribute('rel')).toBeNull();
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+    expect(anchor.hasAttribute('target')).toBe(false);
+    expect(anchor.hasAttribute('rel')).toBe(false);
+  });
+
+  it('shows the external icon for external links', () => {
+    fixture.componentInstance.external = true;
+    fixture.detectChanges();
+
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+    const externalIcon = anchor.querySelector('.link-button-external');
+    expect(externalIcon).toBeTruthy();
+    expect(externalIcon?.textContent?.trim()).toBe('open_in_new');
+  });
+
+  it('does not show the external icon for internal links', () => {
+    fixture.detectChanges();
+
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+    const externalIcon = anchor.querySelector('.link-button-external');
+    expect(externalIcon).toBeNull();
   });
 });
