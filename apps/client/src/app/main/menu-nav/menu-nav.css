@@ -1,3 +1,29 @@
+:host {
+  --logo-size: 40px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--size-md);
+
+  img {
+    display: block;
+    width: var(--logo-size);
+    height: var(--logo-size);
+    border-radius: 35%;
+    border: var(--outline-style);
+    border-color: var(--focus-border-color);
+  }
+
+  h1 {
+    margin: auto 0 auto var(--size-xs);
+    line-height: 1;
+    font-size: var(--font-size-lg);
+    color: var(--glassy-background) !important;
+  }
+}
+
 .menu-nav {
   display: flex;
   flex-direction: column;
