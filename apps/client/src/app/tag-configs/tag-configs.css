@@ -1,40 +1,34 @@
 :host {
   display: flex;
   flex-direction: column;
+  padding: var(--size-md);
 }
 
 p {
   margin-bottom: var(--size-xs);
 }
 
-.tag-configs {
+.tag-configs-toolbar {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: var(--size-md);
+  margin-bottom: var(--size-md);
+  flex-wrap: wrap;
 
-  h3 {
-    margin: 0;
+  libc-input {
+    flex: 1 1 240px;
   }
 
-  .tag-configs-item {
-    display: flex;
-    gap: var(--size-xs);
-    flex-direction: column;
-
-    button {
-      display: block;
-    }
-
-    .tag-configs-item-color {
-      display: flex;
-      align-items: center;
-      gap: var(--size-xs);
-    }
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--size-2xs);
+    white-space: nowrap;
   }
 }
 
-.color-input {
-  pointer-events: none;
-  width: 0;
-  height: 0;
-  opacity: 0;
+.tag-configs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--size-md);
 }

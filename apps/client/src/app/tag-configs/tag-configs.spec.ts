@@ -192,7 +192,7 @@ describe('TagConfigs component', () => {
   it('seeds a black color when the color picker is opened for an uncolored tag', () => {
     createComponent(['#tag']);
 
-    const button = fixture.nativeElement.querySelector('.tag-configs-item-color button') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector('[data-test-id="tag-config-color-#tag"]') as HTMLButtonElement;
     button.click();
 
     expect(tagConfigsState.state.configs()).toEqual([buildTagConfig('#tag', { color: '#000000' })]);
@@ -204,11 +204,35 @@ describe('TagConfigs component', () => {
     fixture.detectChanges();
     tagConfigsService.syncUserTagConfigs.mockClear();
 
-    const button = fixture.nativeElement.querySelector('.tag-configs-item-color button') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector('[data-test-id="tag-config-color-#tag"]') as HTMLButtonElement;
     button.click();
 
     expect(tagConfigsState.state.configs()).toEqual([buildTagConfig('#tag', { color: '#123456' })]);
     expect(tagConfigsService.syncUserTagConfigs).not.toHaveBeenCalled();
+  });
+
+  it('filters tag configs by substring match case-insensitively', () => {
+    createComponent(['#alpha', '#beta', '#gamma']);
+
+    component['onFilterChange']('alp');
+
+    expect(component['tagConfigs']()).toEqual([buildTagConfig('#alpha', {})]);
+  });
+
+  it('shows all tag configs when filter is empty', () => {
+    createComponent(['#alpha', '#beta']);
+
+    component['onFilterChange']('');
+
+    expect(component['tagConfigs']()).toEqual([buildTagConfig('#beta', {}), buildTagConfig('#alpha', {})]);
+  });
+
+  it('trims filter text before matching', () => {
+    createComponent(['#alpha']);
+
+    component['onFilterChange']('  alpha  ');
+
+    expect(component['tagConfigs']()).toEqual([buildTagConfig('#alpha', {})]);
   });
 
   it('resets tag configs after confirmation and syncs empty list', () => {
