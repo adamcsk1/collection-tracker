@@ -36,7 +36,7 @@ describe('NewItemDialogService', () => {
     getMatchedContents: ReturnType<typeof vi.fn>;
     getSelectedContent: ReturnType<typeof vi.fn>;
   };
-  let collection: { addCollectionItem: ReturnType<typeof vi.fn> };
+  let collection: { addCollectionItem: ReturnType<typeof vi.fn>; triggerReload: ReturnType<typeof vi.fn> };
   let spinnerStore: NgxSimpleSignalStoreService<SpinnerLoadingState>;
   let toastStore: NgxSimpleSignalStoreService<ToastState>;
   let portal: { close: ReturnType<typeof vi.fn> };
@@ -45,7 +45,7 @@ describe('NewItemDialogService', () => {
   beforeEach(() => {
     api = { create: vi.fn() };
     omdb = { matchedContent: vi.fn(() => []), getMatchedContents: vi.fn(), getSelectedContent: vi.fn() };
-    collection = { addCollectionItem: vi.fn() };
+    collection = { addCollectionItem: vi.fn(), triggerReload: vi.fn() };
     portal = { close: vi.fn() };
     translate = { translate: vi.fn((key) => `t:${key}`) };
 
@@ -92,6 +92,7 @@ describe('NewItemDialogService', () => {
       plot: 'Plot',
     });
     expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
+    expect(collection.triggerReload).toHaveBeenCalled();
     expect(toastStore.state.message()).toBe('t:Toast.NewItem');
     expect(portal.close).toHaveBeenCalled();
     expect(spinnerStore.state.show()).toBe(false);

@@ -63,6 +63,7 @@ export class NewItemDialogService {
       tap((collectionItem) => {
         this.spinnerLoadingState.setState('show', false);
         this.collection.addCollectionItem(collectionItem, true);
+        this.collection.triggerReload();
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewItem'));
         if (mode === 'close') this.portal.close();
       })

@@ -40,18 +40,32 @@
             }
           </ng-container></libc-autocomplete
         >
-        <libc-checkbox [formField]="form.watched" [label]="('CollectionItemWatched' | signalTranslate)()" />
+        <libc-checkbox
+          data-test-id="new-item-watched"
+          [formField]="form.watched"
+          [label]="('CollectionItemWatched' | signalTranslate)()"
+        />
       }
       <div class="form-buttons">
         <button data-test-id="new-item-save" type="submit" [disabled]="form().invalid()" (click)="submitMode.set(null)">
           <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
           {{ ('Save' | signalTranslate)() }}
         </button>
-        <button type="submit" [disabled]="form().invalid()" (click)="submitMode.set('new')">
+        <button
+          data-test-id="new-item-save-and-new"
+          type="submit"
+          [disabled]="form().invalid()"
+          (click)="submitMode.set('new')"
+        >
           <i class="material-icons" [title]="('SaveAndNew' | signalTranslate)()"> add </i>
           {{ ('SaveAndNew' | signalTranslate)() }}
         </button>
-        <button type="submit" [disabled]="form().invalid()" (click)="submitMode.set('close')">
+        <button
+          data-test-id="new-item-save-and-close"
+          type="submit"
+          [disabled]="form().invalid()"
+          (click)="submitMode.set('close')"
+        >
           <i class="material-icons" [title]="('SaveAndClose' | signalTranslate)()"> door_back </i>
           {{ ('SaveAndClose' | signalTranslate)() }}
         </button>
