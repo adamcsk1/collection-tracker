@@ -5,6 +5,10 @@
     "rootDir": "../../",
     "types": []
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../../libs/shared/src/lib/utils/redirect-to-login-util.ts",
+    "../../libs/shared/src/lib/utils/redirect-to-login-util.spec.ts"
+  ],
   "exclude": ["src/test-setup.ts", "src/**/*.test.ts", "src/**/*.spec.ts"]
 }
