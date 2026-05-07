@@ -11,7 +11,7 @@ export const CollectionPage = {
   getList: () => cy.getByTestId('collection-list'),
   getListItems: () => cy.getByTestId('list-item-title'),
   getListItemImages: () => cy.getByTestId('list-item-image'),
-  getAllItems: () => cy.getByTestId('collection-list').find('[role="listitem"]'),
+  getAllItems: () => cy.getByTestId('list-item-title'),
   getEmptyState: () => cy.getByTestId('list-empty'),
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
 
@@ -27,18 +27,13 @@ export const CollectionPage = {
   getClaudeAiTextarea: () => cy.getByTestId('claude-ai-textarea').find('textarea'),
   getClaudeAiSendButton: () => cy.getByTestId('claude-ai-send'),
 
-  openFloatButtons: () => {
-    cy.getByTestId('show-functions').then(($btn) => {
-      if ($btn.is(':visible')) {
-        $btn.trigger('click');
-      }
-    });
-  },
-
   // New item dialog
+  getNewItemSearch: () => cy.get('[data-test-id="new-item-search"]'),
   getNewItemSearchInput: () => cy.getByTestId('new-item-search').find('input'),
   getNewItemContentSelect: () => cy.getByTestId('new-item-content-select').find('select'),
   getNewItemSaveButton: () => cy.getByTestId('new-item-save'),
+  getNewItemSaveAndNewButton: () => cy.getByTestId('new-item-save-and-new'),
+  getNewItemSaveAndCloseButton: () => cy.getByTestId('new-item-save-and-close'),
 
   // Item dialog
   getItemDialogEditButton: () => cy.getByTestId('item-dialog-edit'),
@@ -46,6 +41,4 @@ export const CollectionPage = {
   getItemDialogDeleteButton: () => cy.getByTestId('item-dialog-delete'),
   getItemDialogMarkWatchedButton: () => cy.getByTestId('item-dialog-mark-watched'),
   getItemDialogMarkUnwatchedButton: () => cy.getByTestId('item-dialog-mark-unwatched'),
-  getItemDialogEditorContent: () => cy.get('.CodeMirror-code'),
-
 };

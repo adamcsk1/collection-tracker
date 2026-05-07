@@ -4,7 +4,7 @@ import { CollectionPage } from '../page-objects/collection.po';
 /** Seeds items and reloads the collection page so the store is populated. */
 const seedAndVisit = (items: ReturnType<typeof buildCollectionItem>[]) => {
   items.forEach((item) => {
-    cy.request('POST', '/api/v1/create', { name: item.name, content: item.content });
+    cy.request('POST', '/api/v1/create', item);
   });
   CollectionPage.visit();
 };

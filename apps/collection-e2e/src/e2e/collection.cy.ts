@@ -7,7 +7,7 @@ import { CommonPage } from '../page-objects/common.po';
 /** Creates collection items on the real server via the authenticated session. */
 const seedItems = (items: ReturnType<typeof buildCollectionItem>[]) => {
   items.forEach((item) => {
-    cy.request('POST', '/api/v1/create', { name: item.name, content: item.content });
+    cy.request('POST', '/api/v1/create', item);
   });
 };
 
@@ -17,9 +17,9 @@ describe('Collection — empty state', () => {
   });
 
   it('shows the empty state message when collection has no items', () => {
-    // Intercept get-all and reload to ensure the collection API call completes
+    // Intercept items load and reload to ensure the collection API call completes
     // before asserting — the token rotation during page load can delay the response.
-    cy.intercept('GET', '/api/v1/get-all*').as('getAll');
+    cy.intercept('GET', '/api/v1/items*').as('getAll');
     cy.reload();
     cy.wait('@getAll');
     CollectionPage.getEmptyState().should('be.visible');
@@ -69,6 +69,79 @@ describe('Collection — add a new element', () => {
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', newTitle);
   });
+
+  it('saves a new item and keeps the dialog open for another item', () => {
+    const firstTitle = 'Save And New Movie One';
+    const secondTitle = 'Save And New Movie Two';
+
+    cy.intercept(
+      { method: 'GET', url: '/api/v1/proxy/omdb/search*', times: 1 },
+      {
+        statusCode: 200,
+        body: buildOmdbSearchResult(firstTitle, 'tt5000001'),
+      }
+    ).as('omdbSearchFirst');
+    cy.intercept(
+      { method: 'GET', url: '/api/v1/proxy/omdb/item*', times: 1 },
+      {
+        statusCode: 200,
+        body: buildOmdbItem(firstTitle, 'tt5000001'),
+      }
+    ).as('omdbItemFirst');
+
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+
+    CollectionPage.getNewItemSearchInput().clear().type(firstTitle);
+    cy.wait('@omdbSearchFirst');
+    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemSaveAndNewButton().click();
+    cy.wait('@omdbItemFirst');
+
+    CollectionPage.getNewItemSearchInput().should('be.visible').and('have.value', '');
+    CollectionPage.getListItems().should('contain.text', firstTitle);
+
+    cy.intercept(
+      { method: 'GET', url: '/api/v1/proxy/omdb/search*', times: 1 },
+      {
+        statusCode: 200,
+        body: buildOmdbSearchResult(secondTitle, 'tt5000002'),
+      }
+    ).as('omdbSearchSecond');
+    cy.intercept(
+      { method: 'GET', url: '/api/v1/proxy/omdb/item*', times: 1 },
+      {
+        statusCode: 200,
+        body: buildOmdbItem(secondTitle, 'tt5000002'),
+      }
+    ).as('omdbItemSecond');
+
+    CollectionPage.getNewItemSearchInput().type(secondTitle);
+    cy.wait('@omdbSearchSecond');
+    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemSaveAndCloseButton().click();
+    cy.wait('@omdbItemSecond');
+
+    CollectionPage.getNewItemSearch().should('not.exist');
+    CollectionPage.getListItems().should('contain.text', firstTitle);
+    CollectionPage.getListItems().should('contain.text', secondTitle);
+  });
+
+  it('saves a new item with the watched tag', () => {
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+
+    CollectionPage.getNewItemSearchInput().type(newTitle);
+    cy.wait('@omdbSearch');
+
+    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    cy.getByTestId('new-item-watched').find('input[type="checkbox"]').check();
+    CollectionPage.getNewItemSaveAndCloseButton().click();
+
+    // Open the item and verify it shows the mark-unwatched button (watched state)
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogMarkUnwatchedButton().should('be.visible');
+  });
 });
 
 describe('Collection — edit an element', () => {
@@ -98,6 +171,7 @@ describe('Collection — delete an element', () => {
   });
 
   it('deletes the item and the empty state becomes visible', () => {
+    cy.on('window:confirm', () => true);
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogDeleteButton().click();
     CollectionPage.getEmptyState().should('be.visible');
@@ -191,8 +265,8 @@ describe('Collection — fuzzy search', () => {
     CollectionPage.getAllItems().should('have.length', 5);
   });
 
-  it('uses fuzzy matching — partial title finds the item', () => {
-    CollectionPage.getSearchInput().type('stellr');
+  it('uses partial title search to find the item', () => {
+    CollectionPage.getSearchInput().type('stellar');
     CollectionPage.getListItems().should('have.length.at.least', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Interstellar');
   });
@@ -204,11 +278,42 @@ describe('Collection - sync', () => {
   });
 
   it('triggers a collection reload when sync is clicked', () => {
-    cy.intercept('GET', '/api/v1/get-all*').as('getAll');
+    cy.intercept('GET', '/api/v1/items*').as('getAll');
 
     CommonPage.openMenu();
     CommonPage.getNavSyncLink().click();
 
     cy.wait('@getAll').its('response.statusCode').should('eq', 200);
+  });
+});
+
+describe('Collection - tag badge filtering', () => {
+  const taggedItem = buildCollectionItem('Badge Test Movie', 'movie', 'tt6000001');
+
+  beforeEach(() => {
+    cy.autoLogin();
+    // Create item with a custom tag
+    cy.request('POST', '/api/v1/create', { ...taggedItem, tags: ['#movie', '#action'] });
+    // Enable image badge for the custom tag via API
+    cy.request('POST', '/api/v1/tag/change-config', [
+      {
+        tag: '#action',
+        color: '#ff0000',
+        useForImageBorder: false,
+        useForTextColor: false,
+        useForImageBadge: true,
+        weight: 1,
+      },
+    ]);
+    CollectionPage.visit();
+  });
+
+  it('clicking a tag badge filters the collection by that tag', () => {
+    // The badge should be visible on the item image
+    cy.get('.badge').should('be.visible').and('contain.text', '#action').click();
+
+    // Verify the collection is filtered
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', 'Badge Test Movie');
   });
 });
