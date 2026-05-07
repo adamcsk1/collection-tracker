@@ -18,7 +18,7 @@ Source: [`apps/server`](../apps/server)
 
 - Default data folder: `.data`
 - CLI flags: `--dataFolder=<path>` and `--debug=true|false`
-- Startup expects `.env` in the active data folder and loads it before registering APIs; set `OMDB_API_KEY` there to enable OMDb proxy endpoints; `CLAUDE_API_KEY` is optional — omitting it does not block startup but disables the Claude proxy endpoint
+- Startup expects `.env` in the active data folder and loads it before registering APIs; `OMDB_API_KEY` must be set for the server to start; `CLAUDE_API_KEY` is optional — omitting it does not block startup but disables the Claude proxy endpoint
 - `RATE_LIMIT` — maximum number of failed requests per 15-minute window per IP. Defaults to `100` when not set. Set a big enough number to avoid rate limiting (used by the E2E test container)
 - `LOG_LEVEL` — controls console log verbosity. Defaults to `info` when not set. Set to `DEBUG` to echo all log levels (info, warning, error, debug) to the console, equivalent to `--debug=true`
 - `nx run server:preserve` creates `.data/.env` from [`apps/server/scripts/.env.dev`](../apps/server/scripts/.env.dev) for local development

@@ -30,7 +30,6 @@ npx nx serve login
 npx nx build login --configuration=production
 npx nx test login
 npx nx lint login
-npx nx run login:stylelint
 npx nx run login:typecheck
 npx nx run login:typecheck-spec
 npx nx run login:format-check

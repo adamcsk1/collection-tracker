@@ -7,6 +7,7 @@ The Docker image serves the built Angular applications with Nginx and runs the b
 - Nginx listens on port `3001`.
 - The login application is served from `/login/`.
 - The client application is served from `/client/`.
+- The health application is served from `/health/`.
 - `/api/` is proxied to the Node server on `127.0.0.1:3000`.
 - `/data` is the writable volume for `.env`, the SQLite database, logs, and image cache files.
 
@@ -15,6 +16,7 @@ The Docker image serves the built Angular applications with Nginx and runs the b
 The image expects existing build artifacts:
 
 - `dist/apps/client/browser`
+- `dist/apps/health/browser`
 - `dist/apps/login/browser`
 - `dist/apps/server`
 
@@ -37,6 +39,7 @@ docker compose up -d
 ```
 
 This will:
+
 - Build the image if it doesn't exist (or run `docker compose up -d --build` to force a rebuild)
 - Map host port `3001` (override with `APP_PORT` env var, e.g. `APP_PORT=8080 docker compose up -d`)
 - Mount `./.data` on the host to `/data` in the container
@@ -91,6 +94,6 @@ Example:
 
 ## Operational Notes
 
-- The runtime image is based on `node:24-alpine`.
+- The runtime image is based on `node:24-slim`.
 - [`docker/entrypoint.sh`](../docker/entrypoint.sh) prepares the mounted `/data` volume and then drops privileges to the non-root `app` user.
 - `npm run release:create` packages a release folder with the Docker assets copied in and ready for image creation.

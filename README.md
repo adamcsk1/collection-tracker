@@ -35,7 +35,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 - Node.js `>= 24.14.0`
 - npm
 - Docker, only for container builds
-- Android studio
+- Android Studio, only for Android wrapper work
 
 ## Quick Start
 
@@ -57,9 +57,9 @@ Common workspace commands:
 ```powershell
 npm run build
 npm run test
-npm run e2e
+npm run cypress:chrome
+npm run lint:check
 npm run lint
-npm run stylelint
 npm run typecheck
 npm run typecheck:spec
 npm run format:check

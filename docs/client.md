@@ -8,8 +8,8 @@ Source: [`apps/client`](../apps/client)
 
 - `collection`: search and browse stored collection items; includes Claude AI natural-language search via `ClaudeSearchService` and `ClaudeAiInput` when `CLAUDE_API_KEY` is configured on the server
 - `statistics`: tag-driven summaries and Chart.js visualizations
-- `tag-configs`: per-tag color, weight, and presentation rules
-- `settings`: API, theme, search, and account-level preferences
+- `settings/tag-configs`: per-tag color, weight, and presentation rules
+- `settings`: theme, search, account actions, access tokens, image refresh, and global watch-status actions
 - `about`: build metadata and settings-lock release flow
 
 ## Technical Notes
@@ -32,7 +32,6 @@ npx nx serve client
 npx nx build client --configuration=production
 npx nx test client
 npx nx lint client
-npx nx run client:stylelint
 npx nx run client:typecheck
 npx nx run client:typecheck-spec
 npx nx run client:format-check
