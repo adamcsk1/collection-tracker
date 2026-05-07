@@ -6,5 +6,5 @@ export const AboutPage = {
   getVersion: () => cy.getByTestId('about-version'),
   getGithubLink: () => cy.getByTestId('about-github-link'),
   getHealthLink: () => cy.getByTestId('about-health-link'),
-  getApiDocsLink: () => cy.getByTestId('about-api-docs-link'),
+  getApiDocsLink: () => cy.getByTestId('about-api-docs-link').scrollIntoView(),
 };

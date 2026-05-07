@@ -9,8 +9,9 @@ export const StatisticsPage = {
   getSummaryAll: () => cy.getByTestId('statistics-summary-all'),
   getSummaryMovies: () => cy.getByTestId('statistics-summary-movies'),
   getSummarySeries: () => cy.getByTestId('statistics-summary-series'),
-  getTagsContainer: () => cy.getByTestId('statistics-tags'),
+  getSummaryWatched: () => cy.getByTestId('statistics-summary-watched'),
+  getSummaryUnwatched: () => cy.getByTestId('statistics-summary-unwatched'),
   getTagButton: (tag: string) => cy.getByTestId(`statistics-tag-${tag}`),
   getTagsEmpty: () => cy.getByTestId('statistics-tags-empty'),
-  getChart: () => cy.getByTestId('statistics-chart'),
+  getChart: () => cy.get('#statistics-tag-chart'),
 };

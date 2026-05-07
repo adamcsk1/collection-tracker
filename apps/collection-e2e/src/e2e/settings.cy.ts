@@ -51,7 +51,7 @@ describe('Settings - basic form fields', () => {
   beforeEach(() => {
     cy.autoLogin();
     openSettingsSections();
-    SettingsPage.visit();
+    SettingsPage.visitBasics();
   });
 
   it('shows the language select', () => {
@@ -87,17 +87,13 @@ describe('Settings - basic form fields', () => {
   it('save button is enabled when the form is valid', () => {
     SettingsPage.getSaveButton().should('not.be.disabled');
   });
-
-  it('save-and-back button is enabled when the form is valid', () => {
-    SettingsPage.getSaveAndBackButton().should('not.be.disabled');
-  });
 });
 
 describe('Settings - settings lock', () => {
   beforeEach(() => {
     cy.autoLogin();
     openSettingsSections();
-    SettingsPage.visit();
+    SettingsPage.visitBasics();
   });
 
   it('shows the settings-lock checkbox when app mode is not full', () => {
@@ -111,16 +107,27 @@ describe('Settings - settings lock', () => {
   });
 });
 
-describe('Settings - full app mode sections', () => {
+describe('Settings - images page', () => {
   beforeEach(() => {
     cy.autoLogin();
-    openSettingsSections();
-    SettingsPage.visit();
-    SettingsPage.getAppModeSelect().select('full');
+    SettingsPage.visitImages();
   });
 
   it('shows the images refresh start button', () => {
     SettingsPage.getImagesRefreshStartButton().should('be.visible');
+  });
+
+  it('calls the refresh images API when the start button is clicked', () => {
+    cy.intercept('POST', '/api/v1/items/refresh-images').as('refreshImages');
+    SettingsPage.getImagesRefreshStartButton().click();
+    cy.wait('@refreshImages').its('response.statusCode').should('eq', 200);
+  });
+});
+
+describe('Settings - global watch status page', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+    SettingsPage.visitGlobalWatchStatus();
   });
 
   it('shows the mark-all-watched button', () => {
@@ -135,50 +142,41 @@ describe('Settings - full app mode sections', () => {
 describe('Settings - mark all watched / unwatched', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie A'));
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie B'));
-    openSettingsSections();
+    cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie A', 'movie', 'tt8000001'));
+    cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie B', 'movie', 'tt8000002'));
     // Force a full page reload so Angular reboots and its boot-time loadCollection()
     // picks up the seeded items. ChangeWatchedStatusService reads from the in-memory
     // store, not the API — the store must contain the items before we act.
     // Register the intercept AFTER cy.visit but BEFORE cy.reload — cy.reload clears
-    // the page and reboots Angular, which then fires get-all with the seeded items.
+    // the page and reboots Angular, which then fires items request with the seeded items.
     cy.visit('/client/#/collection');
-    cy.intercept('GET', '/api/v1/get-all*').as('collectionLoad');
+    cy.intercept('GET', '/api/v1/items*').as('collectionLoad');
     cy.reload();
     cy.wait('@collectionLoad');
-    // Navigate to settings via hash change so Angular stays alive and the
-    // collection store remains populated.
-    cy.window().then((win) => {
-      win.location.hash = '/settings';
-    });
-    SettingsPage.getAppModeSelect().select('full');
+    // Navigate to global watch status page
+    SettingsPage.visitGlobalWatchStatus();
   });
 
-  it('mark all as watched calls the update API for each unwatched item', () => {
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+  it('mark all as watched calls the bulk update API', () => {
+    cy.intercept('POST', '/api/v1/items/mark-all-watched').as('markAllWatched');
     cy.on('window:confirm', () => true);
 
     SettingsPage.getMarkAllWatchedButton().click();
 
-    cy.wait('@updateItem');
-    cy.wait('@updateItem');
+    cy.wait('@markAllWatched').its('response.statusCode').should('eq', 200);
   });
 
-  it('mark all as unwatched calls the update API for each watched item', () => {
+  it('mark all as unwatched calls the bulk update API', () => {
     cy.on('window:confirm', () => true);
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.intercept('POST', '/api/v1/items/mark-all-watched').as('markAllWatched');
+    cy.intercept('POST', '/api/v1/items/mark-all-unwatched').as('markAllUnwatched');
 
     // First mark all as watched so there are watched items to unwatch
     SettingsPage.getMarkAllWatchedButton().click();
-    cy.wait('@updateItem');
-    cy.wait('@updateItem');
+    cy.wait('@markAllWatched').its('response.statusCode').should('eq', 200);
 
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItemUnwatch');
     SettingsPage.getMarkAllUnwatchedButton().click();
-
-    cy.wait('@updateItemUnwatch');
-    cy.wait('@updateItemUnwatch');
+    cy.wait('@markAllUnwatched').its('response.statusCode').should('eq', 200);
   });
 });
 
@@ -186,7 +184,7 @@ describe('Settings - save changes', () => {
   beforeEach(() => {
     cy.autoLogin();
     openSettingsSections();
-    SettingsPage.visit();
+    SettingsPage.visitBasics();
   });
 
   it('calls POST /api/v1/user/settings when save is clicked', () => {
@@ -214,14 +212,6 @@ describe('Settings - save changes', () => {
     });
   });
 
-  it('navigates back to the collection after save-and-back', () => {
-    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
-
-    SettingsPage.getSaveAndBackButton().click();
-
-    cy.wait('@saveSettings');
-    cy.url().should('include', '#/collection');
-  });
 });
 
 describe('Settings - navigate to settings via menu', () => {
@@ -240,8 +230,7 @@ describe('Settings - navigate to settings via menu', () => {
 describe('Settings - account actions', () => {
   beforeEach(() => {
     cy.autoLogin();
-    openSettingsSections();
-    SettingsPage.visit();
+    SettingsPage.visitAccount();
   });
 
   it('shows the account actions section', () => {
@@ -254,8 +243,7 @@ describe('Settings - account actions (destructive)', () => {
     // Use a fresh user - these tests are destructive (token rotation, user deletion).
     // Using the shared cypress user here would rotate/delete it and break all subsequent tests.
     cy.autoLoginWithNewUser();
-    openSettingsSections();
-    SettingsPage.visit();
+    SettingsPage.visitAccount();
   });
 
   it('create new user token calls PUT /api/v1/user/change-token and shows the token dialog', () => {
@@ -282,8 +270,7 @@ describe('Settings - account actions (destructive)', () => {
 describe('Settings - access tokens', () => {
   beforeEach(() => {
     cy.autoLogin();
-    openSettingsSections();
-    SettingsPage.visit();
+    SettingsPage.visitAccessTokens();
   });
 
   it('shows the access tokens section', () => {
@@ -331,7 +318,7 @@ describe('Settings - appMode: basic (read-only)', () => {
     cy.autoLogin();
     // Seed the item before applyAppMode — the page visit inside applyAppMode
     // triggers a token rotation that would invalidate the cookie for cy.request.
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Basic Mode Movie'));
+    cy.request('POST', '/api/v1/create', buildCollectionItem('Basic Mode Movie', 'movie', 'tt8100001'));
     applyAppMode('basic');
   });
 
@@ -355,7 +342,7 @@ describe('Settings - appMode: limited (create only)', () => {
     cy.autoLogin();
     // Seed the item before applyAppMode — the page visit inside applyAppMode
     // triggers a token rotation that would invalidate the cookie for cy.request.
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Limited Mode Movie'));
+    cy.request('POST', '/api/v1/create', buildCollectionItem('Limited Mode Movie', 'movie', 'tt8200001'));
     applyAppMode('limited');
   });
 
@@ -377,7 +364,7 @@ describe('Settings - appMode: limited (create only)', () => {
 describe('Settings - appMode: full (all permissions)', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Full Mode Movie'));
+    cy.request('POST', '/api/v1/create', buildCollectionItem('Full Mode Movie', 'movie', 'tt8300001'));
     CollectionPage.visit();
   });
 

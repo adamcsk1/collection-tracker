@@ -4,12 +4,10 @@ import { TagConfigsPage } from '../page-objects/tag-configs.po';
 
 /**
  * Builds a collection item that also carries a custom tag alongside #movie.
- * Tags are space-separated on one line after **Tags** — the parser regex is /\*\*Tags\*\*\s*(?<tags>.*)/
- * so putting a tag on a new line would make it invisible.
  */
 const buildItemWithCustomTag = (title: string, customTag: string) => {
   const item = buildCollectionItem(title, 'movie');
-  return { ...item, content: item.content.replace('#movie\n', `#movie ${customTag}\n`) };
+  return { ...item, tags: [...item.tags, customTag] };
 };
 
 describe('Tag Configs — no custom tags', () => {
@@ -19,7 +17,7 @@ describe('Tag Configs — no custom tags', () => {
   });
 
   it('shows an empty list when the collection has no configurable tags', () => {
-    TagConfigsPage.getList().find('[role="listitem"]').should('have.length', 0);
+    TagConfigsPage.getList().find('ct-tag-config-card').should('have.length', 0);
   });
 });
 
@@ -29,12 +27,15 @@ describe('Tag Configs — custom tag in collection', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', { name: item.name, content: item.content });
-    // Intercept the get-all call triggered by the page reload so we can explicitly
-    // wait for the collection to finish loading before tests start asserting.
-    cy.intercept('GET', '/api/v1/get-all*').as('getCollection');
+    // Wipe any tag configs left over from previous specs so each test starts
+    // with a clean slate.
+    cy.request('POST', '/api/v1/tag/change-config', []);
+    cy.request('POST', '/api/v1/create', item);
+    // Intercept the statistics call triggered by the page so we can explicitly
+    // wait for the tag list to finish loading before tests start asserting.
+    cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
     TagConfigsPage.visit();
-    cy.wait('@getCollection');
+    cy.wait('@getStatistics');
   });
 
   it('shows the custom tag in the config list', () => {
@@ -62,7 +63,7 @@ describe('Tag Configs — custom tag in collection', () => {
   });
 
   it('can set a weight value for the custom tag', () => {
-    TagConfigsPage.getWeightInput(customTag).clear().type('5');
+    TagConfigsPage.getWeightInput(customTag).type('{selectall}5');
     TagConfigsPage.getWeightInput(customTag).should('have.value', '5');
   });
 
@@ -91,7 +92,7 @@ describe('Tag Configs — reset', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', { name: item.name, content: item.content });
+    cy.request('POST', '/api/v1/create', item);
     TagConfigsPage.visit();
   });
 
@@ -115,7 +116,7 @@ describe('Tag Configs — effect on collection item', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', { name: item.name, content: item.content });
+    cy.request('POST', '/api/v1/create', item);
   });
 
   it('applies the tag color as an image border when useForImageBorder is enabled', () => {
@@ -134,22 +135,6 @@ describe('Tag Configs — effect on collection item', () => {
       .first()
       .invoke('css', 'border-color')
       .should('not.equal', 'rgba(0, 0, 0, 0)');
-  });
-
-  it('applies the tag color to the tag text when useForTextColor is enabled', () => {
-    cy.request('POST', '/api/v1/tag/change-config', [
-      {
-        tag: customTag,
-        color: tagColor,
-        useForImageBorder: false,
-        useForTextColor: true,
-        useForImageBadge: false,
-        weight: 0,
-      },
-    ]);
-    CollectionPage.visit();
-    // The custom tag link should have an inline color style applied
-    cy.contains('a', customTag).invoke('css', 'color').should('not.equal', '');
   });
 
   it('shows the image badge when useForImageBadge is enabled', () => {

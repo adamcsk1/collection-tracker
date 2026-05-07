@@ -1,5 +1,4 @@
 // Global support for Cypress e2e tests
-import '../test-setup';
 import './commands';
 
 // Suppress uncaught Angular HttpErrorResponse exceptions so that server errors
