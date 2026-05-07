@@ -8,7 +8,7 @@ import { ClaudeQueryRequestModel, ClaudeQueryResponseModel } from '@shared/model
 import { debug } from 'console';
 import { getDatabase } from '../core/database/database';
 import { findCollectionItemsForPrompt } from '../core/database/repositories/collection-repository';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 
 const SYSTEM_PROMPT = `
 You are a movie/series classifier. Given a list of items with their full collection metadata and a question, respond ONLY with a JSON array of IMDB IDs from the provided list that match the question.
@@ -23,21 +23,21 @@ const readCollectionItems = (usernameHash: string): ProxyClaudeCollectionItems =
   return findCollectionItemsForPrompt(db, usernameHash);
 };
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/proxy/claude/query`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const apiKey = process.env.CLAUDE_API_KEY;
       if (!apiKey) {
-        response.status(503).send({ error: 'Claude API key not configured' });
+        response.code(503).send({ error: 'Claude API key not configured' });
         return;
       }
 
       const { prompt } = request.body as ClaudeQueryRequestModel;
 
       if (typeof prompt !== 'string' || !prompt.trim()) {
-        response.status(400).send({ error: 'Invalid request body' });
+        response.code(400).send({ error: 'Invalid request body' });
         return;
       }
 
@@ -67,7 +67,7 @@ export const register = (app: Application): void => {
 
       if (message.stop_reason === 'max_tokens') {
         errorLog('Claude response was truncated (max_tokens reached)');
-        response.sendStatus(502);
+        response.code(502).send();
         return;
       }
 
@@ -83,13 +83,13 @@ export const register = (app: Application): void => {
         parsed = JSON.parse(jsonText);
       } catch {
         errorLog(`Claude returned non-JSON response: ${rawText}`);
-        response.sendStatus(502);
+        response.code(502).send();
         return;
       }
 
       if (!Array.isArray(parsed)) {
         errorLog(`Claude returned unexpected shape: ${rawText}`);
-        response.sendStatus(502);
+        response.code(502).send();
         return;
       }
 

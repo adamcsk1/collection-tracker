@@ -1,7 +1,7 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { RefreshImagesApiResponseModel } from '@shared/models/api-model';
 import { OMDbResponseItemModel } from '@shared/models/omdb-model';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import { OMDB_API } from '../core/constants/omdb-const';
 import { getDatabase } from '../core/database/database';
 import {
@@ -36,10 +36,10 @@ const fetchOMDbItem = async (imdbId: string, apiKey: string): Promise<OMDbRespon
   }
 };
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/items/refresh-images`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       await debugLog('POST /items/refresh-images started');
       const db = getDatabase();

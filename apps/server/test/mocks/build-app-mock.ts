@@ -1,7 +1,9 @@
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import { vi } from 'vitest';
 
 export const buildApp = (request: any, response: any) => {
+  request.cookies ??= {};
+  request.unsignCookie ??= (value: string) => ({ valid: true, value });
   let handlerPromise: Promise<any> | undefined;
   const app = {
     get: vi.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
@@ -20,7 +22,7 @@ export const buildApp = (request: any, response: any) => {
       const handler = maybeHandler ?? guardOrHandler;
       handlerPromise = Promise.resolve(handler(request, response));
     }),
-  } as any as Application;
+  } as any as FastifyInstance;
 
   return {
     app,

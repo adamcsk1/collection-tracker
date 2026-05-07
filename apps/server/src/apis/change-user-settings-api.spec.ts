@@ -18,7 +18,7 @@ describe('change-user-settings-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('updates user settings and returns merged config', async () => {
@@ -47,6 +47,6 @@ describe('change-user-settings-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.code).toHaveBeenCalledWith(500);
   });
 });

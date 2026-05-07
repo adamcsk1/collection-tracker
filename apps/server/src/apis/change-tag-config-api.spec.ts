@@ -18,7 +18,7 @@ describe('change-tag-config-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when body contains invalid item shape', async () => {
@@ -42,7 +42,7 @@ describe('change-tag-config-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when body contains non-object item', async () => {
@@ -57,7 +57,7 @@ describe('change-tag-config-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('updates user tag configs and returns updated config', async () => {
@@ -110,7 +110,7 @@ describe('change-tag-config-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.code).toHaveBeenCalledWith(500);
   });
 
   it('returns 500 when a non-Error value is thrown', async () => {
@@ -134,6 +134,6 @@ describe('change-tag-config-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.code).toHaveBeenCalledWith(500);
   });
 });

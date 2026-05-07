@@ -165,7 +165,7 @@ describe('proxy-claude-query-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(response.status).toHaveBeenCalledWith(503);
+      expect(response.code).toHaveBeenCalledWith(503);
       expect(response.send).toHaveBeenCalledWith({ error: 'Claude API key not configured' });
     });
 
@@ -178,7 +178,7 @@ describe('proxy-claude-query-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(response.status).toHaveBeenCalledWith(400);
+      expect(response.code).toHaveBeenCalledWith(400);
       expect(response.send).toHaveBeenCalledWith({ error: 'Invalid request body' });
     });
 
@@ -199,7 +199,7 @@ describe('proxy-claude-query-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(response.sendStatus).toHaveBeenCalledWith(502);
+      expect(response.code).toHaveBeenCalledWith(502);
     });
 
     it('returns 502 when Claude response is truncated', async () => {
@@ -219,7 +219,7 @@ describe('proxy-claude-query-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(response.sendStatus).toHaveBeenCalledWith(502);
+      expect(response.code).toHaveBeenCalledWith(502);
     });
 
     it('returns 500 on unexpected error', async () => {
@@ -247,7 +247,7 @@ describe('proxy-claude-query-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(response.sendStatus).toHaveBeenCalledWith(500);
+      expect(response.code).toHaveBeenCalledWith(500);
     });
   });
 });

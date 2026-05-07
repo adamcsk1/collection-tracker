@@ -1,21 +1,23 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { collectionItemExists } from '../core/database/repositories/collection-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.get(
     `${API_PREFIX}/items/exists`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      if (typeof request.query.imdbId !== 'string' || !request.query.imdbId.trim()) {
-        response.sendStatus(400);
+      const query = request.query as Record<string, unknown>;
+      const imdbId = query.imdbId;
+      if (typeof imdbId !== 'string' || !imdbId.trim()) {
+        response.code(400).send();
         return;
       }
 
-      response.send({ exists: collectionItemExists(getDatabase(), request.usernameHash, request.query.imdbId) });
+      response.send({ exists: collectionItemExists(getDatabase(), request.usernameHash, imdbId) });
     })
   );
 };

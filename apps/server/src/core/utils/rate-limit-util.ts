@@ -1,9 +1,8 @@
-import { ipKeyGenerator } from 'express-rate-limit';
-import type { Request } from 'express';
+import type { FastifyRequest } from 'fastify';
 import { isIP } from 'net';
 import { errorLog } from '../logger';
 
-export const getRateLimitKey = (request: Request): string => {
+export const getRateLimitKey = (request: FastifyRequest): string => {
   const forwardedForHeader = request.headers['x-forwarded-for'];
   const forwardedFor = Array.isArray(forwardedForHeader) ? forwardedForHeader[0] : forwardedForHeader;
   const realIpHeader = request.headers['x-real-ip'];
@@ -23,5 +22,5 @@ export const getRateLimitKey = (request: Request): string => {
     return 'unknown-client';
   }
 
-  return ipKeyGenerator(withoutIpv4Port);
+  return withoutIpv4Port;
 };

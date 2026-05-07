@@ -4,7 +4,7 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { TagConfigsApiRequestModel } from '@shared/models/api-model';
 import { getDatabase } from '../core/database/database';
 import { upsertTagConfigs } from '../core/database/repositories/tag-config-repository';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 
 const isTagConfig = (tagConfig: unknown): tagConfig is TagConfigsApiRequestModel[number] => {
   if (typeof tagConfig !== 'object' || tagConfig === null || Array.isArray(tagConfig)) return false;
@@ -20,14 +20,14 @@ const isTagConfig = (tagConfig: unknown): tagConfig is TagConfigsApiRequestModel
   );
 };
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/tag/change-config`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const body = request.body as TagConfigsApiRequestModel;
       if (!Array.isArray(body) || body.some((tagConfig) => !isTagConfig(tagConfig))) {
-        return response.sendStatus(400);
+        return response.code(400).send();
       }
 
       upsertTagConfigs(getDatabase(), request.usernameHash, body);

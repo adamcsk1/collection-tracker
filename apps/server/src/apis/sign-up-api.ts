@@ -4,19 +4,19 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/api-model';
 import { getDatabase } from '../core/database/database';
 import { countUsers, findUserByHash, insertUser } from '../core/database/repositories/user-repository';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/sign-up`,
     withErrorHandler((request, response) => {
       if (Number(process.env.DISABLE_REGISTRATION)) {
-        return response.sendStatus(403);
+        return response.code(403).send();
       }
 
       const { username } = request.body as SignUpApiRequestModel;
       if (typeof username !== 'string' || !username) {
-        return response.sendStatus(400);
+        return response.code(400).send();
       }
       const db = getDatabase();
       const usernameHash = hashText(username);
@@ -25,11 +25,11 @@ export const register = (app: Application): void => {
 
       const userLimit = Number(process.env.USER_LIMIT);
       if (!isNaN(userLimit) && userLimit <= userCount) {
-        return response.sendStatus(403);
+        return response.code(403).send();
       }
 
       if (findUserByHash(db, usernameHash)) {
-        return response.sendStatus(409);
+        return response.code(409).send();
       }
 
       const userToken = generateRandomToken(username);

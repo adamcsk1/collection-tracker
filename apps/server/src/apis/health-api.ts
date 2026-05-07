@@ -1,6 +1,6 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { HealthApiResponseModel } from '@shared/models/api-model';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import { setTimeout } from 'node:timers/promises';
@@ -61,7 +61,7 @@ const deriveStatus = (
   return 'ok';
 };
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.get(`${API_PREFIX}/health`, async (_request, response) => {
     const totalMemory = os.totalmem();
     const freeMemory = os.freemem();

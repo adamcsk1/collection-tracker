@@ -1,4 +1,4 @@
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import { register as registerAccessTokens } from './access-tokens-api';
 import { register as registerModify } from './change-api';
 import { register as registerChangeTagConfig } from './change-tag-config-api';
@@ -33,7 +33,7 @@ import { register as registerSignUp } from './sign-up-api';
 import { register as registerStatistics } from './statistics-api';
 import { register as registerTagSuggestions } from './tag-suggestions-api';
 
-export const registerAllApis = (app: Application): void => {
+export const registerAllApis = (app: FastifyInstance): void => {
   registerHealth(app);
   registerSignUp(app);
   registerSignIn(app);

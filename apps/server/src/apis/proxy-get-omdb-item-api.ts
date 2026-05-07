@@ -3,21 +3,21 @@ import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { OMDbResponseItemModel } from '@shared/models/omdb-model';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.get(
     `${API_PREFIX}/proxy/omdb/item`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const apiKey = process.env.OMDB_API_KEY;
       if (!apiKey) {
-        response.sendStatus(503);
+        response.code(503).send();
         return;
       }
 
       const url = new URL(OMDB_API);
-      url.searchParams.append('i', String(request.query.i ?? ''));
+      url.searchParams.append('i', String((request.query as Record<string, unknown>).i ?? ''));
       url.searchParams.append('apikey', apiKey);
 
       const result = await fetch(url.href);

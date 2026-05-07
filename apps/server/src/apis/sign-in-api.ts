@@ -1,7 +1,7 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignInApiRequestModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import type jwt from 'jsonwebtoken';
 import {
   accessCookieConfig,
@@ -23,24 +23,24 @@ import { generateAccessToken, generateRefreshToken } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getUserAccessToken, getUserRefreshToken } from '../core/utils/users-util';
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/sign-in`,
     withErrorHandler(async (request, response) => {
       const { username, token } = request.body as SignInApiRequestModel;
       if (typeof username !== 'string' || !username || typeof token !== 'string' || !token) {
-        return response.sendStatus(400);
+        return response.code(400).send();
       }
       const db = getDatabase();
       const usernameHash = hashText(username);
 
       const dbUser = findUserByHash(db, usernameHash);
 
-      if (!dbUser) return response.sendStatus(404);
+      if (!dbUser) return response.code(404).send();
 
       const userTokenHash = hashText(token);
 
-      if (dbUser.user_token_hash !== userTokenHash) return response.sendStatus(401);
+      if (dbUser.user_token_hash !== userTokenHash) return response.code(401).send();
 
       const accessCookie = accessCookieConfig();
       const refreshCookie = refreshCookieConfig();
@@ -54,7 +54,7 @@ export const register = (app: Application): void => {
       );
 
       if (!newAccessToken || !newRefreshToken) {
-        return response.sendStatus(500);
+        return response.code(500).send();
       }
 
       const accessTokenData = getUserAccessToken(newAccessToken, request.headers['user-agent']!, accessCookie.expires!);
@@ -71,8 +71,8 @@ export const register = (app: Application): void => {
       insertRefreshToken(db, usernameHash, refreshTokenData);
 
       response
-        .cookie(COOKIE_TOKEN, newAccessToken, accessCookie)
-        .cookie(COOKIE_REFRESH_TOKEN, newRefreshToken, refreshCookie)
+        .setCookie(COOKIE_TOKEN, newAccessToken, accessCookie)
+        .setCookie(COOKIE_REFRESH_TOKEN, newRefreshToken, refreshCookie)
         .send();
     })
   );

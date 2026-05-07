@@ -45,7 +45,7 @@ describe('proxy-omdb-search-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(response.sendStatus).toHaveBeenCalledWith(503);
+      expect(response.code).toHaveBeenCalledWith(503);
     });
 
     it('returns 500 on fetch error', async () => {
@@ -59,7 +59,7 @@ describe('proxy-omdb-search-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(response.sendStatus).toHaveBeenCalledWith(500);
+      expect(response.code).toHaveBeenCalledWith(500);
     });
   });
 });

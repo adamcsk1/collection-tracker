@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
-import express from 'express';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
-import '../models/express-model';
+import '../models/fastify-model';
 import { COOKIE_TOKEN } from './cookie/cookie-const';
 import { hashText } from './crypto';
 import { getDatabase } from './database/database';
@@ -45,63 +45,60 @@ export const generateRefreshToken = async (
   }
 };
 
-export const jwtGuard = async (
-  request: express.Request,
-  response: express.Response,
-  next: () => void
-): Promise<express.Response | undefined> => {
+export const jwtGuard = async (request: FastifyRequest, response: FastifyReply): Promise<void> => {
   await debugLog(`Validating access token (${request.url})`);
 
-  const cookieToken = request.signedCookies[COOKIE_TOKEN];
+  const signedCookieToken = request.cookies[COOKIE_TOKEN];
+  const cookieToken = signedCookieToken ? request.unsignCookie(signedCookieToken).value : undefined;
   const authorizationToken = request.headers['authorization'];
   let token = cookieToken || authorizationToken || '';
   if (token.includes('Bearer ')) token = token.split(' ')[1];
 
   if (!token) {
     await debugLog('No token found');
-    return response.sendStatus(401);
+    response.code(401).send();
+    return;
   }
 
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     await errorLog('Access token validation error (JWT secret is not configured)');
-    return response.sendStatus(500);
+    response.code(500).send();
+    return;
   }
 
-  jwt.verify(token, jwtSecret, async (error: jwt.VerifyErrors | null, data: jwt.JwtPayload | string | undefined) => {
-    try {
-      if (error) {
-        await debugLog(`Access token verification failed (${error.message})`);
-        if (error.name === 'TokenExpiredError') {
-          return response.sendStatus(401);
-        }
-        return response.sendStatus(403);
-      }
-
-      if (!hasUsername(data)) {
-        await debugLog('Access token payload is invalid');
-        return response.sendStatus(403);
-      }
-
-      const { username } = data;
-      const usernameHash = hashText(username);
-      const tokenHash = hashText(token);
-
-      const allTokens = new Set(findAccessTokensByUser(getDatabase(), usernameHash).map((t) => t.tokenHash));
-
-      if (!allTokens.has(tokenHash)) {
-        await debugLog('Access token not recognized');
-        return response.sendStatus(403);
-      }
-
-      request.username = username;
-      request.usernameHash = usernameHash;
-
-      await debugLog('Access token validated successfully');
-      next();
-    } catch (error: unknown) {
-      if (error instanceof Error) await errorLog(`Access token validation unknown error (${error.message})`);
-      response.sendStatus(500);
+  try {
+    const data = jwt.verify(token, jwtSecret);
+    if (!hasUsername(data)) {
+      await debugLog('Access token payload is invalid');
+      response.code(403).send();
+      return;
     }
-  });
+
+    const { username } = data;
+    const usernameHash = hashText(username);
+    const tokenHash = hashText(token);
+
+    const allTokens = new Set(findAccessTokensByUser(getDatabase(), usernameHash).map((t) => t.tokenHash));
+
+    if (!allTokens.has(tokenHash)) {
+      await debugLog('Access token not recognized');
+      response.code(403).send();
+      return;
+    }
+
+    request.username = username;
+    request.usernameHash = usernameHash;
+
+    await debugLog('Access token validated successfully');
+  } catch (error: unknown) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      await debugLog(`Access token verification failed (${error.message})`);
+      response.code(error.name === 'TokenExpiredError' ? 401 : 403).send();
+      return;
+    }
+
+    if (error instanceof Error) await errorLog(`Access token validation unknown error (${error.message})`);
+    response.code(500).send();
+  }
 };

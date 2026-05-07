@@ -33,32 +33,32 @@ describe('refresh-token-api', () => {
 
   it('returns 401 when no refresh token is provided', async () => {
     const response = mockResponse();
-    const request: any = { signedCookies: {}, headers: {} };
+    const request: any = { cookies: {}, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./refresh-token-api');
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(401);
+    expect(response.code).toHaveBeenCalledWith(401);
   });
 
   it('returns 403 for an invalid refresh token', async () => {
     const response = mockResponse();
-    const request: any = { signedCookies: { [COOKIE_REFRESH_TOKEN]: 'invalid-token' }, headers: {} };
+    const request: any = { cookies: { [COOKIE_REFRESH_TOKEN]: 'invalid-token' }, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./refresh-token-api');
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(403);
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 
   it('returns 403 when refresh token is not recognized', async () => {
     const response = mockResponse();
     const token = jwt.sign({ username: 'user' }, 'secret');
-    const request: any = { signedCookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: {} };
+    const request: any = { cookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('hashed-user', 'token');
@@ -70,13 +70,13 @@ describe('refresh-token-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(403);
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 
   it('issues a new access token and sets cookie for a valid refresh token', async () => {
     const response = mockResponse();
     const token = jwt.sign({ username: 'user' }, 'secret');
-    const request: any = { signedCookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: { 'user-agent': 'agent' } };
+    const request: any = { cookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: { 'user-agent': 'agent' } };
     const { app, handlerPromise } = buildApp(request, response);
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('hashed-user', 'token');
@@ -88,14 +88,14 @@ describe('refresh-token-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.cookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'new-access', expect.any(Object));
-    expect(response.sendStatus).toHaveBeenCalledWith(204);
+    expect(response.setCookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'new-access', expect.any(Object));
+    expect(response.code).toHaveBeenCalledWith(204);
   });
 
   it('prunes expired refresh tokens before validating', async () => {
     const response = mockResponse();
     const token = jwt.sign({ username: 'user' }, 'secret');
-    const request: any = { signedCookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: { 'user-agent': 'agent' } };
+    const request: any = { cookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: { 'user-agent': 'agent' } };
     const { app, handlerPromise } = buildApp(request, response);
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('hashed-user', 'token');
@@ -107,18 +107,18 @@ describe('refresh-token-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(403);
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 
   it('returns 403 when the user has no stored refresh token', async () => {
     const response = mockResponse();
     const token = jwt.sign({ username: 'user' }, 'secret');
-    const request: any = { signedCookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: {} };
+    const request: any = { cookies: { [COOKIE_REFRESH_TOKEN]: token }, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
     const { register } = await import('./refresh-token-api');
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(403);
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 });

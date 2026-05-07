@@ -25,7 +25,7 @@ describe('sign-up-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('returns 403 when registration disabled', async () => {
@@ -38,7 +38,7 @@ describe('sign-up-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(403);
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 
   it('creates user and returns token', async () => {
@@ -74,7 +74,7 @@ describe('sign-up-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(409);
+    expect(response.code).toHaveBeenCalledWith(409);
   });
 
   it('returns 403 when user limit reached', async () => {
@@ -88,7 +88,7 @@ describe('sign-up-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(403);
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 
   it('returns 409 when DB insert conflicts', async () => {
@@ -105,6 +105,6 @@ describe('sign-up-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(409);
+    expect(response.code).toHaveBeenCalledWith(409);
   });
 });
