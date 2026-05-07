@@ -26,8 +26,8 @@ npx nx serve health
 npx nx build health --configuration=production
 npx nx test health
 npx nx lint health
-npx nx run health:stylelint
 npx nx run health:typecheck
+npx nx run health:typecheck-spec
 npx nx run health:format-check
 ```
 

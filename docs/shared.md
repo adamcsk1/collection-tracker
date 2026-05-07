@@ -7,11 +7,10 @@ Source: [`libs/shared`](../libs/shared)
 ## Contents
 
 - `constants/`: API prefix, storage keys, and tag constants
-- `models/`: API DTOs and shared language, theme, search, select, and OMDb types
-- `regexps/`: reusable regexp helpers such as IMDb ID extraction
+- `models/`: API DTOs and shared Claude, collection item, language, theme, select, and OMDb types
+- `omdb/`: reusable OMDb helpers such as IMDb ID extraction
 - `styles/`: reset styles, design tokens, shared component CSS, and animation styles
-- `utils/`: search helpers, color helpers, clipboard helpers, device heuristics, and general utilities
-- `animations/`: shared animation helpers used by the frontend
+- `utils/`: collection item helpers, color helpers, clipboard helpers, device heuristics, and general utilities
 
 ## Integration Notes
 
@@ -29,7 +28,6 @@ Source: [`libs/shared`](../libs/shared)
 ```powershell
 npx nx test shared
 npx nx lint shared
-npx nx run shared:stylelint
 npx nx run shared:typecheck
 npx nx run shared:typecheck-spec
 npx nx run shared:format-check

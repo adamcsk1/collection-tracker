@@ -14,7 +14,8 @@ Source: [`libs/public`](../libs/public)
 
 - `apps/client` copies `libs/public/src` into its build output.
 - `apps/login` copies the same asset tree into its build output.
-- The shared assets provide consistent branding and PWA metadata across both applications.
+- `apps/health` copies the same asset tree into its build output.
+- The shared assets provide consistent branding and PWA metadata across the Angular applications.
 
 ## Nx Targets
 
