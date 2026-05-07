@@ -1,11 +1,11 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../core/anthropic', () => ({ createAnthropicClient: vi.fn(), getAnthropicModel: vi.fn() }));
+vi.mock('../core/ollama', () => ({ createOllamaClient: vi.fn(), getOllamaModel: vi.fn(() => 'qwen2.5:3b') }));
 
-describe('proxy-claude-query-api', () => {
+describe('proxy-ai-query-api', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -18,17 +18,11 @@ describe('proxy-claude-query-api', () => {
     vi.clearAllMocks();
   });
 
-  const mockStream = async (text: string, stop_reason = 'end_turn') => {
-    const { createAnthropicClient } = await import('../core/anthropic');
-    const stream = vi.fn().mockReturnValue({
-      finalMessage: vi.fn().mockResolvedValue({ stop_reason, content: [{ type: 'text', text }] }),
-    });
-    vi.mocked(createAnthropicClient).mockReturnValue({
-      messages: {
-        stream,
-      },
-    } as any);
-    return stream;
+  const mockGenerate = async (text: string, doneReason = 'stop') => {
+    const { createOllamaClient } = await import('../core/ollama/ollama');
+    const generate = vi.fn().mockResolvedValue({ response: text, done: true, done_reason: doneReason });
+    vi.mocked(createOllamaClient).mockReturnValue({ generate });
+    return generate;
   };
 
   const setupCollection = (
@@ -71,9 +65,8 @@ describe('proxy-claude-query-api', () => {
     usernameHash: 'user',
   });
 
-  describe('POST /proxy/claude/query', () => {
-    it('returns matched IMDB IDs from Claude response', async () => {
-      process.env.CLAUDE_API_KEY = 'test-claude-key';
+  describe('POST /proxy/ai/query', () => {
+    it('returns matched IMDB IDs from AI response', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi movies?'), response);
       setupCollection([
@@ -88,17 +81,16 @@ describe('proxy-claude-query-api', () => {
           plot: 'The origin story of Batman.',
         },
       ]);
-      await mockStream('["tt0133093"]');
+      await mockGenerate('["tt0133093"]');
 
-      const { register } = await import('./proxy-claude-query-api');
+      const { register } = await import('./proxy-ai-query-api');
       register(app);
 
       await handlerPromise();
       expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0133093'] });
     });
 
-    it('includes structured metadata in the Claude prompt', async () => {
-      process.env.CLAUDE_API_KEY = 'test-claude-key';
+    it('includes structured metadata in the AI prompt', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are family sci-fi movies?'), response);
       setupCollection([
@@ -111,20 +103,19 @@ describe('proxy-claude-query-api', () => {
           tags: ['#family', '#watched'],
         },
       ]);
-      const stream = await mockStream('[]');
+      const generate = await mockGenerate('[]');
 
-      const { register } = await import('./proxy-claude-query-api');
+      const { register } = await import('./proxy-ai-query-api');
       register(app);
 
       await handlerPromise();
-      const payload = stream.mock.calls[0][0];
-      expect(payload.messages[0].content).toContain('"genre":["Action","Sci-Fi"]');
-      expect(payload.messages[0].content).toContain('"tags":["#family","#watched"]');
-      expect(payload.messages[0].content).toContain('"actors":"Keanu Reeves, Carrie-Anne Moss"');
+      const payload = generate.mock.calls[0][0];
+      expect(payload.prompt).toContain('"genre":["Action","Sci-Fi"]');
+      expect(payload.prompt).toContain('"tags":["#family","#watched"]');
+      expect(payload.prompt).toContain('"actors":"Keanu Reeves, Carrie-Anne Moss"');
     });
 
     it('filters out hallucinated IDs not in the collection', async () => {
-      process.env.CLAUDE_API_KEY = 'test-claude-key';
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi movies?'), response);
       setupCollection([
@@ -134,9 +125,9 @@ describe('proxy-claude-query-api', () => {
           plot: 'A computer hacker learns about the true nature of reality.',
         },
       ]);
-      await mockStream('["tt0133093", "tt9999999"]');
+      await mockGenerate('["tt0133093", "tt9999999"]');
 
-      const { register } = await import('./proxy-claude-query-api');
+      const { register } = await import('./proxy-ai-query-api');
       register(app);
 
       await handlerPromise();
@@ -144,37 +135,22 @@ describe('proxy-claude-query-api', () => {
     });
 
     it('returns empty matchedIds for an empty collection', async () => {
-      process.env.CLAUDE_API_KEY = 'test-claude-key';
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi movies?'), response);
       setupCollection([]);
 
-      const { register } = await import('./proxy-claude-query-api');
+      const { register } = await import('./proxy-ai-query-api');
       register(app);
 
       await handlerPromise();
       expect(response.send).toHaveBeenCalledWith({ matchedIds: [] });
     });
 
-    it('returns 503 when CLAUDE_API_KEY is not set', async () => {
-      delete process.env.CLAUDE_API_KEY;
-      const response = mockResponse();
-      const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
-
-      const { register } = await import('./proxy-claude-query-api');
-      register(app);
-
-      await handlerPromise();
-      expect(response.code).toHaveBeenCalledWith(503);
-      expect(response.send).toHaveBeenCalledWith({ error: 'Claude API key not configured' });
-    });
-
     it('returns 400 on invalid request body (empty prompt)', async () => {
-      process.env.CLAUDE_API_KEY = 'test-claude-key';
       const response = mockResponse();
       const { app, handlerPromise } = buildApp({ body: { prompt: '' }, usernameHash: 'user' }, response);
 
-      const { register } = await import('./proxy-claude-query-api');
+      const { register } = await import('./proxy-ai-query-api');
       register(app);
 
       await handlerPromise();
@@ -182,8 +158,7 @@ describe('proxy-claude-query-api', () => {
       expect(response.send).toHaveBeenCalledWith({ error: 'Invalid request body' });
     });
 
-    it('returns 502 when Claude returns non-JSON', async () => {
-      process.env.CLAUDE_API_KEY = 'test-claude-key';
+    it('returns 502 when AI returns non-JSON', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
       setupCollection([
@@ -193,17 +168,16 @@ describe('proxy-claude-query-api', () => {
           plot: 'A computer hacker learns about the true nature of reality.',
         },
       ]);
-      await mockStream('not valid json');
+      await mockGenerate('not valid json');
 
-      const { register } = await import('./proxy-claude-query-api');
+      const { register } = await import('./proxy-ai-query-api');
       register(app);
 
       await handlerPromise();
       expect(response.code).toHaveBeenCalledWith(502);
     });
 
-    it('returns 502 when Claude response is truncated', async () => {
-      process.env.CLAUDE_API_KEY = 'test-claude-key';
+    it('returns 502 when AI response is truncated', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
       setupCollection([
@@ -213,9 +187,9 @@ describe('proxy-claude-query-api', () => {
           plot: 'A computer hacker learns about the true nature of reality.',
         },
       ]);
-      await mockStream('["tt0133093"]', 'max_tokens');
+      await mockGenerate('["tt0133093"]', 'length');
 
-      const { register } = await import('./proxy-claude-query-api');
+      const { register } = await import('./proxy-ai-query-api');
       register(app);
 
       await handlerPromise();
@@ -223,7 +197,6 @@ describe('proxy-claude-query-api', () => {
     });
 
     it('returns 500 on unexpected error', async () => {
-      process.env.CLAUDE_API_KEY = 'test-claude-key';
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
       setupCollection([
@@ -234,16 +207,12 @@ describe('proxy-claude-query-api', () => {
         },
       ]);
 
-      const { createAnthropicClient } = await import('../core/anthropic');
-      vi.mocked(createAnthropicClient).mockReturnValue({
-        messages: {
-          stream: vi.fn().mockReturnValue({
-            finalMessage: vi.fn().mockRejectedValue(new Error('network error')),
-          }),
-        },
-      } as any);
+      const { createOllamaClient } = await import('../core/ollama/ollama');
+      vi.mocked(createOllamaClient).mockReturnValue({
+        generate: vi.fn().mockRejectedValue(new Error('network error')),
+      });
 
-      const { register } = await import('./proxy-claude-query-api');
+      const { register } = await import('./proxy-ai-query-api');
       register(app);
 
       await handlerPromise();

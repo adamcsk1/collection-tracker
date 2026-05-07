@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ClaudeSearchService } from '../../search/claude-search-service';
+import { AiSearchService } from '../../search/ai-search-service';
 import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -12,15 +12,15 @@ describe('FloatButtons', () => {
   let component: FloatButtons;
   let mainState: NgxSimpleSignalStoreService<MainState>;
   let apiState: NgxSimpleSignalStoreService<ApiState>;
-  let useClaudeAi: ReturnType<typeof signal<boolean | null>>;
+  let useAiSearch: ReturnType<typeof signal<boolean | null>>;
 
   beforeEach(() => {
-    useClaudeAi = signal<boolean | null>(false);
+    useAiSearch = signal<boolean | null>(false);
 
     TestBed.configureTestingModule({
       imports: [FloatButtons],
       providers: [
-        { provide: ClaudeSearchService, useValue: { useClaudeAi } },
+        { provide: AiSearchService, useValue: { useAiSearch } },
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
       ],
@@ -90,13 +90,13 @@ describe('FloatButtons', () => {
     expect(fixture.nativeElement.querySelector('.float-show-button')).toBeTruthy();
   });
 
-  it('emits toggleClaudeAi and collapses the panel when the Claude AI toggle is clicked', () => {
-    mainState.setState('claudeAiAvailable', true);
+  it('emits toggleAiSearch and collapses the panel when the AI search toggle is clicked', () => {
+    mainState.setState('aiAvailable', true);
     fixture.detectChanges();
     showButtons();
 
     const emitted: void[] = [];
-    component.toggleClaudeAi.subscribe(() => emitted.push(undefined));
+    component.toggleAiSearch.subscribe(() => emitted.push(undefined));
 
     findButton('search')?.click();
     fixture.detectChanges();
@@ -136,7 +136,7 @@ describe('FloatButtons', () => {
     expect(findButton('add')).toBeUndefined();
   });
 
-  it('hides the Claude AI toggle when claudeAiAvailable is false', () => {
+  it('hides the AI search toggle when aiAvailable is false', () => {
     showButtons();
 
     expect(findButton('search')).toBeUndefined();
@@ -157,7 +157,7 @@ describe('FloatButtons', () => {
   });
 
   it('disables action buttons when the API load is pending', () => {
-    mainState.setState('claudeAiAvailable', true);
+    mainState.setState('aiAvailable', true);
     mainState.setState('permissions', { create: true, update: false, delete: false });
     fixture.componentRef.setInput('collectionLength', 1);
     apiState.setState('loadNetworkStatus', 'pending');

@@ -118,15 +118,15 @@
   }
 }
 
-.animation-claude-ai-expand {
-  animation: claude-ai-expand 0.2s ease-out forwards;
+.animation-ai-search-expand {
+  animation: ai-search-expand 0.2s ease-out forwards;
 }
 
-.animation-claude-ai-collapse {
-  animation: claude-ai-collapse 0.2s ease-in forwards;
+.animation-ai-search-collapse {
+  animation: ai-search-collapse 0.2s ease-in forwards;
 }
 
-@keyframes claude-ai-expand {
+@keyframes ai-search-expand {
   from {
     transform: translate(-50%, -50%) scale(0.85);
     opacity: 0;
@@ -138,7 +138,7 @@
   }
 }
 
-@keyframes claude-ai-collapse {
+@keyframes ai-search-collapse {
   from {
     transform: translate(-50%, -50%) scale(1);
     opacity: 1;
@@ -151,17 +151,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animation-claude-ai-expand,
-  .animation-claude-ai-collapse {
+  .animation-ai-search-expand,
+  .animation-ai-search-collapse {
     animation-duration: 1ms;
     animation-timing-function: linear;
   }
 
-  .animation-claude-ai-expand {
+  .animation-ai-search-expand {
     animation-name: reduced-motion-show;
   }
 
-  .animation-claude-ai-collapse {
+  .animation-ai-search-collapse {
     animation-name: reduced-motion-hide;
   }
 }

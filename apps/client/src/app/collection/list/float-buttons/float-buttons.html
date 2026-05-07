@@ -32,29 +32,23 @@
         </button>
       </div>
     }
-    @if (claudeAiAvailable()) {
+    @if (aiAvailable()) {
       <div class="float-button">
         <button
-          data-test-id="claude-ai-toggle"
-          class="button-icon material-icons"
+          data-test-id="ai-search-toggle"
+          class="button-icon"
           [attr.aria-label]="
-            useClaudeAi()
-              ? ('SwitchToStandardSearch' | signalTranslate)()
-              : ('SwitchToClaudeAiSearch' | signalTranslate)()
+            useAiSearch() ? ('SwitchToStandardSearch' | signalTranslate)() : ('SwitchToAiSearch' | signalTranslate)()
           "
           [title]="
-            useClaudeAi()
-              ? ('SwitchToStandardSearch' | signalTranslate)()
-              : ('SwitchToClaudeAiSearch' | signalTranslate)()
+            useAiSearch() ? ('SwitchToStandardSearch' | signalTranslate)() : ('SwitchToAiSearch' | signalTranslate)()
           "
           [disabled]="apiLoadNetworkStatus() === 'pending'"
-          (click)="onToggleClaudeAi()"
+          [class.material-icons]="!useAiSearch()"
+          (click)="onToggleAiSearch()"
         >
-          @if (useClaudeAi()) {
-            <libc-image-icon
-              [ariaLabel]="('ClaudeAi' | signalTranslate)()"
-              imageUrl="/client/images/claude-ai-icon-transparent.png"
-            />
+          @if (useAiSearch()) {
+            <libc-image-icon [ariaLabel]="('AiSearch' | signalTranslate)()" imageUrl="/client/images/ollama-icon.png" />
           } @else {
             search
           }

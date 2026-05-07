@@ -16,7 +16,7 @@
         class="badge"
         [style.backgroundColor]="badgeBackgroundColor()"
         [style.color]="badgeTextColor()"
-        [class.silent-disabled]="useClaudeAi()"
+        [class.silent-disabled]="useAiSearch()"
         (click)="onSetSearchText(imageBadgeTag, $event)"
       >
         {{ imageBadgeTag }}

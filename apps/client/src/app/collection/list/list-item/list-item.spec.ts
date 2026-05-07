@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../../collection-store';
-import { ClaudeSearchService } from '../../search/claude-search-service';
+import { AiSearchService } from '../../search/ai-search-service';
 import {
   initialTagConfigsState,
   TagConfigsState,
@@ -46,16 +46,16 @@ describe('ListItem', () => {
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
   let portal: { open: ReturnType<typeof vi.fn> };
-  let useClaudeAi: ReturnType<typeof signal<boolean | null>>;
+  let useAiSearch: ReturnType<typeof signal<boolean | null>>;
 
   beforeEach(() => {
     portal = { open: vi.fn() };
-    useClaudeAi = signal<boolean | null>(false);
+    useAiSearch = signal<boolean | null>(false);
     TestBed.configureTestingModule({
       imports: [ListItem],
       providers: [
         { provide: PortalService, useValue: portal },
-        { provide: ClaudeSearchService, useValue: { useClaudeAi } },
+        { provide: AiSearchService, useValue: { useAiSearch } },
         provideStore(initialApiState, apiStateToken),
         provideStore(initialCollectionState, collectionStateToken),
         provideStore(initialTagConfigsState, tagConfigsStateToken),
@@ -191,8 +191,8 @@ describe('ListItem', () => {
     );
   });
 
-  it('does nothing when Claude AI search is active', () => {
-    useClaudeAi.set(true);
+  it('does nothing when AI search is active', () => {
+    useAiSearch.set(true);
 
     component['onSetSearchText']('query');
 

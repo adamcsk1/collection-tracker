@@ -144,7 +144,7 @@ type(scope): short imperative summary
 - Summary must be imperative, lowercase after the colon, no trailing period, and no more than 72 characters.
 - Body should explain why, not what.
 - Allowed types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`.
-- Common scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`, `tsconfig`, `build`, `claude`, `git`, `vscode`, `hooks`, `i18n`.
+- Common scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`, `tsconfig`, `build`, `ai`, `git`, `vscode`, `hooks`, `i18n`.
 - Markdown should use backtick code spans for inline code, not backslash-wrapped text.
 
 ## Non-Issues

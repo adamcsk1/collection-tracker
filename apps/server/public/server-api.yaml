@@ -161,9 +161,9 @@ components:
         language:
           type: string
           enum: [en]
-        claudeAiAvailable:
+        aiAvailable:
           type: boolean
-          description: Set by the server based on whether CLAUDE_API_KEY is configured. Always present in the response.
+          description: Set by the server to indicate whether local AI search is available. Always present in the response.
 
     UserSettingsRequest:
       type: object
@@ -472,7 +472,7 @@ components:
           items:
             $ref: '#/components/schemas/OMDbItem'
 
-    ClaudeQueryRequest:
+    AiQueryRequest:
       type: object
       required: [prompt]
       properties:
@@ -482,7 +482,7 @@ components:
           examples:
             - Which are sci-fi movies?
 
-    ClaudeQueryResponse:
+    AiQueryResponse:
       type: object
       required: [matchedIds]
       properties:
@@ -490,7 +490,7 @@ components:
           type: array
           items:
             type: string
-          description: IMDb IDs matched by Claude from the caller's collection.
+          description: IMDb IDs matched by AI search from the caller's collection.
           examples:
             - - tt0133093
 
@@ -537,8 +537,8 @@ tags:
     description: Proxy endpoints for the OMDb API. Require `OMDB_API_KEY` on the server.
   - name: Image Proxy
     description: Cached proxy endpoint for external collection item images.
-  - name: Claude Proxy
-    description: Proxy endpoint for the Claude AI API. Requires `CLAUDE_API_KEY` on the server.
+  - name: AI Proxy
+    description: Proxy endpoint for local Ollama AI search.
   - name: Tag
     description: Tag colour configuration.
 
@@ -708,7 +708,7 @@ paths:
     get:
       operationId: getUserSettings
       summary: Get user settings
-      description: 'Always includes `claudeAiAvailable` indicating whether `CLAUDE_API_KEY` is configured on the server. Returns `{ claudeAiAvailable: false }` when no settings have been stored yet.'
+      description: 'Always includes `aiAvailable` indicating whether local AI search is available. Returns `{ aiAvailable: true }` when no settings have been stored yet.'
       tags: [User]
       responses:
         '200':
@@ -1206,35 +1206,33 @@ paths:
         '415':
           description: The upstream response is not an image content type.
 
-  /proxy/claude/query:
+  /proxy/ai/query:
     post:
-      operationId: proxyClaudeQuery
-      summary: Natural-language collection search via Claude
+      operationId: proxyAiQuery
+      summary: Natural-language collection search via local AI
       description: |
-        Proxies a prompt to the Claude API using the server's `CLAUDE_API_KEY`. The key is never exposed to the client.
+        Proxies a prompt to the local Ollama API using the server's `OLLAMA_BASE_URL`.
         The server reads the caller's collection metadata from the database and builds the prompt internally.
         Only the natural-language question is supplied by the client.
-        The model is controlled by the optional `CLAUDE_MODEL` env variable; defaults to `claude-haiku-4-5-20251001`.
-      tags: [Claude Proxy]
+        The model is controlled by the optional `OLLAMA_MODEL` env variable; defaults to `qwen2.5:3b`.
+      tags: [AI Proxy]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClaudeQueryRequest'
+              $ref: '#/components/schemas/AiQueryRequest'
       responses:
         '200':
-          description: IMDb IDs matched by Claude from the caller's collection.
+          description: IMDb IDs matched by AI search from the caller's collection.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClaudeQueryResponse'
+                $ref: '#/components/schemas/AiQueryResponse'
         '400':
           description: Missing or empty `prompt`.
         '502':
-          description: Claude returned an unparseable or truncated response.
-        '503':
-          description: CLAUDE_API_KEY not configured on the server.
+          description: Ollama returned an unparseable or truncated response.
 
   /tag/config:
     get:

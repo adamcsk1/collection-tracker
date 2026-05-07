@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { ItemDialog } from '../item-dialog/item-dialog';
-import { ClaudeSearchService } from '../search/claude-search-service';
+import { AiSearchService } from '../search/ai-search-service';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { initialMainState, mainStateToken } from '../../main/main-store';
 import { ApiService } from '@services/api/api-service';
@@ -61,9 +61,9 @@ describe('List', () => {
         { provide: PortalService, useValue: portal },
         { provide: ApiService, useValue: api },
         {
-          provide: ClaudeSearchService,
+          provide: AiSearchService,
           useFactory: () => ({
-            useClaudeAi: signal(false),
+            useAiSearch: signal(false),
             getMatchedIds: () => of(['tt-ai']),
             searchInProgress: signal(false),
           }),
@@ -148,13 +148,26 @@ describe('List', () => {
     expect(api.searchItems).toHaveBeenCalledWith({}, 1, 50);
   });
 
-  it('requests matched items for Claude AI results', () => {
-    const claudeSearch = TestBed.inject(ClaudeSearchService);
-    claudeSearch.useClaudeAi.set(true);
-    collectionState.setState('claudeAiPromptText', 'space');
-    (component as any).claudeAiMatchedIds = () => ['tt-ai'];
+  it('requests matched items for AI search results', () => {
+    const aiSearch = TestBed.inject(AiSearchService);
+    aiSearch.useAiSearch.set(true);
+    collectionState.setState('aiSearchPromptText', 'space');
+    (component as any).aiSearchMatchedIds = () => ['tt-ai'];
     component['loadItems'](true);
 
     expect(api.getMatchedItems).toHaveBeenCalled();
+  });
+
+  it('does not clear the list or fire a request while AI search results are still loading', () => {
+    component['visibleCollection'].set([buildItem('Keep')]);
+    const aiSearch = TestBed.inject(AiSearchService);
+    aiSearch.useAiSearch.set(true);
+    collectionState.setState('aiSearchPromptText', 'loading...');
+    (component as any).aiSearchMatchedIds = () => null;
+    component['loadItems'](true);
+
+    expect(api.searchItems).not.toHaveBeenCalled();
+    expect(api.getMatchedItems).not.toHaveBeenCalled();
+    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Keep']);
   });
 });

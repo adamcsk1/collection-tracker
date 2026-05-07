@@ -77,7 +77,6 @@ CREATE TABLE IF NOT EXISTS user_settings (
   theme TEXT,
   animated_background INTEGER,
   language TEXT,
-  claude_ai_available INTEGER,
   FOREIGN KEY (username_hash) REFERENCES users(username_hash) ON DELETE CASCADE
 );
 

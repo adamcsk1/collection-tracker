@@ -1,14 +1,14 @@
-import Database from 'better-sqlite3';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 import {
   CollectionItemApiModel,
   CollectionItemChangeApiModel,
   CollectionItemFiltersApiModel,
   CollectionItemSuggestionApiModel,
+  CollectionItemTagMode,
   CollectionItemsApiResponseModel,
   CollectionStatisticsApiResponseModel,
-  CollectionItemTagMode,
 } from '@shared/models/api-model';
+import Database from 'better-sqlite3';
 import { getItemHash } from '../../utils/collection-item-util';
 
 export interface CollectionItemRow {
@@ -25,11 +25,6 @@ export interface CollectionItemRow {
   content_hash: string;
   created_at: string;
   updated_at: string;
-}
-
-export interface CollectionItemPromptModel {
-  imdbId: string;
-  content: string;
 }
 
 interface CollectionItemQueryOptions {
@@ -413,10 +408,7 @@ export const getCollectionStatistics = (
   };
 };
 
-export const findCollectionItemsForPrompt = (
-  db: Database.Database,
-  usernameHash: string
-): CollectionItemPromptModel[] => {
+export const findCollectionItemsForPrompt = (db: Database.Database, usernameHash: string): string[] => {
   const rows = db
     .prepare(
       `SELECT *
@@ -426,24 +418,14 @@ export const findCollectionItemsForPrompt = (
     )
     .all(usernameHash) as CollectionItemRow[];
 
-  return rows.reduce<CollectionItemPromptModel[]>((items, row) => {
+  return rows.reduce<string[]>((items, row) => {
     if (!row.imdb_id) return items;
 
     const apiItem = toApiItem(db, row);
-    items.push({
-      imdbId: apiItem.IMDbId,
-      content: JSON.stringify({
-        IMDbId: apiItem.IMDbId,
-        title: apiItem.title,
-        year: apiItem.year,
-        rate: apiItem.rate,
-        genre: apiItem.genre,
-        tags: apiItem.tags,
-        actors: apiItem.actors,
-        plot: apiItem.plot,
-        image: apiItem.image,
-      }),
-    });
+
+    items.push(
+      `IMDbId: ${apiItem.IMDbId}\nTitle: ${apiItem.title}\nYear: ${apiItem.year}\nRate: ${apiItem.rate}\nGenre: ${apiItem.genre}\nTags: ${apiItem.tags}\nActors: ${apiItem.actors}\nPlot: ${apiItem.plot}\n\n----\n`
+    );
 
     return items;
   }, []);

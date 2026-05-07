@@ -4,11 +4,11 @@ import { form } from '@angular/forms/signals';
 import { AlertService } from '@services/alert-service';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ClaudeAiInput } from './claude-ai-input';
+import { AiSearchInput } from './ai-search-input';
 
 @Component({
-  imports: [ClaudeAiInput],
-  template: `<ct-claude-ai-input [formField]="promptField" placeholder="Ask Claude..." (sendEvent)="onSend()" />`,
+  imports: [AiSearchInput],
+  template: `<ct-ai-search-input [formField]="promptField" placeholder="Ask AI..." (sendEvent)="onSend()" />`,
 })
 class HostComponent {
   protected readonly promptModel = signal('');
@@ -19,7 +19,7 @@ class HostComponent {
   }
 }
 
-describe('ClaudeAiInput component', () => {
+describe('AiSearchInput component', () => {
   let fixture: ComponentFixture<HostComponent>;
   let alertSpy: ReturnType<typeof vi.fn>;
 

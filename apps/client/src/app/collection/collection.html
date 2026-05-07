@@ -1,10 +1,10 @@
 <div class="collection-container">
-  @if (useClaudeAi()) {
+  @if (useAiSearch()) {
     <div class="search-input">
-      <ct-claude-ai-input
-        [formField]="claudeAiPromptTextField"
+      <ct-ai-search-input
+        [formField]="aiSearchPromptTextField"
         [placeholder]="('Placeholder.Reply' | signalTranslate)()"
-        (sendEvent)="onClaudeAiSend()"
+        (sendEvent)="onAiSearchSend()"
       />
     </div>
   } @else {

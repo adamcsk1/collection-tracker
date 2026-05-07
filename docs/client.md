@@ -6,7 +6,7 @@ Source: [`apps/client`](../apps/client)
 
 ## Functional Areas
 
-- `collection`: search and browse stored collection items; includes Claude AI natural-language search via `ClaudeSearchService` and `ClaudeAiInput` when `CLAUDE_API_KEY` is configured on the server
+- `collection`: search and browse stored collection items; includes AI natural-language search via `AiSearchService` and `AiSearchInput`
 - `statistics`: tag-driven summaries and Chart.js visualizations
 - `settings/tag-configs`: per-tag color, weight, and presentation rules
 - `settings`: theme, search, account actions, access tokens, image refresh, and global watch-status actions

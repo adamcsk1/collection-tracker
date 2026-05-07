@@ -5,8 +5,36 @@ services:
       dockerfile: Dockerfile
     image: collection-tracker:latest
     container_name: collection-tracker
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
     ports:
       - "${APP_PORT:-3001}:3001"
     volumes:
       - ./.data:/data
     restart: unless-stopped
+    depends_on:
+      ollama-pull:
+        condition: service_completed_successfully
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: collection-tracker-ollama
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: collection-tracker-ollama-pull
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
+    volumes:
+      - ./docker/ollama-pull.sh:/ollama-pull.sh:ro
+    entrypoint: ["/bin/sh", "/ollama-pull.sh"]
+    depends_on:
+      - ollama
+
+volumes:
+  ollama:

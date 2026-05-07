@@ -117,7 +117,6 @@ export const findUserSettings = (
         theme: string | null;
         animated_background: number | null;
         language: string | null;
-        claude_ai_available: number | null;
       }
     | undefined;
 
@@ -127,7 +126,6 @@ export const findUserSettings = (
     theme: (row.theme as UserSettingsApiResponseModel['theme']) ?? undefined,
     animatedBackground: row.animated_background === 1 ? true : row.animated_background === 0 ? false : undefined,
     language: (row.language as UserSettingsApiResponseModel['language']) ?? undefined,
-    claudeAiAvailable: row.claude_ai_available === 1 ? true : row.claude_ai_available === 0 ? false : undefined,
   };
 };
 
@@ -138,18 +136,16 @@ export const upsertUserSettings = (
 ): void => {
   db.prepare(
     `INSERT INTO user_settings
-     (username_hash, theme, animated_background, language, claude_ai_available)
-     VALUES (?, ?, ?, ?, ?)
+     (username_hash, theme, animated_background, language)
+     VALUES (?, ?, ?, ?)
      ON CONFLICT(username_hash) DO UPDATE SET
        theme = excluded.theme,
        animated_background = excluded.animated_background,
-       language = excluded.language,
-       claude_ai_available = excluded.claude_ai_available`
+       language = excluded.language`
   ).run(
     usernameHash,
     settings.theme ?? null,
     settings.animatedBackground === undefined ? null : settings.animatedBackground ? 1 : 0,
-    settings.language ?? null,
-    settings.claudeAiAvailable === undefined ? null : settings.claudeAiAvailable ? 1 : 0
+    settings.language ?? null
   );
 };

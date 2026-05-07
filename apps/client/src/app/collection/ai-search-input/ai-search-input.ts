@@ -17,13 +17,13 @@ import { AlertService } from '@services/alert-service';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
-  selector: 'ct-claude-ai-input',
+  selector: 'ct-ai-search-input',
   imports: [Textarea, FormField, NgxSignalTranslatePipe, ImageIcon],
-  templateUrl: './claude-ai-input.html',
-  styleUrl: './claude-ai-input.css',
+  templateUrl: './ai-search-input.html',
+  styleUrl: './ai-search-input.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ClaudeAiInput {
+export class AiSearchInput {
   private readonly injector = inject(Injector);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly alert = inject(AlertService);
@@ -62,6 +62,6 @@ export class ClaudeAiInput {
   }
 
   protected onShowMessage(): void {
-    this.alert.show(this.ngxSignalTranslate.translate('Message.ClaudeAiSearch'));
+    this.alert.show(this.ngxSignalTranslate.translate('Message.AiSearch'));
   }
 }
