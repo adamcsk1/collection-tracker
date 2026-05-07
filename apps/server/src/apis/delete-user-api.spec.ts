@@ -23,7 +23,7 @@ describe('delete-user-api', () => {
     expect(
       getDatabase().prepare('SELECT COUNT(*) as count FROM users WHERE username_hash = ?').get('user-hash')
     ).toEqual({ count: 0 });
-    expect(response.sendStatus).toHaveBeenCalledWith(204);
+    expect(response.code).toHaveBeenCalledWith(204);
   });
 
   it('returns 204 when user is already absent', async () => {
@@ -35,6 +35,6 @@ describe('delete-user-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(204);
+    expect(response.code).toHaveBeenCalledWith(204);
   });
 });

@@ -55,7 +55,7 @@ describe('collection-items-matched-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when imdbIds contains non-string values', async () => {
@@ -67,7 +67,7 @@ describe('collection-items-matched-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('returns empty when no imdbIds match', async () => {

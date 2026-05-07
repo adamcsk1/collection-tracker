@@ -4,12 +4,12 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { AccessTokensApiResponseModel } from '@shared/models/api-model';
 import { getDatabase } from '../core/database/database';
 import { findAccessTokensByUser } from '../core/database/repositories/user-repository';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.get(
     `${API_PREFIX}/user/access-tokens`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler((request, response) => {
       const allTokens: AccessTokensApiResponseModel = findAccessTokensByUser(getDatabase(), request.usernameHash);
       const seen = new Set<string>();

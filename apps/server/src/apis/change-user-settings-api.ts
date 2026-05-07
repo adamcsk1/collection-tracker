@@ -7,7 +7,7 @@ import { THEMES } from '@shared/models/theme-model';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { getDatabase } from '../core/database/database';
 import { findUserSettings, upsertUserSettings } from '../core/database/repositories/user-repository';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 
 const isAllowedBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 const isAllowedTheme = (value: unknown): value is UserSettingsApiResponseModel['theme'] =>
@@ -36,13 +36,13 @@ const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel
   });
 };
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/user/settings`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const body = request.body as UserSettingsApiRequestModel;
-      if (!isValidUserSettings(body)) return response.sendStatus(400);
+      if (!isValidUserSettings(body)) return response.code(400).send();
 
       const db = getDatabase();
       const userConfig = findUserSettings(db, request.usernameHash) || ({} satisfies UserSettingsApiResponseModel);

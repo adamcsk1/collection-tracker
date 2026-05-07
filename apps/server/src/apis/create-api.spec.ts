@@ -34,7 +34,7 @@ describe('create-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('creates a DB item and returns it', async () => {
@@ -69,7 +69,7 @@ describe('create-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(409);
+    expect(response.code).toHaveBeenCalledWith(409);
   });
 
   it('returns 400 when title is invalid', async () => {
@@ -81,7 +81,7 @@ describe('create-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('returns 500 on unexpected DB error', async () => {
@@ -93,6 +93,6 @@ describe('create-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.code).toHaveBeenCalledWith(500);
   });
 });

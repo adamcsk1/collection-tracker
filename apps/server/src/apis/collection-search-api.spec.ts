@@ -1,4 +1,4 @@
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
@@ -46,7 +46,12 @@ const insertItem = (item: {
   }
 };
 
-const callRoute = async (register: (app: Application) => void, method: 'get' | 'post', path: string, request: any) => {
+const callRoute = async (
+  register: (app: FastifyInstance) => void,
+  method: 'get' | 'post',
+  path: string,
+  request: any
+) => {
   let handlerPromise: Promise<unknown> = Promise.resolve();
   const response = mockResponse();
   const app = {
@@ -60,7 +65,7 @@ const callRoute = async (register: (app: Application) => void, method: 'get' | '
       const handler = maybeHandler ?? guardOrHandler;
       handlerPromise = Promise.resolve(handler(request, response));
     }),
-  } as any as Application;
+  } as any as FastifyInstance;
 
   register(app);
   await handlerPromise;

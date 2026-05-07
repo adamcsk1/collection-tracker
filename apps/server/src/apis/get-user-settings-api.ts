@@ -4,12 +4,12 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { UserSettingsApiResponseModel } from '@shared/models/api-model';
 import { getDatabase } from '../core/database/database';
 import { findUserSettings } from '../core/database/repositories/user-repository';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.get(
     `${API_PREFIX}/user/settings`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler((request, response) => {
       const dbSettings = findUserSettings(getDatabase(), request.usernameHash);
 

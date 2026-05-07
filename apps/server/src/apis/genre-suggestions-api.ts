@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { findGenreSuggestions } from '../core/database/repositories/collection-repository';
 import { jwtGuard } from '../core/jwt';
@@ -10,15 +10,16 @@ const parseLimit = (value: unknown): number => {
   return Number.isFinite(parsed) ? parsed : 10;
 };
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.get(
     `${API_PREFIX}/genres/suggestions`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      const query = typeof request.query.query === 'string' ? request.query.query : '';
+      const queryParams = request.query as Record<string, unknown>;
+      const query = typeof queryParams.query === 'string' ? queryParams.query : '';
 
       response.send({
-        genres: findGenreSuggestions(getDatabase(), request.usernameHash, query, parseLimit(request.query.limit)),
+        genres: findGenreSuggestions(getDatabase(), request.usernameHash, query, parseLimit(queryParams.limit)),
       });
     })
   );

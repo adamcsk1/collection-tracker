@@ -3,3 +3,5 @@ export const FOLDERS = {
   logs: 'logs',
   cache: 'cache',
 };
+
+export const SERVER_MAX_PARAM_LENGTH = 256;

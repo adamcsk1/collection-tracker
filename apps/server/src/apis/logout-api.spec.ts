@@ -17,7 +17,7 @@ describe('logout-api', () => {
   it('clears both cookies and returns 204', async () => {
     const response = mockResponse();
     const request: any = {
-      signedCookies: { [COOKIE_TOKEN]: 'token', [COOKIE_REFRESH_TOKEN]: 'refresh' },
+      cookies: { [COOKIE_TOKEN]: 'token', [COOKIE_REFRESH_TOKEN]: 'refresh' },
       headers: {},
       usernameHash: 'user',
     };
@@ -38,18 +38,18 @@ describe('logout-api', () => {
 
     expect(response.clearCookie).toHaveBeenCalledWith(COOKIE_TOKEN);
     expect(response.clearCookie).toHaveBeenCalledWith(COOKIE_REFRESH_TOKEN);
-    expect(response.sendStatus).toHaveBeenCalledWith(204);
+    expect(response.code).toHaveBeenCalledWith(204);
   });
 
   it('returns 204 when token rows are already absent', async () => {
     const response = mockResponse();
-    const request: any = { signedCookies: { [COOKIE_TOKEN]: 'token' }, headers: {}, usernameHash: 'user' };
+    const request: any = { cookies: { [COOKIE_TOKEN]: 'token' }, headers: {}, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./logout-api');
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(204);
+    expect(response.code).toHaveBeenCalledWith(204);
   });
 });

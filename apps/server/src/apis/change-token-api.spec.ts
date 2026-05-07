@@ -46,8 +46,8 @@ describe('change-token-api', () => {
     expect(getDatabase().prepare('SELECT user_token_hash FROM users WHERE username_hash = ?').get('user')).toEqual({
       user_token_hash: 'hashed-new-user-token',
     });
-    expect(response.cookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'new-access', expect.any(Object));
-    expect(response.cookie).toHaveBeenCalledWith(COOKIE_REFRESH_TOKEN, 'new-refresh', expect.any(Object));
+    expect(response.setCookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'new-access', expect.any(Object));
+    expect(response.setCookie).toHaveBeenCalledWith(COOKIE_REFRESH_TOKEN, 'new-refresh', expect.any(Object));
     expect(response.send).toHaveBeenCalledWith({ newToken: 'new-user-token' });
   });
 

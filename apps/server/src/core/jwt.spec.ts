@@ -1,7 +1,7 @@
 import { COOKIE_TOKEN } from './cookie/cookie-const';
 import { getDatabase } from './database/database';
 import { generateAccessToken, generateRefreshToken, jwtGuard } from './jwt';
-import type { Request } from 'express';
+import type { FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,6 +10,22 @@ vi.mock('@server/core/crypto', () => ({
 }));
 
 describe('jwt utilities', () => {
+  const mockResponse = () => {
+    const response: any = {};
+    response.send = vi.fn().mockReturnValue(response);
+    response.code = vi.fn().mockReturnValue(response);
+    return response;
+  };
+
+  const mockRequest = (request: Partial<FastifyRequest> & { cookies?: Record<string, string> }) =>
+    ({
+      cookies: {},
+      headers: {},
+      url: '/protected',
+      unsignCookie: (value: string) => ({ valid: true, value }),
+      ...request,
+    }) as unknown as FastifyRequest;
+
   beforeEach(() => {
     process.env.JWT_SECRET = 'secret';
     vi.restoreAllMocks();
@@ -38,13 +54,11 @@ describe('jwt utilities', () => {
   });
 
   it('jwtGuard rejects when no token provided', async () => {
-    const response: any = { sendStatus: vi.fn() };
-    const next = vi.fn();
+    const response = mockResponse();
 
-    await jwtGuard({ signedCookies: {}, headers: {}, url: '/x' } as unknown as Request, response, next);
+    await jwtGuard(mockRequest({ url: '/x' }), response);
 
-    expect(response.sendStatus).toHaveBeenCalledWith(401);
-    expect(next).not.toHaveBeenCalled();
+    expect(response.code).toHaveBeenCalledWith(401);
   });
 
   it('jwtGuard validates token and sets username', async () => {
@@ -54,96 +68,58 @@ describe('jwt utilities', () => {
     db.prepare(
       'INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
     ).run('hashed-user', `hashed-${token}`, 'now', 'agent', null);
-    const response: any = { sendStatus: vi.fn() };
-    const next = vi.fn();
+    const response = mockResponse();
+    const request = mockRequest({ cookies: { [COOKIE_TOKEN]: token } });
 
-    await new Promise<void>((resolve) => {
-      jwtGuard(
-        { signedCookies: { [COOKIE_TOKEN]: token }, headers: {}, url: '/protected' } as unknown as Request,
-        response,
-        () => {
-          next();
-          resolve();
-        }
-      );
-    });
+    await jwtGuard(request, response);
 
-    expect(response.sendStatus).not.toHaveBeenCalled();
-    expect(next).toHaveBeenCalled();
+    expect(response.code).not.toHaveBeenCalled();
+    expect(request.username).toBe('user');
+    expect(request.usernameHash).toBe('hashed-user');
   });
 
   it('jwtGuard rejects expired token with 401', async () => {
     const token = jwt.sign({ username: 'user' }, 'secret', { expiresIn: '-1s' });
-    const response: any = { sendStatus: vi.fn() };
-    const next = vi.fn();
+    const response = mockResponse();
 
-    await jwtGuard(
-      {
-        signedCookies: { [COOKIE_TOKEN]: token },
-        headers: {},
-        url: '/protected',
-      } as unknown as Request,
-      response,
-      next
-    );
+    await jwtGuard(mockRequest({ cookies: { [COOKIE_TOKEN]: token } }), response);
 
-    expect(response.sendStatus).toHaveBeenCalledWith(401);
-    expect(next).not.toHaveBeenCalled();
+    expect(response.code).toHaveBeenCalledWith(401);
   });
 
   it('jwtGuard rejects invalid token with 403', async () => {
-    const response: any = { sendStatus: vi.fn() };
-    const next = vi.fn();
+    const response = mockResponse();
 
     await jwtGuard(
-      {
-        signedCookies: {},
+      mockRequest({
         headers: { authorization: 'Bearer invalid' },
-        url: '/protected',
-      } as unknown as Request,
-      response,
-      next
+      }),
+      response
     );
 
-    expect(response.sendStatus).toHaveBeenCalledWith(403);
-    expect(next).not.toHaveBeenCalled();
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 
   it('jwtGuard returns 500 when JWT secret is missing', async () => {
     delete process.env.JWT_SECRET;
-    const response: any = { sendStatus: vi.fn() };
-    const next = vi.fn();
+    const response = mockResponse();
 
     await jwtGuard(
-      {
-        signedCookies: {},
+      mockRequest({
         headers: { authorization: 'Bearer any-token' },
-        url: '/protected',
-      } as unknown as Request,
-      response,
-      next
+      }),
+      response
     );
 
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
-    expect(next).not.toHaveBeenCalled();
+    expect(response.code).toHaveBeenCalledWith(500);
   });
 
   it('jwtGuard rejects token payloads without username', async () => {
     const token = jwt.sign({ id: 'missing-username' }, 'secret');
-    const response: any = { sendStatus: vi.fn() };
-    const next = vi.fn();
+    const response = mockResponse();
 
-    await jwtGuard(
-      {
-        signedCookies: { [COOKIE_TOKEN]: token },
-        headers: {},
-        url: '/protected',
-      } as unknown as Request,
-      response,
-      next
-    );
+    await jwtGuard(mockRequest({ cookies: { [COOKIE_TOKEN]: token } }), response);
 
-    expect(response.sendStatus).toHaveBeenCalledWith(403);
-    expect(next).not.toHaveBeenCalled();
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 });

@@ -1,6 +1,6 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { CollectionMatchedItemsApiRequestModel } from '@shared/models/api-model';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { searchCollectionItems } from '../core/database/repositories/collection-repository';
 import { jwtGuard } from '../core/jwt';
@@ -11,14 +11,14 @@ const parseNumber = (value: unknown, fallback: number): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/items/matched`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const body = request.body as CollectionMatchedItemsApiRequestModel;
       if (!Array.isArray(body?.imdbIds) || body.imdbIds.some((imdbId) => typeof imdbId !== 'string')) {
-        response.sendStatus(400);
+        response.code(400).send();
         return;
       }
 

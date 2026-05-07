@@ -27,7 +27,7 @@ describe('delete-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('deletes existing DB item when hash matches', async () => {
@@ -40,7 +40,7 @@ describe('delete-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(204);
+    expect(response.code).toHaveBeenCalledWith(204);
     expect(
       getDatabase().prepare('SELECT COUNT(*) as count FROM collection_items WHERE imdb_id = ?').get('tt-delete')
     ).toEqual({ count: 0 });
@@ -56,7 +56,7 @@ describe('delete-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(409);
+    expect(response.code).toHaveBeenCalledWith(409);
   });
 
   it('returns 404 when item is not found', async () => {
@@ -68,6 +68,6 @@ describe('delete-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(404);
+    expect(response.code).toHaveBeenCalledWith(404);
   });
 });

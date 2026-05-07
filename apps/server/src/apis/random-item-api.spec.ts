@@ -42,6 +42,6 @@ describe('random-item-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(404);
+    expect(response.code).toHaveBeenCalledWith(404);
   });
 });

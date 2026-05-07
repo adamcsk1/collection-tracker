@@ -17,8 +17,8 @@ let upstreamRequest: ReturnType<typeof vi.fn>;
 const createResponse = () => {
   const response: any = {};
   response.send = vi.fn().mockReturnValue(response);
-  response.sendStatus = vi.fn().mockReturnValue(response);
-  response.setHeader = vi.fn().mockReturnValue(response);
+  response.code = vi.fn().mockReturnValue(response);
+  response.header = vi.fn().mockReturnValue(response);
   return response;
 };
 
@@ -69,8 +69,12 @@ describe('proxy-image-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(app.get).toHaveBeenCalledWith(`${API_PREFIX}/proxy/image`, expect.any(Function), expect.any(Function));
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(app.get).toHaveBeenCalledWith(
+      `${API_PREFIX}/proxy/image`,
+      { preHandler: expect.any(Function) },
+      expect.any(Function)
+    );
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('fetches an image once and serves cached bytes on the next request', async () => {
@@ -89,7 +93,7 @@ describe('proxy-image-api', () => {
       expect.objectContaining({ hostname: '203.0.113.10', family: 4, servername: 'images.example' }),
       expect.any(Function)
     );
-    expect(firstResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'image/png');
+    expect(firstResponse.header).toHaveBeenCalledWith('Content-Type', 'image/png');
     expect(firstResponse.send).toHaveBeenCalledWith(image);
 
     const secondResponse = createResponse();
@@ -114,7 +118,7 @@ describe('proxy-image-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(415);
+    expect(response.code).toHaveBeenCalledWith(415);
   });
 
   it('rejects localhost and private network targets', async () => {
@@ -126,14 +130,14 @@ describe('proxy-image-api', () => {
     register(localhostApp.app);
 
     await localhostApp.handlerPromise();
-    expect(localhostResponse.sendStatus).toHaveBeenCalledWith(400);
+    expect(localhostResponse.code).toHaveBeenCalledWith(400);
 
     const privateResponse = createResponse();
     const privateApp = buildApp({ query: { url: 'http://192.168.1.10/poster.png' } }, privateResponse);
     register(privateApp.app);
 
     await privateApp.handlerPromise();
-    expect(privateResponse.sendStatus).toHaveBeenCalledWith(400);
+    expect(privateResponse.code).toHaveBeenCalledWith(400);
   });
 
   it('rejects oversized image responses before caching', async () => {
@@ -151,6 +155,6 @@ describe('proxy-image-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(413);
+    expect(response.code).toHaveBeenCalledWith(413);
   });
 });

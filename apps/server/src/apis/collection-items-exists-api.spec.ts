@@ -53,7 +53,7 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when imdbId is empty string', async () => {
@@ -65,6 +65,6 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 });

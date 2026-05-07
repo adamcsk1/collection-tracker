@@ -40,7 +40,7 @@ describe('change-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when hash is missing', async () => {
@@ -52,7 +52,7 @@ describe('change-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('updates an existing DB item when hash matches', async () => {
@@ -91,7 +91,7 @@ describe('change-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(409);
+    expect(response.code).toHaveBeenCalledWith(409);
   });
 
   it('returns 409 when IMDb ID conflicts with another item', async () => {
@@ -114,7 +114,7 @@ describe('change-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(409);
+    expect(response.code).toHaveBeenCalledWith(409);
   });
 
   it('returns 404 when item is missing', async () => {
@@ -130,6 +130,6 @@ describe('change-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(404);
+    expect(response.code).toHaveBeenCalledWith(404);
   });
 });

@@ -1,12 +1,11 @@
-import bodyParser from 'body-parser';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
+import fastifyCookie from '@fastify/cookie';
+import fastifyCors from '@fastify/cors';
+import fastifyFormbody from '@fastify/formbody';
+import fastifyHelmet from '@fastify/helmet';
+import fastifyRateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
-import express from 'express';
-import { rateLimit } from 'express-rate-limit';
+import fastify from 'fastify';
 import { existsSync } from 'fs';
-import helmet from 'helmet';
-import nocache from 'nocache';
 import { registerAllApis } from '../apis';
 import { register as registerDocsApi } from '../apis/docs-api';
 import { initializeFolders } from '../tools/initializer';
@@ -16,6 +15,7 @@ import { initializeDatabase } from './database/database';
 import { runMigrations } from './database/migrations';
 import { join } from 'path';
 import { RATE_LIMIT_EXCLUDED_PATHS } from './constants/rate-limit-const';
+import { SERVER_MAX_PARAM_LENGTH } from './main-const';
 import { getRateLimitKey } from './utils/rate-limit-util';
 
 export const main = async () => {
@@ -45,57 +45,56 @@ export const main = async () => {
       throw new Error('Could not find migrations directory. Database schema may not be up to date.');
     }
 
-    const app = express();
-    app.set('trust proxy', 1);
-    debugLog('Initializing express server');
+    const app = fastify({
+      trustProxy: true,
+      bodyLimit: 50 * 1024 * 1024,
+      routerOptions: { maxParamLength: SERVER_MAX_PARAM_LENGTH },
+    });
+    debugLog('Initializing fastify server');
 
     // Registered before global middleware so helmet's CSP does not block Swagger UI assets.
-    registerDocsApi(app);
+    await registerDocsApi(app);
 
-    app.use((request, _response, next) => {
+    app.addHook('onRequest', async (request) => {
       debugLog(`Incoming request: ${request.url}`);
-      next();
     });
     debugLog('Applying request logging middleware');
-    app.use(helmet());
+    await app.register(fastifyHelmet);
     debugLog('Applying security middleware');
-    app.use(nocache());
+    app.addHook('onSend', async (_request, response) => {
+      response.header('Surrogate-Control', 'no-store');
+      response.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      response.header('Pragma', 'no-cache');
+      response.header('Expires', '0');
+    });
     debugLog('Applying no-cache middleware');
     const rateLimitValue = process.env.RATE_LIMIT !== undefined ? Number(process.env.RATE_LIMIT) : 100;
-    app.use(
-      rateLimit({
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        limit: rateLimitValue,
-        standardHeaders: 'draft-8',
-        legacyHeaders: false,
-        skipSuccessfulRequests: true,
-        skip: (request) => RATE_LIMIT_EXCLUDED_PATHS.includes(request.path),
-        keyGenerator: getRateLimitKey,
-      })
-    );
+    await app.register(fastifyRateLimit, {
+      max: rateLimitValue,
+      timeWindow: 15 * 60 * 1000,
+      enableDraftSpec: true,
+      allowList: (request) => RATE_LIMIT_EXCLUDED_PATHS.includes(request.routeOptions.url ?? request.url),
+      keyGenerator: getRateLimitKey,
+    });
     debugLog('Applying rate limiting middleware');
-    app.use(
-      cors({
-        origin: (requestOrigin: string | undefined, callback: (err: Error | null, origin?: boolean) => void): void => {
-          if (process.env.CORS_ORIGIN === requestOrigin || process.env.CORS_ORIGIN === '*') callback(null, true);
-          else callback(new Error(`Not allowed by CORS (invalid origin: ${requestOrigin})`), false);
-        },
-        optionsSuccessStatus: 200,
-      })
-    );
+    await app.register(fastifyCors, {
+      origin: (requestOrigin, callback) => {
+        if (process.env.CORS_ORIGIN === requestOrigin || process.env.CORS_ORIGIN === '*') callback(null, true);
+        else callback(new Error(`Not allowed by CORS (invalid origin: ${requestOrigin})`), false);
+      },
+      optionsSuccessStatus: 200,
+    });
     debugLog('Applying CORS middleware');
 
-    app.use(bodyParser.json({ limit: '50mb', strict: false }));
-    app.use(bodyParser.urlencoded({ extended: true }));
+    await app.register(fastifyFormbody);
     debugLog('Applying body parser middleware');
-    app.use(cookieParser(process.env.COOKIE_SECRET));
+    await app.register(fastifyCookie, { secret: process.env.COOKIE_SECRET });
     debugLog('Applying cookie parser middleware');
 
     registerAllApis(app);
 
-    app.listen(Number(process.env.PORT), `${process.env.HOST}`, () => {
-      infoLog(`[ ready ] http://${process.env.HOST}:${process.env.PORT}`);
-    });
+    await app.listen({ port: Number(process.env.PORT), host: `${process.env.HOST}` });
+    infoLog(`[ ready ] http://${process.env.HOST}:${process.env.PORT}`);
   } catch (error: unknown) {
     if (error instanceof Error) errorLog(`Server start unknown error (${error.message})`);
     process.exit(1);

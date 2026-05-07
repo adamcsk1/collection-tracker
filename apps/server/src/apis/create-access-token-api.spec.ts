@@ -49,6 +49,6 @@ describe('create-access-token-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.sendStatus).toHaveBeenCalledWith(500);
+    expect(response.code).toHaveBeenCalledWith(500);
   });
 });

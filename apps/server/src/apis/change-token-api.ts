@@ -1,6 +1,6 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { ChangeTokenApiResponseModel } from '@shared/models/api-model';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import type jwt from 'jsonwebtoken';
 import {
   accessCookieConfig,
@@ -21,10 +21,10 @@ import { generateAccessToken, generateRefreshToken, jwtGuard } from '../core/jwt
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getUserAccessToken, getUserRefreshToken } from '../core/utils/users-util';
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.put(
     `${API_PREFIX}/user/change-token`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
 
@@ -41,7 +41,7 @@ export const register = (app: Application): void => {
       );
 
       if (!newAccessToken || !newRefreshToken) {
-        return response.sendStatus(500);
+        return response.code(500).send();
       }
 
       const accessTokenData = getUserAccessToken(newAccessToken, request.headers['user-agent']!, accessCookie.expires!);
@@ -58,8 +58,8 @@ export const register = (app: Application): void => {
 
       const result: ChangeTokenApiResponseModel = { newToken: newUserToken };
       response
-        .cookie(COOKIE_TOKEN, newAccessToken, accessCookie)
-        .cookie(COOKIE_REFRESH_TOKEN, newRefreshToken, refreshCookie)
+        .setCookie(COOKIE_TOKEN, newAccessToken, accessCookie)
+        .setCookie(COOKIE_REFRESH_TOKEN, newRefreshToken, refreshCookie)
         .send(result);
     })
   );

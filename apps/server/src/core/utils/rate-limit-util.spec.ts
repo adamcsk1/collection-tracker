@@ -1,9 +1,9 @@
-import type { Request } from 'express';
+import type { FastifyRequest } from 'fastify';
 import { describe, expect, it } from 'vitest';
 import { getRateLimitKey } from './rate-limit-util';
 
-const buildRequest = (headers: Request['headers'] = {}, remoteAddress?: string): Request =>
-  ({ headers, socket: { remoteAddress } }) as unknown as Request;
+const buildRequest = (headers: FastifyRequest['headers'] = {}, remoteAddress?: string): FastifyRequest =>
+  ({ headers, socket: { remoteAddress } }) as unknown as FastifyRequest;
 
 describe('rate-limit-util', () => {
   describe('getRateLimitKey', () => {
@@ -11,7 +11,7 @@ describe('rate-limit-util', () => {
       expect(getRateLimitKey(buildRequest())).toBe('unknown-client');
     });
 
-    it('uses the socket remote address when Express does not provide request.ip', () => {
+    it('uses the socket remote address when Fastify does not provide a forwarded header', () => {
       expect(getRateLimitKey(buildRequest({}, '203.0.113.10'))).toBe('203.0.113.10');
     });
 
@@ -28,7 +28,7 @@ describe('rate-limit-util', () => {
 
     it('normalizes IP addresses that include a port', () => {
       expect(getRateLimitKey(buildRequest({ 'x-forwarded-for': '203.0.113.10:443' }))).toBe('203.0.113.10');
-      expect(getRateLimitKey(buildRequest({ 'x-forwarded-for': '[2001:db8::1]:443' }))).toBe('2001:db8::/56');
+      expect(getRateLimitKey(buildRequest({ 'x-forwarded-for': '[2001:db8::1]:443' }))).toBe('2001:db8::1');
     });
   });
 });

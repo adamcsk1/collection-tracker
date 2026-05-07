@@ -1,20 +1,20 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import type { Application } from 'express';
+import type { FastifyInstance } from 'fastify';
 import { fetchAndCacheImageWithDetails, getCachedImage } from '../core/image/image-proxy';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
-export const register = (app: Application): void => {
+export const register = (app: FastifyInstance): void => {
   app.get(
     `${API_PREFIX}/proxy/image`,
-    jwtGuard,
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      const sourceUrl = String(request.query.url ?? '');
+      const sourceUrl = String((request.query as Record<string, unknown>).url ?? '');
 
       const cached = getCachedImage(sourceUrl);
       if (cached) {
-        response.setHeader('Content-Type', cached.contentType);
-        response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        response.header('Content-Type', cached.contentType);
+        response.header('Cache-Control', 'public, max-age=31536000, immutable');
         response.send(cached.buffer);
         return;
       }
@@ -25,27 +25,27 @@ export const register = (app: Application): void => {
         case 'fetched': {
           const refreshed = getCachedImage(sourceUrl);
           if (refreshed) {
-            response.setHeader('Content-Type', refreshed.contentType);
-            response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            response.header('Content-Type', refreshed.contentType);
+            response.header('Cache-Control', 'public, max-age=31536000, immutable');
             response.send(refreshed.buffer);
           } else {
-            response.sendStatus(400);
+            response.code(400).send();
           }
           return;
         }
         case 'invalid-url':
         case 'blocked':
         case 'redirect':
-          response.sendStatus(400);
+          response.code(400).send();
           return;
         case 'upstream-error':
-          response.sendStatus(result.statusCode);
+          response.code(result.statusCode).send();
           return;
         case 'not-image':
-          response.sendStatus(415);
+          response.code(415).send();
           return;
         case 'too-large':
-          response.sendStatus(413);
+          response.code(413).send();
           return;
       }
     })
