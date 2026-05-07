@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { redirectToLogin } from './main-util';
+import { redirectToLogin } from './redirect-to-login-util';
 
 describe('redirectToLogin', () => {
   it('does not throw when navigation is triggered', () => {

@@ -1,6 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { redirectToLogin } from '@shared/utils/redirect-to-login-util';
 import { catchError, EMPTY, switchMap } from 'rxjs';
 import { RefreshTokenService } from './refresh-token-service';
 
@@ -15,7 +16,7 @@ export const refreshTokenInterceptor: HttpInterceptorFn = (req, next) => {
         return refreshService.refresh().pipe(
           switchMap(() => next(req)),
           catchError(() => {
-            router.navigateByUrl('/login/');
+            redirectToLogin();
             return EMPTY;
           })
         );
