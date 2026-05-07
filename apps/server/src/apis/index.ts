@@ -20,7 +20,7 @@ import { register as registerHealth } from './health-api';
 import { register as registerLogout } from './logout-api';
 import { register as registerMarkAllUnwatched } from './mark-all-unwatched-api';
 import { register as registerMarkAllWatched } from './mark-all-watched-api';
-import { register as registerProxyClaude } from './proxy-claude-query-api';
+import { register as registerProxyAi } from './proxy-ai-query-api';
 import { register as registerProxyOMDbItem } from './proxy-get-omdb-item-api';
 import { register as registerProxyImage } from './proxy-image-api';
 import { register as registerProxyOMDbSearch } from './proxy-omdb-search-api';
@@ -66,5 +66,5 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerProxyOMDbSearch(app);
   registerProxyOMDbItem(app);
   registerProxyImage(app);
-  registerProxyClaude(app);
+  registerProxyAi(app);
 };

@@ -78,6 +78,7 @@ SALT="your_salt"
 USER_LIMIT=1
 DISABLE_REGISTRATION=0
 OMDB_API_KEY="your_omdb_api_key"
+OLLAMA_MODEL="qwen2.5:3b"
 ```
 
 Full runtime example:
@@ -91,8 +92,8 @@ SALT="your_salt"
 USER_LIMIT=2
 DISABLE_REGISTRATION=0
 OMDB_API_KEY="your_omdb_api_key"
-CLAUDE_API_KEY="your_claude_api_key"
-CLAUDE_MODEL="claude-haiku-4-5-20251001"
+OLLAMA_BASE_URL="http://ollama:11434"
+OLLAMA_MODEL="qwen2.5:3b"
 CORS_ORIGIN="*"
 CACHE_MAX=200
 RATE_LIMIT=100

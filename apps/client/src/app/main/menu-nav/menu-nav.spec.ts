@@ -1,17 +1,17 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { initialMainState, MainState, mainStateToken } from '../main-store';
-import * as MainUtil from '../main-util';
 import { ApiService } from '@services/api/api-service';
-import { CollectionService } from '../../collection/collection-service';
-import { LogoutService } from '../logout-service';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService, provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as MainUtil from '../../../../../../libs/shared/src/lib/utils/redirect-to-login-util';
+import { CollectionService } from '../../collection/collection-service';
+import { LogoutService } from '../logout-service';
+import { initialMainState, MainState, mainStateToken } from '../main-store';
 import { MenuNav } from './menu-nav';
 
 describe('MenuNav', () => {

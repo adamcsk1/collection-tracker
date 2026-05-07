@@ -40,6 +40,7 @@ HOST=0.0.0.0
 PORT=3000
 CORS_ORIGIN=*
 OMDB_API_KEY=
+OLLAMA_MODEL=qwen2.5:3b
 EOF
   chmod 600 /data/.env
 fi

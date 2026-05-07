@@ -93,14 +93,14 @@ Stored as `CT.SettingLock = 'true'` in localStorage. When enabled, the Settings 
 - **Logout** — nav logout link (`data-test-id="nav-logout"`) is in the header menu; open menu first with `data-test-id="nav-menu-button"`; sends `DELETE /api/v1/logout` (returns 204), then redirects to `/login/`; logout tests live in `auth.cy.ts`
 - **Sync** — nav sync link (`data-test-id="nav-sync"`) is in the header menu; reloads the collection by calling `GET /api/v1/get-all*`; use `cy.intercept('GET', '/api/v1/get-all*').as('getAll')` to assert; sync tests live in `collection.cy.ts`
 
-### Claude AI search
+### AI search
 
-The feature requires `CLAUDE_API_KEY` to be set. The test container sets `CLAUDE_API_KEY="cypress_claude_key"` in `apps/collection-e2e/env/.env` (a dummy key). All calls to `POST /api/v1/proxy/claude/query` must be mocked with `cy.intercept`. Tests live in `claude-search.cy.ts` and must use `cy.autoLogin()`.
+All calls to `POST /api/v1/proxy/ai/query` must be mocked with `cy.intercept`. Tests live in `ai-search.cy.ts` and must use `cy.autoLogin()`.
 
-- **Toggle** — `data-test-id="claude-ai-toggle"` appears in the float buttons panel (expand with `show-functions`); clicking it replaces the standard search with `ClaudeAiInput`
-- **Input UI** — trigger button `data-test-id="claude-ai-trigger"` expands a panel with textarea `data-test-id="claude-ai-textarea"` (reach with `.find('textarea')`) and send button `data-test-id="claude-ai-send"`; clicking send collapses the panel
+- **Toggle** — `data-test-id="ai-search-toggle"` appears in the float buttons panel (expand with `show-functions`); clicking it replaces the standard search with `AiSearchInput`
+- **Input UI** — trigger button `data-test-id="ai-search-trigger"` expands a panel with textarea `data-test-id="ai-search-textarea"` (reach with `.find('textarea')`) and send button `data-test-id="ai-search-send"`; clicking send collapses the panel
 - **Filtering** — the client filters client-side based on IMDb IDs returned by the proxy; seed items with distinct IMDb IDs using `buildCollectionItem(title, type, imdbId)`; mock response format: `{ matchedIds: ['tt…'] }`
-- **localStorage cleanup** — `CT.UseClaudeAi` stores the toggle preference; `cy.autoLogin()` does NOT clear it; `claude-search.cy.ts` has a top-level `afterEach` that calls `win.localStorage.removeItem('CT.UseClaudeAi')` after every test
+- **localStorage cleanup** — `CT.UseAiSearch` stores the toggle preference; `cy.autoLogin()` does NOT clear it; `ai-search.cy.ts` has a top-level `afterEach` that calls `win.localStorage.removeItem('CT.UseAiSearch')` after every test
 
 ---
 

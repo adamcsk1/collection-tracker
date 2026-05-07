@@ -1,0 +1,1 @@
+export const DEFAULT_OLLAMA_BASE_URL = 'http://ollama:11434';

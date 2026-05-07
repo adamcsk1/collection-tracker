@@ -1,10 +1,10 @@
 import { effect, inject, Injectable, Injector } from '@angular/core';
 import { Router } from '@angular/router';
-import { MainService } from './main-service';
-import { redirectToLogin } from './main-util';
+import { forkJoin } from 'rxjs';
+import { redirectToLogin } from '../../../../../libs/shared/src/lib/utils/redirect-to-login-util';
 import { SettingsService } from '../settings/settings-service';
 import { TagConfigsService } from '../settings/tag-configs/tag-configs-service';
-import { forkJoin } from 'rxjs';
+import { MainService } from './main-service';
 
 @Injectable({ providedIn: 'root' })
 export class TokenValidationService {

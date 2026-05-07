@@ -20,12 +20,12 @@ export const CollectionPage = {
   getAddNewButton: () => cy.getByTestId('add-new'),
   getRandomPickButton: () => cy.getByTestId('random-pick'),
   getScrollToTopButton: () => cy.getByTestId('scroll-to-top'),
-  getClaudeAiToggleButton: () => cy.getByTestId('claude-ai-toggle'),
+  getAiSearchToggleButton: () => cy.getByTestId('ai-search-toggle'),
 
-  // Claude AI search input
-  getClaudeAiTrigger: () => cy.getByTestId('claude-ai-trigger'),
-  getClaudeAiTextarea: () => cy.getByTestId('claude-ai-textarea').find('textarea'),
-  getClaudeAiSendButton: () => cy.getByTestId('claude-ai-send'),
+  // AI search input
+  getAiSearchTrigger: () => cy.getByTestId('ai-search-trigger'),
+  getAiSearchTextarea: () => cy.getByTestId('ai-search-textarea').find('textarea'),
+  getAiSearchSendButton: () => cy.getByTestId('ai-search-send'),
 
   // New item dialog
   getNewItemSearch: () => cy.get('[data-test-id="new-item-search"]'),

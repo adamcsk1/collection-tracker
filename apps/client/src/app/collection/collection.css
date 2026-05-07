@@ -24,7 +24,7 @@
   .search-input {
     padding: var(--size-xs);
 
-    ct-claude-ai-input {
+    ct-ai-search-input {
       display: block;
     }
   }

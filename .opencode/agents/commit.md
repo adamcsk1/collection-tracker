@@ -35,7 +35,7 @@ Optional body explaining why, not what.
 **Always include a scope.** Use one of:
 
 - App/lib names: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`
-- Cross-cutting concerns: `tsconfig`, `build`, `claude`, `git`, `vscode`, `hooks`, `i18n`
+- Cross-cutting concerns: `tsconfig`, `build`, `ai`, `git`, `vscode`, `hooks`, `i18n`
 
 Pick the most specific scope that covers the primary area of change. A commit that touches only `tsconfig.spec.json` files across multiple apps uses `tsconfig`, not the individual app names.
 

@@ -16,8 +16,8 @@ describe('get-user-settings-api', () => {
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     db.prepare(
-      'INSERT INTO user_settings (username_hash, theme, animated_background, language, claude_ai_available) VALUES (?, ?, ?, ?, ?)'
-    ).run('user', 'dark', 0, 'en', null);
+      'INSERT INTO user_settings (username_hash, theme, animated_background, language) VALUES (?, ?, ?, ?)'
+    ).run('user', 'dark', 0, 'en');
 
     const { register } = await import('./get-user-settings-api');
     register(app);
@@ -27,7 +27,7 @@ describe('get-user-settings-api', () => {
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
-      claudeAiAvailable: false,
+      aiAvailable: true,
     });
   });
 
@@ -40,7 +40,7 @@ describe('get-user-settings-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ claudeAiAvailable: false });
+    expect(response.send).toHaveBeenCalledWith({ aiAvailable: true });
   });
 
   it('returns empty object when caller has no DB row', async () => {
@@ -51,6 +51,6 @@ describe('get-user-settings-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ claudeAiAvailable: false });
+    expect(response.send).toHaveBeenCalledWith({ aiAvailable: true });
   });
 });

@@ -7,7 +7,7 @@ import { TagConfigColorPipe } from '../../../settings/tag-configs/tag-configs-co
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
 import { ItemDialog } from '../../item-dialog/item-dialog';
-import { ClaudeSearchService } from '../../search/claude-search-service';
+import { AiSearchService } from '../../search/ai-search-service';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
 
 @Component({
@@ -26,7 +26,7 @@ export class ListItem {
   private readonly portal = inject(PortalService);
   private readonly apiState = inject(apiStateToken);
   private readonly tagConfigColorPipe = inject(TagConfigColorPipe);
-  private readonly claudeSearch = inject(ClaudeSearchService);
+  private readonly aiSearch = inject(AiSearchService);
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG) ?? false);
   protected readonly imageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
@@ -57,7 +57,7 @@ export class ListItem {
 
     return getContrastColorHex(badgeBackgroundColor);
   });
-  protected readonly useClaudeAi = this.claudeSearch.useClaudeAi.asReadonly();
+  protected readonly useAiSearch = this.aiSearch.useAiSearch.asReadonly();
   protected readonly WATCHED_TAG = WATCHED_TAG;
   protected readonly MOVIE_TAG = MOVIE_TAG;
   protected readonly SERIES_TAG = SERIES_TAG;
@@ -65,7 +65,7 @@ export class ListItem {
   public readonly collectionItem = input.required<CollectionItemModel>();
 
   protected onSetSearchText(searchValue: string | number | null, event?: Event): void {
-    if (this.useClaudeAi()) return;
+    if (this.useAiSearch()) return;
 
     if (searchValue !== null) {
       event?.stopPropagation();

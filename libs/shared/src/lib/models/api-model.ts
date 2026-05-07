@@ -126,7 +126,7 @@ export interface UserSettingsApiResponseModel {
   theme?: ThemeModel;
   animatedBackground?: boolean;
   language?: LanguageModel;
-  claudeAiAvailable?: boolean; // This field is determined by the presence of the CLAUDE_API_KEY on the server and indicates whether Claude AI search is available for the user.
+  aiAvailable?: boolean; // This field indicates whether local AI search is available for the user.
 }
 
 export interface UserSettingsApiRequestModel extends UserSettingsApiResponseModel {

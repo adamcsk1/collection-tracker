@@ -23,7 +23,7 @@ import {
   TagSuggestionsApiResponseModel,
   UserSettingsApiResponseModel,
 } from '@shared/models/api-model';
-import { ClaudeQueryRequestModel, ClaudeQueryResponseModel } from '@shared/models/claude-model';
+import { AiQueryRequestModel, AiQueryResponseModel } from '@shared/models/ai-model';
 import { OMDbResponseItemModel, OMDbResponseModel } from '@shared/models/omdb-model';
 import { Observable } from 'rxjs';
 import { BaseApiService } from './base-api-service';
@@ -151,8 +151,8 @@ export class ApiService extends BaseApiService {
     return this.request('GET', `/proxy/omdb/search?s=${queryParams.s}`);
   }
 
-  public getClaudeQueryData(prompt: string): Observable<ClaudeQueryResponseModel> {
-    const body: ClaudeQueryRequestModel = { prompt };
-    return this.request('POST', '/proxy/claude/query', { prompt: body.prompt });
+  public getAiQueryData(prompt: string): Observable<AiQueryResponseModel> {
+    const body: AiQueryRequestModel = { prompt };
+    return this.request('POST', '/proxy/ai/query', { prompt: body.prompt });
   }
 }

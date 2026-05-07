@@ -6,4 +6,4 @@ export const STORAGE_SETTINGS_LOCK = `${STORAGE_PREFIX}SettingLock`;
 export const STORAGE_SENSITIVE_DATA_STORAGE = `${STORAGE_PREFIX}SensitiveDataStorage`;
 export const STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT = `${STORAGE_PREFIX}ClearLocalStorageAfterLogout`;
 export const STORAGE_STATISTICS_SELECTED_TAGS = `${STORAGE_PREFIX}StatisticsSelectedTags`;
-export const STORAGE_USE_CLAUDE_AI = `${STORAGE_PREFIX}UseClaudeAi`;
+export const STORAGE_USE_AI_SEARCH = `${STORAGE_PREFIX}UseAiSearch`;

@@ -230,33 +230,33 @@ describe('ApiService', () => {
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
-      claudeAiAvailable: true,
+      aiAvailable: true,
     });
 
     await expect(promise).resolves.toEqual({
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
-      claudeAiAvailable: true,
+      aiAvailable: true,
     });
   });
 
-  it('posts a prompt to the Claude query endpoint and returns matched IDs', async () => {
-    const promise = lastValueFrom(service.getClaudeQueryData('sci-fi movies'));
+  it('posts a prompt to the AI query endpoint and returns matched IDs', async () => {
+    const promise = lastValueFrom(service.getAiQueryData('sci-fi movies'));
 
-    const claudeRequest = httpMock.expectOne('https://api.test/proxy/claude/query');
-    expect(claudeRequest.request.method).toBe('POST');
-    expect(claudeRequest.request.body).toEqual({ prompt: 'sci-fi movies' });
-    claudeRequest.flush({ matchedIds: ['tt0133093', 'tt0372784'] });
+    const aiRequest = httpMock.expectOne('https://api.test/proxy/ai/query');
+    expect(aiRequest.request.method).toBe('POST');
+    expect(aiRequest.request.body).toEqual({ prompt: 'sci-fi movies' });
+    aiRequest.flush({ matchedIds: ['tt0133093', 'tt0372784'] });
 
     await expect(promise).resolves.toEqual({ matchedIds: ['tt0133093', 'tt0372784'] });
   });
 
-  it('alerts and rethrows when Claude query fails', async () => {
-    const promise = lastValueFrom(service.getClaudeQueryData('sci-fi movies'));
+  it('alerts and rethrows when AI query fails', async () => {
+    const promise = lastValueFrom(service.getAiQueryData('sci-fi movies'));
 
-    const claudeRequest = httpMock.expectOne('https://api.test/proxy/claude/query');
-    claudeRequest.flush('bad', { status: 502, statusText: 'Bad Gateway' });
+    const aiRequest = httpMock.expectOne('https://api.test/proxy/ai/query');
+    aiRequest.flush('bad', { status: 502, statusText: 'Bad Gateway' });
 
     await expect(promise).rejects.toMatchObject({ status: 502 });
     expect(alertSpy).toHaveBeenCalledTimes(1);

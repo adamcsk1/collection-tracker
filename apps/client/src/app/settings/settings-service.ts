@@ -9,7 +9,7 @@ import {
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
-  STORAGE_USE_CLAUDE_AI,
+  STORAGE_USE_AI_SEARCH,
 } from '@shared/constants/storage-const';
 import { UserSettingsApiRequestModel } from '@shared/models/api-model';
 import { LANGUAGES } from '@shared/models/language-model';
@@ -48,8 +48,8 @@ export class SettingsService {
           this.ngxSignalTranslate.setLanguage(language);
         }
 
-        this.mainState.setState('claudeAiAvailable', !!settings.claudeAiAvailable);
-        if (!settings.claudeAiAvailable) this.webstorage.removeItem(STORAGE_USE_CLAUDE_AI);
+        this.mainState.setState('aiAvailable', !!settings.aiAvailable);
+        if (!settings.aiAvailable) this.webstorage.removeItem(STORAGE_USE_AI_SEARCH);
       }),
       map(() => void 0)
     );

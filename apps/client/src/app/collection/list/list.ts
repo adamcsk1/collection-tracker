@@ -22,7 +22,7 @@ import { CollectionItemModel } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
 import { ItemDialog } from '../item-dialog/item-dialog';
 import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
-import { ClaudeSearchService } from '../search/claude-search-service';
+import { AiSearchService } from '../search/ai-search-service';
 import { FloatButtons } from './float-buttons/float-buttons';
 import { COLLECTION_LIST_PAGE_SIZE } from './list-const';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
@@ -42,20 +42,20 @@ export class List {
   private readonly apiState = inject(apiStateToken);
   private readonly portal = inject(PortalService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly claudeSearch = inject(ClaudeSearchService);
+  private readonly aiSearch = inject(AiSearchService);
   private requestVersion = 0;
   private readonly debouncedSearchText = toSignal(
     toObservable(this.collectionState.state.searchText).pipe(debounceTime(100)),
     { initialValue: '' }
   );
-  private readonly claudeAiSendTrigger = computed(() => ({
-    promptText: this.collectionState.state.claudeAiPromptText(),
-    version: this.collectionState.state.claudeAiSendVersion(),
+  private readonly aiSearchSendTrigger = computed(() => ({
+    promptText: this.collectionState.state.aiSearchPromptText(),
+    version: this.collectionState.state.aiSearchSendVersion(),
   }));
-  private readonly claudeAiMatchedIds = toSignal(
-    toObservable(this.claudeAiSendTrigger).pipe(
+  private readonly aiSearchMatchedIds = toSignal(
+    toObservable(this.aiSearchSendTrigger).pipe(
       debounceTime(500),
-      switchMap(({ promptText }) => this.claudeSearch.getMatchedIds(promptText)),
+      switchMap(({ promptText }) => this.aiSearch.getMatchedIds(promptText)),
       startWith(null)
     ),
     { initialValue: null }
@@ -70,9 +70,9 @@ export class List {
   constructor() {
     effect(() => {
       this.debouncedSearchText();
-      this.claudeAiMatchedIds();
-      this.claudeSearch.useClaudeAi();
-      this.collectionState.state.claudeAiPromptText();
+      this.aiSearchMatchedIds();
+      this.aiSearch.useAiSearch();
+      this.collectionState.state.aiSearchPromptText();
       this.mainCollectionState.state.reloadTrigger();
       this.loadItems(true);
     });
@@ -107,8 +107,8 @@ export class List {
     }
   }
 
-  protected onToggleClaudeAi(): void {
-    this.claudeSearch.useClaudeAi.set(!this.claudeSearch.useClaudeAi());
+  protected onToggleAiSearch(): void {
+    this.aiSearch.useAiSearch.set(!this.aiSearch.useAiSearch());
     this.collectionState.setState('searchText', '');
   }
 
@@ -135,6 +135,12 @@ export class List {
     const requestVersion = ++this.requestVersion;
     const offset = reset ? 0 : this.visibleCollection().length;
     const limit = COLLECTION_LIST_PAGE_SIZE;
+    const aiIds = this.aiSearchMatchedIds();
+    const promptText = this.collectionState.state.aiSearchPromptText().trim();
+
+    if (this.aiSearch.useAiSearch() && promptText && aiIds === null) {
+      return;
+    }
 
     if (reset) {
       this.visibleCollection.set([]);
@@ -142,8 +148,10 @@ export class List {
 
     this.apiState.setState('loadNetworkStatus', 'pending');
 
-    const request = this.claudeSearch.useClaudeAi()
-      ? this.loadClaudeItems(offset, limit)
+    const request = this.aiSearch.useAiSearch()
+      ? promptText
+        ? this.api.getMatchedItems({ imdbIds: aiIds as string[], offset, limit })
+        : this.api.searchItems({}, offset, limit)
       : this.api.searchItems(this.buildFilters(), offset, limit);
 
     request
@@ -161,14 +169,6 @@ export class List {
         this.collectionLength.set(response.total);
         this.apiState.setState('loadNetworkStatus', 'finished');
       });
-  }
-
-  private loadClaudeItems(offset: number, limit: number) {
-    const promptText = this.collectionState.state.claudeAiPromptText().trim();
-    const aiIds = this.claudeAiMatchedIds();
-    if (!promptText || aiIds === null) return this.api.searchItems({}, offset, limit);
-
-    return this.api.getMatchedItems({ imdbIds: aiIds, offset, limit });
   }
 
   private buildFilters(): CollectionItemFiltersApiModel {

@@ -2,6 +2,8 @@
 
 Collection Tracker is a self-hosted media catalog application for managing personal movie and series collections. It is built as an Nx monorepo with Angular frontends and an Express backend using SQLite persistence.
 
+AI search is powered by Ollama. Local development expects Ollama on the host at `OLLAMA_BASE_URL` (default `http://127.0.0.1:11434`), while Docker Compose runs a private Ollama service reachable by the app container at `http://ollama:11434`. The model is configured with `OLLAMA_MODEL` and defaults to `qwen2.5:3b`.
+
 ## RTK Commands
 
 When running shell commands, always prefix with `rtk`. This reduces context usage with no behavior change. If `rtk` has no filter for a command, it passes through unchanged.
@@ -119,7 +121,7 @@ Format: `type(scope): short imperative summary`.
 
 Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`, `perf`.
 
-Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`, `tsconfig`, `build`, `claude`, `git`, `vscode`, `hooks`, `i18n`.
+Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, `shared`, `public`, `dev-proxy`, `tsconfig`, `build`, `ai`, `git`, `vscode`, `hooks`, `i18n`.
 
 ## Code Conventions
 

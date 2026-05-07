@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CollectionState, collectionStateToken, initialCollectionState } from './collection-store';
-import { ClaudeSearchService } from './search/claude-search-service';
+import { AiSearchService } from './search/ai-search-service';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -33,9 +33,9 @@ describe('Collection component', () => {
           provideStore(initialCollectionState, collectionStateToken),
           { provide: AutocompleteService, useValue: { search: vi.fn() } },
           {
-            provide: ClaudeSearchService,
+            provide: AiSearchService,
             useFactory: () => ({
-              useClaudeAi: signal(false),
+              useAiSearch: signal(false),
               getMatchedIds: () => of(null),
               searchInProgress: signal(false),
             }),
@@ -87,9 +87,9 @@ describe('Collection component', () => {
           provideStore(initialCollectionState, collectionStateToken),
           { provide: AutocompleteService, useValue: { search: vi.fn() } },
           {
-            provide: ClaudeSearchService,
+            provide: AiSearchService,
             useFactory: () => ({
-              useClaudeAi: signal(false),
+              useAiSearch: signal(false),
               getMatchedIds: () => of(null),
               searchInProgress: signal(false),
             }),

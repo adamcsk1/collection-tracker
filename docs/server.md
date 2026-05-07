@@ -11,14 +11,14 @@ Source: [`apps/server`](../apps/server)
 - tag configuration and user-settings persistence
 - SQLite database initialization and schema migrations
 - OMDb API proxying — forwards search and item lookups to OMDb using the server-side `OMDB_API_KEY` environment variable
-- Claude AI proxying — forwards IMDB-ID-based queries to Claude using the optional `CLAUDE_API_KEY` environment variable; model is configurable via `CLAUDE_MODEL` (defaults to `claude-haiku-4-5-20251001`)
+- AI search proxying — forwards IMDB-ID-based queries to local Ollama using `OLLAMA_BASE_URL`; model is configurable via `OLLAMA_MODEL` (defaults to `qwen2.5:3b`)
 - runtime safeguards such as Helmet, no-cache, CORS validation, request limits, and cookie parsing
 
 ## Runtime Model
 
 - Default data folder: `.data`
 - CLI flags: `--dataFolder=<path>` and `--debug=true|false`
-- Startup expects `.env` in the active data folder and loads it before registering APIs; `OMDB_API_KEY` must be set for the server to start; `CLAUDE_API_KEY` is optional — omitting it does not block startup but disables the Claude proxy endpoint
+- Startup expects `.env` in the active data folder and loads it before registering APIs; `OMDB_API_KEY` must be set for the server to start; AI search uses local Ollama and defaults to `OLLAMA_BASE_URL=http://127.0.0.1:11434 / http://ollama:11434` with `OLLAMA_MODEL=qwen2.5:3b`
 - `RATE_LIMIT` — maximum number of failed requests per 15-minute window per IP. Defaults to `100` when not set. Set a big enough number to avoid rate limiting (used by the E2E test container)
 - `LOG_LEVEL` — controls console log verbosity. Defaults to `info` when not set. Set to `DEBUG` to echo all log levels (info, warning, error, debug) to the console, equivalent to `--debug=true`
 - `nx run server:preserve` creates `.data/.env` from [`apps/server/scripts/.env.dev`](../apps/server/scripts/.env.dev) for local development
