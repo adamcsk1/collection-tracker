@@ -120,6 +120,7 @@ export class ItemDialog implements OnInit {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
           this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId);
+          this.collectionService.triggerReload();
           this.portal.close();
         }
       });
@@ -174,6 +175,7 @@ export class ItemDialog implements OnInit {
         if (confirmed && item) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
           this.collectionService.updateCollectionItem(this.collectionItem().IMDbId, item);
+          this.collectionService.triggerReload();
           this.collectionItem.set(item);
           this.lastSavedItem.set(toCollectionItemChange(item));
           this.posterImageFailed.set(false);

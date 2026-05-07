@@ -65,6 +65,7 @@ describe('ItemDialog', () => {
     collectionService = {
       deleteCollectionItem: vi.fn(),
       updateCollectionItem: vi.fn(),
+      triggerReload: vi.fn(),
     };
     portal = { close: vi.fn() };
     confirm = { open: vi.fn() };
@@ -149,6 +150,7 @@ describe('ItemDialog', () => {
     expect(confirm.open).toHaveBeenCalled();
     expect(api.delete).toHaveBeenCalledWith('tt1234567', 'testhash');
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567');
+    expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(portal.close).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.DeleteItem');
   });
@@ -177,6 +179,7 @@ describe('ItemDialog', () => {
       'testhash'
     );
     expect(collectionService.updateCollectionItem).toHaveBeenCalledWith('tt1234567', expect.any(Object));
+    expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.EditItem');
     expect(component['editMode']()).toBe(false);
   });
