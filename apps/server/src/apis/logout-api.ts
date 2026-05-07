@@ -32,7 +32,11 @@ export const register = (app: FastifyInstance): void => {
       deleteAccessToken(db, request.usernameHash, tokenHash);
       deleteRefreshToken(db, request.usernameHash, refreshTokenHash);
 
-      response.clearCookie(COOKIE_TOKEN).clearCookie(COOKIE_REFRESH_TOKEN).code(204).send();
+      response
+        .clearCookie(COOKIE_TOKEN, { path: '/' })
+        .clearCookie(COOKIE_REFRESH_TOKEN, { path: '/' })
+        .code(204)
+        .send();
     })
   );
 };

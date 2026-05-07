@@ -36,8 +36,8 @@ describe('logout-api', () => {
 
     await handlerPromise();
 
-    expect(response.clearCookie).toHaveBeenCalledWith(COOKIE_TOKEN);
-    expect(response.clearCookie).toHaveBeenCalledWith(COOKIE_REFRESH_TOKEN);
+    expect(response.clearCookie).toHaveBeenCalledWith(COOKIE_TOKEN, { path: '/' });
+    expect(response.clearCookie).toHaveBeenCalledWith(COOKIE_REFRESH_TOKEN, { path: '/' });
     expect(response.code).toHaveBeenCalledWith(204);
   });
 

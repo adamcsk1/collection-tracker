@@ -16,6 +16,7 @@ export const accessCookieConfig = (): FastifyCookieOptions['parseOptions'] => ({
   secure: process.env.NODE_ENV === 'production',
   signed: true,
   sameSite: 'strict',
+  path: '/',
   expires: dayjs().add(accessCookieExpiration.value, accessCookieExpiration.unit).toDate(),
 });
 
@@ -24,5 +25,6 @@ export const refreshCookieConfig = (): FastifyCookieOptions['parseOptions'] => (
   secure: process.env.NODE_ENV === 'production',
   signed: true,
   sameSite: 'strict',
+  path: '/',
   expires: dayjs().add(refreshCookieExpiration.value, refreshCookieExpiration.unit).toDate(),
 });
