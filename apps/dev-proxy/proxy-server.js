@@ -13,80 +13,56 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', true);
 
-const REFRESH_THRESHOLD = 3;
-const REFRESH_WINDOW_MS = 2000;
-const refreshTracker = new Map();
+const httpProxy = (customs = {}) =>
+  createProxyMiddleware({
+    changeOrigin: true,
+    xfwd: true,
+    logLevel: 'warn',
+    cookieDomainRewrite: { '*': '' },
+    onError(err, req, res) {
+      const msg = `[proxy] error for ${req?.method || 'WS'} ${req?.url}: ${err?.message || err}`;
+      console.error(msg);
+      if (res && !res.headersSent && typeof res.status === 'function') {
+        res.status(502).send('Dev proxy error');
+      }
+    },
+    ...customs,
+  });
 
-app.use((req, res, next) => {
-  if (req.method !== 'GET') return next();
-  const acceptsHtml = (req.headers?.accept || '').includes('text/html');
-  if (!acceptsHtml) return next();
+const wsProxy = (customs = {}) =>
+  createProxyMiddleware({
+    changeOrigin: true,
+    ws: true,
+    xfwd: true,
+    logLevel: 'warn',
+    onError(err, req, _res) {
+      console.error(`[proxy] WS error for ${req?.url}: ${err?.message || err}`);
+    },
+    onProxyReqWs(proxyReq, req, _socket, options) {
+      const targetStr = options?.target?.href || String(options?.target) || 'unknown';
+      console.log(`[proxy] WS forwarded: ${req.url} -> ${proxyReq.path} on ${targetStr}`);
+    },
+    ...customs,
+  });
 
-  const path = req.path || req.originalUrl || '/';
-  const ip = req.ip || req.connection?.remoteAddress || 'unknown';
-  const key = `${ip}|${path}`;
-  const now = Date.now();
-  const recent = (refreshTracker.get(key) || []).filter((ts) => now - ts < REFRESH_WINDOW_MS);
-  recent.push(now);
-  refreshTracker.set(key, recent);
-
-  if (recent.length >= REFRESH_THRESHOLD) {
-    refreshTracker.set(key, []);
-    return res.redirect(302, `http://localhost:${PORT}/`);
-  }
-
-  return next();
-});
-
-const commonProxy = (customs = {}) => ({
-  changeOrigin: true,
-  ws: true,
-  xfwd: true,
-  logLevel: 'warn',
-  cookieDomainRewrite: { '*': '' },
-  onError(err, req, res) {
-    console.error(`[proxy] error for ${req?.method} ${req?.url}:`, err?.stack || err);
-    if (!res.headersSent) {
-      res.status(502).send('Dev proxy error');
-    }
+const apiProxy = httpProxy({
+  target: TARGETS.api,
+  onProxyRes(proxyRes) {
+    const setCookie = proxyRes.headers['set-cookie'];
+    if (!setCookie) return;
+    const rewritten = Array.isArray(setCookie) ? setCookie : [setCookie];
+    proxyRes.headers['set-cookie'] = rewritten.map((cookie) => cookie.replace(/;\s*Secure/gi, ''));
   },
-  ...customs,
 });
 
-const apiProxy = createProxyMiddleware(
-  commonProxy({
-    target: TARGETS.api,
-    onProxyRes(proxyRes) {
-      const setCookie = proxyRes.headers['set-cookie'];
-      if (!setCookie) return;
-      const rewritten = Array.isArray(setCookie) ? setCookie : [setCookie];
-      proxyRes.headers['set-cookie'] = rewritten.map((cookie) => cookie.replace(/;\s*Secure/gi, ''));
-    },
-  })
-);
+const loginProxy = httpProxy({ target: TARGETS.login });
+const clientProxy = httpProxy({ target: TARGETS.client });
+const healthProxy = httpProxy({ target: TARGETS.health });
 
-const loginProxy = createProxyMiddleware(
-  commonProxy({
-    target: TARGETS.login,
-    pathRewrite: {
-      '^/login(/|$)': '',
-    },
-  })
-);
-
-const clientProxy = createProxyMiddleware(
-  commonProxy({
-    target: TARGETS.client,
-    pathRewrite: { '^/client': '' },
-  })
-);
-
-const healthProxy = createProxyMiddleware(
-  commonProxy({
-    target: TARGETS.health,
-    pathRewrite: { '^/health': '' },
-  })
-);
+// WS-only proxies to root targets (base path stripped in upgrade handler)
+const loginWsProxy = wsProxy({ target: 'http://localhost:4201' });
+const clientWsProxy = wsProxy({ target: 'http://localhost:4202' });
+const healthWsProxy = wsProxy({ target: 'http://localhost:4203' });
 
 app.use('/api', apiProxy);
 app.use('/login', loginProxy);
@@ -114,18 +90,58 @@ const pickAppFromReferer = (referer = '') => {
   return null;
 };
 
+const tryUpgrade = (proxy, req, socket, head, targetLabel) => {
+  socket.on('error', (err) => {
+    console.error(`[proxy] Socket error for ${req.url}: ${err.message}`);
+  });
+  socket.on('close', (hadError) => {
+    console.log(`[proxy] Socket closed for ${req.url} (hadError=${hadError})`);
+  });
+
+  try {
+    console.log(`[proxy] WS upgrade: ${req.url} -> ${targetLabel}`);
+    proxy.upgrade(req, socket, head);
+  } catch (err) {
+    console.error(`[proxy] WS upgrade failed for ${req.url}:`, err);
+    socket.destroy();
+  }
+};
+
 server.on('upgrade', (req, socket, head) => {
-  const url = req.url || '';
+  const originalUrl = req.url || '';
+  console.log(`[proxy] Raw WS upgrade: ${originalUrl}`);
+
   const fromReferer = pickAppFromReferer(req.headers?.referer);
 
-  if (url.startsWith('/login') || fromReferer === 'login') return loginProxy.upgrade(req, socket, head);
-  if (url.startsWith('/client') || fromReferer === 'client') return clientProxy.upgrade(req, socket, head);
-  if (url.startsWith('/health') || fromReferer === 'health') return healthProxy.upgrade(req, socket, head);
-  if (url.startsWith('/api')) return apiProxy.upgrade(req, socket, head);
-
-  if (url.includes('ng-cli-ws') || url.startsWith('/ng-cli-ws')) {
-    if (fromReferer === 'login') return loginProxy.upgrade(req, socket, head);
-    if (fromReferer === 'health') return healthProxy.upgrade(req, socket, head);
-    return clientProxy.upgrade(req, socket, head);
+  if (originalUrl.startsWith('/login') || fromReferer === 'login') {
+    req.url = originalUrl.replace(/^\/login(\/|$)/, '/');
+    return tryUpgrade(loginWsProxy, req, socket, head, 'ws://localhost:4201');
   }
+  if (originalUrl.startsWith('/client') || fromReferer === 'client') {
+    req.url = originalUrl.replace(/^\/client(\/|$)/, '/');
+    return tryUpgrade(clientWsProxy, req, socket, head, 'ws://localhost:4202');
+  }
+  if (originalUrl.startsWith('/health') || fromReferer === 'health') {
+    req.url = originalUrl.replace(/^\/health(\/|$)/, '/');
+    return tryUpgrade(healthWsProxy, req, socket, head, 'ws://localhost:4203');
+  }
+  if (originalUrl.startsWith('/api')) {
+    return tryUpgrade(apiProxy, req, socket, head, 'ws://localhost:3000');
+  }
+
+  if (originalUrl.includes('ng-cli-ws') || originalUrl.startsWith('/ng-cli-ws')) {
+    if (fromReferer === 'login') {
+      req.url = originalUrl.replace(/^\/login(\/|$)/, '/');
+      return tryUpgrade(loginWsProxy, req, socket, head, 'ws://localhost:4201');
+    }
+    if (fromReferer === 'health') {
+      req.url = originalUrl.replace(/^\/health(\/|$)/, '/');
+      return tryUpgrade(healthWsProxy, req, socket, head, 'ws://localhost:4203');
+    }
+    req.url = originalUrl.replace(/^\/client(\/|$)/, '/');
+    return tryUpgrade(clientWsProxy, req, socket, head, 'ws://localhost:4202');
+  }
+
+  console.log(`[proxy] Unhandled WS upgrade: ${originalUrl}`);
+  socket.destroy();
 });
