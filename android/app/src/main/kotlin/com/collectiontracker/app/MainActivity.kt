@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.net.http.SslError
 import android.webkit.CookieManager
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -12,6 +13,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebStorage
 import android.webkit.JavascriptInterface
+import android.webkit.SslErrorHandler
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.JsResult
@@ -19,6 +21,7 @@ import android.webkit.WebChromeClient
 import android.app.AlertDialog
 import android.graphics.Color
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -36,11 +39,13 @@ import com.google.android.material.color.MaterialColors
 private const val PREFS_NAME = "collection_tracker_prefs"
 private const val PREF_PAGE_URL = "page_url"
 private const val PREF_API_URL = "api_url"
+private const val PREF_TRUST_UNTRUSTED_CERTIFICATES = "trust_untrusted_certificates"
 private const val PREFS_API_URL = "CT.ApiUrl"
 
 class MainActivity : AppCompatActivity() {
   private lateinit var pageInput: EditText
   private lateinit var apiInput: EditText
+  private lateinit var trustUntrustedCertificatesInput: CheckBox
   private lateinit var openButton: Button
   private lateinit var editButton: Button
   private lateinit var retryButton: Button
@@ -58,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
     pageInput = findViewById(R.id.pageUrlInput)
     apiInput = findViewById(R.id.apiUrlInput)
+    trustUntrustedCertificatesInput = findViewById(R.id.trustUntrustedCertificatesInput)
     openButton = findViewById(R.id.openButton)
     editButton = findViewById(R.id.editButton)
     retryButton = findViewById(R.id.retryButton)
@@ -68,6 +74,7 @@ class MainActivity : AppCompatActivity() {
     val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
     pageInput.setText(prefs.getString(PREF_PAGE_URL, ""))
     apiInput.setText(prefs.getString(PREF_API_URL, ""))
+    trustUntrustedCertificatesInput.isChecked = prefs.getBoolean(PREF_TRUST_UNTRUSTED_CERTIFICATES, false)
     updateApiFromPageUrl()
 
     setupWebView()
@@ -144,7 +151,11 @@ class MainActivity : AppCompatActivity() {
 
     if (save) {
       val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-      prefs.edit {putString(PREF_PAGE_URL, page).putString(PREF_API_URL, api) }
+      prefs.edit {
+        putString(PREF_PAGE_URL, page)
+        putString(PREF_API_URL, api)
+        putBoolean(PREF_TRUST_UNTRUSTED_CERTIFICATES, trustUntrustedCertificatesInput.isChecked)
+      }
     }
 
     pageUrl = page
@@ -153,7 +164,7 @@ class MainActivity : AppCompatActivity() {
     launchWebView()
   }
 
-  @SuppressLint("SetJavaScriptEnabled")
+  @SuppressLint("SetJavaScriptEnabled", "WebViewClientOnReceivedSslError")
   private fun setupWebView() {
     webView.settings.apply {
       javaScriptEnabled = true
@@ -252,6 +263,15 @@ class MainActivity : AppCompatActivity() {
           showError()
         }
       }
+
+      override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+        if (trustUntrustedCertificatesInput.isChecked) {
+          handler?.proceed()
+        } else {
+          handler?.cancel()
+          showError()
+        }
+      }
     }
 
     webView.addJavascriptInterface(ConfigBridge(), "CollectionTrackerInterface")
@@ -286,12 +306,14 @@ class MainActivity : AppCompatActivity() {
           document.getElementById("collection-tracker-root") ||
           document.querySelector("[data-collection-tracker]") ||
           document.querySelector("ct-root") ||
+          document.querySelector("lo-root") ||
+          document.querySelector("he-root") ||
           document.querySelector("app-root")
         );
         const bodyText = (document.body ? document.body.innerText || "" : "").toLowerCase();
         const hasTrackerText = /collection tracker/i.test(bodyText) || /collection tracker/i.test(title);
         const path = window.location.pathname || "";
-        const hasTrackerRoute = /(^|\/)(collection|client)(\/|$)/i.test(path);
+        const hasTrackerRoute = /(^|\/)(collection|client|login|health)(\/|$)/i.test(path);
         return hasKnownRoot || hasTrackerText || hasTrackerRoute;
       })();
     """.trimIndent()
@@ -344,12 +366,14 @@ class MainActivity : AppCompatActivity() {
     prefs.edit {
       remove(PREF_PAGE_URL)
       remove(PREF_API_URL)
+      remove(PREF_TRUST_UNTRUSTED_CERTIFICATES)
     }
 
     pageUrl = ""
     apiUrl = ""
     pageInput.setText("")
     apiInput.setText("")
+    trustUntrustedCertificatesInput.isChecked = false
 
     clearWebViewStoredData()
     showConfig()
@@ -455,7 +479,7 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun showJsDialog(message: String?, result: JsResult, isConfirm: Boolean) {
-    val accentColor = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSecondary, Color.BLACK)
+    val accentColor = MaterialColors.getColor(this, android.R.attr.colorSecondary, Color.BLACK)
     val dialog = AlertDialog.Builder(this)
       .setMessage(message.orEmpty())
       .setOnCancelListener { result.cancel() }

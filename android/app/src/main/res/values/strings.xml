@@ -5,6 +5,8 @@
   <string name="api_url_label">API URL</string>
   <string name="page_url_hint">https://your-domain/client/</string>
   <string name="api_url_hint">https://your-domain/api/</string>
+  <string name="trust_untrusted_certificates">Trust invalid HTTPS certificates</string>
+  <string name="trust_untrusted_certificates_warning">Only enable this for private servers you control.</string>
   <string name="open">Open</string>
   <string name="error_title">Unable to load page</string>
   <string name="error_message">The page URL is not reachable right now.</string>
