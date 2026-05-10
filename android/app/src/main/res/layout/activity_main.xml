@@ -74,6 +74,23 @@
         android:background="@drawable/input_field_background"
         android:textSize="16sp" />
 
+      <CheckBox
+        android:id="@+id/trustUntrustedCertificatesInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:buttonTint="@color/secondary"
+        android:text="@string/trust_untrusted_certificates"
+        android:textColor="@color/primary" />
+
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/trust_untrusted_certificates_warning"
+        android:textColor="@color/hint"
+        android:textSize="13sp" />
+
       <Button
         android:id="@+id/openButton"
         android:layout_width="match_parent"
@@ -125,6 +142,8 @@
       android:layout_height="wrap_content"
       android:layout_marginTop="20dp"
       android:background="@drawable/button_with_border"
+      android:backgroundTint="@null"
+      app:backgroundTint="@null"
       android:textColor="@color/secondary"
       android:text="@string/retry" />
 
@@ -134,6 +153,8 @@
       android:layout_height="wrap_content"
       android:layout_marginTop="12dp"
       android:background="@drawable/button_with_border"
+      android:backgroundTint="@null"
+      app:backgroundTint="@null"
       android:textColor="@color/secondary"
       android:text="@string/edit_settings" />
   </LinearLayout>

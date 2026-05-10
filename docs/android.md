@@ -7,6 +7,7 @@ The Android project is a thin WebView wrapper around a deployed Collection Track
 ## Behavior
 
 - Prompts for the page URL and API URL on first run.
+- Can optionally trust invalid HTTPS certificates for private self-hosted instances.
 - Stores both values locally on the device.
 - Injects runtime config into the loaded page as `window.COLLECTION_TRACKER_CONFIG` and `localStorage.CT.ApiUrl`.
 - Displays a native error screen when the page cannot be loaded or the device is offline.
