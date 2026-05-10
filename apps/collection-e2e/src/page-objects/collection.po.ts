@@ -41,4 +41,10 @@ export const CollectionPage = {
   getItemDialogDeleteButton: () => cy.getByTestId('item-dialog-delete'),
   getItemDialogMarkWatchedButton: () => cy.getByTestId('item-dialog-mark-watched'),
   getItemDialogMarkUnwatchedButton: () => cy.getByTestId('item-dialog-mark-unwatched'),
+  getItemDialogTitleInput: () => cy.getByTestId('item-dialog-title'),
+  getItemDialogYearInput: () => cy.getByTestId('item-dialog-year'),
+  getItemDialogGenreInput: () => cy.getByTestId('item-dialog-genre').find('input'),
+  getItemDialogTagsInput: () => cy.getByTestId('item-dialog-tags').find('input'),
+  getItemDialogActorsInput: () => cy.getByTestId('item-dialog-actors'),
+  getItemDialogPlotInput: () => cy.getByTestId('item-dialog-plot'),
 };
