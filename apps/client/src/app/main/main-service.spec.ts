@@ -70,7 +70,7 @@ describe('MainService', () => {
     expect(setPermissionsSpy).toHaveBeenCalled();
   });
 
-  it('ignores invalid union values from storage', () => {
+  it('ignores invalid union values from storage and applies default permissions', () => {
     webstorage.getItem.mockImplementation((key: string) => {
       switch (key) {
         case STORAGE_APP_MODE:
@@ -87,7 +87,8 @@ describe('MainService', () => {
 
     expect(mainState.state.appMode()).toBe(initialMainState.appMode);
     expect(mainState.state.sensitiveDataStorage()).toBe(initialMainState.sensitiveDataStorage);
-    expect(setPermissionsSpy).not.toHaveBeenCalled();
+    expect(mainState.state.permissions()).toEqual({ create: true, update: true, delete: true });
+    expect(setPermissionsSpy).toHaveBeenCalled();
   });
 
   it('sets permissions based on app mode', () => {
