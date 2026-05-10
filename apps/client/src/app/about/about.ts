@@ -7,6 +7,7 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ThemeService } from '@services/theme/theme-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_SETTINGS_LOCK } from '@shared/constants/storage-const';
+import { getBasePath } from '@shared/utils/get-base-path-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { BehaviorSubject, debounceTime, filter, tap } from 'rxjs';
 
@@ -32,6 +33,7 @@ export class About {
   protected readonly build = BUILD;
   protected readonly buildDate = BUILD_DATE;
   protected readonly appVersion = APP_VERSION;
+  protected readonly basePath = getBasePath();
 
   constructor() {
     if (this.mainState.state.settingsLock()) {

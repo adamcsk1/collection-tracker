@@ -8,7 +8,8 @@ import { PublicApiService } from '@services/api/public-api-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { API_PREFIX } from '@shared/constants/api-const';
+import { getApiPrefix } from '@shared/utils/get-api-prefix-util';
+import { getBasePath } from '@shared/utils/get-base-path-util';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
@@ -40,7 +41,7 @@ export class Main implements AfterViewInit {
     let apiUrl = this.webstorage.getItem(STORAGE_API_URL);
 
     if (!apiUrl) {
-      apiUrl = `${window.location.origin}${API_PREFIX}`;
+      apiUrl = `${window.location.origin}${getApiPrefix()}`;
       this.webstorage.setItem(STORAGE_API_URL, apiUrl);
     }
     this.apiState.setState('apiUrl', apiUrl);
@@ -55,6 +56,6 @@ export class Main implements AfterViewInit {
           return EMPTY;
         })
       )
-      .subscribe(() => (window.location.href = '/client/'));
+      .subscribe(() => (window.location.href = `${getBasePath()}/client/`));
   }
 }

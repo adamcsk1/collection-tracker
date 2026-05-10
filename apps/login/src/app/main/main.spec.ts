@@ -11,11 +11,11 @@ import { PublicApiService } from '@services/api/public-api-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, ThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { API_PREFIX } from '@shared/constants/api-const';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
+import { getApiPrefix } from '@shared/utils/get-api-prefix-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { EMPTY, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Main } from './main';
 
@@ -63,7 +63,7 @@ describe('Main component', () => {
   });
 
   it('bootstraps language, theme, blocker state, and API URL defaults', () => {
-    const expectedApiUrl = `${window.location.origin}${API_PREFIX}`;
+    const expectedApiUrl = `${window.location.origin}${getApiPrefix()}`;
 
     expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('en');
     expect(blockerState.state.show()).toBe(true);
@@ -96,5 +96,20 @@ describe('Main component', () => {
     fixture.componentInstance.ngAfterViewInit();
 
     expect(blockerState.state.show()).toBe(false);
+  });
+
+  it('redirects to client app with base path after successful validation', () => {
+    apiService.validateSession.mockReturnValue(of(void 0));
+    const originalLocation = window.location;
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: { ...originalLocation, href: '' },
+    });
+
+    fixture.componentInstance.ngAfterViewInit();
+
+    expect(window.location.href).toContain('/client/');
+
+    Object.defineProperty(window, 'location', { writable: true, value: originalLocation });
   });
 });

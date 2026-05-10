@@ -1,13 +1,11 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { redirectToLogin } from '@shared/utils/redirect-to-login-util';
 import { catchError, EMPTY, switchMap } from 'rxjs';
 import { RefreshTokenService } from './refresh-token-service';
 
 export const refreshTokenInterceptor: HttpInterceptorFn = (req, next) => {
   const refreshService = inject(RefreshTokenService);
-  const router = inject(Router);
   return next(req).pipe(
     catchError((error) => {
       const isAuthRequest =
