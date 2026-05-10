@@ -408,7 +408,7 @@ export const getCollectionStatistics = (
   };
 };
 
-export const findCollectionItemsForPrompt = (db: Database.Database, usernameHash: string): string[] => {
+export const findCollectionItemsForPrompt = (db: Database.Database, usernameHash: string): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
       `SELECT *
@@ -418,15 +418,10 @@ export const findCollectionItemsForPrompt = (db: Database.Database, usernameHash
     )
     .all(usernameHash) as CollectionItemRow[];
 
-  return rows.reduce<string[]>((items, row) => {
+  return rows.reduce<CollectionItemApiModel[]>((items, row) => {
     if (!row.imdb_id) return items;
-
     const apiItem = toApiItem(db, row);
-
-    items.push(
-      `IMDbId: ${apiItem.IMDbId}\nTitle: ${apiItem.title}\nYear: ${apiItem.year}\nRate: ${apiItem.rate}\nGenre: ${apiItem.genre}\nTags: ${apiItem.tags}\nActors: ${apiItem.actors}\nPlot: ${apiItem.plot}\n\n----\n`
-    );
-
+    items.push(apiItem);
     return items;
   }, []);
 };
