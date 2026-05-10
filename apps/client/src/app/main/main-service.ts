@@ -35,15 +35,12 @@ export class MainService {
     const clearLocalStorageAfterLogout = this.webstorage.getItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT) === 'true';
 
     if (apiUrl) this.apiState.setState('apiUrl', apiUrl);
-    if (appMode) {
-      this.mainState.setState('appMode', appMode);
-      this.setPermissions();
-    }
-    if (sensitiveDataStorage) this.mainState.setState('sensitiveDataStorage', sensitiveDataStorage);
     if (appMode) this.mainState.setState('appMode', appMode);
+    if (sensitiveDataStorage) this.mainState.setState('sensitiveDataStorage', sensitiveDataStorage);
 
     this.mainState.setState('settingsLock', settingsLock);
     this.mainState.setState('clearLocalStorageAfterLogout', clearLocalStorageAfterLogout);
+    this.setPermissions();
   }
 
   public setPermissions(): void {
