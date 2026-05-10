@@ -7,6 +7,7 @@ import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { getBasePath } from '@shared/utils/get-base-path-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { delay, tap } from 'rxjs';
 
@@ -60,7 +61,7 @@ export class AccountActions {
             delay(2000),
             takeUntilDestroyed(this.destroyRef)
           )
-          .subscribe(() => (window.location.href = '/login/'));
+          .subscribe(() => (window.location.href = `${getBasePath()}/login/`));
       });
   }
 }
