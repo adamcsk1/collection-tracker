@@ -51,6 +51,7 @@ describe('ItemDialog', () => {
   let collectionService: {
     deleteCollectionItem: ReturnType<typeof vi.fn>;
     updateCollectionItem: ReturnType<typeof vi.fn>;
+    triggerReload: ReturnType<typeof vi.fn>;
   };
   let portal: { close: ReturnType<typeof vi.fn> };
   let confirm: { open: ReturnType<typeof vi.fn> };

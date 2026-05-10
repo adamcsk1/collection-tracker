@@ -19,7 +19,7 @@ describe('Item dialog — edit flow', () => {
     CollectionPage.getItemDialogEditButton().click();
 
     // Change the title
-    cy.getByTestId('item-dialog-title').clear().type('Updated Title');
+    CollectionPage.getItemDialogTitleInput().clear().type('Updated Title');
 
     // Save changes
     CollectionPage.getItemDialogSaveButton().click();
@@ -27,7 +27,7 @@ describe('Item dialog — edit flow', () => {
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
 
     // Verify the dialog shows the updated title in read-only mode
-    cy.getByTestId('item-dialog-title').should('not.exist');
+    CollectionPage.getItemDialogTitleInput().should('not.exist');
     cy.contains('Updated Title').should('be.visible');
 
     // Close dialog and verify list shows updated title
@@ -42,15 +42,20 @@ describe('Item dialog — edit flow', () => {
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogEditButton().click();
 
-    cy.getByTestId('item-dialog-year').clear().type('2025');
-    cy.getByTestId('item-dialog-actors').clear().type('New Actor One, New Actor Two');
-    cy.getByTestId('item-dialog-plot').clear().type('An updated plot for testing.');
+    CollectionPage.getItemDialogYearInput().clear().type('2025');
+    CollectionPage.getItemDialogGenreInput().clear().type('Drama, Comedy');
+    CollectionPage.getItemDialogTagsInput().clear().type('#movie #updated');
+    CollectionPage.getItemDialogActorsInput().clear().type('New Actor One, New Actor Two');
+    CollectionPage.getItemDialogPlotInput().clear().type('An updated plot for testing.');
 
     CollectionPage.getItemDialogSaveButton().click();
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
 
     // Verify persisted values in read-only mode
     cy.contains('2025').should('be.visible');
+    cy.contains('Drama').should('be.visible');
+    cy.contains('Comedy').should('be.visible');
+    cy.contains('#updated').should('be.visible');
     cy.contains('New Actor One, New Actor Two').should('be.visible');
     cy.contains('An updated plot for testing.').should('be.visible');
   });
@@ -61,7 +66,7 @@ describe('Item dialog — edit flow', () => {
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogEditButton().click();
 
-    cy.getByTestId('item-dialog-title').clear().type('Discarded Title');
+    CollectionPage.getItemDialogTitleInput().clear().type('Discarded Title');
 
     // Click read-only to discard
     cy.getByTestId('item-dialog-read-only').click();

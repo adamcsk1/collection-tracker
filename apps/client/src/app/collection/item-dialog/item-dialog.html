@@ -53,14 +53,15 @@
           }
         </label>
         <libc-autocomplete
-          data-test-id="item-dialog-tags"
-          [label]="('Tags' | signalTranslate)()"
-          [hint]="('Hint.SeparateTags' | signalTranslate)()"
-          [value]="tagsText()"
-          [autocompleteService]="tagSuggestionService"
-          (valueChange)="updateTags($any($event))"
+          data-test-id="item-dialog-genre"
+          [label]="('Genre' | signalTranslate)()"
+          [hint]="('Hint.SeparateGenres' | signalTranslate)()"
+          [value]="genreText()"
+          [autocompleteService]="genreSuggestionService"
+          (valueChange)="updateGenre($any($event))"
         />
         <libc-autocomplete
+          data-test-id="item-dialog-tags"
           [label]="('Tags' | signalTranslate)()"
           [hint]="('Hint.SeparateTags' | signalTranslate)()"
           [value]="tagsText()"
