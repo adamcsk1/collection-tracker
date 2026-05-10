@@ -2,6 +2,7 @@ const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const PORT = 4200;
+const API_PROXY_TIMEOUT_MS = 300000;
 const TARGETS = {
   api: 'http://localhost:3000/api',
   login: 'http://localhost:4201/login',
@@ -47,6 +48,8 @@ const wsProxy = (customs = {}) =>
 
 const apiProxy = httpProxy({
   target: TARGETS.api,
+  timeout: API_PROXY_TIMEOUT_MS,
+  proxyTimeout: API_PROXY_TIMEOUT_MS,
   onProxyRes(proxyRes) {
     const setCookie = proxyRes.headers['set-cookie'];
     if (!setCookie) return;

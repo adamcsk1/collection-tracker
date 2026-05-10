@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains the maintained project documentation. The root [`README.md`](../README.md) is the entry point; the pages below cover the individual applications, libraries, API surface, and delivery assets.
+This directory contains the maintained project documentation. The root [`README.md`](../README.md) is the entry point; the pages below cover the individual applications, libraries, API surface, delivery assets, and runtime deployment variables.
 
 ## Applications
 

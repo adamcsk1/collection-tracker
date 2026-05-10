@@ -9,8 +9,7 @@ The Docker image serves the built Angular applications with Nginx and runs the b
 - The client application is served from `/client/`.
 - The health application is served from `/health/`.
 - `/api/` is proxied to the Node server on `127.0.0.1:3000`.
-- `/data` is the writable volume for `.env`, the SQLite database, logs, and image cache files.
-- In Docker Compose, Ollama runs as a private service on the internal Compose network and is not published to the host.
+- `/data` is the writable volume for `.env`, `ollama.config.json`, the SQLite database, logs, and image cache files.
 
 ## Build Prerequisites
 
@@ -31,15 +30,41 @@ docker run --rm -p 3001:3001 -v ${PWD}/.data:/data collection-tracker
 
 > The server requires `OMDB_API_KEY` in `/data/.env`. If you mount an existing `.data` folder with a configured `.env`, the container uses it. Otherwise, the startup script creates a minimal default `/data/.env` with an empty `OMDB_API_KEY=` placeholder; you must set the key before OMDb proxying will work.
 
-AI search uses Ollama. For local development, install Ollama on the host and run:
+AI search uses Ollama. Install Ollama on the host and run:
 
 ```bash
 ollama pull qwen2.5:3b
 ```
 
-For Docker Compose, the included `ollama` service is private to Compose. An `ollama-pull` init container automatically pulls the configured model before the app starts.
+Docker Compose does not start an Ollama service. AI search reads `/data/ollama.config.json`, which is created with these defaults when missing:
 
-Set `OLLAMA_MODEL` in a `.env` file (or your shell) to override the default (`qwen2.5:3b`). The app connects to `http://ollama:11434` through the private Compose network.
+```json
+{
+  "host": "http://host.docker.internal:11434",
+  "model": "qwen2.5:3b",
+  "options": {
+    "temperature": 0,
+    "top_k": 10,
+    "num_thread": 1
+  },
+  "batchSize": 10,
+  "parallelRequests": 1
+}
+```
+
+Add root-level `keep_alive` to pass an Ollama keep-alive value with generate requests. When omitted, the API does not send `keep_alive`.
+
+Configured `options` are merged over the server `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 4 }`, so omitted option fields keep their deterministic defaults.
+
+The Docker default uses `host.docker.internal` so the container can reach Ollama running on the Docker host. Docker Compose maps that name to the host gateway for Linux hosts.
+
+## Environment Variables
+
+| Variable           | Default                  | Description                                                                                                     |
+| ------------------ | ------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `BASE_PATH`        | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.     |
+| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path. |
+| `APP_PORT`         | `3001`                   | Host port mapped to the container's nginx listener.                                                             |
 
 ## Docker Compose (Recommended for VPS)
 
@@ -54,7 +79,7 @@ This will:
 - Build the image if it doesn't exist (or run `docker compose up -d --build` to force a rebuild)
 - Map host port `3001` (override with `APP_PORT` env var, e.g. `APP_PORT=8080 docker compose up -d`)
 - Mount `./.data` on the host to `/data` in the container
-- Start a private Ollama service with a persistent model volume
+- Configure AI search with `./.data/ollama.config.json`
 - Automatically restart the container unless you stop it manually
 
 To stop:

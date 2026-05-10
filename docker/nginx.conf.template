@@ -38,51 +38,62 @@ http {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Redirect root to /login/
+    # Redirect root to login
     location = / {
-      return 302 /login/;
+      return 302 ${BASE_PATH}/login/;
     }
 
-    # Normalize path without trailing slash
-    location = /client { return 301 /client/; }
-    location = /health { return 301 /health/; }
-    location = /login  { return 301 /login/; }
+    # SUBPATH_ROOT
 
-    # Client app under /client/
-    location /client/ {
+    # Normalize path without trailing slash
+    location = ${BASE_PATH}/client { return 301 ${BASE_PATH}/client/; }
+    location = ${BASE_PATH}/health { return 301 ${BASE_PATH}/health/; }
+    location = ${BASE_PATH}/login  { return 301 ${BASE_PATH}/login/; }
+
+    # Client app under /client/ (or ${BASE_PATH}/client/)
+    location ${BASE_PATH}/client/ {
+      rewrite ^${BASE_PATH}/client/(.*)$ /client/$1 break;
       # Try static file first, else fallback to SPA index
       try_files $uri $uri/ /client/index.html;
       # Adjust base href for subpath hosting if needed
-      sub_filter '<base href="/">' '<base href="/client/">';
+      sub_filter '<base href="/">' '<base href="${BASE_PATH}/client/">';
+      sub_filter '<base href="/" />' '<base href="${BASE_PATH}/client/" />';
       sub_filter_once off;
       sub_filter_types text/html;
     }
 
-    # Health app under /health/
-    location /health/ {
+    # Health app under /health/ (or ${BASE_PATH}/health/)
+    location ${BASE_PATH}/health/ {
+      rewrite ^${BASE_PATH}/health/(.*)$ /health/$1 break;
       try_files $uri $uri/ /health/index.html;
-      sub_filter '<base href="/">' '<base href="/health/">';
+      sub_filter '<base href="/">' '<base href="${BASE_PATH}/health/">';
+      sub_filter '<base href="/" />' '<base href="${BASE_PATH}/health/" />';
       sub_filter_once off;
       sub_filter_types text/html;
     }
 
-    # Login app under /login/
-    location /login/ {
+    # Login app under /login/ (or ${BASE_PATH}/login/)
+    location ${BASE_PATH}/login/ {
+      rewrite ^${BASE_PATH}/login/(.*)$ /login/$1 break;
       # Try static file first, else fallback to SPA index
       try_files $uri $uri/ /login/index.html;
       # Adjust base href for subpath hosting if needed
-      sub_filter '<base href="/">' '<base href="/login/">';
+      sub_filter '<base href="/">' '<base href="${BASE_PATH}/login/">';
+      sub_filter '<base href="/" />' '<base href="${BASE_PATH}/login/" />';
       sub_filter_once off;
       sub_filter_types text/html;
     }
 
     # Proxy API to Node server
-    location /api/ {
+    location ~ ^/(?:[^/]+/)?api/(.*)$ {
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto $scheme;
-      proxy_pass http://127.0.0.1:3000;
+      proxy_connect_timeout 60s;
+      proxy_send_timeout 300s;
+      proxy_read_timeout 300s;
+      proxy_pass http://127.0.0.1:3000/api/$1$is_args$args;
     }
 
     # Optional: serve gz/brotli if present

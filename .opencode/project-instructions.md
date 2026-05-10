@@ -2,7 +2,15 @@
 
 Collection Tracker is a self-hosted media catalog application for managing personal movie and series collections. It is built as an Nx monorepo with Angular frontends and an Express backend using SQLite persistence.
 
-AI search is powered by Ollama. Local development expects Ollama on the host at `OLLAMA_BASE_URL` (default `http://127.0.0.1:11434`), while Docker Compose runs a private Ollama service reachable by the app container at `http://ollama:11434`. The model is configured with `OLLAMA_MODEL` and defaults to `qwen2.5:3b`.
+AI search is powered by Ollama. Local development and Docker Compose read Ollama settings from `ollama.config.json` in the active data folder. Docker Compose does not run Ollama. The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:3b`, `batchSize: 10`, and `parallelRequests: 1`. Configured generate `options` are merged over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 4 }`. Optional root-level `keep_alive` is passed to Ollama generate requests only when present in the config file.
+
+## Docker Deployment Environment Variables
+
+| Variable           | Default                  | Description                                                                                                     |
+| ------------------ | ------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `BASE_PATH`        | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.     |
+| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path. |
+| `APP_PORT`         | `3001`                   | Host port mapped to the container's nginx listener.                                                             |
 
 ## RTK Commands
 
@@ -21,23 +29,23 @@ In command chains, prefix each segment: `rtk git add . && rtk git commit -m "msg
 
 ## Apps
 
-| App | Purpose |
-| --- | --- |
-| `apps/client` | Main collection management UI |
-| `apps/health` | Server health status dashboard |
-| `apps/login` | Authentication UI (sign-in / sign-up) |
-| `apps/server` | Express REST API |
-| `apps/dev-proxy` | Local dev gateway serving everything through `localhost:4200` |
-| `apps/collection-e2e` | Cypress E2E tests |
+| App                   | Purpose                                                       |
+| --------------------- | ------------------------------------------------------------- |
+| `apps/client`         | Main collection management UI                                 |
+| `apps/health`         | Server health status dashboard                                |
+| `apps/login`          | Authentication UI (sign-in / sign-up)                         |
+| `apps/server`         | Express REST API                                              |
+| `apps/dev-proxy`      | Local dev gateway serving everything through `localhost:4200` |
+| `apps/collection-e2e` | Cypress E2E tests                                             |
 
 ## Shared Libraries
 
-| Library | Purpose |
-| --- | --- |
-| `libs/components` | Standalone Angular UI components |
-| `libs/services` | Angular services and signal stores |
-| `libs/shared` | Models, constants, styles, animations, utilities |
-| `libs/public` | Static assets and PWA metadata |
+| Library           | Purpose                                          |
+| ----------------- | ------------------------------------------------ |
+| `libs/components` | Standalone Angular UI components                 |
+| `libs/services`   | Angular services and signal stores               |
+| `libs/shared`     | Models, constants, styles, animations, utilities |
+| `libs/public`     | Static assets and PWA metadata                   |
 
 ## TypeScript Path Aliases
 

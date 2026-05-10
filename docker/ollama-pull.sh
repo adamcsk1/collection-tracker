@@ -2,7 +2,6 @@
 set -e
 
 MODEL="${OLLAMA_MODEL:-qwen2.5:3b}"
-OLLAMA_HOST="${OLLAMA_HOST:-http://ollama:11434}"
 
 echo "Pulling Ollama model: $MODEL ..."
 

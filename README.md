@@ -67,7 +67,15 @@ npm run format:check
 
 ## Environment
 
-The server reads runtime configuration from `.data/.env` by default. `npm start` runs `server:preserve`, which creates that file from [apps/server/scripts/.env.dev](./apps/server/scripts/.env.dev) when it is missing.
+The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. `npm start` runs `server:preserve`, which creates both files from [apps/server/scripts](./apps/server/scripts) when they are missing.
+
+Docker deployments also support these container-level variables:
+
+| Variable           | Default                  | Description                                                         |
+| ------------------ | ------------------------ | ------------------------------------------------------------------- |
+| `BASE_PATH`        | _(empty)_                | URL subpath prefix, such as `/collection-tracker`.                  |
+| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL used by the server health endpoint to check the nginx frontend. |
+| `APP_PORT`         | `3001`                   | Host port mapped to the container nginx listener.                   |
 
 Minimal runtime example:
 
@@ -78,8 +86,29 @@ SALT="your_salt"
 USER_LIMIT=1
 DISABLE_REGISTRATION=0
 OMDB_API_KEY="your_omdb_api_key"
-OLLAMA_MODEL="qwen2.5:3b"
 ```
+
+Ollama config example (`.data/ollama.config.json`):
+
+```json
+{
+  "host": "http://127.0.0.1:11434",
+  "model": "qwen2.5:3b",
+  "keep_alive": "10m",
+  "options": {
+    "temperature": 0,
+    "top_k": 10,
+    "num_thread": 1
+  },
+  "batchSize": 10,
+  "parallelRequests": 1
+}
+```
+
+`batchSize` controls how many collection items are sent to Ollama per query. When omitted, the entire collection is sent in a single unbatched request.
+`parallelRequests` controls how many Ollama batch requests may run at once. When omitted or invalid, it defaults to `1`.
+`keep_alive` is passed to Ollama generate requests when present. When omitted, the API does not send `keep_alive`.
+Configured `options` are merged over the server `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 4 }`, so omitted option fields keep their deterministic defaults.
 
 Full runtime example:
 
@@ -92,8 +121,6 @@ SALT="your_salt"
 USER_LIMIT=2
 DISABLE_REGISTRATION=0
 OMDB_API_KEY="your_omdb_api_key"
-OLLAMA_BASE_URL="http://ollama:11434"
-OLLAMA_MODEL="qwen2.5:3b"
 CORS_ORIGIN="*"
 CACHE_MAX=200
 RATE_LIMIT=100

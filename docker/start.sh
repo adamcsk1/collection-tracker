@@ -1,6 +1,47 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Configurable base path for subpath deployments (e.g. /collection-tracker)
+BASE_PATH=${BASE_PATH:-}
+if [ -n "$BASE_PATH" ]; then
+  BASE_PATH="/${BASE_PATH#/}"
+  BASE_PATH="${BASE_PATH%/}"
+fi
+BASE_PATH_REPLACEMENT=$(printf '%s' "$BASE_PATH" | sed 's/[&|]/\\&/g')
+
+# Generate nginx config from template
+NGINX_TEMPLATE=/etc/nginx/nginx.conf.template
+NGINX_CONF=/etc/nginx/nginx.conf
+
+if [ -f "$NGINX_TEMPLATE" ]; then
+  cp "$NGINX_TEMPLATE" "$NGINX_CONF"
+  sed -i "s|\${BASE_PATH}|${BASE_PATH_REPLACEMENT}|g" "$NGINX_CONF"
+
+  if [ -n "$BASE_PATH" ]; then
+    # Add exact-match redirects for subpath root (e.g. /collection-tracker -> /collection-tracker/login/)
+    sed -i "/# SUBPATH_ROOT/a \\    location = ${BASE_PATH} {\n      return 301 ${BASE_PATH}/;\n    }\n\n    location = ${BASE_PATH}/ {\n      return 302 ${BASE_PATH}/login/;\n    }" "$NGINX_CONF"
+  fi
+  sed -i '/# SUBPATH_ROOT/d' "$NGINX_CONF"
+fi
+
+# Patch manifest.json scope and start_url when BASE_PATH is set
+if [ -n "$BASE_PATH" ]; then
+  for app in client health login; do
+    index_file="/usr/share/nginx/html/${app}/index.html"
+    if [ -f "$index_file" ]; then
+      sed -i "s|<base href=\"/\">|<base href=\"${BASE_PATH}/${app}/\">|g" "$index_file"
+      sed -i "s|<base href=\"/\" />|<base href=\"${BASE_PATH}/${app}/\" />|g" "$index_file"
+    fi
+  done
+
+  for manifest in /usr/share/nginx/html/client/manifest.json /usr/share/nginx/html/health/manifest.json /usr/share/nginx/html/login/manifest.json /usr/share/nginx/html/manifest.json; do
+    if [ -f "$manifest" ]; then
+      sed -i "s|\"scope\": \"/\"|\"scope\": \"${BASE_PATH}/\"|g" "$manifest"
+      sed -i "s|\"start_url\": \"/\"|\"start_url\": \"${BASE_PATH}/\"|g" "$manifest"
+    fi
+  done
+fi
+
 # Ensure required folders exist
 mkdir -p /data
 
@@ -40,9 +81,24 @@ HOST=0.0.0.0
 PORT=3000
 CORS_ORIGIN=*
 OMDB_API_KEY=
-OLLAMA_MODEL=qwen2.5:3b
 EOF
   chmod 600 /data/.env
+fi
+
+if [ ! -f "/data/ollama.config.json" ]; then
+  echo "INFO: /data/ollama.config.json not found. Creating a default one."
+  cat > /data/ollama.config.json <<'EOF'
+{
+  "host": "http://host.docker.internal:11434",
+  "model": "qwen2.5:3b",
+  "options": {
+    "num_thread": 1
+  },
+  "batchSize": 10,
+  "parallelRequests": 1
+}
+EOF
+  chmod 600 /data/ollama.config.json
 fi
 
 # Run node server
