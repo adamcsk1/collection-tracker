@@ -51,7 +51,7 @@
     <h3 class="about-section-title">{{ ('Links' | signalTranslate)() }}</h3>
     <div class="about-nav-links">
       <libc-link-button
-        href="/health/"
+        [href]="basePath + '/health/'"
         icon="monitoring"
         [label]="('NavigateToServerHealth' | signalTranslate)()"
         dataTestId="about-health-link"
@@ -70,7 +70,7 @@
         [external]="true"
       ></libc-link-button>
       <libc-link-button
-        href="/api/docs"
+        [href]="basePath + '/api/docs'"
         icon="description"
         [label]="('NavigateToApiDocs' | signalTranslate)()"
         [external]="true"

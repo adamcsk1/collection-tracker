@@ -18,6 +18,7 @@ import { initialThemeState, themeStateToken } from '@services/theme/theme-store'
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { refreshTokenInterceptor } from '@services/api/refresh-token-interceptor';
+import { getBasePath } from '@shared/utils/get-base-path-util';
 import { routes } from './main-routes';
 
 export const mainConfig: ApplicationConfig = {
@@ -34,6 +35,6 @@ export const mainConfig: ApplicationConfig = {
     provideStore(initialMainCollectionState, mainCollectionStateToken),
     provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
     provideStore(initialTagConfigsState, tagConfigsStateToken),
-    provideSignalTranslateConfig({ path: './client/i18n' }),
+    provideSignalTranslateConfig({ path: `${getBasePath()}/client/i18n` }),
   ],
 };

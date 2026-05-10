@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { redirectToLogin } from '../../../../../libs/shared/src/lib/utils/redirect-to-login-util';
+import { redirectToLogin } from '@shared/utils/redirect-to-login-util';
 import { mainStateToken } from './main-store';
 
 @Injectable({ providedIn: 'root' })

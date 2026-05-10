@@ -12,6 +12,7 @@ import { themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
+import { getBasePath } from '@shared/utils/get-base-path-util';
 import { companionApp, resetCompanionAppConfig } from '@shared/utils/companion-app-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, firstValueFrom, of } from 'rxjs';
@@ -121,7 +122,7 @@ export class SignIn implements OnInit {
         })
         .pipe(catchError(() => of(void 0)))
     );
-    window.location.href = '/client/';
+    window.location.href = `${getBasePath()}/client/`;
   }
 
   protected onResetCompanionAppConfig(): void {

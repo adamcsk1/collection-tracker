@@ -10,6 +10,7 @@ import { mainRoutes } from './main-routes';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { refreshTokenInterceptor } from '@services/api/refresh-token-interceptor';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
+import { getBasePath } from '@shared/utils/get-base-path-util';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 
@@ -23,6 +24,6 @@ export const mainConfig: ApplicationConfig = {
     provideStore(initialToastState, toastStateToken),
     provideStore(initialThemeState, themeStateToken),
     provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
-    provideSignalTranslateConfig({ path: './login/i18n' }),
+    provideSignalTranslateConfig({ path: `${getBasePath()}/login/i18n` }),
   ],
 };

@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import * as MainUtil from '../../../../../libs/shared/src/lib/utils/redirect-to-login-util';
+import * as MainUtil from '@shared/utils/redirect-to-login-util';
 import { SettingsService } from '../settings/settings-service';
 import { TagConfigsService } from '../settings/tag-configs/tag-configs-service';
 import { MainService } from './main-service';

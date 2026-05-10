@@ -5,7 +5,7 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { provideStore } from 'ngx-simple-signal-store';
 import { firstValueFrom, isObservable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as MainUtil from '../../../../../libs/shared/src/lib/utils/redirect-to-login-util';
+import * as MainUtil from '@shared/utils/redirect-to-login-util';
 import { mainGuard } from './main-guard';
 import { MainService } from './main-service';
 import { initialMainState, mainStateToken } from './main-store';

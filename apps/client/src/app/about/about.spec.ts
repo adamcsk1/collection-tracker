@@ -43,13 +43,14 @@ describe('About', () => {
     fixture.detectChanges();
   };
 
-  it('exposes static build info and theme logo', () => {
+  it('exposes static build info, theme logo, and base path', () => {
     setup();
 
     expect(component['build']).toBe('localhost-build');
     expect(component['buildDate']).toBe('localhost-build-date');
     expect(component['appVersion']).toBe('localhost-version');
     expect(component['themeLogo']()).toBe('logo.png');
+    expect(component['basePath']).toBeDefined();
   });
 
   it('disables settings lock on the 10th click and resets counter after debounce', () => {
