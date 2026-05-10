@@ -112,6 +112,16 @@ export class List {
     this.collectionState.setState('searchText', '');
   }
 
+  protected onShowFunctions(): void {
+    this.aiSearch
+      .checkAiAvailable()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(() => EMPTY)
+      )
+      .subscribe();
+  }
+
   protected onResetScrollPosition(): void {
     const element = this.scrollContainer()?.nativeElement;
     if (!element) return;

@@ -200,10 +200,13 @@
   display: flex;
   align-items: center;
   gap: var(--size-xs);
+  line-height: 1;
 }
 
 .metric-icon {
   font-size: var(--font-size-lg);
+  width: var(--font-size-lg);
+  height: var(--font-size-lg);
   color: var(--main-color);
 }
 
@@ -263,7 +266,7 @@
   font-weight: bold;
 }
 
-.frontend-status {
+.service-status {
   font-size: var(--font-size-lg);
   font-weight: bold;
 

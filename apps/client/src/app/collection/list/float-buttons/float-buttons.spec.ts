@@ -47,6 +47,8 @@ describe('FloatButtons', () => {
     Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button')).find(
       (button) => button.textContent?.trim() === text
     );
+  const getAiSearchButton = (): HTMLButtonElement | null =>
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-test-id="ai-search-toggle"]');
 
   it('shows the toggle button and hides the buttons container by default', () => {
     expect(fixture.nativeElement.querySelector('.float-show-button')).toBeTruthy();
@@ -58,6 +60,16 @@ describe('FloatButtons', () => {
 
     expect(fixture.nativeElement.querySelector('.float-buttons-container')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.float-show-button')).toBeNull();
+  });
+
+  it('collapses the panel when the hide functions button is clicked', () => {
+    showButtons();
+
+    findButton('close')?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.float-show-button')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.float-buttons-container')).toBeNull();
   });
 
   it('emits randomPick and collapses the panel when the random pick button is clicked', () => {
@@ -98,11 +110,28 @@ describe('FloatButtons', () => {
     const emitted: void[] = [];
     component.toggleAiSearch.subscribe(() => emitted.push(undefined));
 
-    findButton('search')?.click();
+    getAiSearchButton()?.click();
     fixture.detectChanges();
 
     expect(emitted).toHaveLength(1);
     expect(fixture.nativeElement.querySelector('.float-show-button')).toBeTruthy();
+  });
+
+  it('shows the standard search icon when AI search is available and standard search is active', () => {
+    mainState.setState('aiAvailable', true);
+    fixture.detectChanges();
+    showButtons();
+
+    expect(findButton('search')).toBeTruthy();
+  });
+
+  it('shows the Ollama icon when AI search is active', () => {
+    mainState.setState('aiAvailable', true);
+    useAiSearch.set(true);
+    fixture.detectChanges();
+    showButtons();
+
+    expect(getAiSearchButton()?.querySelector('libc-image-icon')).toBeTruthy();
   });
 
   it('emits scrollToTop when the scroll to top button is clicked', () => {
@@ -136,10 +165,22 @@ describe('FloatButtons', () => {
     expect(findButton('add')).toBeUndefined();
   });
 
-  it('hides the AI search toggle when aiAvailable is false', () => {
+  it('shows the AI search toggle disabled when aiAvailable is false', () => {
     showButtons();
 
-    expect(findButton('search')).toBeUndefined();
+    const button = getAiSearchButton();
+    expect(button).toBeTruthy();
+    expect(button?.disabled).toBe(true);
+    expect(button?.querySelector('.ai-offline-icon')).toBeTruthy();
+  });
+
+  it('emits showFunctions when expanding the float buttons', () => {
+    const emitted: void[] = [];
+    component.showFunctions.subscribe(() => emitted.push(undefined));
+
+    showButtons();
+
+    expect(emitted).toHaveLength(1);
   });
 
   it('disables the random pick button when the collection is empty', () => {
@@ -165,7 +206,11 @@ describe('FloatButtons', () => {
     showButtons();
 
     expect(findButton('add')?.disabled).toBe(true);
-    expect(findButton('search')?.disabled).toBe(true);
+    expect(getAiSearchButton()?.disabled).toBe(true);
     expect(findButton('casino')?.disabled).toBe(true);
+  });
+
+  it('constructs the ollama icon path using getBasePath', () => {
+    expect(component['ollamaIcon']).toContain('/client/images/ollama-icon.png');
   });
 });

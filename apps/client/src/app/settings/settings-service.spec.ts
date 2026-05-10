@@ -14,10 +14,11 @@ import {
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_SETTINGS_LOCK,
+  STORAGE_USE_AI_SEARCH,
 } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { SettingsService } from './settings-service';
 
@@ -40,7 +41,7 @@ describe('SettingsService', () => {
     setItem: ReturnType<typeof vi.fn>;
     removeItem: ReturnType<typeof vi.fn>;
   };
-  let api: { getUserSettings: ReturnType<typeof vi.fn> };
+  let api: { getUserSettings: ReturnType<typeof vi.fn>; getAiAvailable: ReturnType<typeof vi.fn> };
   let sharedApi: { updateUserSettings: ReturnType<typeof vi.fn> };
   let translate: { translate: ReturnType<typeof vi.fn>; setLanguage: ReturnType<typeof vi.fn> };
   let main: { setPermissions: ReturnType<typeof vi.fn> };
@@ -49,7 +50,7 @@ describe('SettingsService', () => {
   beforeEach(() => {
     router = { navigate: vi.fn() };
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn(), removeItem: vi.fn() };
-    api = { getUserSettings: vi.fn(() => of({})) };
+    api = { getUserSettings: vi.fn(() => of({})), getAiAvailable: vi.fn(() => of({ aiAvailable: false })) };
     sharedApi = { updateUserSettings: vi.fn(() => of(void 0)) };
     translate = { translate: vi.fn((value: string) => value), setLanguage: vi.fn() };
     main = { setPermissions: vi.fn() };
@@ -121,5 +122,26 @@ describe('SettingsService', () => {
     expect(translate.setLanguage).not.toHaveBeenCalled();
     expect(mainState.state.language()).toBe('en');
     expect(mainState.state.animatedBackground()).toBe(true);
+    expect(api.getAiAvailable).toHaveBeenCalled();
+  });
+
+  it('disables AI search when preloaded AI availability reports unavailable', () => {
+    mainState.setState('aiAvailable', true);
+    api.getAiAvailable.mockReturnValue(of({ aiAvailable: false }));
+
+    service.preloadUserSettings().subscribe();
+
+    expect(mainState.state.aiAvailable()).toBe(false);
+    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_USE_AI_SEARCH);
+  });
+
+  it('disables AI search when AI availability check fails', () => {
+    mainState.setState('aiAvailable', true);
+    api.getAiAvailable.mockReturnValue(throwError(() => new Error('network')));
+
+    service.preloadUserSettings().subscribe();
+
+    expect(mainState.state.aiAvailable()).toBe(false);
+    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_USE_AI_SEARCH);
   });
 });

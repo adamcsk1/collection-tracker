@@ -46,6 +46,18 @@
   margin: var(--size-xs);
 
   &.float-button-scroll-to-top-offset {
-    bottom: calc(3 * var(--float-button-container-size) + 3 * var(--size-xs)) !important;
+    bottom: calc(4 * var(--float-button-container-size) + 4 * var(--size-xs)) !important;
+  }
+}
+
+.ai-offline-icon {
+  position: relative;
+  display: inline-flex;
+  width: 100%;
+  height: 100%;
+
+  libc-image-icon {
+    width: 100%;
+    height: 100%;
   }
 }

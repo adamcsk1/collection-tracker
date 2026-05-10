@@ -14,6 +14,7 @@ import { FieldTree, FormField } from '@angular/forms/signals';
 import { ImageIcon } from '@components/image-icon/image-icon';
 import { Textarea } from '@components/textarea/textarea';
 import { AlertService } from '@services/alert-service';
+import { getBasePath } from '@shared/utils/get-base-path-util';
 import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
@@ -29,6 +30,7 @@ export class AiSearchInput {
   private readonly alert = inject(AlertService);
   private readonly expandedPanel = viewChild<ElementRef<HTMLDivElement>>('expandedPanel');
   protected readonly isExpanded = signal(false);
+  protected readonly ollamaIcon = `${getBasePath()}/client/images/ollama-icon.png`;
   public readonly formField = input.required<FieldTree<string>>();
   public readonly placeholder = input<string>('');
   public readonly sendEvent = output<void>();

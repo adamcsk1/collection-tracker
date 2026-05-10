@@ -2,9 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { API_PREFIX } from '@shared/constants/api-const';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { HealthApiResponseModel } from '@shared/models/api-model';
+import { getApiPrefix } from '@shared/utils/get-api-prefix-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, throwError } from 'rxjs';
@@ -18,6 +18,7 @@ const healthData: HealthApiResponseModel = {
   disk: { usedPercent: 60 },
   load: { avg1m: 0.5, avg5m: 0.3, avg15m: 0.2 },
   frontend: { status: 'up' },
+  ai: { status: 'up' },
 };
 
 describe('Main component', () => {
@@ -48,7 +49,7 @@ describe('Main component', () => {
     TestBed.createComponent(Main);
 
     expect(ngxTranslate.setLanguage).toHaveBeenCalledWith('en');
-    expect(apiState.state.apiUrl()).toBe(`${window.location.origin}${API_PREFIX}`);
+    expect(apiState.state.apiUrl()).toBe(`${window.location.origin}${getApiPrefix()}`);
   });
 
   it('uses a stored API URL when available', () => {
@@ -113,5 +114,13 @@ describe('Main component', () => {
     expect(component['barLevel'](95)).toBe('warn');
     expect(component['barLevel'](96)).toBe('error');
     expect(component['barLevel'](100)).toBe('error');
+  });
+
+  it('exposes basePath and ollamaIcon derived from getBasePath', () => {
+    const fixture = TestBed.createComponent(Main);
+    const component = fixture.componentInstance;
+
+    expect(component['basePath']).toBeDefined();
+    expect(component['ollamaIcon']).toContain('/health/images/ollama-icon.png');
   });
 });

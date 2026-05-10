@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import { setTimeout } from 'node:timers/promises';
+import { validateOllamaConnection } from '../core/ollama/ollama';
 
 const getCpuUsagePercent = async (): Promise<number> => {
   const startTimes = os.cpus().map((cpu) => ({ ...cpu.times }));
@@ -28,10 +29,21 @@ const getCpuUsagePercent = async (): Promise<number> => {
   return totalTick === 0 ? 0 : Math.round(((totalTick - totalIdle) / totalTick) * 1000) / 10;
 };
 
+const HEALTH_CHECK_URL = process.env['HEALTH_CHECK_URL'] || 'http://127.0.0.1:3001/';
+
 const checkFrontendStatus = async (): Promise<HealthApiResponseModel['frontend']> => {
   try {
-    const response = await fetch('http://127.0.0.1:3001/', { signal: AbortSignal.timeout(3000) });
+    const response = await fetch(HEALTH_CHECK_URL, { signal: AbortSignal.timeout(3000) });
     await response.body?.cancel();
+    return { status: 'up' };
+  } catch {
+    return { status: 'down' };
+  }
+};
+
+const checkAiStatus = async (): Promise<HealthApiResponseModel['ai']> => {
+  try {
+    await validateOllamaConnection();
     return { status: 'up' };
   } catch {
     return { status: 'down' };
@@ -67,7 +79,11 @@ export const register = (app: FastifyInstance): void => {
     const freeMemory = os.freemem();
     const [avg1m, avg5m, avg15m] = os.loadavg();
 
-    const [cpuUsagePercent, frontend] = await Promise.all([getCpuUsagePercent(), checkFrontendStatus()]);
+    const [cpuUsagePercent, frontend, ai] = await Promise.all([
+      getCpuUsagePercent(),
+      checkFrontendStatus(),
+      checkAiStatus(),
+    ]);
 
     const memoryUsedPercent = Math.round(((totalMemory - freeMemory) / totalMemory) * 1000) / 10;
     const disk = getDiskUsedPercent();
@@ -83,6 +99,7 @@ export const register = (app: FastifyInstance): void => {
         avg15m: Math.round(avg15m * 100) / 100,
       },
       frontend,
+      ai,
     };
 
     response.send(result);

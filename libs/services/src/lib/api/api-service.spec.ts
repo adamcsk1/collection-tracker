@@ -230,15 +230,23 @@ describe('ApiService', () => {
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
-      aiAvailable: true,
     });
 
     await expect(promise).resolves.toEqual({
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
-      aiAvailable: true,
     });
+  });
+
+  it('retrieves AI availability', async () => {
+    const promise = lastValueFrom(service.getAiAvailable());
+
+    const aiAvailableRequest = httpMock.expectOne('https://api.test/proxy/ai/available');
+    expect(aiAvailableRequest.request.method).toBe('GET');
+    aiAvailableRequest.flush({ aiAvailable: true });
+
+    await expect(promise).resolves.toEqual({ aiAvailable: true });
   });
 
   it('posts a prompt to the AI query endpoint and returns matched IDs', async () => {

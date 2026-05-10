@@ -21,6 +21,7 @@ import { register as registerLogout } from './logout-api';
 import { register as registerMarkAllUnwatched } from './mark-all-unwatched-api';
 import { register as registerMarkAllWatched } from './mark-all-watched-api';
 import { register as registerProxyAi } from './proxy-ai-query-api';
+import { register as registerProxyAiAvailable } from './proxy-ai-available-api';
 import { register as registerProxyOMDbItem } from './proxy-get-omdb-item-api';
 import { register as registerProxyImage } from './proxy-image-api';
 import { register as registerProxyOMDbSearch } from './proxy-omdb-search-api';
@@ -67,4 +68,5 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerProxyOMDbItem(app);
   registerProxyImage(app);
   registerProxyAi(app);
+  registerProxyAiAvailable(app);
 };

@@ -16,7 +16,7 @@ import { LANGUAGES } from '@shared/models/language-model';
 import { THEMES } from '@shared/models/theme-model';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY, map, Observable, tap } from 'rxjs';
+import { catchError, EMPTY, map, Observable, of, switchMap, tap } from 'rxjs';
 import { MainService } from '../main/main-service';
 import { mainStateToken } from '../main/main-store';
 import { SettingsModel } from './settings-model';
@@ -34,25 +34,38 @@ export class SettingsService {
 
   public preloadUserSettings(): Observable<void> {
     return this.api.getUserSettings().pipe(
-      tap((settings) => {
-        const theme = parseAllowedValue(settings.theme ?? null, THEMES);
-        if (theme) this.themeState.setState('theme', theme);
-
-        if (typeof settings.animatedBackground === 'boolean') {
-          this.mainState.setState('animatedBackground', settings.animatedBackground);
-        }
-
-        const language = parseAllowedValue(settings.language ?? null, LANGUAGES);
-        if (language) {
-          this.mainState.setState('language', language);
-          this.ngxSignalTranslate.setLanguage(language);
-        }
-
-        this.mainState.setState('aiAvailable', !!settings.aiAvailable);
-        if (!settings.aiAvailable) this.webstorage.removeItem(STORAGE_USE_AI_SEARCH);
-      }),
+      tap((settings) => this.applyUserSettings(settings)),
+      switchMap(() =>
+        this.api.getAiAvailable().pipe(
+          tap((result) => this.applyAiAvailable(result)),
+          catchError(() => {
+            this.applyAiAvailable({ aiAvailable: false });
+            return of({ aiAvailable: false });
+          })
+        )
+      ),
       map(() => void 0)
     );
+  }
+
+  private applyUserSettings(settings: { theme?: string; animatedBackground?: boolean; language?: string }): void {
+    const theme = parseAllowedValue(settings.theme ?? null, THEMES);
+    if (theme) this.themeState.setState('theme', theme);
+
+    if (typeof settings.animatedBackground === 'boolean') {
+      this.mainState.setState('animatedBackground', settings.animatedBackground);
+    }
+
+    const language = parseAllowedValue(settings.language ?? null, LANGUAGES);
+    if (language) {
+      this.mainState.setState('language', language);
+      this.ngxSignalTranslate.setLanguage(language);
+    }
+  }
+
+  private applyAiAvailable(result: { aiAvailable: boolean }): void {
+    this.mainState.setState('aiAvailable', result.aiAvailable);
+    if (!result.aiAvailable) this.webstorage.removeItem(STORAGE_USE_AI_SEARCH);
   }
 
   public storeFormData(formData: SettingsModel): void {

@@ -27,4 +27,9 @@ describe('Health page', () => {
   it('shows CPU usage in the CPU card', () => {
     HealthPage.getCpuCard().should('be.visible').and('contain.text', '%');
   });
+
+  it('shows the AI status card', () => {
+    HealthPage.getAiCard().should('be.visible');
+    HealthPage.getAiCard().find('[data-status]').should('have.attr', 'data-status').and('match', /^(up|down)$/);
+  });
 });
