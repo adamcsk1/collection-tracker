@@ -16,7 +16,6 @@ import { initializeDatabase } from './database/database';
 import { runMigrations } from './database/migrations';
 import { debugLog, errorLog, infoLog } from './logger';
 import { SERVER_MAX_PARAM_LENGTH } from './main-const';
-import { getOllamaModel, validateOllamaConnection } from './ollama/ollama';
 import { getRateLimitKey } from './utils/rate-limit-util';
 
 export const main = async () => {
@@ -28,8 +27,6 @@ export const main = async () => {
     dotenv.config({ path: `${dataFolder}/.env`, override: true });
 
     if (!process.env.OMDB_API_KEY?.trim()) throw new Error('OMDB_API_KEY is not set. Please add it to your .env file.');
-
-    if (!!getOllamaModel()) await validateOllamaConnection();
 
     initializeFolders(dataFolder);
 
