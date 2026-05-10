@@ -104,4 +104,12 @@ describe('AiSearchInput component', () => {
 
     expect(fixture.nativeElement.querySelector('.expanded-panel')).toBeTruthy();
   });
+
+  it('constructs the ollama icon path using getBasePath', () => {
+    const component = fixture.debugElement.query(
+      (de) => de.componentInstance instanceof AiSearchInput
+    ).componentInstance;
+
+    expect(component['ollamaIcon']).toContain('/client/images/ollama-icon.png');
+  });
 });

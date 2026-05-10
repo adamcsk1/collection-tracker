@@ -5,8 +5,8 @@ info:
   description: REST API for the Collection Tracker server.
 
 servers:
-  - url: '{scheme}://{host}/api/v1'
-    description: API base path
+  - url: '{scheme}://{host}{basePath}/api/v1'
+    description: API base path. When the app is deployed under a subpath (BASE_PATH env var), prepend that path before /api/v1.
     variables:
       scheme:
         default: http
@@ -14,6 +14,9 @@ servers:
       host:
         default: localhost:4200
         description: Host and port of the server.
+      basePath:
+        default: ''
+        description: Optional deployment subpath, such as /collection-tracker.
 
 components:
   securitySchemes:
@@ -31,7 +34,7 @@ components:
   schemas:
     HealthResponse:
       type: object
-      required: [status, memory, cpu, disk, load, frontend]
+      required: [status, memory, cpu, disk, load, frontend, ai]
       properties:
         status:
           type: string
@@ -67,6 +70,13 @@ components:
             avg15m:
               type: number
         frontend:
+          type: object
+          required: [status]
+          properties:
+            status:
+              type: string
+              enum: [up, down]
+        ai:
           type: object
           required: [status]
           properties:
@@ -161,9 +171,14 @@ components:
         language:
           type: string
           enum: [en]
+
+    AiAvailableResponse:
+      type: object
+      required: [aiAvailable]
+      properties:
         aiAvailable:
           type: boolean
-          description: Set by the server to indicate whether local AI search is available. Always present in the response.
+          description: Indicates whether the configured Ollama host is reachable and the configured model is available.
 
     UserSettingsRequest:
       type: object
@@ -708,7 +723,6 @@ paths:
     get:
       operationId: getUserSettings
       summary: Get user settings
-      description: 'Always includes `aiAvailable` indicating whether local AI search is available. Returns `{ aiAvailable: true }` when no settings have been stored yet.'
       tags: [User]
       responses:
         '200':
@@ -1211,10 +1225,11 @@ paths:
       operationId: proxyAiQuery
       summary: Natural-language collection search via local AI
       description: |
-        Proxies a prompt to the local Ollama API using the server's `OLLAMA_BASE_URL`.
+        Proxies a prompt to the Ollama API using `ollama.config.json` in the server data folder.
         The server reads the caller's collection metadata from the database and builds the prompt internally.
         Only the natural-language question is supplied by the client.
-        The model is controlled by the optional `OLLAMA_MODEL` env variable; defaults to `qwen2.5:3b`.
+        The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:3b`, and merges configured generate options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 4 }`.
+        Ollama availability and model presence are checked by this endpoint before querying.
       tags: [AI Proxy]
       requestBody:
         required: true
@@ -1232,7 +1247,21 @@ paths:
         '400':
           description: Missing or empty `prompt`.
         '502':
-          description: Ollama returned an unparseable or truncated response.
+          description: Ollama is unavailable, the configured model is missing, or Ollama returned an unparseable or truncated response.
+
+  /proxy/ai/available:
+    get:
+      operationId: proxyAiAvailable
+      summary: Check whether local AI search is available
+      description: Checks Ollama host reachability and configured model availability.
+      tags: [AI Proxy]
+      responses:
+        '200':
+          description: AI availability status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiAvailableResponse'
 
   /tag/config:
     get:

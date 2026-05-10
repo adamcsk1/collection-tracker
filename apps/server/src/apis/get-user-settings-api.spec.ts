@@ -27,7 +27,6 @@ describe('get-user-settings-api', () => {
       theme: 'dark',
       animatedBackground: false,
       language: 'en',
-      aiAvailable: true,
     });
   });
 
@@ -40,7 +39,7 @@ describe('get-user-settings-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ aiAvailable: true });
+    expect(response.send).toHaveBeenCalledWith({});
   });
 
   it('returns empty object when caller has no DB row', async () => {
@@ -51,6 +50,6 @@ describe('get-user-settings-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ aiAvailable: true });
+    expect(response.send).toHaveBeenCalledWith({});
   });
 });

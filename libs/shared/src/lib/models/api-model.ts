@@ -126,7 +126,10 @@ export interface UserSettingsApiResponseModel {
   theme?: ThemeModel;
   animatedBackground?: boolean;
   language?: LanguageModel;
-  aiAvailable?: boolean; // This field indicates whether local AI search is available for the user.
+}
+
+export interface AiAvailableApiResponseModel {
+  aiAvailable: boolean;
 }
 
 export interface UserSettingsApiRequestModel extends UserSettingsApiResponseModel {
@@ -177,6 +180,9 @@ export interface HealthApiResponseModel {
     avg15m: number;
   };
   frontend: {
+    status: 'up' | 'down';
+  };
+  ai: {
     status: 'up' | 'down';
   };
 }

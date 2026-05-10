@@ -45,6 +45,7 @@ describe('PublicApiService', () => {
       disk: { usedPercent: 60 },
       load: { avg1m: 0.5, avg5m: 0.3, avg15m: 0.2 },
       frontend: { status: 'up' },
+      ai: { status: 'up' },
     };
 
     const promise = lastValueFrom(service.getHealth());

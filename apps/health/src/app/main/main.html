@@ -9,7 +9,7 @@
     </div>
     <libc-link-button
       dataTestId="health-login-link"
-      href="/login/"
+      [href]="basePath + '/login/'"
       icon="login"
       [label]="('NavigateToLogin' | signalTranslate)()"
     />
@@ -104,8 +104,18 @@
             <span class="material-icons metric-icon">web</span>
             <span class="metric-title">{{ ('Frontend' | signalTranslate)() }}</span>
           </div>
-          <span class="frontend-status" [attr.data-status]="data.frontend.status">
+          <span class="service-status" [attr.data-status]="data.frontend.status">
             {{ data.frontend.status | uppercase }}
+          </span>
+        </div>
+
+        <div data-test-id="health-ai-card" class="metric-card">
+          <div class="metric-header">
+            <libc-image-icon class="metric-icon" [ariaLabel]="('Ai' | signalTranslate)()" [imageUrl]="ollamaIcon" />
+            <span class="metric-title">{{ ('Ai' | signalTranslate)() }}</span>
+          </div>
+          <span class="service-status" [attr.data-status]="data.ai.status">
+            {{ data.ai.status | uppercase }}
           </span>
         </div>
       </div>

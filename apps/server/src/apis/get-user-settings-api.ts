@@ -4,20 +4,15 @@ import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { findUserSettings } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
-import { getOllamaModel } from '../core/ollama/ollama';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
 export const register = (app: FastifyInstance): void => {
   app.get(
     `${API_PREFIX}/user/settings`,
     { preHandler: jwtGuard },
-    withErrorHandler((request, response) => {
+    withErrorHandler(async (request, response) => {
       const dbSettings = findUserSettings(getDatabase(), request.usernameHash);
-
-      const result: UserSettingsApiResponseModel = {
-        ...(dbSettings || {}),
-        aiAvailable: !!getOllamaModel(),
-      };
+      const result: UserSettingsApiResponseModel = dbSettings || {};
       response.send(result);
     })
   );

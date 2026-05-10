@@ -66,6 +66,7 @@ describe('List', () => {
             useAiSearch: signal(false),
             getMatchedIds: () => of(['tt-ai']),
             searchInProgress: signal(false),
+            checkAiAvailable: vi.fn(() => of(true)),
           }),
         },
         provideStore(initialMainCollectionState, mainCollectionStateToken),
@@ -169,5 +170,12 @@ describe('List', () => {
     expect(api.searchItems).not.toHaveBeenCalled();
     expect(api.getMatchedItems).not.toHaveBeenCalled();
     expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Keep']);
+  });
+
+  it('checks AI availability when float buttons are shown', () => {
+    const aiSearch = TestBed.inject(AiSearchService);
+    component['onShowFunctions']();
+
+    expect(aiSearch.checkAiAvailable).toHaveBeenCalled();
   });
 });

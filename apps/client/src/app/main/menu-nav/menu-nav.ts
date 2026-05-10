@@ -7,6 +7,7 @@ import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
 import { CollectionService } from '../../collection/collection-service';
+import { SettingsService } from '../../settings/settings-service';
 import { LogoutService } from '../logout-service';
 import { mainStateToken } from '../main-store';
 
@@ -25,10 +26,18 @@ export class MenuNav {
   private readonly logout = inject(LogoutService);
   private readonly portal = inject(PortalService);
   private readonly theme = inject(ThemeService);
+  private readonly settings = inject(SettingsService);
   protected readonly themeLogo = this.theme.themeLogo;
   protected readonly settingLockEnabled = this.mainState.state.settingsLock;
 
   protected onSync(): void {
+    this.settings
+      .preloadUserSettings()
+      .pipe(
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
     this.collection.triggerReload();
     this.portal.close();
   }

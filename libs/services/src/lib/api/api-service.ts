@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   AccessTokensApiResponseModel,
+  AiAvailableApiResponseModel,
   ChangeApiResponseModel,
   ChangeTokenApiResponseModel,
   CollectionItemApiModel,
@@ -154,5 +155,9 @@ export class ApiService extends BaseApiService {
   public getAiQueryData(prompt: string): Observable<AiQueryResponseModel> {
     const body: AiQueryRequestModel = { prompt };
     return this.request('POST', '/proxy/ai/query', { prompt: body.prompt });
+  }
+
+  public getAiAvailable(): Observable<AiAvailableApiResponseModel> {
+    return this.request('GET', '/proxy/ai/available');
   }
 }

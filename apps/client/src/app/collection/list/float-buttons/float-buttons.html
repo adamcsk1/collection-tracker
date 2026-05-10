@@ -32,29 +32,29 @@
         </button>
       </div>
     }
-    @if (aiAvailable()) {
-      <div class="float-button">
-        <button
-          data-test-id="ai-search-toggle"
-          class="button-icon"
-          [attr.aria-label]="
-            useAiSearch() ? ('SwitchToStandardSearch' | signalTranslate)() : ('SwitchToAiSearch' | signalTranslate)()
-          "
-          [title]="
-            useAiSearch() ? ('SwitchToStandardSearch' | signalTranslate)() : ('SwitchToAiSearch' | signalTranslate)()
-          "
-          [disabled]="apiLoadNetworkStatus() === 'pending'"
-          [class.material-icons]="!useAiSearch()"
-          (click)="onToggleAiSearch()"
-        >
-          @if (useAiSearch()) {
-            <libc-image-icon [ariaLabel]="('AiSearch' | signalTranslate)()" imageUrl="/client/images/ollama-icon.png" />
-          } @else {
+    <div class="float-button">
+      <button
+        data-test-id="ai-search-toggle"
+        class="button-icon"
+        [attr.aria-label]="(searchSwitchButtonLabel() | signalTranslate)()"
+        [title]="(searchSwitchButtonLabel() | signalTranslate)()"
+        [disabled]="apiLoadNetworkStatus() === 'pending' || !aiAvailable()"
+        [class.material-icons]="!useAiSearch() && aiAvailable()"
+        (click)="onToggleAiSearch()"
+      >
+        @if (!useAiSearch()) {
+          @if (aiAvailable()) {
             search
+          } @else {
+            <span class="ai-offline-icon">
+              <libc-image-icon [ariaLabel]="('AiSearchOffline' | signalTranslate)()" [imageUrl]="ollamaIcon" />
+            </span>
           }
-        </button>
-      </div>
-    }
+        } @else {
+          <libc-image-icon [ariaLabel]="('AiSearch' | signalTranslate)()" [imageUrl]="ollamaIcon" />
+        }
+      </button>
+    </div>
     <div class="float-button">
       <button
         data-test-id="random-pick"
@@ -67,6 +67,17 @@
         casino
       </button>
     </div>
+    <div class="float-button">
+      <button
+        data-test-id="hide-functions"
+        class="button-icon material-icons"
+        [attr.aria-label]="('HideFunctions' | signalTranslate)()"
+        [title]="('HideFunctions' | signalTranslate)()"
+        (click)="onHideFunctions()"
+      >
+        close
+      </button>
+    </div>
   </div>
 } @else {
   <div class="float-button float-show-button" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
@@ -75,7 +86,7 @@
       class="button-icon material-icons"
       [attr.aria-label]="('ShowFunctions' | signalTranslate)()"
       [title]="('ShowFunctions' | signalTranslate)()"
-      (click)="showFloatButtons.set(true)"
+      (click)="onShowFunctions()"
     >
       apps
     </button>

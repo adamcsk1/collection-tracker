@@ -18,6 +18,9 @@ afterEach(() => {
 describe('AI search - toggle', () => {
   beforeEach(() => {
     cy.autoLogin();
+    cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
+      'aiAvailable'
+    );
   });
 
   it('shows the AI search toggle button in the float buttons menu', () => {
@@ -69,6 +72,9 @@ describe('AI search - toggle', () => {
 describe('AI search - input interaction', () => {
   beforeEach(() => {
     cy.autoLogin();
+    cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
+      'aiAvailable'
+    );
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAiSearchToggleButton().click();
   });
@@ -95,6 +101,9 @@ describe('AI search - filtering', () => {
 
   beforeEach(() => {
     cy.autoLogin();
+    cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
+      'aiAvailable'
+    );
     seedAndVisit([movieA, movieB, movieC]);
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAiSearchToggleButton().click();

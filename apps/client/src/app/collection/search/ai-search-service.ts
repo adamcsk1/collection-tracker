@@ -4,12 +4,14 @@ import { ApiService } from '@services/api/api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_USE_AI_SEARCH } from '@shared/constants/storage-const';
 import { catchError, map, Observable, of, tap } from 'rxjs';
+import { mainStateToken } from '../../main/main-store';
 
 @Injectable()
 export class AiSearchService {
   private readonly api = inject(ApiService);
   private readonly webstorage = inject(WebstorageService);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
+  private readonly mainState = inject(mainStateToken);
   public readonly searchInProgress = signal(false);
   public readonly useAiSearch = signal<boolean | null>(null);
 
@@ -21,6 +23,16 @@ export class AiSearchService {
       }
 
       this.webstorage.setItem(STORAGE_USE_AI_SEARCH, String(this.useAiSearch()));
+    });
+
+    let previousAiAvailable = this.mainState.state.aiAvailable();
+    effect(() => {
+      const aiAvailable = this.mainState.state.aiAvailable();
+      if (!aiAvailable && previousAiAvailable && this.useAiSearch()) {
+        this.useAiSearch.set(false);
+        this.webstorage.removeItem(STORAGE_USE_AI_SEARCH);
+      }
+      previousAiAvailable = aiAvailable;
     });
   }
 
@@ -38,6 +50,17 @@ export class AiSearchService {
         this.spinnerLoadingState.setState('show', false);
         this.searchInProgress.set(false);
         return of(null);
+      })
+    );
+  }
+
+  public checkAiAvailable(): Observable<boolean> {
+    return this.api.getAiAvailable().pipe(
+      map((result) => result.aiAvailable),
+      tap((available) => this.mainState.setState('aiAvailable', available)),
+      catchError(() => {
+        this.mainState.setState('aiAvailable', false);
+        return of(false);
       })
     );
   }

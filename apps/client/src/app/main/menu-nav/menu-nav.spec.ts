@@ -8,8 +8,9 @@ import { NgxSignalTranslateService, provideSignalTranslateConfig } from 'ngx-sig
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as MainUtil from '../../../../../../libs/shared/src/lib/utils/redirect-to-login-util';
+import * as MainUtil from '@shared/utils/redirect-to-login-util';
 import { CollectionService } from '../../collection/collection-service';
+import { SettingsService } from '../../settings/settings-service';
 import { LogoutService } from '../logout-service';
 import { initialMainState, MainState, mainStateToken } from '../main-store';
 import { MenuNav } from './menu-nav';
@@ -19,6 +20,7 @@ describe('MenuNav', () => {
   let component: MenuNav;
   let portal: { close: ReturnType<typeof vi.fn> };
   let collection: { triggerReload: ReturnType<typeof vi.fn> };
+  let settings: { preloadUserSettings: ReturnType<typeof vi.fn> };
   let api: { logout: ReturnType<typeof vi.fn> };
   let logout: { performLogout: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
@@ -28,6 +30,7 @@ describe('MenuNav', () => {
   beforeEach(() => {
     portal = { close: vi.fn() };
     collection = { triggerReload: vi.fn() };
+    settings = { preloadUserSettings: vi.fn(() => of(void 0)) };
     api = { logout: vi.fn(() => of(void 0)) };
     logout = { performLogout: vi.fn() };
 
@@ -36,6 +39,7 @@ describe('MenuNav', () => {
       providers: [
         { provide: PortalService, useValue: portal },
         { provide: CollectionService, useValue: collection },
+        { provide: SettingsService, useValue: settings },
         { provide: ApiService, useValue: api },
         { provide: LogoutService, useValue: logout },
         { provide: ThemeService, useValue: { themeLogo: signal('logo-mock.png') } },
@@ -68,6 +72,16 @@ describe('MenuNav', () => {
   });
 
   it('triggers collection reload and closes on sync', () => {
+    component['onSync']();
+
+    expect(settings.preloadUserSettings).toHaveBeenCalled();
+    expect(collection.triggerReload).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('still syncs collection when refreshing settings fails', () => {
+    settings.preloadUserSettings.mockReturnValue(throwError(() => new Error('fail')));
+
     component['onSync']();
 
     expect(collection.triggerReload).toHaveBeenCalled();

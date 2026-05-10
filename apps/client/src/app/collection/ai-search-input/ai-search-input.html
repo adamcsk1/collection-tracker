@@ -54,7 +54,7 @@
         [attr.aria-description]="('Message.AiSearch' | signalTranslate)()"
         (click)="onShowMessage()"
       >
-        <libc-image-icon [ariaLabel]="('AiSearch' | signalTranslate)()" imageUrl="/client/images/ollama-icon.png" />
+        <libc-image-icon [ariaLabel]="('AiSearch' | signalTranslate)()" [imageUrl]="ollamaIcon" />
         <span>{{ ('AiSearchInfo' | signalTranslate)() }}</span>
       </a>
     </div>
