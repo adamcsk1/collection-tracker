@@ -17,7 +17,7 @@ const resolveAppSourceFiles = (appName) => {
   return [...appSrc, ...libsSrc];
 };
 
-const extractKeysFromHtml = (content, used) => {
+const extractKeysFromHtml = (content, used, htmlPath) => {
   let searchFrom = 0;
 
   while (true) {
@@ -30,11 +30,30 @@ const extractKeysFromHtml = (content, used) => {
     const exprStart = Math.max(window.lastIndexOf('{{'), window.lastIndexOf('="'), window.lastIndexOf('=\''));
     const expr = exprStart >= 0 ? window.slice(exprStart) : window;
 
+    let foundLiteral = false;
     const strPattern = /'([^']+)'/g;
     let match;
     while ((match = strPattern.exec(expr)) !== null) {
       if (I18N_KEY_PATTERN.test(match[1])) {
         used.add(match[1]);
+        foundLiteral = true;
+      }
+    }
+
+    // Dynamic translation keys returned from the component TS file (e.g. computed signals)
+    if (!foundLiteral && htmlPath) {
+      const tsPath = htmlPath.replace(/\.html$/, '.ts');
+      try {
+        const tsContent = readFileSync(resolve(root, tsPath), 'utf8');
+        const tsStrPattern = /'([^']+)'/g;
+        let tsMatch;
+        while ((tsMatch = tsStrPattern.exec(tsContent)) !== null) {
+          if (I18N_KEY_PATTERN.test(tsMatch[1])) {
+            used.add(tsMatch[1]);
+          }
+        }
+      } catch {
+        // Corresponding .ts file may not exist; ignore.
       }
     }
 
@@ -77,7 +96,7 @@ const extractAppUsedKeys = (files) => {
     }
 
     if (relPath.endsWith('.html')) {
-      extractKeysFromHtml(content, used);
+      extractKeysFromHtml(content, used, relPath);
     } else {
       APP_TS_PATTERN.lastIndex = 0;
       let match;
