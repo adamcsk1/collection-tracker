@@ -8,12 +8,12 @@
         [style.color]="tagConfig().color"
         [style.borderColor]="tagConfig().color"
         [style.backgroundColor]="contrastColor(tagConfig().color)"
-        [attr.aria-label]="('SelectColor' | signalTranslate)()"
+        [attr.aria-label]="translations.selectColor()"
         (click)="onColorButtonClick(colorInput, tagConfig().color)"
       >
-        <i class="material-icons" [title]="('SelectColor' | signalTranslate)()">palette</i>
+        <i class="material-icons" [title]="translations.selectColor()">palette</i>
         @if (tagConfig().color === null) {
-          {{ ('SelectColor' | signalTranslate)() }}
+          {{ translations.selectColor() }}
         } @else {
           {{ tagConfig().color }}
         }
@@ -29,26 +29,26 @@
     </div>
     <libc-input
       [attr.data-test-id]="'tag-config-weight-' + tagConfig().tag"
-      [label]="('Weight' | signalTranslate)()"
+      [label]="translations.weight()"
       type="number"
       [value]="tagConfig().weight"
       (valueChange)="onWeightChange($event)"
     />
     <libc-checkbox
       [attr.data-test-id]="'tag-config-image-border-' + tagConfig().tag"
-      [label]="('UseTagColorForImageBorder' | signalTranslate)()"
+      [label]="translations.useTagColorForImageBorder()"
       [value]="tagConfig().useForImageBorder"
       (valueChange)="onImageBorderChange($event)"
     />
     <libc-checkbox
       [attr.data-test-id]="'tag-config-text-color-' + tagConfig().tag"
-      [label]="('UseTagColorForTextColor' | signalTranslate)()"
+      [label]="translations.useTagColorForTextColor()"
       [value]="tagConfig().useForTextColor"
       (valueChange)="onTextColorChange($event)"
     />
     <libc-checkbox
       [attr.data-test-id]="'tag-config-image-badge-' + tagConfig().tag"
-      [label]="('UseTagForImageBadge' | signalTranslate)()"
+      [label]="translations.useTagForImageBadge()"
       [value]="tagConfig().useForImageBadge"
       (valueChange)="onImageBadgeChange($event)"
     />

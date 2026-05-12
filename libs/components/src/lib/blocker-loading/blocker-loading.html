@@ -1,11 +1,11 @@
 @if (showBlockerLoading()) {
   <div class="blocker-loading" role="alert" aria-live="assertive" animate.leave="animation-fade-out">
     <div>
-      <img [src]="'icons/' + themeLogo()" [alt]="('Title' | signalTranslate)()" />
-      <h1 class="app-title-style">{{ ('Title' | signalTranslate)() }}</h1>
+      <img [src]="'icons/' + themeLogo()" [alt]="translations.title()" />
+      <h1 class="app-title-style">{{ translations.title() }}</h1>
     </div>
     <div class="loading">
-      {{ message() ? message() : ('Message.Loading' | signalTranslate)() }}
+      {{ message() ? message() : translations.messageLoading() }}
       <span class="dots"><span>.</span><span>.</span><span>.</span></span>
     </div>
   </div>

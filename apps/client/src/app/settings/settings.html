@@ -1,36 +1,36 @@
 <div class="settings-layout">
-  <nav class="settings-nav" role="navigation" [attr.aria-label]="('Settings' | signalTranslate)()">
+  <nav class="settings-nav" role="navigation" [attr.aria-label]="translations.settings()">
     <a data-test-id="settings-nav-basics" [routerLink]="['/', 'settings', 'basics']" routerLinkActive="active">
-      {{ ('Basics' | signalTranslate)() }}
+      {{ translations.basics() }}
     </a>
     @if (!settingLockEnabled()) {
       <a data-test-id="settings-nav-account" [routerLink]="['/', 'settings', 'account']" routerLinkActive="active">
-        {{ ('User' | signalTranslate)() }}
+        {{ translations.user() }}
       </a>
       <a
         data-test-id="settings-nav-access-tokens"
         [routerLink]="['/', 'settings', 'access-tokens']"
         routerLinkActive="active"
       >
-        {{ ('AccessTokens' | signalTranslate)() }}
+        {{ translations.accessTokens() }}
       </a>
       <a
         data-test-id="settings-nav-tag-configs"
         [routerLink]="['/', 'settings', 'tag-configs']"
         routerLinkActive="active"
       >
-        {{ ('TagConfig' | signalTranslate)() }}
+        {{ translations.tagConfig() }}
       </a>
     }
     <a data-test-id="settings-nav-images" [routerLink]="['/', 'settings', 'images']" routerLinkActive="active">
-      {{ ('Images' | signalTranslate)() }}
+      {{ translations.images() }}
     </a>
     <a
       data-test-id="settings-nav-global-watch-status"
       [routerLink]="['/', 'settings', 'global-watch-status']"
       routerLinkActive="active"
     >
-      {{ ('GlobalWatchStatus' | signalTranslate)() }}
+      {{ translations.globalWatchStatus() }}
     </a>
   </nav>
   <hr />

@@ -1,63 +1,63 @@
 @if (apiLoadNetworkStatus() === 'pending') {
-  {{ ('Message.LoadStatistics' | signalTranslate)() }}
+  {{ translations.messageLoadStatistics() }}
 } @else if (tags().length === 0) {
-  <span data-test-id="statistics-empty">{{ ('Message.EmptyStatistics' | signalTranslate)() }}</span>
+  <span data-test-id="statistics-empty">{{ translations.messageEmptyStatistics() }}</span>
 } @else {
-  <h2>{{ ('Summary' | signalTranslate)() }}</h2>
+  <h2>{{ translations.summary() }}</h2>
   @if (summary(); as summary) {
     <div data-test-id="statistics-summary" class="summary-grid">
       <button
         data-test-id="statistics-summary-all"
         class="stat-card"
         (click)="onNavigateToCollection()"
-        [attr.aria-label]="('ItemsInCollection' | signalTranslate)() + ': ' + summary.all"
+        [attr.aria-label]="translations.itemsInCollection() + ': ' + summary.all"
       >
         <span class="stat-value">{{ summary.all }}</span>
-        <span class="stat-label">{{ ('ItemsInCollection' | signalTranslate)() }}</span>
+        <span class="stat-label">{{ translations.itemsInCollection() }}</span>
       </button>
       <button
         data-test-id="statistics-summary-movies"
         class="stat-card"
         (click)="onNavigateToCollection('#movie')"
-        [attr.aria-label]="('Movies' | signalTranslate)() + ': ' + summary.movies"
+        [attr.aria-label]="translations.movies() + ': ' + summary.movies"
       >
         <span class="stat-value">{{ summary.movies }}</span>
-        <span class="stat-label">{{ ('Movies' | signalTranslate)() }}</span>
+        <span class="stat-label">{{ translations.movies() }}</span>
       </button>
       <button
         data-test-id="statistics-summary-series"
         class="stat-card"
         (click)="onNavigateToCollection('#series')"
-        [attr.aria-label]="('Series' | signalTranslate)() + ': ' + summary.series"
+        [attr.aria-label]="translations.series() + ': ' + summary.series"
       >
         <span class="stat-value">{{ summary.series }}</span>
-        <span class="stat-label">{{ ('Series' | signalTranslate)() }}</span>
+        <span class="stat-label">{{ translations.series() }}</span>
       </button>
       <button
         data-test-id="statistics-summary-watched"
         class="stat-card"
         (click)="onNavigateToCollection('#watched')"
-        [attr.aria-label]="('Watched' | signalTranslate)() + ': ' + summary.watched"
+        [attr.aria-label]="translations.watched() + ': ' + summary.watched"
       >
         <span class="stat-value">{{ summary.watched }}</span>
-        <span class="stat-label">{{ ('Watched' | signalTranslate)() }}</span>
+        <span class="stat-label">{{ translations.watched() }}</span>
       </button>
       <button
         data-test-id="statistics-summary-unwatched"
         class="stat-card"
         (click)="onNavigateToCollection('#unwatched')"
-        [attr.aria-label]="('Unwatched' | signalTranslate)() + ': ' + summary.unwatched"
+        [attr.aria-label]="translations.unwatched() + ': ' + summary.unwatched"
       >
         <span class="stat-value">{{ summary.unwatched }}</span>
-        <span class="stat-label">{{ ('Unwatched' | signalTranslate)() }}</span>
+        <span class="stat-label">{{ translations.unwatched() }}</span>
       </button>
     </div>
   }
 
   <hr />
 
-  <h2>{{ ('Chart' | signalTranslate)() }}</h2>
-  <libc-details [summary]="('SelectedTags' | signalTranslate)()" [open]="defaultOpenSelectedTags">
+  <h2>{{ translations.chart() }}</h2>
+  <libc-details [summary]="translations.selectedTags()" [open]="defaultOpenSelectedTags">
     <div data-test-id="statistics-tags" class="tags">
       @for (tag of tags(); track tag) {
         <button
@@ -75,35 +75,35 @@
   </libc-details>
   @if (selectedTags().length === 0) {
     <div data-test-id="statistics-tags-empty" class="tags-empty">
-      {{ ('Message.EmptySelectTagsForChart' | signalTranslate)() }}
+      {{ translations.messageEmptySelectTagsForChart() }}
     </div>
   }
 }
 
 <div class="charts-grid" [class.chart-hidden]="apiLoadNetworkStatus() !== 'finished' || tags().length === 0">
   <div class="chart-card" [class.chart-hidden]="selectedTags().length === 0">
-    <h3>{{ ('Tags' | signalTranslate)() }}</h3>
+    <h3>{{ translations.tags() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-tag-chart">{{ tagChart() }}</canvas>
     </div>
   </div>
 
   <div class="chart-card">
-    <h3>{{ ('GlobalWatchStatus' | signalTranslate)() }}</h3>
+    <h3>{{ translations.globalWatchStatus() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-watched-chart">{{ watchedChart() }}</canvas>
     </div>
   </div>
 
   <div class="chart-card">
-    <h3>{{ ('Type' | signalTranslate)() }}</h3>
+    <h3>{{ translations.type() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-type-chart">{{ typeChart() }}</canvas>
     </div>
   </div>
 
   <div class="chart-card chart-card-wide" [class.chart-hidden]="(statistics()?.genreCounts ?? []).length === 0">
-    <h3>{{ ('Genre' | signalTranslate)() }}</h3>
+    <h3>{{ translations.genre() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-genre-chart">{{ genreChart() }}</canvas>
     </div>

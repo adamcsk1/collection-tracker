@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { BlockerLoading } from '@components/blocker-loading/blocker-loading';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
@@ -11,28 +11,31 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { getApiPrefix } from '@shared/utils/get-api-prefix-util';
 import { getBasePath } from '@shared/utils/get-base-path-util';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'lo-root',
-  imports: [RouterOutlet, NgxSignalTranslatePipe, Toast, BlockerLoading],
+  imports: [RouterOutlet, Toast, BlockerLoading],
   templateUrl: './main.html',
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Main implements AfterViewInit {
-  private readonly signalTranslateService = inject(NgxSignalTranslateService);
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly webstorage = inject(WebstorageService);
   private readonly api = inject(PublicApiService);
   private readonly theme = inject(ThemeService);
   private readonly apiState = inject(apiStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly blockerLoadingState = inject(blockerLoadingStateToken);
+  protected readonly translations = {
+    title: computed(() => this.ngxSignalTranslate.translate('Title')),
+  };
   protected readonly themeLogo = this.theme.themeLogo;
 
   constructor() {
-    this.signalTranslateService.setLanguage('en');
+    this.ngxSignalTranslate.setLanguage('en');
     this.blockerLoadingState.setState('withoutDelay', true);
     this.blockerLoadingState.setState('show', true);
     this.themeState.setState('theme', 'light');

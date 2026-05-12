@@ -15,7 +15,7 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { INTERNAL_USED_TAGS, VIRTUAL_TAGS } from '@shared/constants/tags-const';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
 import { TagConfigCard } from './tag-config-card/tag-config-card';
 import { TagConfigsModel } from './tag-configs-model';
@@ -24,7 +24,7 @@ import { tagConfigsStateToken } from './tag-configs-store';
 
 @Component({
   selector: 'ct-tag-configs',
-  imports: [NgxSignalTranslatePipe, Input, TagConfigCard],
+  imports: [Input, TagConfigCard],
   templateUrl: './tag-configs.html',
   styleUrl: './tag-configs.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +40,12 @@ export class TagConfigs {
   private readonly destroyRef = inject(DestroyRef);
   private readonly uniqueTags = signal<string[]>([]);
   private readonly tagIgnoreList = [...INTERNAL_USED_TAGS, ...VIRTUAL_TAGS];
+  protected readonly translations = {
+    tagConfig: computed(() => this.ngxSignalTranslate.translate('TagConfig')),
+    messageTagConfig: computed(() => this.ngxSignalTranslate.translate('Message.TagConfig')),
+    placeholderFilterTags: computed(() => this.ngxSignalTranslate.translate('Placeholder.FilterTags')),
+    resetToDefault: computed(() => this.ngxSignalTranslate.translate('ResetToDefault')),
+  };
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly filterText = signal('');
   protected readonly tagConfigs = computed<TagConfigsModel>(() => {

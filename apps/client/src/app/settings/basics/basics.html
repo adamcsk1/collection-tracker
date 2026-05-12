@@ -1,14 +1,14 @@
 <form role="form" [formRoot]="form">
   <libc-select
     data-test-id="settings-language"
-    [label]="('Language' | signalTranslate)()"
+    [label]="translations.language()"
     [mandatory]="true"
     [formField]="form.language"
     [options]="languageOptions()"
   />
   <libc-select
     data-test-id="settings-theme"
-    [label]="('Theme' | signalTranslate)()"
+    [label]="translations.theme()"
     [mandatory]="true"
     [formField]="form.theme"
     [options]="themeOptions()"
@@ -17,49 +17,49 @@
     data-test-id="settings-animated-background"
     [mandatory]="true"
     [formField]="form.animatedBackground"
-    [label]="('AnimatedBackground' | signalTranslate)()"
-    [hint]="('Message.AnimatedBackground' | signalTranslate)()"
+    [label]="translations.animatedBackground()"
+    [hint]="translations.messageAnimatedBackground()"
   />
   @if (!settingLockEnabled()) {
     <libc-select
       data-test-id="settings-app-mode"
-      [label]="('AppMode' | signalTranslate)()"
-      [hint]="('Message.AppMode' | signalTranslate)()"
+      [label]="translations.appMode()"
+      [hint]="translations.messageAppMode()"
       [mandatory]="true"
       [formField]="form.appMode"
       [options]="[
-        { text: ('BasicAccess' | signalTranslate)(), value: 'basic' },
-        { text: ('LimitedAccess' | signalTranslate)(), value: 'limited' },
-        { text: ('FullAccess' | signalTranslate)(), value: 'full' },
+        { text: translations.basicAccess(), value: 'basic' },
+        { text: translations.limitedAccess(), value: 'limited' },
+        { text: translations.fullAccess(), value: 'full' },
       ]"
     />
     @if (form.appMode().value() !== 'full') {
       <libc-checkbox
         data-test-id="settings-settings-lock"
-        [label]="('SettingsLock' | signalTranslate)()"
-        [hint]="('Message.SettingsLock' | signalTranslate)()"
+        [label]="translations.settingsLock()"
+        [hint]="translations.messageSettingsLock()"
         [mandatory]="true"
         [formField]="form.settingsLock"
       />
     }
   }
   @if (!settingLockEnabled()) {
-    <p>{{ ('Message.StorageSettings' | signalTranslate)() }}</p>
+    <p>{{ translations.messageStorageSettings() }}</p>
     <libc-select
       data-test-id="settings-sensitive-data-storage"
-      [label]="('SensitiveDataStorage' | signalTranslate)()"
-      [hint]="('Message.SensitiveDataStorage' | signalTranslate)()"
+      [label]="translations.sensitiveDataStorage()"
+      [hint]="translations.messageSensitiveDataStorage()"
       [mandatory]="true"
       [formField]="form.sensitiveDataStorage"
       [options]="[
-        { text: ('LocalStorage' | signalTranslate)(), value: 'local' },
-        { text: ('SessionStorage' | signalTranslate)(), value: 'session' },
+        { text: translations.localStorage(), value: 'local' },
+        { text: translations.sessionStorage(), value: 'session' },
       ]"
     />
     @if (form.sensitiveDataStorage().value() === 'local') {
       <libc-checkbox
         data-test-id="settings-clear-local-storage-after-logout"
-        [label]="('ClearLocalStorageAfterLogout' | signalTranslate)()"
+        [label]="translations.clearLocalStorageAfterLogout()"
         [mandatory]="true"
         [formField]="form.clearLocalStorageAfterLogout"
       />
@@ -68,8 +68,8 @@
 
   <div class="form-buttons">
     <button data-test-id="settings-save" type="submit" [disabled]="form().invalid()" (click)="submitAction.set('save')">
-      <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
-      {{ ('Save' | signalTranslate)() }}
+      <i class="material-icons" [title]="translations.save()"> save </i>
+      {{ translations.save() }}
     </button>
   </div>
 </form>

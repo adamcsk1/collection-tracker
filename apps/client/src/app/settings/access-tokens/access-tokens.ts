@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TokenDialog } from '../token-dialog/token-dialog';
 import { TokenItem } from './token-item/token-item';
@@ -8,11 +8,11 @@ import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { AccessTokensApiResponseModel } from '@shared/models/api-model';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-access-tokens',
-  imports: [TokenItem, NgxSignalTranslatePipe],
+  imports: [TokenItem],
   templateUrl: './access-tokens.html',
   styleUrl: './access-tokens.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,6 +24,11 @@ export class AccessTokens implements OnInit {
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly translations = {
+    messageAccessTokenSettings: computed(() => this.ngxSignalTranslate.translate('Message.AccessTokenSettings')),
+    messageCreateNewAccessToken: computed(() => this.ngxSignalTranslate.translate('Message.CreateNewAccessToken')),
+    createNewAccessToken: computed(() => this.ngxSignalTranslate.translate('CreateNewAccessToken')),
+  };
   protected readonly accessTokens = signal<AccessTokensApiResponseModel>([]);
 
   public ngOnInit(): void {

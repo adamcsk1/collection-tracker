@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked, computed } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AiSearchInput } from './ai-search-input/ai-search-input';
@@ -7,13 +7,13 @@ import { List } from './list/list';
 import { AiSearchService } from './search/ai-search-service';
 import { SearchSuggestionService } from './search/search-suggestion-service';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 import { provideStore } from 'ngx-simple-signal-store';
 
 @Component({
   selector: 'ct-collection',
-  imports: [List, FormField, NgxSignalTranslatePipe, Autocomplete, AiSearchInput],
+  imports: [List, FormField, Autocomplete, AiSearchInput],
   templateUrl: './collection.html',
   styleUrl: './collection.css',
   providers: [
@@ -24,10 +24,15 @@ import { provideStore } from 'ngx-simple-signal-store';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Collection {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
   private readonly aiSearch = inject(AiSearchService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  protected readonly translations = {
+    placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
+    placeholderSearchInCollection: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInCollection')),
+  };
   protected readonly searchTextModel = signal('');
   protected readonly aiSearchPromptTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);

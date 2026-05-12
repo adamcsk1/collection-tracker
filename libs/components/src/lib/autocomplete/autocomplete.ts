@@ -14,18 +14,18 @@ import {
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { AutocompleteServiceInterface } from './autocomplete-model';
 import { createFormControlA11y } from '../utils/form-control-a11y-util';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { asyncScheduler, isObservable, Subscription } from 'rxjs';
 
 export const AutocompleteService = new InjectionToken<AutocompleteServiceInterface>('AutocompleteService');
 
 @Component({
   selector: 'libc-autocomplete',
-  imports: [NgxSignalTranslatePipe],
   templateUrl: './autocomplete.html',
   styleUrl: './autocomplete.css',
 })
 export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
   private readonly _suggestions = signal<string[]>([]);
   private readonly injectedAutocompleteService = inject(AutocompleteService, { optional: true });
@@ -33,6 +33,12 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
   private suggestionRequest: Subscription | null = null;
   private lastKeycode = '';
   private lastEventWasAccept = false;
+  protected readonly translations = {
+    closeSuggestions: computed(() => this.ngxSignalTranslate.translate('CloseSuggestions')),
+    suggestions: computed(() => this.ngxSignalTranslate.translate('Suggestions')),
+    resetInput: computed(() => this.ngxSignalTranslate.translate('ResetInput')),
+    validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
+  };
   protected readonly suggestions = this._suggestions.asReadonly();
   public readonly value = model<T | null>(null);
   public readonly touched = model(false);

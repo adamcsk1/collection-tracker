@@ -9,17 +9,18 @@ import {
   output,
   signal,
   viewChild,
+  computed,
 } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
 import { ImageIcon } from '@components/image-icon/image-icon';
 import { Textarea } from '@components/textarea/textarea';
 import { AlertService } from '@services/alert-service';
 import { getBasePath } from '@shared/utils/get-base-path-util';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-ai-search-input',
-  imports: [Textarea, FormField, NgxSignalTranslatePipe, ImageIcon],
+  imports: [Textarea, FormField, ImageIcon],
   templateUrl: './ai-search-input.html',
   styleUrl: './ai-search-input.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +30,12 @@ export class AiSearchInput {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly alert = inject(AlertService);
   private readonly expandedPanel = viewChild<ElementRef<HTMLDivElement>>('expandedPanel');
+  protected readonly translations = {
+    sendPrompt: computed(() => this.ngxSignalTranslate.translate('SendPrompt')),
+    messageAiSearch: computed(() => this.ngxSignalTranslate.translate('Message.AiSearch')),
+    aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
+    aiSearchInfo: computed(() => this.ngxSignalTranslate.translate('AiSearchInfo')),
+  };
   protected readonly isExpanded = signal(false);
   protected readonly ollamaIcon = `${getBasePath()}/client/images/ollama-icon.png`;
   public readonly formField = input.required<FieldTree<string>>();

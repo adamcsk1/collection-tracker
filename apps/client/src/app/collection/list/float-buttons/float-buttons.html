@@ -8,8 +8,8 @@
     <button
       data-test-id="scroll-to-top"
       class="button-icon material-icons"
-      [attr.aria-label]="('ScrollToTop' | signalTranslate)()"
-      [title]="('ScrollToTop' | signalTranslate)()"
+      [attr.aria-label]="translations.scrollToTop()"
+      [title]="translations.scrollToTop()"
       (click)="onScrollToTop()"
     >
       arrow_upward
@@ -23,8 +23,8 @@
         <button
           data-test-id="add-new"
           class="button-icon material-icons"
-          [attr.aria-label]="('AddNew' | signalTranslate)()"
-          [title]="('AddNew' | signalTranslate)()"
+          [attr.aria-label]="translations.addNew()"
+          [title]="translations.addNew()"
           [disabled]="apiLoadNetworkStatus() === 'pending'"
           (click)="onAddNew()"
         >
@@ -36,8 +36,8 @@
       <button
         data-test-id="ai-search-toggle"
         class="button-icon"
-        [attr.aria-label]="(searchSwitchButtonLabel() | signalTranslate)()"
-        [title]="(searchSwitchButtonLabel() | signalTranslate)()"
+        [attr.aria-label]="translations.searchSwitchButtonLabel()"
+        [title]="translations.searchSwitchButtonLabel()"
         [disabled]="apiLoadNetworkStatus() === 'pending' || !aiAvailable()"
         [class.material-icons]="!useAiSearch() && aiAvailable()"
         (click)="onToggleAiSearch()"
@@ -47,11 +47,11 @@
             search
           } @else {
             <span class="ai-offline-icon">
-              <libc-image-icon [ariaLabel]="('AiSearchOffline' | signalTranslate)()" [imageUrl]="ollamaIcon" />
+              <libc-image-icon [ariaLabel]="translations.aiSearchOffline()" [imageUrl]="ollamaIcon" />
             </span>
           }
         } @else {
-          <libc-image-icon [ariaLabel]="('AiSearch' | signalTranslate)()" [imageUrl]="ollamaIcon" />
+          <libc-image-icon [ariaLabel]="translations.aiSearch()" [imageUrl]="ollamaIcon" />
         }
       </button>
     </div>
@@ -59,8 +59,8 @@
       <button
         data-test-id="random-pick"
         class="button-icon material-icons"
-        [attr.aria-label]="('RandomPick' | signalTranslate)()"
-        [title]="('RandomPick' | signalTranslate)()"
+        [attr.aria-label]="translations.randomPick()"
+        [title]="translations.randomPick()"
         [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
         (click)="onRandomPick()"
       >
@@ -71,8 +71,8 @@
       <button
         data-test-id="hide-functions"
         class="button-icon material-icons"
-        [attr.aria-label]="('HideFunctions' | signalTranslate)()"
-        [title]="('HideFunctions' | signalTranslate)()"
+        [attr.aria-label]="translations.hideFunctions()"
+        [title]="translations.hideFunctions()"
         (click)="onHideFunctions()"
       >
         close
@@ -84,8 +84,8 @@
     <button
       data-test-id="show-functions"
       class="button-icon material-icons"
-      [attr.aria-label]="('ShowFunctions' | signalTranslate)()"
-      [title]="('ShowFunctions' | signalTranslate)()"
+      [attr.aria-label]="translations.showFunctions()"
+      [title]="translations.showFunctions()"
       (click)="onShowFunctions()"
     >
       apps

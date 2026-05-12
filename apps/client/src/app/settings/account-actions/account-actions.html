@@ -1,14 +1,14 @@
 <div data-test-id="settings-account-actions">
-  <p>{{ ('Message.UserSettings' | signalTranslate)() }}</p>
+  <p>{{ translations.messageUserSettings() }}</p>
 
   <div class="actions">
     <button data-test-id="settings-create-user-token" (click)="onCreateNewUserToken()">
-      <i class="material-icons" [title]="('CreateNewUserToken' | signalTranslate)()"> add </i>
-      {{ ('CreateNewUserToken' | signalTranslate)() }}
+      <i class="material-icons" [title]="translations.createNewUserToken()"> add </i>
+      {{ translations.createNewUserToken() }}
     </button>
     <button data-test-id="settings-delete-user" class="button-danger" (click)="onDeleteUser()">
-      <i class="material-icons" [title]="('DeleteUser' | signalTranslate)()"> delete </i>
-      {{ ('DeleteUser' | signalTranslate)() }}
+      <i class="material-icons" [title]="translations.deleteUser()"> delete </i>
+      {{ translations.deleteUser() }}
     </button>
   </div>
 </div>

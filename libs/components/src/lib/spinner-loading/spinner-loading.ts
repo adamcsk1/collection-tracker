@@ -1,20 +1,24 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { spinnerLoadingStateToken } from './spinner-loading-store';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { concatMap, delay, filter, of, skip, tap } from 'rxjs';
 
 @Component({
   selector: 'libc-spinner-loading',
-  imports: [AsyncPipe, NgxSignalTranslatePipe],
+  imports: [AsyncPipe],
   templateUrl: './spinner-loading.html',
   styleUrl: './spinner-loading.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpinnerLoading {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private counter = 0;
+  protected readonly translations = {
+    loading: computed(() => this.ngxSignalTranslate.translate('Loading')),
+  };
   protected readonly spinnerLoading$ = toObservable(this.spinnerLoadingState.state.show).pipe(
     skip(1),
     tap((status) => {

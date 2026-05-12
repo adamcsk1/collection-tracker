@@ -11,11 +11,11 @@
       data-test-id="token-dialog-copy"
       class="text-button"
       tabindex="0"
-      [attr.aria-label]="('CopyToClipboard' | signalTranslate)()"
+      [attr.aria-label]="translations.copyToClipboard()"
       (click)="onCopyToClipboard()"
       (keyup.enter)="onCopyToClipboard()"
     >
-      {{ ('CopyToClipboard' | signalTranslate)() }}
+      {{ translations.copyToClipboard() }}
     </a>
     <small> {{ message() }} </small>
   </ng-container>

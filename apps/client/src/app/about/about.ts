@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { APP_VERSION, BUILD, BUILD_DATE } from '../main/main-const';
 import { mainStateToken } from '../main/main-store';
@@ -8,12 +8,12 @@ import { ThemeService } from '@services/theme/theme-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_SETTINGS_LOCK } from '@shared/constants/storage-const';
 import { getBasePath } from '@shared/utils/get-base-path-util';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { BehaviorSubject, debounceTime, filter, tap } from 'rxjs';
 
 @Component({
   selector: 'ct-about',
-  imports: [NgxSignalTranslatePipe, LinkButton],
+  imports: [LinkButton],
   templateUrl: './about.html',
   styleUrl: './about.css',
   host: {
@@ -29,6 +29,18 @@ export class About {
   private readonly toastState = inject(toastStateToken);
   private readonly theme = inject(ThemeService);
   private readonly counter = new BehaviorSubject(0);
+  protected readonly translations = {
+    title: computed(() => this.ngxSignalTranslate.translate('Title')),
+    aboutDescription: computed(() => this.ngxSignalTranslate.translate('About.Description')),
+    build: computed(() => this.ngxSignalTranslate.translate('Build')),
+    buildDate: computed(() => this.ngxSignalTranslate.translate('BuildDate')),
+    appVersion: computed(() => this.ngxSignalTranslate.translate('AppVersion')),
+    links: computed(() => this.ngxSignalTranslate.translate('Links')),
+    navigateToServerHealth: computed(() => this.ngxSignalTranslate.translate('NavigateToServerHealth')),
+    viewOnGitHub: computed(() => this.ngxSignalTranslate.translate('ViewOnGitHub')),
+    downloadApk: computed(() => this.ngxSignalTranslate.translate('DownloadApk')),
+    navigateToApiDocs: computed(() => this.ngxSignalTranslate.translate('NavigateToApiDocs')),
+  };
   protected readonly themeLogo = this.theme.themeLogo;
   protected readonly build = BUILD;
   protected readonly buildDate = BUILD_DATE;

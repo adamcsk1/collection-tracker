@@ -10,8 +10,8 @@
   @if (suggestions().length) {
     <button
       class="input-suggestions-close button-icon material-icons"
-      [attr.aria-label]="('CloseSuggestions' | signalTranslate)()"
-      [title]="('CloseSuggestions' | signalTranslate)()"
+      [attr.aria-label]="translations.closeSuggestions()"
+      [title]="translations.closeSuggestions()"
       [class.input-suggestions-close-small-position]="showReset()"
       (click)="onCloseSuggestion()"
     >
@@ -21,7 +21,7 @@
       class="input-suggestions"
       role="listbox"
       id="autocomplete-suggestions-list"
-      [attr.aria-label]="('Suggestions' | signalTranslate)()"
+      [attr.aria-label]="translations.suggestions()"
       [class.input-suggestions-small]="showReset()"
     >
       @for (suggestion of suggestions(); track $index) {
@@ -73,8 +73,8 @@
   @if (showReset()) {
     <button
       class="button-icon material-icons"
-      [attr.aria-label]="('ResetInput' | signalTranslate)()"
-      [title]="('ResetInput' | signalTranslate)()"
+      [attr.aria-label]="translations.resetInput()"
+      [title]="translations.resetInput()"
       [disabled]="!hasValue() || disabled()"
       (click)="onReset()"
     >
@@ -89,7 +89,7 @@
   @if (showError()) {
     <small class="error" [id]="errorId()">
       @if (hasRequiredError()) {
-        {{ ('Validation.Required' | signalTranslate)() }}
+        {{ translations.validationRequired() }}
       }
       <ng-content select="[errors]"></ng-content>
     </small>

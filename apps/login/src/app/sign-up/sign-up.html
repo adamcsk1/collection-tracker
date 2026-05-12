@@ -1,43 +1,43 @@
 <div class="header">
-  <h2>{{ ('SignUp' | signalTranslate)() }}</h2>
-  <p>{{ ('Message.SignUp' | signalTranslate)() }}</p>
+  <h2>{{ translations.signUp() }}</h2>
+  <p>{{ translations.messageSignUp() }}</p>
 </div>
-<form role="form" [attr.aria-label]="('SignUp' | signalTranslate)()" [formRoot]="form">
+<form role="form" [attr.aria-label]="translations.signUp()" [formRoot]="form">
   <libc-input
     data-test-id="sign-up-username"
     icon="person"
-    [label]="('Username' | signalTranslate)()"
+    [label]="translations.username()"
     [mandatory]="true"
     [formField]="form.username"
   >
     <ng-container errors>
       @if (formErrors.username.minLength()) {
-        {{ ('Validation.UsernameMinLength' | signalTranslate)() }}
+        {{ translations.validationUsernameMinLength() }}
       }
       @if (formErrors.username.maxLength()) {
-        {{ ('Validation.UsernameMaxLength' | signalTranslate)() }}
+        {{ translations.validationUsernameMaxLength() }}
       }
     </ng-container>
   </libc-input>
   @if (secret()) {
-    <label for="secret">{{ ('Secret' | signalTranslate)() }}</label>
+    <label for="secret">{{ translations.secret() }}</label>
     <code id="secret" data-test-id="sign-up-secret-value">{{ secret() }}</code>
     <a
       tabindex="0"
       role="button"
       class="text-button"
-      [attr.aria-label]="('CopyToClipboard' | signalTranslate)()"
+      [attr.aria-label]="translations.copyToClipboard()"
       (click)="onCopyToClipboard()"
       (keyup.enter)="onCopyToClipboard()"
     >
-      {{ ('CopyToClipboard' | signalTranslate)() }}
+      {{ translations.copyToClipboard() }}
     </a>
-    <small> {{ ('Message.SignUpSecret' | signalTranslate)() }} </small>
+    <small> {{ translations.messageSignUpSecret() }} </small>
   }
   @if (showApiUrlInput()) {
     <libc-input
-      [label]="('ApiUrl' | signalTranslate)()"
-      [hint]="('Message.ApiUrl' | signalTranslate)()"
+      [label]="translations.apiUrl()"
+      [hint]="translations.messageApiUrl()"
       [mandatory]="true"
       [formField]="form.apiUrl"
     />
@@ -46,15 +46,15 @@
   <div class="form-buttons">
     @if (!secret()) {
       <button data-test-id="sign-up-submit" type="submit" class="button-custom" [disabled]="form().invalid()">
-        {{ ('Continue' | signalTranslate)() }}
+        {{ translations.continue() }}
       </button>
     }
     <hr />
     <div>
-      <a data-test-id="sign-in-link" [routerLink]="['/', 'sign-in']"> {{ ('BackToSignIn' | signalTranslate)() }} </a>
+      <a data-test-id="sign-in-link" [routerLink]="['/', 'sign-in']"> {{ translations.backToSignIn() }} </a>
       @if (!showApiUrlInput() && !secret()) {
         <button type="button" class="button-basic button-custom" (click)="showApiUrlInput.set(true)">
-          {{ ('ChangeApiUrl' | signalTranslate)() }}
+          {{ translations.changeApiUrl() }}
         </button>
       }
     </div>

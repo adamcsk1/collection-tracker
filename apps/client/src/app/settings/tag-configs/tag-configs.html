@@ -1,17 +1,17 @@
-<h2>{{ ('TagConfig' | signalTranslate)() }}</h2>
-<p>{{ ('Message.TagConfig' | signalTranslate)() }}</p>
+<h2>{{ translations.tagConfig() }}</h2>
+<p>{{ translations.messageTagConfig() }}</p>
 <div class="tag-configs-toolbar">
   <libc-input
     data-test-id="tag-configs-filter"
     [icon]="'search'"
     [showReset]="true"
-    [placeholder]="('Placeholder.FilterTags' | signalTranslate)()"
+    [placeholder]="translations.placeholderFilterTags()"
     type="text"
     (valueChange)="onFilterChange($event)"
   />
   <button data-test-id="tag-configs-reset" (click)="onResetTagConfigs()">
-    <i class="material-icons" [title]="('ResetToDefault' | signalTranslate)()">close</i>
-    {{ ('ResetToDefault' | signalTranslate)() }}
+    <i class="material-icons" [title]="translations.resetToDefault()">close</i>
+    {{ translations.resetToDefault() }}
   </button>
 </div>
 <div data-test-id="tag-configs-list" class="tag-configs" role="list">

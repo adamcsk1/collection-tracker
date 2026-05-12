@@ -3,14 +3,14 @@
     <div class="search-input">
       <ct-ai-search-input
         [formField]="aiSearchPromptTextField"
-        [placeholder]="('Placeholder.Reply' | signalTranslate)()"
+        [placeholder]="translations.placeholderReply()"
         (sendEvent)="onAiSearchSend()"
       />
     </div>
   } @else {
     <libc-autocomplete
       data-test-id="collection-search"
-      [placeholder]="('Placeholder.SearchInCollection' | signalTranslate)()"
+      [placeholder]="translations.placeholderSearchInCollection()"
       [formField]="searchTextField"
       [showReset]="true"
       (userEvent)="onSearchFromUser()"

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TokenDialog } from '../token-dialog/token-dialog';
 
@@ -8,12 +8,11 @@ import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { getBasePath } from '@shared/utils/get-base-path-util';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { delay, tap } from 'rxjs';
 
 @Component({
   selector: 'ct-account-actions',
-  imports: [NgxSignalTranslatePipe],
   templateUrl: './account-actions.html',
   styleUrl: './account-actions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +26,11 @@ export class AccountActions {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly translations = {
+    messageUserSettings: computed(() => this.ngxSignalTranslate.translate('Message.UserSettings')),
+    createNewUserToken: computed(() => this.ngxSignalTranslate.translate('CreateNewUserToken')),
+    deleteUser: computed(() => this.ngxSignalTranslate.translate('DeleteUser')),
+  };
   protected onCreateNewUserToken(): void {
     this.confirm
       .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.CreateNewUserToken'))

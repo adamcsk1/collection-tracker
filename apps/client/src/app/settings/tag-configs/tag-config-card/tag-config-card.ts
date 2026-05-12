@@ -1,18 +1,26 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, computed, inject } from '@angular/core';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Input } from '@components/input/input';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { TagConfigModel } from '../tag-configs-model';
 
 @Component({
   selector: 'ct-tag-config-card',
-  imports: [NgxSignalTranslatePipe, Checkbox, Input],
+  imports: [Checkbox, Input],
   templateUrl: './tag-config-card.html',
   styleUrl: './tag-config-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TagConfigCard {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  protected readonly translations = {
+    selectColor: computed(() => this.ngxSignalTranslate.translate('SelectColor')),
+    weight: computed(() => this.ngxSignalTranslate.translate('Weight')),
+    useTagColorForImageBorder: computed(() => this.ngxSignalTranslate.translate('UseTagColorForImageBorder')),
+    useTagColorForTextColor: computed(() => this.ngxSignalTranslate.translate('UseTagColorForTextColor')),
+    useTagForImageBadge: computed(() => this.ngxSignalTranslate.translate('UseTagForImageBadge')),
+  };
   public readonly tagConfig = input.required<TagConfigModel>();
   public readonly colorChange = output<string>();
   public readonly weightChange = output<number | null>();

@@ -1,8 +1,8 @@
-<p>{{ ('Message.GlobalWatchStatus' | signalTranslate)() }}</p>
+<p>{{ translations.messageGlobalWatchStatus() }}</p>
 <div class="actions">
   <button data-test-id="settings-mark-all-watched" type="button" (click)="onMarkAllAsWatched()">
-    <i class="material-icons" [title]="('MarkAllAsWatched' | signalTranslate)()"> visibility </i>
-    {{ ('MarkAllAsWatched' | signalTranslate)() }}
+    <i class="material-icons" [title]="translations.markAllAsWatched()"> visibility </i>
+    {{ translations.markAllAsWatched() }}
   </button>
   <button
     data-test-id="settings-mark-all-unwatched"
@@ -10,7 +10,7 @@
     class="button-danger"
     (click)="onMarkAllAsUnwatched()"
   >
-    <i class="material-icons" [title]="('MarkAllAsUnwatched' | signalTranslate)()"> visibility_off </i>
-    {{ ('MarkAllAsUnwatched' | signalTranslate)() }}
+    <i class="material-icons" [title]="translations.markAllAsUnwatched()"> visibility_off </i>
+    {{ translations.markAllAsUnwatched() }}
   </button>
 </div>

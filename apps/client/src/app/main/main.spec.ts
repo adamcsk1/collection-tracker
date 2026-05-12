@@ -55,7 +55,6 @@ describe('Main component (client)', () => {
 
     TestBed.overrideComponent(Main, {
       set: {
-        imports: [],
         template: '',
       },
     });

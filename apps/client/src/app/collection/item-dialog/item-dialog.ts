@@ -12,7 +12,7 @@ import { VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { map, mergeMap, of } from 'rxjs';
 import { mainStateToken } from '../../main/main-store';
 import { CollectionItemModel } from '../collection-model';
@@ -23,7 +23,7 @@ import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
 
 @Component({
   selector: 'ct-item-dialog',
-  imports: [NgxSignalTranslatePipe, DialogShell, Autocomplete, LinkButton],
+  imports: [DialogShell, Autocomplete, LinkButton],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
   providers: [TagSuggestionService, GenreSuggestionService],
@@ -42,9 +42,35 @@ export class ItemDialog implements OnInit {
   private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly lastSavedItem = signal<CollectionItemChangeApiModel | null>(null);
+  protected readonly translations = {
+    titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
+    labelTitle: computed(() => this.ngxSignalTranslate.translate('Label.Title')),
+    labelIMDbId: computed(() => this.ngxSignalTranslate.translate('Label.IMDbId')),
+    labelYear: computed(() => this.ngxSignalTranslate.translate('Label.Year')),
+    labelIMDbRate: computed(() => this.ngxSignalTranslate.translate('Label.IMDbRate')),
+    labelImageUrl: computed(() => this.ngxSignalTranslate.translate('Label.ImageUrl')),
+    altImageExample: computed(() => this.ngxSignalTranslate.translate('Alt.ImageExample')),
+    genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
+    hintSeparateGenres: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateGenres')),
+    tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
+    hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
+    actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
+    plot: computed(() => this.ngxSignalTranslate.translate('Plot')),
+    fallbackUnknownYear: computed(() => this.ngxSignalTranslate.translate('Fallback.UnknownYear')),
+    fallbackNotAvailable: computed(() => this.ngxSignalTranslate.translate('Fallback.NotAvailable')),
+    links: computed(() => this.ngxSignalTranslate.translate('Links')),
+    linkYouTubeTrailer: computed(() => this.ngxSignalTranslate.translate('Link.YouTubeTrailer')),
+    linkWebSearch: computed(() => this.ngxSignalTranslate.translate('Link.WebSearch')),
+    readOnly: computed(() => this.ngxSignalTranslate.translate('ReadOnly')),
+    save: computed(() => this.ngxSignalTranslate.translate('Save')),
+    edit: computed(() => this.ngxSignalTranslate.translate('Edit')),
+    markAsUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAsUnwatched')),
+    markAsWatched: computed(() => this.ngxSignalTranslate.translate('MarkAsWatched')),
+    delete: computed(() => this.ngxSignalTranslate.translate('Delete')),
+  };
   protected readonly tagSuggestionService = inject(TagSuggestionService);
   protected readonly genreSuggestionService = inject(GenreSuggestionService);
-  private readonly lastSavedItem = signal<CollectionItemChangeApiModel | null>(null);
   protected readonly draftItem = signal<CollectionItemChangeApiModel>({
     image: '',
     title: '',

@@ -14,12 +14,12 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { getBasePath } from '@shared/utils/get-base-path-util';
 import { companionApp, resetCompanionAppConfig } from '@shared/utils/companion-app-util';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, firstValueFrom, of } from 'rxjs';
 
 @Component({
   selector: 'lo-sign-in',
-  imports: [NgxSignalTranslatePipe, Input, FormField, FormRoot, RouterLink, Select],
+  imports: [Input, FormField, FormRoot, RouterLink, Select],
   templateUrl: './sign-in.html',
   styleUrl: './sign-in.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +33,29 @@ export class SignIn implements OnInit {
   private readonly theme = inject(ThemeService);
   private readonly publicApi = inject(PublicApiService);
   private readonly sharedApi = inject(SharedApiService);
+  protected readonly translations = {
+    welcomeBack: computed(() => this.ngxSignalTranslate.translate('WelcomeBack')),
+    messageSignIn: computed(() => this.ngxSignalTranslate.translate('Message.SignIn')),
+    signIn: computed(() => this.ngxSignalTranslate.translate('SignIn')),
+    username: computed(() => this.ngxSignalTranslate.translate('Username')),
+    validationUsernameMinLength: computed(() => this.ngxSignalTranslate.translate('Validation.UsernameMinLength')),
+    validationUsernameMaxLength: computed(() => this.ngxSignalTranslate.translate('Validation.UsernameMaxLength')),
+    secret: computed(() => this.ngxSignalTranslate.translate('Secret')),
+    apiUrl: computed(() => this.ngxSignalTranslate.translate('ApiUrl')),
+    messageApiUrl: computed(() => this.ngxSignalTranslate.translate('Message.ApiUrl')),
+    continue: computed(() => this.ngxSignalTranslate.translate('Continue')),
+    signUp: computed(() => this.ngxSignalTranslate.translate('SignUp')),
+    companionAppReset: computed(() => this.ngxSignalTranslate.translate('CompanionAppReset')),
+    changeApiUrl: computed(() => this.ngxSignalTranslate.translate('ChangeApiUrl')),
+    language: computed(() => this.ngxSignalTranslate.translate('Language')),
+    theme: computed(() => this.ngxSignalTranslate.translate('Theme')),
+    toggleSecretAriaLabel: computed(() =>
+      this.ngxSignalTranslate.translate(this.tokenInputType() === 'text' ? 'HideSecret' : 'ShowSecret')
+    ),
+    toggleSecretLabel: computed(() =>
+      this.ngxSignalTranslate.translate(this.tokenInputType() === 'text' ? 'ShowSecret' : 'HideSecret')
+    ),
+  };
   protected readonly signInModel = signal<SignInModel>({
     username: '',
     token: '',

@@ -28,7 +28,7 @@
 @if (showError()) {
   <small class="error" [id]="errorId()">
     @if (hasRequiredError()) {
-      {{ ('Validation.Required' | signalTranslate)() }}
+      {{ translations.validationRequired() }}
     }
     <ng-content select="[errors]"></ng-content>
   </small>

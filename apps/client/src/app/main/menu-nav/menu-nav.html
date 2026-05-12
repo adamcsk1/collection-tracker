@@ -1,11 +1,11 @@
 <div class="header" role="banner">
-  <img [src]="'icons/' + themeLogo()" [alt]="('Title' | signalTranslate)()" />
+  <img [src]="'icons/' + themeLogo()" [alt]="translations.title()" />
   <div>
-    <h1 class="app-title-style">{{ ('Title' | signalTranslate)() }}</h1>
+    <h1 class="app-title-style">{{ translations.title() }}</h1>
   </div>
 </div>
 
-<nav class="menu-nav" role="navigation" [attr.aria-label]="('Menu' | signalTranslate)()">
+<nav class="menu-nav" role="navigation" [attr.aria-label]="translations.menu()">
   <a
     data-test-id="nav-collection"
     [routerLink]="['/', 'collection']"
@@ -14,7 +14,7 @@
     (click)="onClose()"
   >
     <i class="material-icons">movie</i>
-    {{ ('Collection' | signalTranslate)() }}
+    {{ translations.collection() }}
   </a>
   @if (!settingLockEnabled()) {
     <a
@@ -25,23 +25,23 @@
       (click)="onClose()"
     >
       <i class="material-icons">settings</i>
-      {{ ('Settings' | signalTranslate)() }}
+      {{ translations.settings() }}
     </a>
   }
   <a [routerLink]="['/', 'statistics']" routerLinkActive="active" class="highlight space" (click)="onClose()">
     <i class="material-icons">bar_chart</i>
-    {{ ('Statistics' | signalTranslate)() }}
+    {{ translations.statistics() }}
   </a>
   <a data-test-id="nav-sync" href="#" (click)="onSync()">
     <i class="material-icons">sync</i>
-    {{ ('Sync' | signalTranslate)() }}
+    {{ translations.sync() }}
   </a>
   <a data-test-id="nav-about" [routerLink]="['/', 'about']" routerLinkActive="active" (click)="onClose()">
     <i class="material-icons">info</i>
-    {{ ('About' | signalTranslate)() }}
+    {{ translations.about() }}
   </a>
   <a data-test-id="nav-logout" href="#" (click)="onLogout()">
     <i class="material-icons">logout</i>
-    {{ ('Logout' | signalTranslate)() }}
+    {{ translations.logout() }}
   </a>
 </nav>
