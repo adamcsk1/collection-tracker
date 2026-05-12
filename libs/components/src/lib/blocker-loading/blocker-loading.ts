@@ -1,22 +1,26 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal, computed } from '@angular/core';
 import { BLOCKER_LOADING_TIMEOUT_MS } from './blocker-loading-const';
 import { blockerLoadingStateToken } from './blocker-loading-store';
 import { ThemeService } from '@services/theme/theme-service';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { asyncScheduler, Subscription } from 'rxjs';
 
 @Component({
   selector: 'libc-blocker-loading',
-  imports: [NgxSignalTranslatePipe],
   templateUrl: './blocker-loading.html',
   styleUrl: './blocker-loading.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BlockerLoading {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly blockerLoadingState = inject(blockerLoadingStateToken);
   private readonly theme = inject(ThemeService);
   private startTime: number | null = null;
   private scheduler?: Subscription;
+  protected readonly translations = {
+    title: computed(() => this.ngxSignalTranslate.translate('Title')),
+    messageLoading: computed(() => this.ngxSignalTranslate.translate('Message.Loading')),
+  };
   protected readonly showBlockerLoading = signal(false);
   protected readonly message = this.blockerLoadingState.state.message;
   protected readonly themeLogo = this.theme.themeLogo;

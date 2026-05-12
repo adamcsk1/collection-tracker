@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
 import { CollectionService } from '../../collection/collection-service';
 import { SettingsService } from '../../settings/settings-service';
@@ -13,12 +13,13 @@ import { mainStateToken } from '../main-store';
 
 @Component({
   selector: 'ct-menu-nav',
-  imports: [RouterLink, RouterLinkActive, NgxSignalTranslatePipe],
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './menu-nav.html',
   styleUrl: './menu-nav.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MenuNav {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly mainState = inject(mainStateToken);
   private readonly collection = inject(CollectionService);
   private readonly destroyRef = inject(DestroyRef);
@@ -27,6 +28,16 @@ export class MenuNav {
   private readonly portal = inject(PortalService);
   private readonly theme = inject(ThemeService);
   private readonly settings = inject(SettingsService);
+  protected readonly translations = {
+    title: computed(() => this.ngxSignalTranslate.translate('Title')),
+    menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
+    collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
+    settings: computed(() => this.ngxSignalTranslate.translate('Settings')),
+    statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
+    sync: computed(() => this.ngxSignalTranslate.translate('Sync')),
+    about: computed(() => this.ngxSignalTranslate.translate('About')),
+    logout: computed(() => this.ngxSignalTranslate.translate('Logout')),
+  };
   protected readonly themeLogo = this.theme.themeLogo;
   protected readonly settingLockEnabled = this.mainState.state.settingsLock;
 

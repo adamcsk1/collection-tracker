@@ -1,14 +1,14 @@
 <button
   data-test-id="nav-menu-button"
   class="menu-button button-icon material-icons"
-  [attr.aria-label]="('Menu' | signalTranslate)()"
-  [title]="('Menu' | signalTranslate)()"
+  [attr.aria-label]="translations.menu()"
+  [title]="translations.menu()"
   (click)="onOpenMenu()"
 >
   menu
 </button>
 <div class="header" role="banner">
   <a [routerLink]="['/']" class="logo-link">
-    <h1 class="app-title-style">{{ ('Title' | signalTranslate)() }}</h1>
+    <h1 class="app-title-style">{{ translations.title() }}</h1>
   </a>
 </div>

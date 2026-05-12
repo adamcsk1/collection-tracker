@@ -56,7 +56,8 @@ Issue description and why it matters. Suggested fix.
 - Signal state exposed publicly should be readonly, usually via `.asReadonly()`.
 - Effects must not accidentally track changing values across async boundaries. Prefer reading signals before async work or using `untracked()` where appropriate.
 - New forms should use Angular Signal Forms from `@angular/forms/signals`, not new `ReactiveFormsModule` or template-driven form patterns.
-- User-visible template text should use the `signalTranslate` pipe rather than hardcoded English.
+- User-visible template text should use `NgxSignalTranslateService.translate()` from computed signals on a protected
+  `translations` property rather than hardcoded English. The injected translation service should stay private.
 - New interactive or landmark elements should include stable `data-test-id` attributes for Cypress.
 - Icon-only buttons and non-obvious controls must have accessible names, usually via translated `[attr.aria-label]`.
 - Non-button clickable elements must be keyboard-accessible and expose the correct role.

@@ -10,12 +10,12 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'lo-sign-up',
-  imports: [NgxSignalTranslatePipe, Input, FormField, FormRoot, RouterLink],
+  imports: [Input, FormField, FormRoot, RouterLink],
   templateUrl: './sign-up.html',
   styleUrl: './sign-up.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,6 +26,21 @@ export class SignUp implements OnInit {
   private readonly api = inject(PublicApiService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly toastState = inject(toastStateToken);
+  protected readonly translations = {
+    signUp: computed(() => this.ngxSignalTranslate.translate('SignUp')),
+    messageSignUp: computed(() => this.ngxSignalTranslate.translate('Message.SignUp')),
+    username: computed(() => this.ngxSignalTranslate.translate('Username')),
+    validationUsernameMinLength: computed(() => this.ngxSignalTranslate.translate('Validation.UsernameMinLength')),
+    validationUsernameMaxLength: computed(() => this.ngxSignalTranslate.translate('Validation.UsernameMaxLength')),
+    secret: computed(() => this.ngxSignalTranslate.translate('Secret')),
+    copyToClipboard: computed(() => this.ngxSignalTranslate.translate('CopyToClipboard')),
+    messageSignUpSecret: computed(() => this.ngxSignalTranslate.translate('Message.SignUpSecret')),
+    apiUrl: computed(() => this.ngxSignalTranslate.translate('ApiUrl')),
+    messageApiUrl: computed(() => this.ngxSignalTranslate.translate('Message.ApiUrl')),
+    continue: computed(() => this.ngxSignalTranslate.translate('Continue')),
+    backToSignIn: computed(() => this.ngxSignalTranslate.translate('BackToSignIn')),
+    changeApiUrl: computed(() => this.ngxSignalTranslate.translate('ChangeApiUrl')),
+  };
   protected readonly signUpModel = signal<SignUpModel>({
     username: '',
     apiUrl: '',

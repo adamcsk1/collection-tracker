@@ -39,8 +39,8 @@
       <button
         data-test-id="ai-search-send"
         class="button-icon"
-        [attr.aria-label]="('SendPrompt' | signalTranslate)()"
-        [title]="('SendPrompt' | signalTranslate)()"
+        [attr.aria-label]="translations.sendPrompt()"
+        [title]="translations.sendPrompt()"
         (click)="onSend()"
         (keydown.enter)="onSend()"
       >
@@ -50,12 +50,12 @@
         class="text-button"
         href="#"
         role="button"
-        [title]="('Message.AiSearch' | signalTranslate)()"
-        [attr.aria-description]="('Message.AiSearch' | signalTranslate)()"
+        [title]="translations.messageAiSearch()"
+        [attr.aria-description]="translations.messageAiSearch()"
         (click)="onShowMessage()"
       >
-        <libc-image-icon [ariaLabel]="('AiSearch' | signalTranslate)()" [imageUrl]="ollamaIcon" />
-        <span>{{ ('AiSearchInfo' | signalTranslate)() }}</span>
+        <libc-image-icon [ariaLabel]="translations.aiSearch()" [imageUrl]="ollamaIcon" />
+        <span>{{ translations.aiSearchInfo() }}</span>
       </a>
     </div>
   </div>

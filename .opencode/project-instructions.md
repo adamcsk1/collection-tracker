@@ -142,7 +142,8 @@ Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, 
 - ESLint uses flat config and includes CSS through `@eslint/css`.
 - Husky runs lint and format checks on commit.
 - Parameter names must be descriptive. Do not use single-letter or abbreviated names except `a`/`b` in sort comparators and `arg`/`args`/`argv` in CLI argument handling.
-- User-visible template text should use `signalTranslate`.
+- User-visible template text should use `NgxSignalTranslateService.translate()` from computed signals on a
+  protected `translations` property. Keep the injected service private.
 - New interactive and landmark elements should include stable `data-test-id` attributes for Cypress.
 
 ## Architecture Constraints

@@ -23,8 +23,8 @@
   @if (showReset()) {
     <button
       class="button-icon material-icons"
-      [attr.aria-label]="('ResetInput' | signalTranslate)()"
-      [title]="('ResetInput' | signalTranslate)()"
+      [attr.aria-label]="translations.resetInput()"
+      [title]="translations.resetInput()"
       [disabled]="!hasValue() || disabled()"
       (click)="onReset()"
     >
@@ -39,7 +39,7 @@
 @if (showError()) {
   <small class="error" [id]="errorId()">
     @if (hasRequiredError()) {
-      {{ ('Validation.Required' | signalTranslate)() }}
+      {{ translations.validationRequired() }}
     }
     <ng-content select="[errors]"></ng-content>
   </small>

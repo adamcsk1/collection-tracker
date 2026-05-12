@@ -6,7 +6,8 @@ const { resolve } = require('path');
 
 const root = resolve(__dirname, '..');
 
-const APP_TS_PATTERN = /\.translate\$?\(\s*['"]([^'"]+)['"]/g;
+const TRANSLATE_CALL_PATTERN = /\.translate\$?\(/;
+const STRING_LITERAL_PATTERN = /['"]([^'"]+)['"]/g;
 
 // i18n keys always start with an uppercase letter and contain only word chars and dots.
 const I18N_KEY_PATTERN = /^[A-Z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*$/;
@@ -15,50 +16,6 @@ const resolveAppSourceFiles = (appName) => {
   const appSrc = globSync(`apps/${appName}/src/**/*.{ts,html}`, { cwd: root });
   const libsSrc = globSync('libs/**/src/**/*.{ts,html}', { cwd: root, ignore: ['**/coverage/**', '**/*.spec.ts'] });
   return [...appSrc, ...libsSrc];
-};
-
-const extractKeysFromHtml = (content, used, htmlPath) => {
-  let searchFrom = 0;
-
-  while (true) {
-    const pipePos = content.indexOf('| signalTranslate', searchFrom);
-    if (pipePos === -1) break;
-
-    const windowStart = Math.max(0, pipePos - 500);
-    const window = content.slice(windowStart, pipePos);
-
-    const exprStart = Math.max(window.lastIndexOf('{{'), window.lastIndexOf('="'), window.lastIndexOf('=\''));
-    const expr = exprStart >= 0 ? window.slice(exprStart) : window;
-
-    let foundLiteral = false;
-    const strPattern = /'([^']+)'/g;
-    let match;
-    while ((match = strPattern.exec(expr)) !== null) {
-      if (I18N_KEY_PATTERN.test(match[1])) {
-        used.add(match[1]);
-        foundLiteral = true;
-      }
-    }
-
-    // Dynamic translation keys returned from the component TS file (e.g. computed signals)
-    if (!foundLiteral && htmlPath) {
-      const tsPath = htmlPath.replace(/\.html$/, '.ts');
-      try {
-        const tsContent = readFileSync(resolve(root, tsPath), 'utf8');
-        const tsStrPattern = /'([^']+)'/g;
-        let tsMatch;
-        while ((tsMatch = tsStrPattern.exec(tsContent)) !== null) {
-          if (I18N_KEY_PATTERN.test(tsMatch[1])) {
-            used.add(tsMatch[1]);
-          }
-        }
-      } catch {
-        // Corresponding .ts file may not exist; ignore.
-      }
-    }
-
-    searchFrom = pipePos + 1;
-  }
 };
 
 const extractKeysWithPattern = (files, pattern) => {
@@ -95,13 +52,13 @@ const extractAppUsedKeys = (files) => {
       continue;
     }
 
-    if (relPath.endsWith('.html')) {
-      extractKeysFromHtml(content, used, relPath);
-    } else {
-      APP_TS_PATTERN.lastIndex = 0;
+    for (const line of content.split(/\r?\n/)) {
+      if (!TRANSLATE_CALL_PATTERN.test(line)) continue;
+
+      STRING_LITERAL_PATTERN.lastIndex = 0;
       let match;
-      while ((match = APP_TS_PATTERN.exec(content)) !== null) {
-        used.add(match[1]);
+      while ((match = STRING_LITERAL_PATTERN.exec(line)) !== null) {
+        if (I18N_KEY_PATTERN.test(match[1])) used.add(match[1]);
       }
     }
   }

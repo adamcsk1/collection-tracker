@@ -15,7 +15,7 @@ import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel } from '@shared/models/api-model';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, EMPTY, fromEvent, startWith, switchMap } from 'rxjs';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { CollectionItemModel } from '../collection-model';
@@ -30,12 +30,13 @@ import { ListItem } from './list-item/list-item';
 
 @Component({
   selector: 'ct-list',
-  imports: [NgxSignalTranslatePipe, ListItem, ListItemSkeleton, FloatButtons],
+  imports: [ListItem, ListItemSkeleton, FloatButtons],
   templateUrl: './list.html',
   styleUrl: './list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class List {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly collectionState = inject(collectionStateToken);
   private readonly api = inject(ApiService);
@@ -60,6 +61,12 @@ export class List {
     ),
     { initialValue: null }
   );
+  protected readonly translations = {
+    collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
+    messageEmptyCollection: computed(() => this.ngxSignalTranslate.translate('Message.EmptyCollection')),
+    messageAddFirstCollectionItem: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstCollectionItem')),
+    messageEmptySearch: computed(() => this.ngxSignalTranslate.translate('Message.EmptySearch')),
+  };
   protected readonly visibleCollection = signal<CollectionItemModel[]>([]);
   protected readonly collectionLength = signal(0);
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;

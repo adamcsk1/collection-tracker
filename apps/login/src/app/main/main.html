@@ -1,10 +1,10 @@
 <div class="header" role="banner">
-  <img [src]="'icons/' + themeLogo()" [alt]="('Title' | signalTranslate)()" />
+  <img [src]="'icons/' + themeLogo()" [alt]="translations.title()" />
   <div>
-    <h1 class="app-title-style">{{ ('Title' | signalTranslate)() }}</h1>
+    <h1 class="app-title-style">{{ translations.title() }}</h1>
   </div>
 </div>
-<div class="content" role="main" [attr.aria-label]="('Title' | signalTranslate)()">
+<div class="content" role="main" [attr.aria-label]="translations.title()">
   <router-outlet></router-outlet>
 </div>
 

@@ -1,16 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, inject } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { createFormControlA11y } from '../utils/form-control-a11y-util';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'libc-input',
-  imports: [NgxSignalTranslatePipe],
   templateUrl: './input.html',
   styleUrl: './input.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Input<T> implements FormValueControl<T | null> {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  protected readonly translations = {
+    resetInput: computed(() => this.ngxSignalTranslate.translate('ResetInput')),
+    validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
+  };
   public readonly value = model<T | null>(null);
   public readonly touched = model(false);
   public readonly dirty = input(false);

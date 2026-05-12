@@ -1,16 +1,19 @@
-import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, computed, inject } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { createFormControlA11y } from '../utils/form-control-a11y-util';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'libc-checkbox',
-  imports: [NgxSignalTranslatePipe],
   templateUrl: './checkbox.html',
   styleUrl: './checkbox.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Checkbox implements FormValueControl<boolean | null> {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  protected readonly translations = {
+    validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
+  };
   public readonly value = model<boolean | null>(null);
   public readonly touched = model(false);
   public readonly dirty = input(false);

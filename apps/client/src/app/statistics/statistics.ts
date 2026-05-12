@@ -10,12 +10,12 @@ import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-cons
 import { CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
 import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'ct-statistics',
-  imports: [NgxSignalTranslatePipe, Details],
+  imports: [Details],
   templateUrl: './statistics.html',
   styleUrl: './statistics.css',
   host: {
@@ -30,6 +30,25 @@ export class Statistics implements AfterViewInit {
   private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  protected readonly translations = {
+    messageLoadStatistics: computed(() => this.ngxSignalTranslate.translate('Message.LoadStatistics')),
+    messageEmptyStatistics: computed(() => this.ngxSignalTranslate.translate('Message.EmptyStatistics')),
+    summary: computed(() => this.ngxSignalTranslate.translate('Summary')),
+    itemsInCollection: computed(() => this.ngxSignalTranslate.translate('ItemsInCollection')),
+    movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
+    series: computed(() => this.ngxSignalTranslate.translate('Series')),
+    watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
+    unwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
+    chart: computed(() => this.ngxSignalTranslate.translate('Chart')),
+    selectedTags: computed(() => this.ngxSignalTranslate.translate('SelectedTags')),
+    messageEmptySelectTagsForChart: computed(() =>
+      this.ngxSignalTranslate.translate('Message.EmptySelectTagsForChart')
+    ),
+    tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
+    globalWatchStatus: computed(() => this.ngxSignalTranslate.translate('GlobalWatchStatus')),
+    type: computed(() => this.ngxSignalTranslate.translate('Type')),
+    genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
+  };
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly statistics = signal<CollectionStatisticsApiResponseModel | null>(null);
   protected readonly tags = computed(() => this.statistics()?.tagCounts.map((tagCount) => tagCount.tag) ?? []);

@@ -4,7 +4,7 @@
   tabindex="-1"
   animate.enter="animation-fade-in"
   animate.leave="animation-fade-out"
-  [attr.aria-label]="('Close' | signalTranslate)()"
+  [attr.aria-label]="translations.close()"
   (click)="onClose()"
 ></button>
 <div
@@ -23,8 +23,8 @@
     </div>
     <button
       class="button-icon material-icons"
-      [attr.aria-label]="('Close' | signalTranslate)()"
-      [title]="('Close' | signalTranslate)()"
+      [attr.aria-label]="translations.close()"
+      [title]="translations.close()"
       (click)="onClose()"
     >
       close

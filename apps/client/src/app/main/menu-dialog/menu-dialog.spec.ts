@@ -12,7 +12,6 @@ describe('MenuDialog', () => {
 
     TestBed.overrideComponent(MenuDialog, {
       set: {
-        imports: [],
         template: '',
       },
     });

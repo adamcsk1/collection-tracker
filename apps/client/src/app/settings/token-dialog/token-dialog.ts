@@ -1,13 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, computed } from '@angular/core';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { toastStateToken } from '@components/toast/toast-store';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
-import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-token-dialog',
-  imports: [NgxSignalTranslatePipe, DialogShell],
+  imports: [DialogShell],
   templateUrl: './token-dialog.html',
   styleUrl: './token-dialog.css',
   host: {
@@ -18,6 +18,9 @@ import { NgxSignalTranslatePipe, NgxSignalTranslateService } from 'ngx-signal-tr
 export class TokenDialog {
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  protected readonly translations = {
+    copyToClipboard: computed(() => this.ngxSignalTranslate.translate('CopyToClipboard')),
+  };
   public readonly title = input.required<string>();
   public readonly message = input.required<string>();
   public readonly token = input.required<string>();

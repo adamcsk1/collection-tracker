@@ -10,28 +10,32 @@ import {
   OnInit,
   Renderer2,
   viewChild,
+  computed,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { createFormControlA11y } from '../utils/form-control-a11y-util';
 import { getCoarsePointerBasedDebounceTime } from '@shared/utils/prefer-coarse-pointer-util';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { asyncScheduler, debounceTime, fromEvent, Subject } from 'rxjs';
 
 @Component({
   selector: 'libc-textarea',
-  imports: [NgxSignalTranslatePipe],
   templateUrl: './textarea.html',
   styleUrl: './textarea.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Textarea<T> implements FormValueControl<T | null>, OnInit {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngZone = inject(NgZone);
   private readonly renderer = inject(Renderer2);
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly textAreaWrapElement = viewChild<ElementRef>('textarea');
   private readonly autoHeightRefreshTrigger = new Subject<void>();
+  protected readonly translations = {
+    validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
+  };
   public readonly value = model<T | null>(null);
   public readonly touched = model(false);
   public readonly dirty = input(false);

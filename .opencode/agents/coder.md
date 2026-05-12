@@ -73,7 +73,7 @@ Within the same project → relative paths are fine at any depth.
 - Standalone components and directives — `imports: [...]` on the decorator, no NgModules; app components use `ct-*` selector, lib components use `libc-*` selector
 - Pipes keep their `name` property
 - State via `ngx-simple-signal-store` signal stores, not class-based services with subjects
-- Templates: use `signalTranslate` pipe for all user-visible strings — never hardcode English text
+- Templates: bind user-visible strings through a protected `translations` property of computed signals that call a private `NgxSignalTranslateService` — never hardcode English text
 - `data-test-id` on interactive and landmark elements for Cypress targeting
 
 ### Server

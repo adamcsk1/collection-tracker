@@ -1,15 +1,15 @@
 <libc-dialog-shell>
   <ng-container dialog-shell-top-content>
     <h3 class="dialog-title">
-      <i class="material-icons" [title]="('Title.CollectionItem' | signalTranslate)()"> movie </i>
-      {{ ('Title.CollectionItem' | signalTranslate)() }}
+      <i class="material-icons" [title]="translations.titleCollectionItem()"> movie </i>
+      {{ translations.titleCollectionItem() }}
     </h3>
   </ng-container>
   <ng-container dialog-shell-content>
     @if (editMode()) {
       <div class="item-form">
         <label>
-          {{ ('Label.Title' | signalTranslate)() }}
+          {{ translations.labelTitle() }}
           <input
             data-test-id="item-dialog-title"
             [value]="draftItem().title"
@@ -17,7 +17,7 @@
           />
         </label>
         <label>
-          {{ ('Label.IMDbId' | signalTranslate)() }}
+          {{ translations.labelIMDbId() }}
           <input
             data-test-id="item-dialog-imdb-id"
             [value]="draftItem().IMDbId"
@@ -25,7 +25,7 @@
           />
         </label>
         <label>
-          {{ ('Label.Year' | signalTranslate)() }}
+          {{ translations.labelYear() }}
           <input
             data-test-id="item-dialog-year"
             type="number"
@@ -34,7 +34,7 @@
           />
         </label>
         <label>
-          {{ ('Label.IMDbRate' | signalTranslate)() }}
+          {{ translations.labelIMDbRate() }}
           <input
             data-test-id="item-dialog-rate"
             [value]="draftItem().rate"
@@ -42,34 +42,34 @@
           />
         </label>
         <label class="full-width image-url-field">
-          {{ ('Label.ImageUrl' | signalTranslate)() }}
+          {{ translations.labelImageUrl() }}
           <input
             data-test-id="item-dialog-image"
             [value]="draftItem().image"
             (input)="updateDraft('image', $any($event.target).value)"
           />
           @if (draftItem().image) {
-            <img class="image-example" [src]="draftImageUrl()" [attr.alt]="('Alt.ImageExample' | signalTranslate)()" />
+            <img class="image-example" [src]="draftImageUrl()" [attr.alt]="translations.altImageExample()" />
           }
         </label>
         <libc-autocomplete
           data-test-id="item-dialog-genre"
-          [label]="('Genre' | signalTranslate)()"
-          [hint]="('Hint.SeparateGenres' | signalTranslate)()"
+          [label]="translations.genre()"
+          [hint]="translations.hintSeparateGenres()"
           [value]="genreText()"
           [autocompleteService]="genreSuggestionService"
           (valueChange)="updateGenre($any($event))"
         />
         <libc-autocomplete
           data-test-id="item-dialog-tags"
-          [label]="('Tags' | signalTranslate)()"
-          [hint]="('Hint.SeparateTags' | signalTranslate)()"
+          [label]="translations.tags()"
+          [hint]="translations.hintSeparateTags()"
           [value]="tagsText()"
           [autocompleteService]="tagSuggestionService"
           (valueChange)="updateTags($any($event))"
         />
         <label class="full-width">
-          {{ ('Actors' | signalTranslate)() }}
+          {{ translations.actors() }}
           <input
             data-test-id="item-dialog-actors"
             [value]="draftItem().actors"
@@ -77,7 +77,7 @@
           />
         </label>
         <label class="full-width">
-          {{ ('Plot' | signalTranslate)() }}
+          {{ translations.plot() }}
           <textarea
             data-test-id="item-dialog-plot"
             [value]="draftItem().plot"
@@ -94,19 +94,17 @@
         }
         <div class="detail-content">
           <header class="detail-header">
-            <p class="eyebrow">{{ collectionItem().year || ('Fallback.UnknownYear' | signalTranslate)() }}</p>
+            <p class="eyebrow">{{ collectionItem().year || translations.fallbackUnknownYear() }}</p>
             <h2>{{ collectionItem().title }}</h2>
             <div class="metadata-row">
-              <span class="chip rating"
-                >IMDb {{ collectionItem().rate || ('Fallback.NotAvailable' | signalTranslate)() }}</span
-              >
+              <span class="chip rating">IMDb {{ collectionItem().rate || translations.fallbackNotAvailable() }}</span>
               <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
             </div>
           </header>
 
           @if (collectionItem().genre.length) {
             <section>
-              <h4>{{ ('Genre' | signalTranslate)() }}</h4>
+              <h4>{{ translations.genre() }}</h4>
               <div class="chip-list">
                 @for (genre of collectionItem().genre; track genre) {
                   <span class="chip">{{ genre }}</span>
@@ -117,14 +115,14 @@
 
           @if (collectionItem().actors) {
             <section>
-              <h4>{{ ('Actors' | signalTranslate)() }}</h4>
+              <h4>{{ translations.actors() }}</h4>
               <p>{{ collectionItem().actors }}</p>
             </section>
           }
 
           @if (collectionItem().tags.length) {
             <section>
-              <h4>{{ ('Tags' | signalTranslate)() }}</h4>
+              <h4>{{ translations.tags() }}</h4>
               <div class="chip-list">
                 @for (tag of collectionItem().tags; track tag) {
                   <span class="chip">{{ tag }}</span>
@@ -135,25 +133,25 @@
 
           @if (collectionItem().plot) {
             <section>
-              <h4>{{ ('Plot' | signalTranslate)() }}</h4>
+              <h4>{{ translations.plot() }}</h4>
               <p>{{ collectionItem().plot }}</p>
             </section>
           }
 
           <section>
-            <h4>{{ ('Links' | signalTranslate)() }}</h4>
+            <h4>{{ translations.links() }}</h4>
             <div class="external-links">
               <libc-link-button
                 [href]="trailerUrl()"
                 icon="play_circle"
-                [label]="('Link.YouTubeTrailer' | signalTranslate)()"
+                [label]="translations.linkYouTubeTrailer()"
                 [external]="true"
                 dataTestId="video"
               ></libc-link-button>
               <libc-link-button
                 [href]="webSearchUrl()"
                 icon="search"
-                [label]="('Link.WebSearch' | signalTranslate)()"
+                [label]="translations.linkWebSearch()"
                 [external]="true"
                 dataTestId="about-web-search-link"
               ></libc-link-button>
@@ -166,35 +164,35 @@
   <ng-container dialog-shell-bottom-content>
     @if (editMode()) {
       <button data-test-id="item-dialog-read-only" (click)="onReadOnly()">
-        <i class="material-icons" [title]="('ReadOnly' | signalTranslate)()"> visibility </i>
-        {{ ('ReadOnly' | signalTranslate)() }}
+        <i class="material-icons" [title]="translations.readOnly()"> visibility </i>
+        {{ translations.readOnly() }}
       </button>
       <button data-test-id="item-dialog-save" (click)="onSaveChanges()">
-        <i class="material-icons" [title]="('Save' | signalTranslate)()"> save </i>
-        {{ ('Save' | signalTranslate)() }}
+        <i class="material-icons" [title]="translations.save()"> save </i>
+        {{ translations.save() }}
       </button>
     } @else {
       @if (permissionUpdate()) {
         <button data-test-id="item-dialog-edit" (click)="onEdit()">
-          <i class="material-icons" [title]="('Edit' | signalTranslate)()"> edit </i>
-          {{ ('Edit' | signalTranslate)() }}
+          <i class="material-icons" [title]="translations.edit()"> edit </i>
+          {{ translations.edit() }}
         </button>
         @if (watched()) {
           <button data-test-id="item-dialog-mark-unwatched" (click)="onMarkAsUnwatched()">
-            <i class="material-icons" [title]="('MarkAsUnwatched' | signalTranslate)()"> visibility_off </i>
-            {{ ('MarkAsUnwatched' | signalTranslate)() }}
+            <i class="material-icons" [title]="translations.markAsUnwatched()"> visibility_off </i>
+            {{ translations.markAsUnwatched() }}
           </button>
         } @else {
           <button data-test-id="item-dialog-mark-watched" (click)="onMarkAsWatched()">
-            <i class="material-icons" [title]="('MarkAsWatched' | signalTranslate)()"> visibility </i>
-            {{ ('MarkAsWatched' | signalTranslate)() }}
+            <i class="material-icons" [title]="translations.markAsWatched()"> visibility </i>
+            {{ translations.markAsWatched() }}
           </button>
         }
       }
       @if (permissionDelete()) {
         <button data-test-id="item-dialog-delete" class="button-danger" (click)="onDelete()">
-          <i class="material-icons" [title]="('Delete' | signalTranslate)()"> delete </i>
-          {{ ('Delete' | signalTranslate)() }}
+          <i class="material-icons" [title]="translations.delete()"> delete </i>
+          {{ translations.delete() }}
         </button>
       }
     }

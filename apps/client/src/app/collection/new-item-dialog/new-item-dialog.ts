@@ -9,7 +9,7 @@ import { Select } from '@components/select/select';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
-import { NgxSignalTranslatePipe } from 'ngx-signal-translate';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, filter, firstValueFrom, of, switchMap } from 'rxjs';
 import { NewItemModel, SaveMode } from './new-item-dialog-model';
 import { NewItemDialogService } from './new-item-dialog-service';
@@ -19,7 +19,7 @@ import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validat
 
 @Component({
   selector: 'ct-new-item-dialog',
-  imports: [FormField, FormRoot, NgxSignalTranslatePipe, Input, Select, DialogShell, Autocomplete, Checkbox],
+  imports: [FormField, FormRoot, Input, Select, DialogShell, Autocomplete, Checkbox],
   templateUrl: './new-item-dialog.html',
   styleUrl: './new-item-dialog.css',
   providers: [OMDbService, NewItemDialogService, { provide: AutocompleteService, useClass: TagSuggestionService }],
@@ -29,11 +29,28 @@ import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validat
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NewItemDialog {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(ApiService);
   private readonly service = inject(NewItemDialogService);
   private readonly knownIMDbIdExists = signal(false);
   private readonly knownIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownIMDbIdExists);
+  protected readonly translations = {
+    titleNewCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.NewCollectionItem')),
+    search: computed(() => this.ngxSignalTranslate.translate('Search')),
+    messageNewCollectionItemSearch: computed(() =>
+      this.ngxSignalTranslate.translate('Message.NewCollectionItemSearch')
+    ),
+    selectedContent: computed(() => this.ngxSignalTranslate.translate('SelectedContent')),
+    validationKnownIMDbId: computed(() => this.ngxSignalTranslate.translate('Validation.KnownIMDbId')),
+    tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
+    messageTags: computed(() => this.ngxSignalTranslate.translate('Message.Tags')),
+    validationUsedInternalTag: computed(() => this.ngxSignalTranslate.translate('Validation.UsedInternalTag')),
+    collectionItemWatched: computed(() => this.ngxSignalTranslate.translate('CollectionItemWatched')),
+    save: computed(() => this.ngxSignalTranslate.translate('Save')),
+    saveAndNew: computed(() => this.ngxSignalTranslate.translate('SaveAndNew')),
+    saveAndClose: computed(() => this.ngxSignalTranslate.translate('SaveAndClose')),
+  };
   protected readonly submitMode = signal<SaveMode | null>(null);
   protected readonly newItemModel = signal<NewItemModel>({
     searchText: '',

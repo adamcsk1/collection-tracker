@@ -3,11 +3,11 @@
     <img
       class="about-logo"
       [src]="'icons/' + themeLogo()"
-      [title]="('Title' | signalTranslate)()"
-      [alt]="('Title' | signalTranslate)()"
+      [title]="translations.title()"
+      [alt]="translations.title()"
     />
-    <h2 data-test-id="about-title" class="about-title app-title-style">{{ ('Title' | signalTranslate)() }}</h2>
-    <p class="about-description">{{ ('About.Description' | signalTranslate)() }}</p>
+    <h2 data-test-id="about-title" class="about-title app-title-style">{{ translations.title() }}</h2>
+    <p class="about-description">{{ translations.aboutDescription() }}</p>
   </section>
 
   <section class="about-section">
@@ -15,27 +15,27 @@
       <div class="about-card">
         <i class="material-icons">construction</i>
         <div class="about-card-body">
-          <span class="about-card-label">{{ ('Build' | signalTranslate)() }}</span>
+          <span class="about-card-label">{{ translations.build() }}</span>
           <span data-test-id="about-build" class="about-card-value">{{ build }}</span>
         </div>
       </div>
       <div class="about-card">
         <i class="material-icons">event</i>
         <div class="about-card-body">
-          <span class="about-card-label">{{ ('BuildDate' | signalTranslate)() }}</span>
+          <span class="about-card-label">{{ translations.buildDate() }}</span>
           <span class="about-card-value">{{ buildDate }}</span>
         </div>
       </div>
       <div class="about-card about-card-interactive">
         <i class="material-icons">tag</i>
         <div class="about-card-body">
-          <span class="about-card-label">{{ ('AppVersion' | signalTranslate)() }}</span>
+          <span class="about-card-label">{{ translations.appVersion() }}</span>
           <span
             data-test-id="about-version"
             class="about-card-value"
             tabindex="0"
             role="button"
-            [attr.aria-label]="('AppVersion' | signalTranslate)()"
+            [attr.aria-label]="translations.appVersion()"
             (click)="onClickAppVersion()"
             (keydown.enter)="onClickAppVersion()"
             (keydown.space)="onClickAppVersion(); $event.preventDefault()"
@@ -48,31 +48,31 @@
   </section>
 
   <section class="about-section">
-    <h3 class="about-section-title">{{ ('Links' | signalTranslate)() }}</h3>
+    <h3 class="about-section-title">{{ translations.links() }}</h3>
     <div class="about-nav-links">
       <libc-link-button
         [href]="basePath + '/health/'"
         icon="monitoring"
-        [label]="('NavigateToServerHealth' | signalTranslate)()"
+        [label]="translations.navigateToServerHealth()"
         dataTestId="about-health-link"
       ></libc-link-button>
       <libc-link-button
         href="https://github.com/adamcsk1/collection-tracker"
         icon="code"
-        [label]="('ViewOnGitHub' | signalTranslate)()"
+        [label]="translations.viewOnGitHub()"
         [external]="true"
         dataTestId="about-github-link"
       ></libc-link-button>
       <libc-link-button
         href="https://github.com/adamcsk1/collection-tracker/releases/latest/download/collection-tracker-release.apk"
         icon="download"
-        [label]="('DownloadApk' | signalTranslate)()"
+        [label]="translations.downloadApk()"
         [external]="true"
       ></libc-link-button>
       <libc-link-button
         [href]="basePath + '/api/docs'"
         icon="description"
-        [label]="('NavigateToApiDocs' | signalTranslate)()"
+        [label]="translations.navigateToApiDocs()"
         [external]="true"
         dataTestId="about-api-docs-link"
       ></libc-link-button>

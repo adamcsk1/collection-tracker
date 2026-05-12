@@ -3,22 +3,22 @@
     <div class="brand">
       <span class="brand-icon material-icons">monitor_heart</span>
       <div class="brand-text">
-        <h1>{{ ('Title' | signalTranslate)() }}</h1>
-        <span class="brand-subtitle">{{ ('SubTitle' | signalTranslate)() }}</span>
+        <h1>{{ translations.title() }}</h1>
+        <span class="brand-subtitle">{{ translations.subTitle() }}</span>
       </div>
     </div>
     <libc-link-button
       dataTestId="health-login-link"
       [href]="basePath + '/login/'"
       icon="login"
-      [label]="('NavigateToLogin' | signalTranslate)()"
+      [label]="translations.navigateToLogin()"
     />
   </header>
 
   @if (loading() && !health()) {
     <div class="loading-block" role="status" aria-live="polite">
       <div class="spinner" aria-hidden="true"></div>
-      <span class="loading-text">{{ ('Loading' | signalTranslate)() }}</span>
+      <span class="loading-text">{{ translations.loading() }}</span>
     </div>
   }
 
@@ -34,7 +34,7 @@
         <div data-test-id="health-memory-card" class="metric-card">
           <div class="metric-header">
             <span class="material-icons metric-icon">memory</span>
-            <span class="metric-title">{{ ('Memory' | signalTranslate)() }}</span>
+            <span class="metric-title">{{ translations.memory() }}</span>
             <span class="metric-value">{{ data.memory.usedPercent }}%</span>
           </div>
           <div class="metric-bar-wrap">
@@ -49,7 +49,7 @@
         <div data-test-id="health-cpu-card" class="metric-card">
           <div class="metric-header">
             <span class="material-icons metric-icon">developer_board</span>
-            <span class="metric-title">{{ ('Cpu' | signalTranslate)() }}</span>
+            <span class="metric-title">{{ translations.cpu() }}</span>
             <span class="metric-value">{{ data.cpu.usagePercent }}%</span>
           </div>
           <div class="metric-bar-wrap">
@@ -65,7 +65,7 @@
           <div class="metric-card">
             <div class="metric-header">
               <span class="material-icons metric-icon">storage</span>
-              <span class="metric-title">{{ ('Disk' | signalTranslate)() }}</span>
+              <span class="metric-title">{{ translations.disk() }}</span>
               <span class="metric-value">{{ data.disk.usedPercent }}%</span>
             </div>
             <div class="metric-bar-wrap">
@@ -81,19 +81,19 @@
         <div class="metric-card">
           <div class="metric-header">
             <span class="material-icons metric-icon">speed</span>
-            <span class="metric-title">{{ ('LoadAverage' | signalTranslate)() }}</span>
+            <span class="metric-title">{{ translations.loadAverage() }}</span>
           </div>
           <div class="load-row">
             <div class="load-item">
-              <span class="metric-title">{{ ('Load.1min' | signalTranslate)() }}</span>
+              <span class="metric-title">{{ translations.load1min() }}</span>
               <span class="load-value">{{ data.load.avg1m }}</span>
             </div>
             <div class="load-item">
-              <span class="metric-title">{{ ('Load.5min' | signalTranslate)() }}</span>
+              <span class="metric-title">{{ translations.load5min() }}</span>
               <span class="load-value">{{ data.load.avg5m }}</span>
             </div>
             <div class="load-item">
-              <span class="metric-title">{{ ('Load.15min' | signalTranslate)() }}</span>
+              <span class="metric-title">{{ translations.load15min() }}</span>
               <span class="load-value">{{ data.load.avg15m }}</span>
             </div>
           </div>
@@ -102,7 +102,7 @@
         <div class="metric-card">
           <div class="metric-header">
             <span class="material-icons metric-icon">web</span>
-            <span class="metric-title">{{ ('Frontend' | signalTranslate)() }}</span>
+            <span class="metric-title">{{ translations.frontend() }}</span>
           </div>
           <span class="service-status" [attr.data-status]="data.frontend.status">
             {{ data.frontend.status | uppercase }}
@@ -111,8 +111,8 @@
 
         <div data-test-id="health-ai-card" class="metric-card">
           <div class="metric-header">
-            <libc-image-icon class="metric-icon" [ariaLabel]="('Ai' | signalTranslate)()" [imageUrl]="ollamaIcon" />
-            <span class="metric-title">{{ ('Ai' | signalTranslate)() }}</span>
+            <libc-image-icon class="metric-icon" [ariaLabel]="translations.ai()" [imageUrl]="ollamaIcon" />
+            <span class="metric-title">{{ translations.ai() }}</span>
           </div>
           <span class="service-status" [attr.data-status]="data.ai.status">
             {{ data.ai.status | uppercase }}

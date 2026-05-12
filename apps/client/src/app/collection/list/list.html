@@ -3,7 +3,7 @@
   data-test-id="collection-list"
   class="list"
   role="list"
-  [attr.aria-label]="('Collection' | signalTranslate)()"
+  [attr.aria-label]="translations.collection()"
   [attr.aria-busy]="apiLoadNetworkStatus() === 'pending'"
   (scroll)="onScroll()"
 >
@@ -27,12 +27,12 @@
       <div data-test-id="list-empty" class="list-empty">
         <i class="material-icons">movie</i>
         @if (collectionLength() === 0) {
-          {{ ('Message.EmptyCollection' | signalTranslate)() }}<br />
+          {{ translations.messageEmptyCollection() }}<br />
           <a data-test-id="add-first-item" href="#" role="button" (click)="onAddNew()">{{
-            ('Message.AddFirstCollectionItem' | signalTranslate)()
+            translations.messageAddFirstCollectionItem()
           }}</a>
         } @else {
-          {{ ('Message.EmptySearch' | signalTranslate)() }}<br />
+          {{ translations.messageEmptySearch() }}<br />
         }
       </div>
     }
