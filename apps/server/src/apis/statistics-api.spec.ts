@@ -15,6 +15,7 @@ const insertUserAndItems = () => {
   );
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#movie');
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#watched');
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#favorite');
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, 'sci-fi');
   db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item1Id, 'Action');
 
@@ -51,6 +52,7 @@ describe('statistics-api', () => {
         totalItems: 2,
         movieCount: 1,
         seriesCount: 1,
+        favoriteCount: 1,
         watchedCount: 1,
         unwatchedCount: 1,
         tagCounts: expect.arrayContaining([

@@ -60,6 +60,7 @@ export interface CollectionStatisticsApiResponseModel {
   totalItems: number;
   movieCount: number;
   seriesCount: number;
+  favoriteCount: number;
   watchedCount: number;
   unwatchedCount: number;
   tagCounts: Array<{ tag: string; count: number }>;

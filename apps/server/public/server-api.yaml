@@ -399,13 +399,16 @@ components:
 
     CollectionStatisticsResponse:
       type: object
-      required: [totalItems, movieCount, seriesCount, watchedCount, unwatchedCount, tagCounts, genreCounts]
+      required:
+        [totalItems, movieCount, seriesCount, favoriteCount, watchedCount, unwatchedCount, tagCounts, genreCounts]
       properties:
         totalItems:
           type: integer
         movieCount:
           type: integer
         seriesCount:
+          type: integer
+        favoriteCount:
           type: integer
         watchedCount:
           type: integer
