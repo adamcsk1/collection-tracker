@@ -272,6 +272,48 @@ describe('Collection — fuzzy search', () => {
   });
 });
 
+describe('Collection — favorites', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+    seedItems([
+      buildCollectionItem('Favorite Test Movie', 'movie', 'tt8000001'),
+      buildCollectionItem('Regular Test Movie', 'movie', 'tt8000002'),
+    ]);
+    CollectionPage.visit();
+  });
+
+  it('marks an item as favorite and filters favorites from the nav menu', () => {
+    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.on('window:confirm', () => true);
+
+    CollectionPage.getListItems().should('have.length', 2);
+    CollectionPage.getListItems().contains('Favorite Test Movie').click();
+
+    CollectionPage.getItemDialogMarkFavoriteButton().click();
+    cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
+    CollectionPage.getItemDialogRemoveFavoriteButton().should('be.visible');
+
+    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.getFavoriteBadges().should('have.length', 1);
+
+    CommonPage.openMenu();
+    CommonPage.getNavFavoritesLink().click();
+
+    cy.url().should('include', 'search=%23favorite');
+    CollectionPage.getSearchInput().should('have.value', '#favorite');
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', 'Favorite Test Movie');
+    CollectionPage.getListItems().should('not.contain.text', 'Regular Test Movie');
+
+    CommonPage.openMenu();
+    CommonPage.getNavCollectionLink().click();
+
+    cy.url().should('not.include', 'search=');
+    CollectionPage.getSearchInput().should('have.value', '');
+    CollectionPage.getListItems().should('have.length', 2);
+  });
+});
+
 describe('Collection - sync', () => {
   beforeEach(() => {
     cy.autoLogin();

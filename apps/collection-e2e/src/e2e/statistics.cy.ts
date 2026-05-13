@@ -14,7 +14,7 @@ describe('Statistics — empty collection', () => {
 });
 
 describe('Statistics — with movies and series', () => {
-  const movieOne = { ...buildCollectionItem('Stats Movie One', 'movie', 'tt9000001'), tags: ['#movie', '#action'] };
+  const movieOne = { ...buildCollectionItem('Stats Movie One', 'movie', 'tt9000001'), tags: ['#movie', '#favorite', '#action'] };
   const movieTwo = { ...buildCollectionItem('Stats Movie Two', 'movie', 'tt9000002'), tags: ['#movie', '#drama'] };
   const seriesOne = { ...buildCollectionItem('Stats Series One', 'series', 'tt9000003'), tags: ['#series', '#action'] };
 
@@ -42,6 +42,10 @@ describe('Statistics — with movies and series', () => {
     StatisticsPage.getSummarySeries().should('contain.text', '1');
   });
 
+  it('shows the correct favorites count', () => {
+    StatisticsPage.getSummaryFavorites().should('contain.text', '1');
+  });
+
   it('shows the correct watched count', () => {
     StatisticsPage.getSummaryWatched().should('contain.text', '0');
   });
@@ -66,6 +70,12 @@ describe('Statistics — with movies and series', () => {
     StatisticsPage.getSummarySeries().click();
     cy.url().should('include', '#/collection');
     CollectionPage.getSearchInput().should('have.value', '#series');
+  });
+
+  it('navigates to the collection filtered by favorites when the favorites summary card is clicked', () => {
+    StatisticsPage.getSummaryFavorites().click();
+    cy.url().should('include', '#/collection');
+    CollectionPage.getSearchInput().should('have.value', '#favorite');
   });
 
   it('shows tag buttons for custom tags', () => {
