@@ -25,7 +25,10 @@
     @if (apiLoadNetworkStatus() !== 'pending') {
       <div data-test-id="list-empty" class="list-empty">
         <i class="material-icons">movie</i>
-        @if (collectionLength() === 0) {
+        @if (isFavoritePrefiltered()) {
+          {{ translations.messageEmptyFavorites() }}<br />
+          {{ translations.messageAddFirstFavorite() }}
+        } @else if (collectionLength() === 0) {
           {{ translations.messageEmptyCollection() }}<br />
           <a data-test-id="add-first-item" href="#" role="button" (click)="onAddNew()">{{
             translations.messageAddFirstCollectionItem()

@@ -14,6 +14,7 @@ import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { initialTagConfigsState, tagConfigsStateToken } from '../../settings/tag-configs/tag-configs-store';
 import { initialSharesState, sharesStateToken } from '../../shares/shares-store';
 import { List } from './list';
 
@@ -76,12 +77,11 @@ describe('List', () => {
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
         provideStore(initialCollectionState, collectionStateToken),
+        provideStore(initialTagConfigsState, tagConfigsStateToken),
         provideStore(initialSharesState, sharesStateToken),
         provideSignalTranslateConfig({ path: '' }),
       ],
     });
-
-    TestBed.overrideComponent(List, { set: { template: '' } });
 
     fixture = TestBed.createComponent(List);
     component = fixture.componentInstance;
@@ -138,6 +138,25 @@ describe('List', () => {
       fixture.detectChanges();
 
       expect(api.searchItems).not.toHaveBeenCalledWith({ search: 'typed' }, 0, 50);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows a favorite-specific empty message on the favorites page', async () => {
+    api.searchItems.mockReturnValue(of({ items: [], total: 0, offset: 0, limit: 50 }));
+    fixture.componentRef.setInput('routeSearchText', '#favorite');
+    vi.useFakeTimers();
+    try {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await vi.runAllTimersAsync();
+      fixture.detectChanges();
+
+      const emptyMessage = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-empty"]');
+      expect(emptyMessage?.textContent).toContain('Message.EmptyFavorites');
+      expect(emptyMessage?.textContent).toContain('Message.AddFirstFavorite');
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="add-first-item"]')).toBeNull();
     } finally {
       vi.useRealTimers();
     }

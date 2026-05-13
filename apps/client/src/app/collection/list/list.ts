@@ -15,7 +15,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
+import { FAVORITE_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import {
@@ -76,6 +76,8 @@ export class List {
   protected readonly translations = {
     collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
     messageEmptyCollection: computed(() => this.ngxSignalTranslate.translate('Message.EmptyCollection')),
+    messageEmptyFavorites: computed(() => this.ngxSignalTranslate.translate('Message.EmptyFavorites')),
+    messageAddFirstFavorite: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstFavorite')),
     messageAddFirstCollectionItem: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstCollectionItem')),
     messageEmptySearch: computed(() => this.ngxSignalTranslate.translate('Message.EmptySearch')),
   };
@@ -85,6 +87,7 @@ export class List {
   protected readonly hasMore = computed(() => this.visibleCollection().length < this.collectionLength());
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly scrollToTopAvailable = signal(false);
+  protected readonly isFavoritePrefiltered = computed(() => this.routeSearchText() === FAVORITE_TAG);
   public readonly hideFloatActions = input(false);
   public readonly routeSearchText = input('');
 
