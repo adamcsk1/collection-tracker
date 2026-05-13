@@ -2,6 +2,8 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { collectionItemExists } from '../core/database/repositories/collection-repository';
+import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
@@ -17,7 +19,22 @@ export const register = (app: FastifyInstance): void => {
         return;
       }
 
-      response.send({ exists: collectionItemExists(getDatabase(), request.usernameHash, imdbId) });
+      const db = getDatabase();
+      const targetOwnerHash =
+        typeof query.ownerShareCode === 'string'
+          ? findUserByShareCode(db, query.ownerShareCode)?.username_hash
+          : request.usernameHash;
+      if (!targetOwnerHash) {
+        response.code(404).send();
+        return;
+      }
+
+      if (!canAccessLibrary(db, request.usernameHash, targetOwnerHash, 'read')) {
+        response.code(403).send();
+        return;
+      }
+
+      response.send({ exists: collectionItemExists(db, [targetOwnerHash], imdbId) });
     })
   );
 };

@@ -197,6 +197,40 @@ components:
           type: boolean
           description: When true, language and theme are only initialized if the user has not already stored those settings.
 
+    UserShare:
+      type: object
+      required: [canRead, canCreate, canUpdate, canDelete]
+      properties:
+        sharedWithUserShareCode:
+          type: string
+        ownerUserShareCode:
+          type: string
+        ownerUsername:
+          type: ['string', 'null']
+        canRead:
+          type: boolean
+        canCreate:
+          type: boolean
+        canUpdate:
+          type: boolean
+        canDelete:
+          type: boolean
+
+    UserSharesResponse:
+      type: object
+      required: [userShareCode, outgoing, incoming]
+      properties:
+        userShareCode:
+          type: string
+        outgoing:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserShare'
+        incoming:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserShare'
+
     CollectionItem:
       type: object
       required: [image, title, titleLower, genre, IMDbId, tags, year, rate, hash, actors, plot]
@@ -229,6 +263,9 @@ components:
           type: string
         plot:
           type: string
+        ownerShareCode:
+          type: string
+          description: Share code of the item owner. Present when the item belongs to a shared library.
 
     CollectionItemChange:
       type: object
@@ -396,7 +433,13 @@ components:
                 type: integer
 
     CreateRequest:
-      $ref: '#/components/schemas/CollectionItemChange'
+      allOf:
+        - $ref: '#/components/schemas/CollectionItemChange'
+        - type: object
+          properties:
+            targetOwnerShareCode:
+              type: string
+              description: Optional owner share code to create the item in a shared library. Defaults to the authenticated user.
 
     CreateResponse:
       type: object
@@ -750,6 +793,75 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserSettingsResponse'
 
+  /user/shares:
+    get:
+      operationId: getUserShares
+      summary: Get user shares
+      tags: [User]
+      responses:
+        '200':
+          description: Current user hash and share lists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSharesResponse'
+    post:
+      operationId: saveUserShare
+      summary: Create or update a share
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sharedWithUserShareCode]
+              properties:
+                sharedWithUserShareCode:
+                  type: string
+                  description: Short share code shown by the invited user.
+                canRead:
+                  type: boolean
+                canCreate:
+                  type: boolean
+                canUpdate:
+                  type: boolean
+                canDelete:
+                  type: boolean
+      responses:
+        '204':
+          description: Share saved.
+
+  /user/shares/incoming/{ownerUserShareCode}:
+    delete:
+      operationId: revokeIncomingUserShare
+      summary: Revoke an incoming share as the invited user
+      tags: [User]
+      parameters:
+        - name: ownerUserShareCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Incoming share revoked.
+
+  /user/shares/{sharedWithUserShareCode}:
+    delete:
+      operationId: deleteUserShare
+      summary: Remove a share
+      tags: [User]
+      parameters:
+        - name: sharedWithUserShareCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Share removed.
+
   /items:
     get:
       operationId: searchItems
@@ -860,6 +972,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          description: Owner share code of the library to check. Defaults to the authenticated user.
+          schema:
+            type: string
       responses:
         '200':
           description: Existing item status.
@@ -869,6 +987,8 @@ paths:
                 $ref: '#/components/schemas/CollectionItemExistsResponse'
         '400':
           description: Missing IMDb ID.
+        '403':
+          description: Not allowed to read the target library.
 
   /items/random:
     get:
@@ -1044,7 +1164,7 @@ paths:
     post:
       operationId: createItem
       summary: Create a collection item
-      description: Creates a structured collection item. `IMDbId` must be unique for the authenticated user.
+      description: Creates a structured collection item. `IMDbId` must be unique within the target library. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission.
       tags: [Collection]
       requestBody:
         required: true
@@ -1061,6 +1181,8 @@ paths:
                 $ref: '#/components/schemas/CreateResponse'
         '400':
           description: Request body is missing required item fields or contains invalid values.
+        '403':
+          description: Not allowed to create in the target library.
         '409':
           description: An item with this IMDb ID already exists.
 
@@ -1074,6 +1196,12 @@ paths:
           in: path
           required: true
           description: IMDb ID of the item to update.
+          schema:
+            type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          description: Owner share code of the library containing the item. Defaults to the authenticated user.
           schema:
             type: string
       requestBody:
@@ -1091,6 +1219,8 @@ paths:
                 $ref: '#/components/schemas/ChangeResponse'
         '400':
           description: Request body is missing required item fields or contains invalid values.
+        '403':
+          description: Not allowed to update in the target library.
         '404':
           description: Item not found.
         '409':
@@ -1114,11 +1244,19 @@ paths:
           description: Current SHA-512 hash of the item. Must match the stored hash.
           schema:
             type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          description: Owner share code of the library containing the item. Defaults to the authenticated user.
+          schema:
+            type: string
       responses:
         '204':
           description: Item deleted.
         '400':
           description: Missing or invalid hash query parameter.
+        '403':
+          description: Not allowed to delete in the target library.
         '404':
           description: Item not found.
         '409':

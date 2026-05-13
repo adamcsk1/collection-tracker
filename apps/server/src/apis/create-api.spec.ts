@@ -3,8 +3,19 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const insertUser = () => {
-  getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+const insertUser = (usernameHash = 'user') => {
+  getDatabase()
+    .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
+    .run(usernameHash, `${usernameHash}-token`);
+};
+
+const insertShare = (ownerHash: string, sharedWithHash: string, canCreate: boolean) => {
+  getDatabase()
+    .prepare(
+      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(ownerHash, sharedWithHash, 1, canCreate ? 1 : 0, 0, 0);
 };
 
 const item = {
@@ -51,6 +62,56 @@ describe('create-api', () => {
     expect(getDatabase().prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt0000001')).toEqual({
       title: 'Custom File',
     });
+  });
+
+  it('creates an item in a shared library when create permission is granted', async () => {
+    insertUser('owner');
+    insertUser('user');
+    insertShare('owner', 'user', true);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const response = mockResponse();
+    const request: any = { body: { ...item, targetOwnerShareCode: getUserShareCode('owner') }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ item: expect.objectContaining({ title: 'Custom File' }) });
+    expect(
+      getDatabase()
+        .prepare('SELECT title FROM collection_items WHERE username_hash = ? AND imdb_id = ?')
+        .get('owner', 'tt0000001')
+    ).toEqual({ title: 'Custom File' });
+  });
+
+  it('returns 403 when creating in a shared library without create permission', async () => {
+    insertUser('owner');
+    insertUser('user');
+    insertShare('owner', 'user', false);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const response = mockResponse();
+    const request: any = { body: { ...item, targetOwnerShareCode: getUserShareCode('owner') }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
+  });
+
+  it('returns 404 when the target shared library does not exist', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = { body: { ...item, targetOwnerShareCode: 'missing-share-code' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(404);
   });
 
   it('returns 409 when DB imdb_id already exists', async () => {

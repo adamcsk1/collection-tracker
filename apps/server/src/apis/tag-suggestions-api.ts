@@ -2,6 +2,7 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { findTagSuggestions } from '../core/database/repositories/collection-repository';
+import { findReadableOwnerHashes } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
@@ -18,15 +19,11 @@ export const register = (app: FastifyInstance): void => {
       const queryParams = request.query as Record<string, unknown>;
       const query = typeof queryParams.query === 'string' ? queryParams.query : '';
       const includeInternal = queryParams.includeInternal === 'true';
+      const db = getDatabase();
+      const usernameHashes = [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
 
       response.send({
-        tags: findTagSuggestions(
-          getDatabase(),
-          request.usernameHash,
-          query,
-          parseLimit(queryParams.limit),
-          includeInternal
-        ),
+        tags: findTagSuggestions(db, usernameHashes, query, parseLimit(queryParams.limit), includeInternal),
       });
     })
   );

@@ -10,6 +10,7 @@ const db = initializeDatabase(tempDir);
 runMigrations(db, join(__dirname, '..', 'src', 'migrations'));
 
 const tables = [
+  'user_shares',
   'collection_item_tags',
   'collection_item_genres',
   'collection_items',

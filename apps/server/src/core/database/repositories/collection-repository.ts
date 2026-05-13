@@ -10,6 +10,7 @@ import {
 } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
 import { getItemHash } from '../../utils/collection-item-util';
+import { getUserShareCode } from './user-repository';
 
 export interface CollectionItemRow {
   id: number;
@@ -127,11 +128,14 @@ const addFilters = (queryParts: QueryParts, filters: CollectionItemFiltersApiMod
 };
 
 const buildItemWhere = (
-  usernameHash: string,
+  usernameHashes: string[],
   filters: CollectionItemFiltersApiModel | undefined,
   matchedImdbIds?: string[]
 ): QueryParts => {
-  const queryParts: QueryParts = { where: ['collection_items.username_hash = ?'], params: [usernameHash] };
+  const queryParts: QueryParts = {
+    where: [`collection_items.username_hash IN (${usernameHashes.map(() => '?').join(', ')})`],
+    params: [...usernameHashes],
+  };
   addFilters(queryParts, filters);
 
   if (matchedImdbIds?.length) {
@@ -173,12 +177,13 @@ const toApiItem = (db: Database.Database, row: CollectionItemRow): CollectionIte
     ...item,
     titleLower: row.title_lower,
     hash: row.content_hash,
+    ownerShareCode: getUserShareCode(row.username_hash),
   };
 };
 
 export const findCollectionItems = (
   db: Database.Database,
-  usernameHash: string,
+  usernameHashes: string[],
   offset: number,
   limit: number
 ): CollectionItemApiModel[] => {
@@ -186,23 +191,23 @@ export const findCollectionItems = (
     .prepare(
       `SELECT *
        FROM collection_items
-       WHERE username_hash = ?
+       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
        ORDER BY created_at DESC, id DESC
        LIMIT ? OFFSET ?`
     )
-    .all(usernameHash, limit, offset) as CollectionItemRow[];
+    .all(...usernameHashes, limit, offset) as CollectionItemRow[];
 
   return rows.map((row) => toApiItem(db, row));
 };
 
 export const searchCollectionItems = (
   db: Database.Database,
-  usernameHash: string,
+  usernameHashes: string[],
   options: CollectionItemQueryOptions
 ): CollectionItemsApiResponseModel => {
   const offset = normalizeOffset(options.offset);
   const limit = normalizeLimit(options.limit);
-  const queryParts = buildItemWhere(usernameHash, options.filters, options.matchedImdbIds);
+  const queryParts = buildItemWhere(usernameHashes, options.filters, options.matchedImdbIds);
   const whereSql = queryParts.where.join(' AND ');
 
   if (options.matchedImdbIds?.length === 0) {
@@ -247,7 +252,7 @@ export const searchCollectionItems = (
 
 export const findCollectionItemSuggestions = (
   db: Database.Database,
-  usernameHash: string,
+  usernameHashes: string[],
   query: string,
   limit: number
 ): CollectionItemSuggestionApiModel[] => {
@@ -258,7 +263,8 @@ export const findCollectionItemSuggestions = (
   if (lowerQuery.startsWith('#')) {
     const systemTagSuggestions = SUGGESTION_SYSTEM_TAGS.filter((tag) => tag.startsWith(lowerQuery));
     const remainingLimit = normalizedLimit - systemTagSuggestions.length;
-    const customTagSuggestions = remainingLimit > 0 ? findTagSuggestions(db, usernameHash, query, remainingLimit) : [];
+    const customTagSuggestions =
+      remainingLimit > 0 ? findTagSuggestions(db, usernameHashes, query, remainingLimit) : [];
 
     return [...systemTagSuggestions, ...customTagSuggestions]
       .slice(0, normalizedLimit)
@@ -270,7 +276,7 @@ export const findCollectionItemSuggestions = (
     .prepare(
       `SELECT imdb_id, title
        FROM collection_items
-       WHERE username_hash = ?
+       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
        AND (
          title_lower LIKE ? ESCAPE '\\'
          OR LOWER(imdb_id) LIKE ? ESCAPE '\\'
@@ -280,7 +286,7 @@ export const findCollectionItemSuggestions = (
        ORDER BY created_at DESC, id DESC
        LIMIT ?`
     )
-    .all(usernameHash, likeQuery, likeQuery, likeQuery, likeQuery, normalizedLimit) as Array<{
+    .all(...usernameHashes, likeQuery, likeQuery, likeQuery, likeQuery, normalizedLimit) as Array<{
     imdb_id: string;
     title: string;
   }>;
@@ -290,7 +296,7 @@ export const findCollectionItemSuggestions = (
 
 export const findTagSuggestions = (
   db: Database.Database,
-  usernameHash: string,
+  usernameHashes: string[],
   query: string,
   limit: number,
   includeInternal = false
@@ -306,21 +312,23 @@ export const findTagSuggestions = (
       `SELECT tag, COUNT(*) as count
        FROM collection_item_tags
        INNER JOIN collection_items ON collection_items.id = collection_item_tags.item_id
-       WHERE collection_items.username_hash = ?
+       WHERE collection_items.username_hash IN (${usernameHashes.map(() => '?').join(', ')})
        AND LOWER(tag) LIKE ? ESCAPE '\\'
        ${excludedSql}
        GROUP BY tag
        ORDER BY count DESC, tag
        LIMIT ?`
     )
-    .all(usernameHash, `${escapeLike(lowerQuery)}%`, ...excludedTags, normalizeLimit(limit)) as Array<{ tag: string }>;
+    .all(...usernameHashes, `${escapeLike(lowerQuery)}%`, ...excludedTags, normalizeLimit(limit)) as Array<{
+    tag: string;
+  }>;
 
   return rows.map((row) => row.tag);
 };
 
 export const findGenreSuggestions = (
   db: Database.Database,
-  usernameHash: string,
+  usernameHashes: string[],
   query: string,
   limit: number
 ): string[] => {
@@ -332,27 +340,32 @@ export const findGenreSuggestions = (
       `SELECT genre, COUNT(*) as count
        FROM collection_item_genres
        INNER JOIN collection_items ON collection_items.id = collection_item_genres.item_id
-       WHERE collection_items.username_hash = ?
+       WHERE collection_items.username_hash IN (${usernameHashes.map(() => '?').join(', ')})
        AND LOWER(genre) LIKE ? ESCAPE '\\'
        GROUP BY genre
        ORDER BY count DESC, genre
        LIMIT ?`
     )
-    .all(usernameHash, `${escapeLike(lowerQuery)}%`, normalizeLimit(limit)) as Array<{ genre: string }>;
+    .all(...usernameHashes, `${escapeLike(lowerQuery)}%`, normalizeLimit(limit)) as Array<{ genre: string }>;
 
   return rows.map((row) => row.genre);
 };
 
-export const collectionItemExists = (db: Database.Database, usernameHash: string, imdbId: string): boolean => {
-  return !!findCollectionItemByImdbId(db, usernameHash, imdbId);
+export const collectionItemExists = (db: Database.Database, usernameHashes: string[], imdbId: string): boolean => {
+  const row = db
+    .prepare(
+      `SELECT 1 FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND imdb_id = ? LIMIT 1`
+    )
+    .get(...usernameHashes, imdbId);
+  return !!row;
 };
 
 export const getCollectionStatistics = (
   db: Database.Database,
-  usernameHash: string,
+  usernameHashes: string[],
   filters?: CollectionItemFiltersApiModel
 ): CollectionStatisticsApiResponseModel => {
-  const queryParts = buildItemWhere(usernameHash, filters);
+  const queryParts = buildItemWhere(usernameHashes, filters);
   const whereSql = queryParts.where.join(' AND ');
   const matchingItemsSql = `SELECT id FROM collection_items WHERE ${whereSql}`;
   const countTag = (tag: string, exists = true): number =>
@@ -408,15 +421,18 @@ export const getCollectionStatistics = (
   };
 };
 
-export const findCollectionItemsForPrompt = (db: Database.Database, usernameHash: string): CollectionItemApiModel[] => {
+export const findCollectionItemsForPrompt = (
+  db: Database.Database,
+  usernameHashes: string[]
+): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
       `SELECT *
        FROM collection_items
-       WHERE username_hash = ?
+       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
        ORDER BY created_at DESC, id DESC`
     )
-    .all(usernameHash) as CollectionItemRow[];
+    .all(...usernameHashes) as CollectionItemRow[];
 
   return rows.reduce<CollectionItemApiModel[]>((items, row) => {
     if (!row.imdb_id) return items;
@@ -428,27 +444,37 @@ export const findCollectionItemsForPrompt = (db: Database.Database, usernameHash
 
 export const findRandomCollectionItem = (
   db: Database.Database,
-  usernameHash: string
+  usernameHashes: string[]
 ): CollectionItemApiModel | undefined => {
   const row = db
-    .prepare('SELECT * FROM collection_items WHERE username_hash = ? ORDER BY RANDOM() LIMIT 1')
-    .get(usernameHash) as CollectionItemRow | undefined;
+    .prepare(
+      `SELECT * FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) ORDER BY RANDOM() LIMIT 1`
+    )
+    .get(...usernameHashes) as CollectionItemRow | undefined;
 
   return row ? toApiItem(db, row) : undefined;
 };
 
-export const findRandomCollectionImages = (db: Database.Database, usernameHash: string, count: number): string[] => {
+export const findRandomCollectionImages = (
+  db: Database.Database,
+  usernameHashes: string[],
+  count: number
+): string[] => {
   const rows = db
-    .prepare('SELECT image FROM collection_items WHERE username_hash = ? AND image != ? ORDER BY RANDOM() LIMIT ?')
-    .all(usernameHash, '', count) as Array<{ image: string }>;
+    .prepare(
+      `SELECT image FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND image != ? ORDER BY RANDOM() LIMIT ?`
+    )
+    .all(...usernameHashes, '', count) as Array<{ image: string }>;
 
   return rows.map((row) => row.image);
 };
 
-export const countCollectionItems = (db: Database.Database, usernameHash: string): number => {
+export const countCollectionItems = (db: Database.Database, usernameHashes: string[]): number => {
   const row = db
-    .prepare('SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ?')
-    .get(usernameHash) as { count: number };
+    .prepare(
+      `SELECT COUNT(*) as count FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})`
+    )
+    .get(...usernameHashes) as { count: number };
   return row.count;
 };
 

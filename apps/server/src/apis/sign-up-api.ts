@@ -35,7 +35,7 @@ export const register = (app: FastifyInstance): void => {
       const userToken = generateRandomToken(username);
       const userTokenHash = hashText(userToken);
 
-      insertUser(db, usernameHash, userTokenHash);
+      insertUser(db, usernameHash, userTokenHash, username);
 
       const result: SignUpApiResponseModel = { token: userToken };
       response.send(result);

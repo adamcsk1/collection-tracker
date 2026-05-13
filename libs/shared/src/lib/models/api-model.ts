@@ -163,6 +163,29 @@ export interface RefreshImagesApiResponseModel {
   errors: number;
 }
 
+export interface UserShareOutgoingApiModel {
+  sharedWithUserShareCode: string;
+  canRead: boolean;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+}
+
+export interface UserShareIncomingApiModel {
+  ownerUserShareCode: string;
+  ownerUsername: string | null;
+  canRead: boolean;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+}
+
+export interface UserSharesApiResponseModel {
+  userShareCode: string;
+  outgoing: UserShareOutgoingApiModel[];
+  incoming: UserShareIncomingApiModel[];
+}
+
 export interface HealthApiResponseModel {
   status: 'ok' | 'warn' | 'error';
   memory: {
