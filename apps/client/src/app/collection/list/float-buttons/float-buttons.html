@@ -1,7 +1,7 @@
 @if (scrollToTopAvailable()) {
   <div
     class="float-button float-button-scroll-to-top"
-    [class.float-button-scroll-to-top-offset]="showFloatButtons()"
+    [class.float-button-scroll-to-top-offset]="actionButtonsVisible()"
     animate.enter="animation-fade-in"
     animate.leave="animation-fade-out"
   >
@@ -16,7 +16,7 @@
     </button>
   </div>
 }
-@if (showFloatButtons()) {
+@if (actionButtonsVisible()) {
   <div class="float-buttons-container" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
     @if (permissionAdd()) {
       <div class="float-button">
@@ -79,7 +79,7 @@
       </button>
     </div>
   </div>
-} @else {
+} @else if (!hideActions()) {
   <div class="float-button float-show-button" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
     <button
       data-test-id="show-functions"

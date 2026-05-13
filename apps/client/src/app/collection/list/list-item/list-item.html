@@ -28,17 +28,26 @@
       <a href="#" role="button" (click)="onOpenDetail()" (keyup)="onOpenDetail()"> {{ collectionItem.title }} </a>
     </h3>
     <div class="meta">
-      @if (collectionItem.year) {
-        <span>{{ collectionItem.year }}</span>
-      }
-      @if (collectionItem.rate) {
-        <span class="rating"> <i class="material-icons"> star_rate </i> {{ collectionItem.rate }} </span>
-      }
-      @if (isShared()) {
-        <span class="shared" data-test-id="list-item-shared" [title]="translations.shared()">
-          <i class="material-icons">share</i>
-        </span>
-      }
+      <span class="meta-column">
+        @if (collectionItem.year) {
+          <span>{{ collectionItem.year }}</span>
+        }
+        @if (collectionItem.rate) {
+          <span class="rating"> <i class="material-icons"> star_rate </i> {{ collectionItem.rate }} </span>
+        }
+      </span>
+      <span class="meta-column">
+        @if (favorite()) {
+          <span class="favorite" data-test-id="list-item-favorite" [title]="translations.favorite()">
+            <i class="material-icons">star</i>
+          </span>
+        }
+        @if (shared()) {
+          <span class="shared" data-test-id="list-item-shared" [title]="translations.shared()">
+            <i class="material-icons">share</i>
+          </span>
+        }
+      </span>
     </div>
   </div>
 }

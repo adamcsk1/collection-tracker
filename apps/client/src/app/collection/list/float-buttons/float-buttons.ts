@@ -40,10 +40,12 @@ export class FloatButtons {
   protected readonly useAiSearch = this.aiSearch.useAiSearch.asReadonly();
   protected readonly permissionAdd = computed(() => true);
   protected readonly showFloatButtons = signal(false);
+  protected readonly actionButtonsVisible = computed(() => !this.hideActions() && this.showFloatButtons());
   protected readonly ollamaIcon = `${getBasePath()}/client/images/ollama-icon.png`;
 
   public readonly scrollToTopAvailable = input<boolean>(false);
   public readonly collectionLength = input.required<number>();
+  public readonly hideActions = input(false);
 
   public readonly randomPick = output<void>();
   public readonly toggleAiSearch = output<void>();
@@ -52,6 +54,8 @@ export class FloatButtons {
   public readonly showFunctions = output<void>();
 
   public onShowFunctions(): void {
+    if (this.hideActions()) return;
+
     this.showFloatButtons.set(true);
     this.showFunctions.emit();
   }

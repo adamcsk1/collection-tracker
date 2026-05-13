@@ -37,6 +37,7 @@ export class Statistics implements AfterViewInit {
     itemsInCollection: computed(() => this.ngxSignalTranslate.translate('ItemsInCollection')),
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
+    favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
     unwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
     chart: computed(() => this.ngxSignalTranslate.translate('Chart')),
@@ -62,6 +63,7 @@ export class Statistics implements AfterViewInit {
     return {
       movies: statistics?.movieCount ?? 0,
       series: statistics?.seriesCount ?? 0,
+      favorites: statistics?.favoriteCount ?? 0,
       all: statistics?.totalItems ?? 0,
       watched: statistics?.watchedCount ?? 0,
       unwatched: statistics?.unwatchedCount ?? 0,

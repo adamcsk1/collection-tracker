@@ -8,7 +8,7 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
+import { FAVORITE_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
@@ -65,8 +65,10 @@ export class ItemDialog implements OnInit {
     readOnly: computed(() => this.ngxSignalTranslate.translate('ReadOnly')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     edit: computed(() => this.ngxSignalTranslate.translate('Edit')),
+    markAsFavorite: computed(() => this.ngxSignalTranslate.translate('MarkAsFavorite')),
     markAsUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAsUnwatched')),
     markAsWatched: computed(() => this.ngxSignalTranslate.translate('MarkAsWatched')),
+    removeFavorite: computed(() => this.ngxSignalTranslate.translate('RemoveFavorite')),
     delete: computed(() => this.ngxSignalTranslate.translate('Delete')),
     shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
   };
@@ -121,6 +123,7 @@ export class ItemDialog implements OnInit {
     return share?.canDelete === true;
   });
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG));
+  protected readonly favorite = computed(() => this.collectionItem().tags.includes(FAVORITE_TAG));
   protected readonly draftImageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.draftItem().image)
   );
@@ -256,6 +259,20 @@ export class ItemDialog implements OnInit {
     this.updateDraft(
       'tags',
       this.draftItem().tags.filter((tag) => tag !== WATCHED_TAG)
+    );
+    this.onSaveChanges();
+  }
+
+  protected onMarkAsFavorite(): void {
+    if (this.draftItem().tags.includes(FAVORITE_TAG)) return;
+    this.updateDraft('tags', [...this.draftItem().tags, FAVORITE_TAG]);
+    this.onSaveChanges();
+  }
+
+  protected onRemoveFavorite(): void {
+    this.updateDraft(
+      'tags',
+      this.draftItem().tags.filter((tag) => tag !== FAVORITE_TAG)
     );
     this.onSaveChanges();
   }

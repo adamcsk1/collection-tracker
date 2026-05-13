@@ -1,15 +1,15 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { isActive, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
+import { FAVORITE_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
 import { CollectionService } from '../../collection/collection-service';
 import { SettingsService } from '../../settings/settings-service';
 import { LogoutService } from '../logout-service';
-import { mainStateToken } from '../main-store';
 
 @Component({
   selector: 'ct-menu-nav',
@@ -20,7 +20,6 @@ import { mainStateToken } from '../main-store';
 })
 export class MenuNav {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly mainState = inject(mainStateToken);
   private readonly collection = inject(CollectionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(ApiService);
@@ -28,17 +27,36 @@ export class MenuNav {
   private readonly portal = inject(PortalService);
   private readonly theme = inject(ThemeService);
   private readonly settings = inject(SettingsService);
+  private readonly router = inject(Router);
+  private readonly activeRoutes = {
+    collection: isActive('/collection', this.router),
+    favorites: isActive(
+      this.router.createUrlTree(['/collection'], { queryParams: { search: '#favorite' } }),
+      this.router,
+      {
+        paths: 'exact',
+        queryParams: 'exact',
+        fragment: 'ignored',
+        matrixParams: 'ignored',
+      }
+    ),
+  };
   protected readonly translations = {
     title: computed(() => this.ngxSignalTranslate.translate('Title')),
     menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
     collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
+    favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     settings: computed(() => this.ngxSignalTranslate.translate('Settings')),
     statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
     sync: computed(() => this.ngxSignalTranslate.translate('Sync')),
     about: computed(() => this.ngxSignalTranslate.translate('About')),
     logout: computed(() => this.ngxSignalTranslate.translate('Logout')),
   };
+  protected readonly FAVORITE_TAG = FAVORITE_TAG;
   protected readonly themeLogo = this.theme.themeLogo;
+  protected readonly isCollectionActive = computed(
+    () => this.activeRoutes.collection() && !this.activeRoutes.favorites()
+  );
 
   protected onSync(): void {
     this.settings

@@ -154,6 +154,29 @@ describe('FloatButtons', () => {
     expect(fixture.nativeElement.querySelector('.float-show-button')).toBeTruthy();
   });
 
+  it('hides action controls while keeping scroll to top available when actions are hidden', () => {
+    fixture.componentRef.setInput('hideActions', true);
+    fixture.componentRef.setInput('scrollToTopAvailable', true);
+    fixture.detectChanges();
+
+    expect(findButton('arrow_upward')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.float-show-button')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.float-buttons-container')).toBeNull();
+  });
+
+  it('does not expand or emit showFunctions when actions are hidden', () => {
+    fixture.componentRef.setInput('hideActions', true);
+    fixture.detectChanges();
+    const emitted: void[] = [];
+    component.showFunctions.subscribe(() => emitted.push(undefined));
+
+    component.onShowFunctions();
+    fixture.detectChanges();
+
+    expect(emitted).toHaveLength(0);
+    expect(fixture.nativeElement.querySelector('.float-buttons-container')).toBeNull();
+  });
+
   it('hides the scroll to top button when scrollToTopAvailable is false', () => {
     expect(findButton('arrow_upward')).toBeUndefined();
   });

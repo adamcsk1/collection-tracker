@@ -1,13 +1,16 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { form, FormField } from '@angular/forms/signals';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
+import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
+import { FAVORITE_TAG } from '@shared/constants/tags-const';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { map } from 'rxjs';
 import { AiSearchInput } from './ai-search-input/ai-search-input';
 import { collectionStateToken, initialCollectionState } from './collection-store';
 import { List } from './list/list';
 import { AiSearchService } from './search/ai-search-service';
 import { SearchSuggestionService } from './search/search-suggestion-service';
-import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
-import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 import { provideStore } from 'ngx-simple-signal-store';
 
@@ -28,7 +31,10 @@ export class Collection {
   private readonly collectionState = inject(collectionStateToken);
   private readonly aiSearch = inject(AiSearchService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  protected readonly querySearch = toSignal(
+    this.route.queryParamMap.pipe(map((queryParamMap) => queryParamMap.get('search')?.trim() ?? '')),
+    { initialValue: this.route.snapshot.queryParams['search']?.trim?.() ?? '' }
+  );
   protected readonly translations = {
     placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
     placeholderSearchInCollection: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInCollection')),
@@ -39,17 +45,20 @@ export class Collection {
   protected readonly aiSearchPromptTextField = form(this.aiSearchPromptTextModel);
   protected readonly aiSearchInProgress = this.aiSearch.searchInProgress.asReadonly();
   protected readonly useAiSearch = this.aiSearch.useAiSearch.asReadonly();
+  protected readonly useStandardSearch = computed(
+    () => !this.useAiSearch() || this.collectionState.state.forceStandardSearch()
+  );
+  protected readonly isFavoritePrefiltered = computed(() => this.querySearch() === FAVORITE_TAG);
 
   constructor() {
-    const querySearch = this.route.snapshot.queryParams['search'];
-    if (typeof querySearch === 'string' && querySearch.trim()) {
-      this.collectionState.setState('searchText', querySearch.trim());
-      void this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: { search: null },
-        replaceUrl: true,
+    effect(() => {
+      const querySearch = this.querySearch();
+
+      untracked(() => {
+        this.collectionState.setState('forceStandardSearch', !!querySearch);
+        this.collectionState.setState('searchText', querySearch);
       });
-    }
+    });
 
     effect(() => {
       const searchText = this.collectionState.state.searchText();
@@ -69,11 +78,15 @@ export class Collection {
   }
 
   protected onSearchFromUser(): void {
-    this.collectionState.setState('forceStandardSearch', false);
+    if (this.collectionState.state.forceStandardSearch()) {
+      this.collectionState.setState('forceStandardSearch', false);
+    }
   }
 
   protected onSearchAccepted(): void {
-    this.collectionState.setState('forceStandardSearch', true);
+    if (this.aiSearch.useAiSearch() && !this.collectionState.state.forceStandardSearch()) {
+      this.collectionState.setState('forceStandardSearch', true);
+    }
   }
 
   protected onAiSearchSend(): void {

@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { sharesStateToken } from '../../../shares/shares-store';
 import { TagConfigColorPipe } from '../../../settings/tag-configs/tag-configs-color-pipe';
+import { sharesStateToken } from '../../../shares/shares-store';
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
 import { ItemDialog } from '../../item-dialog/item-dialog';
@@ -33,6 +33,7 @@ export class ListItem {
   private readonly aiSearch = inject(AiSearchService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG) ?? false);
+  protected readonly favorite = computed(() => this.collectionItem().tags.includes(FAVORITE_TAG) ?? false);
   protected readonly imageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
   );
@@ -47,7 +48,7 @@ export class ListItem {
   protected readonly tags = computed(() => {
     const imageBadgeTag = this.imageBadgeTag();
     return this.collectionItem().tags.filter(
-      (tag) => ![WATCHED_TAG, MOVIE_TAG, SERIES_TAG, imageBadgeTag].includes(tag)
+      (tag) => ![WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, imageBadgeTag].includes(tag)
     );
   });
   protected readonly badgeBackgroundColor = computed(() => {
@@ -63,11 +64,12 @@ export class ListItem {
     return getContrastColorHex(badgeBackgroundColor);
   });
   protected readonly useAiSearch = this.aiSearch.useAiSearch.asReadonly();
-  protected readonly isShared = computed(() => {
+  protected readonly shared = computed(() => {
     const item = this.collectionItem();
     return this.sharesState.state.incoming().some((share) => share.ownerUserShareCode === item.ownerShareCode);
   });
   protected readonly translations = {
+    favorite: computed(() => this.ngxSignalTranslate.translate('Favorite')),
     shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
   };
   protected readonly WATCHED_TAG = WATCHED_TAG;

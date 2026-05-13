@@ -4,7 +4,7 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -140,6 +140,15 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
 
     expect(component['watched']()).toBe(true);
+  });
+
+  it('computes favorite status from tags', () => {
+    expect(component['favorite']()).toBe(false);
+
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG] }));
+    fixture.detectChanges();
+
+    expect(component['favorite']()).toBe(true);
   });
 
   it('uses incoming share permissions for shared collection items', () => {
@@ -353,6 +362,50 @@ describe('ItemDialog', () => {
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
       expect.objectContaining({ tags: expect.not.arrayContaining([WATCHED_TAG]) }),
+      'testhash',
+      undefined
+    );
+    expect(toastState.state.message()).toBe('Toast.EditItem');
+  });
+
+  it('marks item as favorite by appending favorite tag and saving', () => {
+    confirm.open.mockReturnValue(of(true));
+
+    component['onMarkAsFavorite']();
+
+    expect(confirm.open).toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: expect.arrayContaining([FAVORITE_TAG]) }),
+      'testhash',
+      undefined
+    );
+    expect(toastState.state.message()).toBe('Toast.EditItem');
+  });
+
+  it('does not re-save when already favorite', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    confirm.open.mockReturnValue(of(true));
+
+    component['onMarkAsFavorite']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('removes favorite tag and saves', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG, '#action'] }));
+    fixture.detectChanges();
+    confirm.open.mockReturnValue(of(true));
+
+    component['onRemoveFavorite']();
+
+    expect(confirm.open).toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: expect.not.arrayContaining([FAVORITE_TAG]) }),
       'testhash',
       undefined
     );
