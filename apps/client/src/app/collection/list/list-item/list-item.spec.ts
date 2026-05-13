@@ -1,19 +1,19 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CollectionItemModel } from '../../collection-model';
-import { CollectionState, collectionStateToken, initialCollectionState } from '../../collection-store';
-import { AiSearchService } from '../../search/ai-search-service';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { PortalService } from '@services/portal-service';
+import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   initialTagConfigsState,
   TagConfigsState,
   tagConfigsStateToken,
 } from '../../../settings/tag-configs/tag-configs-store';
-import { apiStateToken, initialApiState } from '@services/api/api-store';
-import { PortalService } from '@services/portal-service';
-import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialSharesState, SharesState, sharesStateToken } from '../../../shares/shares-store';
+import { CollectionItemModel } from '../../collection-model';
+import { CollectionState, collectionStateToken, initialCollectionState } from '../../collection-store';
+import { AiSearchService } from '../../search/ai-search-service';
 import { ListItem } from './list-item';
 
 const buildItem = (title: string, tags: string[] = []): CollectionItemModel => ({
@@ -106,18 +106,19 @@ describe('ListItem', () => {
     fixture.componentRef.setInput('collectionItem', { ...buildItem('Shared', []), ownerShareCode: 'owner-code' });
     fixture.detectChanges();
 
-    expect(component['isShared']()).toBe(true);
+    expect(component['shared']()).toBe(true);
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-shared"]')).not.toBeNull();
   });
 
-  it('derives watched, movie, series, and non-internal tags', () => {
+  it('derives watched, favorite, movie, series, and non-internal tags', () => {
     fixture.componentRef.setInput(
       'collectionItem',
-      buildItem('Sample', [WATCHED_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2'])
+      buildItem('Sample', [WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2'])
     );
     fixture.detectChanges();
 
     expect(component['watched']()).toBe(true);
+    expect(component['favorite']()).toBe(true);
     expect(component['movie']()).toBe(true);
     expect(component['series']()).toBe(true);
     expect(component['tags']()).toEqual(['#tag1', '#tag2']);
@@ -125,6 +126,13 @@ describe('ListItem', () => {
     expect(component['MOVIE_TAG']).toBe(MOVIE_TAG);
     expect(component['SERIES_TAG']).toBe(SERIES_TAG);
     expect(component['VIRTUAL_UNWATCHED_TAG']).toBe('#unwatched');
+  });
+
+  it('renders a favorite star for favorite items', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem('Sample', [FAVORITE_TAG]));
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-favorite"]')).not.toBeNull();
   });
 
   it('stores forceStandardSearch flag when setting search text', () => {

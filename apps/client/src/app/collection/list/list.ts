@@ -6,7 +6,9 @@ import {
   effect,
   ElementRef,
   inject,
+  input,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -14,9 +16,19 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
-import { CollectionItemFiltersApiModel } from '@shared/models/api-model';
+import { CollectionItemFiltersApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, debounceTime, EMPTY, fromEvent, startWith, switchMap, tap } from 'rxjs';
+import {
+  asyncScheduler,
+  catchError,
+  debounceTime,
+  EMPTY,
+  fromEvent,
+  Observable,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { sharesStateToken } from '../../shares/shares-store';
 import { CollectionItemModel } from '../collection-model';
@@ -25,7 +37,7 @@ import { ItemDialog } from '../item-dialog/item-dialog';
 import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
 import { FloatButtons } from './float-buttons/float-buttons';
-import { COLLECTION_LIST_PAGE_SIZE } from './list-const';
+import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS } from './list-const';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
 import { ListItem } from './list-item/list-item';
 
@@ -46,11 +58,9 @@ export class List {
   private readonly destroyRef = inject(DestroyRef);
   private readonly aiSearch = inject(AiSearchService);
   private readonly sharesState = inject(sharesStateToken);
-  private requestVersion = 0;
-  private readonly debouncedSearchText = toSignal(
-    toObservable(this.collectionState.state.searchText).pipe(debounceTime(100)),
-    { initialValue: '' }
-  );
+  private readonly debouncedSearchText = signal('');
+  private readonly routeSearchVersion = signal(0);
+  private lastRouteSearchText: string | null = null;
   private readonly aiSearchSendTrigger = computed(() => ({
     promptText: this.collectionState.state.aiSearchPromptText(),
     version: this.collectionState.state.aiSearchSendVersion(),
@@ -75,17 +85,48 @@ export class List {
   protected readonly hasMore = computed(() => this.visibleCollection().length < this.collectionLength());
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly scrollToTopAvailable = signal(false);
+  public readonly hideFloatActions = input(false);
+  public readonly routeSearchText = input('');
 
   constructor() {
     this.loadShares();
 
+    effect((onCleanup) => {
+      const searchText = this.collectionState.state.searchText();
+      const routeSearchVersion = untracked(() => this.routeSearchVersion());
+      const subscription = asyncScheduler.schedule(() => {
+        if (this.routeSearchVersion() === routeSearchVersion) {
+          this.debouncedSearchText.set(searchText);
+        }
+      }, COLLECTION_SEARCH_DEBOUNCE_MS);
+
+      onCleanup(() => subscription.unsubscribe());
+    });
+
     effect(() => {
-      this.debouncedSearchText();
+      const routeSearchText = this.routeSearchText();
+      untracked(() => {
+        if (this.lastRouteSearchText === null) {
+          this.lastRouteSearchText = routeSearchText;
+        } else if (this.lastRouteSearchText !== routeSearchText) {
+          this.lastRouteSearchText = routeSearchText;
+          this.routeSearchVersion.update((version) => version + 1);
+        }
+
+        if (this.debouncedSearchText() !== routeSearchText) {
+          this.debouncedSearchText.set(routeSearchText);
+        }
+      });
+    });
+
+    effect(() => {
+      const searchText = this.debouncedSearchText();
       this.aiSearchMatchedIds();
       this.aiSearch.useAiSearch();
+      this.collectionState.state.forceStandardSearch();
       this.collectionState.state.aiSearchPromptText();
       this.mainCollectionState.state.reloadTrigger();
-      this.loadItems(true);
+      untracked(() => this.loadItems(true, searchText));
     });
 
     effect(() => {
@@ -152,15 +193,21 @@ export class List {
     }
   }
 
-  private loadItems(reset: boolean): void {
-    const requestVersion = ++this.requestVersion;
+  private loadItems(reset: boolean, searchText = this.collectionState.state.searchText()): void {
+    this.getItemsRequest(reset, searchText)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => this.applyItemsResponse(response, reset));
+  }
+
+  private getItemsRequest(reset: boolean, searchText: string): Observable<CollectionItemsApiResponseModel> {
     const offset = reset ? 0 : this.visibleCollection().length;
     const limit = COLLECTION_LIST_PAGE_SIZE;
     const aiIds = this.aiSearchMatchedIds();
     const promptText = this.collectionState.state.aiSearchPromptText().trim();
+    const useAiSearch = this.aiSearch.useAiSearch() && !this.collectionState.state.forceStandardSearch();
 
-    if (this.aiSearch.useAiSearch() && promptText && aiIds === null) {
-      return;
+    if (useAiSearch && promptText && aiIds === null) {
+      return EMPTY;
     }
 
     if (reset) {
@@ -169,31 +216,28 @@ export class List {
 
     this.apiState.setState('loadNetworkStatus', 'pending');
 
-    const request = this.aiSearch.useAiSearch()
+    const request = useAiSearch
       ? promptText
         ? this.api.getMatchedItems({ imdbIds: aiIds as string[], offset, limit })
         : this.api.searchItems({}, offset, limit)
-      : this.api.searchItems(this.buildFilters(), offset, limit);
+      : this.api.searchItems(this.buildFilters(searchText), offset, limit);
 
-    request
-      .pipe(
-        catchError(() => {
-          if (requestVersion === this.requestVersion) this.apiState.setState('loadNetworkStatus', 'error');
-          return EMPTY;
-        }),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe((response) => {
-        if (requestVersion !== this.requestVersion) return;
-
-        this.visibleCollection.set(reset ? response.items : [...this.visibleCollection(), ...response.items]);
-        this.collectionLength.set(response.total);
-        this.apiState.setState('loadNetworkStatus', 'finished');
-      });
+    return request.pipe(
+      catchError(() => {
+        this.apiState.setState('loadNetworkStatus', 'error');
+        return EMPTY;
+      })
+    );
   }
 
-  private buildFilters(): CollectionItemFiltersApiModel {
-    const search = this.collectionState.state.searchText().trim();
+  private applyItemsResponse(response: CollectionItemsApiResponseModel, reset: boolean): void {
+    this.visibleCollection.set(reset ? response.items : [...this.visibleCollection(), ...response.items]);
+    this.collectionLength.set(response.total);
+    this.apiState.setState('loadNetworkStatus', 'finished');
+  }
+
+  private buildFilters(searchText: string): CollectionItemFiltersApiModel {
+    const search = searchText.trim();
     if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false };
     if (search.startsWith('#')) return { tags: [search], tagMode: 'all' };
     return search ? { search } : {};

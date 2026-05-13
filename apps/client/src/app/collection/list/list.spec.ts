@@ -108,6 +108,8 @@ describe('List', () => {
     vi.useFakeTimers();
     try {
       collectionState.setState('searchText', 'be');
+      fixture.detectChanges();
+      await fixture.whenStable();
       await vi.runAllTimersAsync();
       fixture.detectChanges();
 
@@ -119,11 +121,36 @@ describe('List', () => {
     }
   });
 
+  it('resets immediately when the route search changes', async () => {
+    vi.useFakeTimers();
+    try {
+      collectionState.setState('searchText', 'typed');
+      fixture.detectChanges();
+
+      fixture.componentRef.setInput('routeSearchText', '#favorite');
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(api.searchItems).toHaveBeenCalledWith({ tags: ['#favorite'], tagMode: 'all' }, 0, 50);
+
+      api.searchItems.mockClear();
+      await vi.runAllTimersAsync();
+      fixture.detectChanges();
+
+      expect(api.searchItems).not.toHaveBeenCalledWith({ search: 'typed' }, 0, 50);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('maps virtual unwatched search to watched=false server filter', async () => {
     vi.useFakeTimers();
     try {
       collectionState.setState('searchText', VIRTUAL_UNWATCHED_TAG);
+      fixture.detectChanges();
+      await fixture.whenStable();
       await vi.runAllTimersAsync();
+      fixture.detectChanges();
 
       expect(api.searchItems).toHaveBeenLastCalledWith({ watched: false }, 0, 50);
     } finally {
@@ -161,6 +188,17 @@ describe('List', () => {
     component['loadItems'](true);
 
     expect(api.getMatchedItems).toHaveBeenCalled();
+  });
+
+  it('uses standard search when forceStandardSearch is set during AI search', () => {
+    const aiSearch = TestBed.inject(AiSearchService);
+    aiSearch.useAiSearch.set(true);
+    collectionState.setState('forceStandardSearch', true);
+    collectionState.setState('searchText', '#favorite');
+    component['loadItems'](true);
+
+    expect(api.searchItems).toHaveBeenCalledWith({ tags: ['#favorite'], tagMode: 'all' }, 0, 50);
+    expect(api.getMatchedItems).not.toHaveBeenCalled();
   });
 
   it('does not clear the list or fire a request while AI search results are still loading', () => {

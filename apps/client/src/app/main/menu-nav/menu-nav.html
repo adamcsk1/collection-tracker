@@ -9,12 +9,23 @@
   <a
     data-test-id="nav-collection"
     [routerLink]="['/', 'collection']"
-    routerLinkActive="active"
+    [class.active]="isCollectionActive()"
     class="highlight"
     (click)="onClose()"
   >
     <i class="material-icons">movie</i>
     {{ translations.collection() }}
+  </a>
+  <a
+    data-test-id="nav-favorites"
+    [routerLink]="['/', 'collection']"
+    [queryParams]="{ search: FAVORITE_TAG }"
+    routerLinkActive="active"
+    class="highlight"
+    (click)="onClose()"
+  >
+    <i class="material-icons">star</i>
+    {{ translations.favorites() }}
   </a>
   <a
     data-test-id="nav-settings"

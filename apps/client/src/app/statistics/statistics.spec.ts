@@ -20,6 +20,7 @@ describe('Statistics component', () => {
     totalItems: 2,
     movieCount: 1,
     seriesCount: 1,
+    favoriteCount: 1,
     watchedCount: 1,
     unwatchedCount: 1,
     tagCounts: [
@@ -61,6 +62,7 @@ describe('Statistics component', () => {
     expect(component['summary']()).toEqual({
       movies: 1,
       series: 1,
+      favorites: 1,
       all: 2,
       watched: 1,
       unwatched: 1,

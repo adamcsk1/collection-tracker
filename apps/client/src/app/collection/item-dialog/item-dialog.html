@@ -194,6 +194,17 @@
             {{ translations.markAsWatched() }}
           </button>
         }
+        @if (favorite()) {
+          <button data-test-id="item-dialog-remove-favorite" (click)="onRemoveFavorite()">
+            <i class="material-icons" [title]="translations.removeFavorite()"> star_outline </i>
+            {{ translations.removeFavorite() }}
+          </button>
+        } @else {
+          <button data-test-id="item-dialog-mark-favorite" (click)="onMarkAsFavorite()">
+            <i class="material-icons" [title]="translations.markAsFavorite()"> star_rate </i>
+            {{ translations.markAsFavorite() }}
+          </button>
+        }
       }
       @if (permissionDelete()) {
         <button data-test-id="item-dialog-delete" class="button-danger" (click)="onDelete()">

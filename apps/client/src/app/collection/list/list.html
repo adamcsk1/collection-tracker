@@ -14,10 +14,6 @@
     <ct-list-item-skeleton />
     <ct-list-item-skeleton />
     <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
-    <ct-list-item-skeleton />
   }
 
   @for (
@@ -49,6 +45,7 @@
 <ct-float-buttons
   [scrollToTopAvailable]="scrollToTopAvailable()"
   [collectionLength]="collectionLength()"
+  [hideActions]="hideFloatActions()"
   (randomPick)="onRandomPick()"
   (toggleAiSearch)="onToggleAiSearch()"
   (addNew)="onAddNew()"
