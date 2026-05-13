@@ -1,4 +1,4 @@
-import { MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
+import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
 import {
   CollectionItemApiModel,
   CollectionItemChangeApiModel,
@@ -40,8 +40,8 @@ interface QueryParts {
   params: Array<string | number>;
 }
 
-const INTERNAL_TAGS = [WATCHED_TAG, MOVIE_TAG, SERIES_TAG];
-const SUGGESTION_SYSTEM_TAGS = [...VIRTUAL_TAGS, WATCHED_TAG, MOVIE_TAG, SERIES_TAG];
+const INTERNAL_TAGS = [WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG];
+const SUGGESTION_SYSTEM_TAGS = [...VIRTUAL_TAGS, WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG];
 
 const escapeLike = (value: string): string => value.replace(/[\\%_]/g, (match) => `\\${match}`);
 
@@ -414,6 +414,7 @@ export const getCollectionStatistics = (
     totalItems,
     movieCount: countTag(MOVIE_TAG),
     seriesCount: countTag(SERIES_TAG),
+    favoriteCount: countTag(FAVORITE_TAG),
     watchedCount: countTag(WATCHED_TAG),
     unwatchedCount: countTag(WATCHED_TAG, false),
     tagCounts,
