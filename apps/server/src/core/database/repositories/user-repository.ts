@@ -5,14 +5,27 @@ import {
   UserSettingsApiResponseModel,
   UserSettingsApiRequestModel,
 } from '@shared/models/api-model';
+import { hashText } from '../../crypto';
 
 export interface UserRow {
   username_hash: string;
   user_token_hash: string;
+  username: string | null;
 }
 
-export const insertUser = (db: Database.Database, usernameHash: string, userTokenHash: string): void => {
-  db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, userTokenHash);
+export const getUserShareCode = (usernameHash: string): string => hashText(usernameHash).slice(0, 16);
+
+export const insertUser = (
+  db: Database.Database,
+  usernameHash: string,
+  userTokenHash: string,
+  username: string
+): void => {
+  db.prepare('INSERT INTO users (username_hash, user_token_hash, username) VALUES (?, ?, ?)').run(
+    usernameHash,
+    userTokenHash,
+    username
+  );
 };
 
 export const upsertUser = (db: Database.Database, usernameHash: string, userTokenHash: string): void => {
@@ -29,6 +42,15 @@ export const countUsers = (db: Database.Database): number => {
 
 export const findUserByHash = (db: Database.Database, usernameHash: string): UserRow | undefined => {
   return db.prepare('SELECT * FROM users WHERE username_hash = ?').get(usernameHash) as UserRow | undefined;
+};
+
+export const findUsers = (db: Database.Database): UserRow[] => {
+  return db.prepare('SELECT * FROM users').all() as UserRow[];
+};
+
+export const findUserByShareCode = (db: Database.Database, userShareCode: string): UserRow | undefined => {
+  const matches = findUsers(db).filter((user) => getUserShareCode(user.username_hash) === userShareCode);
+  return matches.length === 1 ? matches[0] : undefined;
 };
 
 export const deleteUser = (db: Database.Database, usernameHash: string): void => {

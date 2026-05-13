@@ -73,7 +73,6 @@ CREATE INDEX IF NOT EXISTS idx_collection_item_tags_item ON collection_item_tags
 
 CREATE TABLE IF NOT EXISTS user_settings (
   username_hash TEXT PRIMARY KEY,
-  fetch_batch_size INTEGER,
   theme TEXT,
   animated_background INTEGER,
   language TEXT,

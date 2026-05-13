@@ -4,6 +4,7 @@ import { CollectionItemApiModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { findCollectionItemsForPrompt } from '../core/database/repositories/collection-repository';
+import { findReadableOwnerHashes } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { debugLog, errorLog, warningLog } from '../core/logger';
 import { createOllamaClient, getOllamaConfig, validateOllamaConnection } from '../core/ollama/ollama';
@@ -41,7 +42,8 @@ const stringifyPromptValue = (value: unknown): string => `${value}`.replace(/\s+
 
 const readCollectionItems = (usernameHash: string): CollectionItemApiModel[] => {
   const db = getDatabase();
-  return findCollectionItemsForPrompt(db, usernameHash);
+  const usernameHashes = [usernameHash, ...findReadableOwnerHashes(db, usernameHash)];
+  return findCollectionItemsForPrompt(db, usernameHashes);
 };
 
 const toPromptItem = (item: CollectionItemApiModel): string => {

@@ -3,6 +3,7 @@ import { CollectionMatchedItemsApiRequestModel } from '@shared/models/api-model'
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { searchCollectionItems } from '../core/database/repositories/collection-repository';
+import { findReadableOwnerHashes } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
@@ -22,8 +23,11 @@ export const register = (app: FastifyInstance): void => {
         return;
       }
 
+      const db = getDatabase();
+      const usernameHashes = [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
+
       response.send(
-        searchCollectionItems(getDatabase(), request.usernameHash, {
+        searchCollectionItems(db, usernameHashes, {
           filters: body.filters,
           offset: parseNumber(body.offset, 0),
           limit: parseNumber(body.limit, 50),

@@ -44,7 +44,8 @@ export const register = (app: FastifyInstance): void => {
       await debugLog('POST /items/refresh-images started');
       const db = getDatabase();
       const apiKey = process.env.OMDB_API_KEY!;
-      const totalItems = countCollectionItems(db, request.usernameHash);
+      const ownHash = request.usernameHash;
+      const totalItems = countCollectionItems(db, [ownHash]);
       const batchSize = 50;
 
       await debugLog(`Found ${totalItems} items to check`);
@@ -55,7 +56,7 @@ export const register = (app: FastifyInstance): void => {
       let offset = 0;
 
       while (offset < totalItems) {
-        const items = findCollectionItems(db, request.usernameHash, offset, batchSize);
+        const items = findCollectionItems(db, [ownHash], offset, batchSize);
         for (const item of items) {
           checked++;
           await debugLog(`[${item.IMDbId}] Checking image availability: ${item.image}`);
@@ -76,7 +77,7 @@ export const register = (app: FastifyInstance): void => {
               image: omdbItem.Poster,
             };
             const newHash = getItemHash(updatedItem);
-            updateCollectionItem(db, request.usernameHash, item.IMDbId, newHash, updatedItem);
+            updateCollectionItem(db, ownHash, item.IMDbId, newHash, updatedItem);
             fixed++;
           } else {
             await debugLog(`[${item.IMDbId}] No new poster available from OMDb`);

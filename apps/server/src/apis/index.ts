@@ -17,6 +17,7 @@ import { register as registerGetCollectionItems } from './get-collection-items-a
 import { register as registerTagConfig } from './get-tag-config-api';
 import { register as registerUserSettings } from './get-user-settings-api';
 import { register as registerHealth } from './health-api';
+import { register as registerUserShares } from './user-shares-api';
 import { register as registerLogout } from './logout-api';
 import { register as registerMarkAllUnwatched } from './mark-all-unwatched-api';
 import { register as registerMarkAllWatched } from './mark-all-watched-api';
@@ -61,6 +62,7 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerChangeTagConfig(app);
   registerUserSettings(app);
   registerChangeUserSettings(app);
+  registerUserShares(app);
   registerTagSuggestions(app);
   registerGenreSuggestions(app);
   registerStatistics(app);

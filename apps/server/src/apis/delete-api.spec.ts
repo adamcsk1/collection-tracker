@@ -3,13 +3,28 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const insertItem = (hash = 'abc123') => {
+const insertUser = (usernameHash = 'user') => {
+  getDatabase()
+    .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
+    .run(usernameHash, `${usernameHash}-token`);
+};
+
+const insertShare = (ownerHash: string, sharedWithHash: string, canDelete: boolean) => {
+  getDatabase()
+    .prepare(
+      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(ownerHash, sharedWithHash, 1, 0, 0, canDelete ? 1 : 0);
+};
+
+const insertItem = (hash = 'abc123', usernameHash = 'user') => {
   const db = getDatabase();
-  db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+  insertUser(usernameHash);
   db.prepare(
     `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt-delete', '', '', '', '', '', '', hash);
+  ).run(usernameHash, 'tt-delete', '', '', '', '', '', '', hash);
 };
 
 describe('delete-api', () => {
@@ -44,6 +59,51 @@ describe('delete-api', () => {
     expect(
       getDatabase().prepare('SELECT COUNT(*) as count FROM collection_items WHERE imdb_id = ?').get('tt-delete')
     ).toEqual({ count: 0 });
+  });
+
+  it('deletes an item from a shared library when delete permission is granted', async () => {
+    insertItem('abc123', 'owner');
+    insertUser('user');
+    insertShare('owner', 'user', true);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const request: any = {
+      params: { imdbId: 'tt-delete' },
+      query: { hash: 'abc123', ownerShareCode: getUserShareCode('owner') },
+      usernameHash: 'user',
+    };
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(204);
+    expect(
+      getDatabase()
+        .prepare('SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND imdb_id = ?')
+        .get('owner', 'tt-delete')
+    ).toEqual({ count: 0 });
+  });
+
+  it('returns 403 when deleting from a shared library without delete permission', async () => {
+    insertItem('abc123', 'owner');
+    insertUser('user');
+    insertShare('owner', 'user', false);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const request: any = {
+      params: { imdbId: 'tt-delete' },
+      query: { hash: 'abc123', ownerShareCode: getUserShareCode('owner') },
+      usernameHash: 'user',
+    };
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 
   it('returns 409 when hash does not match', async () => {

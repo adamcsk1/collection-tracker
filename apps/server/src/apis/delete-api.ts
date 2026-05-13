@@ -2,6 +2,8 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { deleteCollectionItem, findCollectionItemByImdbId } from '../core/database/repositories/collection-repository';
+import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
@@ -15,8 +17,22 @@ export const register = (app: FastifyInstance): void => {
       if (typeof hash !== 'string') {
         return response.code(400).send();
       }
+
       const db = getDatabase();
-      const existingItem = findCollectionItemByImdbId(db, request.usernameHash, `${imdbId}`);
+      const query = request.query as Record<string, unknown>;
+      const ownerHash =
+        typeof query.ownerShareCode === 'string'
+          ? findUserByShareCode(db, query.ownerShareCode)?.username_hash
+          : request.usernameHash;
+      if (!ownerHash) {
+        return response.code(404).send();
+      }
+
+      if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'delete')) {
+        return response.code(403).send();
+      }
+
+      const existingItem = findCollectionItemByImdbId(db, ownerHash, `${imdbId}`);
 
       if (!existingItem) {
         return response.code(404).send();
@@ -26,7 +42,7 @@ export const register = (app: FastifyInstance): void => {
         return response.code(409).send();
       }
 
-      deleteCollectionItem(db, request.usernameHash, `${imdbId}`);
+      deleteCollectionItem(db, ownerHash, `${imdbId}`);
 
       response.code(204).send();
     })

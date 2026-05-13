@@ -3,6 +3,8 @@ import { ChangeApiRequestModel, ChangeApiResponseModel } from '@shared/models/ap
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { findCollectionItemByImdbId, updateCollectionItem } from '../core/database/repositories/collection-repository';
+import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
@@ -18,8 +20,22 @@ export const register = (app: FastifyInstance): void => {
       if (!item || typeof hash !== 'string') {
         return response.code(400).send();
       }
+
       const db = getDatabase();
-      const existingItem = findCollectionItemByImdbId(db, request.usernameHash, `${imdbId}`);
+      const query = (request.query ?? {}) as Record<string, unknown>;
+      const ownerHash =
+        typeof query.ownerShareCode === 'string'
+          ? findUserByShareCode(db, query.ownerShareCode)?.username_hash
+          : request.usernameHash;
+      if (!ownerHash) {
+        return response.code(404).send();
+      }
+
+      if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'update')) {
+        return response.code(403).send();
+      }
+
+      const existingItem = findCollectionItemByImdbId(db, ownerHash, `${imdbId}`);
 
       if (!existingItem) {
         return response.code(404).send();
@@ -30,14 +46,14 @@ export const register = (app: FastifyInstance): void => {
       }
 
       if (item.IMDbId !== imdbId) {
-        const conflictItem = findCollectionItemByImdbId(db, request.usernameHash, item.IMDbId);
+        const conflictItem = findCollectionItemByImdbId(db, ownerHash, item.IMDbId);
         if (conflictItem) {
           return response.code(409).send();
         }
       }
 
       const newHash = getItemHash(item);
-      const updatedItem = updateCollectionItem(db, request.usernameHash, `${imdbId}`, newHash, item);
+      const updatedItem = updateCollectionItem(db, ownerHash, `${imdbId}`, newHash, item);
 
       const result: ChangeApiResponseModel = { item: updatedItem! };
       response.send(result);
