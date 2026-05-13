@@ -11,6 +11,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainState, mainStateToken } from '../../main/main-store';
+import { initialSharesState, SharesState, sharesStateToken } from '../../shares/shares-store';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionService } from '../collection-service';
 import { ItemDialog } from './item-dialog';
@@ -60,6 +61,7 @@ describe('ItemDialog', () => {
     update: ReturnType<typeof vi.fn>;
   };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
+  let sharesState: NgxSimpleSignalStoreService<SharesState>;
   let translate: { translate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
@@ -85,6 +87,7 @@ describe('ItemDialog', () => {
         { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: translate },
         provideStore(initialMainState, mainStateToken),
+        provideStore(initialSharesState, sharesStateToken),
         provideStore(initialApiState, apiStateToken),
         provideStore(initialToastState, toastStateToken),
       ],
@@ -98,6 +101,7 @@ describe('ItemDialog', () => {
     fixture = TestBed.createComponent(ItemDialog);
     component = fixture.componentInstance;
     toastState = TestBed.inject(toastStateToken);
+    sharesState = TestBed.inject(sharesStateToken);
 
     fixture.componentRef.setInput('collectionItem', buildItem());
     fixture.detectChanges();
@@ -138,6 +142,70 @@ describe('ItemDialog', () => {
     expect(component['watched']()).toBe(true);
   });
 
+  it('uses incoming share permissions for shared collection items', () => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        canRead: true,
+        canCreate: false,
+        canUpdate: false,
+        canDelete: true,
+      },
+    ]);
+    fixture.componentRef.setInput('collectionItem', buildItem({ ownerShareCode: 'owner-code' }));
+    fixture.detectChanges();
+
+    expect(component['isShared']()).toBe(true);
+    expect(component['library']()).toBe('Owner');
+    expect(component['permissionUpdate']()).toBe(false);
+    expect(component['permissionDelete']()).toBe(true);
+  });
+
+  it('does not allow shared item changes when share permissions are not loaded', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ ownerShareCode: 'owner-code' }));
+    fixture.detectChanges();
+
+    expect(component['isShared']()).toBe(false);
+    expect(component['permissionUpdate']()).toBe(false);
+    expect(component['permissionDelete']()).toBe(false);
+  });
+
+  it('allows changes for the current user library by share code', () => {
+    sharesState.setState('userShareCode', 'own-code');
+    fixture.componentRef.setInput('collectionItem', buildItem({ ownerShareCode: 'own-code' }));
+    fixture.detectChanges();
+
+    expect(component['permissionUpdate']()).toBe(true);
+    expect(component['permissionDelete']()).toBe(true);
+  });
+
+  it('passes the owner share code when changing a shared item', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ ownerShareCode: 'owner-code' }));
+    fixture.detectChanges();
+    component['updateDraft']('title', 'Updated Shared Title');
+
+    component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ title: 'Updated Shared Title' }),
+      'testhash',
+      'owner-code'
+    );
+  });
+
+  it('passes the owner share code when deleting a shared item', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ ownerShareCode: 'owner-code' }));
+    fixture.detectChanges();
+
+    component['onDelete']();
+
+    expect(api.delete).toHaveBeenCalledWith('tt1234567', 'testhash', 'owner-code');
+  });
+
   it('computes genre and tags text from draft item', () => {
     expect(component['genreText']()).toBe('Drama, Thriller');
     expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
@@ -149,8 +217,8 @@ describe('ItemDialog', () => {
     component['onDelete']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.delete).toHaveBeenCalledWith('tt1234567', 'testhash');
-    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567');
+    expect(api.delete).toHaveBeenCalledWith('tt1234567', 'testhash', undefined);
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', undefined);
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(portal.close).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.DeleteItem');
@@ -177,9 +245,10 @@ describe('ItemDialog', () => {
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
       expect.objectContaining({ title: 'Updated Title' }),
-      'testhash'
+      'testhash',
+      undefined
     );
-    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith('tt1234567', expect.any(Object));
+    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith('tt1234567', expect.any(Object), undefined);
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.EditItem');
     expect(component['editMode']()).toBe(false);
@@ -255,7 +324,8 @@ describe('ItemDialog', () => {
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
       expect.objectContaining({ tags: expect.arrayContaining([WATCHED_TAG]) }),
-      'testhash'
+      'testhash',
+      undefined
     );
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });
@@ -283,7 +353,8 @@ describe('ItemDialog', () => {
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
       expect.objectContaining({ tags: expect.not.arrayContaining([WATCHED_TAG]) }),
-      'testhash'
+      'testhash',
+      undefined
     );
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });

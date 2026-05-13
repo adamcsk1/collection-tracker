@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { MainService } from '../main/main-service';
 import { initialMainState, MainState, mainStateToken } from '../main/main-store';
 import { SettingsModel } from './settings-model';
 import { initialToastState, toastStateToken } from '@components/toast/toast-store';
@@ -10,10 +9,8 @@ import { SharedApiService } from '@services/api/shared-api-service';
 import { initialThemeState, themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
-  STORAGE_APP_MODE,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_SENSITIVE_DATA_STORAGE,
-  STORAGE_SETTINGS_LOCK,
   STORAGE_USE_AI_SEARCH,
 } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -21,10 +18,9 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { SettingsService } from './settings-service';
+import { initialSharesState, sharesStateToken } from '../shares/shares-store';
 
 const buildFormData = (overrides: Partial<SettingsModel> = {}): SettingsModel => ({
-  appMode: 'full',
-  settingsLock: false,
   sensitiveDataStorage: 'local',
   clearLocalStorageAfterLogout: false,
   animatedBackground: true,
@@ -41,19 +37,25 @@ describe('SettingsService', () => {
     setItem: ReturnType<typeof vi.fn>;
     removeItem: ReturnType<typeof vi.fn>;
   };
-  let api: { getUserSettings: ReturnType<typeof vi.fn>; getAiAvailable: ReturnType<typeof vi.fn> };
+  let api: {
+    getUserSettings: ReturnType<typeof vi.fn>;
+    getAiAvailable: ReturnType<typeof vi.fn>;
+    getShares: ReturnType<typeof vi.fn>;
+  };
   let sharedApi: { updateUserSettings: ReturnType<typeof vi.fn> };
   let translate: { translate: ReturnType<typeof vi.fn>; setLanguage: ReturnType<typeof vi.fn> };
-  let main: { setPermissions: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
 
   beforeEach(() => {
     router = { navigate: vi.fn() };
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn(), removeItem: vi.fn() };
-    api = { getUserSettings: vi.fn(() => of({})), getAiAvailable: vi.fn(() => of({ aiAvailable: false })) };
+    api = {
+      getUserSettings: vi.fn(() => of({})),
+      getAiAvailable: vi.fn(() => of({ aiAvailable: false })),
+      getShares: vi.fn(() => of({ userShareCode: 'code', outgoing: [], incoming: [] })),
+    };
     sharedApi = { updateUserSettings: vi.fn(() => of(void 0)) };
     translate = { translate: vi.fn((value: string) => value), setLanguage: vi.fn() };
-    main = { setPermissions: vi.fn() };
 
     TestBed.configureTestingModule({
       providers: [
@@ -63,10 +65,10 @@ describe('SettingsService', () => {
         { provide: SharedApiService, useValue: sharedApi },
         { provide: WebstorageService, useValue: webstorage },
         { provide: NgxSignalTranslateService, useValue: translate },
-        { provide: MainService, useValue: main },
         provideStore(initialMainState, mainStateToken),
         provideStore(initialThemeState, themeStateToken),
         provideStore(initialApiState, apiStateToken),
+        provideStore(initialSharesState, sharesStateToken),
         provideStore(initialToastState, toastStateToken),
       ],
     });
@@ -86,22 +88,17 @@ describe('SettingsService', () => {
       animatedBackground: true,
       language: 'en',
     });
-    expect(main.setPermissions).toHaveBeenCalled();
     expect(translate.setLanguage).toHaveBeenCalledWith('en');
   });
 
   it('writes all configuration values to storage', () => {
     const formData = buildFormData({
-      appMode: 'limited',
-      settingsLock: true,
       clearLocalStorageAfterLogout: true,
       animatedBackground: false,
     });
 
     service.storeFormData(formData);
 
-    expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_APP_MODE, 'limited');
-    expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_SETTINGS_LOCK, 'true');
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT, 'true');
     expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({
       theme: 'dark',

@@ -88,7 +88,6 @@ describe('FloatButtons', () => {
   });
 
   it('emits addNew and collapses the panel when the add new button is clicked', () => {
-    mainState.setState('permissions', { create: true, update: false, delete: false });
     fixture.detectChanges();
     showButtons();
 
@@ -159,10 +158,10 @@ describe('FloatButtons', () => {
     expect(findButton('arrow_upward')).toBeUndefined();
   });
 
-  it('hides the add new button when create permission is false', () => {
+  it('shows the add new button by default', () => {
     showButtons();
 
-    expect(findButton('add')).toBeUndefined();
+    expect(findButton('add')).toBeTruthy();
   });
 
   it('shows the AI search toggle disabled when aiAvailable is false', () => {
@@ -199,7 +198,6 @@ describe('FloatButtons', () => {
 
   it('disables action buttons when the API load is pending', () => {
     mainState.setState('aiAvailable', true);
-    mainState.setState('permissions', { create: true, update: false, delete: false });
     fixture.componentRef.setInput('collectionLength', 1);
     apiState.setState('loadNetworkStatus', 'pending');
     fixture.detectChanges();

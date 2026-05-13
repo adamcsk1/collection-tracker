@@ -14,7 +14,7 @@ import { toCollectionItemChange } from '@shared/utils/collection-item-change-uti
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { map, mergeMap, of } from 'rxjs';
-import { mainStateToken } from '../../main/main-store';
+import { sharesStateToken } from '../../shares/shares-store';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionService } from '../collection-service';
 import { TagSuggestionService } from '../new-item-dialog/suggestion/tag-suggestion-service';
@@ -35,7 +35,7 @@ import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
 export class ItemDialog implements OnInit {
   private readonly collectionService = inject(CollectionService);
   private readonly portal = inject(PortalService);
-  private readonly mainState = inject(mainStateToken);
+  private readonly sharesState = inject(sharesStateToken);
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
@@ -68,6 +68,7 @@ export class ItemDialog implements OnInit {
     markAsUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAsUnwatched')),
     markAsWatched: computed(() => this.ngxSignalTranslate.translate('MarkAsWatched')),
     delete: computed(() => this.ngxSignalTranslate.translate('Delete')),
+    shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
   };
   protected readonly tagSuggestionService = inject(TagSuggestionService);
   protected readonly genreSuggestionService = inject(GenreSuggestionService);
@@ -86,8 +87,39 @@ export class ItemDialog implements OnInit {
   protected readonly tagsText = computed(() => this.draftItem().tags.join(' '));
   protected readonly editMode = signal(false);
   protected readonly posterImageFailed = signal(false);
-  protected readonly permissionUpdate = computed(() => this.mainState.state.permissions().update);
-  protected readonly permissionDelete = computed(() => this.mainState.state.permissions().delete);
+  protected readonly isShared = computed(() => {
+    const item = this.collectionItem();
+    return this.sharesState.state.incoming().some((share) => share.ownerUserShareCode === item.ownerShareCode);
+  });
+  protected readonly isOwnItem = computed(() => {
+    const ownerShareCode = this.collectionItem().ownerShareCode;
+    return !ownerShareCode || ownerShareCode === this.sharesState.state.userShareCode();
+  });
+  protected readonly library = computed(() => {
+    const item = this.collectionItem();
+    for (const share of this.sharesState.state.incoming()) {
+      if (share.ownerUserShareCode === item.ownerShareCode) {
+        return `${share.ownerUsername ?? share.ownerUserShareCode}`;
+      }
+    }
+    return '';
+  });
+  protected readonly permissionUpdate = computed(() => {
+    const item = this.collectionItem();
+    const share = this.sharesState.state
+      .incoming()
+      .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
+    if (this.isOwnItem()) return true;
+    return share?.canUpdate === true;
+  });
+  protected readonly permissionDelete = computed(() => {
+    const item = this.collectionItem();
+    const share = this.sharesState.state
+      .incoming()
+      .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
+    if (this.isOwnItem()) return true;
+    return share?.canDelete === true;
+  });
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG));
   protected readonly draftImageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.draftItem().image)
@@ -132,12 +164,15 @@ export class ItemDialog implements OnInit {
   }
 
   protected onDelete(): void {
+    const ownerShareCode = this.collectionItem().ownerShareCode;
     this.confirm
       .open(this.ngxSignalTranslate.translate('Confirm.Delete', { name: this.collectionItem().title }))
       .pipe(
         mergeMap((confirmed) => {
           if (confirmed) {
-            return this.api.delete(this.collectionItem().IMDbId, this.collectionItem().hash).pipe(map(() => confirmed));
+            return this.api
+              .delete(this.collectionItem().IMDbId, this.collectionItem().hash, ownerShareCode)
+              .pipe(map(() => confirmed));
           } else return of(confirmed);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -145,7 +180,7 @@ export class ItemDialog implements OnInit {
       .subscribe((confirmed) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
-          this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId);
+          this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId, ownerShareCode);
           this.collectionService.triggerReload();
           this.portal.close();
         }
@@ -185,13 +220,14 @@ export class ItemDialog implements OnInit {
       return;
     }
 
+    const ownerShareCode = this.collectionItem().ownerShareCode;
     this.confirm
       .open(this.ngxSignalTranslate.translate('Confirm.Change', { name: this.collectionItem().title }))
       .pipe(
         mergeMap((confirmed) => {
           if (confirmed) {
             return this.api
-              .update(this.collectionItem().IMDbId, item, this.collectionItem().hash)
+              .update(this.collectionItem().IMDbId, item, this.collectionItem().hash, ownerShareCode)
               .pipe(map((result) => ({ confirmed, item: result.item })));
           } else return of({ confirmed, item: null });
         }),
@@ -200,7 +236,7 @@ export class ItemDialog implements OnInit {
       .subscribe(({ confirmed, item }) => {
         if (confirmed && item) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
-          this.collectionService.updateCollectionItem(this.collectionItem().IMDbId, item);
+          this.collectionService.updateCollectionItem(this.collectionItem().IMDbId, item, ownerShareCode);
           this.collectionService.triggerReload();
           this.collectionItem.set(item);
           this.lastSavedItem.set(toCollectionItemChange(item));

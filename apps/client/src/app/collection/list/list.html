@@ -20,7 +20,10 @@
     <ct-list-item-skeleton />
   }
 
-  @for (collectionItem of visibleCollection(); track collectionItem.IMDbId) {
+  @for (
+    collectionItem of visibleCollection();
+    track (collectionItem.ownerShareCode ?? '') + ':' + collectionItem.IMDbId
+  ) {
     <ct-list-item [collectionItem]="collectionItem" />
   } @empty {
     @if (apiLoadNetworkStatus() !== 'pending') {

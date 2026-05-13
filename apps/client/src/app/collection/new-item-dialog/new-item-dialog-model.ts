@@ -3,6 +3,7 @@ export interface NewItemModel {
   selectedIMDbId: string | null;
   tags: string;
   watched: boolean;
+  targetOwnerShareCode: string | null;
 }
 
 export type SaveMode = 'new' | 'close' | null;

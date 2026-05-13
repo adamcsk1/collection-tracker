@@ -35,7 +35,7 @@ export class NewItemDialogService {
     this.omdb.getMatchedContents(searchText);
   }
 
-  public save(selectedIMDbId: string, tags: string, mode: SaveMode) {
+  public save(selectedIMDbId: string, tags: string, mode: SaveMode, targetOwnerShareCode?: string) {
     return this.omdb.getSelectedContent(selectedIMDbId).pipe(
       skip(1),
       take(1),
@@ -47,7 +47,7 @@ export class NewItemDialogService {
           title: selectedContent.Title,
           genre: parseGenreText(selectedContent.Genre),
           IMDbId: selectedContent.imdbID,
-          tags: parseTagText(tags),
+          tags: [`#${selectedContent.Type.toLowerCase()}`, ...parseTagText(tags)],
           year: Number(selectedContent.Year) || null,
           rate: selectedContent.imdbRating,
           actors: selectedContent.Actors,
@@ -55,7 +55,9 @@ export class NewItemDialogService {
         })
       ),
       tap(() => this.spinnerLoadingState.setState('show', true)),
-      mergeMap((collectionItem) => this.api.create(collectionItem).pipe(map((response) => response.item))),
+      mergeMap((collectionItem) =>
+        this.api.create(collectionItem, targetOwnerShareCode).pipe(map((response) => response.item))
+      ),
       catchError((error) => {
         this.spinnerLoadingState.setState('show', false);
         return throwError(() => error);

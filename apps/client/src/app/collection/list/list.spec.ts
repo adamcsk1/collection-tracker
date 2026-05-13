@@ -14,6 +14,7 @@ import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { initialSharesState, sharesStateToken } from '../../shares/shares-store';
 import { List } from './list';
 
 vi.mock('marked', () => ({ marked: { parse: () => '' } }));
@@ -26,6 +27,7 @@ describe('List', () => {
     searchItems: ReturnType<typeof vi.fn>;
     getMatchedItems: ReturnType<typeof vi.fn>;
     getRandomItem: ReturnType<typeof vi.fn>;
+    getShares: ReturnType<typeof vi.fn>;
   };
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let scrollSpy: ReturnType<typeof vi.fn>;
@@ -53,6 +55,7 @@ describe('List', () => {
       }),
       getMatchedItems: vi.fn(() => of({ items: [buildItem('AI Match', 'tt-ai')], total: 1, offset: 0, limit: 50 })),
       getRandomItem: vi.fn(() => of(buildItem('Random Pick', 'tt-random'))),
+      getShares: vi.fn(() => of({ userShareCode: 'own-code', outgoing: [], incoming: [] })),
     };
 
     TestBed.configureTestingModule({
@@ -73,6 +76,7 @@ describe('List', () => {
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
         provideStore(initialCollectionState, collectionStateToken),
+        provideStore(initialSharesState, sharesStateToken),
         provideSignalTranslateConfig({ path: '' }),
       ],
     });

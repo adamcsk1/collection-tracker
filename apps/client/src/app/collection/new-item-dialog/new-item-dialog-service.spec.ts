@@ -80,17 +80,20 @@ describe('NewItemDialogService', () => {
 
     await firstValueFrom(service.save('tt123', '#tag', 'close'));
 
-    expect(api.create).toHaveBeenCalledWith({
-      image: 'poster-url',
-      title: 'Title',
-      genre: ['Drama', 'Action'],
-      IMDbId: 'tt123',
-      tags: ['#tag'],
-      year: 2020,
-      rate: '9.0',
-      actors: 'Actors',
-      plot: 'Plot',
-    });
+    expect(api.create).toHaveBeenCalledWith(
+      {
+        image: 'poster-url',
+        title: 'Title',
+        genre: ['Drama', 'Action'],
+        IMDbId: 'tt123',
+        tags: ['#movie', '#tag'],
+        year: 2020,
+        rate: '9.0',
+        actors: 'Actors',
+        plot: 'Plot',
+      },
+      undefined
+    );
     expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
     expect(collection.triggerReload).toHaveBeenCalled();
     expect(toastStore.state.message()).toBe('t:Toast.NewItem');

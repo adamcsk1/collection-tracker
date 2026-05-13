@@ -16,8 +16,9 @@ import { PortalService } from '@services/portal-service';
 import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, debounceTime, EMPTY, fromEvent, startWith, switchMap } from 'rxjs';
+import { catchError, debounceTime, EMPTY, fromEvent, startWith, switchMap, tap } from 'rxjs';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
+import { sharesStateToken } from '../../shares/shares-store';
 import { CollectionItemModel } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
 import { ItemDialog } from '../item-dialog/item-dialog';
@@ -44,6 +45,7 @@ export class List {
   private readonly portal = inject(PortalService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly aiSearch = inject(AiSearchService);
+  private readonly sharesState = inject(sharesStateToken);
   private requestVersion = 0;
   private readonly debouncedSearchText = toSignal(
     toObservable(this.collectionState.state.searchText).pipe(debounceTime(100)),
@@ -75,6 +77,8 @@ export class List {
   protected readonly scrollToTopAvailable = signal(false);
 
   constructor() {
+    this.loadShares();
+
     effect(() => {
       this.debouncedSearchText();
       this.aiSearchMatchedIds();
@@ -193,5 +197,26 @@ export class List {
     if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false };
     if (search.startsWith('#')) return { tags: [search], tagMode: 'all' };
     return search ? { search } : {};
+  }
+
+  private loadShares(): void {
+    if (this.sharesState.state.loaded()) return;
+
+    this.api
+      .getShares()
+      .pipe(
+        tap((result) => {
+          this.sharesState.setState('loaded', true);
+          this.sharesState.setState('userShareCode', result.userShareCode);
+          this.sharesState.setState('outgoing', result.outgoing);
+          this.sharesState.setState('incoming', result.incoming);
+        }),
+        catchError(() => {
+          this.sharesState.setState('loaded', true);
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
   }
 }

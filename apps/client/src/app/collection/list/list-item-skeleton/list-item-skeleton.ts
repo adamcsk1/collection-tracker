@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 @Component({
   selector: 'ct-list-item-skeleton',
   template: `
-    <div class="skeleton">
+    <div class="card skeleton">
       <div class="skeleton-thumb shine"></div>
       <div class="skeleton-body">
         <span class="skeleton-line shine"></span>

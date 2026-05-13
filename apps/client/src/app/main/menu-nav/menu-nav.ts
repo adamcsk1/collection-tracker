@@ -39,7 +39,6 @@ export class MenuNav {
     logout: computed(() => this.ngxSignalTranslate.translate('Logout')),
   };
   protected readonly themeLogo = this.theme.themeLogo;
-  protected readonly settingLockEnabled = this.mainState.state.settingsLock;
 
   protected onSync(): void {
     this.settings

@@ -32,6 +32,10 @@ export const settingsRoutes: Routes = [
           import('./global-watch-status/global-watch-status').then((module) => module.SettingsGlobalWatchStatus),
       },
       {
+        path: 'shares',
+        loadComponent: () => import('./shares/shares').then((module) => module.SettingsShares),
+      },
+      {
         path: '',
         pathMatch: 'full',
         redirectTo: 'basics',

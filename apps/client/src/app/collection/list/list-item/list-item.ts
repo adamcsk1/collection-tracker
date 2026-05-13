@@ -3,6 +3,8 @@ import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { sharesStateToken } from '../../../shares/shares-store';
 import { TagConfigColorPipe } from '../../../settings/tag-configs/tag-configs-color-pipe';
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
@@ -17,6 +19,7 @@ import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
   providers: [TagConfigColorPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    class: 'card card-interactive',
     role: 'listitem',
     '[style.borderColor]': 'imageBorderColor()',
   },
@@ -25,8 +28,10 @@ export class ListItem {
   private readonly collectionState = inject(collectionStateToken);
   private readonly portal = inject(PortalService);
   private readonly apiState = inject(apiStateToken);
+  private readonly sharesState = inject(sharesStateToken);
   private readonly tagConfigColorPipe = inject(TagConfigColorPipe);
   private readonly aiSearch = inject(AiSearchService);
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG) ?? false);
   protected readonly imageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
@@ -58,6 +63,13 @@ export class ListItem {
     return getContrastColorHex(badgeBackgroundColor);
   });
   protected readonly useAiSearch = this.aiSearch.useAiSearch.asReadonly();
+  protected readonly isShared = computed(() => {
+    const item = this.collectionItem();
+    return this.sharesState.state.incoming().some((share) => share.ownerUserShareCode === item.ownerShareCode);
+  });
+  protected readonly translations = {
+    shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
+  };
   protected readonly WATCHED_TAG = WATCHED_TAG;
   protected readonly MOVIE_TAG = MOVIE_TAG;
   protected readonly SERIES_TAG = SERIES_TAG;

@@ -16,6 +16,14 @@
         [showReset]="true"
       />
       @if (matchedContent().length) {
+        @if (showLibrarySelect()) {
+          <libc-select
+            data-test-id="new-item-library"
+            [label]="translations.library()"
+            [formField]="form.targetOwnerShareCode"
+            [options]="libraryOptions()"
+          />
+        }
         <libc-select
           data-test-id="new-item-content-select"
           [mandatory]="true"

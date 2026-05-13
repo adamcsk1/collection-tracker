@@ -38,7 +38,7 @@ export class FloatButtons {
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly aiAvailable = this.mainState.state.aiAvailable;
   protected readonly useAiSearch = this.aiSearch.useAiSearch.asReadonly();
-  protected readonly permissionAdd = computed(() => this.mainState.state.permissions().create);
+  protected readonly permissionAdd = computed(() => true);
   protected readonly showFloatButtons = signal(false);
   protected readonly ollamaIcon = `${getBasePath()}/client/images/ollama-icon.png`;
 

@@ -10,6 +10,7 @@ export interface CollectionItemModel {
   hash: string;
   actors: string;
   plot: string;
+  ownerShareCode?: string;
 }
 
 export type CollectionModel = CollectionItemModel[];

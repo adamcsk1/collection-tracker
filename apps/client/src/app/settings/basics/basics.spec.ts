@@ -35,10 +35,25 @@ describe('SettingsBasics component', () => {
     fixture.detectChanges();
   });
 
-  it('calls service to store form data on save', () => {
-    const model = component['settingsModel']();
-    component['onSave']();
+  it('does not save settings while initializing from state', () => {
+    expect(settingsService.storeFormData).not.toHaveBeenCalled();
+  });
 
-    expect(settingsService.storeFormData).toHaveBeenCalledWith(model);
+  it('stores form data when a setting changes', () => {
+    component['onThemeChange']('dark');
+
+    expect(settingsService.storeFormData).toHaveBeenCalledWith({
+      sensitiveDataStorage: 'local',
+      theme: 'dark',
+      clearLocalStorageAfterLogout: false,
+      animatedBackground: true,
+      language: 'en',
+    });
+  });
+
+  it('ignores invalid select values', () => {
+    component['onThemeChange']('unknown');
+
+    expect(settingsService.storeFormData).not.toHaveBeenCalled();
   });
 });
