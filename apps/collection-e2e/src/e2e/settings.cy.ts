@@ -84,9 +84,6 @@ describe('Settings - basic form fields', () => {
     cy.getByTestId('settings-clear-local-storage-after-logout').should('not.exist');
   });
 
-  it('save button is enabled when the form is valid', () => {
-    SettingsPage.getSaveButton().should('not.be.disabled');
-  });
 });
 
 describe('Settings - settings lock', () => {
@@ -187,15 +184,21 @@ describe('Settings - save changes', () => {
     SettingsPage.visitBasics();
   });
 
-  it('calls POST /api/v1/user/settings when save is clicked', () => {
+  it('calls POST /api/v1/user/settings when a setting changes', () => {
     cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
 
-    SettingsPage.getSaveButton().click();
+    SettingsPage.getThemeSelect().find('option').then(($options) => {
+      const currentValue = $options.filter(':selected').val() as string;
+      const otherOption = $options.toArray().find((option) => option.getAttribute('value') !== currentValue);
 
-    cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+      if (otherOption) {
+        SettingsPage.getThemeSelect().select(otherOption.getAttribute('value') as string);
+        cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+      }
+    });
   });
 
-  it('persists a changed theme after save', () => {
+  it('persists a changed theme after it changes', () => {
     cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
 
     SettingsPage.getThemeSelect().find('option').then(($options) => {
@@ -205,7 +208,6 @@ describe('Settings - save changes', () => {
       if (otherOption) {
         const newValue = otherOption.getAttribute('value') as string;
         SettingsPage.getThemeSelect().select(newValue);
-        SettingsPage.getSaveButton().click();
 
         cy.wait('@saveSettings').its('request.body.theme').should('eq', newValue);
       }
@@ -223,7 +225,7 @@ describe('Settings - navigate to settings via menu', () => {
   it('opens the settings page from the navigation menu', () => {
     CommonPage.navigateToSettingsViaMenu();
     cy.url().should('include', '#/settings');
-    SettingsPage.getSaveButton().should('be.visible');
+    SettingsPage.getBasicsForm().should('be.visible');
   });
 });
 
