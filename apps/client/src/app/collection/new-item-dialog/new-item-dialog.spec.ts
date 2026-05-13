@@ -3,9 +3,10 @@ import { initialMainCollectionState, mainCollectionStateToken } from '../../main
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { ApiService } from '@services/api/api-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
-import { provideStore } from 'ngx-simple-signal-store';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { initialSharesState, SharesState, sharesStateToken } from '../../shares/shares-store';
 import { NewItemDialog } from './new-item-dialog';
 import { NewItemDialogService } from './new-item-dialog-service';
 
@@ -17,6 +18,8 @@ describe('NewItemDialog component', () => {
     search: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
   };
+  let api: { collectionItemExists: ReturnType<typeof vi.fn>; getShares: ReturnType<typeof vi.fn> };
+  let sharesState: NgxSimpleSignalStoreService<SharesState>;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -25,10 +28,17 @@ describe('NewItemDialog component', () => {
       search: vi.fn(),
       save: vi.fn(() => of(undefined)),
     };
+    api = {
+      collectionItemExists: vi.fn(() => of({ exists: false })),
+      getShares: vi.fn(() => of({ userShareCode: '', outgoing: [], incoming: [] })),
+    };
 
     TestBed.configureTestingModule({
       imports: [NewItemDialog],
-      providers: [provideStore(initialMainCollectionState, mainCollectionStateToken)],
+      providers: [
+        provideStore(initialMainCollectionState, mainCollectionStateToken),
+        provideStore(initialSharesState, sharesStateToken),
+      ],
     });
 
     TestBed.overrideComponent(NewItemDialog, {
@@ -36,7 +46,10 @@ describe('NewItemDialog component', () => {
         template: '',
         providers: [
           { provide: NewItemDialogService, useValue: service },
-          { provide: ApiService, useValue: { collectionItemExists: vi.fn(() => of({ exists: false })) } },
+          {
+            provide: ApiService,
+            useValue: api,
+          },
           {
             provide: AutocompleteService,
             useValue: { getSuggestion: vi.fn(), formatSuggestionText: vi.fn() },
@@ -47,6 +60,7 @@ describe('NewItemDialog component', () => {
 
     fixture = TestBed.createComponent(NewItemDialog);
     component = fixture.componentInstance;
+    sharesState = TestBed.inject(sharesStateToken);
     fixture.detectChanges();
   });
 
@@ -74,7 +88,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'new');
+    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'new', undefined);
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -88,7 +102,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', `#tag ${WATCHED_TAG}`, 'new');
+    expect(service.save).toHaveBeenCalledWith('tt123', `#tag ${WATCHED_TAG}`, 'new', undefined);
     expect(formRoot.reset).toHaveBeenCalled();
     expect(component['form'].watched().value()).toBe(false);
   });
@@ -102,7 +116,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', WATCHED_TAG, 'new');
+    expect(service.save).toHaveBeenCalledWith('tt123', WATCHED_TAG, 'new', undefined);
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -113,8 +127,65 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt456', '', 'close');
+    expect(service.save).toHaveBeenCalledWith('tt456', '', 'close', undefined);
     expect(selectedIMDbId.reset).toHaveBeenCalledWith(null);
+  });
+
+  it('saves to the selected shared library', async () => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        canRead: true,
+        canCreate: true,
+        canUpdate: false,
+        canDelete: false,
+      },
+    ]);
+    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].targetOwnerShareCode().value.set('owner-code');
+
+    await component['onSave']('close');
+
+    expect(service.save).toHaveBeenCalledWith('tt123', '', 'close', 'owner-code');
+  });
+
+  it('only offers shared libraries with create permission', () => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'creatable-code',
+        ownerUsername: 'Creatable Owner',
+        canRead: true,
+        canCreate: true,
+        canUpdate: false,
+        canDelete: false,
+      },
+      {
+        ownerUserShareCode: 'readonly-code',
+        ownerUsername: 'Read Only Owner',
+        canRead: true,
+        canCreate: false,
+        canUpdate: false,
+        canDelete: false,
+      },
+    ]);
+
+    expect(component['libraryOptions']()).toEqual([
+      { text: 'MyLibrary', value: '' },
+      { text: 'SharedLibrary (Creatable Owner)', value: 'creatable-code' },
+    ]);
+    expect(component['showLibrarySelect']()).toBe(true);
+  });
+
+  it('checks duplicate IMDb IDs again when the target library changes', async () => {
+    component['form'].selectedIMDbId().value.set('tt123');
+    await vi.advanceTimersByTimeAsync(150);
+    api.collectionItemExists.mockClear();
+
+    component['form'].targetOwnerShareCode().value.set('owner-code');
+    await vi.advanceTimersByTimeAsync(150);
+
+    expect(api.collectionItemExists).toHaveBeenCalledWith('tt123', 'owner-code');
   });
 
   it('exits when there is no selected IMDb id', () => {

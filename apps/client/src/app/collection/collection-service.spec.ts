@@ -14,7 +14,7 @@ describe('CollectionService', () => {
   let service: CollectionService;
   let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
 
-  const buildCollectionItem = (title: string): CollectionItemApiModel => ({
+  const buildCollectionItem = (title: string, ownerShareCode?: string): CollectionItemApiModel => ({
     image: '',
     title,
     titleLower: title.toLowerCase(),
@@ -26,6 +26,7 @@ describe('CollectionService', () => {
     hash: '',
     actors: '',
     plot: '',
+    ownerShareCode,
   });
 
   beforeEach(() => {
@@ -75,11 +76,36 @@ describe('CollectionService', () => {
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('keep')]);
   });
 
+  it('deletes only the matching shared-library item when IMDb IDs overlap', () => {
+    mainCollectionState.setState('collection', [
+      buildCollectionItem('same', 'own-code'),
+      buildCollectionItem('same', 'owner-code'),
+    ]);
+
+    service.deleteCollectionItem('tt-same', 'owner-code');
+
+    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('same', 'own-code')]);
+  });
+
   it('updates an existing collection item by name', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('target')]);
 
     service.updateCollectionItem('tt-target', buildCollectionItem('updated'));
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('updated')]);
+  });
+
+  it('updates only the matching shared-library item when IMDb IDs overlap', () => {
+    mainCollectionState.setState('collection', [
+      buildCollectionItem('target', 'own-code'),
+      buildCollectionItem('target', 'owner-code'),
+    ]);
+
+    service.updateCollectionItem('tt-target', buildCollectionItem('updated', 'owner-code'), 'owner-code');
+
+    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
+      buildCollectionItem('target', 'own-code'),
+      buildCollectionItem('updated', 'owner-code'),
+    ]);
   });
 });

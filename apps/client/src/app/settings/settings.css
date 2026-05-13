@@ -8,7 +8,6 @@
 .settings-layout {
   display: flex;
   flex-direction: column;
-  gap: var(--size-md);
   flex: 1;
   overflow: hidden;
   min-height: 0;
@@ -16,7 +15,34 @@
 
 @media (width > 768px) {
   .settings-layout {
+    gap: var(--size-md);
     flex-direction: row;
+  }
+}
+
+.nav-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--size-2xs) var(--size-md);
+  font-size: var(--font-size-lg);
+  color: var(--main-color);
+  cursor: pointer;
+  flex-shrink: 0;
+  outline-offset: calc(-1 * var(--outline-offset));
+}
+
+.nav-toggle-icon {
+  transition: transform 200ms ease;
+
+  &.is-expanded {
+    transform: rotate(180deg);
+  }
+}
+
+@media (width > 768px) {
+  .nav-toggle {
+    display: none;
   }
 }
 
@@ -25,6 +51,17 @@
   flex-direction: column;
   gap: var(--size-xs);
   flex-shrink: 0;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 250ms ease,
+    opacity 200ms ease;
+
+  &.is-expanded {
+    max-height: 500px;
+    opacity: 1;
+  }
 
   a {
     display: flex;
@@ -35,6 +72,7 @@
     white-space: nowrap;
     font-size: var(--font-size-lg);
     border-radius: var(--border-radius);
+    outline-offset: calc(-1 * var(--outline-offset));
     transition:
       background-color 150ms ease,
       color 150ms ease;
@@ -49,6 +87,9 @@
 @media (width > 768px) {
   .settings-nav {
     width: 220px;
+    max-height: unset;
+    opacity: 1;
+    overflow: visible;
   }
 
   hr {

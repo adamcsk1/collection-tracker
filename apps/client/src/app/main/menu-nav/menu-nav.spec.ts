@@ -5,14 +5,14 @@ import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService, provideSignalTranslateConfig } from 'ngx-signal-translate';
-import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { provideStore } from 'ngx-simple-signal-store';
 import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as MainUtil from '@shared/utils/redirect-to-login-util';
 import { CollectionService } from '../../collection/collection-service';
 import { SettingsService } from '../../settings/settings-service';
 import { LogoutService } from '../logout-service';
-import { initialMainState, MainState, mainStateToken } from '../main-store';
+import { initialMainState, mainStateToken } from '../main-store';
 import { MenuNav } from './menu-nav';
 
 describe('MenuNav', () => {
@@ -23,7 +23,6 @@ describe('MenuNav', () => {
   let settings: { preloadUserSettings: ReturnType<typeof vi.fn> };
   let api: { logout: ReturnType<typeof vi.fn> };
   let logout: { performLogout: ReturnType<typeof vi.fn> };
-  let mainState: NgxSimpleSignalStoreService<MainState>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
   let redirectSpy: ReturnType<typeof vi.spyOn>;
 
@@ -54,7 +53,6 @@ describe('MenuNav', () => {
 
     fixture = TestBed.createComponent(MenuNav);
     component = fixture.componentInstance;
-    mainState = TestBed.inject(mainStateToken);
     fixture.detectChanges();
 
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -102,14 +100,5 @@ describe('MenuNav', () => {
 
     expect(api.logout).toHaveBeenCalled();
     expect(logout.performLogout).toHaveBeenCalled();
-  });
-
-  it('hides settings links when settings lock is enabled', () => {
-    expect(component['settingLockEnabled']()).toBe(false);
-
-    mainState.setState('settingsLock', true);
-    fixture.detectChanges();
-
-    expect(component['settingLockEnabled']()).toBe(true);
   });
 });

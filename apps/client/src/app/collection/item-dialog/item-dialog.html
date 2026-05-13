@@ -97,6 +97,12 @@
             <p class="eyebrow">{{ collectionItem().year || translations.fallbackUnknownYear() }}</p>
             <h2>{{ collectionItem().title }}</h2>
             <div class="metadata-row">
+              @if (isShared()) {
+                <span class="chip shared" data-test-id="item-dialog-shared-library">
+                  <i class="material-icons shared-icon" [title]="translations.shared()"> share </i>
+                  {{ library() }}
+                </span>
+              }
               <span class="chip rating">IMDb {{ collectionItem().rate || translations.fallbackNotAvailable() }}</span>
               <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
             </div>

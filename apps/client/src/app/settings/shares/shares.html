@@ -1,0 +1,155 @@
+<div class="shares-page">
+  <p>{{ translations.messageShareSettings() }}</p>
+
+  <div class="shares-grid">
+    <section class="card share-code-card" data-test-id="share-code-card">
+      <h3 class="card-title">{{ translations.yourUserHash() }}</h3>
+      <div class="card-body">
+        <div class="user-hash-row">
+          <span class="user-hash">{{ userShareCode() }}</span>
+          <button data-test-id="copy-user-hash" (click)="onCopyUserHash()">
+            <i class="material-icons">content_copy</i>
+            {{ translations.copy() }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <form role="form" [formRoot]="form" class="card add-share-form" data-test-id="add-share-card">
+      <h3 class="card-title">{{ translations.addShare() }}</h3>
+      <div class="card-body">
+        <libc-input
+          data-test-id="add-share-user-hash"
+          [label]="translations.sharedWith()"
+          [mandatory]="true"
+          [formField]="form.sharedWithUserShareCode"
+        />
+        <div class="permission-checkboxes">
+          <libc-checkbox
+            data-test-id="add-share-can-read"
+            [formField]="form.canRead"
+            [label]="translations.canRead()"
+          />
+          <libc-checkbox
+            data-test-id="add-share-can-create"
+            [formField]="form.canCreate"
+            [label]="translations.canCreate()"
+          />
+          <libc-checkbox
+            data-test-id="add-share-can-update"
+            [formField]="form.canUpdate"
+            [label]="translations.canUpdate()"
+          />
+          <libc-checkbox
+            data-test-id="add-share-can-delete"
+            [formField]="form.canDelete"
+            [label]="translations.canDelete()"
+          />
+        </div>
+        <div class="share-actions">
+          <button data-test-id="add-share-submit" type="submit" [disabled]="form().invalid()">
+            <i class="material-icons">add</i>
+            {{ translations.addShare() }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <section class="shares-section">
+    <h3>{{ translations.outgoingShares() }}</h3>
+    @if (outgoing().length) {
+      <div class="shares-list" role="list">
+        @for (share of outgoing(); track share.sharedWithUserShareCode) {
+          <article class="card card-interactive share-card" role="listitem">
+            <h4 class="card-title">{{ share.sharedWithUserShareCode }}</h4>
+            <div class="card-body">
+              <div class="share-card-header">
+                <div>
+                  <div class="share-card-label">{{ translations.sharedWith() }}</div>
+                  <div class="share-code">{{ share.sharedWithUserShareCode }}</div>
+                </div>
+                <button
+                  data-test-id="remove-share"
+                  class="button-danger"
+                  (click)="onRemoveShare(share.sharedWithUserShareCode)"
+                >
+                  <i class="material-icons">delete</i>
+                  {{ translations.removeShare() }}
+                </button>
+              </div>
+
+              <div class="share-permissions">
+                <libc-checkbox
+                  data-test-id="share-can-read"
+                  [label]="translations.canRead()"
+                  [value]="share.canRead"
+                  (valueChange)="onUpdateShare(share, { canRead: $event === true })"
+                />
+                <libc-checkbox
+                  data-test-id="share-can-create"
+                  [label]="translations.canCreate()"
+                  [value]="share.canCreate"
+                  (valueChange)="onUpdateShare(share, { canCreate: $event === true })"
+                />
+                <libc-checkbox
+                  data-test-id="share-can-update"
+                  [label]="translations.canUpdate()"
+                  [value]="share.canUpdate"
+                  (valueChange)="onUpdateShare(share, { canUpdate: $event === true })"
+                />
+                <libc-checkbox
+                  data-test-id="share-can-delete"
+                  [label]="translations.canDelete()"
+                  [value]="share.canDelete"
+                  (valueChange)="onUpdateShare(share, { canDelete: $event === true })"
+                />
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="empty-message">{{ translations.messageEmptyOutgoingShares() }}</p>
+    }
+  </section>
+
+  <section class="shares-section">
+    <h3>{{ translations.incomingShares() }}</h3>
+    @if (incoming().length) {
+      <div class="shares-list" role="list">
+        @for (share of incoming(); track share.ownerUserShareCode) {
+          <article class="card card-interactive share-card" role="listitem">
+            <h4 class="card-title">{{ share.ownerUsername || share.ownerUserShareCode }}</h4>
+            <div class="card-body">
+              <div class="share-card-header">
+                <div>
+                  <div class="share-card-label">{{ translations.owner() }}</div>
+                  <div>{{ share.ownerUsername || share.ownerUserShareCode }}</div>
+                  <div class="share-code">{{ share.ownerUserShareCode }}</div>
+                </div>
+                <button
+                  data-test-id="revoke-incoming-share"
+                  class="button-danger"
+                  (click)="onRevokeIncomingShare(share.ownerUserShareCode)"
+                >
+                  <i class="material-icons">delete</i>
+                  {{ translations.revokeShare() }}
+                </button>
+              </div>
+
+              <div class="share-permissions readonly">
+                <span [class.enabled]="share.canRead">{{ translations.canRead() }}</span>
+                <span [class.enabled]="share.canCreate">{{ translations.canCreate() }}</span>
+                <span [class.enabled]="share.canUpdate">{{ translations.canUpdate() }}</span>
+                <span [class.enabled]="share.canDelete">{{ translations.canDelete() }}</span>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="empty-message">{{ translations.messageEmptyIncomingShares() }}</p>
+    }
+  </section>
+</div>

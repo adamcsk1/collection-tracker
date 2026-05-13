@@ -3,6 +3,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessC
 import { provideRouter, withHashLocation } from '@angular/router';
 import { initialMainCollectionState, mainCollectionStateToken } from './main-collection-store';
 import { initialMainState, mainStateToken } from './main-store';
+import { initialSharesState, sharesStateToken } from '../shares/shares-store';
 import { initialTagConfigsState, tagConfigsStateToken } from '../settings/tag-configs/tag-configs-store';
 import {
   blockerLoadingStateToken,
@@ -34,6 +35,7 @@ export const mainConfig: ApplicationConfig = {
     provideStore(initialMainState, mainStateToken),
     provideStore(initialMainCollectionState, mainCollectionStateToken),
     provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
+    provideStore(initialSharesState, sharesStateToken),
     provideStore(initialTagConfigsState, tagConfigsStateToken),
     provideSignalTranslateConfig({ path: `${getBasePath()}/client/i18n` }),
   ],

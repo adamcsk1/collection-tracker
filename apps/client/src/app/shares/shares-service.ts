@@ -1,0 +1,74 @@
+import { inject, Injectable } from '@angular/core';
+import { toastStateToken } from '@components/toast/toast-store';
+import { ApiService } from '@services/api/api-service';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { catchError, EMPTY, tap } from 'rxjs';
+import { sharesStateToken } from './shares-store';
+
+@Injectable()
+export class SharesService {
+  private readonly api = inject(ApiService);
+  private readonly sharesState = inject(sharesStateToken);
+  private readonly toastState = inject(toastStateToken);
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+
+  public loadShares(): void {
+    this.api
+      .getShares()
+      .pipe(
+        tap((result) => {
+          this.sharesState.setState('loaded', true);
+          this.sharesState.setState('userShareCode', result.userShareCode);
+          this.sharesState.setState('outgoing', result.outgoing);
+          this.sharesState.setState('incoming', result.incoming);
+        }),
+        catchError(() => {
+          this.sharesState.setState('loaded', true);
+          return EMPTY;
+        })
+      )
+      .subscribe();
+  }
+
+  public saveShare(
+    sharedWithUserShareCode: string,
+    permissions: { canRead: boolean; canCreate: boolean; canUpdate: boolean; canDelete: boolean }
+  ): void {
+    this.api
+      .saveShare({ sharedWithUserShareCode, ...permissions })
+      .pipe(
+        tap(() => {
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ShareSaved'));
+          this.loadShares();
+        }),
+        catchError(() => EMPTY)
+      )
+      .subscribe();
+  }
+
+  public removeShare(sharedWithUserShareCode: string): void {
+    this.api
+      .deleteShare(sharedWithUserShareCode)
+      .pipe(
+        tap(() => {
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ShareRemoved'));
+          this.loadShares();
+        }),
+        catchError(() => EMPTY)
+      )
+      .subscribe();
+  }
+
+  public revokeIncomingShare(ownerUserShareCode: string): void {
+    this.api
+      .revokeIncomingShare(ownerUserShareCode)
+      .pipe(
+        tap(() => {
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ShareRemoved'));
+          this.loadShares();
+        }),
+        catchError(() => EMPTY)
+      )
+      .subscribe();
+  }
+}

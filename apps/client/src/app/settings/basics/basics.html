@@ -1,10 +1,11 @@
-<form role="form" [formRoot]="form">
+<form role="form" data-test-id="settings-basics-form" [formRoot]="form">
   <libc-select
     data-test-id="settings-language"
     [label]="translations.language()"
     [mandatory]="true"
     [formField]="form.language"
     [options]="languageOptions()"
+    (valueChange)="onLanguageChange($event)"
   />
   <libc-select
     data-test-id="settings-theme"
@@ -12,6 +13,7 @@
     [mandatory]="true"
     [formField]="form.theme"
     [options]="themeOptions()"
+    (valueChange)="onThemeChange($event)"
   />
   <libc-checkbox
     data-test-id="settings-animated-background"
@@ -19,57 +21,28 @@
     [formField]="form.animatedBackground"
     [label]="translations.animatedBackground()"
     [hint]="translations.messageAnimatedBackground()"
+    (valueChange)="onAnimatedBackgroundChange($event)"
   />
-  @if (!settingLockEnabled()) {
-    <libc-select
-      data-test-id="settings-app-mode"
-      [label]="translations.appMode()"
-      [hint]="translations.messageAppMode()"
+  <p>{{ translations.messageStorageSettings() }}</p>
+  <libc-select
+    data-test-id="settings-sensitive-data-storage"
+    [label]="translations.sensitiveDataStorage()"
+    [hint]="translations.messageSensitiveDataStorage()"
+    [mandatory]="true"
+    [formField]="form.sensitiveDataStorage"
+    [options]="[
+      { text: translations.localStorage(), value: 'local' },
+      { text: translations.sessionStorage(), value: 'session' },
+    ]"
+    (valueChange)="onSensitiveDataStorageChange($event)"
+  />
+  @if (form.sensitiveDataStorage().value() === 'local') {
+    <libc-checkbox
+      data-test-id="settings-clear-local-storage-after-logout"
+      [label]="translations.clearLocalStorageAfterLogout()"
       [mandatory]="true"
-      [formField]="form.appMode"
-      [options]="[
-        { text: translations.basicAccess(), value: 'basic' },
-        { text: translations.limitedAccess(), value: 'limited' },
-        { text: translations.fullAccess(), value: 'full' },
-      ]"
+      [formField]="form.clearLocalStorageAfterLogout"
+      (valueChange)="onClearLocalStorageAfterLogoutChange($event)"
     />
-    @if (form.appMode().value() !== 'full') {
-      <libc-checkbox
-        data-test-id="settings-settings-lock"
-        [label]="translations.settingsLock()"
-        [hint]="translations.messageSettingsLock()"
-        [mandatory]="true"
-        [formField]="form.settingsLock"
-      />
-    }
   }
-  @if (!settingLockEnabled()) {
-    <p>{{ translations.messageStorageSettings() }}</p>
-    <libc-select
-      data-test-id="settings-sensitive-data-storage"
-      [label]="translations.sensitiveDataStorage()"
-      [hint]="translations.messageSensitiveDataStorage()"
-      [mandatory]="true"
-      [formField]="form.sensitiveDataStorage"
-      [options]="[
-        { text: translations.localStorage(), value: 'local' },
-        { text: translations.sessionStorage(), value: 'session' },
-      ]"
-    />
-    @if (form.sensitiveDataStorage().value() === 'local') {
-      <libc-checkbox
-        data-test-id="settings-clear-local-storage-after-logout"
-        [label]="translations.clearLocalStorageAfterLogout()"
-        [mandatory]="true"
-        [formField]="form.clearLocalStorageAfterLogout"
-      />
-    }
-  }
-
-  <div class="form-buttons">
-    <button data-test-id="settings-save" type="submit" [disabled]="form().invalid()" (click)="submitAction.set('save')">
-      <i class="material-icons" [title]="translations.save()"> save </i>
-      {{ translations.save() }}
-    </button>
-  </div>
 </form>

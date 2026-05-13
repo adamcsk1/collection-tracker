@@ -5,13 +5,6 @@
 }
 
 .skeleton {
-  display: flex;
-  flex-direction: column;
-  background-color: var(--background-color-alt);
-  border-radius: var(--card-border-radius);
-  box-shadow: var(--card-shadow);
-  overflow: hidden;
-
   .skeleton-thumb {
     width: 100%;
     aspect-ratio: var(--card-aspect-ratio);

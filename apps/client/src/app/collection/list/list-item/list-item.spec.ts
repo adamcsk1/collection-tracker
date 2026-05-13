@@ -13,6 +13,7 @@ import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { initialSharesState, SharesState, sharesStateToken } from '../../../shares/shares-store';
 import { ListItem } from './list-item';
 
 const buildItem = (title: string, tags: string[] = []): CollectionItemModel => ({
@@ -45,6 +46,7 @@ describe('ListItem', () => {
   let component: ListItem;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
+  let sharesState: NgxSimpleSignalStoreService<SharesState>;
   let portal: { open: ReturnType<typeof vi.fn> };
   let useAiSearch: ReturnType<typeof signal<boolean | null>>;
 
@@ -59,6 +61,7 @@ describe('ListItem', () => {
         provideStore(initialApiState, apiStateToken),
         provideStore(initialCollectionState, collectionStateToken),
         provideStore(initialTagConfigsState, tagConfigsStateToken),
+        provideStore(initialSharesState, sharesStateToken),
       ],
     });
 
@@ -66,6 +69,7 @@ describe('ListItem', () => {
     component = fixture.componentInstance;
     collectionState = TestBed.inject(collectionStateToken);
     tagConfigsState = TestBed.inject(tagConfigsStateToken);
+    sharesState = TestBed.inject(sharesStateToken);
 
     fixture.componentRef.setInput('collectionItem', buildItem('Sample'));
     fixture.detectChanges();
@@ -86,6 +90,24 @@ describe('ListItem', () => {
     expect(portal.open).toHaveBeenCalledWith(expect.any(Function), {
       collectionItem: expect.objectContaining(buildItem('Sample', [WATCHED_TAG])),
     });
+  });
+
+  it('marks an item as shared when its owner matches an incoming share', () => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        canRead: true,
+        canCreate: false,
+        canUpdate: false,
+        canDelete: false,
+      },
+    ]);
+    fixture.componentRef.setInput('collectionItem', { ...buildItem('Shared', []), ownerShareCode: 'owner-code' });
+    fixture.detectChanges();
+
+    expect(component['isShared']()).toBe(true);
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-shared"]')).not.toBeNull();
   });
 
   it('derives watched, movie, series, and non-internal tags', () => {

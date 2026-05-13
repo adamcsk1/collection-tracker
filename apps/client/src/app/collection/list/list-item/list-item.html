@@ -34,6 +34,11 @@
       @if (collectionItem.rate) {
         <span class="rating"> <i class="material-icons"> star_rate </i> {{ collectionItem.rate }} </span>
       }
+      @if (isShared()) {
+        <span class="shared" data-test-id="list-item-shared" [title]="translations.shared()">
+          <i class="material-icons">share</i>
+        </span>
+      }
     </div>
   </div>
 }

@@ -5,10 +5,8 @@ import { PublicApiService } from '@services/api/public-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_API_URL,
-  STORAGE_APP_MODE,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_SENSITIVE_DATA_STORAGE,
-  STORAGE_SETTINGS_LOCK,
 } from '@shared/constants/storage-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, throwError } from 'rxjs';
@@ -41,15 +39,11 @@ describe('MainService', () => {
     apiState = TestBed.inject(apiStateToken);
   });
 
-  it('hydrates browser-backed stores and sets permissions', () => {
+  it('hydrates browser-backed stores', () => {
     webstorage.getItem.mockImplementation((key: string) => {
       switch (key) {
         case STORAGE_API_URL:
           return 'https://api.test';
-        case STORAGE_APP_MODE:
-          return 'limited';
-        case STORAGE_SETTINGS_LOCK:
-          return 'true';
         case STORAGE_SENSITIVE_DATA_STORAGE:
           return 'session';
         case STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT:
@@ -58,51 +52,27 @@ describe('MainService', () => {
           return null;
       }
     });
-    const setPermissionsSpy = vi.spyOn(service, 'setPermissions');
 
     service.loadStoredData();
 
     expect(apiState.state.apiUrl()).toBe('https://api.test');
-    expect(mainState.state.appMode()).toBe('limited');
-    expect(mainState.state.settingsLock()).toBe(true);
     expect(mainState.state.sensitiveDataStorage()).toBe('session');
     expect(mainState.state.clearLocalStorageAfterLogout()).toBe(true);
-    expect(setPermissionsSpy).toHaveBeenCalled();
   });
 
-  it('ignores invalid union values from storage and applies default permissions', () => {
+  it('ignores invalid union values from storage', () => {
     webstorage.getItem.mockImplementation((key: string) => {
       switch (key) {
-        case STORAGE_APP_MODE:
-          return 'invalid';
         case STORAGE_SENSITIVE_DATA_STORAGE:
           return 'invalid';
         default:
           return null;
       }
     });
-    const setPermissionsSpy = vi.spyOn(service, 'setPermissions');
 
     service.loadStoredData();
 
-    expect(mainState.state.appMode()).toBe(initialMainState.appMode);
     expect(mainState.state.sensitiveDataStorage()).toBe(initialMainState.sensitiveDataStorage);
-    expect(mainState.state.permissions()).toEqual({ create: true, update: true, delete: true });
-    expect(setPermissionsSpy).toHaveBeenCalled();
-  });
-
-  it('sets permissions based on app mode', () => {
-    mainState.setState('appMode', 'basic');
-    service.setPermissions();
-    expect(mainState.state.permissions()).toEqual({ create: false, update: false, delete: false });
-
-    mainState.setState('appMode', 'limited');
-    service.setPermissions();
-    expect(mainState.state.permissions()).toEqual({ create: true, update: false, delete: false });
-
-    mainState.setState('appMode', 'full');
-    service.setPermissions();
-    expect(mainState.state.permissions()).toEqual({ create: true, update: true, delete: true });
   });
 
   it('validates access token and marks it as valid', () => {

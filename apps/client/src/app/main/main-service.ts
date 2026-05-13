@@ -1,15 +1,13 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { mainStateToken } from './main-store';
-import { APP_MODES, SENSITIVE_DATA_STORAGE_MODES } from '../settings/settings-const';
+import { SENSITIVE_DATA_STORAGE_MODES } from '../settings/settings-const';
 import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_API_URL,
-  STORAGE_APP_MODE,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_SENSITIVE_DATA_STORAGE,
-  STORAGE_SETTINGS_LOCK,
 } from '@shared/constants/storage-const';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { catchError, EMPTY } from 'rxjs';
@@ -26,8 +24,6 @@ export class MainService {
 
   public loadStoredData(): void {
     const apiUrl = this.webstorage.getItem(STORAGE_API_URL);
-    const appMode = parseAllowedValue(this.webstorage.getItem(STORAGE_APP_MODE), APP_MODES);
-    const settingsLock = this.webstorage.getItem(STORAGE_SETTINGS_LOCK) === 'true';
     const sensitiveDataStorage = parseAllowedValue(
       this.webstorage.getItem(STORAGE_SENSITIVE_DATA_STORAGE),
       SENSITIVE_DATA_STORAGE_MODES
@@ -35,22 +31,9 @@ export class MainService {
     const clearLocalStorageAfterLogout = this.webstorage.getItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT) === 'true';
 
     if (apiUrl) this.apiState.setState('apiUrl', apiUrl);
-    if (appMode) this.mainState.setState('appMode', appMode);
     if (sensitiveDataStorage) this.mainState.setState('sensitiveDataStorage', sensitiveDataStorage);
 
-    this.mainState.setState('settingsLock', settingsLock);
     this.mainState.setState('clearLocalStorageAfterLogout', clearLocalStorageAfterLogout);
-    this.setPermissions();
-  }
-
-  public setPermissions(): void {
-    const appMode = this.mainState.state.appMode() || 'basic';
-
-    this.mainState.setState('permissions', {
-      create: ['limited', 'full'].includes(appMode),
-      delete: ['full'].includes(appMode),
-      update: ['full'].includes(appMode),
-    });
   }
 
   public validateSession(): void {

@@ -10,7 +10,8 @@ import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, debounceTime, filter, firstValueFrom, of, switchMap } from 'rxjs';
+import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap, tap } from 'rxjs';
+import { sharesStateToken } from '../../shares/shares-store';
 import { NewItemModel, SaveMode } from './new-item-dialog-model';
 import { NewItemDialogService } from './new-item-dialog-service';
 import { TagSuggestionService } from './suggestion/tag-suggestion-service';
@@ -33,6 +34,7 @@ export class NewItemDialog {
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(ApiService);
   private readonly service = inject(NewItemDialogService);
+  private readonly sharesState = inject(sharesStateToken);
   private readonly knownIMDbIdExists = signal(false);
   private readonly knownIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownIMDbIdExists);
   protected readonly translations = {
@@ -50,6 +52,9 @@ export class NewItemDialog {
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     saveAndNew: computed(() => this.ngxSignalTranslate.translate('SaveAndNew')),
     saveAndClose: computed(() => this.ngxSignalTranslate.translate('SaveAndClose')),
+    library: computed(() => this.ngxSignalTranslate.translate('Library')),
+    myLibrary: computed(() => this.ngxSignalTranslate.translate('MyLibrary')),
+    sharedLibrary: computed(() => this.ngxSignalTranslate.translate('SharedLibrary')),
   };
   protected readonly submitMode = signal<SaveMode | null>(null);
   protected readonly newItemModel = signal<NewItemModel>({
@@ -57,6 +62,7 @@ export class NewItemDialog {
     selectedIMDbId: null,
     tags: '',
     watched: false,
+    targetOwnerShareCode: null,
   });
   protected readonly form = form(
     this.newItemModel,
@@ -91,6 +97,19 @@ export class NewItemDialog {
     },
   };
   protected readonly matchedContent = this.service.matchedContent;
+  protected readonly libraryOptions = computed(() => {
+    const options = [{ text: this.translations.myLibrary(), value: '' }];
+    for (const share of this.sharesState.state.incoming()) {
+      if (share.canCreate) {
+        options.push({
+          text: `${this.translations.sharedLibrary()} (${share.ownerUsername ?? share.ownerUserShareCode})`,
+          value: share.ownerUserShareCode,
+        });
+      }
+    }
+    return options;
+  });
+  protected readonly showLibrarySelect = computed(() => this.libraryOptions().length > 1);
 
   constructor() {
     effect(() => {
@@ -113,14 +132,38 @@ export class NewItemDialog {
       )
       .subscribe((searchText) => this.service.search(searchText));
 
-    toObservable(this.form.selectedIMDbId().value)
+    combineLatest([
+      toObservable(this.form.selectedIMDbId().value),
+      toObservable(this.form.targetOwnerShareCode().value),
+    ])
       .pipe(
         debounceTime(150),
-        switchMap((imdbId) => (imdbId ? this.api.collectionItemExists(imdbId) : of({ exists: false }))),
+        switchMap(([imdbId, targetOwnerShareCode]) => {
+          if (!imdbId) return of({ exists: false });
+          const ownerShareCode = targetOwnerShareCode || undefined;
+          return this.api.collectionItemExists(imdbId, ownerShareCode);
+        }),
         catchError(() => of({ exists: false })),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((response) => this.knownIMDbIdExists.set(response.exists));
+
+    this.api
+      .getShares()
+      .pipe(
+        tap((result) => {
+          this.sharesState.setState('loaded', true);
+          this.sharesState.setState('userShareCode', result.userShareCode);
+          this.sharesState.setState('outgoing', result.outgoing);
+          this.sharesState.setState('incoming', result.incoming);
+        }),
+        catchError(() => {
+          this.sharesState.setState('loaded', true);
+          return of({ userShareCode: '', outgoing: [], incoming: [] });
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
   }
 
   private async onSave(mode: SaveMode | null = null): Promise<void> {
@@ -131,7 +174,8 @@ export class NewItemDialog {
     const watched = this.form.watched().value();
     if (watched) tags = tags ? `${tags} ${WATCHED_TAG}` : WATCHED_TAG;
 
-    await firstValueFrom(this.service.save(selectedIMDbId, tags, mode));
+    const targetOwnerShareCode = this.form.targetOwnerShareCode().value() || undefined;
+    await firstValueFrom(this.service.save(selectedIMDbId, tags, mode, targetOwnerShareCode));
 
     if (mode === 'new') {
       this.form().reset({
@@ -139,6 +183,7 @@ export class NewItemDialog {
         selectedIMDbId: null,
         tags: '',
         watched: false,
+        targetOwnerShareCode: null,
       });
     } else {
       this.form.selectedIMDbId().reset(null);

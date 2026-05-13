@@ -1,36 +1,77 @@
 <div class="settings-layout">
-  <nav class="settings-nav" role="navigation" [attr.aria-label]="translations.settings()">
-    <a data-test-id="settings-nav-basics" [routerLink]="['/', 'settings', 'basics']" routerLinkActive="active">
+  <button
+    data-test-id="settings-nav-toggle"
+    class="nav-toggle button-icon"
+    [attr.aria-label]="translations.toggleMenu()"
+    [attr.aria-expanded]="navExpanded()"
+    aria-controls="settings-nav"
+    (click)="onToggleNav()"
+  >
+    <span>{{ translations.settings() }}</span>
+    <i class="material-icons nav-toggle-icon" [class.is-expanded]="navExpanded()">expand_more</i>
+  </button>
+  <nav
+    id="settings-nav"
+    class="settings-nav"
+    [class.is-expanded]="navExpanded()"
+    role="navigation"
+    [attr.aria-label]="translations.settings()"
+  >
+    <a
+      data-test-id="settings-nav-basics"
+      [routerLink]="['/', 'settings', 'basics']"
+      routerLinkActive="active"
+      (click)="onNavLinkClick()"
+    >
       {{ translations.basics() }}
     </a>
-    @if (!settingLockEnabled()) {
-      <a data-test-id="settings-nav-account" [routerLink]="['/', 'settings', 'account']" routerLinkActive="active">
-        {{ translations.user() }}
-      </a>
-      <a
-        data-test-id="settings-nav-access-tokens"
-        [routerLink]="['/', 'settings', 'access-tokens']"
-        routerLinkActive="active"
-      >
-        {{ translations.accessTokens() }}
-      </a>
-      <a
-        data-test-id="settings-nav-tag-configs"
-        [routerLink]="['/', 'settings', 'tag-configs']"
-        routerLinkActive="active"
-      >
-        {{ translations.tagConfig() }}
-      </a>
-    }
-    <a data-test-id="settings-nav-images" [routerLink]="['/', 'settings', 'images']" routerLinkActive="active">
+    <a
+      data-test-id="settings-nav-account"
+      [routerLink]="['/', 'settings', 'account']"
+      routerLinkActive="active"
+      (click)="onNavLinkClick()"
+    >
+      {{ translations.user() }}
+    </a>
+    <a
+      data-test-id="settings-nav-access-tokens"
+      [routerLink]="['/', 'settings', 'access-tokens']"
+      routerLinkActive="active"
+      (click)="onNavLinkClick()"
+    >
+      {{ translations.accessTokens() }}
+    </a>
+    <a
+      data-test-id="settings-nav-tag-configs"
+      [routerLink]="['/', 'settings', 'tag-configs']"
+      routerLinkActive="active"
+      (click)="onNavLinkClick()"
+    >
+      {{ translations.tagConfig() }}
+    </a>
+    <a
+      data-test-id="settings-nav-images"
+      [routerLink]="['/', 'settings', 'images']"
+      routerLinkActive="active"
+      (click)="onNavLinkClick()"
+    >
       {{ translations.images() }}
     </a>
     <a
       data-test-id="settings-nav-global-watch-status"
       [routerLink]="['/', 'settings', 'global-watch-status']"
       routerLinkActive="active"
+      (click)="onNavLinkClick()"
     >
       {{ translations.globalWatchStatus() }}
+    </a>
+    <a
+      data-test-id="settings-nav-shares"
+      [routerLink]="['/', 'settings', 'shares']"
+      routerLinkActive="active"
+      (click)="onNavLinkClick()"
+    >
+      {{ translations.shares() }}
     </a>
   </nav>
   <hr />

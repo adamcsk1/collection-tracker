@@ -1,21 +1,5 @@
 :host {
-  display: flex;
-  flex-direction: column;
-  background-color: var(--background-color-alt);
-  border-radius: var(--card-border-radius);
-  box-shadow: var(--card-shadow);
-  overflow: hidden;
-  transition:
-    transform 200ms ease,
-    box-shadow 200ms ease;
   cursor: pointer;
-  border: 2px solid transparent;
-
-  &:hover,
-  &:focus-within {
-    transform: translateY(var(--card-hover-translate));
-    box-shadow: var(--card-hover-shadow);
-  }
 
   .badge {
     position: absolute;
@@ -72,7 +56,8 @@
     color: var(--text-color);
     line-height: 1;
 
-    .rating {
+    .rating,
+    .shared {
       display: inline-flex;
       align-items: center;
       gap: var(--size-2xs);

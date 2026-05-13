@@ -5,10 +5,8 @@ import { SharedApiService } from '@services/api/shared-api-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
-  STORAGE_APP_MODE,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_SENSITIVE_DATA_STORAGE,
-  STORAGE_SETTINGS_LOCK,
   STORAGE_USE_AI_SEARCH,
 } from '@shared/constants/storage-const';
 import { UserSettingsApiRequestModel } from '@shared/models/api-model';
@@ -17,8 +15,8 @@ import { THEMES } from '@shared/models/theme-model';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY, map, Observable, of, switchMap, tap } from 'rxjs';
-import { MainService } from '../main/main-service';
 import { mainStateToken } from '../main/main-store';
+import { sharesStateToken } from '../shares/shares-store';
 import { SettingsModel } from './settings-model';
 
 @Injectable({ providedIn: 'root' })
@@ -27,8 +25,8 @@ export class SettingsService {
   private readonly sharedApi = inject(SharedApiService);
   private readonly webstorage = inject(WebstorageService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly main = inject(MainService);
   private readonly mainState = inject(mainStateToken);
+  private readonly sharesState = inject(sharesStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly toastState = inject(toastStateToken);
 
@@ -41,6 +39,20 @@ export class SettingsService {
           catchError(() => {
             this.applyAiAvailable({ aiAvailable: false });
             return of({ aiAvailable: false });
+          })
+        )
+      ),
+      switchMap(() =>
+        this.api.getShares().pipe(
+          tap((result) => {
+            this.sharesState.setState('loaded', true);
+            this.sharesState.setState('userShareCode', result.userShareCode);
+            this.sharesState.setState('outgoing', result.outgoing);
+            this.sharesState.setState('incoming', result.incoming);
+          }),
+          catchError(() => {
+            this.sharesState.setState('loaded', true);
+            return of({ userShareCode: '', outgoing: [], incoming: [] });
           })
         )
       ),
@@ -69,8 +81,6 @@ export class SettingsService {
   }
 
   public storeFormData(formData: SettingsModel): void {
-    this.mainState.setState('appMode', formData.appMode);
-    this.mainState.setState('settingsLock', formData.settingsLock);
     this.mainState.setState('sensitiveDataStorage', formData.sensitiveDataStorage);
     this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout);
     this.mainState.setState('animatedBackground', formData.animatedBackground);
@@ -78,12 +88,8 @@ export class SettingsService {
     this.themeState.setState('theme', formData.theme);
 
     this.webstorage.setItem(STORAGE_SENSITIVE_DATA_STORAGE, formData.sensitiveDataStorage);
-    this.webstorage.setItem(STORAGE_APP_MODE, formData.appMode);
-    this.webstorage.setItem(STORAGE_SETTINGS_LOCK, String(formData.settingsLock));
     this.webstorage.setItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT, String(formData.clearLocalStorageAfterLogout));
     this.ngxSignalTranslate.setLanguage(formData.language);
-
-    this.main.setPermissions();
 
     const userSettings: UserSettingsApiRequestModel = {
       theme: formData.theme,

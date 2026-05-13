@@ -6,6 +6,10 @@ import { mainCollectionStateToken } from '../main/main-collection-store';
 export class CollectionService {
   private readonly mainCollectionState = inject(mainCollectionStateToken);
 
+  private getCollectionItemKey(imdbId: string, ownerShareCode?: string): string {
+    return `${ownerShareCode ?? ''}:${imdbId}`;
+  }
+
   public triggerReload(): void {
     this.mainCollectionState.patchState('reloadTrigger', (trigger) => trigger + 1);
   }
@@ -15,13 +19,17 @@ export class CollectionService {
     else this.mainCollectionState.patchState('collection', (state) => [...state, item]);
   }
 
-  public deleteCollectionItem(imdbId: string): void {
-    this.mainCollectionState.patchState('collection', (state) => state.filter((item) => item.IMDbId !== imdbId));
+  public deleteCollectionItem(imdbId: string, ownerShareCode?: string): void {
+    const itemKey = this.getCollectionItemKey(imdbId, ownerShareCode);
+    this.mainCollectionState.patchState('collection', (state) =>
+      state.filter((item) => this.getCollectionItemKey(item.IMDbId, item.ownerShareCode) !== itemKey)
+    );
   }
 
-  public updateCollectionItem(imdbId: string, item: CollectionItemApiModel): void {
+  public updateCollectionItem(imdbId: string, item: CollectionItemApiModel, ownerShareCode?: string): void {
+    const itemKey = this.getCollectionItemKey(imdbId, ownerShareCode);
     this.mainCollectionState.patchState('collection', (state) => {
-      const index = state.findIndex((item) => item.IMDbId === imdbId);
+      const index = state.findIndex((item) => this.getCollectionItemKey(item.IMDbId, item.ownerShareCode) === itemKey);
       if (index !== -1) state[index] = item;
       return state;
     });

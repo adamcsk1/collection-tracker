@@ -23,6 +23,7 @@ import {
   TagConfigsApiResponseModel,
   TagSuggestionsApiResponseModel,
   UserSettingsApiResponseModel,
+  UserSharesApiResponseModel,
 } from '@shared/models/api-model';
 import { AiQueryRequestModel, AiQueryResponseModel } from '@shared/models/ai-model';
 import { OMDbResponseItemModel, OMDbResponseModel } from '@shared/models/omdb-model';
@@ -92,24 +93,32 @@ export class ApiService extends BaseApiService {
     return this.request('GET', `/genres/suggestions${this.buildQuery({ query, limit })}`);
   }
 
-  public collectionItemExists(imdbId: string): Observable<CollectionItemExistsApiResponseModel> {
-    return this.request('GET', `/items/exists${this.buildQuery({ imdbId })}`);
+  public collectionItemExists(
+    imdbId: string,
+    ownerShareCode?: string
+  ): Observable<CollectionItemExistsApiResponseModel> {
+    return this.request('GET', `/items/exists${this.buildQuery({ imdbId, ownerShareCode })}`);
   }
 
   public getStatistics(filters: CollectionItemFiltersApiModel = {}): Observable<CollectionStatisticsApiResponseModel> {
     return this.request('GET', `/statistics${this.buildQuery({ ...filters })}`);
   }
 
-  public create(item: CollectionItemChangeApiModel): Observable<CreateApiResponseModel> {
-    return this.request('POST', '/create', item);
+  public create(item: CollectionItemChangeApiModel, targetOwnerShareCode?: string): Observable<CreateApiResponseModel> {
+    return this.request('POST', '/create', { ...item, targetOwnerShareCode });
   }
 
-  public update(imdbId: string, item: CollectionItemChangeApiModel, hash: string): Observable<ChangeApiResponseModel> {
-    return this.request('PUT', `/change/${imdbId}`, { ...item, hash });
+  public update(
+    imdbId: string,
+    item: CollectionItemChangeApiModel,
+    hash: string,
+    ownerShareCode?: string
+  ): Observable<ChangeApiResponseModel> {
+    return this.request('PUT', `/change/${imdbId}${this.buildQuery({ ownerShareCode })}`, { ...item, hash });
   }
 
-  public delete(imdbId: string, hash: string): Observable<void> {
-    return this.request('DELETE', `/delete/${imdbId}?hash=${hash}`);
+  public delete(imdbId: string, hash: string, ownerShareCode?: string): Observable<void> {
+    return this.request('DELETE', `/delete/${imdbId}${this.buildQuery({ hash, ownerShareCode })}`);
   }
 
   public getAccessTokens(): Observable<AccessTokensApiResponseModel> {
@@ -134,6 +143,28 @@ export class ApiService extends BaseApiService {
 
   public getUserSettings(): Observable<UserSettingsApiResponseModel> {
     return this.request('GET', '/user/settings');
+  }
+
+  public getShares(): Observable<UserSharesApiResponseModel> {
+    return this.request('GET', '/user/shares');
+  }
+
+  public saveShare(share: {
+    sharedWithUserShareCode: string;
+    canRead?: boolean;
+    canCreate?: boolean;
+    canUpdate?: boolean;
+    canDelete?: boolean;
+  }): Observable<void> {
+    return this.request('POST', '/user/shares', share);
+  }
+
+  public deleteShare(sharedWithUserShareCode: string): Observable<void> {
+    return this.request('DELETE', `/user/shares/${sharedWithUserShareCode}`);
+  }
+
+  public revokeIncomingShare(ownerUserShareCode: string): Observable<void> {
+    return this.request('DELETE', `/user/shares/incoming/${ownerUserShareCode}`);
   }
 
   public getUserTagConfigs(): Observable<TagConfigsApiResponseModel> {

@@ -1,0 +1,111 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.shares-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-md);
+}
+
+.shares-page > p {
+  margin-bottom: var(--size-xs);
+}
+
+.shares-grid,
+.shares-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--size-md);
+}
+
+.shares-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-md);
+}
+
+.shares-section h3 {
+  margin: 0;
+}
+
+.share-code-card,
+.add-share-form,
+.share-card {
+  width: 100%;
+}
+
+.share-card {
+  min-width: 0;
+}
+
+.user-hash-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-md);
+  flex-wrap: wrap;
+}
+
+.user-hash {
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.share-code {
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+
+.share-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--size-md);
+  flex-wrap: wrap;
+}
+
+.share-card-label {
+  opacity: 0.7;
+  font-size: var(--font-size-sm);
+}
+
+.share-permissions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-sm) var(--size-md);
+}
+
+.share-permissions.readonly span {
+  border: var(--border-style);
+  border-radius: calc(100 * var(--size-md));
+  opacity: 0.45;
+  padding: var(--size-2xs) var(--size-xs);
+}
+
+.share-permissions.readonly .enabled {
+  opacity: 1;
+  font-weight: 600;
+  border-color: var(--main-color);
+  color: var(--main-color);
+}
+
+.add-share-form {
+  margin: 0;
+}
+
+.permission-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-sm) var(--size-md);
+}
+
+.share-actions {
+  display: flex;
+}
+
+.empty-message {
+  opacity: 0.7;
+  margin: 0;
+}
