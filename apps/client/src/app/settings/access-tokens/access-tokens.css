@@ -1,5 +1,29 @@
-.actions {
+:host {
   display: flex;
-  gap: var(--size-xs);
-  margin-top: var(--size-xs);
+  flex-direction: column;
+}
+
+p {
+  margin-bottom: var(--size-xs);
+}
+
+.access-tokens-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--size-md);
+  margin-bottom: var(--size-md);
+  flex-wrap: wrap;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--size-2xs);
+    white-space: nowrap;
+  }
+}
+
+.access-tokens {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--size-md);
 }

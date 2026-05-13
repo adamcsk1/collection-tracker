@@ -181,6 +181,23 @@ describe('TagConfigs component', () => {
     ]);
   });
 
+  it('shows success toast after syncing tag configs', () => {
+    createComponent(['#tag']);
+    toastState.setState('message', '');
+
+    component['onTagColorChange']('#tag', '#123456');
+
+    expect(toastState.state.message()).toBe('Toast.TagConfigSaved');
+  });
+
+  it('does not show success toast while pruning stale configs on load', () => {
+    tagConfigsState.setState('configs', [buildTagConfig('#stale', { color: '#123456' })]);
+
+    createComponent(['#tag']);
+
+    expect(toastState.state.message()).toBe('');
+  });
+
   it('adds a new config with defaults when color changes for unknown tag', () => {
     createComponent(['#new']);
 

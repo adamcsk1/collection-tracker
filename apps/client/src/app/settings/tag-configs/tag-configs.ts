@@ -16,7 +16,7 @@ import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { INTERNAL_USED_TAGS, VIRTUAL_TAGS } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY } from 'rxjs';
+import { catchError, EMPTY, tap } from 'rxjs';
 import { TagConfigCard } from './tag-config-card/tag-config-card';
 import { TagConfigsModel } from './tag-configs-model';
 import { TagConfigsService } from './tag-configs-service';
@@ -92,7 +92,7 @@ export class TagConfigs {
 
       if (uniqueTags.length > 0) {
         storedConfigs = storedConfigs.filter((config) => uniqueTags.includes(config.tag));
-        untracked(() => this.storeTagConfigs(storedConfigs));
+        untracked(() => this.storeTagConfigs(storedConfigs, false));
         effectRef.destroy();
       }
     });
@@ -168,11 +168,16 @@ export class TagConfigs {
     this.storeTagConfigs(updatedConfigs);
   }
 
-  private storeTagConfigs(configs: TagConfigsModel): void {
+  private storeTagConfigs(configs: TagConfigsModel, showSuccessToast = true): void {
     this.tagConfigsService
       .syncUserTagConfigs(configs)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
+        tap(() => {
+          if (showSuccessToast) {
+            this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.TagConfigSaved'));
+          }
+        }),
         catchError(() => {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.TagConfigSyncError'));
           return EMPTY;
