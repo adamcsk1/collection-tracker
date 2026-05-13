@@ -19,6 +19,18 @@ import { asyncScheduler, isObservable, Subscription } from 'rxjs';
 
 export const AutocompleteService = new InjectionToken<AutocompleteServiceInterface>('AutocompleteService');
 
+const SUGGESTION_NAVIGATION_KEY_CODES = new Set([
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+]);
+const DEFAULT_SUGGESTION_DEBOUNCE_MS = 80;
+
 @Component({
   selector: 'libc-autocomplete',
   templateUrl: './autocomplete.html',
@@ -57,6 +69,7 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
   public readonly label = input<string>('');
   public readonly hint = input<string>();
   public readonly mandatory = input<boolean>(false);
+  public readonly suggestionDebounceMs = input(DEFAULT_SUGGESTION_DEBOUNCE_MS);
   public readonly autocompleteService = input<AutocompleteServiceInterface | null>(null);
   public readonly userEvent = output<void>();
   public readonly userAcceptSuggestionEvent = output<void>();
@@ -111,12 +124,14 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
   }
 
   protected onKeyup($event: KeyboardEvent): void {
+    if (SUGGESTION_NAVIGATION_KEY_CODES.has($event.code)) return;
+
     const inputText = ($event.target as HTMLInputElement).value;
     this.value.set(inputText as T);
     if (this.suggestionDebounce) this.suggestionDebounce.unsubscribe();
     this.suggestionRequest?.unsubscribe();
     if ($event.code !== 'Escape' && !this.lastEventWasAccept) {
-      this.suggestionDebounce = asyncScheduler.schedule(() => this.getSuggestions(), 80);
+      this.suggestionDebounce = asyncScheduler.schedule(() => this.getSuggestions(), this.suggestionDebounceMs());
     } else {
       this._suggestions.set([]);
     }
