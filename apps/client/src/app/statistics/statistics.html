@@ -8,7 +8,7 @@
     <div data-test-id="statistics-summary" class="summary-grid">
       <button
         data-test-id="statistics-summary-all"
-        class="stat-card"
+        class="card card-interactive stat-card"
         (click)="onNavigateToCollection()"
         [attr.aria-label]="translations.itemsInCollection() + ': ' + summary.all"
       >
@@ -17,7 +17,7 @@
       </button>
       <button
         data-test-id="statistics-summary-movies"
-        class="stat-card"
+        class="card card-interactive stat-card"
         (click)="onNavigateToCollection('#movie')"
         [attr.aria-label]="translations.movies() + ': ' + summary.movies"
       >
@@ -26,7 +26,7 @@
       </button>
       <button
         data-test-id="statistics-summary-series"
-        class="stat-card"
+        class="card card-interactive stat-card"
         (click)="onNavigateToCollection('#series')"
         [attr.aria-label]="translations.series() + ': ' + summary.series"
       >
@@ -35,7 +35,7 @@
       </button>
       <button
         data-test-id="statistics-summary-watched"
-        class="stat-card"
+        class="card card-interactive stat-card"
         (click)="onNavigateToCollection('#watched')"
         [attr.aria-label]="translations.watched() + ': ' + summary.watched"
       >
@@ -44,7 +44,7 @@
       </button>
       <button
         data-test-id="statistics-summary-unwatched"
-        class="stat-card"
+        class="card card-interactive stat-card"
         (click)="onNavigateToCollection('#unwatched')"
         [attr.aria-label]="translations.unwatched() + ': ' + summary.unwatched"
       >
@@ -81,28 +81,28 @@
 }
 
 <div class="charts-grid" [class.chart-hidden]="apiLoadNetworkStatus() !== 'finished' || tags().length === 0">
-  <div class="chart-card" [class.chart-hidden]="selectedTags().length === 0">
+  <div class="card chart-card" [class.chart-hidden]="selectedTags().length === 0">
     <h3>{{ translations.tags() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-tag-chart">{{ tagChart() }}</canvas>
     </div>
   </div>
 
-  <div class="chart-card">
+  <div class="card chart-card">
     <h3>{{ translations.globalWatchStatus() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-watched-chart">{{ watchedChart() }}</canvas>
     </div>
   </div>
 
-  <div class="chart-card">
+  <div class="card chart-card">
     <h3>{{ translations.type() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-type-chart">{{ typeChart() }}</canvas>
     </div>
   </div>
 
-  <div class="chart-card chart-card-wide" [class.chart-hidden]="(statistics()?.genreCounts ?? []).length === 0">
+  <div class="card chart-card chart-card-wide" [class.chart-hidden]="(statistics()?.genreCounts ?? []).length === 0">
     <h3>{{ translations.genre() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-genre-chart">{{ genreChart() }}</canvas>

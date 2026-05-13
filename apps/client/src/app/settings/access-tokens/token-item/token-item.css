@@ -1,14 +1,28 @@
-div {
+:host {
+  display: flex;
+}
+
+.token-card {
+  width: 100%;
+  padding: var(--size-2xs);
+}
+
+.token-field {
+  display: flex;
+  flex-direction: column;
+
+  span:first-child {
+    font-weight: bold;
+    font-size: var(--font-size-sm);
+  }
+}
+
+.token-field-value {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
 
-  span {
-    font-weight: bold;
-    display: block;
-  }
-
-  button {
-    margin-top: var(--size-xs);
-  }
+.token-card-actions {
+  margin-top: var(--size-2xs);
 }

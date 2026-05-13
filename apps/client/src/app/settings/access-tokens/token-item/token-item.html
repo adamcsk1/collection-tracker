@@ -1,29 +1,29 @@
 @if (accessToken(); as accessToken) {
-  <div [title]="accessToken.tokenHash">
-    <span>{{ translations.tokenHash() }}:</span>
-    {{ accessToken.tokenHash }}
+  <div class="card card-interactive token-card" [attr.data-test-id]="'token-card-' + accessToken.tokenHash">
+    <h3 class="card-title" [title]="accessToken.tokenHash">{{ accessToken.tokenHash }}</h3>
+    <div class="card-body">
+      <div class="token-field" [title]="accessToken.createdAt | date: 'full'">
+        <span>{{ translations.created() }}</span>
+        <span>{{ accessToken.createdAt | date: 'medium' }}</span>
+      </div>
+      <div class="token-field" [title]="!accessToken.expiresAt ? '-' : (accessToken.expiresAt | date: 'full')">
+        <span>{{ translations.expires() }}</span>
+        <span>{{ !accessToken.expiresAt ? '-' : (accessToken.expiresAt | date: 'medium') }}</span>
+      </div>
+      <div class="token-field" [title]="accessToken.userAgent">
+        <span>{{ translations.userAgent() }}</span>
+        <span class="token-field-value">{{ accessToken.userAgent }}</span>
+      </div>
+      <div class="token-card-actions">
+        <button
+          [attr.data-test-id]="'settings-revoke-token-' + accessToken.tokenHash"
+          class="button-danger"
+          (click)="onRevokeAccessToken(accessToken.tokenHash)"
+        >
+          <i class="material-icons" [title]="translations.revoke()">block</i>
+          {{ translations.revoke() }}
+        </button>
+      </div>
+    </div>
   </div>
-  <div [title]="accessToken.createdAt | date: 'full'">
-    <span>{{ translations.created() }}:</span>
-    {{ accessToken.createdAt | date: 'medium' }}
-  </div>
-  <div [title]="!accessToken.expiresAt ? '-' : (accessToken.expiresAt | date: 'full')">
-    <span>{{ translations.expires() }}:</span>
-    {{ !accessToken.expiresAt ? '-' : (accessToken.expiresAt | date: 'medium') }}
-  </div>
-  <div [title]="accessToken.userAgent">
-    <span>{{ translations.userAgent() }}:</span>
-    {{ accessToken.userAgent }}
-  </div>
-  <div>
-    <button
-      [attr.data-test-id]="'settings-revoke-token-' + accessToken.tokenHash"
-      class="button-danger"
-      (click)="onRevokeAccessToken(accessToken.tokenHash)"
-    >
-      <i class="material-icons" [title]="translations.revoke()"> block </i>
-      {{ translations.revoke() }}
-    </button>
-  </div>
-  <hr />
 }

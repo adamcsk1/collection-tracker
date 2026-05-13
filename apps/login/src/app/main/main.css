@@ -12,16 +12,11 @@
 }
 
 .content {
-  display: flex;
-  flex-direction: column;
   justify-content: center;
   padding: var(--size-lg);
   gap: var(--size-xl);
   width: 100%;
   max-width: 480px;
-  border-radius: var(--card-border-radius);
-  background-color: var(--background-color-alt);
-  box-shadow: var(--card-shadow);
 
   @media (width <= 520px) {
     padding: var(--size-md);

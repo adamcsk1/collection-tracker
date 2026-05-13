@@ -182,18 +182,8 @@
 }
 
 .metric-card {
-  display: flex;
-  flex-direction: column;
   gap: var(--size-sm);
   padding: var(--size-md);
-  background-color: var(--background-color-alt);
-  border-radius: var(--card-border-radius);
-  box-shadow: var(--card-shadow);
-  border: 2px solid transparent;
-  transition:
-    transform 200ms ease,
-    box-shadow 200ms ease,
-    border-color 200ms ease;
 }
 
 .metric-header {

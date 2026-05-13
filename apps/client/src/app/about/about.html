@@ -26,22 +26,11 @@
           <span class="about-card-value">{{ buildDate }}</span>
         </div>
       </div>
-      <div class="about-card about-card-interactive">
+      <div class="about-card">
         <i class="material-icons">tag</i>
         <div class="about-card-body">
           <span class="about-card-label">{{ translations.appVersion() }}</span>
-          <span
-            data-test-id="about-version"
-            class="about-card-value"
-            tabindex="0"
-            role="button"
-            [attr.aria-label]="translations.appVersion()"
-            (click)="onClickAppVersion()"
-            (keydown.enter)="onClickAppVersion()"
-            (keydown.space)="onClickAppVersion(); $event.preventDefault()"
-          >
-            {{ appVersion }}
-          </span>
+          <span data-test-id="about-version" class="about-card-value">{{ appVersion }}</span>
         </div>
       </div>
     </div>
