@@ -10,6 +10,7 @@ export const CollectionPage = {
   // List
   getList: () => cy.getByTestId('collection-list'),
   getListItems: () => cy.getByTestId('list-item-title'),
+  getSharedBadges: () => cy.getByTestId('list-item-shared'),
   getListItemImages: () => cy.getByTestId('list-item-image'),
   getAllItems: () => cy.getByTestId('list-item-title'),
   getEmptyState: () => cy.getByTestId('list-empty'),
@@ -30,6 +31,7 @@ export const CollectionPage = {
   // New item dialog
   getNewItemSearch: () => cy.get('[data-test-id="new-item-search"]'),
   getNewItemSearchInput: () => cy.getByTestId('new-item-search').find('input'),
+  getNewItemLibrarySelect: () => cy.getByTestId('new-item-library').find('select'),
   getNewItemContentSelect: () => cy.getByTestId('new-item-content-select').find('select'),
   getNewItemSaveButton: () => cy.getByTestId('new-item-save'),
   getNewItemSaveAndNewButton: () => cy.getByTestId('new-item-save-and-new'),
@@ -41,6 +43,7 @@ export const CollectionPage = {
   getItemDialogDeleteButton: () => cy.getByTestId('item-dialog-delete'),
   getItemDialogMarkWatchedButton: () => cy.getByTestId('item-dialog-mark-watched'),
   getItemDialogMarkUnwatchedButton: () => cy.getByTestId('item-dialog-mark-unwatched'),
+  getItemDialogSharedLibraryBadge: () => cy.getByTestId('item-dialog-shared-library'),
   getItemDialogTitleInput: () => cy.getByTestId('item-dialog-title'),
   getItemDialogYearInput: () => cy.getByTestId('item-dialog-year'),
   getItemDialogGenreInput: () => cy.getByTestId('item-dialog-genre').find('input'),
