@@ -7,6 +7,7 @@ export const CommonPage = {
     });
   },
   getNavCollectionLink: () => cy.getByTestId('nav-collection'),
+  getNavFavoritesLink: () => cy.getByTestId('nav-favorites'),
   getNavSyncLink: () => cy.getByTestId('nav-sync'),
   getNavSettingsLink: () => cy.getByTestId('nav-settings'),
 

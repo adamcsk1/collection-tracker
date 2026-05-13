@@ -10,6 +10,7 @@ export const CollectionPage = {
   // List
   getList: () => cy.getByTestId('collection-list'),
   getListItems: () => cy.getByTestId('list-item-title'),
+  getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
   getSharedBadges: () => cy.getByTestId('list-item-shared'),
   getListItemImages: () => cy.getByTestId('list-item-image'),
   getAllItems: () => cy.getByTestId('list-item-title'),
@@ -41,6 +42,8 @@ export const CollectionPage = {
   getItemDialogEditButton: () => cy.getByTestId('item-dialog-edit'),
   getItemDialogSaveButton: () => cy.getByTestId('item-dialog-save'),
   getItemDialogDeleteButton: () => cy.getByTestId('item-dialog-delete'),
+  getItemDialogMarkFavoriteButton: () => cy.getByTestId('item-dialog-mark-favorite'),
+  getItemDialogRemoveFavoriteButton: () => cy.getByTestId('item-dialog-remove-favorite'),
   getItemDialogMarkWatchedButton: () => cy.getByTestId('item-dialog-mark-watched'),
   getItemDialogMarkUnwatchedButton: () => cy.getByTestId('item-dialog-mark-unwatched'),
   getItemDialogSharedLibraryBadge: () => cy.getByTestId('item-dialog-shared-library'),
