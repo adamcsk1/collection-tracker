@@ -250,6 +250,22 @@ describe('Autocomplete component', () => {
     expect(component['selectedSuggestion']()).toBe(0);
   });
 
+  it('does not fetch suggestions when navigating suggestions with arrow keys', () => {
+    vi.useFakeTimers();
+    component['_suggestions'].set(['alpha', 'beta']);
+    serviceStub.getSuggestion.mockClear();
+
+    component['onKeyup']({
+      code: 'ArrowDown',
+      target: { value: 'a' },
+    } as unknown as KeyboardEvent);
+    vi.advanceTimersByTime(80);
+
+    expect(serviceStub.getSuggestion).not.toHaveBeenCalled();
+    expect(component['suggestions']()).toEqual(['alpha', 'beta']);
+    vi.useRealTimers();
+  });
+
   it('updates internal value when model signal changes externally', () => {
     fixture.componentInstance.model.set('delta');
     fixture.detectChanges();
