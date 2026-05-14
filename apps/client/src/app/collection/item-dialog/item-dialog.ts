@@ -8,7 +8,7 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import { FAVORITE_TAG, VIRTUAL_TAGS, WATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
+import { FAVORITE_TAG, VIRTUAL_TAGS, WATCHED_TAG, WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
@@ -46,6 +46,7 @@ export class ItemDialog implements OnInit {
   protected readonly translations = {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
     titleWatchLaterItem: computed(() => this.ngxSignalTranslate.translate('Title.WatchLaterItem')),
+    titleWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.WishlistItem')),
     labelTitle: computed(() => this.ngxSignalTranslate.translate('Label.Title')),
     labelIMDbId: computed(() => this.ngxSignalTranslate.translate('Label.IMDbId')),
     labelYear: computed(() => this.ngxSignalTranslate.translate('Label.Year')),
@@ -90,9 +91,12 @@ export class ItemDialog implements OnInit {
   protected readonly tagsText = computed(() =>
     this.draftItem()
       .tags.filter((tag) => tag !== WATCH_LATER_TAG)
+      .filter((tag) => tag !== WISHLIST_TAG)
       .join(' ')
   );
-  protected readonly detailTags = computed(() => this.collectionItem().tags.filter((tag) => tag !== WATCH_LATER_TAG));
+  protected readonly detailTags = computed(() =>
+    this.collectionItem().tags.filter((tag) => tag !== WATCH_LATER_TAG && tag !== WISHLIST_TAG)
+  );
   protected readonly editMode = signal(false);
   protected readonly posterImageFailed = signal(false);
   protected readonly isShared = computed(() => {
@@ -131,8 +135,18 @@ export class ItemDialog implements OnInit {
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG));
   protected readonly favorite = computed(() => this.collectionItem().tags.includes(FAVORITE_TAG));
   protected readonly watchLater = computed(() => this.collectionItem().tags.includes(WATCH_LATER_TAG));
+  protected readonly wishlist = computed(() => this.collectionItem().tags.includes(WISHLIST_TAG));
+  protected readonly internalCollectionTag = computed(() => {
+    if (this.watchLater()) return WATCH_LATER_TAG;
+    if (this.wishlist()) return WISHLIST_TAG;
+    return null;
+  });
   protected readonly dialogTitle = computed(() =>
-    this.watchLater() ? this.translations.titleWatchLaterItem() : this.translations.titleCollectionItem()
+    this.watchLater()
+      ? this.translations.titleWatchLaterItem()
+      : this.wishlist()
+        ? this.translations.titleWishlistItem()
+        : this.translations.titleCollectionItem()
   );
   protected readonly draftImageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.draftItem().image)
@@ -216,8 +230,9 @@ export class ItemDialog implements OnInit {
 
   protected onSaveChanges(): void {
     let item = this.draftItem();
-    if (this.watchLater() && !item.tags.includes(WATCH_LATER_TAG)) {
-      item = { ...item, tags: [...item.tags, WATCH_LATER_TAG] };
+    const internalCollectionTag = this.internalCollectionTag();
+    if (internalCollectionTag && !item.tags.includes(internalCollectionTag)) {
+      item = { ...item, tags: [...item.tags, internalCollectionTag] };
       this.draftItem.set(item);
     }
     if (!item.title.trim() || !item.IMDbId.trim()) {
@@ -231,10 +246,13 @@ export class ItemDialog implements OnInit {
       return;
     }
 
-    const hasInvalidWatchLaterTag =
-      (!this.watchLater() && item.tags.includes(WATCH_LATER_TAG)) ||
-      (this.watchLater() && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG)));
-    if (hasInvalidWatchLaterTag) {
+    const internalCollectionTags = [WATCH_LATER_TAG, WISHLIST_TAG];
+    const hasInvalidInternalCollectionTag = internalCollectionTag
+      ? item.tags.some((tag) => internalCollectionTags.includes(tag) && tag !== internalCollectionTag) ||
+        item.tags.includes(FAVORITE_TAG) ||
+        item.tags.includes(WATCHED_TAG)
+      : item.tags.some((tag) => internalCollectionTags.includes(tag));
+    if (hasInvalidInternalCollectionTag) {
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UsedInternalTag'));
       return;
     }
@@ -272,6 +290,7 @@ export class ItemDialog implements OnInit {
   }
 
   protected onMarkAsWatched(): void {
+    if (this.internalCollectionTag()) return;
     if (this.draftItem().tags.includes(WATCHED_TAG)) return;
     this.updateDraft('tags', [...this.draftItem().tags, WATCHED_TAG]);
     this.onSaveChanges();
@@ -286,6 +305,7 @@ export class ItemDialog implements OnInit {
   }
 
   protected onMarkAsFavorite(): void {
+    if (this.internalCollectionTag()) return;
     if (this.draftItem().tags.includes(FAVORITE_TAG)) return;
     this.updateDraft('tags', [...this.draftItem().tags, FAVORITE_TAG]);
     this.onSaveChanges();

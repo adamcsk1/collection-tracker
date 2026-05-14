@@ -178,7 +178,7 @@
         {{ translations.save() }}
       </button>
     } @else {
-      @if (permissionUpdate() && !watchLater()) {
+      @if (permissionUpdate() && !internalCollectionTag()) {
         <button data-test-id="item-dialog-edit" (click)="onEdit()">
           <i class="material-icons" [title]="translations.edit()"> edit </i>
           {{ translations.edit() }}

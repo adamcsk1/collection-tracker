@@ -1,6 +1,10 @@
 @if (apiLoadNetworkStatus() === 'pending') {
   {{ translations.messageLoadStatistics() }}
-} @else if ((statistics()?.totalItems ?? 0) === 0 && (statistics()?.watchLaterCount ?? 0) === 0) {
+} @else if (
+  (statistics()?.totalItems ?? 0) === 0 &&
+  (statistics()?.watchLaterCount ?? 0) === 0 &&
+  (statistics()?.wishlistCount ?? 0) === 0
+) {
   <span data-test-id="statistics-empty">{{ translations.messageEmptyStatistics() }}</span>
 } @else {
   <h2>{{ translations.summary() }}</h2>
@@ -50,6 +54,15 @@
       >
         <span class="stat-value">{{ summary.watchLater }}</span>
         <span class="stat-label">{{ translations.watchLater() }}</span>
+      </button>
+      <button
+        data-test-id="statistics-summary-wishlist"
+        class="card card-interactive stat-card"
+        (click)="onNavigateToWishlist()"
+        [attr.aria-label]="translations.wishlist() + ': ' + summary.wishlist"
+      >
+        <span class="stat-value">{{ summary.wishlist }}</span>
+        <span class="stat-label">{{ translations.wishlist() }}</span>
       </button>
       <button
         data-test-id="statistics-summary-watched"

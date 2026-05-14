@@ -120,4 +120,16 @@ describe('NewItemDialogService', () => {
       undefined
     );
   });
+
+  it('adds the wishlist tag when saving in wishlist mode', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(service.save('tt123', '#tag', 'close', undefined, false, true));
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({ tags: ['#movie', '#tag', '#wishlist'] }),
+      undefined
+    );
+  });
 });

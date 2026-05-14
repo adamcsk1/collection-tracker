@@ -37,6 +37,16 @@
     {{ translations.watchLater() }}
   </a>
   <a
+    data-test-id="nav-wishlist"
+    [routerLink]="['/', 'collection', 'wishlist']"
+    routerLinkActive="active"
+    class="highlight"
+    (click)="onClose()"
+  >
+    <i class="material-icons">bookmark</i>
+    {{ translations.wishlist() }}
+  </a>
+  <a
     data-test-id="nav-settings"
     [routerLink]="['/', 'settings']"
     routerLinkActive="active"

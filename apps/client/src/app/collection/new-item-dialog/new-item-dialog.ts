@@ -40,6 +40,7 @@ export class NewItemDialog {
   protected readonly translations = {
     titleNewCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.NewCollectionItem')),
     titleNewWatchLaterItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchLaterItem')),
+    titleNewWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWishlistItem')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
     messageNewCollectionItemSearch: computed(() =>
       this.ngxSignalTranslate.translate('Message.NewCollectionItemSearch')
@@ -110,10 +111,17 @@ export class NewItemDialog {
     }
     return options;
   });
-  protected readonly showLibrarySelect = computed(() => !this.watchLater() && this.libraryOptions().length > 1);
+  protected readonly showLibrarySelect = computed(
+    () => !this.watchLater() && !this.wishlist() && this.libraryOptions().length > 1
+  );
   public readonly watchLater = input(false);
+  public readonly wishlist = input(false);
   protected readonly dialogTitle = computed(() =>
-    this.watchLater() ? this.translations.titleNewWatchLaterItem() : this.translations.titleNewCollectionItem()
+    this.watchLater()
+      ? this.translations.titleNewWatchLaterItem()
+      : this.wishlist()
+        ? this.translations.titleNewWishlistItem()
+        : this.translations.titleNewCollectionItem()
   );
 
   constructor() {
@@ -176,13 +184,19 @@ export class NewItemDialog {
     if (!selectedIMDbId) return;
 
     let tags = this.form.tags().value().trim();
-    const watched = !this.watchLater() && this.form.watched().value();
+    const watched = !this.watchLater() && !this.wishlist() && this.form.watched().value();
     if (watched) tags = tags ? `${tags} ${WATCHED_TAG}` : WATCHED_TAG;
 
-    const targetOwnerShareCode = this.watchLater() ? undefined : this.form.targetOwnerShareCode().value() || undefined;
-    const saveRequest = this.watchLater()
-      ? this.service.save(selectedIMDbId, tags, mode, targetOwnerShareCode, true)
-      : this.service.save(selectedIMDbId, tags, mode, targetOwnerShareCode);
+    const targetOwnerShareCode =
+      this.watchLater() || this.wishlist() ? undefined : this.form.targetOwnerShareCode().value() || undefined;
+    const saveRequest = this.service.save(
+      selectedIMDbId,
+      tags,
+      mode,
+      targetOwnerShareCode,
+      this.watchLater(),
+      this.wishlist()
+    );
     await firstValueFrom(saveRequest);
 
     if (mode === 'new') {
