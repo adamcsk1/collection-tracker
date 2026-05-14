@@ -29,6 +29,16 @@ const insertUserAndItems = () => {
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item2Id, '#series');
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item2Id, 'drama');
   db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item2Id, 'Drama');
+
+  db.prepare(
+    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'tt003', 'Watch Later One', 'watch later one', '2001', '7.1', 'Plot three', 'img3.jpg', 'hash3');
+  const item3Id = Number(
+    (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt003')! as { id: number }).id
+  );
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item3Id, '#movie');
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item3Id, '#watch-later');
 };
 
 describe('statistics-api', () => {
@@ -53,6 +63,7 @@ describe('statistics-api', () => {
         movieCount: 1,
         seriesCount: 1,
         favoriteCount: 1,
+        watchLaterCount: 1,
         watchedCount: 1,
         unwatchedCount: 1,
         tagCounts: expect.arrayContaining([

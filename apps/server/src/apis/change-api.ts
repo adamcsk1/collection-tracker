@@ -1,8 +1,13 @@
 import { API_PREFIX } from '@shared/constants/api-const';
+import { FAVORITE_TAG, WATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { ChangeApiRequestModel, ChangeApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { findCollectionItemByImdbId, updateCollectionItem } from '../core/database/repositories/collection-repository';
+import {
+  findCollectionItemByImdbId,
+  getCollectionItemTags,
+  updateCollectionItem,
+} from '../core/database/repositories/collection-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
@@ -43,6 +48,22 @@ export const register = (app: FastifyInstance): void => {
 
       if (existingItem.content_hash !== hash) {
         return response.code(409).send();
+      }
+
+      const existingTags = getCollectionItemTags(db, existingItem.id);
+      const existingIsWatchLaterItem = existingTags.includes(WATCH_LATER_TAG);
+      if (existingIsWatchLaterItem && ownerHash !== request.usernameHash) {
+        return response.code(403).send();
+      }
+      const isWatchLaterItem = item.tags.includes(WATCH_LATER_TAG);
+      if (isWatchLaterItem && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG))) {
+        return response.code(400).send();
+      }
+      if (isWatchLaterItem && !existingIsWatchLaterItem) {
+        return response.code(400).send();
+      }
+      if (existingIsWatchLaterItem && !isWatchLaterItem) {
+        return response.code(400).send();
       }
 
       if (item.IMDbId !== imdbId) {

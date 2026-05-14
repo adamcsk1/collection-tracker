@@ -28,6 +28,12 @@ const insertItem = (hash = 'abc123', usernameHash = 'user') => {
   ).run(usernameHash, 'tt-change', 'Old', 'old', '', '', '', '', hash);
 };
 
+const insertTag = (tag: string, imdbId = 'tt-change') => {
+  const db = getDatabase();
+  const itemId = (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get(imdbId) as { id: number }).id;
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
+};
+
 const updatedItem = {
   image: 'poster.jpg',
   title: 'Updated',
@@ -139,6 +145,81 @@ describe('change-api', () => {
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(403);
+  });
+
+  it('returns 403 when updating a shared watch later item', async () => {
+    insertItem('abc123', 'owner');
+    insertTag('#watch-later');
+    insertUser('user');
+    insertShare('owner', 'user', true);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      query: { ownerShareCode: getUserShareCode('owner') },
+      body: { ...updatedItem, tags: ['#movie', '#watch-later'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
+  });
+
+  it('returns 400 when a normal item is changed to watch later', async () => {
+    insertItem();
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, tags: ['#movie', '#watch-later'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when a watch later item is changed to a normal item', async () => {
+    insertItem();
+    insertTag('#watch-later');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when a watch later item is marked watched', async () => {
+    insertItem();
+    insertTag('#watch-later');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, tags: ['#movie', '#watch-later', '#watched'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('returns 409 when hash does not match', async () => {

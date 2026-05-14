@@ -1,4 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
+import { WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { searchCollectionItems } from '../core/database/repositories/collection-repository';
@@ -13,10 +14,14 @@ export const register = (app: FastifyInstance): void => {
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
-      const usernameHashes = [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
+      const filters = parseFilters(request.query as Record<string, unknown>);
+      const isWatchLaterRequest = (filters.tags ?? []).some((tag) => tag.toLowerCase() === WATCH_LATER_TAG);
+      const usernameHashes = isWatchLaterRequest
+        ? [request.usernameHash]
+        : [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
       response.send(
         searchCollectionItems(db, usernameHashes, {
-          filters: parseFilters(request.query as Record<string, unknown>),
+          filters,
           offset: parseNumber((request.query as Record<string, unknown>).offset, 0),
           limit: parseNumber((request.query as Record<string, unknown>).limit, 50),
         })

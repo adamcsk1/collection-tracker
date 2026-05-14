@@ -400,7 +400,17 @@ components:
     CollectionStatisticsResponse:
       type: object
       required:
-        [totalItems, movieCount, seriesCount, favoriteCount, watchedCount, unwatchedCount, tagCounts, genreCounts]
+        [
+          totalItems,
+          movieCount,
+          seriesCount,
+          favoriteCount,
+          watchLaterCount,
+          watchedCount,
+          unwatchedCount,
+          tagCounts,
+          genreCounts,
+        ]
       properties:
         totalItems:
           type: integer
@@ -409,6 +419,8 @@ components:
         seriesCount:
           type: integer
         favoriteCount:
+          type: integer
+        watchLaterCount:
           type: integer
         watchedCount:
           type: integer
@@ -1167,7 +1179,7 @@ paths:
     post:
       operationId: createItem
       summary: Create a collection item
-      description: Creates a structured collection item. `IMDbId` must be unique within the target library. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission.
+      description: Creates a structured collection item. `IMDbId` must be unique within the target library. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later items use the internal `#watch-later` tag, cannot be created in shared libraries, and cannot also use `#favorite` or `#watched`.
       tags: [Collection]
       requestBody:
         required: true
@@ -1183,7 +1195,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreateResponse'
         '400':
-          description: Request body is missing required item fields or contains invalid values.
+          description: Request body is missing required item fields, contains invalid values, or uses an invalid watch-later tag combination.
         '403':
           description: Not allowed to create in the target library.
         '409':
@@ -1193,6 +1205,7 @@ paths:
     put:
       operationId: changeItem
       summary: Update a collection item
+      description: Updates a collection item. Existing watch-later items cannot be updated through shared libraries, cannot be changed into normal collection items, and cannot use `#favorite` or `#watched`. Normal collection items cannot be changed into watch-later items.
       tags: [Collection]
       parameters:
         - name: imdbId
@@ -1221,9 +1234,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ChangeResponse'
         '400':
-          description: Request body is missing required item fields or contains invalid values.
+          description: Request body is missing required item fields, contains invalid values, or attempts an invalid watch-later transition.
         '403':
-          description: Not allowed to update in the target library.
+          description: Not allowed to update in the target library or to update a shared watch-later item.
         '404':
           description: Item not found.
         '409':
@@ -1233,6 +1246,7 @@ paths:
     delete:
       operationId: deleteItem
       summary: Delete a collection item
+      description: Deletes a collection item when the supplied hash matches. Shared watch-later items cannot be deleted by users other than their owner.
       tags: [Collection]
       parameters:
         - name: imdbId
@@ -1259,7 +1273,7 @@ paths:
         '400':
           description: Missing or invalid hash query parameter.
         '403':
-          description: Not allowed to delete in the target library.
+          description: Not allowed to delete in the target library or to delete a shared watch-later item.
         '404':
           description: Item not found.
         '409':
