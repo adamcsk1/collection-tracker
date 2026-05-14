@@ -11,6 +11,7 @@ import {
   VIRTUAL_UNWATCHED_TAG,
   WATCHED_TAG,
   WATCH_LATER_TAG,
+  WISHLIST_TAG,
 } from '@shared/constants/tags-const';
 import { CollectionItemApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -165,6 +166,13 @@ describe('ItemDialog', () => {
     expect(component['watchLater']()).toBe(true);
   });
 
+  it('computes wishlist status from tags', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
+    fixture.detectChanges();
+
+    expect(component['wishlist']()).toBe(true);
+  });
+
   it('returns collection item title for normal items', () => {
     expect(component['dialogTitle']()).toBe('Title.CollectionItem');
   });
@@ -174,6 +182,13 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
 
     expect(component['dialogTitle']()).toBe('Title.WatchLaterItem');
+  });
+
+  it('returns wishlist item title for wishlist items', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
+    fixture.detectChanges();
+
+    expect(component['dialogTitle']()).toBe('Title.WishlistItem');
   });
 
   it('uses incoming share permissions for shared collection items', () => {
@@ -253,8 +268,23 @@ describe('ItemDialog', () => {
     expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
   });
 
+  it('hides the internal wishlist tag from editable tag text', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WISHLIST_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+  });
+
   it('hides the internal watch later tag from detail tags', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WATCH_LATER_TAG] }));
+    fixture.detectChanges();
+
+    expect(component['detailTags']()).toEqual([MOVIE_TAG, '#action']);
+  });
+
+  it('hides the internal wishlist tag from detail tags', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WISHLIST_TAG] }));
     fixture.detectChanges();
 
     expect(component['detailTags']()).toEqual([MOVIE_TAG, '#action']);
@@ -354,6 +384,16 @@ describe('ItemDialog', () => {
     expect(api.update).not.toHaveBeenCalled();
   });
 
+  it('does not save when a normal item is changed to wishlist', () => {
+    component['updateDraft']('tags', [MOVIE_TAG, WISHLIST_TAG]);
+
+    component['onSaveChanges']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.UsedInternalTag');
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
   it('does not save when a watch later item is marked watched', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCH_LATER_TAG] }));
     fixture.detectChanges();
@@ -379,6 +419,23 @@ describe('ItemDialog', () => {
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
       expect.objectContaining({ tags: [MOVIE_TAG, '#later', WATCH_LATER_TAG] }),
+      'testhash',
+      undefined
+    );
+  });
+
+  it('keeps the internal wishlist tag when saving wishlist edits', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['updateDraft']('tags', [MOVIE_TAG, '#wishlist-custom']);
+
+    component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [MOVIE_TAG, '#wishlist-custom', WISHLIST_TAG] }),
       'testhash',
       undefined
     );
@@ -431,6 +488,18 @@ describe('ItemDialog', () => {
     expect(api.update).not.toHaveBeenCalled();
   });
 
+  it('does not mark wishlist items as watched', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    confirm.open.mockReturnValue(of(true));
+
+    component['onMarkAsWatched']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
   it('marks item as unwatched by removing watched tag and saving', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCHED_TAG, '#action'] }));
     fixture.detectChanges();
@@ -465,6 +534,18 @@ describe('ItemDialog', () => {
 
   it('does not re-save when already favorite', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    confirm.open.mockReturnValue(of(true));
+
+    component['onMarkAsFavorite']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('does not mark wishlist items as favorite', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));

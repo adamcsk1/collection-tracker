@@ -22,6 +22,7 @@ describe('Statistics component', () => {
     seriesCount: 1,
     favoriteCount: 1,
     watchLaterCount: 1,
+    wishlistCount: 1,
     watchedCount: 1,
     unwatchedCount: 1,
     tagCounts: [
@@ -65,6 +66,7 @@ describe('Statistics component', () => {
       series: 1,
       favorites: 1,
       watchLater: 1,
+      wishlist: 1,
       all: 2,
       watched: 1,
       unwatched: 1,
@@ -137,5 +139,11 @@ describe('Statistics component', () => {
     component['onNavigateToWatchLater']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watch-later']);
+  });
+
+  it('navigates to wishlist when clicking the wishlist stat card', () => {
+    component['onNavigateToWishlist']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'wishlist']);
   });
 });

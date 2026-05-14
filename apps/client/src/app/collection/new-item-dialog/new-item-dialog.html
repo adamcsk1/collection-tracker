@@ -44,7 +44,7 @@
             }
           </ng-container></libc-autocomplete
         >
-        @if (!watchLater()) {
+        @if (!watchLater() && !wishlist()) {
           <libc-checkbox
             data-test-id="new-item-watched"
             [formField]="form.watched"

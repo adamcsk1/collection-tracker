@@ -15,7 +15,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
+import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import {
@@ -85,7 +85,9 @@ export class List {
   protected readonly hasMore = computed(() => this.visibleCollection().length < this.collectionLength());
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly scrollToTopAvailable = signal(false);
-  protected readonly isWatchLaterPrefiltered = computed(() => this.routeSearchText() === WATCH_LATER_TAG);
+  protected readonly isInternalCollectionPrefiltered = computed(() =>
+    [WATCH_LATER_TAG, WISHLIST_TAG].includes(this.routeSearchText())
+  );
   public readonly hideFloatActions = input(false);
   public readonly routeSearchText = input('');
 
@@ -147,7 +149,10 @@ export class List {
   }
 
   protected onAddNew(): void {
-    this.portal.open(NewItemDialog, { watchLater: this.isWatchLaterPrefiltered() });
+    this.portal.open(NewItemDialog, {
+      watchLater: this.routeSearchText() === WATCH_LATER_TAG,
+      wishlist: this.routeSearchText() === WISHLIST_TAG,
+    });
   }
 
   protected onScroll(): void {
@@ -169,7 +174,7 @@ export class List {
   }
 
   protected onShowFunctions(): void {
-    if (this.isWatchLaterPrefiltered()) return;
+    if (this.isInternalCollectionPrefiltered()) return;
 
     this.aiSearch
       .checkAiAvailable()

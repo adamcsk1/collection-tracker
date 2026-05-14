@@ -39,6 +39,7 @@ export class Statistics implements AfterViewInit {
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
     favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     watchLater: computed(() => this.ngxSignalTranslate.translate('WatchLater')),
+    wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
     watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
     unwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
     chart: computed(() => this.ngxSignalTranslate.translate('Chart')),
@@ -66,6 +67,7 @@ export class Statistics implements AfterViewInit {
       series: statistics?.seriesCount ?? 0,
       favorites: statistics?.favoriteCount ?? 0,
       watchLater: statistics?.watchLaterCount ?? 0,
+      wishlist: statistics?.wishlistCount ?? 0,
       all: statistics?.totalItems ?? 0,
       watched: statistics?.watchedCount ?? 0,
       unwatched: statistics?.unwatchedCount ?? 0,
@@ -114,6 +116,10 @@ export class Statistics implements AfterViewInit {
 
   protected onNavigateToWatchLater(): void {
     void this.router.navigate(['/collection', 'watch-later']);
+  }
+
+  protected onNavigateToWishlist(): void {
+    void this.router.navigate(['/collection', 'wishlist']);
   }
 
   protected onNavigateToFavorites(): void {

@@ -7,7 +7,7 @@ Source: [`apps/client`](../apps/client)
 ## Functional Areas
 
 - `collection/library`: search and browse stored collection items; includes AI natural-language search via `AiSearchService` and `AiSearchInput`
-- `collection/favorites` and `collection/watch-later`: filtered collection subroutes for saved item lists
+- `collection/favorites`, `collection/watch-later`, and `collection/wishlist`: filtered collection subroutes for saved item lists
 - `statistics`: tag-driven summaries and Chart.js visualizations
 - `settings/tag-configs`: per-tag color, weight, and presentation rules
 - `settings`: theme, search, account actions, access tokens, image refresh, and global watch-status actions

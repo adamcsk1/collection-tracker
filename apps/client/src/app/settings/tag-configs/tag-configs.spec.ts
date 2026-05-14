@@ -30,6 +30,7 @@ const mockStatistics = (tags: string[]) =>
     seriesCount: 0,
     favoriteCount: 0,
     watchLaterCount: 0,
+    wishlistCount: 0,
     watchedCount: 0,
     unwatchedCount: 0,
     tagCounts: tags.map((tag) => ({ tag, count: 1 })),

@@ -19,6 +19,10 @@ export const collectionRoutes: Routes = [
         loadComponent: () => import('./watch-later/watch-later').then((module) => module.WatchLater),
       },
       {
+        path: 'wishlist',
+        loadComponent: () => import('./wishlist/wishlist').then((module) => module.Wishlist),
+      },
+      {
         path: '',
         pathMatch: 'full',
         redirectTo: 'library',

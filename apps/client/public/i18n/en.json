@@ -86,6 +86,7 @@
   "Message.AddFirstCollectionItem": "Let's add your first movie.",
   "Message.AddFirstFavorite": "Mark items as favorite to find them here quickly.",
   "Message.AddFirstWatchLater": "Add a movie or series to watch later.",
+  "Message.AddFirstWishlist": "Add a movie or series to your wishlist.",
   "Message.AiSearch": "This option uses local AI to provide search results based on the collection items content. It may take a few seconds or minutes to get the search results, but it can find relevant items even with typos or when the search query does not exactly match the item attributes.",
   "Message.AnimatedBackground": "Enable or disable animated background. This setting impacts your network usage because enabling this option will fill the background with poster images from your collection items.",
   "Message.CreateNewAccessToken": "You can create a new access token to grant permissions to external applications.",
@@ -97,6 +98,7 @@
   "Message.EmptySelectTagsForChart": "Please select at least one tag to display the chart.",
   "Message.EmptyStatistics": "Your statistics are empty.",
   "Message.EmptyWatchLater": "No watch later items yet.",
+  "Message.EmptyWishlist": "No wishlist items yet.",
   "Message.GlobalWatchStatus": "Use this section to quickly set the watched status for all items in your collection.",
   "Message.Loading": "Loading",
   "Message.LoadStatistics": "Loading statistics, please wait.",
@@ -167,8 +169,10 @@
   "Title.NewCollectionItem": "New collection item",
   "Title.NewUserToken": "New user token",
   "Title.NewWatchLaterItem": "New watch later item",
+  "Title.NewWishlistItem": "New wishlist item",
   "Title.ShareManagement": "Share management",
   "Title.WatchLaterItem": "Watch later item",
+  "Title.WishlistItem": "Wishlist item",
   "Toast.AccessTokenCreated": "The access token was created successfully!",
   "Toast.AccessTokenRevoked": "The access token was revoked successfully!",
   "Toast.Copied": "Copied to clipboard.",
@@ -208,5 +212,6 @@
   "Watched": "Watched",
   "WatchLater": "Watch later",
   "Weight": "Weight",
+  "Wishlist": "Wishlist",
   "YourShareCode": "Your share code"
 }

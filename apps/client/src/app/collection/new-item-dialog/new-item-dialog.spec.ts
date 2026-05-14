@@ -88,7 +88,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'new', undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'new', undefined, false, false);
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -102,7 +102,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', `#tag ${WATCHED_TAG}`, 'new', undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', `#tag ${WATCHED_TAG}`, 'new', undefined, false, false);
     expect(formRoot.reset).toHaveBeenCalled();
     expect(component['form'].watched().value()).toBe(false);
   });
@@ -116,7 +116,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', WATCHED_TAG, 'new', undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', WATCHED_TAG, 'new', undefined, false, false);
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -127,7 +127,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt456', '', 'close', undefined);
+    expect(service.save).toHaveBeenCalledWith('tt456', '', 'close', undefined, false, false);
     expect(selectedIMDbId.reset).toHaveBeenCalledWith(null);
   });
 
@@ -147,7 +147,19 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', '', 'close', 'owner-code');
+    expect(service.save).toHaveBeenCalledWith('tt123', '', 'close', 'owner-code', false, false);
+  });
+
+  it('saves wishlist items without watched or shared library values', async () => {
+    fixture.componentRef.setInput('wishlist', true);
+    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].tags().value.set('#tag');
+    component['form'].watched().value.set(true);
+    component['form'].targetOwnerShareCode().value.set('owner-code');
+
+    await component['onSave']('close');
+
+    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'close', undefined, false, true);
   });
 
   it('only offers shared libraries with create permission', () => {

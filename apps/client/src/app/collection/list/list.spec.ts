@@ -9,7 +9,7 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
+import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -217,7 +217,16 @@ describe('List', () => {
 
     component['onAddNew']();
 
-    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), { watchLater: true });
+    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), { watchLater: true, wishlist: false });
+  });
+
+  it('opens the new item dialog in wishlist mode on the wishlist page', () => {
+    fixture.componentRef.setInput('routeSearchText', WISHLIST_TAG);
+    fixture.detectChanges();
+
+    component['onAddNew']();
+
+    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), { watchLater: false, wishlist: true });
   });
 
   it('opens a random item from the server', async () => {
