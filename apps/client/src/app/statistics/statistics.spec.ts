@@ -21,6 +21,7 @@ describe('Statistics component', () => {
     movieCount: 1,
     seriesCount: 1,
     favoriteCount: 1,
+    watchLaterCount: 1,
     watchedCount: 1,
     unwatchedCount: 1,
     tagCounts: [
@@ -63,6 +64,7 @@ describe('Statistics component', () => {
       movies: 1,
       series: 1,
       favorites: 1,
+      watchLater: 1,
       all: 2,
       watched: 1,
       unwatched: 1,
@@ -116,12 +118,24 @@ describe('Statistics component', () => {
   it('navigates to collection without search when clicking total stat card', () => {
     component['onNavigateToCollection']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection']);
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library']);
   });
 
   it('navigates to collection with search query when clicking a stat card', () => {
     component['onNavigateToCollection']('#movie');
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection'], { queryParams: { search: '#movie' } });
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], { queryParams: { search: '#movie' } });
+  });
+
+  it('navigates to favorites when clicking the favorites stat card', () => {
+    component['onNavigateToFavorites']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'favorites']);
+  });
+
+  it('navigates to watch later when clicking the watch later stat card', () => {
+    component['onNavigateToWatchLater']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watch-later']);
   });
 });

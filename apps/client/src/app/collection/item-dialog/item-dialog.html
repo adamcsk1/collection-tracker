@@ -1,8 +1,8 @@
 <libc-dialog-shell>
   <ng-container dialog-shell-top-content>
     <h3 class="dialog-title">
-      <i class="material-icons" [title]="translations.titleCollectionItem()"> movie </i>
-      {{ translations.titleCollectionItem() }}
+      <i class="material-icons" [title]="dialogTitle()"> movie </i>
+      {{ dialogTitle() }}
     </h3>
   </ng-container>
   <ng-container dialog-shell-content>
@@ -126,11 +126,11 @@
             </section>
           }
 
-          @if (collectionItem().tags.length) {
+          @if (detailTags().length) {
             <section>
               <h4>{{ translations.tags() }}</h4>
               <div class="chip-list">
-                @for (tag of collectionItem().tags; track tag) {
+                @for (tag of detailTags(); track tag) {
                   <span class="chip">{{ tag }}</span>
                 }
               </div>
@@ -178,7 +178,7 @@
         {{ translations.save() }}
       </button>
     } @else {
-      @if (permissionUpdate()) {
+      @if (permissionUpdate() && !watchLater()) {
         <button data-test-id="item-dialog-edit" (click)="onEdit()">
           <i class="material-icons" [title]="translations.edit()"> edit </i>
           {{ translations.edit() }}

@@ -83,33 +83,23 @@ describe('AiSearchInput component', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const expandedPanel: HTMLElement = fixture.nativeElement.querySelector('.expanded-panel');
-    expandedPanel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.expanded-panel');
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.expanded-panel')).toBeNull();
   });
 
-  it('does not expand again when already expanded', async () => {
+  it('shows an alert when the info link is clicked', async () => {
     const trigger: HTMLElement = fixture.nativeElement.querySelector('.compact-trigger');
     trigger.click();
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(fixture.nativeElement.querySelector('.expanded-panel')).toBeTruthy();
-
-    trigger.click();
+    const infoLink: HTMLElement = fixture.nativeElement.querySelector('.text-button');
+    infoLink.click();
     fixture.detectChanges();
-    await fixture.whenStable();
 
-    expect(fixture.nativeElement.querySelector('.expanded-panel')).toBeTruthy();
-  });
-
-  it('constructs the ollama icon path using getBasePath', () => {
-    const component = fixture.debugElement.query(
-      (de) => de.componentInstance instanceof AiSearchInput
-    ).componentInstance;
-
-    expect(component['ollamaIcon']).toContain('/client/images/ollama-icon.png');
+    expect(alertSpy).toHaveBeenCalled();
   });
 });

@@ -1,8 +1,8 @@
 <libc-dialog-shell>
   <ng-container dialog-shell-top-content>
     <h3 class="dialog-title">
-      <i class="material-icons" [title]="translations.titleNewCollectionItem()"> add_photo_alternate </i>
-      {{ translations.titleNewCollectionItem() }}
+      <i class="material-icons" [title]="dialogTitle()"> add_photo_alternate </i>
+      {{ dialogTitle() }}
     </h3>
   </ng-container>
   <ng-container dialog-shell-content>
@@ -44,11 +44,13 @@
             }
           </ng-container></libc-autocomplete
         >
-        <libc-checkbox
-          data-test-id="new-item-watched"
-          [formField]="form.watched"
-          [label]="translations.collectionItemWatched()"
-        />
+        @if (!watchLater()) {
+          <libc-checkbox
+            data-test-id="new-item-watched"
+            [formField]="form.watched"
+            [label]="translations.collectionItemWatched()"
+          />
+        }
       }
       <div class="form-buttons">
         <button data-test-id="new-item-save" type="submit" [disabled]="form().invalid()" (click)="submitMode.set(null)">

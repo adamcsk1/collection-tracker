@@ -1,6 +1,6 @@
 @if (apiLoadNetworkStatus() === 'pending') {
   {{ translations.messageLoadStatistics() }}
-} @else if ((statistics()?.totalItems ?? 0) === 0) {
+} @else if ((statistics()?.totalItems ?? 0) === 0 && (statistics()?.watchLaterCount ?? 0) === 0) {
   <span data-test-id="statistics-empty">{{ translations.messageEmptyStatistics() }}</span>
 } @else {
   <h2>{{ translations.summary() }}</h2>
@@ -36,11 +36,20 @@
       <button
         data-test-id="statistics-summary-favorites"
         class="card card-interactive stat-card"
-        (click)="onNavigateToCollection('#favorite')"
+        (click)="onNavigateToFavorites()"
         [attr.aria-label]="translations.favorites() + ': ' + summary.favorites"
       >
         <span class="stat-value">{{ summary.favorites }}</span>
         <span class="stat-label">{{ translations.favorites() }}</span>
+      </button>
+      <button
+        data-test-id="statistics-summary-watch-later"
+        class="card card-interactive stat-card"
+        (click)="onNavigateToWatchLater()"
+        [attr.aria-label]="translations.watchLater() + ': ' + summary.watchLater"
+      >
+        <span class="stat-value">{{ summary.watchLater }}</span>
+        <span class="stat-label">{{ translations.watchLater() }}</span>
       </button>
       <button
         data-test-id="statistics-summary-watched"

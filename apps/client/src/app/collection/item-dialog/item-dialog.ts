@@ -8,7 +8,7 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import { FAVORITE_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
+import { FAVORITE_TAG, VIRTUAL_TAGS, WATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
@@ -45,6 +45,7 @@ export class ItemDialog implements OnInit {
   private readonly lastSavedItem = signal<CollectionItemChangeApiModel | null>(null);
   protected readonly translations = {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
+    titleWatchLaterItem: computed(() => this.ngxSignalTranslate.translate('Title.WatchLaterItem')),
     labelTitle: computed(() => this.ngxSignalTranslate.translate('Label.Title')),
     labelIMDbId: computed(() => this.ngxSignalTranslate.translate('Label.IMDbId')),
     labelYear: computed(() => this.ngxSignalTranslate.translate('Label.Year')),
@@ -86,7 +87,12 @@ export class ItemDialog implements OnInit {
     plot: '',
   });
   protected readonly genreText = computed(() => this.draftItem().genre.join(', '));
-  protected readonly tagsText = computed(() => this.draftItem().tags.join(' '));
+  protected readonly tagsText = computed(() =>
+    this.draftItem()
+      .tags.filter((tag) => tag !== WATCH_LATER_TAG)
+      .join(' ')
+  );
+  protected readonly detailTags = computed(() => this.collectionItem().tags.filter((tag) => tag !== WATCH_LATER_TAG));
   protected readonly editMode = signal(false);
   protected readonly posterImageFailed = signal(false);
   protected readonly isShared = computed(() => {
@@ -124,6 +130,10 @@ export class ItemDialog implements OnInit {
   });
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG));
   protected readonly favorite = computed(() => this.collectionItem().tags.includes(FAVORITE_TAG));
+  protected readonly watchLater = computed(() => this.collectionItem().tags.includes(WATCH_LATER_TAG));
+  protected readonly dialogTitle = computed(() =>
+    this.watchLater() ? this.translations.titleWatchLaterItem() : this.translations.titleCollectionItem()
+  );
   protected readonly draftImageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.draftItem().image)
   );
@@ -205,7 +215,11 @@ export class ItemDialog implements OnInit {
   }
 
   protected onSaveChanges(): void {
-    const item = this.draftItem();
+    let item = this.draftItem();
+    if (this.watchLater() && !item.tags.includes(WATCH_LATER_TAG)) {
+      item = { ...item, tags: [...item.tags, WATCH_LATER_TAG] };
+      this.draftItem.set(item);
+    }
     if (!item.title.trim() || !item.IMDbId.trim()) {
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.MissingRequiredField'));
       return;
@@ -214,6 +228,14 @@ export class ItemDialog implements OnInit {
     const hasVirtualTag = item.tags.some((tag) => VIRTUAL_TAGS.includes(tag));
     if (hasVirtualTag) {
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.VirtualTagNotAllowed'));
+      return;
+    }
+
+    const hasInvalidWatchLaterTag =
+      (!this.watchLater() && item.tags.includes(WATCH_LATER_TAG)) ||
+      (this.watchLater() && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG)));
+    if (hasInvalidWatchLaterTag) {
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.UsedInternalTag'));
       return;
     }
 

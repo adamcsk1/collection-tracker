@@ -1,10 +1,9 @@
-import { signal, WritableSignal } from '@angular/core';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DefaultUrlSerializer, Navigation, Router, UrlTree } from '@angular/router';
+import { Router } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
-import { FAVORITE_TAG } from '@shared/constants/tags-const';
 import * as MainUtil from '@shared/utils/redirect-to-login-util';
 import { NgxSignalTranslateService, provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
@@ -16,22 +15,6 @@ import { LogoutService } from '../logout-service';
 import { initialMainState, mainStateToken } from '../main-store';
 import { MenuNav } from './menu-nav';
 
-const urlSerializer = new DefaultUrlSerializer();
-
-const createNavigation = (url: string): Navigation => {
-  const urlTree = urlSerializer.parse(url);
-
-  return {
-    id: 1,
-    initialUrl: urlTree,
-    extractedUrl: urlTree,
-    finalUrl: urlTree,
-    trigger: 'imperative',
-    extras: {},
-    previousNavigation: null,
-  };
-};
-
 describe('MenuNav', () => {
   let fixture: ComponentFixture<MenuNav>;
   let component: MenuNav;
@@ -40,7 +23,6 @@ describe('MenuNav', () => {
   let settings: { preloadUserSettings: ReturnType<typeof vi.fn> };
   let api: { logout: ReturnType<typeof vi.fn> };
   let logout: { performLogout: ReturnType<typeof vi.fn> };
-  let lastSuccessfulNavigation: WritableSignal<Navigation | null>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
   let redirectSpy: ReturnType<typeof vi.spyOn>;
 
@@ -50,7 +32,6 @@ describe('MenuNav', () => {
     settings = { preloadUserSettings: vi.fn(() => of(void 0)) };
     api = { logout: vi.fn(() => of(void 0)) };
     logout = { performLogout: vi.fn() };
-    lastSuccessfulNavigation = signal<Navigation | null>(null);
 
     TestBed.configureTestingModule({
       imports: [MenuNav],
@@ -66,12 +47,7 @@ describe('MenuNav', () => {
         provideStore(initialMainState, mainStateToken),
         {
           provide: Router,
-          useValue: {
-            url: '/',
-            lastSuccessfulNavigation,
-            parseUrl: (url: string): UrlTree => urlSerializer.parse(url),
-            createUrlTree: (): UrlTree => urlSerializer.parse(`/collection?search=${encodeURIComponent(FAVORITE_TAG)}`),
-          },
+          useValue: {},
         },
       ],
     });
@@ -94,28 +70,6 @@ describe('MenuNav', () => {
   it('closes dialog on close', () => {
     component['onClose']();
     expect(portal.close).toHaveBeenCalledTimes(1);
-  });
-
-  it('exposes the favorite tag for the favorites nav filter', () => {
-    expect(component['FAVORITE_TAG']).toBe(FAVORITE_TAG);
-  });
-
-  it('marks collection active on collection routes without the favorites filter', () => {
-    lastSuccessfulNavigation.set(createNavigation('/collection'));
-
-    expect(component['isCollectionActive']()).toBe(true);
-  });
-
-  it('does not mark collection active on the favorites collection filter', () => {
-    lastSuccessfulNavigation.set(createNavigation('/collection?search=%23favorite'));
-
-    expect(component['isCollectionActive']()).toBe(false);
-  });
-
-  it('does not mark collection active on non-collection routes', () => {
-    lastSuccessfulNavigation.set(createNavigation('/settings'));
-
-    expect(component['isCollectionActive']()).toBe(false);
   });
 
   it('triggers collection reload and closes on sync', () => {

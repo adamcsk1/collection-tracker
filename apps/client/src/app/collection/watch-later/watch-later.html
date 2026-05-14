@@ -1,0 +1,10 @@
+<div class="collection-container">
+  <ct-list [routeSearchText]="watchLaterTag">
+    <span list-empty>
+      {{ translations.messageEmptyWatchLater() }}<br />
+      <a data-test-id="add-first-watch-later-item" href="#" role="button" (click)="onAddWatchLater($event)">{{
+        translations.messageAddFirstWatchLater()
+      }}</a>
+    </span>
+  </ct-list>
+</div>

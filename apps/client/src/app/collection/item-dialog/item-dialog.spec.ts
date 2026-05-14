@@ -4,7 +4,14 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import {
+  FAVORITE_TAG,
+  MOVIE_TAG,
+  SERIES_TAG,
+  VIRTUAL_UNWATCHED_TAG,
+  WATCHED_TAG,
+  WATCH_LATER_TAG,
+} from '@shared/constants/tags-const';
 import { CollectionItemApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -151,6 +158,24 @@ describe('ItemDialog', () => {
     expect(component['favorite']()).toBe(true);
   });
 
+  it('computes watch later status from tags', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCH_LATER_TAG] }));
+    fixture.detectChanges();
+
+    expect(component['watchLater']()).toBe(true);
+  });
+
+  it('returns collection item title for normal items', () => {
+    expect(component['dialogTitle']()).toBe('Title.CollectionItem');
+  });
+
+  it('returns watch later item title for watch later items', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCH_LATER_TAG] }));
+    fixture.detectChanges();
+
+    expect(component['dialogTitle']()).toBe('Title.WatchLaterItem');
+  });
+
   it('uses incoming share permissions for shared collection items', () => {
     sharesState.setState('incoming', [
       {
@@ -218,6 +243,21 @@ describe('ItemDialog', () => {
   it('computes genre and tags text from draft item', () => {
     expect(component['genreText']()).toBe('Drama, Thriller');
     expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+  });
+
+  it('hides the internal watch later tag from editable tag text', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WATCH_LATER_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+  });
+
+  it('hides the internal watch later tag from detail tags', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WATCH_LATER_TAG] }));
+    fixture.detectChanges();
+
+    expect(component['detailTags']()).toEqual([MOVIE_TAG, '#action']);
   });
 
   it('deletes an item after confirmation', () => {
@@ -302,6 +342,46 @@ describe('ItemDialog', () => {
     expect(confirm.open).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.VirtualTagNotAllowed');
     expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('does not save when a normal item is changed to watch later', () => {
+    component['updateDraft']('tags', [MOVIE_TAG, WATCH_LATER_TAG]);
+
+    component['onSaveChanges']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.UsedInternalTag');
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('does not save when a watch later item is marked watched', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCH_LATER_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['updateDraft']('tags', [MOVIE_TAG, WATCH_LATER_TAG, WATCHED_TAG]);
+
+    component['onSaveChanges']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.UsedInternalTag');
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('keeps the internal watch later tag when saving watch later edits', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCH_LATER_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['updateDraft']('tags', [MOVIE_TAG, '#later']);
+
+    component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [MOVIE_TAG, '#later', WATCH_LATER_TAG] }),
+      'testhash',
+      undefined
+    );
   });
 
   it('does not save when tags lack a type tag', () => {

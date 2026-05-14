@@ -9,7 +9,7 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
+import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -143,9 +143,25 @@ describe('List', () => {
     }
   });
 
-  it('shows a favorite-specific empty message on the favorites page', async () => {
+  it('keeps the initial route search after the store search debounce settles', async () => {
+    vi.useFakeTimers();
+    try {
+      collectionState.setState('searchText', 'typed');
+      fixture.componentRef.setInput('routeSearchText', '#favorite');
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await vi.runAllTimersAsync();
+      fixture.detectChanges();
+
+      expect(api.searchItems).toHaveBeenLastCalledWith({ tags: ['#favorite'], tagMode: 'all' }, 0, 50);
+      expect(api.searchItems).not.toHaveBeenCalledWith({ search: 'typed' }, 0, 50);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows the collection empty message when the collection is empty', async () => {
     api.searchItems.mockReturnValue(of({ items: [], total: 0, offset: 0, limit: 50 }));
-    fixture.componentRef.setInput('routeSearchText', '#favorite');
     vi.useFakeTimers();
     try {
       fixture.detectChanges();
@@ -154,9 +170,9 @@ describe('List', () => {
       fixture.detectChanges();
 
       const emptyMessage = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-empty"]');
-      expect(emptyMessage?.textContent).toContain('Message.EmptyFavorites');
-      expect(emptyMessage?.textContent).toContain('Message.AddFirstFavorite');
-      expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="add-first-item"]')).toBeNull();
+      expect(emptyMessage?.textContent).toContain('Message.EmptyCollection');
+      expect(emptyMessage?.textContent).toContain('Message.AddFirstCollectionItem');
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="add-first-item"]')).toBeTruthy();
     } finally {
       vi.useRealTimers();
     }
@@ -175,6 +191,33 @@ describe('List', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('shows the search empty message when filtered results are empty', async () => {
+    api.searchItems.mockReturnValue(of({ items: [], total: 0, offset: 0, limit: 50 }));
+    fixture.componentRef.setInput('routeSearchText', '#favorite');
+    vi.useFakeTimers();
+    try {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await vi.runAllTimersAsync();
+      fixture.detectChanges();
+
+      const emptyMessage = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-empty"]');
+      expect(emptyMessage?.textContent).toContain('Message.EmptySearch');
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="add-first-item"]')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('opens the new item dialog in watch later mode on the watch later page', () => {
+    fixture.componentRef.setInput('routeSearchText', WATCH_LATER_TAG);
+    fixture.detectChanges();
+
+    component['onAddNew']();
+
+    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), { watchLater: true });
   });
 
   it('opens a random item from the server', async () => {
@@ -197,6 +240,29 @@ describe('List', () => {
     component['onScroll']();
 
     expect(api.searchItems).toHaveBeenCalledWith({}, 1, 50);
+  });
+
+  it('loads more route-filtered items when scrolled on a prefiltered page', async () => {
+    vi.useFakeTimers();
+    try {
+      fixture.componentRef.setInput('routeSearchText', WATCH_LATER_TAG);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await vi.runAllTimersAsync();
+      fixture.detectChanges();
+
+      api.searchItems.mockClear();
+      component['collectionLength'].set(6);
+      component['visibleCollection'].set([buildItem('One')]);
+      const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100 };
+      (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
+
+      component['onScroll']();
+
+      expect(api.searchItems).toHaveBeenCalledWith({ tags: [WATCH_LATER_TAG], tagMode: 'all' }, 1, 50);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('requests matched items for AI search results', () => {

@@ -1,0 +1,8 @@
+<div class="collection-container">
+  <ct-list [hideFloatActions]="true" [routeSearchText]="favoriteTag">
+    <span list-empty>
+      {{ translations.messageEmptyFavorites() }}<br />
+      {{ translations.messageAddFirstFavorite() }}
+    </span>
+  </ct-list>
+</div>
