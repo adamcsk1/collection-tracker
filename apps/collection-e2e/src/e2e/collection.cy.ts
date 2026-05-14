@@ -315,6 +315,41 @@ describe('Collection — favorites', () => {
   });
 });
 
+describe('Collection — wishlist', () => {
+  const wishlistTitle = 'Wishlist Test Movie';
+
+  beforeEach(() => {
+    cy.intercept('GET', '/api/v1/proxy/omdb/search*', {
+      statusCode: 200,
+      body: buildOmdbSearchResult(wishlistTitle, 'tt8100001'),
+    }).as('wishlistOmdbSearch');
+    cy.intercept('GET', '/api/v1/proxy/omdb/item*', {
+      statusCode: 200,
+      body: buildOmdbItem(wishlistTitle, 'tt8100001'),
+    }).as('wishlistOmdbItem');
+
+    cy.autoLogin();
+  });
+
+  it('navigates via the menu and adds a wishlist item from the empty state', () => {
+    CommonPage.openMenu();
+    CommonPage.getNavWishlistLink().click();
+
+    cy.url().should('include', '#/collection/wishlist');
+    cy.getByTestId('collection-search').should('not.exist');
+    CollectionPage.getAddFirstWishlistItemLink().click();
+
+    CollectionPage.getNewItemSearchInput().type(wishlistTitle);
+    cy.wait('@wishlistOmdbSearch');
+    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemSaveAndCloseButton().click();
+    cy.wait('@wishlistOmdbItem');
+
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', wishlistTitle);
+  });
+});
+
 describe('Collection - sync', () => {
   beforeEach(() => {
     cy.autoLogin();
