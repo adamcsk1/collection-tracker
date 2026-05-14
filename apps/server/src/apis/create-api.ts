@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { FAVORITE_TAG, WATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
+import { FAVORITE_TAG, WATCHED_TAG, WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
@@ -21,11 +21,16 @@ export const register = (app: FastifyInstance): void => {
         return response.code(400).send();
       }
 
-      const isWatchLaterItem = item.tags.includes(WATCH_LATER_TAG);
-      if (isWatchLaterItem && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG))) {
+      const internalCollectionTags = [WATCH_LATER_TAG, WISHLIST_TAG];
+      const itemInternalCollectionTags = item.tags.filter((tag) => internalCollectionTags.includes(tag));
+      const isInternalCollectionItem = itemInternalCollectionTags.length > 0;
+      if (
+        itemInternalCollectionTags.length > 1 ||
+        (isInternalCollectionItem && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG)))
+      ) {
         return response.code(400).send();
       }
-      if (isWatchLaterItem && typeof body.targetOwnerShareCode === 'string') {
+      if (isInternalCollectionItem && typeof body.targetOwnerShareCode === 'string') {
         return response.code(400).send();
       }
 

@@ -5,6 +5,7 @@ import {
   VIRTUAL_TAGS,
   WATCH_LATER_TAG,
   WATCHED_TAG,
+  WISHLIST_TAG,
 } from '@shared/constants/tags-const';
 import {
   CollectionItemApiModel,
@@ -47,8 +48,16 @@ interface QueryParts {
   params: Array<string | number>;
 }
 
-const INTERNAL_TAGS = [WATCHED_TAG, FAVORITE_TAG, WATCH_LATER_TAG, MOVIE_TAG, SERIES_TAG];
-const SUGGESTION_SYSTEM_TAGS = [...VIRTUAL_TAGS, WATCHED_TAG, FAVORITE_TAG, WATCH_LATER_TAG, MOVIE_TAG, SERIES_TAG];
+const INTERNAL_COLLECTION_TAGS = [WATCH_LATER_TAG, WISHLIST_TAG];
+const INTERNAL_TAGS = [WATCHED_TAG, FAVORITE_TAG, ...INTERNAL_COLLECTION_TAGS, MOVIE_TAG, SERIES_TAG];
+const SUGGESTION_SYSTEM_TAGS = [
+  ...VIRTUAL_TAGS,
+  WATCHED_TAG,
+  FAVORITE_TAG,
+  ...INTERNAL_COLLECTION_TAGS,
+  MOVIE_TAG,
+  SERIES_TAG,
+];
 
 const escapeLike = (value: string): string => value.replace(/[\\%_]/g, (match) => `\\${match}`);
 
@@ -62,6 +71,14 @@ const addTagExists = (queryParts: QueryParts, tag: string, exists = true): void 
     WHERE tag_filter.item_id = collection_items.id AND LOWER(tag_filter.tag) = ?
   )`);
   queryParts.params.push(tag.toLowerCase());
+};
+
+const addTagInExists = (queryParts: QueryParts, tags: string[], exists = true): void => {
+  queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
+    SELECT 1 FROM collection_item_tags tag_filter
+    WHERE tag_filter.item_id = collection_items.id AND LOWER(tag_filter.tag) IN (${tags.map(() => '?').join(', ')})
+  )`);
+  queryParts.params.push(...tags.map((tag) => tag.toLowerCase()));
 };
 
 const addGenreExists = (queryParts: QueryParts, genre: string): void => {
@@ -107,12 +124,14 @@ const addSearchFilter = (queryParts: QueryParts, search: string): void => {
 
 const addFilters = (queryParts: QueryParts, filters: CollectionItemFiltersApiModel | undefined): void => {
   const requestedTags = (filters?.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
-  const includesWatchLaterTag = requestedTags.some((tag) => tag.toLowerCase() === WATCH_LATER_TAG);
-  const tags = requestedTags.filter((tag) => tag.toLowerCase() !== WATCH_LATER_TAG);
-  if (includesWatchLaterTag) {
-    addTagExists(queryParts, WATCH_LATER_TAG);
+  const requestedInternalCollectionTags = INTERNAL_COLLECTION_TAGS.filter((internalTag) =>
+    requestedTags.some((tag) => tag.toLowerCase() === internalTag)
+  );
+  const tags = requestedTags.filter((tag) => !INTERNAL_COLLECTION_TAGS.includes(tag.toLowerCase()));
+  if (requestedInternalCollectionTags.length) {
+    for (const internalTag of requestedInternalCollectionTags) addTagExists(queryParts, internalTag);
   } else {
-    addTagExists(queryParts, WATCH_LATER_TAG, false);
+    addTagInExists(queryParts, INTERNAL_COLLECTION_TAGS, false);
   }
   if (!filters) return;
 
@@ -218,14 +237,15 @@ export const findCollectionItems = (
       `SELECT *
        FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-       AND NOT EXISTS (
-         SELECT 1 FROM collection_item_tags
-         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-       )
+        AND NOT EXISTS (
+          SELECT 1 FROM collection_item_tags
+          WHERE collection_item_tags.item_id = collection_items.id
+          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
+        )
        ORDER BY created_at DESC, id DESC
        LIMIT ? OFFSET ?`
     )
-    .all(...usernameHashes, WATCH_LATER_TAG, limit, offset) as CollectionItemRow[];
+    .all(...usernameHashes, ...INTERNAL_COLLECTION_TAGS, limit, offset) as CollectionItemRow[];
 
   return rows.map((row) => toApiItem(db, row));
 };
@@ -313,14 +333,23 @@ export const findCollectionItemSuggestions = (
          OR LOWER(actors) LIKE ? ESCAPE '\\'
          OR LOWER(plot) LIKE ? ESCAPE '\\'
         )
-       AND NOT EXISTS (
-         SELECT 1 FROM collection_item_tags
-         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-       )
+        AND NOT EXISTS (
+          SELECT 1 FROM collection_item_tags
+          WHERE collection_item_tags.item_id = collection_items.id
+          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
+        )
        ORDER BY created_at DESC, id DESC
        LIMIT ?`
     )
-    .all(...usernameHashes, likeQuery, likeQuery, likeQuery, likeQuery, WATCH_LATER_TAG, normalizedLimit) as Array<{
+    .all(
+      ...usernameHashes,
+      likeQuery,
+      likeQuery,
+      likeQuery,
+      likeQuery,
+      ...INTERNAL_COLLECTION_TAGS,
+      normalizedLimit
+    ) as Array<{
     imdb_id: string;
     title: string;
   }>;
@@ -398,7 +427,7 @@ export const getCollectionStatistics = (
   db: Database.Database,
   usernameHashes: string[],
   filters?: CollectionItemFiltersApiModel,
-  watchLaterUsernameHash?: string
+  internalCollectionUsernameHash?: string
 ): CollectionStatisticsApiResponseModel => {
   const queryParts = buildItemWhere(usernameHashes, filters);
   const whereSql = queryParts.where.join(' AND ');
@@ -435,7 +464,21 @@ export const getCollectionStatistics = (
            WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
          )`
       )
-      .get(watchLaterUsernameHash ?? usernameHashes[0], WATCH_LATER_TAG) as { count: number }
+      .get(internalCollectionUsernameHash ?? usernameHashes[0], WATCH_LATER_TAG) as { count: number }
+  ).count;
+
+  const wishlistCount = (
+    db
+      .prepare(
+        `SELECT COUNT(*) as count
+         FROM collection_items
+         WHERE username_hash = ?
+         AND EXISTS (
+           SELECT 1 FROM collection_item_tags
+           WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+         )`
+      )
+      .get(internalCollectionUsernameHash ?? usernameHashes[0], WISHLIST_TAG) as { count: number }
   ).count;
 
   const tagCounts = db
@@ -465,6 +508,7 @@ export const getCollectionStatistics = (
     seriesCount: countTag(SERIES_TAG),
     favoriteCount: countTag(FAVORITE_TAG),
     watchLaterCount,
+    wishlistCount,
     watchedCount: countTag(WATCHED_TAG),
     unwatchedCount: countTag(WATCHED_TAG, false),
     tagCounts,
@@ -481,13 +525,14 @@ export const findCollectionItemsForPrompt = (
       `SELECT *
        FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-       AND NOT EXISTS (
-         SELECT 1 FROM collection_item_tags
-         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-       )
+        AND NOT EXISTS (
+          SELECT 1 FROM collection_item_tags
+          WHERE collection_item_tags.item_id = collection_items.id
+          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
+        )
        ORDER BY created_at DESC, id DESC`
     )
-    .all(...usernameHashes, WATCH_LATER_TAG) as CollectionItemRow[];
+    .all(...usernameHashes, ...INTERNAL_COLLECTION_TAGS) as CollectionItemRow[];
 
   return rows.reduce<CollectionItemApiModel[]>((items, row) => {
     if (!row.imdb_id) return items;
@@ -505,13 +550,14 @@ export const findRandomCollectionItem = (
     .prepare(
       `SELECT * FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-       AND NOT EXISTS (
-         SELECT 1 FROM collection_item_tags
-         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-       )
+        AND NOT EXISTS (
+          SELECT 1 FROM collection_item_tags
+          WHERE collection_item_tags.item_id = collection_items.id
+          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
+        )
        ORDER BY RANDOM() LIMIT 1`
     )
-    .get(...usernameHashes, WATCH_LATER_TAG) as CollectionItemRow | undefined;
+    .get(...usernameHashes, ...INTERNAL_COLLECTION_TAGS) as CollectionItemRow | undefined;
 
   return row ? toApiItem(db, row) : undefined;
 };
@@ -525,13 +571,14 @@ export const findRandomCollectionImages = (
     .prepare(
       `SELECT image FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND image != ?
-       AND NOT EXISTS (
-         SELECT 1 FROM collection_item_tags
-         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-       )
+        AND NOT EXISTS (
+          SELECT 1 FROM collection_item_tags
+          WHERE collection_item_tags.item_id = collection_items.id
+          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
+        )
        ORDER BY RANDOM() LIMIT ?`
     )
-    .all(...usernameHashes, '', WATCH_LATER_TAG, count) as Array<{ image: string }>;
+    .all(...usernameHashes, '', ...INTERNAL_COLLECTION_TAGS, count) as Array<{ image: string }>;
 
   return rows.map((row) => row.image);
 };
@@ -541,12 +588,13 @@ export const countCollectionItems = (db: Database.Database, usernameHashes: stri
     .prepare(
       `SELECT COUNT(*) as count FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-       AND NOT EXISTS (
-         SELECT 1 FROM collection_item_tags
-         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-       )`
+        AND NOT EXISTS (
+          SELECT 1 FROM collection_item_tags
+          WHERE collection_item_tags.item_id = collection_items.id
+          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
+        )`
     )
-    .get(...usernameHashes, WATCH_LATER_TAG) as { count: number };
+    .get(...usernameHashes, ...INTERNAL_COLLECTION_TAGS) as { count: number };
   return row.count;
 };
 
@@ -669,16 +717,17 @@ export const markAllAsWatched = (db: Database.Database, usernameHash: string): n
     .prepare(
       `SELECT * FROM collection_items
        WHERE username_hash = ?
-       AND NOT EXISTS (
-         SELECT 1 FROM collection_item_tags
-         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-       )
+        AND NOT EXISTS (
+          SELECT 1 FROM collection_item_tags
+          WHERE collection_item_tags.item_id = collection_items.id
+          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
+        )
        AND NOT EXISTS (
          SELECT 1 FROM collection_item_tags
          WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
        )`
     )
-    .all(usernameHash, WATCH_LATER_TAG, WATCHED_TAG) as CollectionItemRow[];
+    .all(usernameHash, ...INTERNAL_COLLECTION_TAGS, WATCHED_TAG) as CollectionItemRow[];
 
   let changedCount = 0;
   const transaction = db.transaction(() => {
@@ -703,16 +752,17 @@ export const markAllAsUnwatched = (db: Database.Database, usernameHash: string):
     .prepare(
       `SELECT * FROM collection_items
        WHERE username_hash = ?
-       AND NOT EXISTS (
-         SELECT 1 FROM collection_item_tags
-         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-       )
+        AND NOT EXISTS (
+          SELECT 1 FROM collection_item_tags
+          WHERE collection_item_tags.item_id = collection_items.id
+          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
+        )
        AND EXISTS (
          SELECT 1 FROM collection_item_tags
          WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
        )`
     )
-    .all(usernameHash, WATCH_LATER_TAG, WATCHED_TAG) as CollectionItemRow[];
+    .all(usernameHash, ...INTERNAL_COLLECTION_TAGS, WATCHED_TAG) as CollectionItemRow[];
 
   let changedCount = 0;
   const transaction = db.transaction(() => {

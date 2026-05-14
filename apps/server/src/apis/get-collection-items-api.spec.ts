@@ -171,6 +171,27 @@ describe('get-collection-items-api', () => {
     );
   });
 
+  it('excludes wishlist items from the default collection list', async () => {
+    insertUser('user');
+    insertItem('user', 'tt-normal', 'Normal Item');
+    insertItem('user', 'tt-wishlist', 'Wishlist Item');
+    insertTag('tt-wishlist', '#wishlist');
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: {} };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [expect.objectContaining({ title: 'Normal Item' })],
+        total: 1,
+      })
+    );
+  });
+
   it('returns own watch later items when explicitly requested', async () => {
     insertUser('user');
     insertUser('owner');
@@ -190,6 +211,30 @@ describe('get-collection-items-api', () => {
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
         items: [expect.objectContaining({ title: 'Own Watch Later Item' })],
+        total: 1,
+      })
+    );
+  });
+
+  it('returns own wishlist items when explicitly requested', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertItem('user', 'tt-own-wishlist', 'Own Wishlist Item');
+    insertItem('owner', 'tt-shared-wishlist', 'Shared Wishlist Item');
+    insertTag('tt-own-wishlist', '#wishlist');
+    insertTag('tt-shared-wishlist', '#wishlist');
+    insertShare('owner', 'user', true);
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { tags: '#wishlist', tagMode: 'all' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [expect.objectContaining({ title: 'Own Wishlist Item' })],
         total: 1,
       })
     );

@@ -62,6 +62,7 @@ export interface CollectionStatisticsApiResponseModel {
   seriesCount: number;
   favoriteCount: number;
   watchLaterCount: number;
+  wishlistCount: number;
   watchedCount: number;
   unwatchedCount: number;
   tagCounts: Array<{ tag: string; count: number }>;
