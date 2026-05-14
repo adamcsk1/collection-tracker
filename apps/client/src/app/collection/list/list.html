@@ -25,17 +25,16 @@
     @if (apiLoadNetworkStatus() !== 'pending') {
       <div data-test-id="list-empty" class="list-empty">
         <i class="material-icons">movie</i>
-        @if (isFavoritePrefiltered()) {
-          {{ translations.messageEmptyFavorites() }}<br />
-          {{ translations.messageAddFirstFavorite() }}
-        } @else if (collectionLength() === 0) {
-          {{ translations.messageEmptyCollection() }}<br />
-          <a data-test-id="add-first-item" href="#" role="button" (click)="onAddNew()">{{
-            translations.messageAddFirstCollectionItem()
-          }}</a>
-        } @else {
-          {{ translations.messageEmptySearch() }}<br />
-        }
+        <ng-content select="[list-empty]">
+          @if (!debouncedSearchText().trim() && collectionLength() === 0) {
+            {{ translations.messageEmptyCollection() }}<br />
+            <a data-test-id="add-first-item" href="#" role="button" (click)="onAddNew()">{{
+              translations.messageAddFirstCollectionItem()
+            }}</a>
+          } @else {
+            {{ translations.messageEmptySearch() }}<br />
+          }
+        </ng-content>
       </div>
     }
   }
@@ -49,6 +48,8 @@
   [scrollToTopAvailable]="scrollToTopAvailable()"
   [collectionLength]="collectionLength()"
   [hideActions]="hideFloatActions()"
+  [showAiSearchButton]="!isWatchLaterPrefiltered()"
+  [showRandomPickButton]="!isWatchLaterPrefiltered()"
   (randomPick)="onRandomPick()"
   (toggleAiSearch)="onToggleAiSearch()"
   (addNew)="onAddNew()"

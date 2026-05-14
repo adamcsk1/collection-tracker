@@ -4,6 +4,7 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
+import { WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -35,7 +36,7 @@ export class NewItemDialogService {
     this.omdb.getMatchedContents(searchText);
   }
 
-  public save(selectedIMDbId: string, tags: string, mode: SaveMode, targetOwnerShareCode?: string) {
+  public save(selectedIMDbId: string, tags: string, mode: SaveMode, targetOwnerShareCode?: string, watchLater = false) {
     return this.omdb.getSelectedContent(selectedIMDbId).pipe(
       skip(1),
       take(1),
@@ -47,7 +48,11 @@ export class NewItemDialogService {
           title: selectedContent.Title,
           genre: parseGenreText(selectedContent.Genre),
           IMDbId: selectedContent.imdbID,
-          tags: [`#${selectedContent.Type.toLowerCase()}`, ...parseTagText(tags)],
+          tags: [
+            `#${selectedContent.Type.toLowerCase()}`,
+            ...parseTagText(tags),
+            ...(watchLater ? [WATCH_LATER_TAG] : []),
+          ],
           year: Number(selectedContent.Year) || null,
           rate: selectedContent.imdbRating,
           actors: selectedContent.Actors,

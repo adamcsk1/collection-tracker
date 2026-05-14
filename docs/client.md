@@ -6,7 +6,8 @@ Source: [`apps/client`](../apps/client)
 
 ## Functional Areas
 
-- `collection`: search and browse stored collection items; includes AI natural-language search via `AiSearchService` and `AiSearchInput`
+- `collection/library`: search and browse stored collection items; includes AI natural-language search via `AiSearchService` and `AiSearchInput`
+- `collection/favorites` and `collection/watch-later`: filtered collection subroutes for saved item lists
 - `statistics`: tag-driven summaries and Chart.js visualizations
 - `settings/tag-configs`: per-tag color, weight, and presentation rules
 - `settings`: theme, search, account actions, access tokens, image refresh, and global watch-status actions
@@ -41,4 +42,4 @@ npx nx run client:format-check
 
 - Standalone dev server: `http://localhost:4202/`
 - Proxied path: `http://localhost:4200/client/`
-- Because the router uses `withHashLocation()`, feature URLs resolve under `#/`, for example `http://localhost:4200/client/#/collection`.
+- Because the router uses `withHashLocation()`, feature URLs resolve under `#/`, for example `http://localhost:4200/client/#/collection/library`.

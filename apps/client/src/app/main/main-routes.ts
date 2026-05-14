@@ -5,7 +5,7 @@ import { settingsLockedGuard } from '../settings/settings-locked-guard';
 export const routes: Routes = [
   {
     path: 'collection',
-    loadComponent: () => import('../collection/collection').then((module) => module.Collection),
+    loadChildren: () => import('../collection/collection-routes').then((module) => module.collectionRoutes),
     canActivate: [mainGuard],
   },
   {

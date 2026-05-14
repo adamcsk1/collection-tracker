@@ -196,6 +196,17 @@ describe('FloatButtons', () => {
     expect(button?.querySelector('.ai-offline-icon')).toBeTruthy();
   });
 
+  it('can hide AI search and random pick while keeping add available', () => {
+    fixture.componentRef.setInput('showAiSearchButton', false);
+    fixture.componentRef.setInput('showRandomPickButton', false);
+    fixture.detectChanges();
+
+    expect(findButton('add')).toBeTruthy();
+    expect(getAiSearchButton()).toBeNull();
+    expect(findButton('casino')).toBeUndefined();
+    expect(fixture.nativeElement.querySelector('[data-test-id="show-functions"]')).toBeNull();
+  });
+
   it('emits showFunctions when expanding the float buttons', () => {
     const emitted: void[] = [];
     component.showFunctions.subscribe(() => emitted.push(undefined));

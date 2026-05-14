@@ -1,0 +1,23 @@
+<div class="collection-container">
+  @if (!useStandardSearch()) {
+    <div class="search-input">
+      <ct-ai-search-input
+        [formField]="aiSearchPromptTextField"
+        [placeholder]="translations.placeholderReply()"
+        (sendEvent)="onAiSearchSend()"
+      />
+    </div>
+  } @else {
+    <libc-autocomplete
+      data-test-id="collection-search"
+      [placeholder]="translations.placeholderSearchInCollection()"
+      [formField]="searchTextField"
+      [showReset]="true"
+      (userEvent)="onSearchFromUser()"
+      (userAcceptSuggestionEvent)="onSearchAccepted()"
+    />
+  }
+  @defer (prefetch on idle) {
+    <ct-list [routeSearchText]="querySearch()" />
+  }
+</div>

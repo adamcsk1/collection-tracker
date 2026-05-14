@@ -108,4 +108,16 @@ describe('NewItemDialogService', () => {
     await expect(firstValueFrom(service.save('tt123', '#tag', null))).rejects.toEqual(new Error('fail'));
     expect(spinnerStore.state.show()).toBe(false);
   });
+
+  it('adds the watch later tag when saving in watch later mode', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(service.save('tt123', '#tag', 'close', undefined, true));
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({ tags: ['#movie', '#tag', '#watch-later'] }),
+      undefined
+    );
+  });
 });

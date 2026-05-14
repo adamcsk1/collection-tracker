@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { form, FormField, FormRoot, required, validate } from '@angular/forms/signals';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
@@ -39,6 +39,7 @@ export class NewItemDialog {
   private readonly knownIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownIMDbIdExists);
   protected readonly translations = {
     titleNewCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.NewCollectionItem')),
+    titleNewWatchLaterItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchLaterItem')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
     messageNewCollectionItemSearch: computed(() =>
       this.ngxSignalTranslate.translate('Message.NewCollectionItemSearch')
@@ -109,7 +110,11 @@ export class NewItemDialog {
     }
     return options;
   });
-  protected readonly showLibrarySelect = computed(() => this.libraryOptions().length > 1);
+  protected readonly showLibrarySelect = computed(() => !this.watchLater() && this.libraryOptions().length > 1);
+  public readonly watchLater = input(false);
+  protected readonly dialogTitle = computed(() =>
+    this.watchLater() ? this.translations.titleNewWatchLaterItem() : this.translations.titleNewCollectionItem()
+  );
 
   constructor() {
     effect(() => {
@@ -171,11 +176,14 @@ export class NewItemDialog {
     if (!selectedIMDbId) return;
 
     let tags = this.form.tags().value().trim();
-    const watched = this.form.watched().value();
+    const watched = !this.watchLater() && this.form.watched().value();
     if (watched) tags = tags ? `${tags} ${WATCHED_TAG}` : WATCHED_TAG;
 
-    const targetOwnerShareCode = this.form.targetOwnerShareCode().value() || undefined;
-    await firstValueFrom(this.service.save(selectedIMDbId, tags, mode, targetOwnerShareCode));
+    const targetOwnerShareCode = this.watchLater() ? undefined : this.form.targetOwnerShareCode().value() || undefined;
+    const saveRequest = this.watchLater()
+      ? this.service.save(selectedIMDbId, tags, mode, targetOwnerShareCode, true)
+      : this.service.save(selectedIMDbId, tags, mode, targetOwnerShareCode);
+    await firstValueFrom(saveRequest);
 
     if (mode === 'new') {
       this.form().reset({

@@ -15,7 +15,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { FAVORITE_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
+import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import {
@@ -58,7 +58,7 @@ export class List {
   private readonly destroyRef = inject(DestroyRef);
   private readonly aiSearch = inject(AiSearchService);
   private readonly sharesState = inject(sharesStateToken);
-  private readonly debouncedSearchText = signal('');
+  protected readonly debouncedSearchText = signal('');
   private readonly routeSearchVersion = signal(0);
   private lastRouteSearchText: string | null = null;
   private readonly aiSearchSendTrigger = computed(() => ({
@@ -76,8 +76,6 @@ export class List {
   protected readonly translations = {
     collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
     messageEmptyCollection: computed(() => this.ngxSignalTranslate.translate('Message.EmptyCollection')),
-    messageEmptyFavorites: computed(() => this.ngxSignalTranslate.translate('Message.EmptyFavorites')),
-    messageAddFirstFavorite: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstFavorite')),
     messageAddFirstCollectionItem: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstCollectionItem')),
     messageEmptySearch: computed(() => this.ngxSignalTranslate.translate('Message.EmptySearch')),
   };
@@ -87,7 +85,7 @@ export class List {
   protected readonly hasMore = computed(() => this.visibleCollection().length < this.collectionLength());
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly scrollToTopAvailable = signal(false);
-  protected readonly isFavoritePrefiltered = computed(() => this.routeSearchText() === FAVORITE_TAG);
+  protected readonly isWatchLaterPrefiltered = computed(() => this.routeSearchText() === WATCH_LATER_TAG);
   public readonly hideFloatActions = input(false);
   public readonly routeSearchText = input('');
 
@@ -111,6 +109,9 @@ export class List {
       untracked(() => {
         if (this.lastRouteSearchText === null) {
           this.lastRouteSearchText = routeSearchText;
+          if (routeSearchText) {
+            this.routeSearchVersion.update((version) => version + 1);
+          }
         } else if (this.lastRouteSearchText !== routeSearchText) {
           this.lastRouteSearchText = routeSearchText;
           this.routeSearchVersion.update((version) => version + 1);
@@ -146,7 +147,7 @@ export class List {
   }
 
   protected onAddNew(): void {
-    this.portal.open(NewItemDialog);
+    this.portal.open(NewItemDialog, { watchLater: this.isWatchLaterPrefiltered() });
   }
 
   protected onScroll(): void {
@@ -158,7 +159,7 @@ export class List {
     if (!this.hasMore() || this.apiLoadNetworkStatus() === 'pending') return;
     const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
     if (distanceFromBottom < 200) {
-      this.loadItems(false);
+      this.loadItems(false, this.debouncedSearchText());
     }
   }
 
@@ -168,6 +169,8 @@ export class List {
   }
 
   protected onShowFunctions(): void {
+    if (this.isWatchLaterPrefiltered()) return;
+
     this.aiSearch
       .checkAiAvailable()
       .pipe(

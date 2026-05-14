@@ -41,11 +41,20 @@ export class FloatButtons {
   protected readonly permissionAdd = computed(() => true);
   protected readonly showFloatButtons = signal(false);
   protected readonly actionButtonsVisible = computed(() => !this.hideActions() && this.showFloatButtons());
+  protected readonly canShowActionButton = computed(
+    () => this.showAddButton() || this.showAiSearchButton() || this.showRandomPickButton()
+  );
+  protected readonly addOnlyMode = computed(
+    () => this.showAddButton() && !this.showAiSearchButton() && !this.showRandomPickButton()
+  );
   protected readonly ollamaIcon = `${getBasePath()}/client/images/ollama-icon.png`;
 
   public readonly scrollToTopAvailable = input<boolean>(false);
   public readonly collectionLength = input.required<number>();
   public readonly hideActions = input(false);
+  public readonly showAddButton = input(true);
+  public readonly showAiSearchButton = input(true);
+  public readonly showRandomPickButton = input(true);
 
   public readonly randomPick = output<void>();
   public readonly toggleAiSearch = output<void>();
@@ -54,7 +63,11 @@ export class FloatButtons {
   public readonly showFunctions = output<void>();
 
   public onShowFunctions(): void {
-    if (this.hideActions()) return;
+    if (this.hideActions() || !this.canShowActionButton()) return;
+    if (this.addOnlyMode()) {
+      this.onAddNew();
+      return;
+    }
 
     this.showFloatButtons.set(true);
     this.showFunctions.emit();

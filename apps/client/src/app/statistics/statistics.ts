@@ -38,6 +38,7 @@ export class Statistics implements AfterViewInit {
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
     favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
+    watchLater: computed(() => this.ngxSignalTranslate.translate('WatchLater')),
     watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
     unwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
     chart: computed(() => this.ngxSignalTranslate.translate('Chart')),
@@ -64,6 +65,7 @@ export class Statistics implements AfterViewInit {
       movies: statistics?.movieCount ?? 0,
       series: statistics?.seriesCount ?? 0,
       favorites: statistics?.favoriteCount ?? 0,
+      watchLater: statistics?.watchLaterCount ?? 0,
       all: statistics?.totalItems ?? 0,
       watched: statistics?.watchedCount ?? 0,
       unwatched: statistics?.unwatchedCount ?? 0,
@@ -104,10 +106,18 @@ export class Statistics implements AfterViewInit {
 
   protected onNavigateToCollection(search?: string): void {
     if (search) {
-      void this.router.navigate(['/collection'], { queryParams: { search } });
+      void this.router.navigate(['/collection', 'library'], { queryParams: { search } });
     } else {
-      void this.router.navigate(['/collection']);
+      void this.router.navigate(['/collection', 'library']);
     }
+  }
+
+  protected onNavigateToWatchLater(): void {
+    void this.router.navigate(['/collection', 'watch-later']);
+  }
+
+  protected onNavigateToFavorites(): void {
+    void this.router.navigate(['/collection', 'favorites']);
   }
 
   private createTagChart(): void {

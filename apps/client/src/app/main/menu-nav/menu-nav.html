@@ -8,8 +8,8 @@
 <nav class="menu-nav" role="navigation" [attr.aria-label]="translations.menu()">
   <a
     data-test-id="nav-collection"
-    [routerLink]="['/', 'collection']"
-    [class.active]="isCollectionActive()"
+    [routerLink]="['/', 'collection', 'library']"
+    routerLinkActive="active"
     class="highlight"
     (click)="onClose()"
   >
@@ -18,14 +18,23 @@
   </a>
   <a
     data-test-id="nav-favorites"
-    [routerLink]="['/', 'collection']"
-    [queryParams]="{ search: FAVORITE_TAG }"
+    [routerLink]="['/', 'collection', 'favorites']"
     routerLinkActive="active"
     class="highlight"
     (click)="onClose()"
   >
     <i class="material-icons">star</i>
     {{ translations.favorites() }}
+  </a>
+  <a
+    data-test-id="nav-watch-later"
+    [routerLink]="['/', 'collection', 'watch-later']"
+    routerLinkActive="active"
+    class="highlight"
+    (click)="onClose()"
+  >
+    <i class="material-icons">watch_later</i>
+    {{ translations.watchLater() }}
   </a>
   <a
     data-test-id="nav-settings"
