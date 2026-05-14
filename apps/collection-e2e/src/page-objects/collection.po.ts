@@ -16,6 +16,7 @@ export const CollectionPage = {
   getAllItems: () => cy.getByTestId('list-item-title'),
   getEmptyState: () => cy.getByTestId('list-empty'),
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
+  getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
 
   // Float buttons
   getShowFunctionsButton: () => cy.getByTestId('show-functions'),

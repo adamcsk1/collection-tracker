@@ -8,6 +8,8 @@ export const CommonPage = {
   },
   getNavCollectionLink: () => cy.getByTestId('nav-collection'),
   getNavFavoritesLink: () => cy.getByTestId('nav-favorites'),
+  getNavWatchLaterLink: () => cy.getByTestId('nav-watch-later'),
+  getNavWishlistLink: () => cy.getByTestId('nav-wishlist'),
   getNavSyncLink: () => cy.getByTestId('nav-sync'),
   getNavSettingsLink: () => cy.getByTestId('nav-settings'),
 

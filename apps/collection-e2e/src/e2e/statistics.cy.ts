@@ -109,3 +109,25 @@ describe('Statistics — with movies and series', () => {
     StatisticsPage.getChart().should('be.visible');
   });
 });
+
+describe('Statistics — wishlist', () => {
+  const wishlistItem = {
+    ...buildCollectionItem('Stats Wishlist Movie', 'movie', 'tt9000101'),
+    tags: ['#movie', '#wishlist'],
+  };
+
+  beforeEach(() => {
+    cy.autoLogin();
+    cy.request('POST', '/api/v1/create', wishlistItem);
+    StatisticsPage.visit();
+  });
+
+  it('shows the wishlist count and navigates to the wishlist page', () => {
+    StatisticsPage.getSummaryWishlist().should('contain.text', '1');
+    StatisticsPage.getSummaryWishlist().click();
+
+    cy.url().should('include', '#/collection/wishlist');
+    cy.getByTestId('collection-search').should('not.exist');
+    CollectionPage.getListItems().should('contain.text', 'Stats Wishlist Movie');
+  });
+});
