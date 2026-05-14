@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { FAVORITE_TAG, WATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
+import { FAVORITE_TAG, WATCHED_TAG, WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import { ChangeApiRequestModel, ChangeApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
@@ -50,19 +50,21 @@ export const register = (app: FastifyInstance): void => {
         return response.code(409).send();
       }
 
+      const internalCollectionTags = [WATCH_LATER_TAG, WISHLIST_TAG];
       const existingTags = getCollectionItemTags(db, existingItem.id);
-      const existingIsWatchLaterItem = existingTags.includes(WATCH_LATER_TAG);
-      if (existingIsWatchLaterItem && ownerHash !== request.usernameHash) {
+      const existingInternalCollectionTag = internalCollectionTags.find((tag) => existingTags.includes(tag));
+      if (existingInternalCollectionTag && ownerHash !== request.usernameHash) {
         return response.code(403).send();
       }
-      const isWatchLaterItem = item.tags.includes(WATCH_LATER_TAG);
-      if (isWatchLaterItem && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG))) {
+      const itemInternalCollectionTags = item.tags.filter((tag) => internalCollectionTags.includes(tag));
+      const itemInternalCollectionTag = itemInternalCollectionTags[0] ?? null;
+      if (
+        itemInternalCollectionTags.length > 1 ||
+        (itemInternalCollectionTag && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG)))
+      ) {
         return response.code(400).send();
       }
-      if (isWatchLaterItem && !existingIsWatchLaterItem) {
-        return response.code(400).send();
-      }
-      if (existingIsWatchLaterItem && !isWatchLaterItem) {
+      if (itemInternalCollectionTag !== (existingInternalCollectionTag ?? null)) {
         return response.code(400).send();
       }
 

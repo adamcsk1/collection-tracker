@@ -133,6 +133,27 @@ describe('delete-api', () => {
     expect(response.code).toHaveBeenCalledWith(403);
   });
 
+  it('returns 403 when deleting a shared wishlist item', async () => {
+    insertItem('abc123', 'owner');
+    insertTag('#wishlist');
+    insertUser('user');
+    insertShare('owner', 'user', true);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const request: any = {
+      params: { imdbId: 'tt-delete' },
+      query: { hash: 'abc123', ownerShareCode: getUserShareCode('owner') },
+      usernameHash: 'user',
+    };
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
+  });
+
   it('returns 409 when hash does not match', async () => {
     insertItem('correct-hash');
     const request: any = { params: { imdbId: 'tt-delete' }, query: { hash: 'wrong-hash' }, usernameHash: 'user' };

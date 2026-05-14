@@ -157,10 +157,49 @@ describe('create-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
+  it('returns 400 when wishlist is combined with favorite', async () => {
+    const response = mockResponse();
+    const request: any = { body: { ...item, tags: ['#movie', '#wishlist', '#favorite'] }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when watch later is combined with wishlist', async () => {
+    const response = mockResponse();
+    const request: any = { body: { ...item, tags: ['#movie', '#watch-later', '#wishlist'] }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('returns 400 when creating watch later in a shared library', async () => {
     const response = mockResponse();
     const request: any = {
       body: { ...item, tags: ['#movie', '#watch-later'], targetOwnerShareCode: 'shared-code' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when creating wishlist in a shared library', async () => {
+    const response = mockResponse();
+    const request: any = {
+      body: { ...item, tags: ['#movie', '#wishlist'], targetOwnerShareCode: 'shared-code' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);

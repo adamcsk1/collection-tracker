@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { WATCH_LATER_TAG } from '@shared/constants/tags-const';
+import { WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
@@ -40,12 +40,15 @@ export const register = (app: FastifyInstance): void => {
       }
 
       const existingItem = findCollectionItemByImdbId(db, targetOwnerHash, imdbId);
-      const isSharedWatchLaterItem =
+      const isSharedInternalCollectionItem =
         targetOwnerHash !== request.usernameHash &&
         !!existingItem &&
-        collectionItemHasTag(db, existingItem.id, WATCH_LATER_TAG);
+        (collectionItemHasTag(db, existingItem.id, WATCH_LATER_TAG) ||
+          collectionItemHasTag(db, existingItem.id, WISHLIST_TAG));
 
-      response.send({ exists: isSharedWatchLaterItem ? false : collectionItemExists(db, [targetOwnerHash], imdbId) });
+      response.send({
+        exists: isSharedInternalCollectionItem ? false : collectionItemExists(db, [targetOwnerHash], imdbId),
+      });
     })
   );
 };

@@ -115,6 +115,27 @@ describe('collection-items-exists-api', () => {
     expect(response.send).toHaveBeenCalledWith({ exists: false });
   });
 
+  it('returns false when a shared wishlist item exists', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertItem('owner', 'tt-wishlist');
+    insertTag('tt-wishlist', '#wishlist');
+    insertShare('owner', 'user');
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      query: { imdbId: 'tt-wishlist', ownerShareCode: getUserShareCode('owner') },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-exists-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ exists: false });
+  });
+
   it('returns 400 when imdbId is missing', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: {} };

@@ -169,12 +169,51 @@ describe('change-api', () => {
     expect(response.code).toHaveBeenCalledWith(403);
   });
 
+  it('returns 403 when updating a shared wishlist item', async () => {
+    insertItem('abc123', 'owner');
+    insertTag('#wishlist');
+    insertUser('user');
+    insertShare('owner', 'user', true);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      query: { ownerShareCode: getUserShareCode('owner') },
+      body: { ...updatedItem, tags: ['#movie', '#wishlist'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
+  });
+
   it('returns 400 when a normal item is changed to watch later', async () => {
     insertItem();
     const response = mockResponse();
     const request: any = {
       params: { imdbId: 'tt-change' },
       body: { ...updatedItem, tags: ['#movie', '#watch-later'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when a normal item is changed to wishlist', async () => {
+    insertItem();
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, tags: ['#movie', '#wishlist'], hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -204,6 +243,60 @@ describe('change-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
+  it('returns 400 when a wishlist item is changed to a normal item', async () => {
+    insertItem();
+    insertTag('#wishlist');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when a watch later item is changed to wishlist', async () => {
+    insertItem();
+    insertTag('#watch-later');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, tags: ['#movie', '#wishlist'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when a wishlist item is changed to watch later', async () => {
+    insertItem();
+    insertTag('#wishlist');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, tags: ['#movie', '#watch-later'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('returns 400 when a watch later item is marked watched', async () => {
     insertItem();
     insertTag('#watch-later');
@@ -211,6 +304,24 @@ describe('change-api', () => {
     const request: any = {
       params: { imdbId: 'tt-change' },
       body: { ...updatedItem, tags: ['#movie', '#watch-later', '#watched'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when a wishlist item is marked watched', async () => {
+    insertItem();
+    insertTag('#wishlist');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, tags: ['#movie', '#wishlist', '#watched'], hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);

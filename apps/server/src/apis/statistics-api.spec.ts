@@ -39,6 +39,16 @@ const insertUserAndItems = () => {
   );
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item3Id, '#movie');
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item3Id, '#watch-later');
+
+  db.prepare(
+    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'tt004', 'Wishlist One', 'wishlist one', '2002', '7.2', 'Plot four', 'img4.jpg', 'hash4');
+  const item4Id = Number(
+    (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt004')! as { id: number }).id
+  );
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item4Id, '#movie');
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item4Id, '#wishlist');
 };
 
 describe('statistics-api', () => {
@@ -64,6 +74,7 @@ describe('statistics-api', () => {
         seriesCount: 1,
         favoriteCount: 1,
         watchLaterCount: 1,
+        wishlistCount: 1,
         watchedCount: 1,
         unwatchedCount: 1,
         tagCounts: expect.arrayContaining([

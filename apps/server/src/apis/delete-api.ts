@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { WATCH_LATER_TAG } from '@shared/constants/tags-const';
+import { WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
@@ -47,8 +47,10 @@ export const register = (app: FastifyInstance): void => {
         return response.code(409).send();
       }
 
-      const isWatchLaterItem = collectionItemHasTag(db, existingItem.id, WATCH_LATER_TAG);
-      if (isWatchLaterItem && ownerHash !== request.usernameHash) {
+      const isInternalCollectionItem =
+        collectionItemHasTag(db, existingItem.id, WATCH_LATER_TAG) ||
+        collectionItemHasTag(db, existingItem.id, WISHLIST_TAG);
+      if (isInternalCollectionItem && ownerHash !== request.usernameHash) {
         return response.code(403).send();
       }
 
