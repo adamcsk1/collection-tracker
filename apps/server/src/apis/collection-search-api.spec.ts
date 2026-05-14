@@ -212,6 +212,7 @@ describe('collection search APIs', () => {
         movieCount: 1,
         seriesCount: 1,
         favoriteCount: 1,
+        watchLaterCount: 0,
         watchedCount: 1,
         unwatchedCount: 1,
         tagCounts: [

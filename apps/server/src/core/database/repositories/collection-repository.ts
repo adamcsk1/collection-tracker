@@ -1,4 +1,11 @@
-import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
+import {
+  FAVORITE_TAG,
+  MOVIE_TAG,
+  SERIES_TAG,
+  VIRTUAL_TAGS,
+  WATCH_LATER_TAG,
+  WATCHED_TAG,
+} from '@shared/constants/tags-const';
 import {
   CollectionItemApiModel,
   CollectionItemChangeApiModel,
@@ -40,8 +47,8 @@ interface QueryParts {
   params: Array<string | number>;
 }
 
-const INTERNAL_TAGS = [WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG];
-const SUGGESTION_SYSTEM_TAGS = [...VIRTUAL_TAGS, WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG];
+const INTERNAL_TAGS = [WATCHED_TAG, FAVORITE_TAG, WATCH_LATER_TAG, MOVIE_TAG, SERIES_TAG];
+const SUGGESTION_SYSTEM_TAGS = [...VIRTUAL_TAGS, WATCHED_TAG, FAVORITE_TAG, WATCH_LATER_TAG, MOVIE_TAG, SERIES_TAG];
 
 const escapeLike = (value: string): string => value.replace(/[\\%_]/g, (match) => `\\${match}`);
 
@@ -99,6 +106,14 @@ const addSearchFilter = (queryParts: QueryParts, search: string): void => {
 };
 
 const addFilters = (queryParts: QueryParts, filters: CollectionItemFiltersApiModel | undefined): void => {
+  const requestedTags = (filters?.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
+  const includesWatchLaterTag = requestedTags.some((tag) => tag.toLowerCase() === WATCH_LATER_TAG);
+  const tags = requestedTags.filter((tag) => tag.toLowerCase() !== WATCH_LATER_TAG);
+  if (includesWatchLaterTag) {
+    addTagExists(queryParts, WATCH_LATER_TAG);
+  } else {
+    addTagExists(queryParts, WATCH_LATER_TAG, false);
+  }
   if (!filters) return;
 
   addSearchFilter(queryParts, filters.search ?? '');
@@ -113,7 +128,6 @@ const addFilters = (queryParts: QueryParts, filters: CollectionItemFiltersApiMod
     if (normalizedGenre) addGenreExists(queryParts, normalizedGenre);
   }
 
-  const tags = (filters.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
   const tagMode: CollectionItemTagMode = filters.tagMode ?? 'any';
   if (tags.length === 1 || tagMode === 'all') {
     for (const tag of tags) addTagExists(queryParts, tag);
@@ -159,6 +173,18 @@ const getItemRelations = (db: Database.Database, itemId: number): { genre: strin
   ).map((row) => row.tag),
 });
 
+export const getCollectionItemTags = (db: Database.Database, itemId: number): string[] => {
+  return (
+    db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(itemId) as Array<{
+      tag: string;
+    }>
+  ).map((row) => row.tag);
+};
+
+export const collectionItemHasTag = (db: Database.Database, itemId: number, tag: string): boolean => {
+  return !!db.prepare('SELECT 1 FROM collection_item_tags WHERE item_id = ? AND tag = ?').get(itemId, tag);
+};
+
 const toApiItem = (db: Database.Database, row: CollectionItemRow): CollectionItemApiModel => {
   const relations = getItemRelations(db, row.id);
   const item: CollectionItemChangeApiModel = {
@@ -192,10 +218,14 @@ export const findCollectionItems = (
       `SELECT *
        FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+       AND NOT EXISTS (
+         SELECT 1 FROM collection_item_tags
+         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+       )
        ORDER BY created_at DESC, id DESC
        LIMIT ? OFFSET ?`
     )
-    .all(...usernameHashes, limit, offset) as CollectionItemRow[];
+    .all(...usernameHashes, WATCH_LATER_TAG, limit, offset) as CollectionItemRow[];
 
   return rows.map((row) => toApiItem(db, row));
 };
@@ -282,11 +312,15 @@ export const findCollectionItemSuggestions = (
          OR LOWER(imdb_id) LIKE ? ESCAPE '\\'
          OR LOWER(actors) LIKE ? ESCAPE '\\'
          OR LOWER(plot) LIKE ? ESCAPE '\\'
+        )
+       AND NOT EXISTS (
+         SELECT 1 FROM collection_item_tags
+         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
        )
        ORDER BY created_at DESC, id DESC
        LIMIT ?`
     )
-    .all(...usernameHashes, likeQuery, likeQuery, likeQuery, likeQuery, normalizedLimit) as Array<{
+    .all(...usernameHashes, likeQuery, likeQuery, likeQuery, likeQuery, WATCH_LATER_TAG, normalizedLimit) as Array<{
     imdb_id: string;
     title: string;
   }>;
@@ -363,7 +397,8 @@ export const collectionItemExists = (db: Database.Database, usernameHashes: stri
 export const getCollectionStatistics = (
   db: Database.Database,
   usernameHashes: string[],
-  filters?: CollectionItemFiltersApiModel
+  filters?: CollectionItemFiltersApiModel,
+  watchLaterUsernameHash?: string
 ): CollectionStatisticsApiResponseModel => {
   const queryParts = buildItemWhere(usernameHashes, filters);
   const whereSql = queryParts.where.join(' AND ');
@@ -387,6 +422,20 @@ export const getCollectionStatistics = (
     db.prepare(`SELECT COUNT(*) as count FROM collection_items WHERE ${whereSql}`).get(...queryParts.params) as {
       count: number;
     }
+  ).count;
+
+  const watchLaterCount = (
+    db
+      .prepare(
+        `SELECT COUNT(*) as count
+         FROM collection_items
+         WHERE username_hash = ?
+         AND EXISTS (
+           SELECT 1 FROM collection_item_tags
+           WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+         )`
+      )
+      .get(watchLaterUsernameHash ?? usernameHashes[0], WATCH_LATER_TAG) as { count: number }
   ).count;
 
   const tagCounts = db
@@ -415,6 +464,7 @@ export const getCollectionStatistics = (
     movieCount: countTag(MOVIE_TAG),
     seriesCount: countTag(SERIES_TAG),
     favoriteCount: countTag(FAVORITE_TAG),
+    watchLaterCount,
     watchedCount: countTag(WATCHED_TAG),
     unwatchedCount: countTag(WATCHED_TAG, false),
     tagCounts,
@@ -431,9 +481,13 @@ export const findCollectionItemsForPrompt = (
       `SELECT *
        FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+       AND NOT EXISTS (
+         SELECT 1 FROM collection_item_tags
+         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+       )
        ORDER BY created_at DESC, id DESC`
     )
-    .all(...usernameHashes) as CollectionItemRow[];
+    .all(...usernameHashes, WATCH_LATER_TAG) as CollectionItemRow[];
 
   return rows.reduce<CollectionItemApiModel[]>((items, row) => {
     if (!row.imdb_id) return items;
@@ -449,9 +503,15 @@ export const findRandomCollectionItem = (
 ): CollectionItemApiModel | undefined => {
   const row = db
     .prepare(
-      `SELECT * FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) ORDER BY RANDOM() LIMIT 1`
+      `SELECT * FROM collection_items
+       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+       AND NOT EXISTS (
+         SELECT 1 FROM collection_item_tags
+         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+       )
+       ORDER BY RANDOM() LIMIT 1`
     )
-    .get(...usernameHashes) as CollectionItemRow | undefined;
+    .get(...usernameHashes, WATCH_LATER_TAG) as CollectionItemRow | undefined;
 
   return row ? toApiItem(db, row) : undefined;
 };
@@ -463,9 +523,15 @@ export const findRandomCollectionImages = (
 ): string[] => {
   const rows = db
     .prepare(
-      `SELECT image FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND image != ? ORDER BY RANDOM() LIMIT ?`
+      `SELECT image FROM collection_items
+       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND image != ?
+       AND NOT EXISTS (
+         SELECT 1 FROM collection_item_tags
+         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+       )
+       ORDER BY RANDOM() LIMIT ?`
     )
-    .all(...usernameHashes, '', count) as Array<{ image: string }>;
+    .all(...usernameHashes, '', WATCH_LATER_TAG, count) as Array<{ image: string }>;
 
   return rows.map((row) => row.image);
 };
@@ -473,9 +539,14 @@ export const findRandomCollectionImages = (
 export const countCollectionItems = (db: Database.Database, usernameHashes: string[]): number => {
   const row = db
     .prepare(
-      `SELECT COUNT(*) as count FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})`
+      `SELECT COUNT(*) as count FROM collection_items
+       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+       AND NOT EXISTS (
+         SELECT 1 FROM collection_item_tags
+         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+       )`
     )
-    .get(...usernameHashes) as { count: number };
+    .get(...usernameHashes, WATCH_LATER_TAG) as { count: number };
   return row.count;
 };
 
@@ -601,9 +672,13 @@ export const markAllAsWatched = (db: Database.Database, usernameHash: string): n
        AND NOT EXISTS (
          SELECT 1 FROM collection_item_tags
          WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM collection_item_tags
+         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
        )`
     )
-    .all(usernameHash, WATCHED_TAG) as CollectionItemRow[];
+    .all(usernameHash, WATCH_LATER_TAG, WATCHED_TAG) as CollectionItemRow[];
 
   let changedCount = 0;
   const transaction = db.transaction(() => {
@@ -628,12 +703,16 @@ export const markAllAsUnwatched = (db: Database.Database, usernameHash: string):
     .prepare(
       `SELECT * FROM collection_items
        WHERE username_hash = ?
+       AND NOT EXISTS (
+         SELECT 1 FROM collection_item_tags
+         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+       )
        AND EXISTS (
          SELECT 1 FROM collection_item_tags
          WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
        )`
     )
-    .all(usernameHash, WATCHED_TAG) as CollectionItemRow[];
+    .all(usernameHash, WATCH_LATER_TAG, WATCHED_TAG) as CollectionItemRow[];
 
   let changedCount = 0;
   const transaction = db.transaction(() => {

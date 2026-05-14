@@ -15,7 +15,12 @@ export const register = (app: FastifyInstance): void => {
       const db = getDatabase();
       const usernameHashes = [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
       response.send(
-        getCollectionStatistics(db, usernameHashes, parseFilters(request.query as Record<string, unknown>))
+        getCollectionStatistics(
+          db,
+          usernameHashes,
+          parseFilters(request.query as Record<string, unknown>),
+          request.usernameHash
+        )
       );
     })
   );

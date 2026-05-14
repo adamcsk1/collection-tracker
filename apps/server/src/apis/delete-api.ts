@@ -1,7 +1,12 @@
 import { API_PREFIX } from '@shared/constants/api-const';
+import { WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { deleteCollectionItem, findCollectionItemByImdbId } from '../core/database/repositories/collection-repository';
+import {
+  collectionItemHasTag,
+  deleteCollectionItem,
+  findCollectionItemByImdbId,
+} from '../core/database/repositories/collection-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
@@ -40,6 +45,11 @@ export const register = (app: FastifyInstance): void => {
 
       if (existingItem.content_hash !== hash) {
         return response.code(409).send();
+      }
+
+      const isWatchLaterItem = collectionItemHasTag(db, existingItem.id, WATCH_LATER_TAG);
+      if (isWatchLaterItem && ownerHash !== request.usernameHash) {
+        return response.code(403).send();
       }
 
       deleteCollectionItem(db, ownerHash, `${imdbId}`);

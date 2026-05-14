@@ -1,7 +1,12 @@
 import { API_PREFIX } from '@shared/constants/api-const';
+import { WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { collectionItemExists } from '../core/database/repositories/collection-repository';
+import {
+  collectionItemExists,
+  collectionItemHasTag,
+  findCollectionItemByImdbId,
+} from '../core/database/repositories/collection-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
@@ -34,7 +39,13 @@ export const register = (app: FastifyInstance): void => {
         return;
       }
 
-      response.send({ exists: collectionItemExists(db, [targetOwnerHash], imdbId) });
+      const existingItem = findCollectionItemByImdbId(db, targetOwnerHash, imdbId);
+      const isSharedWatchLaterItem =
+        targetOwnerHash !== request.usernameHash &&
+        !!existingItem &&
+        collectionItemHasTag(db, existingItem.id, WATCH_LATER_TAG);
+
+      response.send({ exists: isSharedWatchLaterItem ? false : collectionItemExists(db, [targetOwnerHash], imdbId) });
     })
   );
 };

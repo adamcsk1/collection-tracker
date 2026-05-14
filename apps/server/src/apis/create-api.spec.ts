@@ -145,6 +145,33 @@ describe('create-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
+  it('returns 400 when watch later is combined with favorite', async () => {
+    const response = mockResponse();
+    const request: any = { body: { ...item, tags: ['#movie', '#watch-later', '#favorite'] }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when creating watch later in a shared library', async () => {
+    const response = mockResponse();
+    const request: any = {
+      body: { ...item, tags: ['#movie', '#watch-later'], targetOwnerShareCode: 'shared-code' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('returns 500 on unexpected DB error', async () => {
     const response = mockResponse();
     const request: any = { body: item, usernameHash: 'missing-user' };

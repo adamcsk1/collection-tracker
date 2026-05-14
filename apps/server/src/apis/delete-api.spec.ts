@@ -27,6 +27,12 @@ const insertItem = (hash = 'abc123', usernameHash = 'user') => {
   ).run(usernameHash, 'tt-delete', '', '', '', '', '', '', hash);
 };
 
+const insertTag = (tag: string, imdbId = 'tt-delete') => {
+  const db = getDatabase();
+  const itemId = (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get(imdbId) as { id: number }).id;
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
+};
+
 describe('delete-api', () => {
   afterEach(() => {
     vi.resetModules();
@@ -90,6 +96,27 @@ describe('delete-api', () => {
     insertItem('abc123', 'owner');
     insertUser('user');
     insertShare('owner', 'user', false);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const request: any = {
+      params: { imdbId: 'tt-delete' },
+      query: { hash: 'abc123', ownerShareCode: getUserShareCode('owner') },
+      usernameHash: 'user',
+    };
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
+  });
+
+  it('returns 403 when deleting a shared watch later item', async () => {
+    insertItem('abc123', 'owner');
+    insertTag('#watch-later');
+    insertUser('user');
+    insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { imdbId: 'tt-delete' },
