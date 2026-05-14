@@ -56,26 +56,26 @@ describe('Statistics — with movies and series', () => {
 
   it('navigates to the collection when the all summary card is clicked', () => {
     StatisticsPage.getSummaryAll().click();
-    cy.url().should('include', '#/collection');
+    cy.url().should('include', '#/collection/library');
     cy.url().should('not.include', 'search');
   });
 
   it('navigates to the collection filtered by movies when the movies summary card is clicked', () => {
     StatisticsPage.getSummaryMovies().click();
-    cy.url().should('include', '#/collection');
+    cy.url().should('include', '#/collection/library');
     CollectionPage.getSearchInput().should('have.value', '#movie');
   });
 
   it('navigates to the collection filtered by series when the series summary card is clicked', () => {
     StatisticsPage.getSummarySeries().click();
-    cy.url().should('include', '#/collection');
+    cy.url().should('include', '#/collection/library');
     CollectionPage.getSearchInput().should('have.value', '#series');
   });
 
   it('navigates to the collection filtered by favorites when the favorites summary card is clicked', () => {
     StatisticsPage.getSummaryFavorites().click();
-    cy.url().should('include', '#/collection');
-    CollectionPage.getSearchInput().should('have.value', '#favorite');
+    cy.url().should('include', '#/collection/favorites');
+    cy.getByTestId('collection-search').should('not.exist');
   });
 
   it('shows tag buttons for custom tags', () => {

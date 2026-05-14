@@ -127,7 +127,7 @@ Cypress.Commands.add('autoLogin', () => {
 
   signInThroughUi(username, token);
 
-  cy.visit('/client/#/collection', {
+  cy.visit('/client/#/collection/library', {
     onBeforeLoad: resetPermissionStorage,
   });
 });
@@ -145,7 +145,7 @@ Cypress.Commands.add('autoLoginWithNewUser', () => {
       signInThroughUi(username, token);
     })
     .then(() => {
-      cy.visit('/client/#/collection', {
+      cy.visit('/client/#/collection/library', {
         onBeforeLoad: resetPermissionStorage,
       });
     });

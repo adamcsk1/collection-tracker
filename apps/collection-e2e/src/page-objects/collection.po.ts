@@ -1,6 +1,6 @@
 export const CollectionPage = {
   visit: () => {
-    cy.visit('/client/#/collection');
+    cy.visit('/client/#/collection/library');
     cy.reload();
   },
 

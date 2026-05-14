@@ -146,7 +146,7 @@ describe('Settings - mark all watched / unwatched', () => {
     // store, not the API — the store must contain the items before we act.
     // Register the intercept AFTER cy.visit but BEFORE cy.reload — cy.reload clears
     // the page and reboots Angular, which then fires items request with the seeded items.
-    cy.visit('/client/#/collection');
+    cy.visit('/client/#/collection/library');
     cy.intercept('GET', '/api/v1/items*').as('collectionLoad');
     cy.reload();
     cy.wait('@collectionLoad');

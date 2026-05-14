@@ -299,8 +299,8 @@ describe('Collection — favorites', () => {
     CommonPage.openMenu();
     CommonPage.getNavFavoritesLink().click();
 
-    cy.url().should('include', 'search=%23favorite');
-    CollectionPage.getSearchInput().should('have.value', '#favorite');
+    cy.url().should('include', '#/collection/favorites');
+    cy.getByTestId('collection-search').should('not.exist');
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Favorite Test Movie');
     CollectionPage.getListItems().should('not.contain.text', 'Regular Test Movie');
@@ -309,6 +309,7 @@ describe('Collection — favorites', () => {
     CommonPage.getNavCollectionLink().click();
 
     cy.url().should('not.include', 'search=');
+    cy.url().should('include', '#/collection/library');
     CollectionPage.getSearchInput().should('have.value', '');
     CollectionPage.getListItems().should('have.length', 2);
   });
