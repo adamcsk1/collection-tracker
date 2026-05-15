@@ -117,7 +117,9 @@
               }
               <span class="chip rating">IMDb {{ collectionItem().rate || translations.fallbackNotAvailable() }}</span>
               @if (collectionItem().userRate !== null) {
-                <span class="chip rating">{{ translations.labelUserRate() }} {{ collectionItem().userRate }}</span>
+                <span class="chip rating" data-test-id="item-dialog-user-rate-chip">
+                  {{ translations.labelUserRate() }} {{ collectionItem().userRate }}
+                </span>
               }
               <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
             </div>
