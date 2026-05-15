@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
-import { WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { CollectionListDataSourceRequest } from '../collection-model';
 import { List } from '../list/list';
 import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
 
@@ -15,8 +16,10 @@ import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
 export class WatchLater {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly portal = inject(PortalService);
+  private readonly api = inject(ApiService);
 
-  protected readonly watchLaterTag = WATCH_LATER_TAG;
+  protected readonly watchLaterDataSource = ({ offset, limit }: CollectionListDataSourceRequest) =>
+    this.api.searchItems({ listType: 'watch-later' }, offset, limit);
   protected readonly translations = {
     messageEmptyWatchLater: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWatchLater')),
     messageAddFirstWatchLater: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWatchLater')),

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { describe, expect, it, vi } from 'vitest';
@@ -13,6 +14,7 @@ describe('WatchLater', () => {
       imports: [WatchLater],
       providers: [
         { provide: PortalService, useValue: portal },
+        { provide: ApiService, useValue: { searchItems: vi.fn() } },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
       ],
     });

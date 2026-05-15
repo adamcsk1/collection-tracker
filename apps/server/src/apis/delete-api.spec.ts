@@ -27,10 +27,13 @@ const insertItem = (hash = 'abc123', usernameHash = 'user') => {
   ).run(usernameHash, 'tt-delete', '', '', '', '', '', '', hash);
 };
 
-const insertTag = (tag: string, imdbId = 'tt-delete') => {
+const insertTypedItem = (listType: 'watch-later' | 'wishlist', hash = 'abc123', usernameHash = 'user') => {
   const db = getDatabase();
-  const itemId = (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get(imdbId) as { id: number }).id;
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
+  insertUser(usernameHash);
+  db.prepare(
+    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(usernameHash, 'tt-delete', listType, '', '', '', '', '', '', hash);
 };
 
 describe('delete-api', () => {
@@ -65,6 +68,43 @@ describe('delete-api', () => {
     expect(
       getDatabase().prepare('SELECT COUNT(*) as count FROM collection_items WHERE imdb_id = ?').get('tt-delete')
     ).toEqual({ count: 0 });
+  });
+
+  it('deletes a watch later item when listType is provided', async () => {
+    insertTypedItem('watch-later');
+    const request: any = {
+      params: { imdbId: 'tt-delete' },
+      query: { hash: 'abc123', listType: 'watch-later' },
+      usernameHash: 'user',
+    };
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(204);
+    expect(
+      getDatabase().prepare('SELECT COUNT(*) as count FROM collection_items WHERE imdb_id = ?').get('tt-delete')
+    ).toEqual({ count: 0 });
+  });
+
+  it('deletes a wishlist item when listType is provided', async () => {
+    insertTypedItem('wishlist');
+    const request: any = {
+      params: { imdbId: 'tt-delete' },
+      query: { hash: 'abc123', listType: 'wishlist' },
+      usernameHash: 'user',
+    };
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(204);
   });
 
   it('deletes an item from a shared library when delete permission is granted', async () => {
@@ -113,14 +153,33 @@ describe('delete-api', () => {
   });
 
   it('returns 403 when deleting a shared watch later item', async () => {
-    insertItem('abc123', 'owner');
-    insertTag('#watch-later');
+    insertTypedItem('watch-later', 'abc123', 'owner');
     insertUser('user');
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { imdbId: 'tt-delete' },
-      query: { hash: 'abc123', ownerShareCode: getUserShareCode('owner') },
+      query: { hash: 'abc123', listType: 'watch-later', ownerShareCode: getUserShareCode('owner') },
+      usernameHash: 'user',
+    };
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
+  });
+
+  it('returns 403 when deleting a shared non-library item by listType', async () => {
+    insertTypedItem('watch-later', 'abc123', 'owner');
+    insertUser('user');
+    insertShare('owner', 'user', true);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const request: any = {
+      params: { imdbId: 'tt-delete' },
+      query: { hash: 'abc123', listType: 'watch-later', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
     const response = mockResponse();
@@ -134,14 +193,13 @@ describe('delete-api', () => {
   });
 
   it('returns 403 when deleting a shared wishlist item', async () => {
-    insertItem('abc123', 'owner');
-    insertTag('#wishlist');
+    insertTypedItem('wishlist', 'abc123', 'owner');
     insertUser('user');
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { imdbId: 'tt-delete' },
-      query: { hash: 'abc123', ownerShareCode: getUserShareCode('owner') },
+      query: { hash: 'abc123', listType: 'wishlist', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
     const response = mockResponse();

@@ -31,6 +31,15 @@ const insertItem = (usernameHash: string, imdbId: string, title: string) => {
     .run(usernameHash, imdbId, title, title.toLowerCase(), '2001', '7.0', '', '', `${imdbId}-hash`);
 };
 
+const insertTypedItem = (usernameHash: string, imdbId: string, title: string, listType: 'watch-later' | 'wishlist') => {
+  getDatabase()
+    .prepare(
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(usernameHash, imdbId, listType, title, title.toLowerCase(), '2001', '7.0', '', '', `${imdbId}-hash`);
+};
+
 const insertTag = (imdbId: string, tag: string) => {
   const db = getDatabase();
   const itemId = (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get(imdbId) as { id: number }).id;
@@ -153,8 +162,7 @@ describe('get-collection-items-api', () => {
   it('excludes watch later items from the default collection list', async () => {
     insertUser('user');
     insertItem('user', 'tt-normal', 'Normal Item');
-    insertItem('user', 'tt-watch-later', 'Watch Later Item');
-    insertTag('tt-watch-later', '#watch-later');
+    insertTypedItem('user', 'tt-watch-later', 'Watch Later Item', 'watch-later');
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: {} };
     const { app, handlerPromise } = buildApp(request, response);
@@ -174,8 +182,7 @@ describe('get-collection-items-api', () => {
   it('excludes wishlist items from the default collection list', async () => {
     insertUser('user');
     insertItem('user', 'tt-normal', 'Normal Item');
-    insertItem('user', 'tt-wishlist', 'Wishlist Item');
-    insertTag('tt-wishlist', '#wishlist');
+    insertTypedItem('user', 'tt-wishlist', 'Wishlist Item', 'wishlist');
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: {} };
     const { app, handlerPromise } = buildApp(request, response);
@@ -195,13 +202,11 @@ describe('get-collection-items-api', () => {
   it('returns own watch later items when explicitly requested', async () => {
     insertUser('user');
     insertUser('owner');
-    insertItem('user', 'tt-own-watch-later', 'Own Watch Later Item');
-    insertItem('owner', 'tt-shared-watch-later', 'Shared Watch Later Item');
-    insertTag('tt-own-watch-later', '#watch-later');
-    insertTag('tt-shared-watch-later', '#watch-later');
+    insertTypedItem('user', 'tt-own-watch-later', 'Own Watch Later Item', 'watch-later');
+    insertTypedItem('owner', 'tt-shared-watch-later', 'Shared Watch Later Item', 'watch-later');
     insertShare('owner', 'user', true);
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { tags: '#watch-later', tagMode: 'all' } };
+    const request: any = { usernameHash: 'user', query: { listType: 'watch-later' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-collection-items-api');
@@ -216,16 +221,37 @@ describe('get-collection-items-api', () => {
     );
   });
 
+  it('returns own watch later items when listType is provided', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertItem('user', 'tt-library', 'Library Item');
+    insertTypedItem('user', 'tt-watch-later', 'Watch Later Item', 'watch-later');
+    insertTypedItem('owner', 'tt-shared-watch-later', 'Shared Watch Later Item', 'watch-later');
+    insertShare('owner', 'user', true);
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { listType: 'watch-later' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [expect.objectContaining({ title: 'Watch Later Item', listType: 'watch-later' })],
+        total: 1,
+      })
+    );
+  });
+
   it('returns own wishlist items when explicitly requested', async () => {
     insertUser('user');
     insertUser('owner');
-    insertItem('user', 'tt-own-wishlist', 'Own Wishlist Item');
-    insertItem('owner', 'tt-shared-wishlist', 'Shared Wishlist Item');
-    insertTag('tt-own-wishlist', '#wishlist');
-    insertTag('tt-shared-wishlist', '#wishlist');
+    insertTypedItem('user', 'tt-own-wishlist', 'Own Wishlist Item', 'wishlist');
+    insertTypedItem('owner', 'tt-shared-wishlist', 'Shared Wishlist Item', 'wishlist');
     insertShare('owner', 'user', true);
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { tags: '#wishlist', tagMode: 'all' } };
+    const request: any = { usernameHash: 'user', query: { listType: 'wishlist' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-collection-items-api');
@@ -240,18 +266,16 @@ describe('get-collection-items-api', () => {
     );
   });
 
-  it('keeps watch later queries scoped when combined with other tags', async () => {
+  it('keeps watch later queries scoped when combined with tags', async () => {
     insertUser('user');
     insertItem('user', 'tt-normal-comedy', 'Normal Comedy Item');
-    insertItem('user', 'tt-watch-later-comedy', 'Watch Later Comedy Item');
-    insertItem('user', 'tt-watch-later-drama', 'Watch Later Drama Item');
+    insertTypedItem('user', 'tt-watch-later-comedy', 'Watch Later Comedy Item', 'watch-later');
+    insertTypedItem('user', 'tt-watch-later-drama', 'Watch Later Drama Item', 'watch-later');
     insertTag('tt-normal-comedy', 'comedy');
-    insertTag('tt-watch-later-comedy', '#watch-later');
     insertTag('tt-watch-later-comedy', 'comedy');
-    insertTag('tt-watch-later-drama', '#watch-later');
     insertTag('tt-watch-later-drama', 'drama');
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { tags: '#watch-later,comedy', tagMode: 'any' } };
+    const request: any = { usernameHash: 'user', query: { listType: 'watch-later', tags: 'comedy', tagMode: 'any' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-collection-items-api');

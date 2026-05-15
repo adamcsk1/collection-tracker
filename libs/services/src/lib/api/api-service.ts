@@ -8,6 +8,7 @@ import {
   CollectionItemChangeApiModel,
   CollectionItemExistsApiResponseModel,
   CollectionItemFiltersApiModel,
+  CollectionListTypeModel,
   CollectionItemsApiResponseModel,
   CollectionItemSuggestionsApiResponseModel,
   CollectionMatchedItemsApiRequestModel,
@@ -95,17 +96,22 @@ export class ApiService extends BaseApiService {
 
   public collectionItemExists(
     imdbId: string,
-    ownerShareCode?: string
+    ownerShareCode?: string,
+    listType?: CollectionListTypeModel
   ): Observable<CollectionItemExistsApiResponseModel> {
-    return this.request('GET', `/items/exists${this.buildQuery({ imdbId, ownerShareCode })}`);
+    return this.request('GET', `/items/exists${this.buildQuery({ imdbId, ownerShareCode, listType })}`);
   }
 
   public getStatistics(filters: CollectionItemFiltersApiModel = {}): Observable<CollectionStatisticsApiResponseModel> {
     return this.request('GET', `/statistics${this.buildQuery({ ...filters })}`);
   }
 
-  public create(item: CollectionItemChangeApiModel, targetOwnerShareCode?: string): Observable<CreateApiResponseModel> {
-    return this.request('POST', '/create', { ...item, targetOwnerShareCode });
+  public create(
+    item: CollectionItemChangeApiModel,
+    targetOwnerShareCode?: string,
+    listType?: CollectionListTypeModel
+  ): Observable<CreateApiResponseModel> {
+    return this.request('POST', '/create', { ...item, targetOwnerShareCode, listType });
   }
 
   public update(
@@ -117,8 +123,13 @@ export class ApiService extends BaseApiService {
     return this.request('PUT', `/change/${imdbId}${this.buildQuery({ ownerShareCode })}`, { ...item, hash });
   }
 
-  public delete(imdbId: string, hash: string, ownerShareCode?: string): Observable<void> {
-    return this.request('DELETE', `/delete/${imdbId}${this.buildQuery({ hash, ownerShareCode })}`);
+  public delete(
+    imdbId: string,
+    hash: string,
+    ownerShareCode?: string,
+    listType?: CollectionListTypeModel
+  ): Observable<void> {
+    return this.request('DELETE', `/delete/${imdbId}${this.buildQuery({ hash, ownerShareCode, listType })}`);
   }
 
   public getAccessTokens(): Observable<AccessTokensApiResponseModel> {

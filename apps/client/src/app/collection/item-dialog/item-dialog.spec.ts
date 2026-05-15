@@ -36,6 +36,7 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
   hash: 'testhash',
   actors: 'Actor One, Actor Two',
   plot: 'A test plot.',
+  listType: 'library',
   ...overrides,
 });
 
@@ -51,6 +52,7 @@ const buildApiItem = (overrides: Partial<CollectionItemApiModel> = {}): Collecti
   hash: 'newhash',
   actors: 'Actor One, Actor Two',
   plot: 'A test plot.',
+  listType: 'library',
   ...overrides,
 });
 
@@ -159,15 +161,15 @@ describe('ItemDialog', () => {
     expect(component['favorite']()).toBe(true);
   });
 
-  it('computes watch later status from tags', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCH_LATER_TAG] }));
+  it('computes watch later status from list type', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
     fixture.detectChanges();
 
     expect(component['watchLater']()).toBe(true);
   });
 
-  it('computes wishlist status from tags', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
+  it('computes wishlist status from list type', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist' }));
     fixture.detectChanges();
 
     expect(component['wishlist']()).toBe(true);
@@ -178,14 +180,14 @@ describe('ItemDialog', () => {
   });
 
   it('returns watch later item title for watch later items', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCH_LATER_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
     fixture.detectChanges();
 
     expect(component['dialogTitle']()).toBe('Title.WatchLaterItem');
   });
 
   it('returns wishlist item title for wishlist items', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist' }));
     fixture.detectChanges();
 
     expect(component['dialogTitle']()).toBe('Title.WishlistItem');
@@ -395,7 +397,7 @@ describe('ItemDialog', () => {
   });
 
   it('does not save when a watch later item is marked watched', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCH_LATER_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
     fixture.detectChanges();
     component.ngOnInit();
     component['updateDraft']('tags', [MOVIE_TAG, WATCH_LATER_TAG, WATCHED_TAG]);
@@ -403,42 +405,32 @@ describe('ItemDialog', () => {
     component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.UsedInternalTag');
+    expect(toastState.state.message()).toBe('');
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('keeps the internal watch later tag when saving watch later edits', () => {
+  it('does not update watch later items', () => {
     confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCH_LATER_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
     fixture.detectChanges();
     component.ngOnInit();
     component['updateDraft']('tags', [MOVIE_TAG, '#later']);
 
     component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
-      'tt1234567',
-      expect.objectContaining({ tags: [MOVIE_TAG, '#later', WATCH_LATER_TAG] }),
-      'testhash',
-      undefined
-    );
+    expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('keeps the internal wishlist tag when saving wishlist edits', () => {
+  it('does not update wishlist items', () => {
     confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist' }));
     fixture.detectChanges();
     component.ngOnInit();
     component['updateDraft']('tags', [MOVIE_TAG, '#wishlist-custom']);
 
     component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
-      'tt1234567',
-      expect.objectContaining({ tags: [MOVIE_TAG, '#wishlist-custom', WISHLIST_TAG] }),
-      'testhash',
-      undefined
-    );
+    expect(api.update).not.toHaveBeenCalled();
   });
 
   it('does not save when tags lack a type tag', () => {

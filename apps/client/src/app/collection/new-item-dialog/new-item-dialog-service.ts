@@ -4,8 +4,7 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
-import { WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
-import { CollectionItemChangeApiModel } from '@shared/models/api-model';
+import { CollectionItemChangeApiModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
@@ -41,8 +40,7 @@ export class NewItemDialogService {
     tags: string,
     mode: SaveMode,
     targetOwnerShareCode?: string,
-    watchLater = false,
-    wishlist = false
+    listType: CollectionListTypeModel = 'library'
   ) {
     return this.omdb.getSelectedContent(selectedIMDbId).pipe(
       skip(1),
@@ -55,12 +53,7 @@ export class NewItemDialogService {
           title: selectedContent.Title,
           genre: parseGenreText(selectedContent.Genre),
           IMDbId: selectedContent.imdbID,
-          tags: [
-            `#${selectedContent.Type.toLowerCase()}`,
-            ...parseTagText(tags),
-            ...(watchLater ? [WATCH_LATER_TAG] : []),
-            ...(wishlist ? [WISHLIST_TAG] : []),
-          ],
+          tags: [`#${selectedContent.Type.toLowerCase()}`, ...parseTagText(tags)],
           year: Number(selectedContent.Year) || null,
           rate: selectedContent.imdbRating,
           actors: selectedContent.Actors,
@@ -69,7 +62,10 @@ export class NewItemDialogService {
       ),
       tap(() => this.spinnerLoadingState.setState('show', true)),
       mergeMap((collectionItem) =>
-        this.api.create(collectionItem, targetOwnerShareCode).pipe(map((response) => response.item))
+        (listType === 'library'
+          ? this.api.create(collectionItem, targetOwnerShareCode)
+          : this.api.create(collectionItem, targetOwnerShareCode, listType)
+        ).pipe(map((response) => response.item))
       ),
       catchError((error) => {
         this.spinnerLoadingState.setState('show', false);

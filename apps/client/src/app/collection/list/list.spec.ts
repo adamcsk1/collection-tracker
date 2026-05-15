@@ -2,7 +2,6 @@ import { ElementRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
-import { ItemDialog } from '../item-dialog/item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { initialMainState, mainStateToken } from '../../main/main-store';
@@ -33,6 +32,13 @@ describe('List', () => {
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let scrollSpy: ReturnType<typeof vi.fn>;
 
+  const buildFilters = (searchText: string) => {
+    const search = searchText.trim();
+    if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false };
+    if (search.startsWith('#')) return { tags: [search], tagMode: 'all' };
+    return search ? { search } : {};
+  };
+
   const buildItem = (title: string, IMDbId = title): CollectionItemModel => ({
     image: '',
     title,
@@ -45,6 +51,7 @@ describe('List', () => {
     hash: '',
     actors: '',
     plot: '',
+    listType: 'library',
   });
 
   beforeEach(() => {
@@ -85,6 +92,9 @@ describe('List', () => {
 
     fixture = TestBed.createComponent(List);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('dataSource', ({ offset, limit, searchText }: any) =>
+      api.searchItems(buildFilters(searchText), offset, limit)
+    );
     collectionState = TestBed.inject(collectionStateToken);
 
     scrollSpy = vi.fn();
@@ -212,7 +222,7 @@ describe('List', () => {
   });
 
   it('opens the new item dialog in watch later mode on the watch later page', () => {
-    fixture.componentRef.setInput('routeSearchText', WATCH_LATER_TAG);
+    fixture.componentRef.setInput('listType', 'watch-later');
     fixture.detectChanges();
 
     component['onAddNew']();
@@ -221,7 +231,7 @@ describe('List', () => {
   });
 
   it('opens the new item dialog in wishlist mode on the wishlist page', () => {
-    fixture.componentRef.setInput('routeSearchText', WISHLIST_TAG);
+    fixture.componentRef.setInput('listType', 'wishlist');
     fixture.detectChanges();
 
     component['onAddNew']();
@@ -229,15 +239,14 @@ describe('List', () => {
     expect(portal.open).toHaveBeenCalledWith(expect.any(Function), { watchLater: false, wishlist: true });
   });
 
-  it('opens a random item from the server', async () => {
+  it('emits a random pick request', async () => {
+    const randomPick = vi.fn();
+    fixture.componentRef.instance.randomPick.subscribe(randomPick);
     fixture.detectChanges();
 
     component['onRandomPick']();
 
-    expect(api.getRandomItem).toHaveBeenCalled();
-    expect(portal.open).toHaveBeenCalledWith(ItemDialog, {
-      collectionItem: expect.objectContaining({ title: 'Random Pick' }),
-    });
+    expect(randomPick).toHaveBeenCalled();
   });
 
   it('loads more items when scrolled near the bottom', () => {
@@ -274,44 +283,11 @@ describe('List', () => {
     }
   });
 
-  it('requests matched items for AI search results', () => {
-    const aiSearch = TestBed.inject(AiSearchService);
-    aiSearch.useAiSearch.set(true);
-    collectionState.setState('aiSearchPromptText', 'space');
-    (component as any).aiSearchMatchedIds = () => ['tt-ai'];
-    component['loadItems'](true);
-
-    expect(api.getMatchedItems).toHaveBeenCalled();
-  });
-
-  it('uses standard search when forceStandardSearch is set during AI search', () => {
-    const aiSearch = TestBed.inject(AiSearchService);
-    aiSearch.useAiSearch.set(true);
-    collectionState.setState('forceStandardSearch', true);
-    collectionState.setState('searchText', '#favorite');
-    component['loadItems'](true);
-
-    expect(api.searchItems).toHaveBeenCalledWith({ tags: ['#favorite'], tagMode: 'all' }, 0, 50);
-    expect(api.getMatchedItems).not.toHaveBeenCalled();
-  });
-
-  it('does not clear the list or fire a request while AI search results are still loading', () => {
-    component['visibleCollection'].set([buildItem('Keep')]);
-    const aiSearch = TestBed.inject(AiSearchService);
-    aiSearch.useAiSearch.set(true);
-    collectionState.setState('aiSearchPromptText', 'loading...');
-    (component as any).aiSearchMatchedIds = () => null;
-    component['loadItems'](true);
-
-    expect(api.searchItems).not.toHaveBeenCalled();
-    expect(api.getMatchedItems).not.toHaveBeenCalled();
-    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Keep']);
-  });
-
-  it('checks AI availability when float buttons are shown', () => {
-    const aiSearch = TestBed.inject(AiSearchService);
+  it('emits when float button functions are shown', () => {
+    const showFunctions = vi.fn();
+    fixture.componentRef.instance.showFunctions.subscribe(showFunctions);
     component['onShowFunctions']();
 
-    expect(aiSearch.checkAiAvailable).toHaveBeenCalled();
+    expect(showFunctions).toHaveBeenCalled();
   });
 });

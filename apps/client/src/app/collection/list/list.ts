@@ -7,35 +7,23 @@ import {
   ElementRef,
   inject,
   input,
+  output,
   signal,
   untracked,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
-import { CollectionItemFiltersApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
+import { CollectionItemsApiResponseModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import {
-  asyncScheduler,
-  catchError,
-  debounceTime,
-  EMPTY,
-  fromEvent,
-  Observable,
-  startWith,
-  switchMap,
-  tap,
-} from 'rxjs';
+import { asyncScheduler, catchError, debounceTime, EMPTY, fromEvent, Observable, tap } from 'rxjs';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { sharesStateToken } from '../../shares/shares-store';
-import { CollectionItemModel } from '../collection-model';
+import { CollectionItemModel, CollectionListDataSource } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
-import { ItemDialog } from '../item-dialog/item-dialog';
 import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
-import { AiSearchService } from '../search/ai-search-service';
 import { FloatButtons } from './float-buttons/float-buttons';
 import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS } from './list-const';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
@@ -56,23 +44,10 @@ export class List {
   private readonly apiState = inject(apiStateToken);
   private readonly portal = inject(PortalService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly aiSearch = inject(AiSearchService);
   private readonly sharesState = inject(sharesStateToken);
   protected readonly debouncedSearchText = signal('');
   private readonly routeSearchVersion = signal(0);
   private lastRouteSearchText: string | null = null;
-  private readonly aiSearchSendTrigger = computed(() => ({
-    promptText: this.collectionState.state.aiSearchPromptText(),
-    version: this.collectionState.state.aiSearchSendVersion(),
-  }));
-  private readonly aiSearchMatchedIds = toSignal(
-    toObservable(this.aiSearchSendTrigger).pipe(
-      debounceTime(500),
-      switchMap(({ promptText }) => this.aiSearch.getMatchedIds(promptText)),
-      startWith(null)
-    ),
-    { initialValue: null }
-  );
   protected readonly translations = {
     collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
     messageEmptyCollection: computed(() => this.ngxSignalTranslate.translate('Message.EmptyCollection')),
@@ -85,11 +60,14 @@ export class List {
   protected readonly hasMore = computed(() => this.visibleCollection().length < this.collectionLength());
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly scrollToTopAvailable = signal(false);
-  protected readonly isInternalCollectionPrefiltered = computed(() =>
-    [WATCH_LATER_TAG, WISHLIST_TAG].includes(this.routeSearchText())
-  );
+  protected readonly isInternalCollectionPrefiltered = computed(() => this.listType() !== 'library');
   public readonly hideFloatActions = input(false);
   public readonly routeSearchText = input('');
+  public readonly listType = input<CollectionListTypeModel>('library');
+  public readonly dataSource = input.required<CollectionListDataSource>();
+  public readonly randomPick = output<void>();
+  public readonly toggleAiSearch = output<void>();
+  public readonly showFunctions = output<void>();
 
   constructor() {
     this.loadShares();
@@ -127,10 +105,6 @@ export class List {
 
     effect(() => {
       const searchText = this.debouncedSearchText();
-      this.aiSearchMatchedIds();
-      this.aiSearch.useAiSearch();
-      this.collectionState.state.forceStandardSearch();
-      this.collectionState.state.aiSearchPromptText();
       this.mainCollectionState.state.reloadTrigger();
       untracked(() => this.loadItems(true, searchText));
     });
@@ -142,16 +116,13 @@ export class List {
   }
 
   protected onRandomPick(): void {
-    this.api
-      .getRandomItem()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((item) => this.portal.open(ItemDialog, { collectionItem: item }));
+    this.randomPick.emit();
   }
 
   protected onAddNew(): void {
     this.portal.open(NewItemDialog, {
-      watchLater: this.routeSearchText() === WATCH_LATER_TAG,
-      wishlist: this.routeSearchText() === WISHLIST_TAG,
+      watchLater: this.listType() === 'watch-later',
+      wishlist: this.listType() === 'wishlist',
     });
   }
 
@@ -169,20 +140,12 @@ export class List {
   }
 
   protected onToggleAiSearch(): void {
-    this.aiSearch.useAiSearch.set(!this.aiSearch.useAiSearch());
-    this.collectionState.setState('searchText', '');
+    this.toggleAiSearch.emit();
   }
 
   protected onShowFunctions(): void {
     if (this.isInternalCollectionPrefiltered()) return;
-
-    this.aiSearch
-      .checkAiAvailable()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        catchError(() => EMPTY)
-      )
-      .subscribe();
+    this.showFunctions.emit();
   }
 
   protected onResetScrollPosition(): void {
@@ -213,25 +176,13 @@ export class List {
   private getItemsRequest(reset: boolean, searchText: string): Observable<CollectionItemsApiResponseModel> {
     const offset = reset ? 0 : this.visibleCollection().length;
     const limit = COLLECTION_LIST_PAGE_SIZE;
-    const aiIds = this.aiSearchMatchedIds();
-    const promptText = this.collectionState.state.aiSearchPromptText().trim();
-    const useAiSearch = this.aiSearch.useAiSearch() && !this.collectionState.state.forceStandardSearch();
-
-    if (useAiSearch && promptText && aiIds === null) {
-      return EMPTY;
-    }
-
     if (reset) {
       this.visibleCollection.set([]);
     }
 
     this.apiState.setState('loadNetworkStatus', 'pending');
 
-    const request = useAiSearch
-      ? promptText
-        ? this.api.getMatchedItems({ imdbIds: aiIds as string[], offset, limit })
-        : this.api.searchItems({}, offset, limit)
-      : this.api.searchItems(this.buildFilters(searchText), offset, limit);
+    const request = this.dataSource()({ reset, offset, limit, searchText });
 
     return request.pipe(
       catchError(() => {
@@ -245,13 +196,6 @@ export class List {
     this.visibleCollection.set(reset ? response.items : [...this.visibleCollection(), ...response.items]);
     this.collectionLength.set(response.total);
     this.apiState.setState('loadNetworkStatus', 'finished');
-  }
-
-  private buildFilters(searchText: string): CollectionItemFiltersApiModel {
-    const search = searchText.trim();
-    if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false };
-    if (search.startsWith('#')) return { tags: [search], tagMode: 'all' };
-    return search ? { search } : {};
   }
 
   private loadShares(): void {

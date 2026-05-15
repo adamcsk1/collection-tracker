@@ -11,6 +11,7 @@ import {
   CollectionItemApiModel,
   CollectionItemChangeApiModel,
   CollectionItemFiltersApiModel,
+  CollectionListTypeModel,
   CollectionItemSuggestionApiModel,
   CollectionItemTagMode,
   CollectionItemsApiResponseModel,
@@ -24,6 +25,7 @@ export interface CollectionItemRow {
   id: number;
   username_hash: string;
   imdb_id: string;
+  list_type: CollectionListTypeModel;
   title: string;
   title_lower: string;
   year: string;
@@ -64,6 +66,11 @@ const escapeLike = (value: string): string => value.replace(/[\\%_]/g, (match) =
 const normalizeLimit = (limit: number): number => Math.min(Math.max(Math.floor(limit) || 10, 1), 100);
 
 const normalizeOffset = (offset: number): number => Math.max(Math.floor(offset) || 0, 0);
+
+const normalizeListType = (listType: CollectionListTypeModel | undefined): CollectionListTypeModel => {
+  if (listType === 'watch-later' || listType === 'wishlist') return listType;
+  return 'library';
+};
 
 const addTagExists = (queryParts: QueryParts, tag: string, exists = true): void => {
   queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
@@ -123,17 +130,17 @@ const addSearchFilter = (queryParts: QueryParts, search: string): void => {
 };
 
 const addFilters = (queryParts: QueryParts, filters: CollectionItemFiltersApiModel | undefined): void => {
-  const requestedTags = (filters?.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
-  const requestedInternalCollectionTags = INTERNAL_COLLECTION_TAGS.filter((internalTag) =>
-    requestedTags.some((tag) => tag.toLowerCase() === internalTag)
-  );
-  const tags = requestedTags.filter((tag) => !INTERNAL_COLLECTION_TAGS.includes(tag.toLowerCase()));
-  if (requestedInternalCollectionTags.length) {
-    for (const internalTag of requestedInternalCollectionTags) addTagExists(queryParts, internalTag);
+  const listType = normalizeListType(filters?.listType);
+  if (listType === 'library') {
+    queryParts.where.push('collection_items.list_type = ?');
+    queryParts.params.push(listType);
   } else {
-    addTagInExists(queryParts, INTERNAL_COLLECTION_TAGS, false);
+    queryParts.where.push('collection_items.list_type = ?');
+    queryParts.params.push(listType);
   }
   if (!filters) return;
+
+  const tags = (filters.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
 
   addSearchFilter(queryParts, filters.search ?? '');
 
@@ -222,6 +229,7 @@ const toApiItem = (db: Database.Database, row: CollectionItemRow): CollectionIte
     ...item,
     titleLower: row.title_lower,
     hash: row.content_hash,
+    listType: row.list_type,
     ownerShareCode: getUserShareCode(row.username_hash),
   };
 };
@@ -230,22 +238,19 @@ export const findCollectionItems = (
   db: Database.Database,
   usernameHashes: string[],
   offset: number,
-  limit: number
+  limit: number,
+  listType: CollectionListTypeModel = 'library'
 ): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
       `SELECT *
-       FROM collection_items
-       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-        AND NOT EXISTS (
-          SELECT 1 FROM collection_item_tags
-          WHERE collection_item_tags.item_id = collection_items.id
-          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
-        )
-       ORDER BY created_at DESC, id DESC
-       LIMIT ? OFFSET ?`
+        FROM collection_items
+        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+         AND list_type = ?
+        ORDER BY created_at DESC, id DESC
+        LIMIT ? OFFSET ?`
     )
-    .all(...usernameHashes, ...INTERNAL_COLLECTION_TAGS, limit, offset) as CollectionItemRow[];
+    .all(...usernameHashes, normalizeListType(listType), limit, offset) as CollectionItemRow[];
 
   return rows.map((row) => toApiItem(db, row));
 };
@@ -327,29 +332,17 @@ export const findCollectionItemSuggestions = (
       `SELECT imdb_id, title
        FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+       AND list_type = ?
        AND (
          title_lower LIKE ? ESCAPE '\\'
          OR LOWER(imdb_id) LIKE ? ESCAPE '\\'
          OR LOWER(actors) LIKE ? ESCAPE '\\'
          OR LOWER(plot) LIKE ? ESCAPE '\\'
         )
-        AND NOT EXISTS (
-          SELECT 1 FROM collection_item_tags
-          WHERE collection_item_tags.item_id = collection_items.id
-          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
-        )
        ORDER BY created_at DESC, id DESC
        LIMIT ?`
     )
-    .all(
-      ...usernameHashes,
-      likeQuery,
-      likeQuery,
-      likeQuery,
-      likeQuery,
-      ...INTERNAL_COLLECTION_TAGS,
-      normalizedLimit
-    ) as Array<{
+    .all(...usernameHashes, 'library', likeQuery, likeQuery, likeQuery, likeQuery, normalizedLimit) as Array<{
     imdb_id: string;
     title: string;
   }>;
@@ -376,13 +369,14 @@ export const findTagSuggestions = (
        FROM collection_item_tags
        INNER JOIN collection_items ON collection_items.id = collection_item_tags.item_id
        WHERE collection_items.username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+       AND collection_items.list_type = ?
        AND LOWER(tag) LIKE ? ESCAPE '\\'
        ${excludedSql}
        GROUP BY tag
        ORDER BY count DESC, tag
        LIMIT ?`
     )
-    .all(...usernameHashes, `${escapeLike(lowerQuery)}%`, ...excludedTags, normalizeLimit(limit)) as Array<{
+    .all(...usernameHashes, 'library', `${escapeLike(lowerQuery)}%`, ...excludedTags, normalizeLimit(limit)) as Array<{
     tag: string;
   }>;
 
@@ -404,22 +398,32 @@ export const findGenreSuggestions = (
        FROM collection_item_genres
        INNER JOIN collection_items ON collection_items.id = collection_item_genres.item_id
        WHERE collection_items.username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+       AND collection_items.list_type = ?
        AND LOWER(genre) LIKE ? ESCAPE '\\'
        GROUP BY genre
        ORDER BY count DESC, genre
        LIMIT ?`
     )
-    .all(...usernameHashes, `${escapeLike(lowerQuery)}%`, normalizeLimit(limit)) as Array<{ genre: string }>;
+    .all(...usernameHashes, 'library', `${escapeLike(lowerQuery)}%`, normalizeLimit(limit)) as Array<{ genre: string }>;
 
   return rows.map((row) => row.genre);
 };
 
 export const collectionItemExists = (db: Database.Database, usernameHashes: string[], imdbId: string): boolean => {
+  return collectionItemExistsInList(db, usernameHashes, imdbId, 'library');
+};
+
+export const collectionItemExistsInList = (
+  db: Database.Database,
+  usernameHashes: string[],
+  imdbId: string,
+  listType: CollectionListTypeModel = 'library'
+): boolean => {
   const row = db
     .prepare(
-      `SELECT 1 FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND imdb_id = ? LIMIT 1`
+      `SELECT 1 FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND imdb_id = ? AND list_type = ? LIMIT 1`
     )
-    .get(...usernameHashes, imdbId);
+    .get(...usernameHashes, imdbId, normalizeListType(listType));
   return !!row;
 };
 
@@ -453,33 +457,20 @@ export const getCollectionStatistics = (
     }
   ).count;
 
-  const watchLaterCount = (
-    db
-      .prepare(
-        `SELECT COUNT(*) as count
-         FROM collection_items
-         WHERE username_hash = ?
-         AND EXISTS (
-           SELECT 1 FROM collection_item_tags
-           WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-         )`
-      )
-      .get(internalCollectionUsernameHash ?? usernameHashes[0], WATCH_LATER_TAG) as { count: number }
-  ).count;
+  const countListType = (listType: CollectionListTypeModel): number =>
+    (
+      db
+        .prepare(
+          `SELECT COUNT(*) as count
+           FROM collection_items
+           WHERE username_hash = ?
+           AND list_type = ?`
+        )
+        .get(internalCollectionUsernameHash ?? usernameHashes[0], listType) as { count: number }
+    ).count;
 
-  const wishlistCount = (
-    db
-      .prepare(
-        `SELECT COUNT(*) as count
-         FROM collection_items
-         WHERE username_hash = ?
-         AND EXISTS (
-           SELECT 1 FROM collection_item_tags
-           WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-         )`
-      )
-      .get(internalCollectionUsernameHash ?? usernameHashes[0], WISHLIST_TAG) as { count: number }
-  ).count;
+  const watchLaterCount = countListType('watch-later');
+  const wishlistCount = countListType('wishlist');
 
   const tagCounts = db
     .prepare(
@@ -523,16 +514,12 @@ export const findCollectionItemsForPrompt = (
   const rows = db
     .prepare(
       `SELECT *
-       FROM collection_items
-       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-        AND NOT EXISTS (
-          SELECT 1 FROM collection_item_tags
-          WHERE collection_item_tags.item_id = collection_items.id
-          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
-        )
-       ORDER BY created_at DESC, id DESC`
+        FROM collection_items
+        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+         AND list_type = ?
+        ORDER BY created_at DESC, id DESC`
     )
-    .all(...usernameHashes, ...INTERNAL_COLLECTION_TAGS) as CollectionItemRow[];
+    .all(...usernameHashes, 'library') as CollectionItemRow[];
 
   return rows.reduce<CollectionItemApiModel[]>((items, row) => {
     if (!row.imdb_id) return items;
@@ -549,15 +536,11 @@ export const findRandomCollectionItem = (
   const row = db
     .prepare(
       `SELECT * FROM collection_items
-       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-        AND NOT EXISTS (
-          SELECT 1 FROM collection_item_tags
-          WHERE collection_item_tags.item_id = collection_items.id
-          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
-        )
-       ORDER BY RANDOM() LIMIT 1`
+        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+         AND list_type = ?
+        ORDER BY RANDOM() LIMIT 1`
     )
-    .get(...usernameHashes, ...INTERNAL_COLLECTION_TAGS) as CollectionItemRow | undefined;
+    .get(...usernameHashes, 'library') as CollectionItemRow | undefined;
 
   return row ? toApiItem(db, row) : undefined;
 };
@@ -571,14 +554,10 @@ export const findRandomCollectionImages = (
     .prepare(
       `SELECT image FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND image != ?
-        AND NOT EXISTS (
-          SELECT 1 FROM collection_item_tags
-          WHERE collection_item_tags.item_id = collection_items.id
-          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
-        )
-       ORDER BY RANDOM() LIMIT ?`
+         AND list_type = ?
+        ORDER BY RANDOM() LIMIT ?`
     )
-    .all(...usernameHashes, '', ...INTERNAL_COLLECTION_TAGS, count) as Array<{ image: string }>;
+    .all(...usernameHashes, '', 'library', count) as Array<{ image: string }>;
 
   return rows.map((row) => row.image);
 };
@@ -588,41 +567,40 @@ export const countCollectionItems = (db: Database.Database, usernameHashes: stri
     .prepare(
       `SELECT COUNT(*) as count FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-        AND NOT EXISTS (
-          SELECT 1 FROM collection_item_tags
-          WHERE collection_item_tags.item_id = collection_items.id
-          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
-        )`
+         AND list_type = ?`
     )
-    .get(...usernameHashes, ...INTERNAL_COLLECTION_TAGS) as { count: number };
+    .get(...usernameHashes, 'library') as { count: number };
   return row.count;
 };
 
 export const findCollectionItemByImdbId = (
   db: Database.Database,
   usernameHash: string,
-  imdbId: string
+  imdbId: string,
+  listType: CollectionListTypeModel = 'library'
 ): CollectionItemRow | undefined => {
   return db
-    .prepare('SELECT * FROM collection_items WHERE username_hash = ? AND imdb_id = ?')
-    .get(usernameHash, imdbId) as CollectionItemRow | undefined;
+    .prepare('SELECT * FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+    .get(usernameHash, imdbId, normalizeListType(listType)) as CollectionItemRow | undefined;
 };
 
 export const insertCollectionItem = (
   db: Database.Database,
   usernameHash: string,
   hash: string,
-  item: CollectionItemChangeApiModel
+  item: CollectionItemChangeApiModel,
+  listType: CollectionListTypeModel = 'library'
 ): CollectionItemApiModel => {
   const result = db
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, imdb_id, title, title_lower, year, rate, actors, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (username_hash, imdb_id, list_type, title, title_lower, year, rate, actors, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       usernameHash,
       item.IMDbId,
+      normalizeListType(listType),
       item.title,
       item.title.toLowerCase(),
       item.year ?? '',
@@ -643,7 +621,7 @@ export const insertCollectionItem = (
     db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
 
-  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, item.IMDbId)!);
+  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, item.IMDbId, listType)!);
 };
 
 export const updateCollectionItem = (
@@ -653,7 +631,7 @@ export const updateCollectionItem = (
   hash: string,
   updatedItem: CollectionItemChangeApiModel
 ): CollectionItemApiModel | undefined => {
-  const existingItem = findCollectionItemByImdbId(db, usernameHash, imdbId);
+  const existingItem = findCollectionItemByImdbId(db, usernameHash, imdbId, 'library');
   if (!existingItem) return;
 
   db.prepare(
@@ -687,11 +665,16 @@ export const updateCollectionItem = (
     db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(existingItem.id, tag);
   }
 
-  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, updatedItem.IMDbId)!);
+  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, updatedItem.IMDbId, 'library')!);
 };
 
-export const deleteCollectionItem = (db: Database.Database, usernameHash: string, imdbId: string): void => {
-  const existingItem = findCollectionItemByImdbId(db, usernameHash, imdbId);
+export const deleteCollectionItem = (
+  db: Database.Database,
+  usernameHash: string,
+  imdbId: string,
+  listType: CollectionListTypeModel = 'library'
+): void => {
+  const existingItem = findCollectionItemByImdbId(db, usernameHash, imdbId, listType);
   if (!existingItem) return;
 
   db.prepare('DELETE FROM collection_item_genres WHERE item_id = ?').run(existingItem.id);
@@ -703,13 +686,12 @@ export const updateCollectionItemHash = (
   db: Database.Database,
   usernameHash: string,
   imdbId: string,
-  hash: string
+  hash: string,
+  listType: CollectionListTypeModel = 'library'
 ): void => {
-  db.prepare('UPDATE collection_items SET content_hash = ? WHERE username_hash = ? AND imdb_id = ?').run(
-    hash,
-    usernameHash,
-    imdbId
-  );
+  db.prepare(
+    'UPDATE collection_items SET content_hash = ? WHERE username_hash = ? AND imdb_id = ? AND list_type = ?'
+  ).run(hash, usernameHash, imdbId, normalizeListType(listType));
 };
 
 export const markAllAsWatched = (db: Database.Database, usernameHash: string): number => {
@@ -717,17 +699,13 @@ export const markAllAsWatched = (db: Database.Database, usernameHash: string): n
     .prepare(
       `SELECT * FROM collection_items
        WHERE username_hash = ?
-        AND NOT EXISTS (
-          SELECT 1 FROM collection_item_tags
-          WHERE collection_item_tags.item_id = collection_items.id
-          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
-        )
+        AND list_type = ?
        AND NOT EXISTS (
          SELECT 1 FROM collection_item_tags
          WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
        )`
     )
-    .all(usernameHash, ...INTERNAL_COLLECTION_TAGS, WATCHED_TAG) as CollectionItemRow[];
+    .all(usernameHash, 'library', WATCHED_TAG) as CollectionItemRow[];
 
   let changedCount = 0;
   const transaction = db.transaction(() => {
@@ -752,17 +730,13 @@ export const markAllAsUnwatched = (db: Database.Database, usernameHash: string):
     .prepare(
       `SELECT * FROM collection_items
        WHERE username_hash = ?
-        AND NOT EXISTS (
-          SELECT 1 FROM collection_item_tags
-          WHERE collection_item_tags.item_id = collection_items.id
-          AND collection_item_tags.tag IN (${INTERNAL_COLLECTION_TAGS.map(() => '?').join(', ')})
-        )
+        AND list_type = ?
        AND EXISTS (
          SELECT 1 FROM collection_item_tags
          WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
        )`
     )
-    .all(usernameHash, ...INTERNAL_COLLECTION_TAGS, WATCHED_TAG) as CollectionItemRow[];
+    .all(usernameHash, 'library', WATCHED_TAG) as CollectionItemRow[];
 
   let changedCount = 0;
   const transaction = db.transaction(() => {

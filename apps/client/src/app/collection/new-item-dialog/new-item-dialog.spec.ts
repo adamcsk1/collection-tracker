@@ -88,7 +88,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'new', undefined, false, false);
+    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'new', undefined, undefined);
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -102,7 +102,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', `#tag ${WATCHED_TAG}`, 'new', undefined, false, false);
+    expect(service.save).toHaveBeenCalledWith('tt123', `#tag ${WATCHED_TAG}`, 'new', undefined, undefined);
     expect(formRoot.reset).toHaveBeenCalled();
     expect(component['form'].watched().value()).toBe(false);
   });
@@ -116,7 +116,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', WATCHED_TAG, 'new', undefined, false, false);
+    expect(service.save).toHaveBeenCalledWith('tt123', WATCHED_TAG, 'new', undefined, undefined);
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -127,7 +127,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt456', '', 'close', undefined, false, false);
+    expect(service.save).toHaveBeenCalledWith('tt456', '', 'close', undefined, undefined);
     expect(selectedIMDbId.reset).toHaveBeenCalledWith(null);
   });
 
@@ -147,7 +147,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', '', 'close', 'owner-code', false, false);
+    expect(service.save).toHaveBeenCalledWith('tt123', '', 'close', 'owner-code', undefined);
   });
 
   it('saves wishlist items without watched or shared library values', async () => {
@@ -159,7 +159,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'close', undefined, false, true);
+    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'close', undefined, 'wishlist');
   });
 
   it('only offers shared libraries with create permission', () => {

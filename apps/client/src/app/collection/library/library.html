@@ -18,6 +18,12 @@
     />
   }
   @defer (prefetch on idle) {
-    <ct-list [routeSearchText]="querySearch()" />
+    <ct-list
+      [routeSearchText]="querySearch()"
+      [dataSource]="collectionDataSource"
+      (randomPick)="onRandomPick()"
+      (toggleAiSearch)="onToggleAiSearch()"
+      (showFunctions)="onShowFunctions()"
+    />
   }
 </div>
