@@ -2,6 +2,7 @@ import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { hashText } from '../crypto';
 
 export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionItemChangeApiModel | undefined => {
+  const userRate = item?.userRate;
   if (
     typeof item?.title !== 'string' ||
     typeof item?.image !== 'string' ||
@@ -11,7 +12,13 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     typeof item?.plot !== 'string' ||
     !Array.isArray(item?.genre) ||
     !Array.isArray(item?.tags) ||
-    (typeof item?.year !== 'number' && item?.year !== null)
+    (typeof item?.year !== 'number' && item?.year !== null) ||
+    (typeof userRate !== 'number' && userRate !== null) ||
+    (typeof userRate === 'number' &&
+      (!Number.isFinite(userRate) ||
+        userRate < 0 ||
+        userRate > 10 ||
+        Math.abs(userRate * 10 - Math.round(userRate * 10)) > 1e-9))
   ) {
     return;
   }
@@ -24,6 +31,7 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     tags: item.tags.map((tag) => `${tag}`.trim()).filter(Boolean),
     year: item.year,
     rate: item.rate.trim(),
+    userRate,
     actors: item.actors.trim(),
     plot: item.plot.trim(),
   };

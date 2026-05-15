@@ -56,6 +56,7 @@ describe('ApiService', () => {
       tags: [],
       year: null,
       rate: '',
+      userRate: null,
       actors: '',
       plot: '',
     };
@@ -78,6 +79,7 @@ describe('ApiService', () => {
       tags: [],
       year: null,
       rate: '',
+      userRate: null,
       actors: '',
       plot: '',
     };
@@ -100,6 +102,7 @@ describe('ApiService', () => {
       tags: [],
       year: null,
       rate: '',
+      userRate: null,
       actors: '',
       plot: '',
     };
@@ -330,6 +333,7 @@ describe('ApiService', () => {
       tags: [],
       year: null,
       rate: '',
+      userRate: null,
       actors: '',
       plot: '',
     };

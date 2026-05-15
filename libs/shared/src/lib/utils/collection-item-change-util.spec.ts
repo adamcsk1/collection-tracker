@@ -12,6 +12,7 @@ describe('toCollectionItemChange', () => {
         tags: ['#owned'],
         year: 2020,
         rate: '9.0',
+        userRate: 8.7,
         hash: 'hash',
         actors: 'Actors',
         plot: 'Plot',
@@ -24,6 +25,7 @@ describe('toCollectionItemChange', () => {
       tags: ['#owned'],
       year: 2020,
       rate: '9.0',
+      userRate: 8.7,
       actors: 'Actors',
       plot: 'Plot',
     });

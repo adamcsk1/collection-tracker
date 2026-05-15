@@ -9,6 +9,7 @@ export interface CollectionItemModel {
   tags: string[];
   year: number | null;
   rate: string;
+  userRate: number | null;
   hash: string;
   actors: string;
   plot: string;

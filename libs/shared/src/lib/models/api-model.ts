@@ -74,7 +74,7 @@ export interface CollectionStatisticsApiResponseModel {
 
 export type CollectionItemChangeApiModel = Pick<
   CollectionItemModel,
-  'image' | 'title' | 'genre' | 'IMDbId' | 'tags' | 'year' | 'rate' | 'actors' | 'plot'
+  'image' | 'title' | 'genre' | 'IMDbId' | 'tags' | 'year' | 'rate' | 'userRate' | 'actors' | 'plot'
 >;
 
 export interface CreateApiRequestModel extends CollectionItemChangeApiModel {

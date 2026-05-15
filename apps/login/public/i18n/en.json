@@ -1,5 +1,6 @@
 {
   "ApiUrl": "API url",
+  "AppTitle": "Collection tracker",
   "BackToSignIn": "Back to Sign In",
   "ChangeApiUrl": "Change API url",
   "Close": "Close",
@@ -26,7 +27,6 @@
   "Suggestions": "Suggestions",
   "System": "System",
   "Theme": "Theme",
-  "Title": "Collection tracker",
   "Toast.CopiedToClipboard": "The secret has been copied to the clipboard.",
   "Username": "Username",
   "Validation.Required": "Required field.",

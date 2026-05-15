@@ -25,6 +25,7 @@ const buildItem = (title: string, tags: string[] = []): CollectionItemModel => (
   tags,
   year: null,
   rate: '',
+  userRate: null,
   hash: '',
   actors: '',
   plot: '',

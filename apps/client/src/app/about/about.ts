@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
-import { APP_VERSION, BUILD, BUILD_DATE } from '../main/main-const';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { LinkButton } from '@components/link-button/link-button';
 import { ThemeService } from '@services/theme/theme-service';
 import { getBasePath } from '@shared/utils/get-base-path-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { APP_VERSION, BUILD, BUILD_DATE } from '../main/main-const';
 
 @Component({
   selector: 'ct-about',
@@ -19,7 +19,7 @@ export class About {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly theme = inject(ThemeService);
   protected readonly translations = {
-    title: computed(() => this.ngxSignalTranslate.translate('Title')),
+    title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
     aboutDescription: computed(() => this.ngxSignalTranslate.translate('About.Description')),
     build: computed(() => this.ngxSignalTranslate.translate('Build')),
     buildDate: computed(() => this.ngxSignalTranslate.translate('BuildDate')),

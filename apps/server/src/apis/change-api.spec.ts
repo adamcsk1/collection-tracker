@@ -28,12 +28,6 @@ const insertItem = (hash = 'abc123', usernameHash = 'user', listType = 'library'
   ).run(usernameHash, 'tt-change', listType, 'Old', 'old', '', '', '', '', hash);
 };
 
-const insertTag = (tag: string, imdbId = 'tt-change') => {
-  const db = getDatabase();
-  const itemId = (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get(imdbId) as { id: number }).id;
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
-};
-
 const updatedItem = {
   image: 'poster.jpg',
   title: 'Updated',
@@ -42,6 +36,7 @@ const updatedItem = {
   tags: ['#movie'],
   year: 2024,
   rate: '7.1',
+  userRate: 8.7,
   actors: 'Actor One, Actor Two',
   plot: 'Updated plot',
 };

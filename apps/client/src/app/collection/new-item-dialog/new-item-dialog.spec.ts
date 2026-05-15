@@ -84,11 +84,12 @@ describe('NewItemDialog component', () => {
     const formRoot = component['form']();
     vi.spyOn(formRoot, 'reset');
     component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].userRate().value.set(8.7);
     component['form'].tags().value.set('#tag');
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'new', undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', 8.7, '#tag', 'new', undefined, undefined);
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -102,7 +103,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', `#tag ${WATCHED_TAG}`, 'new', undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', null, `#tag ${WATCHED_TAG}`, 'new', undefined, undefined);
     expect(formRoot.reset).toHaveBeenCalled();
     expect(component['form'].watched().value()).toBe(false);
   });
@@ -116,7 +117,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', WATCHED_TAG, 'new', undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', null, WATCHED_TAG, 'new', undefined, undefined);
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -127,7 +128,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt456', '', 'close', undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt456', null, '', 'close', undefined, undefined);
     expect(selectedIMDbId.reset).toHaveBeenCalledWith(null);
   });
 
@@ -147,7 +148,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', '', 'close', 'owner-code', undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'close', 'owner-code', undefined);
   });
 
   it('saves wishlist items without watched or shared library values', async () => {
@@ -159,7 +160,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', '#tag', 'close', undefined, 'wishlist');
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', undefined, 'wishlist');
   });
 
   it('only offers shared libraries with create permission', () => {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -20,7 +20,7 @@ export class Header {
 
   protected readonly translations = {
     menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
-    title: computed(() => this.ngxSignalTranslate.translate('Title')),
+    title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
   };
   protected onOpenMenu(): void {
     this.portal.open(MenuDialog);

@@ -8,6 +8,7 @@ interface CollectionItemFixture {
   tags: string[];
   year: number | null;
   rate: string;
+  userRate: number | null;
   actors: string;
   plot: string;
 }
@@ -24,6 +25,7 @@ export const buildCollectionItem = (
   tags: [`#${type}`],
   year: 2020,
   rate: '8.5',
+  userRate: null,
   actors: 'Actor One, Actor Two',
   plot: `A great ${type} for e2e testing.`,
 });

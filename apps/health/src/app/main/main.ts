@@ -1,5 +1,5 @@
 import { DatePipe, UpperCasePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ImageIcon } from '@components/image-icon/image-icon';
 import { LinkButton } from '@components/link-button/link-button';
 import { apiStateToken } from '@services/api/api-store';
@@ -25,7 +25,7 @@ export class Main implements OnInit {
   private readonly webstorage = inject(WebstorageService);
 
   protected readonly translations = {
-    title: computed(() => this.ngxSignalTranslate.translate('Title')),
+    title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
     subTitle: computed(() => this.ngxSignalTranslate.translate('SubTitle')),
     navigateToLogin: computed(() => this.ngxSignalTranslate.translate('NavigateToLogin')),
     loading: computed(() => this.ngxSignalTranslate.translate('Loading')),

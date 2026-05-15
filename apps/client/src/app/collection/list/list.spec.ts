@@ -8,7 +8,7 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
+import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -48,6 +48,7 @@ describe('List', () => {
     tags: [],
     year: null,
     rate: '',
+    userRate: null,
     hash: '',
     actors: '',
     plot: '',

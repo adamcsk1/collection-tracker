@@ -37,6 +37,7 @@ export class NewItemDialogService {
 
   public save(
     selectedIMDbId: string,
+    userRate: number | null,
     tags: string,
     mode: SaveMode,
     targetOwnerShareCode?: string,
@@ -56,6 +57,7 @@ export class NewItemDialogService {
           tags: [`#${selectedContent.Type.toLowerCase()}`, ...parseTagText(tags)],
           year: Number(selectedContent.Year) || null,
           rate: selectedContent.imdbRating,
+          userRate,
           actors: selectedContent.Actors,
           plot: selectedContent.Plot,
         })

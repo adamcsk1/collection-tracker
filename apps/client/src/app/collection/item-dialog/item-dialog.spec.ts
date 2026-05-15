@@ -33,6 +33,7 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
   tags: [MOVIE_TAG, '#action'],
   year: 2020,
   rate: '8.5',
+  userRate: null,
   hash: 'testhash',
   actors: 'Actor One, Actor Two',
   plot: 'A test plot.',
@@ -49,6 +50,7 @@ const buildApiItem = (overrides: Partial<CollectionItemApiModel> = {}): Collecti
   tags: [MOVIE_TAG, '#action'],
   year: 2020,
   rate: '8.5',
+  userRate: null,
   hash: 'newhash',
   actors: 'Actor One, Actor Two',
   plot: 'A test plot.',
@@ -118,9 +120,9 @@ describe('ItemDialog', () => {
   });
 
   it('initializes draft item from the input model', () => {
-    expect(component['draftItem']().title).toBe('Test Movie');
-    expect(component['draftItem']().IMDbId).toBe('tt1234567');
-    expect(component['draftItem']().tags).toEqual([MOVIE_TAG, '#action']);
+    expect(component['form'].title().value()).toBe('Test Movie');
+    expect(component['form'].IMDbId().value()).toBe('tt1234567');
+    expect(component['form'].tagsText().value()).toBe(`${MOVIE_TAG} #action`);
   });
 
   it('toggles edit mode', () => {
@@ -135,11 +137,11 @@ describe('ItemDialog', () => {
 
   it('restores last saved item when switching back to read-only', () => {
     component['onEdit']();
-    component['updateDraft']('title', 'Modified Title');
-    expect(component['draftItem']().title).toBe('Modified Title');
+    component['form'].title().value.set('Modified Title');
+    expect(component['form'].title().value()).toBe('Modified Title');
 
     component['onReadOnly']();
-    expect(component['draftItem']().title).toBe('Test Movie');
+    expect(component['form'].title().value()).toBe('Test Movie');
     expect(component['editMode']()).toBe(false);
   });
 
@@ -231,13 +233,13 @@ describe('ItemDialog', () => {
     expect(component['permissionDelete']()).toBe(true);
   });
 
-  it('passes the owner share code when changing a shared item', () => {
+  it('passes the owner share code when changing a shared item', async () => {
     confirm.open.mockReturnValue(of(true));
     fixture.componentRef.setInput('collectionItem', buildItem({ ownerShareCode: 'owner-code' }));
     fixture.detectChanges();
-    component['updateDraft']('title', 'Updated Shared Title');
+    component['form'].title().value.set('Updated Shared Title');
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
@@ -316,11 +318,11 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('');
   });
 
-  it('saves changes after confirmation and updates state', () => {
+  it('saves changes after confirmation and updates state', async () => {
     confirm.open.mockReturnValue(of(true));
-    component['updateDraft']('title', 'Updated Title');
+    component['form'].title().value.set('Updated Title');
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(confirm.open).toHaveBeenCalled();
     expect(api.update).toHaveBeenCalledWith(
@@ -335,128 +337,123 @@ describe('ItemDialog', () => {
     expect(component['editMode']()).toBe(false);
   });
 
-  it('does not save when confirmation is declined', () => {
+  it('does not save when confirmation is declined', async () => {
     confirm.open.mockReturnValue(of(false));
-    component['updateDraft']('title', 'Updated Title');
+    component['form'].title().value.set('Updated Title');
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(api.update).not.toHaveBeenCalled();
     expect(collectionService.updateCollectionItem).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('');
   });
 
-  it('does not save when title is empty', () => {
-    component['updateDraft']('title', '  ');
+  it('does not save when title is empty', async () => {
+    component['form'].title().value.set('  ');
 
-    component['onSaveChanges']();
-
-    expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.MissingRequiredField');
-  });
-
-  it('does not save when IMDbId is empty', () => {
-    component['updateDraft']('IMDbId', '  ');
-
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.update).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.MissingRequiredField');
+    expect(toastState.state.message()).toBe('');
   });
 
-  it('does not save when tags contain virtual tags', () => {
-    component['updateDraft']('tags', [MOVIE_TAG, VIRTUAL_UNWATCHED_TAG]);
+  it('does not save when IMDbId is empty', async () => {
+    component['form'].IMDbId().value.set('  ');
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.VirtualTagNotAllowed');
+    expect(api.update).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('');
+  });
+
+  it('does not save when tags contain virtual tags', async () => {
+    component['form'].tagsText().value.set(`${MOVIE_TAG} ${VIRTUAL_UNWATCHED_TAG}`);
+
+    await component['onSaveChanges']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('does not save when a normal item is changed to watch later', () => {
-    component['updateDraft']('tags', [MOVIE_TAG, WATCH_LATER_TAG]);
+  it('does not save when a normal item is changed to watch later', async () => {
+    component['form'].tagsText().value.set(`${MOVIE_TAG} ${WATCH_LATER_TAG}`);
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.UsedInternalTag');
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('does not save when a normal item is changed to wishlist', () => {
-    component['updateDraft']('tags', [MOVIE_TAG, WISHLIST_TAG]);
+  it('does not save when a normal item is changed to wishlist', async () => {
+    component['form'].tagsText().value.set(`${MOVIE_TAG} ${WISHLIST_TAG}`);
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.UsedInternalTag');
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('does not save when a watch later item is marked watched', () => {
+  it('does not save when a watch later item is marked watched', async () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
     fixture.detectChanges();
     component.ngOnInit();
-    component['updateDraft']('tags', [MOVIE_TAG, WATCH_LATER_TAG, WATCHED_TAG]);
+    component['form'].tagsText().value.set(`${MOVIE_TAG} ${WATCH_LATER_TAG} ${WATCHED_TAG}`);
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('');
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('does not update watch later items', () => {
+  it('does not update watch later items', async () => {
     confirm.open.mockReturnValue(of(true));
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
     fixture.detectChanges();
     component.ngOnInit();
-    component['updateDraft']('tags', [MOVIE_TAG, '#later']);
+    component['form'].tagsText().value.set(`${MOVIE_TAG} #later`);
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('does not update wishlist items', () => {
+  it('does not update wishlist items', async () => {
     confirm.open.mockReturnValue(of(true));
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist' }));
     fixture.detectChanges();
     component.ngOnInit();
-    component['updateDraft']('tags', [MOVIE_TAG, '#wishlist-custom']);
+    component['form'].tagsText().value.set(`${MOVIE_TAG} #wishlist-custom`);
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('does not save when tags lack a type tag', () => {
-    component['updateDraft']('tags', ['#action']);
+  it('does not save when tags lack a type tag', async () => {
+    component['form'].tagsText().value.set('#action');
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.MissingTypeTag');
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('allows series tag as valid type tag', () => {
+  it('allows series tag as valid type tag', async () => {
     confirm.open.mockReturnValue(of(true));
-    component['updateDraft']('tags', [SERIES_TAG, '#drama']);
+    component['form'].tagsText().value.set(`${SERIES_TAG} #drama`);
 
-    component['onSaveChanges']();
+    await component['onSaveChanges']();
 
     expect(confirm.open).toHaveBeenCalled();
     expect(api.update).toHaveBeenCalled();
   });
 
-  it('marks item as watched by appending watched tag and saving', () => {
+  it('marks item as watched by appending watched tag and saving', async () => {
     confirm.open.mockReturnValue(of(true));
 
-    component['onMarkAsWatched']();
+    await component['onMarkAsWatched']();
 
     expect(confirm.open).toHaveBeenCalled();
     expect(api.update).toHaveBeenCalledWith(
@@ -468,36 +465,37 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });
 
-  it('does not re-save when already watched', () => {
+  it('does not re-save when already watched', async () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCHED_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
 
-    component['onMarkAsWatched']();
+    await component['onMarkAsWatched']();
 
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('does not mark wishlist items as watched', () => {
+  it('does not mark wishlist items as watched', async () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
 
-    component['onMarkAsWatched']();
+    await component['onMarkAsWatched']();
 
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('marks item as unwatched by removing watched tag and saving', () => {
+  it('marks item as unwatched by removing watched tag and saving', async () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCHED_TAG, '#action'] }));
     fixture.detectChanges();
+    component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
 
-    component['onMarkAsUnwatched']();
+    await component['onMarkAsUnwatched']();
 
     expect(confirm.open).toHaveBeenCalled();
     expect(api.update).toHaveBeenCalledWith(
@@ -509,10 +507,10 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });
 
-  it('marks item as favorite by appending favorite tag and saving', () => {
+  it('marks item as favorite by appending favorite tag and saving', async () => {
     confirm.open.mockReturnValue(of(true));
 
-    component['onMarkAsFavorite']();
+    await component['onMarkAsFavorite']();
 
     expect(confirm.open).toHaveBeenCalled();
     expect(api.update).toHaveBeenCalledWith(
@@ -524,36 +522,37 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });
 
-  it('does not re-save when already favorite', () => {
+  it('does not re-save when already favorite', async () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
 
-    component['onMarkAsFavorite']();
+    await component['onMarkAsFavorite']();
 
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('does not mark wishlist items as favorite', () => {
+  it('does not mark wishlist items as favorite', async () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
 
-    component['onMarkAsFavorite']();
+    await component['onMarkAsFavorite']();
 
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('removes favorite tag and saves', () => {
+  it('removes favorite tag and saves', async () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG, '#action'] }));
     fixture.detectChanges();
+    component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
 
-    component['onRemoveFavorite']();
+    await component['onRemoveFavorite']();
 
     expect(confirm.open).toHaveBeenCalled();
     expect(api.update).toHaveBeenCalledWith(
@@ -566,28 +565,13 @@ describe('ItemDialog', () => {
   });
 
   it('updates year to number when valid', () => {
-    component['updateYear']('2021');
-    expect(component['draftItem']().year).toBe(2021);
+    component['form'].year().value.set(2021);
+    expect(component['form'].year().value()).toBe(2021);
   });
 
   it('updates year to null when empty', () => {
-    component['updateYear']('');
-    expect(component['draftItem']().year).toBeNull();
-  });
-
-  it('updates year to null when invalid', () => {
-    component['updateYear']('abc');
-    expect(component['draftItem']().year).toBeNull();
-  });
-
-  it('updates genre from comma-separated text', () => {
-    component['updateGenre']('Action, Comedy');
-    expect(component['draftItem']().genre).toEqual(['Action', 'Comedy']);
-  });
-
-  it('updates tags from space-separated text', () => {
-    component['updateTags']('#tag1 #tag2');
-    expect(component['draftItem']().tags).toEqual(['#tag1', '#tag2']);
+    component['form'].year().value.set(null);
+    expect(component['form'].year().value()).toBeNull();
   });
 
   it('sets posterImageFailed on image error', () => {
