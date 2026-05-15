@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as MainUtil from '@shared/utils/redirect-to-login-util';
@@ -13,7 +14,7 @@ describe('LogoutService', () => {
   let redirectSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    webstorage = { clear: vi.fn() };
+    webstorage = { clear: vi.fn(), removeItem: vi.fn() };
 
     TestBed.configureTestingModule({
       providers: [
@@ -46,11 +47,12 @@ describe('LogoutService', () => {
     expect(webstorage.clear).toHaveBeenCalled();
   });
 
-  it('does not clear local storage when clearLocalStorageAfterLogout is disabled', () => {
+  it('removes logged-in flag but does not clear all local storage when clearLocalStorageAfterLogout is disabled', () => {
     mainState.setState('clearLocalStorageAfterLogout', false);
 
     service.performLogout();
 
     expect(webstorage.clear).not.toHaveBeenCalled();
+    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN);
   });
 });

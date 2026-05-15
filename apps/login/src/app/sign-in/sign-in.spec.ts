@@ -7,7 +7,7 @@ import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, ThemeState, themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { STORAGE_API_URL } from '@shared/constants/storage-const';
+import { STORAGE_API_URL, STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -115,6 +115,7 @@ describe('SignIn component', () => {
     expect(apiState.setState).toHaveBeenCalledWith('apiUrl', 'https://new-api');
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, 'https://new-api');
     expect(publicApiService.signIn).toHaveBeenCalledWith('neo', 'matrix');
+    expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN, 'true');
     expect(sharedApiService.updateUserSettings).toHaveBeenCalledWith({
       language: 'en',
       theme: 'light',

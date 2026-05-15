@@ -7,6 +7,7 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_API_URL,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
+  STORAGE_LOGGED_IN,
   STORAGE_SENSITIVE_DATA_STORAGE,
 } from '@shared/constants/storage-const';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
@@ -42,6 +43,7 @@ export class MainService {
       .pipe(
         catchError(() => {
           this._tokenValid.set(false);
+          this.webstorage.removeItem(STORAGE_LOGGED_IN);
           return EMPTY;
         })
       )
