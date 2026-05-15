@@ -1,6 +1,8 @@
-import { CollectionItemModel } from './collection-item-model';
+import { CollectionItemModel, CollectionListTypeModel } from './collection-item-model';
 import { LanguageModel } from './language-model';
 import { ThemeModel } from './theme-model';
+
+export type { CollectionListTypeModel } from './collection-item-model';
 
 export type CollectionItemApiModel = CollectionItemModel;
 
@@ -14,6 +16,7 @@ export interface CollectionItemFiltersApiModel {
   tagMode?: CollectionItemTagMode;
   type?: CollectionItemTypeFilter;
   watched?: boolean;
+  listType?: CollectionListTypeModel;
 }
 
 export interface CollectionItemsApiResponseModel {
@@ -74,7 +77,9 @@ export type CollectionItemChangeApiModel = Pick<
   'image' | 'title' | 'genre' | 'IMDbId' | 'tags' | 'year' | 'rate' | 'actors' | 'plot'
 >;
 
-export type CreateApiRequestModel = CollectionItemChangeApiModel;
+export interface CreateApiRequestModel extends CollectionItemChangeApiModel {
+  listType?: CollectionListTypeModel;
+}
 
 export interface CreateApiResponseModel {
   item: CollectionItemApiModel;

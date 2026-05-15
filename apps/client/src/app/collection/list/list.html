@@ -18,7 +18,11 @@
 
   @for (
     collectionItem of visibleCollection();
-    track (collectionItem.ownerShareCode ?? '') + ':' + collectionItem.IMDbId
+    track (collectionItem.ownerShareCode ?? '') +
+      ':' +
+      (collectionItem.listType ?? 'library') +
+      ':' +
+      collectionItem.IMDbId
   ) {
     <ct-list-item [collectionItem]="collectionItem" />
   } @empty {

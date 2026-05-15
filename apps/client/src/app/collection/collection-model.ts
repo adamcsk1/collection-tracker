@@ -1,16 +1,15 @@
-export interface CollectionItemModel {
-  image: string;
-  title: string;
-  titleLower: string; // The lowercase cached version of title for faster searching.
-  genre: string[];
-  IMDbId: string;
-  tags: string[];
-  year: number | null;
-  rate: string;
-  hash: string;
-  actors: string;
-  plot: string;
-  ownerShareCode?: string;
+import { CollectionItemsApiResponseModel } from '@shared/models/api-model';
+import { Observable } from 'rxjs';
+
+export type { CollectionItemModel, CollectionModel } from '@shared/models/collection-item-model';
+
+export interface CollectionListDataSourceRequest {
+  reset: boolean;
+  offset: number;
+  limit: number;
+  searchText: string;
 }
 
-export type CollectionModel = CollectionItemModel[];
+export type CollectionListDataSource = (
+  request: CollectionListDataSourceRequest
+) => Observable<CollectionItemsApiResponseModel>;

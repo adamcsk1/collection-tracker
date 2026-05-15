@@ -2,6 +2,8 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
+import { ApiService } from '@services/api/api-service';
+import { PortalService } from '@services/portal-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,12 +18,20 @@ describe('Collection library component', () => {
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let queryParamMap: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
+  const api = {
+    searchItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
+    getMatchedItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
+    getRandomItem: vi.fn(),
+  };
+
   const createFixture = (queryParams: Record<string, unknown> = {}) => {
     queryParamMap = new BehaviorSubject(convertToParamMap(queryParams));
     TestBed.configureTestingModule({
       imports: [CollectionLibrary],
       providers: [
         provideStore(initialCollectionState, collectionStateToken),
+        { provide: ApiService, useValue: api },
+        { provide: PortalService, useValue: { open: vi.fn() } },
         { provide: AutocompleteService, useValue: { search: vi.fn() } },
         {
           provide: AiSearchService,
@@ -29,6 +39,7 @@ describe('Collection library component', () => {
             useAiSearch: signal(false),
             getMatchedIds: () => of(null),
             searchInProgress: signal(false),
+            checkAiAvailable: vi.fn(() => of(true)),
           }),
         },
         {
@@ -75,6 +86,8 @@ describe('Collection library component', () => {
       imports: [CollectionLibrary],
       providers: [
         provideStore(initialCollectionState, collectionStateToken),
+        { provide: ApiService, useValue: api },
+        { provide: PortalService, useValue: { open: vi.fn() } },
         { provide: AutocompleteService, useValue: { search: vi.fn() } },
         {
           provide: AiSearchService,
@@ -82,6 +95,7 @@ describe('Collection library component', () => {
             useAiSearch: signal(false),
             getMatchedIds: () => of(null),
             searchInProgress: signal(false),
+            checkAiAvailable: vi.fn(() => of(true)),
           }),
         },
         {

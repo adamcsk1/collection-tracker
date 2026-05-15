@@ -1,5 +1,4 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { CollectionMatchedItemsApiRequestModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
@@ -25,10 +24,10 @@ export const register = (app: FastifyInstance): void => {
       }
 
       const db = getDatabase();
-      const isWatchLaterRequest = (body.filters?.tags ?? []).some((tag) => tag.toLowerCase() === WATCH_LATER_TAG);
-      const usernameHashes = isWatchLaterRequest
-        ? [request.usernameHash]
-        : [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
+      const usernameHashes =
+        body.filters?.listType && body.filters.listType !== 'library'
+          ? [request.usernameHash]
+          : [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
 
       response.send(
         searchCollectionItems(db, usernameHashes, {

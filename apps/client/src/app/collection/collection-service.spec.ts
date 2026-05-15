@@ -26,6 +26,7 @@ describe('CollectionService', () => {
     hash: '',
     actors: '',
     plot: '',
+    listType: 'library',
     ownerShareCode,
   });
 
@@ -87,6 +88,17 @@ describe('CollectionService', () => {
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('same', 'own-code')]);
   });
 
+  it('deletes only the matching list item when IMDb IDs overlap', () => {
+    mainCollectionState.setState('collection', [
+      buildCollectionItem('same'),
+      { ...buildCollectionItem('same'), listType: 'watch-later' },
+    ]);
+
+    service.deleteCollectionItem('tt-same', undefined, 'watch-later');
+
+    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('same')]);
+  });
+
   it('updates an existing collection item by name', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('target')]);
 
@@ -106,6 +118,24 @@ describe('CollectionService', () => {
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('target', 'own-code'),
       buildCollectionItem('updated', 'owner-code'),
+    ]);
+  });
+
+  it('updates only the matching list item when IMDb IDs overlap', () => {
+    mainCollectionState.setState('collection', [
+      buildCollectionItem('target'),
+      { ...buildCollectionItem('target'), listType: 'watch-later' },
+    ]);
+
+    service.updateCollectionItem('tt-target', {
+      ...buildCollectionItem('updated'),
+      IMDbId: 'tt-target',
+      listType: 'watch-later',
+    });
+
+    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
+      buildCollectionItem('target'),
+      { ...buildCollectionItem('updated'), IMDbId: 'tt-target', listType: 'watch-later' },
     ]);
   });
 });

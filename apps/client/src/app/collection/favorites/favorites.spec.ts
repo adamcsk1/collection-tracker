@@ -1,6 +1,7 @@
 import { Component, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { ApiService } from '@services/api/api-service';
 import { FAVORITE_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { describe, expect, it } from 'vitest';
@@ -13,13 +14,17 @@ import { Favorites } from './favorites';
 class ListStub {
   public readonly hideFloatActions = input(false);
   public readonly routeSearchText = input('');
+  public readonly dataSource = input<unknown>();
 }
 
 describe('Favorites', () => {
   const createFixture = (): ComponentFixture<Favorites> => {
     TestBed.configureTestingModule({
       imports: [Favorites],
-      providers: [{ provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } }],
+      providers: [
+        { provide: ApiService, useValue: { searchItems: () => null } },
+        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
+      ],
     });
     TestBed.overrideComponent(Favorites, { set: { imports: [ListStub] } });
 

@@ -64,6 +64,39 @@ describe('create-api', () => {
     });
   });
 
+  it('creates a watch later item using listType', async () => {
+    insertUser();
+    const response = mockResponse();
+    const request: any = { body: { ...item, listType: 'watch-later' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ title: 'Custom File', listType: 'watch-later', tags: ['#movie'] }),
+    });
+    expect(getDatabase().prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt0000001')).toEqual({
+      list_type: 'watch-later',
+    });
+  });
+
+  it('creates a wishlist item using listType', async () => {
+    insertUser();
+    const response = mockResponse();
+    const request: any = { body: { ...item, listType: 'wishlist' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ title: 'Custom File', listType: 'wishlist', tags: ['#movie'] }),
+    });
+  });
+
   it('creates an item in a shared library when create permission is granted', async () => {
     insertUser('owner');
     insertUser('user');
@@ -185,6 +218,21 @@ describe('create-api', () => {
     const response = mockResponse();
     const request: any = {
       body: { ...item, tags: ['#movie', '#watch-later'], targetOwnerShareCode: 'shared-code' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when creating non-library listType in a shared library', async () => {
+    const response = mockResponse();
+    const request: any = {
+      body: { ...item, listType: 'watch-later', targetOwnerShareCode: 'shared-code' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);

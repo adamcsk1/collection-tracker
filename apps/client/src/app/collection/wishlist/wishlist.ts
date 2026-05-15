@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
-import { WISHLIST_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { CollectionListDataSourceRequest } from '../collection-model';
 import { List } from '../list/list';
 import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
 
@@ -15,8 +16,10 @@ import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
 export class Wishlist {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly portal = inject(PortalService);
+  private readonly api = inject(ApiService);
 
-  protected readonly wishlistTag = WISHLIST_TAG;
+  protected readonly wishlistDataSource = ({ offset, limit }: CollectionListDataSourceRequest) =>
+    this.api.searchItems({ listType: 'wishlist' }, offset, limit);
   protected readonly translations = {
     messageEmptyWishlist: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWishlist')),
     messageAddFirstWishlist: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWishlist')),

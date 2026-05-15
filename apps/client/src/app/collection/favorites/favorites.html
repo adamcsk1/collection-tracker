@@ -1,5 +1,5 @@
 <div class="collection-container">
-  <ct-list [hideFloatActions]="true" [routeSearchText]="favoriteTag">
+  <ct-list [hideFloatActions]="true" [routeSearchText]="favoriteTag" [dataSource]="favoritesDataSource">
     <span list-empty>
       {{ translations.messageEmptyFavorites() }}<br />
       {{ translations.messageAddFirstFavorite() }}

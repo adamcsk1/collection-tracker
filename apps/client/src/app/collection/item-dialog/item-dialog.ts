@@ -121,6 +121,7 @@ export class ItemDialog implements OnInit {
     const share = this.sharesState.state
       .incoming()
       .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
+    if (item.listType !== 'library') return false;
     if (this.isOwnItem()) return true;
     return share?.canUpdate === true;
   });
@@ -134,8 +135,8 @@ export class ItemDialog implements OnInit {
   });
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG));
   protected readonly favorite = computed(() => this.collectionItem().tags.includes(FAVORITE_TAG));
-  protected readonly watchLater = computed(() => this.collectionItem().tags.includes(WATCH_LATER_TAG));
-  protected readonly wishlist = computed(() => this.collectionItem().tags.includes(WISHLIST_TAG));
+  protected readonly watchLater = computed(() => this.collectionItem().listType === 'watch-later');
+  protected readonly wishlist = computed(() => this.collectionItem().listType === 'wishlist');
   protected readonly internalCollectionTag = computed(() => {
     if (this.watchLater()) return WATCH_LATER_TAG;
     if (this.wishlist()) return WISHLIST_TAG;
@@ -192,14 +193,16 @@ export class ItemDialog implements OnInit {
 
   protected onDelete(): void {
     const ownerShareCode = this.collectionItem().ownerShareCode;
+    const listType = this.collectionItem().listType === 'library' ? undefined : this.collectionItem().listType;
     this.confirm
       .open(this.ngxSignalTranslate.translate('Confirm.Delete', { name: this.collectionItem().title }))
       .pipe(
         mergeMap((confirmed) => {
           if (confirmed) {
-            return this.api
-              .delete(this.collectionItem().IMDbId, this.collectionItem().hash, ownerShareCode)
-              .pipe(map(() => confirmed));
+            const deleteRequest = listType
+              ? this.api.delete(this.collectionItem().IMDbId, this.collectionItem().hash, ownerShareCode, listType)
+              : this.api.delete(this.collectionItem().IMDbId, this.collectionItem().hash, ownerShareCode);
+            return deleteRequest.pipe(map(() => confirmed));
           } else return of(confirmed);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -207,7 +210,9 @@ export class ItemDialog implements OnInit {
       .subscribe((confirmed) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
-          this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId, ownerShareCode);
+          if (listType)
+            this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId, ownerShareCode, listType);
+          else this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId, ownerShareCode);
           this.collectionService.triggerReload();
           this.portal.close();
         }
@@ -229,6 +234,8 @@ export class ItemDialog implements OnInit {
   }
 
   protected onSaveChanges(): void {
+    if (this.collectionItem().listType !== 'library') return;
+
     let item = this.draftItem();
     const internalCollectionTag = this.internalCollectionTag();
     if (internalCollectionTag && !item.tags.includes(internalCollectionTag)) {

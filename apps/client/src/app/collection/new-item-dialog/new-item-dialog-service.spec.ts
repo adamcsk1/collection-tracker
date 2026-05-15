@@ -109,27 +109,29 @@ describe('NewItemDialogService', () => {
     expect(spinnerStore.state.show()).toBe(false);
   });
 
-  it('adds the watch later tag when saving in watch later mode', async () => {
+  it('saves watch later items with the watch later list type', async () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await firstValueFrom(service.save('tt123', '#tag', 'close', undefined, true));
+    await firstValueFrom(service.save('tt123', '#tag', 'close', undefined, 'watch-later'));
 
     expect(api.create).toHaveBeenCalledWith(
-      expect.objectContaining({ tags: ['#movie', '#tag', '#watch-later'] }),
-      undefined
+      expect.objectContaining({ tags: ['#movie', '#tag'] }),
+      undefined,
+      'watch-later'
     );
   });
 
-  it('adds the wishlist tag when saving in wishlist mode', async () => {
+  it('saves wishlist items with the wishlist list type', async () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await firstValueFrom(service.save('tt123', '#tag', 'close', undefined, false, true));
+    await firstValueFrom(service.save('tt123', '#tag', 'close', undefined, 'wishlist'));
 
     expect(api.create).toHaveBeenCalledWith(
-      expect.objectContaining({ tags: ['#movie', '#tag', '#wishlist'] }),
-      undefined
+      expect.objectContaining({ tags: ['#movie', '#tag'] }),
+      undefined,
+      'wishlist'
     );
   });
 });

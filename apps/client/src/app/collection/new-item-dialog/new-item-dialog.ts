@@ -9,6 +9,7 @@ import { Select } from '@components/select/select';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
+import { CollectionListTypeModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap, tap } from 'rxjs';
 import { sharesStateToken } from '../../shares/shares-store';
@@ -123,6 +124,9 @@ export class NewItemDialog {
         ? this.translations.titleNewWishlistItem()
         : this.translations.titleNewCollectionItem()
   );
+  private readonly listType = computed<CollectionListTypeModel>(() =>
+    this.watchLater() ? 'watch-later' : this.wishlist() ? 'wishlist' : 'library'
+  );
 
   constructor() {
     effect(() => {
@@ -154,7 +158,10 @@ export class NewItemDialog {
         switchMap(([imdbId, targetOwnerShareCode]) => {
           if (!imdbId) return of({ exists: false });
           const ownerShareCode = targetOwnerShareCode || undefined;
-          return this.api.collectionItemExists(imdbId, ownerShareCode);
+          const listType = this.listType();
+          return listType === 'library'
+            ? this.api.collectionItemExists(imdbId, ownerShareCode)
+            : this.api.collectionItemExists(imdbId, ownerShareCode, listType);
         }),
         catchError(() => of({ exists: false })),
         takeUntilDestroyed(this.destroyRef)
@@ -194,8 +201,7 @@ export class NewItemDialog {
       tags,
       mode,
       targetOwnerShareCode,
-      this.watchLater(),
-      this.wishlist()
+      this.listType() === 'library' ? undefined : this.listType()
     );
     await firstValueFrom(saveRequest);
 

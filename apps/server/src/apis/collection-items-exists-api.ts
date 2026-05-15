@@ -1,16 +1,15 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
-  collectionItemExists,
-  collectionItemHasTag,
+  collectionItemExistsInList,
   findCollectionItemByImdbId,
 } from '../core/database/repositories/collection-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
+import { parseListType } from '../core/utils/query-parse-util';
 
 export const register = (app: FastifyInstance): void => {
   app.get(
@@ -23,6 +22,7 @@ export const register = (app: FastifyInstance): void => {
         response.code(400).send();
         return;
       }
+      const listType = parseListType(query.listType) ?? 'library';
 
       const db = getDatabase();
       const targetOwnerHash =
@@ -39,15 +39,14 @@ export const register = (app: FastifyInstance): void => {
         return;
       }
 
-      const existingItem = findCollectionItemByImdbId(db, targetOwnerHash, imdbId);
+      const existingItem = findCollectionItemByImdbId(db, targetOwnerHash, imdbId, listType);
       const isSharedInternalCollectionItem =
-        targetOwnerHash !== request.usernameHash &&
-        !!existingItem &&
-        (collectionItemHasTag(db, existingItem.id, WATCH_LATER_TAG) ||
-          collectionItemHasTag(db, existingItem.id, WISHLIST_TAG));
+        targetOwnerHash !== request.usernameHash && !!existingItem && listType !== 'library';
 
       response.send({
-        exists: isSharedInternalCollectionItem ? false : collectionItemExists(db, [targetOwnerHash], imdbId),
+        exists: isSharedInternalCollectionItem
+          ? false
+          : collectionItemExistsInList(db, [targetOwnerHash], imdbId, listType),
       });
     })
   );

@@ -31,24 +31,33 @@ const insertUserAndItems = () => {
   db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item2Id, 'Drama');
 
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt003', 'Watch Later One', 'watch later one', '2001', '7.1', 'Plot three', 'img3.jpg', 'hash3');
+    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    'user',
+    'tt003',
+    'watch-later',
+    'Watch Later One',
+    'watch later one',
+    '2001',
+    '7.1',
+    'Plot three',
+    'img3.jpg',
+    'hash3'
+  );
   const item3Id = Number(
     (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt003')! as { id: number }).id
   );
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item3Id, '#movie');
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item3Id, '#watch-later');
 
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt004', 'Wishlist One', 'wishlist one', '2002', '7.2', 'Plot four', 'img4.jpg', 'hash4');
+    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'tt004', 'wishlist', 'Wishlist One', 'wishlist one', '2002', '7.2', 'Plot four', 'img4.jpg', 'hash4');
   const item4Id = Number(
     (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt004')! as { id: number }).id
   );
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item4Id, '#movie');
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item4Id, '#wishlist');
 };
 
 describe('statistics-api', () => {

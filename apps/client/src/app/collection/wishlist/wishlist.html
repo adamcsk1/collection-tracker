@@ -1,5 +1,5 @@
 <div class="collection-container">
-  <ct-list [routeSearchText]="wishlistTag">
+  <ct-list [listType]="'wishlist'" [dataSource]="wishlistDataSource">
     <span list-empty>
       {{ translations.messageEmptyWishlist() }}<br />
       <a data-test-id="add-first-wishlist-item" href="#" role="button" (click)="onAddWishlist($event)">{{

@@ -27,6 +27,15 @@ const insertItem = (usernameHash: string, imdbId: string) => {
     .run(usernameHash, imdbId, 'Shared Item', 'shared item', '1999', '8.0', 'Plot', 'img.jpg', 'hash');
 };
 
+const insertTypedItem = (usernameHash: string, imdbId: string, listType: 'watch-later' | 'wishlist') => {
+  getDatabase()
+    .prepare(
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(usernameHash, imdbId, listType, 'Saved Item', 'saved item', '1999', '8.0', 'Plot', 'img.jpg', 'hash');
+};
+
 const insertShare = (ownerHash: string, sharedWithHash: string) => {
   getDatabase()
     .prepare(
@@ -34,12 +43,6 @@ const insertShare = (ownerHash: string, sharedWithHash: string) => {
        VALUES (?, ?, ?, ?, ?, ?)`
     )
     .run(ownerHash, sharedWithHash, 1, 0, 0, 0);
-};
-
-const insertTag = (imdbId: string, tag: string) => {
-  const db = getDatabase();
-  const itemId = (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get(imdbId) as { id: number }).id;
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
 };
 
 describe('collection-items-exists-api', () => {
@@ -74,6 +77,34 @@ describe('collection-items-exists-api', () => {
     expect(response.send).toHaveBeenCalledWith({ exists: false });
   });
 
+  it('checks watch later existence using listType', async () => {
+    insertUser('user');
+    insertTypedItem('user', 'tt001', 'watch-later');
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { imdbId: 'tt001', listType: 'watch-later' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-exists-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ exists: true });
+  });
+
+  it('checks wishlist existence using listType', async () => {
+    insertUser('user');
+    insertTypedItem('user', 'tt001', 'wishlist');
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { imdbId: 'tt001', listType: 'wishlist' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-exists-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ exists: true });
+  });
+
   it('returns true when a shared normal item exists', async () => {
     insertUser('user');
     insertUser('owner');
@@ -97,14 +128,13 @@ describe('collection-items-exists-api', () => {
   it('returns false when a shared watch later item exists', async () => {
     insertUser('user');
     insertUser('owner');
-    insertItem('owner', 'tt-watch-later');
-    insertTag('tt-watch-later', '#watch-later');
+    insertTypedItem('owner', 'tt-watch-later', 'watch-later');
     insertShare('owner', 'user');
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      query: { imdbId: 'tt-watch-later', ownerShareCode: getUserShareCode('owner') },
+      query: { imdbId: 'tt-watch-later', listType: 'watch-later', ownerShareCode: getUserShareCode('owner') },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -118,14 +148,13 @@ describe('collection-items-exists-api', () => {
   it('returns false when a shared wishlist item exists', async () => {
     insertUser('user');
     insertUser('owner');
-    insertItem('owner', 'tt-wishlist');
-    insertTag('tt-wishlist', '#wishlist');
+    insertTypedItem('owner', 'tt-wishlist', 'wishlist');
     insertShare('owner', 'user');
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      query: { imdbId: 'tt-wishlist', ownerShareCode: getUserShareCode('owner') },
+      query: { imdbId: 'tt-wishlist', listType: 'wishlist', ownerShareCode: getUserShareCode('owner') },
     };
     const { app, handlerPromise } = buildApp(request, response);
 

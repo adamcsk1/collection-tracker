@@ -233,7 +233,7 @@ components:
 
     CollectionItem:
       type: object
-      required: [image, title, titleLower, genre, IMDbId, tags, year, rate, hash, actors, plot]
+      required: [image, title, titleLower, genre, IMDbId, tags, year, rate, hash, actors, plot, listType]
       properties:
         image:
           type: string
@@ -263,6 +263,10 @@ components:
           type: string
         plot:
           type: string
+        listType:
+          type: string
+          enum: [library, watch-later, wishlist]
+          description: Logical list containing the item. `library` is the main collection.
         ownerShareCode:
           type: string
           description: Share code of the item owner. Present when the item belongs to a shared library.
@@ -344,6 +348,9 @@ components:
               enum: [movie, series]
             watched:
               type: boolean
+            listType:
+              type: string
+              enum: [library, watch-later, wishlist]
 
     CollectionItemSuggestionsResponse:
       type: object
@@ -458,6 +465,11 @@ components:
             targetOwnerShareCode:
               type: string
               description: Optional owner share code to create the item in a shared library. Defaults to the authenticated user.
+            listType:
+              type: string
+              enum: [library, watch-later, wishlist]
+              default: library
+              description: Target list. Defaults to `library`.
 
     CreateResponse:
       type: object
@@ -884,7 +896,7 @@ paths:
     get:
       operationId: searchItems
       summary: Search collection items
-      description: Returns a server-filtered and paginated collection result. System tag filters use `type` and `watched`; custom tags use `tags`.
+      description: Returns a server-filtered and paginated collection result. System tag filters use `type` and `watched`; custom tags use `tags`. `listType` defaults to `library`.
       tags: [Collection]
       parameters:
         - name: offset
@@ -926,6 +938,12 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: listType
+          in: query
+          schema:
+            type: string
+            enum: [library, watch-later, wishlist]
+            default: library
       responses:
         '200':
           description: Filtered collection result.
@@ -996,6 +1014,14 @@ paths:
           description: Owner share code of the library to check. Defaults to the authenticated user.
           schema:
             type: string
+        - name: listType
+          in: query
+          required: false
+          description: List to check. Defaults to `library`.
+          schema:
+            type: string
+            enum: [library, watch-later, wishlist]
+            default: library
       responses:
         '200':
           description: Existing item status.
@@ -1182,7 +1208,7 @@ paths:
     post:
       operationId: createItem
       summary: Create a collection item
-      description: Creates a structured collection item. `IMDbId` must be unique within the target library. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later and wishlist items use the internal `#watch-later` and `#wishlist` tags, cannot be created in shared libraries, cannot be combined with each other, and cannot also use `#favorite` or `#watched`.
+      description: Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later and wishlist items cannot be created in shared libraries and cannot use `#favorite` or `#watched`. The internal `#watch-later` and `#wishlist` tags are rejected.
       tags: [Collection]
       requestBody:
         required: true
@@ -1202,13 +1228,13 @@ paths:
         '403':
           description: Not allowed to create in the target library.
         '409':
-          description: An item with this IMDb ID already exists.
+          description: An item with this IMDb ID already exists in the target list.
 
   /change/{imdbId}:
     put:
       operationId: changeItem
       summary: Update a collection item
-      description: Updates a collection item. Existing watch-later and wishlist items cannot be updated through shared libraries, cannot be changed into normal collection items or each other, and cannot use `#favorite` or `#watched`. Normal collection items cannot be changed into watch-later or wishlist items.
+      description: Updates a library item. Watch-later and wishlist items are not modified by this endpoint. The internal `#watch-later` and `#wishlist` tags are rejected.
       tags: [Collection]
       parameters:
         - name: imdbId
@@ -1249,7 +1275,7 @@ paths:
     delete:
       operationId: deleteItem
       summary: Delete a collection item
-      description: Deletes a collection item when the supplied hash matches. Shared watch-later and wishlist items cannot be deleted by users other than their owner.
+      description: Deletes an item from the requested list when the supplied hash matches. Shared watch-later and wishlist items cannot be deleted by users other than their owner.
       tags: [Collection]
       parameters:
         - name: imdbId
@@ -1270,6 +1296,14 @@ paths:
           description: Owner share code of the library containing the item. Defaults to the authenticated user.
           schema:
             type: string
+        - name: listType
+          in: query
+          required: false
+          description: List containing the item. Defaults to `library`.
+          schema:
+            type: string
+            enum: [library, watch-later, wishlist]
+            default: library
       responses:
         '204':
           description: Item deleted.

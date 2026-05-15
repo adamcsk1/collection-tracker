@@ -2,6 +2,7 @@ import {
   CollectionItemFiltersApiModel,
   CollectionItemTagMode,
   CollectionItemTypeFilter,
+  CollectionListTypeModel,
 } from '@shared/models/api-model';
 
 export const parseList = (value: unknown): string[] | undefined => {
@@ -30,16 +31,27 @@ export const parseTagMode = (value: unknown): CollectionItemTagMode | undefined 
   return;
 };
 
+export const parseListType = (value: unknown): CollectionListTypeModel | undefined => {
+  if (value === 'library' || value === 'watch-later' || value === 'wishlist') return value;
+  return;
+};
+
 export const parseNumber = (value: unknown, fallback: number): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-export const parseFilters = (query: Record<string, unknown>): CollectionItemFiltersApiModel => ({
-  search: typeof query.search === 'string' ? query.search : undefined,
-  tags: parseList(query.tags),
-  genres: parseList(query.genres),
-  tagMode: parseTagMode(query.tagMode),
-  type: parseType(query.type),
-  watched: parseBoolean(query.watched),
-});
+export const parseFilters = (query: Record<string, unknown>): CollectionItemFiltersApiModel => {
+  const tags = parseList(query.tags);
+  const listType = parseListType(query.listType);
+
+  return {
+    search: typeof query.search === 'string' ? query.search : undefined,
+    tags,
+    genres: parseList(query.genres),
+    tagMode: parseTagMode(query.tagMode),
+    type: parseType(query.type),
+    watched: parseBoolean(query.watched),
+    listType,
+  };
+};

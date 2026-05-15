@@ -1,3 +1,5 @@
+export type CollectionListTypeModel = 'library' | 'watch-later' | 'wishlist';
+
 export interface CollectionItemModel {
   image: string;
   title: string;
@@ -10,6 +12,7 @@ export interface CollectionItemModel {
   hash: string;
   actors: string;
   plot: string;
+  listType: CollectionListTypeModel;
   ownerShareCode?: string;
 }
 

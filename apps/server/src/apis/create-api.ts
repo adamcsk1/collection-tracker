@@ -9,6 +9,7 @@ import { findUserByShareCode } from '../core/database/repositories/user-reposito
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
+import { parseListType } from '../core/utils/query-parse-util';
 
 export const register = (app: FastifyInstance): void => {
   app.post(
@@ -17,20 +18,20 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler(async (request, response) => {
       const body = request.body as CreateApiRequestModel & { targetOwnerShareCode?: string };
       const item = normalizeItem(body);
+      const listType = parseListType(body.listType) ?? 'library';
       if (!item) {
         return response.code(400).send();
       }
 
       const internalCollectionTags = [WATCH_LATER_TAG, WISHLIST_TAG];
-      const itemInternalCollectionTags = item.tags.filter((tag) => internalCollectionTags.includes(tag));
-      const isInternalCollectionItem = itemInternalCollectionTags.length > 0;
+      const usesInternalCollectionTag = item.tags.some((tag) => internalCollectionTags.includes(tag));
       if (
-        itemInternalCollectionTags.length > 1 ||
-        (isInternalCollectionItem && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG)))
+        usesInternalCollectionTag ||
+        (listType !== 'library' && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG)))
       ) {
         return response.code(400).send();
       }
-      if (isInternalCollectionItem && typeof body.targetOwnerShareCode === 'string') {
+      if (listType !== 'library' && typeof body.targetOwnerShareCode === 'string') {
         return response.code(400).send();
       }
 
@@ -47,13 +48,13 @@ export const register = (app: FastifyInstance): void => {
         return response.code(403).send();
       }
 
-      const existingItem = findCollectionItemByImdbId(db, targetOwnerHash, item.IMDbId);
+      const existingItem = findCollectionItemByImdbId(db, targetOwnerHash, item.IMDbId, listType);
       if (existingItem) {
         return response.code(409).send();
       }
 
       const hash = getItemHash(item);
-      const createdItem = insertCollectionItem(db, targetOwnerHash, hash, item);
+      const createdItem = insertCollectionItem(db, targetOwnerHash, hash, item, listType);
 
       const result: CreateApiResponseModel = { item: createdItem };
       response.send(result);
