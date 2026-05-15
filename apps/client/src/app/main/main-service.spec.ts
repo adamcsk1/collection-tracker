@@ -6,6 +6,7 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_API_URL,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
+  STORAGE_LOGGED_IN,
   STORAGE_SENSITIVE_DATA_STORAGE,
 } from '@shared/constants/storage-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -22,7 +23,7 @@ describe('MainService', () => {
 
   beforeEach(() => {
     api = { validateSession: vi.fn(() => of(undefined)) };
-    webstorage = { getItem: vi.fn() };
+    webstorage = { getItem: vi.fn(), removeItem: vi.fn() };
 
     TestBed.configureTestingModule({
       providers: [
@@ -81,10 +82,11 @@ describe('MainService', () => {
     expect(api.validateSession).toHaveBeenCalled();
   });
 
-  it('marks token as invalid when validation fails and rethrows the error', () => {
+  it('marks token as invalid and clears logged-in flag when validation fails', () => {
     api.validateSession.mockReturnValue(throwError(() => new Error('fail')));
 
     expect(() => service.validateSession()).not.toThrow();
     expect(service.tokenValid()).toBe(false);
+    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN);
   });
 });

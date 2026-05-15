@@ -9,6 +9,7 @@ import type { FastifyInstance } from 'fastify';
 export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/sign-up`,
+    { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
     withErrorHandler((request, response) => {
       if (Number(process.env.DISABLE_REGISTRATION)) {
         return response.code(403).send();

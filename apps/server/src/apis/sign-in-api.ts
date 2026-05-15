@@ -26,6 +26,7 @@ import { getUserAccessToken, getUserRefreshToken } from '../core/utils/users-uti
 export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/sign-in`,
+    { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
     withErrorHandler(async (request, response) => {
       const { username, token } = request.body as SignInApiRequestModel;
       if (typeof username !== 'string' || !username || typeof token !== 'string' || !token) {

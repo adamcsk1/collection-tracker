@@ -8,7 +8,7 @@ import { PublicApiService } from '@services/api/public-api-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { STORAGE_API_URL } from '@shared/constants/storage-const';
+import { STORAGE_API_URL, STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
 import { getApiPrefix } from '@shared/utils/get-api-prefix-util';
 import { getBasePath } from '@shared/utils/get-base-path-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -51,10 +51,16 @@ export class Main implements AfterViewInit {
   }
 
   public ngAfterViewInit(): void {
+    if (this.webstorage.getItem(STORAGE_LOGGED_IN) !== 'true') {
+      this.blockerLoadingState.setState('show', false);
+      return;
+    }
+
     this.api
       .validateSession()
       .pipe(
         catchError(() => {
+          this.webstorage.removeItem(STORAGE_LOGGED_IN);
           this.blockerLoadingState.setState('show', false);
           return EMPTY;
         })
