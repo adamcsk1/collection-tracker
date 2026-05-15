@@ -26,6 +26,7 @@ const item = {
   tags: ['#movie'],
   year: 2024,
   rate: '7.1',
+  userRate: 8.7,
   actors: 'Actor One, Actor Two',
   plot: 'Plot',
 };

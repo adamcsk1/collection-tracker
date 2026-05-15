@@ -78,7 +78,7 @@ describe('NewItemDialogService', () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await firstValueFrom(service.save('tt123', '#tag', 'close'));
+    await firstValueFrom(service.save('tt123', 8.7, '#tag', 'close'));
 
     expect(api.create).toHaveBeenCalledWith(
       {
@@ -89,6 +89,7 @@ describe('NewItemDialogService', () => {
         tags: ['#movie', '#tag'],
         year: 2020,
         rate: '9.0',
+        userRate: 8.7,
         actors: 'Actors',
         plot: 'Plot',
       },
@@ -105,7 +106,7 @@ describe('NewItemDialogService', () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(throwError(() => new Error('fail')));
 
-    await expect(firstValueFrom(service.save('tt123', '#tag', null))).rejects.toEqual(new Error('fail'));
+    await expect(firstValueFrom(service.save('tt123', null, '#tag', null))).rejects.toEqual(new Error('fail'));
     expect(spinnerStore.state.show()).toBe(false);
   });
 
@@ -113,7 +114,7 @@ describe('NewItemDialogService', () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await firstValueFrom(service.save('tt123', '#tag', 'close', undefined, 'watch-later'));
+    await firstValueFrom(service.save('tt123', null, '#tag', 'close', undefined, 'watch-later'));
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#movie', '#tag'] }),
@@ -126,7 +127,7 @@ describe('NewItemDialogService', () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await firstValueFrom(service.save('tt123', '#tag', 'close', undefined, 'wishlist'));
+    await firstValueFrom(service.save('tt123', null, '#tag', 'close', undefined, 'wishlist'));
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#movie', '#tag'] }),

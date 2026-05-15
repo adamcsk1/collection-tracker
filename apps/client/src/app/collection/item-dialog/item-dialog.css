@@ -5,26 +5,6 @@
   width: min(calc(70 * var(--size-md)), 100%);
 }
 
-label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-2xs);
-}
-
-input,
-textarea {
-  border: var(--border-style);
-  border-radius: var(--border-radius);
-  padding: var(--size-xs);
-  color: inherit;
-  background: var(--color-background, transparent);
-}
-
-textarea {
-  min-height: calc(9 * var(--size-md));
-  resize: vertical;
-}
-
 .full-width {
   grid-column: 1 / -1;
 }
@@ -33,10 +13,6 @@ textarea {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: end;
-
-  input {
-    grid-column: 1;
-  }
 }
 
 .image-example {

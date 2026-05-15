@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { form, FormField, FormRoot, required, validate } from '@angular/forms/signals';
+import { form, FormField, FormRoot, max, min, required, validate } from '@angular/forms/signals';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
@@ -47,7 +47,9 @@ export class NewItemDialog {
       this.ngxSignalTranslate.translate('Message.NewCollectionItemSearch')
     ),
     selectedContent: computed(() => this.ngxSignalTranslate.translate('SelectedContent')),
+    labelUserRate: computed(() => this.ngxSignalTranslate.translate('UserRate')),
     validationKnownIMDbId: computed(() => this.ngxSignalTranslate.translate('Validation.KnownIMDbId')),
+    validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
     messageTags: computed(() => this.ngxSignalTranslate.translate('Message.Tags')),
     validationUsedInternalTag: computed(() => this.ngxSignalTranslate.translate('Validation.UsedInternalTag')),
@@ -63,6 +65,7 @@ export class NewItemDialog {
   protected readonly newItemModel = signal<NewItemModel>({
     searchText: '',
     selectedIMDbId: null,
+    userRate: null,
     tags: '',
     watched: false,
     targetOwnerShareCode: null,
@@ -73,6 +76,13 @@ export class NewItemDialog {
       required(newItem.searchText);
       required(newItem.selectedIMDbId);
       validate(newItem.selectedIMDbId, ({ value }) => this.knownIMDbIdValidationError(value()));
+      min(newItem.userRate, 0, { error: { kind: 'min' } });
+      max(newItem.userRate, 10, { error: { kind: 'max' } });
+      validate(newItem.userRate, ({ value }) => {
+        const userRate = value();
+        if (userRate === null) return null;
+        return Math.abs(userRate * 10 - Math.round(userRate * 10)) <= 1e-9 ? null : { kind: 'userRate' };
+      });
       validate(newItem.tags, ({ value }) => forbiddenInternalTagValidation(value()));
     },
     {
@@ -96,6 +106,20 @@ export class NewItemDialog {
           .tags()
           .errors()
           .some((error) => error.kind === 'usedInternalTag')
+      ),
+    },
+    userRate: {
+      min: computed(() =>
+        this.form
+          .userRate()
+          .errors()
+          .some((error) => error.kind === 'min')
+      ),
+      max: computed(() =>
+        this.form
+          .userRate()
+          .errors()
+          .some((error) => error.kind === 'max')
       ),
     },
   };
@@ -198,6 +222,7 @@ export class NewItemDialog {
       this.watchLater() || this.wishlist() ? undefined : this.form.targetOwnerShareCode().value() || undefined;
     const saveRequest = this.service.save(
       selectedIMDbId,
+      this.form.userRate().value(),
       tags,
       mode,
       targetOwnerShareCode,
@@ -209,6 +234,7 @@ export class NewItemDialog {
       this.form().reset({
         searchText: '',
         selectedIMDbId: null,
+        userRate: null,
         tags: '',
         watched: false,
         targetOwnerShareCode: null,

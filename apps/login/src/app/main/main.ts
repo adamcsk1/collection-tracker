@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { BlockerLoading } from '@components/blocker-loading/blocker-loading';
 import { blockerLoadingStateToken } from '@components/blocker-loading/blocker-loading-store';
@@ -8,9 +8,9 @@ import { PublicApiService } from '@services/api/public-api-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { getApiPrefix } from '@shared/utils/get-api-prefix-util';
 import { getBasePath } from '@shared/utils/get-base-path-util';
-import { STORAGE_API_URL } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
 
@@ -30,7 +30,7 @@ export class Main implements AfterViewInit {
   private readonly themeState = inject(themeStateToken);
   private readonly blockerLoadingState = inject(blockerLoadingStateToken);
   protected readonly translations = {
-    title: computed(() => this.ngxSignalTranslate.translate('Title')),
+    title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
   };
   protected readonly themeLogo = this.theme.themeLogo;
 

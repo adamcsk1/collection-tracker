@@ -14,6 +14,7 @@ const validItem: CollectionItemChangeApiModel = {
   tags: ['#movie'],
   year: 2024,
   rate: '7.1',
+  userRate: 8.7,
   actors: 'Actor One',
   plot: 'Plot',
 };
@@ -79,6 +80,19 @@ describe('collection-item-util', () => {
     it('accepts null year', () => {
       const result = normalizeItem({ ...validItem, year: null });
       expect(result?.year).toBeNull();
+    });
+
+    it('accepts null user rate', () => {
+      const result = normalizeItem({ ...validItem, userRate: null });
+      expect(result?.userRate).toBeNull();
+    });
+
+    it('returns undefined when user rate is outside range', () => {
+      expect(normalizeItem({ ...validItem, userRate: 10.1 })).toBeUndefined();
+    });
+
+    it('returns undefined when user rate is not a tenth increment', () => {
+      expect(normalizeItem({ ...validItem, userRate: 8.75 })).toBeUndefined();
     });
   });
 

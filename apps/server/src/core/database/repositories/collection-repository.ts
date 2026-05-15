@@ -30,6 +30,7 @@ export interface CollectionItemRow {
   title_lower: string;
   year: string;
   rate: string;
+  user_rate: number | null;
   actors: string;
   plot: string;
   image: string;
@@ -78,14 +79,6 @@ const addTagExists = (queryParts: QueryParts, tag: string, exists = true): void 
     WHERE tag_filter.item_id = collection_items.id AND LOWER(tag_filter.tag) = ?
   )`);
   queryParts.params.push(tag.toLowerCase());
-};
-
-const addTagInExists = (queryParts: QueryParts, tags: string[], exists = true): void => {
-  queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
-    SELECT 1 FROM collection_item_tags tag_filter
-    WHERE tag_filter.item_id = collection_items.id AND LOWER(tag_filter.tag) IN (${tags.map(() => '?').join(', ')})
-  )`);
-  queryParts.params.push(...tags.map((tag) => tag.toLowerCase()));
 };
 
 const addGenreExists = (queryParts: QueryParts, genre: string): void => {
@@ -221,6 +214,7 @@ const toApiItem = (db: Database.Database, row: CollectionItemRow): CollectionIte
     tags: relations.tags,
     year: row.year ? Number(row.year) : null,
     rate: row.rate,
+    userRate: row.user_rate,
     actors: row.actors,
     plot: row.plot,
   };
@@ -594,8 +588,8 @@ export const insertCollectionItem = (
   const result = db
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, imdb_id, list_type, title, title_lower, year, rate, actors, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (username_hash, imdb_id, list_type, title, title_lower, year, rate, user_rate, actors, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       usernameHash,
@@ -605,6 +599,7 @@ export const insertCollectionItem = (
       item.title.toLowerCase(),
       item.year ?? '',
       item.rate,
+      item.userRate,
       item.actors,
       item.plot,
       item.image,
@@ -636,14 +631,15 @@ export const updateCollectionItem = (
 
   db.prepare(
     `UPDATE collection_items SET
-     imdb_id = ?, title = ?, title_lower = ?, year = ?, rate = ?, actors = ?, plot = ?, image = ?, content_hash = ?, updated_at = CURRENT_TIMESTAMP
-     WHERE id = ?`
+     imdb_id = ?, title = ?, title_lower = ?, year = ?, rate = ?, user_rate = ?, actors = ?, plot = ?, image = ?, content_hash = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`
   ).run(
     updatedItem.IMDbId,
     updatedItem.title,
     updatedItem.title.toLowerCase(),
     updatedItem.year ?? '',
     updatedItem.rate,
+    updatedItem.userRate,
     updatedItem.actors,
     updatedItem.plot,
     updatedItem.image,

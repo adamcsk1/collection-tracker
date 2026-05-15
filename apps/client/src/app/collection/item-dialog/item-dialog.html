@@ -7,84 +7,96 @@
   </ng-container>
   <ng-container dialog-shell-content>
     @if (editMode()) {
-      <div class="item-form">
-        <label>
-          {{ translations.labelTitle() }}
-          <input
-            data-test-id="item-dialog-title"
-            [value]="draftItem().title"
-            (input)="updateDraft('title', $any($event.target).value)"
-          />
-        </label>
-        <label>
-          {{ translations.labelIMDbId() }}
-          <input
-            data-test-id="item-dialog-imdb-id"
-            [value]="draftItem().IMDbId"
-            (input)="updateDraft('IMDbId', $any($event.target).value)"
-          />
-        </label>
-        <label>
-          {{ translations.labelYear() }}
-          <input
-            data-test-id="item-dialog-year"
-            type="number"
-            [value]="draftItem().year ?? ''"
-            (input)="updateYear($any($event.target).value)"
-          />
-        </label>
-        <label>
-          {{ translations.labelIMDbRate() }}
-          <input
-            data-test-id="item-dialog-rate"
-            [value]="draftItem().rate"
-            (input)="updateDraft('rate', $any($event.target).value)"
-          />
-        </label>
-        <label class="full-width image-url-field">
-          {{ translations.labelImageUrl() }}
-          <input
+      <form id="item-edit-form" class="item-form" role="form" [formRoot]="form">
+        <libc-input
+          data-test-id="item-dialog-title"
+          [mandatory]="true"
+          [label]="translations.labelTitle()"
+          [formField]="form.title"
+        >
+          <ng-container errors>
+            @if (formErrors.title.required()) {
+              {{ translations.validationRequired() }}
+            }
+          </ng-container>
+        </libc-input>
+        <libc-input
+          data-test-id="item-dialog-imdb-id"
+          [mandatory]="true"
+          [label]="translations.labelIMDbId()"
+          [formField]="form.IMDbId"
+        >
+          <ng-container errors>
+            @if (formErrors.IMDbId.required()) {
+              {{ translations.validationRequired() }}
+            }
+          </ng-container>
+        </libc-input>
+        <libc-input
+          data-test-id="item-dialog-year"
+          type="number"
+          [label]="translations.labelYear()"
+          [formField]="form.year"
+        />
+        <libc-input data-test-id="item-dialog-rate" [label]="translations.labelIMDbRate()" [formField]="form.rate" />
+        <libc-input
+          data-test-id="item-dialog-user-rate"
+          type="number"
+          [label]="translations.labelUserRate()"
+          [formField]="form.userRate"
+          [step]="0.1"
+        >
+          <ng-container errors>
+            @if (formErrors.userRate.min() || formErrors.userRate.max() || formErrors.userRate.userRate()) {
+              {{ translations.validationUserRate() }}
+            }
+          </ng-container>
+        </libc-input>
+        <div class="full-width image-url-field">
+          <libc-input
             data-test-id="item-dialog-image"
-            [value]="draftItem().image"
-            (input)="updateDraft('image', $any($event.target).value)"
+            [label]="translations.labelImageUrl()"
+            [formField]="form.image"
           />
-          @if (draftItem().image) {
+          @if (form.image().value()) {
             <img class="image-example" [src]="draftImageUrl()" [attr.alt]="translations.altImageExample()" />
           }
-        </label>
+        </div>
         <libc-autocomplete
           data-test-id="item-dialog-genre"
           [label]="translations.genre()"
           [hint]="translations.hintSeparateGenres()"
-          [value]="genreText()"
+          [formField]="form.genreText"
           [autocompleteService]="genreSuggestionService"
-          (valueChange)="updateGenre($any($event))"
         />
         <libc-autocomplete
           data-test-id="item-dialog-tags"
           [label]="translations.tags()"
           [hint]="translations.hintSeparateTags()"
-          [value]="tagsText()"
+          [formField]="form.tagsText"
           [autocompleteService]="tagSuggestionService"
-          (valueChange)="updateTags($any($event))"
+        >
+          <ng-container errors>
+            @if (formErrors.tagsText.virtualTag()) {
+              {{ translations.validationVirtualTag() }}
+            }
+            @if (formErrors.tagsText.invalidInternalCollectionTag()) {
+              {{ translations.validationUsedInternalTag() }}
+            }
+            @if (formErrors.tagsText.missingTypeTag()) {
+              {{ translations.validationMissingTypeTag() }}
+            }
+          </ng-container>
+        </libc-autocomplete>
+        <libc-input data-test-id="item-dialog-actors" [label]="translations.actors()" [formField]="form.actors" />
+        <libc-textarea
+          data-test-id="item-dialog-plot"
+          class="full-width"
+          [label]="translations.plot()"
+          [formField]="form.plot"
+          [autoHeight]="true"
         />
-        <label class="full-width">
-          {{ translations.actors() }}
-          <input
-            data-test-id="item-dialog-actors"
-            [value]="draftItem().actors"
-            (input)="updateDraft('actors', $any($event.target).value)"
-          />
-        </label>
-        <label class="full-width">
-          {{ translations.plot() }}
-          <textarea
-            data-test-id="item-dialog-plot"
-            [value]="draftItem().plot"
-            (input)="updateDraft('plot', $any($event.target).value)"
-          ></textarea>
-        </label>
-      </div>
+      </form>
     } @else {
       <article class="item-detail">
         @if (collectionItem().image && !posterImageFailed()) {
@@ -104,6 +116,9 @@
                 </span>
               }
               <span class="chip rating">IMDb {{ collectionItem().rate || translations.fallbackNotAvailable() }}</span>
+              @if (collectionItem().userRate !== null) {
+                <span class="chip rating">{{ translations.labelUserRate() }} {{ collectionItem().userRate }}</span>
+              }
               <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
             </div>
           </header>
@@ -169,11 +184,11 @@
   </ng-container>
   <ng-container dialog-shell-bottom-content>
     @if (editMode()) {
-      <button data-test-id="item-dialog-read-only" (click)="onReadOnly()">
+      <button data-test-id="item-dialog-read-only" type="button" (click)="onReadOnly()">
         <i class="material-icons" [title]="translations.readOnly()"> visibility </i>
         {{ translations.readOnly() }}
       </button>
-      <button data-test-id="item-dialog-save" (click)="onSaveChanges()">
+      <button data-test-id="item-dialog-save" type="submit" form="item-edit-form" [disabled]="form().invalid()">
         <i class="material-icons" [title]="translations.save()"> save </i>
         {{ translations.save() }}
       </button>

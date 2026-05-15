@@ -233,7 +233,7 @@ components:
 
     CollectionItem:
       type: object
-      required: [image, title, titleLower, genre, IMDbId, tags, year, rate, hash, actors, plot, listType]
+      required: [image, title, titleLower, genre, IMDbId, tags, year, rate, userRate, hash, actors, plot, listType]
       properties:
         image:
           type: string
@@ -256,6 +256,11 @@ components:
           type: ['number', 'null']
         rate:
           type: string
+        userRate:
+          type: ['number', 'null']
+          minimum: 0
+          maximum: 10
+          multipleOf: 0.1
         hash:
           type: string
           description: SHA-512 hash of the structured item content.
@@ -273,7 +278,7 @@ components:
 
     CollectionItemChange:
       type: object
-      required: [image, title, genre, IMDbId, tags, year, rate, actors, plot]
+      required: [image, title, genre, IMDbId, tags, year, rate, userRate, actors, plot]
       properties:
         image:
           type: string
@@ -293,6 +298,11 @@ components:
           type: ['number', 'null']
         rate:
           type: string
+        userRate:
+          type: ['number', 'null']
+          minimum: 0
+          maximum: 10
+          multipleOf: 0.1
         actors:
           type: string
         plot:

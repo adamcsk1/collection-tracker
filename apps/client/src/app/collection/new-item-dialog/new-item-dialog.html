@@ -37,6 +37,19 @@
             }
           </ng-container>
         </libc-select>
+        <libc-input
+          data-test-id="new-item-user-rate"
+          type="number"
+          [label]="translations.labelUserRate()"
+          [formField]="form.userRate"
+          [step]="0.1"
+        >
+          <ng-container errors>
+            @if (formErrors.userRate.min() || formErrors.userRate.max()) {
+              {{ translations.validationUserRate() }}
+            }
+          </ng-container>
+        </libc-input>
         <libc-autocomplete [label]="translations.tags()" [hint]="translations.messageTags()" [formField]="form.tags">
           <ng-container errors>
             @if (formErrors.tags.usedInternalTag()) {

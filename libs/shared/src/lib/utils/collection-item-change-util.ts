@@ -9,6 +9,7 @@ export const toCollectionItemChange = (item: CollectionItemModel): CollectionIte
   tags: item.tags,
   year: item.year,
   rate: item.rate,
+  userRate: item.userRate,
   actors: item.actors,
   plot: item.plot,
 });

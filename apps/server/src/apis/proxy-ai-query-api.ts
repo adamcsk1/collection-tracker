@@ -68,6 +68,9 @@ ${stringifyPromptValue(item.tags)}
 rate:
 ${stringifyPromptValue(item.rate)}
 \n
+userRate:
+${stringifyPromptValue(item.userRate)}
+\n
 actors:
 ${stringifyPromptValue(item.actors)}
 \n

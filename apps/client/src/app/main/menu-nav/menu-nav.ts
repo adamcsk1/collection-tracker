@@ -27,7 +27,7 @@ export class MenuNav {
   private readonly theme = inject(ThemeService);
   private readonly settings = inject(SettingsService);
   protected readonly translations = {
-    title: computed(() => this.ngxSignalTranslate.translate('Title')),
+    title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
     menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
     collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
     favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),

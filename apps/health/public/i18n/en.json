@@ -1,5 +1,6 @@
 {
   "Ai": "AI",
+  "AppTitle": "Collection tracker",
   "Close": "Close",
   "CloseSuggestions": "Close suggestions",
   "Cpu": "CPU",
@@ -20,6 +21,5 @@
   "SubTitle": "status",
   "Suggestions": "Suggestions",
   "System": "System",
-  "Title": "Collection tracker",
   "Validation.Required": "Required field."
 }
