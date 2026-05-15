@@ -142,6 +142,34 @@ describe('Collection — add a new element', () => {
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogMarkUnwatchedButton().should('be.visible');
   });
+
+  it('saves a new item with a user rate', () => {
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+
+    CollectionPage.getNewItemSearchInput().type(newTitle);
+    cy.wait('@omdbSearch');
+
+    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemUserRateInput().type('8.7');
+    CollectionPage.getNewItemSaveAndCloseButton().click();
+
+    CollectionPage.getListItemUserRates().should('contain.text', '8.7');
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogUserRateChip().should('contain.text', '8.7');
+  });
+
+  it('keeps save disabled for an invalid new item user rate', () => {
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+
+    CollectionPage.getNewItemSearchInput().type(newTitle);
+    cy.wait('@omdbSearch');
+
+    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemUserRateInput().type('10.1');
+    CollectionPage.getNewItemSaveAndCloseButton().should('be.disabled');
+  });
 });
 
 describe('Collection — edit an element', () => {

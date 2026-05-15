@@ -60,6 +60,53 @@ describe('Item dialog — edit flow', () => {
     cy.contains('An updated plot for testing.').should('be.visible');
   });
 
+  it('edits the user rate and persists the change', () => {
+    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.on('window:confirm', () => true);
+
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogEditButton().click();
+
+    CollectionPage.getItemDialogUserRateInput().type('9.4');
+    CollectionPage.getItemDialogSaveButton().click();
+    cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.getItemDialogUserRateChip().should('contain.text', '9.4');
+    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.getListItemUserRates().should('contain.text', '9.4');
+  });
+
+  it('clears an existing user rate', () => {
+    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.on('window:confirm', () => true);
+
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogEditButton().click();
+
+    CollectionPage.getItemDialogUserRateInput().type('9.4');
+    CollectionPage.getItemDialogSaveButton().click();
+    cy.wait('@updateItem');
+
+    CollectionPage.getItemDialogEditButton().click();
+    CollectionPage.getItemDialogUserRateInput().clear();
+    CollectionPage.getItemDialogSaveButton().click();
+    cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.getItemDialogUserRateChip().should('not.exist');
+    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.getListItemUserRates().should('not.exist');
+  });
+
+  it('keeps save disabled for an invalid edited user rate', () => {
+    cy.on('window:confirm', () => true);
+
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogEditButton().click();
+
+    CollectionPage.getItemDialogUserRateInput().type('8.75');
+    CollectionPage.getItemDialogSaveButton().should('be.disabled');
+  });
+
   it('discards draft changes when read-only is clicked', () => {
     cy.on('window:confirm', () => true);
 

@@ -36,7 +36,9 @@
           <span class="rating"> <i class="material-icons"> star_rate </i> {{ collectionItem.rate }} </span>
         }
         @if (collectionItem.userRate !== null) {
-          <span class="rating"> <i class="material-icons"> person </i> {{ collectionItem.userRate }} </span>
+          <span class="rating" data-test-id="list-item-user-rate">
+            <i class="material-icons"> person </i> {{ collectionItem.userRate }}
+          </span>
         }
       </span>
       <span class="meta-column">
