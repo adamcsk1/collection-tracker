@@ -13,7 +13,13 @@ export class PortalService {
   }
 
   public open<T = unknown>(component: T, inputs: object = {}): void {
-    const componentRef = this.portalViewContainerRef()!.createComponent(component as Type<T>);
+    const viewContainerRef = this.portalViewContainerRef();
+    if (!viewContainerRef) {
+      throw new Error('Portal host is not ready');
+    }
+    this.close();
+
+    const componentRef = viewContainerRef.createComponent(component as Type<T>);
     this._componentRef.set(componentRef);
 
     for (const [key, value] of Object.entries(inputs)) {
