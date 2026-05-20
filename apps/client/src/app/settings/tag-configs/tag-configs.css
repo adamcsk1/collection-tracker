@@ -31,3 +31,7 @@ p {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--size-md);
 }
+
+.tag-configs-import-file {
+  display: none;
+}
