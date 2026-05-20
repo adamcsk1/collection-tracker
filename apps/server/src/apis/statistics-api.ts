@@ -13,15 +13,12 @@ export const register = (app: FastifyInstance): void => {
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
-      const usernameHashes = [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
-      response.send(
-        getCollectionStatistics(
-          db,
-          usernameHashes,
-          parseFilters(request.query as Record<string, unknown>),
-          request.usernameHash
-        )
-      );
+      const filters = parseFilters(request.query as Record<string, unknown>);
+      const usernameHashes =
+        filters.listType && filters.listType !== 'library'
+          ? [request.usernameHash]
+          : [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
+      response.send(getCollectionStatistics(db, usernameHashes, filters, request.usernameHash));
     })
   );
 };

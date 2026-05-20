@@ -60,6 +60,33 @@ const insertUserAndItems = () => {
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item4Id, '#movie');
 };
 
+const insertUser = (usernameHash: string) => {
+  getDatabase()
+    .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
+    .run(usernameHash, `${usernameHash}-token`);
+};
+
+const insertShare = (ownerHash: string, sharedWithHash: string) => {
+  getDatabase()
+    .prepare(
+      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(ownerHash, sharedWithHash, 1, 0, 0, 0);
+};
+
+const insertSeriesTrackerItem = (usernameHash: string, imdbId: string, title: string) => {
+  const db = getDatabase();
+  db.prepare(
+    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(usernameHash, imdbId, 'series-tracker', title, title.toLowerCase(), '2001', '7.0', '', '', `${imdbId}-hash`);
+  const itemId = Number(
+    (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get(imdbId)! as { id: number }).id
+  );
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, '#series');
+};
+
 describe('statistics-api', () => {
   afterEach(() => {
     vi.resetModules();
@@ -115,5 +142,21 @@ describe('statistics-api', () => {
         seriesCount: 0,
       })
     );
+  });
+
+  it('does not include shared-owner internal lists in filtered statistics', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertShare('owner', 'user');
+    insertSeriesTrackerItem('owner', 'tt-shared-series', 'Shared Series');
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { listType: 'series-tracker' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./statistics-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ totalItems: 0 }));
   });
 });
