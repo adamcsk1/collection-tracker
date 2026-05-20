@@ -97,7 +97,7 @@ export class TagConfigs {
       let storedConfigs = this.tagConfigsState.state.configs();
       const uniqueTags = this.uniqueTags();
 
-      if (uniqueTags.length > 0) {
+      if (uniqueTags.length > 0 && storedConfigs.length > 0) {
         storedConfigs = storedConfigs.filter((config) => uniqueTags.includes(config.tag));
         untracked(() => this.storeTagConfigs(storedConfigs, false));
         effectRef.destroy();
