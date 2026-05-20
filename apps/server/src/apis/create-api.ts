@@ -2,6 +2,7 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { FAVORITE_TAG, WATCHED_TAG, WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
+import { COLLECTION_WORKFLOW_RATE_LIMIT } from '../core/constants/rate-limit-const';
 import { getDatabase } from '../core/database/database';
 import { findCollectionItemByImdbId, insertCollectionItem } from '../core/database/repositories/collection-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
@@ -14,7 +15,7 @@ import { parseListType } from '../core/utils/query-parse-util';
 export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/create`,
-    { preHandler: jwtGuard },
+    { preHandler: jwtGuard, config: { rateLimit: COLLECTION_WORKFLOW_RATE_LIMIT } },
     withErrorHandler(async (request, response) => {
       const body = request.body as CreateApiRequestModel & { targetOwnerShareCode?: string };
       const item = normalizeItem(body);

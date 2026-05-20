@@ -7,3 +7,5 @@ export const RATE_LIMIT_EXCLUDED_PATHS: string[] = [
   `${API_PREFIX}/sign-up`,
   `${API_PREFIX}/session/refresh`,
 ];
+
+export const COLLECTION_WORKFLOW_RATE_LIMIT = { max: 120, timeWindow: '15 minutes' };

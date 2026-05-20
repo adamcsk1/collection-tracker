@@ -1,5 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
+import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -35,6 +36,21 @@ describe('create-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+  });
+
+  it('uses the collection workflow rate limit', async () => {
+    const response = mockResponse();
+    const request: any = { body: {}, usernameHash: 'user' };
+    const { app } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    expect(app.post).toHaveBeenCalledWith(
+      `${API_PREFIX}/create`,
+      expect.objectContaining({ config: { rateLimit: { max: 120, timeWindow: '15 minutes' } } }),
+      expect.any(Function)
+    );
   });
 
   it('returns 400 when content is missing', async () => {
