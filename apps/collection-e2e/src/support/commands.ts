@@ -3,11 +3,14 @@
 export {};
 
 let authCookieHeader = '';
+let requestIpSuffix = 1;
 
 type AuthCookie = {
   name: string;
   value: string;
 };
+
+const collectionListTypes = ['library', 'watch-later', 'wishlist', 'series-tracker'] as const;
 
 const getSetCookieHeaders = (headers: Cypress.Response<unknown>['headers']): string[] => {
   const setCookie = headers['set-cookie'];
@@ -58,6 +61,9 @@ const signInThroughUi = (username: string, token: string): void => {
   cy.getByTestId('sign-in-token').find('input').type(token, { delay: 0 });
   cy.getByTestId('sign-in-submit').click();
   cy.url().should('include', '/client/');
+  cy.then(() => {
+    authCookieHeader = '';
+  });
 };
 
 const toRequestOptions = (requestArgs: unknown[]): Partial<Cypress.RequestOptions> | undefined => {
@@ -76,11 +82,23 @@ Cypress.Commands.overwrite('request', (originalFn, ...args) => {
   const options = toRequestOptions(args);
   if (!options) return originalFn(...args);
 
-  if (!authCookieHeader) return originalFn(...args);
+  requestIpSuffix += 1;
+  const e2eRequestIp = `10.240.${Math.floor(requestIpSuffix / 250) % 250}.${(requestIpSuffix % 250) + 1}`;
+
+  if (!authCookieHeader) {
+    return originalFn({
+      ...options,
+      headers: {
+        'x-forwarded-for': e2eRequestIp,
+        ...options.headers,
+      },
+    });
+  }
 
   return originalFn({
     ...options,
     headers: {
+      'x-forwarded-for': e2eRequestIp,
       Cookie: authCookieHeader,
       ...options.headers,
     },
@@ -118,12 +136,20 @@ Cypress.Commands.add('autoLogin', () => {
 
   cy.request('POST', '/api/v1/sign-in', { username, token }).then(storeAuthCookies);
 
-  cy.request('GET', '/api/v1/items?limit=1000&offset=0').then((response) => {
-    const items = (response.body as { items: Array<{ IMDbId: string; hash: string }> }).items;
-    items.forEach((item) => {
-      cy.request('DELETE', `/api/v1/delete/${encodeURIComponent(item.IMDbId)}?hash=${encodeURIComponent(item.hash)}`);
+  collectionListTypes.forEach((listType) => {
+    const listItemsUrl = `/api/v1/items?limit=1000&offset=0&listType=${encodeURIComponent(listType)}`;
+    cy.request('GET', listItemsUrl).then((response) => {
+      const items = (response.body as { items: Array<{ IMDbId: string; hash: string }> }).items;
+      items.forEach((item) => {
+        const deleteUrl = `/api/v1/delete/${encodeURIComponent(item.IMDbId)}?hash=${encodeURIComponent(
+          item.hash
+        )}&listType=${encodeURIComponent(listType)}`;
+        cy.request('DELETE', deleteUrl);
+      });
     });
   });
+
+  cy.request('POST', '/api/v1/tag/change-config', []);
 
   signInThroughUi(username, token);
 

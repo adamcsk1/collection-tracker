@@ -6,7 +6,7 @@ interface CollectionItemFixture {
   genre: string[];
   IMDbId: string;
   tags: string[];
-  year: number | null;
+  year: string | null;
   rate: string;
   userRate: number | null;
   actors: string;
@@ -23,7 +23,7 @@ export const buildCollectionItem = (
   genre: ['Action', 'Adventure'],
   IMDbId: imdbId,
   tags: [`#${type}`],
-  year: 2020,
+  year: '2020',
   rate: '8.5',
   userRate: null,
   actors: 'Actor One, Actor Two',

@@ -59,8 +59,10 @@ describe('Tag Configs — custom tag in collection', () => {
     // Intercept the statistics call triggered by the page so we can explicitly
     // wait for the tag list to finish loading before tests start asserting.
     cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
+    cy.intercept('GET', '/api/v1/tag/config').as('getTagConfig');
     TagConfigsPage.visit();
     cy.wait('@getStatistics');
+    cy.wait('@getTagConfig');
   });
 
   it('shows the custom tag in the config list', () => {
@@ -178,6 +180,10 @@ describe('Tag Configs — import and export', () => {
     });
 
     cy.request('POST', '/api/v1/tag/change-config', [localExistingConfig]);
+    cy.intercept('GET', '/api/v1/tag/config').as('getLocalTagConfig');
+    TagConfigsPage.visit();
+    cy.wait('@getLocalTagConfig');
+
     cy.on('window:confirm', () => false);
     cy.intercept('POST', '/api/v1/tag/change-config').as('importTagConfigs');
 

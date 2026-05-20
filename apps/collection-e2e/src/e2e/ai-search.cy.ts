@@ -114,12 +114,14 @@ describe('AI search - filtering', () => {
       statusCode: 200,
       body: { matchedIds: ['tt1000001'] },
     }).as('aiQuery');
+    cy.intercept('POST', '/api/v1/items/matched').as('matchedItems');
 
     CollectionPage.getAiSearchTrigger().click();
     CollectionPage.getAiSearchTextarea().type('sci-fi movies');
     CollectionPage.getAiSearchSendButton().click();
 
     cy.wait('@aiQuery');
+    cy.wait('@matchedItems');
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Sci-Fi Alpha');
   });
@@ -129,12 +131,14 @@ describe('AI search - filtering', () => {
       statusCode: 200,
       body: { matchedIds: [] },
     }).as('aiQuery');
+    cy.intercept('POST', '/api/v1/items/matched').as('matchedItems');
 
     CollectionPage.getAiSearchTrigger().click();
     CollectionPage.getAiSearchTextarea().type('something that matches nothing');
     CollectionPage.getAiSearchSendButton().click();
 
     cy.wait('@aiQuery');
+    cy.wait('@matchedItems');
     CollectionPage.getEmptyState().should('be.visible');
   });
 
