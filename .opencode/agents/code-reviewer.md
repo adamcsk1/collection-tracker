@@ -1,7 +1,6 @@
 ---
 description: Reviews code changes for correctness, security, performance, and adherence to Collection Tracker conventions. Use when you want a focused review of modified files before committing or opening a PR.
 mode: subagent
-model: opencode-go/kimi-k2.6
 permission:
   edit: deny
 ---

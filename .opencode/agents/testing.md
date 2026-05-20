@@ -1,7 +1,6 @@
 ---
 description: Writes and reviews Vitest unit tests and Cypress E2E tests for Collection Tracker. Use when adding test coverage, reviewing test quality, or debugging flaky/failing tests.
 mode: subagent
-model: opencode-go/kimi-k2.6
 permission:
   bash: ask
 ---
