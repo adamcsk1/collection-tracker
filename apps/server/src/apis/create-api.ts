@@ -1,5 +1,12 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { FAVORITE_TAG, WATCHED_TAG, WATCH_LATER_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
+import {
+  FAVORITE_TAG,
+  MOVIE_TAG,
+  SERIES_TAG,
+  WATCHED_TAG,
+  WATCH_LATER_TAG,
+  WISHLIST_TAG,
+} from '@shared/constants/tags-const';
 import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { COLLECTION_WORKFLOW_RATE_LIMIT } from '../core/constants/rate-limit-const';
@@ -30,6 +37,9 @@ export const register = (app: FastifyInstance): void => {
         usesInternalCollectionTag ||
         (listType !== 'library' && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG)))
       ) {
+        return response.code(400).send();
+      }
+      if (listType === 'series-tracker' && (!item.tags.includes(SERIES_TAG) || item.tags.includes(MOVIE_TAG))) {
         return response.code(400).send();
       }
       if (listType !== 'library' && typeof body.targetOwnerShareCode === 'string') {

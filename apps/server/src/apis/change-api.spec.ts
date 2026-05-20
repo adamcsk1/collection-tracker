@@ -34,7 +34,7 @@ const updatedItem = {
   genre: ['Drama'],
   IMDbId: 'tt-change',
   tags: ['#movie'],
-  year: 2024,
+  year: '2024',
   rate: '7.1',
   userRate: 8.7,
   actors: 'Actor One, Actor Two',
@@ -91,6 +91,48 @@ describe('change-api', () => {
     expect(getDatabase().prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt-change')).toEqual({
       title: 'Updated',
     });
+  });
+
+  it('updates a series tracker item when listType is provided', async () => {
+    insertItem('abc123', 'user', 'series-tracker');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      query: { listType: 'series-tracker' },
+      body: { ...updatedItem, tags: ['#series', '#episode-s01e02'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        title: 'Updated',
+        listType: 'series-tracker',
+        tags: ['#episode-s01e02', '#series'],
+      }),
+    });
+  });
+
+  it('returns 400 when updating a series tracker item with a movie type', async () => {
+    insertItem('abc123', 'user', 'series-tracker');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      query: { listType: 'series-tracker' },
+      body: { ...updatedItem, hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('updates an item in a shared library when update permission is granted', async () => {

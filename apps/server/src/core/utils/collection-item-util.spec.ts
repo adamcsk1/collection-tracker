@@ -12,7 +12,7 @@ const validItem: CollectionItemChangeApiModel = {
   genre: ['Drama'],
   IMDbId: 'tt0000001',
   tags: ['#movie'],
-  year: 2024,
+  year: '2024',
   rate: '7.1',
   userRate: 8.7,
   actors: 'Actor One',
@@ -73,8 +73,23 @@ describe('collection-item-util', () => {
       expect(normalizeItem({ ...validItem, tags: '#movie' as any })).toBeUndefined();
     });
 
-    it('returns undefined when year is neither number nor null', () => {
-      expect(normalizeItem({ ...validItem, year: '2024' as any })).toBeUndefined();
+    it('accepts year intervals', () => {
+      const result = normalizeItem({ ...validItem, year: '2026-2028' });
+      expect(result?.year).toBe('2026-2028');
+    });
+
+    it('converts numeric year to string', () => {
+      const result = normalizeItem({ ...validItem, year: 2024 as any });
+      expect(result?.year).toBe('2024');
+    });
+
+    it('normalizes decimal year artifacts', () => {
+      const result = normalizeItem({ ...validItem, year: '2005.0' });
+      expect(result?.year).toBe('2005');
+    });
+
+    it('returns undefined when year is neither string, number, nor null', () => {
+      expect(normalizeItem({ ...validItem, year: {} as any })).toBeUndefined();
     });
 
     it('accepts null year', () => {

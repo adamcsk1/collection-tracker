@@ -69,7 +69,7 @@ const normalizeLimit = (limit: number): number => Math.min(Math.max(Math.floor(l
 const normalizeOffset = (offset: number): number => Math.max(Math.floor(offset) || 0, 0);
 
 const normalizeListType = (listType: CollectionListTypeModel | undefined): CollectionListTypeModel => {
-  if (listType === 'watch-later' || listType === 'wishlist') return listType;
+  if (listType === 'watch-later' || listType === 'wishlist' || listType === 'series-tracker') return listType;
   return 'library';
 };
 
@@ -212,7 +212,7 @@ const toApiItem = (db: Database.Database, row: CollectionItemRow): CollectionIte
     genre: relations.genre,
     IMDbId: row.imdb_id,
     tags: relations.tags,
-    year: row.year ? Number(row.year) : null,
+    year: row.year || null,
     rate: row.rate,
     userRate: row.user_rate,
     actors: row.actors,
@@ -624,9 +624,11 @@ export const updateCollectionItem = (
   usernameHash: string,
   imdbId: string,
   hash: string,
-  updatedItem: CollectionItemChangeApiModel
+  updatedItem: CollectionItemChangeApiModel,
+  listType: CollectionListTypeModel = 'library'
 ): CollectionItemApiModel | undefined => {
-  const existingItem = findCollectionItemByImdbId(db, usernameHash, imdbId, 'library');
+  const normalizedListType = normalizeListType(listType);
+  const existingItem = findCollectionItemByImdbId(db, usernameHash, imdbId, normalizedListType);
   if (!existingItem) return;
 
   db.prepare(
@@ -661,7 +663,7 @@ export const updateCollectionItem = (
     db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(existingItem.id, tag);
   }
 
-  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, updatedItem.IMDbId, 'library')!);
+  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, updatedItem.IMDbId, normalizedListType)!);
 };
 
 export const deleteCollectionItem = (

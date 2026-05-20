@@ -1,8 +1,14 @@
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { hashText } from '../crypto';
 
+const normalizeYear = (year: number | string | null): string | null => {
+  if (typeof year === 'number') return Number.isInteger(year) ? `${year}` : `${year}`.replace(/^(\d{4})\.0$/, '$1');
+  return year?.trim().replace(/^(\d{4})\.0$/, '$1') || null;
+};
+
 export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionItemChangeApiModel | undefined => {
   const userRate = item?.userRate;
+  const year = item?.year;
   if (
     typeof item?.title !== 'string' ||
     typeof item?.image !== 'string' ||
@@ -12,7 +18,7 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     typeof item?.plot !== 'string' ||
     !Array.isArray(item?.genre) ||
     !Array.isArray(item?.tags) ||
-    (typeof item?.year !== 'number' && item?.year !== null) ||
+    (typeof year !== 'number' && typeof year !== 'string' && year !== null) ||
     (typeof userRate !== 'number' && userRate !== null) ||
     (typeof userRate === 'number' &&
       (!Number.isFinite(userRate) ||
@@ -29,7 +35,7 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     genre: item.genre.map((genre) => `${genre}`.trim()).filter(Boolean),
     IMDbId: item.IMDbId.trim(),
     tags: item.tags.map((tag) => `${tag}`.trim()).filter(Boolean),
-    year: item.year,
+    year: normalizeYear(year),
     rate: item.rate.trim(),
     userRate,
     actors: item.actors.trim(),

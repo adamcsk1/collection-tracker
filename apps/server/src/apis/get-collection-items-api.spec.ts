@@ -31,7 +31,12 @@ const insertItem = (usernameHash: string, imdbId: string, title: string) => {
     .run(usernameHash, imdbId, title, title.toLowerCase(), '2001', '7.0', '', '', `${imdbId}-hash`);
 };
 
-const insertTypedItem = (usernameHash: string, imdbId: string, title: string, listType: 'watch-later' | 'wishlist') => {
+const insertTypedItem = (
+  usernameHash: string,
+  imdbId: string,
+  title: string,
+  listType: 'watch-later' | 'wishlist' | 'series-tracker'
+) => {
   getDatabase()
     .prepare(
       `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
@@ -199,6 +204,26 @@ describe('get-collection-items-api', () => {
     );
   });
 
+  it('excludes series tracker items from the default collection list', async () => {
+    insertUser('user');
+    insertItem('user', 'tt-normal', 'Normal Item');
+    insertTypedItem('user', 'tt-series-tracker', 'Tracked Series', 'series-tracker');
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: {} };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [expect.objectContaining({ title: 'Normal Item' })],
+        total: 1,
+      })
+    );
+  });
+
   it('returns own watch later items when explicitly requested', async () => {
     insertUser('user');
     insertUser('owner');
@@ -216,6 +241,28 @@ describe('get-collection-items-api', () => {
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
         items: [expect.objectContaining({ title: 'Own Watch Later Item' })],
+        total: 1,
+      })
+    );
+  });
+
+  it('returns own series tracker items when explicitly requested', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertTypedItem('user', 'tt-own-series-tracker', 'Own Tracked Series', 'series-tracker');
+    insertTypedItem('owner', 'tt-shared-series-tracker', 'Shared Tracked Series', 'series-tracker');
+    insertShare('owner', 'user', true);
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { listType: 'series-tracker' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [expect.objectContaining({ title: 'Own Tracked Series' })],
         total: 1,
       })
     );

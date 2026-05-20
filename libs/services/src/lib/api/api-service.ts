@@ -118,9 +118,10 @@ export class ApiService extends BaseApiService {
     imdbId: string,
     item: CollectionItemChangeApiModel,
     hash: string,
-    ownerShareCode?: string
+    ownerShareCode?: string,
+    listType?: CollectionListTypeModel
   ): Observable<ChangeApiResponseModel> {
-    return this.request('PUT', `/change/${imdbId}${this.buildQuery({ ownerShareCode })}`, { ...item, hash });
+    return this.request('PUT', `/change/${imdbId}${this.buildQuery({ ownerShareCode, listType })}`, { ...item, hash });
   }
 
   public delete(

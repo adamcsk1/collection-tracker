@@ -261,7 +261,8 @@ components:
           items:
             type: string
         year:
-          type: ['number', 'null']
+          type: ['string', 'null']
+          description: Release year or year interval such as `2026-2028` or `2027-`.
         rate:
           type: string
         userRate:
@@ -278,7 +279,7 @@ components:
           type: string
         listType:
           type: string
-          enum: [library, watch-later, wishlist]
+          enum: [library, watch-later, wishlist, series-tracker]
           description: Logical list containing the item. `library` is the main collection.
         ownerShareCode:
           type: string
@@ -303,7 +304,8 @@ components:
           items:
             type: string
         year:
-          type: ['number', 'null']
+          type: ['string', 'null']
+          description: Release year or year interval such as `2026-2028` or `2027-`.
         rate:
           type: string
         userRate:
@@ -368,7 +370,7 @@ components:
               type: boolean
             listType:
               type: string
-              enum: [library, watch-later, wishlist]
+              enum: [library, watch-later, wishlist, series-tracker]
 
     CollectionItemSuggestionsResponse:
       type: object
@@ -485,7 +487,7 @@ components:
               description: Optional owner share code to create the item in a shared library. Defaults to the authenticated user.
             listType:
               type: string
-              enum: [library, watch-later, wishlist]
+              enum: [library, watch-later, wishlist, series-tracker]
               default: library
               description: Target list. Defaults to `library`.
 
@@ -960,7 +962,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, watch-later, wishlist]
+            enum: [library, watch-later, wishlist, series-tracker]
             default: library
       responses:
         '200':
@@ -1038,7 +1040,7 @@ paths:
           description: List to check. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watch-later, wishlist]
+            enum: [library, watch-later, wishlist, series-tracker]
             default: library
       responses:
         '200':
@@ -1226,7 +1228,7 @@ paths:
     post:
       operationId: createItem
       summary: Create a collection item
-      description: Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later and wishlist items cannot be created in shared libraries and cannot use `#favorite` or `#watched`. The internal `#watch-later` and `#wishlist` tags are rejected.
+      description: Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later, wishlist, and series-tracker items cannot be created in shared libraries and cannot use `#favorite` or `#watched`. Series-tracker items must be series. The internal `#watch-later` and `#wishlist` tags are rejected.
       tags: [Collection]
       requestBody:
         required: true
@@ -1252,7 +1254,7 @@ paths:
     put:
       operationId: changeItem
       summary: Update a collection item
-      description: Updates a library item. Watch-later and wishlist items are not modified by this endpoint. The internal `#watch-later` and `#wishlist` tags are rejected.
+      description: Updates a library or series-tracker item. Watch-later and wishlist items are not modified by this endpoint. The internal `#watch-later` and `#wishlist` tags are rejected.
       tags: [Collection]
       parameters:
         - name: imdbId
@@ -1293,7 +1295,7 @@ paths:
     delete:
       operationId: deleteItem
       summary: Delete a collection item
-      description: Deletes an item from the requested list when the supplied hash matches. Shared watch-later and wishlist items cannot be deleted by users other than their owner.
+      description: Deletes an item from the requested list when the supplied hash matches. Shared watch-later, wishlist, and series-tracker items cannot be deleted by users other than their owner.
       tags: [Collection]
       parameters:
         - name: imdbId
@@ -1320,7 +1322,7 @@ paths:
           description: List containing the item. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watch-later, wishlist]
+            enum: [library, watch-later, wishlist, series-tracker]
             default: library
       responses:
         '204':
