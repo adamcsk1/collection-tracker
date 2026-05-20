@@ -27,7 +27,11 @@ const insertItem = (hash = 'abc123', usernameHash = 'user') => {
   ).run(usernameHash, 'tt-delete', '', '', '', '', '', '', hash);
 };
 
-const insertTypedItem = (listType: 'watch-later' | 'wishlist', hash = 'abc123', usernameHash = 'user') => {
+const insertTypedItem = (
+  listType: 'watch-later' | 'wishlist' | 'series-tracker',
+  hash = 'abc123',
+  usernameHash = 'user'
+) => {
   const db = getDatabase();
   insertUser(usernameHash);
   db.prepare(
@@ -95,6 +99,23 @@ describe('delete-api', () => {
     const request: any = {
       params: { imdbId: 'tt-delete' },
       query: { hash: 'abc123', listType: 'wishlist' },
+      usernameHash: 'user',
+    };
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(204);
+  });
+
+  it('deletes a series tracker item when listType is provided', async () => {
+    insertTypedItem('series-tracker');
+    const request: any = {
+      params: { imdbId: 'tt-delete' },
+      query: { hash: 'abc123', listType: 'series-tracker' },
       usernameHash: 'user',
     };
     const response = mockResponse();

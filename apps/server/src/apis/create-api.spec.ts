@@ -25,7 +25,7 @@ const item = {
   genre: ['Drama'],
   IMDbId: 'tt0000001',
   tags: ['#movie'],
-  year: 2024,
+  year: '2024',
   rate: '7.1',
   userRate: 8.7,
   actors: 'Actor One, Actor Two',
@@ -112,6 +112,33 @@ describe('create-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({ title: 'Custom File', listType: 'wishlist', tags: ['#movie'] }),
     });
+  });
+
+  it('creates a series tracker item using listType', async () => {
+    insertUser();
+    const response = mockResponse();
+    const request: any = { body: { ...item, tags: ['#series'], listType: 'series-tracker' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ title: 'Custom File', listType: 'series-tracker', tags: ['#series'] }),
+    });
+  });
+
+  it('returns 400 when creating a movie in the series tracker', async () => {
+    const response = mockResponse();
+    const request: any = { body: { ...item, listType: 'series-tracker' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('creates an item in a shared library when create permission is granted', async () => {

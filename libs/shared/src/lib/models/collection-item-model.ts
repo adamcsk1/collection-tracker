@@ -1,4 +1,5 @@
-export type CollectionListTypeModel = 'library' | 'watch-later' | 'wishlist';
+export type CollectionListTypeModel = 'library' | 'watch-later' | 'wishlist' | 'series-tracker';
+export type CollectionItemYearModel = string | null;
 
 export interface CollectionItemModel {
   image: string;
@@ -7,7 +8,7 @@ export interface CollectionItemModel {
   genre: string[];
   IMDbId: string;
   tags: string[];
-  year: number | null;
+  year: CollectionItemYearModel;
   rate: string;
   userRate: number | null;
   hash: string;

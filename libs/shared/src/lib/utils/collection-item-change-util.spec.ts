@@ -10,12 +10,13 @@ describe('toCollectionItemChange', () => {
         genre: ['Drama'],
         IMDbId: 'tt123',
         tags: ['#owned'],
-        year: 2020,
+        year: '2020',
         rate: '9.0',
         userRate: 8.7,
         hash: 'hash',
         actors: 'Actors',
         plot: 'Plot',
+        listType: 'library',
       })
     ).toEqual({
       image: 'poster-url',
@@ -23,7 +24,7 @@ describe('toCollectionItemChange', () => {
       genre: ['Drama'],
       IMDbId: 'tt123',
       tags: ['#owned'],
-      year: 2020,
+      year: '2020',
       rate: '9.0',
       userRate: 8.7,
       actors: 'Actors',
