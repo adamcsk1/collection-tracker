@@ -134,6 +134,7 @@ export interface UserSettingsApiResponseModel {
   theme?: ThemeModel;
   animatedBackground?: boolean;
   language?: LanguageModel;
+  defaultLibraryOwnerShareCode?: string | null;
 }
 
 export interface AiAvailableApiResponseModel {
@@ -173,6 +174,7 @@ export interface RefreshImagesApiResponseModel {
 
 export interface UserShareOutgoingApiModel {
   sharedWithUserShareCode: string;
+  sharedWithUsername: string | null;
   canRead: boolean;
   canCreate: boolean;
   canUpdate: boolean;

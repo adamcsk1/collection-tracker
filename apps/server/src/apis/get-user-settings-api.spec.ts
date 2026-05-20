@@ -30,6 +30,26 @@ describe('get-user-settings-api', () => {
     });
   });
 
+  it('returns the configured default library owner share code', async () => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO user_settings (username_hash, default_library_owner_share_code) VALUES (?, ?)').run(
+      'user',
+      'owner-code'
+    );
+
+    const { register } = await import('./get-user-settings-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      defaultLibraryOwnerShareCode: 'owner-code',
+    });
+  });
+
   it('returns empty object when caller has no stored user settings', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };

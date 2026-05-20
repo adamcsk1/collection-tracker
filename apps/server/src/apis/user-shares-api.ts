@@ -24,6 +24,8 @@ export const register = (app: FastifyInstance): void => {
         userShareCode: getUserShareCode(request.usernameHash),
         outgoing: outgoing.map((row) => ({
           sharedWithUserShareCode: getUserShareCode(row.shared_with_username_hash),
+          sharedWithUsername:
+            findUserByShareCode(db, getUserShareCode(row.shared_with_username_hash))?.username ?? null,
           canRead: row.can_read === 1,
           canCreate: row.can_create === 1,
           canUpdate: row.can_update === 1,

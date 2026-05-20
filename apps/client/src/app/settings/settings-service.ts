@@ -60,7 +60,12 @@ export class SettingsService {
     );
   }
 
-  private applyUserSettings(settings: { theme?: string; animatedBackground?: boolean; language?: string }): void {
+  private applyUserSettings(settings: {
+    theme?: string;
+    animatedBackground?: boolean;
+    language?: string;
+    defaultLibraryOwnerShareCode?: string | null;
+  }): void {
     const theme = parseAllowedValue(settings.theme ?? null, THEMES);
     if (theme) this.themeState.setState('theme', theme);
 
@@ -72,6 +77,10 @@ export class SettingsService {
     if (language) {
       this.mainState.setState('language', language);
       this.ngxSignalTranslate.setLanguage(language);
+    }
+
+    if (settings.defaultLibraryOwnerShareCode !== undefined) {
+      this.mainState.setState('defaultLibraryOwnerShareCode', settings.defaultLibraryOwnerShareCode);
     }
   }
 
@@ -99,6 +108,19 @@ export class SettingsService {
 
     this.sharedApi
       .updateUserSettings(userSettings)
+      .pipe(
+        tap(() => this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'))),
+        map(() => void 0),
+        catchError(() => EMPTY)
+      )
+      .subscribe();
+  }
+
+  public storeDefaultLibraryOwnerShareCode(defaultLibraryOwnerShareCode: string | null): void {
+    this.mainState.setState('defaultLibraryOwnerShareCode', defaultLibraryOwnerShareCode);
+
+    this.sharedApi
+      .updateUserSettings({ defaultLibraryOwnerShareCode })
       .pipe(
         tap(() => this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'))),
         map(() => void 0),

@@ -14,6 +14,10 @@ const isAllowedTheme = (value: unknown): value is UserSettingsApiResponseModel['
   typeof value === 'string' && isAllowedValue(value, THEMES);
 const isAllowedLanguage = (value: unknown): value is UserSettingsApiResponseModel['language'] =>
   typeof value === 'string' && isAllowedValue(value, LANGUAGES);
+const isAllowedDefaultLibraryOwnerShareCode = (
+  value: unknown
+): value is UserSettingsApiResponseModel['defaultLibraryOwnerShareCode'] =>
+  value === null || (typeof value === 'string' && value.trim().length > 0);
 
 const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel => {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return false;
@@ -28,6 +32,8 @@ const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel
         return isAllowedBoolean(value);
       case 'language':
         return isAllowedLanguage(value);
+      case 'defaultLibraryOwnerShareCode':
+        return isAllowedDefaultLibraryOwnerShareCode(value);
       case 'fromLogin':
         return typeof value === 'boolean';
       default:

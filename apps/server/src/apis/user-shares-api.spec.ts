@@ -60,6 +60,7 @@ describe('user-shares-api', () => {
       outgoing: [
         {
           sharedWithUserShareCode: getUserShareCode('friend-hash'),
+          sharedWithUsername: 'Friend',
           canRead: true,
           canCreate: false,
           canUpdate: true,
