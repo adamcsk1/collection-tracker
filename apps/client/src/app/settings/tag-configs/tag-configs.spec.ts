@@ -204,6 +204,12 @@ describe('TagConfigs component', () => {
     expect(toastState.state.message()).toBe('');
   });
 
+  it('does not clear stored configs when collection tags load before tag configs preload', () => {
+    createComponent(['#tag']);
+
+    expect(tagConfigsService.syncUserTagConfigs).not.toHaveBeenCalled();
+  });
+
   it('adds a new config with defaults when color changes for unknown tag', () => {
     createComponent(['#new']);
 
