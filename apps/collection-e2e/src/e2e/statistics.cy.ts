@@ -113,7 +113,7 @@ describe('Statistics — with movies and series', () => {
 describe('Statistics — wishlist', () => {
   const wishlistItem = {
     ...buildCollectionItem('Stats Wishlist Movie', 'movie', 'tt9000101'),
-    tags: ['#movie', '#wishlist'],
+    listType: 'wishlist',
   };
 
   beforeEach(() => {

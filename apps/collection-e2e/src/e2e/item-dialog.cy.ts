@@ -27,7 +27,7 @@ describe('Item dialog — edit flow', () => {
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
 
     // Verify the dialog shows the updated title in read-only mode
-    CollectionPage.getItemDialogTitleInput().should('not.exist');
+    cy.getByTestId('item-dialog-title').should('not.exist');
     cy.contains('Updated Title').should('be.visible');
 
     // Close dialog and verify list shows updated title

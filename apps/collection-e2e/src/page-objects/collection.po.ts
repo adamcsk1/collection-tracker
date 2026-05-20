@@ -18,6 +18,7 @@ export const CollectionPage = {
   getEmptyState: () => cy.getByTestId('list-empty'),
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
   getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
+  getAddFirstSeriesTrackerItemLink: () => cy.getByTestId('add-first-series-tracker-item'),
 
   // Float buttons
   getShowFunctionsButton: () => cy.getByTestId('show-functions'),
@@ -51,11 +52,14 @@ export const CollectionPage = {
   getItemDialogMarkUnwatchedButton: () => cy.getByTestId('item-dialog-mark-unwatched'),
   getItemDialogSharedLibraryBadge: () => cy.getByTestId('item-dialog-shared-library'),
   getItemDialogUserRateChip: () => cy.getByTestId('item-dialog-user-rate-chip'),
-  getItemDialogTitleInput: () => cy.getByTestId('item-dialog-title'),
-  getItemDialogYearInput: () => cy.getByTestId('item-dialog-year'),
+  getItemDialogTitleInput: () => cy.getByTestId('item-dialog-title').find('input'),
+  getItemDialogYearInput: () => cy.getByTestId('item-dialog-year').find('input'),
   getItemDialogUserRateInput: () => cy.getByTestId('item-dialog-user-rate').find('input'),
+  getItemDialogWatchedUpToSeasonSelect: () => cy.getByTestId('item-dialog-watched-up-to-season').find('select'),
+  getItemDialogWatchedUpToEpisodeSelect: () => cy.getByTestId('item-dialog-watched-up-to-episode').find('select'),
+  getItemDialogEpisodeProgressChip: () => cy.getByTestId('item-dialog-episode-progress-chip'),
   getItemDialogGenreInput: () => cy.getByTestId('item-dialog-genre').find('input'),
   getItemDialogTagsInput: () => cy.getByTestId('item-dialog-tags').find('input'),
-  getItemDialogActorsInput: () => cy.getByTestId('item-dialog-actors'),
-  getItemDialogPlotInput: () => cy.getByTestId('item-dialog-plot'),
+  getItemDialogActorsInput: () => cy.getByTestId('item-dialog-actors').find('input'),
+  getItemDialogPlotInput: () => cy.getByTestId('item-dialog-plot').find('textarea'),
 };

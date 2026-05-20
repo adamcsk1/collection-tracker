@@ -378,6 +378,65 @@ describe('Collection — wishlist', () => {
   });
 });
 
+describe('Collection — series tracker', () => {
+  const seriesTitle = 'Series Tracker Test Show';
+
+  beforeEach(() => {
+    cy.intercept('GET', '/api/v1/proxy/omdb/search*', {
+      statusCode: 200,
+      body: {
+        Search: [
+          { Title: 'Filtered Movie Result', Year: '2020', imdbID: 'tt8200000', Type: 'movie', Poster: 'N/A' },
+          { Title: seriesTitle, Year: '2021', imdbID: 'tt8200001', Type: 'series', Poster: 'N/A' },
+        ],
+        totalResults: '2',
+        Response: 'True',
+      },
+    }).as('seriesTrackerOmdbSearch');
+    cy.intercept('GET', '/api/v1/proxy/omdb/item*', {
+      statusCode: 200,
+      body: buildOmdbItem(seriesTitle, 'tt8200001', 'series'),
+    }).as('seriesTrackerOmdbItem');
+
+    cy.autoLogin();
+  });
+
+  it('adds a series and persists watched-up-to progress', () => {
+    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.on('window:confirm', () => true);
+
+    CommonPage.openMenu();
+    CommonPage.getNavSeriesTrackerLink().click();
+
+    cy.url().should('include', '#/collection/series-tracker');
+    cy.getByTestId('collection-search').should('not.exist');
+    CollectionPage.getAddFirstSeriesTrackerItemLink().click();
+
+    CollectionPage.getNewItemSearchInput().type(seriesTitle);
+    cy.wait('@seriesTrackerOmdbSearch');
+    CollectionPage.getNewItemContentSelect().find('option').should('have.length', 1).and('contain.text', seriesTitle);
+    cy.getByTestId('new-item-user-rate').should('not.exist');
+    cy.getByTestId('new-item-watched').should('not.exist');
+    CollectionPage.getNewItemSaveAndCloseButton().click();
+    cy.wait('@seriesTrackerOmdbItem');
+
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', seriesTitle);
+
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogEditButton().click();
+    CollectionPage.getItemDialogWatchedUpToSeasonSelect().select('1');
+    CollectionPage.getItemDialogWatchedUpToEpisodeSelect().select('2');
+    CollectionPage.getItemDialogSaveButton().click();
+    cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
+    CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
+
+    cy.reload();
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
+  });
+});
+
 describe('Collection - sync', () => {
   beforeEach(() => {
     cy.autoLogin();

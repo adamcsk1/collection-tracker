@@ -1,5 +1,4 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
-import { AboutPage } from '../page-objects/about.po';
 import { CollectionPage } from '../page-objects/collection.po';
 import { CommonPage } from '../page-objects/common.po';
 import { SettingsPage } from '../page-objects/settings.po';
@@ -9,28 +8,6 @@ import { SettingsPage } from '../page-objects/settings.po';
 beforeEach(() => {
   cy.on('uncaught:exception', () => false);
 });
-
-/**
- * Sets CT.AppMode in localStorage and reloads the collection page so that
- * Angular re-reads the stored value on init. Call after cy.autoLogin().
- */
-const applyAppMode = (mode: 'basic' | 'limited' | 'full') => {
-  cy.window().then((win) => win.localStorage.setItem('CT.AppMode', mode));
-  CollectionPage.visit();
-};
-
-/**
- * Stores settingsLock=true and the given appMode in localStorage, then reloads.
- * Uses a non-full appMode so the SettingsLock checkbox is accessible in settings
- * (the checkbox is hidden when appMode is 'full').
- */
-const enableSettingsLock = (appMode: 'basic' | 'limited' = 'basic') => {
-  cy.window().then((win) => {
-    win.localStorage.setItem('CT.AppMode', appMode);
-    win.localStorage.setItem('CT.SettingLock', 'true');
-  });
-  CollectionPage.visit();
-};
 
 /**
  * Pre-opens all collapsible details sections in the settings page so that
@@ -67,10 +44,6 @@ describe('Settings - basic form fields', () => {
     SettingsPage.getAnimatedBackgroundCheckbox().should('exist');
   });
 
-  it('shows the app mode select', () => {
-    SettingsPage.getAppModeSelect().should('be.visible');
-  });
-
   it('shows the sensitive data storage select', () => {
     SettingsPage.getSensitiveDataStorageSelect().should('be.visible');
   });
@@ -82,25 +55,6 @@ describe('Settings - basic form fields', () => {
   it('hides the clear-local-storage-after-logout checkbox when storage is switched to session', () => {
     SettingsPage.getSensitiveDataStorageSelect().select('session');
     cy.getByTestId('settings-clear-local-storage-after-logout').should('not.exist');
-  });
-
-});
-
-describe('Settings - settings lock', () => {
-  beforeEach(() => {
-    cy.autoLogin();
-    openSettingsSections();
-    SettingsPage.visitBasics();
-  });
-
-  it('shows the settings-lock checkbox when app mode is not full', () => {
-    SettingsPage.getAppModeSelect().select('basic');
-    SettingsPage.getSettingsLockCheckbox().should('exist');
-  });
-
-  it('hides the settings-lock checkbox when app mode is full', () => {
-    SettingsPage.getAppModeSelect().select('full');
-    cy.getByTestId('settings-settings-lock').should('not.exist');
   });
 });
 
@@ -311,58 +265,6 @@ describe('Settings - access tokens', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// App mode
-// ---------------------------------------------------------------------------
-
-describe('Settings - appMode: basic (read-only)', () => {
-  beforeEach(() => {
-    cy.autoLogin();
-    // Seed the item before applyAppMode — the page visit inside applyAppMode
-    // triggers a token rotation that would invalidate the cookie for cy.request.
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Basic Mode Movie', 'movie', 'tt8100001'));
-    applyAppMode('basic');
-  });
-
-  it('the add-new float button is not present', () => {
-    CollectionPage.getShowFunctionsButton().click();
-    cy.getByTestId('add-new').should('not.exist');
-  });
-
-  it('the item dialog has no edit, delete, or mark-watched buttons', () => {
-    CollectionPage.getListItemImages().first().click();
-
-    cy.getByTestId('item-dialog-edit').should('not.exist');
-    cy.getByTestId('item-dialog-delete').should('not.exist');
-    cy.getByTestId('item-dialog-mark-watched').should('not.exist');
-    cy.getByTestId('item-dialog-mark-unwatched').should('not.exist');
-  });
-});
-
-describe('Settings - appMode: limited (create only)', () => {
-  beforeEach(() => {
-    cy.autoLogin();
-    // Seed the item before applyAppMode — the page visit inside applyAppMode
-    // triggers a token rotation that would invalidate the cookie for cy.request.
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Limited Mode Movie', 'movie', 'tt8200001'));
-    applyAppMode('limited');
-  });
-
-  it('the add-new float button is visible', () => {
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getAddNewButton().should('be.visible');
-  });
-
-  it('the item dialog has no edit, delete, or mark-watched buttons', () => {
-    CollectionPage.getListItemImages().first().click();
-
-    cy.getByTestId('item-dialog-edit').should('not.exist');
-    cy.getByTestId('item-dialog-delete').should('not.exist');
-    cy.getByTestId('item-dialog-mark-watched').should('not.exist');
-    cy.getByTestId('item-dialog-mark-unwatched').should('not.exist');
-  });
-});
-
 describe('Settings - appMode: full (all permissions)', () => {
   beforeEach(() => {
     cy.autoLogin();
@@ -381,55 +283,5 @@ describe('Settings - appMode: full (all permissions)', () => {
     cy.getByTestId('item-dialog-edit').should('be.visible');
     cy.getByTestId('item-dialog-delete').should('be.visible');
     cy.getByTestId('item-dialog-mark-watched').should('be.visible');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Settings lock
-// ---------------------------------------------------------------------------
-
-describe('Settings - settings lock: enabled', () => {
-  beforeEach(() => {
-    cy.autoLogin();
-    enableSettingsLock();
-  });
-
-  it('hides the settings nav link', () => {
-    CommonPage.openMenu();
-    CommonPage.getNavSettingsLink().should('not.exist');
-  });
-
-  it('still shows collection, statistics, sync, about and logout nav links', () => {
-    CommonPage.openMenu();
-    CommonPage.getNavCollectionLink().should('be.visible');
-    CommonPage.getNavSyncLink().should('be.visible');
-    CommonPage.getNavAboutLink().should('be.visible');
-    CommonPage.getNavLogoutLink().should('be.visible');
-  });
-});
-
-describe('Settings - settings unlock via about page', () => {
-  beforeEach(() => {
-    cy.autoLogin();
-    enableSettingsLock();
-    AboutPage.visit();
-  });
-
-  it('clicking the version 10 times restores the settings nav link', () => {
-    for (let clickIndex = 0; clickIndex < 10; clickIndex++) {
-      AboutPage.getVersion().click();
-    }
-
-    CommonPage.openMenu();
-    CommonPage.getNavSettingsLink().should('be.visible');
-  });
-
-  it('clicking fewer than 10 times does not unlock settings', () => {
-    for (let clickIndex = 0; clickIndex < 9; clickIndex++) {
-      AboutPage.getVersion().click();
-    }
-
-    CommonPage.openMenu();
-    CommonPage.getNavSettingsLink().should('not.exist');
   });
 });
