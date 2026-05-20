@@ -4,7 +4,9 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
+import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import { CollectionItemChangeApiModel, CollectionListTypeModel } from '@shared/models/api-model';
+import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
@@ -20,6 +22,7 @@ export class NewItemDialogService {
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly portal = inject(PortalService);
+  public readonly matchedContent = this.omdb.matchedContent;
 
   constructor() {
     effect(() => {
@@ -27,8 +30,6 @@ export class NewItemDialogService {
       this.spinnerLoadingState.setState('show', false);
     });
   }
-
-  readonly matchedContent = this.omdb.matchedContent;
 
   public search(searchText: string): void {
     this.spinnerLoadingState.setState('show', true);
@@ -48,20 +49,22 @@ export class NewItemDialogService {
       take(1),
       filter((selectedContent) => !!selectedContent),
       filter((selectedContent) => !!selectedContent?.imdbID),
-      map(
-        (selectedContent): CollectionItemChangeApiModel => ({
+      map((selectedContent): CollectionItemChangeApiModel => {
+        const selectedContentType = selectedContent.Type.trim().toLowerCase();
+        const typeTag = selectedContentType === 'movie' ? MOVIE_TAG : SERIES_TAG;
+        return {
           image: selectedContent.Poster,
           title: selectedContent.Title,
           genre: parseGenreText(selectedContent.Genre),
           IMDbId: selectedContent.imdbID,
-          tags: [`#${selectedContent.Type.toLowerCase()}`, ...parseTagText(tags)],
-          year: Number(selectedContent.Year) || null,
+          tags: typeTag ? [typeTag, ...parseTagText(tags)] : parseTagText(tags),
+          year: this.parseYear(selectedContent.Year),
           rate: selectedContent.imdbRating,
           userRate,
           actors: selectedContent.Actors,
           plot: selectedContent.Plot,
-        })
-      ),
+        };
+      }),
       tap(() => this.spinnerLoadingState.setState('show', true)),
       mergeMap((collectionItem) =>
         (listType === 'library'
@@ -81,5 +84,11 @@ export class NewItemDialogService {
         if (mode === 'close') this.portal.close();
       })
     );
+  }
+
+  private parseYear(year: string): CollectionItemYearModel {
+    const normalizedYear = year.trim().replace('–', '-');
+    const normalizedDecimalYear = normalizedYear.replace(/^(\d{4})\.0$/, '$1');
+    return normalizedDecimalYear && normalizedDecimalYear !== 'N/A' ? normalizedDecimalYear : null;
   }
 }

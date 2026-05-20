@@ -15,7 +15,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const buildSelectedContent = () => ({
+const buildSelectedContent = (overrides: Partial<ReturnType<typeof buildSelectedContent>> = {}) => ({
   Title: 'Title',
   Year: '2020',
   imdbID: 'tt123',
@@ -26,6 +26,7 @@ const buildSelectedContent = () => ({
   Genre: 'Drama, Action',
   Actors: 'Actors',
   Type: 'movie',
+  ...overrides,
 });
 
 describe('NewItemDialogService', () => {
@@ -87,7 +88,7 @@ describe('NewItemDialogService', () => {
         genre: ['Drama', 'Action'],
         IMDbId: 'tt123',
         tags: ['#movie', '#tag'],
-        year: 2020,
+        year: '2020',
         rate: '9.0',
         userRate: 8.7,
         actors: 'Actors',
@@ -134,5 +135,54 @@ describe('NewItemDialogService', () => {
       undefined,
       'wishlist'
     );
+  });
+
+  it('saves series tracker items with the series tracker list type', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'series' }) as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(service.save('tt123', null, '#tag', 'close', undefined, 'series-tracker'));
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({ tags: ['#series', '#tag'] }),
+      undefined,
+      'series-tracker'
+    );
+  });
+
+  it('keeps year intervals from selected content', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Year: '2026-2028' }) as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(service.save('tt123', null, '', 'close'));
+
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ year: '2026-2028' }), undefined);
+  });
+
+  it('keeps open year intervals from selected content', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Year: '2027–' }) as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(service.save('tt123', null, '', 'close'));
+
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ year: '2027-' }), undefined);
+  });
+
+  it('normalizes decimal year artifacts from selected content', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Year: '2005.0' }) as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(service.save('tt123', null, '', 'close'));
+
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ year: '2005' }), undefined);
+  });
+
+  it('saves non-series content with its detected type tag for series tracker items', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(service.save('tt123', null, '', 'close', undefined, 'series-tracker'));
+
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ tags: ['#movie'] }), undefined, 'series-tracker');
   });
 });

@@ -7,6 +7,7 @@ import { PortalService } from '@services/portal-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { AiSearchService } from '../search/ai-search-service';
 import { CollectionLibrary } from './library';
@@ -29,6 +30,7 @@ describe('Collection library component', () => {
     TestBed.configureTestingModule({
       imports: [CollectionLibrary],
       providers: [
+        provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialCollectionState, collectionStateToken),
         { provide: ApiService, useValue: api },
         { provide: PortalService, useValue: { open: vi.fn() } },
@@ -85,6 +87,7 @@ describe('Collection library component', () => {
     TestBed.configureTestingModule({
       imports: [CollectionLibrary],
       providers: [
+        provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialCollectionState, collectionStateToken),
         { provide: ApiService, useValue: api },
         { provide: PortalService, useValue: { open: vi.fn() } },

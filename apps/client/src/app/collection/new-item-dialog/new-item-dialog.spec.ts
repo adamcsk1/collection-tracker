@@ -201,6 +201,30 @@ describe('NewItemDialog component', () => {
     expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', undefined, 'wishlist');
   });
 
+  it('saves series tracker items without watched, user rate, or shared library values', async () => {
+    fixture.componentRef.setInput('seriesTracker', true);
+    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].tags().value.set('#tag');
+    component['form'].watched().value.set(true);
+    component['form'].userRate().value.set(8.2);
+    component['form'].targetOwnerShareCode().value.set('owner-code');
+
+    await component['onSave']('close');
+
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', undefined, 'series-tracker');
+  });
+
+  it('filters matched content to series in series tracker mode', () => {
+    fixture.componentRef.setInput('seriesTracker', true);
+    service.matchedContent.mockReturnValue([
+      { text: '(movie) Test Movie (2020)', value: 'tt-movie' },
+      { text: '(series) Test Series (2021)', value: 'tt-series' },
+    ]);
+    fixture.detectChanges();
+
+    expect(component['matchedContent']()).toEqual([{ text: '(series) Test Series (2021)', value: 'tt-series' }]);
+  });
+
   it('only offers shared libraries with create permission', () => {
     sharesState.setState('incoming', [
       {

@@ -9,10 +9,11 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
+import { CollectionItemFiltersApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Observable, of } from 'rxjs';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { initialTagConfigsState, tagConfigsStateToken } from '../../settings/tag-configs/tag-configs-store';
 import { initialSharesState, sharesStateToken } from '../../shares/shares-store';
 import { List } from './list';
@@ -24,7 +25,13 @@ describe('List', () => {
   let component: List;
   let portal: { open: ReturnType<typeof vi.fn> };
   let api: {
-    searchItems: ReturnType<typeof vi.fn>;
+    searchItems: Mock<
+      (
+        filters: CollectionItemFiltersApiModel,
+        offset?: number,
+        limit?: number
+      ) => Observable<CollectionItemsApiResponseModel>
+    >;
     getMatchedItems: ReturnType<typeof vi.fn>;
     getRandomItem: ReturnType<typeof vi.fn>;
     getShares: ReturnType<typeof vi.fn>;
@@ -32,7 +39,7 @@ describe('List', () => {
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let scrollSpy: ReturnType<typeof vi.fn>;
 
-  const buildFilters = (searchText: string) => {
+  const buildFilters = (searchText: string): CollectionItemFiltersApiModel => {
     const search = searchText.trim();
     if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false };
     if (search.startsWith('#')) return { tags: [search], tagMode: 'all' };
@@ -228,7 +235,11 @@ describe('List', () => {
 
     component['onAddNew']();
 
-    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), { watchLater: true, wishlist: false });
+    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), {
+      watchLater: true,
+      wishlist: false,
+      seriesTracker: false,
+    });
   });
 
   it('opens the new item dialog in wishlist mode on the wishlist page', () => {
@@ -237,7 +248,24 @@ describe('List', () => {
 
     component['onAddNew']();
 
-    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), { watchLater: false, wishlist: true });
+    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), {
+      watchLater: false,
+      wishlist: true,
+      seriesTracker: false,
+    });
+  });
+
+  it('opens the new item dialog in series tracker mode on the series tracker page', () => {
+    fixture.componentRef.setInput('listType', 'series-tracker');
+    fixture.detectChanges();
+
+    component['onAddNew']();
+
+    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), {
+      watchLater: false,
+      wishlist: false,
+      seriesTracker: true,
+    });
   });
 
   it('emits a random pick request', async () => {

@@ -25,7 +25,7 @@ describe('Main component', () => {
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
   let blockerState: NgxSimpleSignalStoreService<BlockerLoadingState>;
   let apiService: { validateSession: Mock };
-  let webStorage: { getItem: Mock; setItem: Mock };
+  let webStorage: { getItem: Mock; setItem: Mock; removeItem: Mock };
   let themeService: { listen: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
   const initializeFixture = (): void => {

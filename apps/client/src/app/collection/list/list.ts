@@ -123,6 +123,7 @@ export class List {
     this.portal.open(NewItemDialog, {
       watchLater: this.listType() === 'watch-later',
       wishlist: this.listType() === 'wishlist',
+      seriesTracker: this.listType() === 'series-tracker',
     });
   }
 

@@ -37,7 +37,7 @@
             }
           </ng-container>
         </libc-select>
-        @if (!watchLater() && !wishlist()) {
+        @if (!internalListMode()) {
           <libc-input
             data-test-id="new-item-user-rate"
             type="number"
@@ -59,7 +59,7 @@
             }
           </ng-container></libc-autocomplete
         >
-        @if (!watchLater() && !wishlist()) {
+        @if (!internalListMode()) {
           <libc-checkbox
             data-test-id="new-item-watched"
             [formField]="form.watched"

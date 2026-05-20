@@ -33,6 +33,7 @@ export class MenuNav {
     favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     watchLater: computed(() => this.ngxSignalTranslate.translate('WatchLater')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
+    seriesTracker: computed(() => this.ngxSignalTranslate.translate('SeriesTracker')),
     settings: computed(() => this.ngxSignalTranslate.translate('Settings')),
     statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
     sync: computed(() => this.ngxSignalTranslate.translate('Sync')),
