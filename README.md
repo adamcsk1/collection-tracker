@@ -126,6 +126,8 @@ CACHE_MAX=200
 RATE_LIMIT=100
 ```
 
+`RATE_LIMIT` controls the default per-IP request limit for a 15-minute window. High-frequency collection entry routes have their own higher per-route limit so adding multiple items in a row does not quickly exhaust the default bucket.
+
 See the server documentation for the full runtime model and data layout.
 
 ## Documentation

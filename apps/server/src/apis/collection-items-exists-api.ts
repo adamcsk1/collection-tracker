@@ -1,5 +1,6 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { FastifyInstance } from 'fastify';
+import { COLLECTION_WORKFLOW_RATE_LIMIT } from '../core/constants/rate-limit-const';
 import { getDatabase } from '../core/database/database';
 import {
   collectionItemExistsInList,
@@ -14,7 +15,7 @@ import { parseListType } from '../core/utils/query-parse-util';
 export const register = (app: FastifyInstance): void => {
   app.get(
     `${API_PREFIX}/items/exists`,
-    { preHandler: jwtGuard },
+    { preHandler: jwtGuard, config: { rateLimit: COLLECTION_WORKFLOW_RATE_LIMIT } },
     withErrorHandler(async (request, response) => {
       const query = request.query as Record<string, unknown>;
       const imdbId = query.imdbId;
