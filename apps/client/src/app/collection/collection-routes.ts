@@ -23,6 +23,10 @@ export const collectionRoutes: Routes = [
         loadComponent: () => import('./wishlist/wishlist').then((module) => module.Wishlist),
       },
       {
+        path: 'series-tracker',
+        loadComponent: () => import('./series-tracker/series-tracker').then((module) => module.SeriesTracker),
+      },
+      {
         path: '',
         pathMatch: 'full',
         redirectTo: 'library',

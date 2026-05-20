@@ -9,7 +9,7 @@ import { initialMainState, MainState, mainStateToken } from './main-store';
 
 describe('LogoutService', () => {
   let service: LogoutService;
-  let webstorage: { clear: ReturnType<typeof vi.fn> };
+  let webstorage: { clear: ReturnType<typeof vi.fn>; removeItem: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
   let redirectSpy: ReturnType<typeof vi.spyOn>;
 

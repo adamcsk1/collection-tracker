@@ -54,6 +54,7 @@ export class NewItemDialog {
     titleNewCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.NewCollectionItem')),
     titleNewWatchLaterItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchLaterItem')),
     titleNewWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWishlistItem')),
+    titleNewSeriesTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.NewSeriesTrackerItem')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
     messageNewCollectionItemSearch: computed(() =>
       this.ngxSignalTranslate.translate('Message.NewCollectionItemSearch')
@@ -135,7 +136,12 @@ export class NewItemDialog {
       ),
     },
   };
-  protected readonly matchedContent = this.service.matchedContent;
+  protected readonly matchedContent = computed(() => {
+    const matchedContent = this.service.matchedContent();
+    return this.seriesTracker()
+      ? matchedContent.filter((content) => `${content.text}`.toLowerCase().startsWith('(series)'))
+      : matchedContent;
+  });
   protected readonly libraryOptions = computed(() => {
     const options = [{ text: this.translations.myLibrary(), value: '' }];
     for (const share of this.sharesState.state.incoming()) {
@@ -148,11 +154,9 @@ export class NewItemDialog {
     }
     return options;
   });
-  protected readonly showLibrarySelect = computed(
-    () => !this.watchLater() && !this.wishlist() && this.libraryOptions().length > 1
-  );
+  protected readonly showLibrarySelect = computed(() => !this.internalListMode() && this.libraryOptions().length > 1);
   private readonly defaultTargetOwnerShareCode = computed(() => {
-    if (this.watchLater() || this.wishlist()) return null;
+    if (this.internalListMode()) return null;
 
     const defaultLibraryOwnerShareCode = this.mainState.state.defaultLibraryOwnerShareCode();
     if (!defaultLibraryOwnerShareCode) return null;
@@ -163,15 +167,25 @@ export class NewItemDialog {
   });
   public readonly watchLater = input(false);
   public readonly wishlist = input(false);
+  public readonly seriesTracker = input(false);
+  protected readonly internalListMode = computed(() => this.watchLater() || this.wishlist() || this.seriesTracker());
   protected readonly dialogTitle = computed(() =>
     this.watchLater()
       ? this.translations.titleNewWatchLaterItem()
       : this.wishlist()
         ? this.translations.titleNewWishlistItem()
-        : this.translations.titleNewCollectionItem()
+        : this.seriesTracker()
+          ? this.translations.titleNewSeriesTrackerItem()
+          : this.translations.titleNewCollectionItem()
   );
   private readonly listType = computed<CollectionListTypeModel>(() =>
-    this.watchLater() ? 'watch-later' : this.wishlist() ? 'wishlist' : 'library'
+    this.watchLater()
+      ? 'watch-later'
+      : this.wishlist()
+        ? 'wishlist'
+        : this.seriesTracker()
+          ? 'series-tracker'
+          : 'library'
   );
 
   constructor() {
@@ -246,14 +260,15 @@ export class NewItemDialog {
     if (!selectedIMDbId) return;
 
     let tags = this.form.tags().value().trim();
-    const watched = !this.watchLater() && !this.wishlist() && this.form.watched().value();
+    const watched = !this.internalListMode() && this.form.watched().value();
     if (watched) tags = tags ? `${tags} ${WATCHED_TAG}` : WATCHED_TAG;
 
-    const targetOwnerShareCode =
-      this.watchLater() || this.wishlist() ? undefined : this.form.targetOwnerShareCode().value() || undefined;
+    const targetOwnerShareCode = this.internalListMode()
+      ? undefined
+      : this.form.targetOwnerShareCode().value() || undefined;
     const saveRequest = this.service.save(
       selectedIMDbId,
-      this.form.userRate().value(),
+      this.internalListMode() ? null : this.form.userRate().value(),
       tags,
       mode,
       targetOwnerShareCode,

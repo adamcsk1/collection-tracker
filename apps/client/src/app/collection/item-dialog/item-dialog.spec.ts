@@ -31,7 +31,7 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
   genre: ['Drama', 'Thriller'],
   IMDbId: 'tt1234567',
   tags: [MOVIE_TAG, '#action'],
-  year: 2020,
+  year: '2020',
   rate: '8.5',
   userRate: null,
   hash: 'testhash',
@@ -48,7 +48,7 @@ const buildApiItem = (overrides: Partial<CollectionItemApiModel> = {}): Collecti
   genre: ['Drama', 'Thriller'],
   IMDbId: 'tt1234567',
   tags: [MOVIE_TAG, '#action'],
-  year: 2020,
+  year: '2020',
   rate: '8.5',
   userRate: null,
   hash: 'newhash',
@@ -292,6 +292,60 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
 
     expect(component['detailTags']()).toEqual([MOVIE_TAG, '#action']);
+  });
+
+  it('hides episode progress tags from editable and detail tags', () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, '#drama', '#episode-s01e02'] })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['tagsText']()).toBe(`${SERIES_TAG} #drama`);
+    expect(component['detailTags']()).toEqual([SERIES_TAG, '#drama']);
+  });
+
+  it('formats episode progress for the read-only chip', () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, '#episode-s01e02'] })
+    );
+    fixture.detectChanges();
+
+    expect(component['episodeProgressText']()).toBe('S01E02');
+  });
+
+  it('uses N/A when series tracker episode progress is not set', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+
+    expect(component['episodeProgressText']()).toBe('Fallback.NotAvailable');
+  });
+
+  it('saves series tracker episode progress as a single internal tag', async () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, '#episode-s01e02'] })
+    );
+    api.update.mockReturnValue(
+      of({ item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG, '#episode-s03e04'] }) })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['form'].watchedUpToSeason().value.set(3);
+    component['form'].watchedUpToEpisode().value.set(4);
+
+    await component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [SERIES_TAG, '#episode-s03e04'] }),
+      'testhash',
+      undefined,
+      'series-tracker'
+    );
   });
 
   it('deletes an item after confirmation', () => {
@@ -564,9 +618,9 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });
 
-  it('updates year to number when valid', () => {
-    component['form'].year().value.set(2021);
-    expect(component['form'].year().value()).toBe(2021);
+  it('updates year to interval when valid', () => {
+    component['form'].year().value.set('2026-2028');
+    expect(component['form'].year().value()).toBe('2026-2028');
   });
 
   it('updates year to null when empty', () => {

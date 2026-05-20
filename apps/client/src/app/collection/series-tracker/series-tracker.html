@@ -1,0 +1,10 @@
+<div class="collection-container">
+  <ct-list [listType]="'series-tracker'" [dataSource]="seriesTrackerDataSource">
+    <span list-empty>
+      {{ translations.messageEmptySeriesTracker() }}<br />
+      <a data-test-id="add-first-series-tracker-item" href="#" role="button" (click)="onAddSeriesTracker($event)">{{
+        translations.messageAddFirstSeriesTracker()
+      }}</a>
+    </span>
+  </ct-list>
+</div>

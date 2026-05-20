@@ -32,12 +32,7 @@
             }
           </ng-container>
         </libc-input>
-        <libc-input
-          data-test-id="item-dialog-year"
-          type="number"
-          [label]="translations.labelYear()"
-          [formField]="form.year"
-        />
+        <libc-input data-test-id="item-dialog-year" [label]="translations.labelYear()" [formField]="form.year" />
         <libc-input data-test-id="item-dialog-rate" [label]="translations.labelIMDbRate()" [formField]="form.rate" />
         <libc-input
           data-test-id="item-dialog-user-rate"
@@ -88,13 +83,29 @@
             }
           </ng-container>
         </libc-autocomplete>
+        @if (seriesTracker()) {
+          <libc-select
+            data-test-id="item-dialog-watched-up-to-season"
+            [label]="translations.labelWatchedUpToSeason()"
+            [hint]="translations.hintWatchedUpToSeason()"
+            [formField]="form.watchedUpToSeason"
+            [options]="seasonOptions"
+          />
+          <libc-select
+            data-test-id="item-dialog-watched-up-to-episode"
+            [label]="translations.labelWatchedUpToEpisode()"
+            [hint]="translations.hintWatchedUpToEpisode()"
+            [formField]="form.watchedUpToEpisode"
+            [options]="episodeOptions"
+          />
+        }
         <libc-input data-test-id="item-dialog-actors" [label]="translations.actors()" [formField]="form.actors" />
         <libc-textarea
           data-test-id="item-dialog-plot"
           class="full-width"
           [label]="translations.plot()"
           [formField]="form.plot"
-          [autoHeight]="true"
+          [rows]="4"
         />
       </form>
     } @else {
@@ -154,6 +165,15 @@
             </section>
           }
 
+          @if (seriesTracker()) {
+            <section data-test-id="item-dialog-episode-progress-section">
+              <h4>{{ translations.watchedUpTo() }}</h4>
+              <div class="chip-list">
+                <span class="chip" data-test-id="item-dialog-episode-progress-chip">{{ episodeProgressText() }}</span>
+              </div>
+            </section>
+          }
+
           @if (collectionItem().plot) {
             <section>
               <h4>{{ translations.plot() }}</h4>
@@ -200,6 +220,8 @@
           <i class="material-icons" [title]="translations.edit()"> edit </i>
           {{ translations.edit() }}
         </button>
+      }
+      @if (permissionUpdate() && libraryItem()) {
         @if (watched()) {
           <button data-test-id="item-dialog-mark-unwatched" (click)="onMarkAsUnwatched()">
             <i class="material-icons" [title]="translations.markAsUnwatched()"> visibility_off </i>

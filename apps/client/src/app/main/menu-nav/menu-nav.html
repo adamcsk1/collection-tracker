@@ -47,6 +47,16 @@
     {{ translations.wishlist() }}
   </a>
   <a
+    data-test-id="nav-series-tracker"
+    [routerLink]="['/', 'collection', 'series-tracker']"
+    routerLinkActive="active"
+    class="highlight"
+    (click)="onClose()"
+  >
+    <i class="material-icons">format_list_numbered</i>
+    {{ translations.seriesTracker() }}
+  </a>
+  <a
     data-test-id="nav-settings"
     [routerLink]="['/', 'settings']"
     routerLinkActive="active"

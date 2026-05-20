@@ -18,6 +18,7 @@ import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, EMPTY, map, startWith, switchMap } from 'rxjs';
+import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { AiSearchInput } from './ai-search-input/ai-search-input';
 import { CollectionListDataSourceRequest } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
@@ -42,6 +43,7 @@ export class CollectionLibrary {
   private readonly api = inject(ApiService);
   private readonly portal = inject(PortalService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly aiSearchSendTrigger = computed(() => ({
     promptText: this.collectionState.state.aiSearchPromptText(),
     version: this.collectionState.state.aiSearchSendVersion(),
@@ -111,6 +113,15 @@ export class CollectionLibrary {
       if (this.collectionState.state.searchText() !== searchText) {
         this.collectionState.setState('searchText', searchText);
       }
+    });
+
+    effect(() => {
+      this.aiSearchMatchedIds();
+      untracked(() => {
+        if (this.aiSearch.useAiSearch() && this.collectionState.state.aiSearchPromptText().trim()) {
+          this.mainCollectionState.setState('reloadTrigger', this.mainCollectionState.state.reloadTrigger() + 1);
+        }
+      });
     });
   }
 

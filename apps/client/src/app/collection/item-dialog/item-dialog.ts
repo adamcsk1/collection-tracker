@@ -5,6 +5,7 @@ import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { LinkButton } from '@components/link-button/link-button';
+import { Select } from '@components/select/select';
 import { Textarea } from '@components/textarea/textarea';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
@@ -13,6 +14,7 @@ import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { FAVORITE_TAG, WATCH_LATER_TAG, WATCHED_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
+import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -32,19 +34,29 @@ import {
 interface ItemDialogFormModel {
   title: string;
   IMDbId: string;
-  year: number | null;
+  year: CollectionItemYearModel;
   rate: string;
   userRate: number | null;
   image: string;
   genreText: string;
   tagsText: string;
+  watchedUpToSeason: number | null;
+  watchedUpToEpisode: number | null;
   actors: string;
   plot: string;
 }
 
+const EPISODE_PROGRESS_TAG_PATTERN = /^#episode-s(\d{2})e(\d{2})$/;
+
+const buildEpisodeProgressTag = (season: number, episode: number): string =>
+  `#episode-s${`${season}`.padStart(2, '0')}e${`${episode}`.padStart(2, '0')}`;
+
+const removeEpisodeProgressTags = (tags: string[]): string[] =>
+  tags.filter((tag) => !EPISODE_PROGRESS_TAG_PATTERN.test(tag));
+
 @Component({
   selector: 'ct-item-dialog',
-  imports: [FormField, FormRoot, DialogShell, Autocomplete, Input, LinkButton, Textarea],
+  imports: [FormField, FormRoot, DialogShell, Autocomplete, Input, LinkButton, Select, Textarea],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
   providers: [TagSuggestionService, GenreSuggestionService],
@@ -79,6 +91,11 @@ export class ItemDialog implements OnInit {
     genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
     hintSeparateGenres: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateGenres')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
+    watchedUpTo: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo')),
+    labelWatchedUpToSeason: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo.Season')),
+    labelWatchedUpToEpisode: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo.Episode')),
+    hintWatchedUpToSeason: computed(() => this.ngxSignalTranslate.translate('Hint.WatchedUpToSeason')),
+    hintWatchedUpToEpisode: computed(() => this.ngxSignalTranslate.translate('Hint.WatchedUpToEpisode')),
     hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
     actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
     plot: computed(() => this.ngxSignalTranslate.translate('Plot')),
@@ -113,6 +130,8 @@ export class ItemDialog implements OnInit {
     image: '',
     genreText: '',
     tagsText: '',
+    watchedUpToSeason: null,
+    watchedUpToEpisode: null,
     actors: '',
     plot: '',
   });
@@ -207,9 +226,26 @@ export class ItemDialog implements OnInit {
   };
   protected readonly genreText = computed(() => this.form.genreText().value());
   protected readonly tagsText = computed(() => this.form.tagsText().value());
+  protected readonly seasonOptions = [
+    { text: '-', value: null },
+    ...Array.from({ length: 50 }, (_, index) => ({ text: `${index + 1}`, value: index + 1 })),
+  ];
+  protected readonly episodeOptions = [
+    { text: '-', value: null },
+    ...Array.from({ length: 100 }, (_, index) => ({ text: `${index + 1}`, value: index + 1 })),
+  ];
   protected readonly detailTags = computed(() =>
-    this.collectionItem().tags.filter((tag) => tag !== WATCH_LATER_TAG && tag !== WISHLIST_TAG)
+    removeEpisodeProgressTags(this.collectionItem().tags).filter(
+      (tag) => tag !== WATCH_LATER_TAG && tag !== WISHLIST_TAG
+    )
   );
+  protected readonly episodeProgress = computed(() => this.parseEpisodeProgress(this.collectionItem().tags));
+  protected readonly episodeProgressText = computed(() => {
+    const progress = this.episodeProgress();
+    return progress
+      ? `S${`${progress.season}`.padStart(2, '0')}E${`${progress.episode}`.padStart(2, '0')}`
+      : this.translations.fallbackNotAvailable();
+  });
   protected readonly editMode = signal(false);
   protected readonly posterImageFailed = signal(false);
   protected readonly isShared = computed(() => {
@@ -234,10 +270,13 @@ export class ItemDialog implements OnInit {
     const share = this.sharesState.state
       .incoming()
       .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
+    if (item.listType === 'series-tracker') return this.isOwnItem();
     if (item.listType !== 'library') return false;
     if (this.isOwnItem()) return true;
     return share?.canUpdate === true;
   });
+  protected readonly libraryItem = computed(() => this.collectionItem().listType === 'library');
+  protected readonly seriesTracker = computed(() => this.collectionItem().listType === 'series-tracker');
   protected readonly permissionDelete = computed(() => {
     const item = this.collectionItem();
     const share = this.sharesState.state
@@ -285,6 +324,7 @@ export class ItemDialog implements OnInit {
 
   private resetFormFromItem(item: CollectionItemModel): void {
     const change = toCollectionItemChange(item);
+    const episodeProgress = this.parseEpisodeProgress(change.tags);
     const internalTags = change.tags.filter((tag) => tag === WATCH_LATER_TAG || tag === WISHLIST_TAG);
     this.originalInternalTags.set(internalTags);
     this.form().reset({
@@ -295,7 +335,11 @@ export class ItemDialog implements OnInit {
       userRate: change.userRate,
       image: change.image,
       genreText: change.genre.join(', '),
-      tagsText: change.tags.filter((tag) => tag !== WATCH_LATER_TAG && tag !== WISHLIST_TAG).join(' '),
+      tagsText: removeEpisodeProgressTags(change.tags)
+        .filter((tag) => tag !== WATCH_LATER_TAG && tag !== WISHLIST_TAG)
+        .join(' '),
+      watchedUpToSeason: episodeProgress?.season ?? null,
+      watchedUpToEpisode: episodeProgress?.episode ?? null,
       actors: change.actors,
       plot: change.plot,
     });
@@ -305,6 +349,10 @@ export class ItemDialog implements OnInit {
   private buildItemFromForm(): CollectionItemChangeApiModel {
     const formValues = this.form().value();
     let tags = [...parseTagText(formValues.tagsText), ...this.originalInternalTags()];
+    tags = removeEpisodeProgressTags(tags);
+    if (this.seriesTracker() && formValues.watchedUpToSeason !== null && formValues.watchedUpToEpisode !== null) {
+      tags = [...tags, buildEpisodeProgressTag(formValues.watchedUpToSeason, formValues.watchedUpToEpisode)];
+    }
     const internalCollectionTag = this.internalCollectionTag();
     if (internalCollectionTag && !tags.includes(internalCollectionTag)) {
       tags = [...tags, internalCollectionTag];
@@ -358,6 +406,7 @@ export class ItemDialog implements OnInit {
   protected onReadOnly(): void {
     const lastSavedItem = this.lastSavedItem();
     if (lastSavedItem) {
+      const episodeProgress = this.parseEpisodeProgress(lastSavedItem.tags);
       this.form().reset({
         title: lastSavedItem.title,
         IMDbId: lastSavedItem.IMDbId,
@@ -366,7 +415,11 @@ export class ItemDialog implements OnInit {
         userRate: lastSavedItem.userRate,
         image: lastSavedItem.image,
         genreText: lastSavedItem.genre.join(', '),
-        tagsText: lastSavedItem.tags.filter((tag) => tag !== WATCH_LATER_TAG && tag !== WISHLIST_TAG).join(' '),
+        tagsText: removeEpisodeProgressTags(lastSavedItem.tags)
+          .filter((tag) => tag !== WATCH_LATER_TAG && tag !== WISHLIST_TAG)
+          .join(' '),
+        watchedUpToSeason: episodeProgress?.season ?? null,
+        watchedUpToEpisode: episodeProgress?.episode ?? null,
         actors: lastSavedItem.actors,
         plot: lastSavedItem.plot,
       });
@@ -379,8 +432,15 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onSaveChanges(): Promise<void> {
-    if (this.collectionItem().listType !== 'library') return;
+    if (this.collectionItem().listType !== 'library' && this.collectionItem().listType !== 'series-tracker') return;
     await submit(this.form);
+  }
+
+  private parseEpisodeProgress(tags: string[]): { season: number; episode: number } | null {
+    const progressTag = tags.find((tag) => EPISODE_PROGRESS_TAG_PATTERN.test(tag));
+    const match = progressTag?.match(EPISODE_PROGRESS_TAG_PATTERN);
+    if (!match) return null;
+    return { season: Number(match[1]), episode: Number(match[2]) };
   }
 
   private async doSave(): Promise<void> {
@@ -392,9 +452,16 @@ export class ItemDialog implements OnInit {
         .pipe(
           mergeMap((confirmed) => {
             if (confirmed) {
-              return this.api
-                .update(this.collectionItem().IMDbId, item, this.collectionItem().hash, ownerShareCode)
-                .pipe(map((result) => ({ confirmed, item: result.item })));
+              const updateRequest = this.seriesTracker()
+                ? this.api.update(
+                    this.collectionItem().IMDbId,
+                    item,
+                    this.collectionItem().hash,
+                    ownerShareCode,
+                    'series-tracker'
+                  )
+                : this.api.update(this.collectionItem().IMDbId, item, this.collectionItem().hash, ownerShareCode);
+              return updateRequest.pipe(map((result) => ({ confirmed, item: result.item })));
             } else return of({ confirmed, item: null });
           })
         )
