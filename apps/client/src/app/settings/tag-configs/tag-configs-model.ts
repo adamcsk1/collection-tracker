@@ -8,3 +8,9 @@ export interface TagConfigModel {
 }
 
 export type TagConfigsModel = TagConfigModel[];
+
+export interface TagConfigsExportModel {
+  type: 'collection-tracker-tag-configs';
+  version: 1;
+  tagConfigs: TagConfigsModel;
+}

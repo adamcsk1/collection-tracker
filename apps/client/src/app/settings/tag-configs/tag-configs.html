@@ -12,6 +12,22 @@
     <i class="material-icons" [title]="translations.resetToDefault()">close</i>
     {{ translations.resetToDefault() }}
   </button>
+  <button data-test-id="tag-configs-export" (click)="onExportTagConfigs()">
+    <i class="material-icons" [title]="translations.exportLabel()">download</i>
+    {{ translations.exportLabel() }}
+  </button>
+  <button data-test-id="tag-configs-import" (click)="onImportTagConfigsClick(tagConfigsImportFile)">
+    <i class="material-icons" [title]="translations.importLabel()">upload</i>
+    {{ translations.importLabel() }}
+  </button>
+  <input
+    #tagConfigsImportFile
+    data-test-id="tag-configs-import-file"
+    class="tag-configs-import-file"
+    type="file"
+    accept="application/json,.json"
+    (change)="onImportTagConfigs($event)"
+  />
 </div>
 <div data-test-id="tag-configs-list" class="tag-configs" role="list">
   @for (tagConfig of tagConfigs(); track tagConfig.tag) {

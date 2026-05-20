@@ -89,6 +89,32 @@ describe('change-tag-config-api', () => {
     });
   });
 
+  it('accepts null color values', async () => {
+    const response = mockResponse();
+    const request: any = {
+      body: [
+        {
+          tag: '#a',
+          color: null,
+          useForImageBorder: true,
+          useForTextColor: false,
+          useForImageBadge: false,
+          weight: 1,
+        },
+      ],
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+
+    const { register } = await import('./change-tag-config-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(request.body);
+  });
+
   it('returns 500 on unexpected error', async () => {
     const response = mockResponse();
     const request: any = {

@@ -42,7 +42,7 @@ describe('TagConfigs component', () => {
   let component: TagConfigs;
   let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
   let toastState: NgxSimpleSignalStoreService<ToastState>;
-  let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
+  let confirm: { ifConfirmed: ReturnType<typeof vi.fn>; open: ReturnType<typeof vi.fn> };
   let tagConfigsService: { syncUserTagConfigs: ReturnType<typeof vi.fn> };
   let api: { getStatistics: ReturnType<typeof vi.fn> };
 
@@ -54,7 +54,10 @@ describe('TagConfigs component', () => {
   };
 
   beforeEach(() => {
-    confirm = { ifConfirmed: vi.fn(() => of(true)) };
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:tag-configs') });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
+    HTMLAnchorElement.prototype.click = vi.fn();
+    confirm = { ifConfirmed: vi.fn(() => of(true)), open: vi.fn(() => of(true)) };
     tagConfigsService = {
       syncUserTagConfigs: vi.fn((configs: TagConfigsModel) => {
         tagConfigsState.setState(
@@ -264,6 +267,111 @@ describe('TagConfigs component', () => {
 
     expect(tagConfigsState.state.configs()).toEqual([]);
     expect(tagConfigsService.syncUserTagConfigs).toHaveBeenLastCalledWith([]);
+  });
+
+  it('exports the full stored tag config JSON', async () => {
+    createComponent(['#visible']);
+    tagConfigsState.setState('configs', [
+      buildTagConfig('#visible', { color: '#123456' }),
+      buildTagConfig('#stale', { color: '#abcdef', useForImageBadge: true }),
+    ]);
+
+    component['onExportTagConfigs']();
+
+    const blob = vi.mocked(URL.createObjectURL).mock.calls[0][0] as Blob;
+    await expect(blob.text().then((source) => JSON.parse(source))).resolves.toEqual({
+      type: 'collection-tracker-tag-configs',
+      version: 1,
+      tagConfigs: [
+        buildTagConfig('#visible', { color: '#123456' }),
+        buildTagConfig('#stale', { color: '#abcdef', useForImageBadge: true }),
+      ],
+    });
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:tag-configs');
+    expect(toastState.state.message()).toBe('Toast.TagConfigExported');
+  });
+
+  it('imports new tag configs without overwriting existing configs', () => {
+    createComponent(['#existing', '#new']);
+    const existingConfig = buildTagConfig('#existing', { color: '#111111' });
+    const newConfig = buildTagConfig('#new', { color: '#222222', useForImageBorder: true });
+    tagConfigsState.setState('configs', [existingConfig]);
+    tagConfigsService.syncUserTagConfigs.mockClear();
+
+    component['importTagConfigs'](
+      JSON.stringify({ type: 'collection-tracker-tag-configs', version: 1, tagConfigs: [newConfig] })
+    );
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(tagConfigsService.syncUserTagConfigs).toHaveBeenCalledWith([existingConfig, newConfig]);
+    expect(toastState.state.message()).toBe('Toast.TagConfigImported');
+  });
+
+  it('skips conflicting imported configs when conflict overwrite is cancelled', () => {
+    confirm.open.mockReturnValueOnce(of(false));
+    createComponent(['#existing', '#new']);
+    const existingConfig = buildTagConfig('#existing', { color: '#111111' });
+    const importedExistingConfig = buildTagConfig('#existing', { color: '#999999', useForImageBorder: true });
+    const newConfig = buildTagConfig('#new', { color: '#222222' });
+    tagConfigsState.setState('configs', [existingConfig]);
+    tagConfigsService.syncUserTagConfigs.mockClear();
+
+    component['importTagConfigs'](
+      JSON.stringify({
+        type: 'collection-tracker-tag-configs',
+        version: 1,
+        tagConfigs: [importedExistingConfig, newConfig],
+      })
+    );
+
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportTagConfigConflicts');
+    expect(tagConfigsService.syncUserTagConfigs).toHaveBeenCalledWith([existingConfig, newConfig]);
+  });
+
+  it('overwrites conflicting imported configs when conflict overwrite is confirmed', () => {
+    confirm.open.mockReturnValueOnce(of(true));
+    createComponent(['#existing', '#new']);
+    const existingConfig = buildTagConfig('#existing', { color: '#111111' });
+    const importedExistingConfig = buildTagConfig('#existing', { color: '#999999', useForImageBorder: true });
+    const newConfig = buildTagConfig('#new', { color: '#222222' });
+    tagConfigsState.setState('configs', [existingConfig]);
+    tagConfigsService.syncUserTagConfigs.mockClear();
+
+    component['importTagConfigs'](
+      JSON.stringify({
+        type: 'collection-tracker-tag-configs',
+        version: 1,
+        tagConfigs: [importedExistingConfig, newConfig],
+      })
+    );
+
+    expect(tagConfigsService.syncUserTagConfigs).toHaveBeenCalledWith([importedExistingConfig, newConfig]);
+  });
+
+  it('shows import error toast for invalid import JSON', () => {
+    createComponent(['#tag']);
+    tagConfigsService.syncUserTagConfigs.mockClear();
+
+    component['importTagConfigs']('{bad json');
+
+    expect(tagConfigsService.syncUserTagConfigs).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.TagConfigImportError');
+  });
+
+  it('shows import error toast for invalid import config shape', () => {
+    createComponent(['#tag']);
+    tagConfigsService.syncUserTagConfigs.mockClear();
+
+    component['importTagConfigs'](
+      JSON.stringify({
+        type: 'collection-tracker-tag-configs',
+        version: 1,
+        tagConfigs: [{ tag: '#tag', color: null, useForImageBorder: true }],
+      })
+    );
+
+    expect(tagConfigsService.syncUserTagConfigs).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.TagConfigImportError');
   });
 
   it('does not clear configs when reset is not confirmed', () => {

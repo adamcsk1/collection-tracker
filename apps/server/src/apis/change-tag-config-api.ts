@@ -11,7 +11,7 @@ const isTagConfig = (tagConfig: unknown): tagConfig is TagConfigsApiRequestModel
   const candidate = tagConfig as Record<string, unknown>;
   return (
     typeof candidate.tag === 'string' &&
-    typeof candidate.color === 'string' &&
+    (typeof candidate.color === 'string' || candidate.color === null) &&
     typeof candidate.useForImageBorder === 'boolean' &&
     typeof candidate.useForTextColor === 'boolean' &&
     typeof candidate.useForImageBadge === 'boolean' &&

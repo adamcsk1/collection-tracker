@@ -10,6 +10,31 @@ const buildItemWithCustomTag = (title: string, customTag: string) => {
   return { ...item, tags: [...item.tags, customTag] };
 };
 
+const buildTagConfig = (
+  tag: string,
+  overrides: Partial<{
+    color: string | null;
+    useForImageBorder: boolean;
+    useForTextColor: boolean;
+    useForImageBadge: boolean;
+    weight: number;
+  }> = {}
+) => ({
+  tag,
+  color: null,
+  useForImageBorder: false,
+  useForTextColor: false,
+  useForImageBadge: false,
+  weight: 0,
+  ...overrides,
+});
+
+const clearTagConfigDownload = () => {
+  cy.exec(
+    "node -e \"const fs = require('fs'); fs.rmSync('cypress/downloads', { recursive: true, force: true }); fs.mkdirSync('cypress/downloads', { recursive: true });\""
+  );
+};
+
 describe('Tag Configs — no custom tags', () => {
   beforeEach(() => {
     cy.autoLogin();
@@ -109,6 +134,64 @@ describe('Tag Configs — reset', () => {
   });
 });
 
+describe('Tag Configs — import and export', () => {
+  const existingTag = `#export-existing-${Date.now()}`;
+  const importedTag = `#export-imported-${Date.now()}`;
+  const item = {
+    ...buildItemWithCustomTag('Import Export Config Movie', existingTag),
+    tags: ['#movie', existingTag, importedTag],
+  };
+  const exportPath = 'cypress/downloads/collection-tracker-tag-configs.json';
+  const exportedExistingConfig = buildTagConfig(existingTag, {
+    color: '#111111',
+    useForImageBorder: true,
+    weight: 3,
+  });
+  const exportedImportedConfig = buildTagConfig(importedTag, {
+    color: '#222222',
+    useForImageBadge: true,
+    weight: 2,
+  });
+  const localExistingConfig = buildTagConfig(existingTag, {
+    color: '#999999',
+    useForTextColor: true,
+    weight: 9,
+  });
+
+  beforeEach(() => {
+    cy.autoLogin();
+    clearTagConfigDownload();
+    cy.request('POST', '/api/v1/tag/change-config', []);
+    cy.request('POST', '/api/v1/create', item);
+    cy.request('POST', '/api/v1/tag/change-config', [exportedExistingConfig, exportedImportedConfig]);
+    cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
+    TagConfigsPage.visit();
+    cy.wait('@getStatistics');
+  });
+
+  it('exports tag configs and imports them as an extension while skipping conflicts', () => {
+    TagConfigsPage.getExportButton().click();
+    cy.readFile(exportPath).should('deep.equal', {
+      type: 'collection-tracker-tag-configs',
+      version: 1,
+      tagConfigs: [exportedExistingConfig, exportedImportedConfig],
+    });
+
+    cy.request('POST', '/api/v1/tag/change-config', [localExistingConfig]);
+    cy.on('window:confirm', () => false);
+    cy.intercept('POST', '/api/v1/tag/change-config').as('importTagConfigs');
+
+    TagConfigsPage.getImportFileInput().selectFile(exportPath, { force: true });
+    cy.wait('@importTagConfigs');
+
+    cy.request('GET', '/api/v1/tag/config')
+      .its('body')
+      .should('deep.include', localExistingConfig)
+      .and('deep.include', exportedImportedConfig)
+      .and('not.deep.include', exportedExistingConfig);
+  });
+});
+
 describe('Tag Configs — effect on collection item', () => {
   const customTag = '#scifi';
   const item = buildItemWithCustomTag('Scifi Collection Movie', customTag);
@@ -131,10 +214,7 @@ describe('Tag Configs — effect on collection item', () => {
       },
     ]);
     CollectionPage.visit();
-    CollectionPage.getListItemImages()
-      .first()
-      .invoke('css', 'border-color')
-      .should('not.equal', 'rgba(0, 0, 0, 0)');
+    CollectionPage.getListItemImages().first().invoke('css', 'border-color').should('not.equal', 'rgba(0, 0, 0, 0)');
   });
 
   it('shows the image badge when useForImageBadge is enabled', () => {
