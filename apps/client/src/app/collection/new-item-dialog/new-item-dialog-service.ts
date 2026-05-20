@@ -51,6 +51,9 @@ export class NewItemDialogService {
       filter((selectedContent) => !!selectedContent?.imdbID),
       map((selectedContent): CollectionItemChangeApiModel => {
         const selectedContentType = selectedContent.Type.trim().toLowerCase();
+        if (listType === 'series-tracker' && selectedContentType !== 'series') {
+          throw new Error('Series tracker items must be series.');
+        }
         const typeTag = selectedContentType === 'movie' ? MOVIE_TAG : SERIES_TAG;
         return {
           image: selectedContent.Poster,

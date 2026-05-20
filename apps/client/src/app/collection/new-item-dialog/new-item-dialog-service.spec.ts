@@ -177,12 +177,15 @@ describe('NewItemDialogService', () => {
     expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ year: '2005' }), undefined);
   });
 
-  it('saves non-series content with its detected type tag for series tracker items', async () => {
+  it('rejects non-series content for series tracker items', async () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await firstValueFrom(service.save('tt123', null, '', 'close', undefined, 'series-tracker'));
+    await expect(firstValueFrom(service.save('tt123', null, '', 'close', undefined, 'series-tracker'))).rejects.toEqual(
+      new Error('Series tracker items must be series.')
+    );
 
-    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ tags: ['#movie'] }), undefined, 'series-tracker');
+    expect(api.create).not.toHaveBeenCalled();
+    expect(spinnerStore.state.show()).toBe(false);
   });
 });

@@ -139,7 +139,10 @@ export class NewItemDialog {
   protected readonly matchedContent = computed(() => {
     const matchedContent = this.service.matchedContent();
     return this.seriesTracker()
-      ? matchedContent.filter((content) => `${content.text}`.toLowerCase().startsWith('(series)'))
+      ? matchedContent.filter((content) => {
+          const text = `${content.text}`.toLowerCase();
+          return text.startsWith('(series)') || text.startsWith('imdb id:');
+        })
       : matchedContent;
   });
   protected readonly libraryOptions = computed(() => {

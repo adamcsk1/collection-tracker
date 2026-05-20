@@ -1212,6 +1212,12 @@ paths:
           schema:
             type: string
             enum: [movie, series]
+        - name: listType
+          in: query
+          schema:
+            type: string
+            enum: [library, watch-later, wishlist, series-tracker]
+            default: library
         - name: watched
           in: query
           schema:
@@ -1269,6 +1275,14 @@ paths:
           description: Owner share code of the library containing the item. Defaults to the authenticated user.
           schema:
             type: string
+        - name: listType
+          in: query
+          required: false
+          description: List containing the item. Defaults to `library`. Use `series-tracker` to update a series tracker item.
+          schema:
+            type: string
+            enum: [library, series-tracker]
+            default: library
       requestBody:
         required: true
         content:

@@ -217,12 +217,16 @@ describe('NewItemDialog component', () => {
   it('filters matched content to series in series tracker mode', () => {
     fixture.componentRef.setInput('seriesTracker', true);
     service.matchedContent.mockReturnValue([
+      { text: 'IMDb id: tt-id', value: 'tt-id' },
       { text: '(movie) Test Movie (2020)', value: 'tt-movie' },
       { text: '(series) Test Series (2021)', value: 'tt-series' },
     ]);
     fixture.detectChanges();
 
-    expect(component['matchedContent']()).toEqual([{ text: '(series) Test Series (2021)', value: 'tt-series' }]);
+    expect(component['matchedContent']()).toEqual([
+      { text: 'IMDb id: tt-id', value: 'tt-id' },
+      { text: '(series) Test Series (2021)', value: 'tt-series' },
+    ]);
   });
 
   it('only offers shared libraries with create permission', () => {
