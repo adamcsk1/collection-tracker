@@ -1,7 +1,6 @@
 ---
 description: Stages and commits changes with a well-formed conventional commit message. Use when you're ready to commit after completing a unit of work.
 mode: subagent
-model: opencode-go/kimi-k2.6
 permission:
   edit: deny
   bash: ask

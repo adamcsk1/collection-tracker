@@ -1,7 +1,6 @@
 ---
 description: Architecture advisor for the Collection Tracker monorepo. Use when planning new features, adding apps/libraries, evaluating where code should live, or checking Nx boundary compliance.
 mode: subagent
-model: opencode-go/kimi-k2.6
 permission:
   edit: deny
 ---
