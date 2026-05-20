@@ -214,6 +214,35 @@ describe('Collection sharing - item permissions', () => {
     });
   });
 
+  it('uses the configured default shared library when adding a new item', () => {
+    setupShare({ canRead: true, canCreate: true, canUpdate: false, canDelete: false }).then(({ owner, sharedUser }) => {
+      const title = 'Shared Default Movie';
+      const imdbId = `tt${uniqueId().slice(0, 7)}`;
+      cy.intercept('GET', '/api/v1/proxy/omdb/search*', {
+        statusCode: 200,
+        body: buildOmdbSearchResult(title, imdbId),
+      }).as('omdbSearch');
+      cy.intercept('GET', '/api/v1/proxy/omdb/item*', { statusCode: 200, body: buildOmdbItem(title, imdbId) }).as(
+        'omdbItem'
+      );
+
+      signInThroughUi(sharedUser);
+      SettingsPage.visitShares();
+      SettingsPage.getDefaultLibrarySelect().select(owner.shareCode);
+
+      visitSharedCollection(sharedUser);
+      CollectionPage.getShowFunctionsButton().click();
+      CollectionPage.getAddNewButton().click();
+      CollectionPage.getNewItemSearchInput().type(title);
+      cy.wait('@omdbSearch');
+      CollectionPage.getNewItemLibrarySelect().should('have.value', owner.shareCode);
+      cy.intercept('POST', '/api/v1/create').as('createItem');
+      CollectionPage.getNewItemSaveAndCloseButton().click();
+      cy.wait('@omdbItem');
+      cy.wait('@createItem').its('request.body.targetOwnerShareCode').should('eq', owner.shareCode);
+    });
+  });
+
   it('allows editing and marking watched with update permission but hides delete', () => {
     setupShare({ canRead: true, canCreate: false, canUpdate: true, canDelete: false }).then(({ owner, sharedUser }) => {
       seedOwnerItem(owner, 'Shared Update Movie', `tt${uniqueId().slice(0, 7)}`);

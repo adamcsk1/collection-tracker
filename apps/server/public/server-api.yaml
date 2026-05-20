@@ -171,6 +171,9 @@ components:
         language:
           type: string
           enum: [en]
+        defaultLibraryOwnerShareCode:
+          type: ['string', 'null']
+          description: Share code of the incoming library selected by default when creating collection items. Null selects the caller's own library.
 
     AiAvailableResponse:
       type: object
@@ -193,6 +196,9 @@ components:
         language:
           type: string
           enum: [en]
+        defaultLibraryOwnerShareCode:
+          type: ['string', 'null']
+          description: Share code of the incoming library selected by default when creating collection items. Null selects the caller's own library.
         fromLogin:
           type: boolean
           description: When true, language and theme are only initialized if the user has not already stored those settings.
@@ -203,6 +209,8 @@ components:
       properties:
         sharedWithUserShareCode:
           type: string
+        sharedWithUsername:
+          type: ['string', 'null']
         ownerUserShareCode:
           type: string
         ownerUsername:

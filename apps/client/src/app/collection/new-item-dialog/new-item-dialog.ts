@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { form, FormField, FormRoot, max, min, required, validate } from '@angular/forms/signals';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
@@ -12,6 +22,7 @@ import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionListTypeModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap, tap } from 'rxjs';
+import { mainStateToken } from '../../main/main-store';
 import { sharesStateToken } from '../../shares/shares-store';
 import { NewItemModel, SaveMode } from './new-item-dialog-model';
 import { NewItemDialogService } from './new-item-dialog-service';
@@ -35,6 +46,7 @@ export class NewItemDialog {
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(ApiService);
   private readonly service = inject(NewItemDialogService);
+  private readonly mainState = inject(mainStateToken);
   private readonly sharesState = inject(sharesStateToken);
   private readonly knownIMDbIdExists = signal(false);
   private readonly knownIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownIMDbIdExists);
@@ -139,6 +151,16 @@ export class NewItemDialog {
   protected readonly showLibrarySelect = computed(
     () => !this.watchLater() && !this.wishlist() && this.libraryOptions().length > 1
   );
+  private readonly defaultTargetOwnerShareCode = computed(() => {
+    if (this.watchLater() || this.wishlist()) return null;
+
+    const defaultLibraryOwnerShareCode = this.mainState.state.defaultLibraryOwnerShareCode();
+    if (!defaultLibraryOwnerShareCode) return null;
+
+    return this.libraryOptions().some((option) => option.value === defaultLibraryOwnerShareCode)
+      ? defaultLibraryOwnerShareCode
+      : null;
+  });
   public readonly watchLater = input(false);
   public readonly wishlist = input(false);
   protected readonly dialogTitle = computed(() =>
@@ -162,6 +184,15 @@ export class NewItemDialog {
         selectedIMDbId.markAsTouched();
       } else {
         selectedIMDbId.reset(null);
+      }
+    });
+
+    effect(() => {
+      const defaultTargetOwnerShareCode = this.defaultTargetOwnerShareCode();
+      const targetOwnerShareCode = untracked(() => this.form.targetOwnerShareCode().value());
+
+      if (targetOwnerShareCode === null || targetOwnerShareCode === '') {
+        this.form.targetOwnerShareCode().value.set(defaultTargetOwnerShareCode);
       }
     });
 
@@ -237,7 +268,7 @@ export class NewItemDialog {
         userRate: null,
         tags: '',
         watched: false,
-        targetOwnerShareCode: null,
+        targetOwnerShareCode: this.defaultTargetOwnerShareCode(),
       });
     } else {
       this.form.selectedIMDbId().reset(null);

@@ -7,6 +7,7 @@ export interface MainState {
   sensitiveDataStorage: 'local' | 'session';
   language: LanguageModel;
   aiAvailable: boolean;
+  defaultLibraryOwnerShareCode: string | null;
 }
 
 export const initialMainState: MainState = {
@@ -15,6 +16,7 @@ export const initialMainState: MainState = {
   sensitiveDataStorage: 'local',
   language: 'en',
   aiAvailable: false,
+  defaultLibraryOwnerShareCode: null,
 };
 
 export const mainStateToken = createInjectionToken<MainState>('mainState');

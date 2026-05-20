@@ -1,12 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ConfirmService } from '@services/confirm-service';
+import * as copyToClipboardUtil from '@shared/utils/copy-to-clipboard-util';
+import * as mobileUserAgentUtil from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { provideStore } from 'ngx-simple-signal-store';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { SettingsShares } from './shares';
+import { initialMainState, mainStateToken } from '../../main/main-store';
 import { SharesService } from '../../shares/shares-service';
 import { initialSharesState, sharesStateToken } from '../../shares/shares-store';
+import { SettingsService } from '../settings-service';
+
+vi.mock('@shared/utils/copy-to-clipboard-util', () => ({ copyToClipboard: vi.fn() }));
+vi.mock('@shared/utils/mobile-user-agent.util', () => ({ mobileUserAgent: vi.fn() }));
 
 describe('SettingsShares', () => {
   let fixture: ComponentFixture<SettingsShares>;
@@ -17,20 +25,26 @@ describe('SettingsShares', () => {
     removeShare: ReturnType<typeof vi.fn>;
     revokeIncomingShare: ReturnType<typeof vi.fn>;
   };
+  let settingsService: { storeDefaultLibraryOwnerShareCode: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
+    (mobileUserAgentUtil.mobileUserAgent as Mock).mockReturnValue(null);
     sharesService = {
       loadShares: vi.fn(),
       saveShare: vi.fn(),
       removeShare: vi.fn(),
       revokeIncomingShare: vi.fn(),
     };
+    settingsService = { storeDefaultLibraryOwnerShareCode: vi.fn() };
 
     TestBed.configureTestingModule({
       imports: [SettingsShares],
       providers: [
         { provide: ConfirmService, useValue: { ifConfirmed: vi.fn(() => of(true)) } },
         { provide: NgxSignalTranslateService, useValue: { translate: vi.fn((key: string) => key) } },
+        { provide: SettingsService, useValue: settingsService },
+        provideStore(initialToastState, toastStateToken),
+        provideStore(initialMainState, mainStateToken),
         provideStore(initialSharesState, sharesStateToken),
       ],
     });
@@ -54,6 +68,7 @@ describe('SettingsShares', () => {
     component['onUpdateShare'](
       {
         sharedWithUserShareCode: 'share-code',
+        sharedWithUsername: 'Shared User',
         canRead: true,
         canCreate: false,
         canUpdate: false,
@@ -74,5 +89,37 @@ describe('SettingsShares', () => {
     component['onRevokeIncomingShare']('owner-code');
 
     expect(sharesService.revokeIncomingShare).toHaveBeenCalledWith('owner-code');
+  });
+
+  it('copies the user share code and shows the clipboard toast', () => {
+    const sharesState = TestBed.inject(sharesStateToken);
+    const toastState = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
+    sharesState.setState('userShareCode', 'share-code');
+
+    component['onCopyUserHash']();
+
+    expect(copyToClipboardUtil.copyToClipboard).toHaveBeenCalledWith('share-code');
+    expect(toastState.state.message()).toBe('Toast.CopiedToClipboard');
+  });
+
+  it('does not show the clipboard toast on mobile devices', () => {
+    (mobileUserAgentUtil.mobileUserAgent as Mock).mockReturnValue(['Android'] as unknown as RegExpMatchArray);
+    const toastState = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
+
+    component['onCopyUserHash']();
+
+    expect(toastState.state.message()).toBe('');
+  });
+
+  it('stores selected incoming share as default library', () => {
+    component['onDefaultLibraryChange']('owner-code');
+
+    expect(settingsService.storeDefaultLibraryOwnerShareCode).toHaveBeenCalledWith('owner-code');
+  });
+
+  it('stores null when my library is selected as default library', () => {
+    component['onDefaultLibraryChange']('');
+
+    expect(settingsService.storeDefaultLibraryOwnerShareCode).toHaveBeenCalledWith(null);
   });
 });

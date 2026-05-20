@@ -56,17 +56,30 @@
     </form>
   </div>
 
+  <section class="shares-section" data-test-id="default-library-section">
+    <h3>{{ translations.defaultLibrary() }}</h3>
+    <p class="empty-message">{{ translations.messageDefaultLibrary() }}</p>
+    <libc-select
+      data-test-id="settings-default-library"
+      [label]="translations.defaultLibrary()"
+      [value]="defaultLibraryOwnerShareCode() ?? ''"
+      [options]="defaultLibraryOptions()"
+      (valueChange)="onDefaultLibraryChange($event)"
+    />
+  </section>
+
   <section class="shares-section">
     <h3>{{ translations.outgoingShares() }}</h3>
     @if (outgoing().length) {
       <div class="shares-list" role="list">
         @for (share of outgoing(); track share.sharedWithUserShareCode) {
           <article class="card card-interactive share-card" role="listitem">
-            <h4 class="card-title">{{ share.sharedWithUserShareCode }}</h4>
+            <h4 class="card-title">{{ share.sharedWithUsername || share.sharedWithUserShareCode }}</h4>
             <div class="card-body">
               <div class="share-card-header">
                 <div>
                   <div class="share-card-label">{{ translations.sharedWith() }}</div>
+                  <div>{{ share.sharedWithUsername || share.sharedWithUserShareCode }}</div>
                   <div class="share-code">{{ share.sharedWithUserShareCode }}</div>
                 </div>
                 <button

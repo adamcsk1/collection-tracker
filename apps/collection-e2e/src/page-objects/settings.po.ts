@@ -66,6 +66,7 @@ export const SettingsPage = {
   getOutgoingShareCanDeleteCheckbox: () => cy.getByTestId('share-can-delete').find('input[type="checkbox"]'),
   getRemoveShareButton: () => cy.getByTestId('remove-share'),
   getRevokeIncomingShareButton: () => cy.getByTestId('revoke-incoming-share'),
+  getDefaultLibrarySelect: () => cy.getByTestId('settings-default-library').find('select'),
 
   // Token dialog (shown after creating a new user token or access token)
   getTokenDialogValue: () => cy.getByTestId('token-dialog-value'),

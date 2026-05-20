@@ -139,16 +139,20 @@ export const findUserSettings = (
         theme: string | null;
         animated_background: number | null;
         language: string | null;
+        default_library_owner_share_code: string | null;
       }
     | undefined;
 
   if (!row) return undefined;
 
-  return {
-    theme: (row.theme as UserSettingsApiResponseModel['theme']) ?? undefined,
-    animatedBackground: row.animated_background === 1 ? true : row.animated_background === 0 ? false : undefined,
-    language: (row.language as UserSettingsApiResponseModel['language']) ?? undefined,
-  };
+  const settings: UserSettingsApiResponseModel = {};
+  if (row.theme) settings.theme = row.theme as UserSettingsApiResponseModel['theme'];
+  if (row.animated_background !== null) settings.animatedBackground = row.animated_background === 1;
+  if (row.language) settings.language = row.language as UserSettingsApiResponseModel['language'];
+  if (row.default_library_owner_share_code)
+    settings.defaultLibraryOwnerShareCode = row.default_library_owner_share_code;
+
+  return settings;
 };
 
 export const upsertUserSettings = (
@@ -158,16 +162,18 @@ export const upsertUserSettings = (
 ): void => {
   db.prepare(
     `INSERT INTO user_settings
-     (username_hash, theme, animated_background, language)
-     VALUES (?, ?, ?, ?)
+     (username_hash, theme, animated_background, language, default_library_owner_share_code)
+     VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(username_hash) DO UPDATE SET
        theme = excluded.theme,
        animated_background = excluded.animated_background,
-       language = excluded.language`
+       language = excluded.language,
+       default_library_owner_share_code = excluded.default_library_owner_share_code`
   ).run(
     usernameHash,
     settings.theme ?? null,
     settings.animatedBackground === undefined ? null : settings.animatedBackground ? 1 : 0,
-    settings.language ?? null
+    settings.language ?? null,
+    settings.defaultLibraryOwnerShareCode ?? null
   );
 };

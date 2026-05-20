@@ -2,26 +2,35 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Input } from '@components/input/input';
+import { Select } from '@components/select/select';
+import { toastStateToken } from '@components/toast/toast-store';
 import { ConfirmService } from '@services/confirm-service';
 import { UserShareOutgoingApiModel } from '@shared/models/api-model';
+import { SelectDataModel } from '@shared/models/select-model';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
+import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { mainStateToken } from '../../main/main-store';
 import { SharesService } from '../../shares/shares-service';
 import { sharesStateToken } from '../../shares/shares-store';
+import { SettingsService } from '../settings-service';
 
 @Component({
   selector: 'ct-settings-shares',
-  imports: [FormField, FormRoot, Input, Checkbox],
+  imports: [FormField, FormRoot, Input, Checkbox, Select],
   templateUrl: './shares.html',
   styleUrl: './shares.css',
   providers: [SharesService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsShares implements OnInit {
+  private readonly mainState = inject(mainStateToken);
   private readonly sharesState = inject(sharesStateToken);
   private readonly sharesService = inject(SharesService);
+  private readonly settings = inject(SettingsService);
   private readonly confirm = inject(ConfirmService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  private readonly toastState = inject(toastStateToken);
   protected readonly translations = {
     messageShareSettings: computed(() => this.ngxSignalTranslate.translate('Message.ShareSettings')),
     titleShareManagement: computed(() => this.ngxSignalTranslate.translate('Title.ShareManagement')),
@@ -29,6 +38,8 @@ export class SettingsShares implements OnInit {
     copy: computed(() => this.ngxSignalTranslate.translate('Copy')),
     outgoingShares: computed(() => this.ngxSignalTranslate.translate('OutgoingShares')),
     incomingShares: computed(() => this.ngxSignalTranslate.translate('IncomingShares')),
+    defaultLibrary: computed(() => this.ngxSignalTranslate.translate('DefaultLibrary')),
+    messageDefaultLibrary: computed(() => this.ngxSignalTranslate.translate('Message.DefaultLibrary')),
     shareCode: computed(() => this.ngxSignalTranslate.translate('ShareCode')),
     sharedWith: computed(() => this.ngxSignalTranslate.translate('SharedWith')),
     owner: computed(() => this.ngxSignalTranslate.translate('Owner')),
@@ -40,7 +51,6 @@ export class SettingsShares implements OnInit {
     removeShare: computed(() => this.ngxSignalTranslate.translate('RemoveShare')),
     revokeShare: computed(() => this.ngxSignalTranslate.translate('RevokeShare')),
     validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
-    toastCopied: computed(() => this.ngxSignalTranslate.translate('Toast.Copied')),
     confirmRemoveShare: computed(() => this.ngxSignalTranslate.translate('Confirm.RemoveShare')),
     confirmRevokeShare: computed(() => this.ngxSignalTranslate.translate('Confirm.RevokeShare')),
     messageEmptyIncomingShares: computed(() => this.ngxSignalTranslate.translate('Message.EmptyIncomingShares')),
@@ -49,6 +59,16 @@ export class SettingsShares implements OnInit {
   protected readonly userShareCode = this.sharesState.state.userShareCode;
   protected readonly outgoing = this.sharesState.state.outgoing;
   protected readonly incoming = this.sharesState.state.incoming;
+  protected readonly defaultLibraryOwnerShareCode = this.mainState.state.defaultLibraryOwnerShareCode;
+  protected readonly defaultLibraryOptions = computed(() => [
+    { text: this.ngxSignalTranslate.translate('MyLibrary'), value: '' },
+    ...this.incoming()
+      .filter((share) => share.canCreate)
+      .map((share) => ({
+        text: `${this.ngxSignalTranslate.translate('SharedLibrary')} (${share.ownerUsername ?? share.ownerUserShareCode})`,
+        value: share.ownerUserShareCode,
+      })),
+  ]);
   protected readonly addShareModel = signal({
     sharedWithUserShareCode: '',
     canRead: true,
@@ -74,6 +94,9 @@ export class SettingsShares implements OnInit {
 
   protected onCopyUserHash(): void {
     copyToClipboard(this.userShareCode());
+    if (!mobileUserAgent()) {
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.CopiedToClipboard'));
+    }
   }
 
   protected onUpdateShare(share: UserShareOutgoingApiModel, permissions: Partial<UserShareOutgoingApiModel>): void {
@@ -95,6 +118,12 @@ export class SettingsShares implements OnInit {
     this.confirm
       .ifConfirmed(this.translations.confirmRevokeShare())
       .subscribe(() => this.sharesService.revokeIncomingShare(ownerUserShareCode));
+  }
+
+  protected onDefaultLibraryChange(selectedValue: SelectDataModel['value']): void {
+    this.settings.storeDefaultLibraryOwnerShareCode(
+      typeof selectedValue === 'string' && selectedValue ? selectedValue : null
+    );
   }
 
   private onAddShare(): void {

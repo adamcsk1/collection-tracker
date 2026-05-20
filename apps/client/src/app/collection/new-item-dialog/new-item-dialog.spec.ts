@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
+import { initialMainState, MainState, mainStateToken } from '../../main/main-store';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { ApiService } from '@services/api/api-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
@@ -19,6 +20,7 @@ describe('NewItemDialog component', () => {
     save: ReturnType<typeof vi.fn>;
   };
   let api: { collectionItemExists: ReturnType<typeof vi.fn>; getShares: ReturnType<typeof vi.fn> };
+  let mainState: NgxSimpleSignalStoreService<MainState>;
   let sharesState: NgxSimpleSignalStoreService<SharesState>;
 
   beforeEach(() => {
@@ -37,6 +39,7 @@ describe('NewItemDialog component', () => {
       imports: [NewItemDialog],
       providers: [
         provideStore(initialMainCollectionState, mainCollectionStateToken),
+        provideStore(initialMainState, mainStateToken),
         provideStore(initialSharesState, sharesStateToken),
       ],
     });
@@ -60,6 +63,7 @@ describe('NewItemDialog component', () => {
 
     fixture = TestBed.createComponent(NewItemDialog);
     component = fixture.componentInstance;
+    mainState = TestBed.inject(mainStateToken);
     sharesState = TestBed.inject(sharesStateToken);
     fixture.detectChanges();
   });
@@ -149,6 +153,40 @@ describe('NewItemDialog component', () => {
     await component['onSave']('close');
 
     expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'close', 'owner-code', undefined);
+  });
+
+  it('selects the configured default shared library', () => {
+    mainState.setState('defaultLibraryOwnerShareCode', 'owner-code');
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        canRead: true,
+        canCreate: true,
+        canUpdate: false,
+        canDelete: false,
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(component['form'].targetOwnerShareCode().value()).toBe('owner-code');
+  });
+
+  it('keeps my library selected when the configured default is not creatable', () => {
+    mainState.setState('defaultLibraryOwnerShareCode', 'readonly-code');
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'readonly-code',
+        ownerUsername: 'Read Only Owner',
+        canRead: true,
+        canCreate: false,
+        canUpdate: false,
+        canDelete: false,
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(component['form'].targetOwnerShareCode().value()).toBe(null);
   });
 
   it('saves wishlist items without watched or shared library values', async () => {
