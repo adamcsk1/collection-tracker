@@ -490,6 +490,9 @@ components:
               enum: [library, watch-later, wishlist, series-tracker]
               default: library
               description: Target list. Defaults to `library`.
+            fetchSeriesMetadata:
+              type: boolean
+              description: When creating a series-tracker item, fetch and store best-effort OMDb season metadata.
 
     CreateResponse:
       type: object
@@ -545,6 +548,37 @@ components:
         errors:
           type: integer
           description: Number of images that could not be fixed.
+
+    SeriesTrackerSeason:
+      type: object
+      required: [season, episodes]
+      properties:
+        season:
+          type: integer
+          minimum: 1
+          maximum: 50
+        episodes:
+          type: integer
+          minimum: 1
+          maximum: 100
+
+    SeriesTrackerSeasonsRequest:
+      type: object
+      required: [seasons]
+      properties:
+        seasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeriesTrackerSeason'
+
+    SeriesTrackerSeasonsResponse:
+      type: object
+      required: [seasons]
+      properties:
+        seasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeriesTrackerSeason'
 
     OMDbItem:
       type: object
@@ -1349,6 +1383,98 @@ paths:
           description: Item not found.
         '409':
           description: Hash mismatch — the stored content has changed.
+
+  /series-tracker/{imdbId}/seasons:
+    get:
+      operationId: getSeriesTrackerSeasons
+      summary: Get series tracker season metadata
+      description: Returns stored season episode counts for the authenticated user's own series tracker item.
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Stored season metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+        '404':
+          description: Series tracker item not found.
+    put:
+      operationId: updateSeriesTrackerSeasons
+      summary: Replace series tracker season metadata
+      description: Replaces manual season episode counts for the authenticated user's own series tracker item.
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeriesTrackerSeasonsRequest'
+      responses:
+        '200':
+          description: Stored season metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+        '400':
+          description: Invalid season metadata.
+        '404':
+          description: Series tracker item not found.
+    delete:
+      operationId: deleteSeriesTrackerSeasons
+      summary: Delete series tracker season metadata
+      description: Removes stored season metadata so the client falls back to default season and episode options.
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Empty season metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+        '404':
+          description: Series tracker item not found.
+
+  /series-tracker/{imdbId}/seasons/refresh:
+    post:
+      operationId: refreshSeriesTrackerSeasons
+      summary: Refresh series tracker season metadata from OMDb
+      description: Fetches best-effort OMDb season episode counts and replaces stored metadata for the authenticated user's own series tracker item.
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Stored season metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+        '404':
+          description: Series tracker item not found.
 
   /proxy/omdb/search:
     get:

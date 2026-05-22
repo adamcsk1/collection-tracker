@@ -34,11 +34,13 @@ const item = {
 
 describe('create-api', () => {
   afterEach(() => {
+    delete process.env.OMDB_API_KEY;
+    vi.unstubAllGlobals();
     vi.resetModules();
     vi.clearAllMocks();
   });
 
-  it('uses the collection workflow rate limit', async () => {
+  it('uses only the global authenticated API rate limit', async () => {
     const response = mockResponse();
     const request: any = { body: {}, usernameHash: 'user' };
     const { app } = buildApp(request, response);
@@ -48,7 +50,7 @@ describe('create-api', () => {
 
     expect(app.post).toHaveBeenCalledWith(
       `${API_PREFIX}/create`,
-      expect.objectContaining({ config: { rateLimit: { max: 120, timeWindow: '15 minutes' } } }),
+      expect.not.objectContaining({ config: expect.anything() }),
       expect.any(Function)
     );
   });
@@ -118,6 +120,59 @@ describe('create-api', () => {
     insertUser();
     const response = mockResponse();
     const request: any = { body: { ...item, tags: ['#series'], listType: 'series-tracker' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ title: 'Custom File', listType: 'series-tracker', tags: ['#series'] }),
+    });
+  });
+
+  it('stores fetched series metadata when requested', async () => {
+    process.env.OMDB_API_KEY = 'key';
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}, {}] }) })
+    );
+    insertUser();
+    const response = mockResponse();
+    const request: any = {
+      body: { ...item, tags: ['#series'], listType: 'series-tracker', fetchSeriesMetadata: true },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(
+      getDatabase()
+        .prepare(
+          `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
+           FROM series_tracker_seasons
+           INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
+           WHERE collection_items.imdb_id = ?`
+        )
+        .all('tt0000001')
+    ).toEqual([{ season: 1, episodes: 3 }]);
+  });
+
+  it('still creates a series tracker item when metadata fetch fails', async () => {
+    process.env.OMDB_API_KEY = 'key';
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('OMDb unavailable')));
+    insertUser();
+    const response = mockResponse();
+    const request: any = {
+      body: { ...item, tags: ['#series'], listType: 'series-tracker', fetchSeriesMetadata: true },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');

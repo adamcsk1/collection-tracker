@@ -13,7 +13,7 @@ const setGlobalDb = (db: Database.Database | null): void => {
 
 let dbInstance: Database.Database | null = getGlobalDb();
 
-export const getDatabasePath = (dataFolder: string): string => `${dataFolder}/database/collection-tracker.sqlite`;
+const getDatabasePath = (dataFolder: string): string => `${dataFolder}/database/collection-tracker.sqlite`;
 
 export const initializeDatabase = (dataFolder: string): Database.Database => {
   const existing = getGlobalDb();
@@ -42,13 +42,4 @@ export const getDatabase = (): Database.Database => {
     throw new Error('Database not initialized. Call initializeDatabase first.');
   }
   return dbInstance;
-};
-
-export const closeDatabase = (): void => {
-  const existing = getGlobalDb();
-  if (existing) {
-    existing.close();
-    setGlobalDb(null);
-  }
-  dbInstance = null;
 };

@@ -9,6 +9,7 @@ export interface OMDbResponseItemModel {
   Director: string;
   Genre: string;
   Actors: string;
+  totalSeasons?: string;
 }
 
 export interface OMDbResponseModel {

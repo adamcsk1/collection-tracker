@@ -18,6 +18,7 @@ const tables = [
   'refresh_tokens',
   'tag_configs',
   'user_settings',
+  'series_tracker_seasons',
   'users',
 ];
 

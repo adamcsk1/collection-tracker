@@ -1,0 +1,2 @@
+export const MAX_SERIES_TRACKER_SEASONS = 50;
+export const MAX_SERIES_TRACKER_EPISODES = 100;

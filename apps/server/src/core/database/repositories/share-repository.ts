@@ -85,24 +85,3 @@ export const findReadableOwnerHashes = (db: Database.Database, usernameHash: str
     .all(usernameHash) as Array<{ owner_username_hash: string }>;
   return rows.map((row) => row.owner_username_hash);
 };
-
-export const findCreatableOwnerHashes = (db: Database.Database, usernameHash: string): string[] => {
-  const rows = db
-    .prepare('SELECT owner_username_hash FROM user_shares WHERE shared_with_username_hash = ? AND can_create = 1')
-    .all(usernameHash) as Array<{ owner_username_hash: string }>;
-  return rows.map((row) => row.owner_username_hash);
-};
-
-export const findUpdatableOwnerHashes = (db: Database.Database, usernameHash: string): string[] => {
-  const rows = db
-    .prepare('SELECT owner_username_hash FROM user_shares WHERE shared_with_username_hash = ? AND can_update = 1')
-    .all(usernameHash) as Array<{ owner_username_hash: string }>;
-  return rows.map((row) => row.owner_username_hash);
-};
-
-export const findDeletableOwnerHashes = (db: Database.Database, usernameHash: string): string[] => {
-  const rows = db
-    .prepare('SELECT owner_username_hash FROM user_shares WHERE shared_with_username_hash = ? AND can_delete = 1')
-    .all(usernameHash) as Array<{ owner_username_hash: string }>;
-  return rows.map((row) => row.owner_username_hash);
-};

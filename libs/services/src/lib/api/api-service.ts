@@ -20,6 +20,8 @@ import {
   MarkAllWatchedApiResponseModel,
   RandomImagesApiResponseModel,
   RefreshImagesApiResponseModel,
+  SeriesTrackerSeasonsApiRequestModel,
+  SeriesTrackerSeasonsApiResponseModel,
   TagConfigsApiRequestModel,
   TagConfigsApiResponseModel,
   TagSuggestionsApiResponseModel,
@@ -109,9 +111,10 @@ export class ApiService extends BaseApiService {
   public create(
     item: CollectionItemChangeApiModel,
     targetOwnerShareCode?: string,
-    listType?: CollectionListTypeModel
+    listType?: CollectionListTypeModel,
+    fetchSeriesMetadata?: boolean
   ): Observable<CreateApiResponseModel> {
-    return this.request('POST', '/create', { ...item, targetOwnerShareCode, listType });
+    return this.request('POST', '/create', { ...item, targetOwnerShareCode, listType, fetchSeriesMetadata });
   }
 
   public update(
@@ -193,6 +196,25 @@ export class ApiService extends BaseApiService {
 
   public getOMDbSearchData(queryParams: { s: string | null }): Observable<OMDbResponseModel> {
     return this.request('GET', `/proxy/omdb/search?s=${queryParams.s}`);
+  }
+
+  public getSeriesTrackerSeasons(imdbId: string): Observable<SeriesTrackerSeasonsApiResponseModel> {
+    return this.request('GET', `/series-tracker/${imdbId}/seasons`);
+  }
+
+  public refreshSeriesTrackerSeasons(imdbId: string): Observable<SeriesTrackerSeasonsApiResponseModel> {
+    return this.request('POST', `/series-tracker/${imdbId}/seasons/refresh`, {});
+  }
+
+  public updateSeriesTrackerSeasons(
+    imdbId: string,
+    request: SeriesTrackerSeasonsApiRequestModel
+  ): Observable<SeriesTrackerSeasonsApiResponseModel> {
+    return this.request('PUT', `/series-tracker/${imdbId}/seasons`, request);
+  }
+
+  public deleteSeriesTrackerSeasons(imdbId: string): Observable<SeriesTrackerSeasonsApiResponseModel> {
+    return this.request('DELETE', `/series-tracker/${imdbId}/seasons`);
   }
 
   public getAiQueryData(prompt: string): Observable<AiQueryResponseModel> {
