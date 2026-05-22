@@ -5,6 +5,7 @@ export interface NewItemModel {
   tags: string;
   watched: boolean;
   targetOwnerShareCode: string | null;
+  fetchSeriesMetadata: boolean;
 }
 
 export type SaveMode = 'new' | 'close' | null;

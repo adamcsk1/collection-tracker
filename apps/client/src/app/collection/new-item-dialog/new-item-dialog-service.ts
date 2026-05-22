@@ -42,7 +42,8 @@ export class NewItemDialogService {
     tags: string,
     mode: SaveMode,
     targetOwnerShareCode?: string,
-    listType: CollectionListTypeModel = 'library'
+    listType: CollectionListTypeModel = 'library',
+    fetchSeriesMetadata?: boolean
   ) {
     return this.omdb.getSelectedContent(selectedIMDbId).pipe(
       skip(1),
@@ -72,7 +73,7 @@ export class NewItemDialogService {
       mergeMap((collectionItem) =>
         (listType === 'library'
           ? this.api.create(collectionItem, targetOwnerShareCode)
-          : this.api.create(collectionItem, targetOwnerShareCode, listType)
+          : this.api.create(collectionItem, targetOwnerShareCode, listType, fetchSeriesMetadata)
         ).pipe(map((response) => response.item))
       ),
       catchError((error) => {

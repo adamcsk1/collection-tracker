@@ -120,7 +120,8 @@ describe('NewItemDialogService', () => {
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#movie', '#tag'] }),
       undefined,
-      'watch-later'
+      'watch-later',
+      undefined
     );
   });
 
@@ -133,7 +134,8 @@ describe('NewItemDialogService', () => {
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#movie', '#tag'] }),
       undefined,
-      'wishlist'
+      'wishlist',
+      undefined
     );
   });
 
@@ -141,12 +143,13 @@ describe('NewItemDialogService', () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'series' }) as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await firstValueFrom(service.save('tt123', null, '#tag', 'close', undefined, 'series-tracker'));
+    await firstValueFrom(service.save('tt123', null, '#tag', 'close', undefined, 'series-tracker', true));
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#series', '#tag'] }),
       undefined,
-      'series-tracker'
+      'series-tracker',
+      true
     );
   });
 

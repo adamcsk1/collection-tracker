@@ -66,6 +66,14 @@
             [label]="translations.collectionItemWatched()"
           />
         }
+        @if (seriesTracker()) {
+          <libc-checkbox
+            data-test-id="new-item-fetch-series-metadata"
+            [formField]="form.fetchSeriesMetadata"
+            [label]="translations.fetchSeriesMetadata()"
+            [hint]="translations.messageFetchSeriesMetadata()"
+          />
+        }
       }
       <div class="form-buttons">
         <button data-test-id="new-item-save" type="submit" [disabled]="form().invalid()" (click)="submitMode.set(null)">

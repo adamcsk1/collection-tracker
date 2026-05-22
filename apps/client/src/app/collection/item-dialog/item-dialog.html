@@ -89,14 +89,14 @@
             [label]="translations.labelWatchedUpToSeason()"
             [hint]="translations.hintWatchedUpToSeason()"
             [formField]="form.watchedUpToSeason"
-            [options]="seasonOptions"
+            [options]="seasonOptions()"
           />
           <libc-select
             data-test-id="item-dialog-watched-up-to-episode"
             [label]="translations.labelWatchedUpToEpisode()"
             [hint]="translations.hintWatchedUpToEpisode()"
             [formField]="form.watchedUpToEpisode"
-            [options]="episodeOptions"
+            [options]="episodeOptions()"
           />
         }
         <libc-input data-test-id="item-dialog-actors" [label]="translations.actors()" [formField]="form.actors" />
@@ -219,6 +219,20 @@
         <button data-test-id="item-dialog-edit" (click)="onEdit()">
           <i class="material-icons" [title]="translations.edit()"> edit </i>
           {{ translations.edit() }}
+        </button>
+      }
+      @if (permissionUpdate() && seriesTracker()) {
+        <button data-test-id="item-dialog-refresh-series-metadata" (click)="onRefreshSeriesMetadata()">
+          <i class="material-icons" [title]="translations.refreshSeriesMetadata()"> sync </i>
+          {{ translations.refreshSeriesMetadata() }}
+        </button>
+        <button data-test-id="item-dialog-manage-series-metadata" (click)="onManageSeriesMetadata()">
+          <i class="material-icons" [title]="translations.manageSeriesMetadata()"> table_edit </i>
+          {{ translations.manageSeriesMetadata() }}
+        </button>
+        <button data-test-id="item-dialog-remove-series-metadata" (click)="onRemoveSeriesMetadata()">
+          <i class="material-icons" [title]="translations.removeSeriesMetadata()"> playlist_remove </i>
+          {{ translations.removeSeriesMetadata() }}
         </button>
       }
       @if (permissionUpdate() && libraryItem()) {

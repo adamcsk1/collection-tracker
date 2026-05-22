@@ -93,7 +93,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', 8.7, '#tag', 'new', undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', 8.7, '#tag', 'new', undefined, undefined, undefined);
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -107,7 +107,15 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, `#tag ${WATCHED_TAG}`, 'new', undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith(
+      'tt123',
+      null,
+      `#tag ${WATCHED_TAG}`,
+      'new',
+      undefined,
+      undefined,
+      undefined
+    );
     expect(formRoot.reset).toHaveBeenCalled();
     expect(component['form'].watched().value()).toBe(false);
   });
@@ -121,7 +129,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, WATCHED_TAG, 'new', undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', null, WATCHED_TAG, 'new', undefined, undefined, undefined);
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -132,7 +140,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt456', null, '', 'close', undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt456', null, '', 'close', undefined, undefined, undefined);
     expect(selectedIMDbId.reset).toHaveBeenCalledWith(null);
   });
 
@@ -152,7 +160,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'close', 'owner-code', undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'close', 'owner-code', undefined, undefined);
   });
 
   it('selects the configured default shared library', () => {
@@ -198,7 +206,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', undefined, 'wishlist');
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', undefined, 'wishlist', undefined);
   });
 
   it('saves series tracker items without watched, user rate, or shared library values', async () => {
@@ -211,7 +219,17 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', undefined, 'series-tracker');
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', undefined, 'series-tracker', true);
+  });
+
+  it('passes disabled series metadata fetch value for series tracker items', async () => {
+    fixture.componentRef.setInput('seriesTracker', true);
+    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].fetchSeriesMetadata().value.set(false);
+
+    await component['onSave']('close');
+
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'close', undefined, 'series-tracker', false);
   });
 
   it('filters matched content to series in series tracker mode', () => {

@@ -24,10 +24,10 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap, tap } from 'rxjs';
 import { mainStateToken } from '../../main/main-store';
 import { sharesStateToken } from '../../shares/shares-store';
+import { forbiddenInternalTagValidation } from '../validators/tag-validators';
 import { NewItemModel, SaveMode } from './new-item-dialog-model';
 import { NewItemDialogService } from './new-item-dialog-service';
 import { TagSuggestionService } from './suggestion/tag-suggestion-service';
-import { forbiddenInternalTagValidation } from './validators/internal-tag-validator';
 import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
 
 @Component({
@@ -67,6 +67,8 @@ export class NewItemDialog {
     messageTags: computed(() => this.ngxSignalTranslate.translate('Message.Tags')),
     validationUsedInternalTag: computed(() => this.ngxSignalTranslate.translate('Validation.UsedInternalTag')),
     collectionItemWatched: computed(() => this.ngxSignalTranslate.translate('CollectionItemWatched')),
+    fetchSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('FetchSeriesMetadata')),
+    messageFetchSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('Message.FetchSeriesMetadata')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     saveAndNew: computed(() => this.ngxSignalTranslate.translate('SaveAndNew')),
     saveAndClose: computed(() => this.ngxSignalTranslate.translate('SaveAndClose')),
@@ -82,6 +84,7 @@ export class NewItemDialog {
     tags: '',
     watched: false,
     targetOwnerShareCode: null,
+    fetchSeriesMetadata: true,
   });
   protected readonly form = form(
     this.newItemModel,
@@ -275,7 +278,8 @@ export class NewItemDialog {
       tags,
       mode,
       targetOwnerShareCode,
-      this.listType() === 'library' ? undefined : this.listType()
+      this.listType() === 'library' ? undefined : this.listType(),
+      this.seriesTracker() ? this.form.fetchSeriesMetadata().value() : undefined
     );
     await firstValueFrom(saveRequest);
 
@@ -287,6 +291,7 @@ export class NewItemDialog {
         tags: '',
         watched: false,
         targetOwnerShareCode: this.defaultTargetOwnerShareCode(),
+        fetchSeriesMetadata: true,
       });
     } else {
       this.form.selectedIMDbId().reset(null);
