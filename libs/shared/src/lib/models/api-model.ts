@@ -79,6 +79,7 @@ export type CollectionItemChangeApiModel = Pick<
 
 export interface CreateApiRequestModel extends CollectionItemChangeApiModel {
   listType?: CollectionListTypeModel;
+  fetchSeriesMetadata?: boolean;
 }
 
 export interface CreateApiResponseModel {
@@ -170,6 +171,19 @@ export interface RefreshImagesApiResponseModel {
   checked: number;
   fixed: number;
   errors: number;
+}
+
+export interface SeriesTrackerSeasonMetadataModel {
+  season: number;
+  episodes: number;
+}
+
+export interface SeriesTrackerSeasonsApiResponseModel {
+  seasons: SeriesTrackerSeasonMetadataModel[];
+}
+
+export interface SeriesTrackerSeasonsApiRequestModel {
+  seasons: SeriesTrackerSeasonMetadataModel[];
 }
 
 export interface UserShareOutgoingApiModel {

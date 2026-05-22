@@ -9,12 +9,13 @@ import {
 } from '@shared/constants/tags-const';
 import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
-import { COLLECTION_WORKFLOW_RATE_LIMIT } from '../core/constants/rate-limit-const';
 import { getDatabase } from '../core/database/database';
 import { findCollectionItemByImdbId, insertCollectionItem } from '../core/database/repositories/collection-repository';
+import { replaceSeriesTrackerSeasons } from '../core/database/repositories/series-tracker-season-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
+import { fetchSeriesSeasonMetadata } from '../core/omdb/series-season-metadata';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
 import { parseListType } from '../core/utils/query-parse-util';
@@ -22,7 +23,7 @@ import { parseListType } from '../core/utils/query-parse-util';
 export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/create`,
-    { preHandler: jwtGuard, config: { rateLimit: COLLECTION_WORKFLOW_RATE_LIMIT } },
+    { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const body = request.body as CreateApiRequestModel & { targetOwnerShareCode?: string };
       const item = normalizeItem(body);
@@ -66,6 +67,11 @@ export const register = (app: FastifyInstance): void => {
 
       const hash = getItemHash(item);
       const createdItem = insertCollectionItem(db, targetOwnerHash, hash, item, listType);
+
+      if (listType === 'series-tracker' && body.fetchSeriesMetadata === true) {
+        const seasons = await fetchSeriesSeasonMetadata(item.IMDbId);
+        if (seasons.length) replaceSeriesTrackerSeasons(db, targetOwnerHash, item.IMDbId, seasons);
+      }
 
       const result: CreateApiResponseModel = { item: createdItem };
       response.send(result);

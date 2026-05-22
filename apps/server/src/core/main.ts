@@ -68,10 +68,10 @@ export const main = async () => {
       response.header('Expires', '0');
     });
     debugLog('Applying no-cache middleware');
-    const rateLimitValue = process.env.RATE_LIMIT !== undefined ? Number(process.env.RATE_LIMIT) : 100;
+    const rateLimitValue = process.env.RATE_LIMIT !== undefined ? Number(process.env.RATE_LIMIT) : 120;
     await app.register(fastifyRateLimit, {
       max: rateLimitValue,
-      timeWindow: 15 * 60 * 1000,
+      timeWindow: 60 * 1000,
       enableDraftSpec: true,
       allowList: (request) => RATE_LIMIT_EXCLUDED_PATHS.includes(request.routeOptions.url ?? request.url),
       keyGenerator: getRateLimitKey,

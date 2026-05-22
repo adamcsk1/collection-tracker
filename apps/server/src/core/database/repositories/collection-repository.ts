@@ -19,6 +19,7 @@ import {
 } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
 import { getItemHash } from '../../utils/collection-item-util';
+import { deleteSeriesTrackerSeasons } from './series-tracker-season-repository';
 import { getUserShareCode } from './user-repository';
 
 export interface CollectionItemRow {
@@ -191,18 +192,6 @@ const getItemRelations = (db: Database.Database, itemId: number): { genre: strin
     }>
   ).map((row) => row.tag),
 });
-
-export const getCollectionItemTags = (db: Database.Database, itemId: number): string[] => {
-  return (
-    db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(itemId) as Array<{
-      tag: string;
-    }>
-  ).map((row) => row.tag);
-};
-
-export const collectionItemHasTag = (db: Database.Database, itemId: number, tag: string): boolean => {
-  return !!db.prepare('SELECT 1 FROM collection_item_tags WHERE item_id = ? AND tag = ?').get(itemId, tag);
-};
 
 const toApiItem = (db: Database.Database, row: CollectionItemRow): CollectionItemApiModel => {
   const relations = getItemRelations(db, row.id);
@@ -401,10 +390,6 @@ export const findGenreSuggestions = (
     .all(...usernameHashes, 'library', `${escapeLike(lowerQuery)}%`, normalizeLimit(limit)) as Array<{ genre: string }>;
 
   return rows.map((row) => row.genre);
-};
-
-export const collectionItemExists = (db: Database.Database, usernameHashes: string[], imdbId: string): boolean => {
-  return collectionItemExistsInList(db, usernameHashes, imdbId, 'library');
 };
 
 export const collectionItemExistsInList = (
@@ -677,19 +662,8 @@ export const deleteCollectionItem = (
 
   db.prepare('DELETE FROM collection_item_genres WHERE item_id = ?').run(existingItem.id);
   db.prepare('DELETE FROM collection_item_tags WHERE item_id = ?').run(existingItem.id);
+  deleteSeriesTrackerSeasons(db, usernameHash, imdbId);
   db.prepare('DELETE FROM collection_items WHERE id = ?').run(existingItem.id);
-};
-
-export const updateCollectionItemHash = (
-  db: Database.Database,
-  usernameHash: string,
-  imdbId: string,
-  hash: string,
-  listType: CollectionListTypeModel = 'library'
-): void => {
-  db.prepare(
-    'UPDATE collection_items SET content_hash = ? WHERE username_hash = ? AND imdb_id = ? AND list_type = ?'
-  ).run(hash, usernameHash, imdbId, normalizeListType(listType));
 };
 
 export const markAllAsWatched = (db: Database.Database, usernameHash: string): number => {
