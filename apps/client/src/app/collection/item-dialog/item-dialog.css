@@ -114,3 +114,10 @@
     width: 100%;
   }
 }
+
+@media (hover: hover) and (pointer: fine) {
+  button.dialog-footer-button:not(.button-icon, .button-custom) {
+    flex: 0 0 auto;
+    width: fit-content;
+  }
+}

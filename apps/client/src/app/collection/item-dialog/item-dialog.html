@@ -206,61 +206,79 @@
   </ng-container>
   <ng-container dialog-shell-bottom-content>
     @if (editMode()) {
-      <button data-test-id="item-dialog-read-only" type="button" (click)="onReadOnly()">
+      <button class="dialog-footer-button" data-test-id="item-dialog-read-only" type="button" (click)="onReadOnly()">
         <i class="material-icons" [title]="translations.readOnly()"> visibility </i>
         {{ translations.readOnly() }}
       </button>
-      <button data-test-id="item-dialog-save" type="submit" form="item-edit-form" [disabled]="form().invalid()">
+      <button
+        class="dialog-footer-button"
+        data-test-id="item-dialog-save"
+        type="submit"
+        form="item-edit-form"
+        [disabled]="form().invalid()"
+      >
         <i class="material-icons" [title]="translations.save()"> save </i>
         {{ translations.save() }}
       </button>
     } @else {
       @if (permissionUpdate() && !internalCollectionTag()) {
-        <button data-test-id="item-dialog-edit" (click)="onEdit()">
+        <button class="dialog-footer-button" data-test-id="item-dialog-edit" (click)="onEdit()">
           <i class="material-icons" [title]="translations.edit()"> edit </i>
           {{ translations.edit() }}
         </button>
       }
       @if (permissionUpdate() && seriesTracker()) {
-        <button data-test-id="item-dialog-refresh-series-metadata" (click)="onRefreshSeriesMetadata()">
+        <button
+          class="dialog-footer-button"
+          data-test-id="item-dialog-refresh-series-metadata"
+          (click)="onRefreshSeriesMetadata()"
+        >
           <i class="material-icons" [title]="translations.refreshSeriesMetadata()"> sync </i>
           {{ translations.refreshSeriesMetadata() }}
         </button>
-        <button data-test-id="item-dialog-manage-series-metadata" (click)="onManageSeriesMetadata()">
+        <button
+          class="dialog-footer-button"
+          data-test-id="item-dialog-manage-series-metadata"
+          (click)="onManageSeriesMetadata()"
+        >
           <i class="material-icons" [title]="translations.manageSeriesMetadata()"> table_edit </i>
           {{ translations.manageSeriesMetadata() }}
         </button>
-        <button data-test-id="item-dialog-remove-series-metadata" (click)="onRemoveSeriesMetadata()">
+        <button
+          class="dialog-footer-button"
+          data-test-id="item-dialog-remove-series-metadata"
+          (click)="onRemoveSeriesMetadata()"
+        >
           <i class="material-icons" [title]="translations.removeSeriesMetadata()"> playlist_remove </i>
           {{ translations.removeSeriesMetadata() }}
         </button>
       }
       @if (permissionUpdate() && libraryItem()) {
         @if (watched()) {
-          <button data-test-id="item-dialog-mark-unwatched" (click)="onMarkAsUnwatched()">
+          <button class="dialog-footer-button" data-test-id="item-dialog-mark-unwatched" (click)="onMarkAsUnwatched()">
             <i class="material-icons" [title]="translations.markAsUnwatched()"> visibility_off </i>
             {{ translations.markAsUnwatched() }}
           </button>
         } @else {
-          <button data-test-id="item-dialog-mark-watched" (click)="onMarkAsWatched()">
+          <button class="dialog-footer-button" data-test-id="item-dialog-mark-watched" (click)="onMarkAsWatched()">
             <i class="material-icons" [title]="translations.markAsWatched()"> visibility </i>
             {{ translations.markAsWatched() }}
           </button>
         }
         @if (favorite()) {
-          <button data-test-id="item-dialog-remove-favorite" (click)="onRemoveFavorite()">
+          <button class="dialog-footer-button" data-test-id="item-dialog-remove-favorite" (click)="onRemoveFavorite()">
             <i class="material-icons" [title]="translations.removeFavorite()"> star_outline </i>
             {{ translations.removeFavorite() }}
           </button>
         } @else {
-          <button data-test-id="item-dialog-mark-favorite" (click)="onMarkAsFavorite()">
+          <button class="dialog-footer-button" data-test-id="item-dialog-mark-favorite" (click)="onMarkAsFavorite()">
             <i class="material-icons" [title]="translations.markAsFavorite()"> star_rate </i>
             {{ translations.markAsFavorite() }}
           </button>
         }
       }
       @if (permissionDelete()) {
-        <button data-test-id="item-dialog-delete" class="button-danger" (click)="onDelete()">
+        <button class="dialog-footer-button button-danger" data-test-id="item-dialog-delete" (click)="onDelete()">
           <i class="material-icons" [title]="translations.delete()"> delete </i>
           {{ translations.delete() }}
         </button>
