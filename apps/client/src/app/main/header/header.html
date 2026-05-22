@@ -9,6 +9,9 @@
 </button>
 <div class="header" role="banner">
   <a [routerLink]="['/']" class="logo-link">
-    <h1 class="app-title-style">{{ translations.title() }}</h1>
+    <div class="title-stack">
+      <h1 class="app-title-style">{{ translations.title() }}</h1>
+      <span data-test-id="current-nav-title" class="current-nav-title">{{ currentNavTitle() }}</span>
+    </div>
   </a>
 </div>
