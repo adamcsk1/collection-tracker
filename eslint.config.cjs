@@ -82,6 +82,15 @@ module.exports = [
       "import/order": "off",
       "@typescript-eslint/no-explicit-any": ["off"],
       "@typescript-eslint/member-ordering": 0,
+      "@typescript-eslint/explicit-member-accessibility": [
+        "error",
+        {
+          accessibility: "explicit",
+          overrides: {
+            constructors: "no-public",
+          },
+        },
+      ],
       "@typescript-eslint/naming-convention": 0,
       "@angular-eslint/no-host-metadata-property": "off",
       "@angular-eslint/no-output-on-prefix": "off",
@@ -106,6 +115,15 @@ module.exports = [
       "import/order": "off",
       "@typescript-eslint/no-explicit-any": ["off"],
       "@typescript-eslint/member-ordering": 0,
+      "@typescript-eslint/explicit-member-accessibility": [
+        "error",
+        {
+          accessibility: "explicit",
+          overrides: {
+            constructors: "no-public",
+          },
+        },
+      ],
       "@typescript-eslint/naming-convention": 0,
       "@typescript-eslint/ban-types": "off",
       "@typescript-eslint/no-inferrable-types": "off",
