@@ -4,6 +4,11 @@ export const CollectionPage = {
     cy.reload();
   },
 
+  visitSeriesTracker: () => {
+    cy.visit('/client/#/collection/series-tracker');
+    cy.reload();
+  },
+
   // Search
   getSearchInput: () => cy.getByTestId('collection-search').find('input'),
 
@@ -44,6 +49,7 @@ export const CollectionPage = {
 
   // Item dialog
   getItemDialogEditButton: () => cy.getByTestId('item-dialog-edit'),
+  getItemDialogReadOnlyButton: () => cy.getByTestId('item-dialog-read-only'),
   getItemDialogSaveButton: () => cy.getByTestId('item-dialog-save'),
   getItemDialogDeleteButton: () => cy.getByTestId('item-dialog-delete'),
   getItemDialogMarkFavoriteButton: () => cy.getByTestId('item-dialog-mark-favorite'),
@@ -58,8 +64,20 @@ export const CollectionPage = {
   getItemDialogWatchedUpToSeasonSelect: () => cy.getByTestId('item-dialog-watched-up-to-season').find('select'),
   getItemDialogWatchedUpToEpisodeSelect: () => cy.getByTestId('item-dialog-watched-up-to-episode').find('select'),
   getItemDialogEpisodeProgressChip: () => cy.getByTestId('item-dialog-episode-progress-chip'),
+  getItemDialogManageSeriesMetadataButton: () => cy.getByTestId('item-dialog-manage-series-metadata'),
+  getItemDialogRemoveSeriesMetadataButton: () => cy.getByTestId('item-dialog-remove-series-metadata'),
   getItemDialogGenreInput: () => cy.getByTestId('item-dialog-genre').find('input'),
   getItemDialogTagsInput: () => cy.getByTestId('item-dialog-tags').find('input'),
   getItemDialogActorsInput: () => cy.getByTestId('item-dialog-actors').find('input'),
   getItemDialogPlotInput: () => cy.getByTestId('item-dialog-plot').find('textarea'),
+
+  // Series metadata dialog
+  getSeriesMetadataMessage: () => cy.getByTestId('series-metadata-message'),
+  getSeriesMetadataAddButton: () => cy.getByTestId('series-metadata-add'),
+  getSeriesMetadataCloseButton: () => cy.getByTestId('series-metadata-close'),
+  getSeriesMetadataSaveButton: () => cy.getByTestId('series-metadata-save'),
+  getSeriesMetadataValidation: () => cy.getByTestId('series-metadata-validation'),
+  getSeriesMetadataSeasonInputs: () => cy.getByTestId('series-metadata-season').find('input'),
+  getSeriesMetadataEpisodeInputs: () => cy.getByTestId('series-metadata-episodes').find('input'),
+  getSeriesMetadataRemoveButtons: () => cy.getByTestId('series-metadata-remove'),
 };
