@@ -61,9 +61,6 @@ const signInThroughUi = (username: string, token: string): void => {
   cy.getByTestId('sign-in-token').find('input').type(token, { delay: 0 });
   cy.getByTestId('sign-in-submit').click();
   cy.url().should('include', '/client/');
-  cy.then(() => {
-    authCookieHeader = '';
-  });
 };
 
 const toRequestOptions = (requestArgs: unknown[]): Partial<Cypress.RequestOptions> | undefined => {
