@@ -97,14 +97,16 @@
   align-items: center;
 }
 
-.metadata-row a {
-  color: var(--main-color, currentColor);
-  text-decoration: none;
-}
+.metadata-row {
+  a {
+    color: var(--main-color, currentColor);
+    text-decoration: none;
 
-.metadata-row a:hover,
-.metadata-row a:focus-visible {
-  text-decoration: underline;
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
 }
 
 .external-links {

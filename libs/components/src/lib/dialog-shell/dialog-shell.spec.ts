@@ -16,6 +16,18 @@ import { DialogShell } from './dialog-shell';
 })
 class HostComponent {}
 
+@Component({
+  imports: [DialogShell],
+  template: `
+    <libc-dialog-shell [closeWithPortal]="false" (closed)="onClosed()">
+      <div dialog-shell-content>Content</div>
+    </libc-dialog-shell>
+  `,
+})
+class CustomCloseHostComponent {
+  public readonly onClosed = vi.fn();
+}
+
 describe('DialogShell component', () => {
   let closeSpy: ReturnType<typeof vi.fn>;
   let fixture: ComponentFixture<HostComponent>;
@@ -54,5 +66,16 @@ describe('DialogShell component', () => {
     overlay?.click();
 
     expect(closeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('emits closed without portal close when portal close is disabled', () => {
+    const customFixture = TestBed.createComponent(CustomCloseHostComponent);
+    customFixture.detectChanges();
+    const closeButton = customFixture.nativeElement.querySelector('.dialog-header button') as HTMLButtonElement;
+
+    closeButton.click();
+
+    expect(customFixture.componentInstance.onClosed).toHaveBeenCalledTimes(1);
+    expect(closeSpy).not.toHaveBeenCalled();
   });
 });

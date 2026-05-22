@@ -1,0 +1,62 @@
+<libc-dialog-shell [closeWithPortal]="false" (closed)="close()">
+  <ng-container dialog-shell-top-content>
+    <h3 class="dialog-title">
+      <i class="material-icons" [title]="translations.title()"> tv </i>
+      {{ translations.title() }}
+    </h3>
+  </ng-container>
+  <ng-container dialog-shell-content>
+    <p class="metadata-message" data-test-id="series-metadata-message">{{ translations.message() }}</p>
+    <div class="metadata-grid" data-test-id="series-metadata-rows">
+      @for (season of form.seasons; track $index; let index = $index) {
+        <div class="card">
+          <div class="card-body">
+            <div class="card-body-row">
+              <libc-input
+                data-test-id="series-metadata-season"
+                type="number"
+                [label]="translations.season()"
+                [formField]="season.season"
+              />
+              <libc-input
+                data-test-id="series-metadata-episodes"
+                type="number"
+                [label]="translations.episodes()"
+                [formField]="season.episodes"
+              />
+
+              <div>
+                <button
+                  data-test-id="series-metadata-remove"
+                  type="button"
+                  class="button-danger"
+                  (click)="removeSeason(index)"
+                >
+                  <i class="material-icons" [title]="translations.remove()"> delete </i>
+                  {{ translations.remove() }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    @if (!valid()) {
+      <p class="validation-message" data-test-id="series-metadata-validation">{{ translations.validation() }}</p>
+    }
+    <button data-test-id="series-metadata-add" type="button" (click)="addSeason()">
+      <i class="material-icons" [title]="translations.addSeason()"> add </i>
+      {{ translations.addSeason() }}
+    </button>
+  </ng-container>
+  <ng-container dialog-shell-bottom-content>
+    <button data-test-id="series-metadata-close" type="button" (click)="close()">
+      <i class="material-icons" [title]="translations.close()"> close </i>
+      {{ translations.close() }}
+    </button>
+    <button data-test-id="series-metadata-save" type="button" [disabled]="!valid()" (click)="save()">
+      <i class="material-icons" [title]="translations.save()"> save </i>
+      {{ translations.save() }}
+    </button>
+  </ng-container>
+</libc-dialog-shell>

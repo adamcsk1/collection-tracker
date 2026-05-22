@@ -4,6 +4,8 @@ import {
   Component,
   ElementRef,
   inject,
+  input,
+  output,
   viewChild,
   computed,
 } from '@angular/core';
@@ -20,6 +22,8 @@ export class DialogShell implements AfterViewInit {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly portal = inject(PortalService);
   private readonly dialogRoot = viewChild<ElementRef<HTMLDivElement>>('dialogRoot');
+  public readonly closeWithPortal = input(true);
+  public readonly closed = output<void>();
 
   protected readonly translations = {
     close: computed(() => this.ngxSignalTranslate.translate('Close')),
@@ -29,6 +33,7 @@ export class DialogShell implements AfterViewInit {
   }
 
   protected onClose(): void {
-    this.portal.close();
+    this.closed.emit();
+    if (this.closeWithPortal()) this.portal.close();
   }
 }

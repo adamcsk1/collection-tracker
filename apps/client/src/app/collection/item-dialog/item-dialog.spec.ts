@@ -23,6 +23,7 @@ import { initialSharesState, SharesState, sharesStateToken } from '../../shares/
 import { CollectionItemModel } from '../collection-model';
 import { CollectionService } from '../collection-service';
 import { ItemDialog } from './item-dialog';
+import { SeriesSeasonMetadataDialog } from '../series-season-metadata-dialog/series-season-metadata-dialog';
 
 const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItemModel => ({
   image: 'https://example.com/poster.jpg',
@@ -66,11 +67,14 @@ describe('ItemDialog', () => {
     updateCollectionItem: ReturnType<typeof vi.fn>;
     triggerReload: ReturnType<typeof vi.fn>;
   };
-  let portal: { close: ReturnType<typeof vi.fn> };
+  let portal: { close: ReturnType<typeof vi.fn>; open: ReturnType<typeof vi.fn> };
   let confirm: { open: ReturnType<typeof vi.fn> };
   let api: {
     delete: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
+    getSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
+    refreshSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
+    deleteSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
   };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
   let sharesState: NgxSimpleSignalStoreService<SharesState>;
@@ -82,11 +86,14 @@ describe('ItemDialog', () => {
       updateCollectionItem: vi.fn(),
       triggerReload: vi.fn(),
     };
-    portal = { close: vi.fn() };
+    portal = { close: vi.fn(), open: vi.fn() };
     confirm = { open: vi.fn() };
     api = {
       delete: vi.fn(() => of(undefined)),
       update: vi.fn(() => of({ item: buildApiItem() })),
+      getSeriesTrackerSeasons: vi.fn(() => of({ seasons: [] })),
+      refreshSeriesTrackerSeasons: vi.fn(() => of({ seasons: [{ season: 1, episodes: 2 }] })),
+      deleteSeriesTrackerSeasons: vi.fn(() => of({ seasons: [] })),
     };
     translate = { translate: vi.fn((key: string) => key) };
 
@@ -316,6 +323,35 @@ describe('ItemDialog', () => {
     expect(component['episodeProgressText']()).toBe('S01E02');
   });
 
+  it('loads series metadata and uses it for season and episode options', () => {
+    api.getSeriesTrackerSeasons.mockReturnValue(of({ seasons: [{ season: 1, episodes: 3 }] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['form'].watchedUpToSeason().value.set(1);
+
+    expect(api.getSeriesTrackerSeasons).toHaveBeenCalledWith('tt1234567');
+    expect(component['seasonOptions']()).toEqual([
+      { text: '-', value: null },
+      { text: '1', value: 1 },
+    ]);
+    expect(component['episodeOptions']()).toEqual([
+      { text: '-', value: null },
+      { text: '1', value: 1 },
+      { text: '2', value: 2 },
+      { text: '3', value: 3 },
+    ]);
+  });
+
+  it('falls back to default season options when metadata is absent', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['seasonOptions']().length).toBe(51);
+    expect(component['episodeOptions']().length).toBe(101);
+  });
+
   it('uses N/A when series tracker episode progress is not set', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
     fixture.detectChanges();
@@ -346,6 +382,68 @@ describe('ItemDialog', () => {
       undefined,
       'series-tracker'
     );
+  });
+
+  it('clears stale episode progress when metadata lowers the selected episode count', async () => {
+    confirm.open.mockReturnValue(of(true));
+    api.getSeriesTrackerSeasons.mockReturnValue(of({ seasons: [{ season: 1, episodes: 2 }] }));
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, '#episode-s01e10'] })
+    );
+    api.update.mockReturnValue(of({ item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG] }) }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    await component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [SERIES_TAG] }),
+      'testhash',
+      undefined,
+      'series-tracker'
+    );
+  });
+
+  it('refreshes series metadata after confirmation', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+
+    component['onRefreshSeriesMetadata']();
+
+    expect(api.refreshSeriesTrackerSeasons).toHaveBeenCalledWith('tt1234567');
+    expect(component['seriesSeasons']()).toEqual([{ season: 1, episodes: 2 }]);
+    expect(toastState.state.message()).toBe('Toast.SeriesMetadataRefreshed');
+  });
+
+  it('removes series metadata after confirmation', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
+
+    component['onRemoveSeriesMetadata']();
+
+    expect(api.deleteSeriesTrackerSeasons).toHaveBeenCalledWith('tt1234567');
+    expect(component['seriesSeasons']()).toEqual([]);
+    expect(toastState.state.message()).toBe('Toast.SeriesMetadataDeleted');
+  });
+
+  it('opens the manual series metadata dialog', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
+
+    component['onManageSeriesMetadata']();
+
+    expect(portal.open).toHaveBeenCalledWith(SeriesSeasonMetadataDialog, {
+      imdbId: 'tt1234567',
+      initialSeasons: [{ season: 1, episodes: 2 }],
+      saved: expect.any(Function),
+      closed: expect.any(Function),
+    });
   });
 
   it('deletes an item after confirmation', () => {
