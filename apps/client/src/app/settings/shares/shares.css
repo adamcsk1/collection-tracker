@@ -7,10 +7,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--size-md);
-}
 
-.shares-page > p {
-  margin-bottom: var(--size-xs);
+  > p {
+    margin-bottom: var(--size-xs);
+  }
 }
 
 .shares-grid,
@@ -24,10 +24,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--size-md);
-}
 
-.shares-section h3 {
-  margin: 0;
+  h3 {
+    margin: 0;
+  }
 }
 
 .share-code-card,
@@ -75,20 +75,22 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--size-sm) var(--size-md);
-}
 
-.share-permissions.readonly span {
-  border: var(--border-style);
-  border-radius: calc(100 * var(--size-md));
-  opacity: 0.45;
-  padding: var(--size-2xs) var(--size-xs);
-}
+  &.readonly {
+    span {
+      border: var(--border-style);
+      border-radius: calc(100 * var(--size-md));
+      opacity: 0.45;
+      padding: var(--size-2xs) var(--size-xs);
+    }
 
-.share-permissions.readonly .enabled {
-  opacity: 1;
-  font-weight: 600;
-  border-color: var(--main-color);
-  color: var(--main-color);
+    .enabled {
+      opacity: 1;
+      font-weight: 600;
+      border-color: var(--main-color);
+      color: var(--main-color);
+    }
+  }
 }
 
 .add-share-form {
