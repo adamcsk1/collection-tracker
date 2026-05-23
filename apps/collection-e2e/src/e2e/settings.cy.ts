@@ -280,8 +280,9 @@ describe('Settings - appMode: full (all permissions)', () => {
   it('the item dialog shows edit, delete, and mark-watched buttons', () => {
     CollectionPage.getListItemImages().first().click();
 
-    cy.getByTestId('item-dialog-edit').should('be.visible');
-    cy.getByTestId('item-dialog-delete').should('be.visible');
-    cy.getByTestId('item-dialog-mark-watched').should('be.visible');
+    CollectionPage.getItemDialogEditButton().should('be.visible');
+    CollectionPage.getItemDialogDeleteButton().should('be.visible');
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');
   });
 });
