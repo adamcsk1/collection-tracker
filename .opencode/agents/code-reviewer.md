@@ -48,6 +48,7 @@ Review the changed files provided. Check each one against the rules below and re
 ### Formatting
 - Prettier: 120-char line width, single quotes
 - CSS linted via `@eslint/css`
+- CSS should use CSS nesting for related selectors, pseudo-classes, and component-local child selectors instead of repeating full selector chains.
 
 ## How to review
 

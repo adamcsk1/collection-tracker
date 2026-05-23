@@ -140,6 +140,7 @@ Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, 
 - State uses signal stores from `ngx-simple-signal-store`, not traditional services or subjects.
 - Prettier uses 120 character line width and single quotes.
 - ESLint uses flat config and includes CSS through `@eslint/css`.
+- CSS should use CSS nesting for related selectors, pseudo-classes, and component-local child selectors instead of repeating full selector chains.
 - Husky runs lint and format checks on commit.
 - Parameter names must be descriptive. Do not use single-letter or abbreviated names except `a`/`b` in sort comparators and `arg`/`args`/`argv` in CLI argument handling.
 - User-visible template text should use `NgxSignalTranslateService.translate()` from computed signals on a

@@ -227,9 +227,19 @@
           {{ translations.edit() }}
         </button>
       }
+      @if (permissionDelete()) {
+        <button class="dialog-footer-button button-danger" data-test-id="item-dialog-delete" (click)="onDelete()">
+          <i class="material-icons" [title]="translations.delete()"> delete </i>
+          {{ translations.delete() }}
+        </button>
+      }
+    }
+  </ng-container>
+  <ng-container dialog-shell-menu-content>
+    @if (!editMode()) {
       @if (permissionUpdate() && seriesTracker()) {
         <button
-          class="dialog-footer-button"
+          class="button-borderless"
           data-test-id="item-dialog-refresh-series-metadata"
           (click)="onRefreshSeriesMetadata()"
         >
@@ -237,7 +247,7 @@
           {{ translations.refreshSeriesMetadata() }}
         </button>
         <button
-          class="dialog-footer-button"
+          class="button-borderless"
           data-test-id="item-dialog-manage-series-metadata"
           (click)="onManageSeriesMetadata()"
         >
@@ -245,7 +255,7 @@
           {{ translations.manageSeriesMetadata() }}
         </button>
         <button
-          class="dialog-footer-button"
+          class="button-borderless"
           data-test-id="item-dialog-remove-series-metadata"
           (click)="onRemoveSeriesMetadata()"
         >
@@ -255,33 +265,27 @@
       }
       @if (permissionUpdate() && libraryItem()) {
         @if (watched()) {
-          <button class="dialog-footer-button" data-test-id="item-dialog-mark-unwatched" (click)="onMarkAsUnwatched()">
+          <button class="button-borderless" data-test-id="item-dialog-mark-unwatched" (click)="onMarkAsUnwatched()">
             <i class="material-icons" [title]="translations.markAsUnwatched()"> visibility_off </i>
             {{ translations.markAsUnwatched() }}
           </button>
         } @else {
-          <button class="dialog-footer-button" data-test-id="item-dialog-mark-watched" (click)="onMarkAsWatched()">
+          <button class="button-borderless" data-test-id="item-dialog-mark-watched" (click)="onMarkAsWatched()">
             <i class="material-icons" [title]="translations.markAsWatched()"> visibility </i>
             {{ translations.markAsWatched() }}
           </button>
         }
         @if (favorite()) {
-          <button class="dialog-footer-button" data-test-id="item-dialog-remove-favorite" (click)="onRemoveFavorite()">
+          <button class="button-borderless" data-test-id="item-dialog-remove-favorite" (click)="onRemoveFavorite()">
             <i class="material-icons" [title]="translations.removeFavorite()"> star_outline </i>
             {{ translations.removeFavorite() }}
           </button>
         } @else {
-          <button class="dialog-footer-button" data-test-id="item-dialog-mark-favorite" (click)="onMarkAsFavorite()">
+          <button class="button-borderless" data-test-id="item-dialog-mark-favorite" (click)="onMarkAsFavorite()">
             <i class="material-icons" [title]="translations.markAsFavorite()"> star_rate </i>
             {{ translations.markAsFavorite() }}
           </button>
         }
-      }
-      @if (permissionDelete()) {
-        <button class="dialog-footer-button button-danger" data-test-id="item-dialog-delete" (click)="onDelete()">
-          <i class="material-icons" [title]="translations.delete()"> delete </i>
-          {{ translations.delete() }}
-        </button>
       }
     }
   </ng-container>
