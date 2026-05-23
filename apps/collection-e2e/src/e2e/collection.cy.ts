@@ -140,6 +140,7 @@ describe('Collection — add a new element', () => {
 
     // Open the item and verify it shows the mark-unwatched button (watched state)
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkUnwatchedButton().should('be.visible');
   });
 
@@ -317,6 +318,7 @@ describe('Collection — favorites', () => {
     CollectionPage.getListItems().should('have.length', 2);
     CollectionPage.getListItems().contains('Favorite Test Movie').click();
 
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkFavoriteButton().click();
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
     CollectionPage.getItemDialogRemoveFavoriteButton().should('be.visible');

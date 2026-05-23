@@ -21,6 +21,8 @@ describe('Series metadata dialog', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogRefreshSeriesMetadataButton().should('be.visible');
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     CollectionPage.getSeriesMetadataMessage().should('contain.text', 'Season and episode counts can come from OMDb');
@@ -37,6 +39,7 @@ describe('Series metadata dialog', () => {
     CollectionPage.getSeriesMetadataSaveButton().click();
 
     cy.wait('@saveSeriesMetadata').its('response.statusCode').should('eq', 200);
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().should('be.visible');
 
     CollectionPage.getItemDialogEditButton().click();
@@ -55,11 +58,13 @@ describe('Series metadata dialog', () => {
 
   it('reopens the item dialog when the metadata dialog is closed without saving', () => {
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     CollectionPage.getSeriesMetadataAddButton().click();
     CollectionPage.getSeriesMetadataCloseButton().click();
 
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().should('be.visible');
     CollectionPage.getItemDialogEditButton().click();
     CollectionPage.getItemDialogWatchedUpToSeasonSelect().find('option').should('have.length', 51);
@@ -81,6 +86,7 @@ describe('Series metadata dialog', () => {
     CollectionPage.getItemDialogWatchedUpToSeasonSelect().find('option').should('have.length', 3);
     CollectionPage.getItemDialogReadOnlyButton().click();
 
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogRemoveSeriesMetadataButton().click();
 
     cy.wait('@deleteSeriesMetadata').its('response.statusCode').should('eq', 200);

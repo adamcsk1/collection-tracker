@@ -163,6 +163,7 @@ describe('Item dialog — mark watched / unwatched', () => {
 
     CollectionPage.getListItemImages().first().click();
 
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkWatchedButton().click();
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
 
@@ -176,6 +177,7 @@ describe('Item dialog — mark watched / unwatched', () => {
 
     // First mark as watched
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkWatchedButton().click();
     cy.wait('@updateItem');
 
