@@ -33,7 +33,8 @@ button {
     }
   }
 
-  &.button-icon {
+  &.button-icon,
+  &.button-borderless {
     border: none;
   }
 

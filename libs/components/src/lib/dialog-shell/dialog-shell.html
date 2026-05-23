@@ -21,14 +21,48 @@
     <div>
       <ng-content select="[dialog-shell-top-content]" />
     </div>
-    <button
-      class="button-icon material-icons"
-      [attr.aria-label]="translations.close()"
-      [title]="translations.close()"
-      (click)="onClose()"
-    >
-      close
-    </button>
+    <div class="dialog-header-actions">
+      @if (hasMenuContent()) {
+        <button
+          type="button"
+          data-test-id="dialog-actions-menu-button"
+          class="button-icon material-icons"
+          [attr.aria-controls]="actionsMenuId"
+          [attr.aria-expanded]="menuOpen()"
+          [attr.aria-label]="translations.moreActions()"
+          [title]="translations.moreActions()"
+          (click)="onToggleMenu()"
+        >
+          more_vert
+        </button>
+      } @else {
+        <button
+          type="button"
+          data-test-id="dialog-close-button"
+          class="button-icon material-icons"
+          [attr.aria-label]="translations.close()"
+          [title]="translations.close()"
+          (click)="onClose()"
+        >
+          close
+        </button>
+      }
+      <div
+        [id]="actionsMenuId"
+        data-test-id="dialog-actions-menu"
+        class="dialog-actions-menu"
+        [class.dialog-actions-menu-open]="menuOpen()"
+        [attr.hidden]="hasMenuContent() && menuOpen() ? null : ''"
+      >
+        <div #menuContent class="dialog-actions-menu-content">
+          <ng-content select="[dialog-shell-menu-content]" />
+        </div>
+        <button type="button" data-test-id="dialog-actions-close-button" class="button-borderless" (click)="onClose()">
+          <span class="material-icons" aria-hidden="true">close</span>
+          {{ translations.close() }}
+        </button>
+      </div>
+    </div>
   </div>
   <div class="dialog-body">
     <ng-content select="[dialog-shell-content]" />

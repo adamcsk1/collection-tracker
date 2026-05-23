@@ -84,6 +84,7 @@ Within the same project → relative paths are fine at any depth.
 ### Formatting
 - Prettier: 120-char line width, single quotes
 - CSS linted via `@eslint/css`
+- CSS should use CSS nesting for related selectors, pseudo-classes, and component-local child selectors instead of repeating full selector chains.
 
 ---
 
