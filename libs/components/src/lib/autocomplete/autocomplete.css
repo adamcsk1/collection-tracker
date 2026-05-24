@@ -56,50 +56,69 @@ label {
     border-bottom-right-radius: 0;
   }
 
-  ul.input-suggestions-small {
+  .input-box-with-pane-above,
+  .input-box-with-pane-above:focus-visible {
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+  }
+
+  .input-suggestions-pane-small {
     width: var(--input-width) !important;
   }
 
-  ul.input-suggestions {
+  .input-suggestions-pane {
     position: absolute;
-    top: calc(var(--input-height) / 2 + 1px);
+    top: 100%;
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    max-height: 115px;
-    background-color: var(--background-color-alt);
-    border: var(--border-style);
-    border-top: none;
-    border-bottom-left-radius: var(--border-radius);
-    border-bottom-right-radius: var(--border-radius);
-    margin-bottom: calc(-1 * var(--size-md));
-    list-style-type: none;
-    padding: 4px;
-    padding-left: 5px;
     z-index: 2;
-    outline: var(--outline-style);
-    outline-color: var(--focus-border-color);
-    overflow: hidden;
 
-    li {
-      padding: 2px 1px;
+    &.input-suggestions-pane-above {
+      top: auto;
+      bottom: 100%;
+    }
 
-      button {
-        width: 100%;
-        text-align: left;
-        background-color: transparent;
-        border: none;
-        color: var(--main-color);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+    ul.input-suggestions {
+      display: flex;
+      flex-direction: column;
+      max-height: 115px;
+      background-color: var(--background-color-alt);
+      border: var(--border-style);
+      border-top: none;
+      border-bottom-left-radius: var(--border-radius);
+      border-bottom-right-radius: var(--border-radius);
+      margin: 0;
+      list-style-type: none;
+      padding: 4px;
+      padding-left: 5px;
+      outline: var(--outline-style);
+      outline-color: var(--focus-border-color);
+      overflow: hidden;
+
+      li {
+        padding: 2px 1px;
+
+        button {
+          width: 100%;
+          text-align: left;
+          background-color: transparent;
+          border: none;
+          color: var(--main-color);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        button.input-suggestion-selected {
+          outline: var(--outline-style);
+          outline-color: var(--focus-border-color);
+          border-radius: var(--border-radius);
+        }
       }
+    }
 
-      button.input-suggestion-selected {
-        outline: var(--outline-style);
-        outline-color: var(--focus-border-color);
-        border-radius: var(--border-radius);
-      }
+    &.input-suggestions-pane-above ul.input-suggestions {
+      border-top: var(--border-style);
+      border-bottom: none;
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
     }
   }
 
@@ -107,17 +126,13 @@ label {
     &.input-suggestions-close {
       z-index: 3;
       position: absolute;
-      right: -13px;
-      top: calc(var(--input-height) - 15px);
+      right: -14px;
+      top: -14px;
       background-color: var(--background-color-alt);
       border: var(--border-style);
       border-radius: 100%;
       padding: 2px;
       font-size: var(--font-size-lg);
-    }
-
-    &.input-suggestions-close-small-position {
-      right: 35px;
     }
   }
 }

@@ -8,42 +8,51 @@
 }
 <div class="input">
   @if (suggestions().length) {
-    <button
-      class="input-suggestions-close button-icon material-icons"
-      [attr.aria-label]="translations.closeSuggestions()"
-      [title]="translations.closeSuggestions()"
-      [class.input-suggestions-close-small-position]="showReset()"
-      (click)="onCloseSuggestion()"
+    <div
+      class="input-suggestions-pane"
+      [class.input-suggestions-pane-small]="showReset()"
+      [class.input-suggestions-pane-above]="showSuggestionsAbove()"
     >
-      close
-    </button>
-    <ul
-      class="input-suggestions"
-      role="listbox"
-      id="autocomplete-suggestions-list"
-      [attr.aria-label]="translations.suggestions()"
-      [class.input-suggestions-small]="showReset()"
-    >
-      @for (suggestion of suggestions(); track $index) {
-        <li>
-          <button
-            type="button"
-            role="option"
-            class="button-custom"
-            [class.input-suggestion-selected]="$index === selectedSuggestion()"
-            [attr.id]="'autocomplete-suggestion-' + $index"
-            [attr.aria-selected]="$index === selectedSuggestion()"
-            [attr.aria-label]="suggestion"
-            (click)="onAcceptSuggestion($index)"
-          >
-            {{ formatSuggestionText(suggestion) }}
-          </button>
-        </li>
-      }
-    </ul>
+      <button
+        class="input-suggestions-close button-icon material-icons"
+        [attr.aria-label]="translations.closeSuggestions()"
+        [title]="translations.closeSuggestions()"
+        (click)="onCloseSuggestion()"
+      >
+        close
+      </button>
+      <ul
+        class="input-suggestions"
+        role="listbox"
+        id="autocomplete-suggestions-list"
+        [attr.aria-label]="translations.suggestions()"
+      >
+        @for (suggestion of suggestions(); track $index) {
+          <li>
+            <button
+              type="button"
+              role="option"
+              class="button-custom"
+              [class.input-suggestion-selected]="$index === selectedSuggestion()"
+              [attr.id]="'autocomplete-suggestion-' + $index"
+              [attr.aria-selected]="$index === selectedSuggestion()"
+              [attr.aria-label]="suggestion"
+              (click)="onAcceptSuggestion($index)"
+            >
+              {{ formatSuggestionText(suggestion) }}
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
   }
 
-  <div class="input-box" [class.input-box-with-pane]="suggestions().length" [class.input-box-focused]="focused()">
+  <div
+    class="input-box"
+    [class.input-box-with-pane]="suggestions().length"
+    [class.input-box-with-pane-above]="suggestions().length && showSuggestionsAbove()"
+    [class.input-box-focused]="focused()"
+  >
     <input
       #inputElement
       [id]="inputId()"

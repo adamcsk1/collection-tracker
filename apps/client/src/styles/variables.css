@@ -7,6 +7,7 @@
   --container-max-width-mobile: 95vw;
 
   /* Customs */
+  --logo-small-size: 40px;
   --card-width: 160px;
   --card-aspect-ratio: 2 / 3;
   --grid-gap: var(--size-md);

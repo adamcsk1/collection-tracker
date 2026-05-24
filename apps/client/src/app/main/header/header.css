@@ -12,6 +12,10 @@
   align-items: center;
   min-width: 0;
 
+  .logo-small {
+    margin-right: var(--size-xs);
+  }
+
   a {
     display: flex;
     flex-direction: row;
@@ -52,15 +56,4 @@
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.menu-button {
-  margin-left: var(--size-xs);
-  margin-right: var(--size-xs);
-}
-
-@media (width > 768px) {
-  .menu-button {
-    display: none;
-  }
 }

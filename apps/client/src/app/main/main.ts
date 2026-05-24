@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Background } from './background/background';
+import { FloatActions } from './float-actions/float-actions';
 import { Header } from './header/header';
 import { MenuNav } from './menu-nav/menu-nav';
 import { MainService } from './main-service';
@@ -17,7 +18,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-root',
-  imports: [RouterOutlet, Header, MenuNav, SpinnerLoading, Toast, Background, BlockerLoading],
+  imports: [RouterOutlet, Header, MenuNav, SpinnerLoading, Toast, Background, BlockerLoading, FloatActions],
   templateUrl: './main.html',
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

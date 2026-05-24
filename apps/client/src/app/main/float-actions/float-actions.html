@@ -1,7 +1,29 @@
-@if (scrollToTopAvailable()) {
+<section
+  class="float-search-bar"
+  data-test-id="float-search-bar"
+  [class.float-search-bar-menu-only]="!searchTemplate()"
+>
+  <button
+    data-test-id="nav-menu-button"
+    class="menu-button button-icon material-icons"
+    [attr.aria-label]="translations.menu()"
+    [title]="translations.menu()"
+    (click)="onOpenMenu()"
+  >
+    menu
+  </button>
+  @if (searchTemplate(); as template) {
+    <div class="float-search-content">
+      <ng-container [ngTemplateOutlet]="template" />
+    </div>
+  }
+</section>
+
+@if (config().scrollToTopAvailable) {
   <div
     class="float-button float-button-scroll-to-top"
     [class.float-button-scroll-to-top-offset]="actionButtonsVisible()"
+    [class.float-button-scroll-to-top-search-offset]="searchTemplate()"
     animate.enter="animation-fade-in"
     animate.leave="animation-fade-out"
   >
@@ -17,8 +39,13 @@
   </div>
 }
 @if (actionButtonsVisible()) {
-  <div class="float-buttons-container" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
-    @if (showAddButton() && permissionAdd()) {
+  <div
+    class="float-buttons-container"
+    [class.float-buttons-container-search-offset]="searchTemplate()"
+    animate.enter="animation-scale-in"
+    animate.leave="animation-scale-out"
+  >
+    @if (config().showAddButton) {
       <div class="float-button">
         <button
           data-test-id="add-new"
@@ -32,7 +59,7 @@
         </button>
       </div>
     }
-    @if (showAiSearchButton()) {
+    @if (config().showAiSearchButton) {
       <div class="float-button">
         <button
           data-test-id="ai-search-toggle"
@@ -57,14 +84,14 @@
         </button>
       </div>
     }
-    @if (showRandomPickButton()) {
+    @if (config().showRandomPickButton) {
       <div class="float-button">
         <button
           data-test-id="random-pick"
           class="button-icon material-icons"
           [attr.aria-label]="translations.randomPick()"
           [title]="translations.randomPick()"
-          [disabled]="apiLoadNetworkStatus() === 'pending' || collectionLength() === 0"
+          [disabled]="apiLoadNetworkStatus() === 'pending' || config().collectionLength === 0"
           (click)="onRandomPick()"
         >
           casino
@@ -83,8 +110,13 @@
       </button>
     </div>
   </div>
-} @else if (!hideActions() && canShowActionButton()) {
-  <div class="float-button float-show-button" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
+} @else if (showFloatActions()) {
+  <div
+    class="float-button float-show-button"
+    [class.float-show-button-search-offset]="searchTemplate()"
+    animate.enter="animation-scale-in"
+    animate.leave="animation-scale-out"
+  >
     @if (addOnlyMode()) {
       <button
         data-test-id="add-new"

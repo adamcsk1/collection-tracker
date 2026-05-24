@@ -7,6 +7,7 @@ import { PortalService } from '@services/portal-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { AiSearchService } from '../search/ai-search-service';
@@ -17,6 +18,7 @@ vi.mock('marked', () => ({ marked: vi.fn(() => '') }));
 describe('Collection library component', () => {
   let fixture: ComponentFixture<CollectionLibrary>;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
+  let floatActions: FloatActionsService;
   let queryParamMap: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   const api = {
@@ -54,12 +56,13 @@ describe('Collection library component', () => {
 
     TestBed.overrideComponent(CollectionLibrary, {
       set: {
-        template: '',
+        template: '<ng-template #floatSearch></ng-template>',
       },
     });
 
     fixture = TestBed.createComponent(CollectionLibrary);
     collectionState = fixture.debugElement.injector.get(collectionStateToken);
+    floatActions = TestBed.inject(FloatActionsService);
     fixture.detectChanges();
   };
 
@@ -114,7 +117,7 @@ describe('Collection library component', () => {
 
     TestBed.overrideComponent(CollectionLibrary, {
       set: {
-        template: '',
+        template: '<ng-template #floatSearch></ng-template>',
       },
     });
 
@@ -155,5 +158,13 @@ describe('Collection library component', () => {
     fixture.componentInstance['onSearchFromUser']();
 
     expect(setStateSpy).not.toHaveBeenCalledWith('forceStandardSearch', false);
+  });
+
+  it('registers and clears the float search template', () => {
+    expect(floatActions.searchTemplate()).toBeTruthy();
+
+    fixture.destroy();
+
+    expect(floatActions.searchTemplate()).toBeNull();
   });
 });

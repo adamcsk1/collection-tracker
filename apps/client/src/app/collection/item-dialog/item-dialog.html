@@ -265,23 +265,39 @@
       }
       @if (permissionUpdate() && libraryItem()) {
         @if (watched()) {
-          <button class="button-borderless" data-test-id="item-dialog-mark-unwatched" (click)="onMarkAsUnwatched()">
+          <button
+            class="button-borderless button-custom"
+            data-test-id="item-dialog-mark-unwatched"
+            (click)="onMarkAsUnwatched()"
+          >
             <i class="material-icons" [title]="translations.markAsUnwatched()"> visibility_off </i>
             {{ translations.markAsUnwatched() }}
           </button>
         } @else {
-          <button class="button-borderless" data-test-id="item-dialog-mark-watched" (click)="onMarkAsWatched()">
+          <button
+            class="button-borderless button-custom"
+            data-test-id="item-dialog-mark-watched"
+            (click)="onMarkAsWatched()"
+          >
             <i class="material-icons" [title]="translations.markAsWatched()"> visibility </i>
             {{ translations.markAsWatched() }}
           </button>
         }
         @if (favorite()) {
-          <button class="button-borderless" data-test-id="item-dialog-remove-favorite" (click)="onRemoveFavorite()">
+          <button
+            class="button-borderless button-custom"
+            data-test-id="item-dialog-remove-favorite"
+            (click)="onRemoveFavorite()"
+          >
             <i class="material-icons" [title]="translations.removeFavorite()"> star_outline </i>
             {{ translations.removeFavorite() }}
           </button>
         } @else {
-          <button class="button-borderless" data-test-id="item-dialog-mark-favorite" (click)="onMarkAsFavorite()">
+          <button
+            class="button-borderless button-custom"
+            data-test-id="item-dialog-mark-favorite"
+            (click)="onMarkAsFavorite()"
+          >
             <i class="material-icons" [title]="translations.markAsFavorite()"> star_rate </i>
             {{ translations.markAsFavorite() }}
           </button>

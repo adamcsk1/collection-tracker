@@ -65,11 +65,27 @@
       display: flex;
       flex-direction: column;
     }
+
+    button.button-borderless {
+      padding-left: var(--size-md);
+    }
+
+    @media (width <= 520px) {
+      button.button-borderless {
+        justify-content: flex-start;
+      }
+    }
   }
 
   .dialog-actions-menu-content {
     display: flex;
     flex-direction: column;
+
+    @media (width <= 520px) {
+      :host ::ng-deep button {
+        justify-content: flex-start;
+      }
+    }
   }
 
   .dialog-body {
@@ -86,29 +102,5 @@
     flex-wrap: wrap;
     gap: var(--size-xs);
     padding-top: var(--size-md);
-  }
-}
-
-:host {
-  & ::ng-deep .dialog-actions-menu-content {
-    & :where(button, a) {
-      display: flex;
-      width: 100%;
-      align-items: center;
-      justify-content: flex-start;
-      gap: var(--size-2xs);
-      border: none;
-      border-radius: 0;
-      padding: var(--size-xs) var(--size-sm);
-      color: var(--main-color);
-      text-align: left;
-      text-decoration: none;
-
-      &:hover,
-      &:focus-visible {
-        background: color-mix(in srgb, var(--main-color) 12%, transparent);
-        outline: none;
-      }
-    }
   }
 }

@@ -1,21 +1,7 @@
-:host {
-  --logo-size: 40px;
-}
-
 .header {
   display: flex;
   align-items: center;
   margin-bottom: var(--size-md);
-
-  img {
-    display: block;
-    width: var(--logo-size);
-    height: var(--logo-size);
-    border-radius: 35%;
-    border: var(--outline-style);
-    border-color: var(--focus-border-color);
-    margin-left: calc(var(--size-xs) * 1.25);
-  }
 
   h1 {
     margin: auto 0 auto var(--size-xs);

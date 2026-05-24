@@ -7,6 +7,7 @@ import {
   ElementRef,
   inject,
   input,
+  OnDestroy,
   output,
   signal,
   untracked,
@@ -19,24 +20,25 @@ import { PortalService } from '@services/portal-service';
 import { CollectionItemsApiResponseModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { asyncScheduler, catchError, debounceTime, EMPTY, fromEvent, Observable, tap } from 'rxjs';
+import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { sharesStateToken } from '../../shares/shares-store';
 import { CollectionItemModel, CollectionListDataSource } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
 import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
-import { FloatButtons } from './float-buttons/float-buttons';
+import { AiSearchService } from '../search/ai-search-service';
 import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS } from './list-const';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
 import { ListItem } from './list-item/list-item';
 
 @Component({
   selector: 'ct-list',
-  imports: [ListItem, ListItemSkeleton, FloatButtons],
+  imports: [ListItem, ListItemSkeleton],
   templateUrl: './list.html',
   styleUrl: './list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class List {
+export class List implements OnDestroy {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly collectionState = inject(collectionStateToken);
@@ -45,6 +47,8 @@ export class List {
   private readonly portal = inject(PortalService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly sharesState = inject(sharesStateToken);
+  private readonly floatActions = inject(FloatActionsService);
+  private readonly aiSearch = inject(AiSearchService, { optional: true });
   protected readonly debouncedSearchText = signal('');
   private readonly routeSearchVersion = signal(0);
   private lastRouteSearchText: string | null = null;
@@ -71,6 +75,13 @@ export class List {
 
   constructor() {
     this.loadShares();
+    this.floatActions.setCallbacks({
+      addNew: () => this.onAddNew(),
+      randomPick: () => this.onRandomPick(),
+      toggleAiSearch: () => this.onToggleAiSearch(),
+      scrollToTop: () => this.onResetScrollPosition(),
+      showFunctions: () => this.onShowFunctions(),
+    });
 
     effect((onCleanup) => {
       const searchText = this.collectionState.state.searchText();
@@ -113,6 +124,22 @@ export class List {
       this.debouncedSearchText();
       this.onResetScrollPosition();
     });
+
+    effect(() => {
+      this.floatActions.updateConfig({
+        collectionLength: this.collectionLength(),
+        scrollToTopAvailable: this.scrollToTopAvailable(),
+        showActions: !this.hideFloatActions(),
+        showAddButton: true,
+        showAiSearchButton: !this.isInternalCollectionPrefiltered(),
+        showRandomPickButton: !this.isInternalCollectionPrefiltered(),
+        useAiSearch: this.aiSearch?.useAiSearch() ?? false,
+      });
+    });
+  }
+
+  public ngOnDestroy(): void {
+    this.floatActions.resetActions();
   }
 
   protected onRandomPick(): void {

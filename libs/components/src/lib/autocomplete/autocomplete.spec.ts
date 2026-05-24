@@ -48,6 +48,19 @@ class InputServiceHostComponent {
   } | null>(null);
 }
 
+@Component({
+  imports: [FormField, Autocomplete],
+  template: `<libc-autocomplete
+    [formField]="field"
+    placeholder="Search"
+    [suggestionListPlacement]="'top'"
+  ></libc-autocomplete>`,
+})
+class TopPlacementHostComponent {
+  public readonly model = signal('');
+  public readonly field = form(this.model);
+}
+
 describe('Autocomplete component', () => {
   let fixture: ComponentFixture<HostComponent>;
   let component: Autocomplete<string>;
@@ -65,7 +78,7 @@ describe('Autocomplete component', () => {
     };
 
     TestBed.configureTestingModule({
-      imports: [HostComponent, NoHintHostComponent],
+      imports: [HostComponent, NoHintHostComponent, TopPlacementHostComponent],
       providers: [
         { provide: AutocompleteService, useValue: serviceStub },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
@@ -393,6 +406,25 @@ describe('Autocomplete component', () => {
     expect(userAcceptSuggestionSpy).toHaveBeenCalled();
     expect(component['suggestions']()).toEqual([]);
     unsubscribe.unsubscribe();
+  });
+
+  it('uses bottom suggestion placement by default', () => {
+    component['_suggestions'].set(['alpha']);
+    fixture.detectChanges();
+
+    const suggestionsPane = fixture.nativeElement.querySelector('.input-suggestions-pane') as HTMLDivElement;
+    expect(suggestionsPane.classList.contains('input-suggestions-pane-above')).toBe(false);
+  });
+
+  it('can show suggestions above the input', () => {
+    const topFixture = TestBed.createComponent(TopPlacementHostComponent);
+    topFixture.detectChanges();
+    const topComponent = topFixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
+    topComponent['_suggestions'].set(['alpha']);
+    topFixture.detectChanges();
+
+    const suggestionsPane = topFixture.nativeElement.querySelector('.input-suggestions-pane') as HTMLDivElement;
+    expect(suggestionsPane.classList.contains('input-suggestions-pane-above')).toBe(true);
   });
 });
 

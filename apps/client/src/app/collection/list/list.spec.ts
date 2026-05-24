@@ -14,6 +14,7 @@ import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { Observable, of } from 'rxjs';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { initialTagConfigsState, tagConfigsStateToken } from '../../settings/tag-configs/tag-configs-store';
 import { initialSharesState, sharesStateToken } from '../../shares/shares-store';
 import { List } from './list';
@@ -37,6 +38,7 @@ describe('List', () => {
     getShares: ReturnType<typeof vi.fn>;
   };
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
+  let floatActions: FloatActionsService;
   let scrollSpy: ReturnType<typeof vi.fn>;
 
   const buildFilters = (searchText: string): CollectionItemFiltersApiModel => {
@@ -104,6 +106,7 @@ describe('List', () => {
       api.searchItems(buildFilters(searchText), offset, limit)
     );
     collectionState = TestBed.inject(collectionStateToken);
+    floatActions = TestBed.inject(FloatActionsService);
 
     scrollSpy = vi.fn();
     (component as any).scrollContainer = () => ({ nativeElement: { scrollTo: scrollSpy } }) as ElementRef;
@@ -318,5 +321,25 @@ describe('List', () => {
     component['onShowFunctions']();
 
     expect(showFunctions).toHaveBeenCalled();
+  });
+
+  it('publishes float action config and resets it on destroy', () => {
+    fixture.detectChanges();
+
+    expect(floatActions.config().showActions).toBe(true);
+    expect(floatActions.config().showAiSearchButton).toBe(true);
+
+    fixture.destroy();
+
+    expect(floatActions.config().showActions).toBe(false);
+  });
+
+  it('registers float action callbacks', () => {
+    fixture.detectChanges();
+    const addNewSpy = vi.spyOn(component as any, 'onAddNew');
+
+    floatActions.addNew();
+
+    expect(addNewSpy).toHaveBeenCalled();
   });
 });
