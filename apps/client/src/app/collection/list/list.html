@@ -48,15 +48,3 @@
     <ct-list-item-skeleton />
   }
 </div>
-<ct-float-buttons
-  [scrollToTopAvailable]="scrollToTopAvailable()"
-  [collectionLength]="collectionLength()"
-  [hideActions]="hideFloatActions()"
-  [showAiSearchButton]="!isInternalCollectionPrefiltered()"
-  [showRandomPickButton]="!isInternalCollectionPrefiltered()"
-  (randomPick)="onRandomPick()"
-  (toggleAiSearch)="onToggleAiSearch()"
-  (addNew)="onAddNew()"
-  (scrollToTop)="onResetScrollPosition()"
-  (showFunctions)="onShowFunctions()"
-/>

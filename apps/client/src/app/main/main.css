@@ -40,6 +40,7 @@
 
 .main-body {
   padding: var(--size-md);
+  padding-bottom: calc(var(--size-md) + 72px);
   overflow: auto;
   flex: 1;
   max-height: calc(100vh - var(--header-height));

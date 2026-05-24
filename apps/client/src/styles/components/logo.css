@@ -1,0 +1,9 @@
+img.logo-small {
+  display: block;
+  width: var(--logo-small-size);
+  height: var(--logo-small-size);
+  border-radius: 35%;
+  border: var(--outline-style);
+  border-color: var(--focus-border-color);
+  margin-left: calc(var(--size-xs) * 1.25);
+}

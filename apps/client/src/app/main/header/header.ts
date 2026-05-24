@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
-import { PortalService } from '@services/portal-service';
+import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { filter, map, startWith } from 'rxjs';
-import { MenuDialog } from '../menu-dialog/menu-dialog';
 
 @Component({
   selector: 'ct-header',
@@ -18,8 +17,8 @@ import { MenuDialog } from '../menu-dialog/menu-dialog';
 })
 export class Header {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly portal = inject(PortalService);
   private readonly router = inject(Router);
+  private readonly theme = inject(ThemeService);
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -28,16 +27,12 @@ export class Header {
     ),
     { initialValue: this.router.url }
   );
-
+  protected readonly themeLogo = this.theme.themeLogo;
   protected readonly translations = {
     menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
     title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
   };
   protected readonly currentNavTitle = computed(() => this.ngxSignalTranslate.translate(this.currentNavTitleKey()));
-
-  protected onOpenMenu(): void {
-    this.portal.open(MenuDialog);
-  }
 
   private currentNavTitleKey(): string {
     const currentPath = this.currentUrl().split('?')[0].split('#')[0];

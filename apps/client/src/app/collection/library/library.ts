@@ -6,7 +6,9 @@ import {
   effect,
   inject,
   signal,
+  TemplateRef,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, FormField } from '@angular/forms/signals';
@@ -18,6 +20,7 @@ import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, EMPTY, map, startWith, switchMap } from 'rxjs';
+import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { AiSearchInput } from './ai-search-input/ai-search-input';
 import { CollectionListDataSourceRequest } from '../collection-model';
@@ -44,6 +47,8 @@ export class CollectionLibrary {
   private readonly portal = inject(PortalService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly mainCollectionState = inject(mainCollectionStateToken);
+  private readonly floatActions = inject(FloatActionsService);
+  private readonly floatSearchTemplate = viewChild<TemplateRef<unknown>>('floatSearch');
   private readonly aiSearchSendTrigger = computed(() => ({
     promptText: this.collectionState.state.aiSearchPromptText(),
     version: this.collectionState.state.aiSearchSendVersion(),
@@ -123,6 +128,12 @@ export class CollectionLibrary {
         }
       });
     });
+
+    effect(() => {
+      this.floatActions.setSearchTemplate(this.floatSearchTemplate() ?? null);
+    });
+
+    this.destroyRef.onDestroy(() => this.floatActions.setSearchTemplate(null));
   }
 
   protected onSearchFromUser(): void {

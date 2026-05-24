@@ -19,6 +19,8 @@ import { asyncScheduler, isObservable, Subscription } from 'rxjs';
 
 export const AutocompleteService = new InjectionToken<AutocompleteServiceInterface>('AutocompleteService');
 
+export type AutocompleteSuggestionListPlacement = 'bottom' | 'top';
+
 const SUGGESTION_NAVIGATION_KEY_CODES = new Set([
   'ArrowUp',
   'ArrowDown',
@@ -63,8 +65,10 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
     return value !== null && `${value}`.length > 0;
   });
   protected readonly focused = signal<boolean>(false);
+  protected readonly showSuggestionsAbove = computed(() => this.suggestionListPlacement() === 'top');
   public readonly inputId = input<string>(crypto.randomUUID());
   public readonly showReset = input<boolean>(false);
+  public readonly suggestionListPlacement = input<AutocompleteSuggestionListPlacement>('bottom');
   public readonly placeholder = input<string>('');
   public readonly label = input<string>('');
   public readonly hint = input<string>();

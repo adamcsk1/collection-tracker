@@ -1,14 +1,6 @@
-<button
-  data-test-id="nav-menu-button"
-  class="menu-button button-icon material-icons"
-  [attr.aria-label]="translations.menu()"
-  [title]="translations.menu()"
-  (click)="onOpenMenu()"
->
-  menu
-</button>
 <div class="header" role="banner">
   <a [routerLink]="['/']" class="logo-link">
+    <img class="logo-small" [src]="'icons/' + themeLogo()" [alt]="translations.title()" />
     <div class="title-stack">
       <h1 class="app-title-style">{{ translations.title() }}</h1>
       <span data-test-id="current-nav-title" class="current-nav-title">{{ currentNavTitle() }}</span>
