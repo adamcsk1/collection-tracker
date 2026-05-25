@@ -1,0 +1,93 @@
+@if (actionButtonsVisible()) {
+  <div class="float-buttons-container" animate.enter="animation-scale-in">
+    @if (config().showAddButton) {
+      <div class="float-button">
+        <button
+          data-test-id="add-new"
+          class="button-icon material-icons"
+          [attr.aria-label]="translations.addNew()"
+          [title]="translations.addNew()"
+          [disabled]="apiLoadNetworkStatus() === 'pending'"
+          (click)="onAddNew()"
+        >
+          add
+        </button>
+      </div>
+    }
+    @if (config().showAiSearchButton) {
+      <div class="float-button">
+        <button
+          data-test-id="ai-search-toggle"
+          class="button-icon"
+          [attr.aria-label]="translations.searchSwitchButtonLabel()"
+          [title]="translations.searchSwitchButtonLabel()"
+          [disabled]="apiLoadNetworkStatus() === 'pending' || !aiAvailable()"
+          [class.material-icons]="!useAiSearch() && aiAvailable()"
+          (click)="onToggleAiSearch()"
+        >
+          @if (!useAiSearch()) {
+            @if (aiAvailable()) {
+              search
+            } @else {
+              <span class="ai-offline-icon">
+                <libc-image-icon [ariaLabel]="translations.aiSearchOffline()" [imageUrl]="ollamaIcon" />
+              </span>
+            }
+          } @else {
+            <libc-image-icon [ariaLabel]="translations.aiSearch()" [imageUrl]="ollamaIcon" />
+          }
+        </button>
+      </div>
+    }
+    @if (config().showRandomPickButton) {
+      <div class="float-button">
+        <button
+          data-test-id="random-pick"
+          class="button-icon material-icons"
+          [attr.aria-label]="translations.randomPick()"
+          [title]="translations.randomPick()"
+          [disabled]="apiLoadNetworkStatus() === 'pending' || config().collectionLength === 0"
+          (click)="onRandomPick()"
+        >
+          casino
+        </button>
+      </div>
+    }
+  </div>
+  <div class="float-button float-show-button float-button-basic" animate.enter="animation-scale-in">
+    <button
+      data-test-id="hide-functions"
+      class="button-icon material-icons"
+      [attr.aria-label]="translations.hideFunctions()"
+      [title]="translations.hideFunctions()"
+      (click)="onHideFunctions()"
+    >
+      close
+    </button>
+  </div>
+} @else if (showFloatActions()) {
+  <div class="float-button float-show-button float-button-basic" animate.enter="animation-scale-in">
+    @if (addOnlyMode()) {
+      <button
+        data-test-id="add-new"
+        class="button-icon material-icons"
+        [attr.aria-label]="translations.addNew()"
+        [title]="translations.addNew()"
+        [disabled]="apiLoadNetworkStatus() === 'pending'"
+        (click)="onAddNew()"
+      >
+        add
+      </button>
+    } @else {
+      <button
+        data-test-id="show-functions"
+        class="button-icon material-icons"
+        [attr.aria-label]="translations.showFunctions()"
+        [title]="translations.showFunctions()"
+        (click)="onShowFunctions()"
+      >
+        apps
+      </button>
+    }
+  </div>
+}

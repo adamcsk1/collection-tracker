@@ -1,0 +1,101 @@
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnDestroy, signal } from '@angular/core';
+import { ImageIcon } from '@components/image-icon/image-icon';
+import { apiStateToken } from '@services/api/api-store';
+import { getBasePath } from '@shared/utils/get-base-path-util';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { FloatActionsService } from '../../main/float-actions/float-actions-service';
+import { mainStateToken } from '../../main/main-store';
+import { FloatActionButtonsService } from './float-action-buttons-service';
+
+@Component({
+  selector: 'ct-float-action-buttons',
+  templateUrl: './float-action-buttons.html',
+  styleUrl: './float-action-buttons.css',
+  imports: [ImageIcon],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class FloatActionButtons implements OnDestroy {
+  private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  private readonly mainState = inject(mainStateToken);
+  private readonly apiState = inject(apiStateToken);
+  private readonly floatActions = inject(FloatActionsService);
+  private readonly actionButtons = inject(FloatActionButtonsService);
+
+  protected readonly translations = {
+    addNew: computed(() => this.ngxSignalTranslate.translate('AddNew')),
+    searchSwitchButtonLabel: computed(() =>
+      this.useAiSearch()
+        ? this.ngxSignalTranslate.translate('SwitchToStandardSearch')
+        : this.aiAvailable()
+          ? this.ngxSignalTranslate.translate('SwitchToAiSearch')
+          : this.ngxSignalTranslate.translate('AiSearchOffline')
+    ),
+    aiSearchOffline: computed(() => this.ngxSignalTranslate.translate('AiSearchOffline')),
+    aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
+    randomPick: computed(() => this.ngxSignalTranslate.translate('RandomPick')),
+    hideFunctions: computed(() => this.ngxSignalTranslate.translate('HideFunctions')),
+    showFunctions: computed(() => this.ngxSignalTranslate.translate('ShowFunctions')),
+  };
+  protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
+  protected readonly aiAvailable = this.mainState.state.aiAvailable;
+  protected readonly config = this.actionButtons.config;
+  protected readonly useAiSearch = computed(() => this.config().useAiSearch);
+  protected readonly showFloatButtons = signal(false);
+  protected readonly actionButtonsVisible = computed(() => this.config().showActions && this.showFloatButtons());
+  protected readonly canShowActionButton = computed(() => {
+    const config = this.config();
+    return config.showAddButton || config.showAiSearchButton || config.showRandomPickButton;
+  });
+  protected readonly addOnlyMode = computed(() => {
+    const config = this.config();
+    return config.showAddButton && !config.showAiSearchButton && !config.showRandomPickButton;
+  });
+  protected readonly showFloatActions = computed(() => this.config().showActions && this.canShowActionButton());
+  protected readonly ollamaIcon = `${getBasePath()}/client/images/ollama-icon.png`;
+
+  constructor() {
+    effect(() => {
+      if (!this.config().showActions) {
+        this.showFloatButtons.set(false);
+      }
+    });
+
+    effect(() => {
+      this.floatActions.setActionButtonsVisible(this.actionButtonsVisible());
+    });
+  }
+
+  public ngOnDestroy(): void {
+    this.floatActions.setActionButtonsVisible(false);
+  }
+
+  protected onShowFunctions(): void {
+    if (!this.showFloatActions()) return;
+    if (this.addOnlyMode()) {
+      this.onAddNew();
+      return;
+    }
+
+    this.showFloatButtons.set(true);
+    this.actionButtons.showFunctions();
+  }
+
+  protected onHideFunctions(): void {
+    this.showFloatButtons.set(false);
+  }
+
+  protected onRandomPick(): void {
+    this.actionButtons.randomPick();
+    this.showFloatButtons.set(false);
+  }
+
+  protected onToggleAiSearch(): void {
+    this.actionButtons.toggleAiSearch();
+    this.showFloatButtons.set(false);
+  }
+
+  protected onAddNew(): void {
+    this.actionButtons.addNew();
+    this.showFloatButtons.set(false);
+  }
+}

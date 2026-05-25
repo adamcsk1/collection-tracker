@@ -1,7 +1,7 @@
 <section
   class="float-search-bar"
   data-test-id="float-search-bar"
-  [class.float-search-bar-menu-only]="!searchTemplate()"
+  [class.float-search-bar-menu-only]="!searchTemplate() && !showFloatActions()"
 >
   <button
     data-test-id="nav-menu-button"
@@ -17,13 +17,17 @@
       <ng-container [ngTemplateOutlet]="template" />
     </div>
   }
+
+  @if (showFloatActions() && actionsComponent(); as component) {
+    <ng-container [ngComponentOutlet]="component" />
+  }
 </section>
 
 @if (config().scrollToTopAvailable) {
   <div
     class="float-button float-button-scroll-to-top"
-    [class.float-button-scroll-to-top-offset]="actionButtonsVisible()"
-    [class.float-button-scroll-to-top-search-offset]="searchTemplate()"
+    [class.float-button-scroll-to-top-actions-offset]="actionButtonsVisible()"
+    [class.float-button-scroll-to-top-bar-offset]="searchTemplate() || showFloatActions()"
     animate.enter="animation-fade-in"
     animate.leave="animation-fade-out"
   >
@@ -36,108 +40,5 @@
     >
       arrow_upward
     </button>
-  </div>
-}
-@if (actionButtonsVisible()) {
-  <div
-    class="float-buttons-container"
-    [class.float-buttons-container-search-offset]="searchTemplate()"
-    animate.enter="animation-scale-in"
-    animate.leave="animation-scale-out"
-  >
-    @if (config().showAddButton) {
-      <div class="float-button">
-        <button
-          data-test-id="add-new"
-          class="button-icon material-icons"
-          [attr.aria-label]="translations.addNew()"
-          [title]="translations.addNew()"
-          [disabled]="apiLoadNetworkStatus() === 'pending'"
-          (click)="onAddNew()"
-        >
-          add
-        </button>
-      </div>
-    }
-    @if (config().showAiSearchButton) {
-      <div class="float-button">
-        <button
-          data-test-id="ai-search-toggle"
-          class="button-icon"
-          [attr.aria-label]="translations.searchSwitchButtonLabel()"
-          [title]="translations.searchSwitchButtonLabel()"
-          [disabled]="apiLoadNetworkStatus() === 'pending' || !aiAvailable()"
-          [class.material-icons]="!useAiSearch() && aiAvailable()"
-          (click)="onToggleAiSearch()"
-        >
-          @if (!useAiSearch()) {
-            @if (aiAvailable()) {
-              search
-            } @else {
-              <span class="ai-offline-icon">
-                <libc-image-icon [ariaLabel]="translations.aiSearchOffline()" [imageUrl]="ollamaIcon" />
-              </span>
-            }
-          } @else {
-            <libc-image-icon [ariaLabel]="translations.aiSearch()" [imageUrl]="ollamaIcon" />
-          }
-        </button>
-      </div>
-    }
-    @if (config().showRandomPickButton) {
-      <div class="float-button">
-        <button
-          data-test-id="random-pick"
-          class="button-icon material-icons"
-          [attr.aria-label]="translations.randomPick()"
-          [title]="translations.randomPick()"
-          [disabled]="apiLoadNetworkStatus() === 'pending' || config().collectionLength === 0"
-          (click)="onRandomPick()"
-        >
-          casino
-        </button>
-      </div>
-    }
-    <div class="float-button">
-      <button
-        data-test-id="hide-functions"
-        class="button-icon material-icons"
-        [attr.aria-label]="translations.hideFunctions()"
-        [title]="translations.hideFunctions()"
-        (click)="onHideFunctions()"
-      >
-        close
-      </button>
-    </div>
-  </div>
-} @else if (showFloatActions()) {
-  <div
-    class="float-button float-show-button"
-    [class.float-show-button-search-offset]="searchTemplate()"
-    animate.enter="animation-scale-in"
-    animate.leave="animation-scale-out"
-  >
-    @if (addOnlyMode()) {
-      <button
-        data-test-id="add-new"
-        class="button-icon material-icons"
-        [attr.aria-label]="translations.addNew()"
-        [title]="translations.addNew()"
-        [disabled]="apiLoadNetworkStatus() === 'pending'"
-        (click)="onAddNew()"
-      >
-        add
-      </button>
-    } @else {
-      <button
-        data-test-id="show-functions"
-        class="button-icon material-icons"
-        [attr.aria-label]="translations.showFunctions()"
-        [title]="translations.showFunctions()"
-        (click)="onShowFunctions()"
-      >
-        apps
-      </button>
-    }
   </div>
 }

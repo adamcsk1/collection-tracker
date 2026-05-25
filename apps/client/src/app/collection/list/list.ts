@@ -25,6 +25,8 @@ import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { sharesStateToken } from '../../shares/shares-store';
 import { CollectionItemModel, CollectionListDataSource } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
+import { FloatActionButtons } from '../float-action-buttons/float-action-buttons';
+import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
 import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
 import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS } from './list-const';
@@ -48,6 +50,7 @@ export class List implements OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly sharesState = inject(sharesStateToken);
   private readonly floatActions = inject(FloatActionsService);
+  private readonly actionButtons = inject(FloatActionButtonsService);
   private readonly aiSearch = inject(AiSearchService, { optional: true });
   protected readonly debouncedSearchText = signal('');
   private readonly routeSearchVersion = signal(0);
@@ -75,13 +78,14 @@ export class List implements OnDestroy {
 
   constructor() {
     this.loadShares();
-    this.floatActions.setCallbacks({
+    this.actionButtons.setCallbacks({
       addNew: () => this.onAddNew(),
       randomPick: () => this.onRandomPick(),
       toggleAiSearch: () => this.onToggleAiSearch(),
-      scrollToTop: () => this.onResetScrollPosition(),
       showFunctions: () => this.onShowFunctions(),
     });
+    this.floatActions.setScrollToTopCallback(() => this.onResetScrollPosition());
+    this.floatActions.setActionsComponent(FloatActionButtons);
 
     effect((onCleanup) => {
       const searchText = this.collectionState.state.searchText();
@@ -126,10 +130,14 @@ export class List implements OnDestroy {
     });
 
     effect(() => {
+      const showActions = !this.hideFloatActions();
       this.floatActions.updateConfig({
-        collectionLength: this.collectionLength(),
         scrollToTopAvailable: this.scrollToTopAvailable(),
-        showActions: !this.hideFloatActions(),
+        actionsAvailable: showActions,
+      });
+      this.actionButtons.updateConfig({
+        collectionLength: this.collectionLength(),
+        showActions,
         showAddButton: true,
         showAiSearchButton: !this.isInternalCollectionPrefiltered(),
         showRandomPickButton: !this.isInternalCollectionPrefiltered(),
@@ -140,6 +148,7 @@ export class List implements OnDestroy {
 
   public ngOnDestroy(): void {
     this.floatActions.resetActions();
+    this.actionButtons.reset();
   }
 
   protected onRandomPick(): void {
