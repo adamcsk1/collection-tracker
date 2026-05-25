@@ -17,6 +17,8 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { initialTagConfigsState, tagConfigsStateToken } from '../../settings/tag-configs/tag-configs-store';
 import { initialSharesState, sharesStateToken } from '../../shares/shares-store';
+import { FloatActionButtons } from '../float-action-buttons/float-action-buttons';
+import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
 import { List } from './list';
 
 vi.mock('marked', () => ({ marked: { parse: () => '' } }));
@@ -39,6 +41,7 @@ describe('List', () => {
   };
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let floatActions: FloatActionsService;
+  let actionButtons: FloatActionButtonsService;
   let scrollSpy: ReturnType<typeof vi.fn>;
 
   const buildFilters = (searchText: string): CollectionItemFiltersApiModel => {
@@ -107,6 +110,7 @@ describe('List', () => {
     );
     collectionState = TestBed.inject(collectionStateToken);
     floatActions = TestBed.inject(FloatActionsService);
+    actionButtons = TestBed.inject(FloatActionButtonsService);
 
     scrollSpy = vi.fn();
     (component as any).scrollContainer = () => ({ nativeElement: { scrollTo: scrollSpy } }) as ElementRef;
@@ -326,19 +330,23 @@ describe('List', () => {
   it('publishes float action config and resets it on destroy', () => {
     fixture.detectChanges();
 
-    expect(floatActions.config().showActions).toBe(true);
-    expect(floatActions.config().showAiSearchButton).toBe(true);
+    expect(floatActions.config().actionsAvailable).toBe(true);
+    expect(actionButtons.config().showActions).toBe(true);
+    expect(actionButtons.config().showAiSearchButton).toBe(true);
+    expect(floatActions.actionsComponent()).toBe(FloatActionButtons);
 
     fixture.destroy();
 
-    expect(floatActions.config().showActions).toBe(false);
+    expect(floatActions.config().actionsAvailable).toBe(false);
+    expect(actionButtons.config().showActions).toBe(false);
+    expect(floatActions.actionsComponent()).toBeNull();
   });
 
   it('registers float action callbacks', () => {
     fixture.detectChanges();
     const addNewSpy = vi.spyOn(component as any, 'onAddNew');
 
-    floatActions.addNew();
+    actionButtons.addNew();
 
     expect(addNewSpy).toHaveBeenCalled();
   });

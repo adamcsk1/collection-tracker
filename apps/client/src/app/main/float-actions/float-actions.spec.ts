@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
@@ -8,6 +9,12 @@ import { MenuDialog } from '../menu-dialog/menu-dialog';
 import { initialMainState, mainStateToken } from '../main-store';
 import { FloatActions } from './float-actions';
 import { FloatActionsService } from './float-actions-service';
+
+@Component({
+  selector: 'ct-test-float-action-buttons',
+  template: '<button data-test-id="test-action-button">test</button>',
+})
+class TestFloatActionButtons {}
 
 describe('FloatActions', () => {
   let fixture: ComponentFixture<FloatActions>;
@@ -32,34 +39,25 @@ describe('FloatActions', () => {
     fixture = TestBed.createComponent(FloatActions);
     component = fixture.componentInstance;
     service = TestBed.inject(FloatActionsService);
-    service.updateConfig({ showActions: true, collectionLength: 1 });
+    service.updateConfig({ actionsAvailable: true });
     fixture.detectChanges();
   });
 
   it('opens the action menu from the float button', () => {
-    component['onShowFunctions']();
+    service.setActionsComponent(TestFloatActionButtons);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-test-id="add-new"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test-id="random-pick"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test-id="test-action-button"]')).toBeTruthy();
   });
 
-  it('runs registered callbacks and closes the action menu', () => {
-    const addNew = vi.fn();
-    service.setCallbacks({
-      addNew,
-      randomPick: vi.fn(),
-      toggleAiSearch: vi.fn(),
-      scrollToTop: vi.fn(),
-      showFunctions: vi.fn(),
-    });
-    component['onShowFunctions']();
+  it('offsets scroll-to-top when the registered action menu is expanded', () => {
+    service.setActionsComponent(TestFloatActionButtons);
+    service.setActionButtonsVisible(true);
+    service.updateConfig({ scrollToTopAvailable: true });
 
-    component['onAddNew']();
     fixture.detectChanges();
 
-    expect(addNew).toHaveBeenCalledTimes(1);
-    expect(fixture.nativeElement.querySelector('[data-test-id="hide-functions"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.float-button-scroll-to-top-actions-offset')).toBeTruthy();
   });
 
   it('opens the mobile menu dialog', () => {
@@ -76,13 +74,13 @@ describe('FloatActions', () => {
   });
 
   it('collapses the action menu when actions reset', () => {
-    component['onShowFunctions']();
+    service.setActionsComponent(TestFloatActionButtons);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('[data-test-id="hide-functions"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test-id="test-action-button"]')).toBeTruthy();
 
     service.resetActions();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-test-id="hide-functions"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="test-action-button"]')).toBeNull();
   });
 });

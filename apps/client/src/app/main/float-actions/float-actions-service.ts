@@ -1,51 +1,49 @@
-import { Injectable, signal, TemplateRef } from '@angular/core';
-import { initialConfig, noopCallbacks } from './float-actions-const';
-import { FloatActionsCallbacks, FloatActionsConfig } from './float-actions-model';
+import { Injectable, signal, TemplateRef, Type } from '@angular/core';
+import { initialConfig } from './float-actions-const';
+import { FloatActionsConfig } from './float-actions-model';
 
 @Injectable({ providedIn: 'root' })
 export class FloatActionsService {
   private readonly _config = signal<FloatActionsConfig>(initialConfig);
   private readonly _searchTemplate = signal<TemplateRef<unknown> | null>(null);
+  private readonly _actionsComponent = signal<Type<unknown> | null>(null);
+  private readonly _actionButtonsVisible = signal(false);
 
   public readonly config = this._config.asReadonly();
   public readonly searchTemplate = this._searchTemplate.asReadonly();
+  public readonly actionsComponent = this._actionsComponent.asReadonly();
+  public readonly actionButtonsVisible = this._actionButtonsVisible.asReadonly();
 
-  private callbacks: FloatActionsCallbacks = noopCallbacks;
+  private scrollToTopCallback = (): void => void 0;
 
   public updateConfig(config: Partial<FloatActionsConfig>): void {
     this._config.update((currentConfig) => ({ ...currentConfig, ...config }));
   }
 
-  public setCallbacks(callbacks: FloatActionsCallbacks): void {
-    this.callbacks = callbacks;
+  public setScrollToTopCallback(callback: () => void): void {
+    this.scrollToTopCallback = callback;
   }
 
   public resetActions(): void {
     this._config.set(initialConfig);
-    this.callbacks = noopCallbacks;
+    this._actionsComponent.set(null);
+    this._actionButtonsVisible.set(false);
+    this.scrollToTopCallback = (): void => void 0;
   }
 
   public setSearchTemplate(template: TemplateRef<unknown> | null): void {
     this._searchTemplate.set(template);
   }
 
-  public addNew(): void {
-    this.callbacks.addNew();
+  public setActionsComponent(component: Type<unknown> | null): void {
+    this._actionsComponent.set(component);
   }
 
-  public randomPick(): void {
-    this.callbacks.randomPick();
-  }
-
-  public toggleAiSearch(): void {
-    this.callbacks.toggleAiSearch();
+  public setActionButtonsVisible(visible: boolean): void {
+    this._actionButtonsVisible.set(visible);
   }
 
   public scrollToTop(): void {
-    this.callbacks.scrollToTop();
-  }
-
-  public showFunctions(): void {
-    this.callbacks.showFunctions();
+    this.scrollToTopCallback();
   }
 }
