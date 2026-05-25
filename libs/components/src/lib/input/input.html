@@ -23,12 +23,11 @@
     (input)="onInput($event)"
     (blur)="onBlur()"
   />
-  @if (showReset()) {
+  @if (showReset() && hasValue() && !disabled()) {
     <button
       class="button-icon material-icons"
       [attr.aria-label]="translations.resetInput()"
       [title]="translations.resetInput()"
-      [disabled]="!hasValue() || disabled()"
       (click)="onReset()"
     >
       backspace
