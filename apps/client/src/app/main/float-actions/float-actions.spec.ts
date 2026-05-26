@@ -50,14 +50,38 @@ describe('FloatActions', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="test-action-button"]')).toBeTruthy();
   });
 
-  it('offsets scroll-to-top when the registered action menu is expanded', () => {
+  it('does not offset scroll-to-top when the registered action menu is expanded', () => {
     service.setActionsComponent(TestFloatActionButtons);
     service.setActionButtonsVisible(true);
     service.updateConfig({ scrollToTopAvailable: true });
 
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.float-button-scroll-to-top-actions-offset')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test-id="scroll-to-top"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.float-button-scroll-to-top-actions-offset')).toBeNull();
+  });
+
+  it('renders scroll-to-top as a labelled icon button outside the action slot', () => {
+    service.setActionsComponent(TestFloatActionButtons);
+    service.updateConfig({ scrollToTopAvailable: true });
+
+    fixture.detectChanges();
+
+    const scrollButton = fixture.nativeElement.querySelector('[data-test-id="scroll-to-top"]');
+    expect(fixture.nativeElement.querySelector('.float-actions-slot [data-test-id="scroll-to-top"]')).toBeNull();
+    expect(scrollButton.querySelector('.material-icons')?.textContent.trim()).toBe('arrow_upward');
+    expect(scrollButton.textContent).toContain('ScrollToTop');
+  });
+
+  it('renders scroll-to-top when no action component is registered', () => {
+    service.updateConfig({ scrollToTopAvailable: true });
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="scroll-to-top"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]').classList).toContain(
+      'float-search-bar-menu-only'
+    );
   });
 
   it('opens the mobile menu dialog', () => {

@@ -52,24 +52,27 @@
     display: none;
   }
 
+  div.float-search-content {
+    margin-left: var(--size-md);
+  }
+
   .float-search-bar-menu-only {
     display: none;
-  }
-}
-
-@media (width >= 1600px) {
-  .float-button-scroll-to-top {
-    right: calc(
-      (100% - min(var(--container-max-width), calc(100% - 2 * var(--size-xs)))) / 2 -
-        var(--float-button-container-size) - var(--size-xs)
-    );
-    bottom: var(--size-xs) !important;
   }
 }
 
 .float-search-content {
   min-width: 0;
   flex: 1;
+  margin-left: 0;
+}
+
+.float-actions-slot {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .float-button {
@@ -90,19 +93,31 @@
 
 .float-button-scroll-to-top {
   position: absolute;
-  right: 0;
-  bottom: calc(var(--float-button-container-size) + var(--size-xs));
-  display: flex;
-  flex-direction: column;
+  bottom: calc(var(--float-search-height) + 2 * var(--size-xs));
+  left: 50%;
+  z-index: 1;
+  height: auto;
+  width: max-content;
+  transform: translateX(-50%);
+}
+
+.scroll-to-top-button {
+  display: inline-flex;
   align-items: center;
-  gap: var(--size-xs);
-  margin: var(--size-md);
+  justify-content: center;
+  gap: var(--size-2xs);
+  height: auto;
+  min-width: 100%;
+  padding-block: var(--size-3xs);
+  padding-inline: var(--size-2xs);
+  color: var(--main-color);
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  font: inherit;
+  font-size: var(--font-size-sm);
 
-  &.float-button-scroll-to-top-bar-offset {
-    bottom: calc(var(--float-search-height) + var(--float-button-container-size) + 2 * var(--size-xs));
-  }
-
-  &.float-button-scroll-to-top-actions-offset.float-button-scroll-to-top-bar-offset {
-    bottom: calc(var(--float-search-height) + 4 * var(--float-button-container-size) + 5 * var(--size-xs));
+  .material-icons {
+    font-size: var(--font-size-sm);
   }
 }

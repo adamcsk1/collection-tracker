@@ -319,6 +319,25 @@ describe('List', () => {
     }
   });
 
+  it('keeps scroll-to-top available after reset scroll events while still scrolled down', async () => {
+    vi.useFakeTimers();
+    try {
+      const element = document.createElement('div');
+      element.scrollTop = 120;
+      element.scrollTo = vi.fn();
+      (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
+      component['scrollToTopAvailable'].set(true);
+
+      component['onResetScrollPosition']();
+      element.dispatchEvent(new Event('scroll'));
+      await vi.advanceTimersByTimeAsync(500);
+
+      expect(component['scrollToTopAvailable']()).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('emits when float button functions are shown', () => {
     const showFunctions = vi.fn();
     fixture.componentRef.instance.showFunctions.subscribe(showFunctions);
