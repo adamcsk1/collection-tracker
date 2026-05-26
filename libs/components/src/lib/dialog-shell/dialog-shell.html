@@ -57,7 +57,12 @@
         <div #menuContent class="dialog-actions-menu-content">
           <ng-content select="[dialog-shell-menu-content]" />
         </div>
-        <button type="button" data-test-id="dialog-actions-close-button" class="button-borderless" (click)="onClose()">
+        <button
+          type="button"
+          data-test-id="dialog-actions-close-button"
+          class="button-borderless unaligned"
+          (click)="onClose()"
+        >
           <i class="material-icons" aria-hidden="true">close</i>
           {{ translations.close() }}
         </button>
