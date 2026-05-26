@@ -19,26 +19,27 @@
   }
 
   @if (showFloatActions() && actionsComponent(); as component) {
-    <ng-container [ngComponentOutlet]="component" />
+    <div class="float-actions-slot">
+      <ng-container [ngComponentOutlet]="component" />
+    </div>
   }
 </section>
 
 @if (config().scrollToTopAvailable) {
   <div
     class="float-button float-button-scroll-to-top"
-    [class.float-button-scroll-to-top-actions-offset]="actionButtonsVisible()"
-    [class.float-button-scroll-to-top-bar-offset]="searchTemplate() || showFloatActions()"
     animate.enter="animation-fade-in"
     animate.leave="animation-fade-out"
   >
     <button
       data-test-id="scroll-to-top"
-      class="button-icon material-icons"
+      class="scroll-to-top-button"
       [attr.aria-label]="translations.scrollToTop()"
       [title]="translations.scrollToTop()"
       (click)="onScrollToTop()"
     >
-      arrow_upward
+      <span class="material-icons" aria-hidden="true">arrow_upward</span>
+      <span>{{ translations.scrollToTop() }}</span>
     </button>
   </div>
 }

@@ -4,8 +4,8 @@
 
 .float-buttons-container {
   position: absolute;
-  right: var(--size-xs);
-  bottom: calc(100% + var(--size-xs));
+  right: 0;
+  bottom: calc(100% + var(--size-md));
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -198,7 +198,7 @@ export class List implements OnDestroy {
       const subscription = fromEvent(element, 'scroll')
         .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
-          this.scrollToTopAvailable.set(false);
+          this.scrollToTopAvailable.set(element.scrollTop !== 0);
           subscription.unsubscribe();
         });
     }
