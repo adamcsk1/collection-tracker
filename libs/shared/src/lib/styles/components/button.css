@@ -62,4 +62,9 @@ button {
       justify-content: center;
     }
   }
+
+  &.unaligned {
+    width: auto !important;
+    justify-content: flex-start !important;
+  }
 }

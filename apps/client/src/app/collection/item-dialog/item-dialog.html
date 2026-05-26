@@ -239,7 +239,7 @@
     @if (!editMode()) {
       @if (permissionUpdate() && seriesTracker()) {
         <button
-          class="button-borderless"
+          class="button-borderless unaligned"
           data-test-id="item-dialog-refresh-series-metadata"
           (click)="onRefreshSeriesMetadata()"
         >
@@ -247,7 +247,7 @@
           {{ translations.refreshSeriesMetadata() }}
         </button>
         <button
-          class="button-borderless"
+          class="button-borderless unaligned"
           data-test-id="item-dialog-manage-series-metadata"
           (click)="onManageSeriesMetadata()"
         >
@@ -255,7 +255,7 @@
           {{ translations.manageSeriesMetadata() }}
         </button>
         <button
-          class="button-borderless"
+          class="button-borderless unaligned"
           data-test-id="item-dialog-remove-series-metadata"
           (click)="onRemoveSeriesMetadata()"
         >
@@ -266,7 +266,7 @@
       @if (permissionUpdate() && libraryItem()) {
         @if (watched()) {
           <button
-            class="button-borderless button-custom"
+            class="button-borderless unaligned"
             data-test-id="item-dialog-mark-unwatched"
             (click)="onMarkAsUnwatched()"
           >
@@ -275,7 +275,7 @@
           </button>
         } @else {
           <button
-            class="button-borderless button-custom"
+            class="button-borderless unaligned"
             data-test-id="item-dialog-mark-watched"
             (click)="onMarkAsWatched()"
           >
@@ -285,7 +285,7 @@
         }
         @if (favorite()) {
           <button
-            class="button-borderless button-custom"
+            class="button-borderless unaligned"
             data-test-id="item-dialog-remove-favorite"
             (click)="onRemoveFavorite()"
           >
@@ -294,7 +294,7 @@
           </button>
         } @else {
           <button
-            class="button-borderless button-custom"
+            class="button-borderless unaligned"
             data-test-id="item-dialog-mark-favorite"
             (click)="onMarkAsFavorite()"
           >
