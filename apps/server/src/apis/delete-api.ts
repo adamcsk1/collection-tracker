@@ -1,7 +1,7 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { deleteCollectionItem, findCollectionItemByImdbId } from '../core/database/repositories/collection-repository';
+import { deleteCollectionItem, findCollectionItemByImdbId } from '../core/database/repositories/collection';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';

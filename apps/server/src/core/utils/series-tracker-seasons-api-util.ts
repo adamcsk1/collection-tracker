@@ -1,7 +1,7 @@
 import { SeriesTrackerSeasonsApiRequestModel, SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
 import { getDatabase } from '../database/database';
-import { findCollectionItemByImdbId } from '../database/repositories/collection-repository';
+import { findCollectionItemByImdbId } from '../database/repositories/collection';
 
 export const normalizeSeriesTrackerSeasons = (
   body: SeriesTrackerSeasonsApiRequestModel

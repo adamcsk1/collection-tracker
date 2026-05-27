@@ -1,7 +1,7 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { findTagSuggestions } from '../core/database/repositories/collection-repository';
+import { findTagSuggestions } from '../core/database/repositories/collection';
 import { findReadableOwnerHashes } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
