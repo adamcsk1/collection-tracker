@@ -13,14 +13,6 @@
       [class.input-suggestions-pane-small]="showReset()"
       [class.input-suggestions-pane-above]="showSuggestionsAbove()"
     >
-      <button
-        class="input-suggestions-close button-icon material-icons"
-        [attr.aria-label]="translations.closeSuggestions()"
-        [title]="translations.closeSuggestions()"
-        (click)="onCloseSuggestion()"
-      >
-        close
-      </button>
       <ul
         class="input-suggestions"
         role="listbox"

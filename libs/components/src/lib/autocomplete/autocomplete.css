@@ -121,20 +121,6 @@ label {
       border-radius: var(--border-radius) var(--border-radius) 0 0;
     }
   }
-
-  button {
-    &.input-suggestions-close {
-      z-index: 3;
-      position: absolute;
-      right: -14px;
-      top: -14px;
-      background-color: var(--background-color-alt);
-      border: var(--border-style);
-      border-radius: 100%;
-      padding: 2px;
-      font-size: var(--font-size-lg);
-    }
-  }
 }
 
 .input-messages {
