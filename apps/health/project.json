@@ -48,9 +48,14 @@
             "glob": "**/*",
             "input": "libs/public/src",
             "output": "."
+          },
+          {
+            "glob": "material-icons-latin-400-normal.woff2",
+            "input": "node_modules/@fontsource/material-icons/files",
+            "output": "fonts"
           }
         ],
-        "styles": ["node_modules/@fontsource/material-icons/index.css", "apps/health/src/styles.css"],
+        "styles": ["apps/health/src/styles.css"],
         "outputPath": "dist/apps/health"
       },
       "configurations": {
