@@ -48,7 +48,6 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
   private lastKeycode = '';
   private lastEventWasAccept = false;
   protected readonly translations = {
-    closeSuggestions: computed(() => this.ngxSignalTranslate.translate('CloseSuggestions')),
     suggestions: computed(() => this.ngxSignalTranslate.translate('Suggestions')),
     resetInput: computed(() => this.ngxSignalTranslate.translate('ResetInput')),
     validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
@@ -188,11 +187,6 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
 
   protected onFocus(): void {
     this.focused.set(true);
-  }
-
-  protected onCloseSuggestion(): void {
-    this._suggestions.set([]);
-    this.inputElement()?.nativeElement.focus();
   }
 
   private getSuggestions(): void {

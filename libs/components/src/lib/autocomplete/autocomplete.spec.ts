@@ -371,17 +371,6 @@ describe('Autocomplete component', () => {
     expect(noHintComponent['describedBy']()).toBeNull();
   });
 
-  it('closes suggestions and refocuses the input', () => {
-    component['_suggestions'].set(['alpha', 'beta']);
-    const inputEl = (component as any).inputElement().nativeElement as HTMLInputElement;
-    const focusSpy = vi.spyOn(inputEl, 'focus');
-
-    component['onCloseSuggestion']();
-
-    expect(component['suggestions']()).toEqual([]);
-    expect(focusSpy).toHaveBeenCalled();
-  });
-
   it('emits userEvent when a key is pressed in the input', () => {
     const userEventSpy = vi.fn();
     const unsubscribe = component['userEvent'].subscribe(userEventSpy);
