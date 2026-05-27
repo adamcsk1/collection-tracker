@@ -97,6 +97,16 @@ describe('FloatActions', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="nav-menu-button"]')).toBeTruthy();
   });
 
+  it('marks the float bar as no-search when actions render without a search template', () => {
+    service.setSearchTemplate(null);
+    service.setActionsComponent(TestFloatActionButtons);
+    fixture.detectChanges();
+
+    const floatSearchBar = fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]');
+    expect(floatSearchBar.classList).toContain('float-search-bar-no-search');
+    expect(floatSearchBar.classList).not.toContain('float-search-bar-menu-only');
+  });
+
   it('collapses the action menu when actions reset', () => {
     service.setActionsComponent(TestFloatActionButtons);
     fixture.detectChanges();

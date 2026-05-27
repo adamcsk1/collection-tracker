@@ -36,6 +36,10 @@
   margin-inline: 0;
 }
 
+.float-search-bar-no-search {
+  justify-content: space-between;
+}
+
 .menu-button {
   flex: 0 0 var(--float-button-container-size);
   height: var(--float-button-container-size);
@@ -45,7 +49,7 @@
 
 @media (width > 768px) {
   :host {
-    left: 280px;
+    left: var(--sidebar-width);
   }
 
   .menu-button {
@@ -58,6 +62,13 @@
 
   .float-search-bar-menu-only {
     display: none;
+  }
+
+  .float-search-bar-no-search {
+    right: auto;
+    width: auto;
+    margin-inline: 0;
+    justify-content: flex-start;
   }
 }
 

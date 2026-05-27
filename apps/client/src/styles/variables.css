@@ -5,9 +5,10 @@
   --image-height: 125px;
   --container-max-width: 1200px;
   --container-max-width-mobile: 95vw;
+  --sidebar-width: 280px;
+  --logo-small-size: 40px;
 
   /* Customs */
-  --logo-small-size: 40px;
   --card-width: 160px;
   --card-aspect-ratio: 2 / 3;
   --grid-gap: var(--size-md);
