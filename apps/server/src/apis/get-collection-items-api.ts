@@ -1,7 +1,7 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { searchCollectionItems } from '../core/database/repositories/collection-repository';
+import { searchCollectionItems } from '../core/database/repositories/collection';
 import { findReadableOwnerHashes } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { parseFilters, parseNumber } from '../core/utils/query-parse-util';

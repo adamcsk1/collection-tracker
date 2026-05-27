@@ -2,7 +2,7 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { MarkAllWatchedApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { markAllAsWatched } from '../core/database/repositories/collection-repository';
+import { markAllAsWatched } from '../core/database/repositories/collection';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 

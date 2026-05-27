@@ -8,7 +8,7 @@ import {
   countCollectionItems,
   findCollectionItems,
   updateCollectionItem,
-} from '../core/database/repositories/collection-repository';
+} from '../core/database/repositories/collection';
 import { fetchAndCacheImage } from '../core/image/image-proxy';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';

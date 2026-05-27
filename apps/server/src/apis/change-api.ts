@@ -10,7 +10,7 @@ import {
 import { ChangeApiRequestModel, ChangeApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { findCollectionItemByImdbId, updateCollectionItem } from '../core/database/repositories/collection-repository';
+import { findCollectionItemByImdbId, updateCollectionItem } from '../core/database/repositories/collection';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';

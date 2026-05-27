@@ -3,7 +3,7 @@ import { AiQueryRequestModel, AiQueryResponseModel } from '@shared/models/ai-mod
 import { CollectionItemApiModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { findCollectionItemsForPrompt } from '../core/database/repositories/collection-repository';
+import { findCollectionItemsForPrompt } from '../core/database/repositories/collection';
 import { findReadableOwnerHashes } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { debugLog, errorLog, warningLog } from '../core/logger';
