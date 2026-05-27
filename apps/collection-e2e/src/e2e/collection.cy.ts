@@ -255,7 +255,7 @@ describe('Collection — random pick', () => {
 });
 
 describe('Collection — scroll to top', () => {
-  const items = buildCollectionItems(Array.from({ length: 20 }, (_, index) => `Top Test Movie ${index + 1}`));
+  const items = buildCollectionItems(Array.from({ length: 60 }, (_, index) => `Top Test Movie ${index + 1}`));
 
   beforeEach(() => {
     cy.autoLogin();
@@ -264,7 +264,9 @@ describe('Collection — scroll to top', () => {
   });
 
   it('scroll-to-top button appears after scrolling and returns to top', () => {
-    CollectionPage.getList().scrollTo('bottom', { ensureScrollable: false });
+    CollectionPage.getListItems().should('have.length', 50);
+    CollectionPage.getList().scrollTo('bottom');
+    CollectionPage.getList().invoke('scrollTop').should('be.greaterThan', 0);
     CollectionPage.getScrollToTopButton().should('be.visible');
     CollectionPage.getScrollToTopButton().click();
     CollectionPage.getList().invoke('scrollTop').should('equal', 0);
