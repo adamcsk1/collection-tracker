@@ -68,6 +68,17 @@ describe('BlockerLoading component', () => {
     expect(store.state.withoutDelay()).toBe(false);
   });
 
+  it('uses the small shell logo asset', () => {
+    const store = TestBed.inject(blockerLoadingStateToken);
+
+    store.setState('withoutDelay', true);
+    store.setState('show', true);
+    fixture.detectChanges();
+
+    const image = fixture.nativeElement.querySelector('img') as HTMLImageElement;
+    expect(image.getAttribute('src')).toBe('icons/logo-shell-mock.png');
+  });
+
   it('cancels delayed show when toggled off before timeout', () => {
     const store = TestBed.inject(blockerLoadingStateToken);
 

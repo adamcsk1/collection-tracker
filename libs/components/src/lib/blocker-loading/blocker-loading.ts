@@ -24,6 +24,7 @@ export class BlockerLoading {
   protected readonly showBlockerLoading = signal(false);
   protected readonly message = this.blockerLoadingState.state.message;
   protected readonly themeLogo = this.theme.themeLogo;
+  protected readonly shellLogo = computed(() => this.themeLogo().replace('logo', 'logo-shell'));
 
   constructor() {
     effect(() => {
