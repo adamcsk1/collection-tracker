@@ -57,7 +57,7 @@
     overflow: hidden;
     border: var(--border-style);
     border-radius: var(--border-radius);
-    background: var(--glassy-background);
+    background: var(--background-color);
     box-shadow: 0 var(--size-2xs) var(--size-md) rgb(0 0 0 / 20%);
     padding: var(--size-2xs);
 
