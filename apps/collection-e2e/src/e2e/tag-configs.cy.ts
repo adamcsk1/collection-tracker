@@ -173,10 +173,12 @@ describe('Tag Configs — import and export', () => {
 
   it('exports tag configs and imports them as an extension while skipping conflicts', () => {
     TagConfigsPage.getExportButton().click();
-    cy.readFile(exportPath).should('deep.equal', {
-      type: 'collection-tracker-tag-configs',
-      version: 1,
-      tagConfigs: [exportedExistingConfig, exportedImportedConfig],
+    cy.readFile(exportPath, null, { timeout: 15000 }).should((source) => {
+      expect(JSON.parse(source.toString('utf8'))).to.deep.equal({
+        type: 'collection-tracker-tag-configs',
+        version: 1,
+        tagConfigs: [exportedExistingConfig, exportedImportedConfig],
+      });
     });
 
     cy.request('POST', '/api/v1/tag/change-config', [localExistingConfig]);
