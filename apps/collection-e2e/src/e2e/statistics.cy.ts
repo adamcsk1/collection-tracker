@@ -5,7 +5,9 @@ import { StatisticsPage } from '../page-objects/statistics.po';
 describe('Statistics — empty collection', () => {
   beforeEach(() => {
     cy.autoLogin();
+    cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
     StatisticsPage.visit();
+    cy.wait('@getStatistics');
   });
 
   it('shows the empty state message when there are no items', () => {
@@ -23,7 +25,9 @@ describe('Statistics — with movies and series', () => {
     cy.request('POST', '/api/v1/create', movieOne);
     cy.request('POST', '/api/v1/create', movieTwo);
     cy.request('POST', '/api/v1/create', seriesOne);
+    cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
     StatisticsPage.visit();
+    cy.wait('@getStatistics');
   });
 
   it('shows the summary section', () => {
@@ -119,7 +123,9 @@ describe('Statistics — wishlist', () => {
   beforeEach(() => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', wishlistItem);
+    cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
     StatisticsPage.visit();
+    cy.wait('@getStatistics');
   });
 
   it('shows the wishlist count and navigates to the wishlist page', () => {
