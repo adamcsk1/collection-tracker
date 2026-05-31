@@ -12,7 +12,9 @@ describe('Series metadata dialog', () => {
       listType: 'series-tracker',
       fetchSeriesMetadata: false,
     });
+    cy.intercept('GET', '/api/v1/items*').as('getSeriesTrackerItems');
     CollectionPage.visitSeriesTracker();
+    cy.wait('@getSeriesTrackerItems');
   });
 
   it('saves manual season metadata and uses it for progress options', () => {
@@ -81,6 +83,7 @@ describe('Series metadata dialog', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.visitSeriesTracker();
+    cy.wait('@getSeriesTrackerItems');
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogEditButton().click();
     CollectionPage.getItemDialogWatchedUpToSeasonSelect().find('option').should('have.length', 3);

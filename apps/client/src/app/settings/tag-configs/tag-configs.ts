@@ -98,8 +98,10 @@ export class TagConfigs {
       const uniqueTags = this.uniqueTags();
 
       if (uniqueTags.length > 0 && storedConfigs.length > 0) {
-        storedConfigs = storedConfigs.filter((config) => uniqueTags.includes(config.tag));
-        untracked(() => this.storeTagConfigs(storedConfigs, false));
+        const prunedConfigs = storedConfigs.filter((config) => uniqueTags.includes(config.tag));
+        if (prunedConfigs.length !== storedConfigs.length) {
+          untracked(() => this.storeTagConfigs(prunedConfigs, false));
+        }
         effectRef.destroy();
       }
     });

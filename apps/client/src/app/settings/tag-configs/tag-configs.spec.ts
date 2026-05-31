@@ -210,6 +210,14 @@ describe('TagConfigs component', () => {
     expect(tagConfigsService.syncUserTagConfigs).not.toHaveBeenCalled();
   });
 
+  it('does not resync stored configs when collection tags already match them', () => {
+    tagConfigsState.setState('configs', [buildTagConfig('#tag', { color: '#123456' })]);
+
+    createComponent(['#tag']);
+
+    expect(tagConfigsService.syncUserTagConfigs).not.toHaveBeenCalled();
+  });
+
   it('adds a new config with defaults when color changes for unknown tag', () => {
     createComponent(['#new']);
 
