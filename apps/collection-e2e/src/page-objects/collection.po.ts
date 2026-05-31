@@ -18,7 +18,7 @@ export const CollectionPage = {
   getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
   getSharedBadges: () => cy.getByTestId('list-item-shared'),
   getListItemUserRates: () => cy.getByTestId('list-item-user-rate'),
-  getListItemImages: () => cy.getByTestId('list-item-image'),
+  getListItemImages: (options?: Partial<Cypress.Timeoutable>) => cy.get('[data-test-id="list-item-image"]', options),
   getAllItems: () => cy.getByTestId('list-item-title'),
   getEmptyState: () => cy.getByTestId('list-empty'),
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),

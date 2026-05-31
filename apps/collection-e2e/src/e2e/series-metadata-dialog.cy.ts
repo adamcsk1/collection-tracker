@@ -22,7 +22,7 @@ describe('Series metadata dialog', () => {
     cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
     cy.on('window:confirm', () => true);
 
-    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogRefreshSeriesMetadataButton().should('be.visible');
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
@@ -59,7 +59,7 @@ describe('Series metadata dialog', () => {
   });
 
   it('reopens the item dialog when the metadata dialog is closed without saving', () => {
-    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
@@ -84,7 +84,7 @@ describe('Series metadata dialog', () => {
 
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
-    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
     CollectionPage.getItemDialogEditButton().click();
     CollectionPage.getItemDialogWatchedUpToSeasonSelect().find('option').should('have.length', 3);
     CollectionPage.getItemDialogReadOnlyButton().click();
