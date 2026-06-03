@@ -84,8 +84,12 @@ export class ApiService extends BaseApiService {
     return this.request('POST', `/items/refresh-images${this.buildQuery({ ownerShareCode })}`);
   }
 
-  public getItemSearchSuggestions(query: string, limit = 10): Observable<CollectionItemSuggestionsApiResponseModel> {
-    return this.request('GET', `/items/search-suggestions${this.buildQuery({ query, limit })}`);
+  public getItemSearchSuggestions(
+    query: string,
+    limit = 10,
+    listType?: CollectionListTypeModel
+  ): Observable<CollectionItemSuggestionsApiResponseModel> {
+    return this.request('GET', `/items/search-suggestions${this.buildQuery({ query, limit, listType })}`);
   }
 
   public getTagSuggestions(query: string, limit = 10): Observable<TagSuggestionsApiResponseModel> {

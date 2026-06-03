@@ -16,8 +16,6 @@ import { ActivatedRoute } from '@angular/router';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
-import { CollectionItemFiltersApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, EMPTY, map, startWith, switchMap } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
@@ -28,6 +26,7 @@ import { collectionStateToken } from '../collection-store';
 import { ItemDialog } from '../item-dialog/item-dialog';
 import { List } from '../list/list';
 import { AiSearchService } from '../search/ai-search-service';
+import { buildStandardSearchFilters } from '../utils/collection-search-filter-util';
 import { SearchSuggestionService } from './search/search-suggestion-service';
 
 @Component({
@@ -91,7 +90,7 @@ export class CollectionLibrary {
       ? promptText
         ? this.api.getMatchedItems({ imdbIds: aiIds as string[], offset, limit })
         : this.api.searchItems({ listType: 'library' }, offset, limit)
-      : this.api.searchItems(this.buildFilters(searchText), offset, limit);
+      : this.api.searchItems(buildStandardSearchFilters(searchText, 'library'), offset, limit);
   };
 
   constructor() {
@@ -174,12 +173,5 @@ export class CollectionLibrary {
         catchError(() => EMPTY)
       )
       .subscribe();
-  }
-
-  private buildFilters(searchText: string): CollectionItemFiltersApiModel {
-    const search = searchText.trim();
-    if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false, listType: 'library' };
-    if (search.startsWith('#')) return { tags: [search], tagMode: 'all', listType: 'library' };
-    return search ? { search, listType: 'library' } : { listType: 'library' };
   }
 }

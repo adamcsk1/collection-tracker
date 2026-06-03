@@ -11,6 +11,9 @@ export const CollectionPage = {
 
   // Search
   getSearchInput: () => cy.getByTestId('collection-search').find('input'),
+  getSeriesTrackerSearchInput: () => cy.getByTestId('series-tracker-search').find('input'),
+  getWatchLaterSearchInput: () => cy.getByTestId('watch-later-search').find('input'),
+  getWishlistSearchInput: () => cy.getByTestId('wishlist-search').find('input'),
 
   // List
   getList: () => cy.getByTestId('collection-list'),
