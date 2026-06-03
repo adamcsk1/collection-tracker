@@ -291,3 +291,23 @@ describe('Collection sharing - item permissions', () => {
     });
   });
 });
+
+describe('Collection sharing - image refresh', () => {
+  it('refreshes images for a shared library with update permission', () => {
+    setupShare({ canRead: true, canCreate: false, canUpdate: true, canDelete: false }).then(({ owner, sharedUser }) => {
+      seedOwnerItem(owner, 'Shared Image Refresh Movie', `tt${uniqueId().slice(0, 7)}`);
+      signInThroughUi(sharedUser);
+      SettingsPage.visitImages();
+
+      SettingsPage.getImagesRefreshLibrarySelect().should('be.visible').select(owner.shareCode);
+      cy.intercept('POST', '/api/v1/items/refresh-images*').as('refreshImages');
+      cy.on('window:confirm', () => true);
+      SettingsPage.getImagesRefreshStartButton().click();
+
+      cy.wait('@refreshImages').then((interception) => {
+        expect(interception.request.url).to.include(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
+        expect(interception.response?.statusCode).to.eq(200);
+      });
+    });
+  });
+});

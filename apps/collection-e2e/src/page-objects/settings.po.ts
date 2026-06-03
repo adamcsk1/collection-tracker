@@ -36,6 +36,7 @@ export const SettingsPage = {
     cy.getByTestId('settings-clear-local-storage-after-logout').scrollIntoView().find('input[type="checkbox"]'),
 
   // Images page
+  getImagesRefreshLibrarySelect: () => cy.getByTestId('settings-images-refresh-library').find('select'),
   getImagesRefreshStartButton: () => cy.getByTestId('settings-images-refresh-start').scrollIntoView(),
 
   // Global watch status page

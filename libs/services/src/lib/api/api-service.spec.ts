@@ -406,6 +406,16 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ count: 5, checked: 5, fixed: 1, errors: 0 });
   });
 
+  it('refreshes shared library images when owner share code is provided', async () => {
+    const promise = lastValueFrom(service.refreshImages('owner-code'));
+
+    const refreshRequest = httpMock.expectOne('https://api.test/items/refresh-images?ownerShareCode=owner-code');
+    expect(refreshRequest.request.method).toBe('POST');
+    refreshRequest.flush({ count: 1, checked: 1, fixed: 1, errors: 0 });
+
+    await expect(promise).resolves.toEqual({ count: 1, checked: 1, fixed: 1, errors: 0 });
+  });
+
   it('alerts and rethrows when refreshImages fails', async () => {
     const promise = lastValueFrom(service.refreshImages());
 
