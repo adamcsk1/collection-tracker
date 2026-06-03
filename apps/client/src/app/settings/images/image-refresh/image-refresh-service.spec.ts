@@ -10,22 +10,26 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { EMPTY, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CollectionService } from '../../../collection/collection-service';
 import { ImageRefreshService } from './image-refresh-service';
 
 describe('ImageRefreshService', () => {
   let service: ImageRefreshService;
   let api: { refreshImages: ReturnType<typeof vi.fn> };
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
+  let collection: { triggerReload: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     api = { refreshImages: vi.fn(() => of({ count: 2, checked: 2, fixed: 0, errors: 0 })) };
     confirm = { ifConfirmed: vi.fn(() => of(true)) };
+    collection = { triggerReload: vi.fn() };
 
     TestBed.configureTestingModule({
       providers: [
         ImageRefreshService,
         { provide: ApiService, useValue: api },
         { provide: ConfirmService, useValue: confirm },
+        { provide: CollectionService, useValue: collection },
         { provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } },
         provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
         provideStore(initialToastState, toastStateToken),
@@ -64,6 +68,13 @@ describe('ImageRefreshService', () => {
     expect(service.state().checked).toBe(2);
     expect(service.state().fixed).toBe(0);
     expect(service.state().errors).toBe(0);
+    expect(collection.triggerReload).toHaveBeenCalled();
+  });
+
+  it('passes selected shared library to the API', () => {
+    service.refreshImages('owner-code');
+
+    expect(api.refreshImages).toHaveBeenCalledWith('owner-code');
   });
 
   it('hides blocker after processing completes', () => {

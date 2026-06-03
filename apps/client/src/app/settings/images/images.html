@@ -1,6 +1,16 @@
 <p>{{ translations.messageMissingImages() }}</p>
 
 <div class="actions">
+  @if (showLibrarySelect()) {
+    <libc-select
+      data-test-id="settings-images-refresh-library"
+      [label]="translations.library()"
+      [value]="selectedOwnerShareCode()"
+      [options]="libraryOptions()"
+      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      (valueChange)="onLibraryChange($event)"
+    />
+  }
   <button
     data-test-id="settings-images-refresh-start"
     type="button"

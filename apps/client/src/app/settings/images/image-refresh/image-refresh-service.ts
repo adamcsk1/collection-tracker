@@ -5,6 +5,7 @@ import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { take, tap } from 'rxjs';
+import { CollectionService } from '../../../collection/collection-service';
 import { ImageRefreshStateModel } from './image-refresh-model';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class ImageRefreshService {
   private readonly api = inject(ApiService);
   private readonly confirm = inject(ConfirmService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  private readonly collection = inject(CollectionService);
   private readonly _state = signal<ImageRefreshStateModel>({
     running: false,
     count: 0,
@@ -23,7 +25,7 @@ export class ImageRefreshService {
   });
   public readonly state = this._state.asReadonly();
 
-  public refreshImages(): void {
+  public refreshImages(ownerShareCode?: string): void {
     this.confirm.ifConfirmed(this.ngxSignalTranslate.translate('Confirm.ImageRefresh')).subscribe(() => {
       this.blockerLoadingState.patchState('withoutDelay', true);
       this.blockerLoadingState.patchState('show', true);
@@ -38,7 +40,7 @@ export class ImageRefreshService {
       });
 
       this.api
-        .refreshImages()
+        .refreshImages(ownerShareCode)
         .pipe(
           take(1),
           tap((response) => {
@@ -60,6 +62,7 @@ export class ImageRefreshService {
             } else {
               this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ImagesRegenerated'));
             }
+            this.collection.triggerReload();
           })
         )
         .subscribe();

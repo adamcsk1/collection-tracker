@@ -1156,8 +1156,14 @@ paths:
     post:
       operationId: refreshImages
       summary: Refresh collection item images
-      description: Checks every collection item image through the image proxy, caches available images, and fetches updated poster URLs from OMDb for broken images.
+      description: Checks every collection item image through the image proxy, caches available images, and fetches updated poster URLs from OMDb for broken images. When `ownerShareCode` is provided, the refresh targets that shared library and requires update permission.
       tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for refreshing an incoming shared library.
       responses:
         '200':
           description: Summary of the refresh operation.
@@ -1165,6 +1171,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RefreshImagesResponse'
+        '403':
+          description: The authenticated user cannot update the requested library.
+        '404':
+          description: The requested shared library owner was not found.
 
   /tags/suggestions:
     get:

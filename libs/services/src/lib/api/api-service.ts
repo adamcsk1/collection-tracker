@@ -80,8 +80,8 @@ export class ApiService extends BaseApiService {
     return this.request('POST', '/items/mark-all-unwatched');
   }
 
-  public refreshImages(): Observable<RefreshImagesApiResponseModel> {
-    return this.request('POST', '/items/refresh-images');
+  public refreshImages(ownerShareCode?: string): Observable<RefreshImagesApiResponseModel> {
+    return this.request('POST', `/items/refresh-images${this.buildQuery({ ownerShareCode })}`);
   }
 
   public getItemSearchSuggestions(query: string, limit = 10): Observable<CollectionItemSuggestionsApiResponseModel> {

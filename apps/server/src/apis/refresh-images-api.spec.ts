@@ -1,6 +1,7 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
+import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../core/logger', () => ({
@@ -10,16 +11,25 @@ vi.mock('../core/logger', () => ({
 
 let fetchAndCacheImageResult = true;
 
-const insertUser = () => {
-  getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+const insertUser = (usernameHash = 'user') => {
+  getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertItem = (imdbId: string, image: string, hash = 'hash') => {
+const insertItem = (imdbId: string, image: string, hash = 'hash', usernameHash = 'user') => {
   const db = getDatabase();
   db.prepare(
     `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', imdbId, 'Title', 'title', '', '', '', image, hash);
+  ).run(usernameHash, imdbId, 'Title', 'title', '', '', '', image, hash);
+};
+
+const insertShare = (ownerHash: string, sharedWithHash: string, canUpdate: boolean) => {
+  getDatabase()
+    .prepare(
+      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(ownerHash, sharedWithHash, 1, 0, canUpdate ? 1 : 0, 0);
 };
 
 describe('refresh-images-api', () => {
@@ -159,5 +169,67 @@ describe('refresh-images-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
+  });
+
+  it('refreshes a shared library when the user has update permission', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertShare('owner', 'user', true);
+    insertItem('tt-own', 'https://images.example/own.jpg', 'own-hash', 'user');
+    insertItem('tt-shared', 'https://images.example/shared-broken.jpg', 'shared-hash', 'owner');
+
+    fetchAndCacheImageResult = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          imdbID: 'tt-shared',
+          Poster: 'https://images.example/shared-new.jpg',
+        }),
+      }))
+    );
+
+    vi.doMock('../core/image/image-proxy', () => ({
+      fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
+    }));
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-images-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
+
+    const rows = getDatabase()
+      .prepare('SELECT username_hash, image FROM collection_items ORDER BY username_hash')
+      .all() as Array<{ username_hash: string; image: string }>;
+    expect(rows).toEqual([
+      { username_hash: 'owner', image: 'https://images.example/shared-new.jpg' },
+      { username_hash: 'user', image: 'https://images.example/own.jpg' },
+    ]);
+  });
+
+  it('rejects shared image refresh without update permission', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertShare('owner', 'user', false);
+
+    vi.doMock('../core/image/image-proxy', () => ({
+      fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
+    }));
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-images-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 });

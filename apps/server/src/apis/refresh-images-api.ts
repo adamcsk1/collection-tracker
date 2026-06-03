@@ -9,6 +9,8 @@ import {
   findCollectionItems,
   updateCollectionItem,
 } from '../core/database/repositories/collection';
+import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { fetchAndCacheImage } from '../core/image/image-proxy';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
@@ -44,8 +46,20 @@ export const register = (app: FastifyInstance): void => {
       await debugLog('POST /items/refresh-images started');
       const db = getDatabase();
       const apiKey = process.env.OMDB_API_KEY!;
-      const ownHash = request.usernameHash;
-      const totalItems = countCollectionItems(db, [ownHash]);
+      const query = (request.query ?? {}) as Record<string, unknown>;
+      const ownerHash =
+        typeof query.ownerShareCode === 'string'
+          ? findUserByShareCode(db, query.ownerShareCode)?.username_hash
+          : request.usernameHash;
+      if (!ownerHash) {
+        return response.code(404).send();
+      }
+
+      if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'update')) {
+        return response.code(403).send();
+      }
+
+      const totalItems = countCollectionItems(db, [ownerHash]);
       const batchSize = 50;
 
       await debugLog(`Found ${totalItems} items to check`);
@@ -56,7 +70,7 @@ export const register = (app: FastifyInstance): void => {
       let offset = 0;
 
       while (offset < totalItems) {
-        const items = findCollectionItems(db, [ownHash], offset, batchSize);
+        const items = findCollectionItems(db, [ownerHash], offset, batchSize);
         for (const item of items) {
           checked++;
           await debugLog(`[${item.IMDbId}] Checking image availability: ${item.image}`);
@@ -77,7 +91,7 @@ export const register = (app: FastifyInstance): void => {
               image: omdbItem.Poster,
             };
             const newHash = getItemHash(updatedItem);
-            updateCollectionItem(db, ownHash, item.IMDbId, newHash, updatedItem);
+            updateCollectionItem(db, ownerHash, item.IMDbId, newHash, updatedItem);
             fixed++;
           } else {
             await debugLog(`[${item.IMDbId}] No new poster available from OMDb`);
