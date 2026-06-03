@@ -1,5 +1,5 @@
 import { VIRTUAL_TAGS } from '@shared/constants/tags-const';
-import { CollectionItemSuggestionApiModel } from '@shared/models/api-model';
+import { CollectionItemSuggestionApiModel, CollectionListTypeModel } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
 import { escapeLike, normalizeLimit } from './collection-query';
 import { INTERNAL_TAGS, SUGGESTION_SYSTEM_TAGS } from './collection-tags';
@@ -8,7 +8,8 @@ export const findCollectionItemSuggestions = (
   db: Database.Database,
   usernameHashes: string[],
   query: string,
-  limit: number
+  limit: number,
+  listType: CollectionListTypeModel = 'library'
 ): CollectionItemSuggestionApiModel[] => {
   const normalizedLimit = normalizeLimit(limit);
   const lowerQuery = query.trim().toLowerCase();
@@ -18,7 +19,7 @@ export const findCollectionItemSuggestions = (
     const systemTagSuggestions = SUGGESTION_SYSTEM_TAGS.filter((tag) => tag.startsWith(lowerQuery));
     const remainingLimit = normalizedLimit - systemTagSuggestions.length;
     const customTagSuggestions =
-      remainingLimit > 0 ? findTagSuggestions(db, usernameHashes, query, remainingLimit) : [];
+      remainingLimit > 0 ? findTagSuggestions(db, usernameHashes, query, remainingLimit, false, listType) : [];
 
     return [...systemTagSuggestions, ...customTagSuggestions]
       .slice(0, normalizedLimit)
@@ -41,7 +42,7 @@ export const findCollectionItemSuggestions = (
        ORDER BY created_at DESC, id DESC
        LIMIT ?`
     )
-    .all(...usernameHashes, 'library', likeQuery, likeQuery, likeQuery, likeQuery, normalizedLimit) as Array<{
+    .all(...usernameHashes, listType, likeQuery, likeQuery, likeQuery, likeQuery, normalizedLimit) as Array<{
     imdb_id: string;
     title: string;
   }>;
@@ -54,7 +55,8 @@ export const findTagSuggestions = (
   usernameHashes: string[],
   query: string,
   limit: number,
-  includeInternal = false
+  includeInternal = false,
+  listType: CollectionListTypeModel = 'library'
 ): string[] => {
   const lowerQuery = query.trim().toLowerCase();
   if (!lowerQuery) return [];
@@ -75,7 +77,7 @@ export const findTagSuggestions = (
        ORDER BY count DESC, tag
        LIMIT ?`
     )
-    .all(...usernameHashes, 'library', `${escapeLike(lowerQuery)}%`, ...excludedTags, normalizeLimit(limit)) as Array<{
+    .all(...usernameHashes, listType, `${escapeLike(lowerQuery)}%`, ...excludedTags, normalizeLimit(limit)) as Array<{
     tag: string;
   }>;
 

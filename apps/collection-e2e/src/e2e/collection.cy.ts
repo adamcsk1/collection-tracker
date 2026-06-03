@@ -303,6 +303,69 @@ describe('Collection — fuzzy search', () => {
   });
 });
 
+describe('Collection — standard search in secondary lists', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Wishlist Search Alpha', 'movie', 'tt8300001'),
+      listType: 'wishlist',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Wishlist Search Beta', 'movie', 'tt8300002'),
+      listType: 'wishlist',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Watch Later Search Alpha', 'movie', 'tt8300003'),
+      listType: 'watch-later',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Watch Later Search Beta', 'movie', 'tt8300004'),
+      listType: 'watch-later',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Series Tracker Search Alpha', 'series', 'tt8300005'),
+      listType: 'series-tracker',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Series Tracker Search Beta', 'series', 'tt8300006'),
+      listType: 'series-tracker',
+    });
+  });
+
+  it('filters wishlist items and requests wishlist-scoped suggestions', () => {
+    cy.intercept('GET', '/api/v1/items/search-suggestions*').as('searchSuggestions');
+
+    CommonPage.openMenu();
+    CommonPage.getNavWishlistLink().click();
+
+    CollectionPage.getWishlistSearchInput().should('be.visible').type('Alpha');
+    cy.wait('@searchSuggestions').its('request.url').should('include', 'listType=wishlist');
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', 'Wishlist Search Alpha');
+    CollectionPage.getListItems().should('not.contain.text', 'Wishlist Search Beta');
+  });
+
+  it('filters watch later items', () => {
+    CommonPage.openMenu();
+    CommonPage.getNavWatchLaterLink().click();
+
+    CollectionPage.getWatchLaterSearchInput().should('be.visible').type('Alpha');
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', 'Watch Later Search Alpha');
+    CollectionPage.getListItems().should('not.contain.text', 'Watch Later Search Beta');
+  });
+
+  it('filters series tracker items', () => {
+    CommonPage.openMenu();
+    CommonPage.getNavSeriesTrackerLink().click();
+
+    CollectionPage.getSeriesTrackerSearchInput().should('be.visible').type('Alpha');
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', 'Series Tracker Search Alpha');
+    CollectionPage.getListItems().should('not.contain.text', 'Series Tracker Search Beta');
+  });
+});
+
 describe('Collection — favorites', () => {
   beforeEach(() => {
     cy.autoLogin();

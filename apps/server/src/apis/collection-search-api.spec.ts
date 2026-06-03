@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { CollectionListTypeModel } from '@shared/models/api-model';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
@@ -15,12 +16,13 @@ const insertItem = (item: {
   actors?: string;
   plot?: string;
   createdAt?: string;
+  listType?: CollectionListTypeModel;
 }) => {
   const result = getDatabase()
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, imdb_id, title, title_lower, year, rate, actors, plot, image, content_hash, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))`
+       (username_hash, imdb_id, title, title_lower, year, rate, actors, plot, image, content_hash, list_type, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))`
     )
     .run(
       'user',
@@ -33,6 +35,7 @@ const insertItem = (item: {
       item.plot ?? '',
       '',
       `${item.imdbId}-hash`,
+      item.listType ?? 'library',
       item.createdAt ?? null
     );
   const itemId = Number(result.lastInsertRowid);
@@ -162,6 +165,29 @@ describe('collection search APIs', () => {
       suggestions: [{ label: '#favorite', value: '#favorite', kind: 'tag' }],
     });
     expect(existsResponse.send).toHaveBeenCalledWith({ exists: true });
+  });
+
+  it('returns search suggestions for the requested list type', async () => {
+    insertUser();
+    insertItem({ imdbId: 'tt-library', title: 'Shared Title' });
+    insertItem({ imdbId: 'tt-watch-later', title: 'Shared Title', listType: 'watch-later', tags: ['#queued'] });
+    const { register } = await import('./collection-items-search-suggestions-api');
+
+    const titleResponse = await callRoute(register, 'get', '/api/v1/items/search-suggestions', {
+      query: { query: 'shared', limit: '5', listType: 'watch-later' },
+      usernameHash: 'user',
+    });
+    const tagResponse = await callRoute(register, 'get', '/api/v1/items/search-suggestions', {
+      query: { query: '#que', limit: '5', listType: 'watch-later' },
+      usernameHash: 'user',
+    });
+
+    expect(titleResponse.send).toHaveBeenCalledWith({
+      suggestions: [{ label: 'Shared Title', value: 'tt-watch-later', kind: 'title' }],
+    });
+    expect(tagResponse.send).toHaveBeenCalledWith({
+      suggestions: [{ label: '#queued', value: '#queued', kind: 'tag' }],
+    });
   });
 
   it('returns custom tag suggestions without internal or virtual tags by default', async () => {

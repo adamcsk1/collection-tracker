@@ -1,4 +1,13 @@
 <div class="collection-container">
+  <ng-template #floatSearch>
+    <libc-autocomplete
+      data-test-id="series-tracker-search"
+      [placeholder]="translations.placeholderSearchInCollection()"
+      [formField]="searchTextField"
+      [showReset]="true"
+      [suggestionListPlacement]="'top'"
+    />
+  </ng-template>
   <ct-list [listType]="'series-tracker'" [dataSource]="seriesTrackerDataSource">
     <span list-empty>
       {{ translations.messageEmptySeriesTracker() }}<br />

@@ -1,4 +1,13 @@
 <div class="collection-container">
+  <ng-template #floatSearch>
+    <libc-autocomplete
+      data-test-id="wishlist-search"
+      [placeholder]="translations.placeholderSearchInCollection()"
+      [formField]="searchTextField"
+      [showReset]="true"
+      [suggestionListPlacement]="'top'"
+    />
+  </ng-template>
   <ct-list [listType]="'wishlist'" [dataSource]="wishlistDataSource">
     <span list-empty>
       {{ translations.messageEmptyWishlist() }}<br />

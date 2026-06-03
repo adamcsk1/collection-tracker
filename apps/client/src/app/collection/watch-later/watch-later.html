@@ -1,4 +1,13 @@
 <div class="collection-container">
+  <ng-template #floatSearch>
+    <libc-autocomplete
+      data-test-id="watch-later-search"
+      [placeholder]="translations.placeholderSearchInCollection()"
+      [formField]="searchTextField"
+      [showReset]="true"
+      [suggestionListPlacement]="'top'"
+    />
+  </ng-template>
   <ct-list [listType]="'watch-later'" [dataSource]="watchLaterDataSource">
     <span list-empty>
       {{ translations.messageEmptyWatchLater() }}<br />

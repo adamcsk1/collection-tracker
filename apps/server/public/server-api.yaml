@@ -1043,6 +1043,12 @@ paths:
           schema:
             type: integer
             default: 10
+        - name: listType
+          in: query
+          required: false
+          description: List to search suggestions within. Defaults to `library`.
+          schema:
+            $ref: '#/components/schemas/CollectionListType'
       responses:
         '200':
           description: Search suggestions.

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ApiService } from '@services/api/api-service';
 import { firstValueFrom, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SearchSuggestionService } from './search-suggestion-service';
+import { SearchSuggestionService, searchSuggestionListTypeToken } from './search-suggestion-service';
 
 describe('SearchSuggestionService', () => {
   let service: SearchSuggestionService;
@@ -30,10 +30,26 @@ describe('SearchSuggestionService', () => {
   it('returns server suggestions with formatted title values', async () => {
     const suggestions = await firstValueFrom(service.getSuggestion('gra'));
 
-    expect(api.getItemSearchSuggestions).toHaveBeenCalledWith('gra', 3);
+    expect(api.getItemSearchSuggestions).toHaveBeenCalledWith('gra', 3, 'library');
     expect(service.formatSuggestionText(suggestions[0])).toBe('Gravity');
     expect(service.formatSuggestionValue(suggestions[0])).toBe('tt1234567');
     expect(suggestions[1]).toBe('#space');
+  });
+
+  it('requests suggestions for the configured list type', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        SearchSuggestionService,
+        { provide: ApiService, useValue: api },
+        { provide: searchSuggestionListTypeToken, useValue: 'watch-later' },
+      ],
+    });
+    service = TestBed.inject(SearchSuggestionService);
+
+    await firstValueFrom(service.getSuggestion('mat'));
+
+    expect(api.getItemSearchSuggestions).toHaveBeenCalledWith('mat', 3, 'watch-later');
   });
 
   it('keeps raw suggestion values when no separator is present', () => {

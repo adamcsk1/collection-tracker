@@ -5,6 +5,7 @@ import { findCollectionItemSuggestions } from '../core/database/repositories/col
 import { findReadableOwnerHashes } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
+import { parseListType } from '../core/utils/query-parse-util';
 
 const parseNumber = (value: unknown, fallback: number): number => {
   const parsed = Number(value);
@@ -19,9 +20,10 @@ export const register = (app: FastifyInstance): void => {
       const queryParams = request.query as Record<string, unknown>;
       const query = typeof queryParams.query === 'string' ? queryParams.query : '';
       const limit = parseNumber(queryParams.limit, 10);
+      const listType = parseListType(queryParams.listType) ?? 'library';
       const db = getDatabase();
       const usernameHashes = [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
-      response.send({ suggestions: findCollectionItemSuggestions(db, usernameHashes, query, limit) });
+      response.send({ suggestions: findCollectionItemSuggestions(db, usernameHashes, query, limit, listType) });
     })
   );
 };
