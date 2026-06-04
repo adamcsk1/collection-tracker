@@ -5,9 +5,8 @@ import { StatisticsPage } from '../page-objects/statistics.po';
 describe('Statistics — empty collection', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
     StatisticsPage.visit();
-    cy.wait('@getStatistics');
+    StatisticsPage.getEmptyMessage().should('be.visible');
   });
 
   it('shows the empty state message when there are no items', () => {
@@ -16,7 +15,10 @@ describe('Statistics — empty collection', () => {
 });
 
 describe('Statistics — with movies and series', () => {
-  const movieOne = { ...buildCollectionItem('Stats Movie One', 'movie', 'tt9000001'), tags: ['#movie', '#favorite', '#action'] };
+  const movieOne = {
+    ...buildCollectionItem('Stats Movie One', 'movie', 'tt9000001'),
+    tags: ['#movie', '#favorite', '#action'],
+  };
   const movieTwo = { ...buildCollectionItem('Stats Movie Two', 'movie', 'tt9000002'), tags: ['#movie', '#drama'] };
   const seriesOne = { ...buildCollectionItem('Stats Series One', 'series', 'tt9000003'), tags: ['#series', '#action'] };
 
@@ -25,9 +27,8 @@ describe('Statistics — with movies and series', () => {
     cy.request('POST', '/api/v1/create', movieOne);
     cy.request('POST', '/api/v1/create', movieTwo);
     cy.request('POST', '/api/v1/create', seriesOne);
-    cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
     StatisticsPage.visit();
-    cy.wait('@getStatistics');
+    StatisticsPage.getSummaryAll().should('contain.text', '3');
   });
 
   it('shows the summary section', () => {
@@ -123,9 +124,8 @@ describe('Statistics — wishlist', () => {
   beforeEach(() => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', wishlistItem);
-    cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
     StatisticsPage.visit();
-    cy.wait('@getStatistics');
+    StatisticsPage.getSummaryWishlist().should('contain.text', '1');
   });
 
   it('shows the wishlist count and navigates to the wishlist page', () => {

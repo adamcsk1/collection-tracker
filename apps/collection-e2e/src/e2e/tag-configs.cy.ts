@@ -56,13 +56,10 @@ describe('Tag Configs — custom tag in collection', () => {
     // with a clean slate.
     cy.request('POST', '/api/v1/tag/change-config', []);
     cy.request('POST', '/api/v1/create', item);
-    // Intercept the statistics call triggered by the page so we can explicitly
-    // wait for the tag list to finish loading before tests start asserting.
-    cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
     cy.intercept('GET', '/api/v1/tag/config').as('getTagConfig');
     TagConfigsPage.visit();
-    cy.wait('@getStatistics');
     cy.wait('@getTagConfig');
+    TagConfigsPage.getList().should('contain.text', customTag);
   });
 
   it('shows the custom tag in the config list', () => {
@@ -166,9 +163,10 @@ describe('Tag Configs — import and export', () => {
     cy.request('POST', '/api/v1/tag/change-config', []);
     cy.request('POST', '/api/v1/create', item);
     cy.request('POST', '/api/v1/tag/change-config', [exportedExistingConfig, exportedImportedConfig]);
-    cy.intercept('GET', '/api/v1/statistics*').as('getStatistics');
+    cy.intercept('GET', '/api/v1/tag/config').as('getTagConfig');
     TagConfigsPage.visit();
-    cy.wait('@getStatistics');
+    cy.wait('@getTagConfig');
+    TagConfigsPage.getList().should('contain.text', existingTag).and('contain.text', importedTag);
   });
 
   it('exports tag configs and imports them as an extension while skipping conflicts', () => {

@@ -4,9 +4,9 @@ export const StatisticsPage = {
     cy.reload();
   },
 
-  getEmptyMessage: () => cy.getByTestId('statistics-empty'),
-  getSummary: () => cy.getByTestId('statistics-summary'),
-  getSummaryAll: () => cy.getByTestId('statistics-summary-all'),
+  getEmptyMessage: () => cy.getByTestId('statistics-empty', { timeout: 10000 }),
+  getSummary: () => cy.getByTestId('statistics-summary', { timeout: 10000 }),
+  getSummaryAll: () => cy.getByTestId('statistics-summary-all', { timeout: 10000 }),
   getSummaryMovies: () => cy.getByTestId('statistics-summary-movies'),
   getSummarySeries: () => cy.getByTestId('statistics-summary-series'),
   getSummaryFavorites: () => cy.getByTestId('statistics-summary-favorites'),
