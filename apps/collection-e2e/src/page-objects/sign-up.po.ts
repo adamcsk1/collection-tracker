@@ -1,5 +1,10 @@
 export const SignUpPage = {
-  visit: () => cy.visit('/login/#/sign-up'),
+  visit: () => {
+    cy.clearCookies({ log: false });
+    cy.visit('/login/#/sign-up', {
+      onBeforeLoad: (window) => window.localStorage.removeItem('CT.LoggedIn'),
+    });
+  },
 
   getUsernameInput: () => cy.getByTestId('sign-up-username').find('input'),
   getSubmitButton: () => cy.getByTestId('sign-up-submit'),

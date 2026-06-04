@@ -1,5 +1,10 @@
 export const SignInPage = {
-  visit: () => cy.visit('/login/#/sign-in'),
+  visit: () => {
+    cy.clearCookies({ log: false });
+    cy.visit('/login/#/sign-in', {
+      onBeforeLoad: (window) => window.localStorage.removeItem('CT.LoggedIn'),
+    });
+  },
 
   getUsernameInput: () => cy.getByTestId('sign-in-username').find('input'),
   getTokenInput: () => cy.getByTestId('sign-in-token').find('input'),

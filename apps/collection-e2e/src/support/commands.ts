@@ -105,7 +105,7 @@ Cypress.Commands.overwrite('request', (originalFn, ...args) => {
 declare global {
   namespace Cypress {
     interface Chainable {
-      getByTestId(testId: string): Chainable<JQuery<HTMLElement>>;
+      getByTestId(testId: string, options?: Partial<Timeoutable>): Chainable<JQuery<HTMLElement>>;
       /**
        * Signs in with the pre-created cypress user and wipes its collection.
        * Fast - no sign-up round-trip. Use this for the majority of tests.
@@ -120,8 +120,8 @@ declare global {
   }
 }
 
-Cypress.Commands.add('getByTestId', (testId: string) => {
-  return cy.get(`[data-test-id="${testId}"]`);
+Cypress.Commands.add('getByTestId', (testId: string, options?: Partial<Cypress.Timeoutable>) => {
+  return cy.get(`[data-test-id="${testId}"]`, options);
 });
 
 Cypress.Commands.add('autoLogin', () => {
