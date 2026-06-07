@@ -1,0 +1,442 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
+import { TagManagementModel } from './tag-management-model';
+import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { ApiService } from '@services/api/api-service';
+import { ConfirmService } from '@services/confirm-service';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
+import { EMPTY, of, throwError } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TagManagement } from './tag-management';
+import { TagManagementService } from './tag-management-service';
+import {
+  initialTagManagementState,
+  TagManagementState,
+  tagManagementStateToken,
+} from '../../tag-management/tag-management-store';
+
+const buildTagManagement = (
+  tag: string,
+  overrides: Partial<TagManagementModel[number]>
+): TagManagementModel[number] => ({
+  tag,
+  color: null,
+  useForImageBorder: false,
+  useForTextColor: false,
+  useForImageBadge: false,
+  weight: 0,
+  ...overrides,
+});
+
+const mockStatistics = (tags: string[]) =>
+  of({
+    totalItems: tags.length,
+    movieCount: 0,
+    seriesCount: 0,
+    favoriteCount: 0,
+    watchLaterCount: 0,
+    wishlistCount: 0,
+    watchedCount: 0,
+    unwatchedCount: 0,
+    tagCounts: tags.map((tag) => ({ tag, count: 1 })),
+    genreCounts: [],
+  });
+
+describe('TagManagement component', () => {
+  let fixture: ComponentFixture<TagManagement>;
+  let component: TagManagement;
+  let tagManagementState: NgxSimpleSignalStoreService<TagManagementState>;
+  let toastState: NgxSimpleSignalStoreService<ToastState>;
+  let confirm: { ifConfirmed: ReturnType<typeof vi.fn>; open: ReturnType<typeof vi.fn> };
+  let tagManagementService: { syncUserTagManagement: ReturnType<typeof vi.fn> };
+  let api: { getStatistics: ReturnType<typeof vi.fn> };
+
+  const createComponent = (tags: string[] = []) => {
+    api.getStatistics.mockReturnValue(mockStatistics(tags));
+    fixture = TestBed.createComponent(TagManagement);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  };
+
+  beforeEach(() => {
+    delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:tag-management') });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
+    HTMLAnchorElement.prototype.click = vi.fn();
+    confirm = { ifConfirmed: vi.fn(() => of(true)), open: vi.fn(() => of(true)) };
+    tagManagementService = {
+      syncUserTagManagement: vi.fn((configs: TagManagementModel) => {
+        tagManagementState.setState(
+          'configs',
+          [...configs].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+        );
+        return of(void 0);
+      }),
+    };
+    api = { getStatistics: vi.fn(() => mockStatistics([])) };
+
+    TestBed.configureTestingModule({
+      imports: [TagManagement],
+      providers: [
+        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
+        { provide: ConfirmService, useValue: confirm },
+        { provide: TagManagementService, useValue: tagManagementService },
+        { provide: ApiService, useValue: api },
+        provideStore(initialMainCollectionState, mainCollectionStateToken),
+        provideStore(initialApiState, apiStateToken),
+        provideStore(initialToastState, toastStateToken),
+        provideStore(initialTagManagementState, tagManagementStateToken),
+      ],
+    });
+
+    tagManagementState = TestBed.inject(tagManagementStateToken);
+    toastState = TestBed.inject(toastStateToken);
+  });
+
+  it('builds tag management entries from collection tags while ignoring internal/virtual tags', () => {
+    createComponent(['#a', '#b', '#series', '#movie', '#unwatched', '#a', '#tag-with-weight']);
+
+    tagManagementState.setState('configs', [buildTagManagement('#tag-with-weight', { color: '#aabbcc', weight: 7 })]);
+    fixture.detectChanges();
+
+    expect(component['tagManagement']()).toEqual([
+      buildTagManagement('#a', {}),
+      buildTagManagement('#b', {}),
+      buildTagManagement('#tag-with-weight', { color: '#aabbcc', weight: 7 }),
+    ]);
+  });
+
+  it('updates only one field and keeps existing values', () => {
+    createComponent(['#tag']);
+
+    tagManagementState.setState('configs', [buildTagManagement('#tag', { color: '#123456', weight: 5 })]);
+    fixture.detectChanges();
+
+    component['onUseForImageBorderChange']('#tag', true);
+
+    expect(tagManagementState.state.configs()).toEqual([
+      buildTagManagement('#tag', {
+        color: '#123456',
+        weight: 5,
+        useForImageBorder: true,
+      }),
+    ]);
+
+    component['onUseForTextColorChange']('#tag', true);
+
+    expect(tagManagementState.state.configs()).toEqual([
+      buildTagManagement('#tag', {
+        color: '#123456',
+        weight: 5,
+        useForImageBorder: true,
+        useForTextColor: true,
+      }),
+    ]);
+  });
+
+  it('updates only image badge flag and keeps existing values', () => {
+    createComponent(['#tag']);
+
+    tagManagementState.setState('configs', [buildTagManagement('#tag', { color: '#123456', useForTextColor: true })]);
+    fixture.detectChanges();
+
+    component['onUseForImageBadgeChange']('#tag', true);
+
+    expect(tagManagementState.state.configs()).toEqual([
+      buildTagManagement('#tag', {
+        color: '#123456',
+        useForTextColor: true,
+        useForImageBadge: true,
+      }),
+    ]);
+  });
+
+  it('keeps color as null when creating a new config from a non-color change', () => {
+    createComponent(['#tag']);
+
+    component['onUseForImageBorderChange']('#tag', true);
+
+    expect(tagManagementState.state.configs()).toEqual([
+      buildTagManagement('#tag', {
+        color: null,
+        useForImageBorder: true,
+      }),
+    ]);
+  });
+
+  it('coerces text input into numeric weight and falls back to zero on invalid values', () => {
+    createComponent(['#tag']);
+
+    component['onWeightChange']('#tag', 42);
+    expect(tagManagementState.state.configs()).toEqual([buildTagManagement('#tag', { weight: 42 })]);
+
+    component['onWeightChange']('#tag', Number.NaN);
+    expect(tagManagementState.state.configs()).toEqual([buildTagManagement('#tag', { weight: 0 })]);
+  });
+
+  it('stores configs sorted by descending weight and syncs them via service', () => {
+    createComponent(['#low', '#high']);
+
+    component['onTagColorChange']('#low', '#111111');
+    component['onTagColorChange']('#high', '#222222');
+    component['onWeightChange']('#low', 1 as unknown as number);
+    component['onWeightChange']('#high', 9 as unknown as number);
+
+    expect(tagManagementState.state.configs()).toEqual([
+      buildTagManagement('#high', { color: '#222222', weight: 9 }),
+      buildTagManagement('#low', { color: '#111111', weight: 1 }),
+    ]);
+
+    expect(tagManagementService.syncUserTagManagement).toHaveBeenLastCalledWith([
+      buildTagManagement('#low', { color: '#111111', weight: 1 }),
+      buildTagManagement('#high', { color: '#222222', weight: 9 }),
+    ]);
+  });
+
+  it('shows success toast after syncing tag management', () => {
+    createComponent(['#tag']);
+    toastState.setState('message', '');
+
+    component['onTagColorChange']('#tag', '#123456');
+
+    expect(toastState.state.message()).toBe('Toast.TagManagementSaved');
+  });
+
+  it('does not show success toast while pruning stale configs on load', () => {
+    tagManagementState.setState('configs', [buildTagManagement('#stale', { color: '#123456' })]);
+
+    createComponent(['#tag']);
+
+    expect(toastState.state.message()).toBe('');
+  });
+
+  it('does not clear stored configs when collection tags load before tag management preload', () => {
+    createComponent(['#tag']);
+
+    expect(tagManagementService.syncUserTagManagement).not.toHaveBeenCalled();
+  });
+
+  it('does not resync stored configs when collection tags already match them', () => {
+    tagManagementState.setState('configs', [buildTagManagement('#tag', { color: '#123456' })]);
+
+    createComponent(['#tag']);
+
+    expect(tagManagementService.syncUserTagManagement).not.toHaveBeenCalled();
+  });
+
+  it('adds a new config with defaults when color changes for unknown tag', () => {
+    createComponent(['#new']);
+
+    component['onTagColorChange']('#new', '#abc');
+
+    expect(tagManagementState.state.configs()).toEqual([buildTagManagement('#new', { color: '#abc' })]);
+  });
+
+  it('seeds a black color when the color picker is opened for an uncolored tag', () => {
+    createComponent(['#tag']);
+
+    const button = fixture.nativeElement.querySelector(
+      '[data-test-id="tag-management-color-#tag"]'
+    ) as HTMLButtonElement;
+    button.click();
+
+    expect(tagManagementState.state.configs()).toEqual([buildTagManagement('#tag', { color: '#000000' })]);
+  });
+
+  it('does not overwrite an existing color when the color picker button is clicked', () => {
+    createComponent(['#tag']);
+    tagManagementState.setState('configs', [buildTagManagement('#tag', { color: '#123456' })]);
+    fixture.detectChanges();
+    tagManagementService.syncUserTagManagement.mockClear();
+
+    const button = fixture.nativeElement.querySelector(
+      '[data-test-id="tag-management-color-#tag"]'
+    ) as HTMLButtonElement;
+    button.click();
+
+    expect(tagManagementState.state.configs()).toEqual([buildTagManagement('#tag', { color: '#123456' })]);
+    expect(tagManagementService.syncUserTagManagement).not.toHaveBeenCalled();
+  });
+
+  it('filters tag management by substring match case-insensitively', () => {
+    createComponent(['#alpha', '#beta', '#gamma']);
+
+    component['onFilterChange']('alp');
+
+    expect(component['tagManagement']()).toEqual([buildTagManagement('#alpha', {})]);
+  });
+
+  it('shows all tag management when filter is empty', () => {
+    createComponent(['#alpha', '#beta']);
+
+    component['onFilterChange']('');
+
+    expect(component['tagManagement']()).toEqual([buildTagManagement('#beta', {}), buildTagManagement('#alpha', {})]);
+  });
+
+  it('trims filter text before matching', () => {
+    createComponent(['#alpha']);
+
+    component['onFilterChange']('  alpha  ');
+
+    expect(component['tagManagement']()).toEqual([buildTagManagement('#alpha', {})]);
+  });
+
+  it('resets tag management after confirmation and syncs empty list', () => {
+    createComponent(['#tag']);
+    tagManagementState.setState('configs', [buildTagManagement('#tag', { color: '#123456', useForImageBorder: true })]);
+    fixture.detectChanges();
+
+    component['onResetTagManagement']();
+
+    expect(tagManagementState.state.configs()).toEqual([]);
+    expect(tagManagementService.syncUserTagManagement).toHaveBeenLastCalledWith([]);
+  });
+
+  it('exports the full stored tag management JSON', async () => {
+    createComponent(['#visible']);
+    tagManagementState.setState('configs', [
+      buildTagManagement('#visible', { color: '#123456' }),
+      buildTagManagement('#stale', { color: '#abcdef', useForImageBadge: true }),
+    ]);
+
+    component['onExportTagManagement']();
+
+    const blob = vi.mocked(URL.createObjectURL).mock.calls[0][0] as Blob;
+    await expect(blob.text().then((source) => JSON.parse(source))).resolves.toEqual({
+      type: 'collection-tracker-tag-management',
+      version: 1,
+      tagManagement: [
+        buildTagManagement('#visible', { color: '#123456' }),
+        buildTagManagement('#stale', { color: '#abcdef', useForImageBadge: true }),
+      ],
+    });
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:tag-management');
+    expect(toastState.state.message()).toBe('');
+  });
+
+  it('exports through the companion app bridge when available', () => {
+    const saveDownload = vi.fn(() => true);
+    window.CollectionTrackerInterface = { saveDownload };
+    createComponent(['#visible']);
+    tagManagementState.setState('configs', [buildTagManagement('#visible', { color: '#123456' })]);
+
+    component['onExportTagManagement']();
+
+    expect(saveDownload).toHaveBeenCalledWith(
+      'collection-tracker-tag-management.json',
+      'application/json',
+      expect.any(String)
+    );
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('');
+  });
+
+  it('imports new tag management without overwriting existing configs', () => {
+    createComponent(['#existing', '#new']);
+    const existingConfig = buildTagManagement('#existing', { color: '#111111' });
+    const newConfig = buildTagManagement('#new', { color: '#222222', useForImageBorder: true });
+    tagManagementState.setState('configs', [existingConfig]);
+    tagManagementService.syncUserTagManagement.mockClear();
+
+    component['importTagManagement'](
+      JSON.stringify({ type: 'collection-tracker-tag-management', version: 1, tagManagement: [newConfig] })
+    );
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(tagManagementService.syncUserTagManagement).toHaveBeenCalledWith([existingConfig, newConfig]);
+    expect(toastState.state.message()).toBe('Toast.TagManagementImported');
+  });
+
+  it('skips conflicting imported configs when conflict overwrite is cancelled', () => {
+    confirm.open.mockReturnValueOnce(of(false));
+    createComponent(['#existing', '#new']);
+    const existingConfig = buildTagManagement('#existing', { color: '#111111' });
+    const importedExistingConfig = buildTagManagement('#existing', { color: '#999999', useForImageBorder: true });
+    const newConfig = buildTagManagement('#new', { color: '#222222' });
+    tagManagementState.setState('configs', [existingConfig]);
+    tagManagementService.syncUserTagManagement.mockClear();
+
+    component['importTagManagement'](
+      JSON.stringify({
+        type: 'collection-tracker-tag-management',
+        version: 1,
+        tagManagement: [importedExistingConfig, newConfig],
+      })
+    );
+
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportTagManagementConflicts');
+    expect(tagManagementService.syncUserTagManagement).toHaveBeenCalledWith([existingConfig, newConfig]);
+  });
+
+  it('overwrites conflicting imported configs when conflict overwrite is confirmed', () => {
+    confirm.open.mockReturnValueOnce(of(true));
+    createComponent(['#existing', '#new']);
+    const existingConfig = buildTagManagement('#existing', { color: '#111111' });
+    const importedExistingConfig = buildTagManagement('#existing', { color: '#999999', useForImageBorder: true });
+    const newConfig = buildTagManagement('#new', { color: '#222222' });
+    tagManagementState.setState('configs', [existingConfig]);
+    tagManagementService.syncUserTagManagement.mockClear();
+
+    component['importTagManagement'](
+      JSON.stringify({
+        type: 'collection-tracker-tag-management',
+        version: 1,
+        tagManagement: [importedExistingConfig, newConfig],
+      })
+    );
+
+    expect(tagManagementService.syncUserTagManagement).toHaveBeenCalledWith([importedExistingConfig, newConfig]);
+  });
+
+  it('shows import error toast for invalid import JSON', () => {
+    createComponent(['#tag']);
+    tagManagementService.syncUserTagManagement.mockClear();
+
+    component['importTagManagement']('{bad json');
+
+    expect(tagManagementService.syncUserTagManagement).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.TagManagementImportError');
+  });
+
+  it('shows import error toast for invalid import config shape', () => {
+    createComponent(['#tag']);
+    tagManagementService.syncUserTagManagement.mockClear();
+
+    component['importTagManagement'](
+      JSON.stringify({
+        type: 'collection-tracker-tag-management',
+        version: 1,
+        tagManagement: [{ tag: '#tag', color: null, useForImageBorder: true }],
+      })
+    );
+
+    expect(tagManagementService.syncUserTagManagement).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.TagManagementImportError');
+  });
+
+  it('does not clear configs when reset is not confirmed', () => {
+    confirm.ifConfirmed = vi.fn(() => EMPTY);
+    createComponent(['#tag']);
+    const initialConfigs = [buildTagManagement('#tag', { color: '#123456', useForImageBorder: true })];
+    tagManagementState.setState('configs', initialConfigs);
+    fixture.detectChanges();
+    tagManagementService.syncUserTagManagement.mockClear();
+
+    component['onResetTagManagement']();
+
+    expect(tagManagementState.state.configs()).toEqual(initialConfigs);
+    expect(tagManagementService.syncUserTagManagement).not.toHaveBeenCalled();
+  });
+
+  it('shows toast message when syncing tag management fails', () => {
+    createComponent(['#tag']);
+    tagManagementService.syncUserTagManagement.mockReturnValueOnce(throwError(() => new Error('fail')));
+
+    component['onTagColorChange']('#tag', '#123456');
+
+    expect(toastState.state.message()).toBe('Toast.TagManagementSyncError');
+  });
+});

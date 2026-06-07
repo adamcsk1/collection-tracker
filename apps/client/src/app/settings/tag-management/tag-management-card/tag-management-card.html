@@ -1,0 +1,59 @@
+<div
+  class="card card-interactive tag-management-card"
+  [attr.data-test-id]="'tag-management-card-' + tagManagement().tag"
+>
+  <h3 class="card-title">{{ tagManagement().tag }}</h3>
+  <div class="card-body">
+    <div class="tag-management-card-color">
+      <button
+        class="color-button"
+        [attr.data-test-id]="'tag-management-color-' + tagManagement().tag"
+        [style.color]="tagManagement().color"
+        [style.borderColor]="tagManagement().color"
+        [style.backgroundColor]="contrastColor(tagManagement().color)"
+        [attr.aria-label]="translations.selectColor()"
+        (click)="onColorButtonClick(colorInput, tagManagement().color)"
+      >
+        <i class="material-icons" [title]="translations.selectColor()">palette</i>
+        @if (tagManagement().color === null) {
+          {{ translations.selectColor() }}
+        } @else {
+          {{ tagManagement().color }}
+        }
+      </button>
+      <input
+        #colorInput
+        type="color"
+        class="color-input"
+        [value]="tagManagement().color ?? ''"
+        [attr.aria-hidden]="true"
+        (change)="onColorInputChange($event)"
+      />
+    </div>
+    <libc-input
+      [attr.data-test-id]="'tag-management-weight-' + tagManagement().tag"
+      [label]="translations.weight()"
+      type="number"
+      [value]="tagManagement().weight"
+      (valueChange)="onWeightChange($event)"
+    />
+    <libc-checkbox
+      [attr.data-test-id]="'tag-management-image-border-' + tagManagement().tag"
+      [label]="translations.useTagColorForImageBorder()"
+      [value]="tagManagement().useForImageBorder"
+      (valueChange)="onImageBorderChange($event)"
+    />
+    <libc-checkbox
+      [attr.data-test-id]="'tag-management-text-color-' + tagManagement().tag"
+      [label]="translations.useTagColorForTextColor()"
+      [value]="tagManagement().useForTextColor"
+      (valueChange)="onTextColorChange($event)"
+    />
+    <libc-checkbox
+      [attr.data-test-id]="'tag-management-image-badge-' + tagManagement().tag"
+      [label]="translations.useTagForImageBadge()"
+      [value]="tagManagement().useForImageBadge"
+      (valueChange)="onImageBadgeChange($event)"
+    />
+  </div>
+</div>

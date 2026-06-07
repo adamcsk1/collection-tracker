@@ -2,12 +2,12 @@
   display: flex;
 }
 
-.tag-config-card {
+.tag-management-card {
   width: 100%;
   padding: var(--size-2xs);
 }
 
-.tag-config-card-color {
+.tag-management-card-color {
   display: flex;
   align-items: center;
   position: relative;
