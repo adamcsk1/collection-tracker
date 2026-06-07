@@ -3,7 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-describe('change-tag-config-api', () => {
+describe('update-tag-management-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -14,7 +14,7 @@ describe('change-tag-config-api', () => {
     const request: any = { body: { tag: '#a' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-tag-config-api');
+    const { register } = await import('./update-tag-management-api');
     register(app);
 
     await handlerPromise();
@@ -38,7 +38,7 @@ describe('change-tag-config-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-tag-config-api');
+    const { register } = await import('./update-tag-management-api');
     register(app);
 
     await handlerPromise();
@@ -53,14 +53,14 @@ describe('change-tag-config-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-tag-config-api');
+    const { register } = await import('./update-tag-management-api');
     register(app);
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('updates user tag configs and returns updated config', async () => {
+  it('updates user tag management and returns updated entries', async () => {
     const response = mockResponse();
     const request: any = {
       body: [
@@ -79,7 +79,7 @@ describe('change-tag-config-api', () => {
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
 
-    const { register } = await import('./change-tag-config-api');
+    const { register } = await import('./update-tag-management-api');
     register(app);
 
     await handlerPromise();
@@ -108,7 +108,7 @@ describe('change-tag-config-api', () => {
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
 
-    const { register } = await import('./change-tag-config-api');
+    const { register } = await import('./update-tag-management-api');
     register(app);
 
     await handlerPromise();
@@ -132,7 +132,7 @@ describe('change-tag-config-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-tag-config-api');
+    const { register } = await import('./update-tag-management-api');
     register(app);
 
     await handlerPromise();
@@ -156,7 +156,7 @@ describe('change-tag-config-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-tag-config-api');
+    const { register } = await import('./update-tag-management-api');
     register(app);
 
     await handlerPromise();

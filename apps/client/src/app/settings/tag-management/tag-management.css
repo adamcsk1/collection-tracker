@@ -7,7 +7,7 @@ p {
   margin-bottom: var(--size-xs);
 }
 
-.tag-configs-toolbar {
+.tag-management-toolbar {
   display: flex;
   align-items: center;
   gap: var(--size-md);
@@ -26,12 +26,12 @@ p {
   }
 }
 
-.tag-configs {
+.tag-management {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--size-md);
 }
 
-.tag-configs-import-file {
+.tag-management-import-file {
   display: none;
 }

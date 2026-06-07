@@ -3,13 +3,13 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-describe('get-tag-config-api', () => {
+describe('get-tag-management-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
   });
 
-  it('returns caller tag configs', async () => {
+  it('returns caller tag management', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
@@ -19,7 +19,7 @@ describe('get-tag-config-api', () => {
       'INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run('user', '#a', '#111111', 1, 0, 0, 1);
 
-    const { register } = await import('./get-tag-config-api');
+    const { register } = await import('./get-tag-management-api');
     register(app);
 
     await handlerPromise();
@@ -35,24 +35,24 @@ describe('get-tag-config-api', () => {
     ]);
   });
 
-  it('returns empty array when caller has no stored tag config', async () => {
+  it('returns empty array when caller has no stored tag management', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./get-tag-config-api');
+    const { register } = await import('./get-tag-management-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith([]);
   });
 
-  it('returns empty array when tag config storage is null', async () => {
+  it('returns empty array when tag management storage is null', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./get-tag-config-api');
+    const { register } = await import('./get-tag-management-api');
     register(app);
 
     await handlerPromise();
@@ -63,7 +63,7 @@ describe('get-tag-config-api', () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    const { register } = await import('./get-tag-config-api');
+    const { register } = await import('./get-tag-management-api');
     register(app);
 
     await handlerPromise();
@@ -74,7 +74,7 @@ describe('get-tag-config-api', () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
-    const { register } = await import('./get-tag-config-api');
+    const { register } = await import('./get-tag-management-api');
     register(app);
 
     await handlerPromise();

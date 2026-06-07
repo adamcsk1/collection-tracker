@@ -3,20 +3,24 @@ import { ApiService } from '@services/api/api-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TagConfigsService } from './tag-configs-service';
-import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from './tag-configs-store';
+import { TagManagementService } from './tag-management-service';
+import {
+  initialTagManagementState,
+  TagManagementState,
+  tagManagementStateToken,
+} from '../../tag-management/tag-management-store';
 
-describe('TagConfigsService', () => {
-  let service: TagConfigsService;
+describe('TagManagementService', () => {
+  let service: TagManagementService;
   let api: {
-    getUserTagConfigs: ReturnType<typeof vi.fn>;
-    updateUserTagConfigs: ReturnType<typeof vi.fn>;
+    getUserTagManagement: ReturnType<typeof vi.fn>;
+    updateUserTagManagement: ReturnType<typeof vi.fn>;
   };
-  let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
+  let tagManagementState: NgxSimpleSignalStoreService<TagManagementState>;
 
   beforeEach(() => {
     api = {
-      getUserTagConfigs: vi.fn(() =>
+      getUserTagManagement: vi.fn(() =>
         of([
           {
             tag: '#low',
@@ -36,26 +40,26 @@ describe('TagConfigsService', () => {
           },
         ])
       ),
-      updateUserTagConfigs: vi.fn(() => of(void 0)),
+      updateUserTagManagement: vi.fn(() => of(void 0)),
     };
 
     TestBed.configureTestingModule({
       providers: [
-        TagConfigsService,
+        TagManagementService,
         { provide: ApiService, useValue: api },
-        provideStore(initialTagConfigsState, tagConfigsStateToken),
+        provideStore(initialTagManagementState, tagManagementStateToken),
       ],
     });
 
-    service = TestBed.inject(TagConfigsService);
-    tagConfigsState = TestBed.inject(tagConfigsStateToken);
+    service = TestBed.inject(TagManagementService);
+    tagManagementState = TestBed.inject(tagManagementStateToken);
   });
 
   it('preloads user configs and stores them sorted by weight', () => {
-    service.preloadUserTagConfigs().subscribe();
+    service.preloadUserTagManagement().subscribe();
 
-    expect(api.getUserTagConfigs).toHaveBeenCalled();
-    expect(tagConfigsState.state.configs()).toEqual([
+    expect(api.getUserTagManagement).toHaveBeenCalled();
+    expect(tagManagementState.state.configs()).toEqual([
       {
         tag: '#high',
         color: '#222222',
@@ -95,9 +99,9 @@ describe('TagConfigsService', () => {
       },
     ];
 
-    service.syncUserTagConfigs(input).subscribe();
+    service.syncUserTagManagement(input).subscribe();
 
-    expect(api.updateUserTagConfigs).toHaveBeenCalledWith([
+    expect(api.updateUserTagManagement).toHaveBeenCalledWith([
       {
         tag: '#high',
         color: '#222222',
@@ -115,7 +119,7 @@ describe('TagConfigsService', () => {
         weight: 1,
       },
     ]);
-    expect(tagConfigsState.state.configs()).toEqual([
+    expect(tagManagementState.state.configs()).toEqual([
       {
         tag: '#high',
         color: '#222222',
@@ -154,9 +158,9 @@ describe('TagConfigsService', () => {
       },
     ];
 
-    service.syncUserTagConfigs(malformedInput).subscribe();
+    service.syncUserTagManagement(malformedInput).subscribe();
 
-    expect(api.updateUserTagConfigs).toHaveBeenCalledWith([
+    expect(api.updateUserTagManagement).toHaveBeenCalledWith([
       {
         tag: '#weighted',
         color: '#222222',
@@ -193,9 +197,9 @@ describe('TagConfigsService', () => {
       } as any,
     ];
 
-    service.syncUserTagConfigs(malformedInput).subscribe();
+    service.syncUserTagManagement(malformedInput).subscribe();
 
-    expect(api.updateUserTagConfigs).toHaveBeenCalledWith([
+    expect(api.updateUserTagManagement).toHaveBeenCalledWith([
       {
         tag: '#a',
         color: '#111111',

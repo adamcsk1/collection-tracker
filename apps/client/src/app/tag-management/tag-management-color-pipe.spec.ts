@@ -1,24 +1,24 @@
 import { TestBed } from '@angular/core/testing';
-import { initialTagConfigsState, TagConfigsState, tagConfigsStateToken } from './tag-configs-store';
+import { initialTagManagementState, TagManagementState, tagManagementStateToken } from './tag-management-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { TagConfigColorPipe } from './tag-configs-color-pipe';
+import { TagManagementColorPipe } from './tag-management-color-pipe';
 
-describe('TagConfigColorPipe', () => {
-  let pipe: TagConfigColorPipe;
-  let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
+describe('TagManagementColorPipe', () => {
+  let pipe: TagManagementColorPipe;
+  let tagManagementState: NgxSimpleSignalStoreService<TagManagementState>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [TagConfigColorPipe, provideStore(initialTagConfigsState, tagConfigsStateToken)],
+      providers: [TagManagementColorPipe, provideStore(initialTagManagementState, tagManagementStateToken)],
     });
 
-    pipe = TestBed.inject(TagConfigColorPipe);
-    tagConfigsState = TestBed.inject(tagConfigsStateToken);
+    pipe = TestBed.inject(TagManagementColorPipe);
+    tagManagementState = TestBed.inject(tagManagementStateToken);
   });
 
   it('returns matching tag color by default', () => {
-    tagConfigsState.setState('configs', [
+    tagManagementState.setState('configs', [
       {
         tag: '#blue',
         color: '#112233',
@@ -33,7 +33,7 @@ describe('TagConfigColorPipe', () => {
   });
 
   it('respects image border/text usage flags and ignores non-compatible entries', () => {
-    tagConfigsState.setState('configs', [
+    tagManagementState.setState('configs', [
       {
         tag: '#blue',
         color: '#112233',
@@ -67,7 +67,7 @@ describe('TagConfigColorPipe', () => {
   });
 
   it('supports tag arrays and still respects flags', () => {
-    tagConfigsState.setState('configs', [
+    tagManagementState.setState('configs', [
       {
         tag: '#blue',
         color: '#112233',
@@ -91,7 +91,7 @@ describe('TagConfigColorPipe', () => {
   });
 
   it('returns null when color is transparent', () => {
-    tagConfigsState.setState('configs', [
+    tagManagementState.setState('configs', [
       {
         tag: '#blue',
         color: 'transparent',
@@ -106,7 +106,7 @@ describe('TagConfigColorPipe', () => {
   });
 
   it('supports image badge flag and ignores non-badge configs', () => {
-    tagConfigsState.setState('configs', [
+    tagManagementState.setState('configs', [
       {
         tag: '#badge',
         color: '#112233',

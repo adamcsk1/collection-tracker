@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
-import { TagConfigsApiResponseModel, TagConfigApiModel } from '@shared/models/api-model';
+import { TagManagementApiResponseModel, TagManagementApiModel } from '@shared/models/api-model';
 
-export const findTagConfigs = (db: Database.Database, usernameHash: string): TagConfigsApiResponseModel => {
+export const findTagManagement = (db: Database.Database, usernameHash: string): TagManagementApiResponseModel => {
   const rows = db
     .prepare(
       `SELECT tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight
@@ -27,14 +27,14 @@ export const findTagConfigs = (db: Database.Database, usernameHash: string): Tag
         useForTextColor: row.use_for_text_color === 1,
         useForImageBadge: row.use_for_image_badge === 1,
         weight: row.weight,
-      }) as TagConfigApiModel
+      }) as TagManagementApiModel
   );
 };
 
-export const upsertTagConfigs = (
+export const upsertTagManagement = (
   db: Database.Database,
   usernameHash: string,
-  configs: TagConfigsApiResponseModel
+  configs: TagManagementApiResponseModel
 ): void => {
   db.prepare('DELETE FROM tag_configs WHERE username_hash = ?').run(usernameHash);
 

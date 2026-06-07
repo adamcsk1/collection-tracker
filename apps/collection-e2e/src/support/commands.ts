@@ -146,7 +146,7 @@ Cypress.Commands.add('autoLogin', () => {
     });
   });
 
-  cy.request('POST', '/api/v1/tag/change-config', []);
+  cy.request('POST', '/api/v1/tag-management', []);
 
   signInThroughUi(username, token);
 

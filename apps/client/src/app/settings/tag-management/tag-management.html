@@ -1,0 +1,44 @@
+<p>{{ translations.messageTagManagement() }}</p>
+<div class="tag-management-toolbar">
+  <libc-input
+    data-test-id="tag-management-filter"
+    [icon]="'search'"
+    [showReset]="true"
+    [placeholder]="translations.placeholderFilterTags()"
+    type="text"
+    (valueChange)="onFilterChange($event)"
+  />
+  <button data-test-id="tag-management-reset" (click)="onResetTagManagement()">
+    <i class="material-icons" [title]="translations.resetToDefault()">close</i>
+    {{ translations.resetToDefault() }}
+  </button>
+  <button data-test-id="tag-management-export" (click)="onExportTagManagement()">
+    <i class="material-icons" [title]="translations.exportLabel()">download</i>
+    {{ translations.exportLabel() }}
+  </button>
+  <button data-test-id="tag-management-import" (click)="onImportTagManagementClick(tagManagementImportFile)">
+    <i class="material-icons" [title]="translations.importLabel()">upload</i>
+    {{ translations.importLabel() }}
+  </button>
+  <input
+    #tagManagementImportFile
+    data-test-id="tag-management-import-file"
+    class="tag-management-import-file"
+    type="file"
+    accept="application/json,.json"
+    (change)="onImportTagManagement($event)"
+  />
+</div>
+<div data-test-id="tag-management-list" class="tag-management" role="list">
+  @for (tagManagement of tagManagement(); track tagManagement.tag) {
+    <ct-tag-management-card
+      role="listitem"
+      [tagManagement]="tagManagement"
+      (colorChange)="onTagColorChange(tagManagement.tag, $event)"
+      (weightChange)="onWeightChange(tagManagement.tag, $event)"
+      (imageBorderChange)="onUseForImageBorderChange(tagManagement.tag, $event)"
+      (textColorChange)="onUseForTextColorChange(tagManagement.tag, $event)"
+      (imageBadgeChange)="onUseForImageBadgeChange(tagManagement.tag, $event)"
+    />
+  }
+</div>
