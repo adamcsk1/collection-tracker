@@ -2,9 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { CollectionListDisplayRatingModel } from '@shared/models/collection-list-display-preferences-model';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { TagConfigColorPipe } from '../../../settings/tag-configs/tag-configs-color-pipe';
+import { TagManagementColorPipe } from '../../../tag-management/tag-management-color-pipe';
+import { mainStateToken } from '../../../main/main-store';
 import { sharesStateToken } from '../../../shares/shares-store';
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
@@ -16,7 +18,7 @@ import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
   selector: 'ct-list-item',
   templateUrl: './list-item.html',
   styleUrl: './list-item.css',
-  providers: [TagConfigColorPipe],
+  providers: [TagManagementColorPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'card card-interactive',
@@ -28,8 +30,9 @@ export class ListItem {
   private readonly collectionState = inject(collectionStateToken);
   private readonly portal = inject(PortalService);
   private readonly apiState = inject(apiStateToken);
+  private readonly mainState = inject(mainStateToken);
   private readonly sharesState = inject(sharesStateToken);
-  private readonly tagConfigColorPipe = inject(TagConfigColorPipe);
+  private readonly tagManagementColorPipe = inject(TagManagementColorPipe);
   private readonly aiSearch = inject(AiSearchService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG) ?? false);
@@ -40,10 +43,10 @@ export class ListItem {
   protected readonly movie = computed(() => this.collectionItem().tags.includes(MOVIE_TAG) ?? false);
   protected readonly series = computed(() => this.collectionItem().tags.includes(SERIES_TAG) ?? false);
   protected readonly imageBorderColor = computed(() =>
-    this.tagConfigColorPipe.transform(this.collectionItem().tags, { checkUseForImageBorder: true })
+    this.tagManagementColorPipe.transform(this.collectionItem().tags, { checkUseForImageBorder: true })
   );
   protected readonly imageBadgeTag = computed(() =>
-    this.collectionItem().tags.find((tag) => this.tagConfigColorPipe.transform(tag, { useForImageBadge: true }))
+    this.collectionItem().tags.find((tag) => this.tagManagementColorPipe.transform(tag, { useForImageBadge: true }))
   );
   protected readonly tags = computed(() => {
     const imageBadgeTag = this.imageBadgeTag();
@@ -53,7 +56,7 @@ export class ListItem {
   });
   protected readonly badgeBackgroundColor = computed(() => {
     const imageBadgeTag = this.imageBadgeTag();
-    return imageBadgeTag ? this.tagConfigColorPipe.transform(imageBadgeTag, { useForImageBadge: true }) : null;
+    return imageBadgeTag ? this.tagManagementColorPipe.transform(imageBadgeTag, { useForImageBadge: true }) : null;
   });
   protected readonly badgeTextColor = computed(() => {
     const badgeBackgroundColor = this.badgeBackgroundColor();
@@ -64,12 +67,26 @@ export class ListItem {
     return getContrastColorHex(badgeBackgroundColor);
   });
   protected readonly useAiSearch = this.aiSearch.useAiSearch.asReadonly();
+  protected readonly listDisplayPreferences = this.mainState.state.collectionListDisplayPreferences;
+  protected readonly selectedRating = computed(() => {
+    const item = this.collectionItem();
+    const preferences = this.listDisplayPreferences();
+    const preferredRating = this.getRatingDisplayValue(preferences.preferredRating, item);
+    if (preferredRating) return preferredRating;
+    if (preferences.imdbRatingFallback && preferences.preferredRating !== 'imdb') {
+      return this.getRatingDisplayValue('imdb', item);
+    }
+
+    return null;
+  });
   protected readonly shared = computed(() => {
     const item = this.collectionItem();
     return this.sharesState.state.incoming().some((share) => share.ownerUserShareCode === item.ownerShareCode);
   });
   protected readonly translations = {
     favorite: computed(() => this.ngxSignalTranslate.translate('Favorite')),
+    metacriticShort: computed(() => this.ngxSignalTranslate.translate('MetacriticShort')),
+    rottenTomatoesShort: computed(() => this.ngxSignalTranslate.translate('RottenTomatoesShort')),
     shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
   };
   protected readonly WATCHED_TAG = WATCHED_TAG;
@@ -77,6 +94,38 @@ export class ListItem {
   protected readonly SERIES_TAG = SERIES_TAG;
   protected readonly VIRTUAL_UNWATCHED_TAG = VIRTUAL_UNWATCHED_TAG;
   public readonly collectionItem = input.required<CollectionItemModel>();
+
+  private getRatingDisplayValue(
+    rating: CollectionListDisplayRatingModel,
+    item: CollectionItemModel
+  ): { label: string; value: string | number; testId: string; icon: string } | null {
+    switch (rating) {
+      case 'imdb':
+        return item.rate ? { label: '', value: item.rate, testId: 'list-item-rating-imdb', icon: 'star_rate' } : null;
+      case 'rottenTomatoes':
+        return item.rottenTomatoesRate
+          ? {
+              label: this.translations.rottenTomatoesShort(),
+              value: item.rottenTomatoesRate,
+              testId: 'list-item-rating-rotten-tomatoes',
+              icon: 'star_rate',
+            }
+          : null;
+      case 'metacritic':
+        return item.metacriticRate
+          ? {
+              label: this.translations.metacriticShort(),
+              value: item.metacriticRate,
+              testId: 'list-item-rating-metacritic',
+              icon: 'star_rate',
+            }
+          : null;
+      case 'user':
+        return item.userRate !== null
+          ? { label: '', value: item.userRate, testId: 'list-item-user-rate', icon: 'person' }
+          : null;
+    }
+  }
 
   protected onSetSearchText(searchValue: string | number | null, event?: Event): void {
     if (this.useAiSearch()) return;

@@ -25,8 +25,9 @@ export class Settings {
     basics: computed(() => this.ngxSignalTranslate.translate('Basics')),
     user: computed(() => this.ngxSignalTranslate.translate('User')),
     accessTokens: computed(() => this.ngxSignalTranslate.translate('AccessTokens')),
-    tagConfig: computed(() => this.ngxSignalTranslate.translate('TagConfig')),
-    images: computed(() => this.ngxSignalTranslate.translate('Images')),
+    tagManagement: computed(() => this.ngxSignalTranslate.translate('TagManagement')),
+    collectionListDisplay: computed(() => this.ngxSignalTranslate.translate('CollectionListDisplay')),
+    mediaRefresh: computed(() => this.ngxSignalTranslate.translate('MediaRefresh')),
     globalWatchStatus: computed(() => this.ngxSignalTranslate.translate('GlobalWatchStatus')),
     shares: computed(() => this.ngxSignalTranslate.translate('Shares')),
   };

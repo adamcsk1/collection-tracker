@@ -9,6 +9,11 @@ import {
   STORAGE_SENSITIVE_DATA_STORAGE,
   STORAGE_USE_AI_SEARCH,
 } from '@shared/constants/storage-const';
+import {
+  CollectionListDisplayPreferencesModel,
+  COLLECTION_LIST_DISPLAY_RATINGS,
+  DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES,
+} from '@shared/models/collection-list-display-preferences-model';
 import { UserSettingsApiRequestModel } from '@shared/models/api-model';
 import { LANGUAGES } from '@shared/models/language-model';
 import { THEMES } from '@shared/models/theme-model';
@@ -65,6 +70,7 @@ export class SettingsService {
     animatedBackground?: boolean;
     language?: string;
     defaultLibraryOwnerShareCode?: string | null;
+    collectionListDisplayPreferences?: Partial<CollectionListDisplayPreferencesModel>;
   }): void {
     const theme = parseAllowedValue(settings.theme ?? null, THEMES);
     if (theme) this.themeState.setState('theme', theme);
@@ -82,6 +88,34 @@ export class SettingsService {
     if (settings.defaultLibraryOwnerShareCode !== undefined) {
       this.mainState.setState('defaultLibraryOwnerShareCode', settings.defaultLibraryOwnerShareCode);
     }
+
+    if (settings.collectionListDisplayPreferences) {
+      this.mainState.setState(
+        'collectionListDisplayPreferences',
+        this.normalizeCollectionListDisplayPreferences(settings.collectionListDisplayPreferences)
+      );
+    }
+  }
+
+  private normalizeCollectionListDisplayPreferences(
+    preferences: Partial<CollectionListDisplayPreferencesModel>
+  ): CollectionListDisplayPreferencesModel {
+    const preferredRating = COLLECTION_LIST_DISPLAY_RATINGS.find((rating) => rating === preferences.preferredRating);
+    return {
+      showYear:
+        typeof preferences.showYear === 'boolean'
+          ? preferences.showYear
+          : DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES.showYear,
+      showSharedIcon:
+        typeof preferences.showSharedIcon === 'boolean'
+          ? preferences.showSharedIcon
+          : DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES.showSharedIcon,
+      preferredRating: preferredRating ?? DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES.preferredRating,
+      imdbRatingFallback:
+        typeof preferences.imdbRatingFallback === 'boolean'
+          ? preferences.imdbRatingFallback
+          : DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES.imdbRatingFallback,
+    };
   }
 
   private applyAiAvailable(result: { aiAvailable: boolean }): void {
@@ -121,6 +155,19 @@ export class SettingsService {
 
     this.sharedApi
       .updateUserSettings({ defaultLibraryOwnerShareCode })
+      .pipe(
+        tap(() => this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'))),
+        map(() => void 0),
+        catchError(() => EMPTY)
+      )
+      .subscribe();
+  }
+
+  public storeCollectionListDisplayPreferences(preferences: CollectionListDisplayPreferencesModel): void {
+    this.mainState.setState('collectionListDisplayPreferences', preferences);
+
+    this.sharedApi
+      .updateUserSettings({ collectionListDisplayPreferences: preferences })
       .pipe(
         tap(() => this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'))),
         map(() => void 0),

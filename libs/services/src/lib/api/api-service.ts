@@ -19,11 +19,12 @@ import {
   MarkAllUnwatchedApiResponseModel,
   MarkAllWatchedApiResponseModel,
   RandomImagesApiResponseModel,
+  RefreshExternalRatingsApiResponseModel,
   RefreshImagesApiResponseModel,
   SeriesTrackerSeasonsApiRequestModel,
   SeriesTrackerSeasonsApiResponseModel,
-  TagConfigsApiRequestModel,
-  TagConfigsApiResponseModel,
+  TagManagementApiRequestModel,
+  TagManagementApiResponseModel,
   TagSuggestionsApiResponseModel,
   UserSettingsApiResponseModel,
   UserSharesApiResponseModel,
@@ -82,6 +83,10 @@ export class ApiService extends BaseApiService {
 
   public refreshImages(ownerShareCode?: string): Observable<RefreshImagesApiResponseModel> {
     return this.request('POST', `/items/refresh-images${this.buildQuery({ ownerShareCode })}`);
+  }
+
+  public refreshExternalRatings(ownerShareCode?: string): Observable<RefreshExternalRatingsApiResponseModel> {
+    return this.request('POST', `/items/refresh-external-ratings${this.buildQuery({ ownerShareCode })}`);
   }
 
   public getItemSearchSuggestions(
@@ -186,12 +191,12 @@ export class ApiService extends BaseApiService {
     return this.request('DELETE', `/user/shares/incoming/${ownerUserShareCode}`);
   }
 
-  public getUserTagConfigs(): Observable<TagConfigsApiResponseModel> {
-    return this.request('GET', '/tag/config');
+  public getUserTagManagement(): Observable<TagManagementApiResponseModel> {
+    return this.request('GET', '/tag-management');
   }
 
-  public updateUserTagConfigs(tagConfigs: TagConfigsApiRequestModel): Observable<void> {
-    return this.request('POST', '/tag/change-config', tagConfigs);
+  public updateUserTagManagement(tagManagement: TagManagementApiRequestModel): Observable<void> {
+    return this.request('POST', '/tag-management', tagManagement);
   }
 
   public getOMDbData(queryParams: { i: string | null }): Observable<OMDbResponseItemModel> {

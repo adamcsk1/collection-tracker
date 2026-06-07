@@ -1,4 +1,5 @@
 import { CollectionItemModel, CollectionListTypeModel } from './collection-item-model';
+import { CollectionListDisplayPreferencesModel } from './collection-list-display-preferences-model';
 import { LanguageModel } from './language-model';
 import { ThemeModel } from './theme-model';
 
@@ -74,7 +75,18 @@ export interface CollectionStatisticsApiResponseModel {
 
 export type CollectionItemChangeApiModel = Pick<
   CollectionItemModel,
-  'image' | 'title' | 'genre' | 'IMDbId' | 'tags' | 'year' | 'rate' | 'userRate' | 'actors' | 'plot'
+  | 'image'
+  | 'title'
+  | 'genre'
+  | 'IMDbId'
+  | 'tags'
+  | 'year'
+  | 'rate'
+  | 'rottenTomatoesRate'
+  | 'metacriticRate'
+  | 'userRate'
+  | 'actors'
+  | 'plot'
 >;
 
 export interface CreateApiRequestModel extends CollectionItemChangeApiModel {
@@ -136,6 +148,7 @@ export interface UserSettingsApiResponseModel {
   animatedBackground?: boolean;
   language?: LanguageModel;
   defaultLibraryOwnerShareCode?: string | null;
+  collectionListDisplayPreferences?: CollectionListDisplayPreferencesModel;
 }
 
 export interface AiAvailableApiResponseModel {
@@ -146,7 +159,7 @@ export interface UserSettingsApiRequestModel extends UserSettingsApiResponseMode
   fromLogin?: boolean; // To initialize language and theme after first login, as the client won't have the user settings yet.
 }
 
-export interface TagConfigApiModel {
+export interface TagManagementApiModel {
   tag: string;
   color: string | null;
   useForImageBorder: boolean;
@@ -155,8 +168,8 @@ export interface TagConfigApiModel {
   weight: number;
 }
 
-export type TagConfigsApiResponseModel = TagConfigApiModel[];
-export type TagConfigsApiRequestModel = TagConfigsApiResponseModel;
+export type TagManagementApiResponseModel = TagManagementApiModel[];
+export type TagManagementApiRequestModel = TagManagementApiResponseModel;
 
 export interface MarkAllWatchedApiResponseModel {
   changedCount: number;
@@ -167,6 +180,13 @@ export interface MarkAllUnwatchedApiResponseModel {
 }
 
 export interface RefreshImagesApiResponseModel {
+  count: number;
+  checked: number;
+  fixed: number;
+  errors: number;
+}
+
+export interface RefreshExternalRatingsApiResponseModel {
   count: number;
   checked: number;
   fixed: number;

@@ -42,20 +42,28 @@
       {{ translations.accessTokens() }}
     </a>
     <a
-      data-test-id="settings-nav-tag-configs"
-      [routerLink]="['/', 'settings', 'tag-configs']"
+      data-test-id="settings-nav-tag-management"
+      [routerLink]="['/', 'settings', 'tag-management']"
       routerLinkActive="active"
       (click)="onNavLinkClick()"
     >
-      {{ translations.tagConfig() }}
+      {{ translations.tagManagement() }}
     </a>
     <a
-      data-test-id="settings-nav-images"
-      [routerLink]="['/', 'settings', 'images']"
+      data-test-id="settings-nav-collection-list-display"
+      [routerLink]="['/', 'settings', 'collection-list-display']"
       routerLinkActive="active"
       (click)="onNavLinkClick()"
     >
-      {{ translations.images() }}
+      {{ translations.collectionListDisplay() }}
+    </a>
+    <a
+      data-test-id="settings-nav-media-refresh"
+      [routerLink]="['/', 'settings', 'media-refresh']"
+      routerLinkActive="active"
+      (click)="onNavLinkClick()"
+    >
+      {{ translations.mediaRefresh() }}
     </a>
     <a
       data-test-id="settings-nav-global-watch-status"

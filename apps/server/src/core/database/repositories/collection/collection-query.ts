@@ -43,6 +43,8 @@ const addSearchFilter = (queryParts: QueryParts, search: string): void => {
     OR LOWER(collection_items.imdb_id) LIKE ? ESCAPE '\\'
     OR LOWER(collection_items.year) LIKE ? ESCAPE '\\'
     OR LOWER(collection_items.rate) LIKE ? ESCAPE '\\'
+    OR LOWER(collection_items.rotten_tomatoes_rate) LIKE ? ESCAPE '\\'
+    OR LOWER(collection_items.metacritic_rate) LIKE ? ESCAPE '\\'
     OR LOWER(collection_items.actors) LIKE ? ESCAPE '\\'
     OR LOWER(collection_items.plot) LIKE ? ESCAPE '\\'
     OR EXISTS (
@@ -55,6 +57,8 @@ const addSearchFilter = (queryParts: QueryParts, search: string): void => {
     )
   )`);
   queryParts.params.push(
+    likeSearch,
+    likeSearch,
     likeSearch,
     likeSearch,
     likeSearch,

@@ -1,8 +1,0 @@
-.actions {
-  display: flex;
-  align-items: start;
-  flex-wrap: wrap;
-  flex-direction: column;
-  gap: var(--size-xs);
-  margin-top: var(--size-xs);
-}

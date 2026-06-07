@@ -35,6 +35,16 @@
         <libc-input data-test-id="item-dialog-year" [label]="translations.labelYear()" [formField]="form.year" />
         <libc-input data-test-id="item-dialog-rate" [label]="translations.labelIMDbRate()" [formField]="form.rate" />
         <libc-input
+          data-test-id="item-dialog-rotten-tomatoes-rate"
+          [label]="translations.labelRottenTomatoesRate()"
+          [formField]="form.rottenTomatoesRate"
+        />
+        <libc-input
+          data-test-id="item-dialog-metacritic-rate"
+          [label]="translations.labelMetacriticRate()"
+          [formField]="form.metacriticRate"
+        />
+        <libc-input
           data-test-id="item-dialog-user-rate"
           type="number"
           [label]="translations.labelUserRate()"
@@ -118,23 +128,40 @@
         <div class="detail-content">
           <header class="detail-header">
             <p class="eyebrow">{{ collectionItem().year || translations.fallbackUnknownYear() }}</p>
+            <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
             <h2>{{ collectionItem().title }}</h2>
             <div class="metadata-row">
-              @if (isShared()) {
-                <span class="chip shared" data-test-id="item-dialog-shared-library">
-                  <i class="material-icons shared-icon" [title]="translations.shared()"> share </i>
-                  {{ library() }}
-                </span>
-              }
+              <div class="chip-list">
+                @if (isShared()) {
+                  <span class="chip shared" data-test-id="item-dialog-shared-library">
+                    <i class="material-icons shared-icon" [title]="translations.shared()"> share </i>
+                    {{ library() }}
+                  </span>
+                }
+              </div>
+            </div>
+          </header>
+          <section>
+            <h4>{{ translations.ratings() }}</h4>
+            <div class="chip-list">
               <span class="chip rating">IMDb {{ collectionItem().rate || translations.fallbackNotAvailable() }}</span>
+              @if (collectionItem().rottenTomatoesRate) {
+                <span class="chip rating"
+                  >{{ translations.labelRottenTomatoesRate() }} {{ collectionItem().rottenTomatoesRate }}</span
+                >
+              }
+              @if (collectionItem().metacriticRate) {
+                <span class="chip rating"
+                  >{{ translations.labelMetacriticRate() }} {{ collectionItem().metacriticRate }}</span
+                >
+              }
               @if (collectionItem().userRate !== null) {
                 <span class="chip rating" data-test-id="item-dialog-user-rate-chip">
                   {{ translations.labelUserRate() }} {{ collectionItem().userRate }}
                 </span>
               }
-              <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
             </div>
-          </header>
+          </section>
 
           @if (collectionItem().genre.length) {
             <section>

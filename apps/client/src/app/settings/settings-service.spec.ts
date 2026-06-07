@@ -122,6 +122,42 @@ describe('SettingsService', () => {
     expect(api.getAiAvailable).toHaveBeenCalled();
   });
 
+  it('preloads collection list display preferences from the API', () => {
+    api.getUserSettings.mockReturnValue(
+      of({
+        collectionListDisplayPreferences: {
+          showYear: false,
+          showSharedIcon: false,
+          preferredRating: 'metacritic',
+          imdbRatingFallback: true,
+        },
+      })
+    );
+
+    service.preloadUserSettings().subscribe();
+
+    expect(mainState.state.collectionListDisplayPreferences()).toEqual({
+      showYear: false,
+      showSharedIcon: false,
+      preferredRating: 'metacritic',
+      imdbRatingFallback: true,
+    });
+  });
+
+  it('stores collection list display preferences', () => {
+    const preferences = {
+      showYear: false,
+      showSharedIcon: true,
+      preferredRating: 'user' as const,
+      imdbRatingFallback: true,
+    };
+
+    service.storeCollectionListDisplayPreferences(preferences);
+
+    expect(mainState.state.collectionListDisplayPreferences()).toEqual(preferences);
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({ collectionListDisplayPreferences: preferences });
+  });
+
   it('disables AI search when preloaded AI availability reports unavailable', () => {
     mainState.setState('aiAvailable', true);
     api.getAiAvailable.mockReturnValue(of({ aiAvailable: false }));

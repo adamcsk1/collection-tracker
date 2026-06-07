@@ -527,7 +527,7 @@ describe('Collection - tag badge filtering', () => {
     // Create item with a custom tag
     cy.request('POST', '/api/v1/create', { ...taggedItem, tags: ['#movie', '#action'] });
     // Enable image badge for the custom tag via API
-    cy.request('POST', '/api/v1/tag/change-config', [
+    cy.request('POST', '/api/v1/tag-management', [
       {
         tag: '#action',
         color: '#ff0000',

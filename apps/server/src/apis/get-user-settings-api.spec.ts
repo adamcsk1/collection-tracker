@@ -50,6 +50,30 @@ describe('get-user-settings-api', () => {
     });
   });
 
+  it('returns collection list display preferences', async () => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    const db = getDatabase();
+    const preferences = {
+      showYear: false,
+      showSharedIcon: true,
+      preferredRating: 'rottenTomatoes',
+      imdbRatingFallback: true,
+    };
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO user_settings (username_hash, collection_list_display_preferences) VALUES (?, ?)').run(
+      'user',
+      JSON.stringify(preferences)
+    );
+
+    const { register } = await import('./get-user-settings-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ collectionListDisplayPreferences: preferences });
+  });
+
   it('returns empty object when caller has no stored user settings', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };

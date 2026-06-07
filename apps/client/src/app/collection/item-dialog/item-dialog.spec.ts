@@ -34,6 +34,8 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
   tags: [MOVIE_TAG, '#action'],
   year: '2020',
   rate: '8.5',
+  rottenTomatoesRate: '',
+  metacriticRate: '',
   userRate: null,
   hash: 'testhash',
   actors: 'Actor One, Actor Two',
@@ -51,6 +53,8 @@ const buildApiItem = (overrides: Partial<CollectionItemApiModel> = {}): Collecti
   tags: [MOVIE_TAG, '#action'],
   year: '2020',
   rate: '8.5',
+  rottenTomatoesRate: '',
+  metacriticRate: '',
   userRate: null,
   hash: 'newhash',
   actors: 'Actor One, Actor Two',
@@ -130,6 +134,15 @@ describe('ItemDialog', () => {
     expect(component['form'].title().value()).toBe('Test Movie');
     expect(component['form'].IMDbId().value()).toBe('tt1234567');
     expect(component['form'].tagsText().value()).toBe(`${MOVIE_TAG} #action`);
+  });
+
+  it('initializes external rating fields from the input model', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ rottenTomatoesRate: '96%', metacriticRate: '85/100' }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['form'].rottenTomatoesRate().value()).toBe('96%');
+    expect(component['form'].metacriticRate().value()).toBe('85/100');
   });
 
   it('toggles edit mode', () => {
@@ -487,6 +500,38 @@ describe('ItemDialog', () => {
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.EditItem');
     expect(component['editMode']()).toBe(false);
+  });
+
+  it('saves edited external ratings', async () => {
+    confirm.open.mockReturnValue(of(true));
+    component['form'].rottenTomatoesRate().value.set('97%');
+    component['form'].metacriticRate().value.set('86/100');
+
+    await component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ rottenTomatoesRate: '97%', metacriticRate: '86/100' }),
+      'testhash',
+      undefined
+    );
+  });
+
+  it('clears external ratings when changing the IMDb ID', async () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ rottenTomatoesRate: '96%', metacriticRate: '85/100' }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['form'].IMDbId().value.set('tt7654321');
+
+    await component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ IMDbId: 'tt7654321', rottenTomatoesRate: '', metacriticRate: '' }),
+      'testhash',
+      undefined
+    );
   });
 
   it('does not save when confirmation is declined', async () => {

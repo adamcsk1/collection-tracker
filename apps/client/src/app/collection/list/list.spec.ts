@@ -15,7 +15,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { Observable, of } from 'rxjs';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
-import { initialTagConfigsState, tagConfigsStateToken } from '../../settings/tag-configs/tag-configs-store';
+import { initialTagManagementState, tagManagementStateToken } from '../../tag-management/tag-management-store';
 import { initialSharesState, sharesStateToken } from '../../shares/shares-store';
 import { FloatActionButtons } from '../float-action-buttons/float-action-buttons';
 import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
@@ -60,6 +60,8 @@ describe('List', () => {
     tags: [],
     year: null,
     rate: '',
+    rottenTomatoesRate: '',
+    metacriticRate: '',
     userRate: null,
     hash: '',
     actors: '',
@@ -97,7 +99,7 @@ describe('List', () => {
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
         provideStore(initialCollectionState, collectionStateToken),
-        provideStore(initialTagConfigsState, tagConfigsStateToken),
+        provideStore(initialTagManagementState, tagManagementStateToken),
         provideStore(initialSharesState, sharesStateToken),
         provideSignalTranslateConfig({ path: '' }),
       ],

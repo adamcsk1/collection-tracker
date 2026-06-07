@@ -35,15 +35,24 @@ describe('proxy-ai-query-api', () => {
   };
 
   const setupCollection = (
-    files: { imdbId: string; title: string; plot: string; actors?: string; genre?: string[]; tags?: string[] }[]
+    files: {
+      imdbId: string;
+      title: string;
+      plot: string;
+      actors?: string;
+      genre?: string[];
+      tags?: string[];
+      rottenTomatoesRate?: string;
+      metacriticRate?: string;
+    }[]
   ) => {
     const db = getDatabase();
     db.prepare('INSERT OR IGNORE INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     for (const file of files) {
       const result = db
         .prepare(
-          `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, actors, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           'user',
@@ -52,6 +61,8 @@ describe('proxy-ai-query-api', () => {
           file.title.toLowerCase(),
           '',
           '',
+          file.rottenTomatoesRate ?? '',
+          file.metacriticRate ?? '',
           file.actors ?? '',
           file.plot,
           '',
@@ -110,6 +121,8 @@ describe('proxy-ai-query-api', () => {
           actors: 'Keanu Reeves, Carrie-Anne Moss',
           genre: ['Action', 'Sci-Fi'],
           tags: ['#family', '#watched'],
+          rottenTomatoesRate: '83%',
+          metacriticRate: '73/100',
         },
       ]);
       const generate = await mockGenerate('[]');
@@ -123,6 +136,8 @@ describe('proxy-ai-query-api', () => {
       expect(payload.system).toContain('Return ONLY a valid JSON array of decision objects.');
       expect(payload.system).toContain('Each object must be shaped exactly like {"IMDbId":"tt0111161","match":true}.');
       expect(payload.system).toContain('Default to excluding an item.');
+      expect(payload.system).toContain('rottenTomatoesRate');
+      expect(payload.system).toContain('metacriticRate');
       expect(payload.system).toContain(
         'Do not mark every candidate as match:true unless every single candidate clearly matches the request.'
       );
@@ -130,6 +145,8 @@ describe('proxy-ai-query-api', () => {
       expect(payload.prompt).toContain('IMDbId:\ntt0133093');
       expect(payload.prompt).toContain('genre:\nAction,Sci-Fi');
       expect(payload.prompt).toContain('tags:\n#family,#watched');
+      expect(payload.prompt).toContain('rottenTomatoesRate:\n83%');
+      expect(payload.prompt).toContain('metacriticRate:\n73/100');
       expect(payload.prompt).toContain('actors:\nKeanu Reeves, Carrie-Anne Moss');
       expect(payload.prompt).toContain('Candidate collection items:');
       expect(payload.prompt).toContain('Return the decision-object JSON array only.');

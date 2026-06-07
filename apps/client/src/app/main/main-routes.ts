@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { mainGuard } from './main-guard';
 import { settingsLockedGuard } from '../settings/settings-locked-guard';
+import { mainGuard } from './main-guard';
 
 export const routes: Routes = [
   {
@@ -22,11 +22,6 @@ export const routes: Routes = [
     path: 'about',
     loadComponent: () => import('../about/about').then((module) => module.About),
     canActivate: [mainGuard],
-  },
-  {
-    path: 'tag-configs',
-    redirectTo: 'settings/tag-configs',
-    pathMatch: 'full',
   },
   {
     path: '',

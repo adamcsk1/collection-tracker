@@ -23,6 +23,8 @@ describe('CollectionService', () => {
     tags: [],
     year: null,
     rate: '',
+    rottenTomatoesRate: '',
+    metacriticRate: '',
     userRate: null,
     hash: '',
     actors: '',

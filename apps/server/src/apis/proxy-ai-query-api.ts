@@ -26,7 +26,7 @@ Output contract:
 
 Filtering rules:
 - Evaluate every provided collection item independently against the user's request.
-- Use only fields present in the provided items: IMDbId, title, year, genre, tags, rate, actors, and plot.
+- Use only fields present in the provided items: IMDbId, title, year, genre, tags, rate, rottenTomatoesRate, metacriticRate, userRate, actors, and plot.
 - Match semantic intent, not only exact words. For example, "christmas movies" can match items whose title, tags, genres, or plot clearly indicate Christmas, holidays, Santa, festive events, or Christmas settings.
 - The user's request can ask for any actor, genre, title, year, decade, tag, rating, theme, mood, setting, franchise, plot idea, or combination of conditions.
 - Default to excluding an item. Include it only when the provided fields clearly support the match.
@@ -67,6 +67,12 @@ ${stringifyPromptValue(item.tags)}
 \n
 rate:
 ${stringifyPromptValue(item.rate)}
+\n
+rottenTomatoesRate:
+${stringifyPromptValue(item.rottenTomatoesRate)}
+\n
+metacriticRate:
+${stringifyPromptValue(item.metacriticRate)}
 \n
 userRate:
 ${stringifyPromptValue(item.userRate)}

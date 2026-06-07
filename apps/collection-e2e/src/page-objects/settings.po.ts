@@ -15,8 +15,12 @@ export const SettingsPage = {
     cy.visit('/client/#/settings/shares');
   },
 
-  visitImages: () => {
-    cy.visit('/client/#/settings/images');
+  visitMediaRefresh: () => {
+    cy.visit('/client/#/settings/media-refresh');
+  },
+
+  visitCollectionListDisplay: () => {
+    cy.visit('/client/#/settings/collection-list-display');
   },
 
   visitGlobalWatchStatus: () => {
@@ -35,9 +39,20 @@ export const SettingsPage = {
   getClearLocalStorageCheckbox: () =>
     cy.getByTestId('settings-clear-local-storage-after-logout').scrollIntoView().find('input[type="checkbox"]'),
 
-  // Images page
-  getImagesRefreshLibrarySelect: () => cy.getByTestId('settings-images-refresh-library').find('select'),
-  getImagesRefreshStartButton: () => cy.getByTestId('settings-images-refresh-start').scrollIntoView(),
+  // Collection list display page
+  getCollectionListDisplayForm: () => cy.getByTestId('settings-collection-list-display-form'),
+  getListShowYearCheckbox: () => cy.getByTestId('settings-list-show-year').find('input[type="checkbox"]'),
+  getListShowSharedIconCheckbox: () => cy.getByTestId('settings-list-show-shared-icon').find('input[type="checkbox"]'),
+  getListPreferredRatingSelect: () => cy.getByTestId('settings-list-preferred-rating').find('select'),
+  getListImdbRatingFallbackCheckbox: () =>
+    cy.getByTestId('settings-list-imdb-rating-fallback').find('input[type="checkbox"]'),
+
+  // Media refresh page
+  getMediaRefreshLibrarySelect: () => cy.getByTestId('settings-media-refresh-library').find('select'),
+  getImageRefreshStartButton: () => cy.getByTestId('settings-images-refresh-start').scrollIntoView(),
+  getExternalRatingsRefreshStartButton: () =>
+    cy.getByTestId('settings-external-ratings-refresh-start').scrollIntoView(),
+  getImageRefreshStatus: () => cy.getByTestId('settings-image-refresh-status').scrollIntoView(),
 
   // Global watch status page
   getMarkAllWatchedButton: () => cy.getByTestId('settings-mark-all-watched').scrollIntoView(),
