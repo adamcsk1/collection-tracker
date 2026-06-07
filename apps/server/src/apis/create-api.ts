@@ -1,13 +1,6 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import {
-  FAVORITE_TAG,
-  MOVIE_TAG,
-  SERIES_TAG,
-  WATCHED_TAG,
-  WATCH_LATER_TAG,
-  WISHLIST_TAG,
-} from '@shared/constants/tags-const';
 import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/api-model';
+import { createCollectionItemTagValidation } from '@shared/utils/collection-item-tag-validation-util';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { findCollectionItemByImdbId, insertCollectionItem } from '../core/database/repositories/collection';
@@ -32,20 +25,12 @@ export const register = (app: FastifyInstance): void => {
         return response.code(400).send();
       }
 
-      const internalCollectionTags = [WATCH_LATER_TAG, WISHLIST_TAG];
-      const usesInternalCollectionTag = item.tags.some((tag) => internalCollectionTags.includes(tag));
-      if (
-        usesInternalCollectionTag ||
-        (listType !== 'library' && (item.tags.includes(FAVORITE_TAG) || item.tags.includes(WATCHED_TAG)))
-      ) {
-        return response.code(400).send();
-      }
-      if (listType === 'series-tracker' && (!item.tags.includes(SERIES_TAG) || item.tags.includes(MOVIE_TAG))) {
-        return response.code(400).send();
-      }
-      if (listType !== 'library' && typeof body.targetOwnerShareCode === 'string') {
-        return response.code(400).send();
-      }
+      const tagValidationError = createCollectionItemTagValidation({
+        tags: item.tags,
+        listType,
+        targetOwnerShareCode: body.targetOwnerShareCode,
+      });
+      if (tagValidationError) return response.code(400).send();
 
       const db = getDatabase();
       const targetOwnerHash =

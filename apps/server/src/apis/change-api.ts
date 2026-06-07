@@ -1,13 +1,6 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import {
-  FAVORITE_TAG,
-  MOVIE_TAG,
-  SERIES_TAG,
-  WATCHED_TAG,
-  WATCH_LATER_TAG,
-  WISHLIST_TAG,
-} from '@shared/constants/tags-const';
 import { ChangeApiRequestModel, ChangeApiResponseModel } from '@shared/models/api-model';
+import { changeCollectionItemTagValidation } from '@shared/utils/collection-item-tag-validation-util';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { findCollectionItemByImdbId, updateCollectionItem } from '../core/database/repositories/collection';
@@ -55,25 +48,15 @@ export const register = (app: FastifyInstance): void => {
         return response.code(409).send();
       }
 
-      const internalCollectionTags = [WATCH_LATER_TAG, WISHLIST_TAG];
-      const isExistingInternalItem = existingItem.list_type !== 'library';
-      if (isExistingInternalItem && ownerHash !== request.usernameHash) {
-        return response.code(403).send();
-      }
-      if (
-        (isExistingInternalItem && listType !== 'series-tracker') ||
-        item.tags.some((tag) => internalCollectionTags.includes(tag))
-      ) {
-        return response.code(400).send();
-      }
-      if (
-        listType === 'series-tracker' &&
-        (!item.tags.includes(SERIES_TAG) ||
-          item.tags.includes(MOVIE_TAG) ||
-          item.tags.includes(FAVORITE_TAG) ||
-          item.tags.includes(WATCHED_TAG))
-      ) {
-        return response.code(400).send();
+      const tagValidationError = changeCollectionItemTagValidation({
+        tags: item.tags,
+        listType,
+        existingListType: existingItem.list_type,
+        requesterIsOwner: ownerHash === request.usernameHash,
+      });
+      if (tagValidationError) {
+        const status = tagValidationError.kind === 'sharedInternalCollectionItemUpdate' ? 403 : 400;
+        return response.code(status).send();
       }
 
       if (item.IMDbId !== imdbId) {

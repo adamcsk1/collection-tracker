@@ -12,14 +12,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { AutocompleteServiceInterface } from './autocomplete-model';
-import { createFormControlA11y } from '../utils/form-control-a11y-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { asyncScheduler, isObservable, Subscription } from 'rxjs';
+import { createFormControlA11y } from '../utils/form-control-a11y-util';
+import { AutocompleteServiceInterface, AutocompleteSuggestionListPlacement } from './autocomplete-model';
 
 export const AutocompleteService = new InjectionToken<AutocompleteServiceInterface>('AutocompleteService');
-
-export type AutocompleteSuggestionListPlacement = 'bottom' | 'top';
 
 const SUGGESTION_NAVIGATION_KEY_CODES = new Set([
   'ArrowUp',
@@ -31,7 +29,7 @@ const SUGGESTION_NAVIGATION_KEY_CODES = new Set([
   'PageUp',
   'PageDown',
 ]);
-const DEFAULT_SUGGESTION_DEBOUNCE_MS = 80;
+const DEFAULT_SUGGESTION_DEBOUNCE_MS = 300;
 
 @Component({
   selector: 'libc-autocomplete',

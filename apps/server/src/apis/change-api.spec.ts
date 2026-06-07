@@ -36,6 +36,8 @@ const updatedItem = {
   tags: ['#movie'],
   year: '2024',
   rate: '7.1',
+  rottenTomatoesRate: '96%',
+  metacriticRate: '85/100',
   userRate: 8.7,
   actors: 'Actor One, Actor Two',
   plot: 'Updated plot',
@@ -88,8 +90,14 @@ describe('change-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({ title: 'Updated', hash: hashText(JSON.stringify(updatedItem)) }),
     });
-    expect(getDatabase().prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt-change')).toEqual({
+    expect(
+      getDatabase()
+        .prepare('SELECT title, rotten_tomatoes_rate, metacritic_rate FROM collection_items WHERE imdb_id = ?')
+        .get('tt-change')
+    ).toEqual({
       title: 'Updated',
+      rotten_tomatoes_rate: '96%',
+      metacritic_rate: '85/100',
     });
   });
 
@@ -124,6 +132,40 @@ describe('change-api', () => {
       params: { imdbId: 'tt-change' },
       query: { listType: 'series-tracker' },
       body: { ...updatedItem, hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when updating an item without a type tag', async () => {
+    insertItem();
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, tags: ['#action'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when updating an item with a virtual tag', async () => {
+    insertItem();
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, tags: ['#movie', '#unwatched'], hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -172,6 +214,27 @@ describe('change-api', () => {
     const request: any = {
       params: { imdbId: 'tt-change' },
       query: { ownerShareCode: getUserShareCode('owner') },
+      body: { ...updatedItem, hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
+  });
+
+  it('returns 403 when updating a shared internal collection item directly', async () => {
+    insertItem('abc123', 'owner', 'watch-later');
+    insertUser('user');
+    insertShare('owner', 'user', true);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      query: { ownerShareCode: getUserShareCode('owner'), listType: 'watch-later' },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
     };
