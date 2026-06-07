@@ -15,4 +15,9 @@
   <string name="error_page_url_required">Enter a page URL</string>
   <string name="error_api_url_required">Enter an API URL</string>
   <string name="error_invalid_collection_tracker_page">Loaded page is not Collection Tracker instance!</string>
+  <string name="error_file_picker_unavailable">No file picker is available on this device.</string>
+  <string name="download_failed">Download failed.</string>
+  <string name="download_in_progress">Downloading Collection Tracker file</string>
+  <string name="download_saved">File saved to Downloads.</string>
+  <string name="download_started">Download started.</string>
 </resources>

@@ -15,12 +15,12 @@ base {
 
 android {
   namespace = "com.collectiontracker.app"
-  compileSdk = 36
+  compileSdk = 37
 
   defaultConfig {
     applicationId = "com.collectiontracker.app"
     minSdk = 35
-    targetSdk = 36
+    targetSdk = 37
     versionCode = versionCodeTimestamp
     versionName = "0.1.0"
   }
@@ -33,13 +33,14 @@ android {
   buildTypes {
     getByName("release") {
       isMinifyEnabled = false
+      //noinspection NotShrinkingResources
       isShrinkResources = false
     }
   }
 }
 
 dependencies {
-  implementation("androidx.core:core-ktx:1.18.0")
+  implementation("androidx.core:core-ktx:1.19.0")
   implementation("androidx.appcompat:appcompat:1.7.1")
-  implementation("com.google.android.material:material:1.13.0")
+  implementation("com.google.android.material:material:1.14.0")
 }
