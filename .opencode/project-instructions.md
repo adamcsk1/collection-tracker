@@ -6,11 +6,13 @@ AI search is powered by Ollama. Local development and Docker Compose read Ollama
 
 ## Docker Deployment Environment Variables
 
-| Variable           | Default                  | Description                                                                                                     |
-| ------------------ | ------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `BASE_PATH`        | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.     |
-| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path. |
-| `APP_PORT`         | `3001`                   | Host port mapped to the container's nginx listener.                                                             |
+| Variable           | Default                  | Description                                                                                                        |
+| ------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `BASE_PATH`        | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.        |
+| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.    |
+| `APP_PORT`         | `3001`                   | Host port mapped to the container's nginx listener.                                                                |
+| `APP_UID`          | `1000`                   | Runtime user ID used for writable Docker files. Set to `$(id -u)` on Linux hosts so `./.data` remains accessible.  |
+| `APP_GID`          | `1000`                   | Runtime group ID used for writable Docker files. Set to `$(id -g)` on Linux hosts so `./.data` remains accessible. |
 
 ## RTK Commands
 

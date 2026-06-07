@@ -49,26 +49,18 @@ mkdir -p /data
 # Pass data folder and allow overriding HOST/PORT via env
 cd /app/server
 
-# Determine entry file from generated package.json or fallbacks
-ENTRY=""
-if [ -f "package.json" ]; then
-  ENTRY=$(node -e "try{console.log(require('./package.json').main||'')}catch(e){console.error('')}") || true
+if [ ! -f "package.json" ]; then
+  echo "Cannot find /app/server/package.json. Ensure the server build generated package metadata."
+  exit 1
 fi
 
-# Fallback candidates (cover Nx esbuild with bundle=false)
-if [ -z "$ENTRY" ] || [ ! -f "$ENTRY" ]; then
-  for CAND in \
-    "bootstrap.js" \
-    "main.js" \
-    "index.js" \
-    "apps/server/src/bootstrap.js" \
-    "apps/server/src/main.js"; do
-    if [ -f "$CAND" ]; then ENTRY="$CAND"; break; fi
-  done
-fi
+ENTRY=$(node -e "const { main } = require('./package.json'); if (!main) process.exit(1); console.log(main)") || {
+  echo "Cannot read server entry from /app/server/package.json main."
+  exit 1
+}
 
-if [ -z "$ENTRY" ] || [ ! -f "$ENTRY" ]; then
-  echo "Cannot find server entry file. Checked package.json 'main' and common candidates. Contents of /app/server:" && ls -laR
+if [ ! -f "$ENTRY" ]; then
+  echo "Cannot find server entry file from package.json main: $ENTRY"
   exit 1
 fi
 
