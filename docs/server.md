@@ -8,7 +8,7 @@ Source: [`apps/server`](../apps/server)
 
 - sign-up, sign-in, logout, and access-token lifecycle management
 - CRUD for per-user collection items stored in SQLite
-- tag configuration and user-settings persistence
+- tag management and user-settings persistence
 - SQLite database initialization and schema migrations
 - OMDb API proxying — forwards search and item lookups to OMDb using the server-side `OMDB_API_KEY` environment variable
 - AI search proxying — forwards IMDB-ID-based queries to Ollama using `ollama.config.json` in the active data folder
