@@ -27,6 +27,8 @@ const item = {
   tags: ['#movie'],
   year: '2024',
   rate: '7.1',
+  rottenTomatoesRate: '96%',
+  metacriticRate: '85/100',
   userRate: 8.7,
   actors: 'Actor One, Actor Two',
   plot: 'Plot',
@@ -78,8 +80,14 @@ describe('create-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({ item: expect.objectContaining({ title: 'Custom File' }) });
-    expect(getDatabase().prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt0000001')).toEqual({
+    expect(
+      getDatabase()
+        .prepare('SELECT title, rotten_tomatoes_rate, metacritic_rate FROM collection_items WHERE imdb_id = ?')
+        .get('tt0000001')
+    ).toEqual({
       title: 'Custom File',
+      rotten_tomatoes_rate: '96%',
+      metacritic_rate: '85/100',
     });
   });
 
@@ -187,6 +195,30 @@ describe('create-api', () => {
   it('returns 400 when creating a movie in the series tracker', async () => {
     const response = mockResponse();
     const request: any = { body: { ...item, listType: 'series-tracker' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when creating an item without a type tag', async () => {
+    const response = mockResponse();
+    const request: any = { body: { ...item, tags: ['#action'] }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when creating an item with a virtual tag', async () => {
+    const response = mockResponse();
+    const request: any = { body: { ...item, tags: ['#movie', '#unwatched'] }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');

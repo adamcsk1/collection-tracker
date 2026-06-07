@@ -5,3 +5,5 @@ export interface AutocompleteServiceInterface {
   formatSuggestionText?(text: string): string;
   formatSuggestionValue?(text: string): string;
 }
+
+export type AutocompleteSuggestionListPlacement = 'bottom' | 'top';

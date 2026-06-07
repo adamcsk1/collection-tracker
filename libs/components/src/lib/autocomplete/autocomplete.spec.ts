@@ -96,7 +96,7 @@ describe('Autocomplete component', () => {
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
-    vi.advanceTimersByTime(80);
+    vi.advanceTimersByTime(300);
     fixture.detectChanges();
 
     expect(component['suggestions']()).toEqual(['alpha', 'beta']);
@@ -137,7 +137,7 @@ describe('Autocomplete component', () => {
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
-    vi.advanceTimersByTime(80);
+    vi.advanceTimersByTime(300);
     fixture.detectChanges();
 
     component['onKeydown']({
@@ -165,7 +165,7 @@ describe('Autocomplete component', () => {
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
-    vi.advanceTimersByTime(80);
+    vi.advanceTimersByTime(300);
     fixture.detectChanges();
 
     expect(component['suggestions']()).toHaveLength(2);
@@ -272,7 +272,7 @@ describe('Autocomplete component', () => {
       code: 'ArrowDown',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
-    vi.advanceTimersByTime(80);
+    vi.advanceTimersByTime(300);
 
     expect(serviceStub.getSuggestion).not.toHaveBeenCalled();
     expect(component['suggestions']()).toEqual(['alpha', 'beta']);
@@ -336,7 +336,7 @@ describe('Autocomplete component', () => {
       code: 'KeyA',
       target: { value: 'a' },
     } as unknown as KeyboardEvent);
-    vi.advanceTimersByTime(80);
+    vi.advanceTimersByTime(300);
     fixture.detectChanges();
 
     component['onAcceptSuggestion'](0);
@@ -448,7 +448,7 @@ describe('Autocomplete component with input service', () => {
       code: 'KeyG',
       target: { value: 'g' },
     } as unknown as KeyboardEvent);
-    vi.advanceTimersByTime(80);
+    vi.advanceTimersByTime(300);
     inputFixture.detectChanges();
 
     expect(inputComponent['suggestions']()).toEqual(['gamma', 'delta']);
@@ -477,7 +477,7 @@ describe('Autocomplete component with input service', () => {
       code: 'KeyZ',
       target: { value: 'z' },
     } as unknown as KeyboardEvent);
-    vi.advanceTimersByTime(80);
+    vi.advanceTimersByTime(300);
     inputFixture.detectChanges();
 
     expect(inputComponent['suggestions']()).toEqual(['zeta', 'eta']);
