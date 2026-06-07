@@ -10,6 +10,8 @@ The Android project is a thin WebView wrapper around a deployed Collection Track
 - Can optionally trust invalid HTTPS certificates for private self-hosted instances.
 - Stores both values locally on the device.
 - Injects runtime config into the loaded page as `window.COLLECTION_TRACKER_CONFIG` and `localStorage.CT.ApiUrl`.
+- Opens Android's document picker for web file inputs, including tag management import.
+- Saves WebView downloads to Android Downloads, including tag management exports created from `blob:` URLs.
 - Displays a native error screen when the page cannot be loaded or the device is offline.
 - Exposes `window.CollectionTracker.resetAppConfig()` so the web application can clear the stored configuration and return to setup.
 

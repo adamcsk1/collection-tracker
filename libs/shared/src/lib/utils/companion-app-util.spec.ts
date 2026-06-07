@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { companionApp, resetCompanionAppConfig } from './companion-app-util';
+import { companionApp, resetCompanionAppConfig, saveCompanionAppDownload } from './companion-app-util';
 
 describe('companionApp', () => {
   it('returns true when CollectionTrackerInterface exists on window', () => {
@@ -27,5 +27,22 @@ describe('resetCompanionAppConfig', () => {
   it('returns undefined when interface is missing', () => {
     delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
     expect(resetCompanionAppConfig()).toBeUndefined();
+  });
+});
+
+describe('saveCompanionAppDownload', () => {
+  it('calls saveDownload on the bridge with base64 encoded content', () => {
+    const saveDownload = vi.fn(() => true);
+    window.CollectionTrackerInterface = { saveDownload };
+
+    const result = saveCompanionAppDownload('export.json', 'application/json', '{"tag":"#ä"}');
+
+    expect(saveDownload).toHaveBeenCalledWith('export.json', 'application/json', 'eyJ0YWciOiIjw6QifQ==');
+    expect(result).toBe(true);
+  });
+
+  it('returns false when saveDownload is missing', () => {
+    window.CollectionTrackerInterface = {};
+    expect(saveCompanionAppDownload('export.json', 'application/json', '{}')).toBe(false);
   });
 });

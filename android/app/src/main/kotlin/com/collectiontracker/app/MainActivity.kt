@@ -1,39 +1,42 @@
 package com.collectiontracker.app
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.ConnectivityManager
+import android.net.Uri
 import android.net.NetworkCapabilities
-import android.os.Bundle
 import android.net.http.SslError
+import android.os.Bundle
 import android.webkit.CookieManager
+import android.webkit.JsResult
+import android.webkit.SslErrorHandler
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebStorage
-import android.webkit.JavascriptInterface
-import android.webkit.SslErrorHandler
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.webkit.JsResult
-import android.webkit.WebChromeClient
-import android.app.AlertDialog
 import android.graphics.Color
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import org.json.JSONObject
-import androidx.core.content.edit
-import android.widget.Toast
 import com.google.android.material.color.MaterialColors
 
 private const val PREFS_NAME = "collection_tracker_prefs"
@@ -56,6 +59,14 @@ class MainActivity : AppCompatActivity() {
   private var pageUrl: String = ""
   private var apiUrl: String = ""
   private var isShowingInvalidPage = false
+  private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+
+  private val fileChooserLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    val callback = fileChooserCallback ?: return@registerForActivityResult
+    fileChooserCallback = null
+    val uris = WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
+    callback.onReceiveValue(uris)
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -179,6 +190,30 @@ class MainActivity : AppCompatActivity() {
     cookieManager.setAcceptThirdPartyCookies(webView, true)
 
     webView.webChromeClient = object : WebChromeClient() {
+      override fun onShowFileChooser(
+        webView: WebView?,
+        filePathCallback: ValueCallback<Array<Uri>>?,
+        fileChooserParams: FileChooserParams?,
+      ): Boolean {
+        fileChooserCallback?.onReceiveValue(null)
+        fileChooserCallback = filePathCallback
+
+        val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+          addCategory(Intent.CATEGORY_OPENABLE)
+          type = "*/*"
+        }
+
+        return try {
+          fileChooserLauncher.launch(intent)
+          true
+        } catch (_: ActivityNotFoundException) {
+          fileChooserCallback = null
+          filePathCallback?.onReceiveValue(null)
+          Toast.makeText(this@MainActivity, getString(R.string.error_file_picker_unavailable), Toast.LENGTH_LONG).show()
+          true
+        }
+      }
+
       override fun onJsAlert(
         view: WebView?,
         url: String?,
@@ -217,6 +252,9 @@ class MainActivity : AppCompatActivity() {
         return true
       }
     }
+
+    val downloadHandler = AndroidDownloadHandler(this, webView)
+    webView.setDownloadListener(downloadHandler.createDownloadListener())
 
     webView.webViewClient = object : WebViewClient() {
       override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -274,7 +312,7 @@ class MainActivity : AppCompatActivity() {
       }
     }
 
-    webView.addJavascriptInterface(ConfigBridge(), "CollectionTrackerInterface")
+    webView.addJavascriptInterface(CollectionTrackerBridge(this, ::clearStoredConfig, downloadHandler), "CollectionTrackerInterface")
   }
 
   private fun injectRuntimeConfig() {
@@ -291,6 +329,14 @@ class MainActivity : AppCompatActivity() {
         try {
           localStorage.setItem('${PREFS_API_URL}', ${JSONObject.quote(apiUrl)});
         } catch (_ignored) {}
+
+        if (!URL.__collectionTrackerRevokeObjectUrlPatched) {
+          URL.__collectionTrackerRevokeObjectUrlPatched = true;
+          var revokeObjectURL = URL.revokeObjectURL.bind(URL);
+          URL.revokeObjectURL = function(url) {
+            window.setTimeout(function() { revokeObjectURL(url); }, 30000);
+          };
+        }
       })();
     """.trimIndent()
     webView.evaluateJavascript(script, null)
@@ -461,15 +507,6 @@ class MainActivity : AppCompatActivity() {
     val network = connectivityManager.activeNetwork ?: return false
     val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
     return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-  }
-
-  private inner class ConfigBridge {
-    @Suppress("unused")
-    @JavascriptInterface
-    fun resetAppConfig(): Boolean {
-      runOnUiThread { clearStoredConfig() }
-      return true
-    }
   }
 
   private fun hideKeyboard() {
