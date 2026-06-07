@@ -297,12 +297,12 @@ describe('Collection sharing - image refresh', () => {
     setupShare({ canRead: true, canCreate: false, canUpdate: true, canDelete: false }).then(({ owner, sharedUser }) => {
       seedOwnerItem(owner, 'Shared Image Refresh Movie', `tt${uniqueId().slice(0, 7)}`);
       signInThroughUi(sharedUser);
-      SettingsPage.visitImages();
+      SettingsPage.visitMediaRefresh();
 
-      SettingsPage.getImagesRefreshLibrarySelect().should('be.visible').select(owner.shareCode);
+      SettingsPage.getMediaRefreshLibrarySelect().should('be.visible').select(owner.shareCode);
       cy.intercept('POST', '/api/v1/items/refresh-images*').as('refreshImages');
       cy.on('window:confirm', () => true);
-      SettingsPage.getImagesRefreshStartButton().click();
+      SettingsPage.getImageRefreshStartButton().click();
 
       cy.wait('@refreshImages').then((interception) => {
         expect(interception.request.url).to.include(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);

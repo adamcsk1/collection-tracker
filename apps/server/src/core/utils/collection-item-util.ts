@@ -14,6 +14,8 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     typeof item?.image !== 'string' ||
     typeof item?.IMDbId !== 'string' ||
     typeof item?.rate !== 'string' ||
+    typeof item?.rottenTomatoesRate !== 'string' ||
+    typeof item?.metacriticRate !== 'string' ||
     typeof item?.actors !== 'string' ||
     typeof item?.plot !== 'string' ||
     !Array.isArray(item?.genre) ||
@@ -37,6 +39,8 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     tags: item.tags.map((tag) => `${tag}`.trim()).filter(Boolean),
     year: normalizeYear(year),
     rate: item.rate.trim(),
+    rottenTomatoesRate: item.rottenTomatoesRate.trim(),
+    metacriticRate: item.metacriticRate.trim(),
     userRate,
     actors: item.actors.trim(),
     plot: item.plot.trim(),

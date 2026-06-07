@@ -58,20 +58,64 @@ describe('Settings - basic form fields', () => {
   });
 });
 
-describe('Settings - images page', () => {
+describe('Settings - media refresh page', () => {
   beforeEach(() => {
     cy.autoLogin();
-    SettingsPage.visitImages();
+    SettingsPage.visitMediaRefresh();
   });
 
-  it('shows the images refresh start button', () => {
-    SettingsPage.getImagesRefreshStartButton().should('be.visible');
+  it('shows the media refresh action buttons', () => {
+    SettingsPage.getImageRefreshStartButton().should('be.visible');
+    SettingsPage.getExternalRatingsRefreshStartButton().should('be.visible');
   });
 
-  it('calls the refresh images API when the start button is clicked', () => {
+  it('calls the refresh images API when the image refresh button is clicked', () => {
     cy.intercept('POST', '/api/v1/items/refresh-images').as('refreshImages');
-    SettingsPage.getImagesRefreshStartButton().click();
+    SettingsPage.getImageRefreshStartButton().click();
     cy.wait('@refreshImages').its('response.statusCode').should('eq', 200);
+    SettingsPage.getImageRefreshStatus()
+      .should('be.visible')
+      .and('contain.text', 'Count')
+      .and('contain.text', 'Checked')
+      .and('contain.text', 'Fixed')
+      .and('contain.text', 'Errors');
+  });
+});
+
+describe('Settings - collection list display page', () => {
+  beforeEach(() => {
+    cy.autoLoginWithNewUser();
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('List Display Test Movie', 'movie', 'tt8100001'),
+      rottenTomatoesRate: '96%',
+      metacriticRate: '85/100',
+    });
+  });
+
+  it('shows the display preference controls', () => {
+    SettingsPage.visitCollectionListDisplay();
+
+    SettingsPage.getCollectionListDisplayForm().should('be.visible');
+    SettingsPage.getListShowYearCheckbox().should('exist');
+    SettingsPage.getListShowSharedIconCheckbox().should('exist');
+    SettingsPage.getListPreferredRatingSelect().should('be.visible');
+    SettingsPage.getListImdbRatingFallbackCheckbox().should('exist');
+  });
+
+  it('applies preferred rating and year visibility to the collection list', () => {
+    SettingsPage.visitCollectionListDisplay();
+    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+
+    SettingsPage.getListShowYearCheckbox().uncheck();
+    cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+    SettingsPage.getListPreferredRatingSelect().select('metacritic');
+    cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.visit();
+    CollectionPage.getListItems().contains('List Display Test Movie').should('be.visible');
+    cy.getByTestId('list-item-year').should('not.exist');
+    CollectionPage.getListItemMetacriticRatings().should('contain.text', '85/100');
+    cy.getByTestId('list-item-rating-imdb').should('not.exist');
   });
 });
 
@@ -141,33 +185,36 @@ describe('Settings - save changes', () => {
   it('calls POST /api/v1/user/settings when a setting changes', () => {
     cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
 
-    SettingsPage.getThemeSelect().find('option').then(($options) => {
-      const currentValue = $options.filter(':selected').val() as string;
-      const otherOption = $options.toArray().find((option) => option.getAttribute('value') !== currentValue);
+    SettingsPage.getThemeSelect()
+      .find('option')
+      .then(($options) => {
+        const currentValue = $options.filter(':selected').val() as string;
+        const otherOption = $options.toArray().find((option) => option.getAttribute('value') !== currentValue);
 
-      if (otherOption) {
-        SettingsPage.getThemeSelect().select(otherOption.getAttribute('value') as string);
-        cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
-      }
-    });
+        if (otherOption) {
+          SettingsPage.getThemeSelect().select(otherOption.getAttribute('value') as string);
+          cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+        }
+      });
   });
 
   it('persists a changed theme after it changes', () => {
     cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
 
-    SettingsPage.getThemeSelect().find('option').then(($options) => {
-      const currentValue = $options.filter(':selected').val() as string;
-      const otherOption = $options.toArray().find((option) => option.getAttribute('value') !== currentValue);
+    SettingsPage.getThemeSelect()
+      .find('option')
+      .then(($options) => {
+        const currentValue = $options.filter(':selected').val() as string;
+        const otherOption = $options.toArray().find((option) => option.getAttribute('value') !== currentValue);
 
-      if (otherOption) {
-        const newValue = otherOption.getAttribute('value') as string;
-        SettingsPage.getThemeSelect().select(newValue);
+        if (otherOption) {
+          const newValue = otherOption.getAttribute('value') as string;
+          SettingsPage.getThemeSelect().select(newValue);
 
-        cy.wait('@saveSettings').its('request.body.theme').should('eq', newValue);
-      }
-    });
+          cy.wait('@saveSettings').its('request.body.theme').should('eq', newValue);
+        }
+      });
   });
-
 });
 
 describe('Settings - navigate to settings via menu', () => {
@@ -258,7 +305,7 @@ describe('Settings - access tokens', () => {
 
     // Fetch the token list to get the stored tokenHash
     cy.request('GET', '/api/v1/user/access-tokens').then((response) => {
-      const tokenHash = (response.body as Array<{ tokenHash: string; }>)[0].tokenHash;
+      const tokenHash = (response.body as Array<{ tokenHash: string }>)[0].tokenHash;
       SettingsPage.getRevokeTokenButton(tokenHash).click();
       cy.wait('@revokeToken').its('response.statusCode').should('eq', 204);
     });

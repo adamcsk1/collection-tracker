@@ -29,15 +29,16 @@
     </h3>
     <div class="meta">
       <span class="meta-column">
-        @if (collectionItem.year) {
-          <span>{{ collectionItem.year }}</span>
+        @if (listDisplayPreferences().showYear && collectionItem.year) {
+          <span data-test-id="list-item-year">{{ collectionItem.year }}</span>
         }
-        @if (collectionItem.rate) {
-          <span class="rating"> <i class="material-icons"> star_rate </i> {{ collectionItem.rate }} </span>
-        }
-        @if (collectionItem.userRate !== null) {
-          <span class="rating" data-test-id="list-item-user-rate">
-            <i class="material-icons"> person </i> {{ collectionItem.userRate }}
+        @if (selectedRating(); as rating) {
+          <span class="rating" [attr.data-test-id]="rating.testId">
+            <i class="material-icons" aria-hidden="true"> {{ rating.icon }} </i>
+            @if (rating.label) {
+              {{ rating.label }}
+            }
+            {{ rating.value }}
           </span>
         }
       </span>
@@ -47,7 +48,7 @@
             <i class="material-icons">star</i>
           </span>
         }
-        @if (shared()) {
+        @if (listDisplayPreferences().showSharedIcon && shared()) {
           <span class="shared" data-test-id="list-item-shared" [title]="translations.shared()">
             <i class="material-icons">share</i>
           </span>

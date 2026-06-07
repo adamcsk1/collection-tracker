@@ -64,6 +64,8 @@ export class NewItemDialogService {
           tags: typeTag ? [typeTag, ...parseTagText(tags)] : parseTagText(tags),
           year: this.parseYear(selectedContent.Year),
           rate: selectedContent.imdbRating,
+          rottenTomatoesRate: this.getRating(selectedContent.Ratings, 'Rotten Tomatoes'),
+          metacriticRate: this.getRating(selectedContent.Ratings, 'Metacritic'),
           userRate,
           actors: selectedContent.Actors,
           plot: selectedContent.Plot,
@@ -94,5 +96,9 @@ export class NewItemDialogService {
     const normalizedYear = year.trim().replace('–', '-');
     const normalizedDecimalYear = normalizedYear.replace(/^(\d{4})\.0$/, '$1');
     return normalizedDecimalYear && normalizedDecimalYear !== 'N/A' ? normalizedDecimalYear : null;
+  }
+
+  private getRating(ratings: { Source: string; Value: string }[] | undefined, source: string): string {
+    return ratings?.find((rating) => rating.Source === source)?.Value.trim() ?? '';
   }
 }

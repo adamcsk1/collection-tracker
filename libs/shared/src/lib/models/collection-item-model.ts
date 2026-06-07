@@ -10,6 +10,8 @@ export interface CollectionItemModel {
   tags: string[];
   year: CollectionItemYearModel;
   rate: string;
+  rottenTomatoesRate: string;
+  metacriticRate: string;
   userRate: number | null;
   hash: string;
   actors: string;

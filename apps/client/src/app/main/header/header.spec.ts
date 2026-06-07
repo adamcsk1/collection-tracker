@@ -43,7 +43,7 @@ describe('Header component', () => {
   });
 
   it('uses settings as the title for settings child pages', () => {
-    routerEvents.next(new NavigationEnd(1, '/settings/tag-configs', '/settings/tag-configs'));
+    routerEvents.next(new NavigationEnd(1, '/settings/tag-management', '/settings/tag-management'));
 
     expect(component['currentNavTitle']()).toBe('Settings');
   });

@@ -1,4 +1,8 @@
 import { LanguageModel } from '@shared/models/language-model';
+import {
+  CollectionListDisplayPreferencesModel,
+  DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES,
+} from '@shared/models/collection-list-display-preferences-model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
 
 export interface MainState {
@@ -8,6 +12,7 @@ export interface MainState {
   language: LanguageModel;
   aiAvailable: boolean;
   defaultLibraryOwnerShareCode: string | null;
+  collectionListDisplayPreferences: CollectionListDisplayPreferencesModel;
 }
 
 export const initialMainState: MainState = {
@@ -17,6 +22,7 @@ export const initialMainState: MainState = {
   language: 'en',
   aiAvailable: false,
   defaultLibraryOwnerShareCode: null,
+  collectionListDisplayPreferences: DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES,
 };
 
 export const mainStateToken = createInjectionToken<MainState>('mainState');

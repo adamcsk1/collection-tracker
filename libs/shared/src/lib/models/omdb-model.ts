@@ -1,6 +1,12 @@
+export interface OMDbResponseRatingModel {
+  Source: string;
+  Value: string;
+}
+
 export interface OMDbResponseItemModel {
   imdbID: string;
   imdbRating: string;
+  Ratings?: OMDbResponseRatingModel[];
   Plot: string;
   Poster: string;
   Type: string;

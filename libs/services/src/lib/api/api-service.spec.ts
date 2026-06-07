@@ -56,6 +56,8 @@ describe('ApiService', () => {
       tags: [],
       year: null,
       rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
       userRate: null,
       actors: '',
       plot: '',
@@ -79,6 +81,8 @@ describe('ApiService', () => {
       tags: [],
       year: null,
       rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
       userRate: null,
       actors: '',
       plot: '',
@@ -102,6 +106,8 @@ describe('ApiService', () => {
       tags: [],
       year: null,
       rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
       userRate: null,
       actors: '',
       plot: '',
@@ -175,12 +181,12 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({});
   });
 
-  it('retrieves user tag configs', async () => {
-    const promise = lastValueFrom(service.getUserTagConfigs());
+  it('retrieves user tag management', async () => {
+    const promise = lastValueFrom(service.getUserTagManagement());
 
-    const tagConfigsRequest = httpMock.expectOne('https://api.test/tag/config');
-    expect(tagConfigsRequest.request.method).toBe('GET');
-    tagConfigsRequest.flush([
+    const tagManagementRequest = httpMock.expectOne('https://api.test/tag-management');
+    expect(tagManagementRequest.request.method).toBe('GET');
+    tagManagementRequest.flush([
       {
         tag: '#a',
         color: '#111111',
@@ -203,7 +209,7 @@ describe('ApiService', () => {
     ]);
   });
 
-  it('updates user tag configs', async () => {
+  it('updates user tag management', async () => {
     const payload = [
       {
         tag: '#a',
@@ -214,12 +220,12 @@ describe('ApiService', () => {
         weight: 1,
       },
     ];
-    const promise = lastValueFrom(service.updateUserTagConfigs(payload));
+    const promise = lastValueFrom(service.updateUserTagManagement(payload));
 
-    const updateTagConfigsRequest = httpMock.expectOne('https://api.test/tag/change-config');
-    expect(updateTagConfigsRequest.request.method).toBe('POST');
-    expect(updateTagConfigsRequest.request.body).toEqual(payload);
-    updateTagConfigsRequest.flush({});
+    const updateTagManagementRequest = httpMock.expectOne('https://api.test/tag-management');
+    expect(updateTagManagementRequest.request.method).toBe('POST');
+    expect(updateTagManagementRequest.request.body).toEqual(payload);
+    updateTagManagementRequest.flush({});
 
     await expect(promise).resolves.toEqual({});
   });
@@ -273,19 +279,19 @@ describe('ApiService', () => {
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('alerts and rethrows when retrieving user tag configs fails', async () => {
-    const promise = lastValueFrom(service.getUserTagConfigs());
+  it('alerts and rethrows when retrieving user tag management fails', async () => {
+    const promise = lastValueFrom(service.getUserTagManagement());
 
-    const tagConfigsRequest = httpMock.expectOne('https://api.test/tag/config');
-    tagConfigsRequest.flush('bad', { status: 500, statusText: 'Server Error' });
+    const tagManagementRequest = httpMock.expectOne('https://api.test/tag-management');
+    tagManagementRequest.flush('bad', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('alerts and rethrows when updating user tag configs fails', async () => {
+  it('alerts and rethrows when updating user tag management fails', async () => {
     const promise = lastValueFrom(
-      service.updateUserTagConfigs([
+      service.updateUserTagManagement([
         {
           tag: '#a',
           color: '#111111',
@@ -297,8 +303,8 @@ describe('ApiService', () => {
       ])
     );
 
-    const updateTagConfigsRequest = httpMock.expectOne('https://api.test/tag/change-config');
-    updateTagConfigsRequest.flush('bad', { status: 400, statusText: 'Bad Request' });
+    const updateTagManagementRequest = httpMock.expectOne('https://api.test/tag-management');
+    updateTagManagementRequest.flush('bad', { status: 400, statusText: 'Bad Request' });
 
     await expect(promise).rejects.toMatchObject({ status: 400 });
     expect(alertSpy).toHaveBeenCalledTimes(1);
@@ -333,6 +339,8 @@ describe('ApiService', () => {
       tags: [],
       year: null,
       rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
       userRate: null,
       actors: '',
       plot: '',
@@ -410,6 +418,28 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.refreshImages('owner-code'));
 
     const refreshRequest = httpMock.expectOne('https://api.test/items/refresh-images?ownerShareCode=owner-code');
+    expect(refreshRequest.request.method).toBe('POST');
+    refreshRequest.flush({ count: 1, checked: 1, fixed: 1, errors: 0 });
+
+    await expect(promise).resolves.toEqual({ count: 1, checked: 1, fixed: 1, errors: 0 });
+  });
+
+  it('refreshes external ratings and returns summary', async () => {
+    const promise = lastValueFrom(service.refreshExternalRatings());
+
+    const refreshRequest = httpMock.expectOne('https://api.test/items/refresh-external-ratings');
+    expect(refreshRequest.request.method).toBe('POST');
+    refreshRequest.flush({ count: 5, checked: 5, fixed: 1, errors: 0 });
+
+    await expect(promise).resolves.toEqual({ count: 5, checked: 5, fixed: 1, errors: 0 });
+  });
+
+  it('refreshes shared library external ratings when owner share code is provided', async () => {
+    const promise = lastValueFrom(service.refreshExternalRatings('owner-code'));
+
+    const refreshRequest = httpMock.expectOne(
+      'https://api.test/items/refresh-external-ratings?ownerShareCode=owner-code'
+    );
     expect(refreshRequest.request.method).toBe('POST');
     refreshRequest.flush({ count: 1, checked: 1, fixed: 1, errors: 0 });
 

@@ -15,14 +15,16 @@ const insertItem = (item: {
   genres?: string[];
   actors?: string;
   plot?: string;
+  rottenTomatoesRate?: string;
+  metacriticRate?: string;
   createdAt?: string;
   listType?: CollectionListTypeModel;
 }) => {
   const result = getDatabase()
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, imdb_id, title, title_lower, year, rate, actors, plot, image, content_hash, list_type, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))`
+       (username_hash, imdb_id, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash, list_type, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))`
     )
     .run(
       'user',
@@ -31,6 +33,8 @@ const insertItem = (item: {
       item.title.toLowerCase(),
       '2024',
       '8.0',
+      item.rottenTomatoesRate ?? '',
+      item.metacriticRate ?? '',
       item.actors ?? '',
       item.plot ?? '',
       '',
@@ -105,6 +109,29 @@ describe('collection search APIs', () => {
         limit: 10,
         items: [expect.objectContaining({ IMDbId: 'tt-alien' })],
       })
+    );
+  });
+
+  it('searches items by external ratings', async () => {
+    insertUser();
+    insertItem({ imdbId: 'tt-rated', title: 'Rated Movie', rottenTomatoesRate: '96%', metacriticRate: '85/100' });
+    insertItem({ imdbId: 'tt-other', title: 'Other Movie', rottenTomatoesRate: '50%', metacriticRate: '40/100' });
+    const { register } = await import('./get-collection-items-api');
+
+    const rottenTomatoesResponse = await callRoute(register, 'get', '/api/v1/items', {
+      query: { search: '96%' },
+      usernameHash: 'user',
+    });
+    const metacriticResponse = await callRoute(register, 'get', '/api/v1/items', {
+      query: { search: '85/100' },
+      usernameHash: 'user',
+    });
+
+    expect(rottenTomatoesResponse.send).toHaveBeenCalledWith(
+      expect.objectContaining({ total: 1, items: [expect.objectContaining({ IMDbId: 'tt-rated' })] })
+    );
+    expect(metacriticResponse.send).toHaveBeenCalledWith(
+      expect.objectContaining({ total: 1, items: [expect.objectContaining({ IMDbId: 'tt-rated' })] })
     );
   });
 

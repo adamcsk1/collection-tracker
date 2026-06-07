@@ -12,8 +12,8 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import { FAVORITE_TAG, WATCH_LATER_TAG, WATCHED_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
+import { FAVORITE_TAG, WATCH_LATER_TAG, WATCHED_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import { CollectionItemChangeApiModel, SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
 import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
@@ -25,6 +25,7 @@ import { CollectionItemModel } from '../collection-model';
 import { CollectionService } from '../collection-service';
 import { TagSuggestionService } from '../new-item-dialog/suggestion/tag-suggestion-service';
 import { SeriesSeasonMetadataDialog } from '../series-season-metadata-dialog/series-season-metadata-dialog';
+import { getProxyImageUrl } from '../utils/proxy-image-url-util';
 import {
   buildEpisodeProgressTag,
   filterEditableTags,
@@ -34,7 +35,6 @@ import {
   typeTagValidation,
   virtualTagValidation,
 } from '../validators/tag-validators';
-import { getProxyImageUrl } from '../utils/proxy-image-url-util';
 import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
 
 interface ItemDialogFormModel {
@@ -42,6 +42,8 @@ interface ItemDialogFormModel {
   IMDbId: string;
   year: CollectionItemYearModel;
   rate: string;
+  rottenTomatoesRate: string;
+  metacriticRate: string;
   userRate: number | null;
   image: string;
   genreText: string;
@@ -83,6 +85,8 @@ export class ItemDialog implements OnInit {
     labelIMDbId: computed(() => this.ngxSignalTranslate.translate('IMDbId')),
     labelYear: computed(() => this.ngxSignalTranslate.translate('Year')),
     labelIMDbRate: computed(() => this.ngxSignalTranslate.translate('IMDbRate')),
+    labelMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Metacritic')),
+    labelRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('RottenTomatoes')),
     labelUserRate: computed(() => this.ngxSignalTranslate.translate('UserRate')),
     labelImageUrl: computed(() => this.ngxSignalTranslate.translate('ImageUrl')),
     altImageExample: computed(() => this.ngxSignalTranslate.translate('Alt.ImageExample')),
@@ -119,6 +123,7 @@ export class ItemDialog implements OnInit {
     validationUsedInternalTag: computed(() => this.ngxSignalTranslate.translate('Toast.UsedInternalTag')),
     validationMissingTypeTag: computed(() => this.ngxSignalTranslate.translate('Toast.MissingTypeTag')),
     validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
+    ratings: computed(() => this.ngxSignalTranslate.translate('Ratings')),
   };
   protected readonly tagSuggestionService = inject(TagSuggestionService);
   protected readonly genreSuggestionService = inject(GenreSuggestionService);
@@ -127,6 +132,8 @@ export class ItemDialog implements OnInit {
     IMDbId: '',
     year: null,
     rate: '',
+    rottenTomatoesRate: '',
+    metacriticRate: '',
     userRate: null,
     image: '',
     genreText: '',
@@ -378,6 +385,8 @@ export class ItemDialog implements OnInit {
       IMDbId: change.IMDbId,
       year: change.year,
       rate: change.rate,
+      rottenTomatoesRate: change.rottenTomatoesRate,
+      metacriticRate: change.metacriticRate,
       userRate: change.userRate,
       image: change.image,
       genreText: change.genre.join(', '),
@@ -402,11 +411,14 @@ export class ItemDialog implements OnInit {
     if (internalCollectionTag && !tags.includes(internalCollectionTag)) {
       tags = [...tags, internalCollectionTag];
     }
+    const imdbIdChanged = formValues.IMDbId !== this.collectionItem().IMDbId;
     return {
       title: formValues.title,
       IMDbId: formValues.IMDbId,
       year: formValues.year,
       rate: formValues.rate,
+      rottenTomatoesRate: imdbIdChanged ? '' : formValues.rottenTomatoesRate,
+      metacriticRate: imdbIdChanged ? '' : formValues.metacriticRate,
       userRate: formValues.userRate,
       image: formValues.image,
       genre: parseGenreText(formValues.genreText),
@@ -457,6 +469,8 @@ export class ItemDialog implements OnInit {
         IMDbId: lastSavedItem.IMDbId,
         year: lastSavedItem.year,
         rate: lastSavedItem.rate,
+        rottenTomatoesRate: lastSavedItem.rottenTomatoesRate,
+        metacriticRate: lastSavedItem.metacriticRate,
         userRate: lastSavedItem.userRate,
         image: lastSavedItem.image,
         genreText: lastSavedItem.genre.join(', '),

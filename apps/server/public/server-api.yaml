@@ -174,6 +174,22 @@ components:
         defaultLibraryOwnerShareCode:
           type: ['string', 'null']
           description: Share code of the incoming library selected by default when creating collection items. Null selects the caller's own library.
+        collectionListDisplayPreferences:
+          $ref: '#/components/schemas/CollectionListDisplayPreferences'
+
+    CollectionListDisplayPreferences:
+      type: object
+      required: [showYear, showSharedIcon, preferredRating, imdbRatingFallback]
+      properties:
+        showYear:
+          type: boolean
+        showSharedIcon:
+          type: boolean
+        preferredRating:
+          type: string
+          enum: [imdb, rottenTomatoes, metacritic, user]
+        imdbRatingFallback:
+          type: boolean
 
     AiAvailableResponse:
       type: object
@@ -199,6 +215,8 @@ components:
         defaultLibraryOwnerShareCode:
           type: ['string', 'null']
           description: Share code of the incoming library selected by default when creating collection items. Null selects the caller's own library.
+        collectionListDisplayPreferences:
+          $ref: '#/components/schemas/CollectionListDisplayPreferences'
         fromLogin:
           type: boolean
           description: When true, language and theme are only initialized if the user has not already stored those settings.
@@ -241,7 +259,24 @@ components:
 
     CollectionItem:
       type: object
-      required: [image, title, titleLower, genre, IMDbId, tags, year, rate, userRate, hash, actors, plot, listType]
+      required:
+        [
+          image,
+          title,
+          titleLower,
+          genre,
+          IMDbId,
+          tags,
+          year,
+          rate,
+          rottenTomatoesRate,
+          metacriticRate,
+          userRate,
+          hash,
+          actors,
+          plot,
+          listType,
+        ]
       properties:
         image:
           type: string
@@ -265,6 +300,10 @@ components:
           description: Release year or year interval such as `2026-2028` or `2027-`.
         rate:
           type: string
+        rottenTomatoesRate:
+          type: string
+        metacriticRate:
+          type: string
         userRate:
           type: ['number', 'null']
           minimum: 0
@@ -287,7 +326,8 @@ components:
 
     CollectionItemChange:
       type: object
-      required: [image, title, genre, IMDbId, tags, year, rate, userRate, actors, plot]
+      required:
+        [image, title, genre, IMDbId, tags, year, rate, rottenTomatoesRate, metacriticRate, userRate, actors, plot]
       properties:
         image:
           type: string
@@ -307,6 +347,10 @@ components:
           type: ['string', 'null']
           description: Release year or year interval such as `2026-2028` or `2027-`.
         rate:
+          type: string
+        rottenTomatoesRate:
+          type: string
+        metacriticRate:
           type: string
         userRate:
           type: ['number', 'null']
@@ -549,6 +593,23 @@ components:
           type: integer
           description: Number of images that could not be fixed.
 
+    RefreshExternalRatingsResponse:
+      type: object
+      required: [count, checked, fixed, errors]
+      properties:
+        count:
+          type: integer
+          description: Total number of collection items processed.
+        checked:
+          type: integer
+          description: Number of items checked.
+        fixed:
+          type: integer
+          description: Number of items with updated IMDb, Rotten Tomatoes, or Metacritic ratings.
+        errors:
+          type: integer
+          description: Number of items whose external ratings could not be refreshed.
+
     SeriesTrackerSeason:
       type: object
       required: [season, episodes]
@@ -604,6 +665,16 @@ components:
           type: string
         Actors:
           type: string
+        Ratings:
+          type: array
+          items:
+            type: object
+            required: [Source, Value]
+            properties:
+              Source:
+                type: string
+              Value:
+                type: string
 
     OMDbSearchResponse:
       type: object
@@ -636,7 +707,7 @@ components:
           examples:
             - - tt0133093
 
-    TagConfig:
+    TagManagement:
       type: object
       required: [tag, color, useForImageBorder, useForTextColor, useForImageBadge, weight]
       properties:
@@ -657,10 +728,10 @@ components:
         weight:
           type: integer
 
-    TagConfigsResponse:
+    TagManagementResponse:
       type: array
       items:
-        $ref: '#/components/schemas/TagConfig'
+        $ref: '#/components/schemas/TagManagement'
 
 security:
   - cookieAuth: []
@@ -682,7 +753,7 @@ tags:
   - name: AI Proxy
     description: Proxy endpoint for local Ollama AI search.
   - name: Tag
-    description: Tag colour configuration.
+    description: Tag management.
 
 paths:
   /health:
@@ -861,7 +932,7 @@ paths:
     post:
       operationId: updateUserSettings
       summary: Update user settings
-      description: Accepts any subset of `fetchBatchSize`, `theme`, `animatedBackground`, `language`, and `fromLogin`. Returns the merged settings object.
+      description: Accepts any subset of user settings and returns the merged settings object.
       tags: [User]
       requestBody:
         required: true
@@ -1182,6 +1253,30 @@ paths:
         '404':
           description: The requested shared library owner was not found.
 
+  /items/refresh-external-ratings:
+    post:
+      operationId: refreshExternalRatings
+      summary: Refresh collection item external ratings
+      description: Fetches every collection item from OMDb and refreshes IMDb, Rotten Tomatoes, and Metacritic ratings. When `ownerShareCode` is provided, the refresh targets that shared library and requires update permission.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for refreshing an incoming shared library.
+      responses:
+        '200':
+          description: Summary of the refresh operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshExternalRatingsResponse'
+        '403':
+          description: The authenticated user cannot update the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
   /tags/suggestions:
     get:
       operationId: getTagSuggestions
@@ -1284,7 +1379,7 @@ paths:
     post:
       operationId: createItem
       summary: Create a collection item
-      description: Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later, wishlist, and series-tracker items cannot be created in shared libraries and cannot use `#favorite` or `#watched`. Series-tracker items must be series. The internal `#watch-later` and `#wishlist` tags are rejected.
+      description: Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list. Tags must include `#movie` or `#series`. Virtual tags and the internal `#watch-later` and `#wishlist` tags are rejected. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later, wishlist, and series-tracker items cannot be created in shared libraries and cannot use `#favorite` or `#watched`. Series-tracker items must use `#series` and cannot use `#movie`.
       tags: [Collection]
       requestBody:
         required: true
@@ -1300,7 +1395,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreateResponse'
         '400':
-          description: Request body is missing required item fields, contains invalid values, or uses an invalid internal collection tag combination.
+          description: Request body is missing required item fields, contains invalid values, or uses an invalid tag/list combination.
         '403':
           description: Not allowed to create in the target library.
         '409':
@@ -1310,7 +1405,7 @@ paths:
     put:
       operationId: changeItem
       summary: Update a collection item
-      description: Updates a library or series-tracker item. Watch-later and wishlist items are not modified by this endpoint. The internal `#watch-later` and `#wishlist` tags are rejected.
+      description: Updates a library or series-tracker item. Tags must include `#movie` or `#series`. Virtual tags and the internal `#watch-later` and `#wishlist` tags are rejected. Watch-later and wishlist items are not modified by this endpoint. Series-tracker items must use `#series` and cannot use `#movie`, `#favorite`, or `#watched`.
       tags: [Collection]
       parameters:
         - name: imdbId
@@ -1347,7 +1442,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ChangeResponse'
         '400':
-          description: Request body is missing required item fields, contains invalid values, or attempts an invalid internal collection transition.
+          description: Request body is missing required item fields, contains invalid values, or attempts an invalid tag/list transition.
         '403':
           description: Not allowed to update in the target library or to update a shared internal collection item.
         '404':
@@ -1631,35 +1726,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/AiAvailableResponse'
 
-  /tag/config:
+  /tag-management:
     get:
-      operationId: getTagConfig
-      summary: Get tag configuration
+      operationId: getTagManagement
+      summary: Get tag management
       tags: [Tag]
       responses:
         '200':
-          description: Current tag configuration array.
+          description: Current tag management array.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TagConfigsResponse'
-
-  /tag/change-config:
+                $ref: '#/components/schemas/TagManagementResponse'
     post:
-      operationId: changeTagConfig
-      summary: Replace tag configuration
-      description: Replaces the full tag configuration array and returns the stored result.
+      operationId: updateTagManagement
+      summary: Replace tag management
+      description: Replaces the full tag management array and returns the stored result.
       tags: [Tag]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TagConfigsResponse'
+              $ref: '#/components/schemas/TagManagementResponse'
       responses:
         '200':
-          description: Stored tag configuration.
+          description: Stored tag management.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TagConfigsResponse'
+                $ref: '#/components/schemas/TagManagementResponse'

@@ -19,12 +19,19 @@ export const settingsRoutes: Routes = [
         loadComponent: () => import('./access-tokens/access-tokens').then((module) => module.AccessTokens),
       },
       {
-        path: 'tag-configs',
-        loadComponent: () => import('./tag-configs/tag-configs').then((module) => module.TagConfigs),
+        path: 'tag-management',
+        loadComponent: () => import('./tag-management/tag-management').then((module) => module.TagManagement),
       },
       {
-        path: 'images',
-        loadComponent: () => import('./images/images').then((module) => module.SettingsImages),
+        path: 'collection-list-display',
+        loadComponent: () =>
+          import('./collection-list-display/collection-list-display').then(
+            (module) => module.SettingsCollectionListDisplay
+          ),
+      },
+      {
+        path: 'media-refresh',
+        loadComponent: () => import('./media-refresh/media-refresh').then((module) => module.SettingsMediaRefresh),
       },
       {
         path: 'global-watch-status',

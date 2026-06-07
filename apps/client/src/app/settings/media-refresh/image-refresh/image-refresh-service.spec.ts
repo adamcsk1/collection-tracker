@@ -64,6 +64,7 @@ describe('ImageRefreshService', () => {
 
     expect(toastState.state.message()).toBe('Toast.ImagesRegenerated');
     expect(service.state().running).toBe(false);
+    expect(service.state().completed).toBe(true);
     expect(service.state().count).toBe(2);
     expect(service.state().checked).toBe(2);
     expect(service.state().fixed).toBe(0);

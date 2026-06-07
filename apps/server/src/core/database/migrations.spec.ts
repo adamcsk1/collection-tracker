@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { runMigrations } from './migrations';
+import { hasSqlMigrations, runMigrations } from './migrations';
 
 describe('runMigrations', () => {
   const tempDirs: string[] = [];
@@ -14,7 +14,21 @@ describe('runMigrations', () => {
     }
   });
 
-  it('repairs collection item relation foreign keys that point to a renamed table', () => {
+  it('only treats directories with SQL migration files as migration directories', () => {
+    const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+    tempDirs.push(migrationsDir);
+
+    writeFileSync(join(migrationsDir, '011_add_collection_item_external_ratings.ts'), 'export {};');
+    writeFileSync(join(migrationsDir, 'readme.md'), 'not a migration');
+
+    expect(hasSqlMigrations(migrationsDir)).toBe(false);
+
+    writeFileSync(join(migrationsDir, '011_add_collection_item_external_ratings.sql'), 'SELECT 1;');
+
+    expect(hasSqlMigrations(migrationsDir)).toBe(true);
+  });
+
+  it('repairs collection item relation foreign keys that point to a renamed table', async () => {
     const db = new Database(':memory:');
     db.exec(`
       PRAGMA foreign_keys = OFF;
@@ -87,7 +101,7 @@ describe('runMigrations', () => {
       PRAGMA legacy_alter_table = OFF;`
     );
 
-    runMigrations(db, migrationsDir);
+    await runMigrations(db, migrationsDir);
 
     expect(db.prepare('PRAGMA foreign_key_list(collection_item_genres)').all()).toEqual([
       expect.objectContaining({ table: 'collection_items' }),
@@ -104,7 +118,7 @@ describe('runMigrations', () => {
     db.close();
   });
 
-  it('normalizes decimal year text artifacts', () => {
+  it('normalizes decimal year text artifacts', async () => {
     const db = new Database(':memory:');
     db.exec(`
       CREATE TABLE schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
@@ -120,7 +134,7 @@ describe('runMigrations', () => {
       WHERE year GLOB '[0-9][0-9][0-9][0-9].0';`
     );
 
-    runMigrations(db, migrationsDir);
+    await runMigrations(db, migrationsDir);
 
     expect(db.prepare('SELECT year FROM collection_items ORDER BY id').all()).toEqual([
       { year: '2005' },
@@ -134,7 +148,7 @@ describe('runMigrations', () => {
     db.close();
   });
 
-  it('preserves the user rate check when adding series tracker list type', () => {
+  it('preserves the user rate check when adding series tracker list type', async () => {
     const db = new Database(':memory:');
     db.exec(`
       CREATE TABLE schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
@@ -181,7 +195,7 @@ describe('runMigrations', () => {
       readFileSync(join(process.cwd(), 'apps/server/src/migrations/007_add_series_tracker_list_type.sql'), 'utf8')
     );
 
-    runMigrations(db, migrationsDir);
+    await runMigrations(db, migrationsDir);
 
     expect(() => {
       db.prepare(
@@ -192,6 +206,76 @@ describe('runMigrations', () => {
     expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt001')).toEqual({
       list_type: 'library',
     });
+
+    db.close();
+  });
+
+  it('adds external rating columns with empty defaults', async () => {
+    const db = new Database(':memory:');
+    db.exec(`
+      CREATE TABLE schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+      CREATE TABLE users (username_hash TEXT PRIMARY KEY, user_token_hash TEXT NOT NULL);
+      CREATE TABLE collection_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username_hash TEXT NOT NULL,
+        imdb_id TEXT NOT NULL,
+        list_type TEXT NOT NULL DEFAULT 'library' CHECK (list_type IN ('library', 'watch-later', 'wishlist', 'series-tracker')),
+        title TEXT NOT NULL,
+        title_lower TEXT NOT NULL,
+        year TEXT NOT NULL,
+        rate TEXT NOT NULL,
+        user_rate REAL,
+        actors TEXT NOT NULL DEFAULT '',
+        plot TEXT NOT NULL,
+        image TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(username_hash, imdb_id, list_type),
+        FOREIGN KEY (username_hash) REFERENCES users(username_hash) ON DELETE CASCADE
+      );
+      CREATE TABLE collection_item_genres (
+        item_id INTEGER NOT NULL,
+        genre TEXT NOT NULL,
+        PRIMARY KEY (item_id, genre),
+        FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+      );
+      CREATE TABLE collection_item_tags (
+        item_id INTEGER NOT NULL,
+        tag TEXT NOT NULL,
+        PRIMARY KEY (item_id, tag),
+        FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+      );
+      INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+      INSERT INTO collection_items (id, username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
+      VALUES (1, 'user', 'tt001', 'Title', 'title', '2024', '8.0', 'Plot', 'image', 'hash');
+      INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama');
+      INSERT INTO collection_item_tags (item_id, tag) VALUES (1, '#movie');
+    `);
+    const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+    tempDirs.push(migrationsDir);
+    writeFileSync(
+      join(migrationsDir, '011_add_collection_item_external_ratings.sql'),
+      readFileSync(
+        join(process.cwd(), 'apps/server/src/migrations/011_add_collection_item_external_ratings.sql'),
+        'utf8'
+      )
+    );
+
+    await runMigrations(db, migrationsDir);
+
+    expect(
+      db
+        .prepare('SELECT rotten_tomatoes_rate, metacritic_rate, content_hash FROM collection_items WHERE imdb_id = ?')
+        .get('tt001')
+    ).toEqual({
+      rotten_tomatoes_rate: '',
+      metacritic_rate: '',
+      content_hash: 'hash',
+    });
+    expect(db.prepare('SELECT id FROM schema_migrations ORDER BY id').all()).toEqual([
+      { id: '011_add_collection_item_external_ratings.sql' },
+    ]);
 
     db.close();
   });

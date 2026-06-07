@@ -7,7 +7,7 @@ import { beforeEach } from 'vitest';
 
 const tempDir = mkdtempSync(join(tmpdir(), 'collection-tracker-test-'));
 const db = initializeDatabase(tempDir);
-runMigrations(db, join(__dirname, '..', 'src', 'migrations'));
+await runMigrations(db, join(__dirname, '..', 'src', 'migrations'));
 
 const tables = [
   'user_shares',

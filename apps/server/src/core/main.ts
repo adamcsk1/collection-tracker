@@ -13,7 +13,7 @@ import { initializeFolders } from '../tools/initializer';
 import { getArgv } from './argv/argv';
 import { RATE_LIMIT_EXCLUDED_PATHS } from './constants/rate-limit-const';
 import { initializeDatabase } from './database/database';
-import { runMigrations } from './database/migrations';
+import { hasSqlMigrations, runMigrations } from './database/migrations';
 import { debugLog, errorLog, infoLog } from './logger';
 import { SERVER_MAX_PARAM_LENGTH } from './main-const';
 import { getRateLimitKey } from './utils/rate-limit-util';
@@ -38,9 +38,9 @@ export const main = async () => {
       join(process.cwd(), 'migrations'),
       join(process.cwd(), 'apps', 'server', 'src', 'migrations'),
     ];
-    const migrationsDir = possibleMigrationDirs.find((dir) => existsSync(dir));
+    const migrationsDir = possibleMigrationDirs.find((dir) => existsSync(dir) && hasSqlMigrations(dir));
     if (migrationsDir) {
-      runMigrations(db, migrationsDir);
+      await runMigrations(db, migrationsDir);
     } else {
       throw new Error('Could not find migrations directory. Database schema may not be up to date.');
     }

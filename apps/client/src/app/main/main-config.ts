@@ -4,7 +4,7 @@ import { provideRouter, withHashLocation } from '@angular/router';
 import { initialMainCollectionState, mainCollectionStateToken } from './main-collection-store';
 import { initialMainState, mainStateToken } from './main-store';
 import { initialSharesState, sharesStateToken } from '../shares/shares-store';
-import { initialTagConfigsState, tagConfigsStateToken } from '../settings/tag-configs/tag-configs-store';
+import { initialTagManagementState, tagManagementStateToken } from '../tag-management/tag-management-store';
 import {
   blockerLoadingStateToken,
   initialBlockerLoadingState,
@@ -36,7 +36,7 @@ export const mainConfig: ApplicationConfig = {
     provideStore(initialMainCollectionState, mainCollectionStateToken),
     provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
     provideStore(initialSharesState, sharesStateToken),
-    provideStore(initialTagConfigsState, tagConfigsStateToken),
+    provideStore(initialTagManagementState, tagManagementStateToken),
     provideSignalTranslateConfig({ path: `${getBasePath()}/client/i18n` }),
   ],
 };

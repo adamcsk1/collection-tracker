@@ -59,6 +59,51 @@ describe('change-user-settings-api', () => {
     });
   });
 
+  it('updates collection list display preferences', async () => {
+    const response = mockResponse();
+    const preferences = {
+      showYear: false,
+      showSharedIcon: true,
+      preferredRating: 'metacritic',
+      imdbRatingFallback: true,
+    };
+    const request: any = { body: { collectionListDisplayPreferences: preferences }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+
+    const { register } = await import('./change-user-settings-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ collectionListDisplayPreferences: preferences });
+    expect(
+      db.prepare('SELECT collection_list_display_preferences FROM user_settings WHERE username_hash = ?').get('user')
+    ).toEqual({ collection_list_display_preferences: JSON.stringify(preferences) });
+  });
+
+  it('returns 400 for invalid collection list display preferences', async () => {
+    const response = mockResponse();
+    const request: any = {
+      body: {
+        collectionListDisplayPreferences: {
+          showYear: true,
+          showSharedIcon: true,
+          preferredRating: 'letterboxd',
+          imdbRatingFallback: false,
+        },
+      },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-user-settings-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('accepts null to select my library as the default', async () => {
     const response = mockResponse();
     const request: any = { body: { defaultLibraryOwnerShareCode: null }, usernameHash: 'user' };

@@ -26,6 +26,8 @@ export const toApiItem = (db: Database.Database, row: CollectionItemRow): Collec
     tags: relations.tags,
     year: row.year || null,
     rate: row.rate,
+    rottenTomatoesRate: row.rotten_tomatoes_rate ?? '',
+    metacriticRate: row.metacritic_rate ?? '',
     userRate: row.user_rate,
     actors: row.actors,
     plot: row.plot,

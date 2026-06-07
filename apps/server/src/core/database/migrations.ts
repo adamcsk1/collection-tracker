@@ -4,7 +4,10 @@ import { join } from 'path';
 
 const MIGRATION_PATTERN = /^\d+_.+\.sql$/;
 
-export const runMigrations = (db: Database.Database, migrationsDir: string): void => {
+export const hasSqlMigrations = (migrationsDir: string): boolean =>
+  readdirSync(migrationsDir).some((file) => MIGRATION_PATTERN.test(file));
+
+export const runMigrations = async (db: Database.Database, migrationsDir: string): Promise<void> => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       id TEXT PRIMARY KEY,
@@ -30,6 +33,7 @@ export const runMigrations = (db: Database.Database, migrationsDir: string): voi
     try {
       db.exec(sql);
       db.prepare('INSERT INTO schema_migrations (id) VALUES (?)').run(file);
+      appliedIds.add(file);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error(`Migration failed: ${file} - ${error.message}`);

@@ -8,6 +8,8 @@ interface CollectionItemFixture {
   tags: string[];
   year: string | null;
   rate: string;
+  rottenTomatoesRate: string;
+  metacriticRate: string;
   userRate: number | null;
   actors: string;
   plot: string;
@@ -25,6 +27,8 @@ export const buildCollectionItem = (
   tags: [`#${type}`],
   year: '2020',
   rate: '8.5',
+  rottenTomatoesRate: '',
+  metacriticRate: '',
   userRate: null,
   actors: 'Actor One, Actor Two',
   plot: `A great ${type} for e2e testing.`,

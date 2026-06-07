@@ -1,8 +1,6 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { RefreshImagesApiResponseModel } from '@shared/models/api-model';
-import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 import type { FastifyInstance } from 'fastify';
-import { OMDB_API } from '../core/constants/omdb-const';
 import { getDatabase } from '../core/database/database';
 import {
   countCollectionItems,
@@ -14,29 +12,9 @@ import { findUserByShareCode } from '../core/database/repositories/user-reposito
 import { fetchAndCacheImage } from '../core/image/image-proxy';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
+import { fetchOMDbItem } from '../core/omdb/omdb-item';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash } from '../core/utils/collection-item-util';
-
-const fetchOMDbItem = async (imdbId: string, apiKey: string): Promise<OMDbResponseItemModel | null> => {
-  const url = new URL(OMDB_API);
-  url.searchParams.append('i', imdbId);
-  url.searchParams.append('apikey', apiKey);
-
-  try {
-    const response = await fetch(url.href);
-    if (!response.ok) {
-      await debugLog(`[${imdbId}] OMDb fetch failed with status ${response.status}`);
-      return null;
-    }
-    const data = (await response.json()) as OMDbResponseItemModel;
-    await debugLog(`[${imdbId}] OMDb fetch succeeded`);
-    return data;
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    await debugLog(`[${imdbId}] OMDb fetch error: ${message}`);
-    return null;
-  }
-};
 
 export const register = (app: FastifyInstance): void => {
   app.post(

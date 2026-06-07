@@ -1,0 +1,29 @@
+<form role="form" data-test-id="settings-collection-list-display-form" [formRoot]="form">
+  <p>{{ translations.messageCollectionListDisplay() }}</p>
+  <libc-checkbox
+    data-test-id="settings-list-show-year"
+    [formField]="form.showYear"
+    [label]="translations.showYear()"
+    (valueChange)="onShowYearChange($event)"
+  />
+  <libc-checkbox
+    data-test-id="settings-list-show-shared-icon"
+    [formField]="form.showSharedIcon"
+    [label]="translations.showSharedIcon()"
+    (valueChange)="onShowSharedIconChange($event)"
+  />
+  <libc-select
+    data-test-id="settings-list-preferred-rating"
+    [formField]="form.preferredRating"
+    [label]="translations.preferredRating()"
+    [options]="ratingOptions()"
+    (valueChange)="onPreferredRatingChange($event)"
+  />
+  <libc-checkbox
+    data-test-id="settings-list-imdb-rating-fallback"
+    [formField]="form.imdbRatingFallback"
+    [label]="translations.imdbRatingFallback()"
+    [hint]="translations.messageImdbRatingFallback()"
+    (valueChange)="onImdbRatingFallbackChange($event)"
+  />
+</form>

@@ -22,8 +22,8 @@ export const insertCollectionItem = (
   const result = db
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, imdb_id, list_type, title, title_lower, year, rate, user_rate, actors, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       usernameHash,
@@ -33,6 +33,8 @@ export const insertCollectionItem = (
       item.title.toLowerCase(),
       item.year ?? '',
       item.rate,
+      item.rottenTomatoesRate,
+      item.metacriticRate,
       item.userRate,
       item.actors,
       item.plot,
@@ -67,7 +69,7 @@ export const updateCollectionItem = (
 
   db.prepare(
     `UPDATE collection_items SET
-     imdb_id = ?, title = ?, title_lower = ?, year = ?, rate = ?, user_rate = ?, actors = ?, plot = ?, image = ?, content_hash = ?, updated_at = CURRENT_TIMESTAMP
+     imdb_id = ?, title = ?, title_lower = ?, year = ?, rate = ?, rotten_tomatoes_rate = ?, metacritic_rate = ?, user_rate = ?, actors = ?, plot = ?, image = ?, content_hash = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`
   ).run(
     updatedItem.IMDbId,
@@ -75,6 +77,8 @@ export const updateCollectionItem = (
     updatedItem.title.toLowerCase(),
     updatedItem.year ?? '',
     updatedItem.rate,
+    updatedItem.rottenTomatoesRate,
+    updatedItem.metacriticRate,
     updatedItem.userRate,
     updatedItem.actors,
     updatedItem.plot,

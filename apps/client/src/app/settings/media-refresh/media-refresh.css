@@ -1,0 +1,36 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-xs);
+  margin-top: var(--size-xs);
+}
+
+.refresh-statuses {
+  display: grid;
+  gap: var(--size-xs);
+  margin-top: var(--size-md);
+}
+
+.refresh-status {
+  width: 100%;
+
+  dl {
+    display: grid;
+    gap: var(--size-xs);
+    margin: 0;
+  }
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--size-md);
+  }
+
+  dt {
+    font-weight: bold;
+  }
+
+  dd {
+    margin: 0;
+  }
+}

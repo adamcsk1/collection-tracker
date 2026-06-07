@@ -2,6 +2,10 @@ import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { UserSettingsApiRequestModel, UserSettingsApiResponseModel } from '@shared/models/api-model';
+import {
+  CollectionListDisplayPreferencesModel,
+  COLLECTION_LIST_DISPLAY_RATINGS,
+} from '@shared/models/collection-list-display-preferences-model';
 import { LANGUAGES } from '@shared/models/language-model';
 import { THEMES } from '@shared/models/theme-model';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
@@ -19,6 +23,21 @@ const isAllowedDefaultLibraryOwnerShareCode = (
 ): value is UserSettingsApiResponseModel['defaultLibraryOwnerShareCode'] =>
   value === null || (typeof value === 'string' && value.trim().length > 0);
 
+const isAllowedCollectionListDisplayPreferences = (value: unknown): value is CollectionListDisplayPreferencesModel => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.showYear === 'boolean' &&
+    typeof candidate.showSharedIcon === 'boolean' &&
+    typeof candidate.preferredRating === 'string' &&
+    COLLECTION_LIST_DISPLAY_RATINGS.includes(
+      candidate.preferredRating as CollectionListDisplayPreferencesModel['preferredRating']
+    ) &&
+    typeof candidate.imdbRatingFallback === 'boolean'
+  );
+};
+
 const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel => {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return false;
 
@@ -34,6 +53,8 @@ const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel
         return isAllowedLanguage(value);
       case 'defaultLibraryOwnerShareCode':
         return isAllowedDefaultLibraryOwnerShareCode(value);
+      case 'collectionListDisplayPreferences':
+        return isAllowedCollectionListDisplayPreferences(value);
       case 'fromLogin':
         return typeof value === 'boolean';
       default:

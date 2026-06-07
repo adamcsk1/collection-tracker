@@ -1,0 +1,86 @@
+<p>{{ translations.messageMissingImages() }}</p>
+
+@if (showLibrarySelect()) {
+  <libc-select
+    data-test-id="settings-media-refresh-library"
+    [label]="translations.library()"
+    [value]="selectedOwnerShareCode()"
+    [options]="libraryOptions()"
+    [disabled]="apiLoadNetworkStatus() === 'pending'"
+    (valueChange)="onLibraryChange($event)"
+  />
+}
+<div class="actions">
+  <button
+    data-test-id="settings-images-refresh-start"
+    type="button"
+    [disabled]="apiLoadNetworkStatus() === 'pending'"
+    (click)="onStartImagesRefresh()"
+  >
+    <i class="material-icons" [title]="translations.imageRefresh()"> start </i>
+    {{ translations.imageRefresh() }}
+  </button>
+  <button
+    data-test-id="settings-external-ratings-refresh-start"
+    type="button"
+    [disabled]="apiLoadNetworkStatus() === 'pending'"
+    (click)="onStartExternalRatingsRefresh()"
+  >
+    <i class="material-icons" [title]="translations.externalRatingsRefresh()"> start </i>
+    {{ translations.externalRatingsRefresh() }}
+  </button>
+</div>
+
+<div class="refresh-statuses">
+  @if (imageRefreshState().completed) {
+    <section class="card refresh-status" data-test-id="settings-image-refresh-status">
+      <h3 class="card-title">{{ translations.imageRefresh() }}</h3>
+      <div class="card-body">
+        <dl>
+          <div>
+            <dt>{{ translations.count() }}</dt>
+            <dd>{{ imageRefreshState().count }}</dd>
+          </div>
+          <div>
+            <dt>{{ translations.checked() }}</dt>
+            <dd>{{ imageRefreshState().checked }}</dd>
+          </div>
+          <div>
+            <dt>{{ translations.fixed() }}</dt>
+            <dd>{{ imageRefreshState().fixed }}</dd>
+          </div>
+          <div>
+            <dt>{{ translations.errors() }}</dt>
+            <dd>{{ imageRefreshState().errors }}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  }
+
+  @if (externalRatingsRefreshState().completed) {
+    <section class="card refresh-status" data-test-id="settings-external-ratings-refresh-status">
+      <h3 class="card-title">{{ translations.externalRatingsRefresh() }}</h3>
+      <div class="card-body">
+        <dl>
+          <div>
+            <dt>{{ translations.count() }}</dt>
+            <dd>{{ externalRatingsRefreshState().count }}</dd>
+          </div>
+          <div>
+            <dt>{{ translations.checked() }}</dt>
+            <dd>{{ externalRatingsRefreshState().checked }}</dd>
+          </div>
+          <div>
+            <dt>{{ translations.updated() }}</dt>
+            <dd>{{ externalRatingsRefreshState().fixed }}</dd>
+          </div>
+          <div>
+            <dt>{{ translations.errors() }}</dt>
+            <dd>{{ externalRatingsRefreshState().errors }}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  }
+</div>

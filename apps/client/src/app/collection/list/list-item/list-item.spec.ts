@@ -3,13 +3,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
 import {
-  initialTagConfigsState,
-  TagConfigsState,
-  tagConfigsStateToken,
-} from '../../../settings/tag-configs/tag-configs-store';
+  initialTagManagementState,
+  TagManagementState,
+  tagManagementStateToken,
+} from '../../../tag-management/tag-management-store';
 import { initialSharesState, SharesState, sharesStateToken } from '../../../shares/shares-store';
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../../collection-store';
@@ -25,6 +27,8 @@ const buildItem = (title: string, tags: string[] = []): CollectionItemModel => (
   tags,
   year: null,
   rate: '',
+  rottenTomatoesRate: '',
+  metacriticRate: '',
   userRate: null,
   hash: '',
   actors: '',
@@ -47,22 +51,29 @@ describe('ListItem', () => {
   let fixture: ComponentFixture<ListItem>;
   let component: ListItem;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
-  let tagConfigsState: NgxSimpleSignalStoreService<TagConfigsState>;
+  let tagManagementState: NgxSimpleSignalStoreService<TagManagementState>;
+  let mainState: NgxSimpleSignalStoreService<MainState>;
   let sharesState: NgxSimpleSignalStoreService<SharesState>;
   let portal: { open: ReturnType<typeof vi.fn> };
   let useAiSearch: ReturnType<typeof signal<boolean | null>>;
+  let translate: { translate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     portal = { open: vi.fn() };
     useAiSearch = signal<boolean | null>(false);
+    translate = {
+      translate: vi.fn((key: string) => ({ MetacriticShort: 'MC', RottenTomatoesShort: 'RT' })[key] ?? key),
+    };
     TestBed.configureTestingModule({
       imports: [ListItem],
       providers: [
         { provide: PortalService, useValue: portal },
         { provide: AiSearchService, useValue: { useAiSearch } },
+        { provide: NgxSignalTranslateService, useValue: translate },
         provideStore(initialApiState, apiStateToken),
         provideStore(initialCollectionState, collectionStateToken),
-        provideStore(initialTagConfigsState, tagConfigsStateToken),
+        provideStore(initialMainState, mainStateToken),
+        provideStore(initialTagManagementState, tagManagementStateToken),
         provideStore(initialSharesState, sharesStateToken),
       ],
     });
@@ -70,7 +81,8 @@ describe('ListItem', () => {
     fixture = TestBed.createComponent(ListItem);
     component = fixture.componentInstance;
     collectionState = TestBed.inject(collectionStateToken);
-    tagConfigsState = TestBed.inject(tagConfigsStateToken);
+    mainState = TestBed.inject(mainStateToken);
+    tagManagementState = TestBed.inject(tagManagementStateToken);
     sharesState = TestBed.inject(sharesStateToken);
 
     fixture.componentRef.setInput('collectionItem', buildItem('Sample'));
@@ -137,6 +149,99 @@ describe('ListItem', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-favorite"]')).not.toBeNull();
   });
 
+  it('renders external ratings when present', () => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Sample'),
+      rate: '8.1',
+      rottenTomatoesRate: '96%',
+      metacriticRate: '85/100',
+    });
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('8.1');
+    expect(text).not.toContain('RT 96%');
+    expect(text).not.toContain('MC 85/100');
+  });
+
+  it('hides the year when collection list display settings disable it', () => {
+    mainState.setState('collectionListDisplayPreferences', {
+      ...mainState.state.collectionListDisplayPreferences(),
+      showYear: false,
+    });
+    fixture.componentRef.setInput('collectionItem', { ...buildItem('Sample'), year: '2024' });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-year"]')).toBeNull();
+  });
+
+  it('hides the shared icon when collection list display settings disable it', () => {
+    mainState.setState('collectionListDisplayPreferences', {
+      ...mainState.state.collectionListDisplayPreferences(),
+      showSharedIcon: false,
+    });
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        canRead: true,
+        canCreate: false,
+        canUpdate: false,
+        canDelete: false,
+      },
+    ]);
+    fixture.componentRef.setInput('collectionItem', { ...buildItem('Shared', []), ownerShareCode: 'owner-code' });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-shared"]')).toBeNull();
+  });
+
+  it('renders the selected preferred rating only', () => {
+    mainState.setState('collectionListDisplayPreferences', {
+      ...mainState.state.collectionListDisplayPreferences(),
+      preferredRating: 'metacritic',
+    });
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Sample'),
+      rate: '8.1',
+      rottenTomatoesRate: '96%',
+      metacriticRate: '85/100',
+    });
+    fixture.detectChanges();
+
+    const text = ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
+    expect(text).toContain('MC 85/100');
+    expect(text).not.toContain('8.1');
+    expect(text).not.toContain('RT 96%');
+  });
+
+  it('falls back to IMDb when selected rating is unavailable and fallback is enabled', () => {
+    mainState.setState('collectionListDisplayPreferences', {
+      ...mainState.state.collectionListDisplayPreferences(),
+      preferredRating: 'rottenTomatoes',
+      imdbRatingFallback: true,
+    });
+    fixture.componentRef.setInput('collectionItem', { ...buildItem('Sample'), rate: '8.1', rottenTomatoesRate: '' });
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-rating-imdb"]')
+    ).not.toBeNull();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('8.1');
+  });
+
+  it('does not fall back to IMDb when fallback is disabled', () => {
+    mainState.setState('collectionListDisplayPreferences', {
+      ...mainState.state.collectionListDisplayPreferences(),
+      preferredRating: 'rottenTomatoes',
+      imdbRatingFallback: false,
+    });
+    fixture.componentRef.setInput('collectionItem', { ...buildItem('Sample'), rate: '8.1', rottenTomatoesRate: '' });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id^="list-item-rating-"]')).toBeNull();
+  });
+
   it('stores forceStandardSearch flag when setting search text', () => {
     component['onSetSearchText']('query');
 
@@ -144,8 +249,8 @@ describe('ListItem', () => {
     expect(collectionState.state.forceStandardSearch()).toBe(true);
   });
 
-  it('applies tag-config-driven colors to image border', () => {
-    tagConfigsState.setState('configs', [
+  it('applies tag-management-driven colors to image border', () => {
+    tagManagementState.setState('configs', [
       {
         tag: '#blue',
         color: '#112233',
@@ -170,7 +275,7 @@ describe('ListItem', () => {
 
     expect(['#112233', normalizeHexColor('#112233')]).toContain(host.style.borderColor);
 
-    tagConfigsState.setState('configs', [
+    tagManagementState.setState('configs', [
       {
         tag: '#blue',
         color: '#112233',
@@ -190,7 +295,7 @@ describe('ListItem', () => {
   });
 
   it('renders image badge for the first matching image-badge tag and hides it from secondary tags', () => {
-    tagConfigsState.setState('configs', [
+    tagManagementState.setState('configs', [
       {
         tag: '#badge-red',
         color: '#ff0000',
@@ -264,7 +369,7 @@ describe('ListItem', () => {
   it('sets search text to image badge tag when image badge is clicked', () => {
     const collectionItem = buildItem('Sample', ['#badge']);
     collectionItem.rate = '8.7';
-    tagConfigsState.setState('configs', [
+    tagManagementState.setState('configs', [
       {
         tag: '#badge',
         color: '#fefefe',

@@ -5,6 +5,10 @@ import {
   UserSettingsApiResponseModel,
   UserSettingsApiRequestModel,
 } from '@shared/models/api-model';
+import {
+  CollectionListDisplayPreferencesModel,
+  COLLECTION_LIST_DISPLAY_RATINGS,
+} from '@shared/models/collection-list-display-preferences-model';
 import { hashText } from '../../crypto';
 
 export interface UserRow {
@@ -140,6 +144,7 @@ export const findUserSettings = (
         animated_background: number | null;
         language: string | null;
         default_library_owner_share_code: string | null;
+        collection_list_display_preferences: string | null;
       }
     | undefined;
 
@@ -151,8 +156,41 @@ export const findUserSettings = (
   if (row.language) settings.language = row.language as UserSettingsApiResponseModel['language'];
   if (row.default_library_owner_share_code)
     settings.defaultLibraryOwnerShareCode = row.default_library_owner_share_code;
+  const collectionListDisplayPreferences = parseCollectionListDisplayPreferences(
+    row.collection_list_display_preferences
+  );
+  if (collectionListDisplayPreferences) settings.collectionListDisplayPreferences = collectionListDisplayPreferences;
 
   return settings;
+};
+
+const parseCollectionListDisplayPreferences = (
+  value: string | null
+): CollectionListDisplayPreferencesModel | undefined => {
+  if (!value) return undefined;
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!isCollectionListDisplayPreferences(parsed)) return undefined;
+    return parsed;
+  } catch {
+    return undefined;
+  }
+};
+
+const isCollectionListDisplayPreferences = (value: unknown): value is CollectionListDisplayPreferencesModel => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.showYear === 'boolean' &&
+    typeof candidate.showSharedIcon === 'boolean' &&
+    typeof candidate.preferredRating === 'string' &&
+    COLLECTION_LIST_DISPLAY_RATINGS.includes(
+      candidate.preferredRating as CollectionListDisplayPreferencesModel['preferredRating']
+    ) &&
+    typeof candidate.imdbRatingFallback === 'boolean'
+  );
 };
 
 export const upsertUserSettings = (
@@ -162,18 +200,20 @@ export const upsertUserSettings = (
 ): void => {
   db.prepare(
     `INSERT INTO user_settings
-     (username_hash, theme, animated_background, language, default_library_owner_share_code)
-     VALUES (?, ?, ?, ?, ?)
+     (username_hash, theme, animated_background, language, default_library_owner_share_code, collection_list_display_preferences)
+     VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(username_hash) DO UPDATE SET
        theme = excluded.theme,
        animated_background = excluded.animated_background,
        language = excluded.language,
-       default_library_owner_share_code = excluded.default_library_owner_share_code`
+       default_library_owner_share_code = excluded.default_library_owner_share_code,
+       collection_list_display_preferences = excluded.collection_list_display_preferences`
   ).run(
     usernameHash,
     settings.theme ?? null,
     settings.animatedBackground === undefined ? null : settings.animatedBackground ? 1 : 0,
     settings.language ?? null,
-    settings.defaultLibraryOwnerShareCode ?? null
+    settings.defaultLibraryOwnerShareCode ?? null,
+    settings.collectionListDisplayPreferences ? JSON.stringify(settings.collectionListDisplayPreferences) : null
   );
 };

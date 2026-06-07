@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as MainUtil from '@shared/utils/redirect-to-login-util';
 import { SettingsService } from '../settings/settings-service';
-import { TagConfigsService } from '../settings/tag-configs/tag-configs-service';
+import { TagManagementService } from '../settings/tag-management/tag-management-service';
 import { MainService } from './main-service';
 import { TokenValidationService } from './token-validation-service';
 
@@ -18,13 +18,13 @@ describe('TokenValidationService', () => {
   let router: { navigate: ReturnType<typeof vi.fn> };
   let mainService: { tokenValid: ReturnType<typeof vi.fn> };
   let settingsService: { preloadUserSettings: ReturnType<typeof vi.fn> };
-  let tagConfigsService: { preloadUserTagConfigs: ReturnType<typeof vi.fn> };
+  let tagManagementService: { preloadUserTagManagement: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     mainService = { tokenValid: vi.fn(() => null) };
     router = { navigate: vi.fn() };
     settingsService = { preloadUserSettings: vi.fn(() => of(void 0)) };
-    tagConfigsService = { preloadUserTagConfigs: vi.fn(() => of(void 0)) };
+    tagManagementService = { preloadUserTagManagement: vi.fn(() => of(void 0)) };
 
     TestBed.configureTestingModule({
       imports: [TestHostComponent],
@@ -32,7 +32,7 @@ describe('TokenValidationService', () => {
         TokenValidationService,
         { provide: MainService, useValue: mainService },
         { provide: SettingsService, useValue: settingsService },
-        { provide: TagConfigsService, useValue: tagConfigsService },
+        { provide: TagManagementService, useValue: tagManagementService },
         provideRouter([]),
         { provide: Router, useValue: router },
       ],
@@ -42,7 +42,7 @@ describe('TokenValidationService', () => {
     fixture = TestBed.createComponent(TestHostComponent);
   });
 
-  it('preloads settings and tag configs when token is valid', () => {
+  it('preloads settings and tag management when token is valid', () => {
     mainService.tokenValid.mockReturnValue(true);
 
     service.startValidation();
@@ -50,7 +50,7 @@ describe('TokenValidationService', () => {
 
     expect(router.navigate).not.toHaveBeenCalled();
     expect(settingsService.preloadUserSettings).toHaveBeenCalled();
-    expect(tagConfigsService.preloadUserTagConfigs).toHaveBeenCalled();
+    expect(tagManagementService.preloadUserTagManagement).toHaveBeenCalled();
   });
 
   it('redirects to login when token validation fails', () => {

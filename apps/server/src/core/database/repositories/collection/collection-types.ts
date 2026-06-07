@@ -9,6 +9,8 @@ export interface CollectionItemRow {
   title_lower: string;
   year: string;
   rate: string;
+  rotten_tomatoes_rate: string;
+  metacritic_rate: string;
   user_rate: number | null;
   actors: string;
   plot: string;
