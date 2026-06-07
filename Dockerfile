@@ -47,8 +47,8 @@ ENV NODE_ENV=production \
 EXPOSE 3001
 
 # Keep container default user as root so we can fix ownership/permissions of mounted volumes,
-# then drop to the non-root 'app' user within the entrypoint.
+# then drop to the configured non-root UID/GID within the entrypoint.
 USER root
 
-# Start entrypoint that will chown/chmod and then exec start.sh as 'app'
+# Start entrypoint that will chown/chmod and then exec start.sh as the runtime user.
 ENTRYPOINT ["/app/entrypoint.sh"]

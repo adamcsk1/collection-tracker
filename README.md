@@ -71,11 +71,13 @@ The server reads runtime configuration from `.data/.env` by default. AI search r
 
 Docker deployments also support these container-level variables:
 
-| Variable           | Default                  | Description                                                         |
-| ------------------ | ------------------------ | ------------------------------------------------------------------- |
-| `BASE_PATH`        | _(empty)_                | URL subpath prefix, such as `/collection-tracker`.                  |
-| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL used by the server health endpoint to check the nginx frontend. |
-| `APP_PORT`         | `3001`                   | Host port mapped to the container nginx listener.                   |
+| Variable           | Default                  | Description                                                          |
+| ------------------ | ------------------------ | -------------------------------------------------------------------- |
+| `BASE_PATH`        | _(empty)_                | URL subpath prefix, such as `/collection-tracker`.                   |
+| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL used by the server health endpoint to check the nginx frontend.  |
+| `APP_PORT`         | `3001`                   | Host port mapped to the container nginx listener.                    |
+| `APP_UID`          | `1000`                   | Runtime user ID for Docker writable files. Use `$(id -u)` on Linux.  |
+| `APP_GID`          | `1000`                   | Runtime group ID for Docker writable files. Use `$(id -g)` on Linux. |
 
 Minimal runtime example:
 

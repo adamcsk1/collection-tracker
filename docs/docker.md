@@ -22,10 +22,10 @@ The image expects existing build artifacts:
 
 ## Build And Run
 
-```powershell
+```bash
 npm run build
 docker buildx build --load -t collection-tracker .
-docker run --rm -p 3001:3001 -v ${PWD}/.data:/data collection-tracker
+docker run --rm -p 3001:3001 -e APP_UID=$(id -u) -e APP_GID=$(id -g) -v ${PWD}/.data:/data collection-tracker
 ```
 
 > The server requires `OMDB_API_KEY` in `/data/.env`. If you mount an existing `.data` folder with a configured `.env`, the container uses it. Otherwise, the startup script creates a minimal default `/data/.env` with an empty `OMDB_API_KEY=` placeholder; you must set the key before OMDb proxying will work.
@@ -60,11 +60,13 @@ The Docker default uses `host.docker.internal` so the container can reach Ollama
 
 ## Environment Variables
 
-| Variable           | Default                  | Description                                                                                                     |
-| ------------------ | ------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `BASE_PATH`        | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.     |
-| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path. |
-| `APP_PORT`         | `3001`                   | Host port mapped to the container's nginx listener.                                                             |
+| Variable           | Default                  | Description                                                                                                      |
+| ------------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `BASE_PATH`        | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.      |
+| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.  |
+| `APP_PORT`         | `3001`                   | Host port mapped to the container's nginx listener.                                                              |
+| `APP_UID`          | `1000`                   | Runtime user ID used for writable files. Set to `$(id -u)` on Linux hosts so `./.data` remains user-accessible.  |
+| `APP_GID`          | `1000`                   | Runtime group ID used for writable files. Set to `$(id -g)` on Linux hosts so `./.data` remains user-accessible. |
 
 ## Docker Compose (Recommended for VPS)
 
@@ -74,11 +76,18 @@ A simple `docker-compose.yml` is included in the repo root. After building the a
 docker compose up -d
 ```
 
+On Linux hosts, pass your current user and group IDs so the bind-mounted `./.data` folder remains accessible without root:
+
+```bash
+APP_UID=$(id -u) APP_GID=$(id -g) docker compose up -d
+```
+
 This will:
 
 - Build the image if it doesn't exist (or run `docker compose up -d --build` to force a rebuild)
 - Map host port `3001` (override with `APP_PORT` env var, e.g. `APP_PORT=8080 docker compose up -d`)
 - Mount `./.data` on the host to `/data` in the container
+- Run the app with `APP_UID`/`APP_GID` for writable mounted files
 - Configure AI search with `./.data/ollama.config.json`
 - Automatically restart the container unless you stop it manually
 
@@ -113,24 +122,8 @@ A typical setup is:
 
 This is the recommended deployment model for secure cookie handling, TLS certificates, and standard production traffic management.
 
-## Helper Scripts
-
-The repository also includes shell helpers in [`docker/scripts`](../docker/scripts):
-
-- [`docker/scripts/build.sh`](../docker/scripts/build.sh): builds the `collection-tracker` image from the current directory. Run it from the repo root or from a release folder that contains the copied Docker assets.
-- [`docker/scripts/start.sh`](../docker/scripts/start.sh): starts the container in detached mode. Accepts three positional arguments: `DATA_FOLDER` (default `${PWD}/.data`), `IMAGE` (default `collection-tracker`), and `HOST_PORT` (default `3000`). Maps `HOST_PORT` on the host to container port `3001` (Nginx).
-- [`docker/scripts/stop.sh`](../docker/scripts/stop.sh): stops any running container from the given image (default `collection-tracker`).
-
-Example:
-
-```bash
-./docker/scripts/build.sh
-./docker/scripts/start.sh .data collection-tracker 3001
-./docker/scripts/stop.sh
-```
-
 ## Operational Notes
 
 - The runtime image is based on `node:24-slim`.
-- [`docker/entrypoint.sh`](../docker/entrypoint.sh) prepares the mounted `/data` volume and then drops privileges to the non-root `app` user.
+- [`docker/entrypoint.sh`](../docker/entrypoint.sh) prepares the mounted `/data` volume and then drops privileges to the configured non-root `APP_UID`/`APP_GID`.
 - `npm run release:create` packages a release folder with the Docker assets copied in and ready for image creation.
