@@ -108,7 +108,7 @@ Issue description and why it matters. Suggested fix.
 - Tests should use page objects from `page-objects/`; spec files should not call `cy.get()` directly when a page object exists or should be added.
 - Element selection should use `cy.getByTestId(...)`, not CSS classes, tag names, or text that may change with i18n.
 - For custom `Input`, `Select`, `Autocomplete`, and `Checkbox` components, the `data-test-id` is usually on the host. Tests should reach the actual control with `.find('input')`, `.find('select')`, or `.find('input[type="checkbox"]')` as appropriate.
-- Only `/api/v1/proxy/*` calls should normally be mocked with `cy.intercept`. Real app API endpoints such as sign-in, sign-up, get-all, settings, and tag config should hit the Docker test server unless an existing test pattern explicitly says otherwise.
+- Only `/api/v1/proxy/*` calls should normally be mocked with `cy.intercept`. Real app API endpoints such as sign-in, sign-up, get-all, settings, and tag management should hit the Docker test server unless an existing test pattern explicitly says otherwise.
 - Destructive account tests must use `cy.autoLoginWithNewUser()`, not the shared `cy.autoLogin()` user.
 - Tests involving `ConfirmService` actions must stub `window.confirm` before the action.
 - New pages should add `data-test-id` coverage, a page object, and relevant E2E coverage.

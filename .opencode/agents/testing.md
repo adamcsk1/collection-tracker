@@ -47,16 +47,16 @@ apps/collection-e2e/src/
 - **Inputs inside `Input`/`Select`** — `data-test-id` is on the host element; use `.find('input')` / `.find('select')` inside PO methods to reach the actual control
 - **Checkbox** — `data-test-id` on the `<Checkbox>` host; reach control with `.find('input[type="checkbox"]')`; use `.check()` / `.uncheck()`
 - **Page Objects** — every page/dialog gets a PO in `page-objects/`; PO exports a plain object of arrow functions; test files never call `cy.get()` directly
-- **Mocking — proxy only** — only `/api/v1/proxy/*` calls are mocked with `cy.intercept`; all other `/api/v1/` endpoints hit the real Docker test server; never mock sign-in, sign-up, get-all, settings, tag config, or other real API endpoints
+- **Mocking — proxy only** — only `/api/v1/proxy/*` calls are mocked with `cy.intercept`; all other `/api/v1/` endpoints hit the real Docker test server; never mock sign-in, sign-up, get-all, settings, tag management, or other real API endpoints
 - **autoLogin** — `cy.autoLogin()` signs in as the shared pre-created `cypress` user via the login UI, wipes leftover collection items, then visits `/client/#/collection`; `CT.AppMode` is set to `'full'` in localStorage before sign-in; rate limiting disabled via `RATE_LIMIT=0` in `apps/collection-e2e/env/.env`
 - **Seeding items** — after `cy.autoLogin()`, seed via `cy.request('POST', '/api/v1/create', { name, content })`; browser session cookie is shared so requests are authenticated automatically; then call `CollectionPage.visit()` to reload
 - **Hash routing** — all apps use `#/route`; visit with `cy.visit('/login/#/sign-in')`, `cy.visit('/client/#/collection')` etc.
 - **Adding new pages** — when a new page is added, add `data-test-id` attributes to its interactive/landmark elements, create a PO file, and add coverage in the relevant spec file
 - **Adding `data-test-id`** — place on the host element of `Input`, `Select`, `Autocomplete`, `Checkbox`, buttons, and semantic container elements; do not add to purely decorative or repeated structural divs
 - **Dynamic test IDs in `@for` loops** — use `[attr.data-test-id]="'prefix-' + item.key"`; PO methods accept the key as a parameter (e.g., `getWeightInput(tag: string)`)
-- **window.confirm** — stub with `cy.on('window:confirm', () => true)` before any action that calls `ConfirmService` (e.g., delete, reset tag configs)
-- **Seeding tag configs** — use `cy.request('POST', '/api/v1/tag/change-config', [...TagConfigModel])` to pre-configure tag settings; GET endpoint is `/api/v1/tag/config`; **never seed tag configs via API before visiting the tag-configs page** — the component may re-POST an empty list that overwrites the seeded values; set config state via the UI after the page loads
-- **Internal tags excluded from tag-configs** — `#movie`, `#series`, and `#watched` are filtered out; seed items with a custom tag (e.g. `#action`) and add it on the same line as `#movie`, space-separated; the tags parser regex captures only one line
+- **window.confirm** — stub with `cy.on('window:confirm', () => true)` before any action that calls `ConfirmService` (e.g., delete, reset tag management)
+- **Seeding tag management** — use `cy.request('POST', '/api/v1/tag-management', [...TagManagementModel])` to pre-configure tag settings; GET endpoint is `/api/v1/tag-management`; **never seed tag management via API before visiting the tag-management page** — the component may re-POST an empty list that overwrites the seeded values; set config state via the UI after the page loads
+- **Internal tags excluded from tag-management** — `#movie`, `#series`, and `#watched` are filtered out; seed items with a custom tag (e.g. `#action`) and add it on the same line as `#movie`, space-separated; the tags parser regex captures only one line
 - **Destructive account tests** — use `cy.autoLoginWithNewUser()`, never `cy.autoLogin()`, in any describe block that creates a new user token or deletes the user; failure to isolate cascades as 401 failures across subsequent specs
 
 ### AppMode
