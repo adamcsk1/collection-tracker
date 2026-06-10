@@ -1,5 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
+import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { hashText } from '../core/crypto';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -107,7 +108,7 @@ describe('change-api', () => {
     const request: any = {
       params: { imdbId: 'tt-change' },
       query: { listType: 'series-tracker' },
-      body: { ...updatedItem, tags: ['#series', '#episode-s01e02'], hash: 'abc123' },
+      body: { ...updatedItem, tags: ['#series'], hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -120,7 +121,39 @@ describe('change-api', () => {
       item: expect.objectContaining({
         title: 'Updated',
         listType: 'series-tracker',
-        tags: ['#episode-s01e02', '#series'],
+        tags: ['#series'],
+      }),
+    });
+  });
+
+  it('preserves completed tag when updating a completed series tracker item', async () => {
+    insertItem('abc123', 'user', 'series-tracker');
+    const db = getDatabase();
+    const itemId = (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt-change') as { id: number })
+      .id;
+    db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, COMPLETED_TAG);
+    db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(itemId, 1, 1);
+    db.prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(
+      itemId,
+      1,
+      1
+    );
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      query: { listType: 'series-tracker' },
+      body: { ...updatedItem, tags: ['#series'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        tags: ['#completed', '#series'],
       }),
     });
   });

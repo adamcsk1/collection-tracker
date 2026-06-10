@@ -8,6 +8,8 @@ import { register as registerCollectionItemsExists } from './collection-items-ex
 import { register as registerCollectionItemsMatched } from './collection-items-matched-api';
 import { register as registerCollectionItemsSearchSuggestions } from './collection-items-search-suggestions-api';
 import { register as registerChangeSeriesTrackerSeasons } from './change-series-tracker-seasons-api';
+import { register as registerChangeSeriesTrackerWatchedEpisodes } from './change-series-tracker-watched-episodes-api';
+import { register as registerMarkAllSeriesTrackerWatched } from './mark-all-series-tracker-watched-api';
 import { register as registerCreateAccessToken } from './create-access-token-api';
 import { register as registerCreate } from './create-api';
 import { register as registerDeleteAccessToken } from './delete-access-token-api';
@@ -17,6 +19,7 @@ import { register as registerDeleteUser } from './delete-user-api';
 import { register as registerGenreSuggestions } from './genre-suggestions-api';
 import { register as registerGetCollectionItems } from './get-collection-items-api';
 import { register as registerGetSeriesTrackerSeasons } from './get-series-tracker-seasons-api';
+import { register as registerGetSeriesTrackerWatchedEpisodes } from './get-series-tracker-watched-episodes-api';
 import { register as registerTagManagement } from './get-tag-management-api';
 import { register as registerUserSettings } from './get-user-settings-api';
 import { register as registerHealth } from './health-api';
@@ -39,6 +42,7 @@ import { register as registerSignIn } from './sign-in-api';
 import { register as registerSignUp } from './sign-up-api';
 import { register as registerStatistics } from './statistics-api';
 import { register as registerTagSuggestions } from './tag-suggestions-api';
+import { register as registerExport } from './export-api';
 
 export const registerAllApis = (app: FastifyInstance): void => {
   registerHealth(app);
@@ -73,12 +77,16 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerGenreSuggestions(app);
   registerStatistics(app);
   registerGetSeriesTrackerSeasons(app);
+  registerGetSeriesTrackerWatchedEpisodes(app);
   registerRefreshSeriesTrackerSeasons(app);
   registerChangeSeriesTrackerSeasons(app);
+  registerChangeSeriesTrackerWatchedEpisodes(app);
+  registerMarkAllSeriesTrackerWatched(app);
   registerDeleteSeriesTrackerSeasons(app);
   registerProxyOMDbSearch(app);
   registerProxyOMDbItem(app);
   registerProxyImage(app);
   registerProxyAi(app);
   registerProxyAiAvailable(app);
+  registerExport(app);
 };

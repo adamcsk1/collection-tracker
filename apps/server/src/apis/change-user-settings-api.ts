@@ -78,6 +78,7 @@ export const register = (app: FastifyInstance): void => {
         if (body.language && userConfig.language) delete body.language;
         if (body.theme && userConfig.theme) delete body.theme;
       }
+      delete body.fromLogin;
 
       const updatedConfig = { ...userConfig, ...body } satisfies UserSettingsApiResponseModel;
       upsertUserSettings(db, request.usernameHash, updatedConfig);

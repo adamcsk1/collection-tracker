@@ -54,6 +54,7 @@ export const parseFilters = (query: Record<string, unknown>): CollectionItemFilt
     tagMode: parseTagMode(query.tagMode),
     type: parseType(query.type),
     watched: parseBoolean(query.watched),
+    completed: parseBoolean(query.completed),
     listType,
   };
 };

@@ -24,7 +24,15 @@ export const normalizeSeriesTrackerSeasons = (
       return null;
     if (seenSeasons.has(season)) return null;
     seenSeasons.add(season);
-    seasons.push({ season, episodes });
+
+    const rawTitles = seasonMetadata?.titles;
+    let titles: string[] | undefined;
+    if (Array.isArray(rawTitles)) {
+      if (!rawTitles.every((title) => typeof title === 'string')) return null;
+      titles = rawTitles.slice(0, MAX_SERIES_TRACKER_EPISODES);
+    }
+
+    seasons.push({ season, episodes, titles });
   }
 
   return seasons.sort((firstSeason, secondSeason) => firstSeason.season - secondSeason.season);

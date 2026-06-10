@@ -17,6 +17,7 @@ export interface CollectionItemFiltersApiModel {
   tagMode?: CollectionItemTagMode;
   type?: CollectionItemTypeFilter;
   watched?: boolean;
+  completed?: boolean;
   listType?: CollectionListTypeModel;
 }
 
@@ -196,14 +197,31 @@ export interface RefreshExternalRatingsApiResponseModel {
 export interface SeriesTrackerSeasonMetadataModel {
   season: number;
   episodes: number;
+  titles?: string[];
 }
 
 export interface SeriesTrackerSeasonsApiResponseModel {
   seasons: SeriesTrackerSeasonMetadataModel[];
+  item?: CollectionItemApiModel;
 }
 
 export interface SeriesTrackerSeasonsApiRequestModel {
   seasons: SeriesTrackerSeasonMetadataModel[];
+}
+
+export interface SeriesTrackerWatchedEpisodeModel {
+  season: number;
+  episode: number;
+}
+
+export interface SeriesTrackerWatchedEpisodesApiResponseModel {
+  watchedEpisodes: SeriesTrackerWatchedEpisodeModel[];
+  lastWatchedEpisode: { season: number; episode: number } | null;
+  item?: CollectionItemApiModel;
+}
+
+export interface SeriesTrackerWatchedEpisodesApiRequestModel {
+  watchedEpisodes: SeriesTrackerWatchedEpisodeModel[];
 }
 
 export interface UserShareOutgoingApiModel {
@@ -228,6 +246,19 @@ export interface UserSharesApiResponseModel {
   userShareCode: string;
   outgoing: UserShareOutgoingApiModel[];
   incoming: UserShareIncomingApiModel[];
+}
+
+export interface UserExportApiResponseModel {
+  userSettings: UserSettingsApiResponseModel;
+  collectionItems: CollectionItemApiModel[];
+  tagManagement: TagManagementApiResponseModel;
+  seriesTrackerData: Record<
+    string,
+    {
+      seasons: SeriesTrackerSeasonMetadataModel[];
+      watchedEpisodes: SeriesTrackerWatchedEpisodeModel[];
+    }
+  >;
 }
 
 export interface HealthApiResponseModel {

@@ -412,6 +412,8 @@ components:
               enum: [movie, series]
             watched:
               type: boolean
+            completed:
+              type: boolean
             listType:
               type: string
               enum: [library, watch-later, wishlist, series-tracker]
@@ -534,9 +536,6 @@ components:
               enum: [library, watch-later, wishlist, series-tracker]
               default: library
               description: Target list. Defaults to `library`.
-            fetchSeriesMetadata:
-              type: boolean
-              description: When creating a series-tracker item, fetch and store best-effort OMDb season metadata.
 
     CreateResponse:
       type: object
@@ -622,6 +621,11 @@ components:
           type: integer
           minimum: 1
           maximum: 100
+        titles:
+          type: array
+          items:
+            type: string
+          description: Optional per-episode titles.
 
     SeriesTrackerSeasonsRequest:
       type: object
@@ -640,6 +644,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SeriesTrackerSeason'
+        item:
+          $ref: '#/components/schemas/CollectionItem'
+          description: Updated collection item when this response is returned from a mutating endpoint.
+
+    SeriesTrackerWatchedEpisode:
+      type: object
+      required: [season, episode]
+      properties:
+        season:
+          type: integer
+          minimum: 1
+          maximum: 50
+        episode:
+          type: integer
+          minimum: 1
+          maximum: 100
+
+    SeriesTrackerWatchedEpisodesRequest:
+      type: object
+      required: [watchedEpisodes, lastWatchedEpisode]
+      properties:
+        watchedEpisodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
+
+    SeriesTrackerWatchedEpisodesResponse:
+      type: object
+      required: [watchedEpisodes]
+      properties:
+        watchedEpisodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
+        lastWatchedEpisode:
+          type: object
+          nullable: true
+          required: [season, episode]
+          properties:
+            season:
+              type: integer
+            episode:
+              type: integer
+        item:
+          $ref: '#/components/schemas/CollectionItem'
+          description: Updated collection item when this response is returned from a mutating endpoint.
 
     OMDbItem:
       type: object
@@ -732,6 +782,33 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/TagManagement'
+
+    ExportResponse:
+      type: object
+      required: [userSettings, collectionItems, tagManagement, seriesTrackerData]
+      properties:
+        userSettings:
+          $ref: '#/components/schemas/UserSettingsResponse'
+        collectionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionItem'
+        tagManagement:
+          $ref: '#/components/schemas/TagManagementResponse'
+        seriesTrackerData:
+          type: object
+          additionalProperties:
+            type: object
+            required: [seasons, watchedEpisodes]
+            properties:
+              seasons:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeriesTrackerSeason'
+              watchedEpisodes:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
 
 security:
   - cookieAuth: []
@@ -1021,7 +1098,7 @@ paths:
     get:
       operationId: searchItems
       summary: Search collection items
-      description: Returns a server-filtered and paginated collection result. System tag filters use `type` and `watched`; custom tags use `tags`. `listType` defaults to `library`.
+      description: Returns a server-filtered and paginated collection result. System tag filters use `type`, `watched`, and `completed`; custom tags use `tags`. `listType` defaults to `library`.
       tags: [Collection]
       parameters:
         - name: offset
@@ -1060,6 +1137,10 @@ paths:
             type: string
             enum: [movie, series]
         - name: watched
+          in: query
+          schema:
+            type: boolean
+        - name: completed
           in: query
           schema:
             type: boolean
@@ -1379,7 +1460,7 @@ paths:
     post:
       operationId: createItem
       summary: Create a collection item
-      description: Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list. Tags must include `#movie` or `#series`. Virtual tags and the internal `#watch-later` and `#wishlist` tags are rejected. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later, wishlist, and series-tracker items cannot be created in shared libraries and cannot use `#favorite` or `#watched`. Series-tracker items must use `#series` and cannot use `#movie`.
+      description: Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list. Tags must include `#movie` or `#series`. Virtual tags, the internal `#watch-later` and `#wishlist` tags, and the server-managed `#completed` tag are rejected. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later, wishlist, and series-tracker items cannot be created in shared libraries and cannot use `#favorite` or `#watched`. Series-tracker items must use `#series` and cannot use `#movie`.
       tags: [Collection]
       requestBody:
         required: true
@@ -1587,6 +1668,80 @@ paths:
         '404':
           description: Series tracker item not found.
 
+  /series-tracker/{imdbId}/mark-all-watched:
+    put:
+      operationId: markAllSeriesTrackerWatched
+      summary: Mark all episodes as watched for a series tracker item
+      description: Marks every episode in every season as watched for the authenticated user's own series tracker item.
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated watched episodes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesResponse'
+        '400':
+          description: No season metadata exists for the item.
+        '404':
+          description: Series tracker item not found.
+
+  /series-tracker/{imdbId}/watched-episodes:
+    get:
+      operationId: getSeriesTrackerWatchedEpisodes
+      summary: Get watched episodes for a series tracker item
+      description: Returns all watched episodes and the last watched episode for the authenticated user's own series tracker item.
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Watched episodes and last watched episode.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesResponse'
+        '404':
+          description: Series tracker item not found.
+    put:
+      operationId: updateSeriesTrackerWatchedEpisodes
+      summary: Replace watched episodes for a series tracker item
+      description: Replaces all watched episodes for the authenticated user's own series tracker item.
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesRequest'
+      responses:
+        '200':
+          description: Updated watched episodes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesResponse'
+        '400':
+          description: Invalid watched episode data.
+        '404':
+          description: Series tracker item not found.
+
   /proxy/omdb/search:
     get:
       operationId: proxyOmdbSearch
@@ -1725,6 +1880,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AiAvailableResponse'
+
+  /export:
+    get:
+      operationId: getUserExport
+      summary: Export all user-owned data
+      description: Returns a JSON export of all user-owned data including settings, collection items, tag management, and series tracker metadata.
+      tags: [User]
+      responses:
+        '200':
+          description: Complete user data export.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResponse'
 
   /tag-management:
     get:
