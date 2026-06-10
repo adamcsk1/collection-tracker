@@ -120,6 +120,7 @@ export class ItemDialog implements OnInit {
     watchedUpTo: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo')),
     manageWatchedEpisodes: computed(() => this.ngxSignalTranslate.translate('ManageWatchedEpisodes')),
     markAllEpisodesWatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesWatched')),
+    markAllEpisodesUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesUnwatched')),
     hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
     actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
     plot: computed(() => this.ngxSignalTranslate.translate('Plot')),
@@ -302,6 +303,23 @@ export class ItemDialog implements OnInit {
   protected readonly tagsText = computed(() => this.form.tagsText().value());
   protected readonly seriesSeasons = signal<SeriesTrackerSeasonMetadataModel[]>([]);
   protected readonly watchedEpisodes = signal<SeriesTrackerWatchedEpisodeModel[]>([]);
+  protected readonly seriesSeasonsLoaded = signal(false);
+  protected readonly watchedEpisodesLoaded = signal(false);
+  protected readonly allEpisodesWatched = computed(() => {
+    if (!this.seriesSeasonsLoaded() || !this.watchedEpisodesLoaded())
+      return this.collectionItem().tags.includes(COMPLETED_TAG);
+
+    const seasons = this.seriesSeasons();
+    if (!seasons.length) return false;
+
+    const watchedSet = new Set(this.watchedEpisodes().map((episode) => `${episode.season}-${episode.episode}`));
+    for (const season of seasons) {
+      for (let episode = 1; episode <= season.episodes; episode++) {
+        if (!watchedSet.has(`${season.season}-${episode}`)) return false;
+      }
+    }
+    return true;
+  });
   protected readonly lastWatchedEpisode = computed(() => {
     const episodes = this.watchedEpisodes();
     if (!episodes.length) return null;
@@ -404,7 +422,10 @@ export class ItemDialog implements OnInit {
     this.api
       .getSeriesTrackerSeasons(this.collectionItem().IMDbId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => this.seriesSeasons.set(response.seasons));
+      .subscribe((response) => {
+        this.seriesSeasons.set(response.seasons);
+        this.seriesSeasonsLoaded.set(true);
+      });
   }
 
   private loadWatchedEpisodes(): void {
@@ -412,7 +433,10 @@ export class ItemDialog implements OnInit {
     this.api
       .getSeriesTrackerWatchedEpisodes(this.collectionItem().IMDbId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => this.watchedEpisodes.set(response.watchedEpisodes));
+      .subscribe((response) => {
+        this.watchedEpisodes.set(response.watchedEpisodes);
+        this.watchedEpisodesLoaded.set(true);
+      });
   }
 
   private resetFormFromItem(item: CollectionItemModel): void {
@@ -711,6 +735,36 @@ export class ItemDialog implements OnInit {
         this.applySyncedCollectionItem(result.item);
         this.collectionService.triggerReload();
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedWatched'));
+      });
+  }
+
+  protected onMarkAllEpisodesUnwatched(): void {
+    if (!this.seriesTracker() || !this.permissionUpdate()) return;
+    this.confirm
+      .open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesUnwatched'))
+      .pipe(
+        mergeMap((confirmed) => {
+          if (!confirmed) return of({ confirmed, result: null });
+          this.spinnerLoadingState.setState('show', true);
+          return this.api
+            .updateSeriesTrackerWatchedEpisodes(this.collectionItem().IMDbId, { watchedEpisodes: [] })
+            .pipe(
+              map((result) => ({ confirmed, result })),
+              tap(() => this.spinnerLoadingState.setState('show', false)),
+              catchError((error) => {
+                this.spinnerLoadingState.setState('show', false);
+                return throwError(() => error);
+              })
+            );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(({ confirmed, result }) => {
+        if (!confirmed || !result) return;
+        this.watchedEpisodes.set(result.watchedEpisodes);
+        this.applySyncedCollectionItem(result.item);
+        this.collectionService.triggerReload();
+        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedUnwatched'));
       });
   }
 }
