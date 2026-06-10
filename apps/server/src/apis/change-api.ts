@@ -3,7 +3,11 @@ import { ChangeApiRequestModel, ChangeApiResponseModel } from '@shared/models/ap
 import { changeCollectionItemTagValidation } from '@shared/utils/collection-item-tag-validation-util';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { findCollectionItemByImdbId, updateCollectionItem } from '../core/database/repositories/collection';
+import {
+  findCollectionItemByImdbId,
+  syncSeriesTrackerCompletedTag,
+  updateCollectionItem,
+} from '../core/database/repositories/collection';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
@@ -67,7 +71,10 @@ export const register = (app: FastifyInstance): void => {
       }
 
       const newHash = getItemHash(item);
-      const updatedItem = updateCollectionItem(db, ownerHash, `${imdbId}`, newHash, item, listType);
+      let updatedItem = updateCollectionItem(db, ownerHash, `${imdbId}`, newHash, item, listType);
+      if (listType === 'series-tracker') {
+        updatedItem = syncSeriesTrackerCompletedTag(db, ownerHash, item.IMDbId) ?? updatedItem;
+      }
 
       const result: ChangeApiResponseModel = { item: updatedItem! };
       response.send(result);

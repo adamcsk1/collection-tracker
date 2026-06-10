@@ -15,6 +15,7 @@ export const findCollectionItems = (
   limit: number,
   listType: CollectionListTypeModel = 'library'
 ): CollectionItemApiModel[] => {
+  const normalizedListType = normalizeListType(listType);
   const rows = db
     .prepare(
       `SELECT *
@@ -24,7 +25,7 @@ export const findCollectionItems = (
         ORDER BY created_at DESC, id DESC
         LIMIT ? OFFSET ?`
     )
-    .all(...usernameHashes, normalizeListType(listType), limit, offset) as CollectionItemRow[];
+    .all(...usernameHashes, normalizedListType, limit, offset) as CollectionItemRow[];
 
   return rows.map((row) => toApiItem(db, row));
 };
@@ -168,4 +169,16 @@ export const findCollectionItemByImdbId = (
   return db
     .prepare('SELECT * FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
     .get(usernameHash, imdbId, normalizeListType(listType)) as CollectionItemRow | undefined;
+};
+
+export const findAllCollectionItemsByUser = (db: Database.Database, usernameHash: string): CollectionItemApiModel[] => {
+  const rows = db
+    .prepare(
+      `SELECT * FROM collection_items
+       WHERE username_hash = ?
+       ORDER BY list_type, created_at DESC, id DESC`
+    )
+    .all(usernameHash) as CollectionItemRow[];
+
+  return rows.map((row) => toApiItem(db, row));
 };

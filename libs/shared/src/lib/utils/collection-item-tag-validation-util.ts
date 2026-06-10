@@ -1,4 +1,5 @@
 import {
+  COMPLETED_TAG,
   FAVORITE_TAG,
   INTERNAL_USED_TAGS,
   MOVIE_TAG,
@@ -18,7 +19,17 @@ import { parseTagText } from './collection-item-text-util';
 const INTERNAL_COLLECTION_TAGS = [WATCH_LATER_TAG, WISHLIST_TAG];
 const TYPE_TAGS = [MOVIE_TAG, SERIES_TAG];
 const FORBIDDEN_NON_LIBRARY_TAGS = [FAVORITE_TAG, WATCHED_TAG];
+const USER_ACTION_TAGS = [FAVORITE_TAG, WATCHED_TAG];
+const SERVER_MANAGED_TAGS = [COMPLETED_TAG];
+const EDITOR_HIDDEN_TAGS = [...INTERNAL_COLLECTION_TAGS, ...USER_ACTION_TAGS, ...SERVER_MANAGED_TAGS];
+const EDITOR_PRESERVED_TAGS = [...INTERNAL_COLLECTION_TAGS, ...USER_ACTION_TAGS];
 const EPISODE_PROGRESS_TAG_PATTERN = /^#episode-s(\d{2})e(\d{2})$/;
+
+export const forbiddenEpisodeProgressTagValidation = (
+  tags: readonly string[]
+): CollectionItemTagValidationError | undefined => {
+  return tags.some((tag) => EPISODE_PROGRESS_TAG_PATTERN.test(tag)) ? { kind: 'invalidSeriesTrackerTags' } : undefined;
+};
 
 export const forbiddenInternalTagTextValidation = (
   tagText: string | null
@@ -31,6 +42,14 @@ export const forbiddenInternalTagTextValidation = (
 
 export const virtualTagValidation = (tags: readonly string[]): CollectionItemTagValidationError | undefined => {
   return tags.some((tag) => VIRTUAL_TAGS.includes(tag)) ? { kind: 'virtualTag' } : undefined;
+};
+
+export const serverManagedTagValidation = (tags: readonly string[]): CollectionItemTagValidationError | undefined => {
+  return tags.some((tag) => SERVER_MANAGED_TAGS.includes(tag)) ? { kind: 'usedInternalTag' } : undefined;
+};
+
+export const userActionTagValidation = (tags: readonly string[]): CollectionItemTagValidationError | undefined => {
+  return tags.some((tag) => USER_ACTION_TAGS.includes(tag)) ? { kind: 'usedInternalTag' } : undefined;
 };
 
 export const invalidInternalCollectionTagValidation = (
@@ -46,7 +65,13 @@ export const typeTagValidation = (tags: readonly string[]): CollectionItemTagVal
 };
 
 export const collectionItemTagValidation = (tags: readonly string[]): CollectionItemTagValidationError | undefined => {
-  return virtualTagValidation(tags) ?? invalidInternalCollectionTagValidation(tags) ?? typeTagValidation(tags);
+  return (
+    virtualTagValidation(tags) ??
+    serverManagedTagValidation(tags) ??
+    invalidInternalCollectionTagValidation(tags) ??
+    forbiddenEpisodeProgressTagValidation(tags) ??
+    typeTagValidation(tags)
+  );
 };
 
 export const createCollectionItemTagValidation = ({
@@ -93,18 +118,11 @@ export const changeCollectionItemTagValidation = ({
   return undefined;
 };
 
-export const removeEpisodeProgressTags = (tags: readonly string[]): string[] =>
-  tags.filter((tag) => !EPISODE_PROGRESS_TAG_PATTERN.test(tag));
-
 export const filterEditableTags = (tags: readonly string[]): string[] =>
-  removeEpisodeProgressTags(tags).filter((tag) => !INTERNAL_COLLECTION_TAGS.includes(tag));
+  tags.filter((tag) => !EDITOR_HIDDEN_TAGS.includes(tag));
 
-export const buildEpisodeProgressTag = (season: number, episode: number): string =>
-  `#episode-s${`${season}`.padStart(2, '0')}e${`${episode}`.padStart(2, '0')}`;
+export const filterEditorPreservedTags = (tags: readonly string[]): string[] =>
+  tags.filter((tag) => EDITOR_PRESERVED_TAGS.includes(tag));
 
-export const parseEpisodeProgress = (tags: readonly string[]): { season: number; episode: number } | null => {
-  const progressTag = tags.find((tag) => EPISODE_PROGRESS_TAG_PATTERN.test(tag));
-  const match = progressTag?.match(EPISODE_PROGRESS_TAG_PATTERN);
-  if (!match) return null;
-  return { season: Number(match[1]), episode: Number(match[2]) };
-};
+export const filterDisplayTags = (tags: readonly string[]): string[] =>
+  tags.filter((tag) => !INTERNAL_COLLECTION_TAGS.includes(tag));

@@ -4,6 +4,7 @@ import Database from 'better-sqlite3';
 interface SeriesTrackerSeasonRow {
   season: number;
   episodes: number;
+  episode_titles: string | null;
 }
 
 const findSeriesTrackerItemId = (db: Database.Database, usernameHash: string, imdbId: string): number | null => {
@@ -27,13 +28,16 @@ export const findSeriesTrackerSeasons = (
   return (
     db
       .prepare(
-        `SELECT season, episodes
+        `SELECT season, episodes, episode_titles
            FROM series_tracker_seasons
            WHERE item_id = ?
            ORDER BY season`
       )
       .all(itemId) as SeriesTrackerSeasonRow[]
-  ).map((row) => ({ season: row.season, episodes: row.episodes }));
+  ).map((row) => {
+    const titles = row.episode_titles ? (JSON.parse(row.episode_titles) as string[]) : [];
+    return { season: row.season, episodes: row.episodes, titles };
+  });
 };
 
 export const replaceSeriesTrackerSeasons = (
@@ -49,11 +53,12 @@ export const replaceSeriesTrackerSeasons = (
     db.prepare('DELETE FROM series_tracker_seasons WHERE item_id = ?').run(itemId);
 
     const insert = db.prepare(
-      `INSERT INTO series_tracker_seasons (item_id, season, episodes)
-       VALUES (?, ?, ?)`
+      `INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles)
+       VALUES (?, ?, ?, ?)`
     );
     for (const season of seasons) {
-      insert.run(itemId, season.season, season.episodes);
+      const titlesJson = season.titles?.length ? JSON.stringify(season.titles) : null;
+      insert.run(itemId, season.season, season.episodes, titlesJson);
     }
   });
 

@@ -2,6 +2,7 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { SeriesTrackerSeasonsApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
+import { syncSeriesTrackerCompletedTag } from '../core/database/repositories/collection';
 import { replaceSeriesTrackerSeasons } from '../core/database/repositories/series-tracker-season-repository';
 import { jwtGuard } from '../core/jwt';
 import { fetchSeriesSeasonMetadata } from '../core/omdb/series-season-metadata';
@@ -17,8 +18,10 @@ export const register = (app: FastifyInstance): void => {
       if (!hasOwnSeriesTrackerItem(request.usernameHash, imdbId)) return response.code(404).send();
 
       const seasons = await fetchSeriesSeasonMetadata(imdbId);
-      const savedSeasons = replaceSeriesTrackerSeasons(getDatabase(), request.usernameHash, imdbId, seasons);
-      const result: SeriesTrackerSeasonsApiResponseModel = { seasons: savedSeasons };
+      const db = getDatabase();
+      const savedSeasons = replaceSeriesTrackerSeasons(db, request.usernameHash, imdbId, seasons);
+      const item = syncSeriesTrackerCompletedTag(db, request.usernameHash, imdbId);
+      const result: SeriesTrackerSeasonsApiResponseModel = { seasons: savedSeasons, item };
       response.send(result);
     })
   );

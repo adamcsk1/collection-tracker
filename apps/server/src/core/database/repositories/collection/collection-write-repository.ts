@@ -1,12 +1,14 @@
-import { WATCHED_TAG } from '@shared/constants/tags-const';
+import { COMPLETED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import {
   CollectionItemApiModel,
   CollectionItemChangeApiModel,
   CollectionListTypeModel,
 } from '@shared/models/api-model';
+import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import Database from 'better-sqlite3';
 import { getItemHash } from '../../../utils/collection-item-util';
-import { deleteSeriesTrackerSeasons } from '../series-tracker-season-repository';
+import { findSeriesTrackerSeasons } from '../series-tracker-season-repository';
+import { findWatchedEpisodes } from '../series-tracker-watched-episodes-repository';
 import { toApiItem } from './collection-mapper';
 import { normalizeListType } from './collection-query';
 import { findCollectionItemByImdbId } from './collection-read-repository';
@@ -115,8 +117,46 @@ export const deleteCollectionItem = (
 
   db.prepare('DELETE FROM collection_item_genres WHERE item_id = ?').run(existingItem.id);
   db.prepare('DELETE FROM collection_item_tags WHERE item_id = ?').run(existingItem.id);
-  deleteSeriesTrackerSeasons(db, usernameHash, imdbId);
   db.prepare('DELETE FROM collection_items WHERE id = ?').run(existingItem.id);
+};
+
+export const syncSeriesTrackerCompletedTag = (
+  db: Database.Database,
+  usernameHash: string,
+  imdbId: string
+): CollectionItemApiModel | undefined => {
+  const row = findCollectionItemByImdbId(db, usernameHash, imdbId, 'series-tracker');
+  if (!row) return;
+
+  const seasons = findSeriesTrackerSeasons(db, usernameHash, imdbId);
+  const watchedEpisodes = findWatchedEpisodes(db, usernameHash, imdbId);
+  const availableEpisodes = new Set<string>();
+  for (const season of seasons) {
+    for (let episode = 1; episode <= season.episodes; episode++) {
+      availableEpisodes.add(`${season.season}-${episode}`);
+    }
+  }
+  const completed =
+    availableEpisodes.size > 0 &&
+    watchedEpisodes.length === availableEpisodes.size &&
+    watchedEpisodes.every((episode) => availableEpisodes.has(`${episode.season}-${episode.episode}`));
+  const item = toApiItem(db, row);
+  const hasCompletedTag = item.tags.includes(COMPLETED_TAG);
+  if (completed === hasCompletedTag) return item;
+
+  if (completed) {
+    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(row.id, COMPLETED_TAG);
+  } else {
+    db.prepare('DELETE FROM collection_item_tags WHERE item_id = ? AND tag = ?').run(row.id, COMPLETED_TAG);
+  }
+
+  const syncedItem = toApiItem(db, row);
+  const hash = getItemHash(toCollectionItemChange(syncedItem));
+  db.prepare('UPDATE collection_items SET content_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
+    hash,
+    row.id
+  );
+  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, imdbId, 'series-tracker')!);
 };
 
 export const markAllAsWatched = (db: Database.Database, usernameHash: string): number => {

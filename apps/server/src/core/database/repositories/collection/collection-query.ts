@@ -1,4 +1,4 @@
-import { MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { COMPLETED_TAG, MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import {
   CollectionItemFiltersApiModel,
   CollectionItemTagMode,
@@ -89,6 +89,8 @@ const addFilters = (queryParts: QueryParts, filters: CollectionItemFiltersApiMod
   if (filters.type === 'series') addTagExists(queryParts, SERIES_TAG);
   if (filters.watched === true) addTagExists(queryParts, WATCHED_TAG);
   if (filters.watched === false) addTagExists(queryParts, WATCHED_TAG, false);
+  if (filters.completed === true) addTagExists(queryParts, COMPLETED_TAG);
+  if (filters.completed === false) addTagExists(queryParts, COMPLETED_TAG, false);
 
   for (const genre of filters.genres ?? []) {
     const normalizedGenre = genre.trim();

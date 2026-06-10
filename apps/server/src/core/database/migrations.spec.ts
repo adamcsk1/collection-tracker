@@ -279,4 +279,58 @@ describe('runMigrations', () => {
 
     db.close();
   });
+
+  it('expands legacy series tracker episode progress tags into watched episodes', async () => {
+    const db = new Database(':memory:');
+    db.exec(`
+      CREATE TABLE schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+      CREATE TABLE collection_items (id INTEGER PRIMARY KEY AUTOINCREMENT);
+      CREATE TABLE collection_item_tags (
+        item_id INTEGER NOT NULL,
+        tag TEXT NOT NULL,
+        PRIMARY KEY (item_id, tag),
+        FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+      );
+      CREATE TABLE series_tracker_seasons (
+        item_id INTEGER NOT NULL,
+        season INTEGER NOT NULL CHECK (season >= 1 AND season <= 50),
+        episodes INTEGER NOT NULL CHECK (episodes >= 1 AND episodes <= 100),
+        episode_titles TEXT,
+        PRIMARY KEY (item_id, season),
+        FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+      );
+      INSERT INTO collection_items (id) VALUES (1), (2);
+      INSERT INTO collection_item_tags (item_id, tag) VALUES (1, '#episode-s02e02'), (2, '#episode-s01e03');
+      INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (1, 1, 3), (1, 2, 4);
+    `);
+    const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+    tempDirs.push(migrationsDir);
+    writeFileSync(
+      join(migrationsDir, '013_add_series_tracker_watched_episodes.sql'),
+      readFileSync(
+        join(process.cwd(), 'apps/server/src/migrations/013_add_series_tracker_watched_episodes.sql'),
+        'utf8'
+      )
+    );
+
+    await runMigrations(db, migrationsDir);
+
+    expect(
+      db
+        .prepare(
+          'SELECT item_id, season, episode FROM series_tracker_watched_episodes ORDER BY item_id, season, episode'
+        )
+        .all()
+    ).toEqual([
+      { item_id: 1, season: 1, episode: 1 },
+      { item_id: 1, season: 1, episode: 2 },
+      { item_id: 1, season: 1, episode: 3 },
+      { item_id: 1, season: 2, episode: 1 },
+      { item_id: 1, season: 2, episode: 2 },
+      { item_id: 2, season: 1, episode: 3 },
+    ]);
+    expect(db.prepare('SELECT tag FROM collection_item_tags ORDER BY item_id').all()).toEqual([]);
+
+    db.close();
+  });
 });

@@ -1,25 +1,27 @@
 import {
+  COMPLETED_TAG,
   FAVORITE_TAG,
   INTERNAL_USED_TAGS,
   MOVIE_TAG,
   SERIES_TAG,
   VIRTUAL_TAGS,
+  VIRTUAL_UNCOMPLETED_TAG,
   VIRTUAL_UNWATCHED_TAG,
   WATCHED_TAG,
   WATCH_LATER_TAG,
   WISHLIST_TAG,
 } from '../constants/tags-const';
 import {
-  buildEpisodeProgressTag,
   changeCollectionItemTagValidation,
   collectionItemTagValidation,
   createCollectionItemTagValidation,
+  filterDisplayTags,
   filterEditableTags,
+  filterEditorPreservedTags,
   forbiddenInternalTagTextValidation,
   invalidInternalCollectionTagValidation,
-  parseEpisodeProgress,
-  removeEpisodeProgressTags,
   typeTagValidation,
+  userActionTagValidation,
   virtualTagValidation,
 } from './collection-item-tag-validation-util';
 
@@ -48,6 +50,7 @@ describe('collection item tag validation util', () => {
 
   it('validates virtual tags', () => {
     expect(virtualTagValidation([MOVIE_TAG, VIRTUAL_UNWATCHED_TAG])).toEqual({ kind: 'virtualTag' });
+    expect(virtualTagValidation([SERIES_TAG, VIRTUAL_UNCOMPLETED_TAG])).toEqual({ kind: 'virtualTag' });
     expect(virtualTagValidation([MOVIE_TAG, '#unwatched-list'])).toBeUndefined();
   });
 
@@ -61,6 +64,12 @@ describe('collection item tag validation util', () => {
     expect(invalidInternalCollectionTagValidation([MOVIE_TAG, '#watch-later-list'])).toBeUndefined();
   });
 
+  it('validates user action tags', () => {
+    expect(userActionTagValidation([MOVIE_TAG, WATCHED_TAG])).toEqual({ kind: 'usedInternalTag' });
+    expect(userActionTagValidation([MOVIE_TAG, FAVORITE_TAG])).toEqual({ kind: 'usedInternalTag' });
+    expect(userActionTagValidation([MOVIE_TAG, '#custom'])).toBeUndefined();
+  });
+
   it('requires a type tag', () => {
     expect(typeTagValidation(['#action'])).toEqual({ kind: 'missingTypeTag' });
     expect(typeTagValidation([MOVIE_TAG])).toBeUndefined();
@@ -72,6 +81,7 @@ describe('collection item tag validation util', () => {
     expect(collectionItemTagValidation([MOVIE_TAG, WATCH_LATER_TAG])).toEqual({
       kind: 'invalidInternalCollectionTag',
     });
+    expect(collectionItemTagValidation([SERIES_TAG, COMPLETED_TAG])).toEqual({ kind: 'usedInternalTag' });
     expect(collectionItemTagValidation(['#action'])).toEqual({ kind: 'missingTypeTag' });
     expect(collectionItemTagValidation([MOVIE_TAG, '#action'])).toBeUndefined();
   });
@@ -148,19 +158,54 @@ describe('collection item tag validation util', () => {
     ).toEqual({ kind: 'sharedInternalCollectionItemUpdate' });
   });
 
-  it('builds and parses episode progress tags', () => {
-    const tag = buildEpisodeProgressTag(3, 4);
-
-    expect(tag).toBe('#episode-s03e04');
-    expect(parseEpisodeProgress([MOVIE_TAG, tag])).toEqual({ season: 3, episode: 4 });
-    expect(parseEpisodeProgress([MOVIE_TAG])).toBeNull();
+  it('rejects episode progress tags in validation', () => {
+    expect(
+      createCollectionItemTagValidation({
+        tags: [SERIES_TAG, '#episode-s01e02'],
+        listType: 'series-tracker',
+      })
+    ).toEqual({ kind: 'invalidSeriesTrackerTags' });
+    expect(
+      changeCollectionItemTagValidation({
+        tags: [SERIES_TAG, '#episode-s01e02'],
+        listType: 'series-tracker',
+        existingListType: 'series-tracker',
+        requesterIsOwner: true,
+      })
+    ).toEqual({ kind: 'invalidSeriesTrackerTags' });
   });
 
   it('filters tags that should not be edited directly', () => {
-    expect(removeEpisodeProgressTags([MOVIE_TAG, '#episode-s01e02', '#action'])).toEqual([MOVIE_TAG, '#action']);
-    expect(filterEditableTags([MOVIE_TAG, WATCH_LATER_TAG, WISHLIST_TAG, '#episode-s01e02', '#action'])).toEqual([
-      MOVIE_TAG,
-      '#action',
-    ]);
+    expect(
+      filterEditableTags([
+        MOVIE_TAG,
+        WATCHED_TAG,
+        FAVORITE_TAG,
+        COMPLETED_TAG,
+        WATCH_LATER_TAG,
+        WISHLIST_TAG,
+        '#action',
+      ])
+    ).toEqual([MOVIE_TAG, '#action']);
+  });
+
+  it('finds hidden tags that should be preserved in edit saves', () => {
+    expect(
+      filterEditorPreservedTags([
+        MOVIE_TAG,
+        WATCHED_TAG,
+        FAVORITE_TAG,
+        COMPLETED_TAG,
+        WATCH_LATER_TAG,
+        WISHLIST_TAG,
+        '#action',
+      ])
+    ).toEqual([WATCHED_TAG, FAVORITE_TAG, WATCH_LATER_TAG, WISHLIST_TAG]);
+  });
+
+  it('filters only list placement tags from display tags', () => {
+    expect(
+      filterDisplayTags([MOVIE_TAG, WATCHED_TAG, FAVORITE_TAG, COMPLETED_TAG, WATCH_LATER_TAG, WISHLIST_TAG, '#action'])
+    ).toEqual([MOVIE_TAG, WATCHED_TAG, FAVORITE_TAG, COMPLETED_TAG, '#action']);
   });
 });

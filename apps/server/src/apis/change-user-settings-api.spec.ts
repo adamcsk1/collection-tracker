@@ -38,6 +38,28 @@ describe('change-user-settings-api', () => {
     });
   });
 
+  it('does not overwrite stored language and theme from login defaults', async () => {
+    const response = mockResponse();
+    const request: any = { body: { theme: 'light', language: 'en', fromLogin: true }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO user_settings (username_hash, theme, language) VALUES (?, ?, ?)').run('user', 'dark', 'en');
+
+    const { register } = await import('./change-user-settings-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      theme: 'dark',
+      language: 'en',
+    });
+    expect(db.prepare('SELECT theme, language FROM user_settings WHERE username_hash = ?').get('user')).toEqual({
+      theme: 'dark',
+      language: 'en',
+    });
+  });
+
   it('updates the default library owner share code', async () => {
     const response = mockResponse();
     const request: any = { body: { defaultLibraryOwnerShareCode: 'owner-code' }, usernameHash: 'user' };

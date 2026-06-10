@@ -1,6 +1,7 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
+import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const insertUserAndItems = () => {
@@ -263,6 +264,31 @@ describe('get-collection-items-api', () => {
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
         items: [expect.objectContaining({ title: 'Own Tracked Series' })],
+        total: 1,
+      })
+    );
+  });
+
+  it('filters series tracker items by completed status', async () => {
+    insertUser('user');
+    insertTypedItem('user', 'tt-completed-series-tracker', 'Completed Tracked Series', 'series-tracker');
+    insertTypedItem('user', 'tt-uncompleted-series-tracker', 'Uncompleted Tracked Series', 'series-tracker');
+    insertTag('tt-completed-series-tracker', COMPLETED_TAG);
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { listType: 'series-tracker', completed: 'false' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            title: 'Uncompleted Tracked Series',
+          }),
+        ],
         total: 1,
       })
     );
