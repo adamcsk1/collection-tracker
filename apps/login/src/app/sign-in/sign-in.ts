@@ -53,7 +53,7 @@ export class SignIn implements OnInit {
       this.ngxSignalTranslate.translate(this.tokenInputType() === 'text' ? 'HideSecret' : 'ShowSecret')
     ),
     toggleSecretLabel: computed(() =>
-      this.ngxSignalTranslate.translate(this.tokenInputType() === 'text' ? 'ShowSecret' : 'HideSecret')
+      this.ngxSignalTranslate.translate(this.tokenInputType() === 'text' ? 'HideSecret' : 'ShowSecret')
     ),
   };
   protected readonly signInModel = signal<SignInModel>({
@@ -143,6 +143,7 @@ export class SignIn implements OnInit {
         .updateUserSettings({
           language: formValue.language,
           theme: formValue.theme,
+          fromLogin: true,
         })
         .pipe(catchError(() => of(void 0)))
     );

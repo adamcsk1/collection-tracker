@@ -29,6 +29,7 @@
 @if (config().scrollToTopAvailable) {
   <div
     class="float-button float-button-scroll-to-top"
+    [class.float-button-scroll-to-top-no-search-bar]="!searchTemplate() && !showFloatActions()"
     animate.enter="animation-fade-in"
     animate.leave="animation-fade-out"
   >

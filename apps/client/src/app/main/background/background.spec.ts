@@ -109,7 +109,7 @@ describe('Background component', () => {
     vi.advanceTimersByTime(500);
 
     expect(component['images']().length).toBeGreaterThan(0);
-    expect(component['windowHeight']).toBe(1200);
+    expect(component['windowHeight']()).toBe(1200);
   });
 
   it('flags large height and width deltas for handling', () => {
@@ -134,7 +134,7 @@ describe('Background component', () => {
     window.dispatchEvent(new Event('resize'));
     vi.runAllTimers();
 
-    expect(component['windowHeight']).toBe(600);
+    expect(component['windowHeight']()).toBe(600);
     expect(setImagesSpy).not.toHaveBeenCalled();
   });
 

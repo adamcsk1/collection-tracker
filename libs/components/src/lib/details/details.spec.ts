@@ -5,12 +5,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Details } from './details';
 
 @Component({
+  selector: 'libc-test-details-host',
   imports: [Details],
   template: `<libc-details summary="Summary" [open]="open"><p>Body</p></libc-details>`,
 })
 class HostComponent {
   public open = false;
 }
+
+@Component({
+  selector: 'libc-test-details-no-store-host',
+  imports: [Details],
+  template: `<libc-details summary="Summary" [storeOpenedState]="false"><p>Body</p></libc-details>`,
+})
+class HostNoStoreComponent {}
 
 describe('Details component', () => {
   let storage: WebstorageService;
@@ -56,5 +64,37 @@ describe('Details component', () => {
     fixture.detectChanges();
 
     expect(setItemSpy).toHaveBeenCalledWith(expect.stringContaining('DetailsSummary'), 'false');
+  });
+});
+
+describe('Details component with storeOpenedState disabled', () => {
+  let storage: WebstorageService;
+  let getItemSpy: ReturnType<typeof vi.spyOn>;
+  let setItemSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HostNoStoreComponent],
+      providers: [WebstorageService],
+    });
+
+    storage = TestBed.inject(WebstorageService);
+    getItemSpy = vi.spyOn(storage, 'getItem').mockReturnValue('false');
+    setItemSpy = vi.spyOn(storage, 'setItem').mockImplementation(() => {});
+  });
+
+  it('does not read or persist open state when storeOpenedState is false', () => {
+    const noStoreFixture = TestBed.createComponent(HostNoStoreComponent);
+    noStoreFixture.detectChanges();
+
+    const component = noStoreFixture.debugElement.children[0].children[0].componentInstance as Details;
+    expect(component['storedOpened']()).toBe(false);
+    expect(getItemSpy).not.toHaveBeenCalled();
+
+    const detailsElement = { open: false } as unknown as HTMLDetailsElement;
+    component.onToggle({ target: { parentElement: detailsElement } } as unknown as Event);
+    noStoreFixture.detectChanges();
+
+    expect(setItemSpy).not.toHaveBeenCalled();
   });
 });

@@ -5,5 +5,6 @@
 @import url('../../../libs/shared/src/lib/styles/main.css');
 @import url('../../../libs/shared/src/lib/styles/components/button.css');
 @import url('../../../libs/shared/src/lib/styles/components/link.css');
+@import url('../../../libs/shared/src/lib/styles/components/text-button.css');
 @import url('../../../libs/shared/src/lib/styles/components/card.css');
 @import url('./styles/login-page.css');

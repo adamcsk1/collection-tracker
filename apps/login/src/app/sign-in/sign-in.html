@@ -26,18 +26,16 @@
     [type]="tokenInputType()"
     [formField]="form.token"
   />
-  <a
+  <button
+    type="button"
     data-test-id="sign-in-toggle-secret"
     class="text-button"
-    tabindex="0"
-    role="button"
     [attr.aria-pressed]="tokenInputType() === 'text'"
     [attr.aria-label]="translations.toggleSecretAriaLabel()"
     (click)="onToggleTokenInputType()"
-    (keyup.enter)="onToggleTokenInputType()"
   >
     {{ translations.toggleSecretLabel() }}
-  </a>
+  </button>
   @if (showApiUrlInput()) {
     <libc-input
       data-test-id="sign-in-api-url"

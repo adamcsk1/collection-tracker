@@ -1,78 +1,86 @@
-<button
-  type="button"
-  class="dialog-overlay"
-  tabindex="-1"
-  animate.enter="animation-fade-in"
-  animate.leave="animation-fade-out"
-  [attr.aria-label]="translations.close()"
-  (click)="onClose()"
-></button>
-<div
-  #dialogRoot
-  class="dialog-frame"
-  role="dialog"
-  aria-modal="true"
-  tabindex="-1"
-  animate.enter="animation-slide-in-left"
-  animate.leave="animation-slide-out-left"
-  (keydown.escape)="onClose()"
->
-  <div class="dialog-header">
-    <div>
-      <ng-content select="[dialog-shell-top-content]" />
+@if (!closing()) {
+  <button
+    type="button"
+    class="dialog-overlay"
+    tabindex="-1"
+    animate.enter="animation-fade-in"
+    animate.leave="animation-fade-out"
+    [attr.aria-label]="translations.close()"
+    (click)="onClose()"
+  ></button>
+  <div
+    #dialogRoot
+    class="dialog-frame"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+    animate.enter="animation-slide-in-bottom"
+    animate.leave="animation-slide-out-bottom"
+    [style.--dialog-drag-offset]="dragOffsetCss()"
+    [style.transform]="dragFrameTransform()"
+    (keydown.escape)="onClose()"
+    (keydown.tab)="onTrapFocus($event)"
+  >
+    <div class="dialog-top-bar">
+      <button
+        type="button"
+        class="dialog-drag-handle"
+        data-test-id="dialog-drag-handle"
+        [attr.aria-label]="translations.dragToClose()"
+        [title]="translations.dragToClose()"
+        (keydown.enter)="onClose()"
+        (keydown.space)="onClose(); $event.preventDefault()"
+        (pointerdown)="onDragHandlePointerDown($event)"
+        (pointermove)="onDragHandlePointerMove($event)"
+        (pointerup)="onDragHandlePointerUp($event)"
+        (pointercancel)="onDragHandlePointerCancel()"
+      ></button>
     </div>
-    <div class="dialog-header-actions">
-      @if (hasMenuContent()) {
-        <button
-          type="button"
-          data-test-id="dialog-actions-menu-button"
-          class="button-icon material-icons"
-          [attr.aria-controls]="actionsMenuId"
-          [attr.aria-expanded]="menuOpen()"
-          [attr.aria-label]="translations.moreActions()"
-          [title]="translations.moreActions()"
-          (click)="onToggleMenu()"
+    <div class="dialog-header">
+      <div>
+        <ng-content select="[dialog-shell-top-content]" />
+      </div>
+      <div class="dialog-header-actions">
+        @if (hasMenuContent()) {
+          <button
+            #menuButton
+            type="button"
+            data-test-id="dialog-actions-menu-button"
+            class="button-icon material-icons"
+            [attr.aria-controls]="actionsMenuId"
+            [attr.aria-expanded]="menuOpen()"
+            [attr.aria-label]="translations.moreActions()"
+            [title]="translations.moreActions()"
+            (click)="onToggleMenu()"
+          >
+            more_vert
+          </button>
+        }
+        <div
+          #menuContainer
+          [id]="actionsMenuId"
+          data-test-id="dialog-actions-menu"
+          class="dialog-actions-menu"
+          [class.dialog-actions-menu-open]="menuOpen()"
+          [attr.hidden]="hasMenuContent() && menuOpen() ? null : ''"
         >
-          more_vert
-        </button>
-      } @else {
-        <button
-          type="button"
-          data-test-id="dialog-close-button"
-          class="button-icon material-icons"
-          [attr.aria-label]="translations.close()"
-          [title]="translations.close()"
-          (click)="onClose()"
-        >
-          close
-        </button>
-      }
-      <div
-        [id]="actionsMenuId"
-        data-test-id="dialog-actions-menu"
-        class="dialog-actions-menu"
-        [class.dialog-actions-menu-open]="menuOpen()"
-        [attr.hidden]="hasMenuContent() && menuOpen() ? null : ''"
-      >
-        <div #menuContent class="dialog-actions-menu-content">
-          <ng-content select="[dialog-shell-menu-content]" />
+          <div
+            #menuContent
+            class="dialog-actions-menu-content"
+            tabindex="-1"
+            (click)="onMenuContentClick()"
+            (keydown.enter)="onMenuContentClick()"
+          >
+            <ng-content select="[dialog-shell-menu-content]" />
+          </div>
         </div>
-        <button
-          type="button"
-          data-test-id="dialog-actions-close-button"
-          class="button-borderless unaligned"
-          (click)="onClose()"
-        >
-          <i class="material-icons" aria-hidden="true">close</i>
-          {{ translations.close() }}
-        </button>
       </div>
     </div>
+    <div class="dialog-body">
+      <ng-content select="[dialog-shell-content]" />
+    </div>
+    <div class="dialog-footer">
+      <ng-content select="[dialog-shell-bottom-content]" />
+    </div>
   </div>
-  <div class="dialog-body">
-    <ng-content select="[dialog-shell-content]" />
-  </div>
-  <div class="dialog-footer">
-    <ng-content select="[dialog-shell-bottom-content]" />
-  </div>
-</div>
+}

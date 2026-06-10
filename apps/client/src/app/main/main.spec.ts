@@ -13,6 +13,7 @@ import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FloatActionsService } from './float-actions/float-actions-service';
 import { Main } from './main';
 
 describe('Main component (client)', () => {
@@ -27,6 +28,7 @@ describe('Main component (client)', () => {
   let translate: { setLanguage: ReturnType<typeof vi.fn> };
   let portal: { setViewContainerRef: ReturnType<typeof vi.fn> };
   let tokenValidation: { startValidation: ReturnType<typeof vi.fn> };
+  let floatActions: FloatActionsService;
 
   beforeEach(() => {
     mainService = {
@@ -62,6 +64,7 @@ describe('Main component (client)', () => {
     fixture = TestBed.createComponent(Main);
     apiState = TestBed.inject(apiStateToken);
     spinnerState = TestBed.inject(spinnerLoadingStateToken) as NgxSimpleSignalStoreService<{ show: boolean }>;
+    floatActions = TestBed.inject(FloatActionsService);
     fixture.detectChanges();
   });
 
@@ -86,5 +89,13 @@ describe('Main component (client)', () => {
   it('sets the language and theme on init', () => {
     expect(theme.listen).toHaveBeenCalled();
     expect(translate.setLanguage).toHaveBeenCalledWith(initialMainState.language);
+  });
+
+  it('reserves desktop float space when only scroll-to-top is visible', () => {
+    expect(fixture.componentInstance['floatBarPresent']()).toBe(false);
+
+    floatActions.updateConfig({ scrollToTopAvailable: true });
+
+    expect(fixture.componentInstance['floatBarPresent']()).toBe(true);
   });
 });

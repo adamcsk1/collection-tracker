@@ -1,3 +1,7 @@
+:host {
+  --mobile-top-border-radius: 1rem;
+}
+
 .dialog-overlay {
   position: absolute;
   top: 0;
@@ -13,25 +17,60 @@
 }
 
 .dialog-frame {
+  --dialog-frame-default-height: 90vh;
+  --dialog-frame-height: min(
+    var(--dialog-frame-default-height),
+    var(--dialog-frame-max-height, var(--dialog-frame-default-height))
+  );
+
   background-color: var(--glassy-background);
   box-sizing: border-box;
   position: absolute;
-  top: 0;
-  left: 0;
+  top: var(--dialog-frame-top, calc(100vh - var(--dialog-frame-height)));
+  left: 50%;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  width: min(500px, 100vw);
-  height: 100vh;
+  width: min(600px, 100vw);
+  height: var(--dialog-frame-height);
   max-height: none;
   max-width: none;
-  border-radius: 0;
   padding: var(--size-md);
+  border-radius: var(--mobile-top-border-radius) var(--mobile-top-border-radius) 0 0;
+  translate: -50% 0;
 
-  @media (width <= 520px) {
+  .dialog-top-bar {
+    position: relative;
+    min-height: calc(2 * var(--size-md));
+
+    .dialog-drag-handle {
+      opacity: 1;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: min(20vw, 250px);
+      height: 3px;
+      border: 0;
+      border-radius: var(--border-radius);
+      background-color: var(--main-color);
+      margin: 0;
+      padding: 0;
+      cursor: grab;
+      touch-action: none;
+      transform: translate(-50%, -50%);
+
+      &:focus-visible {
+        outline: var(--outline-style);
+        outline-color: var(--focus-border-color);
+        outline-offset: var(--size-2xs);
+      }
+    }
+  }
+
+  @media (width <= 650px) {
+    --dialog-frame-default-height: 95vh;
+
     width: 100vw;
-    height: 100vh;
-    border-radius: 0;
   }
 
   .dialog-header {
@@ -91,6 +130,9 @@
     flex: 0 0 auto;
     flex-wrap: wrap;
     gap: var(--size-xs);
-    padding-top: var(--size-md);
+
+    &:has(*) {
+      padding-top: var(--size-md);
+    }
   }
 }

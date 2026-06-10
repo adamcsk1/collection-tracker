@@ -1,4 +1,5 @@
-import { effect, inject, Injectable, Injector } from '@angular/core';
+import { DestroyRef, effect, inject, Injectable, Injector } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { redirectToLogin } from '@shared/utils/redirect-to-login-util';
@@ -13,13 +14,16 @@ export class TokenValidationService {
   private readonly settings = inject(SettingsService);
   private readonly tagManagement = inject(TagManagementService);
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   public startValidation(): void {
     const tokenValidationEffect = effect(
       () => {
         const tokenValidated = this.main.tokenValid();
         if (tokenValidated) {
-          forkJoin([this.settings.preloadUserSettings(), this.tagManagement.preloadUserTagManagement()]).subscribe();
+          forkJoin([this.settings.preloadUserSettings(), this.tagManagement.preloadUserTagManagement()])
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe();
           tokenValidationEffect.destroy();
         } else if (tokenValidated === false) {
           redirectToLogin();
