@@ -3,15 +3,51 @@
 <section class="export-import-section">
   <h2>{{ translations.collectionData() }}</h2>
   <p>{{ translations.messageCollectionDataExport() }}</p>
+  <p>{{ translations.messageCollectionDataImport() }}</p>
   <div class="export-import-toolbar">
     <button data-test-id="collection-data-export" (click)="onExportCollectionData()">
       <i class="material-icons" aria-hidden="true">download</i>
       {{ translations.export() }}
     </button>
-    <button data-test-id="collection-data-import" class="button-disabled" [disabled]="true">
+    <button
+      data-test-id="collection-data-import"
+      [attr.aria-label]="translations.importCollectionData()"
+      (click)="onImportCollectionDataClick(collectionDataImportFile)"
+    >
       <i class="material-icons" aria-hidden="true">upload</i>
       {{ translations.import() }}
     </button>
+    <input
+      #collectionDataImportFile
+      data-test-id="collection-data-import-file"
+      class="export-import-import-file"
+      type="file"
+      accept="application/json,.json"
+      (change)="onImportCollectionData($event)"
+    />
+  </div>
+</section>
+
+<section class="export-import-section">
+  <h2>{{ translations.collectionItemsByIMDbId() }}</h2>
+  <p>{{ translations.messageCollectionItemsByIMDbIdImport() }}</p>
+  <div class="export-import-toolbar">
+    <button
+      data-test-id="collection-items-imdb-id-import"
+      [attr.aria-label]="translations.importCollectionItemsByIMDbId()"
+      (click)="onImportCollectionItemsClick(collectionItemsImportFile)"
+    >
+      <i class="material-icons" aria-hidden="true">upload</i>
+      {{ translations.import() }}
+    </button>
+    <input
+      #collectionItemsImportFile
+      data-test-id="collection-items-imdb-id-import-file"
+      class="export-import-import-file"
+      type="file"
+      accept="application/json,text/markdown,text/plain,.json,.md,.txt"
+      (change)="onImportCollectionItems($event)"
+    />
   </div>
 </section>
 

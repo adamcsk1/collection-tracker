@@ -134,4 +134,46 @@ describe('Export/Import — collection data export', () => {
       });
     });
   });
+
+  it('imports collection data from an exported JSON file', () => {
+    ExportImportPage.getCollectionDataExportButton().click();
+    cy.wait('@getExport').its('response.statusCode').should('eq', 200);
+    cy.readFile(exportPath, null, { timeout: 15000 }).should('exist');
+
+    cy.request(
+      'POST',
+      '/api/v1/create',
+      buildCollectionItem('Imported State Should Remove This', 'movie', 'tt8500001')
+    );
+    cy.request('POST', '/api/v1/tag-management', []);
+    cy.intercept('POST', '/api/v1/import').as('importCollectionData');
+
+    cy.on('window:confirm', () => true);
+    ExportImportPage.getCollectionDataImportFileInput().selectFile(exportPath, { force: true });
+    cy.wait('@importCollectionData').its('response.statusCode').should('eq', 200);
+
+    cy.request('GET', '/api/v1/items?limit=1000&offset=0&listType=library')
+      .its('body.items')
+      .should((items) => {
+        const titles = items.map((item: { title: string }) => item.title);
+        expect(titles).to.include('Export Movie');
+        expect(titles).not.to.include('Imported State Should Remove This');
+      });
+    cy.request('GET', `/api/v1/series-tracker/${seriesImdbId}/watched-episodes`)
+      .its('body.watchedEpisodes')
+      .should('deep.equal', [{ season: 1, episode: 1 }]);
+  });
+
+  it('sends selected IMDb ID file content for collection-item import', () => {
+    cy.writeFile('cypress/downloads/imdb-import.md', '- https://www.imdb.com/title/tt8600001/\n- tt8600002');
+    cy.intercept('POST', '/api/v1/import/collection-items', (request) => {
+      expect(request.body).to.deep.equal({ source: '- https://www.imdb.com/title/tt8600001/\n- tt8600002' });
+      request.reply({ totalCount: 2, importedCount: 2, skippedCount: 0, errorCount: 0 });
+    }).as('importCollectionItems');
+
+    ExportImportPage.getCollectionItemsImdbIdImportFileInput().selectFile('cypress/downloads/imdb-import.md', {
+      force: true,
+    });
+    cy.wait('@importCollectionItems').its('response.statusCode').should('eq', 200);
+  });
 });

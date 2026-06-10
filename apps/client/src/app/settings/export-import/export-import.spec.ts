@@ -10,6 +10,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExportImport } from './export-import';
+import { SettingsService } from '../settings-service';
 import { TagManagementService } from '../tag-management/tag-management-service';
 import {
   initialTagManagementState,
@@ -61,8 +62,16 @@ describe('ExportImport component', () => {
   let component: ExportImport;
   let tagManagementState: NgxSimpleSignalStoreService<TagManagementState>;
   let toastState: NgxSimpleSignalStoreService<ToastState>;
-  let tagManagementService: { syncUserTagManagement: ReturnType<typeof vi.fn> };
-  let api: { getUserExport: ReturnType<typeof vi.fn> };
+  let tagManagementService: {
+    preloadUserTagManagement: ReturnType<typeof vi.fn>;
+    syncUserTagManagement: ReturnType<typeof vi.fn>;
+  };
+  let settingsService: { preloadUserSettings: ReturnType<typeof vi.fn> };
+  let api: {
+    getUserExport: ReturnType<typeof vi.fn>;
+    importUserExport: ReturnType<typeof vi.fn>;
+    importCollectionItems: ReturnType<typeof vi.fn>;
+  };
   let confirm: { open: ReturnType<typeof vi.fn> };
 
   const createComponent = () => {
@@ -77,6 +86,7 @@ describe('ExportImport component', () => {
     Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
     HTMLAnchorElement.prototype.click = vi.fn();
     tagManagementService = {
+      preloadUserTagManagement: vi.fn(() => of(void 0)),
       syncUserTagManagement: vi.fn((configs: TagManagementModel) => {
         tagManagementState.setState(
           'configs',
@@ -85,7 +95,19 @@ describe('ExportImport component', () => {
         return of(void 0);
       }),
     };
-    api = { getUserExport: vi.fn(() => of(mockExportResponse)) };
+    settingsService = { preloadUserSettings: vi.fn(() => of(void 0)) };
+    api = {
+      getUserExport: vi.fn(() => of(mockExportResponse)),
+      importUserExport: vi.fn(() =>
+        of({
+          importedCollectionItems: 1,
+          importedTagManagement: 1,
+          importedSeriesTrackerSeasons: 0,
+          importedSeriesTrackerWatchedEpisodes: 0,
+        })
+      ),
+      importCollectionItems: vi.fn(() => of({ totalCount: 2, importedCount: 1, skippedCount: 1, errorCount: 0 })),
+    };
     confirm = { open: vi.fn(() => of(true)) };
 
     TestBed.configureTestingModule({
@@ -93,6 +115,7 @@ describe('ExportImport component', () => {
       providers: [
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: TagManagementService, useValue: tagManagementService },
+        { provide: SettingsService, useValue: settingsService },
         { provide: ApiService, useValue: api },
         { provide: ConfirmService, useValue: confirm },
         provideStore(initialMainCollectionState, mainCollectionStateToken),
@@ -139,6 +162,75 @@ describe('ExportImport component', () => {
     component['onExportCollectionData']();
 
     expect(toastState.state.message()).toBe('Toast.ExportError');
+  });
+
+  it('imports collection data after confirmation', () => {
+    confirm.open.mockReturnValueOnce(of(true));
+    createComponent();
+    const source = JSON.stringify({ type: 'collection-tracker-export', version: 1, ...mockExportResponse });
+
+    component['importCollectionData'](source);
+
+    expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportCollectionData');
+    expect(api.importUserExport).toHaveBeenCalledWith({
+      type: 'collection-tracker-export',
+      version: 1,
+      ...mockExportResponse,
+    });
+    expect(settingsService.preloadUserSettings).toHaveBeenCalled();
+    expect(tagManagementService.preloadUserTagManagement).toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.CollectionDataImported');
+  });
+
+  it('does not import collection data when confirmation is cancelled', () => {
+    confirm.open.mockReturnValueOnce(of(false));
+    createComponent();
+
+    component['importCollectionData'](
+      JSON.stringify({ type: 'collection-tracker-export', version: 1, ...mockExportResponse })
+    );
+
+    expect(api.importUserExport).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('');
+  });
+
+  it('shows collection data import error toast for invalid JSON', () => {
+    createComponent();
+
+    component['importCollectionData']('{bad json');
+
+    expect(api.importUserExport).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.CollectionDataImportError');
+  });
+
+  it('shows collection data import error toast when API fails', () => {
+    confirm.open.mockReturnValueOnce(of(true));
+    api.importUserExport.mockReturnValueOnce(throwError(() => new Error('fail')));
+    createComponent();
+
+    component['importCollectionData'](
+      JSON.stringify({ type: 'collection-tracker-export', version: 1, ...mockExportResponse })
+    );
+
+    expect(toastState.state.message()).toBe('Toast.CollectionDataImportError');
+  });
+
+  it('imports collection items by IMDb ID source text', () => {
+    createComponent();
+
+    component['importCollectionItems']('tt0133093 tt0372784');
+
+    expect(api.importCollectionItems).toHaveBeenCalledWith('tt0133093 tt0372784');
+    expect(toastState.state.message()).toBe('Toast.CollectionItemsByIMDbIdImported');
+  });
+
+  it('shows collection items import error toast when API fails', () => {
+    api.importCollectionItems.mockReturnValueOnce(throwError(() => new Error('fail')));
+    createComponent();
+
+    component['importCollectionItems']('tt0133093');
+
+    expect(toastState.state.message()).toBe('Toast.CollectionItemsByIMDbIdImportError');
   });
 
   it('exports tag management JSON', async () => {

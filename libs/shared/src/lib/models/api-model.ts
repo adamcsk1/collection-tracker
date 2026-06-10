@@ -261,6 +261,29 @@ export interface UserExportApiResponseModel {
   >;
 }
 
+export interface UserImportApiRequestModel extends UserExportApiResponseModel {
+  type: string;
+  version: number;
+}
+
+export interface UserImportApiResponseModel {
+  importedCollectionItems: number;
+  importedTagManagement: number;
+  importedSeriesTrackerSeasons: number;
+  importedSeriesTrackerWatchedEpisodes: number;
+}
+
+export interface CollectionItemsImportApiRequestModel {
+  source: string;
+}
+
+export interface CollectionItemsImportApiResponseModel {
+  totalCount: number;
+  importedCount: number;
+  skippedCount: number;
+  errorCount: number;
+}
+
 export interface HealthApiResponseModel {
   status: 'ok' | 'warn' | 'error';
   memory: {

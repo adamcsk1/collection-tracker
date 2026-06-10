@@ -8,6 +8,7 @@ import {
   CollectionItemChangeApiModel,
   CollectionItemExistsApiResponseModel,
   CollectionItemFiltersApiModel,
+  CollectionItemsImportApiResponseModel,
   CollectionListTypeModel,
   CollectionItemsApiResponseModel,
   CollectionItemSuggestionsApiResponseModel,
@@ -29,6 +30,8 @@ import {
   TagManagementApiResponseModel,
   TagSuggestionsApiResponseModel,
   UserExportApiResponseModel,
+  UserImportApiRequestModel,
+  UserImportApiResponseModel,
   UserSettingsApiResponseModel,
   UserSharesApiResponseModel,
 } from '@shared/models/api-model';
@@ -255,5 +258,13 @@ export class ApiService extends BaseApiService {
 
   public getUserExport(): Observable<UserExportApiResponseModel> {
     return this.request('GET', '/export');
+  }
+
+  public importUserExport(importData: UserImportApiRequestModel): Observable<UserImportApiResponseModel> {
+    return this.request('POST', '/import', importData);
+  }
+
+  public importCollectionItems(source: string): Observable<CollectionItemsImportApiResponseModel> {
+    return this.request('POST', '/import/collection-items', { source });
   }
 }

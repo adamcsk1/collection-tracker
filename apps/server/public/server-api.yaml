@@ -810,6 +810,64 @@ components:
                 items:
                   $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
 
+    ImportRequest:
+      allOf:
+        - type: object
+          required: [type, version]
+          properties:
+            type:
+              type: string
+              const: collection-tracker-export
+            version:
+              type: integer
+              const: 1
+        - $ref: '#/components/schemas/ExportResponse'
+
+    ImportResponse:
+      type: object
+      required:
+        [
+          importedCollectionItems,
+          importedTagManagement,
+          importedSeriesTrackerSeasons,
+          importedSeriesTrackerWatchedEpisodes,
+        ]
+      properties:
+        importedCollectionItems:
+          type: integer
+        importedTagManagement:
+          type: integer
+        importedSeriesTrackerSeasons:
+          type: integer
+        importedSeriesTrackerWatchedEpisodes:
+          type: integer
+
+    CollectionItemsImportRequest:
+      type: object
+      required: [source]
+      properties:
+        source:
+          type: string
+          maxLength: 1000000
+          description: JSON, Markdown, or plain text content containing up to 100 unique IMDb IDs.
+
+    CollectionItemsImportResponse:
+      type: object
+      required: [totalCount, importedCount, skippedCount, errorCount]
+      properties:
+        totalCount:
+          type: integer
+          description: Number of unique IMDb IDs extracted from the source.
+        importedCount:
+          type: integer
+          description: Number of new collection library items imported.
+        skippedCount:
+          type: integer
+          description: Number of IMDb IDs skipped because they already exist in one of the caller's lists.
+        errorCount:
+          type: integer
+          description: Number of IMDb IDs that could not be imported from OMDb.
+
 security:
   - cookieAuth: []
   - bearerAuth: []
@@ -1894,6 +1952,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExportResponse'
+
+  /import:
+    post:
+      operationId: importUserExport
+      summary: Import all user-owned data
+      description: Replaces the authenticated user's exported application data with a collection tracker export. Login credentials, access tokens, and shares are preserved.
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportRequest'
+      responses:
+        '200':
+          description: Import summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResponse'
+        '400':
+          description: The request is not a valid collection tracker export.
+
+  /import/collection-items:
+    post:
+      operationId: importCollectionItemsByImdbId
+      summary: Import collection library items by IMDb ID
+      description: Extracts IMDb IDs from JSON, Markdown, or plain text content, fetches metadata from OMDb, imports new items into the collection library, and skips IDs that already exist in any of the caller's lists.
+      tags: [Collection]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionItemsImportRequest'
+      responses:
+        '200':
+          description: Import summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionItemsImportResponse'
+        '400':
+          description: The request body does not include valid source text, the source text is too large, or it contains too many IMDb IDs.
 
   /tag-management:
     get:

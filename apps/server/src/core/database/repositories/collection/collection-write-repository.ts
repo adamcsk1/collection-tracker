@@ -120,6 +120,18 @@ export const deleteCollectionItem = (
   db.prepare('DELETE FROM collection_items WHERE id = ?').run(existingItem.id);
 };
 
+export const deleteCollectionItemsByUser = (db: Database.Database, usernameHash: string): void => {
+  db.prepare('DELETE FROM collection_items WHERE username_hash = ?').run(usernameHash);
+};
+
+export const collectionItemExistsByImdbId = (db: Database.Database, usernameHash: string, imdbId: string): boolean => {
+  return Boolean(
+    db
+      .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? LIMIT 1')
+      .get(usernameHash, imdbId)
+  );
+};
+
 export const syncSeriesTrackerCompletedTag = (
   db: Database.Database,
   usernameHash: string,
