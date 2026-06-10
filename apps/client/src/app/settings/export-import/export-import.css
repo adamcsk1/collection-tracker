@@ -1,0 +1,34 @@
+.export-import-section {
+  margin-bottom: var(--size-lg);
+
+  h2 {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--size-xs);
+  }
+
+  p {
+    margin-bottom: var(--size-md);
+    color: var(--text-color-muted);
+  }
+}
+
+.export-import-toolbar {
+  display: flex;
+  gap: var(--size-xs);
+  flex-wrap: wrap;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--size-2xs);
+  }
+}
+
+.export-import-import-file {
+  display: none;
+}
+
+.button-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

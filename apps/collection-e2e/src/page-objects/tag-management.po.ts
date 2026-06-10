@@ -5,9 +5,6 @@ export const TagManagementPage = {
   },
 
   getResetButton: () => cy.getByTestId('tag-management-reset'),
-  getExportButton: () => cy.getByTestId('tag-management-export'),
-  getImportButton: () => cy.getByTestId('tag-management-import'),
-  getImportFileInput: () => cy.getByTestId('tag-management-import-file'),
   getList: () => cy.getByTestId('tag-management-list', { timeout: 10000 }),
   getColorButton: (tag: string) => cy.getByTestId(`tag-management-color-${tag}`),
   getWeightInput: (tag: string) => cy.getByTestId(`tag-management-weight-${tag}`).find('input'),
