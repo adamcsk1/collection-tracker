@@ -83,6 +83,7 @@ describe('ItemDialog', () => {
     update: ReturnType<typeof vi.fn>;
     getSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
     getSeriesTrackerWatchedEpisodes: ReturnType<typeof vi.fn>;
+    updateSeriesTrackerWatchedEpisodes: ReturnType<typeof vi.fn>;
     refreshSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
     deleteSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
     markAllSeriesTrackerWatched: ReturnType<typeof vi.fn>;
@@ -104,6 +105,13 @@ describe('ItemDialog', () => {
       update: vi.fn(() => of({ item: buildApiItem() })),
       getSeriesTrackerSeasons: vi.fn(() => of({ seasons: [] })),
       getSeriesTrackerWatchedEpisodes: vi.fn(() => of({ watchedEpisodes: [], lastWatchedEpisode: null })),
+      updateSeriesTrackerWatchedEpisodes: vi.fn(() =>
+        of({
+          watchedEpisodes: [],
+          lastWatchedEpisode: null,
+          item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG], hash: 'unwatched-hash' }),
+        })
+      ),
       refreshSeriesTrackerSeasons: vi.fn(() =>
         of({
           seasons: [{ season: 1, episodes: 2 }],
@@ -440,6 +448,45 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('Toast.SetSeasonMetadataFirst');
   });
 
+  it('reports all episodes watched only when every available episode is watched', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
+    component['seriesSeasonsLoaded'].set(true);
+    component['watchedEpisodes'].set([{ season: 1, episode: 1 }]);
+    component['watchedEpisodesLoaded'].set(true);
+
+    expect(component['allEpisodesWatched']()).toBe(false);
+
+    component['watchedEpisodes'].set([
+      { season: 1, episode: 1 },
+      { season: 1, episode: 2 },
+    ]);
+
+    expect(component['allEpisodesWatched']()).toBe(true);
+  });
+
+  it('does not report all episodes watched without season metadata', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component['seriesSeasons'].set([]);
+    component['seriesSeasonsLoaded'].set(true);
+    component['watchedEpisodes'].set([{ season: 1, episode: 1 }]);
+    component['watchedEpisodesLoaded'].set(true);
+
+    expect(component['allEpisodesWatched']()).toBe(false);
+  });
+
+  it('uses completed tag while watched episode data is loading', () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, COMPLETED_TAG] })
+    );
+    fixture.detectChanges();
+
+    expect(component['allEpisodesWatched']()).toBe(true);
+  });
+
   it('calls mark all watched API after confirmation', () => {
     confirm.open.mockReturnValue(of(true));
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
@@ -481,6 +528,62 @@ describe('ItemDialog', () => {
     component['onMarkAllEpisodesWatched']();
 
     expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
+  });
+
+  it('clears watched episodes after confirmation', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, COMPLETED_TAG] })
+    );
+    fixture.detectChanges();
+    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
+    component['watchedEpisodes'].set([
+      { season: 1, episode: 1 },
+      { season: 1, episode: 2 },
+    ]);
+
+    component['onMarkAllEpisodesUnwatched']();
+
+    expect(api.updateSeriesTrackerWatchedEpisodes).toHaveBeenCalledWith('tt1234567', { watchedEpisodes: [] });
+  });
+
+  it('updates watchedEpisodes signal after mark all unwatched success', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, COMPLETED_TAG] })
+    );
+    fixture.detectChanges();
+    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
+    component['watchedEpisodes'].set([
+      { season: 1, episode: 1 },
+      { season: 1, episode: 2 },
+    ]);
+
+    component['onMarkAllEpisodesUnwatched']();
+
+    expect(component['watchedEpisodes']()).toEqual([]);
+    expect(component.collectionItem().hash).toBe('unwatched-hash');
+    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ hash: 'unwatched-hash' }),
+      undefined
+    );
+    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedUnwatched');
+  });
+
+  it('does not call mark all unwatched API when confirmation is declined', () => {
+    confirm.open.mockReturnValue(of(false));
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, COMPLETED_TAG] })
+    );
+    fixture.detectChanges();
+
+    component['onMarkAllEpisodesUnwatched']();
+
+    expect(api.updateSeriesTrackerWatchedEpisodes).not.toHaveBeenCalled();
   });
 
   it('refreshes series metadata after confirmation', () => {

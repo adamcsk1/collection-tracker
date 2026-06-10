@@ -150,6 +150,7 @@ describe('Watched episodes dialog', () => {
       watchedEpisodes: [{ season: 1, episode: 1 }],
     });
     cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/mark-all-watched`).as('markAllWatched');
+    cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/watched-episodes`).as('markAllUnwatched');
 
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
@@ -159,7 +160,7 @@ describe('Watched episodes dialog', () => {
     cy.wait('@markAllWatched').its('response.statusCode').should('eq', 200);
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
     CollectionPage.getItemDialogSystemTagsSection().should('contain.text', '#completed');
-    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.closeDialogByOverlay();
 
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
@@ -168,6 +169,25 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getListItems().should('have.length', 1).and('contain.text', seriesTitle);
     CollectionPage.getSeriesTrackerSearchInput().clear().type('#uncompleted');
     CollectionPage.getListItems().should('have.length', 1).and('contain.text', incompleteSeriesTitle);
+
+    CollectionPage.getSeriesTrackerSearchInput().clear();
+    CollectionPage.getListItems().contains(seriesTitle).click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogMarkAllWatchedButton().should('not.exist');
+    CollectionPage.getItemDialogMarkAllUnwatchedButton().click();
+    cy.wait('@markAllUnwatched').then((interception) => {
+      expect(interception.request.body).to.deep.equal({ watchedEpisodes: [] });
+      expect(interception.response?.statusCode).to.eq(200);
+    });
+    CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'N/A');
+    CollectionPage.getItemDialogSystemTagsSection().should('not.contain.text', '#completed');
+    CollectionPage.closeDialogByOverlay();
+
+    CollectionPage.visitSeriesTracker();
+    cy.wait('@getSeriesTrackerItems');
+    CollectionPage.getSeriesTrackerCompletedBadges().should('have.length', 0);
+    CollectionPage.getSeriesTrackerSearchInput().clear().type('#uncompleted');
+    CollectionPage.getListItems().should('have.length', 2);
   });
 
   it('removes stale watched episodes when season metadata is reduced', () => {

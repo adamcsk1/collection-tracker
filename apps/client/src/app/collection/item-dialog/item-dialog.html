@@ -276,14 +276,25 @@
           <i class="material-icons" aria-hidden="true"> check_circle </i>
           {{ translations.manageWatchedEpisodes() }}
         </button>
-        <button
-          class="button-borderless unaligned"
-          data-test-id="item-dialog-mark-all-watched"
-          (click)="onMarkAllEpisodesWatched()"
-        >
-          <i class="material-icons" aria-hidden="true"> check_circle_outline </i>
-          {{ translations.markAllEpisodesWatched() }}
-        </button>
+        @if (allEpisodesWatched()) {
+          <button
+            class="button-borderless unaligned"
+            data-test-id="item-dialog-mark-all-unwatched"
+            (click)="onMarkAllEpisodesUnwatched()"
+          >
+            <i class="material-icons" aria-hidden="true"> remove_circle_outline </i>
+            {{ translations.markAllEpisodesUnwatched() }}
+          </button>
+        } @else {
+          <button
+            class="button-borderless unaligned"
+            data-test-id="item-dialog-mark-all-watched"
+            (click)="onMarkAllEpisodesWatched()"
+          >
+            <i class="material-icons" aria-hidden="true"> check_circle_outline </i>
+            {{ translations.markAllEpisodesWatched() }}
+          </button>
+        }
         <button
           class="button-borderless unaligned"
           data-test-id="item-dialog-refresh-series-metadata"
