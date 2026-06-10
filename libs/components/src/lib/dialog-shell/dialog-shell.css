@@ -92,7 +92,7 @@
     right: 0;
     z-index: 2;
     display: none;
-    min-width: 250px;
+    min-width: 260px;
     overflow: hidden;
     border: var(--border-style);
     border-radius: var(--border-radius);
