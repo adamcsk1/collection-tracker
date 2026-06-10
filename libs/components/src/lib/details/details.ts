@@ -16,13 +16,18 @@ export class Details implements OnInit {
   protected readonly storedOpened = signal<boolean>(false);
   public readonly open = input(false);
   public readonly summary = input.required<string>();
+  public readonly storeOpenedState = input(true);
 
   public ngOnInit(): void {
-    this.storedOpened.set(this.webstorage.getItem(this.storageKey) === 'true');
+    if (this.storeOpenedState()) {
+      this.storedOpened.set(this.webstorage.getItem(this.storageKey) === 'true');
+    }
   }
 
   public onToggle(event: Event): void {
-    const open = !((event.target as HTMLElement).parentElement as HTMLDetailsElement)?.open;
-    this.webstorage.setItem(this.storageKey, open.toString());
+    if (this.storeOpenedState()) {
+      const open = !((event.target as HTMLElement).parentElement as HTMLDetailsElement)?.open;
+      this.webstorage.setItem(this.storageKey, open.toString());
+    }
   }
 }

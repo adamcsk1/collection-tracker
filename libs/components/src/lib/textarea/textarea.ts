@@ -6,7 +6,6 @@ import {
   inject,
   input,
   model,
-  NgZone,
   OnInit,
   Renderer2,
   viewChild,
@@ -28,7 +27,6 @@ import { asyncScheduler, debounceTime, fromEvent, Subject } from 'rxjs';
 export class Textarea<T> implements FormValueControl<T | null>, OnInit {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly ngZone = inject(NgZone);
   private readonly renderer = inject(Renderer2);
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly textAreaWrapElement = viewChild<ElementRef>('textarea');
@@ -58,11 +56,9 @@ export class Textarea<T> implements FormValueControl<T | null>, OnInit {
 
   public ngOnInit(): void {
     if (this.autoHeight()) {
-      this.ngZone.runOutsideAngular(() =>
-        fromEvent(window, 'resize')
-          .pipe(debounceTime(getCoarsePointerBasedDebounceTime()), takeUntilDestroyed(this.destroyRef))
-          .subscribe(() => this.ngZone.run(() => this.autoHeightRefreshTrigger.next()))
-      );
+      fromEvent(window, 'resize')
+        .pipe(debounceTime(getCoarsePointerBasedDebounceTime()), takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.autoHeightRefreshTrigger.next());
 
       this.autoHeightRefreshTrigger
         .pipe(debounceTime(100), takeUntilDestroyed(this.destroyRef))

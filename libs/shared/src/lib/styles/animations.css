@@ -14,20 +14,12 @@
   animation: fade-out 0.2s ease-in forwards;
 }
 
-.animation-slide-in-right {
-  animation: slide-in-right 0.2s ease-out forwards;
+.animation-slide-in-bottom {
+  animation: slide-in-bottom 0.2s ease-out forwards;
 }
 
-.animation-slide-out-right {
-  animation: slide-out-right 0.2s ease-in forwards;
-}
-
-.animation-slide-in-left {
-  animation: slide-in-left 0.2s ease-out forwards;
-}
-
-.animation-slide-out-left {
-  animation: slide-out-left 0.2s ease-in forwards;
+.animation-slide-out-bottom {
+  animation: slide-out-bottom 0.2s ease-in forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -35,25 +27,21 @@
   .animation-scale-out,
   .animation-fade-in,
   .animation-fade-out,
-  .animation-slide-in-right,
-  .animation-slide-out-right,
-  .animation-slide-in-left,
-  .animation-slide-out-left {
+  .animation-slide-in-bottom,
+  .animation-slide-out-bottom {
     animation-duration: 1ms;
     animation-timing-function: linear;
   }
 
   .animation-scale-in,
   .animation-fade-in,
-  .animation-slide-in-right,
-  .animation-slide-in-left {
+  .animation-slide-in-bottom {
     animation-name: reduced-motion-show;
   }
 
   .animation-scale-out,
   .animation-fade-out,
-  .animation-slide-out-right,
-  .animation-slide-out-left {
+  .animation-slide-out-bottom {
     animation-name: reduced-motion-hide;
   }
 }
@@ -102,50 +90,26 @@
   }
 }
 
-@keyframes slide-in-right {
+@keyframes slide-in-bottom {
   from {
-    transform: translateX(100%);
+    transform: translateY(100%);
     opacity: 0;
   }
 
   to {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
   }
 }
 
-@keyframes slide-out-right {
+@keyframes slide-out-bottom {
   from {
-    transform: translateX(0);
+    transform: translateY(var(--dialog-drag-offset, 0));
     opacity: 1;
   }
 
   to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-@keyframes slide-in-left {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slide-out-left {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-
-  to {
-    transform: translateX(-100%);
+    transform: translateY(100%);
     opacity: 0;
   }
 }

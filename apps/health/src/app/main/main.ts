@@ -1,6 +1,5 @@
 import { DatePipe, UpperCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ImageIcon } from '@components/image-icon/image-icon';
 import { LinkButton } from '@components/link-button/link-button';
 import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
@@ -13,7 +12,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'he-root',
-  imports: [UpperCasePipe, DatePipe, LinkButton, ImageIcon],
+  imports: [UpperCasePipe, DatePipe, LinkButton],
   templateUrl: './main.html',
   styleUrl: './main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +42,6 @@ export class Main implements OnInit {
   protected readonly loading = signal(true);
   protected readonly loadedAt = signal<Date | null>(null);
   protected readonly basePath = getBasePath();
-  protected readonly ollamaIcon = `${this.basePath}/health/images/ollama-icon.png`;
 
   constructor() {
     this.ngxSignalTranslate.setLanguage('en');

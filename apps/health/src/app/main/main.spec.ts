@@ -116,11 +116,12 @@ describe('Main component', () => {
     expect(component['barLevel'](100)).toBe('error');
   });
 
-  it('exposes basePath and ollamaIcon derived from getBasePath', () => {
+  it('renders the AI metric with a material icon', () => {
     const fixture = TestBed.createComponent(Main);
-    const component = fixture.componentInstance;
+    fixture.detectChanges();
 
-    expect(component['basePath']).toBeDefined();
-    expect(component['ollamaIcon']).toContain('/health/images/ollama-icon.png');
+    expect(
+      fixture.nativeElement.querySelector('[data-test-id="health-ai-card"] .material-icons')?.textContent.trim()
+    ).toBe('psychology');
   });
 });

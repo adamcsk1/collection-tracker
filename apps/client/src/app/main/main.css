@@ -51,8 +51,13 @@
 
 @media (width > 768px) {
   .main-body {
+    padding-bottom: var(--size-md);
     max-height: 100vh;
     max-height: 100svh;
     max-height: 100dvh;
+  }
+
+  .main-body-float-bar-present {
+    padding-bottom: calc(var(--size-md) + 72px);
   }
 }

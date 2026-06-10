@@ -88,13 +88,21 @@ describe('SignIn component', () => {
 
   it('toggles token visibility through the UI control', () => {
     const component = fixture.componentInstance;
+    const toggleButton = fixture.nativeElement.querySelector(
+      '[data-test-id="sign-in-toggle-secret"]'
+    ) as HTMLButtonElement;
     expect(component['tokenInputType']()).toBe('password');
+    expect(toggleButton.tagName).toBe('BUTTON');
+    expect(toggleButton.textContent?.trim()).toBe('ShowSecret');
+    expect(toggleButton.getAttribute('aria-label')).toBe('ShowSecret');
 
-    component['onToggleTokenInputType']();
+    toggleButton.click();
     fixture.detectChanges();
     expect(component['tokenInputType']()).toBe('text');
+    expect(toggleButton.textContent?.trim()).toBe('HideSecret');
+    expect(toggleButton.getAttribute('aria-label')).toBe('HideSecret');
 
-    component['onToggleTokenInputType']();
+    toggleButton.click();
     expect(component['tokenInputType']()).toBe('password');
   });
 
@@ -119,6 +127,7 @@ describe('SignIn component', () => {
     expect(sharedApiService.updateUserSettings).toHaveBeenCalledWith({
       language: 'en',
       theme: 'light',
+      fromLogin: true,
     });
   });
 

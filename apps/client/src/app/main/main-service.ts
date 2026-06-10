@@ -1,4 +1,5 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { mainStateToken } from './main-store';
 import { SENSITIVE_DATA_STORAGE_MODES } from '../settings/settings-const';
 import { apiStateToken } from '@services/api/api-store';
@@ -19,6 +20,7 @@ export class MainService {
   private readonly webstorage = inject(WebstorageService);
   private readonly mainState = inject(mainStateToken);
   private readonly apiState = inject(apiStateToken);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly _tokenValid = signal<boolean | null>(null);
   public readonly hasRequiredConfig = computed(() => !!this.apiState.state.apiUrl());
   public readonly tokenValid = this._tokenValid.asReadonly();
@@ -45,7 +47,8 @@ export class MainService {
           this._tokenValid.set(false);
           this.webstorage.removeItem(STORAGE_LOGGED_IN);
           return EMPTY;
-        })
+        }),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => this._tokenValid.set(true));
   }

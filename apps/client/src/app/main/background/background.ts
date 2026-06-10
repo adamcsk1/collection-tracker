@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, NgZone, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
@@ -9,7 +9,7 @@ import { BackgroundImagesModel } from './background-model';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { getCoarsePointerBasedDebounceTime } from '@shared/utils/prefer-coarse-pointer-util';
 import { randomInt } from '@shared/utils/random-int-util';
-import { debounceTime, filter, fromEvent, map } from 'rxjs';
+import { debounceTime, filter, fromEvent, map, merge } from 'rxjs';
 
 @Component({
   selector: 'ct-background',
@@ -17,7 +17,7 @@ import { debounceTime, filter, fromEvent, map } from 'rxjs';
   styleUrl: './background.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[style.--window-height]': 'windowHeight + "px"',
+    '[style.--window-height]': 'windowHeight() + "px"',
     '[style.--image-width]': 'imageWidth + "px"',
     '[style.--image-height]': 'imageHeight + "px"',
     'aria-hidden': 'true',
@@ -27,7 +27,6 @@ export class Background {
   private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly ngZone = inject(NgZone);
   private readonly document = inject(DOCUMENT);
   private get isTextInputFocused(): boolean {
     return ['INPUT', 'TEXTAREA'].includes(this.document.activeElement?.tagName || '');
@@ -42,10 +41,10 @@ export class Background {
   protected readonly images = signal<BackgroundImagesModel>([]);
   protected readonly imageWidth = 90; // px
   protected readonly imageHeight = 125; // px
-  protected windowHeight = this.viewportHeight;
-  protected windowWidth = this.viewportWidth;
-  private lastViewportHeight = this.windowHeight;
-  private lastViewportWidth = this.windowWidth;
+  protected readonly windowHeight = signal(this.viewportHeight);
+  protected readonly windowWidth = signal(this.viewportWidth);
+  private lastViewportHeight = this.viewportHeight;
+  private lastViewportWidth = this.viewportWidth;
   private imageUrls: string[] = [];
 
   constructor() {
@@ -54,30 +53,30 @@ export class Background {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
         this.imageUrls = response.images;
-        this.setImages(this.windowHeight, this.windowWidth);
+        this.setImages(this.windowHeight(), this.windowWidth());
       });
 
-    this.ngZone.runOutsideAngular(() =>
-      (mobileUserAgent() ? fromEvent(screen.orientation, 'change') : fromEvent(window, 'resize'))
-        .pipe(
-          debounceTime(getCoarsePointerBasedDebounceTime()),
-          map(() => ({ height: this.viewportHeight, width: this.viewportWidth })),
-          filter(({ height, width }) => this.shouldHandleHeight(height) || this.shouldHandleWidth(width)),
-          takeUntilDestroyed(this.destroyRef)
-        )
-        .subscribe(({ height, width }) =>
-          this.ngZone.run(() => {
-            this.windowHeight = height;
-            this.windowWidth = width;
-            this.lastViewportHeight = height;
-            this.lastViewportWidth = width;
+    const resizeEvent$ = mobileUserAgent()
+      ? merge(fromEvent(screen.orientation, 'change'), fromEvent(window, 'resize'))
+      : fromEvent(window, 'resize');
 
-            if (this.isKeyboardLikely(height) || this.isTextInputFocused) return;
+    resizeEvent$
+      .pipe(
+        debounceTime(getCoarsePointerBasedDebounceTime()),
+        map(() => ({ height: this.viewportHeight, width: this.viewportWidth })),
+        filter(({ height, width }) => this.shouldHandleHeight(height) || this.shouldHandleWidth(width)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(({ height, width }) => {
+        this.windowHeight.set(height);
+        this.windowWidth.set(width);
+        this.lastViewportHeight = height;
+        this.lastViewportWidth = width;
 
-            this.setImages(height, width);
-          })
-        )
-    );
+        if (this.isKeyboardLikely(height) || this.isTextInputFocused) return;
+
+        this.setImages(height, width);
+      });
   }
 
   private setImages(viewportHeight: number, viewportWidth: number): void {

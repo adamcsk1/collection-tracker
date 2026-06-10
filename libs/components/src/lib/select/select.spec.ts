@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { Select } from './select';
 
 @Component({
+  selector: 'libc-test-select-host',
   imports: [FormField, Select],
   template: `<libc-select [formField]="field" [options]="options" label="Choose" hint="Pick one"></libc-select>`,
 })
@@ -19,6 +20,7 @@ class HostComponent {
 }
 
 @Component({
+  selector: 'libc-test-select-no-hint-host',
   imports: [FormField, Select],
   template: `<libc-select [formField]="field" [options]="options" label="Choose"></libc-select>`,
 })
@@ -32,6 +34,7 @@ class NoHintHostComponent {
 }
 
 @Component({
+  selector: 'libc-test-select-number-host',
   imports: [FormField, Select],
   template: `<libc-select [formField]="field" [options]="options" label="Choose"></libc-select>`,
 })
@@ -45,6 +48,7 @@ class NumberHostComponent {
 }
 
 @Component({
+  selector: 'libc-test-select-whitespace-host',
   imports: [FormField, Select],
   template: `<libc-select [formField]="field" [options]="options" label="Choose"></libc-select>`,
 })

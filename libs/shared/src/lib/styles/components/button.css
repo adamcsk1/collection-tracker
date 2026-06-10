@@ -48,7 +48,7 @@ button {
     }
   }
 
-  &:not(.button-icon, .button-custom) {
+  &:not(.button-icon, .button-custom, .text-button) {
     display: flex;
     align-items: center;
     gap: var(--size-2xs);

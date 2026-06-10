@@ -4,6 +4,12 @@
   padding: var(--size-2xs) var(--size-xs);
   background: color-mix(in srgb, var(--background-color-alt) 80%, transparent);
 
+  &.chip-system {
+    background: color-mix(in srgb, var(--main-color, currentColor) 20%, transparent);
+    border-color: var(--main-color, currentColor);
+    color: var(--main-color, currentColor);
+  }
+
   i {
     font-size: inherit;
     vertical-align: middle;
