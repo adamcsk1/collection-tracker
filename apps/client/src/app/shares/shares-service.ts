@@ -1,4 +1,5 @@
-import { inject, Injectable } from '@angular/core';
+import { DestroyRef, inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -11,6 +12,7 @@ export class SharesService {
   private readonly sharesState = inject(sharesStateToken);
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  private readonly destroyRef = inject(DestroyRef);
 
   public loadShares(): void {
     this.api
@@ -25,7 +27,8 @@ export class SharesService {
         catchError(() => {
           this.sharesState.setState('loaded', true);
           return EMPTY;
-        })
+        }),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }
@@ -41,7 +44,8 @@ export class SharesService {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ShareSaved'));
           this.loadShares();
         }),
-        catchError(() => EMPTY)
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }
@@ -54,7 +58,8 @@ export class SharesService {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ShareRemoved'));
           this.loadShares();
         }),
-        catchError(() => EMPTY)
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }
@@ -67,7 +72,8 @@ export class SharesService {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ShareRemoved'));
           this.loadShares();
         }),
-        catchError(() => EMPTY)
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }

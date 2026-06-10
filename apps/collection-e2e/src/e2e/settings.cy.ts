@@ -301,7 +301,7 @@ describe('Settings - access tokens', () => {
     cy.wait('@createToken').its('response.statusCode').should('eq', 200);
 
     // Close the dialog
-    cy.get('[role="dialog"]').find('button.button-icon').click();
+    cy.get('.dialog-overlay').click({ force: true });
 
     // Fetch the token list to get the stored tokenHash
     cy.request('GET', '/api/v1/user/access-tokens').then((response) => {
@@ -327,9 +327,9 @@ describe('Settings - appMode: full (all permissions)', () => {
   it('the item dialog shows edit, delete, and mark-watched buttons', () => {
     CollectionPage.getListItemImages().first().click();
 
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().should('be.visible');
     CollectionPage.getItemDialogDeleteButton().should('be.visible');
-    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');
   });
 });
