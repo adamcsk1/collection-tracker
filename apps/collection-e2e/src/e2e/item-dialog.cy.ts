@@ -115,6 +115,25 @@ describe('Item dialog — edit flow', () => {
     CollectionPage.getItemDialogSaveButton().should('be.disabled');
   });
 
+  it('keeps save disabled for invalid edited external rating formats', () => {
+    cy.on('window:confirm', () => true);
+
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogEditButton().click();
+
+    CollectionPage.getItemDialogIMDbRateInput().clear().type('10.1');
+    CollectionPage.getItemDialogSaveButton().should('be.disabled');
+
+    CollectionPage.getItemDialogIMDbRateInput().clear().type('10');
+    CollectionPage.getItemDialogRottenTomatoesRateInput().type('101%');
+    CollectionPage.getItemDialogSaveButton().should('be.disabled');
+
+    CollectionPage.getItemDialogRottenTomatoesRateInput().clear().type('100%');
+    CollectionPage.getItemDialogMetacriticRateInput().type('59%');
+    CollectionPage.getItemDialogSaveButton().should('be.disabled');
+  });
+
   it('discards draft changes when read-only is clicked', () => {
     cy.on('window:confirm', () => true);
 

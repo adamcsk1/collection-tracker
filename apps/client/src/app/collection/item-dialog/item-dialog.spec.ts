@@ -590,6 +590,7 @@ describe('ItemDialog', () => {
 
   it('saves edited external ratings', async () => {
     confirm.open.mockReturnValue(of(true));
+    component['form'].rate().value.set('8.6');
     component['form'].rottenTomatoesRate().value.set('97%');
     component['form'].metacriticRate().value.set('86/100');
 
@@ -597,10 +598,61 @@ describe('ItemDialog', () => {
 
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
-      expect.objectContaining({ rottenTomatoesRate: '97%', metacriticRate: '86/100' }),
+      expect.objectContaining({ rate: '8.6', rottenTomatoesRate: '97%', metacriticRate: '86/100' }),
       'testhash',
       undefined
     );
+  });
+
+  it('validates edited IMDb rate format', async () => {
+    for (const validRate of ['', '0', '0.0', '8.5', '10', '10.0']) {
+      component['form'].rate().value.set(validRate);
+      expect(component['formErrors'].rate.rateFormat()).toBe(false);
+    }
+
+    for (const invalidRate of ['10.1', '8.55', '-1', 'abc']) {
+      component['form'].rate().value.set(invalidRate);
+      expect(component['formErrors'].rate.rateFormat()).toBe(true);
+    }
+
+    await component['onSaveChanges']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('validates edited Rotten Tomatoes rate format', async () => {
+    for (const validRate of ['', '0%', '96%', '100%']) {
+      component['form'].rottenTomatoesRate().value.set(validRate);
+      expect(component['formErrors'].rottenTomatoesRate.rateFormat()).toBe(false);
+    }
+
+    for (const invalidRate of ['101%', '96', '96.5%', 'abc']) {
+      component['form'].rottenTomatoesRate().value.set(invalidRate);
+      expect(component['formErrors'].rottenTomatoesRate.rateFormat()).toBe(true);
+    }
+
+    await component['onSaveChanges']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('validates edited Metacritic rate format', async () => {
+    for (const validRate of ['', '0/100', '59/100', '100/100']) {
+      component['form'].metacriticRate().value.set(validRate);
+      expect(component['formErrors'].metacriticRate.rateFormat()).toBe(false);
+    }
+
+    for (const invalidRate of ['101/100', '59', '59/10', '59%', 'abc']) {
+      component['form'].metacriticRate().value.set(invalidRate);
+      expect(component['formErrors'].metacriticRate.rateFormat()).toBe(true);
+    }
+
+    await component['onSaveChanges']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
   });
 
   it('preserves hidden user action tags when saving regular edits', async () => {

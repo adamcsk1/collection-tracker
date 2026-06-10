@@ -66,6 +66,15 @@ interface ItemDialogFormModel {
   plot: string;
 }
 
+const imdbRatePattern = /^(?:10(?:\.0)?|[0-9](?:\.[0-9])?)$/;
+const rottenTomatoesRatePattern = /^(?:100|[1-9]?\d)%$/;
+const metacriticRatePattern = /^(?:100|[1-9]?\d)\/100$/;
+
+const optionalRateFormatValidation = (value: string, pattern: RegExp) => {
+  if (!value) return undefined;
+  return pattern.test(value) ? undefined : { kind: 'rateFormat' };
+};
+
 @Component({
   selector: 'ct-item-dialog',
   imports: [FormField, FormRoot, DialogShell, Autocomplete, Input, LinkButton, Textarea],
@@ -135,6 +144,9 @@ export class ItemDialog implements OnInit {
     validationVirtualTag: computed(() => this.ngxSignalTranslate.translate('Toast.VirtualTagNotAllowed')),
     validationUsedInternalTag: computed(() => this.ngxSignalTranslate.translate('Toast.UsedInternalTag')),
     validationMissingTypeTag: computed(() => this.ngxSignalTranslate.translate('Toast.MissingTypeTag')),
+    validationIMDbRate: computed(() => this.ngxSignalTranslate.translate('Validation.IMDbRate')),
+    validationMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Validation.MetacriticRate')),
+    validationRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('Validation.RottenTomatoesRate')),
     validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
     ratings: computed(() => this.ngxSignalTranslate.translate('Ratings')),
   };
@@ -179,6 +191,11 @@ export class ItemDialog implements OnInit {
         const tags = [...parseTagText(value()), ...this.originalInternalTags()];
         return typeTagValidation(tags);
       });
+      validate(item.rate, ({ value }) => optionalRateFormatValidation(value(), imdbRatePattern));
+      validate(item.rottenTomatoesRate, ({ value }) =>
+        optionalRateFormatValidation(value(), rottenTomatoesRatePattern)
+      );
+      validate(item.metacriticRate, ({ value }) => optionalRateFormatValidation(value(), metacriticRatePattern));
       min(item.userRate, 0, { error: { kind: 'min' } });
       max(item.userRate, 10, { error: { kind: 'max' } });
       validate(item.userRate, ({ value }) => {
@@ -234,6 +251,30 @@ export class ItemDialog implements OnInit {
           .tagsText()
           .errors()
           .some((error) => error.kind === 'missingTypeTag')
+      ),
+    },
+    rate: {
+      rateFormat: computed(() =>
+        this.form
+          .rate()
+          .errors()
+          .some((error) => error.kind === 'rateFormat')
+      ),
+    },
+    rottenTomatoesRate: {
+      rateFormat: computed(() =>
+        this.form
+          .rottenTomatoesRate()
+          .errors()
+          .some((error) => error.kind === 'rateFormat')
+      ),
+    },
+    metacriticRate: {
+      rateFormat: computed(() =>
+        this.form
+          .metacriticRate()
+          .errors()
+          .some((error) => error.kind === 'rateFormat')
       ),
     },
     userRate: {
