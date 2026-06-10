@@ -1,6 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  initialSpinnerLoadingState,
+  spinnerLoadingStateToken,
+} from '@components/spinner-loading/spinner-loading-store';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
+import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -11,21 +16,35 @@ import { SeriesSeasonMetadataDialog } from './series-season-metadata-dialog';
 describe('SeriesSeasonMetadataDialog', () => {
   let fixture: ComponentFixture<SeriesSeasonMetadataDialog>;
   let component: SeriesSeasonMetadataDialog;
-  let api: { updateSeriesTrackerSeasons: ReturnType<typeof vi.fn> };
+  let api: {
+    updateSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
+    refreshSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
+    deleteSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
+  };
   let portal: { close: ReturnType<typeof vi.fn> };
+  let confirm: { open: ReturnType<typeof vi.fn> };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
 
   beforeEach(() => {
-    api = { updateSeriesTrackerSeasons: vi.fn(() => of({ seasons: [{ season: 1, episodes: 2 }] })) };
+    api = {
+      updateSeriesTrackerSeasons: vi.fn(() => of({ seasons: [{ season: 1, episodes: 2 }] })),
+      refreshSeriesTrackerSeasons: vi.fn(() =>
+        of({ seasons: [{ season: 1, episodes: 3, titles: ['Pilot'] }], item: { hash: 'refreshed-hash' } })
+      ),
+      deleteSeriesTrackerSeasons: vi.fn(() => of({ seasons: [], item: { hash: 'metadata-deleted-hash' } })),
+    };
     portal = { close: vi.fn() };
+    confirm = { open: vi.fn(() => of(true)) };
 
     TestBed.configureTestingModule({
       imports: [SeriesSeasonMetadataDialog],
       providers: [
         { provide: ApiService, useValue: api },
         { provide: PortalService, useValue: portal },
+        { provide: ConfirmService, useValue: confirm },
         { provide: NgxSignalTranslateService, useValue: { translate: vi.fn((key: string) => key) } },
         provideStore(initialToastState, toastStateToken),
+        provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
       ],
     });
     TestBed.overrideComponent(SeriesSeasonMetadataDialog, { set: { template: '' } });
@@ -100,5 +119,46 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     expect(customClosed).toHaveBeenCalled();
     expect(portal.close).not.toHaveBeenCalled();
+  });
+
+  it('refreshes series metadata after confirmation', async () => {
+    const saved = vi.fn();
+    fixture.componentRef.setInput('saved', saved);
+
+    await component['onRefreshSeriesMetadata']();
+
+    expect(api.refreshSeriesTrackerSeasons).toHaveBeenCalledWith('tt-series');
+    expect(component['seasons']()).toEqual([{ season: 1, episodes: 3 }]);
+    expect(component['getEpisodeTitle'](0, 0)).toBe('Pilot');
+    expect(saved).toHaveBeenCalledWith([{ season: 1, episodes: 3, titles: ['Pilot'] }], { hash: 'refreshed-hash' });
+    expect(toastState.state.message()).toBe('Toast.SeriesMetadataRefreshed');
+  });
+
+  it('does not refresh series metadata when confirmation is declined', async () => {
+    confirm.open.mockReturnValue(of(false));
+
+    await component['onRefreshSeriesMetadata']();
+
+    expect(api.refreshSeriesTrackerSeasons).not.toHaveBeenCalled();
+  });
+
+  it('removes series metadata after confirmation', async () => {
+    const saved = vi.fn();
+    fixture.componentRef.setInput('saved', saved);
+
+    await component['onRemoveSeriesMetadata']();
+
+    expect(api.deleteSeriesTrackerSeasons).toHaveBeenCalledWith('tt-series');
+    expect(component['formModel']().seasons).toEqual([]);
+    expect(saved).toHaveBeenCalledWith([], { hash: 'metadata-deleted-hash' });
+    expect(toastState.state.message()).toBe('Toast.SeriesMetadataDeleted');
+  });
+
+  it('does not remove series metadata when confirmation is declined', async () => {
+    confirm.open.mockReturnValue(of(false));
+
+    await component['onRemoveSeriesMetadata']();
+
+    expect(api.deleteSeriesTrackerSeasons).not.toHaveBeenCalled();
   });
 });

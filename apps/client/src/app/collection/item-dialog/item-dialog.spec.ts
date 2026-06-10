@@ -18,10 +18,10 @@ import {
   WATCH_LATER_TAG,
   WISHLIST_TAG,
 } from '@shared/constants/tags-const';
-import { CollectionItemApiModel, SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
+import { CollectionItemApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of, Subject } from 'rxjs';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainState, mainStateToken } from '../../main/main-store';
 import { initialSharesState, SharesState, sharesStateToken } from '../../shares/shares-store';
@@ -252,6 +252,13 @@ describe('ItemDialog', () => {
     expect(component['dialogTitle']()).toBe('Title.WishlistItem');
   });
 
+  it('returns series tracker item title for series tracker items', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+
+    expect(component['dialogTitle']()).toBe('Title.SeriesTrackerItem');
+  });
+
   it('uses incoming share permissions for shared collection items', () => {
     sharesState.setState('incoming', [
       {
@@ -437,17 +444,6 @@ describe('ItemDialog', () => {
     );
   });
 
-  it('shows toast when no season metadata exists on mark all watched', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
-    fixture.detectChanges();
-    component['seriesSeasons'].set([]);
-
-    component['onMarkAllEpisodesWatched']();
-
-    expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.SetSeasonMetadataFirst');
-  });
-
   it('reports all episodes watched only when every available episode is watched', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
     fixture.detectChanges();
@@ -485,152 +481,6 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
 
     expect(component['allEpisodesWatched']()).toBe(true);
-  });
-
-  it('calls mark all watched API after confirmation', () => {
-    confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
-    fixture.detectChanges();
-    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
-
-    component['onMarkAllEpisodesWatched']();
-
-    expect(api.markAllSeriesTrackerWatched).toHaveBeenCalledWith('tt1234567');
-  });
-
-  it('updates watchedEpisodes signal after mark all watched success', () => {
-    confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
-    fixture.detectChanges();
-    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
-
-    component['onMarkAllEpisodesWatched']();
-
-    expect(component['watchedEpisodes']()).toEqual([
-      { season: 1, episode: 1 },
-      { season: 1, episode: 2 },
-    ]);
-    expect(component.collectionItem().hash).toBe('completed-hash');
-    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith(
-      'tt1234567',
-      expect.objectContaining({ hash: 'completed-hash' }),
-      undefined
-    );
-    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedWatched');
-  });
-
-  it('does not call mark all watched API when confirmation is declined', () => {
-    confirm.open.mockReturnValue(of(false));
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
-    fixture.detectChanges();
-    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
-
-    component['onMarkAllEpisodesWatched']();
-
-    expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
-  });
-
-  it('clears watched episodes after confirmation', () => {
-    confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput(
-      'collectionItem',
-      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, COMPLETED_TAG] })
-    );
-    fixture.detectChanges();
-    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
-    component['watchedEpisodes'].set([
-      { season: 1, episode: 1 },
-      { season: 1, episode: 2 },
-    ]);
-
-    component['onMarkAllEpisodesUnwatched']();
-
-    expect(api.updateSeriesTrackerWatchedEpisodes).toHaveBeenCalledWith('tt1234567', { watchedEpisodes: [] });
-  });
-
-  it('updates watchedEpisodes signal after mark all unwatched success', () => {
-    confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput(
-      'collectionItem',
-      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, COMPLETED_TAG] })
-    );
-    fixture.detectChanges();
-    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
-    component['watchedEpisodes'].set([
-      { season: 1, episode: 1 },
-      { season: 1, episode: 2 },
-    ]);
-
-    component['onMarkAllEpisodesUnwatched']();
-
-    expect(component['watchedEpisodes']()).toEqual([]);
-    expect(component.collectionItem().hash).toBe('unwatched-hash');
-    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith(
-      'tt1234567',
-      expect.objectContaining({ hash: 'unwatched-hash' }),
-      undefined
-    );
-    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedUnwatched');
-  });
-
-  it('does not call mark all unwatched API when confirmation is declined', () => {
-    confirm.open.mockReturnValue(of(false));
-    fixture.componentRef.setInput(
-      'collectionItem',
-      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, COMPLETED_TAG] })
-    );
-    fixture.detectChanges();
-
-    component['onMarkAllEpisodesUnwatched']();
-
-    expect(api.updateSeriesTrackerWatchedEpisodes).not.toHaveBeenCalled();
-  });
-
-  it('refreshes series metadata after confirmation', () => {
-    confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
-    fixture.detectChanges();
-
-    component['onRefreshSeriesMetadata']();
-
-    expect(api.refreshSeriesTrackerSeasons).toHaveBeenCalledWith('tt1234567');
-    expect(component['seriesSeasons']()).toEqual([{ season: 1, episodes: 2 }]);
-    expect(component.collectionItem().hash).toBe('refreshed-hash');
-    expect(toastState.state.message()).toBe('Toast.SeriesMetadataRefreshed');
-  });
-
-  it('shows spinner while refreshing series metadata and hides after completion', () => {
-    confirm.open.mockReturnValue(of(true));
-    const refreshSubject = new Subject<{ seasons: SeriesTrackerSeasonMetadataModel[] }>();
-    api.refreshSeriesTrackerSeasons.mockReturnValue(refreshSubject);
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
-    fixture.detectChanges();
-
-    component['onRefreshSeriesMetadata']();
-
-    expect(api.refreshSeriesTrackerSeasons).toHaveBeenCalledWith('tt1234567');
-    const spinnerLoadingState = TestBed.inject(spinnerLoadingStateToken);
-    expect(spinnerLoadingState.state.show()).toBe(true);
-
-    refreshSubject.next({ seasons: [{ season: 1, episodes: 2 }] });
-    refreshSubject.complete();
-
-    expect(spinnerLoadingState.state.show()).toBe(false);
-    expect(component['seriesSeasons']()).toEqual([{ season: 1, episodes: 2 }]);
-  });
-
-  it('removes series metadata after confirmation', () => {
-    confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
-    fixture.detectChanges();
-    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
-
-    component['onRemoveSeriesMetadata']();
-
-    expect(api.deleteSeriesTrackerSeasons).toHaveBeenCalledWith('tt1234567');
-    expect(component['seriesSeasons']()).toEqual([]);
-    expect(component.collectionItem().hash).toBe('metadata-deleted-hash');
-    expect(toastState.state.message()).toBe('Toast.SeriesMetadataDeleted');
   });
 
   it('opens the manual series metadata dialog', () => {

@@ -133,7 +133,7 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).should('be.checked');
   });
 
-  it('marks all episodes watched from the item dialog and updates completed filters', () => {
+  it('marks all episodes watched from the manage episodes dialog and updates completed filters', () => {
     const incompleteImdbId = 'tt8300003';
     const incompleteSeriesTitle = 'Incomplete Episodes Test Show';
     cy.request('POST', '/api/v1/create', {
@@ -156,8 +156,11 @@ describe('Watched episodes dialog', () => {
     cy.wait('@getSeriesTrackerItems');
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
-    CollectionPage.getItemDialogMarkAllWatchedButton().click();
+    CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getWatchedEpisodesMarkAllWatchedButton().click();
     cy.wait('@markAllWatched').its('response.statusCode').should('eq', 200);
+    CollectionPage.closeDialogByOverlay();
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
     CollectionPage.getItemDialogSystemTagsSection().should('contain.text', '#completed');
     CollectionPage.closeDialogByOverlay();
@@ -173,12 +176,15 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getSeriesTrackerSearchInput().clear();
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
-    CollectionPage.getItemDialogMarkAllWatchedButton().should('not.exist');
-    CollectionPage.getItemDialogMarkAllUnwatchedButton().click();
+    CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getWatchedEpisodesMarkAllWatchedButton().should('not.exist');
+    CollectionPage.getWatchedEpisodesMarkAllUnwatchedButton().click();
     cy.wait('@markAllUnwatched').then((interception) => {
       expect(interception.request.body).to.deep.equal({ watchedEpisodes: [] });
       expect(interception.response?.statusCode).to.eq(200);
     });
+    CollectionPage.closeDialogByOverlay();
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'N/A');
     CollectionPage.getItemDialogSystemTagsSection().should('not.contain.text', '#completed');
     CollectionPage.closeDialogByOverlay();

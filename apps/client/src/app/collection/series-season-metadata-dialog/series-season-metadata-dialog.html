@@ -77,4 +77,24 @@
       {{ translations.save() }}
     </button>
   </ng-container>
+  <ng-container dialog-shell-menu-content>
+    <button
+      class="button-borderless unaligned"
+      data-test-id="series-metadata-refresh"
+      type="button"
+      (click)="onRefreshSeriesMetadata()"
+    >
+      <i class="material-icons" aria-hidden="true"> sync </i>
+      {{ translations.refreshSeriesMetadata() }}
+    </button>
+    <button
+      class="button-borderless unaligned"
+      data-test-id="series-metadata-remove-all"
+      type="button"
+      (click)="onRemoveSeriesMetadata()"
+    >
+      <i class="material-icons" aria-hidden="true"> playlist_remove </i>
+      {{ translations.removeSeriesMetadata() }}
+    </button>
+  </ng-container>
 </libc-dialog-shell>
