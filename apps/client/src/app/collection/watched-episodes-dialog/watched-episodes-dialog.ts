@@ -10,6 +10,7 @@ import { PortalService } from '@services/portal-service';
 import {
   CollectionItemApiModel,
   SeriesTrackerSeasonMetadataModel,
+  SeriesTrackerWatchedEpisodesApiResponseModel,
   SeriesTrackerWatchedEpisodeModel,
 } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -36,6 +37,9 @@ export class WatchedEpisodesDialog implements OnInit {
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
+  private saveWatchedEpisodesQueue = Promise.resolve();
+  private saveWatchedEpisodesVersion = 0;
+  private hasLocalWatchedEpisodeChanges = false;
   public readonly imdbId = input.required<string>();
   public readonly saved = input<
     (watchedEpisodes: SeriesTrackerWatchedEpisodeModel[], item?: CollectionItemApiModel) => void
@@ -49,7 +53,6 @@ export class WatchedEpisodesDialog implements OnInit {
     markAllEpisodesWatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesWatched')),
     markAllEpisodesUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesUnwatched')),
     episode: computed(() => this.ngxSignalTranslate.translate('Episode')),
-    save: computed(() => this.ngxSignalTranslate.translate('Save')),
   };
   protected readonly seasonsMetadata = signal<SeriesTrackerSeasonMetadataModel[]>([]);
   protected readonly watchedEpisodes = signal<SeriesTrackerWatchedEpisodeModel[]>([]);
@@ -93,7 +96,7 @@ export class WatchedEpisodesDialog implements OnInit {
       .getSeriesTrackerWatchedEpisodes(this.imdbId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((watchedResponse) => {
-        this.watchedEpisodes.set(watchedResponse.watchedEpisodes);
+        if (!this.hasLocalWatchedEpisodeChanges) this.watchedEpisodes.set(watchedResponse.watchedEpisodes);
       });
   }
 
@@ -120,7 +123,8 @@ export class WatchedEpisodesDialog implements OnInit {
     return watchedCount > 0 && watchedCount < episodesCount;
   }
 
-  protected onToggleEpisode(season: number, episode: number): void {
+  protected async onToggleEpisode(season: number, episode: number): Promise<void> {
+    this.hasLocalWatchedEpisodeChanges = true;
     const key = `${season}-${episode}`;
     const currentWatched = this.watchedEpisodes();
     if (this.watchedSet().has(key)) {
@@ -132,9 +136,11 @@ export class WatchedEpisodesDialog implements OnInit {
     } else {
       this.watchedEpisodes.set([...currentWatched, { season, episode }]);
     }
+    await this.saveWatchedEpisodes();
   }
 
-  protected onToggleSeason(season: number, episodesCount: number): void {
+  protected async onToggleSeason(season: number, episodesCount: number): Promise<void> {
+    this.hasLocalWatchedEpisodeChanges = true;
     const currentWatched = this.watchedEpisodes();
     const seasonEpisodes: SeriesTrackerWatchedEpisodeModel[] = [];
     for (let episode = 1; episode <= episodesCount; episode++) {
@@ -148,6 +154,7 @@ export class WatchedEpisodesDialog implements OnInit {
       const withoutSeason = currentWatched.filter((watchedEpisode) => watchedEpisode.season !== season);
       this.watchedEpisodes.set([...withoutSeason, ...seasonEpisodes]);
     }
+    await this.saveWatchedEpisodes();
   }
 
   protected isSeasonOpenDefault(season: number): boolean {
@@ -158,7 +165,7 @@ export class WatchedEpisodesDialog implements OnInit {
     return this.seasonsMetadata()[seasonIndex]?.titles?.[episodeIndex];
   }
 
-  protected async onSave(): Promise<void> {
+  private async saveWatchedEpisodes(): Promise<void> {
     const episodes = this.watchedEpisodes()
       .slice()
       .sort((firstEpisode, secondEpisode) => {
@@ -167,15 +174,42 @@ export class WatchedEpisodesDialog implements OnInit {
         }
         return firstEpisode.episode - secondEpisode.episode;
       });
-    const result = await firstValueFrom(
-      this.api.updateSeriesTrackerWatchedEpisodes(this.imdbId(), { watchedEpisodes: episodes })
-    );
-    this.saved()(result.watchedEpisodes, result.item);
-    this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.WatchedEpisodesSaved'));
-    this.onClose();
+    const version = ++this.saveWatchedEpisodesVersion;
+    const save = this.saveWatchedEpisodesQueue
+      .catch(() => undefined)
+      .then(async () => {
+        const result = await firstValueFrom(
+          this.api.updateSeriesTrackerWatchedEpisodes(this.imdbId(), { watchedEpisodes: episodes })
+        );
+        if (version === this.saveWatchedEpisodesVersion) this.applySavedWatchedEpisodes(result);
+        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.WatchedEpisodesSaved'));
+      });
+    this.saveWatchedEpisodesQueue = save;
+    await save;
   }
 
-  protected onClose(): void {
+  private async queueWatchedEpisodesMutation(
+    action: () => Promise<SeriesTrackerWatchedEpisodesApiResponseModel>
+  ): Promise<SeriesTrackerWatchedEpisodesApiResponseModel> {
+    const version = ++this.saveWatchedEpisodesVersion;
+    const save = this.saveWatchedEpisodesQueue
+      .catch(() => undefined)
+      .then(async () => {
+        const result = await action();
+        if (version === this.saveWatchedEpisodesVersion) this.applySavedWatchedEpisodes(result);
+        return result;
+      });
+    this.saveWatchedEpisodesQueue = save.then(() => undefined);
+    return save;
+  }
+
+  private applySavedWatchedEpisodes(result: SeriesTrackerWatchedEpisodesApiResponseModel): void {
+    this.watchedEpisodes.set(result.watchedEpisodes);
+    this.saved()(result.watchedEpisodes, result.item);
+  }
+
+  protected async onClose(): Promise<void> {
+    await this.saveWatchedEpisodesQueue.catch(() => undefined);
     this.closed()();
   }
 
@@ -206,11 +240,12 @@ export class WatchedEpisodesDialog implements OnInit {
     );
     if (!confirmed) return;
 
+    this.hasLocalWatchedEpisodeChanges = true;
     this.spinnerLoadingState.setState('show', true);
     try {
-      const result = await firstValueFrom(this.api.markAllSeriesTrackerWatched(this.imdbId()));
-      this.watchedEpisodes.set(result.watchedEpisodes);
-      this.saved()(result.watchedEpisodes, result.item);
+      await this.queueWatchedEpisodesMutation(() =>
+        firstValueFrom(this.api.markAllSeriesTrackerWatched(this.imdbId()))
+      );
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedWatched'));
     } finally {
       this.spinnerLoadingState.setState('show', false);
@@ -223,13 +258,12 @@ export class WatchedEpisodesDialog implements OnInit {
     );
     if (!confirmed) return;
 
+    this.hasLocalWatchedEpisodeChanges = true;
     this.spinnerLoadingState.setState('show', true);
     try {
-      const result = await firstValueFrom(
-        this.api.updateSeriesTrackerWatchedEpisodes(this.imdbId(), { watchedEpisodes: [] })
+      await this.queueWatchedEpisodesMutation(() =>
+        firstValueFrom(this.api.updateSeriesTrackerWatchedEpisodes(this.imdbId(), { watchedEpisodes: [] }))
       );
-      this.watchedEpisodes.set(result.watchedEpisodes);
-      this.saved()(result.watchedEpisodes, result.item);
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedUnwatched'));
     } finally {
       this.spinnerLoadingState.setState('show', false);

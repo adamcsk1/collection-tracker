@@ -67,14 +67,6 @@
       </div>
     }
   </ng-container>
-  <ng-container dialog-shell-bottom-content>
-    @if (hasSeasonMetadata()) {
-      <button class="dialog-footer-button" data-test-id="watched-episodes-save" type="button" (click)="onSave()">
-        <i class="material-icons" aria-hidden="true"> save </i>
-        {{ translations.save() }}
-      </button>
-    }
-  </ng-container>
   <ng-container dialog-shell-menu-content>
     @if (allEpisodesWatched()) {
       <button
