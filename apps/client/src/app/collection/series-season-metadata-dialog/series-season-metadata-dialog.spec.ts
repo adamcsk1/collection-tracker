@@ -34,7 +34,7 @@ describe('SeriesSeasonMetadataDialog', () => {
     component = fixture.componentInstance;
     toastState = TestBed.inject(toastStateToken);
     fixture.componentRef.setInput('imdbId', 'tt-series');
-    fixture.componentRef.setInput('initialSeasons', [{ season: 1, episodes: 2 }]);
+    fixture.componentRef.setInput('initialSeasons', [{ season: 1, episodes: 2, titles: [] }]);
     fixture.detectChanges();
   });
 
@@ -54,38 +54,51 @@ describe('SeriesSeasonMetadataDialog', () => {
     expect(component['valid']()).toBe(false);
   });
 
-  it('saves sorted metadata and closes', async () => {
+  it('saves sorted metadata with titles and closes', async () => {
+    api.updateSeriesTrackerSeasons.mockReturnValue(of({ seasons: [{ season: 1, episodes: 2, titles: ['Pilot'] }] }));
     const saved = vi.fn();
-    const closed = vi.fn();
     fixture.componentRef.setInput('saved', saved);
-    fixture.componentRef.setInput('closed', closed);
     component['form']().reset({
       seasons: [
-        { season: 2, episodes: 4 },
-        { season: 1, episodes: 3 },
+        { season: 2, episodes: 4, titles: [] },
+        { season: 1, episodes: 3, titles: ['Pilot'] },
       ],
     });
 
-    await component['save']();
+    await component['onSave']();
 
     expect(api.updateSeriesTrackerSeasons).toHaveBeenCalledWith('tt-series', {
       seasons: [
-        { season: 1, episodes: 3 },
-        { season: 2, episodes: 4 },
+        { season: 1, episodes: 3, titles: ['Pilot'] },
+        { season: 2, episodes: 4, titles: [] },
       ],
     });
-    expect(saved).toHaveBeenCalledWith([{ season: 1, episodes: 2 }]);
+    expect(saved).toHaveBeenCalledWith([{ season: 1, episodes: 2, titles: ['Pilot'] }], undefined);
     expect(toastState.state.message()).toBe('Toast.SeriesMetadataSaved');
-    expect(closed).toHaveBeenCalled();
-    expect(portal.close).not.toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalled();
   });
 
-  it('calls the close callback when closed', () => {
-    const closed = vi.fn();
-    fixture.componentRef.setInput('closed', closed);
+  it('calls the default portal close when closed', () => {
+    component['onClose']();
 
-    component['close']();
+    expect(portal.close).toHaveBeenCalled();
+  });
 
-    expect(closed).toHaveBeenCalled();
+  it('reads and writes episode titles', () => {
+    component['setEpisodeTitle'](0, 0, 'Pilot');
+    component['setEpisodeTitle'](0, 1, 'Episode 2');
+
+    expect(component['getEpisodeTitle'](0, 0)).toBe('Pilot');
+    expect(component['getEpisodeTitle'](0, 1)).toBe('Episode 2');
+    expect(component['getEpisodeTitle'](0, 2)).toBe('');
+  });
+
+  it('calls custom closed callback without closing portal', () => {
+    const customClosed = vi.fn();
+    fixture.componentRef.setInput('closed', customClosed);
+    component['onClose']();
+
+    expect(customClosed).toHaveBeenCalled();
+    expect(portal.close).not.toHaveBeenCalled();
   });
 });

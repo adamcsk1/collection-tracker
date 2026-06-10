@@ -1,18 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { applyEach, form, FormField, max, min, validate } from '@angular/forms/signals';
+import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
-import { SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
+import { CollectionItemApiModel, SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'ct-series-season-metadata-dialog',
-  imports: [DialogShell, FormField, Input],
+  imports: [Details, DialogShell, FormField, Input],
   templateUrl: './series-season-metadata-dialog.html',
   styleUrl: './series-season-metadata-dialog.css',
   host: {
@@ -27,18 +28,22 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   public readonly imdbId = input.required<string>();
   public readonly initialSeasons = input<SeriesTrackerSeasonMetadataModel[]>([]);
-  public readonly saved = input<(seasons: SeriesTrackerSeasonMetadataModel[]) => void>(() => undefined);
+  public readonly saved = input<(seasons: SeriesTrackerSeasonMetadataModel[], item?: CollectionItemApiModel) => void>(
+    () => undefined
+  );
   public readonly closed = input<() => void>(() => this.portal.close());
   protected readonly translations = {
     title: computed(() => this.ngxSignalTranslate.translate('Title.SeriesMetadata')),
     message: computed(() => this.ngxSignalTranslate.translate('Message.SeriesMetadata')),
     season: computed(() => this.ngxSignalTranslate.translate('Season')),
     episodes: computed(() => this.ngxSignalTranslate.translate('Episodes')),
+    episodeTitles: computed(() => this.ngxSignalTranslate.translate('EpisodeTitles')),
     addSeason: computed(() => this.ngxSignalTranslate.translate('AddSeason')),
     remove: computed(() => this.ngxSignalTranslate.translate('Remove')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     close: computed(() => this.ngxSignalTranslate.translate('Close')),
     validation: computed(() => this.ngxSignalTranslate.translate('Validation.SeriesMetadata')),
+    noMetadata: computed(() => this.ngxSignalTranslate.translate('Message.SetSeasonMetadata')),
   };
   protected readonly formModel = signal<{ seasons: SeriesTrackerSeasonMetadataModel[] }>({ seasons: [] });
   protected readonly form = form(this.formModel, (metadata) => {
@@ -71,35 +76,60 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   }
 
   public ngOnInit(): void {
-    this.form().reset({ seasons: this.initialSeasons().map((season) => ({ ...season })) });
+    this.form().reset({
+      seasons: this.initialSeasons().map((season) => ({
+        season: season.season,
+        episodes: season.episodes,
+        titles: season.titles ?? [],
+      })),
+    });
   }
 
-  protected addSeason(): void {
+  protected getEpisodeIndices(episodesCount: number): number[] {
+    return Array.from({ length: episodesCount }, (_, index) => index);
+  }
+
+  protected getEpisodeTitle(seasonIndex: number, episodeIndex: number): string {
+    return this.formModel().seasons[seasonIndex].titles?.[episodeIndex] ?? '';
+  }
+
+  protected setEpisodeTitle(seasonIndex: number, episodeIndex: number, title: string): void {
+    this.formModel.update((metadata) => {
+      const seasons = [...metadata.seasons];
+      const season = { ...seasons[seasonIndex] };
+      const titles = [...(season.titles ?? [])];
+      titles[episodeIndex] = title;
+      season.titles = titles;
+      seasons[seasonIndex] = season;
+      return { seasons };
+    });
+  }
+
+  protected onAddSeason(): void {
     const nextSeason = Math.max(0, ...this.formModel().seasons.map((season) => season.season)) + 1;
     this.formModel.update((metadata) => ({
-      seasons: [...metadata.seasons, { season: nextSeason, episodes: 1 }],
+      seasons: [...metadata.seasons, { season: nextSeason, episodes: 1, titles: [] }],
     }));
   }
 
-  protected removeSeason(index: number): void {
+  protected onRemoveSeason(index: number): void {
     this.formModel.update((metadata) => ({
       seasons: metadata.seasons.filter((_, seasonIndex) => seasonIndex !== index),
     }));
   }
 
-  protected async save(): Promise<void> {
+  protected async onSave(): Promise<void> {
     if (!this.valid()) return;
-    const seasons = this.form()
-      .value()
-      .seasons.map((season) => ({ season: season.season, episodes: season.episodes }))
+    const seasons = this.formModel()
+      .seasons.map((season) => ({ season: season.season, episodes: season.episodes, titles: season.titles }))
       .sort((firstSeason, secondSeason) => firstSeason.season - secondSeason.season);
     const result = await firstValueFrom(this.api.updateSeriesTrackerSeasons(this.imdbId(), { seasons }));
-    this.saved()(result.seasons);
+    this.saved()(result.seasons, result.item);
     this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataSaved'));
-    this.closed()();
+    this.onClose();
   }
 
-  protected close(): void {
+  protected onClose(): void {
     this.closed()();
   }
 }

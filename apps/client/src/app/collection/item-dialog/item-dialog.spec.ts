@@ -1,10 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  initialSpinnerLoadingState,
+  spinnerLoadingStateToken,
+} from '@components/spinner-loading/spinner-loading-store';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import {
+  COMPLETED_TAG,
   FAVORITE_TAG,
   MOVIE_TAG,
   SERIES_TAG,
@@ -13,10 +18,10 @@ import {
   WATCH_LATER_TAG,
   WISHLIST_TAG,
 } from '@shared/constants/tags-const';
-import { CollectionItemApiModel } from '@shared/models/api-model';
+import { CollectionItemApiModel, SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainState, mainStateToken } from '../../main/main-store';
 import { initialSharesState, SharesState, sharesStateToken } from '../../shares/shares-store';
@@ -77,8 +82,10 @@ describe('ItemDialog', () => {
     delete: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     getSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
+    getSeriesTrackerWatchedEpisodes: ReturnType<typeof vi.fn>;
     refreshSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
     deleteSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
+    markAllSeriesTrackerWatched: ReturnType<typeof vi.fn>;
   };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
   let sharesState: NgxSimpleSignalStoreService<SharesState>;
@@ -96,8 +103,29 @@ describe('ItemDialog', () => {
       delete: vi.fn(() => of(undefined)),
       update: vi.fn(() => of({ item: buildApiItem() })),
       getSeriesTrackerSeasons: vi.fn(() => of({ seasons: [] })),
-      refreshSeriesTrackerSeasons: vi.fn(() => of({ seasons: [{ season: 1, episodes: 2 }] })),
-      deleteSeriesTrackerSeasons: vi.fn(() => of({ seasons: [] })),
+      getSeriesTrackerWatchedEpisodes: vi.fn(() => of({ watchedEpisodes: [], lastWatchedEpisode: null })),
+      refreshSeriesTrackerSeasons: vi.fn(() =>
+        of({
+          seasons: [{ season: 1, episodes: 2 }],
+          item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG], hash: 'refreshed-hash' }),
+        })
+      ),
+      deleteSeriesTrackerSeasons: vi.fn(() =>
+        of({
+          seasons: [],
+          item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG], hash: 'metadata-deleted-hash' }),
+        })
+      ),
+      markAllSeriesTrackerWatched: vi.fn(() =>
+        of({
+          watchedEpisodes: [
+            { season: 1, episode: 1 },
+            { season: 1, episode: 2 },
+          ],
+          lastWatchedEpisode: { season: 1, episode: 2 },
+          item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG, COMPLETED_TAG], hash: 'completed-hash' }),
+        })
+      ),
     };
     translate = { translate: vi.fn((key: string) => key) };
 
@@ -113,6 +141,7 @@ describe('ItemDialog', () => {
         provideStore(initialSharesState, sharesStateToken),
         provideStore(initialApiState, apiStateToken),
         provideStore(initialToastState, toastStateToken),
+        provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
       ],
     });
     TestBed.overrideComponent(ItemDialog, {
@@ -300,69 +329,67 @@ describe('ItemDialog', () => {
     expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
   });
 
+  it('hides completed from editable tag text', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, COMPLETED_TAG, '#action'] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+  });
+
+  it('hides watched and favorite from editable tag text', () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ tags: [MOVIE_TAG, WATCHED_TAG, FAVORITE_TAG, '#action'] })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+  });
+
   it('hides the internal watch later tag from detail tags', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WATCH_LATER_TAG] }));
     fixture.detectChanges();
 
-    expect(component['detailTags']()).toEqual([MOVIE_TAG, '#action']);
+    expect(component['detailTags']()).toEqual(['#action']);
+    expect(component['systemTags']()).toEqual([MOVIE_TAG]);
   });
 
   it('hides the internal wishlist tag from detail tags', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WISHLIST_TAG] }));
     fixture.detectChanges();
 
-    expect(component['detailTags']()).toEqual([MOVIE_TAG, '#action']);
+    expect(component['detailTags']()).toEqual(['#action']);
+    expect(component['systemTags']()).toEqual([MOVIE_TAG]);
   });
 
-  it('hides episode progress tags from editable and detail tags', () => {
-    fixture.componentRef.setInput(
-      'collectionItem',
-      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, '#drama', '#episode-s01e02'] })
-    );
+  it('shows completed in system tags', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, COMPLETED_TAG, '#action'] }));
     fixture.detectChanges();
-    component.ngOnInit();
 
-    expect(component['tagsText']()).toBe(`${SERIES_TAG} #drama`);
-    expect(component['detailTags']()).toEqual([SERIES_TAG, '#drama']);
+    expect(component['detailTags']()).toEqual(['#action']);
+    expect(component['systemTags']()).toEqual([MOVIE_TAG, COMPLETED_TAG]);
   });
 
-  it('formats episode progress for the read-only chip', () => {
+  it('shows watched and favorite in system tags', () => {
     fixture.componentRef.setInput(
       'collectionItem',
-      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, '#episode-s01e02'] })
+      buildItem({ tags: [MOVIE_TAG, WATCHED_TAG, FAVORITE_TAG, '#action'] })
     );
     fixture.detectChanges();
 
-    expect(component['episodeProgressText']()).toBe('S01E02');
+    expect(component['detailTags']()).toEqual(['#action']);
+    expect(component['systemTags']()).toEqual([MOVIE_TAG, WATCHED_TAG, FAVORITE_TAG]);
   });
 
-  it('loads series metadata and uses it for season and episode options', () => {
-    api.getSeriesTrackerSeasons.mockReturnValue(of({ seasons: [{ season: 1, episodes: 3 }] }));
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
-    fixture.detectChanges();
-    component.ngOnInit();
-    component['form'].watchedUpToSeason().value.set(1);
-
-    expect(api.getSeriesTrackerSeasons).toHaveBeenCalledWith('tt1234567');
-    expect(component['seasonOptions']()).toEqual([
-      { text: '-', value: null },
-      { text: '1', value: 1 },
-    ]);
-    expect(component['episodeOptions']()).toEqual([
-      { text: '-', value: null },
-      { text: '1', value: 1 },
-      { text: '2', value: 2 },
-      { text: '3', value: 3 },
-    ]);
-  });
-
-  it('falls back to default season options when metadata is absent', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
-    fixture.detectChanges();
-    component.ngOnInit();
-
-    expect(component['seasonOptions']().length).toBe(51);
-    expect(component['episodeOptions']().length).toBe(101);
+  it('detects system display tags', () => {
+    expect(component['isSystemDisplayTag'](MOVIE_TAG)).toBe(true);
+    expect(component['isSystemDisplayTag'](SERIES_TAG)).toBe(true);
+    expect(component['isSystemDisplayTag'](WATCHED_TAG)).toBe(true);
+    expect(component['isSystemDisplayTag'](FAVORITE_TAG)).toBe(true);
+    expect(component['isSystemDisplayTag'](COMPLETED_TAG)).toBe(true);
+    expect(component['isSystemDisplayTag']('#action')).toBe(false);
   });
 
   it('uses N/A when series tracker episode progress is not set', () => {
@@ -372,51 +399,88 @@ describe('ItemDialog', () => {
     expect(component['episodeProgressText']()).toBe('Fallback.NotAvailable');
   });
 
-  it('saves series tracker episode progress as a single internal tag', async () => {
-    confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput(
-      'collectionItem',
-      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, '#episode-s01e02'] })
+  it('loads watched episodes on init for series tracker items', () => {
+    api.getSeriesTrackerWatchedEpisodes.mockReturnValue(
+      of({ watchedEpisodes: [{ season: 1, episode: 2 }], lastWatchedEpisode: { season: 1, episode: 2 } })
     );
-    api.update.mockReturnValue(
-      of({ item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG, '#episode-s03e04'] }) })
-    );
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
-    component['form'].watchedUpToSeason().value.set(3);
-    component['form'].watchedUpToEpisode().value.set(4);
 
-    await component['onSaveChanges']();
+    expect(api.getSeriesTrackerWatchedEpisodes).toHaveBeenCalledWith('tt1234567');
+    expect(component['watchedEpisodes']()).toEqual([{ season: 1, episode: 2 }]);
+    expect(component['episodeProgressText']()).toBe('S01E02');
+  });
 
-    expect(api.update).toHaveBeenCalledWith(
-      'tt1234567',
-      expect.objectContaining({ tags: [SERIES_TAG, '#episode-s03e04'] }),
-      'testhash',
-      undefined,
-      'series-tracker'
+  it('opens watched episodes dialog on manage watched episodes', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component['watchedEpisodes'].set([{ season: 1, episode: 2 }]);
+
+    component['onManageWatchedEpisodes']();
+
+    expect(portal.open).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({
+        imdbId: 'tt1234567',
+        saved: expect.any(Function),
+        closed: expect.any(Function),
+      })
     );
   });
 
-  it('clears stale episode progress when metadata lowers the selected episode count', async () => {
-    confirm.open.mockReturnValue(of(true));
-    api.getSeriesTrackerSeasons.mockReturnValue(of({ seasons: [{ season: 1, episodes: 2 }] }));
-    fixture.componentRef.setInput(
-      'collectionItem',
-      buildItem({ listType: 'series-tracker', tags: [SERIES_TAG, '#episode-s01e10'] })
-    );
-    api.update.mockReturnValue(of({ item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG] }) }));
+  it('shows toast when no season metadata exists on mark all watched', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
     fixture.detectChanges();
-    component.ngOnInit();
+    component['seriesSeasons'].set([]);
 
-    await component['onSaveChanges']();
+    component['onMarkAllEpisodesWatched']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.SetSeasonMetadataFirst');
+  });
+
+  it('calls mark all watched API after confirmation', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
+
+    component['onMarkAllEpisodesWatched']();
+
+    expect(api.markAllSeriesTrackerWatched).toHaveBeenCalledWith('tt1234567');
+  });
+
+  it('updates watchedEpisodes signal after mark all watched success', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
+
+    component['onMarkAllEpisodesWatched']();
+
+    expect(component['watchedEpisodes']()).toEqual([
+      { season: 1, episode: 1 },
+      { season: 1, episode: 2 },
+    ]);
+    expect(component.collectionItem().hash).toBe('completed-hash');
+    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith(
       'tt1234567',
-      expect.objectContaining({ tags: [SERIES_TAG] }),
-      'testhash',
-      undefined,
-      'series-tracker'
+      expect.objectContaining({ hash: 'completed-hash' }),
+      undefined
     );
+    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedWatched');
+  });
+
+  it('does not call mark all watched API when confirmation is declined', () => {
+    confirm.open.mockReturnValue(of(false));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
+
+    component['onMarkAllEpisodesWatched']();
+
+    expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
   });
 
   it('refreshes series metadata after confirmation', () => {
@@ -428,7 +492,28 @@ describe('ItemDialog', () => {
 
     expect(api.refreshSeriesTrackerSeasons).toHaveBeenCalledWith('tt1234567');
     expect(component['seriesSeasons']()).toEqual([{ season: 1, episodes: 2 }]);
+    expect(component.collectionItem().hash).toBe('refreshed-hash');
     expect(toastState.state.message()).toBe('Toast.SeriesMetadataRefreshed');
+  });
+
+  it('shows spinner while refreshing series metadata and hides after completion', () => {
+    confirm.open.mockReturnValue(of(true));
+    const refreshSubject = new Subject<{ seasons: SeriesTrackerSeasonMetadataModel[] }>();
+    api.refreshSeriesTrackerSeasons.mockReturnValue(refreshSubject);
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+
+    component['onRefreshSeriesMetadata']();
+
+    expect(api.refreshSeriesTrackerSeasons).toHaveBeenCalledWith('tt1234567');
+    const spinnerLoadingState = TestBed.inject(spinnerLoadingStateToken);
+    expect(spinnerLoadingState.state.show()).toBe(true);
+
+    refreshSubject.next({ seasons: [{ season: 1, episodes: 2 }] });
+    refreshSubject.complete();
+
+    expect(spinnerLoadingState.state.show()).toBe(false);
+    expect(component['seriesSeasons']()).toEqual([{ season: 1, episodes: 2 }]);
   });
 
   it('removes series metadata after confirmation', () => {
@@ -441,6 +526,7 @@ describe('ItemDialog', () => {
 
     expect(api.deleteSeriesTrackerSeasons).toHaveBeenCalledWith('tt1234567');
     expect(component['seriesSeasons']()).toEqual([]);
+    expect(component.collectionItem().hash).toBe('metadata-deleted-hash');
     expect(toastState.state.message()).toBe('Toast.SeriesMetadataDeleted');
   });
 
@@ -517,6 +603,43 @@ describe('ItemDialog', () => {
     );
   });
 
+  it('preserves hidden user action tags when saving regular edits', async () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ tags: [MOVIE_TAG, WATCHED_TAG, FAVORITE_TAG, '#action'] })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['form'].title().value.set('Updated Title');
+
+    await component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [MOVIE_TAG, '#action', WATCHED_TAG, FAVORITE_TAG] }),
+      'testhash',
+      undefined
+    );
+  });
+
+  it('does not send completed when saving regular edits', async () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, COMPLETED_TAG, '#action'] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['form'].title().value.set('Updated Title');
+
+    await component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [MOVIE_TAG, '#action'] }),
+      'testhash',
+      undefined
+    );
+  });
+
   it('clears external ratings when changing the IMDb ID', async () => {
     confirm.open.mockReturnValue(of(true));
     fixture.componentRef.setInput('collectionItem', buildItem({ rottenTomatoesRate: '96%', metacriticRate: '85/100' }));
@@ -570,6 +693,26 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('shows an internal tag error when tags contain server-managed tags', async () => {
+    component['form'].tagsText().value.set(`${MOVIE_TAG} ${COMPLETED_TAG}`);
+
+    await component['onSaveChanges']();
+
+    expect(component['formErrors'].tagsText.usedInternalTag()).toBe(true);
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('shows an internal tag error when tags contain user action tags', async () => {
+    component['form'].tagsText().value.set(`${MOVIE_TAG} ${WATCHED_TAG}`);
+
+    await component['onSaveChanges']();
+
+    expect(component['formErrors'].tagsText.usedInternalTag()).toBe(true);
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.update).not.toHaveBeenCalled();
   });
@@ -775,6 +918,11 @@ describe('ItemDialog', () => {
     expect(component['posterImageFailed']()).toBe(false);
     component['onPosterImageError']();
     expect(component['posterImageFailed']()).toBe(true);
+  });
+
+  it('uses translated poster alt text', () => {
+    expect(component['translations'].altPoster()).toBe('Alt.Poster');
+    expect(translate.translate).toHaveBeenCalledWith('Alt.Poster', { title: 'Test Movie' });
   });
 
   it('computes proxy image urls', () => {

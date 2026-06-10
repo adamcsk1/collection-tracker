@@ -23,9 +23,12 @@ import {
   RefreshImagesApiResponseModel,
   SeriesTrackerSeasonsApiRequestModel,
   SeriesTrackerSeasonsApiResponseModel,
+  SeriesTrackerWatchedEpisodesApiRequestModel,
+  SeriesTrackerWatchedEpisodesApiResponseModel,
   TagManagementApiRequestModel,
   TagManagementApiResponseModel,
   TagSuggestionsApiResponseModel,
+  UserExportApiResponseModel,
   UserSettingsApiResponseModel,
   UserSharesApiResponseModel,
 } from '@shared/models/api-model';
@@ -226,6 +229,21 @@ export class ApiService extends BaseApiService {
     return this.request('DELETE', `/series-tracker/${imdbId}/seasons`);
   }
 
+  public getSeriesTrackerWatchedEpisodes(imdbId: string): Observable<SeriesTrackerWatchedEpisodesApiResponseModel> {
+    return this.request('GET', `/series-tracker/${imdbId}/watched-episodes`);
+  }
+
+  public updateSeriesTrackerWatchedEpisodes(
+    imdbId: string,
+    request: SeriesTrackerWatchedEpisodesApiRequestModel
+  ): Observable<SeriesTrackerWatchedEpisodesApiResponseModel> {
+    return this.request('PUT', `/series-tracker/${imdbId}/watched-episodes`, request);
+  }
+
+  public markAllSeriesTrackerWatched(imdbId: string): Observable<SeriesTrackerWatchedEpisodesApiResponseModel> {
+    return this.request('PUT', `/series-tracker/${imdbId}/mark-all-watched`);
+  }
+
   public getAiQueryData(prompt: string): Observable<AiQueryResponseModel> {
     const body: AiQueryRequestModel = { prompt };
     return this.request('POST', '/proxy/ai/query', { prompt: body.prompt });
@@ -233,5 +251,9 @@ export class ApiService extends BaseApiService {
 
   public getAiAvailable(): Observable<AiAvailableApiResponseModel> {
     return this.request('GET', '/proxy/ai/available');
+  }
+
+  public getUserExport(): Observable<UserExportApiResponseModel> {
+    return this.request('GET', '/export');
   }
 }

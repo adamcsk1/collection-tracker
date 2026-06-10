@@ -19,6 +19,7 @@ export const CollectionPage = {
   getList: () => cy.getByTestId('collection-list'),
   getListItems: () => cy.getByTestId('list-item-title'),
   getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
+  getSeriesTrackerCompletedBadges: () => cy.getByTestId('list-item-series-tracker-completed'),
   getSharedBadges: () => cy.getByTestId('list-item-shared'),
   getListItemYears: () => cy.getByTestId('list-item-year'),
   getListItemImdbRatings: () => cy.getByTestId('list-item-rating-imdb'),
@@ -31,6 +32,15 @@ export const CollectionPage = {
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
   getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
   getAddFirstSeriesTrackerItemLink: () => cy.getByTestId('add-first-series-tracker-item'),
+  setListPreferredRatingToUser: () =>
+    cy.request('POST', '/api/v1/user/settings', {
+      collectionListDisplayPreferences: {
+        showYear: true,
+        showSharedIcon: true,
+        preferredRating: 'user',
+        imdbRatingFallback: false,
+      },
+    }),
 
   // Float buttons
   getShowFunctionsButton: () => cy.getByTestId('show-functions'),
@@ -69,9 +79,11 @@ export const CollectionPage = {
   getItemDialogTitleInput: () => cy.getByTestId('item-dialog-title').find('input'),
   getItemDialogYearInput: () => cy.getByTestId('item-dialog-year').find('input'),
   getItemDialogUserRateInput: () => cy.getByTestId('item-dialog-user-rate').find('input'),
-  getItemDialogWatchedUpToSeasonSelect: () => cy.getByTestId('item-dialog-watched-up-to-season').find('select'),
-  getItemDialogWatchedUpToEpisodeSelect: () => cy.getByTestId('item-dialog-watched-up-to-episode').find('select'),
   getItemDialogEpisodeProgressChip: () => cy.getByTestId('item-dialog-episode-progress-chip'),
+  getItemDialogCompletedChip: () => cy.getByTestId('item-dialog-completed-chip'),
+  getItemDialogSystemTagsSection: () => cy.getByTestId('item-dialog-system-tags-section'),
+  getItemDialogManageWatchedEpisodesButton: () => cy.getByTestId('item-dialog-manage-watched-episodes'),
+  getItemDialogMarkAllWatchedButton: () => cy.getByTestId('item-dialog-mark-all-watched'),
   getItemDialogRefreshSeriesMetadataButton: () => cy.getByTestId('item-dialog-refresh-series-metadata'),
   getItemDialogManageSeriesMetadataButton: () => cy.getByTestId('item-dialog-manage-series-metadata'),
   getItemDialogRemoveSeriesMetadataButton: () => cy.getByTestId('item-dialog-remove-series-metadata'),
@@ -79,14 +91,28 @@ export const CollectionPage = {
   getItemDialogTagsInput: () => cy.getByTestId('item-dialog-tags').find('input'),
   getItemDialogActorsInput: () => cy.getByTestId('item-dialog-actors').find('input'),
   getItemDialogPlotInput: () => cy.getByTestId('item-dialog-plot').find('textarea'),
+  getItemDialogWatchedUpToSeasonSelect: () => cy.getByTestId('item-dialog-watched-up-to-season').find('select'),
+  getItemDialogWatchedUpToEpisodeSelect: () => cy.getByTestId('item-dialog-watched-up-to-episode').find('select'),
 
   // Series metadata dialog
   getSeriesMetadataMessage: () => cy.getByTestId('series-metadata-message'),
+  getSeriesMetadataNoMetadataMessage: () => cy.getByTestId('series-metadata-no-metadata-message'),
   getSeriesMetadataAddButton: () => cy.getByTestId('series-metadata-add'),
-  getSeriesMetadataCloseButton: () => cy.getByTestId('series-metadata-close'),
   getSeriesMetadataSaveButton: () => cy.getByTestId('series-metadata-save'),
   getSeriesMetadataValidation: () => cy.getByTestId('series-metadata-validation'),
   getSeriesMetadataSeasonInputs: () => cy.getByTestId('series-metadata-season').find('input'),
   getSeriesMetadataEpisodeInputs: () => cy.getByTestId('series-metadata-episodes').find('input'),
   getSeriesMetadataRemoveButtons: () => cy.getByTestId('series-metadata-remove'),
+  getSeriesMetadataEpisodeTitleToggles: () =>
+    cy.getByTestId('series-metadata-episode-titles-toggle').find('summary'),
+  getSeriesMetadataEpisodeTitleInputs: () =>
+    cy.getByTestId('series-metadata-episode-title').find('input'),
+
+  // Watched episodes dialog
+  getWatchedEpisodesDialog: () => cy.getByTestId('watched-episodes-dialog').last().find('.dialog-frame'),
+  getWatchedEpisodesSaveButton: () => cy.getByTestId('watched-episodes-save'),
+  getWatchedEpisodesSeasonToggle: () => cy.getByTestId('watched-episodes-season-toggle'),
+  getWatchedEpisodesEpisodeCheckbox: () => cy.getByTestId('watched-episodes-episode-checkbox'),
+  getWatchedEpisodesNoMetadataMessage: () => cy.getByTestId('watched-episodes-no-metadata-message'),
+  getWatchedEpisodesManageSeasonMetadataButton: () => cy.getByTestId('watched-episodes-manage-season-metadata'),
 };

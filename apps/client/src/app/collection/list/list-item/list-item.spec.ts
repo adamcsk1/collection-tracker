@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { COMPLETED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -147,6 +147,49 @@ describe('ListItem', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-favorite"]')).not.toBeNull();
+  });
+
+  it('renders completed status for completed series tracker items', () => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Sample', [SERIES_TAG, COMPLETED_TAG]),
+      listType: 'series-tracker',
+    });
+    fixture.detectChanges();
+
+    const completed = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-test-id="list-item-series-tracker-completed"]'
+    );
+    expect(completed).not.toBeNull();
+    expect(completed?.textContent?.trim()).toBe('check_circle');
+    expect(completed?.getAttribute('aria-label')).toBe('Completed');
+    expect(completed?.getAttribute('title')).toBe('Completed');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).toContain(
+      'completed-image'
+    );
+  });
+
+  it('does not render completed status for partial series tracker items', () => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Sample', [SERIES_TAG]),
+      listType: 'series-tracker',
+    });
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-series-tracker-completed"]')
+    ).toBeNull();
+  });
+
+  it('does not render completed status for non-series-tracker items with completed tag', () => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Sample', [SERIES_TAG, COMPLETED_TAG]),
+      listType: 'library',
+    });
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-series-tracker-completed"]')
+    ).toBeNull();
   });
 
   it('renders external ratings when present', () => {
@@ -345,19 +388,21 @@ describe('ListItem', () => {
   });
 
   it('stops event propagation when search value is not null', () => {
-    const event = { stopPropagation: vi.fn() } as unknown as Event;
+    const event = { preventDefault: vi.fn(), stopPropagation: vi.fn() } as unknown as Event;
 
     component['onSetSearchText']('query', event);
 
     expect(event.stopPropagation).toHaveBeenCalled();
+    expect(event.preventDefault).toHaveBeenCalled();
   });
 
-  it('does not stop event propagation when search value is null', () => {
-    const event = { stopPropagation: vi.fn() } as unknown as Event;
+  it('stops event propagation when search value is null', () => {
+    const event = { preventDefault: vi.fn(), stopPropagation: vi.fn() } as unknown as Event;
 
     component['onSetSearchText'](null, event);
 
-    expect(event.stopPropagation).not.toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+    expect(event.preventDefault).toHaveBeenCalled();
   });
 
   it('converts number search value to string', () => {

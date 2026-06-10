@@ -1,4 +1,4 @@
-import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
+import { VIRTUAL_UNCOMPLETED_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { describe, expect, it } from 'vitest';
 import { buildStandardSearchFilters } from './collection-search-filter-util';
 
@@ -26,6 +26,13 @@ describe('buildStandardSearchFilters', () => {
     expect(buildStandardSearchFilters(VIRTUAL_UNWATCHED_TAG, 'library')).toEqual({
       watched: false,
       listType: 'library',
+    });
+  });
+
+  it('builds virtual uncompleted filters', () => {
+    expect(buildStandardSearchFilters(VIRTUAL_UNCOMPLETED_TAG, 'series-tracker')).toEqual({
+      completed: false,
+      listType: 'series-tracker',
     });
   });
 });

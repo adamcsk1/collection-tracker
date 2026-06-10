@@ -16,6 +16,7 @@ describe('Item dialog — edit flow', () => {
     CollectionPage.getListItemImages().first().click();
 
     // Enter edit mode
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().click();
 
     // Change the title
@@ -40,6 +41,7 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogYearInput().clear().type('2025');
@@ -57,7 +59,7 @@ describe('Item dialog — edit flow', () => {
     cy.contains('Comedy').should('be.visible');
     cy.contains('#updated').should('be.visible');
     cy.contains('New Actor One, New Actor Two').should('be.visible');
-    cy.contains('An updated plot for testing.').should('be.visible');
+    cy.contains('An updated plot for testing.').scrollIntoView().should('be.visible');
   });
 
   it('edits the user rate and persists the change', () => {
@@ -65,6 +67,7 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogUserRateInput().type('9.4');
@@ -73,6 +76,8 @@ describe('Item dialog — edit flow', () => {
 
     CollectionPage.getItemDialogUserRateChip().should('contain.text', '9.4');
     cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.setListPreferredRatingToUser();
+    CollectionPage.visit();
     CollectionPage.getListItemUserRates().should('contain.text', '9.4');
   });
 
@@ -81,12 +86,14 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogUserRateInput().type('9.4');
     CollectionPage.getItemDialogSaveButton().click();
     cy.wait('@updateItem');
 
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().click();
     CollectionPage.getItemDialogUserRateInput().clear();
     CollectionPage.getItemDialogSaveButton().click();
@@ -101,6 +108,7 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogUserRateInput().type('8.75');
@@ -111,6 +119,7 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogTitleInput().clear().type('Discarded Title');
@@ -168,6 +177,7 @@ describe('Item dialog — mark watched / unwatched', () => {
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
 
     // After marking watched, the button should switch to mark-unwatched
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkUnwatchedButton().should('be.visible');
   });
 
@@ -182,10 +192,12 @@ describe('Item dialog — mark watched / unwatched', () => {
     cy.wait('@updateItem');
 
     // Now mark as unwatched
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkUnwatchedButton().click();
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
 
     // Button should switch back to mark-watched
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');
   });
 });

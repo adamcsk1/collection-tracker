@@ -7,7 +7,9 @@
     right: var(--size-xs);
     font-size: var(--font-size-sm);
     padding: var(--size-2xs) var(--size-xs);
+    border: 0;
     border-radius: var(--border-radius);
+    cursor: pointer;
 
     @media (width <= 520px) {
       font-size: var(--font-size-sm);
@@ -17,13 +19,40 @@
   .image {
     width: 100%;
     aspect-ratio: var(--card-aspect-ratio);
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
     position: relative;
+    overflow: hidden;
 
     &:hover {
       outline: none;
+    }
+
+    .poster-image {
+      position: absolute;
+      inset: 0;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+
+      &.completed-image {
+        filter: grayscale(1);
+      }
+    }
+
+    .completed {
+      position: absolute;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--main-color);
+      background: var(--background-color);
+      border-radius: 50%;
+      box-shadow: 0 0 var(--size-xs) rgb(0 0 0 / 45%);
+
+      i {
+        font-size: calc(2 * var(--font-size-lg));
+      }
     }
   }
 

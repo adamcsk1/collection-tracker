@@ -1,12 +1,17 @@
-<libc-dialog-shell [closeWithPortal]="false" (closed)="close()">
+<libc-dialog-shell [closeWithPortal]="false" (closed)="onClose()">
   <ng-container dialog-shell-top-content>
     <h3 class="dialog-title">
-      <i class="material-icons" [title]="translations.title()"> tv </i>
+      <i class="material-icons" aria-hidden="true"> tv </i>
       {{ translations.title() }}
     </h3>
   </ng-container>
   <ng-container dialog-shell-content>
     <p class="metadata-message" data-test-id="series-metadata-message">{{ translations.message() }}</p>
+    @if (seasons().length === 0) {
+      <p class="no-metadata-message" data-test-id="series-metadata-no-metadata-message">
+        {{ translations.noMetadata() }}
+      </p>
+    }
     <div class="metadata-grid" data-test-id="series-metadata-rows">
       @for (season of form.seasons; track $index; let index = $index) {
         <div class="card">
@@ -30,13 +35,30 @@
                   data-test-id="series-metadata-remove"
                   type="button"
                   class="button-danger"
-                  (click)="removeSeason(index)"
+                  (click)="onRemoveSeason(index)"
                 >
-                  <i class="material-icons" [title]="translations.remove()"> delete </i>
+                  <i class="material-icons" aria-hidden="true"> delete </i>
                   {{ translations.remove() }}
                 </button>
               </div>
             </div>
+            <libc-details
+              class="episode-titles-details"
+              data-test-id="series-metadata-episode-titles-toggle"
+              [summary]="translations.episodeTitles()"
+            >
+              <div class="episode-titles-grid">
+                @for (episodeIndex of getEpisodeIndices(season.episodes().value()); track $index) {
+                  <libc-input
+                    data-test-id="series-metadata-episode-title"
+                    type="text"
+                    [label]="translations.episodes() + ' ' + (episodeIndex + 1)"
+                    [value]="getEpisodeTitle(index, episodeIndex)"
+                    (valueChange)="setEpisodeTitle(index, episodeIndex, $event ?? '')"
+                  />
+                }
+              </div>
+            </libc-details>
           </div>
         </div>
       }
@@ -44,18 +66,14 @@
     @if (!valid()) {
       <p class="validation-message" data-test-id="series-metadata-validation">{{ translations.validation() }}</p>
     }
-    <button data-test-id="series-metadata-add" type="button" (click)="addSeason()">
-      <i class="material-icons" [title]="translations.addSeason()"> add </i>
+    <button data-test-id="series-metadata-add" type="button" (click)="onAddSeason()">
+      <i class="material-icons" aria-hidden="true"> add </i>
       {{ translations.addSeason() }}
     </button>
   </ng-container>
   <ng-container dialog-shell-bottom-content>
-    <button data-test-id="series-metadata-close" type="button" (click)="close()">
-      <i class="material-icons" [title]="translations.close()"> close </i>
-      {{ translations.close() }}
-    </button>
-    <button data-test-id="series-metadata-save" type="button" [disabled]="!valid()" (click)="save()">
-      <i class="material-icons" [title]="translations.save()"> save </i>
+    <button data-test-id="series-metadata-save" type="button" [disabled]="!valid()" (click)="onSave()">
+      <i class="material-icons" aria-hidden="true"> save </i>
       {{ translations.save() }}
     </button>
   </ng-container>

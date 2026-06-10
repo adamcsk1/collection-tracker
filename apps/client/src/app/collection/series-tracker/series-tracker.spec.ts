@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
+import { VIRTUAL_UNCOMPLETED_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -96,6 +96,17 @@ describe('SeriesTracker', () => {
     });
 
     expect(api.searchItems).toHaveBeenCalledWith({ watched: false, listType: 'series-tracker' }, 0, 50);
+  });
+
+  it('maps virtual uncompleted search to series tracker filters', () => {
+    fixture.componentInstance['seriesTrackerDataSource']({
+      reset: true,
+      offset: 0,
+      limit: 50,
+      searchText: VIRTUAL_UNCOMPLETED_TAG,
+    });
+
+    expect(api.searchItems).toHaveBeenCalledWith({ completed: false, listType: 'series-tracker' }, 0, 50);
   });
 
   it('searches series tracker items without a text filter by default', () => {

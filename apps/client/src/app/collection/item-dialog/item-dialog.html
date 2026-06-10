@@ -1,7 +1,7 @@
 <libc-dialog-shell>
   <ng-container dialog-shell-top-content>
     <h3 class="dialog-title">
-      <i class="material-icons" [title]="dialogTitle()"> movie </i>
+      <i class="material-icons" aria-hidden="true"> movie </i>
       {{ dialogTitle() }}
     </h3>
   </ng-container>
@@ -88,27 +88,14 @@
             @if (formErrors.tagsText.invalidInternalCollectionTag()) {
               {{ translations.validationUsedInternalTag() }}
             }
+            @if (formErrors.tagsText.usedInternalTag()) {
+              {{ translations.validationUsedInternalTag() }}
+            }
             @if (formErrors.tagsText.missingTypeTag()) {
               {{ translations.validationMissingTypeTag() }}
             }
           </ng-container>
         </libc-autocomplete>
-        @if (seriesTracker()) {
-          <libc-select
-            data-test-id="item-dialog-watched-up-to-season"
-            [label]="translations.labelWatchedUpToSeason()"
-            [hint]="translations.hintWatchedUpToSeason()"
-            [formField]="form.watchedUpToSeason"
-            [options]="seasonOptions()"
-          />
-          <libc-select
-            data-test-id="item-dialog-watched-up-to-episode"
-            [label]="translations.labelWatchedUpToEpisode()"
-            [hint]="translations.hintWatchedUpToEpisode()"
-            [formField]="form.watchedUpToEpisode"
-            [options]="episodeOptions()"
-          />
-        }
         <libc-input data-test-id="item-dialog-actors" [label]="translations.actors()" [formField]="form.actors" />
         <libc-textarea
           data-test-id="item-dialog-plot"
@@ -122,7 +109,7 @@
       <article class="item-detail">
         @if (collectionItem().image && !posterImageFailed()) {
           <div class="poster-card">
-            <img [src]="imageUrl()" [alt]="collectionItem().title + ' poster'" (error)="onPosterImageError()" />
+            <img [src]="imageUrl()" [alt]="translations.altPoster()" (error)="onPosterImageError()" />
           </div>
         }
         <div class="detail-content">
@@ -134,7 +121,7 @@
               <div class="chip-list">
                 @if (isShared()) {
                   <span class="chip shared" data-test-id="item-dialog-shared-library">
-                    <i class="material-icons shared-icon" [title]="translations.shared()"> share </i>
+                    <i class="material-icons shared-icon" aria-hidden="true"> share </i>
                     {{ library() }}
                   </span>
                 }
@@ -182,11 +169,22 @@
           }
 
           @if (detailTags().length) {
-            <section>
+            <section data-test-id="item-dialog-tags-section">
               <h4>{{ translations.tags() }}</h4>
               <div class="chip-list">
                 @for (tag of detailTags(); track tag) {
                   <span class="chip">{{ tag }}</span>
+                }
+              </div>
+            </section>
+          }
+
+          @if (systemTags().length) {
+            <section data-test-id="item-dialog-system-tags-section">
+              <h4>{{ translations.systemTags() }}</h4>
+              <div class="chip-list">
+                @for (tag of systemTags(); track tag) {
+                  <span class="chip chip-system">{{ tag }}</span>
                 }
               </div>
             </section>
@@ -234,7 +232,7 @@
   <ng-container dialog-shell-bottom-content>
     @if (editMode()) {
       <button class="dialog-footer-button" data-test-id="item-dialog-read-only" type="button" (click)="onReadOnly()">
-        <i class="material-icons" [title]="translations.readOnly()"> visibility </i>
+        <i class="material-icons" aria-hidden="true"> visibility </i>
         {{ translations.readOnly() }}
       </button>
       <button
@@ -244,22 +242,9 @@
         form="item-edit-form"
         [disabled]="form().invalid()"
       >
-        <i class="material-icons" [title]="translations.save()"> save </i>
+        <i class="material-icons" aria-hidden="true"> save </i>
         {{ translations.save() }}
       </button>
-    } @else {
-      @if (permissionUpdate() && !internalCollectionTag()) {
-        <button class="dialog-footer-button" data-test-id="item-dialog-edit" (click)="onEdit()">
-          <i class="material-icons" [title]="translations.edit()"> edit </i>
-          {{ translations.edit() }}
-        </button>
-      }
-      @if (permissionDelete()) {
-        <button class="dialog-footer-button button-danger" data-test-id="item-dialog-delete" (click)="onDelete()">
-          <i class="material-icons" [title]="translations.delete()"> delete </i>
-          {{ translations.delete() }}
-        </button>
-      }
     }
   </ng-container>
   <ng-container dialog-shell-menu-content>
@@ -267,10 +252,26 @@
       @if (permissionUpdate() && seriesTracker()) {
         <button
           class="button-borderless unaligned"
+          data-test-id="item-dialog-manage-watched-episodes"
+          (click)="onManageWatchedEpisodes()"
+        >
+          <i class="material-icons" aria-hidden="true"> check_circle </i>
+          {{ translations.manageWatchedEpisodes() }}
+        </button>
+        <button
+          class="button-borderless unaligned"
+          data-test-id="item-dialog-mark-all-watched"
+          (click)="onMarkAllEpisodesWatched()"
+        >
+          <i class="material-icons" aria-hidden="true"> check_circle_outline </i>
+          {{ translations.markAllEpisodesWatched() }}
+        </button>
+        <button
+          class="button-borderless unaligned"
           data-test-id="item-dialog-refresh-series-metadata"
           (click)="onRefreshSeriesMetadata()"
         >
-          <i class="material-icons" [title]="translations.refreshSeriesMetadata()"> sync </i>
+          <i class="material-icons" aria-hidden="true"> sync </i>
           {{ translations.refreshSeriesMetadata() }}
         </button>
         <button
@@ -278,7 +279,7 @@
           data-test-id="item-dialog-manage-series-metadata"
           (click)="onManageSeriesMetadata()"
         >
-          <i class="material-icons" [title]="translations.manageSeriesMetadata()"> list </i>
+          <i class="material-icons" aria-hidden="true"> list </i>
           {{ translations.manageSeriesMetadata() }}
         </button>
         <button
@@ -286,7 +287,7 @@
           data-test-id="item-dialog-remove-series-metadata"
           (click)="onRemoveSeriesMetadata()"
         >
-          <i class="material-icons" [title]="translations.removeSeriesMetadata()"> playlist_remove </i>
+          <i class="material-icons" aria-hidden="true"> playlist_remove </i>
           {{ translations.removeSeriesMetadata() }}
         </button>
       }
@@ -297,7 +298,7 @@
             data-test-id="item-dialog-mark-unwatched"
             (click)="onMarkAsUnwatched()"
           >
-            <i class="material-icons" [title]="translations.markAsUnwatched()"> visibility_off </i>
+            <i class="material-icons" aria-hidden="true"> visibility_off </i>
             {{ translations.markAsUnwatched() }}
           </button>
         } @else {
@@ -306,7 +307,7 @@
             data-test-id="item-dialog-mark-watched"
             (click)="onMarkAsWatched()"
           >
-            <i class="material-icons" [title]="translations.markAsWatched()"> visibility </i>
+            <i class="material-icons" aria-hidden="true"> visibility </i>
             {{ translations.markAsWatched() }}
           </button>
         }
@@ -316,7 +317,7 @@
             data-test-id="item-dialog-remove-favorite"
             (click)="onRemoveFavorite()"
           >
-            <i class="material-icons" [title]="translations.removeFavorite()"> star_outline </i>
+            <i class="material-icons" aria-hidden="true"> star_outline </i>
             {{ translations.removeFavorite() }}
           </button>
         } @else {
@@ -325,10 +326,26 @@
             data-test-id="item-dialog-mark-favorite"
             (click)="onMarkAsFavorite()"
           >
-            <i class="material-icons" [title]="translations.markAsFavorite()"> star_rate </i>
+            <i class="material-icons" aria-hidden="true"> star_rate </i>
             {{ translations.markAsFavorite() }}
           </button>
         }
+      }
+      @if (permissionUpdate() && !internalCollectionTag()) {
+        <button class="button-borderless unaligned" data-test-id="item-dialog-edit" (click)="onEdit()">
+          <i class="material-icons" aria-hidden="true"> edit </i>
+          {{ translations.edit() }}
+        </button>
+      }
+      @if (permissionDelete()) {
+        <button
+          class="button-borderless unaligned button-danger"
+          data-test-id="item-dialog-delete"
+          (click)="onDelete()"
+        >
+          <i class="material-icons" aria-hidden="true"> delete </i>
+          {{ translations.delete() }}
+        </button>
       }
     }
   </ng-container>

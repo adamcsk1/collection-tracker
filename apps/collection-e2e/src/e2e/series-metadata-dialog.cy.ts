@@ -10,16 +10,14 @@ describe('Series metadata dialog', () => {
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(seriesTitle, 'series', imdbId),
       listType: 'series-tracker',
-      fetchSeriesMetadata: false,
     });
     cy.intercept('GET', '/api/v1/items*').as('getSeriesTrackerItems');
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
   });
 
-  it('saves manual season metadata and uses it for progress options', () => {
+  it('saves manual season metadata', () => {
     cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/seasons`).as('saveSeriesMetadata');
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
@@ -43,19 +41,6 @@ describe('Series metadata dialog', () => {
     cy.wait('@saveSeriesMetadata').its('response.statusCode').should('eq', 200);
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().should('be.visible');
-
-    CollectionPage.getItemDialogEditButton().click();
-    CollectionPage.getItemDialogWatchedUpToSeasonSelect().find('option').should('have.length', 3);
-    CollectionPage.getItemDialogWatchedUpToSeasonSelect().select('1');
-    CollectionPage.getItemDialogWatchedUpToEpisodeSelect().find('option').should('have.length', 4);
-    CollectionPage.getItemDialogWatchedUpToEpisodeSelect().select('3');
-    CollectionPage.getItemDialogWatchedUpToSeasonSelect().select('2');
-    CollectionPage.getItemDialogWatchedUpToEpisodeSelect().find('option').should('have.length', 3);
-    CollectionPage.getItemDialogWatchedUpToEpisodeSelect().select('2');
-    CollectionPage.getItemDialogSaveButton().click();
-
-    cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
-    CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S02E02');
   });
 
   it('reopens the item dialog when the metadata dialog is closed without saving', () => {
@@ -64,15 +49,13 @@ describe('Series metadata dialog', () => {
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     CollectionPage.getSeriesMetadataAddButton().click();
-    CollectionPage.getSeriesMetadataCloseButton().click();
+    cy.get('.dialog-overlay').click({ force: true });
 
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().should('be.visible');
-    CollectionPage.getItemDialogEditButton().click();
-    CollectionPage.getItemDialogWatchedUpToSeasonSelect().find('option').should('have.length', 51);
   });
 
-  it('removes stored season metadata and falls back to default progress options', () => {
+  it('removes stored season metadata', () => {
     cy.request('PUT', `/api/v1/series-tracker/${imdbId}/seasons`, {
       seasons: [
         { season: 1, episodes: 3 },
@@ -85,15 +68,53 @@ describe('Series metadata dialog', () => {
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
     CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
-    CollectionPage.getItemDialogEditButton().click();
-    CollectionPage.getItemDialogWatchedUpToSeasonSelect().find('option').should('have.length', 3);
-    CollectionPage.getItemDialogReadOnlyButton().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
+    CollectionPage.getWatchedEpisodesDialog().should('be.visible');
+    CollectionPage.getWatchedEpisodesNoMetadataMessage().should('not.exist');
+    cy.get('.dialog-overlay').click({ force: true });
+
+    cy.getByTestId('watched-episodes-dialog').should('not.exist');
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogRemoveSeriesMetadataButton().click();
 
     cy.wait('@deleteSeriesMetadata').its('response.statusCode').should('eq', 200);
-    CollectionPage.getItemDialogEditButton().click();
-    CollectionPage.getItemDialogWatchedUpToSeasonSelect().find('option').should('have.length', 51);
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
+    CollectionPage.getWatchedEpisodesNoMetadataMessage().should('be.visible');
+  });
+
+  it('saves and restores episode titles in the metadata dialog', () => {
+    cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/seasons`).as('saveSeriesMetadata');
+
+    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogManageSeriesMetadataButton().click();
+
+    CollectionPage.getSeriesMetadataAddButton().click();
+    CollectionPage.getSeriesMetadataEpisodeInputs().first().clear().type('2');
+
+    CollectionPage.getSeriesMetadataEpisodeTitleToggles().first().click();
+    CollectionPage.getSeriesMetadataEpisodeTitleInputs().eq(0).type('Alpha');
+    CollectionPage.getSeriesMetadataEpisodeTitleInputs().eq(1).type('Beta');
+
+    CollectionPage.getSeriesMetadataSaveButton().click();
+    cy.wait('@saveSeriesMetadata').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogManageSeriesMetadataButton().click();
+
+    CollectionPage.getSeriesMetadataEpisodeTitleToggles().first().click();
+    CollectionPage.getSeriesMetadataEpisodeTitleInputs().eq(0).should('have.value', 'Alpha');
+    CollectionPage.getSeriesMetadataEpisodeTitleInputs().eq(1).should('have.value', 'Beta');
+  });
+
+  it('shows no-metadata message when no metadata is set', () => {
+    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogManageSeriesMetadataButton().click();
+
+    CollectionPage.getSeriesMetadataNoMetadataMessage().should('be.visible');
   });
 });

@@ -1,0 +1,78 @@
+<libc-dialog-shell data-test-id="watched-episodes-dialog" [closeWithPortal]="false" (closed)="onClose()">
+  <ng-container dialog-shell-top-content>
+    <h3 class="dialog-title">
+      <i class="material-icons" aria-hidden="true"> check_circle </i>
+      {{ translations.title() }}
+    </h3>
+  </ng-container>
+  <ng-container dialog-shell-content>
+    @if (!hasSeasonMetadata()) {
+      <div class="no-metadata-message" data-test-id="watched-episodes-no-metadata-message">
+        <p>{{ translations.setSeasonMetadata() }}</p>
+        <button
+          class="button-borderless"
+          data-test-id="watched-episodes-manage-season-metadata"
+          (click)="onManageSeasonMetadata()"
+        >
+          <i class="material-icons" aria-hidden="true"> list </i>
+          {{ translations.manageSeasonMetadata() }}
+        </button>
+      </div>
+    } @else {
+      <div class="seasons-list">
+        @for (season of seasonsMetadata(); track season.season; let seasonIndex = $index) {
+          <libc-details
+            [open]="isSeasonOpenDefault(season.season)"
+            [storeOpenedState]="false"
+            [summary]="translations.season() + ' ' + season.season"
+          >
+            <div class="season-toggle-row">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  data-test-id="watched-episodes-season-toggle"
+                  [checked]="isSeasonFullyWatched(season.season, season.episodes)"
+                  [indeterminate]="isSeasonPartiallyWatched(season.season, season.episodes)"
+                  (change)="onToggleSeason(season.season, season.episodes)"
+                />
+                {{ translations.markAllEpisodesWatched() }}
+              </label>
+            </div>
+            <div class="episodes-list">
+              @for (episode of [].constructor(season.episodes); track $index; let episodeIndex = $index) {
+                <div class="card">
+                  <label class="card-title">
+                    <input
+                      type="checkbox"
+                      data-test-id="watched-episodes-episode-checkbox"
+                      [checked]="isEpisodeWatched(season.season, episodeIndex + 1)"
+                      (change)="onToggleEpisode(season.season, episodeIndex + 1)"
+                    />
+                    <span class="episode-label">
+                      <span>{{ translations.episode() }} {{ episodeIndex + 1 }}</span>
+                    </span>
+                  </label>
+                  <div class="card-body">
+                    <div class="card-body-row">
+                      @if (getEpisodeTitle(seasonIndex, episodeIndex)) {
+                        <span class="episode-title">{{ getEpisodeTitle(seasonIndex, episodeIndex) }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </libc-details>
+        }
+      </div>
+    }
+  </ng-container>
+  <ng-container dialog-shell-bottom-content>
+    @if (hasSeasonMetadata()) {
+      <button class="dialog-footer-button" data-test-id="watched-episodes-save" type="button" (click)="onSave()">
+        <i class="material-icons" aria-hidden="true"> save </i>
+        {{ translations.save() }}
+      </button>
+    }
+  </ng-container>
+</libc-dialog-shell>
