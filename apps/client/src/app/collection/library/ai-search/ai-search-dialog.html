@@ -1,0 +1,37 @@
+<libc-dialog-shell>
+  <ng-container dialog-shell-content>
+    <libc-textarea
+      data-test-id="ai-search-textarea"
+      [attr.aria-label]="translations.aiSearch()"
+      [formField]="formField()"
+      [placeholder]="placeholder()"
+      [rows]="5"
+    />
+  </ng-container>
+  <ng-container dialog-shell-bottom-content>
+    <div class="panel-actions">
+      <button
+        type="button"
+        data-test-id="ai-search-send"
+        class="button-icon"
+        [attr.aria-label]="translations.sendPrompt()"
+        [title]="translations.sendPrompt()"
+        (click)="onSend()"
+        (keydown.enter)="onSend()"
+      >
+        <i class="material-icons" aria-hidden="true">send</i>
+      </button>
+      <button
+        type="button"
+        data-test-id="ai-search-info"
+        class="text-button"
+        [title]="translations.messageAiSearch()"
+        [attr.aria-description]="translations.messageAiSearch()"
+        (click)="onShowMessage()"
+      >
+        <i class="material-icons" aria-hidden="true">psychology</i>
+        <span>{{ translations.aiSearchInfo() }}</span>
+      </button>
+    </div>
+  </ng-container>
+</libc-dialog-shell>
