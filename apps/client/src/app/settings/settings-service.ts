@@ -1,4 +1,5 @@
-import { inject, Injectable } from '@angular/core';
+import { DestroyRef, inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { SharedApiService } from '@services/api/shared-api-service';
@@ -34,6 +35,7 @@ export class SettingsService {
   private readonly sharesState = inject(sharesStateToken);
   private readonly themeState = inject(themeStateToken);
   private readonly toastState = inject(toastStateToken);
+  private readonly destroyRef = inject(DestroyRef);
 
   public preloadUserSettings(): Observable<void> {
     return this.api.getUserSettings().pipe(
@@ -145,7 +147,8 @@ export class SettingsService {
       .pipe(
         tap(() => this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'))),
         map(() => void 0),
-        catchError(() => EMPTY)
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }
@@ -158,7 +161,8 @@ export class SettingsService {
       .pipe(
         tap(() => this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'))),
         map(() => void 0),
-        catchError(() => EMPTY)
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }
@@ -171,7 +175,8 @@ export class SettingsService {
       .pipe(
         tap(() => this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'))),
         map(() => void 0),
-        catchError(() => EMPTY)
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }

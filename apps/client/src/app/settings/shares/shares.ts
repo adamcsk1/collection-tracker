@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Input } from '@components/input/input';
@@ -31,6 +32,7 @@ export class SettingsShares implements OnInit {
   private readonly confirm = inject(ConfirmService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly toastState = inject(toastStateToken);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly translations = {
     messageShareSettings: computed(() => this.ngxSignalTranslate.translate('Message.ShareSettings')),
     titleShareManagement: computed(() => this.ngxSignalTranslate.translate('Title.ShareManagement')),
@@ -111,12 +113,14 @@ export class SettingsShares implements OnInit {
   protected onRemoveShare(sharedWithUserShareCode: string): void {
     this.confirm
       .ifConfirmed(this.translations.confirmRemoveShare())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.sharesService.removeShare(sharedWithUserShareCode));
   }
 
   protected onRevokeIncomingShare(ownerUserShareCode: string): void {
     this.confirm
       .ifConfirmed(this.translations.confirmRevokeShare())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.sharesService.revokeIncomingShare(ownerUserShareCode));
   }
 

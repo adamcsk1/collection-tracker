@@ -107,9 +107,12 @@ const visitSharedCollection = (sharedUser: TestUser): void => {
 };
 
 const assertDialogPermissions = (permissions: { update: boolean; delete: boolean }): void => {
+  if (permissions.update || permissions.delete) {
+    CollectionPage.openItemDialogActionsMenu();
+  }
+
   if (permissions.update) {
     CollectionPage.getItemDialogEditButton().should('be.visible');
-    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');
   } else {
     cy.getByTestId('item-dialog-edit').should('not.exist');
