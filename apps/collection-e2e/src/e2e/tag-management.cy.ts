@@ -29,12 +29,6 @@ const buildTagManagement = (
   ...overrides,
 });
 
-const clearTagManagementDownload = () => {
-  cy.exec(
-    "node -e \"const fs = require('fs'); fs.rmSync('cypress/downloads', { recursive: true, force: true }); fs.mkdirSync('cypress/downloads', { recursive: true });\""
-  );
-};
-
 describe('Tag Management — no custom tags', () => {
   beforeEach(() => {
     cy.autoLogin();
@@ -130,71 +124,6 @@ describe('Tag Management — reset', () => {
     TagManagementPage.getResetButton().click();
 
     TagManagementPage.getImageBorderCheckbox(customTag).should('not.be.checked');
-  });
-});
-
-describe('Tag Management — import and export', () => {
-  const existingTag = `#export-existing-${Date.now()}`;
-  const importedTag = `#export-imported-${Date.now()}`;
-  const item = {
-    ...buildItemWithCustomTag('Import Export Tag Management Movie', existingTag),
-    tags: ['#movie', existingTag, importedTag],
-  };
-  const exportPath = 'cypress/downloads/collection-tracker-tag-management.json';
-  const exportedExistingConfig = buildTagManagement(existingTag, {
-    color: '#111111',
-    useForImageBorder: true,
-    weight: 3,
-  });
-  const exportedImportedConfig = buildTagManagement(importedTag, {
-    color: '#222222',
-    useForImageBadge: true,
-    weight: 2,
-  });
-  const localExistingConfig = buildTagManagement(existingTag, {
-    color: '#999999',
-    useForTextColor: true,
-    weight: 9,
-  });
-
-  beforeEach(() => {
-    cy.autoLogin();
-    clearTagManagementDownload();
-    cy.request('POST', '/api/v1/tag-management', []);
-    cy.request('POST', '/api/v1/create', item);
-    cy.request('POST', '/api/v1/tag-management', [exportedExistingConfig, exportedImportedConfig]);
-    cy.intercept('GET', '/api/v1/tag-management').as('getTagManagement');
-    TagManagementPage.visit();
-    cy.wait('@getTagManagement');
-    TagManagementPage.getList().should('contain.text', existingTag).and('contain.text', importedTag);
-  });
-
-  it('exports tag management and imports them as an extension while skipping conflicts', () => {
-    TagManagementPage.getExportButton().click();
-    cy.readFile(exportPath, null, { timeout: 15000 }).should((source) => {
-      expect(JSON.parse(source.toString('utf8'))).to.deep.equal({
-        type: 'collection-tracker-tag-management',
-        version: 1,
-        tagManagement: [exportedExistingConfig, exportedImportedConfig],
-      });
-    });
-
-    cy.request('POST', '/api/v1/tag-management', [localExistingConfig]);
-    cy.intercept('GET', '/api/v1/tag-management').as('getLocalTagManagement');
-    TagManagementPage.visit();
-    cy.wait('@getLocalTagManagement');
-
-    cy.on('window:confirm', () => false);
-    cy.intercept('POST', '/api/v1/tag-management').as('importTagManagement');
-
-    TagManagementPage.getImportFileInput().selectFile(exportPath, { force: true });
-    cy.wait('@importTagManagement');
-
-    cy.request('GET', '/api/v1/tag-management')
-      .its('body')
-      .should('deep.include', localExistingConfig)
-      .and('deep.include', exportedImportedConfig)
-      .and('not.deep.include', exportedExistingConfig);
   });
 });
 

@@ -30,6 +30,7 @@ export class Settings {
     mediaRefresh: computed(() => this.ngxSignalTranslate.translate('MediaRefresh')),
     globalWatchStatus: computed(() => this.ngxSignalTranslate.translate('GlobalWatchStatus')),
     shares: computed(() => this.ngxSignalTranslate.translate('Shares')),
+    exportImport: computed(() => this.ngxSignalTranslate.translate('ExportImport')),
   };
 
   protected onToggleNav(): void {

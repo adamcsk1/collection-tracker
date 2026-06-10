@@ -1,0 +1,39 @@
+<p>{{ translations.messageExportImport() }}</p>
+
+<section class="export-import-section">
+  <h2>{{ translations.collectionData() }}</h2>
+  <p>{{ translations.messageCollectionDataExport() }}</p>
+  <div class="export-import-toolbar">
+    <button data-test-id="collection-data-export" (click)="onExportCollectionData()">
+      <i class="material-icons" aria-hidden="true">download</i>
+      {{ translations.export() }}
+    </button>
+    <button data-test-id="collection-data-import" class="button-disabled" [disabled]="true">
+      <i class="material-icons" aria-hidden="true">upload</i>
+      {{ translations.import() }}
+    </button>
+  </div>
+</section>
+
+<section class="export-import-section">
+  <h2>{{ translations.tagManagement() }}</h2>
+  <p>{{ translations.messageExportImportTagManagement() }}</p>
+  <div class="export-import-toolbar">
+    <button data-test-id="tag-management-export" (click)="onExportTagManagement()">
+      <i class="material-icons" aria-hidden="true">download</i>
+      {{ translations.export() }}
+    </button>
+    <button data-test-id="tag-management-import" (click)="onImportTagManagementClick(tagManagementImportFile)">
+      <i class="material-icons" aria-hidden="true">upload</i>
+      {{ translations.import() }}
+    </button>
+    <input
+      #tagManagementImportFile
+      data-test-id="tag-management-import-file"
+      class="export-import-import-file"
+      type="file"
+      accept="application/json,.json"
+      (change)="onImportTagManagement($event)"
+    />
+  </div>
+</section>

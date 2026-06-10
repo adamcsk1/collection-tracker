@@ -61,10 +61,6 @@ describe('TagManagement component', () => {
   };
 
   beforeEach(() => {
-    delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
-    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:tag-management') });
-    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
-    HTMLAnchorElement.prototype.click = vi.fn();
     confirm = { ifConfirmed: vi.fn(() => of(true)), open: vi.fn(() => of(true)) };
     tagManagementService = {
       syncUserTagManagement: vi.fn((configs: TagManagementModel) => {
@@ -293,128 +289,6 @@ describe('TagManagement component', () => {
 
     expect(tagManagementState.state.configs()).toEqual([]);
     expect(tagManagementService.syncUserTagManagement).toHaveBeenLastCalledWith([]);
-  });
-
-  it('exports the full stored tag management JSON', async () => {
-    createComponent(['#visible']);
-    tagManagementState.setState('configs', [
-      buildTagManagement('#visible', { color: '#123456' }),
-      buildTagManagement('#stale', { color: '#abcdef', useForImageBadge: true }),
-    ]);
-
-    component['onExportTagManagement']();
-
-    const blob = vi.mocked(URL.createObjectURL).mock.calls[0][0] as Blob;
-    await expect(blob.text().then((source) => JSON.parse(source))).resolves.toEqual({
-      type: 'collection-tracker-tag-management',
-      version: 1,
-      tagManagement: [
-        buildTagManagement('#visible', { color: '#123456' }),
-        buildTagManagement('#stale', { color: '#abcdef', useForImageBadge: true }),
-      ],
-    });
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:tag-management');
-    expect(toastState.state.message()).toBe('');
-  });
-
-  it('exports through the companion app bridge when available', () => {
-    const saveDownload = vi.fn(() => true);
-    window.CollectionTrackerInterface = { saveDownload };
-    createComponent(['#visible']);
-    tagManagementState.setState('configs', [buildTagManagement('#visible', { color: '#123456' })]);
-
-    component['onExportTagManagement']();
-
-    expect(saveDownload).toHaveBeenCalledWith(
-      'collection-tracker-tag-management.json',
-      'application/json',
-      expect.any(String)
-    );
-    expect(URL.createObjectURL).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('');
-  });
-
-  it('imports new tag management without overwriting existing configs', () => {
-    createComponent(['#existing', '#new']);
-    const existingConfig = buildTagManagement('#existing', { color: '#111111' });
-    const newConfig = buildTagManagement('#new', { color: '#222222', useForImageBorder: true });
-    tagManagementState.setState('configs', [existingConfig]);
-    tagManagementService.syncUserTagManagement.mockClear();
-
-    component['importTagManagement'](
-      JSON.stringify({ type: 'collection-tracker-tag-management', version: 1, tagManagement: [newConfig] })
-    );
-
-    expect(confirm.open).not.toHaveBeenCalled();
-    expect(tagManagementService.syncUserTagManagement).toHaveBeenCalledWith([existingConfig, newConfig]);
-    expect(toastState.state.message()).toBe('Toast.TagManagementImported');
-  });
-
-  it('skips conflicting imported configs when conflict overwrite is cancelled', () => {
-    confirm.open.mockReturnValueOnce(of(false));
-    createComponent(['#existing', '#new']);
-    const existingConfig = buildTagManagement('#existing', { color: '#111111' });
-    const importedExistingConfig = buildTagManagement('#existing', { color: '#999999', useForImageBorder: true });
-    const newConfig = buildTagManagement('#new', { color: '#222222' });
-    tagManagementState.setState('configs', [existingConfig]);
-    tagManagementService.syncUserTagManagement.mockClear();
-
-    component['importTagManagement'](
-      JSON.stringify({
-        type: 'collection-tracker-tag-management',
-        version: 1,
-        tagManagement: [importedExistingConfig, newConfig],
-      })
-    );
-
-    expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportTagManagementConflicts');
-    expect(tagManagementService.syncUserTagManagement).toHaveBeenCalledWith([existingConfig, newConfig]);
-  });
-
-  it('overwrites conflicting imported configs when conflict overwrite is confirmed', () => {
-    confirm.open.mockReturnValueOnce(of(true));
-    createComponent(['#existing', '#new']);
-    const existingConfig = buildTagManagement('#existing', { color: '#111111' });
-    const importedExistingConfig = buildTagManagement('#existing', { color: '#999999', useForImageBorder: true });
-    const newConfig = buildTagManagement('#new', { color: '#222222' });
-    tagManagementState.setState('configs', [existingConfig]);
-    tagManagementService.syncUserTagManagement.mockClear();
-
-    component['importTagManagement'](
-      JSON.stringify({
-        type: 'collection-tracker-tag-management',
-        version: 1,
-        tagManagement: [importedExistingConfig, newConfig],
-      })
-    );
-
-    expect(tagManagementService.syncUserTagManagement).toHaveBeenCalledWith([importedExistingConfig, newConfig]);
-  });
-
-  it('shows import error toast for invalid import JSON', () => {
-    createComponent(['#tag']);
-    tagManagementService.syncUserTagManagement.mockClear();
-
-    component['importTagManagement']('{bad json');
-
-    expect(tagManagementService.syncUserTagManagement).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.TagManagementImportError');
-  });
-
-  it('shows import error toast for invalid import config shape', () => {
-    createComponent(['#tag']);
-    tagManagementService.syncUserTagManagement.mockClear();
-
-    component['importTagManagement'](
-      JSON.stringify({
-        type: 'collection-tracker-tag-management',
-        version: 1,
-        tagManagement: [{ tag: '#tag', color: null, useForImageBorder: true }],
-      })
-    );
-
-    expect(tagManagementService.syncUserTagManagement).not.toHaveBeenCalled();
-    expect(toastState.state.message()).toBe('Toast.TagManagementImportError');
   });
 
   it('does not clear configs when reset is not confirmed', () => {

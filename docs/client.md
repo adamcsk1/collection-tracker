@@ -10,6 +10,7 @@ Source: [`apps/client`](../apps/client)
 - `collection/favorites`, `collection/watch-later`, `collection/wishlist`, and `collection/series-tracker`: filtered collection subroutes for saved item lists and series progress tracking
 - `statistics`: tag-driven summaries and Chart.js visualizations
 - `settings/tag-management`: per-tag color, weight, and presentation rules
+- `settings/export-import`: export and import collection data and tag management settings
 - `settings/collection-list-display`: per-user collection list metadata and preferred rating display rules
 - `settings`: theme, search, account actions, access tokens, image refresh, sharing, and global watch-status actions
 - `about`: build metadata and settings-lock release flow

@@ -81,6 +81,14 @@
     >
       {{ translations.shares() }}
     </a>
+    <a
+      data-test-id="settings-nav-export-import"
+      [routerLink]="['/', 'settings', 'export-import']"
+      routerLinkActive="active"
+      (click)="onNavLinkClick()"
+    >
+      {{ translations.exportImport() }}
+    </a>
   </nav>
   <hr />
   <div class="settings-content">

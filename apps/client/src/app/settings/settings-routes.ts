@@ -43,6 +43,10 @@ export const settingsRoutes: Routes = [
         loadComponent: () => import('./shares/shares').then((module) => module.SettingsShares),
       },
       {
+        path: 'export-import',
+        loadComponent: () => import('./export-import/export-import').then((module) => module.ExportImport),
+      },
+      {
         path: '',
         pathMatch: 'full',
         redirectTo: 'basics',
