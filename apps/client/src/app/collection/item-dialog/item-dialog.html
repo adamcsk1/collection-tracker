@@ -33,17 +33,35 @@
           </ng-container>
         </libc-input>
         <libc-input data-test-id="item-dialog-year" [label]="translations.labelYear()" [formField]="form.year" />
-        <libc-input data-test-id="item-dialog-rate" [label]="translations.labelIMDbRate()" [formField]="form.rate" />
+        <libc-input data-test-id="item-dialog-rate" [label]="translations.labelIMDbRate()" [formField]="form.rate">
+          <ng-container errors>
+            @if (formErrors.rate.rateFormat()) {
+              {{ translations.validationIMDbRate() }}
+            }
+          </ng-container>
+        </libc-input>
         <libc-input
           data-test-id="item-dialog-rotten-tomatoes-rate"
           [label]="translations.labelRottenTomatoesRate()"
           [formField]="form.rottenTomatoesRate"
-        />
+        >
+          <ng-container errors>
+            @if (formErrors.rottenTomatoesRate.rateFormat()) {
+              {{ translations.validationRottenTomatoesRate() }}
+            }
+          </ng-container>
+        </libc-input>
         <libc-input
           data-test-id="item-dialog-metacritic-rate"
           [label]="translations.labelMetacriticRate()"
           [formField]="form.metacriticRate"
-        />
+        >
+          <ng-container errors>
+            @if (formErrors.metacriticRate.rateFormat()) {
+              {{ translations.validationMetacriticRate() }}
+            }
+          </ng-container>
+        </libc-input>
         <libc-input
           data-test-id="item-dialog-user-rate"
           type="number"
