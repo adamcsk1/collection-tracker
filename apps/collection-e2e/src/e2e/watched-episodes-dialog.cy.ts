@@ -57,9 +57,8 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
+    cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(1).check();
-    CollectionPage.getWatchedEpisodesSaveButton().click();
-
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
   });
@@ -81,7 +80,6 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(1).should('be.checked');
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(2).should('be.checked');
 
-    CollectionPage.getWatchedEpisodesSaveButton().click();
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E03');
   });
@@ -106,7 +104,6 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(2).should('be.checked').uncheck({ force: true });
-    CollectionPage.getWatchedEpisodesSaveButton().click();
 
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
@@ -125,12 +122,36 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
-    CollectionPage.getWatchedEpisodesSaveButton().click();
-    cy.wait('@saveWatchedEpisodes');
+    cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
+    CollectionPage.closeDialogByOverlay();
 
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).should('be.checked');
+  });
+
+  it('updates the item dialog after closing while auto-save is pending', () => {
+    cy.request('PUT', `/api/v1/series-tracker/${imdbId}/seasons`, {
+      seasons: [{ season: 1, episodes: 3 }],
+    });
+    cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/watched-episodes`, (request) => {
+      request.continue((response) => {
+        response.setDelay(250);
+      });
+    }).as('saveWatchedEpisodes');
+
+    CollectionPage.visitSeriesTracker();
+    cy.wait('@getSeriesTrackerItems');
+    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
+
+    CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
+    CollectionPage.closeDialogByOverlay();
+    cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
+    CollectionPage.getItemDialogEpisodeProgressChip().should('be.visible').and('contain.text', 'S01E01');
   });
 
   it('marks all episodes watched from the manage episodes dialog and updates completed filters', () => {

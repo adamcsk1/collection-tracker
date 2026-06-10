@@ -112,8 +112,8 @@ export const CollectionPage = {
     cy.getByTestId('series-metadata-episode-title').find('input'),
 
   // Watched episodes dialog
+  getWatchedEpisodesDialogHost: () => cy.getByTestId('watched-episodes-dialog'),
   getWatchedEpisodesDialog: () => cy.getByTestId('watched-episodes-dialog').last().find('.dialog-frame'),
-  getWatchedEpisodesSaveButton: () => cy.getByTestId('watched-episodes-save'),
   getWatchedEpisodesSeasonToggle: () => cy.getByTestId('watched-episodes-season-toggle'),
   getWatchedEpisodesEpisodeCheckbox: () => cy.getByTestId('watched-episodes-episode-checkbox'),
   getWatchedEpisodesMarkAllWatchedButton: () => cy.getByTestId('watched-episodes-mark-all-watched'),

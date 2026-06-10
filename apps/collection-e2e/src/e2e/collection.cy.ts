@@ -506,8 +506,8 @@ describe('Collection — series tracker', () => {
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
+    cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(1).check();
-    CollectionPage.getWatchedEpisodesSaveButton().click();
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
 
