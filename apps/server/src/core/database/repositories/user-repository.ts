@@ -217,3 +217,7 @@ export const upsertUserSettings = (
     settings.collectionListDisplayPreferences ? JSON.stringify(settings.collectionListDisplayPreferences) : null
   );
 };
+
+export const deleteUserSettings = (db: Database.Database, usernameHash: string): void => {
+  db.prepare('DELETE FROM user_settings WHERE username_hash = ?').run(usernameHash);
+};

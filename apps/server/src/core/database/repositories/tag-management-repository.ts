@@ -54,3 +54,7 @@ export const upsertTagManagement = (
     );
   }
 };
+
+export const deleteTagManagement = (db: Database.Database, usernameHash: string): void => {
+  db.prepare('DELETE FROM tag_configs WHERE username_hash = ?').run(usernameHash);
+};

@@ -269,6 +269,53 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ matchedIds: ['tt0133093', 'tt0372784'] });
   });
 
+  it('retrieves user export data', async () => {
+    const exportData = { userSettings: {}, collectionItems: [], tagManagement: [], seriesTrackerData: {} };
+    const promise = lastValueFrom(service.getUserExport());
+
+    const exportRequest = httpMock.expectOne('https://api.test/export');
+    expect(exportRequest.request.method).toBe('GET');
+    exportRequest.flush(exportData);
+
+    await expect(promise).resolves.toEqual(exportData);
+  });
+
+  it('imports user export data', async () => {
+    const importData = {
+      type: 'collection-tracker-export',
+      version: 1,
+      userSettings: {},
+      collectionItems: [],
+      tagManagement: [],
+      seriesTrackerData: {},
+    };
+    const importResult = {
+      importedCollectionItems: 0,
+      importedTagManagement: 0,
+      importedSeriesTrackerSeasons: 0,
+      importedSeriesTrackerWatchedEpisodes: 0,
+    };
+    const promise = lastValueFrom(service.importUserExport(importData));
+
+    const importRequest = httpMock.expectOne('https://api.test/import');
+    expect(importRequest.request.method).toBe('POST');
+    expect(importRequest.request.body).toEqual(importData);
+    importRequest.flush(importResult);
+
+    await expect(promise).resolves.toEqual(importResult);
+  });
+
+  it('imports collection items from source text', async () => {
+    const promise = lastValueFrom(service.importCollectionItems('tt0133093'));
+
+    const importRequest = httpMock.expectOne('https://api.test/import/collection-items');
+    expect(importRequest.request.method).toBe('POST');
+    expect(importRequest.request.body).toEqual({ source: 'tt0133093' });
+    importRequest.flush({ totalCount: 1, importedCount: 1, skippedCount: 0, errorCount: 0 });
+
+    await expect(promise).resolves.toEqual({ totalCount: 1, importedCount: 1, skippedCount: 0, errorCount: 0 });
+  });
+
   it('alerts and rethrows when AI query fails', async () => {
     const promise = lastValueFrom(service.getAiQueryData('sci-fi movies'));
 

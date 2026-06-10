@@ -43,6 +43,7 @@ import { register as registerSignUp } from './sign-up-api';
 import { register as registerStatistics } from './statistics-api';
 import { register as registerTagSuggestions } from './tag-suggestions-api';
 import { register as registerExport } from './export-api';
+import { register as registerImport } from './import-api';
 
 export const registerAllApis = (app: FastifyInstance): void => {
   registerHealth(app);
@@ -89,4 +90,5 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerProxyAi(app);
   registerProxyAiAvailable(app);
   registerExport(app);
+  registerImport(app);
 };
