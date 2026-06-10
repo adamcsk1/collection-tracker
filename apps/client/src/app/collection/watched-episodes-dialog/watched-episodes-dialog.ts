@@ -2,8 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
+import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
+import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import {
   CollectionItemApiModel,
@@ -30,6 +32,8 @@ export class WatchedEpisodesDialog implements OnInit {
   private readonly api = inject(ApiService);
   private readonly portal = inject(PortalService);
   private readonly toastState = inject(toastStateToken);
+  private readonly confirm = inject(ConfirmService);
+  private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
   public readonly imdbId = input.required<string>();
@@ -43,6 +47,7 @@ export class WatchedEpisodesDialog implements OnInit {
     manageSeasonMetadata: computed(() => this.ngxSignalTranslate.translate('ManageSeriesMetadata')),
     season: computed(() => this.ngxSignalTranslate.translate('Season')),
     markAllEpisodesWatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesWatched')),
+    markAllEpisodesUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesUnwatched')),
     episode: computed(() => this.ngxSignalTranslate.translate('Episode')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
   };
@@ -56,6 +61,18 @@ export class WatchedEpisodesDialog implements OnInit {
     return set;
   });
   protected readonly hasSeasonMetadata = computed(() => this.seasonsMetadata().length > 0);
+  protected readonly allEpisodesWatched = computed(() => {
+    const seasons = this.seasonsMetadata();
+    if (!seasons.length) return false;
+
+    const watchedSet = this.watchedSet();
+    for (const season of seasons) {
+      for (let episode = 1; episode <= season.episodes; episode++) {
+        if (!watchedSet.has(`${season.season}-${episode}`)) return false;
+      }
+    }
+    return true;
+  });
 
   protected readonly openSeasons = computed<Set<number>>(() =>
     getOpenSeasons(this.seasonsMetadata(), this.watchedSet())
@@ -107,7 +124,11 @@ export class WatchedEpisodesDialog implements OnInit {
     const key = `${season}-${episode}`;
     const currentWatched = this.watchedEpisodes();
     if (this.watchedSet().has(key)) {
-      this.watchedEpisodes.set(currentWatched.filter((ep) => ep.season !== season || ep.episode !== episode));
+      this.watchedEpisodes.set(
+        currentWatched.filter(
+          (watchedEpisode) => watchedEpisode.season !== season || watchedEpisode.episode !== episode
+        )
+      );
     } else {
       this.watchedEpisodes.set([...currentWatched, { season, episode }]);
     }
@@ -122,9 +143,9 @@ export class WatchedEpisodesDialog implements OnInit {
 
     const isFullyWatched = this.isSeasonFullyWatched(season, episodesCount);
     if (isFullyWatched) {
-      this.watchedEpisodes.set(currentWatched.filter((ep) => ep.season !== season));
+      this.watchedEpisodes.set(currentWatched.filter((watchedEpisode) => watchedEpisode.season !== season));
     } else {
-      const withoutSeason = currentWatched.filter((ep) => ep.season !== season);
+      const withoutSeason = currentWatched.filter((watchedEpisode) => watchedEpisode.season !== season);
       this.watchedEpisodes.set([...withoutSeason, ...seasonEpisodes]);
     }
   }
@@ -173,5 +194,45 @@ export class WatchedEpisodesDialog implements OnInit {
           closed: this.closed(),
         }),
     });
+  }
+
+  protected async onMarkAllEpisodesWatched(): Promise<void> {
+    if (!this.hasSeasonMetadata()) {
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SetSeasonMetadataFirst'));
+      return;
+    }
+    const confirmed = await firstValueFrom(
+      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesWatched'))
+    );
+    if (!confirmed) return;
+
+    this.spinnerLoadingState.setState('show', true);
+    try {
+      const result = await firstValueFrom(this.api.markAllSeriesTrackerWatched(this.imdbId()));
+      this.watchedEpisodes.set(result.watchedEpisodes);
+      this.saved()(result.watchedEpisodes, result.item);
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedWatched'));
+    } finally {
+      this.spinnerLoadingState.setState('show', false);
+    }
+  }
+
+  protected async onMarkAllEpisodesUnwatched(): Promise<void> {
+    const confirmed = await firstValueFrom(
+      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesUnwatched'))
+    );
+    if (!confirmed) return;
+
+    this.spinnerLoadingState.setState('show', true);
+    try {
+      const result = await firstValueFrom(
+        this.api.updateSeriesTrackerWatchedEpisodes(this.imdbId(), { watchedEpisodes: [] })
+      );
+      this.watchedEpisodes.set(result.watchedEpisodes);
+      this.saved()(result.watchedEpisodes, result.item);
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedUnwatched'));
+    } finally {
+      this.spinnerLoadingState.setState('show', false);
+    }
   }
 }

@@ -75,4 +75,27 @@
       </button>
     }
   </ng-container>
+  <ng-container dialog-shell-menu-content>
+    @if (allEpisodesWatched()) {
+      <button
+        class="button-borderless unaligned"
+        data-test-id="watched-episodes-mark-all-unwatched"
+        type="button"
+        (click)="onMarkAllEpisodesUnwatched()"
+      >
+        <i class="material-icons" aria-hidden="true"> remove_circle_outline </i>
+        {{ translations.markAllEpisodesUnwatched() }}
+      </button>
+    } @else {
+      <button
+        class="button-borderless unaligned"
+        data-test-id="watched-episodes-mark-all-watched"
+        type="button"
+        (click)="onMarkAllEpisodesWatched()"
+      >
+        <i class="material-icons" aria-hidden="true"> check_circle_outline </i>
+        {{ translations.markAllEpisodesWatched() }}
+      </button>
+    }
+  </ng-container>
 </libc-dialog-shell>

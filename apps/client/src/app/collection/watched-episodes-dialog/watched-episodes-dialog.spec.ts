@@ -1,11 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  initialSpinnerLoadingState,
+  spinnerLoadingStateToken,
+} from '@components/spinner-loading/spinner-loading-store';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
+import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SeriesSeasonMetadataDialog } from '../series-season-metadata-dialog/series-season-metadata-dialog';
 import { WatchedEpisodesDialog } from './watched-episodes-dialog';
 
 describe('WatchedEpisodesDialog', () => {
@@ -15,8 +21,10 @@ describe('WatchedEpisodesDialog', () => {
     getSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
     getSeriesTrackerWatchedEpisodes: ReturnType<typeof vi.fn>;
     updateSeriesTrackerWatchedEpisodes: ReturnType<typeof vi.fn>;
+    markAllSeriesTrackerWatched: ReturnType<typeof vi.fn>;
   };
   let portal: { close: ReturnType<typeof vi.fn>; open: ReturnType<typeof vi.fn> };
+  let confirm: { open: ReturnType<typeof vi.fn> };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
 
   beforeEach(() => {
@@ -28,16 +36,30 @@ describe('WatchedEpisodesDialog', () => {
       updateSeriesTrackerWatchedEpisodes: vi.fn(() =>
         of({ watchedEpisodes: [{ season: 1, episode: 2 }], lastWatchedEpisode: { season: 1, episode: 2 } })
       ),
+      markAllSeriesTrackerWatched: vi.fn(() =>
+        of({
+          watchedEpisodes: [
+            { season: 1, episode: 1 },
+            { season: 1, episode: 2 },
+            { season: 1, episode: 3 },
+          ],
+          lastWatchedEpisode: { season: 1, episode: 3 },
+          item: { hash: 'completed-hash' },
+        })
+      ),
     };
     portal = { close: vi.fn(), open: vi.fn() };
+    confirm = { open: vi.fn(() => of(true)) };
 
     TestBed.configureTestingModule({
       imports: [WatchedEpisodesDialog],
       providers: [
         { provide: ApiService, useValue: api },
         { provide: PortalService, useValue: portal },
+        { provide: ConfirmService, useValue: confirm },
         { provide: NgxSignalTranslateService, useValue: { translate: vi.fn((key: string) => key) } },
         provideStore(initialToastState, toastStateToken),
+        provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
       ],
     });
     TestBed.overrideComponent(WatchedEpisodesDialog, { set: { template: '' } });
@@ -165,5 +187,99 @@ describe('WatchedEpisodesDialog', () => {
 
     expect(component['isSeasonOpenDefault'](1)).toBe(true);
     expect(component['isSeasonOpenDefault'](2)).toBe(false);
+  });
+
+  it('opens metadata management and wires saved and closed callbacks', () => {
+    const saved = vi.fn();
+    fixture.componentRef.setInput('saved', saved);
+
+    component['onManageSeasonMetadata']();
+
+    expect(portal.open).toHaveBeenCalledWith(SeriesSeasonMetadataDialog, {
+      imdbId: 'tt-series',
+      initialSeasons: [{ season: 1, episodes: 3, titles: [] }],
+      saved: expect.any(Function),
+      closed: expect.any(Function),
+    });
+
+    const metadataInputs = portal.open.mock.calls[0][1] as {
+      saved: (seasons: [{ season: number; episodes: number; titles: string[] }], item?: { hash: string }) => void;
+      closed: () => void;
+    };
+    metadataInputs.saved([{ season: 2, episodes: 4, titles: [] }], { hash: 'metadata-hash' });
+
+    expect(component['seasonsMetadata']()).toEqual([{ season: 2, episodes: 4, titles: [] }]);
+    expect(saved).toHaveBeenCalledWith([{ season: 1, episode: 2 }], { hash: 'metadata-hash' });
+
+    metadataInputs.closed();
+
+    expect(portal.open).toHaveBeenLastCalledWith(WatchedEpisodesDialog, {
+      imdbId: 'tt-series',
+      saved,
+      closed: portal.close,
+    });
+  });
+
+  it('shows toast when no season metadata exists on mark all watched', async () => {
+    component['seasonsMetadata'].set([]);
+
+    await component['onMarkAllEpisodesWatched']();
+
+    expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('Toast.SetSeasonMetadataFirst');
+  });
+
+  it('marks all episodes watched after confirmation', async () => {
+    const saved = vi.fn();
+    fixture.componentRef.setInput('saved', saved);
+
+    await component['onMarkAllEpisodesWatched']();
+
+    expect(api.markAllSeriesTrackerWatched).toHaveBeenCalledWith('tt-series');
+    expect(component['watchedEpisodes']()).toEqual([
+      { season: 1, episode: 1 },
+      { season: 1, episode: 2 },
+      { season: 1, episode: 3 },
+    ]);
+    expect(saved).toHaveBeenCalledWith(
+      [
+        { season: 1, episode: 1 },
+        { season: 1, episode: 2 },
+        { season: 1, episode: 3 },
+      ],
+      { hash: 'completed-hash' }
+    );
+    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedWatched');
+  });
+
+  it('does not mark all episodes watched when confirmation is declined', async () => {
+    confirm.open.mockReturnValue(of(false));
+
+    await component['onMarkAllEpisodesWatched']();
+
+    expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
+  });
+
+  it('clears watched episodes after confirmation', async () => {
+    const saved = vi.fn();
+    fixture.componentRef.setInput('saved', saved);
+    api.updateSeriesTrackerWatchedEpisodes.mockReturnValue(
+      of({ watchedEpisodes: [], lastWatchedEpisode: null, item: { hash: 'unwatched-hash' } })
+    );
+
+    await component['onMarkAllEpisodesUnwatched']();
+
+    expect(api.updateSeriesTrackerWatchedEpisodes).toHaveBeenCalledWith('tt-series', { watchedEpisodes: [] });
+    expect(component['watchedEpisodes']()).toEqual([]);
+    expect(saved).toHaveBeenCalledWith([], { hash: 'unwatched-hash' });
+    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedUnwatched');
+  });
+
+  it('does not clear watched episodes when confirmation is declined', async () => {
+    confirm.open.mockReturnValue(of(false));
+
+    await component['onMarkAllEpisodesUnwatched']();
+
+    expect(api.updateSeriesTrackerWatchedEpisodes).not.toHaveBeenCalled();
   });
 });

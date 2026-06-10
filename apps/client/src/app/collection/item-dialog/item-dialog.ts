@@ -6,7 +6,6 @@ import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { LinkButton } from '@components/link-button/link-button';
 import { Textarea } from '@components/textarea/textarea';
-import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
@@ -30,7 +29,7 @@ import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, firstValueFrom, map, mergeMap, of, tap, throwError } from 'rxjs';
+import { firstValueFrom, map, mergeMap, of } from 'rxjs';
 import { sharesStateToken } from '../../shares/shares-store';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionService } from '../collection-service';
@@ -93,7 +92,6 @@ export class ItemDialog implements OnInit {
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
-  private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
@@ -101,6 +99,7 @@ export class ItemDialog implements OnInit {
   private readonly originalInternalTags = signal<string[]>([]);
   protected readonly translations = {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
+    titleSeriesTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.SeriesTrackerItem')),
     titleWatchLaterItem: computed(() => this.ngxSignalTranslate.translate('Title.WatchLaterItem')),
     titleWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.WishlistItem')),
     labelTitle: computed(() => this.ngxSignalTranslate.translate('Title')),
@@ -119,8 +118,6 @@ export class ItemDialog implements OnInit {
     systemTags: computed(() => this.ngxSignalTranslate.translate('SystemTags')),
     watchedUpTo: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo')),
     manageWatchedEpisodes: computed(() => this.ngxSignalTranslate.translate('ManageWatchedEpisodes')),
-    markAllEpisodesWatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesWatched')),
-    markAllEpisodesUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesUnwatched')),
     hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
     actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
     plot: computed(() => this.ngxSignalTranslate.translate('Plot')),
@@ -137,8 +134,6 @@ export class ItemDialog implements OnInit {
     markAsWatched: computed(() => this.ngxSignalTranslate.translate('MarkAsWatched')),
     manageSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('ManageSeriesMetadata')),
     removeFavorite: computed(() => this.ngxSignalTranslate.translate('RemoveFavorite')),
-    refreshSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('RefreshSeriesMetadata')),
-    removeSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('RemoveSeriesMetadata')),
     delete: computed(() => this.ngxSignalTranslate.translate('Delete')),
     shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
     validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
@@ -392,7 +387,9 @@ export class ItemDialog implements OnInit {
       ? this.translations.titleWatchLaterItem()
       : this.wishlist()
         ? this.translations.titleWishlistItem()
-        : this.translations.titleCollectionItem()
+        : this.seriesTracker()
+          ? this.translations.titleSeriesTrackerItem()
+          : this.translations.titleCollectionItem()
   );
   protected readonly draftImageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.form.image().value())
@@ -620,57 +617,6 @@ export class ItemDialog implements OnInit {
     await this.doSave(this.buildItemWithUpdatedTags([], [FAVORITE_TAG]));
   }
 
-  protected onRefreshSeriesMetadata(): void {
-    if (!this.seriesTracker() || !this.permissionUpdate()) return;
-    this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.RefreshSeriesMetadata'))
-      .pipe(
-        mergeMap((confirmed) => {
-          if (!confirmed) return of({ confirmed, result: null });
-          this.spinnerLoadingState.setState('show', true);
-          return this.api.refreshSeriesTrackerSeasons(this.collectionItem().IMDbId).pipe(
-            map((result) => ({ confirmed, result })),
-            tap(() => this.spinnerLoadingState.setState('show', false)),
-            catchError((error) => {
-              this.spinnerLoadingState.setState('show', false);
-              return throwError(() => error);
-            })
-          );
-        }),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe(({ confirmed, result }) => {
-        if (!confirmed || !result) return;
-        this.seriesSeasons.set(result.seasons);
-        this.applySyncedCollectionItem(result.item);
-        this.collectionService.triggerReload();
-        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataRefreshed'));
-      });
-  }
-
-  protected onRemoveSeriesMetadata(): void {
-    if (!this.seriesTracker() || !this.permissionUpdate()) return;
-    this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.RemoveSeriesMetadata'))
-      .pipe(
-        mergeMap((confirmed) =>
-          confirmed
-            ? this.api
-                .deleteSeriesTrackerSeasons(this.collectionItem().IMDbId)
-                .pipe(map((result) => ({ confirmed, result })))
-            : of({ confirmed, result: null })
-        ),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe(({ confirmed, result }) => {
-        if (!confirmed || !result) return;
-        this.seriesSeasons.set(result.seasons);
-        this.applySyncedCollectionItem(result.item);
-        this.collectionService.triggerReload();
-        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataDeleted'));
-      });
-  }
-
   protected onManageSeriesMetadata(): void {
     if (!this.seriesTracker() || !this.permissionUpdate()) return;
     let collectionItem = this.collectionItem();
@@ -704,67 +650,5 @@ export class ItemDialog implements OnInit {
       },
       closed: () => this.portal.open(ItemDialog, { collectionItem }),
     });
-  }
-
-  protected onMarkAllEpisodesWatched(): void {
-    if (!this.seriesTracker() || !this.permissionUpdate()) return;
-    if (!this.seriesSeasons().length) {
-      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SetSeasonMetadataFirst'));
-      return;
-    }
-    this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesWatched'))
-      .pipe(
-        mergeMap((confirmed) => {
-          if (!confirmed) return of({ confirmed, result: null });
-          this.spinnerLoadingState.setState('show', true);
-          return this.api.markAllSeriesTrackerWatched(this.collectionItem().IMDbId).pipe(
-            map((result) => ({ confirmed, result })),
-            tap(() => this.spinnerLoadingState.setState('show', false)),
-            catchError((error) => {
-              this.spinnerLoadingState.setState('show', false);
-              return throwError(() => error);
-            })
-          );
-        }),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe(({ confirmed, result }) => {
-        if (!confirmed || !result) return;
-        this.watchedEpisodes.set(result.watchedEpisodes);
-        this.applySyncedCollectionItem(result.item);
-        this.collectionService.triggerReload();
-        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedWatched'));
-      });
-  }
-
-  protected onMarkAllEpisodesUnwatched(): void {
-    if (!this.seriesTracker() || !this.permissionUpdate()) return;
-    this.confirm
-      .open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesUnwatched'))
-      .pipe(
-        mergeMap((confirmed) => {
-          if (!confirmed) return of({ confirmed, result: null });
-          this.spinnerLoadingState.setState('show', true);
-          return this.api
-            .updateSeriesTrackerWatchedEpisodes(this.collectionItem().IMDbId, { watchedEpisodes: [] })
-            .pipe(
-              map((result) => ({ confirmed, result })),
-              tap(() => this.spinnerLoadingState.setState('show', false)),
-              catchError((error) => {
-                this.spinnerLoadingState.setState('show', false);
-                return throwError(() => error);
-              })
-            );
-        }),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe(({ confirmed, result }) => {
-        if (!confirmed || !result) return;
-        this.watchedEpisodes.set(result.watchedEpisodes);
-        this.applySyncedCollectionItem(result.item);
-        this.collectionService.triggerReload();
-        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedUnwatched'));
-      });
   }
 }

@@ -3,8 +3,10 @@ import { applyEach, form, FormField, max, min, validate } from '@angular/forms/s
 import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
+import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
+import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
 import { CollectionItemApiModel, SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
@@ -25,6 +27,8 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   private readonly api = inject(ApiService);
   private readonly portal = inject(PortalService);
   private readonly toastState = inject(toastStateToken);
+  private readonly confirm = inject(ConfirmService);
+  private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   public readonly imdbId = input.required<string>();
   public readonly initialSeasons = input<SeriesTrackerSeasonMetadataModel[]>([]);
@@ -42,6 +46,8 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     remove: computed(() => this.ngxSignalTranslate.translate('Remove')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     close: computed(() => this.ngxSignalTranslate.translate('Close')),
+    refreshSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('RefreshSeriesMetadata')),
+    removeSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('RemoveSeriesMetadata')),
     validation: computed(() => this.ngxSignalTranslate.translate('Validation.SeriesMetadata')),
     noMetadata: computed(() => this.ngxSignalTranslate.translate('Message.SetSeasonMetadata')),
   };
@@ -76,8 +82,12 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   }
 
   public ngOnInit(): void {
+    this.resetForm(this.initialSeasons());
+  }
+
+  private resetForm(seasons: SeriesTrackerSeasonMetadataModel[]): void {
     this.form().reset({
-      seasons: this.initialSeasons().map((season) => ({
+      seasons: seasons.map((season) => ({
         season: season.season,
         episodes: season.episodes,
         titles: season.titles ?? [],
@@ -131,5 +141,34 @@ export class SeriesSeasonMetadataDialog implements OnInit {
 
   protected onClose(): void {
     this.closed()();
+  }
+
+  protected async onRefreshSeriesMetadata(): Promise<void> {
+    const confirmed = await firstValueFrom(
+      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.RefreshSeriesMetadata'))
+    );
+    if (!confirmed) return;
+
+    this.spinnerLoadingState.setState('show', true);
+    try {
+      const result = await firstValueFrom(this.api.refreshSeriesTrackerSeasons(this.imdbId()));
+      this.resetForm(result.seasons);
+      this.saved()(result.seasons, result.item);
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataRefreshed'));
+    } finally {
+      this.spinnerLoadingState.setState('show', false);
+    }
+  }
+
+  protected async onRemoveSeriesMetadata(): Promise<void> {
+    const confirmed = await firstValueFrom(
+      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.RemoveSeriesMetadata'))
+    );
+    if (!confirmed) return;
+
+    const result = await firstValueFrom(this.api.deleteSeriesTrackerSeasons(this.imdbId()));
+    this.resetForm(result.seasons);
+    this.saved()(result.seasons, result.item);
+    this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataDeleted'));
   }
 }

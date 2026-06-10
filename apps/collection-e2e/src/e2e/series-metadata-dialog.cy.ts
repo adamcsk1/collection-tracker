@@ -22,8 +22,9 @@ describe('Series metadata dialog', () => {
 
     CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
     CollectionPage.openItemDialogActionsMenu();
-    CollectionPage.getItemDialogRefreshSeriesMetadataButton().should('be.visible');
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getSeriesMetadataRefreshButton().should('be.visible');
 
     CollectionPage.getSeriesMetadataMessage().should('contain.text', 'Season and episode counts can come from OMDb');
     CollectionPage.getSeriesMetadataAddButton().click();
@@ -77,9 +78,12 @@ describe('Series metadata dialog', () => {
 
     cy.getByTestId('watched-episodes-dialog').should('not.exist');
     CollectionPage.openItemDialogActionsMenu();
-    CollectionPage.getItemDialogRemoveSeriesMetadataButton().click();
+    CollectionPage.getItemDialogManageSeriesMetadataButton().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getSeriesMetadataRemoveAllButton().click();
 
     cy.wait('@deleteSeriesMetadata').its('response.statusCode').should('eq', 200);
+    CollectionPage.closeDialogByOverlay();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
     CollectionPage.getWatchedEpisodesNoMetadataMessage().should('be.visible');

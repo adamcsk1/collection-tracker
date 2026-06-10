@@ -276,33 +276,6 @@
           <i class="material-icons" aria-hidden="true"> check_circle </i>
           {{ translations.manageWatchedEpisodes() }}
         </button>
-        @if (allEpisodesWatched()) {
-          <button
-            class="button-borderless unaligned"
-            data-test-id="item-dialog-mark-all-unwatched"
-            (click)="onMarkAllEpisodesUnwatched()"
-          >
-            <i class="material-icons" aria-hidden="true"> remove_circle_outline </i>
-            {{ translations.markAllEpisodesUnwatched() }}
-          </button>
-        } @else {
-          <button
-            class="button-borderless unaligned"
-            data-test-id="item-dialog-mark-all-watched"
-            (click)="onMarkAllEpisodesWatched()"
-          >
-            <i class="material-icons" aria-hidden="true"> check_circle_outline </i>
-            {{ translations.markAllEpisodesWatched() }}
-          </button>
-        }
-        <button
-          class="button-borderless unaligned"
-          data-test-id="item-dialog-refresh-series-metadata"
-          (click)="onRefreshSeriesMetadata()"
-        >
-          <i class="material-icons" aria-hidden="true"> sync </i>
-          {{ translations.refreshSeriesMetadata() }}
-        </button>
         <button
           class="button-borderless unaligned"
           data-test-id="item-dialog-manage-series-metadata"
@@ -310,14 +283,6 @@
         >
           <i class="material-icons" aria-hidden="true"> list </i>
           {{ translations.manageSeriesMetadata() }}
-        </button>
-        <button
-          class="button-borderless unaligned"
-          data-test-id="item-dialog-remove-series-metadata"
-          (click)="onRemoveSeriesMetadata()"
-        >
-          <i class="material-icons" aria-hidden="true"> playlist_remove </i>
-          {{ translations.removeSeriesMetadata() }}
         </button>
       }
       @if (permissionUpdate() && libraryItem()) {
