@@ -1,6 +1,6 @@
 # Collection Tracker
 
-Collection Tracker is an Nx monorepo for a self-hosted movie and series catalog. The workspace combines Angular applications for authentication and collection management, an Express API, shared libraries, Cypress coverage, and delivery assets for Docker and Android.
+Collection Tracker is an Nx monorepo for a self-hosted movie and series catalog. The workspace combines Angular applications for authentication and collection management, a Fastify API, shared libraries, Cypress coverage, and delivery assets for Docker and Android.
 
 ## Project Goal
 
@@ -11,7 +11,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 ## Technology
 
 - Angular with Nx
-- Express for the API
+- Fastify for the API
 - Vitest for unit tests and Cypress for end-to-end coverage
 - SQLite persistence in a configurable data directory
 - Android WebView wrapper for mobile distribution
@@ -125,10 +125,10 @@ DISABLE_REGISTRATION=0
 OMDB_API_KEY="your_omdb_api_key"
 CORS_ORIGIN="*"
 CACHE_MAX=200
-RATE_LIMIT=100
+RATE_LIMIT=120
 ```
 
-`RATE_LIMIT` controls the default per-IP request limit for a 15-minute window. High-frequency collection entry routes have their own higher per-route limit so adding multiple items in a row does not quickly exhaust the default bucket.
+`RATE_LIMIT` controls the default per-IP request limit for a 1-minute window. When omitted, it defaults to `120`. High-frequency collection entry routes have their own higher per-route limit so adding multiple items in a row does not quickly exhaust the default bucket.
 
 See the server documentation for the full runtime model and data layout.
 

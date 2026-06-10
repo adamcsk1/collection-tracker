@@ -5,7 +5,7 @@ You are reviewing pull requests for Collection Tracker, a self-hosted media cata
 Stack:
 
 - Angular 21 standalone applications with signals
-- Express REST API
+- Fastify REST API
 - SQLite persistence through `better-sqlite3`
 - Vitest unit tests
 - Cypress E2E tests

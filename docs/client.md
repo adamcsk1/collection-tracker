@@ -12,7 +12,10 @@ Source: [`apps/client`](../apps/client)
 - `settings/tag-management`: per-tag color, weight, and presentation rules
 - `settings/export-import`: export and import collection data and tag management settings
 - `settings/collection-list-display`: per-user collection list metadata and preferred rating display rules
-- `settings`: theme, search, account actions, access tokens, image refresh, sharing, and global watch-status actions
+- `settings/media-refresh`: refresh stored images and external ratings from OMDb-backed APIs
+- `settings/global-watch-status`: mark all visible collection items watched or unwatched
+- `settings/shares`: manage outgoing and incoming collection shares by user share code
+- `settings`: theme, language, search, app-mode, settings-lock, account actions, access tokens, media refresh, sharing, and global watch-status actions
 - `about`: build metadata and settings-lock release flow
 
 ## Technical Notes
