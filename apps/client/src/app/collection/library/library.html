@@ -20,13 +20,11 @@
       />
     }
   </ng-template>
-  @defer (on idle) {
-    <ct-list
-      [routeSearchText]="querySearch()"
-      [dataSource]="collectionDataSource"
-      (randomPick)="onRandomPick()"
-      (toggleAiSearch)="onToggleAiSearch()"
-      (showFunctions)="onShowFunctions()"
-    />
-  }
+  <ct-list
+    [routeSearchText]="querySearch()"
+    [dataSource]="collectionDataSource"
+    (randomPick)="onRandomPick()"
+    (toggleAiSearch)="onToggleAiSearch()"
+    (showFunctions)="onShowFunctions()"
+  />
 </div>

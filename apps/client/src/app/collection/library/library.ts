@@ -20,13 +20,13 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, debounceTime, EMPTY, map, startWith, switchMap } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
-import { AiSearchInput } from './ai-search-input/ai-search-input';
 import { CollectionListDataSourceRequest } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
 import { ItemDialog } from '../item-dialog/item-dialog';
 import { List } from '../list/list';
 import { AiSearchService } from '../search/ai-search-service';
 import { buildStandardSearchFilters } from '../utils/collection-search-filter-util';
+import { AiSearchInput } from './ai-search/ai-search-input';
 import { SearchSuggestionService } from './search/search-suggestion-service';
 
 @Component({
