@@ -23,4 +23,4 @@ npx nx run collection-e2e:e2e
 
 - Cypress uses `http://localhost:2999` as its base URL.
 - `npm run cypress:chrome` and `npm run cypress:firefox` run `collection-e2e:prepare` first, which builds the app image, seeds the database, and starts the Docker test container on port `2999`.
-- The test container's `.env` (`apps/collection-e2e/env/.env`) sets `RATE_LIMIT=10000` to avoid server-side rate limiting. Without this, the ~100 `autoLogin()` calls across the suite would exhaust the default 100-request budget (each login page visit triggers a `validateAccessToken()` → 401 that counts as a failed request).
+- The test container's `.env` (`apps/collection-e2e/env/.env`) sets `RATE_LIMIT=10000` to avoid server-side rate limiting. Without this, repeated `autoLogin()` calls across the suite would exhaust the default 120-request-per-minute budget.

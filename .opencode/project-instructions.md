@@ -1,6 +1,6 @@
 # Collection Tracker Project Instructions
 
-Collection Tracker is a self-hosted media catalog application for managing personal movie and series collections. It is built as an Nx monorepo with Angular frontends and an Express backend using SQLite persistence.
+Collection Tracker is a self-hosted media catalog application for managing personal movie and series collections. It is built as an Nx monorepo with Angular frontends and a Fastify backend using SQLite persistence.
 
 AI search is powered by Ollama. Local development and Docker Compose read Ollama settings from `ollama.config.json` in the active data folder. Docker Compose does not run Ollama. The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:3b`, `batchSize: 10`, and `parallelRequests: 1`. Configured generate `options` are merged over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 4 }`. Optional root-level `keep_alive` is passed to Ollama generate requests only when present in the config file.
 
@@ -36,7 +36,7 @@ In command chains, prefix each segment: `rtk git add . && rtk git commit -m "msg
 | `apps/client`         | Main collection management UI                                 |
 | `apps/health`         | Server health status dashboard                                |
 | `apps/login`          | Authentication UI (sign-in / sign-up)                         |
-| `apps/server`         | Express REST API                                              |
+| `apps/server`         | Fastify REST API                                              |
 | `apps/dev-proxy`      | Local dev gateway serving everything through `localhost:4200` |
 | `apps/collection-e2e` | Cypress E2E tests                                             |
 
@@ -69,8 +69,8 @@ Cross-project imports must use a declared `@alias/*` path. Relative imports are 
 ```bash
 npm start               # Start all services in dev
 npm run build           # Production build
-npm run lint            # ESLint check, including CSS via @eslint/css
-npm run lint:fix        # ESLint fix
+npm run lint:check      # ESLint check, including CSS via @eslint/css
+npm run lint            # ESLint fix
 npm run typecheck       # TypeScript check
 npm run format:check    # Prettier check
 npm run test            # Unit tests with Vitest

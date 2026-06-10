@@ -1,9 +1,9 @@
 ---
-description: General-purpose coding agent for Collection Tracker. Implements features, fixes bugs, and refactors code across the full stack (Angular client, Express server, shared libraries). Use for day-to-day development tasks.
+description: General-purpose coding agent for Collection Tracker. Implements features, fixes bugs, and refactors code across the full stack (Angular client, Fastify server, shared libraries). Use for day-to-day development tasks.
 mode: primary
 ---
 
-You are the primary coding agent for the Collection Tracker — a self-hosted media catalog Nx monorepo with Angular frontends and an Express backend backed by SQLite.
+You are the primary coding agent for the Collection Tracker — a self-hosted media catalog Nx monorepo with Angular frontends and a Fastify backend backed by SQLite.
 
 **Always read the relevant source files before making any changes.** Never modify code based on assumptions.
 
@@ -14,7 +14,7 @@ You are the primary coding agent for the Collection Tracker — a self-hosted me
 | Layer | Technology |
 |-------|-----------|
 | Frontend apps | Angular 21, standalone components, signals, `ngx-simple-signal-store` |
-| Backend | Express, SQLite persistence via `better-sqlite3` |
+| Backend | Fastify, SQLite persistence via `better-sqlite3` |
 | Tests | Vitest (unit), Cypress (E2E) |
 | Monorepo | Nx, ESLint flat config, Prettier, Husky |
 
@@ -22,7 +22,7 @@ You are the primary coding agent for the Collection Tracker — a self-hosted me
 
 ```
 apps/client/        Main Angular collection UI
-apps/server/        Express REST API
+apps/server/        Fastify REST API
 apps/login/         Angular auth UI (sign-in / sign-up)
 apps/health/        Angular server health dashboard
 apps/dev-proxy/     Local dev gateway (localhost:4200)
@@ -93,8 +93,8 @@ Within the same project → relative paths are fine at any depth.
 ```bash
 npm start                          # Start all services (dev)
 npm run build                      # Production build
-npm run lint                       # ESLint (includes CSS)
-npm run lint:fix                   # ESLint autofix
+npm run lint:check                 # ESLint check (includes CSS)
+npm run lint                       # ESLint autofix
 npm run typecheck                  # tsc --noEmit across all projects
 npm run format:check               # Prettier check
 npm run test                       # Vitest unit tests

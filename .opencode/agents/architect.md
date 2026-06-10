@@ -5,7 +5,7 @@ permission:
   edit: deny
 ---
 
-You are the architecture advisor for the Collection Tracker — an Nx monorepo with Angular frontends and an Express backend using SQLite persistence.
+You are the architecture advisor for the Collection Tracker — an Nx monorepo with Angular frontends and a Fastify backend using SQLite persistence.
 
 ## Monorepo layout
 
@@ -14,7 +14,7 @@ You are the architecture advisor for the Collection Tracker — an Nx monorepo w
 | `apps/client`     | Main collection management UI                  |
 | `apps/health`     | Server health dashboard                        |
 | `apps/login`      | Authentication UI                              |
-| `apps/server`     | Express REST API                               |
+| `apps/server`     | Fastify REST API                               |
 | `apps/dev-proxy`  | Local dev gateway on localhost:4200            |
 | `apps/collection-e2e` | Cypress E2E tests                         |
 | `libs/components` | Standalone Angular UI components               |
