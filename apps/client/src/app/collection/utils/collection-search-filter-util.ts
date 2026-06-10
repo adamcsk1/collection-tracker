@@ -1,5 +1,5 @@
 import { effect, untracked } from '@angular/core';
-import { VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
+import { VIRTUAL_UNCOMPLETED_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { StandardSearchSetupOptions } from './collection-search-filter-model';
 
@@ -9,6 +9,7 @@ export const buildStandardSearchFilters = (
 ): CollectionItemFiltersApiModel => {
   const search = searchText.trim();
   if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false, listType };
+  if (search === VIRTUAL_UNCOMPLETED_TAG) return { completed: false, listType };
   if (search.startsWith('#')) return { tags: [search], tagMode: 'all', listType };
   return search ? { search, listType } : { listType };
 };

@@ -1,11 +1,12 @@
 import {
-  buildEpisodeProgressTag as buildSharedEpisodeProgressTag,
   filterEditableTags as filterSharedEditableTags,
+  filterDisplayTags as filterSharedDisplayTags,
   forbiddenInternalTagTextValidation,
+  filterEditorPreservedTags as filterSharedEditorPreservedTags,
   invalidInternalCollectionTagValidation as sharedInvalidInternalCollectionTagValidation,
-  parseEpisodeProgress as parseSharedEpisodeProgress,
-  removeEpisodeProgressTags as removeSharedEpisodeProgressTags,
+  serverManagedTagValidation as sharedServerManagedTagValidation,
   typeTagValidation as sharedTypeTagValidation,
+  userActionTagValidation as sharedUserActionTagValidation,
   virtualTagValidation as sharedVirtualTagValidation,
 } from '@shared/utils/collection-item-tag-validation-util';
 
@@ -37,6 +38,18 @@ export const virtualTagValidation = (tags: readonly string[]): VirtualTagValidat
   return error?.kind === 'virtualTag' ? error : undefined;
 };
 
+export const serverManagedTagValidation = (
+  tags: readonly string[]
+): ForbiddenInternalTagValidationError | undefined => {
+  const error = sharedServerManagedTagValidation(tags);
+  return error?.kind === 'usedInternalTag' ? error : undefined;
+};
+
+export const userActionTagValidation = (tags: readonly string[]): ForbiddenInternalTagValidationError | undefined => {
+  const error = sharedUserActionTagValidation(tags);
+  return error?.kind === 'usedInternalTag' ? error : undefined;
+};
+
 export const invalidInternalCollectionTagValidation = (
   tags: readonly string[]
 ): InvalidInternalCollectionTagValidationError | undefined => {
@@ -49,7 +62,6 @@ export const typeTagValidation = (tags: readonly string[]): MissingTypeTagValida
   return error?.kind === 'missingTypeTag' ? error : undefined;
 };
 
-export const removeEpisodeProgressTags = removeSharedEpisodeProgressTags;
 export const filterEditableTags = filterSharedEditableTags;
-export const buildEpisodeProgressTag = buildSharedEpisodeProgressTag;
-export const parseEpisodeProgress = parseSharedEpisodeProgress;
+export const filterDisplayTags = filterSharedDisplayTags;
+export const filterEditorPreservedTags = filterSharedEditorPreservedTags;

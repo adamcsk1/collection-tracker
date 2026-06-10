@@ -8,7 +8,7 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
+import { VIRTUAL_UNCOMPLETED_TAG, VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -47,6 +47,7 @@ describe('List', () => {
   const buildFilters = (searchText: string): CollectionItemFiltersApiModel => {
     const search = searchText.trim();
     if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false };
+    if (search === VIRTUAL_UNCOMPLETED_TAG) return { completed: false };
     if (search.startsWith('#')) return { tags: [search], tagMode: 'all' };
     return search ? { search } : {};
   };
@@ -215,6 +216,21 @@ describe('List', () => {
       fixture.detectChanges();
 
       expect(api.searchItems).toHaveBeenLastCalledWith({ watched: false }, 0, 50);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('maps virtual uncompleted search to completed=false server filter', async () => {
+    vi.useFakeTimers();
+    try {
+      collectionState.setState('searchText', VIRTUAL_UNCOMPLETED_TAG);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await vi.runAllTimersAsync();
+      fixture.detectChanges();
+
+      expect(api.searchItems).toHaveBeenLastCalledWith({ completed: false }, 0, 50);
     } finally {
       vi.useRealTimers();
     }

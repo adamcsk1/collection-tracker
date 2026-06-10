@@ -222,16 +222,6 @@ describe('NewItemDialog component', () => {
     expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', undefined, 'series-tracker', true);
   });
 
-  it('passes disabled series metadata fetch value for series tracker items', async () => {
-    fixture.componentRef.setInput('seriesTracker', true);
-    component['form'].selectedIMDbId().value.set('tt123');
-    component['form'].fetchSeriesMetadata().value.set(false);
-
-    await component['onSave']('close');
-
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'close', undefined, 'series-tracker', false);
-  });
-
   it('filters matched content to series in series tracker mode', () => {
     fixture.componentRef.setInput('seriesTracker', true);
     service.matchedContent.mockReturnValue([

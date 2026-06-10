@@ -1,0 +1,58 @@
+.no-metadata-message {
+  text-align: center;
+  padding: var(--size-md);
+}
+
+.no-metadata-message p {
+  margin-bottom: var(--size-md);
+}
+
+.seasons-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-xs);
+
+  .season-toggle-row {
+    display: flex;
+    align-items: center;
+    padding: var(--size-2xs) 0;
+    margin-bottom: var(--size-2xs);
+  }
+
+  .card-title {
+    display: flex;
+    gap: var(--size-xs);
+  }
+
+  .episodes-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-2xs);
+    padding-top: var(--size-xs);
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: var(--size-xs);
+      cursor: pointer;
+      padding: var(--size-2xs) 0;
+    }
+
+    .checkbox-label input[type='checkbox'] {
+      width: var(--size-lg);
+      height: var(--size-lg);
+      cursor: pointer;
+    }
+
+    .episode-label {
+      display: flex;
+      flex-direction: column;
+      gap: var(--size-2xs);
+    }
+
+    .episode-title {
+      opacity: 0.7;
+      font-size: 0.9em;
+    }
+  }
+}

@@ -5,34 +5,48 @@ import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { LinkButton } from '@components/link-button/link-button';
-import { Select } from '@components/select/select';
 import { Textarea } from '@components/textarea/textarea';
+import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
-import { FAVORITE_TAG, WATCH_LATER_TAG, WATCHED_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
-import { CollectionItemChangeApiModel, SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
+import {
+  COMPLETED_TAG,
+  FAVORITE_TAG,
+  MOVIE_TAG,
+  SERIES_TAG,
+  WATCH_LATER_TAG,
+  WATCHED_TAG,
+  WISHLIST_TAG,
+} from '@shared/constants/tags-const';
+import {
+  CollectionItemChangeApiModel,
+  SeriesTrackerSeasonMetadataModel,
+  SeriesTrackerWatchedEpisodeModel,
+} from '@shared/models/api-model';
 import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { firstValueFrom, map, mergeMap, of } from 'rxjs';
+import { catchError, firstValueFrom, map, mergeMap, of, tap, throwError } from 'rxjs';
 import { sharesStateToken } from '../../shares/shares-store';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionService } from '../collection-service';
 import { TagSuggestionService } from '../new-item-dialog/suggestion/tag-suggestion-service';
 import { SeriesSeasonMetadataDialog } from '../series-season-metadata-dialog/series-season-metadata-dialog';
+import { WatchedEpisodesDialog } from '../watched-episodes-dialog/watched-episodes-dialog';
 import { getProxyImageUrl } from '../utils/proxy-image-url-util';
+import { formatSeriesTrackerEpisode } from '../utils/series-tracker-progress-util';
 import {
-  buildEpisodeProgressTag,
+  filterDisplayTags,
+  filterEditorPreservedTags,
   filterEditableTags,
   invalidInternalCollectionTagValidation,
-  parseEpisodeProgress,
-  removeEpisodeProgressTags,
+  serverManagedTagValidation,
   typeTagValidation,
+  userActionTagValidation,
   virtualTagValidation,
 } from '../validators/tag-validators';
 import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
@@ -48,15 +62,13 @@ interface ItemDialogFormModel {
   image: string;
   genreText: string;
   tagsText: string;
-  watchedUpToSeason: number | null;
-  watchedUpToEpisode: number | null;
   actors: string;
   plot: string;
 }
 
 @Component({
   selector: 'ct-item-dialog',
-  imports: [FormField, FormRoot, DialogShell, Autocomplete, Input, LinkButton, Select, Textarea],
+  imports: [FormField, FormRoot, DialogShell, Autocomplete, Input, LinkButton, Textarea],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
   providers: [TagSuggestionService, GenreSuggestionService],
@@ -72,6 +84,7 @@ export class ItemDialog implements OnInit {
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
+  private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
@@ -90,14 +103,14 @@ export class ItemDialog implements OnInit {
     labelUserRate: computed(() => this.ngxSignalTranslate.translate('UserRate')),
     labelImageUrl: computed(() => this.ngxSignalTranslate.translate('ImageUrl')),
     altImageExample: computed(() => this.ngxSignalTranslate.translate('Alt.ImageExample')),
+    altPoster: computed(() => this.ngxSignalTranslate.translate('Alt.Poster', { title: this.collectionItem().title })),
     genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
     hintSeparateGenres: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateGenres')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
+    systemTags: computed(() => this.ngxSignalTranslate.translate('SystemTags')),
     watchedUpTo: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo')),
-    labelWatchedUpToSeason: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo.Season')),
-    labelWatchedUpToEpisode: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo.Episode')),
-    hintWatchedUpToSeason: computed(() => this.ngxSignalTranslate.translate('Hint.WatchedUpToSeason')),
-    hintWatchedUpToEpisode: computed(() => this.ngxSignalTranslate.translate('Hint.WatchedUpToEpisode')),
+    manageWatchedEpisodes: computed(() => this.ngxSignalTranslate.translate('ManageWatchedEpisodes')),
+    markAllEpisodesWatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesWatched')),
     hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
     actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
     plot: computed(() => this.ngxSignalTranslate.translate('Plot')),
@@ -138,8 +151,6 @@ export class ItemDialog implements OnInit {
     image: '',
     genreText: '',
     tagsText: '',
-    watchedUpToSeason: null,
-    watchedUpToEpisode: null,
     actors: '',
     plot: '',
   });
@@ -151,6 +162,14 @@ export class ItemDialog implements OnInit {
       validate(item.tagsText, ({ value }) => {
         const tags = [...parseTagText(value()), ...this.originalInternalTags()];
         return virtualTagValidation(tags);
+      });
+      validate(item.tagsText, ({ value }) => {
+        const tags = [...parseTagText(value()), ...this.originalInternalTags()];
+        return serverManagedTagValidation(tags);
+      });
+      validate(item.tagsText, ({ value }) => {
+        const tags = [...parseTagText(value()), ...this.originalInternalTags()];
+        return userActionTagValidation(tags);
       });
       validate(item.tagsText, ({ value }) => {
         const tags = [...parseTagText(value()), ...this.originalInternalTags()];
@@ -204,6 +223,12 @@ export class ItemDialog implements OnInit {
           .errors()
           .some((error) => error.kind === 'invalidInternalCollectionTag')
       ),
+      usedInternalTag: computed(() =>
+        this.form
+          .tagsText()
+          .errors()
+          .some((error) => error.kind === 'usedInternalTag')
+      ),
       missingTypeTag: computed(() =>
         this.form
           .tagsText()
@@ -234,41 +259,22 @@ export class ItemDialog implements OnInit {
   };
   protected readonly genreText = computed(() => this.form.genreText().value());
   protected readonly tagsText = computed(() => this.form.tagsText().value());
-  private readonly fallbackSeasonOptions = [
-    { text: '-', value: null },
-    ...Array.from({ length: MAX_SERIES_TRACKER_SEASONS }, (_, index) => ({ text: `${index + 1}`, value: index + 1 })),
-  ];
-  private readonly fallbackEpisodeOptions = [
-    { text: '-', value: null },
-    ...Array.from({ length: MAX_SERIES_TRACKER_EPISODES }, (_, index) => ({ text: `${index + 1}`, value: index + 1 })),
-  ];
   protected readonly seriesSeasons = signal<SeriesTrackerSeasonMetadataModel[]>([]);
-  protected readonly seasonOptions = computed(() => {
-    const seasons = this.seriesSeasons();
-    return seasons.length
-      ? [{ text: '-', value: null }, ...seasons.map((season) => ({ text: `${season.season}`, value: season.season }))]
-      : this.fallbackSeasonOptions;
+  protected readonly watchedEpisodes = signal<SeriesTrackerWatchedEpisodeModel[]>([]);
+  protected readonly lastWatchedEpisode = computed(() => {
+    const episodes = this.watchedEpisodes();
+    if (!episodes.length) return null;
+    const last = episodes[episodes.length - 1];
+    return { season: last.season, episode: last.episode };
   });
-  protected readonly episodeOptions = computed(() => {
-    const selectedSeason = this.form.watchedUpToSeason().value();
-    const seasonMetadata = this.seriesSeasons().find((season) => season.season === selectedSeason);
-    return seasonMetadata
-      ? [
-          { text: '-', value: null },
-          ...Array.from({ length: seasonMetadata.episodes }, (_, index) => ({
-            text: `${index + 1}`,
-            value: index + 1,
-          })),
-        ]
-      : this.fallbackEpisodeOptions;
-  });
-  protected readonly detailTags = computed(() => filterEditableTags(this.collectionItem().tags));
-  protected readonly episodeProgress = computed(() => parseEpisodeProgress(this.collectionItem().tags));
+  protected readonly detailTags = computed(() =>
+    filterDisplayTags(this.collectionItem().tags).filter((tag) => !this.isSystemDisplayTag(tag))
+  );
+  protected readonly systemTags = computed(() =>
+    filterDisplayTags(this.collectionItem().tags).filter((tag) => this.isSystemDisplayTag(tag))
+  );
   protected readonly episodeProgressText = computed(() => {
-    const progress = this.episodeProgress();
-    return progress
-      ? `S${`${progress.season}`.padStart(2, '0')}E${`${progress.episode}`.padStart(2, '0')}`
-      : this.translations.fallbackNotAvailable();
+    return formatSeriesTrackerEpisode(this.lastWatchedEpisode()) ?? this.translations.fallbackNotAvailable();
   });
   protected readonly editMode = signal(false);
   protected readonly posterImageFailed = signal(false);
@@ -318,6 +324,10 @@ export class ItemDialog implements OnInit {
     if (this.wishlist()) return WISHLIST_TAG;
     return null;
   });
+  protected readonly hasInternalCollectionTag = computed(() => {
+    const tags = this.collectionItem().tags;
+    return tags.includes(WATCH_LATER_TAG) || tags.includes(WISHLIST_TAG);
+  });
   protected readonly dialogTitle = computed(() =>
     this.watchLater()
       ? this.translations.titleWatchLaterItem()
@@ -345,6 +355,7 @@ export class ItemDialog implements OnInit {
   public ngOnInit(): void {
     this.resetFormFromItem(this.collectionItem());
     this.loadSeriesSeasons();
+    this.loadWatchedEpisodes();
   }
 
   private loadSeriesSeasons(): void {
@@ -352,32 +363,19 @@ export class ItemDialog implements OnInit {
     this.api
       .getSeriesTrackerSeasons(this.collectionItem().IMDbId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => this.setSeriesSeasons(response.seasons));
+      .subscribe((response) => this.seriesSeasons.set(response.seasons));
   }
 
-  private setSeriesSeasons(seasons: SeriesTrackerSeasonMetadataModel[]): void {
-    this.seriesSeasons.set(seasons);
-    this.normalizeWatchedUpToSelection();
-  }
-
-  private normalizeWatchedUpToSelection(): void {
-    const selectedSeason = this.form.watchedUpToSeason().value();
-    const selectedEpisode = this.form.watchedUpToEpisode().value();
-    if (selectedSeason === null) {
-      if (selectedEpisode !== null) this.form.watchedUpToEpisode().value.set(null);
-      return;
-    }
-
-    const seasonMetadata = this.seriesSeasons().find((season) => season.season === selectedSeason);
-    if (!seasonMetadata) return;
-    if (selectedEpisode !== null && selectedEpisode > seasonMetadata.episodes) {
-      this.form.watchedUpToEpisode().value.set(null);
-    }
+  private loadWatchedEpisodes(): void {
+    if (!this.seriesTracker() || !this.isOwnItem()) return;
+    this.api
+      .getSeriesTrackerWatchedEpisodes(this.collectionItem().IMDbId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => this.watchedEpisodes.set(response.watchedEpisodes));
   }
 
   private resetFormFromItem(item: CollectionItemModel): void {
     const change = toCollectionItemChange(item);
-    const episodeProgress = parseEpisodeProgress(change.tags);
     const internalTags = change.tags.filter((tag) => tag === WATCH_LATER_TAG || tag === WISHLIST_TAG);
     this.originalInternalTags.set(internalTags);
     this.form().reset({
@@ -391,22 +389,24 @@ export class ItemDialog implements OnInit {
       image: change.image,
       genreText: change.genre.join(', '),
       tagsText: filterEditableTags(change.tags).join(' '),
-      watchedUpToSeason: episodeProgress?.season ?? null,
-      watchedUpToEpisode: episodeProgress?.episode ?? null,
       actors: change.actors,
       plot: change.plot,
     });
     this.lastSavedItem.set(change);
   }
 
+  private applySyncedCollectionItem(item: CollectionItemModel | undefined): void {
+    if (!item) return;
+    const currentItem = this.collectionItem();
+    this.collectionService.updateCollectionItem(currentItem.IMDbId, item, currentItem.ownerShareCode);
+    this.collectionItem.set(item);
+    this.resetFormFromItem(item);
+    this.posterImageFailed.set(false);
+  }
+
   private buildItemFromForm(): CollectionItemChangeApiModel {
-    this.normalizeWatchedUpToSelection();
     const formValues = this.form().value();
-    let tags = [...parseTagText(formValues.tagsText), ...this.originalInternalTags()];
-    tags = removeEpisodeProgressTags(tags);
-    if (this.seriesTracker() && formValues.watchedUpToSeason !== null && formValues.watchedUpToEpisode !== null) {
-      tags = [...tags, buildEpisodeProgressTag(formValues.watchedUpToSeason, formValues.watchedUpToEpisode)];
-    }
+    let tags = [...parseTagText(formValues.tagsText), ...filterEditorPreservedTags(this.collectionItem().tags)];
     const internalCollectionTag = this.internalCollectionTag();
     if (internalCollectionTag && !tags.includes(internalCollectionTag)) {
       tags = [...tags, internalCollectionTag];
@@ -426,6 +426,18 @@ export class ItemDialog implements OnInit {
       actors: formValues.actors,
       plot: formValues.plot,
     };
+  }
+
+  private buildItemWithUpdatedTags(tagsToAdd: string[], tagsToRemove: string[]): CollectionItemChangeApiModel {
+    const item = this.buildItemFromForm();
+    item.tags = [...item.tags.filter((tag) => !tagsToRemove.includes(tag)), ...tagsToAdd].filter(
+      (tag, index, tags) => tags.indexOf(tag) === index
+    );
+    return item;
+  }
+
+  protected isSystemDisplayTag(tag: string): boolean {
+    return [WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, COMPLETED_TAG].includes(tag);
   }
 
   protected onDelete(): void {
@@ -463,7 +475,6 @@ export class ItemDialog implements OnInit {
   protected onReadOnly(): void {
     const lastSavedItem = this.lastSavedItem();
     if (lastSavedItem) {
-      const episodeProgress = parseEpisodeProgress(lastSavedItem.tags);
       this.form().reset({
         title: lastSavedItem.title,
         IMDbId: lastSavedItem.IMDbId,
@@ -475,8 +486,6 @@ export class ItemDialog implements OnInit {
         image: lastSavedItem.image,
         genreText: lastSavedItem.genre.join(', '),
         tagsText: filterEditableTags(lastSavedItem.tags).join(' '),
-        watchedUpToSeason: episodeProgress?.season ?? null,
-        watchedUpToEpisode: episodeProgress?.episode ?? null,
         actors: lastSavedItem.actors,
         plot: lastSavedItem.plot,
       });
@@ -493,8 +502,7 @@ export class ItemDialog implements OnInit {
     await submit(this.form);
   }
 
-  private async doSave(): Promise<void> {
-    const item = this.buildItemFromForm();
+  private async doSave(item = this.buildItemFromForm()): Promise<void> {
     const ownerShareCode = this.collectionItem().ownerShareCode;
     const confirmed = await firstValueFrom(
       this.confirm
@@ -528,31 +536,23 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMarkAsWatched(): Promise<void> {
-    if (this.internalCollectionTag()) return;
-    const tags = parseTagText(this.form.tagsText().value());
-    if (tags.includes(WATCHED_TAG)) return;
-    this.form.tagsText().value.set([...tags, WATCHED_TAG].join(' '));
-    await this.onSaveChanges();
+    if (this.internalCollectionTag() || this.hasInternalCollectionTag()) return;
+    if (this.collectionItem().tags.includes(WATCHED_TAG)) return;
+    await this.doSave(this.buildItemWithUpdatedTags([WATCHED_TAG], []));
   }
 
   protected async onMarkAsUnwatched(): Promise<void> {
-    const tags = parseTagText(this.form.tagsText().value());
-    this.form.tagsText().value.set(tags.filter((tag) => tag !== WATCHED_TAG).join(' '));
-    await this.onSaveChanges();
+    await this.doSave(this.buildItemWithUpdatedTags([], [WATCHED_TAG]));
   }
 
   protected async onMarkAsFavorite(): Promise<void> {
-    if (this.internalCollectionTag()) return;
-    const tags = parseTagText(this.form.tagsText().value());
-    if (tags.includes(FAVORITE_TAG)) return;
-    this.form.tagsText().value.set([...tags, FAVORITE_TAG].join(' '));
-    await this.onSaveChanges();
+    if (this.internalCollectionTag() || this.hasInternalCollectionTag()) return;
+    if (this.collectionItem().tags.includes(FAVORITE_TAG)) return;
+    await this.doSave(this.buildItemWithUpdatedTags([FAVORITE_TAG], []));
   }
 
   protected async onRemoveFavorite(): Promise<void> {
-    const tags = parseTagText(this.form.tagsText().value());
-    this.form.tagsText().value.set(tags.filter((tag) => tag !== FAVORITE_TAG).join(' '));
-    await this.onSaveChanges();
+    await this.doSave(this.buildItemWithUpdatedTags([], [FAVORITE_TAG]));
   }
 
   protected onRefreshSeriesMetadata(): void {
@@ -560,18 +560,25 @@ export class ItemDialog implements OnInit {
     this.confirm
       .open(this.ngxSignalTranslate.translate('Confirm.RefreshSeriesMetadata'))
       .pipe(
-        mergeMap((confirmed) =>
-          confirmed
-            ? this.api
-                .refreshSeriesTrackerSeasons(this.collectionItem().IMDbId)
-                .pipe(map((result) => ({ confirmed, result })))
-            : of({ confirmed, result: null })
-        ),
+        mergeMap((confirmed) => {
+          if (!confirmed) return of({ confirmed, result: null });
+          this.spinnerLoadingState.setState('show', true);
+          return this.api.refreshSeriesTrackerSeasons(this.collectionItem().IMDbId).pipe(
+            map((result) => ({ confirmed, result })),
+            tap(() => this.spinnerLoadingState.setState('show', false)),
+            catchError((error) => {
+              this.spinnerLoadingState.setState('show', false);
+              return throwError(() => error);
+            })
+          );
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(({ confirmed, result }) => {
         if (!confirmed || !result) return;
-        this.setSeriesSeasons(result.seasons);
+        this.seriesSeasons.set(result.seasons);
+        this.applySyncedCollectionItem(result.item);
+        this.collectionService.triggerReload();
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataRefreshed'));
       });
   }
@@ -592,19 +599,77 @@ export class ItemDialog implements OnInit {
       )
       .subscribe(({ confirmed, result }) => {
         if (!confirmed || !result) return;
-        this.setSeriesSeasons(result.seasons);
+        this.seriesSeasons.set(result.seasons);
+        this.applySyncedCollectionItem(result.item);
+        this.collectionService.triggerReload();
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataDeleted'));
       });
   }
 
   protected onManageSeriesMetadata(): void {
     if (!this.seriesTracker() || !this.permissionUpdate()) return;
-    const collectionItem = this.collectionItem();
+    let collectionItem = this.collectionItem();
     this.portal.open(SeriesSeasonMetadataDialog, {
       imdbId: collectionItem.IMDbId,
       initialSeasons: this.seriesSeasons(),
-      saved: (seasons: SeriesTrackerSeasonMetadataModel[]) => this.setSeriesSeasons(seasons),
+      saved: (seasons: SeriesTrackerSeasonMetadataModel[], item?: CollectionItemModel) => {
+        this.seriesSeasons.set(seasons);
+        if (item) {
+          collectionItem = item;
+          this.applySyncedCollectionItem(item);
+        }
+        this.collectionService.triggerReload();
+      },
       closed: () => this.portal.open(ItemDialog, { collectionItem }),
     });
+  }
+
+  protected onManageWatchedEpisodes(): void {
+    if (!this.seriesTracker() || !this.permissionUpdate()) return;
+    let collectionItem = this.collectionItem();
+    this.portal.open(WatchedEpisodesDialog, {
+      imdbId: collectionItem.IMDbId,
+      saved: (watchedEpisodes: SeriesTrackerWatchedEpisodeModel[], item?: CollectionItemModel) => {
+        this.watchedEpisodes.set(watchedEpisodes);
+        if (item) {
+          collectionItem = item;
+          this.applySyncedCollectionItem(item);
+        }
+        this.collectionService.triggerReload();
+      },
+      closed: () => this.portal.open(ItemDialog, { collectionItem }),
+    });
+  }
+
+  protected onMarkAllEpisodesWatched(): void {
+    if (!this.seriesTracker() || !this.permissionUpdate()) return;
+    if (!this.seriesSeasons().length) {
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SetSeasonMetadataFirst'));
+      return;
+    }
+    this.confirm
+      .open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesWatched'))
+      .pipe(
+        mergeMap((confirmed) => {
+          if (!confirmed) return of({ confirmed, result: null });
+          this.spinnerLoadingState.setState('show', true);
+          return this.api.markAllSeriesTrackerWatched(this.collectionItem().IMDbId).pipe(
+            map((result) => ({ confirmed, result })),
+            tap(() => this.spinnerLoadingState.setState('show', false)),
+            catchError((error) => {
+              this.spinnerLoadingState.setState('show', false);
+              return throwError(() => error);
+            })
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(({ confirmed, result }) => {
+        if (!confirmed || !result) return;
+        this.watchedEpisodes.set(result.watchedEpisodes);
+        this.applySyncedCollectionItem(result.item);
+        this.collectionService.triggerReload();
+        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedWatched'));
+      });
   }
 }

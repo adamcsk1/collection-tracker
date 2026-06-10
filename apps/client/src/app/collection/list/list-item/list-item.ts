@@ -1,7 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, VIRTUAL_UNWATCHED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import {
+  COMPLETED_TAG,
+  FAVORITE_TAG,
+  MOVIE_TAG,
+  SERIES_TAG,
+  VIRTUAL_UNWATCHED_TAG,
+  WATCHED_TAG,
+} from '@shared/constants/tags-const';
 import { CollectionListDisplayRatingModel } from '@shared/models/collection-list-display-preferences-model';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -83,7 +90,12 @@ export class ListItem {
     const item = this.collectionItem();
     return this.sharesState.state.incoming().some((share) => share.ownerUserShareCode === item.ownerShareCode);
   });
+  protected readonly seriesTrackerCompleted = computed(() => {
+    const item = this.collectionItem();
+    return item.listType === 'series-tracker' && item.tags.includes(COMPLETED_TAG);
+  });
   protected readonly translations = {
+    completed: computed(() => this.ngxSignalTranslate.translate('Completed')),
     favorite: computed(() => this.ngxSignalTranslate.translate('Favorite')),
     metacriticShort: computed(() => this.ngxSignalTranslate.translate('MetacriticShort')),
     rottenTomatoesShort: computed(() => this.ngxSignalTranslate.translate('RottenTomatoesShort')),
@@ -128,10 +140,11 @@ export class ListItem {
   }
 
   protected onSetSearchText(searchValue: string | number | null, event?: Event): void {
+    event?.stopPropagation();
+    event?.preventDefault();
     if (this.useAiSearch()) return;
 
     if (searchValue !== null) {
-      event?.stopPropagation();
       this.collectionState.setState('forceStandardSearch', true);
       this.collectionState.setState('searchText', `${searchValue}`);
     }

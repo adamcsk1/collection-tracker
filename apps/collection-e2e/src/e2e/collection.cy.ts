@@ -155,6 +155,8 @@ describe('Collection — add a new element', () => {
     CollectionPage.getNewItemUserRateInput().type('8.7');
     CollectionPage.getNewItemSaveAndCloseButton().click();
 
+    CollectionPage.setListPreferredRatingToUser();
+    CollectionPage.visit();
     CollectionPage.getListItemUserRates().should('contain.text', '8.7');
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogUserRateChip().should('contain.text', '8.7');
@@ -182,11 +184,13 @@ describe('Collection — edit an element', () => {
 
   it('opens item dialog and shows edit button', () => {
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().should('be.visible');
   });
 
   it('enters edit mode and the save button appears', () => {
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().click();
     CollectionPage.getItemDialogSaveButton().should('be.visible');
   });
@@ -202,6 +206,7 @@ describe('Collection — delete an element', () => {
   it('deletes the item and the empty state becomes visible', () => {
     cy.on('window:confirm', () => true);
     CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogDeleteButton().click();
     CollectionPage.getEmptyState().should('be.visible');
   });
@@ -250,6 +255,7 @@ describe('Collection — random pick', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getRandomPickButton().should('not.be.disabled');
     CollectionPage.getRandomPickButton().click();
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogEditButton().should('be.visible');
   });
 });
@@ -386,6 +392,7 @@ describe('Collection — favorites', () => {
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkFavoriteButton().click();
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
+    CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogRemoveFavoriteButton().should('be.visible');
 
     cy.get('.dialog-overlay').click({ force: true });
@@ -469,7 +476,7 @@ describe('Collection — series tracker', () => {
   });
 
   it('adds a series and persists watched-up-to progress', () => {
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.intercept('PUT', `/api/v1/series-tracker/tt8200001/watched-episodes`).as('saveWatchedEpisodes');
     cy.on('window:confirm', () => true);
 
     CommonPage.openMenu();
@@ -490,12 +497,18 @@ describe('Collection — series tracker', () => {
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', seriesTitle);
 
+    cy.request('PUT', `/api/v1/series-tracker/tt8200001/seasons`, {
+      seasons: [{ season: 1, episodes: 3 }],
+    });
+    CollectionPage.visitSeriesTracker();
+
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.getItemDialogEditButton().click();
-    CollectionPage.getItemDialogWatchedUpToSeasonSelect().select('1');
-    CollectionPage.getItemDialogWatchedUpToEpisodeSelect().select('2');
-    CollectionPage.getItemDialogSaveButton().click();
-    cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
+    CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
+    CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(1).check();
+    CollectionPage.getWatchedEpisodesSaveButton().click();
+    cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
 
     cy.reload();

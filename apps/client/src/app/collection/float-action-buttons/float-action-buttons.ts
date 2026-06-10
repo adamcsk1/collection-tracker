@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, OnDestroy, signal } from '@angular/core';
-import { ImageIcon } from '@components/image-icon/image-icon';
 import { apiStateToken } from '@services/api/api-store';
-import { getBasePath } from '@shared/utils/get-base-path-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainStateToken } from '../../main/main-store';
@@ -11,7 +9,6 @@ import { FloatActionButtonsService } from './float-action-buttons-service';
   selector: 'ct-float-action-buttons',
   templateUrl: './float-action-buttons.html',
   styleUrl: './float-action-buttons.css',
-  imports: [ImageIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FloatActionButtons implements OnDestroy {
@@ -40,6 +37,9 @@ export class FloatActionButtons implements OnDestroy {
   protected readonly aiAvailable = this.mainState.state.aiAvailable;
   protected readonly config = this.actionButtons.config;
   protected readonly useAiSearch = computed(() => this.config().useAiSearch);
+  protected readonly aiSearchIcon = computed(() =>
+    !this.useAiSearch() && this.aiAvailable() ? 'search' : 'psychology'
+  );
   protected readonly showFloatButtons = signal(false);
   protected readonly actionButtonsVisible = computed(() => this.config().showActions && this.showFloatButtons());
   protected readonly canShowActionButton = computed(() => {
@@ -51,7 +51,6 @@ export class FloatActionButtons implements OnDestroy {
     return config.showAddButton && !config.showAiSearchButton && !config.showRandomPickButton;
   });
   protected readonly showFloatActions = computed(() => this.config().showActions && this.canShowActionButton());
-  protected readonly ollamaIcon = `${getBasePath()}/client/images/ollama-icon.png`;
 
   constructor() {
     effect(() => {

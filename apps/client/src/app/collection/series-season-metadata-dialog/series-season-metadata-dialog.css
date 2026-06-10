@@ -8,6 +8,10 @@
   gap: var(--size-md);
   align-items: end;
   margin: var(--size-sm) 0;
+
+  .card {
+    width: 100%;
+  }
 }
 
 .card-body-row {
@@ -25,6 +29,29 @@
     margin-bottom: var(--size-3xs);
   }
 }
+
+.episode-titles-details {
+  margin-top: var(--size-sm);
+
+  summary {
+    cursor: pointer;
+    font-weight: 500;
+  }
+}
+
+.episode-titles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--size-sm);
+  margin-top: var(--size-sm);
+}
+
+.no-metadata-message {
+  color: var(--color-warning);
+  font-style: italic;
+  margin: var(--size-sm) 0;
+}
+
 .validation-message {
   color: var(--color-danger);
 }

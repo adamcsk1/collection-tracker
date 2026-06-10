@@ -18,24 +18,13 @@
       <div class="float-button">
         <button
           data-test-id="ai-search-toggle"
-          class="button-icon"
+          class="button-icon material-icons"
           [attr.aria-label]="translations.searchSwitchButtonLabel()"
           [title]="translations.searchSwitchButtonLabel()"
           [disabled]="apiLoadNetworkStatus() === 'pending' || !aiAvailable()"
-          [class.material-icons]="!useAiSearch() && aiAvailable()"
           (click)="onToggleAiSearch()"
         >
-          @if (!useAiSearch()) {
-            @if (aiAvailable()) {
-              search
-            } @else {
-              <span class="ai-offline-icon">
-                <libc-image-icon [ariaLabel]="translations.aiSearchOffline()" [imageUrl]="ollamaIcon" />
-              </span>
-            }
-          } @else {
-            <libc-image-icon [ariaLabel]="translations.aiSearch()" [imageUrl]="ollamaIcon" />
-          }
+          {{ aiSearchIcon() }}
         </button>
       </div>
     }
