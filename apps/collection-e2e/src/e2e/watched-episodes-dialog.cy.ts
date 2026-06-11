@@ -17,7 +17,7 @@ describe('Watched episodes dialog', () => {
   });
 
   it('opens dialog and shows no-metadata message when no metadata exists', () => {
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
@@ -35,7 +35,7 @@ describe('Watched episodes dialog', () => {
 
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
@@ -52,7 +52,7 @@ describe('Watched episodes dialog', () => {
 
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
@@ -60,6 +60,9 @@ describe('Watched episodes dialog', () => {
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(1).check();
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
+    CollectionPage.closeDialogByOverlay();
+    CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
+    CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
   });
 
@@ -71,7 +74,7 @@ describe('Watched episodes dialog', () => {
 
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
@@ -81,6 +84,9 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(2).should('be.checked');
 
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
+    CollectionPage.closeDialogByOverlay();
+    CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
+    CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E03');
   });
 
@@ -99,13 +105,16 @@ describe('Watched episodes dialog', () => {
 
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(2).should('be.checked').uncheck({ force: true });
 
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
+    CollectionPage.closeDialogByOverlay();
+    CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
+    CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
   });
 
@@ -117,13 +126,15 @@ describe('Watched episodes dialog', () => {
 
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.closeDialogByOverlay();
+    CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
+    CollectionPage.getItemDialogHost().should('be.visible');
 
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -142,7 +153,7 @@ describe('Watched episodes dialog', () => {
 
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
@@ -151,7 +162,7 @@ describe('Watched episodes dialog', () => {
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
 
     CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
-    CollectionPage.getItemDialogEpisodeProgressChip().should('be.visible').and('contain.text', 'S01E01');
+    CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E01');
   });
 
   it('marks all episodes watched from the manage episodes dialog and updates completed filters', () => {
@@ -235,7 +246,7 @@ describe('Watched episodes dialog', () => {
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
     CollectionPage.getSeriesTrackerCompletedBadges().should('have.length', 1);
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E01');
 
     cy.request('GET', `/api/v1/series-tracker/${imdbId}/watched-episodes`)

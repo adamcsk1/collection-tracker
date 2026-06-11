@@ -20,7 +20,7 @@ describe('Series metadata dialog', () => {
     cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/seasons`).as('saveSeriesMetadata');
     cy.on('window:confirm', () => true);
 
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
     CollectionPage.openItemDialogActionsMenu();
@@ -45,13 +45,14 @@ describe('Series metadata dialog', () => {
   });
 
   it('reopens the item dialog when the metadata dialog is closed without saving', () => {
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     CollectionPage.getSeriesMetadataAddButton().click();
     cy.get('.dialog-overlay').click({ force: true });
 
+    CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().should('be.visible');
   });
@@ -68,7 +69,7 @@ describe('Series metadata dialog', () => {
 
     CollectionPage.visitSeriesTracker();
     cy.wait('@getSeriesTrackerItems');
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
@@ -77,6 +78,7 @@ describe('Series metadata dialog', () => {
     cy.get('.dialog-overlay').click({ force: true });
 
     cy.getByTestId('watched-episodes-dialog').should('not.exist');
+    CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
     CollectionPage.openItemDialogActionsMenu();
@@ -84,6 +86,8 @@ describe('Series metadata dialog', () => {
 
     cy.wait('@deleteSeriesMetadata').its('response.statusCode').should('eq', 200);
     CollectionPage.closeDialogByOverlay();
+    CollectionPage.getSeriesMetadataDialogHost().should('not.exist');
+    CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
     CollectionPage.getWatchedEpisodesNoMetadataMessage().should('be.visible');
@@ -92,7 +96,7 @@ describe('Series metadata dialog', () => {
   it('saves and restores episode titles in the metadata dialog', () => {
     cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/seasons`).as('saveSeriesMetadata');
 
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
@@ -115,7 +119,7 @@ describe('Series metadata dialog', () => {
   });
 
   it('shows no-metadata message when no metadata is set', () => {
-    CollectionPage.getListItemImages({ timeout: 10000 }).first().click();
+    CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
