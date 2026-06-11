@@ -197,7 +197,7 @@ components:
       properties:
         aiAvailable:
           type: boolean
-          description: Indicates whether the configured Ollama host is reachable and the configured model is available.
+          description: Indicates whether the configured Ollama host is reachable and the configured language and embedding models are available.
 
     UserSettingsRequest:
       type: object
@@ -1923,13 +1923,13 @@ paths:
         '400':
           description: Missing or empty `prompt`.
         '502':
-          description: Ollama is unavailable, the configured model is missing, or Ollama returned an unparseable or truncated response.
+          description: Ollama is unavailable, a configured model is missing, or Ollama returned an unparseable, truncated, or invalid embedding response.
 
   /proxy/ai/available:
     get:
       operationId: proxyAiAvailable
       summary: Check whether local AI search is available
-      description: Checks Ollama host reachability and configured model availability.
+      description: Checks Ollama host reachability and configured language and embedding model availability.
       tags: [AI Proxy]
       responses:
         '200':

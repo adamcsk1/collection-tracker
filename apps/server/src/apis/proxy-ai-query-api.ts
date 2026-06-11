@@ -12,7 +12,7 @@ import { findReadableOwnerHashes } from '../core/database/repositories/share-rep
 import { jwtGuard } from '../core/jwt';
 import { debugLog, errorLog, warningLog } from '../core/logger';
 import { createOllamaClient, getOllamaConfig, validateOllamaConnection } from '../core/ollama/ollama';
-import { DEFAULT_OLLAMA_EMBEDDING_MODEL } from '../core/ollama/ollama-const';
+import { DEFAULT_OLLAMA_EMBEDDING_MODEL, DEFAULT_OLLAMA_SEMANTIC_CANDIDATE_LIMIT } from '../core/ollama/ollama-const';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
 const SYSTEM_PROMPT = `
@@ -121,6 +121,8 @@ Return the matchedIds JSON object only.`;
 };
 
 const cosineSimilarity = (firstEmbedding: number[], secondEmbedding: number[]): number => {
+  if (firstEmbedding.length !== secondEmbedding.length) return 0;
+
   const length = Math.min(firstEmbedding.length, secondEmbedding.length);
   let dotProduct = 0;
   let firstMagnitude = 0;
@@ -190,7 +192,8 @@ const getEmbeddings = async (
   client: ReturnType<typeof createOllamaClient>,
   model: string,
   input: string[],
-  keepAlive: ReturnType<typeof getOllamaConfig>['keep_alive']
+  keepAlive: ReturnType<typeof getOllamaConfig>['keep_alive'],
+  expectedDimension?: number
 ): Promise<number[][]> => {
   if (!input.length) return [];
 
@@ -199,13 +202,27 @@ const getEmbeddings = async (
     input,
     ...(keepAlive !== undefined ? { keep_alive: keepAlive } : {}),
   });
-  const embeddings = response.embeddings ?? [];
+  const embeddings: unknown = response.embeddings ?? [];
 
-  if (embeddings.length !== input.length || embeddings.some((embedding) => !embedding.length)) {
+  if (!Array.isArray(embeddings) || embeddings.length !== input.length) {
     throw new Error('invalid-embeddings');
   }
 
-  return embeddings;
+  const embeddingDimension = expectedDimension ?? (Array.isArray(embeddings[0]) ? embeddings[0].length : 0);
+
+  if (
+    !embeddingDimension ||
+    embeddings.some(
+      (embedding) =>
+        !Array.isArray(embedding) ||
+        embedding.length !== embeddingDimension ||
+        embedding.some((value) => typeof value !== 'number' || !Number.isFinite(value))
+    )
+  ) {
+    throw new Error('invalid-embeddings');
+  }
+
+  return embeddings as number[][];
 };
 
 const getRankedCandidates = async (
@@ -236,7 +253,8 @@ const getRankedCandidates = async (
       client,
       embeddingModel,
       batch.map((item) => item.aiSearchText),
-      keepAlive
+      keepAlive,
+      queryEmbedding.length
     );
 
     batch.forEach((item, index) => {
@@ -365,7 +383,7 @@ export const register = (app: FastifyInstance): void => {
       const keepAlive = ollamaConfig.keep_alive;
       const ollamaOptions = ollamaConfig.options;
       const embeddingModel = ollamaConfig.embeddingModel ?? DEFAULT_OLLAMA_EMBEDDING_MODEL;
-      const semanticCandidateLimit = ollamaConfig.semanticCandidateLimit ?? items.length;
+      const semanticCandidateLimit = ollamaConfig.semanticCandidateLimit ?? DEFAULT_OLLAMA_SEMANTIC_CANDIDATE_LIMIT;
 
       const queryBatch = async (batch: CollectionItemApiModel[]): Promise<string[]> => {
         const userMessage = buildPrompt(prompt, batch);
