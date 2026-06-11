@@ -82,12 +82,18 @@ if [ ! -f "/data/ollama.config.json" ]; then
   cat > /data/ollama.config.json <<'EOF'
 {
   "host": "http://host.docker.internal:11434",
-  "model": "qwen2.5:3b",
-  "options": {
-    "num_thread": 1
-  },
+  "model": "qwen2.5:14b",
+  "embeddingModel": "mxbai-embed-large",
+  "keep_alive": "15m",
   "batchSize": 10,
-  "parallelRequests": 1
+  "parallelRequests": 1,
+  "semanticCandidateLimit": 90,
+  "options": {
+    "temperature": 0,
+    "top_k": 10,
+    "num_thread": 10,
+    "num_ctx": 8192
+  }
 }
 EOF
   chmod 600 /data/ollama.config.json

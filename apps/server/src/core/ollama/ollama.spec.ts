@@ -85,8 +85,9 @@ describe('ollama config', () => {
 
     expect(getOllamaConfig()).toEqual({
       host: 'http://127.0.0.1:11434',
-      model: 'qwen2.5:3b',
-      options: { temperature: 0, top_k: 10, num_thread: 4 },
+      model: 'qwen2.5:14b',
+      embeddingModel: 'mxbai-embed-large',
+      options: { temperature: 0, top_k: 10, num_thread: 10, num_ctx: 8192 },
       parallelRequests: 1,
     });
   });
@@ -95,18 +96,26 @@ describe('ollama config', () => {
     const { getOllamaConfig } = await importOllama({
       host: 'http://ollama.test',
       model: 'gemma2:2b',
+      embeddingModel: 'nomic-embed-text',
       options: { temperature: 0.2, top_k: 20 },
     });
 
     expect(getOllamaConfig().host).toBe('http://ollama.test');
     expect(getOllamaConfig().model).toBe('gemma2:2b');
-    expect(getOllamaConfig().options).toEqual({ temperature: 0.2, top_k: 20, num_thread: 4 });
+    expect(getOllamaConfig().embeddingModel).toBe('nomic-embed-text');
+    expect(getOllamaConfig().options).toEqual({ temperature: 0.2, top_k: 20, num_thread: 10, num_ctx: 8192 });
   });
 
   it('merges configured Ollama options over deterministic defaults', async () => {
     const { getOllamaConfig } = await importOllama({ options: { num_thread: 24 } });
 
-    expect(getOllamaConfig().options).toEqual({ temperature: 0, top_k: 10, num_thread: 24 });
+    expect(getOllamaConfig().options).toEqual({ temperature: 0, top_k: 10, num_thread: 24, num_ctx: 8192 });
+  });
+
+  it('reads the semantic candidate limit from the config file', async () => {
+    const { getOllamaConfig } = await importOllama({ semanticCandidateLimit: 80 });
+
+    expect(getOllamaConfig().semanticCandidateLimit).toBe(80);
   });
 
   it('falls back to defaults for invalid Ollama config properties', async () => {
@@ -114,8 +123,9 @@ describe('ollama config', () => {
 
     expect(getOllamaConfig()).toEqual({
       host: 'http://127.0.0.1:11434',
-      model: 'qwen2.5:3b',
-      options: { temperature: 0, top_k: 10, num_thread: 4 },
+      model: 'qwen2.5:14b',
+      embeddingModel: 'mxbai-embed-large',
+      options: { temperature: 0, top_k: 10, num_thread: 10, num_ctx: 8192 },
       parallelRequests: 1,
     });
   });
@@ -142,6 +152,7 @@ describe('ollama config', () => {
       model: 'qwen2.5:3b',
       prompt: 'prompt',
       options: { num_predict: 40, temperature: 0, top_k: 10 },
+      format: 'json',
     });
 
     const [, requestInit] = fetchMock.mock.calls[0];
@@ -149,7 +160,26 @@ describe('ollama config', () => {
       model: 'qwen2.5:3b',
       prompt: 'prompt',
       stream: false,
+      format: 'json',
       options: { num_predict: 40, temperature: 0, top_k: 10 },
+    });
+  });
+
+  it('sends embedding requests to Ollama', async () => {
+    const { createOllamaClient } = await importOllama();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ embeddings: [[1, 2, 3]] }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await createOllamaClient('http://ollama.test').embed({
+      model: 'mxbai-embed-large',
+      input: ['query'],
+      keep_alive: '10m',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith('http://ollama.test/api/embed', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'mxbai-embed-large', input: ['query'], keep_alive: '10m' }),
     });
   });
 
@@ -201,7 +231,7 @@ describe('ollama config', () => {
     const { validateOllamaConnection } = await importOllama();
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: [{ name: 'qwen2.5:3b' }] }),
+      json: async () => ({ models: [{ name: 'qwen2.5:14b' }, { name: 'mxbai-embed-large' }] }),
     });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -210,5 +240,33 @@ describe('ollama config', () => {
     expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:11434/api/tags', {
       signal: expect.any(AbortSignal),
     });
+  });
+
+  it('accepts an installed latest tag for an untagged configured model', async () => {
+    const { validateOllamaConnection } = await importOllama({
+      model: 'qwen2.5',
+      embeddingModel: 'mxbai-embed-large',
+    });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [{ name: 'qwen2.5:latest' }, { name: 'mxbai-embed-large:latest' }] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(validateOllamaConnection()).resolves.toBeUndefined();
+  });
+
+  it('does not match a different tag when the configured model has an explicit tag', async () => {
+    const { validateOllamaConnection } = await importOllama({
+      model: 'qwen2.5:14b',
+      embeddingModel: 'mxbai-embed-large:v1',
+    });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [{ name: 'qwen2.5:14b' }, { name: 'mxbai-embed-large:latest' }] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(validateOllamaConnection()).rejects.toThrow('Ollama embedding model "mxbai-embed-large:v1"');
   });
 });

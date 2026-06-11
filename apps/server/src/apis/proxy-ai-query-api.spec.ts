@@ -30,9 +30,15 @@ describe('proxy-ai-query-api', () => {
   const mockGenerate = async (text: string, doneReason = 'stop') => {
     const { createOllamaClient } = await import('../core/ollama/ollama');
     const generate = vi.fn().mockResolvedValue({ response: text, done: true, done_reason: doneReason });
-    vi.mocked(createOllamaClient).mockReturnValue({ generate });
+    vi.mocked(createOllamaClient).mockReturnValue({ generate, embed: mockEmbed() });
     return generate;
   };
+
+  const mockEmbed = () =>
+    vi.fn(async (payload: { input: string | string[] }) => {
+      const inputs = Array.isArray(payload.input) ? payload.input : [payload.input];
+      return { embeddings: inputs.map((_, index) => [1, index + 1]) };
+    });
 
   const setupCollection = (
     files: {
@@ -101,7 +107,7 @@ describe('proxy-ai-query-api', () => {
           plot: 'The origin story of Batman.',
         },
       ]);
-      await mockGenerate('["tt0133093"]');
+      await mockGenerate('{"matchedIds":["tt0133093"]}');
 
       const { register } = await import('./proxy-ai-query-api');
       register(app);
@@ -125,16 +131,18 @@ describe('proxy-ai-query-api', () => {
           metacriticRate: '73/100',
         },
       ]);
-      const generate = await mockGenerate('[]');
+      const generate = await mockGenerate('{"matchedIds":[]}');
 
       const { register } = await import('./proxy-ai-query-api');
       register(app);
 
       await handlerPromise();
       const payload = generate.mock.calls[0][0];
-      expect(payload.system).toContain('You are a strict collection item filter for movies and series.');
-      expect(payload.system).toContain('Return ONLY a valid JSON array of decision objects.');
-      expect(payload.system).toContain('Each object must be shaped exactly like {"IMDbId":"tt0111161","match":true}.');
+      expect(payload.system).toContain('You are a strict movie and series collection search filter.');
+      expect(payload.system).toContain(
+        'Return ONLY valid JSON shaped exactly like {"matchedIds":["tt0111161","tt0068646"]}.'
+      );
+      expect(payload.system).toContain('If no candidates match, return {"matchedIds":[]}.');
       expect(payload.system).toContain('Default to excluding an item.');
       expect(payload.system).toContain('rottenTomatoesRate');
       expect(payload.system).toContain('metacriticRate');
@@ -149,8 +157,14 @@ describe('proxy-ai-query-api', () => {
       expect(payload.prompt).toContain('metacriticRate:\n73/100');
       expect(payload.prompt).toContain('actors:\nKeanu Reeves, Carrie-Anne Moss');
       expect(payload.prompt).toContain('Candidate collection items:');
-      expect(payload.prompt).toContain('Return the decision-object JSON array only.');
-      expect(payload.options).toEqual({ num_predict: 128, temperature: 0, top_k: 10, num_thread: 4 });
+      expect(payload.prompt).toContain('Return the matchedIds JSON object only.');
+      expect(payload.format).toEqual({
+        type: 'object',
+        properties: { matchedIds: { type: 'array', items: { type: 'string' } } },
+        required: ['matchedIds'],
+        additionalProperties: false,
+      });
+      expect(payload.options).toEqual({ num_predict: 64, temperature: 0, top_k: 10, num_thread: 4 });
     });
 
     it('passes configured keep_alive to Ollama', async () => {
@@ -191,8 +205,8 @@ describe('proxy-ai-query-api', () => {
       setupCollection(files);
 
       const { createOllamaClient } = await import('../core/ollama/ollama');
-      const generate = vi.fn().mockResolvedValue({ response: '[]', done: true, done_reason: 'stop' });
-      vi.mocked(createOllamaClient).mockReturnValue({ generate });
+      const generate = vi.fn().mockResolvedValue({ response: '{"matchedIds":[]}', done: true, done_reason: 'stop' });
+      vi.mocked(createOllamaClient).mockReturnValue({ generate, embed: mockEmbed() });
 
       const { register } = await import('./proxy-ai-query-api');
       register(app);
@@ -227,9 +241,9 @@ describe('proxy-ai-query-api', () => {
         maxActiveRequests = Math.max(maxActiveRequests, activeRequests);
         await Promise.resolve();
         activeRequests -= 1;
-        return { response: '[]', done: true, done_reason: 'stop' };
+        return { response: '{"matchedIds":[]}', done: true, done_reason: 'stop' };
       });
-      vi.mocked(createOllamaClient).mockReturnValue({ generate });
+      vi.mocked(createOllamaClient).mockReturnValue({ generate, embed: mockEmbed() });
 
       const { register } = await import('./proxy-ai-query-api');
       register(app);
@@ -265,9 +279,9 @@ describe('proxy-ai-query-api', () => {
         maxActiveRequests = Math.max(maxActiveRequests, activeRequests);
         await Promise.resolve();
         activeRequests -= 1;
-        return { response: '[]', done: true, done_reason: 'stop' };
+        return { response: '{"matchedIds":[]}', done: true, done_reason: 'stop' };
       });
-      vi.mocked(createOllamaClient).mockReturnValue({ generate });
+      vi.mocked(createOllamaClient).mockReturnValue({ generate, embed: mockEmbed() });
 
       const { register } = await import('./proxy-ai-query-api');
       register(app);
@@ -277,7 +291,7 @@ describe('proxy-ai-query-api', () => {
       expect(maxActiveRequests).toBe(2);
     });
 
-    it('waits for active parallel batches before returning 502 after a batch failure', async () => {
+    it('waits for active parallel batches before returning 502 after an Ollama request failure', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi movies?'), response);
       const files = Array.from({ length: 3 }, (_, index) => ({
@@ -300,11 +314,8 @@ describe('proxy-ai-query-api', () => {
       const slowBatch = new Promise<{ response: string; done: boolean; done_reason: string }>((resolve) => {
         resolveSlowBatch = resolve;
       });
-      const generate = vi
-        .fn()
-        .mockResolvedValueOnce({ response: 'not valid json', done: true, done_reason: 'stop' })
-        .mockReturnValueOnce(slowBatch);
-      vi.mocked(createOllamaClient).mockReturnValue({ generate });
+      const generate = vi.fn().mockRejectedValueOnce(new Error('network error')).mockReturnValueOnce(slowBatch);
+      vi.mocked(createOllamaClient).mockReturnValue({ generate, embed: mockEmbed() });
 
       const { register } = await import('./proxy-ai-query-api');
       register(app);
@@ -312,7 +323,7 @@ describe('proxy-ai-query-api', () => {
       await Promise.resolve();
       expect(response.code).not.toHaveBeenCalled();
 
-      resolveSlowBatch?.({ response: '[]', done: true, done_reason: 'stop' });
+      resolveSlowBatch?.({ response: '{"matchedIds":[]}', done: true, done_reason: 'stop' });
       await handlerPromise();
 
       expect(generate).toHaveBeenCalledTimes(2);
@@ -329,7 +340,7 @@ describe('proxy-ai-query-api', () => {
           plot: 'A computer hacker learns about the true nature of reality.',
         },
       ]);
-      await mockGenerate('["tt0133093", "tt9999999"]');
+      await mockGenerate('{"matchedIds":["tt0133093", "tt9999999"]}');
 
       const { register } = await import('./proxy-ai-query-api');
       register(app);
@@ -362,6 +373,84 @@ describe('proxy-ai-query-api', () => {
       expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0133093'] });
     });
 
+    it('returns IDs from malformed repeated object output', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('Which are christmas movies?'), response);
+      setupCollection([
+        {
+          imdbId: 'tt0369436',
+          title: 'Noel',
+          plot: 'A Christmas story.',
+        },
+        {
+          imdbId: 'tt8623904',
+          title: 'A Christmas Carol',
+          plot: 'A Christmas ghost story.',
+        },
+        {
+          imdbId: 'tt2294629',
+          title: 'Frozen',
+          plot: 'Two sisters in a snowy kingdom.',
+        },
+      ]);
+      await mockGenerate(`{
+        "IMDbId": "tt0369436", "match": true,
+        "IMDbId": "tt8623904", "match": true,
+        "IMDbId": "tt2294629", "match": false
+      }`);
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt8623904', 'tt0369436'] });
+    });
+
+    it('boosts exact lexical matches into the semantic candidate shortlist', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('matrix'), response);
+      setupCollection([
+        {
+          imdbId: 'tt0133093',
+          title: 'The Matrix',
+          plot: 'A computer hacker learns about the true nature of reality.',
+        },
+        {
+          imdbId: 'tt0372784',
+          title: 'Batman Begins',
+          plot: 'The origin story of Batman.',
+        },
+        {
+          imdbId: 'tt0088763',
+          title: 'Back to the Future',
+          plot: 'A teenager travels through time.',
+        },
+      ]);
+
+      const { createOllamaClient, getOllamaConfig } = await import('../core/ollama/ollama');
+      vi.mocked(getOllamaConfig).mockReturnValue({
+        host: 'http://127.0.0.1:11434',
+        model: 'qwen2.5:3b',
+        options: { temperature: 0, top_k: 10, num_thread: 4 },
+        parallelRequests: 1,
+        batchSize: 1,
+        semanticCandidateLimit: 1,
+      });
+      const generate = vi.fn().mockResolvedValue({
+        response: '{"matchedIds":["tt0133093"]}',
+        done: true,
+        done_reason: 'stop',
+      });
+      vi.mocked(createOllamaClient).mockReturnValue({ generate, embed: mockEmbed() });
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(generate.mock.calls[0][0].prompt).toContain('title:\nThe Matrix');
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0133093'] });
+    });
+
     it('filters out IDs that were not present in the queried batch', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi movies?'), response);
@@ -388,9 +477,9 @@ describe('proxy-ai-query-api', () => {
       });
       const generate = vi
         .fn()
-        .mockResolvedValueOnce({ response: '["tt0133093"]', done: true, done_reason: 'stop' })
-        .mockResolvedValueOnce({ response: '[]', done: true, done_reason: 'stop' });
-      vi.mocked(createOllamaClient).mockReturnValue({ generate });
+        .mockResolvedValueOnce({ response: '{"matchedIds":["tt0133093"]}', done: true, done_reason: 'stop' })
+        .mockResolvedValueOnce({ response: '{"matchedIds":[]}', done: true, done_reason: 'stop' });
+      vi.mocked(createOllamaClient).mockReturnValue({ generate, embed: mockEmbed() });
 
       const { register } = await import('./proxy-ai-query-api');
       register(app);
@@ -427,7 +516,7 @@ describe('proxy-ai-query-api', () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
       const { validateOllamaConnection } = await import('../core/ollama/ollama');
-      vi.mocked(validateOllamaConnection).mockRejectedValue(new Error('Ollama unavailable'));
+      vi.mocked(validateOllamaConnection).mockRejectedValueOnce(new Error('Ollama unavailable'));
 
       const { register } = await import('./proxy-ai-query-api');
       register(app);
@@ -436,7 +525,7 @@ describe('proxy-ai-query-api', () => {
       expect(response.code).toHaveBeenCalledWith(502);
     });
 
-    it('returns 502 when AI returns non-JSON', async () => {
+    it('returns 502 when AI returns unparseable text', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
       setupCollection([
@@ -488,6 +577,7 @@ describe('proxy-ai-query-api', () => {
       const { createOllamaClient } = await import('../core/ollama/ollama');
       vi.mocked(createOllamaClient).mockReturnValue({
         generate: vi.fn().mockRejectedValue(new Error('network error')),
+        embed: mockEmbed(),
       });
 
       const { register } = await import('./proxy-ai-query-api');

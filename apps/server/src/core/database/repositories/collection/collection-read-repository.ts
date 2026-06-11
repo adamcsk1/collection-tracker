@@ -8,6 +8,37 @@ import { toApiItem } from './collection-mapper';
 import { buildItemWhere, normalizeLimit, normalizeListType, normalizeOffset } from './collection-query';
 import { CollectionItemQueryOptions, CollectionItemRow } from './collection-types';
 
+export interface AiSearchCollectionItem extends CollectionItemApiModel {
+  itemId: number;
+  aiSearchContentHash: string;
+  aiSearchText: string;
+}
+
+const stringifySearchValue = (value: unknown): string => `${value ?? ''}`.replace(/\s+/g, ' ').trim();
+
+const toAiSearchItem = (db: Database.Database, row: CollectionItemRow): AiSearchCollectionItem => {
+  const apiItem = toApiItem(db, row);
+  const fields = [
+    apiItem.title,
+    apiItem.year,
+    apiItem.genre.join(', '),
+    apiItem.tags.join(', '),
+    apiItem.rate,
+    apiItem.rottenTomatoesRate,
+    apiItem.metacriticRate,
+    apiItem.userRate,
+    apiItem.actors,
+    apiItem.plot,
+  ].map(stringifySearchValue);
+
+  return {
+    ...apiItem,
+    itemId: row.id,
+    aiSearchContentHash: JSON.stringify(fields),
+    aiSearchText: fields.filter(Boolean).join('\n'),
+  };
+};
+
 export const findCollectionItems = (
   db: Database.Database,
   usernameHashes: string[],
@@ -112,6 +143,27 @@ export const findCollectionItemsForPrompt = (
     if (!row.imdb_id) return items;
     const apiItem = toApiItem(db, row);
     items.push(apiItem);
+    return items;
+  }, []);
+};
+
+export const findCollectionItemsForAiSearch = (
+  db: Database.Database,
+  usernameHashes: string[]
+): AiSearchCollectionItem[] => {
+  const rows = db
+    .prepare(
+      `SELECT *
+        FROM collection_items
+        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+         AND list_type = ?
+        ORDER BY created_at DESC, id DESC`
+    )
+    .all(...usernameHashes, 'library') as CollectionItemRow[];
+
+  return rows.reduce<AiSearchCollectionItem[]>((items, row) => {
+    if (!row.imdb_id) return items;
+    items.push(toAiSearchItem(db, row));
     return items;
   }, []);
 };

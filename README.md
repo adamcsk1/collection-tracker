@@ -95,22 +95,27 @@ Ollama config example (`.data/ollama.config.json`):
 ```json
 {
   "host": "http://127.0.0.1:11434",
-  "model": "qwen2.5:3b",
-  "keep_alive": "10m",
+  "model": "qwen2.5:14b",
+  "embeddingModel": "mxbai-embed-large",
+  "keep_alive": "15m",
   "options": {
     "temperature": 0,
     "top_k": 10,
-    "num_thread": 1
+    "num_thread": 10,
+    "num_ctx": 8192
   },
   "batchSize": 10,
-  "parallelRequests": 1
+  "parallelRequests": 1,
+  "semanticCandidateLimit": 90
 }
 ```
 
-`batchSize` controls how many collection items are sent to Ollama per query. When omitted, the entire collection is sent in a single unbatched request.
+AI search first embeds the prompt and collection items with `embeddingModel`, ranks the best semantic candidates, then asks `model` to filter those candidates and return ordered IMDb IDs.
+`semanticCandidateLimit` controls how many ranked candidates are sent to the language model after embedding retrieval.
+`batchSize` controls how many ranked candidates are sent to Ollama per generate request. When omitted, the full candidate set is sent in a single unbatched request.
 `parallelRequests` controls how many Ollama batch requests may run at once. When omitted or invalid, it defaults to `1`.
-`keep_alive` is passed to Ollama generate requests when present. When omitted, the API does not send `keep_alive`.
-Configured `options` are merged over the server `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 4 }`, so omitted option fields keep their deterministic defaults.
+`keep_alive` is passed to Ollama generate and embed requests when present. When omitted, the API does not send `keep_alive`.
+Configured `options` are merged over the server `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`, so omitted option fields keep their deterministic defaults.
 
 Full runtime example:
 
