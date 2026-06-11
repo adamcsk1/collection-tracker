@@ -14,8 +14,7 @@ COOKIE_SECRET="${randomUUID().toString('hex').replace(/-/g, '')}"
 SALT="${randomUUID().toString('hex').replace(/-/g, '')}}"
 USER_LIMIT=1
 DISABLE_REGISTRATION=0
-OMDB_API_KEY=""
-OLLAMA_MODEL="qwen2.5:3b"`;
+OMDB_API_KEY=""`;
 
 if (!existsSync(releaseFolder)) {
   mkdirSync(releaseFolder);
