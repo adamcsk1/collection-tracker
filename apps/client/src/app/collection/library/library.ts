@@ -22,7 +22,7 @@ import { FloatActionsService } from '../../main/float-actions/float-actions-serv
 import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { CollectionListDataSourceRequest } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
-import { ItemDialog } from '../item-dialog/item-dialog';
+import { ItemDialog } from '../item/item-dialog/item-dialog';
 import { List } from '../list/list';
 import { AiSearchService } from '../search/ai-search-service';
 import { buildStandardSearchFilters } from '../utils/collection-search-filter-util';

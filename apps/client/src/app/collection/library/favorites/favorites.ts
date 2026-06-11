@@ -2,14 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { ApiService } from '@services/api/api-service';
 import { FAVORITE_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { CollectionListDataSourceRequest } from '../collection-model';
-import { List } from '../list/list';
+import { CollectionListDataSourceRequest } from '../../collection-model';
+import { List } from '../../list/list';
 
 @Component({
   selector: 'ct-favorites',
   imports: [List],
   templateUrl: './favorites.html',
-  styleUrl: '../collection.css',
+  styleUrl: '../../collection.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Favorites {

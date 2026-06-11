@@ -10,7 +10,7 @@ import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
-import { CollectionService } from '../collection-service';
+import { CollectionService } from '../../collection-service';
 import { SaveMode } from './new-item-dialog-model';
 
 @Injectable()

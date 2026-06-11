@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
-import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
+import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { Wishlist } from './wishlist';
 
 describe('Wishlist', () => {

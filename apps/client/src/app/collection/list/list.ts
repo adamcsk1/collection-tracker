@@ -27,7 +27,7 @@ import { CollectionItemModel, CollectionListDataSource } from '../collection-mod
 import { collectionStateToken } from '../collection-store';
 import { FloatActionButtons } from '../float-action-buttons/float-action-buttons';
 import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
-import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
+import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
 import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS } from './list-const';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';

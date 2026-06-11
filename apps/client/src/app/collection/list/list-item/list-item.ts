@@ -17,7 +17,7 @@ import { mainStateToken } from '../../../main/main-store';
 import { sharesStateToken } from '../../../shares/shares-store';
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
-import { ItemDialog } from '../../item-dialog/item-dialog';
+import { ItemDialog } from '../../item/item-dialog/item-dialog';
 import { AiSearchService } from '../../search/ai-search-service';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
 
