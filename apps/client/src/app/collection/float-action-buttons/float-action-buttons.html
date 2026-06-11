@@ -14,14 +14,14 @@
         </button>
       </div>
     }
-    @if (config().showAiSearchButton) {
+    @if (showAiSearchButton()) {
       <div class="float-button">
         <button
           data-test-id="ai-search-toggle"
           class="button-icon material-icons"
           [attr.aria-label]="translations.searchSwitchButtonLabel()"
           [title]="translations.searchSwitchButtonLabel()"
-          [disabled]="apiLoadNetworkStatus() === 'pending' || !aiAvailable()"
+          [disabled]="apiLoadNetworkStatus() === 'pending'"
           (click)="onToggleAiSearch()"
         >
           {{ aiSearchIcon() }}

@@ -15,11 +15,6 @@
     padding: var(--size-sm);
     width: var(--icon-button-size);
     height: var(--icon-button-size);
-    border: var(--border-style);
-    border-radius: var(--border-radius);
-    background-color: transparent;
-    color: var(--text-color);
-    cursor: pointer;
 
     &:hover {
       outline: var(--outline-style);
