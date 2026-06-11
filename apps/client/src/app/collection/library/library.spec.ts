@@ -8,7 +8,11 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
-import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
+import {
+  initialMainCollectionState,
+  mainCollectionStateToken,
+  type MainCollectionState,
+} from '../../main/main-collection-store';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { AiSearchService } from '../search/ai-search-service';
 import { CollectionLibrary } from './library';
@@ -18,6 +22,8 @@ vi.mock('marked', () => ({ marked: vi.fn(() => '') }));
 describe('Collection library component', () => {
   let fixture: ComponentFixture<CollectionLibrary>;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
+  let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
+  let aiSearch: { useAiSearch: ReturnType<typeof signal<boolean>> };
   let floatActions: FloatActionsService;
   let queryParamMap: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
@@ -29,6 +35,9 @@ describe('Collection library component', () => {
 
   const createFixture = (queryParams: Record<string, unknown> = {}) => {
     queryParamMap = new BehaviorSubject(convertToParamMap(queryParams));
+    aiSearch = {
+      useAiSearch: signal(false),
+    };
     TestBed.configureTestingModule({
       imports: [CollectionLibrary],
       providers: [
@@ -40,7 +49,7 @@ describe('Collection library component', () => {
         {
           provide: AiSearchService,
           useFactory: () => ({
-            useAiSearch: signal(false),
+            useAiSearch: aiSearch.useAiSearch,
             getMatchedIds: () => of(null),
             searchInProgress: signal(false),
             checkAiAvailable: vi.fn(() => of(true)),
@@ -62,6 +71,7 @@ describe('Collection library component', () => {
 
     fixture = TestBed.createComponent(CollectionLibrary);
     collectionState = fixture.debugElement.injector.get(collectionStateToken);
+    mainCollectionState = fixture.debugElement.injector.get(mainCollectionStateToken);
     floatActions = TestBed.inject(FloatActionsService);
     fixture.detectChanges();
   };
@@ -158,6 +168,28 @@ describe('Collection library component', () => {
     fixture.componentInstance['onSearchFromUser']();
 
     expect(setStateSpy).not.toHaveBeenCalledWith('forceStandardSearch', false);
+  });
+
+  it('reloads the unfiltered list when switching from AI search to standard search', () => {
+    aiSearch.useAiSearch.set(true);
+    collectionState.setState('searchText', '');
+    mainCollectionState.setState('reloadTrigger', 3);
+
+    fixture.componentInstance['onToggleAiSearch']();
+
+    expect(aiSearch.useAiSearch()).toBe(false);
+    expect(collectionState.state.searchText()).toBe('');
+    expect(mainCollectionState.state.reloadTrigger()).toBe(4);
+  });
+
+  it('does not force a reload when switching from standard search to AI search', () => {
+    aiSearch.useAiSearch.set(false);
+    mainCollectionState.setState('reloadTrigger', 3);
+
+    fixture.componentInstance['onToggleAiSearch']();
+
+    expect(aiSearch.useAiSearch()).toBe(true);
+    expect(mainCollectionState.state.reloadTrigger()).toBe(3);
   });
 
   it('registers and clears the float search template', () => {
