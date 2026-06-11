@@ -89,6 +89,7 @@ describe('ollama config', () => {
       embeddingModel: 'mxbai-embed-large',
       options: { temperature: 0, top_k: 10, num_thread: 10, num_ctx: 8192 },
       parallelRequests: 1,
+      semanticCandidateLimit: 90,
     });
   });
 
@@ -118,6 +119,12 @@ describe('ollama config', () => {
     expect(getOllamaConfig().semanticCandidateLimit).toBe(80);
   });
 
+  it('falls back to the default semantic candidate limit for invalid values', async () => {
+    const { getOllamaConfig } = await importOllama({ semanticCandidateLimit: 1.5 });
+
+    expect(getOllamaConfig().semanticCandidateLimit).toBe(90);
+  });
+
   it('falls back to defaults for invalid Ollama config properties', async () => {
     const { getOllamaConfig } = await importOllama({ host: ' ', model: '', options: { stop: ['invalid'] } });
 
@@ -127,6 +134,7 @@ describe('ollama config', () => {
       embeddingModel: 'mxbai-embed-large',
       options: { temperature: 0, top_k: 10, num_thread: 10, num_ctx: 8192 },
       parallelRequests: 1,
+      semanticCandidateLimit: 90,
     });
   });
 

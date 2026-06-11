@@ -563,6 +563,61 @@ describe('proxy-ai-query-api', () => {
       expect(response.code).toHaveBeenCalledWith(502);
     });
 
+    it('returns 502 when Ollama returns non-finite embeddings', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
+      setupCollection([
+        {
+          imdbId: 'tt0133093',
+          title: 'The Matrix',
+          plot: 'A computer hacker learns about the true nature of reality.',
+        },
+      ]);
+
+      const { createOllamaClient } = await import('../core/ollama/ollama');
+      const generate = vi.fn();
+      vi.mocked(createOllamaClient).mockReturnValue({
+        generate,
+        embed: vi.fn().mockResolvedValue({ embeddings: [[Number.NaN, 1]] }),
+      });
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(response.code).toHaveBeenCalledWith(502);
+      expect(generate).not.toHaveBeenCalled();
+    });
+
+    it('returns 502 when Ollama returns item embeddings with the wrong dimension', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
+      setupCollection([
+        {
+          imdbId: 'tt0133093',
+          title: 'The Matrix',
+          plot: 'A computer hacker learns about the true nature of reality.',
+        },
+      ]);
+
+      const { createOllamaClient } = await import('../core/ollama/ollama');
+      const generate = vi.fn();
+      vi.mocked(createOllamaClient).mockReturnValue({
+        generate,
+        embed: vi
+          .fn()
+          .mockResolvedValueOnce({ embeddings: [[1, 2]] })
+          .mockResolvedValueOnce({ embeddings: [[1]] }),
+      });
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(response.code).toHaveBeenCalledWith(502);
+      expect(generate).not.toHaveBeenCalled();
+    });
+
     it('returns 502 on unexpected AI service error', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);

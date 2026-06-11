@@ -7,6 +7,7 @@ import {
   DEFAULT_OLLAMA_HOST,
   DEFAULT_OLLAMA_MODEL,
   DEFAULT_OLLAMA_OPTIONS,
+  DEFAULT_OLLAMA_SEMANTIC_CANDIDATE_LIMIT,
   OLLAMA_CONFIG_FILE_NAME,
 } from './ollama-const';
 import {
@@ -25,6 +26,7 @@ const defaultOllamaConfig: OllamaConfig = {
   embeddingModel: DEFAULT_OLLAMA_EMBEDDING_MODEL,
   options: DEFAULT_OLLAMA_OPTIONS,
   parallelRequests: 1,
+  semanticCandidateLimit: DEFAULT_OLLAMA_SEMANTIC_CANDIDATE_LIMIT,
 };
 const OLLAMA_CONNECTION_TIMEOUT_MS = 3000;
 
@@ -82,7 +84,7 @@ export const getOllamaConfig = (): OllamaConfig => {
     Number.isInteger(config.semanticCandidateLimit) &&
     config.semanticCandidateLimit > 0
       ? config.semanticCandidateLimit
-      : undefined;
+      : DEFAULT_OLLAMA_SEMANTIC_CANDIDATE_LIMIT;
 
   cachedConfig = {
     host: typeof config.host === 'string' && config.host.trim() ? config.host.trim() : DEFAULT_OLLAMA_HOST,
