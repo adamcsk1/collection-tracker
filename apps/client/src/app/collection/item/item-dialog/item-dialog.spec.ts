@@ -23,12 +23,12 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initialMainState, mainStateToken } from '../../main/main-store';
-import { initialSharesState, SharesState, sharesStateToken } from '../../shares/shares-store';
-import { CollectionItemModel } from '../collection-model';
-import { CollectionService } from '../collection-service';
+import { initialMainState, mainStateToken } from '../../../main/main-store';
+import { initialSharesState, SharesState, sharesStateToken } from '../../../shares/shares-store';
+import { CollectionItemModel } from '../../collection-model';
+import { CollectionService } from '../../collection-service';
 import { ItemDialog } from './item-dialog';
-import { SeriesSeasonMetadataDialog } from '../series-season-metadata-dialog/series-season-metadata-dialog';
+import { SeriesSeasonMetadataDialog } from '../../series-tracker/series-season-metadata-dialog/series-season-metadata-dialog';
 
 const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItemModel => ({
   image: 'https://example.com/poster.jpg',

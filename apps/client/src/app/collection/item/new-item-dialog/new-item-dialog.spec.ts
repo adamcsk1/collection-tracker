@@ -1,13 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
-import { initialMainState, MainState, mainStateToken } from '../../main/main-store';
+import { initialMainCollectionState, mainCollectionStateToken } from '../../../main/main-collection-store';
+import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { ApiService } from '@services/api/api-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initialSharesState, SharesState, sharesStateToken } from '../../shares/shares-store';
+import { initialSharesState, SharesState, sharesStateToken } from '../../../shares/shares-store';
 import { NewItemDialog } from './new-item-dialog';
 import { NewItemDialogService } from './new-item-dialog-service';
 

@@ -18,7 +18,7 @@ import { CollectionListDataSourceRequest } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
 import { List } from '../list/list';
-import { NewItemDialog } from '../new-item-dialog/new-item-dialog';
+import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { buildStandardSearchFilters, setupStandardCollectionSearch } from '../utils/collection-search-filter-util';
 
 @Component({
@@ -48,7 +48,9 @@ export class SeriesTracker {
   protected readonly translations = {
     messageEmptySeriesTracker: computed(() => this.ngxSignalTranslate.translate('Message.EmptySeriesTracker')),
     messageAddFirstSeriesTracker: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstSeriesTracker')),
-    placeholderSearchInCollection: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInCollection')),
+    placeholderSearchInSeriesTracker: computed(() =>
+      this.ngxSignalTranslate.translate('Placeholder.SearchInSeriesTracker')
+    ),
   };
 
   constructor() {

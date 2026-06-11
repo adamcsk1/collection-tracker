@@ -30,14 +30,14 @@ import { toCollectionItemChange } from '@shared/utils/collection-item-change-uti
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { firstValueFrom, map, mergeMap, of } from 'rxjs';
-import { sharesStateToken } from '../../shares/shares-store';
-import { CollectionItemModel } from '../collection-model';
-import { CollectionService } from '../collection-service';
+import { sharesStateToken } from '../../../shares/shares-store';
+import { CollectionItemModel } from '../../collection-model';
+import { CollectionService } from '../../collection-service';
 import { TagSuggestionService } from '../new-item-dialog/suggestion/tag-suggestion-service';
-import { SeriesSeasonMetadataDialog } from '../series-season-metadata-dialog/series-season-metadata-dialog';
-import { WatchedEpisodesDialog } from '../watched-episodes-dialog/watched-episodes-dialog';
-import { getProxyImageUrl } from '../utils/proxy-image-url-util';
-import { formatSeriesTrackerEpisode } from '../utils/series-tracker-progress-util';
+import { SeriesSeasonMetadataDialog } from '../../series-tracker/series-season-metadata-dialog/series-season-metadata-dialog';
+import { WatchedEpisodesDialog } from '../../series-tracker/watched-episodes-dialog/watched-episodes-dialog';
+import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
+import { formatSeriesTrackerEpisode } from '../../series-tracker/utils/series-tracker-progress-util';
 import {
   filterDisplayTags,
   filterEditorPreservedTags,
@@ -47,7 +47,7 @@ import {
   typeTagValidation,
   userActionTagValidation,
   virtualTagValidation,
-} from '../validators/tag-validators';
+} from '../../validators/tag-validators';
 import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
 
 interface ItemDialogFormModel {

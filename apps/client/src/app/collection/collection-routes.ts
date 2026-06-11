@@ -12,7 +12,7 @@ export const collectionRoutes: Routes = [
       },
       {
         path: 'favorites',
-        loadComponent: () => import('./favorites/favorites').then((module) => module.Favorites),
+        loadComponent: () => import('./library/favorites/favorites').then((module) => module.Favorites),
       },
       {
         path: 'watch-later',
