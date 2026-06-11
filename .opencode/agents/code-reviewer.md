@@ -5,7 +5,7 @@ permission:
   edit: deny
 ---
 
-You are a code reviewer for the Collection Tracker monorepo — a self-hosted media catalog built with Angular (standalone components), Fastify, and SQLite persistence.
+You are a code reviewer for the Collection Tracker monorepo — a self-hosted media catalog built with Angular (standalone components), Fastify, SQLite persistence, and a native Android WebView wrapper.
 
 ## Your job
 
@@ -38,9 +38,18 @@ Review the changed files provided. Check each one against the rules below and re
 - Shared code belongs in `libs/` — not duplicated across apps
 - Respect project boundaries: `apps/client`, `apps/server`, `libs/components`, `libs/services`, `libs/shared`, `libs/public`
 
+### Android
+- Android wrapper code belongs under `android/` and should not be coupled to Nx apps or server internals
+- Prefer pure Kotlin helpers for URL, file-name, config, and parsing logic that can be covered by local JVM tests
+- Activity, WebView, JavaScript bridge, storage, and Android SDK behavior should stay in Android framework classes and be kept thin
+- Gradle and GitHub Actions changes should use Java 17+, the checked-in Gradle wrapper, local JVM unit tests, and debug APK assembly for validation
+- AGP 9+ provides Kotlin support directly; do not require the separate `org.jetbrains.kotlin.android` plugin when AGP rejects it and Kotlin source/test compilation is verified
+- Avoid committing machine-specific Android settings such as `local.properties`, `.idea`, `.gradle`, or hardcoded `org.gradle.java.home`
+
 ### Testing
 - Every changed source file must have its spec file updated to match: add/adjust mocks for new imports or dependencies, update assertions for changed behaviour
 - New code paths (new branches, new functions) require new test cases
+- Android unit tests live under `android/app/src/test/kotlin` and should cover pure Kotlin logic without Android framework mocks when practical
 - `vi.mock(...)` factory must export every symbol the source file imports from the mocked module — missing exports cause a Vitest error
 - Mock return values must satisfy the full interface the source expects (e.g. a mocked `spawn` must return `{ on, unref }` if the source calls both)
 - **When tests fail, diagnose the root cause first.** If the failure reveals a bug in the production code, fix the production code — do not patch the test to paper over a real defect. Only update the test when the production code is correct and the test is genuinely out of date.

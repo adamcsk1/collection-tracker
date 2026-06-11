@@ -20,3 +20,12 @@ The Android project is a thin WebView wrapper around a deployed Collection Track
 1. Open Android Studio.
 2. Open the [`android`](../android) directory.
 3. Sync the Gradle project and apply any required SDK updates.
+
+## Test And Build
+
+Run Android commands with Java 17 or newer from the [`android`](../android) directory:
+
+```powershell
+./gradlew testDebugUnitTest
+./gradlew assembleDebug
+```
