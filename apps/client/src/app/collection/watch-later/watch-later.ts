@@ -48,7 +48,7 @@ export class WatchLater {
   protected readonly translations = {
     messageEmptyWatchLater: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWatchLater')),
     messageAddFirstWatchLater: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWatchLater')),
-    placeholderSearchInCollection: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInCollection')),
+    placeholderSearchInWatchLater: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInWatchLater')),
   };
 
   constructor() {

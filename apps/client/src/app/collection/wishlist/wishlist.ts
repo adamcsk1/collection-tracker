@@ -48,7 +48,7 @@ export class Wishlist {
   protected readonly translations = {
     messageEmptyWishlist: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWishlist')),
     messageAddFirstWishlist: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWishlist')),
-    placeholderSearchInCollection: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInCollection')),
+    placeholderSearchInWishlist: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInWishlist')),
   };
 
   constructor() {
