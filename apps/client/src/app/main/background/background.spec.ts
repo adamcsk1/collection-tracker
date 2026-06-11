@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { initialMainState, mainStateToken, type MainState } from '../main-store';
 import * as mobileUserAgentUtil from '@shared/utils/mobile-user-agent.util';
 import * as coarsePointerUtil from '@shared/utils/prefer-coarse-pointer-util';
 import * as randomIntUtil from '@shared/utils/random-int-util';
-import { provideStore } from 'ngx-simple-signal-store';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Background } from './background';
@@ -24,6 +25,7 @@ describe('Background component', () => {
   let randomSpy: ReturnType<typeof vi.spyOn>;
   let orientationTarget: EventTarget;
   let setImagesSpy: ReturnType<typeof vi.spyOn>;
+  let mainState: NgxSimpleSignalStoreService<MainState>;
 
   const createComponent = () => {
     fixture = TestBed.createComponent(Background);
@@ -63,8 +65,14 @@ describe('Background component', () => {
 
     TestBed.configureTestingModule({
       imports: [Background],
-      providers: [{ provide: ApiService, useValue: api }, provideStore(initialApiState, apiStateToken)],
+      providers: [
+        { provide: ApiService, useValue: api },
+        provideStore(initialApiState, apiStateToken),
+        provideStore(initialMainState, mainStateToken),
+      ],
     });
+
+    mainState = TestBed.inject(mainStateToken);
   });
 
   afterEach(() => {
@@ -86,6 +94,23 @@ describe('Background component', () => {
     const images = component['images']();
     expect(images.length).toBeGreaterThan(0);
     expect(images.every((img: any) => ['img-1', 'img-2'].includes(img.url))).toBe(true);
+  });
+
+  it('loads random images once on creation', () => {
+    createComponent();
+
+    expect(api.getRandomImages).toHaveBeenCalledTimes(1);
+    expect(api.getRandomImages).toHaveBeenCalledWith(50);
+  });
+
+  it('reloads random images when the refresh trigger changes', () => {
+    createComponent();
+
+    mainState.patchState('backgroundImagesRefreshTrigger', (trigger) => trigger + 1);
+    fixture.detectChanges();
+
+    expect(api.getRandomImages).toHaveBeenCalledTimes(2);
+    expect(api.getRandomImages).toHaveBeenLastCalledWith(50);
   });
 
   it('proxies external background image URLs', () => {

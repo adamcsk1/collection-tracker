@@ -21,8 +21,9 @@ import { OMDbService } from '@services/omdb/omdb-service';
 import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionListTypeModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap, tap } from 'rxjs';
+import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap } from 'rxjs';
 import { mainStateToken } from '../../../main/main-store';
+import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { sharesStateToken } from '../../../shares/shares-store';
 import { forbiddenInternalTagValidation } from '../../validators/tag-validators';
 import { NewItemModel, SaveMode } from './new-item-dialog-model';
@@ -35,7 +36,12 @@ import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validat
   imports: [FormField, FormRoot, Input, Select, DialogShell, Autocomplete, Checkbox],
   templateUrl: './new-item-dialog.html',
   styleUrl: './new-item-dialog.css',
-  providers: [OMDbService, NewItemDialogService, { provide: AutocompleteService, useClass: TagSuggestionService }],
+  providers: [
+    OMDbService,
+    NewItemDialogService,
+    SharesLoaderService,
+    { provide: AutocompleteService, useClass: TagSuggestionService },
+  ],
   host: {
     class: 'dialog',
   },
@@ -48,6 +54,7 @@ export class NewItemDialog {
   private readonly service = inject(NewItemDialogService);
   private readonly mainState = inject(mainStateToken);
   private readonly sharesState = inject(sharesStateToken);
+  private readonly sharesLoader = inject(SharesLoaderService);
   private readonly knownIMDbIdExists = signal(false);
   private readonly knownIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownIMDbIdExists);
   protected readonly translations = {
@@ -243,22 +250,7 @@ export class NewItemDialog {
       )
       .subscribe((response) => this.knownIMDbIdExists.set(response.exists));
 
-    this.api
-      .getShares()
-      .pipe(
-        tap((result) => {
-          this.sharesState.setState('loaded', true);
-          this.sharesState.setState('userShareCode', result.userShareCode);
-          this.sharesState.setState('outgoing', result.outgoing);
-          this.sharesState.setState('incoming', result.incoming);
-        }),
-        catchError(() => {
-          this.sharesState.setState('loaded', true);
-          return of({ userShareCode: '', outgoing: [], incoming: [] });
-        }),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
+    this.sharesLoader.load(this.destroyRef, true);
   }
 
   private async onSave(mode: SaveMode | null = null): Promise<void> {

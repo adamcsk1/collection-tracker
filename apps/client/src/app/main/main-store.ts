@@ -11,6 +11,7 @@ export interface MainState {
   sensitiveDataStorage: 'local' | 'session';
   language: LanguageModel;
   aiAvailable: boolean;
+  backgroundImagesRefreshTrigger: number;
   defaultLibraryOwnerShareCode: string | null;
   collectionListDisplayPreferences: CollectionListDisplayPreferencesModel;
 }
@@ -21,6 +22,7 @@ export const initialMainState: MainState = {
   sensitiveDataStorage: 'local',
   language: 'en',
   aiAvailable: false,
+  backgroundImagesRefreshTrigger: 0,
   defaultLibraryOwnerShareCode: null,
   collectionListDisplayPreferences: DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES,
 };

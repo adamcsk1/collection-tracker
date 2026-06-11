@@ -1,0 +1,72 @@
+@if (!editMode()) {
+  @if (permissionUpdate() && seriesTracker()) {
+    <button
+      class="button-borderless unaligned"
+      data-test-id="item-dialog-manage-watched-episodes"
+      (click)="manageWatchedEpisodes.emit()"
+    >
+      <i class="material-icons" aria-hidden="true"> check_circle </i>
+      {{ translations().manageWatchedEpisodes() }}
+    </button>
+    <button
+      class="button-borderless unaligned"
+      data-test-id="item-dialog-manage-series-metadata"
+      (click)="manageSeriesMetadata.emit()"
+    >
+      <i class="material-icons" aria-hidden="true"> list </i>
+      {{ translations().manageSeriesMetadata() }}
+    </button>
+  }
+  @if (permissionUpdate() && libraryItem()) {
+    @if (watched()) {
+      <button
+        class="button-borderless unaligned"
+        data-test-id="item-dialog-mark-unwatched"
+        (click)="markAsUnwatched.emit()"
+      >
+        <i class="material-icons" aria-hidden="true"> visibility_off </i>
+        {{ translations().markAsUnwatched() }}
+      </button>
+    } @else {
+      <button
+        class="button-borderless unaligned"
+        data-test-id="item-dialog-mark-watched"
+        (click)="markAsWatched.emit()"
+      >
+        <i class="material-icons" aria-hidden="true"> visibility </i>
+        {{ translations().markAsWatched() }}
+      </button>
+    }
+    @if (favorite()) {
+      <button
+        class="button-borderless unaligned"
+        data-test-id="item-dialog-remove-favorite"
+        (click)="removeFavorite.emit()"
+      >
+        <i class="material-icons" aria-hidden="true"> star_outline </i>
+        {{ translations().removeFavorite() }}
+      </button>
+    } @else {
+      <button
+        class="button-borderless unaligned"
+        data-test-id="item-dialog-mark-favorite"
+        (click)="markAsFavorite.emit()"
+      >
+        <i class="material-icons" aria-hidden="true"> star_rate </i>
+        {{ translations().markAsFavorite() }}
+      </button>
+    }
+  }
+  @if (permissionUpdate() && !internalCollectionTag()) {
+    <button class="button-borderless unaligned" data-test-id="item-dialog-edit" (click)="edit.emit()">
+      <i class="material-icons" aria-hidden="true"> edit </i>
+      {{ translations().edit() }}
+    </button>
+  }
+  @if (permissionDelete()) {
+    <button class="button-borderless unaligned button-danger" data-test-id="item-dialog-delete" (click)="delete.emit()">
+      <i class="material-icons" aria-hidden="true"> delete </i>
+      {{ translations().delete() }}
+    </button>
+  }
+}

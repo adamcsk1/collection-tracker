@@ -4,22 +4,13 @@ import { form, FormField, FormRoot, max, min, submit, validate } from '@angular/
 import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
-import { LinkButton } from '@components/link-button/link-button';
 import { Textarea } from '@components/textarea/textarea';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import {
-  COMPLETED_TAG,
-  FAVORITE_TAG,
-  MOVIE_TAG,
-  SERIES_TAG,
-  WATCH_LATER_TAG,
-  WATCHED_TAG,
-  WISHLIST_TAG,
-} from '@shared/constants/tags-const';
+import { COMPLETED_TAG, FAVORITE_TAG, WATCH_LATER_TAG, WATCHED_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
 import {
   CollectionItemChangeApiModel,
   SeriesTrackerSeasonMetadataModel,
@@ -49,6 +40,17 @@ import {
   virtualTagValidation,
 } from '../../validators/tag-validators';
 import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
+import { ItemDialogActions } from './item-dialog-actions';
+import { ItemDialogDetail } from './item-dialog-detail';
+import {
+  buildIMDbUrl,
+  buildTrailerUrl,
+  buildWebSearchUrl,
+  isSystemDisplayTag,
+  validateOptionalIMDbRateFormat,
+  validateOptionalMetacriticRateFormat,
+  validateOptionalRottenTomatoesRateFormat,
+} from './utils/item-dialog-util';
 
 interface ItemDialogFormModel {
   title: string;
@@ -65,18 +67,9 @@ interface ItemDialogFormModel {
   plot: string;
 }
 
-const imdbRatePattern = /^(?:10(?:\.0)?|[0-9](?:\.[0-9])?)$/;
-const rottenTomatoesRatePattern = /^(?:100|[1-9]?\d)%$/;
-const metacriticRatePattern = /^(?:100|[1-9]?\d)\/100$/;
-
-const optionalRateFormatValidation = (value: string, pattern: RegExp) => {
-  if (!value) return undefined;
-  return pattern.test(value) ? undefined : { kind: 'rateFormat' };
-};
-
 @Component({
   selector: 'ct-item-dialog',
-  imports: [FormField, FormRoot, DialogShell, Autocomplete, Input, LinkButton, Textarea],
+  imports: [FormField, FormRoot, DialogShell, Autocomplete, Input, Textarea, ItemDialogDetail, ItemDialogActions],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
   providers: [TagSuggestionService, GenreSuggestionService],
@@ -187,11 +180,9 @@ export class ItemDialog implements OnInit {
         const tags = [...parseTagText(value()), ...this.originalInternalTags()];
         return typeTagValidation(tags);
       });
-      validate(item.rate, ({ value }) => optionalRateFormatValidation(value(), imdbRatePattern));
-      validate(item.rottenTomatoesRate, ({ value }) =>
-        optionalRateFormatValidation(value(), rottenTomatoesRatePattern)
-      );
-      validate(item.metacriticRate, ({ value }) => optionalRateFormatValidation(value(), metacriticRatePattern));
+      validate(item.rate, ({ value }) => validateOptionalIMDbRateFormat(value()));
+      validate(item.rottenTomatoesRate, ({ value }) => validateOptionalRottenTomatoesRateFormat(value()));
+      validate(item.metacriticRate, ({ value }) => validateOptionalMetacriticRateFormat(value()));
       min(item.userRate, 0, { error: { kind: 'min' } });
       max(item.userRate, 10, { error: { kind: 'max' } });
       validate(item.userRate, ({ value }) => {
@@ -322,10 +313,10 @@ export class ItemDialog implements OnInit {
     return { season: last.season, episode: last.episode };
   });
   protected readonly detailTags = computed(() =>
-    filterDisplayTags(this.collectionItem().tags).filter((tag) => !this.isSystemDisplayTag(tag))
+    filterDisplayTags(this.collectionItem().tags).filter((tag) => !isSystemDisplayTag(tag))
   );
   protected readonly systemTags = computed(() =>
-    filterDisplayTags(this.collectionItem().tags).filter((tag) => this.isSystemDisplayTag(tag))
+    filterDisplayTags(this.collectionItem().tags).filter((tag) => isSystemDisplayTag(tag))
   );
   protected readonly episodeProgressText = computed(() => {
     return formatSeriesTrackerEpisode(this.lastWatchedEpisode()) ?? this.translations.fallbackNotAvailable();
@@ -397,14 +388,13 @@ export class ItemDialog implements OnInit {
   protected readonly imageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
   );
-  protected readonly trailerUrl = computed(() => {
-    const item = this.collectionItem();
-    return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${item.title} ${item.year ?? ''} trailer`.trim())}`;
-  });
-  protected readonly imdbUrl = computed(() => `https://www.imdb.com/title/${this.collectionItem().IMDbId}/`);
+  protected readonly trailerUrl = computed(() =>
+    buildTrailerUrl(this.collectionItem().title, this.collectionItem().year)
+  );
+  protected readonly imdbUrl = computed(() => buildIMDbUrl(this.collectionItem().IMDbId));
   protected readonly webSearchUrl = computed(() => {
     const item = this.collectionItem();
-    return `https://duckduckgo.com/?q=${encodeURIComponent(`${item.title} ${item.year ?? ''}`.trim())}`;
+    return buildWebSearchUrl(item.title, item.year);
   });
   public readonly collectionItem = model.required<CollectionItemModel>();
 
@@ -496,10 +486,6 @@ export class ItemDialog implements OnInit {
       (tag, index, tags) => tags.indexOf(tag) === index
     );
     return item;
-  }
-
-  protected isSystemDisplayTag(tag: string): boolean {
-    return [WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, COMPLETED_TAG].includes(tag);
   }
 
   protected onDelete(): void {

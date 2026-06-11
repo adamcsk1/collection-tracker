@@ -1,0 +1,121 @@
+<article class="item-detail">
+  @if (collectionItem().image && !posterImageFailed()) {
+    <div class="poster-card">
+      <img [src]="imageUrl()" [alt]="translations().altPoster()" (error)="posterImageError.emit()" />
+    </div>
+  }
+  <div class="detail-content">
+    <header class="detail-header">
+      <p class="eyebrow">{{ collectionItem().year || translations().fallbackUnknownYear() }}</p>
+      <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
+      <h3>{{ collectionItem().title }}</h3>
+      <div class="metadata-row">
+        <div class="chip-list">
+          @if (isShared()) {
+            <span class="chip shared" data-test-id="item-dialog-shared-library">
+              <i class="material-icons shared-icon" aria-hidden="true"> share </i>
+              {{ library() }}
+            </span>
+          }
+        </div>
+      </div>
+    </header>
+    <section>
+      <h4>{{ translations().ratings() }}</h4>
+      <div class="chip-list">
+        <span class="chip rating">IMDb {{ collectionItem().rate || translations().fallbackNotAvailable() }}</span>
+        @if (collectionItem().rottenTomatoesRate) {
+          <span class="chip rating"
+            >{{ translations().labelRottenTomatoesRate() }} {{ collectionItem().rottenTomatoesRate }}</span
+          >
+        }
+        @if (collectionItem().metacriticRate) {
+          <span class="chip rating"
+            >{{ translations().labelMetacriticRate() }} {{ collectionItem().metacriticRate }}</span
+          >
+        }
+        @if (collectionItem().userRate !== null) {
+          <span class="chip rating" data-test-id="item-dialog-user-rate-chip">
+            {{ translations().labelUserRate() }} {{ collectionItem().userRate }}
+          </span>
+        }
+      </div>
+    </section>
+
+    @if (collectionItem().genre.length) {
+      <section>
+        <h4>{{ translations().genre() }}</h4>
+        <div class="chip-list">
+          @for (genre of collectionItem().genre; track genre) {
+            <span class="chip">{{ genre }}</span>
+          }
+        </div>
+      </section>
+    }
+
+    @if (collectionItem().actors) {
+      <section>
+        <h4>{{ translations().actors() }}</h4>
+        <p>{{ collectionItem().actors }}</p>
+      </section>
+    }
+
+    @if (detailTags().length) {
+      <section data-test-id="item-dialog-tags-section">
+        <h4>{{ translations().tags() }}</h4>
+        <div class="chip-list">
+          @for (tag of detailTags(); track tag) {
+            <span class="chip">{{ tag }}</span>
+          }
+        </div>
+      </section>
+    }
+
+    @if (systemTags().length) {
+      <section data-test-id="item-dialog-system-tags-section">
+        <h4>{{ translations().systemTags() }}</h4>
+        <div class="chip-list">
+          @for (tag of systemTags(); track tag) {
+            <span class="chip chip-system">{{ tag }}</span>
+          }
+        </div>
+      </section>
+    }
+
+    @if (seriesTracker()) {
+      <section data-test-id="item-dialog-episode-progress-section">
+        <h4>{{ translations().watchedUpTo() }}</h4>
+        <div class="chip-list">
+          <span class="chip" data-test-id="item-dialog-episode-progress-chip">{{ episodeProgressText() }}</span>
+        </div>
+      </section>
+    }
+
+    @if (collectionItem().plot) {
+      <section>
+        <h4>{{ translations().plot() }}</h4>
+        <p>{{ collectionItem().plot }}</p>
+      </section>
+    }
+
+    <section>
+      <h4>{{ translations().links() }}</h4>
+      <div class="external-links">
+        <libc-link-button
+          [href]="trailerUrl()"
+          icon="play_circle"
+          [label]="translations().linkYouTubeTrailer()"
+          [external]="true"
+          dataTestId="video"
+        ></libc-link-button>
+        <libc-link-button
+          [href]="webSearchUrl()"
+          icon="search"
+          [label]="translations().linkWebSearch()"
+          [external]="true"
+          dataTestId="about-web-search-link"
+        ></libc-link-button>
+      </div>
+    </section>
+  </div>
+</article>
