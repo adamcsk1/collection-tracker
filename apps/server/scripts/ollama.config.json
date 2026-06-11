@@ -1,9 +1,15 @@
 {
   "host": "http://127.0.0.1:11434",
-  "model": "qwen2.5:3b",
+  "model": "qwen2.5:14b",
+  "embeddingModel": "mxbai-embed-large",
+  "keep_alive": "15m",
   "batchSize": 10,
   "parallelRequests": 1,
+  "semanticCandidateLimit": 90,
   "options": {
-    "num_thread": 1
+    "temperature": 0,
+    "top_k": 10,
+    "num_thread": 10,
+    "num_ctx": 8192
   }
 }

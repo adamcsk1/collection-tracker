@@ -2,7 +2,7 @@
 
 Collection Tracker is a self-hosted media catalog application for managing personal movie and series collections. It is built as an Nx monorepo with Angular frontends and a Fastify backend using SQLite persistence.
 
-AI search is powered by Ollama. Local development and Docker Compose read Ollama settings from `ollama.config.json` in the active data folder. Docker Compose does not run Ollama. The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:3b`, `batchSize: 10`, and `parallelRequests: 1`. Configured generate `options` are merged over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 4 }`. Optional root-level `keep_alive` is passed to Ollama generate requests only when present in the config file.
+AI search is powered by Ollama. Local development and Docker Compose read Ollama settings from `ollama.config.json` in the active data folder. Docker Compose does not run Ollama. The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:14b`, embedding model `mxbai-embed-large`, `batchSize: 10`, `parallelRequests: 1`, and `semanticCandidateLimit: 90`. Configured generate `options` are merged over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`. Optional root-level `keep_alive` is passed to Ollama generate and embed requests only when present in the config file.
 
 ## Docker Deployment Environment Variables
 

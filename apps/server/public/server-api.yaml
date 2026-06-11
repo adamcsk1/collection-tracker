@@ -1902,10 +1902,10 @@ paths:
       summary: Natural-language collection search via local AI
       description: |
         Proxies a prompt to the Ollama API using `ollama.config.json` in the server data folder.
-        The server reads the caller's collection metadata from the database and builds the prompt internally.
+        The server reads the caller's collection metadata from the database, embeds collection items, retrieves semantic candidates, and builds the final filtering prompt internally.
         Only the natural-language question is supplied by the client.
-        The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:3b`, and merges configured generate options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 4 }`.
-        Ollama availability and model presence are checked by this endpoint before querying.
+        The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:14b`, embedding model `mxbai-embed-large`, and merges configured generate options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`.
+        Ollama availability and model presence for both the language and embedding models are checked by this endpoint before querying.
       tags: [AI Proxy]
       requestBody:
         required: true
