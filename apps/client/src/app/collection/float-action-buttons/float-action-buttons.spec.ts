@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { provideStore } from 'ngx-simple-signal-store';
+import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
-import { initialMainState, mainStateToken } from '../../main/main-store';
+import { initialMainState, mainStateToken, type MainState } from '../../main/main-store';
 import { FloatActionButtons } from './float-action-buttons';
 import { FloatActionButtonsService } from './float-action-buttons-service';
 
@@ -13,6 +13,7 @@ describe('FloatActionButtons', () => {
   let component: FloatActionButtons;
   let floatActions: FloatActionsService;
   let actionButtons: FloatActionButtonsService;
+  let mainState: NgxSimpleSignalStoreService<MainState>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -30,6 +31,8 @@ describe('FloatActionButtons', () => {
     component = fixture.componentInstance;
     floatActions = TestBed.inject(FloatActionsService);
     actionButtons = TestBed.inject(FloatActionButtonsService);
+    mainState = TestBed.inject(mainStateToken);
+    mainState.setState('aiAvailable', true);
     actionButtons.updateConfig({ showActions: true, collectionLength: 1 });
     fixture.detectChanges();
   });
@@ -70,6 +73,34 @@ describe('FloatActionButtons', () => {
       showFunctions: vi.fn(),
     });
     actionButtons.updateConfig({ showAiSearchButton: false, showRandomPickButton: false });
+    fixture.detectChanges();
+
+    component['onShowFunctions']();
+
+    expect(addNew).toHaveBeenCalledTimes(1);
+    expect(floatActions.actionButtonsVisible()).toBe(false);
+  });
+
+  it('hides the AI search toggle when AI search is unavailable', () => {
+    mainState.setState('aiAvailable', false);
+    fixture.detectChanges();
+
+    component['onShowFunctions']();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="ai-search-toggle"]')).toBeNull();
+  });
+
+  it('uses direct add mode when AI search is unavailable and random pick is hidden', () => {
+    const addNew = vi.fn();
+    actionButtons.setCallbacks({
+      addNew,
+      randomPick: vi.fn(),
+      toggleAiSearch: vi.fn(),
+      showFunctions: vi.fn(),
+    });
+    actionButtons.updateConfig({ showRandomPickButton: false });
+    mainState.setState('aiAvailable', false);
     fixture.detectChanges();
 
     component['onShowFunctions']();

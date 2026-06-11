@@ -23,11 +23,8 @@ export class FloatActionButtons implements OnDestroy {
     searchSwitchButtonLabel: computed(() =>
       this.useAiSearch()
         ? this.ngxSignalTranslate.translate('SwitchToStandardSearch')
-        : this.aiAvailable()
-          ? this.ngxSignalTranslate.translate('SwitchToAiSearch')
-          : this.ngxSignalTranslate.translate('AiSearchOffline')
+        : this.ngxSignalTranslate.translate('SwitchToAiSearch')
     ),
-    aiSearchOffline: computed(() => this.ngxSignalTranslate.translate('AiSearchOffline')),
     aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
     randomPick: computed(() => this.ngxSignalTranslate.translate('RandomPick')),
     hideFunctions: computed(() => this.ngxSignalTranslate.translate('HideFunctions')),
@@ -37,6 +34,7 @@ export class FloatActionButtons implements OnDestroy {
   protected readonly aiAvailable = this.mainState.state.aiAvailable;
   protected readonly config = this.actionButtons.config;
   protected readonly useAiSearch = computed(() => this.config().useAiSearch);
+  protected readonly showAiSearchButton = computed(() => this.config().showAiSearchButton && this.aiAvailable());
   protected readonly aiSearchIcon = computed(() =>
     !this.useAiSearch() && this.aiAvailable() ? 'search' : 'psychology'
   );
@@ -44,11 +42,11 @@ export class FloatActionButtons implements OnDestroy {
   protected readonly actionButtonsVisible = computed(() => this.config().showActions && this.showFloatButtons());
   protected readonly canShowActionButton = computed(() => {
     const config = this.config();
-    return config.showAddButton || config.showAiSearchButton || config.showRandomPickButton;
+    return config.showAddButton || this.showAiSearchButton() || config.showRandomPickButton;
   });
   protected readonly addOnlyMode = computed(() => {
     const config = this.config();
-    return config.showAddButton && !config.showAiSearchButton && !config.showRandomPickButton;
+    return config.showAddButton && !this.showAiSearchButton() && !config.showRandomPickButton;
   });
   protected readonly showFloatActions = computed(() => this.config().showActions && this.canShowActionButton());
 
