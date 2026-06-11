@@ -161,8 +161,13 @@ export class CollectionLibrary {
   }
 
   protected onToggleAiSearch(): void {
-    this.aiSearch.useAiSearch.set(!this.aiSearch.useAiSearch());
+    const useAiSearch = this.aiSearch.useAiSearch();
+    this.aiSearch.useAiSearch.set(!useAiSearch);
     this.collectionState.setState('searchText', '');
+
+    if (useAiSearch) {
+      this.mainCollectionState.setState('reloadTrigger', this.mainCollectionState.state.reloadTrigger() + 1);
+    }
   }
 
   protected onShowFunctions(): void {
