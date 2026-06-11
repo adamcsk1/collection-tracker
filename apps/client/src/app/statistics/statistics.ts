@@ -12,12 +12,14 @@ import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
+import { StatisticsChartService } from './statistics-chart-service';
 
 @Component({
   selector: 'ct-statistics',
   imports: [Details],
   templateUrl: './statistics.html',
   styleUrl: './statistics.css',
+  providers: [StatisticsChartService],
   host: {
     class: 'page',
   },
@@ -30,6 +32,7 @@ export class Statistics implements AfterViewInit {
   private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly charts = inject(StatisticsChartService);
   protected readonly translations = {
     messageLoadStatistics: computed(() => this.ngxSignalTranslate.translate('Message.LoadStatistics')),
     messageEmptyStatistics: computed(() => this.ngxSignalTranslate.translate('Message.EmptyStatistics')),
@@ -127,162 +130,35 @@ export class Statistics implements AfterViewInit {
   }
 
   private createTagChart(): void {
-    if (this.tagChart()) return;
-    const canvas = document.getElementById('statistics-tag-chart') as HTMLCanvasElement | null;
-    if (!canvas) return;
-
-    this.tagChart.set(
-      new Chart(canvas, {
-        type: 'pie',
-        data: {
-          labels: [],
-          datasets: [],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-        },
-      })
-    );
+    this.tagChart.set(this.charts.createTagChart(this.tagChart()));
   }
 
   private createWatchedChart(): void {
-    if (this.watchedChart()) return;
-    const canvas = document.getElementById('statistics-watched-chart') as HTMLCanvasElement | null;
-    if (!canvas) return;
-
-    this.watchedChart.set(
-      new Chart(canvas, {
-        type: 'doughnut',
-        data: {
-          labels: [],
-          datasets: [],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '60%',
-        },
-      })
-    );
+    this.watchedChart.set(this.charts.createWatchedChart(this.watchedChart()));
   }
 
   private createTypeChart(): void {
-    if (this.typeChart()) return;
-    const canvas = document.getElementById('statistics-type-chart') as HTMLCanvasElement | null;
-    if (!canvas) return;
-
-    this.typeChart.set(
-      new Chart(canvas, {
-        type: 'doughnut',
-        data: {
-          labels: [],
-          datasets: [],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '60%',
-        },
-      })
-    );
+    this.typeChart.set(this.charts.createTypeChart(this.typeChart()));
   }
 
   private createGenreChart(): void {
-    if (this.genreChart()) return;
-    const canvas = document.getElementById('statistics-genre-chart') as HTMLCanvasElement | null;
-    if (!canvas) return;
-
-    this.genreChart.set(
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: [],
-          datasets: [],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: 'y',
-          plugins: {
-            legend: { display: false },
-          },
-        },
-      })
-    );
+    this.genreChart.set(this.charts.createGenreChart(this.genreChart()));
   }
 
   private updateTagChart(): void {
-    const chart = this.tagChart();
-    const tagCounts = this.statistics()?.tagCounts ?? [];
-    if (!chart) return;
-
-    chart.data.labels = this.selectedTags();
-    const data: number[] = [];
-
-    for (const tag of this.selectedTags()) {
-      const count = tagCounts.find((tagCount) => tagCount.tag === tag)?.count ?? 0;
-      data.push(count);
-    }
-
-    chart.data.datasets = [
-      {
-        label: this.ngxSignalTranslate.translate('Count'),
-        data,
-        backgroundColor: this.selectedTags().map((tag) => textToHexColor(tag.replace('#', ''))),
-      },
-    ];
-    chart.update();
+    this.charts.updateTagChart(this.tagChart(), this.statistics(), this.selectedTags());
   }
 
   private updateWatchedChart(): void {
-    const chart = this.watchedChart();
-    const statistics = this.statistics();
-    if (!chart || !statistics) return;
-
-    chart.data.labels = [this.ngxSignalTranslate.translate('Watched'), this.ngxSignalTranslate.translate('Unwatched')];
-    chart.data.datasets = [
-      {
-        label: this.ngxSignalTranslate.translate('Count'),
-        data: [statistics.watchedCount, statistics.unwatchedCount],
-        backgroundColor: [textToHexColor('watched'), textToHexColor('unwatched')],
-      },
-    ];
-    chart.update();
+    this.charts.updateWatchedChart(this.watchedChart(), this.statistics());
   }
 
   private updateTypeChart(): void {
-    const chart = this.typeChart();
-    const statistics = this.statistics();
-    if (!chart || !statistics) return;
-
-    chart.data.labels = [this.ngxSignalTranslate.translate('Movies'), this.ngxSignalTranslate.translate('Series')];
-    chart.data.datasets = [
-      {
-        label: this.ngxSignalTranslate.translate('Count'),
-        data: [statistics.movieCount, statistics.seriesCount],
-        backgroundColor: [textToHexColor('movie'), textToHexColor('series')],
-      },
-    ];
-    chart.update();
+    this.charts.updateTypeChart(this.typeChart(), this.statistics());
   }
 
   private updateGenreChart(): void {
-    const chart = this.genreChart();
-    const genreCounts = this.statistics()?.genreCounts ?? [];
-    if (!chart) return;
-
-    const sortedGenres = [...genreCounts].sort((a, b) => b.count - a.count).slice(0, 10);
-
-    chart.data.labels = sortedGenres.map((genreCount) => genreCount.genre);
-    chart.data.datasets = [
-      {
-        label: this.ngxSignalTranslate.translate('Count'),
-        data: sortedGenres.map((genreCount) => genreCount.count),
-        backgroundColor: sortedGenres.map((genreCount) => textToHexColor(genreCount.genre)),
-      },
-    ];
-    chart.update();
+    this.charts.updateGenreChart(this.genreChart(), this.statistics());
   }
 
   private loadStatistics(): void {

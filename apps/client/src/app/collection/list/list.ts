@@ -14,15 +14,14 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { CollectionItemsApiResponseModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { asyncScheduler, catchError, debounceTime, EMPTY, fromEvent, Observable, tap } from 'rxjs';
+import { asyncScheduler, catchError, debounceTime, EMPTY, fromEvent, Observable } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
-import { sharesStateToken } from '../../shares/shares-store';
+import { SharesLoaderService } from '../../shares/shares-loader-service';
 import { CollectionItemModel, CollectionListDataSource } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
 import { FloatActionButtons } from '../float-action-buttons/float-action-buttons';
@@ -38,17 +37,17 @@ import { ListItem } from './list-item/list-item';
   imports: [ListItem, ListItemSkeleton],
   templateUrl: './list.html',
   styleUrl: './list.css',
+  providers: [SharesLoaderService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class List implements OnDestroy {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly mainCollectionState = inject(mainCollectionStateToken);
   private readonly collectionState = inject(collectionStateToken);
-  private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
   private readonly portal = inject(PortalService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly sharesState = inject(sharesStateToken);
+  private readonly sharesLoader = inject(SharesLoaderService);
   private readonly floatActions = inject(FloatActionsService);
   private readonly actionButtons = inject(FloatActionButtonsService);
   private readonly aiSearch = inject(AiSearchService, { optional: true });
@@ -77,7 +76,7 @@ export class List implements OnDestroy {
   public readonly showFunctions = output<void>();
 
   constructor() {
-    this.loadShares();
+    this.sharesLoader.load(this.destroyRef);
     this.actionButtons.setCallbacks({
       addNew: () => this.onAddNew(),
       randomPick: () => this.onRandomPick(),
@@ -233,26 +232,5 @@ export class List implements OnDestroy {
     this.visibleCollection.set(reset ? response.items : [...this.visibleCollection(), ...response.items]);
     this.collectionLength.set(response.total);
     this.apiState.setState('loadNetworkStatus', 'finished');
-  }
-
-  private loadShares(): void {
-    if (this.sharesState.state.loaded()) return;
-
-    this.api
-      .getShares()
-      .pipe(
-        tap((result) => {
-          this.sharesState.setState('loaded', true);
-          this.sharesState.setState('userShareCode', result.userShareCode);
-          this.sharesState.setState('outgoing', result.outgoing);
-          this.sharesState.setState('incoming', result.incoming);
-        }),
-        catchError(() => {
-          this.sharesState.setState('loaded', true);
-          return EMPTY;
-        }),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
   }
 }

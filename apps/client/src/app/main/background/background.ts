@@ -1,9 +1,10 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { getProxyImageUrl } from '../../collection/utils/proxy-image-url-util';
+import { mainStateToken } from '../main-store';
 import { DESKTOP_HEIGHT_BUFFER, HEIGHT_BUFFER, WIDTH_BUFFER } from './background-const';
 import { BackgroundImagesModel } from './background-model';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
@@ -26,6 +27,7 @@ import { debounceTime, filter, fromEvent, map, merge } from 'rxjs';
 export class Background {
   private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
+  private readonly mainState = inject(mainStateToken);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private get isTextInputFocused(): boolean {
@@ -48,13 +50,10 @@ export class Background {
   private imageUrls: string[] = [];
 
   constructor() {
-    this.api
-      .getRandomImages(50)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        this.imageUrls = response.images;
-        this.setImages(this.windowHeight(), this.windowWidth());
-      });
+    effect(() => {
+      this.mainState.state.backgroundImagesRefreshTrigger();
+      untracked(() => this.loadRandomImages());
+    });
 
     const resizeEvent$ = mobileUserAgent()
       ? merge(fromEvent(screen.orientation, 'change'), fromEvent(window, 'resize'))
@@ -76,6 +75,16 @@ export class Background {
         if (this.isKeyboardLikely(height) || this.isTextInputFocused) return;
 
         this.setImages(height, width);
+      });
+  }
+
+  private loadRandomImages(): void {
+    this.api
+      .getRandomImages(50)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        this.imageUrls = response.images;
+        this.setImages(this.windowHeight(), this.windowWidth());
       });
   }
 

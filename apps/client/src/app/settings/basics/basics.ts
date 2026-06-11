@@ -35,6 +35,7 @@ export class SettingsBasics implements OnInit {
     theme: computed(() => this.ngxSignalTranslate.translate('Theme')),
     animatedBackground: computed(() => this.ngxSignalTranslate.translate('AnimatedBackground')),
     messageAnimatedBackground: computed(() => this.ngxSignalTranslate.translate('Message.AnimatedBackground')),
+    refreshBackgroundImages: computed(() => this.ngxSignalTranslate.translate('RefreshBackgroundImages')),
     messageStorageSettings: computed(() => this.ngxSignalTranslate.translate('Message.StorageSettings')),
     sensitiveDataStorage: computed(() => this.ngxSignalTranslate.translate('SensitiveDataStorage')),
     messageSensitiveDataStorage: computed(() => this.ngxSignalTranslate.translate('Message.SensitiveDataStorage')),
@@ -86,6 +87,10 @@ export class SettingsBasics implements OnInit {
     if (typeof selectedValue !== 'boolean') return;
 
     this.storeSettings({ animatedBackground: selectedValue });
+  }
+
+  protected onRefreshBackgroundImages(): void {
+    this.mainState.patchState('backgroundImagesRefreshTrigger', (trigger) => trigger + 1);
   }
 
   protected onSensitiveDataStorageChange(selectedValue: SelectDataModel['value']): void {

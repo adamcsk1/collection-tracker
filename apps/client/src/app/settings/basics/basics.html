@@ -23,6 +23,17 @@
     [hint]="translations.messageAnimatedBackground()"
     (valueChange)="onAnimatedBackgroundChange($event)"
   />
+  <div>
+    <button
+      data-test-id="settings-refresh-background-images"
+      type="button"
+      [disabled]="!form.animatedBackground().value()"
+      (click)="onRefreshBackgroundImages()"
+    >
+      <i class="material-icons" aria-hidden="true"> refresh </i>
+      {{ translations.refreshBackgroundImages() }}
+    </button>
+  </div>
   <p>{{ translations.messageStorageSettings() }}</p>
   <libc-select
     data-test-id="settings-sensitive-data-storage"

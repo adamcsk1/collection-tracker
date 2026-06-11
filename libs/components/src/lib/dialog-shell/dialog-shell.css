@@ -92,7 +92,8 @@
     right: 0;
     z-index: 2;
     display: none;
-    min-width: 260px;
+    width: max-content;
+    max-width: min(100vw - calc(2 * var(--size-md)), calc(28 * var(--size-md)));
     overflow: hidden;
     border: var(--border-style);
     border-radius: var(--border-radius);

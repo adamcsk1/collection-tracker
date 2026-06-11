@@ -29,6 +29,7 @@ import { CollectionItemModel } from '../../collection-model';
 import { CollectionService } from '../../collection-service';
 import { ItemDialog } from './item-dialog';
 import { SeriesSeasonMetadataDialog } from '../../series-tracker/series-season-metadata-dialog/series-season-metadata-dialog';
+import { isSystemDisplayTag } from './utils/item-dialog-util';
 
 const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItemModel => ({
   image: 'https://example.com/poster.jpg',
@@ -399,12 +400,12 @@ describe('ItemDialog', () => {
   });
 
   it('detects system display tags', () => {
-    expect(component['isSystemDisplayTag'](MOVIE_TAG)).toBe(true);
-    expect(component['isSystemDisplayTag'](SERIES_TAG)).toBe(true);
-    expect(component['isSystemDisplayTag'](WATCHED_TAG)).toBe(true);
-    expect(component['isSystemDisplayTag'](FAVORITE_TAG)).toBe(true);
-    expect(component['isSystemDisplayTag'](COMPLETED_TAG)).toBe(true);
-    expect(component['isSystemDisplayTag']('#action')).toBe(false);
+    expect(isSystemDisplayTag(MOVIE_TAG)).toBe(true);
+    expect(isSystemDisplayTag(SERIES_TAG)).toBe(true);
+    expect(isSystemDisplayTag(WATCHED_TAG)).toBe(true);
+    expect(isSystemDisplayTag(FAVORITE_TAG)).toBe(true);
+    expect(isSystemDisplayTag(COMPLETED_TAG)).toBe(true);
+    expect(isSystemDisplayTag('#action')).toBe(false);
   });
 
   it('uses N/A when series tracker episode progress is not set', () => {
