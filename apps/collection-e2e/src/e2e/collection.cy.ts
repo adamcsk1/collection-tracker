@@ -139,7 +139,7 @@ describe('Collection — add a new element', () => {
     CollectionPage.getNewItemSaveAndCloseButton().click();
 
     // Open the item and verify it shows the mark-unwatched button (watched state)
-    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getListItems().contains(newTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkUnwatchedButton().should('be.visible');
   });
@@ -509,6 +509,9 @@ describe('Collection — series tracker', () => {
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(1).check();
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
+    CollectionPage.closeDialogByOverlay();
+    CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
+    CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
 
     cy.reload();

@@ -1,3 +1,8 @@
+const getActiveDialog = () => cy.get('.dialog').last();
+const getItemDialog = () => cy.getByTestId('item-dialog').find('.dialog-frame');
+const getSeriesMetadataDialog = () => cy.getByTestId('series-metadata-dialog').find('.dialog-frame');
+const getWatchedEpisodesDialogHost = () => cy.getByTestId('watched-episodes-dialog');
+
 export const CollectionPage = {
   visit: () => {
     cy.visit('/client/#/collection/library');
@@ -17,7 +22,8 @@ export const CollectionPage = {
 
   // List
   getList: () => cy.getByTestId('collection-list'),
-  getListItems: () => cy.getByTestId('list-item-title'),
+  getListItems: (options: Partial<Cypress.Timeoutable> = { timeout: 10000 }) =>
+    cy.getByTestId('list-item-title', options),
   getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
   getSeriesTrackerCompletedBadges: () => cy.getByTestId('list-item-series-tracker-completed'),
   getSharedBadges: () => cy.getByTestId('list-item-shared'),
@@ -65,59 +71,78 @@ export const CollectionPage = {
   getNewItemSaveAndCloseButton: () => cy.getByTestId('new-item-save-and-close'),
 
   // Item dialog
-  getItemDialogEditButton: () => cy.getByTestId('item-dialog-edit'),
-  getItemDialogReadOnlyButton: () => cy.getByTestId('item-dialog-read-only'),
-  getItemDialogSaveButton: () => cy.getByTestId('item-dialog-save'),
-  getItemDialogDeleteButton: () => cy.getByTestId('item-dialog-delete'),
+  getItemDialogHost: getItemDialog,
+  getItemDialogEditButton: () => getItemDialog().find('[data-test-id="item-dialog-edit"]'),
+  getItemDialogReadOnlyButton: () => getItemDialog().find('[data-test-id="item-dialog-read-only"]'),
+  getItemDialogSaveButton: () => getItemDialog().find('[data-test-id="item-dialog-save"]'),
+  getItemDialogDeleteButton: () => getItemDialog().find('[data-test-id="item-dialog-delete"]'),
   closeDialogByOverlay: () => cy.getByTestId('dialog-overlay').click({ force: true }),
-  openItemDialogActionsMenu: () => cy.getByTestId('dialog-actions-menu-button').click(),
-  getItemDialogMarkFavoriteButton: () => cy.getByTestId('item-dialog-mark-favorite'),
-  getItemDialogRemoveFavoriteButton: () => cy.getByTestId('item-dialog-remove-favorite'),
-  getItemDialogMarkWatchedButton: () => cy.getByTestId('item-dialog-mark-watched'),
-  getItemDialogMarkUnwatchedButton: () => cy.getByTestId('item-dialog-mark-unwatched'),
-  getItemDialogSharedLibraryBadge: () => cy.getByTestId('item-dialog-shared-library'),
-  getItemDialogUserRateChip: () => cy.getByTestId('item-dialog-user-rate-chip'),
-  getItemDialogTitleInput: () => cy.getByTestId('item-dialog-title').find('input'),
-  getItemDialogYearInput: () => cy.getByTestId('item-dialog-year').find('input'),
-  getItemDialogIMDbRateInput: () => cy.getByTestId('item-dialog-rate').find('input'),
-  getItemDialogRottenTomatoesRateInput: () => cy.getByTestId('item-dialog-rotten-tomatoes-rate').find('input'),
-  getItemDialogMetacriticRateInput: () => cy.getByTestId('item-dialog-metacritic-rate').find('input'),
-  getItemDialogUserRateInput: () => cy.getByTestId('item-dialog-user-rate').find('input'),
-  getItemDialogEpisodeProgressChip: () => cy.getByTestId('item-dialog-episode-progress-chip'),
-  getItemDialogCompletedChip: () => cy.getByTestId('item-dialog-completed-chip'),
-  getItemDialogSystemTagsSection: () => cy.getByTestId('item-dialog-system-tags-section'),
-  getItemDialogManageWatchedEpisodesButton: () => cy.getByTestId('item-dialog-manage-watched-episodes'),
-  getItemDialogManageSeriesMetadataButton: () => cy.getByTestId('item-dialog-manage-series-metadata'),
-  getItemDialogGenreInput: () => cy.getByTestId('item-dialog-genre').find('input'),
-  getItemDialogTagsInput: () => cy.getByTestId('item-dialog-tags').find('input'),
-  getItemDialogActorsInput: () => cy.getByTestId('item-dialog-actors').find('input'),
-  getItemDialogPlotInput: () => cy.getByTestId('item-dialog-plot').find('textarea'),
-  getItemDialogWatchedUpToSeasonSelect: () => cy.getByTestId('item-dialog-watched-up-to-season').find('select'),
-  getItemDialogWatchedUpToEpisodeSelect: () => cy.getByTestId('item-dialog-watched-up-to-episode').find('select'),
+  openItemDialogActionsMenu: () => {
+    getActiveDialog().then((dialog) => {
+      cy.wrap(dialog).find('[data-test-id="dialog-actions-menu-button"]').click();
+      cy.wrap(dialog).find('[data-test-id="dialog-actions-menu"]').should('be.visible');
+    });
+  },
+  getItemDialogMarkFavoriteButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-favorite"]'),
+  getItemDialogRemoveFavoriteButton: () => getItemDialog().find('[data-test-id="item-dialog-remove-favorite"]'),
+  getItemDialogMarkWatchedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-watched"]'),
+  getItemDialogMarkUnwatchedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-unwatched"]'),
+  getItemDialogSharedLibraryBadge: () => getItemDialog().find('[data-test-id="item-dialog-shared-library"]'),
+  getItemDialogUserRateChip: () => getItemDialog().find('[data-test-id="item-dialog-user-rate-chip"]'),
+  getItemDialogTitleInput: () => getItemDialog().find('[data-test-id="item-dialog-title"] input'),
+  getItemDialogYearInput: () => getItemDialog().find('[data-test-id="item-dialog-year"] input'),
+  getItemDialogIMDbRateInput: () => getItemDialog().find('[data-test-id="item-dialog-rate"] input'),
+  getItemDialogRottenTomatoesRateInput: () =>
+    getItemDialog().find('[data-test-id="item-dialog-rotten-tomatoes-rate"] input'),
+  getItemDialogMetacriticRateInput: () => getItemDialog().find('[data-test-id="item-dialog-metacritic-rate"] input'),
+  getItemDialogUserRateInput: () => getItemDialog().find('[data-test-id="item-dialog-user-rate"] input'),
+  getItemDialogEpisodeProgressChip: () => getItemDialog().find('[data-test-id="item-dialog-episode-progress-chip"]'),
+  getItemDialogCompletedChip: () => getItemDialog().find('[data-test-id="item-dialog-completed-chip"]'),
+  getItemDialogSystemTagsSection: () => getItemDialog().find('[data-test-id="item-dialog-system-tags-section"]'),
+  getItemDialogManageWatchedEpisodesButton: () =>
+    getItemDialog().find('[data-test-id="item-dialog-manage-watched-episodes"]'),
+  getItemDialogManageSeriesMetadataButton: () =>
+    getItemDialog().find('[data-test-id="item-dialog-manage-series-metadata"]'),
+  getItemDialogGenreInput: () => getItemDialog().find('[data-test-id="item-dialog-genre"] input'),
+  getItemDialogTagsInput: () => getItemDialog().find('[data-test-id="item-dialog-tags"] input'),
+  getItemDialogActorsInput: () => getItemDialog().find('[data-test-id="item-dialog-actors"] input'),
+  getItemDialogPlotInput: () => getItemDialog().find('[data-test-id="item-dialog-plot"] textarea'),
+  getItemDialogWatchedUpToSeasonSelect: () =>
+    getItemDialog().find('[data-test-id="item-dialog-watched-up-to-season"] select'),
+  getItemDialogWatchedUpToEpisodeSelect: () =>
+    getItemDialog().find('[data-test-id="item-dialog-watched-up-to-episode"] select'),
 
   // Series metadata dialog
-  getSeriesMetadataMessage: () => cy.getByTestId('series-metadata-message'),
-  getSeriesMetadataNoMetadataMessage: () => cy.getByTestId('series-metadata-no-metadata-message'),
-  getSeriesMetadataAddButton: () => cy.getByTestId('series-metadata-add'),
-  getSeriesMetadataRefreshButton: () => cy.getByTestId('series-metadata-refresh'),
-  getSeriesMetadataRemoveAllButton: () => cy.getByTestId('series-metadata-remove-all'),
-  getSeriesMetadataSaveButton: () => cy.getByTestId('series-metadata-save'),
-  getSeriesMetadataValidation: () => cy.getByTestId('series-metadata-validation'),
-  getSeriesMetadataSeasonInputs: () => cy.getByTestId('series-metadata-season').find('input'),
-  getSeriesMetadataEpisodeInputs: () => cy.getByTestId('series-metadata-episodes').find('input'),
-  getSeriesMetadataRemoveButtons: () => cy.getByTestId('series-metadata-remove'),
+  getSeriesMetadataDialogHost: () => cy.getByTestId('series-metadata-dialog'),
+  getSeriesMetadataMessage: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-message"]'),
+  getSeriesMetadataNoMetadataMessage: () =>
+    getSeriesMetadataDialog().find('[data-test-id="series-metadata-no-metadata-message"]'),
+  getSeriesMetadataAddButton: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-add"]'),
+  getSeriesMetadataRefreshButton: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-refresh"]'),
+  getSeriesMetadataRemoveAllButton: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-remove-all"]'),
+  getSeriesMetadataSaveButton: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-save"]'),
+  getSeriesMetadataValidation: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-validation"]'),
+  getSeriesMetadataSeasonInputs: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-season"] input'),
+  getSeriesMetadataEpisodeInputs: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-episodes"] input'),
+  getSeriesMetadataRemoveButtons: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-remove"]'),
   getSeriesMetadataEpisodeTitleToggles: () =>
-    cy.getByTestId('series-metadata-episode-titles-toggle').find('summary'),
+    getSeriesMetadataDialog().find('[data-test-id="series-metadata-episode-titles-toggle"] summary'),
   getSeriesMetadataEpisodeTitleInputs: () =>
-    cy.getByTestId('series-metadata-episode-title').find('input'),
+    getSeriesMetadataDialog().find('[data-test-id="series-metadata-episode-title"] input'),
 
   // Watched episodes dialog
-  getWatchedEpisodesDialogHost: () => cy.getByTestId('watched-episodes-dialog'),
-  getWatchedEpisodesDialog: () => cy.getByTestId('watched-episodes-dialog').last().find('.dialog-frame'),
-  getWatchedEpisodesSeasonToggle: () => cy.getByTestId('watched-episodes-season-toggle'),
-  getWatchedEpisodesEpisodeCheckbox: () => cy.getByTestId('watched-episodes-episode-checkbox'),
-  getWatchedEpisodesMarkAllWatchedButton: () => cy.getByTestId('watched-episodes-mark-all-watched'),
-  getWatchedEpisodesMarkAllUnwatchedButton: () => cy.getByTestId('watched-episodes-mark-all-unwatched'),
-  getWatchedEpisodesNoMetadataMessage: () => cy.getByTestId('watched-episodes-no-metadata-message'),
-  getWatchedEpisodesManageSeasonMetadataButton: () => cy.getByTestId('watched-episodes-manage-season-metadata'),
+  getWatchedEpisodesDialogHost,
+  getWatchedEpisodesDialog: () => getWatchedEpisodesDialogHost().last().find('.dialog-frame'),
+  getWatchedEpisodesSeasonToggle: () =>
+    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-season-toggle"]'),
+  getWatchedEpisodesEpisodeCheckbox: () =>
+    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-episode-checkbox"]'),
+  getWatchedEpisodesMarkAllWatchedButton: () =>
+    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-mark-all-watched"]'),
+  getWatchedEpisodesMarkAllUnwatchedButton: () =>
+    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-mark-all-unwatched"]'),
+  getWatchedEpisodesNoMetadataMessage: () =>
+    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-no-metadata-message"]'),
+  getWatchedEpisodesManageSeasonMetadataButton: () =>
+    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-manage-season-metadata"]'),
 };
