@@ -1,7 +1,6 @@
 export const TagManagementPage = {
   visit: () => {
     cy.visit('/client/#/settings/tag-management');
-    cy.reload();
   },
 
   getResetButton: () => cy.getByTestId('tag-management-reset'),

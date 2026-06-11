@@ -50,9 +50,9 @@ describe('Tag Management — custom tag in collection', () => {
     // with a clean slate.
     cy.request('POST', '/api/v1/tag-management', []);
     cy.request('POST', '/api/v1/create', item);
-    cy.intercept('GET', '/api/v1/tag-management').as('getTagManagement');
+    cy.intercept('GET', '/api/v1/statistics').as('getStatistics');
     TagManagementPage.visit();
-    cy.wait('@getTagManagement');
+    cy.wait('@getStatistics');
     TagManagementPage.getList().should('contain.text', customTag);
   });
 
@@ -81,25 +81,33 @@ describe('Tag Management — custom tag in collection', () => {
   });
 
   it('can set a weight value for the custom tag', () => {
+    cy.intercept('POST', '/api/v1/tag-management').as('saveTagManagement');
     TagManagementPage.getWeightInput(customTag).type('{selectall}5');
+    cy.wait('@saveTagManagement');
     TagManagementPage.getWeightInput(customTag).should('have.value', '5');
   });
 
   it('can check the image-border checkbox', () => {
+    cy.intercept('POST', '/api/v1/tag-management').as('saveTagManagement');
     TagManagementPage.getImageBorderCheckbox(customTag).should('not.be.checked');
     TagManagementPage.getImageBorderCheckbox(customTag).check();
+    cy.wait('@saveTagManagement');
     TagManagementPage.getImageBorderCheckbox(customTag).should('be.checked');
   });
 
   it('can check the text-color checkbox', () => {
+    cy.intercept('POST', '/api/v1/tag-management').as('saveTagManagement');
     TagManagementPage.getTextColorCheckbox(customTag).should('not.be.checked');
     TagManagementPage.getTextColorCheckbox(customTag).check();
+    cy.wait('@saveTagManagement');
     TagManagementPage.getTextColorCheckbox(customTag).should('be.checked');
   });
 
   it('can check the image-badge checkbox', () => {
+    cy.intercept('POST', '/api/v1/tag-management').as('saveTagManagement');
     TagManagementPage.getImageBadgeCheckbox(customTag).should('not.be.checked');
     TagManagementPage.getImageBadgeCheckbox(customTag).check();
+    cy.wait('@saveTagManagement');
     TagManagementPage.getImageBadgeCheckbox(customTag).should('be.checked');
   });
 });
@@ -115,13 +123,17 @@ describe('Tag Management — reset', () => {
   });
 
   it('clears tag management after confirming reset', () => {
+    cy.intercept('POST', '/api/v1/tag-management').as('saveTagManagement');
     // Set the checkbox via UI — avoids a race condition where the component's init
     // effect can clear API-seeded entries if it runs before preloadUserTagManagement resolves.
     TagManagementPage.getImageBorderCheckbox(customTag).check();
+    cy.wait('@saveTagManagement');
     TagManagementPage.getImageBorderCheckbox(customTag).should('be.checked');
 
+    cy.intercept('POST', '/api/v1/tag-management').as('resetTagManagement');
     cy.on('window:confirm', () => true);
     TagManagementPage.getResetButton().click();
+    cy.wait('@resetTagManagement');
 
     TagManagementPage.getImageBorderCheckbox(customTag).should('not.be.checked');
   });
