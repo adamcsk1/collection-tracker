@@ -77,10 +77,10 @@ class AndroidDownloadHandler(
   }
 
   private fun saveToDownloads(fileName: String, mimeType: String, bytes: ByteArray) {
-    val safeFileName = fileName.replace(Regex("[\\\\/:*?\"<>|]"), "_").ifBlank { "collection-tracker-download" }
+    val safeFileName = DownloadFile.sanitizeFileName(fileName)
     val values = ContentValues().apply {
       put(MediaStore.Downloads.DISPLAY_NAME, safeFileName)
-      put(MediaStore.Downloads.MIME_TYPE, mimeType.ifBlank { "application/octet-stream" })
+      put(MediaStore.Downloads.MIME_TYPE, DownloadFile.normalizeMimeType(mimeType))
       put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
       put(MediaStore.Downloads.IS_PENDING, 1)
     }

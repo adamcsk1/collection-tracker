@@ -1,6 +1,6 @@
 # Collection Tracker Project Instructions
 
-Collection Tracker is a self-hosted media catalog application for managing personal movie and series collections. It is built as an Nx monorepo with Angular frontends and a Fastify backend using SQLite persistence.
+Collection Tracker is a self-hosted media catalog application for managing personal movie and series collections. It is built as an Nx monorepo with Angular frontends, a Fastify backend using SQLite persistence, and a native Android WebView wrapper.
 
 AI search is powered by Ollama. Local development and Docker Compose read Ollama settings from `ollama.config.json` in the active data folder. Docker Compose does not run Ollama. The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:14b`, embedding model `mxbai-embed-large`, `batchSize: 10`, `parallelRequests: 1`, and `semanticCandidateLimit: 90`. Configured generate `options` are merged over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`. Optional root-level `keep_alive` is passed to Ollama generate and embed requests only when present in the config file.
 
@@ -39,6 +39,7 @@ In command chains, prefix each segment: `rtk git add . && rtk git commit -m "msg
 | `apps/server`         | Fastify REST API                                              |
 | `apps/dev-proxy`      | Local dev gateway serving everything through `localhost:4200` |
 | `apps/collection-e2e` | Cypress E2E tests                                             |
+| `android`             | Native Android WebView wrapper for deployed instances         |
 
 ## Shared Libraries
 
@@ -76,6 +77,8 @@ npm run format:check    # Prettier check
 npm run test            # Unit tests with Vitest
 npm run test:affected   # Test only affected projects
 npm run cypress:chrome  # Cypress E2E tests
+cd android && ./gradlew testDebugUnitTest  # Android JVM unit tests
+cd android && ./gradlew assembleDebug      # Android debug APK build
 ```
 
 ## Dev URLs
@@ -103,6 +106,9 @@ When adding, removing, or changing any server API endpoint or its request/respon
 
 Tests use Vitest and live next to the source file: `foo.ts` to `foo.spec.ts`.
 
+Android JVM unit tests live under `android/app/src/test/kotlin` and run with `./gradlew testDebugUnitTest` from the `android` directory. Android Gradle commands require Java 17 or newer.
+The Android project uses AGP 9+, which provides Kotlin support directly; do not add `org.jetbrains.kotlin.android` unless the Android Gradle plugin version requires it.
+
 When changing a source file, update its spec file when behavior, dependencies, imports, branches, or assertions change. Add cases for new code paths. Run `npm run test` before committing; all tests must pass.
 
 When tests fail, diagnose the root cause first. If the failure exposes a bug in production code, fix production code. Only update the test when production code is correct and the test is genuinely out of date.
@@ -112,6 +118,7 @@ Patterns by type:
 - Utilities: plain `describe`/`it`, import directly, assert outputs.
 - Angular components: `TestBed.configureTestingModule`, `provideStore(...)` for signal stores, `vi.useFakeTimers()` where timers are involved.
 - Server APIs: use shared test helpers from `apps/server/test/mocks/`, including `buildApp`, `mockResponse`, and `getDatabase()` when seeding or asserting database state.
+- Android: keep pure Kotlin helper logic separate from Activity/WebView framework code when practical so it can be tested without Android framework mocks.
 
 Always follow the existing test style in the file being tested.
 
@@ -153,6 +160,7 @@ Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, 
 
 - Database changes stay server-side. Use the existing SQLite database layer, repository modules, and migrations for schema changes.
 - Shared code belongs in `libs/`.
+- Android wrapper code belongs in `android/`; do not couple it to Nx app internals or server internals.
 - Apps must not import from other apps.
 - Cross-project imports must use declared path aliases.
 - Prefer small direct changes over speculative abstractions.

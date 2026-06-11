@@ -7,6 +7,7 @@ Stack:
 - Angular 21 standalone applications with signals
 - Fastify REST API
 - SQLite persistence through `better-sqlite3`
+- Native Android WebView wrapper
 - Vitest unit tests
 - Cypress E2E tests
 
@@ -36,6 +37,7 @@ Issue description and why it matters. Suggested fix.
 - Any changed database migration or repository code.
 - Any changed Cypress test, fixture, page object, or support command.
 - Any dependency, build, Nx, TypeScript, or CI configuration change.
+- Any changed Android Activity, WebView, JavaScript bridge, download handling, Gradle, manifest, or Android workflow behavior.
 
 ## TypeScript
 
@@ -112,6 +114,17 @@ Issue description and why it matters. Suggested fix.
 - Destructive account tests must use `cy.autoLoginWithNewUser()`, not the shared `cy.autoLogin()` user.
 - Tests involving `ConfirmService` actions must stub `window.confirm` before the action.
 - New pages should add `data-test-id` coverage, a page object, and relevant E2E coverage.
+
+## Android
+
+- Android wrapper code lives under `android/` and should not import or duplicate Nx app/server internals.
+- Prefer extracting URL, config, filename, parsing, and other pure Kotlin logic from Activity/WebView framework classes when it needs unit coverage.
+- Local Android JVM unit tests live under `android/app/src/test/kotlin` and should avoid Android framework mocks when pure Kotlin coverage is practical.
+- Android Gradle and GitHub Actions changes should use Java 17+, the checked-in Gradle wrapper, local JVM unit tests (`testDebugUnitTest`), and debug APK assembly (`assembleDebug`) unless the change is release-specific.
+- AGP 9+ provides Kotlin support directly; do not require the separate `org.jetbrains.kotlin.android` plugin when AGP rejects it and Kotlin source/test compilation is verified.
+- Do not allow machine-specific Android settings such as `local.properties`, `.idea`, `.gradle`, or hardcoded `org.gradle.java.home` to be committed.
+- Review WebView configuration, JavaScript bridge methods, URL handling, downloads, file pickers, and certificate handling for security regressions.
+- JavaScript bridge methods exposed with `@JavascriptInterface` should have narrow inputs and delegate to minimal Android-side behavior.
 
 ## I18n And Accessibility
 

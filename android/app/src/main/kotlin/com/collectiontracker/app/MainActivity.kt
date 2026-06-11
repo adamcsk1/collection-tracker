@@ -143,9 +143,9 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun openConfiguredWebApp(save: Boolean) {
-    val page = normalizeInput(pageInput.text.toString())
-    val userApi = normalizeInput(apiInput.text.toString())
-    val api = userApi.ifBlank { deriveApiUrlFromPage(page) }
+    val page = AndroidUrlConfig.normalizeInput(pageInput.text.toString())
+    val userApi = AndroidUrlConfig.normalizeInput(apiInput.text.toString())
+    val api = userApi.ifBlank { AndroidUrlConfig.deriveApiUrlFromPage(page) }
 
     if (api != userApi) {
       apiInput.setText(api)
@@ -376,26 +376,7 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun isLikelyCollectionTrackerPage(url: String?): Boolean {
-    if (url.isNullOrBlank() || pageUrl.isBlank()) return false
-
-    val configured = pageUrl.toUri()
-    val loaded = url.toUri()
-    val configuredPort = configured.port
-    val loadedPort = loaded.port
-
-    if (configured.scheme?.isNotBlank() == true && loaded.scheme != configured.scheme) {
-      return false
-    }
-
-    if (configured.host?.isNotBlank() == true && loaded.host != configured.host) {
-      return false
-    }
-
-    if (configuredPort != -1 && loadedPort != -1 && configuredPort != loadedPort) {
-      return false
-    }
-
-    return true
+    return AndroidUrlConfig.isLikelyCollectionTrackerPage(pageUrl, url)
   }
 
   private fun showInvalidPage() {
@@ -477,29 +458,14 @@ class MainActivity : AppCompatActivity() {
     errorContainer.isVisible = false
   }
 
-  private fun normalizeInput(input: String): String {
-    var cleaned = input.trim()
-    if (cleaned.isBlank()) return cleaned
-    if (!cleaned.startsWith("http://") && !cleaned.startsWith("https://")) {
-      cleaned = "https://$cleaned"
-    }
-    return cleaned
-  }
-
   private fun updateApiFromPageUrl() {
-    val page = normalizeInput(pageInput.text.toString())
-    val derivedApi = deriveApiUrlFromPage(page)
+    val page = AndroidUrlConfig.normalizeInput(pageInput.text.toString())
+    val derivedApi = AndroidUrlConfig.deriveApiUrlFromPage(page)
     if (derivedApi.isBlank()) {
       return
     }
 
     apiInput.setText(derivedApi)
-  }
-
-  private fun deriveApiUrlFromPage(inputPageUrl: String): String {
-    val trimmed = normalizeInput(inputPageUrl).trimEnd('/')
-    if (trimmed.isBlank()) return ""
-    return if (trimmed.endsWith("/api/v1")) trimmed else "$trimmed/api/v1"
   }
 
   private fun isNetworkAvailable(): Boolean {
