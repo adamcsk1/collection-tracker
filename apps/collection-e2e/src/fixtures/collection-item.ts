@@ -20,7 +20,7 @@ export const buildCollectionItem = (
   type: ItemType = 'movie',
   imdbId = 'tt1234567'
 ): CollectionItemFixture => ({
-  image: 'https://placehold.co/90x133',
+  image: '',
   title,
   genre: ['Action', 'Adventure'],
   IMDbId: imdbId,

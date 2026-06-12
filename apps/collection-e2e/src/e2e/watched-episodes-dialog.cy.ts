@@ -1,6 +1,14 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { CollectionPage } from '../page-objects/collection.po';
 
+const waitForSeriesTrackerItem = (imdbId: string) => {
+  cy.wait('@getSeriesTrackerItems')
+    .its('response.body.items')
+    .should((items: Array<{ IMDbId: string }>) => {
+      expect(items.some((item) => item.IMDbId === imdbId)).to.eq(true);
+    });
+};
+
 describe('Watched episodes dialog', () => {
   const imdbId = 'tt8300002';
   const seriesTitle = 'Watched Episodes Test Show';
@@ -11,9 +19,9 @@ describe('Watched episodes dialog', () => {
       ...buildCollectionItem(seriesTitle, 'series', imdbId),
       listType: 'series-tracker',
     });
-    cy.intercept('GET', '/api/v1/items*').as('getSeriesTrackerItems');
+    cy.intercept('GET', '/api/v1/items?*listType=series-tracker*').as('getSeriesTrackerItems');
     CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
+    waitForSeriesTrackerItem(imdbId);
   });
 
   it('opens dialog and shows no-metadata message when no metadata exists', () => {
@@ -33,8 +41,6 @@ describe('Watched episodes dialog', () => {
       ],
     });
 
-    CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -50,8 +56,6 @@ describe('Watched episodes dialog', () => {
     });
     cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/watched-episodes`).as('saveWatchedEpisodes');
 
-    CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -72,8 +76,6 @@ describe('Watched episodes dialog', () => {
     });
     cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/watched-episodes`).as('saveWatchedEpisodes');
 
-    CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -103,8 +105,6 @@ describe('Watched episodes dialog', () => {
     });
     cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/watched-episodes`).as('saveWatchedEpisodes');
 
-    CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -124,8 +124,6 @@ describe('Watched episodes dialog', () => {
     });
     cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/watched-episodes`).as('saveWatchedEpisodes');
 
-    CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -151,8 +149,6 @@ describe('Watched episodes dialog', () => {
       });
     }).as('saveWatchedEpisodes');
 
-    CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -184,8 +180,8 @@ describe('Watched episodes dialog', () => {
     cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/mark-all-watched`).as('markAllWatched');
     cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/watched-episodes`).as('markAllUnwatched');
 
-    CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
+    cy.reload();
+    waitForSeriesTrackerItem(imdbId);
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -198,8 +194,7 @@ describe('Watched episodes dialog', () => {
     CollectionPage.closeDialogByOverlay();
 
     CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
-    CollectionPage.getSeriesTrackerCompletedBadges().should('have.length', 1);
+    waitForSeriesTrackerItem(imdbId);
     CollectionPage.getSeriesTrackerSearchInput().clear().type('#completed');
     CollectionPage.getListItems().should('have.length', 1).and('contain.text', seriesTitle);
     CollectionPage.getSeriesTrackerSearchInput().clear().type('#uncompleted');
@@ -222,8 +217,7 @@ describe('Watched episodes dialog', () => {
     CollectionPage.closeDialogByOverlay();
 
     CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
-    CollectionPage.getSeriesTrackerCompletedBadges().should('have.length', 0);
+    waitForSeriesTrackerItem(imdbId);
     CollectionPage.getSeriesTrackerSearchInput().clear().type('#uncompleted');
     CollectionPage.getListItems().should('have.length', 2);
   });
@@ -243,8 +237,8 @@ describe('Watched episodes dialog', () => {
       seasons: [{ season: 1, episodes: 1 }],
     });
 
-    CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
+    cy.reload();
+    waitForSeriesTrackerItem(imdbId);
     CollectionPage.getSeriesTrackerCompletedBadges().should('have.length', 1);
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E01');

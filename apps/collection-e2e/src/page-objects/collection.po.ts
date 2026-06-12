@@ -11,7 +11,6 @@ export const CollectionPage = {
 
   visitSeriesTracker: () => {
     cy.visit('/client/#/collection/series-tracker');
-    cy.reload();
   },
 
   // Search

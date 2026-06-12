@@ -1,6 +1,14 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { CollectionPage } from '../page-objects/collection.po';
 
+const waitForSeriesTrackerItem = (imdbId: string) => {
+  cy.wait('@getSeriesTrackerItems')
+    .its('response.body.items')
+    .should((items: Array<{ IMDbId: string }>) => {
+      expect(items.some((item) => item.IMDbId === imdbId)).to.eq(true);
+    });
+};
+
 describe('Series metadata dialog', () => {
   const imdbId = 'tt8300001';
   const seriesTitle = 'Metadata Dialog Test Show';
@@ -11,9 +19,9 @@ describe('Series metadata dialog', () => {
       ...buildCollectionItem(seriesTitle, 'series', imdbId),
       listType: 'series-tracker',
     });
-    cy.intercept('GET', '/api/v1/items*').as('getSeriesTrackerItems');
+    cy.intercept('GET', '/api/v1/items?*listType=series-tracker*').as('getSeriesTrackerItems');
     CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
+    waitForSeriesTrackerItem(imdbId);
   });
 
   it('saves manual season metadata', () => {
@@ -67,8 +75,6 @@ describe('Series metadata dialog', () => {
     cy.intercept('DELETE', `/api/v1/series-tracker/${imdbId}/seasons`).as('deleteSeriesMetadata');
     cy.on('window:confirm', () => true);
 
-    CollectionPage.visitSeriesTracker();
-    cy.wait('@getSeriesTrackerItems');
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();

@@ -1,7 +1,6 @@
 export const StatisticsPage = {
   visit: () => {
     cy.visit('/client/#/statistics');
-    cy.reload();
   },
 
   getEmptyMessage: () => cy.getByTestId('statistics-empty', { timeout: 10000 }),
