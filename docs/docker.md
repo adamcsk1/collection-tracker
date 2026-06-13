@@ -132,4 +132,4 @@ This is the recommended deployment model for secure cookie handling, TLS certifi
 
 - The runtime image is based on `node:24-slim`.
 - [`docker/entrypoint.sh`](../docker/entrypoint.sh) prepares the mounted `/data` volume and then drops privileges to the configured non-root `APP_UID`/`APP_GID`.
-- `npm run release:create` packages a release folder with the Docker assets copied in and ready for image creation.
+- Release packaging details are covered in [Release packaging](./release.md).

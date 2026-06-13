@@ -29,3 +29,5 @@ Run Android commands with Java 17 or newer from the [`android`](../android) dire
 ./gradlew testDebugUnitTest
 ./gradlew assembleDebug
 ```
+
+Release APK packaging and signing details are covered in [Release packaging](./release.md).

@@ -30,7 +30,7 @@
     "format:affected": "npm run nx -- affected --target=format",
     "format:check": "npm run nx -- run-many --target=format-check --projects=client,components,services,shared,server,login,health,dev-proxy",
     "format:check:affected": "npm run nx -- affected --target=format-check",
-    "release:create": "npm run build && node ./scripts/create-release.js",
+    "release": "node ./scripts/create-release.js",
     "check-i18n": "node scripts/check-i18n.js",
     "sort-i18n": "node scripts/sort-i18n.js",
     "prepare": "husky"

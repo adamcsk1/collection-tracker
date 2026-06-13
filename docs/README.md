@@ -21,6 +21,7 @@ This directory contains the maintained project documentation. The root [`README.
 
 ## Delivery
 
+- [Release packaging](./release.md)
 - [Docker deployment](./docker.md)
 - [Android wrapper](./android.md)
 
