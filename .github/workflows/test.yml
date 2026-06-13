@@ -20,5 +20,13 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - run: npm ci
       - run: npm run test
+      - run: .\gradlew.bat testDebugUnitTest
+        working-directory: android
+      - run: .\gradlew.bat assembleDebug
+        working-directory: android

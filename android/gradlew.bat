@@ -6,6 +6,22 @@ if exist "gradle\wrapper\gradle-wrapper.jar" (
     "%JAVA_HOME%\bin\java.exe" -jar gradle\wrapper\gradle-wrapper.jar %*
     exit /b %errorlevel%
   )
+
+  if exist "C:\Program Files\Android\Android Studio\jbr\bin\java.exe" (
+    "C:\Program Files\Android\Android Studio\jbr\bin\java.exe" -jar gradle\wrapper\gradle-wrapper.jar %*
+    exit /b %errorlevel%
+  )
+
+  if exist "C:\Program Files\Android\Android Studio\jre\bin\java.exe" (
+    "C:\Program Files\Android\Android Studio\jre\bin\java.exe" -jar gradle\wrapper\gradle-wrapper.jar %*
+    exit /b %errorlevel%
+  )
+
+  where java >nul 2>nul
+  if %errorlevel%==0 (
+    java -jar gradle\wrapper\gradle-wrapper.jar %*
+    exit /b %errorlevel%
+  )
 )
 
 where gradle >nul 2>nul
