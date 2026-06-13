@@ -21,7 +21,6 @@ import android.webkit.WebSettings
 import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.graphics.Color
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.CheckBox
@@ -37,7 +36,6 @@ import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import org.json.JSONObject
-import com.google.android.material.color.MaterialColors
 
 private const val PREFS_NAME = "collection_tracker_prefs"
 private const val PREF_PAGE_URL = "page_url"
@@ -482,7 +480,7 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun showJsDialog(message: String?, result: JsResult, isConfirm: Boolean) {
-    val accentColor = MaterialColors.getColor(this, android.R.attr.colorSecondary, Color.BLACK)
+    val dialogButtonColor = getColor(R.color.dialog_button)
     val dialog = AlertDialog.Builder(this)
       .setMessage(message.orEmpty())
       .setOnCancelListener { result.cancel() }
@@ -497,7 +495,7 @@ class MainActivity : AppCompatActivity() {
       }
       .show()
 
-    dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(accentColor)
-    dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(accentColor)
+    dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(dialogButtonColor)
+    dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(dialogButtonColor)
   }
 }
