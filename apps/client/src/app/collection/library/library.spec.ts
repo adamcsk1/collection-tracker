@@ -192,6 +192,28 @@ describe('Collection library component', () => {
     expect(mainCollectionState.state.reloadTrigger()).toBe(3);
   });
 
+  it('clears forced standard search when switching from standard search to AI search', () => {
+    aiSearch.useAiSearch.set(false);
+    collectionState.setState('forceStandardSearch', true);
+
+    fixture.componentInstance['onToggleAiSearch']();
+
+    expect(aiSearch.useAiSearch()).toBe(true);
+    expect(collectionState.state.forceStandardSearch()).toBe(false);
+  });
+
+  it('keeps forced standard search when switching to AI search with a route search filter', () => {
+    queryParamMap.next(convertToParamMap({ search: '#action' }));
+    fixture.detectChanges();
+    aiSearch.useAiSearch.set(false);
+
+    fixture.componentInstance['onToggleAiSearch']();
+
+    expect(aiSearch.useAiSearch()).toBe(true);
+    expect(collectionState.state.searchText()).toBe('#action');
+    expect(collectionState.state.forceStandardSearch()).toBe(true);
+  });
+
   it('registers and clears the float search template', () => {
     expect(floatActions.searchTemplate()).toBeTruthy();
 

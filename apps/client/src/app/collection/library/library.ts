@@ -162,11 +162,14 @@ export class CollectionLibrary {
 
   protected onToggleAiSearch(): void {
     const useAiSearch = this.aiSearch.useAiSearch();
+    const querySearch = this.querySearch();
     this.aiSearch.useAiSearch.set(!useAiSearch);
-    this.collectionState.setState('searchText', '');
+    this.collectionState.setState('searchText', querySearch || '');
 
     if (useAiSearch) {
       this.mainCollectionState.setState('reloadTrigger', this.mainCollectionState.state.reloadTrigger() + 1);
+    } else if (!querySearch) {
+      this.collectionState.setState('forceStandardSearch', false);
     }
   }
 
