@@ -43,8 +43,18 @@ export class SeriesTracker {
 
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
-  protected readonly seriesTrackerDataSource = ({ offset, limit, searchText }: CollectionListDataSourceRequest) =>
-    this.api.searchItems(buildStandardSearchFilters(searchText, 'series-tracker'), offset, limit);
+  protected readonly seriesTrackerDataSource = ({
+    offset,
+    limit,
+    searchText,
+    orderBy,
+    orderDirection,
+  }: CollectionListDataSourceRequest) =>
+    this.api.searchItems(
+      { ...buildStandardSearchFilters(searchText, 'series-tracker'), orderBy, orderDirection },
+      offset,
+      limit
+    );
   protected readonly translations = {
     messageEmptySeriesTracker: computed(() => this.ngxSignalTranslate.translate('Message.EmptySeriesTracker')),
     messageAddFirstSeriesTracker: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstSeriesTracker')),

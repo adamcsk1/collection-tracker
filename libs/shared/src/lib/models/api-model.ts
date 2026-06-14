@@ -9,6 +9,8 @@ export type CollectionItemApiModel = CollectionItemModel;
 
 export type CollectionItemTypeFilter = 'movie' | 'series';
 export type CollectionItemTagMode = 'any' | 'all';
+export type CollectionItemOrderBy = 'createdAt' | 'alphabet';
+export type CollectionItemOrderDirection = 'asc' | 'desc';
 
 export interface CollectionItemFiltersApiModel {
   search?: string;
@@ -19,6 +21,8 @@ export interface CollectionItemFiltersApiModel {
   watched?: boolean;
   completed?: boolean;
   listType?: CollectionListTypeModel;
+  orderBy?: CollectionItemOrderBy;
+  orderDirection?: CollectionItemOrderDirection;
 }
 
 export interface CollectionItemsApiResponseModel {

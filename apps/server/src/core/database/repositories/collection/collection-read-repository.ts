@@ -6,7 +6,7 @@ import {
 import Database from 'better-sqlite3';
 import { toApiItem } from './collection-mapper';
 import { buildItemWhere, normalizeLimit, normalizeListType, normalizeOffset } from './collection-query';
-import { CollectionItemQueryOptions, CollectionItemRow } from './collection-types';
+import { CollectionItemOrderOptions, CollectionItemQueryOptions, CollectionItemRow } from './collection-types';
 
 export interface AiSearchCollectionItem extends CollectionItemApiModel {
   itemId: number;
@@ -15,6 +15,15 @@ export interface AiSearchCollectionItem extends CollectionItemApiModel {
 }
 
 const stringifySearchValue = (value: unknown): string => `${value ?? ''}`.replace(/\s+/g, ' ').trim();
+
+const buildCollectionOrderBy = ({
+  orderBy = 'createdAt',
+  orderDirection = 'desc',
+}: CollectionItemOrderOptions): string => {
+  const directionSql = orderDirection === 'asc' ? 'ASC' : 'DESC';
+  if (orderBy === 'alphabet') return `title_lower ${directionSql}, id ${directionSql}`;
+  return `created_at ${directionSql}, id ${directionSql}`;
+};
 
 const toAiSearchItem = (db: Database.Database, row: CollectionItemRow): AiSearchCollectionItem => {
   const apiItem = toApiItem(db, row);
@@ -70,6 +79,10 @@ export const searchCollectionItems = (
   const limit = normalizeLimit(options.limit);
   const queryParts = buildItemWhere(usernameHashes, options.filters, options.matchedImdbIds);
   const whereSql = queryParts.where.join(' AND ');
+  const orderBySql = buildCollectionOrderBy({
+    orderBy: options.filters?.orderBy,
+    orderDirection: options.filters?.orderDirection,
+  });
 
   if (options.matchedImdbIds?.length === 0) {
     return { items: [], total: 0, offset, limit };
@@ -103,7 +116,7 @@ export const searchCollectionItems = (
       `SELECT *
        FROM collection_items
        WHERE ${whereSql}
-       ORDER BY created_at DESC, id DESC
+       ORDER BY ${orderBySql}
        LIMIT ? OFFSET ?`
     )
     .all(...queryParts.params, limit, offset) as CollectionItemRow[];

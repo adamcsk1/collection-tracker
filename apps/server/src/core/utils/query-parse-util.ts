@@ -1,5 +1,7 @@
 import {
   CollectionItemFiltersApiModel,
+  CollectionItemOrderBy,
+  CollectionItemOrderDirection,
   CollectionItemTagMode,
   CollectionItemTypeFilter,
   CollectionListTypeModel,
@@ -38,6 +40,16 @@ export const parseListType = (value: unknown): CollectionListTypeModel | undefin
   return;
 };
 
+export const parseOrderBy = (value: unknown): CollectionItemOrderBy | undefined => {
+  if (value === 'createdAt' || value === 'alphabet') return value;
+  return;
+};
+
+export const parseOrderDirection = (value: unknown): CollectionItemOrderDirection | undefined => {
+  if (value === 'asc' || value === 'desc') return value;
+  return;
+};
+
 export const parseNumber = (value: unknown, fallback: number): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -56,5 +68,7 @@ export const parseFilters = (query: Record<string, unknown>): CollectionItemFilt
     watched: parseBoolean(query.watched),
     completed: parseBoolean(query.completed),
     listType,
+    orderBy: parseOrderBy(query.orderBy),
+    orderDirection: parseOrderDirection(query.orderDirection),
   };
 };

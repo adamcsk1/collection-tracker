@@ -43,8 +43,18 @@ export class WatchLater {
 
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
-  protected readonly watchLaterDataSource = ({ offset, limit, searchText }: CollectionListDataSourceRequest) =>
-    this.api.searchItems(buildStandardSearchFilters(searchText, 'watch-later'), offset, limit);
+  protected readonly watchLaterDataSource = ({
+    offset,
+    limit,
+    searchText,
+    orderBy,
+    orderDirection,
+  }: CollectionListDataSourceRequest) =>
+    this.api.searchItems(
+      { ...buildStandardSearchFilters(searchText, 'watch-later'), orderBy, orderDirection },
+      offset,
+      limit
+    );
   protected readonly translations = {
     messageEmptyWatchLater: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWatchLater')),
     messageAddFirstWatchLater: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWatchLater')),

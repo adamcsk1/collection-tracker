@@ -52,6 +52,8 @@ describe('FloatActionButtons', () => {
       addNew,
       randomPick: vi.fn(),
       toggleAiSearch: vi.fn(),
+      toggleOrderBy: vi.fn(),
+      toggleOrderDirection: vi.fn(),
       showFunctions: vi.fn(),
     });
     component['onShowFunctions']();
@@ -70,6 +72,8 @@ describe('FloatActionButtons', () => {
       addNew,
       randomPick: vi.fn(),
       toggleAiSearch: vi.fn(),
+      toggleOrderBy: vi.fn(),
+      toggleOrderDirection: vi.fn(),
       showFunctions: vi.fn(),
     });
     actionButtons.updateConfig({ showAiSearchButton: false, showRandomPickButton: false });
@@ -97,6 +101,8 @@ describe('FloatActionButtons', () => {
       addNew,
       randomPick: vi.fn(),
       toggleAiSearch: vi.fn(),
+      toggleOrderBy: vi.fn(),
+      toggleOrderDirection: vi.fn(),
       showFunctions: vi.fn(),
     });
     actionButtons.updateConfig({ showRandomPickButton: false });
@@ -119,5 +125,29 @@ describe('FloatActionButtons', () => {
 
     expect(fixture.nativeElement.querySelector('[data-test-id="hide-functions"]')).toBeNull();
     expect(floatActions.actionButtonsVisible()).toBe(false);
+  });
+
+  it('runs order callbacks from the action menu', () => {
+    const toggleOrderBy = vi.fn();
+    const toggleOrderDirection = vi.fn();
+    actionButtons.setCallbacks({
+      addNew: vi.fn(),
+      randomPick: vi.fn(),
+      toggleAiSearch: vi.fn(),
+      toggleOrderBy,
+      toggleOrderDirection,
+      showFunctions: vi.fn(),
+    });
+    actionButtons.updateConfig({ showOrderButtons: true });
+    component['onShowFunctions']();
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-test-id="list-order-by-toggle"]').click();
+    component['onShowFunctions']();
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('[data-test-id="list-order-direction-toggle"]').click();
+
+    expect(toggleOrderBy).toHaveBeenCalledTimes(1);
+    expect(toggleOrderDirection).toHaveBeenCalledTimes(1);
   });
 });

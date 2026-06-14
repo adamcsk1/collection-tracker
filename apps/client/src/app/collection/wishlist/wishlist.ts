@@ -43,8 +43,18 @@ export class Wishlist {
 
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
-  protected readonly wishlistDataSource = ({ offset, limit, searchText }: CollectionListDataSourceRequest) =>
-    this.api.searchItems(buildStandardSearchFilters(searchText, 'wishlist'), offset, limit);
+  protected readonly wishlistDataSource = ({
+    offset,
+    limit,
+    searchText,
+    orderBy,
+    orderDirection,
+  }: CollectionListDataSourceRequest) =>
+    this.api.searchItems(
+      { ...buildStandardSearchFilters(searchText, 'wishlist'), orderBy, orderDirection },
+      offset,
+      limit
+    );
   protected readonly translations = {
     messageEmptyWishlist: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWishlist')),
     messageAddFirstWishlist: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWishlist')),

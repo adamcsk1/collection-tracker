@@ -81,7 +81,7 @@ describe('FloatActions', () => {
     const scrollToTop = fixture.nativeElement.querySelector('[data-test-id="scroll-to-top"]');
     expect(scrollToTop).toBeTruthy();
     expect(scrollToTop.parentElement.classList).toContain('float-button-scroll-to-top-no-search-bar');
-    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]').classList).toContain(
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]').classList).not.toContain(
       'float-search-bar-menu-only'
     );
   });
@@ -106,7 +106,6 @@ describe('FloatActions', () => {
 
     const floatSearchBar = fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]');
     expect(floatSearchBar.classList).toContain('float-search-bar-no-search');
-    expect(floatSearchBar.classList).not.toContain('float-search-bar-menu-only');
     expect(fixture.nativeElement.querySelector('[data-test-id="scroll-to-top"]')).toBeNull();
   });
 

@@ -29,13 +29,6 @@
   pointer-events: auto;
 }
 
-.float-search-bar-menu-only {
-  left: calc(var(--size-xs) + var(--float-search-side-margin));
-  right: auto;
-  width: auto;
-  margin-inline: 0;
-}
-
 .float-search-bar-no-search {
   justify-content: space-between;
 }
@@ -60,14 +53,7 @@
     margin-left: var(--size-md);
   }
 
-  .float-search-bar-menu-only {
-    display: none;
-  }
-
   .float-search-bar-no-search {
-    right: auto;
-    width: auto;
-    margin-inline: 0;
     justify-content: flex-start;
   }
 
@@ -87,6 +73,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-left: auto;
   flex-shrink: 0;
 }
 

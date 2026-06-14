@@ -1,4 +1,9 @@
-import { CollectionItemFiltersApiModel, CollectionListTypeModel } from '@shared/models/api-model';
+import {
+  CollectionItemFiltersApiModel,
+  CollectionItemOrderBy,
+  CollectionItemOrderDirection,
+  CollectionListTypeModel,
+} from '@shared/models/api-model';
 
 export interface CollectionItemRow {
   id: number;
@@ -25,6 +30,11 @@ export interface CollectionItemQueryOptions {
   offset: number;
   limit: number;
   matchedImdbIds?: string[];
+}
+
+export interface CollectionItemOrderOptions {
+  orderBy?: CollectionItemOrderBy;
+  orderDirection?: CollectionItemOrderDirection;
 }
 
 export interface QueryParts {

@@ -135,6 +135,42 @@ describe('collection search APIs', () => {
     );
   });
 
+  it('orders items by created date and alphabet', async () => {
+    insertUser();
+    insertItem({ imdbId: 'tt-alpha', title: 'Alpha', createdAt: '2024-01-01T00:00:00.000Z' });
+    insertItem({ imdbId: 'tt-charlie', title: 'Charlie', createdAt: '2024-01-02T00:00:00.000Z' });
+    insertItem({ imdbId: 'tt-bravo', title: 'Bravo', createdAt: '2024-01-03T00:00:00.000Z' });
+    const { register } = await import('./get-collection-items-api');
+
+    const createdAscendingResponse = await callRoute(register, 'get', '/api/v1/items', {
+      query: { orderBy: 'createdAt', orderDirection: 'asc' },
+      usernameHash: 'user',
+    });
+    const alphabetDescendingResponse = await callRoute(register, 'get', '/api/v1/items', {
+      query: { orderBy: 'alphabet', orderDirection: 'desc' },
+      usernameHash: 'user',
+    });
+
+    expect(createdAscendingResponse.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({ IMDbId: 'tt-alpha' }),
+          expect.objectContaining({ IMDbId: 'tt-charlie' }),
+          expect.objectContaining({ IMDbId: 'tt-bravo' }),
+        ],
+      })
+    );
+    expect(alphabetDescendingResponse.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({ IMDbId: 'tt-charlie' }),
+          expect.objectContaining({ IMDbId: 'tt-bravo' }),
+          expect.objectContaining({ IMDbId: 'tt-alpha' }),
+        ],
+      })
+    );
+  });
+
   it('returns matched IMDb IDs in the caller-provided order', async () => {
     insertUser();
     insertItem({ imdbId: 'tt-first', title: 'First', createdAt: '2024-01-01T00:00:00.000Z' });

@@ -17,11 +17,16 @@ You are the architecture advisor for the Collection Tracker — an Nx monorepo w
 | `apps/server`     | Fastify REST API                               |
 | `apps/dev-proxy`  | Local dev gateway on localhost:4200            |
 | `apps/collection-e2e` | Cypress E2E tests                         |
-| `android`         | Native Android WebView wrapper                 |
 | `libs/components` | Standalone Angular UI components               |
 | `libs/services`   | Angular services and signal stores             |
 | `libs/shared`     | Models, constants, styles, animations, utils   |
 | `libs/public`     | Static assets and PWA metadata                 |
+
+Standalone root-level projects:
+
+| Project   | Purpose                        |
+|-----------|--------------------------------|
+| `android` | Native Android WebView wrapper |
 
 ## Hard constraints
 

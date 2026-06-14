@@ -417,6 +417,14 @@ components:
             listType:
               type: string
               enum: [library, watch-later, wishlist, series-tracker]
+            orderBy:
+              type: string
+              enum: [createdAt, alphabet]
+              default: createdAt
+            orderDirection:
+              type: string
+              enum: [asc, desc]
+              default: desc
 
     CollectionItemSuggestionsResponse:
       type: object
@@ -1208,6 +1216,18 @@ paths:
             type: string
             enum: [library, watch-later, wishlist, series-tracker]
             default: library
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum: [createdAt, alphabet]
+            default: createdAt
+        - name: orderDirection
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
       responses:
         '200':
           description: Filtered collection result.

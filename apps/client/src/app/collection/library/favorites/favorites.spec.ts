@@ -13,6 +13,10 @@ import { Favorites } from './favorites';
 })
 class ListStub {
   public readonly hideFloatActions = input(false);
+  public readonly showAddButton = input(true);
+  public readonly showAiSearchButton = input(true);
+  public readonly showRandomPickButton = input(true);
+  public readonly orderStorageKey = input('');
   public readonly routeSearchText = input('');
   public readonly dataSource = input<unknown>();
 }
@@ -33,12 +37,15 @@ describe('Favorites', () => {
     return fixture;
   };
 
-  it('passes the favorite tag and hides list actions', () => {
+  it('passes the favorite tag and disables add-only list actions', () => {
     const fixture = createFixture();
     const list = fixture.debugElement.query(By.directive(ListStub)).componentInstance as ListStub;
 
     expect(list.routeSearchText()).toBe(FAVORITE_TAG);
-    expect(list.hideFloatActions()).toBe(true);
+    expect(list.showAddButton()).toBe(false);
+    expect(list.showAiSearchButton()).toBe(false);
+    expect(list.showRandomPickButton()).toBe(false);
+    expect(list.orderStorageKey()).toBe('favorites');
   });
 
   it('renders the favorites empty state', () => {

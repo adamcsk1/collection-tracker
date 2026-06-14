@@ -65,6 +65,8 @@ npm run typecheck:spec
 npm run format:check
 ```
 
+Release packaging details are covered in [Release packaging](./docs/release.md).
+
 ## Environment
 
 The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. `npm start` runs `server:preserve`, which creates both files from [apps/server/scripts](./apps/server/scripts) when they are missing.
@@ -144,7 +146,7 @@ See the server documentation for the full runtime model and data layout.
 
 ## Release
 
-`npm run release:create` builds the applications and creates `release/release-<version>/` with the build output and Docker assets required for packaging.
+See the [release documentation](./docs/release.md) for packaging, version bump, tag, hash, and Android APK details.
 
 ## License
 

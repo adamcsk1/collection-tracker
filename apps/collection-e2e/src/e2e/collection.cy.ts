@@ -11,6 +11,13 @@ const seedItems = (items: ReturnType<typeof buildCollectionItem>[]) => {
   });
 };
 
+const expectVisibleTitles = (titles: string[]) => {
+  CollectionPage.getListItems().should('have.length', titles.length);
+  titles.forEach((title, index) => {
+    CollectionPage.getListItems().eq(index).should('contain.text', title);
+  });
+};
+
 describe('Collection — empty state', () => {
   beforeEach(() => {
     cy.autoLogin();
@@ -369,6 +376,141 @@ describe('Collection — standard search in secondary lists', () => {
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Series Tracker Search Alpha');
     CollectionPage.getListItems().should('not.contain.text', 'Series Tracker Search Beta');
+  });
+});
+
+describe('Collection — order controls', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+  });
+
+  it('orders library items and persists the selected order after refresh', () => {
+    seedItems([
+      buildCollectionItem('Order Alpha', 'movie', 'tt8400001'),
+      buildCollectionItem('Order Charlie', 'movie', 'tt8400002'),
+      buildCollectionItem('Order Bravo', 'movie', 'tt8400003'),
+    ]);
+    cy.intercept('GET', '/api/v1/items*').as('getItems');
+    CollectionPage.visit();
+    cy.wait('@getItems');
+
+    expectVisibleTitles(['Order Bravo', 'Order Charlie', 'Order Alpha']);
+
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getOrderDirectionToggleButton().click();
+    cy.wait('@getItems').its('request.url').should('include', 'orderDirection=asc');
+    expectVisibleTitles(['Order Alpha', 'Order Charlie', 'Order Bravo']);
+
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getOrderByToggleButton().click();
+    cy.wait('@getItems').its('request.url').should('include', 'orderBy=alphabet');
+    expectVisibleTitles(['Order Alpha', 'Order Bravo', 'Order Charlie']);
+
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getOrderDirectionToggleButton().click();
+    cy.wait('@getItems').its('request.url').should('include', 'orderDirection=desc');
+    expectVisibleTitles(['Order Charlie', 'Order Bravo', 'Order Alpha']);
+
+    cy.reload();
+    cy.wait('@getItems').then((interception) => {
+      expect(interception.request.url).to.include('orderBy=alphabet');
+      expect(interception.request.url).to.include('orderDirection=desc');
+    });
+    expectVisibleTitles(['Order Charlie', 'Order Bravo', 'Order Alpha']);
+  });
+
+  it('keeps order preferences isolated per collection page', () => {
+    seedItems([
+      buildCollectionItem('Library Alpha', 'movie', 'tt8400011'),
+      buildCollectionItem('Library Bravo', 'movie', 'tt8400012'),
+    ]);
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Wishlist Alpha', 'movie', 'tt8400013'),
+      listType: 'wishlist',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Wishlist Bravo', 'movie', 'tt8400014'),
+      listType: 'wishlist',
+    });
+    cy.intercept('GET', '/api/v1/items*').as('getItems');
+    CollectionPage.visit();
+    cy.wait('@getItems');
+
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getOrderByToggleButton().click();
+    cy.wait('@getItems');
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getOrderDirectionToggleButton().click();
+    cy.wait('@getItems');
+    expectVisibleTitles(['Library Bravo', 'Library Alpha']);
+
+    CommonPage.openMenu();
+    CommonPage.getNavWishlistLink().click();
+    cy.wait('@getItems').then((interception) => {
+      expect(interception.request.url).to.include('listType=wishlist');
+      expect(interception.request.url).to.include('orderBy=createdAt');
+      expect(interception.request.url).to.include('orderDirection=desc');
+    });
+    expectVisibleTitles(['Wishlist Bravo', 'Wishlist Alpha']);
+
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getOrderByToggleButton().click();
+    cy.wait('@getItems').its('request.url').should('include', 'orderBy=alphabet');
+    cy.reload();
+    cy.wait('@getItems').its('request.url').should('include', 'orderBy=alphabet');
+    expectVisibleTitles(['Wishlist Alpha', 'Wishlist Bravo']);
+
+    CommonPage.openMenu();
+    CommonPage.getNavCollectionLink().click();
+    cy.wait('@getItems').then((interception) => {
+      expect(interception.request.url).to.include('orderBy=alphabet');
+      expect(interception.request.url).to.include('orderDirection=desc');
+    });
+    expectVisibleTitles(['Library Bravo', 'Library Alpha']);
+  });
+
+  it('shows order controls on secondary collection pages and favorites', () => {
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Watch Later Order', 'movie', 'tt8400021'),
+      listType: 'watch-later',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Wishlist Order', 'movie', 'tt8400022'),
+      listType: 'wishlist',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Series Tracker Order', 'series', 'tt8400023'),
+      listType: 'series-tracker',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Favorite Order', 'movie', 'tt8400024'),
+      tags: ['#movie', '#favorite'],
+    });
+
+    CommonPage.openMenu();
+    CommonPage.getNavWatchLaterLink().click();
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getOrderByToggleButton().should('be.visible');
+    CollectionPage.getOrderDirectionToggleButton().should('be.visible');
+
+    CommonPage.openMenu();
+    CommonPage.getNavWishlistLink().click();
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getOrderByToggleButton().should('be.visible');
+    CollectionPage.getOrderDirectionToggleButton().should('be.visible');
+
+    CommonPage.openMenu();
+    CommonPage.getNavSeriesTrackerLink().click();
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getOrderByToggleButton().should('be.visible');
+    CollectionPage.getOrderDirectionToggleButton().should('be.visible');
+
+    CommonPage.openMenu();
+    CommonPage.getNavFavoritesLink().click();
+    cy.getByTestId('collection-search').should('not.exist');
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getOrderByToggleButton().should('be.visible');
+    CollectionPage.getOrderDirectionToggleButton().should('be.visible');
   });
 });
 

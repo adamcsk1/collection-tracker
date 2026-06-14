@@ -54,6 +54,8 @@ export const CollectionPage = {
   getRandomPickButton: () => cy.getByTestId('random-pick'),
   getScrollToTopButton: () => cy.getByTestId('scroll-to-top'),
   getAiSearchToggleButton: () => cy.getByTestId('ai-search-toggle'),
+  getOrderByToggleButton: () => cy.getByTestId('list-order-by-toggle'),
+  getOrderDirectionToggleButton: () => cy.getByTestId('list-order-direction-toggle'),
 
   // AI search input
   getAiSearchTrigger: () => cy.getByTestId('ai-search-trigger'),

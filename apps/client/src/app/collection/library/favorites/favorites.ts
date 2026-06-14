@@ -17,8 +17,17 @@ export class Favorites {
   private readonly api = inject(ApiService);
 
   protected readonly favoriteTag = FAVORITE_TAG;
-  protected readonly favoritesDataSource = ({ offset, limit }: CollectionListDataSourceRequest) =>
-    this.api.searchItems({ tags: [this.favoriteTag], tagMode: 'all', listType: 'library' }, offset, limit);
+  protected readonly favoritesDataSource = ({
+    offset,
+    limit,
+    orderBy,
+    orderDirection,
+  }: CollectionListDataSourceRequest) =>
+    this.api.searchItems(
+      { tags: [this.favoriteTag], tagMode: 'all', listType: 'library', orderBy, orderDirection },
+      offset,
+      limit
+    );
   protected readonly translations = {
     messageEmptyFavorites: computed(() => this.ngxSignalTranslate.translate('Message.EmptyFavorites')),
     messageAddFirstFavorite: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstFavorite')),

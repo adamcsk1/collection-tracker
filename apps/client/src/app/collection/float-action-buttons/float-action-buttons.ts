@@ -27,6 +27,16 @@ export class FloatActionButtons implements OnDestroy {
     ),
     aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
     randomPick: computed(() => this.ngxSignalTranslate.translate('RandomPick')),
+    orderBySwitchButtonLabel: computed(() =>
+      this.config().orderBy === 'createdAt'
+        ? this.ngxSignalTranslate.translate('SwitchToAlphabetOrder')
+        : this.ngxSignalTranslate.translate('SwitchToCreatedAtOrder')
+    ),
+    orderDirectionSwitchButtonLabel: computed(() =>
+      this.config().orderDirection === 'asc'
+        ? this.ngxSignalTranslate.translate('SwitchToDescendingOrder')
+        : this.ngxSignalTranslate.translate('SwitchToAscendingOrder')
+    ),
     hideFunctions: computed(() => this.ngxSignalTranslate.translate('HideFunctions')),
     showFunctions: computed(() => this.ngxSignalTranslate.translate('ShowFunctions')),
   };
@@ -38,15 +48,23 @@ export class FloatActionButtons implements OnDestroy {
   protected readonly aiSearchIcon = computed(() =>
     !this.useAiSearch() && this.aiAvailable() ? 'search' : 'psychology'
   );
+  protected readonly orderByIcon = computed(() =>
+    this.config().orderBy === 'createdAt' ? 'schedule' : 'sort_by_alpha'
+  );
+  protected readonly orderDirectionIcon = computed(() =>
+    this.config().orderDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'
+  );
   protected readonly showFloatButtons = signal(false);
   protected readonly actionButtonsVisible = computed(() => this.config().showActions && this.showFloatButtons());
   protected readonly canShowActionButton = computed(() => {
     const config = this.config();
-    return config.showAddButton || this.showAiSearchButton() || config.showRandomPickButton;
+    return config.showAddButton || this.showAiSearchButton() || config.showRandomPickButton || config.showOrderButtons;
   });
   protected readonly addOnlyMode = computed(() => {
     const config = this.config();
-    return config.showAddButton && !this.showAiSearchButton() && !config.showRandomPickButton;
+    return (
+      config.showAddButton && !this.showAiSearchButton() && !config.showRandomPickButton && !config.showOrderButtons
+    );
   });
   protected readonly showFloatActions = computed(() => this.config().showActions && this.canShowActionButton());
 
@@ -88,6 +106,16 @@ export class FloatActionButtons implements OnDestroy {
 
   protected onToggleAiSearch(): void {
     this.actionButtons.toggleAiSearch();
+    this.showFloatButtons.set(false);
+  }
+
+  protected onToggleOrderBy(): void {
+    this.actionButtons.toggleOrderBy();
+    this.showFloatButtons.set(false);
+  }
+
+  protected onToggleOrderDirection(): void {
+    this.actionButtons.toggleOrderDirection();
     this.showFloatButtons.set(false);
   }
 

@@ -77,7 +77,13 @@ export class CollectionLibrary {
   protected readonly useStandardSearch = computed(
     () => !this.useAiSearch() || this.collectionState.state.forceStandardSearch()
   );
-  protected readonly collectionDataSource = ({ offset, limit, searchText }: CollectionListDataSourceRequest) => {
+  protected readonly collectionDataSource = ({
+    offset,
+    limit,
+    searchText,
+    orderBy,
+    orderDirection,
+  }: CollectionListDataSourceRequest) => {
     const aiIds = this.aiSearchMatchedIds();
     const promptText = this.collectionState.state.aiSearchPromptText().trim();
     const useAiSearch = this.aiSearch.useAiSearch() && !this.collectionState.state.forceStandardSearch();
@@ -89,8 +95,12 @@ export class CollectionLibrary {
     return useAiSearch
       ? promptText
         ? this.api.getMatchedItems({ imdbIds: aiIds as string[], offset, limit })
-        : this.api.searchItems({ listType: 'library' }, offset, limit)
-      : this.api.searchItems(buildStandardSearchFilters(searchText, 'library'), offset, limit);
+        : this.api.searchItems({ listType: 'library', orderBy, orderDirection }, offset, limit)
+      : this.api.searchItems(
+          { ...buildStandardSearchFilters(searchText, 'library'), orderBy, orderDirection },
+          offset,
+          limit
+        );
   };
 
   constructor() {

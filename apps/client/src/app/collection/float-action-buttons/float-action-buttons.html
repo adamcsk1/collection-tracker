@@ -42,6 +42,32 @@
         </button>
       </div>
     }
+    @if (config().showOrderButtons) {
+      <div class="float-button">
+        <button
+          data-test-id="list-order-by-toggle"
+          class="button-icon material-icons"
+          [attr.aria-label]="translations.orderBySwitchButtonLabel()"
+          [title]="translations.orderBySwitchButtonLabel()"
+          [disabled]="apiLoadNetworkStatus() === 'pending'"
+          (click)="onToggleOrderBy()"
+        >
+          {{ orderByIcon() }}
+        </button>
+      </div>
+      <div class="float-button">
+        <button
+          data-test-id="list-order-direction-toggle"
+          class="button-icon material-icons"
+          [attr.aria-label]="translations.orderDirectionSwitchButtonLabel()"
+          [title]="translations.orderDirectionSwitchButtonLabel()"
+          [disabled]="apiLoadNetworkStatus() === 'pending'"
+          (click)="onToggleOrderDirection()"
+        >
+          {{ orderDirectionIcon() }}
+        </button>
+      </div>
+    }
   </div>
   <div class="float-button float-show-button float-button-basic" animate.enter="animation-scale-in">
     <button

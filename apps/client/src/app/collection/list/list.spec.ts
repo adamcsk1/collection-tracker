@@ -8,6 +8,8 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
+import { WebstorageService } from '@services/webstorage/webstorage-service';
+import { STORAGE_COLLECTION_LIST_ORDER_PREFERENCES } from '@shared/constants/storage-const';
 import { VIRTUAL_UNCOMPLETED_TAG, VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
@@ -43,6 +45,7 @@ describe('List', () => {
   let floatActions: FloatActionsService;
   let actionButtons: FloatActionButtonsService;
   let scrollSpy: ReturnType<typeof vi.fn>;
+  let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
 
   const buildFilters = (searchText: string): CollectionItemFiltersApiModel => {
     const search = searchText.trim();
@@ -72,6 +75,7 @@ describe('List', () => {
 
   beforeEach(() => {
     portal = { open: vi.fn() };
+    webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
     api = {
       searchItems: vi.fn((_filters, offset = 0, limit = 50) => {
         const items = [buildItem('Alpha'), buildItem('Beta'), buildItem('Gamma')];
@@ -86,6 +90,7 @@ describe('List', () => {
       imports: [List],
       providers: [
         { provide: PortalService, useValue: portal },
+        { provide: WebstorageService, useValue: webstorage },
         { provide: ApiService, useValue: api },
         {
           provide: AiSearchService,
@@ -370,6 +375,9 @@ describe('List', () => {
     expect(floatActions.config().actionsAvailable).toBe(true);
     expect(actionButtons.config().showActions).toBe(true);
     expect(actionButtons.config().showAiSearchButton).toBe(true);
+    expect(actionButtons.config().showOrderButtons).toBe(true);
+    expect(actionButtons.config().orderBy).toBe('createdAt');
+    expect(actionButtons.config().orderDirection).toBe('desc');
     expect(floatActions.actionsComponent()).toBe(FloatActionButtons);
 
     fixture.destroy();
@@ -386,5 +394,39 @@ describe('List', () => {
     actionButtons.addNew();
 
     expect(addNewSpy).toHaveBeenCalled();
+  });
+
+  it('restores list order preference from local storage', () => {
+    webstorage.getItem.mockReturnValue(JSON.stringify({ library: { orderBy: 'alphabet', orderDirection: 'asc' } }));
+
+    fixture.detectChanges();
+
+    expect(component['orderBy']()).toBe('alphabet');
+    expect(component['orderDirection']()).toBe('asc');
+    expect(api.searchItems).toHaveBeenCalled();
+  });
+
+  it('stores list order preference under the current page key', () => {
+    fixture.componentRef.setInput('listType', 'wishlist');
+    fixture.detectChanges();
+
+    component['onToggleOrderBy']();
+    component['onToggleOrderDirection']();
+    fixture.detectChanges();
+
+    const latestStoredValue = webstorage.setItem.mock.calls.at(-1)?.[1] as string;
+    expect(webstorage.setItem.mock.calls.at(-1)?.[0]).toBe(STORAGE_COLLECTION_LIST_ORDER_PREFERENCES);
+    expect(JSON.parse(latestStoredValue)).toEqual({ wishlist: { orderBy: 'alphabet', orderDirection: 'asc' } });
+  });
+
+  it('uses an explicit order storage key when provided', () => {
+    fixture.componentRef.setInput('orderStorageKey', 'favorites');
+    fixture.detectChanges();
+
+    component['onToggleOrderBy']();
+    fixture.detectChanges();
+
+    const latestStoredValue = webstorage.setItem.mock.calls.at(-1)?.[1] as string;
+    expect(JSON.parse(latestStoredValue)).toEqual({ favorites: { orderBy: 'alphabet', orderDirection: 'desc' } });
   });
 });

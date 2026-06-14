@@ -39,7 +39,12 @@ In command chains, prefix each segment: `rtk git add . && rtk git commit -m "msg
 | `apps/server`         | Fastify REST API                                              |
 | `apps/dev-proxy`      | Local dev gateway serving everything through `localhost:4200` |
 | `apps/collection-e2e` | Cypress E2E tests                                             |
-| `android`             | Native Android WebView wrapper for deployed instances         |
+
+## Standalone Projects
+
+| Project   | Purpose                                                |
+| --------- | ------------------------------------------------------ |
+| `android` | Native Android WebView wrapper for deployed instances  |
 
 ## Shared Libraries
 
