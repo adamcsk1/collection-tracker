@@ -1,8 +1,9 @@
 const getActiveDialog = () => cy.get('.dialog').last();
-const getItemDialog = () => cy.getByTestId('item-dialog').find('.dialog-frame');
-const getSeriesMetadataDialog = () => cy.getByTestId('series-metadata-dialog').find('.dialog-frame');
+const getItemDialog = () => cy.getByTestId('item-dialog').last().find('.dialog-frame');
+const getSeriesMetadataDialog = () => cy.getByTestId('series-metadata-dialog').last().find('.dialog-frame');
 const getWatchedEpisodesDialogHost = () => cy.getByTestId('watched-episodes-dialog');
-const getDialogComponentHost = (testId: string) => cy.getByTestId(testId).parents('.dialog').first();
+const getWatchedEpisodesDialog = () => getWatchedEpisodesDialogHost().last();
+const getDialogComponentHost = (testId: string) => cy.getByTestId(testId).last().parents('.dialog').first();
 
 export const CollectionPage = {
   visit: () => {
@@ -82,7 +83,7 @@ export const CollectionPage = {
   getItemDialogReadOnlyButton: () => getItemDialog().find('[data-test-id="item-dialog-read-only"]'),
   getItemDialogSaveButton: () => getItemDialog().find('[data-test-id="item-dialog-save"]'),
   getItemDialogDeleteButton: () => getItemDialog().find('[data-test-id="item-dialog-delete"]'),
-  closeDialogByOverlay: () => cy.getByTestId('dialog-overlay').click({ force: true }),
+  closeDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),
   closeActiveDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),
   openItemDialogActionsMenu: () => {
     getActiveDialog().then((dialog) => {
@@ -143,17 +144,17 @@ export const CollectionPage = {
   // Watched episodes dialog
   getWatchedEpisodesDialogHost,
   getWatchedEpisodesDialogComponentHost: () => getDialogComponentHost('watched-episodes-dialog'),
-  getWatchedEpisodesDialog: () => getWatchedEpisodesDialogHost().last().find('.dialog-frame'),
+  getWatchedEpisodesDialog: () => getWatchedEpisodesDialog().find('.dialog-frame'),
   getWatchedEpisodesSeasonToggle: () =>
-    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-season-toggle"]'),
+    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-season-toggle"]'),
   getWatchedEpisodesEpisodeCheckbox: () =>
-    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-episode-checkbox"]'),
+    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-episode-checkbox"]'),
   getWatchedEpisodesMarkAllWatchedButton: () =>
-    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-mark-all-watched"]'),
+    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-mark-all-watched"]'),
   getWatchedEpisodesMarkAllUnwatchedButton: () =>
-    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-mark-all-unwatched"]'),
+    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-mark-all-unwatched"]'),
   getWatchedEpisodesNoMetadataMessage: () =>
-    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-no-metadata-message"]'),
+    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-no-metadata-message"]'),
   getWatchedEpisodesManageSeasonMetadataButton: () =>
-    getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-manage-season-metadata"]'),
+    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-manage-season-metadata"]'),
 };

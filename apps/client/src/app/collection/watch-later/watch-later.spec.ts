@@ -18,6 +18,14 @@ describe('WatchLater', () => {
   const api = {
     searchItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
   };
+  const dataSourceRequest = (searchText: string, offset = 0, limit = 50) => ({
+    reset: true,
+    offset,
+    limit,
+    searchText,
+    orderBy: 'createdAt' as const,
+    orderDirection: 'desc' as const,
+  });
 
   const createFixture = (searchText = '') => {
     TestBed.configureTestingModule({
@@ -71,9 +79,13 @@ describe('WatchLater', () => {
   });
 
   it('searches watch later items by standard text', () => {
-    fixture.componentInstance['watchLaterDataSource']({ reset: true, offset: 10, limit: 25, searchText: ' alien ' });
+    fixture.componentInstance['watchLaterDataSource'](dataSourceRequest(' alien ', 10, 25));
 
-    expect(api.searchItems).toHaveBeenCalledWith({ search: 'alien', listType: 'watch-later' }, 10, 25);
+    expect(api.searchItems).toHaveBeenCalledWith(
+      { search: 'alien', listType: 'watch-later', orderBy: 'createdAt', orderDirection: 'desc' },
+      10,
+      25
+    );
   });
 
   it('registers and clears the float search template', () => {

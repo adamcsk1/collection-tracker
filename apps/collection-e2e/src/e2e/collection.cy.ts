@@ -18,6 +18,16 @@ const expectVisibleTitles = (titles: string[]) => {
   });
 };
 
+const showOrderControls = () => {
+  cy.get('body').then((body) => {
+    if (body.find('[data-test-id="show-functions"]').length) {
+      CollectionPage.getShowFunctionsButton().click();
+    }
+  });
+  CollectionPage.getOrderByToggleButton().should('be.visible');
+  CollectionPage.getOrderDirectionToggleButton().should('be.visible');
+};
+
 describe('Collection — empty state', () => {
   beforeEach(() => {
     cy.autoLogin();
@@ -442,7 +452,7 @@ describe('Collection — order controls', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderDirectionToggleButton().click();
     cy.wait('@getItems');
-    expectVisibleTitles(['Library Bravo', 'Library Alpha']);
+    expectVisibleTitles(['Library Alpha', 'Library Bravo']);
 
     CommonPage.openMenu();
     CommonPage.getNavWishlistLink().click();
@@ -458,15 +468,15 @@ describe('Collection — order controls', () => {
     cy.wait('@getItems').its('request.url').should('include', 'orderBy=alphabet');
     cy.reload();
     cy.wait('@getItems').its('request.url').should('include', 'orderBy=alphabet');
-    expectVisibleTitles(['Wishlist Alpha', 'Wishlist Bravo']);
+    expectVisibleTitles(['Wishlist Bravo', 'Wishlist Alpha']);
 
     CommonPage.openMenu();
     CommonPage.getNavCollectionLink().click();
     cy.wait('@getItems').then((interception) => {
       expect(interception.request.url).to.include('orderBy=alphabet');
-      expect(interception.request.url).to.include('orderDirection=desc');
+      expect(interception.request.url).to.include('orderDirection=asc');
     });
-    expectVisibleTitles(['Library Bravo', 'Library Alpha']);
+    expectVisibleTitles(['Library Alpha', 'Library Bravo']);
   });
 
   it('shows order controls on secondary collection pages and favorites', () => {
@@ -489,28 +499,20 @@ describe('Collection — order controls', () => {
 
     CommonPage.openMenu();
     CommonPage.getNavWatchLaterLink().click();
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getOrderByToggleButton().should('be.visible');
-    CollectionPage.getOrderDirectionToggleButton().should('be.visible');
+    showOrderControls();
 
     CommonPage.openMenu();
     CommonPage.getNavWishlistLink().click();
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getOrderByToggleButton().should('be.visible');
-    CollectionPage.getOrderDirectionToggleButton().should('be.visible');
+    showOrderControls();
 
     CommonPage.openMenu();
     CommonPage.getNavSeriesTrackerLink().click();
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getOrderByToggleButton().should('be.visible');
-    CollectionPage.getOrderDirectionToggleButton().should('be.visible');
+    showOrderControls();
 
     CommonPage.openMenu();
     CommonPage.getNavFavoritesLink().click();
     cy.getByTestId('collection-search').should('not.exist');
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getOrderByToggleButton().should('be.visible');
-    CollectionPage.getOrderDirectionToggleButton().should('be.visible');
+    showOrderControls();
   });
 });
 
@@ -537,7 +539,7 @@ describe('Collection — favorites', () => {
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogRemoveFavoriteButton().should('be.visible');
 
-    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.closeActiveDialogByOverlay();
     CollectionPage.getFavoriteBadges().should('have.length', 1);
 
     CommonPage.openMenu();

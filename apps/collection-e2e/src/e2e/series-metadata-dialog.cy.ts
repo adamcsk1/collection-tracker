@@ -58,7 +58,7 @@ describe('Series metadata dialog', () => {
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     CollectionPage.getSeriesMetadataAddButton().click();
-    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.closeActiveDialogByOverlay();
 
     CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.openItemDialogActionsMenu();
@@ -81,7 +81,7 @@ describe('Series metadata dialog', () => {
 
     CollectionPage.getWatchedEpisodesDialog().should('be.visible');
     CollectionPage.getWatchedEpisodesNoMetadataMessage().should('not.exist');
-    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.closeActiveDialogByOverlay();
 
     cy.getByTestId('watched-episodes-dialog').should('not.exist');
     CollectionPage.getItemDialogHost().should('be.visible');

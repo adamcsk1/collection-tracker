@@ -301,7 +301,7 @@ describe('Settings - access tokens', () => {
     cy.wait('@createToken').its('response.statusCode').should('eq', 200);
 
     // Close the dialog
-    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.closeActiveDialogByOverlay();
 
     // Fetch the token list to get the stored tokenHash
     cy.request('GET', '/api/v1/user/access-tokens').then((response) => {

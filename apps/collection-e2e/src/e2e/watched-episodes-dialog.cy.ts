@@ -159,6 +159,9 @@ describe('Watched episodes dialog', () => {
 
     CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E01');
+    CollectionPage.closeActiveDialogByOverlay();
+    cy.getByTestId('item-dialog').should('not.exist');
+    cy.get('.dialog').should('not.exist');
   });
 
   it('marks all episodes watched from the manage episodes dialog and updates completed filters', () => {
@@ -189,9 +192,12 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getWatchedEpisodesMarkAllWatchedButton().click();
     cy.wait('@markAllWatched').its('response.statusCode').should('eq', 200);
     CollectionPage.closeDialogByOverlay();
+    CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
     CollectionPage.getItemDialogSystemTagsSection().should('contain.text', '#completed');
     CollectionPage.closeDialogByOverlay();
+    cy.getByTestId('item-dialog').should('not.exist');
+    cy.get('.dialog').should('not.exist');
 
     CollectionPage.visitSeriesTracker();
     waitForSeriesTrackerItem(imdbId);
@@ -212,9 +218,12 @@ describe('Watched episodes dialog', () => {
       expect(interception.response?.statusCode).to.eq(200);
     });
     CollectionPage.closeDialogByOverlay();
+    CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'N/A');
     CollectionPage.getItemDialogSystemTagsSection().should('not.contain.text', '#completed');
     CollectionPage.closeDialogByOverlay();
+    cy.getByTestId('item-dialog').should('not.exist');
+    cy.get('.dialog').should('not.exist');
 
     CollectionPage.visitSeriesTracker();
     waitForSeriesTrackerItem(imdbId);

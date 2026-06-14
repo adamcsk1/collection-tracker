@@ -32,7 +32,7 @@ describe('Item dialog — edit flow', () => {
     cy.contains('Updated Title').should('be.visible');
 
     // Close dialog and verify list shows updated title
-    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.closeActiveDialogByOverlay();
     CollectionPage.getListItems().should('contain.text', 'Updated Title');
   });
 
@@ -75,7 +75,7 @@ describe('Item dialog — edit flow', () => {
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
 
     CollectionPage.getItemDialogUserRateChip().should('contain.text', '9.4');
-    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.closeActiveDialogByOverlay();
     CollectionPage.setListPreferredRatingToUser();
     CollectionPage.visit();
     CollectionPage.getListItemUserRates().should('contain.text', '9.4');
@@ -100,7 +100,7 @@ describe('Item dialog — edit flow', () => {
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
 
     CollectionPage.getItemDialogUserRateChip().should('not.exist');
-    cy.get('.dialog-overlay').click({ force: true });
+    CollectionPage.closeActiveDialogByOverlay();
     CollectionPage.getListItemUserRates().should('not.exist');
   });
 

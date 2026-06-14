@@ -19,6 +19,14 @@ describe('SeriesTracker', () => {
   const api = {
     searchItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
   };
+  const dataSourceRequest = (searchText: string, offset = 0, limit = 50) => ({
+    reset: true,
+    offset,
+    limit,
+    searchText,
+    orderBy: 'createdAt' as const,
+    orderDirection: 'desc' as const,
+  });
 
   const createFixture = (searchText = '') => {
     TestBed.configureTestingModule({
@@ -72,47 +80,53 @@ describe('SeriesTracker', () => {
   });
 
   it('searches series tracker items by standard text', () => {
-    fixture.componentInstance['seriesTrackerDataSource']({ reset: true, offset: 10, limit: 25, searchText: ' dark ' });
+    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(' dark ', 10, 25));
 
-    expect(api.searchItems).toHaveBeenCalledWith({ search: 'dark', listType: 'series-tracker' }, 10, 25);
+    expect(api.searchItems).toHaveBeenCalledWith(
+      { search: 'dark', listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      10,
+      25
+    );
   });
 
   it('searches series tracker items by tag', () => {
-    fixture.componentInstance['seriesTrackerDataSource']({ reset: true, offset: 0, limit: 50, searchText: '#drama' });
+    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest('#drama'));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { tags: ['#drama'], tagMode: 'all', listType: 'series-tracker' },
+      { tags: ['#drama'], tagMode: 'all', listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
   });
 
   it('maps virtual unwatched search to series tracker filters', () => {
-    fixture.componentInstance['seriesTrackerDataSource']({
-      reset: true,
-      offset: 0,
-      limit: 50,
-      searchText: VIRTUAL_UNWATCHED_TAG,
-    });
+    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(VIRTUAL_UNWATCHED_TAG));
 
-    expect(api.searchItems).toHaveBeenCalledWith({ watched: false, listType: 'series-tracker' }, 0, 50);
+    expect(api.searchItems).toHaveBeenCalledWith(
+      { watched: false, listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      0,
+      50
+    );
   });
 
   it('maps virtual uncompleted search to series tracker filters', () => {
-    fixture.componentInstance['seriesTrackerDataSource']({
-      reset: true,
-      offset: 0,
-      limit: 50,
-      searchText: VIRTUAL_UNCOMPLETED_TAG,
-    });
+    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(VIRTUAL_UNCOMPLETED_TAG));
 
-    expect(api.searchItems).toHaveBeenCalledWith({ completed: false, listType: 'series-tracker' }, 0, 50);
+    expect(api.searchItems).toHaveBeenCalledWith(
+      { completed: false, listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      0,
+      50
+    );
   });
 
   it('searches series tracker items without a text filter by default', () => {
-    fixture.componentInstance['seriesTrackerDataSource']({ reset: true, offset: 0, limit: 50, searchText: '' });
+    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(''));
 
-    expect(api.searchItems).toHaveBeenCalledWith({ listType: 'series-tracker' }, 0, 50);
+    expect(api.searchItems).toHaveBeenCalledWith(
+      { listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      0,
+      50
+    );
   });
 
   it('registers and clears the float search template', () => {

@@ -18,6 +18,14 @@ describe('Wishlist', () => {
   const api = {
     searchItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
   };
+  const dataSourceRequest = (searchText: string, offset = 0, limit = 50) => ({
+    reset: true,
+    offset,
+    limit,
+    searchText,
+    orderBy: 'createdAt' as const,
+    orderDirection: 'desc' as const,
+  });
 
   const createFixture = (searchText = '') => {
     TestBed.configureTestingModule({
@@ -71,9 +79,13 @@ describe('Wishlist', () => {
   });
 
   it('searches wishlist items by standard text', () => {
-    fixture.componentInstance['wishlistDataSource']({ reset: true, offset: 10, limit: 25, searchText: ' dune ' });
+    fixture.componentInstance['wishlistDataSource'](dataSourceRequest(' dune ', 10, 25));
 
-    expect(api.searchItems).toHaveBeenCalledWith({ search: 'dune', listType: 'wishlist' }, 10, 25);
+    expect(api.searchItems).toHaveBeenCalledWith(
+      { search: 'dune', listType: 'wishlist', orderBy: 'createdAt', orderDirection: 'desc' },
+      10,
+      25
+    );
   });
 
   it('registers and clears the float search template', () => {
