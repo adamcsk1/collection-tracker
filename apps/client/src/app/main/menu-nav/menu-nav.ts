@@ -51,7 +51,7 @@ export class MenuNav {
       )
       .subscribe();
     this.collection.triggerReload();
-    this.portal.close();
+    this.portal.closeAll();
   }
 
   protected onLogout(): void {
@@ -68,6 +68,6 @@ export class MenuNav {
   }
 
   protected onClose(): void {
-    this.portal.close();
+    this.portal.closeAll();
   }
 }

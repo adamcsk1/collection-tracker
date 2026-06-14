@@ -77,7 +77,11 @@ describe('ItemDialog', () => {
     updateCollectionItem: ReturnType<typeof vi.fn>;
     triggerReload: ReturnType<typeof vi.fn>;
   };
-  let portal: { close: ReturnType<typeof vi.fn>; open: ReturnType<typeof vi.fn> };
+  let portal: {
+    closeAll: ReturnType<typeof vi.fn>;
+    open: ReturnType<typeof vi.fn>;
+    openStacked: ReturnType<typeof vi.fn>;
+  };
   let confirm: { open: ReturnType<typeof vi.fn> };
   let api: {
     delete: ReturnType<typeof vi.fn>;
@@ -99,7 +103,7 @@ describe('ItemDialog', () => {
       updateCollectionItem: vi.fn(),
       triggerReload: vi.fn(),
     };
-    portal = { close: vi.fn(), open: vi.fn() };
+    portal = { closeAll: vi.fn(), open: vi.fn(), openStacked: vi.fn() };
     confirm = { open: vi.fn() };
     api = {
       delete: vi.fn(() => of(undefined)),
@@ -435,12 +439,11 @@ describe('ItemDialog', () => {
 
     component['onManageWatchedEpisodes']();
 
-    expect(portal.open).toHaveBeenCalledWith(
+    expect(portal.openStacked).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
         imdbId: 'tt1234567',
         saved: expect.any(Function),
-        closed: expect.any(Function),
       })
     );
   });
@@ -491,11 +494,10 @@ describe('ItemDialog', () => {
 
     component['onManageSeriesMetadata']();
 
-    expect(portal.open).toHaveBeenCalledWith(SeriesSeasonMetadataDialog, {
+    expect(portal.openStacked).toHaveBeenCalledWith(SeriesSeasonMetadataDialog, {
       imdbId: 'tt1234567',
       initialSeasons: [{ season: 1, episodes: 2 }],
       saved: expect.any(Function),
-      closed: expect.any(Function),
     });
   });
 
@@ -508,7 +510,7 @@ describe('ItemDialog', () => {
     expect(api.delete).toHaveBeenCalledWith('tt1234567', 'testhash', undefined);
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', undefined);
     expect(collectionService.triggerReload).toHaveBeenCalled();
-    expect(portal.close).toHaveBeenCalled();
+    expect(portal.closeAll).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.DeleteItem');
   });
 
@@ -519,7 +521,7 @@ describe('ItemDialog', () => {
 
     expect(api.delete).not.toHaveBeenCalled();
     expect(collectionService.deleteCollectionItem).not.toHaveBeenCalled();
-    expect(portal.close).not.toHaveBeenCalled();
+    expect(portal.closeAll).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('');
   });
 

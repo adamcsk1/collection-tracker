@@ -21,7 +21,7 @@ describe('SeriesSeasonMetadataDialog', () => {
     refreshSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
     deleteSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
   };
-  let portal: { close: ReturnType<typeof vi.fn> };
+  let portal: { closeTop: ReturnType<typeof vi.fn> };
   let confirm: { open: ReturnType<typeof vi.fn> };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
 
@@ -33,7 +33,7 @@ describe('SeriesSeasonMetadataDialog', () => {
       ),
       deleteSeriesTrackerSeasons: vi.fn(() => of({ seasons: [], item: { hash: 'metadata-deleted-hash' } })),
     };
-    portal = { close: vi.fn() };
+    portal = { closeTop: vi.fn() };
     confirm = { open: vi.fn(() => of(true)) };
 
     TestBed.configureTestingModule({
@@ -94,13 +94,13 @@ describe('SeriesSeasonMetadataDialog', () => {
     });
     expect(saved).toHaveBeenCalledWith([{ season: 1, episodes: 2, titles: ['Pilot'] }], undefined);
     expect(toastState.state.message()).toBe('Toast.SeriesMetadataSaved');
-    expect(portal.close).toHaveBeenCalled();
+    expect(portal.closeTop).toHaveBeenCalled();
   });
 
   it('calls the default portal close when closed', () => {
     component['onClose']();
 
-    expect(portal.close).toHaveBeenCalled();
+    expect(portal.closeTop).toHaveBeenCalled();
   });
 
   it('reads and writes episode titles', () => {
@@ -118,7 +118,7 @@ describe('SeriesSeasonMetadataDialog', () => {
     component['onClose']();
 
     expect(customClosed).toHaveBeenCalled();
-    expect(portal.close).not.toHaveBeenCalled();
+    expect(portal.closeTop).not.toHaveBeenCalled();
   });
 
   it('refreshes series metadata after confirmation', async () => {

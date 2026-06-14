@@ -44,7 +44,7 @@ export class WatchedEpisodesDialog implements OnInit {
   public readonly saved = input<
     (watchedEpisodes: SeriesTrackerWatchedEpisodeModel[], item?: CollectionItemApiModel) => void
   >(() => undefined);
-  public readonly closed = input<() => void>(() => this.portal.close());
+  public readonly closed = input<() => void>(() => this.portal.closeTop());
   protected readonly translations = {
     title: computed(() => this.ngxSignalTranslate.translate('Title.WatchedEpisodes')),
     setSeasonMetadata: computed(() => this.ngxSignalTranslate.translate('Message.SetSeasonMetadata')),
@@ -214,19 +214,13 @@ export class WatchedEpisodesDialog implements OnInit {
   }
 
   protected onManageSeasonMetadata(): void {
-    this.portal.open(SeriesSeasonMetadataDialog, {
+    this.portal.openStacked(SeriesSeasonMetadataDialog, {
       imdbId: this.imdbId(),
       initialSeasons: this.seasonsMetadata(),
       saved: (seasons: SeriesTrackerSeasonMetadataModel[], item?: CollectionItemApiModel) => {
         this.seasonsMetadata.set(seasons);
         if (item) this.saved()(this.watchedEpisodes(), item);
       },
-      closed: () =>
-        this.portal.open(WatchedEpisodesDialog, {
-          imdbId: this.imdbId(),
-          saved: this.saved(),
-          closed: this.closed(),
-        }),
     });
   }
 

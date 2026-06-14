@@ -45,14 +45,14 @@ describe('NewItemDialogService', () => {
   let collection: { addCollectionItem: ReturnType<typeof vi.fn>; triggerReload: ReturnType<typeof vi.fn> };
   let spinnerStore: NgxSimpleSignalStoreService<SpinnerLoadingState>;
   let toastStore: NgxSimpleSignalStoreService<ToastState>;
-  let portal: { close: ReturnType<typeof vi.fn> };
+  let portal: { closeAll: ReturnType<typeof vi.fn> };
   let translate: { translate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     api = { create: vi.fn() };
     omdb = { matchedContent: vi.fn(() => []), getMatchedContents: vi.fn(), getSelectedContent: vi.fn() };
     collection = { addCollectionItem: vi.fn(), triggerReload: vi.fn() };
-    portal = { close: vi.fn() };
+    portal = { closeAll: vi.fn() };
     translate = { translate: vi.fn((key) => `t:${key}`) };
 
     TestBed.configureTestingModule({
@@ -106,7 +106,7 @@ describe('NewItemDialogService', () => {
     expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
     expect(collection.triggerReload).toHaveBeenCalled();
     expect(toastStore.state.message()).toBe('t:Toast.NewItem');
-    expect(portal.close).toHaveBeenCalled();
+    expect(portal.closeAll).toHaveBeenCalled();
     expect(spinnerStore.state.show()).toBe(false);
   });
 
@@ -132,7 +132,7 @@ describe('NewItemDialogService', () => {
     );
     expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
     expect(collection.triggerReload).toHaveBeenCalled();
-    expect(portal.close).toHaveBeenCalled();
+    expect(portal.closeAll).toHaveBeenCalled();
   });
 
   it('saves wishlist items with the wishlist list type', async () => {

@@ -87,7 +87,7 @@ export class NewItemDialogService {
         this.collection.addCollectionItem(collectionItem, true);
         this.collection.triggerReload();
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewItem'));
-        if (mode === 'close') this.portal.close();
+        if (mode === 'close') this.portal.closeAll();
       })
     );
   }

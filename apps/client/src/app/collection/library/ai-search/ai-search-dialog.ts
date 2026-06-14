@@ -49,7 +49,7 @@ export class AiSearchDialog {
 
   protected onSend(): void {
     this.send()();
-    this.portal.close();
+    this.portal.closeTop();
   }
 
   protected onShowMessage(): void {

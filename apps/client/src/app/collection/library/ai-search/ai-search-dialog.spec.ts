@@ -34,7 +34,7 @@ describe('AiSearchDialog component', () => {
       imports: [HostComponent],
       providers: [
         { provide: AlertService, useValue: { show: alertSpy } },
-        { provide: PortalService, useValue: { close: portalCloseSpy } },
+        { provide: PortalService, useValue: { closeTop: portalCloseSpy } },
         provideSignalTranslateConfig({ path: '' }),
       ],
     });

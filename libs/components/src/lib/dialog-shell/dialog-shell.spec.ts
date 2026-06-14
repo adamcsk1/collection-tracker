@@ -83,7 +83,7 @@ describe('DialogShell component', () => {
     TestBed.configureTestingModule({
       imports: [HostComponent],
       providers: [
-        { provide: PortalService, useValue: { close: closeSpy } },
+        { provide: PortalService, useValue: { closeTop: closeSpy } },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
       ],
     });
@@ -126,7 +126,7 @@ describe('DialogShell component', () => {
     trigger.remove();
   });
 
-  it('calls portal.close when the drag handle is pulled down', () => {
+  it('calls portal.closeTop when the drag handle is pulled down', () => {
     const dragHandle = fixture.nativeElement.querySelector('[data-test-id="dialog-drag-handle"]') as HTMLElement;
 
     dispatchPointerEvent(dragHandle, 'pointerdown', 100);
@@ -153,7 +153,7 @@ describe('DialogShell component', () => {
     expect(dragHandle.getAttribute('aria-label')).toBe('DragToClose');
   });
 
-  it('calls portal.close when the drag handle is activated by keyboard', () => {
+  it('calls portal.closeTop when the drag handle is activated by keyboard', () => {
     const dragHandle = fixture.nativeElement.querySelector('[data-test-id="dialog-drag-handle"]') as HTMLButtonElement;
 
     dragHandle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
@@ -195,7 +195,7 @@ describe('DialogShell component', () => {
     expect(closeSpy).not.toHaveBeenCalled();
   });
 
-  it('calls portal.close when Escape key is pressed', () => {
+  it('calls portal.closeTop when Escape key is pressed', () => {
     const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
     dialogRoot?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     finishCloseAnimation();
@@ -203,7 +203,7 @@ describe('DialogShell component', () => {
     expect(closeSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('calls portal.close when backdrop is clicked', () => {
+  it('calls portal.closeTop when backdrop is clicked', () => {
     const overlay = fixture.nativeElement.querySelector('.dialog-overlay') as HTMLButtonElement;
     overlay?.click();
     finishCloseAnimation();

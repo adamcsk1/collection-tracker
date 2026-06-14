@@ -6,9 +6,31 @@
   height: 100vh;
   width: 100vw;
 
+  &.dialog-stacked {
+    pointer-events: none;
+
+    .dialog-frame {
+      scale: 0.96;
+    }
+  }
+
+  &.dialog-stack-top {
+    .dialog-overlay {
+      backdrop-filter: none;
+    }
+
+    .dialog-frame {
+      background-color: var(--background-color-alt);
+    }
+  }
+
   .dialog-title {
     display: flex;
     align-items: center;
     gap: var(--size-2xs);
+  }
+
+  .dialog-frame {
+    transition: scale 0.2s ease;
   }
 }

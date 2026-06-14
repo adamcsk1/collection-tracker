@@ -115,9 +115,11 @@ export class DialogShell implements AfterViewInit {
     timer(closeAnimationDuration, asyncScheduler)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
-        this.previouslyFocusedElement?.focus();
         this.closed.emit();
-        if (this.closeWithPortal()) this.portal.close();
+        if (this.closeWithPortal()) {
+          this.portal.closeTop();
+          this.previouslyFocusedElement?.focus();
+        }
       });
   }
 

@@ -35,7 +35,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   public readonly saved = input<(seasons: SeriesTrackerSeasonMetadataModel[], item?: CollectionItemApiModel) => void>(
     () => undefined
   );
-  public readonly closed = input<() => void>(() => this.portal.close());
+  public readonly closed = input<() => void>(() => this.portal.closeTop());
   protected readonly translations = {
     title: computed(() => this.ngxSignalTranslate.translate('Title.SeriesMetadata')),
     message: computed(() => this.ngxSignalTranslate.translate('Message.SeriesMetadata')),

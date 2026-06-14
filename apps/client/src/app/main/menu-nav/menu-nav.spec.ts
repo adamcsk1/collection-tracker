@@ -18,7 +18,7 @@ import { MenuNav } from './menu-nav';
 describe('MenuNav', () => {
   let fixture: ComponentFixture<MenuNav>;
   let component: MenuNav;
-  let portal: { close: ReturnType<typeof vi.fn> };
+  let portal: { closeAll: ReturnType<typeof vi.fn> };
   let collection: { triggerReload: ReturnType<typeof vi.fn> };
   let settings: { preloadUserSettings: ReturnType<typeof vi.fn> };
   let api: { logout: ReturnType<typeof vi.fn> };
@@ -27,7 +27,7 @@ describe('MenuNav', () => {
   let redirectSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    portal = { close: vi.fn() };
+    portal = { closeAll: vi.fn() };
     collection = { triggerReload: vi.fn() };
     settings = { preloadUserSettings: vi.fn(() => of(void 0)) };
     api = { logout: vi.fn(() => of(void 0)) };
@@ -69,7 +69,7 @@ describe('MenuNav', () => {
 
   it('closes dialog on close', () => {
     component['onClose']();
-    expect(portal.close).toHaveBeenCalledTimes(1);
+    expect(portal.closeAll).toHaveBeenCalledTimes(1);
   });
 
   it('triggers collection reload and closes on sync', () => {
@@ -77,7 +77,7 @@ describe('MenuNav', () => {
 
     expect(settings.preloadUserSettings).toHaveBeenCalled();
     expect(collection.triggerReload).toHaveBeenCalled();
-    expect(portal.close).toHaveBeenCalledTimes(1);
+    expect(portal.closeAll).toHaveBeenCalledTimes(1);
   });
 
   it('still syncs collection when refreshing settings fails', () => {
@@ -86,7 +86,7 @@ describe('MenuNav', () => {
     component['onSync']();
 
     expect(collection.triggerReload).toHaveBeenCalled();
-    expect(portal.close).toHaveBeenCalledTimes(1);
+    expect(portal.closeAll).toHaveBeenCalledTimes(1);
   });
 
   it('logs out successfully', () => {

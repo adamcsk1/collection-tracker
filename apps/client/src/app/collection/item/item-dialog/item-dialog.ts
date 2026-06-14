@@ -516,7 +516,7 @@ export class ItemDialog implements OnInit {
             this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId, ownerShareCode, listType);
           else this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId, ownerShareCode);
           this.collectionService.triggerReload();
-          this.portal.close();
+          this.portal.closeAll();
         }
       });
   }
@@ -616,7 +616,7 @@ export class ItemDialog implements OnInit {
   protected onManageSeriesMetadata(): void {
     if (!this.seriesTracker() || !this.permissionUpdate()) return;
     let collectionItem = this.collectionItem();
-    this.portal.open(SeriesSeasonMetadataDialog, {
+    this.portal.openStacked(SeriesSeasonMetadataDialog, {
       imdbId: collectionItem.IMDbId,
       initialSeasons: this.seriesSeasons(),
       saved: (seasons: SeriesTrackerSeasonMetadataModel[], item?: CollectionItemModel) => {
@@ -627,14 +627,13 @@ export class ItemDialog implements OnInit {
         }
         this.collectionService.triggerReload();
       },
-      closed: () => this.portal.open(ItemDialog, { collectionItem }),
     });
   }
 
   protected onManageWatchedEpisodes(): void {
     if (!this.seriesTracker() || !this.permissionUpdate()) return;
     let collectionItem = this.collectionItem();
-    this.portal.open(WatchedEpisodesDialog, {
+    this.portal.openStacked(WatchedEpisodesDialog, {
       imdbId: collectionItem.IMDbId,
       saved: (watchedEpisodes: SeriesTrackerWatchedEpisodeModel[], item?: CollectionItemModel) => {
         this.watchedEpisodes.set(watchedEpisodes);
@@ -644,7 +643,6 @@ export class ItemDialog implements OnInit {
         }
         this.collectionService.triggerReload();
       },
-      closed: () => this.portal.open(ItemDialog, { collectionItem }),
     });
   }
 }

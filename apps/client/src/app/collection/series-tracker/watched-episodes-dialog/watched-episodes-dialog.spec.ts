@@ -23,7 +23,11 @@ describe('WatchedEpisodesDialog', () => {
     updateSeriesTrackerWatchedEpisodes: ReturnType<typeof vi.fn>;
     markAllSeriesTrackerWatched: ReturnType<typeof vi.fn>;
   };
-  let portal: { close: ReturnType<typeof vi.fn>; open: ReturnType<typeof vi.fn> };
+  let portal: {
+    closeTop: ReturnType<typeof vi.fn>;
+    open: ReturnType<typeof vi.fn>;
+    openStacked: ReturnType<typeof vi.fn>;
+  };
   let confirm: { open: ReturnType<typeof vi.fn> };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
 
@@ -48,7 +52,7 @@ describe('WatchedEpisodesDialog', () => {
         })
       ),
     };
-    portal = { close: vi.fn(), open: vi.fn() };
+    portal = { closeTop: vi.fn(), open: vi.fn(), openStacked: vi.fn() };
     confirm = { open: vi.fn(() => of(true)) };
 
     TestBed.configureTestingModule({
@@ -69,7 +73,7 @@ describe('WatchedEpisodesDialog', () => {
     toastState = TestBed.inject(toastStateToken);
     fixture.componentRef.setInput('imdbId', 'tt-series');
     fixture.componentRef.setInput('saved', vi.fn());
-    fixture.componentRef.setInput('closed', portal.close);
+    fixture.componentRef.setInput('closed', portal.closeTop);
     fixture.detectChanges();
   });
 
@@ -141,7 +145,7 @@ describe('WatchedEpisodesDialog', () => {
       undefined
     );
     expect(toastState.state.message()).toBe('Toast.WatchedEpisodesSaved');
-    expect(portal.close).not.toHaveBeenCalled();
+    expect(portal.closeTop).not.toHaveBeenCalled();
 
     api.updateSeriesTrackerWatchedEpisodes.mockClear();
     api.updateSeriesTrackerWatchedEpisodes.mockReturnValue(
@@ -222,7 +226,7 @@ describe('WatchedEpisodesDialog', () => {
       undefined
     );
     expect(toastState.state.message()).toBe('Toast.WatchedEpisodesSaved');
-    expect(portal.close).not.toHaveBeenCalled();
+    expect(portal.closeTop).not.toHaveBeenCalled();
   });
 
   it('does not apply stale auto-save responses over newer local edits', async () => {
@@ -266,7 +270,7 @@ describe('WatchedEpisodesDialog', () => {
   it('calls the closed callback when closed', async () => {
     await component['onClose']();
 
-    expect(portal.close).toHaveBeenCalled();
+    expect(portal.closeTop).toHaveBeenCalled();
   });
 
   it('waits for a pending auto-save before closing', async () => {
@@ -282,7 +286,7 @@ describe('WatchedEpisodesDialog', () => {
     const close = component['onClose']();
     await Promise.resolve();
 
-    expect(portal.close).not.toHaveBeenCalled();
+    expect(portal.closeTop).not.toHaveBeenCalled();
 
     pendingEpisodeSave.next({
       watchedEpisodes: [
@@ -296,7 +300,7 @@ describe('WatchedEpisodesDialog', () => {
     await episodeSave;
     await close;
 
-    expect(portal.close).toHaveBeenCalled();
+    expect(portal.closeTop).toHaveBeenCalled();
   });
 
   it('ignores a late initial watched episodes response after local edits', async () => {
@@ -312,7 +316,7 @@ describe('WatchedEpisodesDialog', () => {
     const lateLoadComponent = lateLoadFixture.componentInstance;
     lateLoadFixture.componentRef.setInput('imdbId', 'tt-series');
     lateLoadFixture.componentRef.setInput('saved', vi.fn());
-    lateLoadFixture.componentRef.setInput('closed', portal.close);
+    lateLoadFixture.componentRef.setInput('closed', portal.closeTop);
     lateLoadFixture.detectChanges();
 
     await lateLoadComponent['onToggleEpisode'](1, 1);
@@ -354,35 +358,25 @@ describe('WatchedEpisodesDialog', () => {
     expect(component['isSeasonOpenDefault'](2)).toBe(false);
   });
 
-  it('opens metadata management and wires saved and closed callbacks', () => {
+  it('opens stacked metadata management and wires saved callback', () => {
     const saved = vi.fn();
     fixture.componentRef.setInput('saved', saved);
 
     component['onManageSeasonMetadata']();
 
-    expect(portal.open).toHaveBeenCalledWith(SeriesSeasonMetadataDialog, {
+    expect(portal.openStacked).toHaveBeenCalledWith(SeriesSeasonMetadataDialog, {
       imdbId: 'tt-series',
       initialSeasons: [{ season: 1, episodes: 3, titles: [] }],
       saved: expect.any(Function),
-      closed: expect.any(Function),
     });
 
-    const metadataInputs = portal.open.mock.calls[0][1] as {
+    const metadataInputs = portal.openStacked.mock.calls[0][1] as {
       saved: (seasons: [{ season: number; episodes: number; titles: string[] }], item?: { hash: string }) => void;
-      closed: () => void;
     };
     metadataInputs.saved([{ season: 2, episodes: 4, titles: [] }], { hash: 'metadata-hash' });
 
     expect(component['seasonsMetadata']()).toEqual([{ season: 2, episodes: 4, titles: [] }]);
     expect(saved).toHaveBeenCalledWith([{ season: 1, episode: 2 }], { hash: 'metadata-hash' });
-
-    metadataInputs.closed();
-
-    expect(portal.open).toHaveBeenLastCalledWith(WatchedEpisodesDialog, {
-      imdbId: 'tt-series',
-      saved,
-      closed: portal.close,
-    });
   });
 
   it('shows toast when no season metadata exists on mark all watched', async () => {
