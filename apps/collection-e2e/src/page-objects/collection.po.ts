@@ -2,6 +2,7 @@ const getActiveDialog = () => cy.get('.dialog').last();
 const getItemDialog = () => cy.getByTestId('item-dialog').find('.dialog-frame');
 const getSeriesMetadataDialog = () => cy.getByTestId('series-metadata-dialog').find('.dialog-frame');
 const getWatchedEpisodesDialogHost = () => cy.getByTestId('watched-episodes-dialog');
+const getDialogComponentHost = (testId: string) => cy.getByTestId(testId).parents('.dialog').first();
 
 export const CollectionPage = {
   visit: () => {
@@ -71,11 +72,16 @@ export const CollectionPage = {
 
   // Item dialog
   getItemDialogHost: getItemDialog,
+  getItemDialogComponentHost: () => getDialogComponentHost('item-dialog'),
+  getActiveDialogHost: getActiveDialog,
+  getActiveDialogFrame: () => getActiveDialog().find('.dialog-frame'),
+  getFocusedElement: () => cy.focused(),
   getItemDialogEditButton: () => getItemDialog().find('[data-test-id="item-dialog-edit"]'),
   getItemDialogReadOnlyButton: () => getItemDialog().find('[data-test-id="item-dialog-read-only"]'),
   getItemDialogSaveButton: () => getItemDialog().find('[data-test-id="item-dialog-save"]'),
   getItemDialogDeleteButton: () => getItemDialog().find('[data-test-id="item-dialog-delete"]'),
   closeDialogByOverlay: () => cy.getByTestId('dialog-overlay').click({ force: true }),
+  closeActiveDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),
   openItemDialogActionsMenu: () => {
     getActiveDialog().then((dialog) => {
       cy.wrap(dialog).find('[data-test-id="dialog-actions-menu-button"]').click();
@@ -113,6 +119,8 @@ export const CollectionPage = {
 
   // Series metadata dialog
   getSeriesMetadataDialogHost: () => cy.getByTestId('series-metadata-dialog'),
+  getSeriesMetadataDialog: getSeriesMetadataDialog,
+  getSeriesMetadataDialogComponentHost: () => getDialogComponentHost('series-metadata-dialog'),
   getSeriesMetadataMessage: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-message"]'),
   getSeriesMetadataNoMetadataMessage: () =>
     getSeriesMetadataDialog().find('[data-test-id="series-metadata-no-metadata-message"]'),
@@ -122,7 +130,8 @@ export const CollectionPage = {
   getSeriesMetadataSaveButton: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-save"]'),
   getSeriesMetadataValidation: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-validation"]'),
   getSeriesMetadataSeasonInputs: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-season"] input'),
-  getSeriesMetadataEpisodeInputs: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-episodes"] input'),
+  getSeriesMetadataEpisodeInputs: () =>
+    getSeriesMetadataDialog().find('[data-test-id="series-metadata-episodes"] input'),
   getSeriesMetadataRemoveButtons: () => getSeriesMetadataDialog().find('[data-test-id="series-metadata-remove"]'),
   getSeriesMetadataEpisodeTitleToggles: () =>
     getSeriesMetadataDialog().find('[data-test-id="series-metadata-episode-titles-toggle"] summary'),
@@ -131,6 +140,7 @@ export const CollectionPage = {
 
   // Watched episodes dialog
   getWatchedEpisodesDialogHost,
+  getWatchedEpisodesDialogComponentHost: () => getDialogComponentHost('watched-episodes-dialog'),
   getWatchedEpisodesDialog: () => getWatchedEpisodesDialogHost().last().find('.dialog-frame'),
   getWatchedEpisodesSeasonToggle: () =>
     getWatchedEpisodesDialogHost().find('[data-test-id="watched-episodes-season-toggle"]'),
