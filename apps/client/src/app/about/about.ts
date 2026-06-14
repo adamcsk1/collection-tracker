@@ -27,7 +27,6 @@ export class About {
     links: computed(() => this.ngxSignalTranslate.translate('Links')),
     navigateToServerHealth: computed(() => this.ngxSignalTranslate.translate('NavigateToServerHealth')),
     viewOnGitHub: computed(() => this.ngxSignalTranslate.translate('ViewOnGitHub')),
-    downloadApk: computed(() => this.ngxSignalTranslate.translate('DownloadApk')),
     navigateToApiDocs: computed(() => this.ngxSignalTranslate.translate('NavigateToApiDocs')),
   };
   protected readonly themeLogo = this.theme.themeLogo;
