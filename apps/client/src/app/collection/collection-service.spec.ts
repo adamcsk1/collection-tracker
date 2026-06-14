@@ -72,6 +72,38 @@ describe('CollectionService', () => {
     ]);
   });
 
+  it('replaces an existing item with the same owner, list type, and IMDb ID', () => {
+    mainCollectionState.setState('collection', [buildCollectionItem('target')]);
+
+    service.addCollectionItem({ ...buildCollectionItem('updated'), IMDbId: 'tt-target' }, true);
+
+    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
+      { ...buildCollectionItem('updated'), IMDbId: 'tt-target' },
+    ]);
+  });
+
+  it('adds an item with the same IMDb ID but a different list type', () => {
+    mainCollectionState.setState('collection', [buildCollectionItem('same')]);
+
+    service.addCollectionItem({ ...buildCollectionItem('same'), listType: 'watch-later' }, true);
+
+    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
+      { ...buildCollectionItem('same'), listType: 'watch-later' },
+      buildCollectionItem('same'),
+    ]);
+  });
+
+  it('adds an item with the same IMDb ID but a different owner', () => {
+    mainCollectionState.setState('collection', [buildCollectionItem('same', 'owner-one')]);
+
+    service.addCollectionItem(buildCollectionItem('same', 'owner-two'), true);
+
+    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
+      buildCollectionItem('same', 'owner-two'),
+      buildCollectionItem('same', 'owner-one'),
+    ]);
+  });
+
   it('deletes a collection item by name', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('keep'), buildCollectionItem('remove')]);
 
@@ -139,6 +171,25 @@ describe('CollectionService', () => {
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('target'),
       { ...buildCollectionItem('updated'), IMDbId: 'tt-target', listType: 'watch-later' },
+    ]);
+  });
+
+  it('replaces the old keyed item with the backend-returned item when IMDb ID changes', () => {
+    mainCollectionState.setState('collection', [
+      buildCollectionItem('target'),
+      { ...buildCollectionItem('target'), listType: 'series-tracker' },
+    ]);
+
+    service.updateCollectionItem(
+      'tt-target',
+      { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'series-tracker' },
+      undefined,
+      'series-tracker'
+    );
+
+    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
+      buildCollectionItem('target'),
+      { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'series-tracker' },
     ]);
   });
 });

@@ -536,7 +536,12 @@ describe('ItemDialog', () => {
       'testhash',
       undefined
     );
-    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith('tt1234567', expect.any(Object), undefined);
+    expect(collectionService.updateCollectionItem).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.any(Object),
+      undefined,
+      'library'
+    );
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.EditItem');
     expect(component['editMode']()).toBe(false);

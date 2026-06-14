@@ -130,6 +130,9 @@ describe('NewItemDialogService', () => {
       'watch-later',
       undefined
     );
+    expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
+    expect(collection.triggerReload).toHaveBeenCalled();
+    expect(portal.close).toHaveBeenCalled();
   });
 
   it('saves wishlist items with the wishlist list type', async () => {

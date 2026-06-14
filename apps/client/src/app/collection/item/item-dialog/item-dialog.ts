@@ -450,7 +450,12 @@ export class ItemDialog implements OnInit {
   private applySyncedCollectionItem(item: CollectionItemModel | undefined): void {
     if (!item) return;
     const currentItem = this.collectionItem();
-    this.collectionService.updateCollectionItem(currentItem.IMDbId, item, currentItem.ownerShareCode);
+    this.collectionService.updateCollectionItem(
+      currentItem.IMDbId,
+      item,
+      currentItem.ownerShareCode,
+      currentItem.listType
+    );
     this.collectionItem.set(item);
     this.resetFormFromItem(item);
     this.posterImageFailed.set(false);
@@ -574,7 +579,12 @@ export class ItemDialog implements OnInit {
     );
     if (confirmed.confirmed && confirmed.item) {
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
-      this.collectionService.updateCollectionItem(this.collectionItem().IMDbId, confirmed.item, ownerShareCode);
+      this.collectionService.updateCollectionItem(
+        this.collectionItem().IMDbId,
+        confirmed.item,
+        ownerShareCode,
+        this.collectionItem().listType
+      );
       this.collectionService.triggerReload();
       this.collectionItem.set(confirmed.item);
       this.lastSavedItem.set(toCollectionItemChange(confirmed.item));

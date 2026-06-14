@@ -19,8 +19,18 @@ export class CollectionService {
   }
 
   public addCollectionItem(item: CollectionItemApiModel, first = false): void {
-    if (first) this.mainCollectionState.patchState('collection', (state) => [item, ...state]);
-    else this.mainCollectionState.patchState('collection', (state) => [...state, item]);
+    const itemKey = this.getCollectionItemKey(item.IMDbId, item.ownerShareCode, item.listType);
+    this.mainCollectionState.patchState('collection', (state) => {
+      const index = state.findIndex(
+        (stateItem) =>
+          this.getCollectionItemKey(stateItem.IMDbId, stateItem.ownerShareCode, stateItem.listType) === itemKey
+      );
+      if (index !== -1) {
+        return state.map((stateItem, stateIndex) => (stateIndex === index ? item : stateItem));
+      }
+
+      return first ? [item, ...state] : [...state, item];
+    });
   }
 
   public deleteCollectionItem(imdbId: string, ownerShareCode?: string, listType?: CollectionListTypeModel): void {
@@ -30,14 +40,19 @@ export class CollectionService {
     );
   }
 
-  public updateCollectionItem(imdbId: string, item: CollectionItemApiModel, ownerShareCode?: string): void {
-    const itemKey = this.getCollectionItemKey(imdbId, ownerShareCode, item.listType);
+  public updateCollectionItem(
+    imdbId: string,
+    item: CollectionItemApiModel,
+    ownerShareCode?: string,
+    listType: CollectionListTypeModel = item.listType
+  ): void {
+    const itemKey = this.getCollectionItemKey(imdbId, ownerShareCode, listType);
     this.mainCollectionState.patchState('collection', (state) => {
       const index = state.findIndex(
-        (item) => this.getCollectionItemKey(item.IMDbId, item.ownerShareCode, item.listType) === itemKey
+        (stateItem) =>
+          this.getCollectionItemKey(stateItem.IMDbId, stateItem.ownerShareCode, stateItem.listType) === itemKey
       );
-      if (index !== -1) state[index] = item;
-      return state;
+      return index === -1 ? state : state.map((stateItem, stateIndex) => (stateIndex === index ? item : stateItem));
     });
   }
 }
