@@ -136,6 +136,16 @@ describe('DialogShell component', () => {
     expect(closeSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('closes after a short drag movement', () => {
+    const dragHandle = fixture.nativeElement.querySelector('[data-test-id="dialog-drag-handle"]') as HTMLElement;
+
+    dispatchPointerEvent(dragHandle, 'pointerdown', 100);
+    dispatchPointerEvent(dragHandle, 'pointerup', 132);
+    finishCloseAnimation();
+
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('labels the drag handle as a close control', () => {
     const dragHandle = fixture.nativeElement.querySelector('[data-test-id="dialog-drag-handle"]') as HTMLButtonElement;
 

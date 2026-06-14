@@ -49,15 +49,27 @@
       top: 50%;
       left: 50%;
       width: min(20vw, 250px);
-      height: 3px;
+      height: calc(2 * var(--size-md));
       border: 0;
       border-radius: var(--border-radius);
-      background-color: var(--main-color);
+      background: transparent;
       margin: 0;
       padding: 0;
       cursor: grab;
       touch-action: none;
       transform: translate(-50%, -50%);
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 90%;
+        height: 3px;
+        border-radius: inherit;
+        background-color: var(--main-color);
+        transform: translate(-50%, -50%);
+      }
 
       &:focus-visible {
         outline: var(--outline-style);

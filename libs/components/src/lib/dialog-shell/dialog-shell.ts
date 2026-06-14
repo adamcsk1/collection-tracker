@@ -19,7 +19,7 @@ import { asyncScheduler, timer } from 'rxjs';
 
 let nextDialogShellActionsMenuId = 0;
 const closeAnimationDuration = 200;
-const dragCloseThreshold = 48;
+const dragCloseThreshold = 32;
 const focusableSelector = [
   'a[href]',
   'button:not([disabled])',
