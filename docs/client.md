@@ -8,7 +8,7 @@ Source: [`apps/client`](../apps/client)
 
 - `collection/library`: search and browse stored collection items; includes AI natural-language search via `AiSearchService` and `AiSearchInput`
 - `collection/favorites`, `collection/watch-later`, `collection/wishlist`, and `collection/series-tracker`: filtered collection subroutes for saved item lists and series progress tracking
-- `statistics`: tag-driven summaries and Chart.js visualizations
+- statistics dialog: tag-driven summaries and Chart.js visualizations opened from the main menu
 - `settings/tag-management`: per-tag color, weight, and presentation rules
 - `settings/export-import`: export and import collection data and tag management settings
 - `settings/collection-list-display`: per-user collection list metadata and preferred rating display rules

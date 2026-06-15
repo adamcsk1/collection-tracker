@@ -66,8 +66,15 @@
     <i class="material-icons">settings</i>
     {{ translations.settings() }}
   </a>
-  <a [routerLink]="['/', 'statistics']" routerLinkActive="active" class="highlight space" (click)="onClose()">
-    <i class="material-icons">bar_chart</i>
+  <a
+    data-test-id="nav-statistics"
+    href="#"
+    role="button"
+    class="highlight space"
+    (click)="onOpenStatistics($event)"
+    (keydown.space)="onOpenStatistics($event)"
+  >
+    <i class="material-icons" aria-hidden="true">bar_chart</i>
     {{ translations.statistics() }}
   </a>
   <a data-test-id="nav-sync" href="#" (click)="onSync()">

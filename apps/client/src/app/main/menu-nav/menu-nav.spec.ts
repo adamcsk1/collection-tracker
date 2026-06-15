@@ -18,7 +18,7 @@ import { MenuNav } from './menu-nav';
 describe('MenuNav', () => {
   let fixture: ComponentFixture<MenuNav>;
   let component: MenuNav;
-  let portal: { closeAll: ReturnType<typeof vi.fn> };
+  let portal: { closeAll: ReturnType<typeof vi.fn>; open: ReturnType<typeof vi.fn> };
   let collection: { triggerReload: ReturnType<typeof vi.fn> };
   let settings: { preloadUserSettings: ReturnType<typeof vi.fn> };
   let api: { logout: ReturnType<typeof vi.fn> };
@@ -27,7 +27,7 @@ describe('MenuNav', () => {
   let redirectSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    portal = { closeAll: vi.fn() };
+    portal = { closeAll: vi.fn(), open: vi.fn() };
     collection = { triggerReload: vi.fn() };
     settings = { preloadUserSettings: vi.fn(() => of(void 0)) };
     api = { logout: vi.fn(() => of(void 0)) };
@@ -78,6 +78,22 @@ describe('MenuNav', () => {
     expect(settings.preloadUserSettings).toHaveBeenCalled();
     expect(collection.triggerReload).toHaveBeenCalled();
     expect(portal.closeAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens statistics in a dialog', async () => {
+    const { StatisticsDialog } = await import('../../statistics/statistics-dialog');
+
+    await component['onOpenStatistics']();
+
+    expect(portal.open).toHaveBeenCalledWith(StatisticsDialog);
+  });
+
+  it('prevents default link navigation when opening statistics', async () => {
+    const event = { preventDefault: vi.fn() } as unknown as Event;
+
+    await component['onOpenStatistics'](event);
+
+    expect(event.preventDefault).toHaveBeenCalled();
   });
 
   it('still syncs collection when refreshing settings fails', () => {

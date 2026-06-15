@@ -1,0 +1,11 @@
+<libc-dialog-shell data-test-id="statistics-dialog" [ariaLabelledBy]="'statistics-dialog-title'">
+  <ng-container dialog-shell-top-content>
+    <h3 id="statistics-dialog-title" class="dialog-title">
+      <i class="material-icons" aria-hidden="true">bar_chart</i>
+      {{ translations.statistics() }}
+    </h3>
+  </ng-container>
+  <ng-container dialog-shell-content>
+    <ct-statistics />
+  </ng-container>
+</libc-dialog-shell>

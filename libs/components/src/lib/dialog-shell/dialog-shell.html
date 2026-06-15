@@ -15,6 +15,7 @@
     role="dialog"
     aria-modal="true"
     tabindex="-1"
+    [attr.aria-labelledby]="ariaLabelledBy() || null"
     animate.enter="animation-slide-in-bottom"
     animate.leave="animation-slide-out-bottom"
     [style.--dialog-drag-offset]="dragOffsetCss()"

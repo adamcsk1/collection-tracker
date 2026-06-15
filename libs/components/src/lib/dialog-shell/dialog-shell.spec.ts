@@ -31,6 +31,18 @@ class CustomCloseHostComponent {
 }
 
 @Component({
+  selector: 'libc-test-dialog-shell-labelled-host',
+  imports: [DialogShell],
+  template: `
+    <libc-dialog-shell [ariaLabelledBy]="'test-dialog-title'">
+      <h3 id="test-dialog-title" dialog-shell-top-content>Dialog title</h3>
+      <div dialog-shell-content>Content</div>
+    </libc-dialog-shell>
+  `,
+})
+class LabelledHostComponent {}
+
+@Component({
   selector: 'libc-test-dialog-shell-menu-host',
   imports: [DialogShell],
   template: `
@@ -151,6 +163,15 @@ describe('DialogShell component', () => {
 
     expect(dragHandle.type).toBe('button');
     expect(dragHandle.getAttribute('aria-label')).toBe('DragToClose');
+  });
+
+  it('uses the provided label element as the dialog accessible name', () => {
+    const labelledFixture = TestBed.createComponent(LabelledHostComponent);
+    labelledFixture.detectChanges();
+
+    const dialogRoot = labelledFixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    expect(dialogRoot.getAttribute('aria-labelledby')).toBe('test-dialog-title');
   });
 
   it('calls portal.closeTop when the drag handle is activated by keyboard', () => {

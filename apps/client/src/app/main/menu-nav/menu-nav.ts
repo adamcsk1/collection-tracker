@@ -70,4 +70,10 @@ export class MenuNav {
   protected onClose(): void {
     this.portal.closeAll();
   }
+
+  protected async onOpenStatistics(event?: Event): Promise<void> {
+    event?.preventDefault();
+    const { StatisticsDialog } = await import('../../statistics/statistics-dialog');
+    this.portal.open(StatisticsDialog);
+  }
 }

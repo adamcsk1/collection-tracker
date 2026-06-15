@@ -5,6 +5,7 @@ import { StatisticsSummaryModel } from './statistics-model';
 import { Details } from '@components/details/details';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
+import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
 import { CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
@@ -20,9 +21,6 @@ import { StatisticsChartService } from './statistics-chart-service';
   templateUrl: './statistics.html',
   styleUrl: './statistics.css',
   providers: [StatisticsChartService],
-  host: {
-    class: 'page',
-  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Statistics implements AfterViewInit {
@@ -32,6 +30,7 @@ export class Statistics implements AfterViewInit {
   private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly portal = inject(PortalService);
   private readonly charts = inject(StatisticsChartService);
   protected readonly translations = {
     messageLoadStatistics: computed(() => this.ngxSignalTranslate.translate('Message.LoadStatistics')),
@@ -110,23 +109,29 @@ export class Statistics implements AfterViewInit {
   protected readonly textToHexColor = textToHexColor;
 
   protected onNavigateToCollection(search?: string): void {
-    if (search) {
-      void this.router.navigate(['/collection', 'library'], { queryParams: { search } });
-    } else {
-      void this.router.navigate(['/collection', 'library']);
-    }
+    const navigation = search
+      ? this.router.navigate(['/collection', 'library'], { queryParams: { search } })
+      : this.router.navigate(['/collection', 'library']);
+
+    this.closeAfterNavigation(navigation);
   }
 
   protected onNavigateToWatchLater(): void {
-    void this.router.navigate(['/collection', 'watch-later']);
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'watch-later']));
   }
 
   protected onNavigateToWishlist(): void {
-    void this.router.navigate(['/collection', 'wishlist']);
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'wishlist']));
   }
 
   protected onNavigateToFavorites(): void {
-    void this.router.navigate(['/collection', 'favorites']);
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'favorites']));
+  }
+
+  private closeAfterNavigation(navigation: Promise<boolean>): void {
+    void navigation.then((success) => {
+      if (success) this.portal.closeAll();
+    });
   }
 
   private createTagChart(): void {

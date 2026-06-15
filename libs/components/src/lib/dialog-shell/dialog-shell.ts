@@ -48,6 +48,7 @@ export class DialogShell implements AfterViewInit {
   private dragPointerId: number | null = null;
   private previouslyFocusedElement: HTMLElement | null = null;
   public readonly closeWithPortal = input(true);
+  public readonly ariaLabelledBy = input('');
   public readonly closed = output<void>();
   protected readonly hasMenuContent = signal(false);
   protected readonly menuOpen = signal(false);

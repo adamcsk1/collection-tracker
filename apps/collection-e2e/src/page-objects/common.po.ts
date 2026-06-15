@@ -13,6 +13,7 @@ export const CommonPage = {
   getNavSeriesTrackerLink: () => cy.getByTestId('nav-series-tracker'),
   getNavSyncLink: () => cy.getByTestId('nav-sync'),
   getNavSettingsLink: () => cy.getByTestId('nav-settings'),
+  getNavStatisticsLink: () => cy.getByTestId('nav-statistics'),
 
   getNavAboutLink: () => cy.getByTestId('nav-about'),
   getNavLogoutLink: () => cy.getByTestId('nav-logout'),

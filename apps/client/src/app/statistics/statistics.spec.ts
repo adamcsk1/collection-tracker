@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -14,6 +15,7 @@ describe('Statistics component', () => {
   let component: Statistics;
   let api: { getStatistics: ReturnType<typeof vi.fn> };
   let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
+  let portal: { closeAll: ReturnType<typeof vi.fn> };
   let routerNavigate: ReturnType<typeof vi.fn>;
 
   const statistics = {
@@ -37,6 +39,7 @@ describe('Statistics component', () => {
   beforeEach(() => {
     api = { getStatistics: vi.fn(() => of(statistics)) };
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
+    portal = { closeAll: vi.fn() };
     routerNavigate = vi.fn(() => Promise.resolve(true));
 
     TestBed.configureTestingModule({
@@ -46,6 +49,7 @@ describe('Statistics component', () => {
         { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: WebstorageService, useValue: webstorage },
+        { provide: PortalService, useValue: portal },
         { provide: Router, useValue: { navigate: routerNavigate } },
       ],
     });
@@ -88,6 +92,7 @@ describe('Statistics component', () => {
         { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: WebstorageService, useValue: webstorage },
+        { provide: PortalService, useValue: portal },
         { provide: Router, useValue: { navigate: routerNavigate } },
       ],
     });
@@ -145,5 +150,12 @@ describe('Statistics component', () => {
     component['onNavigateToWishlist']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'wishlist']);
+  });
+
+  it('closes the dialog after a successful stat navigation', async () => {
+    component['onNavigateToCollection']();
+    await Promise.resolve();
+
+    expect(portal.closeAll).toHaveBeenCalled();
   });
 });
