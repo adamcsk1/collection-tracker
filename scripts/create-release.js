@@ -21,12 +21,40 @@ const androidReleaseApkFolder = join(androidFolder, 'app', 'build', 'outputs', '
 const androidSdkBuildToolsFolder = process.env.LOCALAPPDATA
   ? join(process.env.LOCALAPPDATA, 'Android', 'Sdk', 'build-tools')
   : '';
+const helpHint = 'Run npm run release -- -- --help for usage.';
 
 let appVersion = '';
 let webReleaseName = '';
 let webReleaseFolder = '';
 let webZipFile = '';
 let tagVersionAfterRelease = false;
+
+const formatHelp = () => `Usage:
+  npm run release -- [options]
+
+Options:
+  --bump <major|minor|patch>  Bump package, lockfile, and Android version before building.
+  --no-commit                 Do not commit or tag the version bump. Requires --bump.
+  -h, --help                  Show this help.
+
+Examples:
+  npm run release
+  npm run release -- -- --help
+  npm run release -- --bump patch
+  npm run release -- --bump minor --no-commit
+`;
+
+const formatCommandPart = (part) => {
+  if (/^[A-Za-z0-9_./:=@%+\\-]+$/.test(part)) return part;
+  return `"${part.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+};
+
+const formatCommand = (command, args = []) => [command, ...args].map(formatCommandPart).join(' ');
+
+const createCommandFailureMessage = (command, args, cwd, status) => {
+  const statusText = status === null || status === undefined ? 'unknown status' : `status ${status}`;
+  return `Command failed with ${statusText}: ${formatCommand(command, args)}\nWorking directory: ${cwd}`;
+};
 
 const minimalEnv = `JWT_SECRET="${randomUUID().toString('hex').replace(/-/g, '')}"
 COOKIE_SECRET="${randomUUID().toString('hex').replace(/-/g, '')}"
@@ -35,16 +63,25 @@ USER_LIMIT=1
 DISABLE_REGISTRATION=0
 OMDB_API_KEY=""`;
 
-const parseArguments = () => {
-  const options = { bump: '', noCommit: false };
-  const args = process.argv.slice(2);
+const parseArguments = (args = process.argv.slice(2)) => {
+  const options = { bump: '', help: false, noCommit: false };
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
+    if (arg === '--') {
+      continue;
+    }
+    if (arg === '--help' || arg === '-h') {
+      options.help = true;
+      continue;
+    }
     if (arg === '--bump') {
       const bump = args[index + 1];
+      if (!bump || bump.startsWith('--')) {
+        throw new Error(`--bump must be followed by major, minor, or patch. ${helpHint}`);
+      }
       if (!['major', 'minor', 'patch'].includes(bump)) {
-        throw new Error('--bump must be followed by major, minor, or patch');
+        throw new Error(`--bump must be followed by major, minor, or patch. Received: ${bump}. ${helpHint}`);
       }
       options.bump = bump;
       index += 1;
@@ -54,11 +91,13 @@ const parseArguments = () => {
       options.noCommit = true;
       continue;
     }
-    throw new Error(`Unknown release argument: ${arg}`);
+    throw new Error(`Unknown release argument: ${arg}. ${helpHint}`);
   }
 
+  if (options.help) return options;
+
   if (options.noCommit && !options.bump) {
-    throw new Error('--no-commit can only be used with --bump');
+    throw new Error(`--no-commit can only be used with --bump. ${helpHint}`);
   }
 
   return options;
@@ -107,7 +146,8 @@ const getGitStatus = () => {
     shell: false,
   });
   if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`git status --porcelain failed with status ${result.status}`);
+  if (result.status !== 0)
+    throw new Error(createCommandFailureMessage('git', ['status', '--porcelain'], rootFolder, result.status));
   return result.stdout.trim();
 };
 
@@ -131,6 +171,8 @@ const assertVersionTagMissing = (version) => {
 };
 
 const updateVersionFiles = (version) => {
+  console.log(`Updating version files to ${version}`);
+
   const packageJson = readJsonFile(packageJsonFile);
   packageJson.version = version;
   writeJsonFile(packageJsonFile, packageJson);
@@ -171,13 +213,14 @@ const assertVersionFilesMatch = (version) => {
 };
 
 const getCommandOutput = (command, args) => {
+  const cwd = rootFolder;
   const result = spawnSync(command, args, {
-    cwd: rootFolder,
+    cwd,
     encoding: 'utf-8',
     shell: false,
   });
   if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed with status ${result.status}`);
+  if (result.status !== 0) throw new Error(createCommandFailureMessage(command, args, cwd, result.status));
   return result.stdout.trim();
 };
 
@@ -224,15 +267,16 @@ const withClientAboutBuildInfo = (file, buildInfo, callback) => {
 };
 
 const commitVersionBump = (version) => {
-  run('git', ['add', packageJsonFile, packageLockFile, androidBuildFile]);
-  run('git', ['commit', '-m', `chore(release): bump version to ${version}`]);
+  run('git', ['add', packageJsonFile, packageLockFile, androidBuildFile], { label: 'Staging version bump files' });
+  run('git', ['commit', '-m', `chore(release): bump version to ${version}`], { label: 'Committing version bump' });
 };
 
 const tagVersion = (version) => {
-  run('git', ['tag', version]);
+  run('git', ['tag', version], { label: `Tagging release ${version}` });
 };
 
 const prepareVersion = (options) => {
+  console.log('Preparing release version');
   const currentVersion = readJsonFile(packageJsonFile).version;
   if (!options.bump) {
     assertVersionFilesMatch(currentVersion);
@@ -268,20 +312,20 @@ const resolveApkSigner = () => {
 
 const runNpmBuild = () => {
   if (process.platform === 'win32') {
-    run('cmd', ['/d', '/s', '/c', 'npm.cmd', 'run', 'build']);
+    run('cmd', ['/d', '/s', '/c', 'npm.cmd', 'run', 'build'], { label: 'Building web apps' });
     return;
   }
-  run('npm', ['run', 'build']);
+  run('npm', ['run', 'build'], { label: 'Building web apps' });
 };
 
 const runApkSigner = (apkFile) => {
   const apkSigner = resolveApkSigner();
   const args = ['verify', '--verbose', apkFile];
   if (process.platform === 'win32' && apkSigner.endsWith('.bat')) {
-    run('cmd', ['/d', '/s', '/c', apkSigner, ...args]);
+    run('cmd', ['/d', '/s', '/c', apkSigner, ...args], { label: 'Verifying APK signature' });
     return;
   }
-  run(apkSigner, args);
+  run(apkSigner, args, { label: 'Verifying APK signature' });
 };
 
 const createZip = (sourceFolder, zipFile) => {
@@ -294,14 +338,15 @@ const createZip = (sourceFolder, zipFile) => {
         '-Command',
         `Compress-Archive -LiteralPath '${basename(sourceFolder).replaceAll("'", "''")}' -DestinationPath '${zipFile.replaceAll("'", "''")}' -Force`,
       ],
-      { cwd: releaseFolder }
+      { cwd: releaseFolder, label: 'Creating web archive' }
     );
     return;
   }
-  run('zip', ['-r', zipFile, basename(sourceFolder)], { cwd: releaseFolder });
+  run('zip', ['-r', zipFile, basename(sourceFolder)], { cwd: releaseFolder, label: 'Creating web archive' });
 };
 
 const writeHashFiles = (file) => {
+  console.log(`Writing checksum files for ${basename(file)}`);
   const data = readFileSync(file);
   for (const algorithm of ['sha256', 'md5']) {
     const hash = createHash(algorithm).update(data).digest('hex');
@@ -310,15 +355,21 @@ const writeHashFiles = (file) => {
 };
 
 const run = (command, args, options = {}) => {
+  const cwd = options.cwd ?? rootFolder;
+  if (options.label) {
+    console.log(`Running: ${options.label}`);
+  }
+  console.log(`Command: ${formatCommand(command, args)}`);
+
   const result = spawnSync(command, args, {
-    cwd: options.cwd ?? rootFolder,
+    cwd,
     env: { ...process.env, ...(options.env ?? {}) },
     shell: options.shell ?? false,
     stdio: 'inherit',
   });
 
   if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed with status ${result.status}`);
+  if (result.status !== 0) throw new Error(createCommandFailureMessage(command, args, cwd, result.status));
 };
 
 const recreateFolder = (folder) => {
@@ -331,6 +382,7 @@ const recreateFolder = (folder) => {
 };
 
 const createWebRelease = () => {
+  console.log('Copying web release files');
   recreateFolder(webReleaseFolder);
   mkdirSync(join(webReleaseFolder, 'data'), { recursive: true });
 
@@ -350,6 +402,7 @@ const findAndroidApks = () => {
 };
 
 const createAndroidRelease = () => {
+  console.log('Building Android release');
   if (existsSync(androidReleaseApkFolder)) {
     rmSync(androidReleaseApkFolder, { recursive: true, force: true });
   }
@@ -357,7 +410,7 @@ const createAndroidRelease = () => {
   const androidCommand = process.platform === 'win32' ? 'cmd' : './gradlew';
   const androidArgs =
     process.platform === 'win32' ? ['/c', join(androidFolder, 'gradlew.bat'), 'assembleRelease'] : ['assembleRelease'];
-  run(androidCommand, androidArgs, { cwd: androidFolder });
+  run(androidCommand, androidArgs, { cwd: androidFolder, label: 'Building Android release APK' });
 
   const apkFiles = findAndroidApks();
   if (!apkFiles.length) {
@@ -392,8 +445,15 @@ If an APK filename contains \`unsigned\`, sign it with your Android release key 
 };
 
 const createRelease = () => {
-  prepareVersion(parseArguments());
+  const options = parseArguments();
+  if (options.help) {
+    console.log(formatHelp());
+    return;
+  }
+
+  prepareVersion(options);
   withClientAboutBuildInfo(clientAboutFile, getClientAboutReleaseBuildInfo(), runNpmBuild);
+  console.log('Staging release folder');
   recreateFolder(releaseFolder);
   createWebRelease();
   createAndroidRelease();
@@ -409,10 +469,20 @@ const createRelease = () => {
 };
 
 if (require.main === module) {
-  createRelease();
+  try {
+    createRelease();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
 }
 
 module.exports = {
+  bumpVersion,
+  createCommandFailureMessage,
+  formatCommand,
+  formatHelp,
+  parseArguments,
   updateClientAboutBuildInfoSource,
   withClientAboutBuildInfo,
 };

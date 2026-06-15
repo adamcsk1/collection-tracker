@@ -5,7 +5,15 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
-const { updateClientAboutBuildInfoSource, withClientAboutBuildInfo } = require('./create-release.js');
+const {
+  bumpVersion,
+  createCommandFailureMessage,
+  formatCommand,
+  formatHelp,
+  parseArguments,
+  updateClientAboutBuildInfoSource,
+  withClientAboutBuildInfo,
+} = require('./create-release.js');
 
 const aboutSource = `export class About {
   protected readonly build = 'localhost-build';
@@ -53,5 +61,51 @@ describe('create-release build metadata helpers', () => {
     } finally {
       rmSync(temporaryFolder, { recursive: true, force: true });
     }
+  });
+});
+
+describe('create-release argument helpers', () => {
+  it('prints usage, options, and examples in help output', () => {
+    const help = formatHelp();
+
+    expect(help).toContain('Usage:');
+    expect(help).toContain('--bump <major|minor|patch>');
+    expect(help).toContain('--no-commit');
+    expect(help).toContain('npm run release -- -- --help');
+    expect(help).toContain('npm run release -- --bump patch');
+  });
+
+  it('parses help and release bump options', () => {
+    expect(parseArguments(['--help'])).toEqual({ bump: '', help: true, noCommit: false });
+    expect(parseArguments(['--', '--help'])).toEqual({ bump: '', help: true, noCommit: false });
+    expect(parseArguments(['--bump', 'minor', '--no-commit'])).toEqual({ bump: 'minor', help: false, noCommit: true });
+  });
+
+  it('reports missing or unsupported bump values with usage guidance', () => {
+    expect(() => parseArguments(['--bump'])).toThrow('--bump must be followed by major, minor, or patch');
+    expect(() => parseArguments(['--bump', 'weekly'])).toThrow('Received: weekly');
+    expect(() => parseArguments(['--unknown'])).toThrow('Run npm run release -- -- --help for usage.');
+  });
+});
+
+describe('create-release command helpers', () => {
+  it('formats command arguments with quotes when needed', () => {
+    expect(formatCommand('git', ['commit', '-m', 'chore(release): bump version to 1.2.3'])).toBe(
+      'git commit -m "chore(release): bump version to 1.2.3"'
+    );
+  });
+
+  it('includes the command and working directory in failure messages', () => {
+    expect(createCommandFailureMessage('npm', ['run', 'build'], '/repo', 1)).toBe(
+      'Command failed with status 1: npm run build\nWorking directory: /repo'
+    );
+  });
+});
+
+describe('create-release version helpers', () => {
+  it('bumps semantic versions', () => {
+    expect(bumpVersion('1.2.3', 'patch')).toBe('1.2.4');
+    expect(bumpVersion('1.2.3', 'minor')).toBe('1.3.0');
+    expect(bumpVersion('1.2.3', 'major')).toBe('2.0.0');
   });
 });
