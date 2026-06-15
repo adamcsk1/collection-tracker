@@ -7,7 +7,7 @@
   </label>
 }
 <div class="container" [class.has-icon]="icon()">
-  <i class="material-icons">{{ icon() }}</i>
+  <i class="material-icons" aria-hidden="true">{{ icon() }}</i>
   <input
     class="input"
     [attr.aria-label]="label() || placeholder()"
@@ -26,6 +26,7 @@
   @if (showReset() && hasValue() && !disabled()) {
     <button
       class="button-icon material-icons"
+      [attr.data-test-id]="resetButtonDataTestId() ?? null"
       [attr.aria-label]="translations.resetInput()"
       [title]="translations.resetInput()"
       (click)="onReset()"

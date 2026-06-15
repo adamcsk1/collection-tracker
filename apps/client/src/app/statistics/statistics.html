@@ -89,19 +89,85 @@
 
   <h2>{{ translations.chart() }}</h2>
   <libc-details [summary]="translations.selectedTags()" [open]="defaultOpenSelectedTags">
-    <div data-test-id="statistics-tags" class="tags">
-      @for (tag of tags(); track tag) {
-        <button
-          [attr.data-test-id]="'statistics-tag-' + tag"
-          class="tag-chip"
-          [class.tag-chip-selected]="selectedTags().includes(tag)"
-          [attr.aria-pressed]="selectedTags().includes(tag)"
-          (click)="onToggleTag(tag)"
-          [style.--tag-color]="textToHexColor(tag.replace('#', ''))"
-        >
-          {{ tag }}
-        </button>
-      }
+    <div class="tag-picker">
+      <div class="tag-picker-controls">
+        <libc-input
+          data-test-id="statistics-tag-filter"
+          class="tag-filter"
+          [icon]="'search'"
+          [showReset]="true"
+          resetButtonDataTestId="statistics-tag-filter-reset"
+          [placeholder]="translations.placeholderFilterTags()"
+          type="text"
+          (valueChange)="onFilterTags($event)"
+        />
+        @if (selectedTags().length > 0) {
+          <button
+            data-test-id="statistics-tags-clear"
+            type="button"
+            class="text-button"
+            (click)="onClearSelectedTags()"
+          >
+            {{ translations.clearSelectedTags() }}
+          </button>
+        }
+      </div>
+
+      <div class="tag-picker-scroll">
+        @if (selectedVisibleTags().length > 0) {
+          <section
+            data-test-id="statistics-selected-tags-section"
+            class="tag-group"
+            [attr.aria-label]="translations.selectedTags()"
+          >
+            <h3>{{ translations.selectedTags() }}</h3>
+            <div data-test-id="statistics-selected-tags" class="tags">
+              @for (tag of selectedVisibleTags(); track tag) {
+                <button
+                  [attr.data-test-id]="'statistics-tag-' + tag"
+                  class="tag-chip tag-chip-selected"
+                  [attr.aria-pressed]="true"
+                  (click)="onToggleTag(tag)"
+                  [style.--tag-color]="textToHexColor(tag.replace('#', ''))"
+                >
+                  {{ tag }}
+                </button>
+              }
+            </div>
+          </section>
+        }
+
+        @if (availableVisibleTags().length > 0) {
+          <section
+            data-test-id="statistics-available-tags-section"
+            class="tag-group"
+            [attr.aria-label]="translations.availableTags()"
+          >
+            <h3>{{ translations.availableTags() }}</h3>
+            <div data-test-id="statistics-tags" class="tags">
+              @for (tag of availableVisibleTags(); track tag) {
+                <button
+                  [attr.data-test-id]="'statistics-tag-' + tag"
+                  class="tag-chip"
+                  [attr.aria-pressed]="false"
+                  (click)="onToggleTag(tag)"
+                  [style.--tag-color]="textToHexColor(tag.replace('#', ''))"
+                >
+                  {{ tag }}
+                </button>
+              }
+            </div>
+          </section>
+        } @else if (hasActiveTagFilter() && filteredTags().length === 0) {
+          <div data-test-id="statistics-tags-filter-empty" class="tags-empty">
+            {{ translations.messageEmptyTagFilter() }}
+          </div>
+        } @else if (tags().length === 0) {
+          <div data-test-id="statistics-tags-unavailable" class="tags-empty">
+            {{ translations.messageEmptyTags() }}
+          </div>
+        }
+      </div>
     </div>
   </libc-details>
   @if (selectedTags().length === 0) {

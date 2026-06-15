@@ -43,6 +43,41 @@
   padding: var(--size-xs) 0;
 }
 
+.tag-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-sm);
+}
+
+.tag-picker-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-sm);
+  align-items: center;
+}
+
+.tag-filter {
+  flex: 1 1 calc(16 * var(--size-md));
+}
+
+.tag-picker-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-sm);
+}
+
+.tag-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2xs);
+
+  h3 {
+    margin: 0;
+    color: var(--main-color);
+    font-size: var(--font-size-sm);
+  }
+}
+
 .tag-chip {
   display: inline-flex;
   align-items: center;
@@ -110,5 +145,21 @@
 @media (width > 768px) {
   .chart-card-wide .chart-container {
     min-height: 280px;
+  }
+}
+
+@media (width <= 520px) {
+  .tag-picker-scroll {
+    max-height: 40dvh;
+    overflow-y: auto;
+    padding-right: var(--size-2xs);
+  }
+
+  .tags {
+    gap: var(--size-xs);
+  }
+
+  .tag-chip {
+    padding: var(--size-2xs) var(--size-xs);
   }
 }

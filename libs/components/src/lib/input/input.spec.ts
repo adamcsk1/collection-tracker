@@ -7,7 +7,14 @@ import { Input } from './input';
 
 @Component({
   imports: [FormField, Input],
-  template: `<libc-input [formField]="field" label="Name" hint="Helpful" [showReset]="true"></libc-input>`,
+  template: `<libc-input
+    [formField]="field"
+    label="Name"
+    hint="Helpful"
+    icon="search"
+    [showReset]="true"
+    resetButtonDataTestId="name-reset"
+  ></libc-input>`,
 })
 class HostComponent {
   public readonly model = signal('');
@@ -86,5 +93,21 @@ describe('Input component', () => {
     const describedBy = componentInstance['describedBy']() ?? '';
     expect(describedBy).toContain('-hint');
     expect(describedBy).toContain('-error');
+  });
+
+  it('marks the icon as decorative', () => {
+    const icon = fixture.nativeElement.querySelector('.material-icons') as HTMLElement;
+
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('applies the reset button test id when provided', () => {
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Input<string>;
+    component['onInput']({ target: { value: 'abc' } } as unknown as Event);
+    fixture.detectChanges();
+
+    const resetButton = fixture.nativeElement.querySelector('[data-test-id="name-reset"]') as HTMLButtonElement;
+
+    expect(resetButton).toBeTruthy();
   });
 });

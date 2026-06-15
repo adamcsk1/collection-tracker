@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { StatisticsSummaryModel } from './statistics-model';
 import { Details } from '@components/details/details';
+import { Input } from '@components/input/input';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
@@ -17,7 +18,7 @@ import { StatisticsChartService } from './statistics-chart-service';
 
 @Component({
   selector: 'ct-statistics',
-  imports: [Details],
+  imports: [Details, Input],
   templateUrl: './statistics.html',
   styleUrl: './statistics.css',
   providers: [StatisticsChartService],
@@ -35,6 +36,7 @@ export class Statistics implements AfterViewInit {
   protected readonly translations = {
     messageLoadStatistics: computed(() => this.ngxSignalTranslate.translate('Message.LoadStatistics')),
     messageEmptyStatistics: computed(() => this.ngxSignalTranslate.translate('Message.EmptyStatistics')),
+    messageEmptyTags: computed(() => this.ngxSignalTranslate.translate('Message.EmptyTags')),
     summary: computed(() => this.ngxSignalTranslate.translate('Summary')),
     itemsInCollection: computed(() => this.ngxSignalTranslate.translate('ItemsInCollection')),
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
@@ -45,10 +47,14 @@ export class Statistics implements AfterViewInit {
     watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
     unwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
     chart: computed(() => this.ngxSignalTranslate.translate('Chart')),
+    availableTags: computed(() => this.ngxSignalTranslate.translate('AvailableTags')),
+    clearSelectedTags: computed(() => this.ngxSignalTranslate.translate('ClearSelectedTags')),
     selectedTags: computed(() => this.ngxSignalTranslate.translate('SelectedTags')),
+    placeholderFilterTags: computed(() => this.ngxSignalTranslate.translate('Placeholder.FilterTags')),
     messageEmptySelectTagsForChart: computed(() =>
       this.ngxSignalTranslate.translate('Message.EmptySelectTagsForChart')
     ),
+    messageEmptyTagFilter: computed(() => this.ngxSignalTranslate.translate('Message.EmptyTagFilter')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
     globalWatchStatus: computed(() => this.ngxSignalTranslate.translate('GlobalWatchStatus')),
     type: computed(() => this.ngxSignalTranslate.translate('Type')),
@@ -62,6 +68,21 @@ export class Statistics implements AfterViewInit {
   protected readonly typeChart = signal<Chart<'doughnut', number[], string> | null>(null);
   protected readonly genreChart = signal<Chart<'bar', number[], string> | null>(null);
   protected readonly selectedTags = signal<string[]>([]);
+  protected readonly tagFilter = signal('');
+  protected readonly normalizedTagFilter = computed(() => this.tagFilter().trim().toLowerCase());
+  protected readonly hasActiveTagFilter = computed(() => this.normalizedTagFilter().length > 0);
+  protected readonly selectedTagSet = computed(() => new Set(this.selectedTags()));
+  protected readonly filteredTags = computed(() => {
+    const tagFilter = this.normalizedTagFilter();
+    const tags = this.tags();
+    return tagFilter ? tags.filter((tag) => tag.toLowerCase().includes(tagFilter)) : tags;
+  });
+  protected readonly selectedVisibleTags = computed(() =>
+    this.filteredTags().filter((tag) => this.selectedTagSet().has(tag))
+  );
+  protected readonly availableVisibleTags = computed(() =>
+    this.filteredTags().filter((tag) => !this.selectedTagSet().has(tag))
+  );
   protected readonly summary = computed<StatisticsSummaryModel>(() => {
     const statistics = this.statistics();
     return {
@@ -102,7 +123,17 @@ export class Statistics implements AfterViewInit {
       this.selectedTags.update((selectedTags) => selectedTags.filter((selectedTag) => selectedTag !== tag));
     } else this.selectedTags.update((selectedTags) => [...selectedTags, tag]);
 
-    this.webstorage.setItem(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify(this.selectedTags()));
+    this.persistSelectedTags();
+    this.updateTagChart();
+  }
+
+  protected onFilterTags(value: string | null): void {
+    this.tagFilter.set(value ?? '');
+  }
+
+  protected onClearSelectedTags(): void {
+    this.selectedTags.set([]);
+    this.persistSelectedTags();
     this.updateTagChart();
   }
 
@@ -164,6 +195,10 @@ export class Statistics implements AfterViewInit {
 
   private updateGenreChart(): void {
     this.charts.updateGenreChart(this.genreChart(), this.statistics());
+  }
+
+  private persistSelectedTags(): void {
+    this.webstorage.setItem(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify(this.selectedTags()));
   }
 
   private loadStatistics(): void {

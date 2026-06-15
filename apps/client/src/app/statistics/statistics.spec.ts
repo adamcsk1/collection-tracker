@@ -122,6 +122,29 @@ describe('Statistics component', () => {
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify(['#action']));
   });
 
+  it('filters visible tags by text', () => {
+    component['onFilterTags']('act');
+
+    expect(component['availableVisibleTags']()).toEqual(['#action']);
+  });
+
+  it('shows matching selected tags before available tags', () => {
+    component['onToggleTag']('#action');
+    component['onFilterTags']('a');
+
+    expect(component['selectedVisibleTags']()).toEqual(['#action']);
+    expect(component['availableVisibleTags']()).toEqual(['#drama']);
+  });
+
+  it('clears selected tags and persists the empty selection', () => {
+    component['onToggleTag']('#action');
+
+    component['onClearSelectedTags']();
+
+    expect(component['selectedTags']()).toEqual([]);
+    expect(webstorage.setItem).toHaveBeenLastCalledWith(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify([]));
+  });
+
   it('navigates to collection without search when clicking total stat card', () => {
     component['onNavigateToCollection']();
 
