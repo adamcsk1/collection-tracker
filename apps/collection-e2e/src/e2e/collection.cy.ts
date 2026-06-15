@@ -19,11 +19,17 @@ const expectVisibleTitles = (titles: string[]) => {
 };
 
 const showOrderControls = () => {
-  cy.get('body').then((body) => {
-    if (body.find('[data-test-id="show-functions"]').length) {
-      CollectionPage.getShowFunctionsButton().click();
-    }
-  });
+  cy.get('body')
+    .should((body) => {
+      expect(
+        body.find('[data-test-id="show-functions"], [data-test-id="list-order-by-toggle"]').length
+      ).to.be.greaterThan(0);
+    })
+    .then((body) => {
+      if (body.find('[data-test-id="show-functions"]').length) {
+        CollectionPage.getShowFunctionsButton().click();
+      }
+    });
   CollectionPage.getOrderByToggleButton().should('be.visible');
   CollectionPage.getOrderDirectionToggleButton().should('be.visible');
 };
@@ -480,6 +486,7 @@ describe('Collection — order controls', () => {
   });
 
   it('shows order controls on secondary collection pages and favorites', () => {
+    cy.intercept('GET', '/api/v1/items*').as('getItems');
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Later Order', 'movie', 'tt8400021'),
       listType: 'watch-later',
@@ -499,18 +506,26 @@ describe('Collection — order controls', () => {
 
     CommonPage.openMenu();
     CommonPage.getNavWatchLaterLink().click();
+    cy.url().should('include', '#/collection/watch-later');
+    cy.wait('@getItems');
     showOrderControls();
 
     CommonPage.openMenu();
     CommonPage.getNavWishlistLink().click();
+    cy.url().should('include', '#/collection/wishlist');
+    cy.wait('@getItems');
     showOrderControls();
 
     CommonPage.openMenu();
     CommonPage.getNavSeriesTrackerLink().click();
+    cy.url().should('include', '#/collection/series-tracker');
+    cy.wait('@getItems');
     showOrderControls();
 
     CommonPage.openMenu();
     CommonPage.getNavFavoritesLink().click();
+    cy.url().should('include', '#/collection/favorites');
+    cy.wait('@getItems');
     cy.getByTestId('collection-search').should('not.exist');
     showOrderControls();
   });
