@@ -88,7 +88,11 @@
   <hr />
 
   <h2>{{ translations.chart() }}</h2>
-  <libc-details [summary]="translations.selectedTags()" [open]="defaultOpenSelectedTags">
+  <libc-details
+    data-test-id="statistics-tags-details"
+    [summary]="translations.selectedTags()"
+    [open]="defaultOpenSelectedTags"
+  >
     <div class="tag-picker">
       <div class="tag-picker-controls">
         <libc-input
@@ -178,7 +182,11 @@
 }
 
 <div class="charts-grid" [class.chart-hidden]="apiLoadNetworkStatus() !== 'finished' || tags().length === 0">
-  <div class="card chart-card" [class.chart-hidden]="selectedTags().length === 0">
+  <div
+    data-test-id="statistics-tag-chart-card"
+    class="card chart-card"
+    [class.chart-hidden]="selectedTags().length === 0"
+  >
     <h3>{{ translations.tags() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-tag-chart">{{ tagChart() }}</canvas>

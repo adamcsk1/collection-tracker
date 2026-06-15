@@ -29,6 +29,7 @@ describe('Statistics — with movies and series', () => {
     cy.request('POST', '/api/v1/create', seriesOne);
     StatisticsPage.visit();
     StatisticsPage.getSummaryAll().should('contain.text', '3');
+    StatisticsPage.openTagsDetails();
   });
 
   it('shows the summary section', () => {
@@ -93,25 +94,25 @@ describe('Statistics — with movies and series', () => {
   });
 
   it('hides the chart canvas when no tag is selected', () => {
-    StatisticsPage.getChart().should('not.be.visible');
+    StatisticsPage.getTagChartCard().should('not.be.visible');
   });
 
   it('shows the chart when a tag button is clicked', () => {
     StatisticsPage.getTagButton('#action').click();
-    StatisticsPage.getChart().should('be.visible');
+    StatisticsPage.getTagChartCard().scrollIntoView().should('be.visible');
   });
 
   it('hides the chart again when the selected tag is deselected', () => {
     StatisticsPage.getTagButton('#action').click();
-    StatisticsPage.getChart().should('be.visible');
+    StatisticsPage.getTagChartCard().scrollIntoView().should('be.visible');
     StatisticsPage.getTagButton('#action').click();
-    StatisticsPage.getChart().should('not.be.visible');
+    StatisticsPage.getTagChartCard().should('not.be.visible');
   });
 
   it('can select multiple tags and shows the chart', () => {
     StatisticsPage.getTagButton('#action').click();
     StatisticsPage.getTagButton('#drama').click();
-    StatisticsPage.getChart().should('be.visible');
+    StatisticsPage.getTagChartCard().scrollIntoView().should('be.visible');
   });
 });
 

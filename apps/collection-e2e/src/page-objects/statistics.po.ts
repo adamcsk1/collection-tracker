@@ -17,7 +17,14 @@ export const StatisticsPage = {
   getSummaryWishlist: () => cy.getByTestId('statistics-summary-wishlist'),
   getSummaryWatched: () => cy.getByTestId('statistics-summary-watched'),
   getSummaryUnwatched: () => cy.getByTestId('statistics-summary-unwatched'),
-  getTagButton: (tag: string) => cy.getByTestId(`statistics-tag-${tag}`),
-  getTagsEmpty: () => cy.getByTestId('statistics-tags-empty'),
-  getChart: () => cy.get('#statistics-tag-chart'),
+  openTagsDetails: () => {
+    cy.getByTestId('statistics-tags-details')
+      .find('details')
+      .then(($details) => {
+        if (!$details.prop('open')) cy.wrap($details).find('summary').click();
+      });
+  },
+  getTagButton: (tag: string) => cy.getByTestId(`statistics-tag-${tag}`).scrollIntoView(),
+  getTagsEmpty: () => cy.getByTestId('statistics-tags-empty').scrollIntoView(),
+  getTagChartCard: () => cy.getByTestId('statistics-tag-chart-card'),
 };
