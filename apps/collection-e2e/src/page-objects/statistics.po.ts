@@ -25,6 +25,24 @@ export const StatisticsPage = {
       });
   },
   getTagButton: (tag: string) => cy.getByTestId(`statistics-tag-${tag}`).scrollIntoView(),
+  clickAvailableTagButton: (tag: string) =>
+    cy
+      .getByTestId('statistics-tags')
+      .find(`[data-test-id="statistics-tag-${tag}"]`)
+      .scrollIntoView()
+      .then(($button) => {
+        ($button[0] as HTMLButtonElement).click();
+      }),
+  getSelectedTagButton: (tag: string) =>
+    cy.getByTestId('statistics-selected-tags').find(`[data-test-id="statistics-tag-${tag}"]`).scrollIntoView(),
+  clickSelectedTagButton: (tag: string) =>
+    cy
+      .getByTestId('statistics-selected-tags')
+      .find(`[data-test-id="statistics-tag-${tag}"]`)
+      .scrollIntoView()
+      .then(($button) => {
+        ($button[0] as HTMLButtonElement).click();
+      }),
   getTagsEmpty: () => cy.getByTestId('statistics-tags-empty').scrollIntoView(),
   getTagChartCard: () => cy.getByTestId('statistics-tag-chart-card'),
 };

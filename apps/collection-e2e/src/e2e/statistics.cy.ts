@@ -94,25 +94,27 @@ describe('Statistics — with movies and series', () => {
   });
 
   it('hides the chart canvas when no tag is selected', () => {
-    StatisticsPage.getTagChartCard().should('not.be.visible');
+    StatisticsPage.getTagChartCard().should('have.class', 'chart-hidden');
   });
 
   it('shows the chart when a tag button is clicked', () => {
-    StatisticsPage.getTagButton('#action').click();
-    StatisticsPage.getTagChartCard().scrollIntoView().should('be.visible');
+    StatisticsPage.clickAvailableTagButton('#action');
+    StatisticsPage.getTagChartCard().should('not.have.class', 'chart-hidden');
   });
 
   it('hides the chart again when the selected tag is deselected', () => {
-    StatisticsPage.getTagButton('#action').click();
-    StatisticsPage.getTagChartCard().scrollIntoView().should('be.visible');
-    StatisticsPage.getTagButton('#action').click();
-    StatisticsPage.getTagChartCard().should('not.be.visible');
+    StatisticsPage.clickAvailableTagButton('#action');
+    StatisticsPage.getSelectedTagButton('#action').should('have.attr', 'aria-pressed', 'true');
+    StatisticsPage.getTagChartCard().should('not.have.class', 'chart-hidden');
+    StatisticsPage.clickSelectedTagButton('#action');
+    StatisticsPage.getTagChartCard().should('have.class', 'chart-hidden');
   });
 
   it('can select multiple tags and shows the chart', () => {
-    StatisticsPage.getTagButton('#action').click();
-    StatisticsPage.getTagButton('#drama').click();
-    StatisticsPage.getTagChartCard().scrollIntoView().should('be.visible');
+    StatisticsPage.clickAvailableTagButton('#action');
+    StatisticsPage.getSelectedTagButton('#action').should('have.attr', 'aria-pressed', 'true');
+    StatisticsPage.clickAvailableTagButton('#drama');
+    StatisticsPage.getTagChartCard().should('not.have.class', 'chart-hidden');
   });
 });
 
