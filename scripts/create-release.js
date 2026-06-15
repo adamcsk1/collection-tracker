@@ -14,6 +14,7 @@ const dockerReadme = join(rootFolder, 'docs', 'docker.md');
 const releaseFolder = join(rootFolder, 'release');
 const packageJsonFile = join(rootFolder, 'package.json');
 const packageLockFile = join(rootFolder, 'package-lock.json');
+const clientAboutFile = join(rootFolder, 'apps', 'client', 'src', 'app', 'about', 'about.ts');
 const androidFolder = join(rootFolder, 'android');
 const androidBuildFile = join(androidFolder, 'app', 'build.gradle.kts');
 const androidReleaseApkFolder = join(androidFolder, 'app', 'build', 'outputs', 'apk', 'release');
@@ -113,7 +114,9 @@ const getGitStatus = () => {
 const assertCleanGitStatus = () => {
   const status = getGitStatus();
   if (status) {
-    throw new Error(`Cannot create a version bump commit with a dirty git status. Commit or stash changes first, or use --no-commit.\n${status}`);
+    throw new Error(
+      `Cannot create a version bump commit with a dirty git status. Commit or stash changes first, or use --no-commit.\n${status}`
+    );
   }
 };
 
@@ -139,7 +142,8 @@ const updateVersionFiles = (version) => {
 
   const androidBuild = readFileSync(androidBuildFile, 'utf-8');
   const updatedAndroidBuild = androidBuild.replace(/versionName = "\d+\.\d+\.\d+"/, `versionName = "${version}"`);
-  if (updatedAndroidBuild === androidBuild) throw new Error(`Could not update Android versionName in ${androidBuildFile}`);
+  if (updatedAndroidBuild === androidBuild)
+    throw new Error(`Could not update Android versionName in ${androidBuildFile}`);
   writeFileSync(androidBuildFile, updatedAndroidBuild);
 };
 
@@ -159,8 +163,63 @@ const assertVersionFilesMatch = (version) => {
 
   for (const [label, foundVersion] of versions) {
     if (foundVersion !== version) {
-      throw new Error(`${label} version ${foundVersion} does not match package.json version ${version}. Run release with --bump or update versions before packaging.`);
+      throw new Error(
+        `${label} version ${foundVersion} does not match package.json version ${version}. Run release with --bump or update versions before packaging.`
+      );
     }
+  }
+};
+
+const getCommandOutput = (command, args) => {
+  const result = spawnSync(command, args, {
+    cwd: rootFolder,
+    encoding: 'utf-8',
+    shell: false,
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed with status ${result.status}`);
+  return result.stdout.trim();
+};
+
+const replacePropertyValue = (source, property, value) => {
+  const pattern = new RegExp(`protected readonly ${property} = '[^']*';`);
+  if (!pattern.test(source)) throw new Error(`Could not find About ${property} build metadata placeholder.`);
+  const escapedValue = value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return source.replace(pattern, `protected readonly ${property} = '${escapedValue}';`);
+};
+
+const updateClientAboutBuildInfoSource = (aboutSource, { build, buildDate, version }, options = {}) => {
+  const updatedAboutSource = replacePropertyValue(
+    replacePropertyValue(replacePropertyValue(aboutSource, 'build', build), 'buildDate', buildDate),
+    'appVersion',
+    version
+  );
+
+  if (!options.allowUnchanged && updatedAboutSource === aboutSource) {
+    throw new Error('Could not update release build metadata.');
+  }
+
+  return updatedAboutSource;
+};
+
+const getClientAboutReleaseBuildInfo = () => {
+  const commitHash = getCommandOutput('git', ['rev-parse', '--short', 'HEAD']);
+  const branch = getCommandOutput('git', ['name-rev', '--name-only', 'HEAD']);
+  return {
+    build: `${commitHash} (${branch})`,
+    buildDate: new Date().toISOString(),
+    version: appVersion,
+  };
+};
+
+const withClientAboutBuildInfo = (file, buildInfo, callback) => {
+  const originalAboutSource = readFileSync(file, 'utf-8');
+  writeFileSync(file, updateClientAboutBuildInfoSource(originalAboutSource, buildInfo), 'utf-8');
+
+  try {
+    return callback();
+  } finally {
+    writeFileSync(file, originalAboutSource, 'utf-8');
   }
 };
 
@@ -228,11 +287,15 @@ const runApkSigner = (apkFile) => {
 const createZip = (sourceFolder, zipFile) => {
   if (existsSync(zipFile)) rmSync(zipFile, { force: true });
   if (process.platform === 'win32') {
-    run('powershell', [
-      '-NoProfile',
-      '-Command',
-      `Compress-Archive -LiteralPath '${basename(sourceFolder).replaceAll("'", "''")}' -DestinationPath '${zipFile.replaceAll("'", "''")}' -Force`,
-    ], { cwd: releaseFolder });
+    run(
+      'powershell',
+      [
+        '-NoProfile',
+        '-Command',
+        `Compress-Archive -LiteralPath '${basename(sourceFolder).replaceAll("'", "''")}' -DestinationPath '${zipFile.replaceAll("'", "''")}' -Force`,
+      ],
+      { cwd: releaseFolder }
+    );
     return;
   }
   run('zip', ['-r', zipFile, basename(sourceFolder)], { cwd: releaseFolder });
@@ -292,7 +355,8 @@ const createAndroidRelease = () => {
   }
 
   const androidCommand = process.platform === 'win32' ? 'cmd' : './gradlew';
-  const androidArgs = process.platform === 'win32' ? ['/c', join(androidFolder, 'gradlew.bat'), 'assembleRelease'] : ['assembleRelease'];
+  const androidArgs =
+    process.platform === 'win32' ? ['/c', join(androidFolder, 'gradlew.bat'), 'assembleRelease'] : ['assembleRelease'];
   run(androidCommand, androidArgs, { cwd: androidFolder });
 
   const apkFiles = findAndroidApks();
@@ -327,17 +391,28 @@ If an APK filename contains \`unsigned\`, sign it with your Android release key 
   );
 };
 
-prepareVersion(parseArguments());
-runNpmBuild();
-recreateFolder(releaseFolder);
-createWebRelease();
-createAndroidRelease();
-createZip(webReleaseFolder, webZipFile);
-writeHashFiles(webZipFile);
+const createRelease = () => {
+  prepareVersion(parseArguments());
+  withClientAboutBuildInfo(clientAboutFile, getClientAboutReleaseBuildInfo(), runNpmBuild);
+  recreateFolder(releaseFolder);
+  createWebRelease();
+  createAndroidRelease();
+  createZip(webReleaseFolder, webZipFile);
+  writeHashFiles(webZipFile);
 
-if (tagVersionAfterRelease) {
-  tagVersion(appVersion);
+  if (tagVersionAfterRelease) {
+    tagVersion(appVersion);
+  }
+
+  console.log(`Web release created at ${webReleaseFolder}`);
+  console.log(`Web archive created at ${webZipFile}`);
+};
+
+if (require.main === module) {
+  createRelease();
 }
 
-console.log(`Web release created at ${webReleaseFolder}`);
-console.log(`Web archive created at ${webZipFile}`);
+module.exports = {
+  updateClientAboutBuildInfoSource,
+  withClientAboutBuildInfo,
+};

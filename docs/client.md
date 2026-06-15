@@ -23,7 +23,7 @@ Source: [`apps/client`](../apps/client)
 - Uses standalone Angular components, zoneless change detection, and hash-based routing.
 - Copies static assets from both [`apps/client/public`](../apps/client/public) and [`libs/public/src`](../libs/public/src).
 - Loads translations from `./client/i18n`.
-- Runs build metadata hooks through [`apps/client/scripts/set-build-infos.js`](../apps/client/scripts/set-build-infos.js) and [`apps/client/scripts/reset-build-infos.js`](../apps/client/scripts/reset-build-infos.js).
+- Keeps local build metadata placeholders in the About component; release packaging temporarily patches them before building and resets them afterwards.
 
 ## Important Paths
 

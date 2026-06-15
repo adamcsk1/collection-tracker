@@ -122,18 +122,6 @@
       "options": {
         "command": "prettier --check \"apps/client\""
       }
-    },
-    "prebuild": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node apps/client/scripts/set-build-infos.js"
-      }
-    },
-    "postbuild": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node apps/client/scripts/reset-build-infos.js"
-      }
     }
   }
 }

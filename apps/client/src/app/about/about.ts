@@ -3,7 +3,6 @@ import { LinkButton } from '@components/link-button/link-button';
 import { ThemeService } from '@services/theme/theme-service';
 import { getBasePath } from '@shared/utils/get-base-path-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { APP_VERSION, BUILD, BUILD_DATE } from '../main/main-const';
 
 @Component({
   selector: 'ct-about',
@@ -30,8 +29,8 @@ export class About {
     navigateToApiDocs: computed(() => this.ngxSignalTranslate.translate('NavigateToApiDocs')),
   };
   protected readonly themeLogo = this.theme.themeLogo;
-  protected readonly build = BUILD;
-  protected readonly buildDate = BUILD_DATE;
-  protected readonly appVersion = APP_VERSION;
+  protected readonly build = 'localhost-build';
+  protected readonly buildDate = 'localhost-build-date';
+  protected readonly appVersion = 'localhost-version';
   protected readonly basePath = getBasePath();
 }
