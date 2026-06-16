@@ -8,6 +8,7 @@ const require = createRequire(import.meta.url);
 const {
   bumpVersion,
   createCommandFailureMessage,
+  formatBuildDate,
   formatCommand,
   formatHelp,
   parseArguments,
@@ -26,13 +27,17 @@ describe('create-release build metadata helpers', () => {
   it('updates About build metadata placeholders and escapes TypeScript string values', () => {
     const updatedSource = updateClientAboutBuildInfoSource(aboutSource, {
       build: "abc123 (feature\\branch's)",
-      buildDate: '2026-06-15T09:00:00.000Z',
+      buildDate: '2026-06-15',
       version: '1.2.3',
     });
 
     expect(updatedSource).toContain("protected readonly build = 'abc123 (feature\\\\branch\\'s)';");
-    expect(updatedSource).toContain("protected readonly buildDate = '2026-06-15T09:00:00.000Z';");
+    expect(updatedSource).toContain("protected readonly buildDate = '2026-06-15';");
     expect(updatedSource).toContain("protected readonly appVersion = '1.2.3';");
+  });
+
+  it('formats release build dates as YYYY-MM-DD', () => {
+    expect(formatBuildDate(new Date('2026-06-15T09:00:00.000Z'))).toBe('2026-06-15');
   });
 
   it('restores the exact original About source when the release build callback fails', () => {
@@ -47,7 +52,7 @@ describe('create-release build metadata helpers', () => {
           temporaryAboutFile,
           {
             build: 'abc123 (main)',
-            buildDate: '2026-06-15T09:00:00.000Z',
+            buildDate: '2026-06-15',
             version: '1.2.3',
           },
           () => {

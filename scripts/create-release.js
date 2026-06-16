@@ -245,12 +245,14 @@ const updateClientAboutBuildInfoSource = (aboutSource, { build, buildDate, versi
   return updatedAboutSource;
 };
 
+const formatBuildDate = (date = new Date()) => date.toISOString().slice(0, 10);
+
 const getClientAboutReleaseBuildInfo = () => {
   const commitHash = getCommandOutput('git', ['rev-parse', '--short', 'HEAD']);
   const branch = getCommandOutput('git', ['name-rev', '--name-only', 'HEAD']);
   return {
     build: `${commitHash} (${branch})`,
-    buildDate: new Date().toISOString(),
+    buildDate: formatBuildDate(),
     version: appVersion,
   };
 };
@@ -480,6 +482,7 @@ if (require.main === module) {
 module.exports = {
   bumpVersion,
   createCommandFailureMessage,
+  formatBuildDate,
   formatCommand,
   formatHelp,
   parseArguments,
