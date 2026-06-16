@@ -93,6 +93,17 @@ describe('Collection — add a new element', () => {
     CollectionPage.getListItems().first().should('contain.text', newTitle);
   });
 
+  it('searches OMDB when enter is pressed in the new-item search', () => {
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+
+    CollectionPage.getNewItemSearchInput().type(`${newTitle}{enter}`);
+
+    cy.wait('@omdbSearch');
+    CollectionPage.getNewItemSearchInput().should('have.value', newTitle);
+    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+  });
+
   it('saves a new item and keeps the dialog open for another item', () => {
     const firstTitle = 'Save And New Movie One';
     const secondTitle = 'Save And New Movie Two';

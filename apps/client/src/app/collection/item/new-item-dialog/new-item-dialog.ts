@@ -253,6 +253,13 @@ export class NewItemDialog {
     this.sharesLoader.load(this.destroyRef, true);
   }
 
+  protected onSearchEnter(event: Event): void {
+    event.preventDefault();
+
+    const searchText = this.form.searchText().value().trim();
+    if (searchText) this.service.search(searchText);
+  }
+
   private async onSave(mode: SaveMode | null = null): Promise<void> {
     const selectedIMDbId = this.form.selectedIMDbId().value();
     if (!selectedIMDbId) return;

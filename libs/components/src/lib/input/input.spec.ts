@@ -110,4 +110,14 @@ describe('Input component', () => {
 
     expect(resetButton).toBeTruthy();
   });
+
+  it('keeps the reset button out of form submission', () => {
+    const component = fixture.debugElement.children[0].children[0].componentInstance as Input<string>;
+    component['onInput']({ target: { value: 'abc' } } as unknown as Event);
+    fixture.detectChanges();
+
+    const resetButton = fixture.nativeElement.querySelector('[data-test-id="name-reset"]') as HTMLButtonElement;
+
+    expect(resetButton.type).toBe('button');
+  });
 });

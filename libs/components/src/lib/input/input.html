@@ -25,6 +25,7 @@
   />
   @if (showReset() && hasValue() && !disabled()) {
     <button
+      type="button"
       class="button-icon material-icons"
       [attr.data-test-id]="resetButtonDataTestId() ?? null"
       [attr.aria-label]="translations.resetInput()"

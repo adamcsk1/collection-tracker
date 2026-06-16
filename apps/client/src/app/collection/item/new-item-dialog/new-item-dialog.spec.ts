@@ -86,6 +86,17 @@ describe('NewItemDialog component', () => {
     expect(service.search).toHaveBeenCalledWith('matrix');
   });
 
+  it('searches immediately without clearing the search text when enter is pressed', () => {
+    const preventDefault = vi.fn();
+    component['form'].searchText().value.set('matrix');
+
+    component['onSearchEnter']({ preventDefault } as unknown as Event);
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(service.search).toHaveBeenCalledWith('matrix');
+    expect(component['form'].searchText().value()).toBe('matrix');
+  });
+
   it('invokes save and resets when mode is new', async () => {
     const formRoot = component['form']();
     vi.spyOn(formRoot, 'reset');

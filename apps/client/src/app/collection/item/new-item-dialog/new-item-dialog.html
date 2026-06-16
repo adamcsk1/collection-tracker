@@ -14,6 +14,7 @@
         [mandatory]="true"
         [formField]="form.searchText"
         [showReset]="true"
+        (keydown.enter)="onSearchEnter($event)"
       />
       @if (matchedContent().length) {
         @if (showLibrarySelect()) {
