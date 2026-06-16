@@ -81,8 +81,14 @@
     <i class="material-icons">sync</i>
     {{ translations.sync() }}
   </a>
-  <a data-test-id="nav-about" [routerLink]="['/', 'about']" routerLinkActive="active" (click)="onClose()">
-    <i class="material-icons">info</i>
+  <a
+    data-test-id="nav-about"
+    href="#"
+    role="button"
+    (click)="onOpenAbout($event)"
+    (keydown.space)="onOpenAbout($event)"
+  >
+    <i class="material-icons" aria-hidden="true">info</i>
     {{ translations.about() }}
   </a>
   <a data-test-id="nav-logout" href="#" (click)="onLogout()">

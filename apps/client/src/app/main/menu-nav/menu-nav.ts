@@ -76,4 +76,10 @@ export class MenuNav {
     const { StatisticsDialog } = await import('../../statistics/statistics-dialog');
     this.portal.open(StatisticsDialog);
   }
+
+  protected async onOpenAbout(event?: Event): Promise<void> {
+    event?.preventDefault();
+    const { AboutDialog } = await import('../../about/about-dialog');
+    this.portal.open(AboutDialog);
+  }
 }

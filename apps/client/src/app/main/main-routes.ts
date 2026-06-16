@@ -14,11 +14,6 @@ export const routes: Routes = [
     canActivate: [mainGuard, settingsLockedGuard],
   },
   {
-    path: 'about',
-    loadComponent: () => import('../about/about').then((module) => module.About),
-    canActivate: [mainGuard],
-  },
-  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'collection',

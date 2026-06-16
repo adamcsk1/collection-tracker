@@ -55,19 +55,14 @@
 .about-cards {
   display: flex;
   flex-direction: column;
-  gap: var(--size-xs);
+  gap: var(--size-md);
 }
 
 .about-card {
   display: flex;
   align-items: center;
   gap: var(--size-sm);
-  padding: var(--size-sm) var(--size-md);
-  background-color: var(--background-color-alt);
   border-radius: var(--border-radius);
-  transition:
-    background-color 200ms ease,
-    transform 200ms ease;
 
   > i.material-icons {
     font-size: var(--font-size-2xl);
@@ -96,24 +91,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 60%;
-  }
-}
-
-.about-card-interactive {
-  .about-card-value {
-    cursor: pointer;
-    color: var(--main-color);
-    border-radius: var(--border-radius);
-    padding: var(--size-3xs) var(--size-2xs);
-    margin: calc(-1 * var(--size-3xs)) calc(-1 * var(--size-2xs));
-    transition:
-      background-color 150ms ease,
-      color 150ms ease;
-
-    &:is(:hover, :focus-visible) {
-      background-color: rgb(from var(--main-color) r g b / 0.1);
-      outline: none;
-    }
   }
 }
 

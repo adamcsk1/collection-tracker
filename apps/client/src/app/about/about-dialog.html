@@ -1,0 +1,11 @@
+<libc-dialog-shell data-test-id="about-dialog" [ariaLabelledBy]="'about-dialog-title'">
+  <ng-container dialog-shell-top-content>
+    <h3 id="about-dialog-title" class="dialog-title">
+      <i class="material-icons" aria-hidden="true">info</i>
+      {{ translations.about() }}
+    </h3>
+  </ng-container>
+  <ng-container dialog-shell-content>
+    <ct-about />
+  </ng-container>
+</libc-dialog-shell>

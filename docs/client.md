@@ -16,7 +16,7 @@ Source: [`apps/client`](../apps/client)
 - `settings/global-watch-status`: mark all visible collection items watched or unwatched
 - `settings/shares`: manage outgoing and incoming collection shares by user share code
 - `settings`: theme, language, search, app-mode, settings-lock, account actions, access tokens, media refresh, sharing, and global watch-status actions
-- `about`: build metadata and settings-lock release flow
+- about dialog: build metadata and settings-lock release flow opened from the main menu
 
 ## Technical Notes
 

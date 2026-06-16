@@ -88,10 +88,26 @@ describe('MenuNav', () => {
     expect(portal.open).toHaveBeenCalledWith(StatisticsDialog);
   });
 
+  it('opens about in a dialog', async () => {
+    const { AboutDialog } = await import('../../about/about-dialog');
+
+    await component['onOpenAbout']();
+
+    expect(portal.open).toHaveBeenCalledWith(AboutDialog);
+  });
+
   it('prevents default link navigation when opening statistics', async () => {
     const event = { preventDefault: vi.fn() } as unknown as Event;
 
     await component['onOpenStatistics'](event);
+
+    expect(event.preventDefault).toHaveBeenCalled();
+  });
+
+  it('prevents default link navigation when opening about', async () => {
+    const event = { preventDefault: vi.fn() } as unknown as Event;
+
+    await component['onOpenAbout'](event);
 
     expect(event.preventDefault).toHaveBeenCalled();
   });

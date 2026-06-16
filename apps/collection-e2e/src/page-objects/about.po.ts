@@ -1,10 +1,17 @@
-export const AboutPage = {
-  visit: () => cy.visit('/client/#/about'),
+import { CommonPage } from './common.po';
 
+export const AboutPage = {
+  visit: () => {
+    cy.visit('/client/#/collection/library');
+    CommonPage.openMenu();
+    CommonPage.getNavAboutLink().click();
+  },
+
+  getDialog: () => cy.getByTestId('about-dialog').find('[role="dialog"]'),
   getTitle: () => cy.getByTestId('about-title'),
   getBuild: () => cy.getByTestId('about-build'),
   getVersion: () => cy.getByTestId('about-version'),
-  getGithubLink: () => cy.getByTestId('about-github-link'),
-  getHealthLink: () => cy.getByTestId('about-health-link'),
+  getGithubLink: () => cy.getByTestId('about-github-link').scrollIntoView(),
+  getHealthLink: () => cy.getByTestId('about-health-link').scrollIntoView(),
   getApiDocsLink: () => cy.getByTestId('about-api-docs-link').scrollIntoView(),
 };
