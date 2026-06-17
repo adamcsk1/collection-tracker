@@ -23,6 +23,7 @@ export class NewItemDialogService {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly portal = inject(PortalService);
   public readonly matchedContent = this.omdb.matchedContent;
+  public readonly completedSearchText = this.omdb.completedSearchText;
 
   constructor() {
     effect(() => {

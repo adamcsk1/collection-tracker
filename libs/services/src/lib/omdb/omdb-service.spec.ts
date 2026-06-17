@@ -44,6 +44,7 @@ describe('OMDbService', () => {
     service.getMatchedContents('see tt0133093 now');
 
     expect(service.matchedContent()).toEqual([{ text: 'IMDb id: tt0133093', value: 'tt0133093' }]);
+    expect(service.completedSearchText()).toBe('');
     httpMock.expectNone(() => true);
   });
 
@@ -70,6 +71,55 @@ describe('OMDbService', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(service.matchedContent()).toEqual([{ text: '(movie) The Matrix (1999)', value: 'tt0133093' }]);
+    expect(service.completedSearchText()).toBe('Matrix');
+  });
+
+  it('ignores stale search responses', () => {
+    service.getMatchedContents('Matrix');
+    const firstSearchRequest = httpMock.expectOne(`${API_URL}/proxy/omdb/search?s=Matrix`);
+
+    service.getMatchedContents('Dune');
+    const secondSearchRequest = httpMock.expectOne(`${API_URL}/proxy/omdb/search?s=Dune`);
+
+    firstSearchRequest.flush({
+      Search: [
+        {
+          imdbID: 'tt0133093',
+          imdbRating: '8.7',
+          Plot: '',
+          Poster: '',
+          Type: 'movie',
+          Title: 'The Matrix',
+          Year: '1999',
+          Director: '',
+          Genre: '',
+          Actors: '',
+        },
+      ],
+    });
+
+    expect(service.matchedContent()).toEqual([]);
+    expect(service.completedSearchText()).toBe('');
+
+    secondSearchRequest.flush({
+      Search: [
+        {
+          imdbID: 'tt1160419',
+          imdbRating: '8.0',
+          Plot: '',
+          Poster: '',
+          Type: 'movie',
+          Title: 'Dune',
+          Year: '2021',
+          Director: '',
+          Genre: '',
+          Actors: '',
+        },
+      ],
+    });
+
+    expect(service.matchedContent()).toEqual([{ text: '(movie) Dune (2021)', value: 'tt1160419' }]);
+    expect(service.completedSearchText()).toBe('Dune');
   });
 
   it('sets an empty result list when search returns no matches', () => {
@@ -79,6 +129,7 @@ describe('OMDbService', () => {
     searchRequest.flush({ Search: [] });
 
     expect(service.matchedContent()).toEqual([]);
+    expect(service.completedSearchText()).toBe('Nothing');
   });
 
   it('alerts and throws when search request fails', () => {

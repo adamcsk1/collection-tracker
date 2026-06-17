@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { CollectionService } from '../../collection-service';
 import { NewItemDialogService } from './new-item-dialog-service';
@@ -9,6 +10,7 @@ import {
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
+import { SelectInputModel } from '@shared/models/select-model';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -38,7 +40,8 @@ describe('NewItemDialogService', () => {
   let service: NewItemDialogService;
   let api: { create: ReturnType<typeof vi.fn> };
   let omdb: {
-    matchedContent: ReturnType<typeof vi.fn>;
+    matchedContent: ReturnType<typeof signal<SelectInputModel>>;
+    completedSearchText: ReturnType<typeof signal<string>>;
     getMatchedContents: ReturnType<typeof vi.fn>;
     getSelectedContent: ReturnType<typeof vi.fn>;
   };
@@ -50,7 +53,12 @@ describe('NewItemDialogService', () => {
 
   beforeEach(() => {
     api = { create: vi.fn() };
-    omdb = { matchedContent: vi.fn(() => []), getMatchedContents: vi.fn(), getSelectedContent: vi.fn() };
+    omdb = {
+      matchedContent: signal<SelectInputModel>([]),
+      completedSearchText: signal(''),
+      getMatchedContents: vi.fn(),
+      getSelectedContent: vi.fn(),
+    };
     collection = { addCollectionItem: vi.fn(), triggerReload: vi.fn() };
     portal = { closeAll: vi.fn() };
     translate = { translate: vi.fn((key) => `t:${key}`) };

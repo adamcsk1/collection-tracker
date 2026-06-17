@@ -16,6 +16,31 @@
         [showReset]="true"
         (keydown.enter)="onSearchEnter($event)"
       />
+      <div aria-live="polite">
+        @if (showExternalSearchLinks()) {
+          <p class="external-search-help" data-test-id="new-item-external-search-help">
+            {{ translations.messageNewCollectionItemSearchHelpStart() }}
+            <a
+              data-test-id="new-item-imdb-search-link"
+              [href]="imdbSearchUrl()"
+              [attr.aria-label]="translations.ariaSearchIMDbForTitleNewTab()"
+              target="_blank"
+              rel="noopener noreferrer"
+              >{{ translations.imdb() }}</a
+            >
+            {{ translations.messageNewCollectionItemSearchHelpMiddle() }}
+            <a
+              data-test-id="new-item-duckduckgo-search-link"
+              [href]="webSearchUrl()"
+              [attr.aria-label]="translations.ariaSearchDuckDuckGoForTitleNewTab()"
+              target="_blank"
+              rel="noopener noreferrer"
+              >{{ translations.duckDuckGo() }}</a
+            >
+            {{ translations.messageNewCollectionItemSearchHelpEnd() }}
+          </p>
+        }
+      </div>
       @if (matchedContent().length) {
         @if (showLibrarySelect()) {
           <libc-select

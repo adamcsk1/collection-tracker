@@ -1,3 +1,14 @@
 form {
   height: inherit;
 }
+
+.external-search-help {
+  color: var(--text-color);
+  font-size: 0.95rem;
+  margin: -0.5rem 0 1rem;
+
+  a {
+    color: var(--main-color);
+    font-weight: 600;
+  }
+}

@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../../main/main-collection-store';
 import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
@@ -17,6 +18,7 @@ describe('NewItemDialog component', () => {
   let component: NewItemDialog;
   let service: {
     matchedContent: ReturnType<typeof vi.fn>;
+    completedSearchText: ReturnType<typeof signal<string>>;
     search: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
   };
@@ -28,6 +30,7 @@ describe('NewItemDialog component', () => {
     vi.useFakeTimers();
     service = {
       matchedContent: vi.fn(() => [{ text: 'First', value: 'tt123' }]),
+      completedSearchText: signal(''),
       search: vi.fn(),
       save: vi.fn(() => of(undefined)),
     };
@@ -95,6 +98,22 @@ describe('NewItemDialog component', () => {
     expect(preventDefault).toHaveBeenCalled();
     expect(service.search).toHaveBeenCalledWith('matrix');
     expect(component['form'].searchText().value()).toBe('matrix');
+  });
+
+  it('shows external search links for the completed title search', () => {
+    component['form'].searchText().value.set('The Matrix');
+    service.completedSearchText.set('The Matrix');
+
+    expect(component['showExternalSearchLinks']()).toBe(true);
+    expect(component['imdbSearchUrl']()).toBe('https://www.imdb.com/find/?q=The%20Matrix');
+    expect(component['webSearchUrl']()).toBe('https://duckduckgo.com/?q=The%20Matrix');
+  });
+
+  it('hides external search links when the input changes after the completed search', () => {
+    component['form'].searchText().value.set('The Matrix Reloaded');
+    service.completedSearchText.set('The Matrix');
+
+    expect(component['showExternalSearchLinks']()).toBe(false);
   });
 
   it('invokes save and resets when mode is new', async () => {

@@ -30,6 +30,7 @@ import { NewItemModel, SaveMode } from './new-item-dialog-model';
 import { NewItemDialogService } from './new-item-dialog-service';
 import { TagSuggestionService } from './suggestion/tag-suggestion-service';
 import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
+import { buildIMDbSearchUrl, buildWebSearchUrl } from '../item-dialog/utils/item-dialog-util';
 
 @Component({
   selector: 'ct-new-item-dialog',
@@ -63,8 +64,23 @@ export class NewItemDialog {
     titleNewWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWishlistItem')),
     titleNewSeriesTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.NewSeriesTrackerItem')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
+    ariaSearchDuckDuckGoForTitleNewTab: computed(() =>
+      this.ngxSignalTranslate.translate('Aria.SearchDuckDuckGoForTitleNewTab')
+    ),
+    ariaSearchIMDbForTitleNewTab: computed(() => this.ngxSignalTranslate.translate('Aria.SearchIMDbForTitleNewTab')),
+    duckDuckGo: computed(() => this.ngxSignalTranslate.translate('DuckDuckGo')),
+    imdb: computed(() => this.ngxSignalTranslate.translate('IMDb')),
     messageNewCollectionItemSearch: computed(() =>
       this.ngxSignalTranslate.translate('Message.NewCollectionItemSearch')
+    ),
+    messageNewCollectionItemSearchHelpEnd: computed(() =>
+      this.ngxSignalTranslate.translate('Message.NewCollectionItemSearchHelpEnd')
+    ),
+    messageNewCollectionItemSearchHelpMiddle: computed(() =>
+      this.ngxSignalTranslate.translate('Message.NewCollectionItemSearchHelpMiddle')
+    ),
+    messageNewCollectionItemSearchHelpStart: computed(() =>
+      this.ngxSignalTranslate.translate('Message.NewCollectionItemSearchHelpStart')
     ),
     selectedContent: computed(() => this.ngxSignalTranslate.translate('SelectedContent')),
     labelUserRate: computed(() => this.ngxSignalTranslate.translate('UserRate')),
@@ -155,6 +171,13 @@ export class NewItemDialog {
         })
       : matchedContent;
   });
+  protected readonly completedSearchText = this.service.completedSearchText;
+  protected readonly showExternalSearchLinks = computed(() => {
+    const completedSearchText = this.completedSearchText();
+    return !!completedSearchText && this.form.searchText().value().trim() === completedSearchText;
+  });
+  protected readonly imdbSearchUrl = computed(() => buildIMDbSearchUrl(this.completedSearchText()));
+  protected readonly webSearchUrl = computed(() => buildWebSearchUrl(this.completedSearchText(), null));
   protected readonly libraryOptions = computed(() => {
     const options = [{ text: this.translations.myLibrary(), value: '' }];
     for (const share of this.sharesState.state.incoming()) {
