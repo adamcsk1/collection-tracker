@@ -121,10 +121,17 @@ class MainActivity : AppCompatActivity() {
 
     onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
       override fun handleOnBackPressed() {
-        if (::webView.isInitialized && webView.canGoBack()) {
-          webView.goBack()
-        } else {
+        if (!::webView.isInitialized || !webView.isVisible) {
           finish()
+          return
+        }
+
+        webView.evaluateJavascript(
+          "Boolean(window.CollectionTrackerAndroidBack && window.CollectionTrackerAndroidBack())",
+        ) { handled ->
+          if (handled != "true") {
+            runOnUiThread { finish() }
+          }
         }
       }
     })
