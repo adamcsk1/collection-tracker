@@ -13,6 +13,7 @@ import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AndroidBackHandlerService } from './android-back-handler-service';
 import { FloatActionsService } from './float-actions/float-actions-service';
 import { Main } from './main';
 
@@ -28,6 +29,7 @@ describe('Main component (client)', () => {
   let translate: { setLanguage: ReturnType<typeof vi.fn> };
   let portal: { setViewContainerRef: ReturnType<typeof vi.fn> };
   let tokenValidation: { startValidation: ReturnType<typeof vi.fn> };
+  let androidBackHandler: { listen: ReturnType<typeof vi.fn> };
   let floatActions: FloatActionsService;
 
   beforeEach(() => {
@@ -39,12 +41,14 @@ describe('Main component (client)', () => {
     translate = { setLanguage: vi.fn() };
     portal = { setViewContainerRef: vi.fn() };
     tokenValidation = { startValidation: vi.fn() };
+    androidBackHandler = { listen: vi.fn() };
 
     TestBed.configureTestingModule({
       imports: [Main],
       providers: [
         { provide: MainService, useValue: mainService },
         { provide: TokenValidationService, useValue: tokenValidation },
+        { provide: AndroidBackHandlerService, useValue: androidBackHandler },
         { provide: PortalService, useValue: portal },
         { provide: ThemeService, useValue: theme },
         { provide: NgxSignalTranslateService, useValue: translate },
@@ -89,6 +93,10 @@ describe('Main component (client)', () => {
   it('sets the language and theme on init', () => {
     expect(theme.listen).toHaveBeenCalled();
     expect(translate.setLanguage).toHaveBeenCalledWith(initialMainState.language);
+  });
+
+  it('starts the Android back handler on init', () => {
+    expect(androidBackHandler.listen).toHaveBeenCalledOnce();
   });
 
   it('reserves desktop float space when only scroll-to-top is visible', () => {

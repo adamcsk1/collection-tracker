@@ -24,6 +24,7 @@ import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { AndroidBackHandlerService } from './android-back-handler-service';
 import { FloatActionsService } from './float-actions/float-actions-service';
 
 @Component({
@@ -34,6 +35,7 @@ import { FloatActionsService } from './float-actions/float-actions-service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Main implements OnInit {
+  private readonly androidBackHandler = inject(AndroidBackHandlerService);
   private readonly mainState = inject(mainStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
@@ -66,6 +68,7 @@ export class Main implements OnInit {
     this.main.loadStoredData();
     this.ngxSignalTranslate.setLanguage(this.mainState.state.language());
     this.theme.listen();
+    this.androidBackHandler.listen();
   }
 
   public ngOnInit(): void {
