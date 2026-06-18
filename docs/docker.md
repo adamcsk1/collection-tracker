@@ -2,6 +2,35 @@
 
 The Docker image serves the built Angular applications with Nginx and runs the built Node server in the same container.
 
+## GHCR Image
+
+Main branch builds publish a prebuilt runtime image to GitHub Container Registry after the Android, Cypress, format,
+i18n, lint, test, and typecheck workflows all pass for the same commit.
+
+Published tags:
+
+- `ghcr.io/adamcsk1/collection-tracker:latest` for the latest successful main branch image
+- `ghcr.io/adamcsk1/collection-tracker:sha-<commit-sha>` for a commit-pinned image
+
+For public packages, Docker can pull the image anonymously. For private packages, log in first:
+
+```bash
+docker login ghcr.io
+```
+
+Pull and run the latest image directly:
+
+```bash
+docker pull ghcr.io/adamcsk1/collection-tracker:latest
+docker run --rm \
+  -p 3001:3001 \
+  --add-host=host.docker.internal:host-gateway \
+  -e APP_UID=$(id -u) \
+  -e APP_GID=$(id -g) \
+  -v ${PWD}/.data:/data \
+  ghcr.io/adamcsk1/collection-tracker:latest
+```
+
 ## Runtime Layout
 
 - Nginx listens on port `3001`.
@@ -76,7 +105,8 @@ The Docker default uses `host.docker.internal` so the container can reach Ollama
 
 ## Docker Compose (Recommended for VPS)
 
-A simple `docker-compose.yml` is included in the repo root. After building the app (`npm run build`), start the container with:
+A simple `docker-compose.yml` is included in the repo root for local source checkouts. After building the app
+(`npm run build`), start the container with:
 
 ```bash
 docker compose up -d
@@ -102,6 +132,37 @@ To stop:
 ```bash
 docker compose down
 ```
+
+### Compose with GHCR image
+
+For deployment from the prebuilt GHCR image, use a compose file without a `build:` block:
+
+```yaml
+services:
+  collection-tracker:
+    image: ghcr.io/adamcsk1/collection-tracker:latest
+    container_name: collection-tracker
+    restart: unless-stopped
+    ports:
+      - '${APP_PORT:-3001}:3001'
+    environment:
+      BASE_PATH: ${BASE_PATH:-}
+      HEALTH_CHECK_URL: ${HEALTH_CHECK_URL:-}
+      APP_UID: ${APP_UID:-1000}
+      APP_GID: ${APP_GID:-1000}
+    volumes:
+      - ./.data:/data
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+```
+
+Start it on Linux hosts with your current user and group IDs:
+
+```bash
+APP_UID=$(id -u) APP_GID=$(id -g) docker compose up -d
+```
+
+Pin a deployment to an immutable commit image by replacing `latest` with `sha-<commit-sha>`.
 
 ### One-shot VPS deploy example
 

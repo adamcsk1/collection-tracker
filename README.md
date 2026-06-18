@@ -67,6 +67,41 @@ npm run format:check
 
 Release packaging details are covered in [Release packaging](./docs/release.md).
 
+## Docker Deployment
+
+Prebuilt images are published to GitHub Container Registry as `ghcr.io/adamcsk1/collection-tracker:latest` after the main
+branch passes the Android, Cypress, format, i18n, lint, test, and typecheck workflows.
+
+Use a deployment compose file like this:
+
+```yaml
+services:
+  collection-tracker:
+    image: ghcr.io/adamcsk1/collection-tracker:latest
+    container_name: collection-tracker
+    restart: unless-stopped
+    ports:
+      - '${APP_PORT:-3001}:3001'
+    environment:
+      BASE_PATH: ${BASE_PATH:-}
+      HEALTH_CHECK_URL: ${HEALTH_CHECK_URL:-}
+      APP_UID: ${APP_UID:-1000}
+      APP_GID: ${APP_GID:-1000}
+    volumes:
+      - ./.data:/data
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+```
+
+On Linux hosts, start it with your user and group IDs so `./.data` remains writable by your user:
+
+```bash
+APP_UID=$(id -u) APP_GID=$(id -g) docker compose up -d
+```
+
+The checked-in [`docker-compose.yml`](./docker-compose.yml) remains a local-build compose file for source checkouts.
+See [Docker deployment](./docs/docker.md) for GHCR tags, runtime variables, Ollama setup, and reverse proxy guidance.
+
 ## Environment
 
 The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. `npm start` runs `server:preserve`, which creates both files from [apps/server/scripts](./apps/server/scripts) when they are missing.
