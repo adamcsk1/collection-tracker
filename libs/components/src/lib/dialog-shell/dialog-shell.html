@@ -12,6 +12,7 @@
   <div
     #dialogRoot
     class="dialog-frame"
+    data-test-id="dialog-frame"
     role="dialog"
     aria-modal="true"
     tabindex="-1"
@@ -20,6 +21,9 @@
     animate.leave="animation-slide-out-bottom"
     [style.--dialog-drag-offset]="dragOffsetCss()"
     [style.transform]="dragFrameTransform()"
+    (pointerdown)="onDialogFramePointerDown($event)"
+    (pointerup)="onDialogFramePointerUp($event)"
+    (pointercancel)="onDialogFramePointerCancel()"
     (keydown.escape)="onClose()"
     (keydown.tab)="onTrapFocus($event)"
   >

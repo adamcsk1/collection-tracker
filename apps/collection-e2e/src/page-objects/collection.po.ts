@@ -1,9 +1,30 @@
 const getActiveDialog = () => cy.get('.dialog').last();
-const getItemDialog = () => cy.getByTestId('item-dialog').last().find('.dialog-frame');
-const getSeriesMetadataDialog = () => cy.getByTestId('series-metadata-dialog').last().find('.dialog-frame');
+const getDialogFrame = (subject: Cypress.Chainable<JQuery<HTMLElement>>) =>
+  subject.find('[data-test-id="dialog-frame"]');
+const getActiveDialogFrame = () => cy.getByTestId('dialog-frame').last();
+const getItemDialog = () => getDialogFrame(cy.getByTestId('item-dialog').last());
+const getSeriesMetadataDialog = () => getDialogFrame(cy.getByTestId('series-metadata-dialog').last());
 const getWatchedEpisodesDialogHost = () => cy.getByTestId('watched-episodes-dialog');
 const getWatchedEpisodesDialog = () => getWatchedEpisodesDialogHost().last();
 const getDialogComponentHost = (testId: string) => cy.getByTestId(testId).last().parents('.dialog').first();
+const swipeActiveDialog = (startX: number, endX: number) =>
+  getActiveDialogFrame()
+    .trigger('pointerdown', {
+      pointerId: 1,
+      pointerType: 'touch',
+      isPrimary: true,
+      clientX: startX,
+      clientY: 180,
+      force: true,
+    })
+    .trigger('pointerup', {
+      pointerId: 1,
+      pointerType: 'touch',
+      isPrimary: true,
+      clientX: endX,
+      clientY: 184,
+      force: true,
+    });
 
 export const CollectionPage = {
   visit: () => {
@@ -74,11 +95,15 @@ export const CollectionPage = {
   getNewItemSaveAndCloseButton: () => cy.getByTestId('new-item-save-and-close'),
 
   // Item dialog
+  getItemDialogShellHost: () => cy.getByTestId('item-dialog'),
   getItemDialogHost: getItemDialog,
   getItemDialogComponentHost: () => getDialogComponentHost('item-dialog'),
   getActiveDialogHost: getActiveDialog,
-  getActiveDialogFrame: () => getActiveDialog().find('.dialog-frame'),
+  getActiveDialogFrame,
   getFocusedElement: () => cy.focused(),
+  swipeActiveDialogFromLeftEdge: () => swipeActiveDialog(2, 90),
+  swipeActiveDialogFromRightEdge: () =>
+    cy.window().then((window) => swipeActiveDialog(window.innerWidth - 2, window.innerWidth - 90)),
   getItemDialogEditButton: () => getItemDialog().find('[data-test-id="item-dialog-edit"]'),
   getItemDialogReadOnlyButton: () => getItemDialog().find('[data-test-id="item-dialog-read-only"]'),
   getItemDialogSaveButton: () => getItemDialog().find('[data-test-id="item-dialog-save"]'),
@@ -144,7 +169,7 @@ export const CollectionPage = {
   // Watched episodes dialog
   getWatchedEpisodesDialogHost,
   getWatchedEpisodesDialogComponentHost: () => getDialogComponentHost('watched-episodes-dialog'),
-  getWatchedEpisodesDialog: () => getWatchedEpisodesDialog().find('.dialog-frame'),
+  getWatchedEpisodesDialog: () => getDialogFrame(getWatchedEpisodesDialog()),
   getWatchedEpisodesSeasonToggle: () =>
     getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-season-toggle"]'),
   getWatchedEpisodesEpisodeCheckbox: () =>

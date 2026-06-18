@@ -37,6 +37,7 @@
   max-width: none;
   padding: var(--size-md);
   border-radius: var(--mobile-top-border-radius) var(--mobile-top-border-radius) 0 0;
+  touch-action: pan-y;
   translate: -50% 0;
 
   .dialog-top-bar {

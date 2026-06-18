@@ -80,17 +80,45 @@ describe('DialogShell component', () => {
     vi.advanceTimersByTime(200);
   };
 
-  const dispatchPointerEvent = (element: HTMLElement, type: string, clientY: number): void => {
+  const setViewport = (width: number, isMobile: boolean): void => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(width <= 650px)' ? isMobile : false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+  };
+
+  const dispatchPointerEvent = (
+    element: HTMLElement,
+    type: string,
+    clientY: number,
+    clientX = 0,
+    pointerId = 1,
+    pointerType = 'touch'
+  ): void => {
     const event = new Event(type, { bubbles: true }) as PointerEvent;
     Object.defineProperties(event, {
       clientY: { value: clientY },
-      pointerId: { value: 1 },
+      clientX: { value: clientX },
+      pointerId: { value: pointerId },
+      pointerType: { value: pointerType },
+      isPrimary: { value: true },
     });
     element.dispatchEvent(event);
   };
 
   beforeEach(() => {
     vi.useFakeTimers();
+    setViewport(1024, false);
     closeSpy = vi.fn();
     TestBed.configureTestingModule({
       imports: [HostComponent],
@@ -211,6 +239,125 @@ describe('DialogShell component', () => {
     dispatchPointerEvent(dragHandle, 'pointerdown', 100);
     dispatchPointerEvent(dragHandle, 'pointerup', 120);
     dragHandle.click();
+    finishCloseAnimation();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it('calls portal.closeTop when swiping in from the mobile left edge', () => {
+    setViewport(390, true);
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 2);
+    dispatchPointerEvent(dialogRoot, 'pointerup', 108, 90);
+    finishCloseAnimation();
+
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls portal.closeTop when swiping in from the mobile right edge', () => {
+    setViewport(390, true);
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 388);
+    dispatchPointerEvent(dialogRoot, 'pointerup', 108, 300);
+    finishCloseAnimation();
+
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not close from an edge swipe on desktop viewports', () => {
+    setViewport(1024, false);
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 2);
+    dispatchPointerEvent(dialogRoot, 'pointerup', 108, 90);
+    finishCloseAnimation();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not close when a mobile swipe starts away from the screen edge', () => {
+    setViewport(390, true);
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 100);
+    dispatchPointerEvent(dialogRoot, 'pointerup', 108, 190);
+    finishCloseAnimation();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not close when a mobile edge swipe moves outward', () => {
+    setViewport(390, true);
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 2);
+    dispatchPointerEvent(dialogRoot, 'pointerup', 108, 0);
+    finishCloseAnimation();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not close when vertical movement dominates a mobile edge swipe', () => {
+    setViewport(390, true);
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 2);
+    dispatchPointerEvent(dialogRoot, 'pointerup', 190, 80);
+    finishCloseAnimation();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not close from a non-touch edge drag on mobile viewports', () => {
+    setViewport(390, true);
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 2, 1, 'mouse');
+    dispatchPointerEvent(dialogRoot, 'pointerup', 108, 90, 1, 'mouse');
+    finishCloseAnimation();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not close when a mobile edge swipe starts from dialog content', () => {
+    setViewport(390, true);
+    const dialogContent = fixture.nativeElement.querySelector('[dialog-shell-content]') as HTMLElement;
+
+    dispatchPointerEvent(dialogContent, 'pointerdown', 100, 2);
+    dispatchPointerEvent(dialogContent, 'pointerup', 108, 90);
+    finishCloseAnimation();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not close after a mobile edge swipe is cancelled', () => {
+    setViewport(390, true);
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 2);
+    dispatchPointerEvent(dialogRoot, 'pointercancel', 104, 40);
+    dispatchPointerEvent(dialogRoot, 'pointerup', 108, 90);
+    finishCloseAnimation();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not close from a mobile edge swipe while the actions menu is open', () => {
+    setViewport(390, true);
+    const menuFixture = TestBed.createComponent(MenuHostComponent);
+    menuFixture.detectChanges();
+    menuFixture.detectChanges();
+    const dialogRoot = menuFixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+    const menuButton = menuFixture.nativeElement.querySelector(
+      '[data-test-id="dialog-actions-menu-button"]'
+    ) as HTMLButtonElement;
+
+    menuButton.click();
+    menuFixture.detectChanges();
+    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 388);
+    dispatchPointerEvent(dialogRoot, 'pointerup', 108, 300);
     finishCloseAnimation();
 
     expect(closeSpy).not.toHaveBeenCalled();

@@ -20,6 +20,9 @@ import { asyncScheduler, timer } from 'rxjs';
 let nextDialogShellActionsMenuId = 0;
 const closeAnimationDuration = 200;
 const dragCloseThreshold = 32;
+const edgeSwipeStartWidth = 32;
+const edgeSwipeCloseThreshold = 48;
+const mobileDialogMediaQuery = '(width <= 650px)';
 const focusableSelector = [
   'a[href]',
   'button:not([disabled])',
@@ -46,6 +49,10 @@ export class DialogShell implements AfterViewInit {
   private readonly menuContainer = viewChild<ElementRef<HTMLDivElement>>('menuContainer');
   private dragStartY: number | null = null;
   private dragPointerId: number | null = null;
+  private edgeSwipeStartX: number | null = null;
+  private edgeSwipeStartY: number | null = null;
+  private edgeSwipePointerId: number | null = null;
+  private edgeSwipeDirection: 1 | -1 | null = null;
   private previouslyFocusedElement: HTMLElement | null = null;
   public readonly closeWithPortal = input(true);
   public readonly ariaLabelledBy = input('');
@@ -145,6 +152,39 @@ export class DialogShell implements AfterViewInit {
     }
   }
 
+  protected onDialogFramePointerDown(event: PointerEvent): void {
+    if (!this.canStartEdgeSwipe(event)) return;
+
+    this.edgeSwipeStartX = event.clientX;
+    this.edgeSwipeStartY = event.clientY;
+    this.edgeSwipePointerId = event.pointerId;
+    this.edgeSwipeDirection = event.clientX <= edgeSwipeStartWidth ? 1 : -1;
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+  }
+
+  protected onDialogFramePointerUp(event: PointerEvent): void {
+    if (
+      this.edgeSwipePointerId !== event.pointerId ||
+      this.edgeSwipeStartX === null ||
+      this.edgeSwipeStartY === null ||
+      this.edgeSwipeDirection === null
+    ) {
+      return;
+    }
+
+    const horizontalDistance = (event.clientX - this.edgeSwipeStartX) * this.edgeSwipeDirection;
+    const verticalDistance = Math.abs(event.clientY - this.edgeSwipeStartY);
+    this.resetEdgeSwipe();
+
+    if (horizontalDistance >= edgeSwipeCloseThreshold && horizontalDistance > verticalDistance) {
+      this.onClose();
+    }
+  }
+
+  protected onDialogFramePointerCancel(): void {
+    this.resetEdgeSwipe();
+  }
+
   protected onDragHandlePointerDown(event: PointerEvent): void {
     this.dragStartY = event.clientY;
     this.dragPointerId = event.pointerId;
@@ -185,5 +225,33 @@ export class DialogShell implements AfterViewInit {
     return Array.from(dialogRoot.querySelectorAll<HTMLElement>(focusableSelector)).filter(
       (element) => !element.closest('[hidden]')
     );
+  }
+
+  private canStartEdgeSwipe(event: PointerEvent): boolean {
+    if (event.isPrimary === false || event.pointerType !== 'touch' || this.menuOpen() || this.closing()) return false;
+
+    const window = this.document.defaultView;
+    const dialogRoot = this.dialogRoot()?.nativeElement;
+    if (!window?.matchMedia?.(mobileDialogMediaQuery).matches || !dialogRoot || dialogRoot.closest('[inert]')) {
+      return false;
+    }
+
+    if (!this.canStartEdgeSwipeFromTarget(event.target, dialogRoot)) return false;
+
+    return event.clientX <= edgeSwipeStartWidth || event.clientX >= window.innerWidth - edgeSwipeStartWidth;
+  }
+
+  private canStartEdgeSwipeFromTarget(target: EventTarget | null, dialogRoot: HTMLElement): boolean {
+    if (!(target instanceof Element)) return false;
+    if (target.closest(focusableSelector) || target.closest('.dialog-actions-menu, .dialog-body')) return false;
+
+    return target === dialogRoot || Boolean(target.closest('.dialog-top-bar, .dialog-header, .dialog-footer'));
+  }
+
+  private resetEdgeSwipe(): void {
+    this.edgeSwipeStartX = null;
+    this.edgeSwipeStartY = null;
+    this.edgeSwipePointerId = null;
+    this.edgeSwipeDirection = null;
   }
 }
