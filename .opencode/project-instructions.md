@@ -1,6 +1,6 @@
 # Collection Tracker Project Instructions
 
-Collection Tracker is a self-hosted media catalog application for managing personal movie and series collections. It is built as an Nx monorepo with Angular frontends, a Fastify backend using SQLite persistence, and a native Android WebView wrapper.
+Collection Tracker is a self-hosted media catalog application for managing personal movie and series collections. It is built as a TypeScript workspace with Angular frontends, a Fastify backend using SQLite persistence, and a native Android WebView wrapper. Nx core is used for task orchestration, affected project selection, caching, and explicit project metadata; Angular, Cypress, Vitest, ESLint, and server builds run through direct CLI commands.
 
 AI search is powered by Ollama. Local development and Docker Compose read Ollama settings from `ollama.config.json` in the active data folder. Docker Compose does not run Ollama. The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:14b`, embedding model `mxbai-embed-large`, `batchSize: 10`, `parallelRequests: 1`, and `semanticCandidateLimit: 90`. Configured generate `options` are merged over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`. Optional root-level `keep_alive` is passed to Ollama generate and embed requests only when present in the config file.
 
@@ -42,9 +42,9 @@ In command chains, prefix each segment: `rtk git add . && rtk git commit -m "msg
 
 ## Standalone Projects
 
-| Project   | Purpose                                                |
-| --------- | ------------------------------------------------------ |
-| `android` | Native Android WebView wrapper for deployed instances  |
+| Project   | Purpose                                               |
+| --------- | ----------------------------------------------------- |
+| `android` | Native Android WebView wrapper for deployed instances |
 
 ## Shared Libraries
 
@@ -80,7 +80,7 @@ npm run lint            # ESLint fix
 npm run typecheck       # TypeScript check
 npm run format:check    # Prettier check
 npm run test            # Unit tests with Vitest
-npm run test:affected   # Test only affected projects
+npm run test:affected   # Test projects affected by local changes
 npm run cypress:chrome  # Cypress E2E tests
 cd android && ./gradlew testDebugUnitTest  # Android JVM unit tests
 cd android && ./gradlew assembleDebug      # Android debug APK build
@@ -98,7 +98,7 @@ cd android && ./gradlew assembleDebug      # Android debug APK build
 
 Always read the relevant source files before making changes. Do not suggest or apply modifications based on assumptions.
 
-When adding or removing apps, libraries, routes, Nx targets, or runtime requirements, keep all of the following in sync:
+When adding or removing apps, libraries, routes, build scripts, or runtime requirements, keep all of the following in sync:
 
 - `.opencode/project-instructions.md` - Apps table, path aliases, dev URLs, and project conventions
 - `README.md` - Workspace section and quick start URLs
@@ -165,7 +165,7 @@ Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, 
 
 - Database changes stay server-side. Use the existing SQLite database layer, repository modules, and migrations for schema changes.
 - Shared code belongs in `libs/`.
-- Android wrapper code belongs in `android/`; do not couple it to Nx app internals or server internals.
+- Android wrapper code belongs in `android/`; do not couple it to web app internals or server internals.
 - Apps must not import from other apps.
 - Cross-project imports must use declared path aliases.
 - Prefer small direct changes over speculative abstractions.

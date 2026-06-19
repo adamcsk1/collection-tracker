@@ -1,110 +1,42 @@
 {
-  "name": "server",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/server/src",
+  "name": "server",
   "projectType": "application",
+  "sourceRoot": "apps/server/src",
   "tags": ["type:app", "scope:node"],
+  "implicitDependencies": ["shared"],
   "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/server"],
+      "options": { "command": "node apps/server/scripts/build-server.js" }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": { "command": "node dist/apps/server/bootstrap.js --debug=true" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --config apps/server/vitest.config.ts" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint --config eslint.config.cjs apps/server/**/*.ts" }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.app.json"
-      }
+      "options": { "command": "tsc --noEmit -p apps/server/tsconfig.app.json" }
     },
     "typecheck-spec": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
-      }
+      "options": { "command": "tsc --noEmit -p apps/server/tsconfig.spec.json" }
     },
-    "test": {
-      "executor": "@nx/vitest:test",
-      "outputs": ["{workspaceRoot}/coverage/apps/server"],
-      "options": {
-        "config": "apps/server/vitest.config.ts",
-        "passWithNoTests": true
-      }
-    },
-    "build": {
-      "executor": "@nx/esbuild:esbuild",
-      "outputs": ["{options.outputPath}"],
-      "defaultConfiguration": "production",
-      "options": {
-        "platform": "node",
-        "outputPath": "dist/apps/server",
-        "format": ["cjs"],
-        "bundle": false,
-        "main": "apps/server/src/bootstrap.ts",
-        "tsConfig": "apps/server/tsconfig.app.json",
-        "assets": [
-          "apps/server/src/assets",
-          { "input": "apps/server/public", "glob": "**/*", "output": "public" },
-          { "input": "apps/server/src/migrations", "glob": "**/*.sql", "output": "migrations" }
-        ],
-        "generatePackageJson": true,
-        "esbuildOptions": {
-          "sourcemap": true,
-          "outExtension": {
-            ".js": ".js"
-          }
-        }
-      },
-      "configurations": {
-        "development": {},
-        "production": {
-          "esbuildOptions": {
-            "sourcemap": false,
-            "outExtension": {
-              ".js": ".js"
-            }
-          }
-        }
-      }
-    },
-    "serve": {
-      "continuous": true,
-      "executor": "@nx/js:node",
-      "defaultConfiguration": "development",
-      "dependsOn": ["build"],
-      "options": {
-        "buildTarget": "server:build",
-        "runBuildTargetDependencies": false,
-        "args": ["--debug=true"]
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "server:build:development"
-        },
-        "production": {
-          "buildTarget": "server:build:production"
-        }
-      }
-    },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": ["apps/server/**/*.ts"],
-        "tsConfig": ["apps/server/tsconfig.app.json"],
-        "eslintConfig": "apps/server/eslint.config.cjs"
-      }
-    },
-    "format": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --write \"apps/server\""
-      }
-    },
-    "format-check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --check \"apps/server\""
-      }
-    },
+    "format": { "executor": "nx:run-commands", "options": { "command": "prettier --write apps/server" } },
+    "format-check": { "executor": "nx:run-commands", "options": { "command": "prettier --check apps/server" } },
     "preserve": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "node apps/server/scripts/create-dev-env.js"
-      }
+      "options": { "command": "node apps/server/scripts/create-dev-env.js" }
     }
   }
 }

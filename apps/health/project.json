@@ -2,125 +2,38 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "health",
   "projectType": "application",
+  "sourceRoot": "apps/health/src",
   "tags": ["type:app", "scope:angular"],
-  "generators": {
-    "@schematics/angular:component": {
-      "style": "css"
-    }
-  },
-  "sourceRoot": "src",
-  "prefix": "he",
+  "implicitDependencies": ["components", "public", "services", "shared"],
   "targets": {
-    "typecheck": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/health"],
+      "options": { "command": "ng build health" }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": { "command": "ng serve health --configuration development --port 4203" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --config apps/health/vitest.config.ts" }
+    },
+    "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.app.json"
+        "command": "eslint --config eslint.config.cjs apps/health/src/**/*.ts apps/health/src/**/*.html apps/health/src/**/*.css"
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc --noEmit -p apps/health/tsconfig.app.json" }
     },
     "typecheck-spec": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
-      }
+      "options": { "command": "tsc --noEmit -p apps/health/tsconfig.spec.json" }
     },
-    "test": {
-      "executor": "@nx/vitest:test",
-      "outputs": ["{workspaceRoot}/coverage/apps/health"],
-      "options": {
-        "config": "apps/health/vitest.config.ts",
-        "passWithNoTests": true
-      }
-    },
-    "build": {
-      "executor": "@angular/build:application",
-      "options": {
-        "browser": "apps/health/src/bootstrap.ts",
-        "index": "apps/health/src/index.html",
-        "tsConfig": "apps/health/tsconfig.app.json",
-        "inlineStyleLanguage": "css",
-        "assets": [
-          {
-            "glob": "**/*",
-            "input": "apps/health/public",
-            "output": "."
-          },
-          {
-            "glob": "**/*",
-            "input": "libs/public/src",
-            "output": "."
-          },
-          {
-            "glob": "material-icons-latin-400-normal.woff2",
-            "input": "node_modules/@fontsource/material-icons/files",
-            "output": "fonts"
-          }
-        ],
-        "styles": ["apps/health/src/styles.css"],
-        "outputPath": "dist/apps/health"
-      },
-      "configurations": {
-        "production": {
-          "budgets": [
-            {
-              "type": "initial",
-              "maximumWarning": "500kB",
-              "maximumError": "1MB"
-            },
-            {
-              "type": "anyComponentStyle",
-              "maximumWarning": "5kB",
-              "maximumError": "8kB"
-            }
-          ],
-          "outputHashing": "all"
-        },
-        "development": {
-          "optimization": false,
-          "extractLicenses": false,
-          "sourceMap": true,
-          "baseHref": "/health/"
-        }
-      },
-      "defaultConfiguration": "production",
-      "outputs": ["{options.outputPath}"]
-    },
-    "serve": {
-      "executor": "@angular/build:dev-server",
-      "configurations": {
-        "production": {
-          "buildTarget": "health:build:production"
-        },
-        "development": {
-          "buildTarget": "health:build:development"
-        }
-      },
-      "options": {
-        "port": 4203
-      },
-      "defaultConfiguration": "development"
-    },
-    "extract-i18n": {
-      "executor": "@angular/build:extract-i18n"
-    },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": ["apps/health/src/**/*.ts", "apps/health/src/**/*.html", "apps/health/src/**/*.css"],
-        "tsConfig": ["apps/health/tsconfig.app.json"],
-        "eslintConfig": "apps/health/eslint.config.cjs"
-      }
-    },
-    "format": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --write \"apps/health\""
-      }
-    },
-    "format-check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --check \"apps/health\""
-      }
-    }
+    "format": { "executor": "nx:run-commands", "options": { "command": "prettier --write apps/health" } },
+    "format-check": { "executor": "nx:run-commands", "options": { "command": "prettier --check apps/health" } }
   }
 }

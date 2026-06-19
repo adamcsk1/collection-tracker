@@ -1,6 +1,6 @@
 # PR Review Instructions - Collection Tracker
 
-You are reviewing pull requests for Collection Tracker, a self-hosted media catalog application built as an Nx monorepo.
+You are reviewing pull requests for Collection Tracker, a self-hosted media catalog application built as a TypeScript workspace. Nx is used only as the task runner/project graph; framework-specific work should use direct CLIs rather than Nx plugins.
 
 Stack:
 
@@ -36,7 +36,7 @@ Issue description and why it matters. Suggested fix.
 - Any changed Angular template with user-visible text, interactive elements, forms, or routing.
 - Any changed database migration or repository code.
 - Any changed Cypress test, fixture, page object, or support command.
-- Any dependency, build, Nx, TypeScript, or CI configuration change.
+- Any dependency, build, TypeScript, or CI configuration change.
 - Any changed Android Activity, WebView, JavaScript bridge, download handling, Gradle, manifest, or Android workflow behavior.
 
 ## TypeScript
@@ -64,13 +64,13 @@ Issue description and why it matters. Suggested fix.
 - Icon-only buttons and non-obvious controls must have accessible names, usually via translated `[attr.aria-label]`.
 - Non-button clickable elements must be keyboard-accessible and expose the correct role.
 
-## Architecture And Nx Boundaries
+## Architecture And Workspace Boundaries
 
 - Shared code belongs in `libs/`, not duplicated across apps.
 - Apps must not import from other apps.
 - Cross-project imports must go through the declared alias for that app or library.
 - Do not introduce speculative abstractions, one-use helpers, or compatibility shims without a concrete shipped-data or external-consumer need.
-- When adding or removing apps, libraries, routes, Nx targets, or runtime requirements, the PR should keep `.opencode/project-instructions.md`, `README.md`, `docs/README.md`, and the relevant `docs/` page in sync.
+- When adding or removing apps, libraries, routes, build scripts, or runtime requirements, the PR should keep `.opencode/project-instructions.md`, `README.md`, `docs/README.md`, and the relevant `docs/` page in sync.
 
 ## Server And API
 
@@ -117,7 +117,7 @@ Issue description and why it matters. Suggested fix.
 
 ## Android
 
-- Android wrapper code lives under `android/` and should not import or duplicate Nx app/server internals.
+- Android wrapper code lives under `android/` and should not import or duplicate web app/server internals.
 - Prefer extracting URL, config, filename, parsing, and other pure Kotlin logic from Activity/WebView framework classes when it needs unit coverage.
 - Local Android JVM unit tests live under `android/app/src/test/kotlin` and should avoid Android framework mocks when pure Kotlin coverage is practical.
 - Android Gradle and GitHub Actions changes should use Java 17+, the checked-in Gradle wrapper, local JVM unit tests (`testDebugUnitTest`), and debug APK assembly (`assembleDebug`) unless the change is release-specific.

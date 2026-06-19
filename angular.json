@@ -1,0 +1,270 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "apps",
+  "cli": {
+    "schematicCollections": ["@schematics/angular"]
+  },
+  "schematics": {
+    "@schematics/angular:application": {
+      "strict": true,
+      "style": "css"
+    },
+    "@schematics/angular:component": {
+      "style": "css"
+    }
+  },
+  "projects": {
+    "client": {
+      "projectType": "application",
+      "root": "apps/client",
+      "sourceRoot": "apps/client/src",
+      "prefix": "ct",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "css"
+        }
+      },
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "apps/client/src/bootstrap.ts",
+            "index": "apps/client/src/index.html",
+            "tsConfig": "apps/client/tsconfig.app.json",
+            "inlineStyleLanguage": "css",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "apps/client/public",
+                "output": "."
+              },
+              {
+                "glob": "**/*",
+                "input": "libs/public/src",
+                "output": "."
+              },
+              {
+                "glob": "material-icons-latin-400-normal.woff2",
+                "input": "node_modules/@fontsource/material-icons/files",
+                "output": "fonts"
+              }
+            ],
+            "styles": ["apps/client/src/styles.css"],
+            "allowedCommonJsDependencies": ["dayjs"],
+            "outputPath": "dist/apps/client"
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "20kB",
+                  "maximumError": "24kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "baseHref": "/client/"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "client:build:production"
+            },
+            "development": {
+              "buildTarget": "client:build:development"
+            }
+          },
+          "options": {
+            "port": 4202
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n"
+        }
+      }
+    },
+    "login": {
+      "projectType": "application",
+      "root": "apps/login",
+      "sourceRoot": "apps/login/src",
+      "prefix": "lo",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "css"
+        }
+      },
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "apps/login/src/bootstrap.ts",
+            "index": "apps/login/src/index.html",
+            "tsConfig": "apps/login/tsconfig.app.json",
+            "inlineStyleLanguage": "css",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "apps/login/public",
+                "output": "."
+              },
+              {
+                "glob": "**/*",
+                "input": "libs/public/src",
+                "output": "."
+              },
+              {
+                "glob": "material-icons-latin-400-normal.woff2",
+                "input": "node_modules/@fontsource/material-icons/files",
+                "output": "fonts"
+              }
+            ],
+            "styles": ["apps/login/src/styles.css"],
+            "allowedCommonJsDependencies": ["dayjs"],
+            "outputPath": "dist/apps/login"
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "baseHref": "/login/"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "login:build:production"
+            },
+            "development": {
+              "buildTarget": "login:build:development"
+            }
+          },
+          "options": {
+            "port": 4201
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n"
+        }
+      }
+    },
+    "health": {
+      "projectType": "application",
+      "root": "apps/health",
+      "sourceRoot": "apps/health/src",
+      "prefix": "he",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "css"
+        }
+      },
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "apps/health/src/bootstrap.ts",
+            "index": "apps/health/src/index.html",
+            "tsConfig": "apps/health/tsconfig.app.json",
+            "inlineStyleLanguage": "css",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "apps/health/public",
+                "output": "."
+              },
+              {
+                "glob": "**/*",
+                "input": "libs/public/src",
+                "output": "."
+              },
+              {
+                "glob": "material-icons-latin-400-normal.woff2",
+                "input": "node_modules/@fontsource/material-icons/files",
+                "output": "fonts"
+              }
+            ],
+            "styles": ["apps/health/src/styles.css"],
+            "outputPath": "dist/apps/health"
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "5kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "baseHref": "/health/"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "health:build:production"
+            },
+            "development": {
+              "buildTarget": "health:build:development"
+            }
+          },
+          "options": {
+            "port": 4203
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n"
+        }
+      }
+    }
+  }
+}

@@ -23,14 +23,14 @@ Source: [`libs/services`](../libs/services)
 ## Important Paths
 
 - [Source root](../libs/services/src/lib)
-- [Project configuration](../libs/services/project.json)
+- [Source root](../libs/services/src/lib)
 
-## Nx Targets
+## Checks
 
 ```powershell
-npx nx test services
-npx nx lint services
-npx nx run services:typecheck
-npx nx run services:typecheck-spec
-npx nx run services:format-check
+npm run test
+npm run lint:check
+npm run typecheck
+npm run typecheck:spec
+npm run format:check
 ```

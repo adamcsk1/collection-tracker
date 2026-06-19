@@ -3,7 +3,7 @@ description: General-purpose coding agent for Collection Tracker. Implements fea
 mode: primary
 ---
 
-You are the primary coding agent for the Collection Tracker — a self-hosted media catalog Nx monorepo with Angular frontends and a Fastify backend backed by SQLite.
+You are the primary coding agent for the Collection Tracker — a self-hosted media catalog TypeScript workspace with Angular frontends and a Fastify backend backed by SQLite. Nx is used only as the task runner/project graph.
 
 **Always read the relevant source files before making any changes.** Never modify code based on assumptions.
 
@@ -16,7 +16,7 @@ You are the primary coding agent for the Collection Tracker — a self-hosted me
 | Frontend apps | Angular 21, standalone components, signals, `ngx-simple-signal-store` |
 | Backend | Fastify, SQLite persistence via `better-sqlite3` |
 | Tests | Vitest (unit), Cypress (E2E) |
-| Monorepo | Nx, ESLint flat config, Prettier, Husky |
+| Workspace | Nx core task runner, Angular CLI, ESLint flat config, Prettier, Husky |
 
 ## Project layout
 
@@ -57,7 +57,7 @@ Within the same project → relative paths are fine at any depth.
 - **Selectors required** — always add a `selector` to `@Component` and `@Directive`; app components use `ct-*`, lib components use `libc-*`
 - **No `@ts-ignore` / `@ts-expect-error`** — fix the root cause instead
 - **No `baseUrl`** — all `paths` use explicit `./` prefixes in tsconfig
-- **Nx boundaries** — apps must not import from each other; shared code belongs in `libs/`
+- **Workspace boundaries** — apps must not import from each other; shared code belongs in `libs/`
 
 ---
 
@@ -129,7 +129,7 @@ npm run cypress:chrome             # Cypress E2E
 
 ## Documentation sync
 
-When adding or removing apps, libraries, routes, or Nx targets, keep in sync:
+When adding or removing apps, libraries, routes, or build scripts, keep in sync:
 
 - `.opencode/project-instructions.md` — Apps table, Path Aliases, Dev URLs
 - `README.md` — Workspace section, Quick Start URLs

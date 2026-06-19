@@ -1,49 +1,27 @@
 {
-  "name": "shared",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "shared/src",
+  "name": "shared",
   "projectType": "library",
+  "sourceRoot": "libs/shared/src",
   "tags": ["type:lib", "scope:universal"],
   "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --config libs/shared/vitest.config.ts" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint --config eslint.config.cjs libs/shared/src/**/*.ts libs/shared/src/**/*.css" }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.lib.json"
-      }
+      "options": { "command": "tsc --noEmit -p libs/shared/tsconfig.lib.json" }
     },
     "typecheck-spec": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
-      }
+      "options": { "command": "tsc --noEmit -p libs/shared/tsconfig.spec.json" }
     },
-    "test": {
-      "executor": "@nx/vitest:test",
-      "outputs": ["{workspaceRoot}/coverage/libs/shared"],
-      "options": {
-        "config": "libs/shared/vitest.config.ts",
-        "passWithNoTests": true
-      }
-    },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": ["libs/shared/src/**/*.ts", "libs/shared/src/**/*.css"],
-        "tsConfig": ["libs/shared/tsconfig.app.json"],
-        "eslintConfig": "libs/shared/eslint.config.cjs"
-      }
-    },
-    "format": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --write \"libs/shared\""
-      }
-    },
-    "format-check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --check \"libs/shared\""
-      }
-    }
+    "format": { "executor": "nx:run-commands", "options": { "command": "prettier --write libs/shared" } },
+    "format-check": { "executor": "nx:run-commands", "options": { "command": "prettier --check libs/shared" } }
   }
 }

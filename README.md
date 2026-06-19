@@ -1,6 +1,6 @@
 # Collection Tracker
 
-Collection Tracker is an Nx monorepo for a self-hosted movie and series catalog. The workspace combines Angular applications for authentication and collection management, a Fastify API, shared libraries, Cypress coverage, and delivery assets for Docker and Android.
+Collection Tracker is a TypeScript workspace for a self-hosted movie and series catalog. Nx core is used for task orchestration, affected project selection, caching, and explicit project metadata; Angular, Cypress, Vitest, ESLint, and server builds run through their direct CLIs.
 
 ## Project Goal
 
@@ -10,7 +10,7 @@ The project is open to contributions, feedback, and suggestions that improve usa
 
 ## Technology
 
-- Angular with Nx
+- Angular CLI applications with Nx task orchestration
 - Fastify for the API
 - Vitest for unit tests and Cypress for end-to-end coverage
 - SQLite persistence in a configurable data directory
@@ -104,7 +104,7 @@ See [Docker deployment](./docs/docker.md) for GHCR tags, runtime variables, Olla
 
 ## Environment
 
-The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. `npm start` runs `server:preserve`, which creates both files from [apps/server/scripts](./apps/server/scripts) when they are missing.
+The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. `npm start` runs `apps/server/scripts/create-dev-env.js`, which creates both files from [apps/server/scripts](./apps/server/scripts) when they are missing.
 
 Docker deployments also support these container-level variables:
 

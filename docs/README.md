@@ -2,6 +2,10 @@
 
 This directory contains the maintained project documentation. The root [`README.md`](../README.md) is the entry point; the pages below cover the individual applications, libraries, API surface, delivery assets, and runtime deployment variables.
 
+## Development
+
+- [Development workflow](./development.md)
+
 ## Applications
 
 - [Client](./client.md)
@@ -25,4 +29,4 @@ This directory contains the maintained project documentation. The root [`README.
 - [Docker deployment](./docker.md)
 - [Android wrapper](./android.md)
 
-Keep this tree aligned with the workspace whenever responsibilities, Nx targets, routes, or runtime requirements change.
+Keep this tree aligned with the workspace whenever responsibilities, build scripts, routes, or runtime requirements change.

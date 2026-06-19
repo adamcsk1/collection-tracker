@@ -2,27 +2,11 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "dev-proxy",
   "projectType": "application",
+  "sourceRoot": "apps/dev-proxy",
   "tags": ["type:app", "scope:node"],
-  "generators": {},
-  "sourceRoot": "./",
   "targets": {
-    "serve": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node apps/dev-proxy/proxy-server.js"
-      }
-    },
-    "format": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --write \"apps/dev-proxy\""
-      }
-    },
-    "format-check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --check \"apps/dev-proxy\""
-      }
-    }
+    "serve": { "executor": "nx:run-commands", "options": { "command": "node apps/dev-proxy/proxy-server.js" } },
+    "format": { "executor": "nx:run-commands", "options": { "command": "prettier --write apps/dev-proxy" } },
+    "format-check": { "executor": "nx:run-commands", "options": { "command": "prettier --check apps/dev-proxy" } }
   }
 }

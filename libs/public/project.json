@@ -1,8 +1,8 @@
 {
-  "name": "public",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "public/src",
+  "name": "public",
   "projectType": "library",
+  "sourceRoot": "libs/public/src",
   "tags": ["type:lib", "scope:universal"],
   "targets": {}
 }

@@ -21,14 +21,14 @@ Source: [`libs/shared`](../libs/shared)
 ## Important Paths
 
 - [Source root](../libs/shared/src/lib)
-- [Project configuration](../libs/shared/project.json)
+- [Source root](../libs/shared/src/lib)
 
-## Nx Targets
+## Checks
 
 ```powershell
-npx nx test shared
-npx nx lint shared
-npx nx run shared:typecheck
-npx nx run shared:typecheck-spec
-npx nx run shared:format-check
+npm run test
+npm run lint:check
+npm run typecheck
+npm run typecheck:spec
+npm run format:check
 ```

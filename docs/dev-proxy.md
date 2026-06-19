@@ -6,22 +6,21 @@ Source: [`apps/dev-proxy`](../apps/dev-proxy)
 
 ## Route Map
 
-| Path      | Target                         | Notes                                                   |
-| --------- | ------------------------------ | ------------------------------------------------------- |
-| `/login`  | `http://localhost:4201/login`  | Removes the `/login` prefix before proxying.            |
-| `/client` | `http://localhost:4202/client` | Removes the `/client` prefix before proxying.           |
-| `/health` | `http://localhost:4203/health` | Removes the `/health` prefix before proxying.           |
-| `/api`    | `http://localhost:3000/api`    | Proxies API traffic without changing the `/api` prefix. |
-| `/`       | local redirect                 | Redirects to `/login`.                                  |
+| Path      | Target                         | Notes                                         |
+| --------- | ------------------------------ | --------------------------------------------- |
+| `/login`  | `http://localhost:4201/login`  | Proxies matching traffic as-is.               |
+| `/client` | `http://localhost:4202/client` | Proxies matching traffic as-is.               |
+| `/health` | `http://localhost:4203/health` | Proxies matching traffic as-is.               |
+| `/api`    | `http://localhost:3000/api`    | Proxies API traffic as-is.                    |
+| `/`       | local redirect                 | Redirects to `/login`.                        |
 
 ## Proxy Behavior
 
 - Supports WebSocket and Angular HMR upgrade traffic.
 - Rewrites `Set-Cookie` headers for local HTTP development by stripping the cookie domain and removing the `Secure` attribute.
-- Tracks repeated HTML refreshes on the same path and redirects back to `/` after rapid repeated reloads.
 
-## Nx Target
+## Development Command
 
 ```powershell
-npx nx serve dev-proxy
+npm start
 ```

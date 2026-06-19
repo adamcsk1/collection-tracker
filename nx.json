@@ -1,94 +1,27 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": [
+      "{workspaceRoot}/angular.json",
+      "{workspaceRoot}/eslint.config.cjs",
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/package-lock.json",
+      "{workspaceRoot}/tsconfig.json",
+      "{workspaceRoot}/tsconfig.app.json",
+      "{workspaceRoot}/tsconfig.spec.json"
+    ]
+  },
   "targetDefaults": {
     "build": {
       "cache": true,
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "production",
-        "^production"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^default"]
     },
     "test": {
       "cache": true,
-      "inputs": [
-        "default",
-        "^production"
-      ]
-    },
-    "typecheck": {
-      "executor": "nx:run-commands",
-      "cache": false,
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"
-      }
-    },
-    "typecheck-spec": {
-      "executor": "nx:run-commands",
-      "cache": false,
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
-      }
-    },
-    "@angular/build:application": {
-      "cache": true,
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "production",
-        "^production"
-      ]
-    },
-    "@nx/esbuild:esbuild": {
-      "cache": true,
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "production",
-        "^production"
-      ]
+      "inputs": ["default", "^default"]
     }
   },
-  "namedInputs": {
-    "sharedGlobals": [],
-    "default": [
-      "{projectRoot}/**/*",
-      "sharedGlobals"
-    ],
-    "production": [
-      "default",
-      "!{projectRoot}/tsconfig.spec.json",
-      "!{projectRoot}/**/*.spec.[jt]s",
-      "!{projectRoot}/.eslintrc.json",
-      "!{projectRoot}/eslint.config.cjs"
-    ]
-  },
-  "generators": {
-    "@nx/angular:library": {
-      "linter": "eslint",
-      "unitTestRunner": "none"
-    },
-    "@nx/angular:component": {
-      "style": "css"
-    },
-    "@nx/angular:application": {
-      "e2eTestRunner": "none",
-      "linter": "eslint",
-      "style": "css",
-      "unitTestRunner": "none"
-    }
-  },
-  "plugins": [
-    {
-      "plugin": "@nx/eslint/plugin",
-      "options": {
-        "targetName": "eslint:lint"
-      }
-    }
-  ],
   "analytics": true
 }

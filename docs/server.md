@@ -23,7 +23,7 @@ Source: [`apps/server`](../apps/server)
 - Startup expects `.env` in the active data folder and loads it before registering APIs; `OMDB_API_KEY` must be set for the server to start; AI search reads `ollama.config.json` from the active data folder and merges configured options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`; Ollama availability is checked by the AI query API rather than during server startup
 - `RATE_LIMIT` — default maximum number of requests per 1-minute window per IP. Defaults to `120` when not set. Collection entry workflow routes use their own higher per-route limit so adding several items in a row does not exhaust a small global bucket. Set a big enough number to avoid rate limiting (used by the E2E test container)
 - `LOG_LEVEL` — controls console log verbosity. Defaults to `info` when not set. Set to `DEBUG` to echo all log levels (info, warning, error, debug) to the console, equivalent to `--debug=true`
-- `nx run server:preserve` creates `.data/.env` and `.data/ollama.config.json` from [`apps/server/scripts`](../apps/server/scripts) for local development
+- `npm start` creates `.data/.env` and `.data/ollama.config.json` from [`apps/server/scripts`](../apps/server/scripts) for local development
 - Production deployments should run behind an HTTPS reverse proxy; see [Docker deployment](./docker.md)
 
 ## Data Layout
@@ -42,17 +42,16 @@ Collection items, users, tokens, settings, shares, collection-list display prefe
 - [API registration](../apps/server/src/apis/index.ts)
 - [Development environment bootstrap](../apps/server/scripts/create-dev-env.js)
 
-## Nx Targets
+## Build And Checks
 
 ```powershell
-npx nx serve server
-npx nx build server --configuration=production
-npx nx test server
-npx nx lint server
-npx nx run server:typecheck
-npx nx run server:typecheck-spec
-npx nx run server:format-check
-npx nx run server:preserve
+npm start
+npm run build:server
+npm run test
+npm run lint:check
+npm run typecheck
+npm run typecheck:spec
+npm run format:check
 ```
 
 ## Related Documentation

@@ -3,27 +3,20 @@
   "name": "collection-e2e",
   "projectType": "application",
   "sourceRoot": "apps/collection-e2e/src",
+  "tags": ["type:app", "scope:e2e"],
+  "implicitDependencies": ["client", "health", "login", "server"],
   "targets": {
     "typecheck": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"
-      }
-    },
-    "e2e": {
-      "executor": "@nx/cypress:cypress",
-      "options": {
-        "cypressConfig": "apps/collection-e2e/cypress.config.ts",
-        "testingType": "e2e",
-        "browser": "chrome"
-      }
+      "options": { "command": "tsc --noEmit -p apps/collection-e2e/tsconfig.json" }
     },
     "prepare": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run build && bash apps/collection-e2e/scripts/prepare.sh"
-      }
+      "options": { "command": "npm run build && bash apps/collection-e2e/scripts/prepare.sh" }
+    },
+    "e2e": {
+      "executor": "nx:run-commands",
+      "options": { "command": "cypress run --config-file apps/collection-e2e/cypress.config.ts" }
     }
-  },
-  "tags": ["type:app", "scope:e2e"]
+  }
 }

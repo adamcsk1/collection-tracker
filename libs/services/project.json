@@ -1,49 +1,28 @@
 {
-  "name": "services",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "services/src",
+  "name": "services",
   "projectType": "library",
+  "sourceRoot": "libs/services/src",
   "tags": ["type:lib", "scope:angular"],
+  "implicitDependencies": ["shared"],
   "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --config libs/services/vitest.config.ts" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint --config eslint.config.cjs libs/services/src/**/*.ts" }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.lib.json"
-      }
+      "options": { "command": "tsc --noEmit -p libs/services/tsconfig.lib.json" }
     },
     "typecheck-spec": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
-      }
+      "options": { "command": "tsc --noEmit -p libs/services/tsconfig.spec.json" }
     },
-    "test": {
-      "executor": "@nx/vitest:test",
-      "outputs": ["{workspaceRoot}/coverage/libs/services"],
-      "options": {
-        "config": "libs/services/vitest.config.ts",
-        "passWithNoTests": true
-      }
-    },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": ["libs/services/src/**/*.ts"],
-        "tsConfig": ["libs/services/tsconfig.app.json"],
-        "eslintConfig": "libs/services/eslint.config.cjs"
-      }
-    },
-    "format": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --write \"libs/services\""
-      }
-    },
-    "format-check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --check \"libs/services\""
-      }
-    }
+    "format": { "executor": "nx:run-commands", "options": { "command": "prettier --write libs/services" } },
+    "format-check": { "executor": "nx:run-commands", "options": { "command": "prettier --check libs/services" } }
   }
 }

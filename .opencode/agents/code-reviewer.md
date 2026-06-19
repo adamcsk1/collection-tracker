@@ -34,12 +34,12 @@ Review the changed files provided. Check each one against the rules below and re
 - No docstrings/comments added to unchanged code
 - No feature flags or compatibility shims when you can just change the code
 
-### Nx monorepo
+### Workspace boundaries
 - Shared code belongs in `libs/` — not duplicated across apps
 - Respect project boundaries: `apps/client`, `apps/server`, `libs/components`, `libs/services`, `libs/shared`, `libs/public`
 
 ### Android
-- Android wrapper code belongs under `android/` and should not be coupled to Nx apps or server internals
+- Android wrapper code belongs under `android/` and should not be coupled to web apps or server internals
 - Prefer pure Kotlin helpers for URL, file-name, config, and parsing logic that can be covered by local JVM tests
 - Activity, WebView, JavaScript bridge, storage, and Android SDK behavior should stay in Android framework classes and be kept thin
 - Gradle and GitHub Actions changes should use Java 17+, the checked-in Gradle wrapper, local JVM unit tests, and debug APK assembly for validation

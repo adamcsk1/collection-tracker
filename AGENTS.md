@@ -7,7 +7,7 @@ The GitHub Copilot files in `.github/` are bridge files only. They point Copilot
 Project-specific OpenCode agents live in `.opencode/agents/`:
 
 - `coder` - general implementation work
-- `architect` - planning, architecture, and Nx boundary decisions
+- `architect` - planning, architecture, and workspace boundary decisions
 - `code-reviewer` - read-only change review
 - `testing` - Vitest and Cypress guidance
 - `i18n-a11y` - internationalisation and accessibility work

@@ -1,46 +1,48 @@
 // @ts-check
 const typescriptParser = require("@typescript-eslint/parser");
 const tsPlugin = require("@typescript-eslint/eslint-plugin");
-const nx = require("@nx/eslint-plugin");
+const angular = require("angular-eslint");
 const css = require("@eslint/css");
 
+const crossProjectRelativeImportPatterns = [
+  {
+    group: [
+      "**/apps/**",
+      "**/libs/**",
+      "../**/client/**",
+      "../**/collection-e2e/**",
+      "../**/dev-proxy/**",
+      "../**/health/**",
+      "../**/login/**",
+      "../**/server/**",
+      "../**/components/**",
+      "../**/public/**",
+      "../**/services/**",
+      "../**/shared/**",
+    ],
+    message: "Use declared @alias/* paths for cross-project imports.",
+  },
+];
+
+/** @param {string[]} aliasPatterns */
+const noRestrictedImports = (...aliasPatterns) => [
+  "error",
+  {
+    patterns: [
+      ...crossProjectRelativeImportPatterns,
+      {
+        group: aliasPatterns,
+        message: "This project must not import from that app or library boundary.",
+      },
+    ],
+  },
+];
+
 module.exports = [
-  ...nx.configs["flat/angular"],
-  ...nx.configs["flat/angular-template"],
+  ...angular.configs.tsRecommended,
+  ...angular.configs.templateRecommended.map((config) => ({ ...config, files: ["**/*.html"] })),
   {
     ignores: [".cache/", ".git/", "node_modules/", ".angular/", ".nx/", "dist"],
-  },
-  {
-    plugins: {
-      "@nx": nx,
-    },
-    rules: {
-      "@nx/enforce-module-boundaries": [
-        "error",
-        {
-          enforceBuildableLibDependency: true,
-          allow: ['^(?!@(?:client|health|login|server|components|services|shared|public)/)(?!apps/|libs/)(?!\\.{1,2}/).+', 'vitest.config'],
-          depConstraints: [
-            {
-              sourceTag: "scope:node",
-              onlyDependOnLibsWithTags: ["scope:node", "scope:universal"],
-            },
-            {
-              sourceTag: "scope:angular",
-              onlyDependOnLibsWithTags: ["scope:angular", "scope:universal"],
-            },
-            {
-              sourceTag: "scope:universal",
-              onlyDependOnLibsWithTags: ["scope:universal"],
-            },
-            {
-              sourceTag: "scope:e2e",
-              onlyDependOnLibsWithTags: ["*"],
-            },
-          ],
-        },
-      ],
-    },
   },
   {
     files: [
@@ -96,6 +98,42 @@ module.exports = [
       "@angular-eslint/no-output-on-prefix": "off",
       "@typescript-eslint/ban-types": "off",
       "@typescript-eslint/no-inferrable-types": "off",
+      "no-restricted-imports": ["error", { patterns: crossProjectRelativeImportPatterns }],
+    },
+  },
+  {
+    files: ["apps/client/**/*.ts"],
+    rules: { "no-restricted-imports": noRestrictedImports("@health/*", "@login/*", "@server/*") },
+  },
+  {
+    files: ["apps/health/**/*.ts"],
+    rules: { "no-restricted-imports": noRestrictedImports("@client/*", "@login/*", "@server/*") },
+  },
+  {
+    files: ["apps/login/**/*.ts"],
+    rules: { "no-restricted-imports": noRestrictedImports("@client/*", "@health/*", "@server/*") },
+  },
+  {
+    files: ["libs/components/**/*.ts"],
+    rules: { "no-restricted-imports": noRestrictedImports("@client/*", "@health/*", "@login/*", "@server/*") },
+  },
+  {
+    files: ["libs/services/**/*.ts"],
+    rules: {
+      "no-restricted-imports": noRestrictedImports("@client/*", "@health/*", "@login/*", "@server/*", "@components/*"),
+    },
+  },
+  {
+    files: ["libs/shared/**/*.ts", "libs/public/**/*.ts"],
+    rules: {
+      "no-restricted-imports": noRestrictedImports(
+        "@client/*",
+        "@health/*",
+        "@login/*",
+        "@server/*",
+        "@components/*",
+        "@services/*"
+      ),
     },
   },
   {
@@ -127,6 +165,14 @@ module.exports = [
       "@typescript-eslint/naming-convention": 0,
       "@typescript-eslint/ban-types": "off",
       "@typescript-eslint/no-inferrable-types": "off",
+      "no-restricted-imports": noRestrictedImports(
+        "@client/*",
+        "@health/*",
+        "@login/*",
+        "@components/*",
+        "@services/*",
+        "@public/*"
+      ),
     },
   },
   {

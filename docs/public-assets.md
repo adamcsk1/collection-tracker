@@ -17,6 +17,6 @@ Source: [`libs/public`](../libs/public)
 - `apps/health` copies the same asset tree into its build output.
 - The shared assets provide consistent branding and PWA metadata across the Angular applications.
 
-## Nx Targets
+## Build Integration
 
-This library does not define standalone Nx targets.
+This library is copied into Angular application builds through `angular.json` asset entries.

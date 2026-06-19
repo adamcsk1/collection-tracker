@@ -23,16 +23,16 @@ Source: [`apps/login`](../apps/login)
 - [Application config](../apps/login/src/app/main/main-config.ts)
 - [Feature source](../apps/login/src/app)
 
-## Nx Targets
+## Build And Checks
 
 ```powershell
-npx nx serve login
-npx nx build login --configuration=production
-npx nx test login
-npx nx lint login
-npx nx run login:typecheck
-npx nx run login:typecheck-spec
-npx nx run login:format-check
+ng serve login
+ng build login --configuration=production
+npm run test
+npm run lint:check
+npm run typecheck
+npm run typecheck:spec
+npm run format:check
 ```
 
 ## Development Routing

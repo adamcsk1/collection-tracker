@@ -2,126 +2,38 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "client",
   "projectType": "application",
+  "sourceRoot": "apps/client/src",
   "tags": ["type:app", "scope:angular"],
-  "generators": {
-    "@schematics/angular:component": {
-      "style": "css"
-    }
-  },
-  "sourceRoot": "src",
-  "prefix": "ct",
+  "implicitDependencies": ["components", "public", "services", "shared"],
   "targets": {
-    "typecheck": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/client"],
+      "options": { "command": "ng build client" }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": { "command": "ng serve client --configuration development --port 4202" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --config apps/client/vitest.config.ts" }
+    },
+    "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.app.json"
+        "command": "eslint --config eslint.config.cjs apps/client/src/**/*.ts apps/client/src/**/*.html apps/client/src/**/*.css"
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc --noEmit -p apps/client/tsconfig.app.json" }
     },
     "typecheck-spec": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
-      }
+      "options": { "command": "tsc --noEmit -p apps/client/tsconfig.spec.json" }
     },
-    "test": {
-      "executor": "@nx/vitest:test",
-      "outputs": ["{workspaceRoot}/coverage/apps/client"],
-      "options": {
-        "config": "apps/client/vitest.config.ts",
-        "passWithNoTests": true
-      }
-    },
-    "build": {
-      "executor": "@angular/build:application",
-      "options": {
-        "browser": "apps/client/src/bootstrap.ts",
-        "index": "apps/client/src/index.html",
-        "tsConfig": "apps/client/tsconfig.app.json",
-        "inlineStyleLanguage": "css",
-        "assets": [
-          {
-            "glob": "**/*",
-            "input": "apps/client/public",
-            "output": "."
-          },
-          {
-            "glob": "**/*",
-            "input": "libs/public/src",
-            "output": "."
-          },
-          {
-            "glob": "material-icons-latin-400-normal.woff2",
-            "input": "node_modules/@fontsource/material-icons/files",
-            "output": "fonts"
-          }
-        ],
-        "styles": ["apps/client/src/styles.css"],
-        "allowedCommonJsDependencies": ["dayjs"],
-        "outputPath": "dist/apps/client"
-      },
-      "configurations": {
-        "production": {
-          "budgets": [
-            {
-              "type": "initial",
-              "maximumWarning": "500kB",
-              "maximumError": "1MB"
-            },
-            {
-              "type": "anyComponentStyle",
-              "maximumWarning": "20kB",
-              "maximumError": "24kB"
-            }
-          ],
-          "outputHashing": "all"
-        },
-        "development": {
-          "optimization": false,
-          "extractLicenses": false,
-          "sourceMap": true,
-          "baseHref": "/client/"
-        }
-      },
-      "defaultConfiguration": "production",
-      "outputs": ["{options.outputPath}"]
-    },
-    "serve": {
-      "executor": "@angular/build:dev-server",
-      "configurations": {
-        "production": {
-          "buildTarget": "client:build:production"
-        },
-        "development": {
-          "buildTarget": "client:build:development"
-        }
-      },
-      "options": {
-        "port": 4202
-      },
-      "defaultConfiguration": "development"
-    },
-    "extract-i18n": {
-      "executor": "@angular/build:extract-i18n"
-    },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": ["apps/client/src/**/*.ts", "apps/client/src/**/*.html", "apps/client/src/**/*.css"],
-        "tsConfig": ["apps/client/tsconfig.app.json"],
-        "eslintConfig": "apps/client/eslint.config.cjs"
-      }
-    },
-    "format": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --write \"apps/client\""
-      }
-    },
-    "format-check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "prettier --check \"apps/client\""
-      }
-    }
+    "format": { "executor": "nx:run-commands", "options": { "command": "prettier --write apps/client" } },
+    "format-check": { "executor": "nx:run-commands", "options": { "command": "prettier --check apps/client" } }
   }
 }

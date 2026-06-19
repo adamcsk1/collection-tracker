@@ -19,16 +19,16 @@ The dashboard calls `GET /api/v1/health` via `ApiService.getHealth()`. The respo
 - [Application config](../apps/health/src/app/main/main-config.ts)
 - [Main component](../apps/health/src/app/main/main.ts)
 
-## Nx Targets
+## Build And Checks
 
 ```powershell
-npx nx serve health
-npx nx build health --configuration=production
-npx nx test health
-npx nx lint health
-npx nx run health:typecheck
-npx nx run health:typecheck-spec
-npx nx run health:format-check
+ng serve health
+ng build health --configuration=production
+npm run test
+npm run lint:check
+npm run typecheck
+npm run typecheck:spec
+npm run format:check
 ```
 
 ## Development Routing

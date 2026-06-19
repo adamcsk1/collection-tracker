@@ -1,4 +1,5 @@
 import { generateRandomToken, hashText } from '../core/crypto';
+import type {} from '@fastify/rate-limit';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/api-model';

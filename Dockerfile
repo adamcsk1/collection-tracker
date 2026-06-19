@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends nginx bash gosu && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy pre-built artifacts produced outside of Docker (nx build ...)
+# Copy pre-built artifacts produced outside of Docker (npm run build)
 # - Angular client build -> dist/apps/client/browser
 # - Angular health build -> dist/apps/health/browser
 # - Angular login build  -> dist/apps/login/browser
@@ -21,7 +21,7 @@ COPY dist/apps/server/ /app/server/
 WORKDIR /app/server
 RUN if [ -f package-lock.json ]; then npm ci --omit=dev; \
   elif [ -f package.json ]; then npm install --omit=dev; \
-  else echo "No package.json in server dist. Ensure Nx 'generatePackageJson' is enabled." && exit 1; fi
+  else echo "No package.json in server dist. Ensure npm run build generated server package metadata." && exit 1; fi
 
 # Create non-root user and required folders
 RUN groupadd -r app && useradd -r -g app app && \

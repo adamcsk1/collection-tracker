@@ -28,14 +28,13 @@ Source: [`libs/components`](../libs/components)
 ## Important Paths
 
 - [Source root](../libs/components/src/lib)
-- [Project configuration](../libs/components/project.json)
 
-## Nx Targets
+## Checks
 
 ```powershell
-npx nx test components
-npx nx lint components
-npx nx run components:typecheck
-npx nx run components:typecheck-spec
-npx nx run components:format-check
+npm run test
+npm run lint:check
+npm run typecheck
+npm run typecheck:spec
+npm run format:check
 ```

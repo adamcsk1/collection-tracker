@@ -1,4 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
+import type {} from '@fastify/rate-limit';
 import { SignInApiRequestModel } from '@shared/models/api-model';
 import dayjs from 'dayjs';
 import type { FastifyInstance } from 'fastify';

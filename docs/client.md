@@ -31,16 +31,16 @@ Source: [`apps/client`](../apps/client)
 - [Application config](../apps/client/src/app/main/main-config.ts)
 - [Feature source](../apps/client/src/app)
 
-## Nx Targets
+## Build And Checks
 
 ```powershell
-npx nx serve client
-npx nx build client --configuration=production
-npx nx test client
-npx nx lint client
-npx nx run client:typecheck
-npx nx run client:typecheck-spec
-npx nx run client:format-check
+ng serve client
+ng build client --configuration=production
+npm run test
+npm run lint:check
+npm run typecheck
+npm run typecheck:spec
+npm run format:check
 ```
 
 ## Development Routing

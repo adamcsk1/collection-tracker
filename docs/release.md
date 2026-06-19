@@ -16,7 +16,7 @@ Release packaging clears the existing `release/` folder before writing new artif
 
 ## Version Bumps
 
-Use `--bump` to update the Nx app and Android versions before packaging:
+Use `--bump` to update the app and Android versions before packaging:
 
 ```bash
 npm run release -- --bump patch

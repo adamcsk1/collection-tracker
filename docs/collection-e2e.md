@@ -15,8 +15,6 @@ Source: [`apps/collection-e2e`](../apps/collection-e2e)
 npm run cypress:chrome
 # or
 npm run cypress:firefox
-# or
-npx nx run collection-e2e:e2e
 ```
 
 ## Operational Notes
