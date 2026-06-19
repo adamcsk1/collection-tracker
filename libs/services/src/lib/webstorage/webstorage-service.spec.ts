@@ -2,10 +2,27 @@ import { TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { WebstorageService } from './webstorage-service';
 
+const createMemoryStorage = (): Storage => {
+  const values = new Map<string, string>();
+  return {
+    get length() {
+      return values.size;
+    },
+    clear: vi.fn(() => values.clear()),
+    getItem: vi.fn((key: string) => values.get(key) ?? null),
+    key: vi.fn((index: number) => Array.from(values.keys())[index] ?? null),
+    removeItem: vi.fn((key: string) => values.delete(key)),
+    setItem: vi.fn((key: string, value: string) => values.set(key, value)),
+  };
+};
+
 describe('WebstorageService', () => {
   let service: WebstorageService;
 
   beforeEach(() => {
+    Object.defineProperty(globalThis, 'localStorage', { value: createMemoryStorage(), configurable: true });
+    Object.defineProperty(globalThis, 'sessionStorage', { value: createMemoryStorage(), configurable: true });
+
     localStorage.clear();
     sessionStorage.clear();
 
@@ -70,7 +87,7 @@ describe('WebstorageService', () => {
     sessionStorage.setItem('session-only', 'value');
     localStorage.setItem('session-only', 'persist');
 
-    const sessionRemoveSpy = vi.spyOn(Storage.prototype, 'removeItem');
+    const sessionRemoveSpy = vi.spyOn(sessionStorage, 'removeItem');
 
     service.removeItem('session-only', 'session');
 

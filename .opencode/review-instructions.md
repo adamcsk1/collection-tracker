@@ -4,7 +4,7 @@ You are reviewing pull requests for Collection Tracker, a self-hosted media cata
 
 Stack:
 
-- Angular 21 standalone applications with signals
+- Angular 22 standalone applications with signals
 - Fastify REST API
 - SQLite persistence through `better-sqlite3`
 - Native Android WebView wrapper

@@ -45,9 +45,10 @@ export const fetchSeriesSeasonMetadata = async (imdbId: string): Promise<SeriesT
   for (let season = 1; season <= Math.min(totalSeasons, MAX_SERIES_TRACKER_SEASONS); season++) {
     try {
       const seasonInfo = await fetchOmdbJson<OmdbSeasonResponse>({ i: imdbId, Season: `${season}` });
-      const episodes = Array.isArray(seasonInfo?.Episodes) ? seasonInfo.Episodes.length : 0;
+      const seasonEpisodes = Array.isArray(seasonInfo?.Episodes) ? seasonInfo.Episodes : [];
+      const episodes = seasonEpisodes.length;
       if (episodes >= 1) {
-        const titles = seasonInfo.Episodes.slice(0, MAX_SERIES_TRACKER_EPISODES).map((episode) => episode.Title ?? '');
+        const titles = seasonEpisodes.slice(0, MAX_SERIES_TRACKER_EPISODES).map((episode) => episode.Title ?? '');
         seasons.push({ season, episodes: Math.min(episodes, MAX_SERIES_TRACKER_EPISODES), titles });
       }
     } catch {

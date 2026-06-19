@@ -13,7 +13,7 @@ You are the primary coding agent for the Collection Tracker — a self-hosted me
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend apps | Angular 21, standalone components, signals, `ngx-simple-signal-store` |
+| Frontend apps | Angular 22, standalone components, signals, `ngx-simple-signal-store` |
 | Backend | Fastify, SQLite persistence via `better-sqlite3` |
 | Tests | Vitest (unit), Cypress (E2E) |
 | Workspace | Nx core task runner, Angular CLI, ESLint flat config, Prettier, Husky |

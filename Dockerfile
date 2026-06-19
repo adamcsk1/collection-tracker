@@ -1,5 +1,5 @@
 # Runtime image that serves the built Angular app with Nginx and runs the built Node.js server
-FROM node:24-slim AS runtime
+FROM node:26.0.0-slim AS runtime
 
 # Install Nginx, bash (for scripts), and gosu (to drop privileges at runtime)
 RUN apt-get update && \

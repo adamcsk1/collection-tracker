@@ -33,8 +33,8 @@ export class Input<T> implements FormValueControl<T | null> {
   public readonly placeholder = input<string>('');
   public readonly icon = input<string>('');
   public readonly hint = input<string>();
-  public readonly min = input<number>();
-  public readonly max = input<number>();
+  public readonly min = input<NonNullable<T>>();
+  public readonly max = input<NonNullable<T>>();
   public readonly step = input<number>();
   private readonly _a11y = createFormControlA11y(this.inputId, this.hint, this.touched, this.dirty, this.errors);
   protected readonly showError = this._a11y.showError;

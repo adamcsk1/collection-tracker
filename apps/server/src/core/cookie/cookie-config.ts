@@ -1,6 +1,8 @@
 import dayjs, { ManipulateType } from 'dayjs';
 import type { FastifyCookieOptions } from '@fastify/cookie';
 
+type CookieConfig = NonNullable<FastifyCookieOptions['parseOptions']> & { expires: Date };
+
 export const accessCookieExpiration = {
   value: 15,
   unit: 'minutes',
@@ -11,7 +13,7 @@ export const refreshCookieExpiration = {
   unit: 'days',
 } satisfies { value: number; unit: ManipulateType };
 
-export const accessCookieConfig = (): FastifyCookieOptions['parseOptions'] => ({
+export const accessCookieConfig = (): CookieConfig => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   signed: true,
@@ -20,7 +22,7 @@ export const accessCookieConfig = (): FastifyCookieOptions['parseOptions'] => ({
   expires: dayjs().add(accessCookieExpiration.value, accessCookieExpiration.unit).toDate(),
 });
 
-export const refreshCookieConfig = (): FastifyCookieOptions['parseOptions'] => ({
+export const refreshCookieConfig = (): CookieConfig => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   signed: true,

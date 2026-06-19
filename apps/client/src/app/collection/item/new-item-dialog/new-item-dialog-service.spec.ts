@@ -10,6 +10,7 @@ import {
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
+import { OMDbResponseItemModel } from '@shared/models/omdb-model';
 import { SelectInputModel } from '@shared/models/select-model';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -17,7 +18,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const buildSelectedContent = (overrides: Partial<ReturnType<typeof buildSelectedContent>> = {}) => ({
+const buildSelectedContent = (overrides: Partial<OMDbResponseItemModel> = {}): OMDbResponseItemModel => ({
   Title: 'Title',
   Year: '2020',
   imdbID: 'tt123',
