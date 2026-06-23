@@ -57,6 +57,10 @@
     justify-content: flex-start;
   }
 
+  .float-search-bar-menu-only {
+    display: none;
+  }
+
   .float-button-scroll-to-top-no-search-bar {
     bottom: var(--size-xs);
   }

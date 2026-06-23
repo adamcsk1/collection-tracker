@@ -26,6 +26,7 @@ export class FloatActions {
   protected readonly actionsComponent = this.service.actionsComponent;
   protected readonly actionButtonsVisible = this.service.actionButtonsVisible;
   protected readonly showFloatActions = computed(() => this.config().actionsAvailable && !!this.actionsComponent());
+  protected readonly showMenuOnlyBar = computed(() => !this.searchTemplate() && !this.showFloatActions());
 
   protected onOpenMenu(): void {
     this.portal.open(MenuDialog);

@@ -81,7 +81,7 @@ describe('FloatActions', () => {
     const scrollToTop = fixture.nativeElement.querySelector('[data-test-id="scroll-to-top"]');
     expect(scrollToTop).toBeTruthy();
     expect(scrollToTop.parentElement.classList).toContain('float-button-scroll-to-top-no-search-bar');
-    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]').classList).not.toContain(
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]').classList).toContain(
       'float-search-bar-menu-only'
     );
   });
@@ -99,6 +99,15 @@ describe('FloatActions', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="nav-menu-button"]')).toBeTruthy();
   });
 
+  it('marks the float bar as menu-only when no search or actions are registered', () => {
+    service.setSearchTemplate(null);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]').classList).toContain(
+      'float-search-bar-menu-only'
+    );
+  });
+
   it('marks the float bar as no-search when actions render without a search template', () => {
     service.setSearchTemplate(null);
     service.setActionsComponent(TestFloatActionButtons);
@@ -106,6 +115,7 @@ describe('FloatActions', () => {
 
     const floatSearchBar = fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]');
     expect(floatSearchBar.classList).toContain('float-search-bar-no-search');
+    expect(floatSearchBar.classList).not.toContain('float-search-bar-menu-only');
     expect(fixture.nativeElement.querySelector('[data-test-id="scroll-to-top"]')).toBeNull();
   });
 
