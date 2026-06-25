@@ -78,13 +78,7 @@
             </ng-container>
           </libc-input>
         }
-        <libc-autocomplete [label]="translations.tags()" [hint]="translations.messageTags()" [formField]="form.tags">
-          <ng-container errors>
-            @if (formErrors.tags.usedInternalTag()) {
-              {{ translations.validationUsedInternalTag() }}
-            }
-          </ng-container></libc-autocomplete
-        >
+        <libc-autocomplete [label]="translations.tags()" [hint]="translations.messageTags()" [formField]="form.tags" />
         @if (showWatchedCheckbox()) {
           <libc-checkbox
             data-test-id="new-item-watched"

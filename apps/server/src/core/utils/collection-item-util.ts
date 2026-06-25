@@ -9,6 +9,9 @@ const normalizeYear = (year: number | string | null): string | null => {
 export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionItemChangeApiModel | undefined => {
   const userRate = item?.userRate;
   const year = item?.year;
+  const rawTags = Array.isArray(item?.tags) ? item.tags.map((tag) => `${tag}`.trim()).filter(Boolean) : [];
+  const contentType = item?.contentType;
+  const favorite = item?.favorite;
   if (
     typeof item?.title !== 'string' ||
     typeof item?.image !== 'string' ||
@@ -18,6 +21,8 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     typeof item?.metacriticRate !== 'string' ||
     typeof item?.actors !== 'string' ||
     typeof item?.plot !== 'string' ||
+    (contentType !== 'movie' && contentType !== 'series') ||
+    typeof favorite !== 'boolean' ||
     !Array.isArray(item?.genre) ||
     !Array.isArray(item?.tags) ||
     (typeof year !== 'number' && typeof year !== 'string' && year !== null) ||
@@ -36,7 +41,7 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     title: item.title.trim(),
     genre: item.genre.map((genre) => `${genre}`.trim()).filter(Boolean),
     IMDbId: item.IMDbId.trim(),
-    tags: item.tags.map((tag) => `${tag}`.trim()).filter(Boolean),
+    tags: rawTags,
     year: normalizeYear(year),
     rate: item.rate.trim(),
     rottenTomatoesRate: item.rottenTomatoesRate.trim(),
@@ -44,6 +49,8 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     userRate,
     actors: item.actors.trim(),
     plot: item.plot.trim(),
+    contentType,
+    favorite,
   };
 
   if (!normalized.title || !normalized.IMDbId) return;

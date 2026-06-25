@@ -1,7 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { insertSeriesTrackerItem } from '../../test/mocks/series-tracker-item-mock';
-import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -68,7 +67,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
     );
   });
 
-  it('adds completed tag when all episodes are watched', async () => {
+  it('sets watched timestamp when all episodes are watched', async () => {
     const itemId = insertSeriesTrackerItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
@@ -90,11 +89,6 @@ describe('change-series-tracker-watched-episodes-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(
-      getDatabase()
-        .prepare('SELECT 1 FROM collection_item_tags WHERE item_id = ? AND tag = ?')
-        .get(itemId, COMPLETED_TAG)
-    ).toBeTruthy();
     expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
       watched_at: expect.any(String),
     });
@@ -151,12 +145,11 @@ describe('change-series-tracker-watched-episodes-api', () => {
     ).toBeUndefined();
   });
 
-  it('removes completed tag when not all episodes are watched', async () => {
+  it('clears watched timestamp when not all episodes are watched', async () => {
     const itemId = insertSeriesTrackerItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
-    getDatabase().prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, COMPLETED_TAG);
     getDatabase().prepare('UPDATE collection_items SET watched_at = ? WHERE id = ?').run('2025-01-01 00:00:00', itemId);
     const response = mockResponse();
     const request: any = {
@@ -170,11 +163,6 @@ describe('change-series-tracker-watched-episodes-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(
-      getDatabase()
-        .prepare('SELECT 1 FROM collection_item_tags WHERE item_id = ? AND tag = ?')
-        .get(itemId, COMPLETED_TAG)
-    ).toBeUndefined();
     expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
       watched_at: null,
     });

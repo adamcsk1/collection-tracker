@@ -61,6 +61,8 @@ describe('ApiService', () => {
       userRate: null,
       actors: '',
       plot: '',
+      contentType: 'movie' as const,
+      favorite: false,
     };
     const promise = lastValueFrom(service.create(item));
 
@@ -86,6 +88,8 @@ describe('ApiService', () => {
       userRate: null,
       actors: '',
       plot: '',
+      contentType: 'movie' as const,
+      favorite: false,
     };
     const promise = lastValueFrom(service.update('tt123', item, 'old-hash'));
 
@@ -111,6 +115,8 @@ describe('ApiService', () => {
       userRate: null,
       actors: '',
       plot: '',
+      contentType: 'movie' as const,
+      favorite: false,
     };
     const promise = lastValueFrom(service.update('tt123', item, 'old-hash').pipe(defaultIfEmpty(undefined)));
 
@@ -303,7 +309,7 @@ describe('ApiService', () => {
   it('imports user export data', async () => {
     const importData = {
       type: 'collection-tracker-export',
-      version: 2,
+      version: 3,
       userSettings: {},
       collectionItems: [],
       tagManagement: [],
@@ -411,6 +417,8 @@ describe('ApiService', () => {
       userRate: null,
       actors: '',
       plot: '',
+      contentType: 'movie' as const,
+      favorite: false,
     };
     const promise = lastValueFrom(service.create(item));
 

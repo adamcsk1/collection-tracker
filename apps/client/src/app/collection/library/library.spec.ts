@@ -153,6 +153,14 @@ describe('Collection library component', () => {
     expect(collectionState.state.forceStandardSearch()).toBe(false);
   });
 
+  it('forces standard search when query params contain structured filters', () => {
+    queryParamMap.next(convertToParamMap({ type: 'movie' }));
+    fixture.detectChanges();
+
+    expect(collectionState.state.searchText()).toBe('');
+    expect(collectionState.state.forceStandardSearch()).toBe(true);
+  });
+
   it('does not force standard search again when a suggestion is accepted in standard search mode', () => {
     collectionState.setState('forceStandardSearch', false);
 
@@ -211,6 +219,18 @@ describe('Collection library component', () => {
 
     expect(aiSearch.useAiSearch()).toBe(true);
     expect(collectionState.state.searchText()).toBe('#action');
+    expect(collectionState.state.forceStandardSearch()).toBe(true);
+  });
+
+  it('keeps forced standard search when switching to AI search with a route structured filter', () => {
+    queryParamMap.next(convertToParamMap({ type: 'movie' }));
+    fixture.detectChanges();
+    aiSearch.useAiSearch.set(false);
+
+    fixture.componentInstance['onToggleAiSearch']();
+
+    expect(aiSearch.useAiSearch()).toBe(true);
+    expect(collectionState.state.searchText()).toBe('');
     expect(collectionState.state.forceStandardSearch()).toBe(true);
   });
 

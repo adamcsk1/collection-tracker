@@ -24,13 +24,14 @@ const insertItem = (
     plot: string;
     image: string;
     contentHash: string;
+    contentType: string;
   }> = {}
 ) => {
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       usernameHash,
@@ -42,7 +43,8 @@ const insertItem = (
       overrides.rate ?? '',
       overrides.plot ?? '',
       overrides.image ?? '',
-      overrides.contentHash ?? `${usernameHash}-${listType}-${imdbId}`
+      overrides.contentHash ?? `${usernameHash}-${listType}-${imdbId}`,
+      overrides.contentType ?? 'series'
     );
   const itemId = Number(result.lastInsertRowid);
   for (const tag of tags) {
@@ -72,7 +74,8 @@ describe('series-tracker-repository', () => {
       expect.objectContaining({
         IMDbId: 'tt-1',
         listType: 'series-tracker',
-        tags: expect.arrayContaining(['#series', '#action']),
+        contentType: 'series',
+        tags: ['#action', '#series'],
       })
     );
     const trackerRow = db
@@ -98,7 +101,7 @@ describe('series-tracker-repository', () => {
     expect(count.count).toBe(1);
   });
 
-  it('strips forbidden tags and ensures series tag remains', () => {
+  it('preserves former system tags as custom tags and keeps the series content type', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#series', '#completed', '#favorite', '#watch-later', '#wishlist', '#action']);
     const db = getDatabase();
@@ -106,13 +109,12 @@ describe('series-tracker-repository', () => {
     const result = copySeriesToSeriesTracker(db, 'user', 'user', 'tt-1', 'library');
 
     expect(result).toBeTruthy();
-    expect(result!.tags).toContain('#series');
+    expect(result!.contentType).toBe('series');
     expect(result!.tags).toContain('#action');
-    expect(result!.tags).not.toContain('#completed');
-    expect(result!.tags).not.toContain('#favorite');
-    expect(result!.tags).not.toContain('#watch-later');
-    expect(result!.tags).not.toContain('#wishlist');
-    expect(result!.tags).not.toContain('#movie');
+    expect(result!.tags).toContain('#completed');
+    expect(result!.tags).toContain('#favorite');
+    expect(result!.tags).toContain('#watch-later');
+    expect(result!.tags).toContain('#wishlist');
   });
 
   it('deletes source item when deleteSource is true', () => {
@@ -139,7 +141,7 @@ describe('series-tracker-repository', () => {
 
   it('returns null when source item is not a series', () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#movie']);
+    insertItem('user', 'tt-1', ['#movie'], 'library', { contentType: 'movie' });
     const db = getDatabase();
 
     const result = copySeriesToSeriesTracker(db, 'user', 'user', 'tt-1', 'library');
@@ -166,7 +168,7 @@ describe('series-tracker-repository', () => {
   it('markAllSeriesAsWatched copies unwatched library series to tracker', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#series']);
-    insertItem('user', 'tt-2', ['#movie']);
+    insertItem('user', 'tt-2', ['#movie'], 'library', { contentType: 'movie' });
     const db = getDatabase();
 
     const result = markAllSeriesAsWatched(db, 'user', 'user');

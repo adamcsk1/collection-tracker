@@ -3,7 +3,7 @@ import { CollectionListDisplayPreferencesModel } from './collection-list-display
 import { LanguageModel } from './language-model';
 import { ThemeModel } from './theme-model';
 
-export type { CollectionListTypeModel } from './collection-item-model';
+export type { CollectionItemContentTypeModel, CollectionListTypeModel } from './collection-item-model';
 
 export type CollectionItemApiModel = CollectionItemModel;
 
@@ -20,6 +20,7 @@ export interface CollectionItemFiltersApiModel {
   type?: CollectionItemTypeFilter;
   watched?: boolean;
   completed?: boolean;
+  favorite?: boolean;
   listType?: CollectionListTypeModel;
   orderBy?: CollectionItemOrderBy;
   orderDirection?: CollectionItemOrderDirection;
@@ -98,6 +99,8 @@ export type CollectionItemChangeApiModel = Pick<
   | 'userRate'
   | 'actors'
   | 'plot'
+  | 'contentType'
+  | 'favorite'
 >;
 
 export interface CreateApiRequestModel extends CollectionItemChangeApiModel {

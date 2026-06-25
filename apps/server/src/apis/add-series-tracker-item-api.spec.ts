@@ -8,14 +8,20 @@ const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertItem = (usernameHash: string, imdbId: string, tags: string[], listType = 'watch-later') => {
+const insertItem = (
+  usernameHash: string,
+  imdbId: string,
+  tags: string[],
+  listType = 'watch-later',
+  contentType = 'series'
+) => {
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', 'hash');
+    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', 'hash', contentType);
   const itemId = Number(result.lastInsertRowid);
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
@@ -64,7 +70,12 @@ describe('add-series-tracker-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'series-tracker', tags: ['#series'] }),
+      item: expect.objectContaining({
+        IMDbId: 'tt-1',
+        listType: 'series-tracker',
+        contentType: 'series',
+        tags: ['#series', '#watch-later'],
+      }),
     });
     expect(
       getDatabase()
@@ -108,7 +119,12 @@ describe('add-series-tracker-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'series-tracker', tags: ['#series'] }),
+      item: expect.objectContaining({
+        IMDbId: 'tt-1',
+        listType: 'series-tracker',
+        contentType: 'series',
+        tags: ['#series'],
+      }),
     });
     expect(
       getDatabase()
@@ -214,7 +230,7 @@ describe('add-series-tracker-item-api', () => {
 
   it('rejects watch later movie items', async () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#movie', '#watch-later']);
+    insertItem('user', 'tt-1', ['#movie', '#watch-later'], 'watch-later', 'movie');
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: { sourceListType: 'watch-later' } };

@@ -8,14 +8,32 @@ const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertItem = (imdbId: string, tags: string[] = [], listType = 'library', usernameHash = 'user') => {
+const insertItem = (
+  imdbId: string,
+  tags: string[] = [],
+  listType = 'library',
+  usernameHash = 'user',
+  contentType = 'series'
+) => {
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', `${usernameHash}-${listType}-${imdbId}`);
+    .run(
+      usernameHash,
+      imdbId,
+      listType,
+      'Title',
+      'title',
+      '',
+      '',
+      '',
+      '',
+      `${usernameHash}-${listType}-${imdbId}`,
+      contentType
+    );
   const itemId = Number(result.lastInsertRowid);
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
@@ -54,7 +72,7 @@ describe('mark-all-series-watched-api', () => {
     insertShare('owner', 'user', true);
     insertItem('tt-own', ['#series'], 'library', 'user');
     insertItem('tt-shared', ['#series'], 'library', 'owner');
-    insertItem('tt-movie', ['#movie'], 'library', 'owner');
+    insertItem('tt-movie', ['#movie'], 'library', 'owner', 'movie');
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };
@@ -97,14 +115,12 @@ describe('mark-all-series-watched-api', () => {
     expect(
       getDatabase()
         .prepare(
-          `SELECT collection_item_tags.tag
-           FROM collection_item_tags
-           INNER JOIN collection_items ON collection_items.id = collection_item_tags.item_id
-           WHERE collection_items.imdb_id = ? AND collection_items.list_type = ?
-           ORDER BY collection_item_tags.tag`
+          `SELECT content_type, watched_at
+           FROM collection_items
+           WHERE imdb_id = ? AND list_type = ?`
         )
-        .all('tt-shared', 'series-tracker')
-    ).toEqual([{ tag: '#completed' }, { tag: '#series' }]);
+        .get('tt-shared', 'series-tracker')
+    ).toEqual({ content_type: 'series', watched_at: expect.any(String) });
   });
 
   it('marks existing series tracker episodes watched without fetching metadata again', async () => {
@@ -141,16 +157,38 @@ describe('mark-all-series-watched-api', () => {
       { season: 1, episode: 1 },
       { season: 1, episode: 2 },
     ]);
-    expect(
-      getDatabase()
-        .prepare(
-          `SELECT tag
-           FROM collection_item_tags
-           WHERE item_id = ?
-           ORDER BY tag`
-        )
-        .all(trackerItemId)
-    ).toEqual([{ tag: '#completed' }, { tag: '#series' }]);
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(trackerItemId)).toEqual({
+      watched_at: expect.any(String),
+    });
+  });
+
+  it('counts progress changed when only the completed timestamp changes', async () => {
+    process.env.OMDB_API_KEY = 'key';
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    insertUser('user');
+    insertItem('tt-1', ['#series'], 'library', 'user');
+    const trackerItemId = insertItem('tt-1', ['#series'], 'series-tracker', 'user');
+    getDatabase()
+      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .run(trackerItemId, 1, 2);
+    getDatabase()
+      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?), (?, ?, ?)')
+      .run(trackerItemId, 1, 1, trackerItemId, 1, 2);
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./mark-all-series-watched-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ trackedCount: 0, progressChangedCount: 1 });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(trackerItemId)).toEqual({
+      watched_at: expect.any(String),
+    });
   });
 
   it('marks tracker-only series watched when My Library is selected', async () => {
@@ -186,9 +224,9 @@ describe('mark-all-series-watched-api', () => {
       { season: 1, episode: 1 },
       { season: 1, episode: 2 },
     ]);
-    expect(
-      getDatabase().prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(trackerItemId)
-    ).toEqual([{ tag: '#completed' }, { tag: '#series' }]);
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(trackerItemId)).toEqual({
+      watched_at: expect.any(String),
+    });
   });
 
   it('does not mark unrelated tracker-only series watched when a shared library is selected', async () => {

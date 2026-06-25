@@ -40,7 +40,7 @@ describe('tag-suggestions-api', () => {
     );
   });
 
-  it('excludes internal tags by default', async () => {
+  it('includes former internal tags by default', async () => {
     insertUserAndItems();
     const db = getDatabase();
     const itemId = Number(
@@ -56,30 +56,7 @@ describe('tag-suggestions-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ tags: [] });
-  });
-
-  it('includes internal tags when requested', async () => {
-    insertUserAndItems();
-    const db = getDatabase();
-    const itemId = Number(
-      (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt001')! as { id: number }).id
-    );
-    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, '#movie');
-
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { query: '#movie', includeInternal: 'true' } };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./tag-suggestions-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        tags: expect.arrayContaining(['#movie']),
-      })
-    );
+    expect(response.send).toHaveBeenCalledWith({ tags: ['#movie'] });
   });
 
   it('returns empty array when query is empty', async () => {

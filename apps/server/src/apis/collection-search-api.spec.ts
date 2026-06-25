@@ -19,12 +19,14 @@ const insertItem = (item: {
   metacriticRate?: string;
   createdAt?: string;
   listType?: CollectionListTypeModel;
+  contentType?: 'movie' | 'series';
+  favorite?: boolean;
 }) => {
   const result = getDatabase()
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, imdb_id, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash, list_type, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))`
+       (username_hash, imdb_id, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash, list_type, content_type, favorite, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))`
     )
     .run(
       'user',
@@ -40,6 +42,8 @@ const insertItem = (item: {
       '',
       `${item.imdbId}-hash`,
       item.listType ?? 'library',
+      item.contentType ?? 'movie',
+      item.favorite ? 1 : 0,
       item.createdAt ?? null
     );
   const itemId = Number(result.lastInsertRowid);
@@ -95,7 +99,13 @@ describe('collection search APIs', () => {
       plot: 'space horror',
     });
     insertItem({ imdbId: 'tt-alien', title: 'Alien Movie', tags: ['#movie'], listType: 'movie-tracker' });
-    insertItem({ imdbId: 'tt-drama', title: 'Quiet Drama', tags: ['#series'], genres: ['Drama'] });
+    insertItem({
+      imdbId: 'tt-drama',
+      title: 'Quiet Drama',
+      tags: ['#series'],
+      genres: ['Drama'],
+      contentType: 'series',
+    });
     const { register } = await import('./get-collection-items-api');
 
     const response = await callRoute(register, 'get', '/api/v1/items', {
@@ -109,6 +119,37 @@ describe('collection search APIs', () => {
         offset: 0,
         limit: 10,
         items: [expect.objectContaining({ IMDbId: 'tt-alien' })],
+      })
+    );
+  });
+
+  it('filters unwatched library items across movies and series when no type is provided', async () => {
+    insertUser();
+    insertItem({ imdbId: 'tt-unwatched-movie', title: 'Unwatched Movie', contentType: 'movie' });
+    insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', contentType: 'movie' });
+    insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', listType: 'movie-tracker', contentType: 'movie' });
+    insertItem({ imdbId: 'tt-unwatched-series', title: 'Unwatched Series', contentType: 'series' });
+    insertItem({ imdbId: 'tt-watched-series', title: 'Watched Series', contentType: 'series' });
+    insertItem({
+      imdbId: 'tt-watched-series',
+      title: 'Watched Series',
+      listType: 'series-tracker',
+      contentType: 'series',
+    });
+    const { register } = await import('./get-collection-items-api');
+
+    const response = await callRoute(register, 'get', '/api/v1/items', {
+      query: { watched: 'false', limit: '10', offset: '0' },
+      usernameHash: 'user',
+    });
+
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        total: 2,
+        items: expect.arrayContaining([
+          expect.objectContaining({ IMDbId: 'tt-unwatched-movie' }),
+          expect.objectContaining({ IMDbId: 'tt-unwatched-series' }),
+        ]),
       })
     );
   });
@@ -238,13 +279,9 @@ describe('collection search APIs', () => {
     expect(tagSuggestionsResponse.send).toHaveBeenCalledWith({
       suggestions: [{ label: '#space', value: '#space', kind: 'tag' }],
     });
-    expect(favoriteSuggestionsResponse.send).toHaveBeenCalledWith({
-      suggestions: [{ label: '#favorite', value: '#favorite', kind: 'tag' }],
-    });
+    expect(favoriteSuggestionsResponse.send).toHaveBeenCalledWith({ suggestions: [] });
     expect(watchedSuggestionsResponse.send).toHaveBeenCalledWith({ suggestions: [] });
-    expect(unwatchedSuggestionsResponse.send).toHaveBeenCalledWith({
-      suggestions: [{ label: '#unwatched', value: '#unwatched', kind: 'tag' }],
-    });
+    expect(unwatchedSuggestionsResponse.send).toHaveBeenCalledWith({ suggestions: [] });
     expect(existsResponse.send).toHaveBeenCalledWith({ exists: true, hash: 'tt-alien-hash' });
   });
 
@@ -271,7 +308,7 @@ describe('collection search APIs', () => {
     });
   });
 
-  it('returns custom tag suggestions without internal or virtual tags by default', async () => {
+  it('returns tag suggestions including former internal tag names', async () => {
     insertUser();
     insertItem({ imdbId: 'tt-one', title: 'One', tags: ['#movie', '#favorite', '#space'] });
     const { register } = await import('./tag-suggestions-api');
@@ -281,7 +318,7 @@ describe('collection search APIs', () => {
       usernameHash: 'user',
     });
 
-    expect(response.send).toHaveBeenCalledWith({ tags: ['#space'] });
+    expect(response.send).toHaveBeenCalledWith({ tags: ['#favorite', '#movie', '#space'] });
   });
 
   it('returns genre suggestions', async () => {
@@ -304,9 +341,16 @@ describe('collection search APIs', () => {
       title: 'Movie',
       tags: ['#movie', '#favorite', '#space'],
       genres: ['Sci-Fi'],
+      favorite: true,
     });
     insertItem({ imdbId: 'tt-movie', title: 'Movie', tags: ['#movie'], listType: 'movie-tracker' });
-    insertItem({ imdbId: 'tt-series', title: 'Series', tags: ['#series', '#drama'], genres: ['Drama'] });
+    insertItem({
+      imdbId: 'tt-series',
+      title: 'Series',
+      tags: ['#series', '#drama'],
+      genres: ['Drama'],
+      contentType: 'series',
+    });
     const { register } = await import('./statistics-api');
 
     const response = await callRoute(register, 'get', '/api/v1/statistics', {
@@ -331,6 +375,9 @@ describe('collection search APIs', () => {
         watchedYearCounts: [],
         tagCounts: [
           { tag: '#drama', count: 1 },
+          { tag: '#favorite', count: 1 },
+          { tag: '#movie', count: 1 },
+          { tag: '#series', count: 1 },
           { tag: '#space', count: 1 },
         ],
         genreCounts: [

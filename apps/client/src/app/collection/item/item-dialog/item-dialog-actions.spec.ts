@@ -28,7 +28,6 @@ const translations: ItemDialogTranslations = {
   links: signal('Links'),
   plot: signal('Plot'),
   ratings: signal('Ratings'),
-  systemTags: signal('System tags'),
   tags: signal('Tags'),
   watchedUpTo: signal('Watched up to'),
   edit: signal('Edit'),
@@ -54,7 +53,6 @@ describe('ItemDialogActions', () => {
     fixture.componentRef.setInput('favorite', overrides['favorite'] ?? false);
     fixture.componentRef.setInput('inSeriesTracker', overrides['inSeriesTracker'] ?? false);
     fixture.componentRef.setInput('inMovieTracker', overrides['inMovieTracker'] ?? false);
-    fixture.componentRef.setInput('internalCollectionTag', overrides['internalCollectionTag'] ?? null);
     fixture.detectChanges();
   };
 
@@ -153,12 +151,10 @@ describe('ItemDialogActions', () => {
     expect(queryButton('item-dialog-move-series-tracker')).toBeNull();
   });
 
-  it('hides actions while editing and hides edit for internal collection tags', () => {
+  it('hides actions while editing', () => {
     createComponent({ editMode: true });
-    expect(queryButton('item-dialog-delete')).toBeNull();
 
-    createComponent({ internalCollectionTag: '#watch-later' });
-    expect(queryButton('item-dialog-edit')).toBeNull();
+    expect(queryButton('item-dialog-delete')).toBeNull();
   });
 
   const getButton = (testId: string): HTMLButtonElement => {

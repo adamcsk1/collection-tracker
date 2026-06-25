@@ -1,8 +1,6 @@
-import { VIRTUAL_TAGS } from '@shared/constants/tags-const';
 import { CollectionItemSuggestionApiModel, CollectionListTypeModel } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
 import { escapeLike, normalizeLimit } from './collection-query';
-import { INTERNAL_TAGS, SUGGESTION_SYSTEM_TAGS } from './collection-tags';
 
 export const findCollectionItemSuggestions = (
   db: Database.Database,
@@ -16,14 +14,11 @@ export const findCollectionItemSuggestions = (
   if (!lowerQuery) return [];
 
   if (lowerQuery.startsWith('#')) {
-    const systemTagSuggestions = SUGGESTION_SYSTEM_TAGS.filter((tag) => tag.startsWith(lowerQuery));
-    const remainingLimit = normalizedLimit - systemTagSuggestions.length;
-    const customTagSuggestions =
-      remainingLimit > 0 ? findTagSuggestions(db, usernameHashes, query, remainingLimit, false, listType) : [];
-
-    return [...systemTagSuggestions, ...customTagSuggestions]
-      .slice(0, normalizedLimit)
-      .map((tag) => ({ label: tag, value: tag, kind: 'tag' }));
+    return findTagSuggestions(db, usernameHashes, query, normalizedLimit, listType).map((tag) => ({
+      label: tag,
+      value: tag,
+      kind: 'tag',
+    }));
   }
 
   const likeQuery = `%${escapeLike(lowerQuery)}%`;
@@ -55,14 +50,10 @@ export const findTagSuggestions = (
   usernameHashes: string[],
   query: string,
   limit: number,
-  includeInternal = false,
   listType: CollectionListTypeModel = 'library'
 ): string[] => {
   const lowerQuery = query.trim().toLowerCase();
   if (!lowerQuery) return [];
-
-  const excludedTags = includeInternal ? [] : [...INTERNAL_TAGS, ...VIRTUAL_TAGS];
-  const excludedSql = excludedTags.length ? `AND tag NOT IN (${excludedTags.map(() => '?').join(', ')})` : '';
 
   const rows = db
     .prepare(
@@ -72,12 +63,11 @@ export const findTagSuggestions = (
        WHERE collection_items.username_hash IN (${usernameHashes.map(() => '?').join(', ')})
        AND collection_items.list_type = ?
        AND LOWER(tag) LIKE ? ESCAPE '\\'
-       ${excludedSql}
-       GROUP BY tag
+        GROUP BY tag
        ORDER BY count DESC, tag
        LIMIT ?`
     )
-    .all(...usernameHashes, listType, `${escapeLike(lowerQuery)}%`, ...excludedTags, normalizeLimit(limit)) as Array<{
+    .all(...usernameHashes, listType, `${escapeLike(lowerQuery)}%`, normalizeLimit(limit)) as Array<{
     tag: string;
   }>;
 

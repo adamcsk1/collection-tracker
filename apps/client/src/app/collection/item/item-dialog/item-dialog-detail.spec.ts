@@ -18,7 +18,6 @@ const translations: ItemDialogTranslations = {
   genre: signal('Genre'),
   actors: signal('Actors'),
   tags: signal('Tags'),
-  systemTags: signal('System tags'),
   watchedUpTo: signal('Watched up to'),
   plot: signal('Plot'),
   links: signal('Links'),
@@ -42,7 +41,7 @@ const item: CollectionItemModel = {
   titleLower: 'test movie',
   genre: ['Drama'],
   IMDbId: 'tt1234567',
-  tags: ['#movie'],
+  tags: [],
   year: '2020',
   rate: '8.5',
   rottenTomatoesRate: '90%',
@@ -52,6 +51,8 @@ const item: CollectionItemModel = {
   actors: 'Actor One',
   plot: 'Plot text',
   listType: 'library',
+  contentType: 'movie',
+  favorite: false,
   watchedAt: null,
 };
 
@@ -71,18 +72,16 @@ describe('ItemDialogDetail', () => {
     fixture.componentRef.setInput('isShared', true);
     fixture.componentRef.setInput('library', 'Shared Owner');
     fixture.componentRef.setInput('detailTags', ['#drama']);
-    fixture.componentRef.setInput('systemTags', ['#movie']);
     fixture.componentRef.setInput('seriesTracker', true);
     fixture.componentRef.setInput('episodeProgressText', 'S01E02');
     fixture.detectChanges();
   });
 
-  it('renders shared metadata, tags, system tags, and series progress', () => {
+  it('renders shared metadata, tags, and series progress', () => {
     const element = fixture.nativeElement as HTMLElement;
 
     expect(element.querySelector('[data-test-id="item-dialog-shared-library"]')?.textContent).toContain('Shared Owner');
     expect(element.querySelector('[data-test-id="item-dialog-tags-section"]')?.textContent).toContain('#drama');
-    expect(element.querySelector('[data-test-id="item-dialog-system-tags-section"]')?.textContent).toContain('#movie');
     expect(element.querySelector('[data-test-id="item-dialog-episode-progress-chip"]')?.textContent).toContain(
       'S01E02'
     );

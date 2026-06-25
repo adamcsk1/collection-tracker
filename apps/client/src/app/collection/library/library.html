@@ -1,27 +1,18 @@
 <div class="collection-container">
   <ng-template #floatSearch>
-    @if (!useStandardSearch()) {
-      <div class="search-input">
-        <ct-ai-search-input
-          [formField]="aiSearchPromptTextField"
-          [placeholder]="translations.placeholderReply()"
-          (sendEvent)="onAiSearchSend()"
-        />
-      </div>
-    } @else {
-      <libc-autocomplete
-        data-test-id="collection-search"
-        [placeholder]="translations.placeholderSearchInCollection()"
-        [formField]="searchTextField"
-        [showReset]="true"
-        [suggestionListPlacement]="'top'"
-        (userEvent)="onSearchFromUser()"
-        (userAcceptSuggestionEvent)="onSearchAccepted()"
-      />
-    }
+    <libc-autocomplete
+      data-test-id="collection-search"
+      [placeholder]="translations.placeholderSearchInCollection()"
+      [formField]="searchTextField"
+      [showReset]="true"
+      [suggestionListPlacement]="'top'"
+      (userEvent)="onSearchFromUser()"
+      (userAcceptSuggestionEvent)="onSearchAccepted()"
+    />
   </ng-template>
   <ct-list
     [routeSearchText]="querySearch()"
+    [routeFilterKey]="queryFilterKey()"
     [dataSource]="collectionDataSource"
     (randomPick)="onRandomPick()"
     (toggleAiSearch)="onToggleAiSearch()"

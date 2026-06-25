@@ -103,8 +103,7 @@ FROM collection_item_tags_old old_tag
 INNER JOIN collection_items_old old_item ON old_item.id = old_tag.item_id
 INNER JOIN collection_items new_item ON new_item.username_hash = old_item.username_hash
   AND new_item.imdb_id = old_item.imdb_id
-  AND new_item.list_type = old_item.list_type
-WHERE old_tag.tag != '#watched';
+  AND new_item.list_type = old_item.list_type;
 
 INSERT OR IGNORE INTO collection_item_tags (item_id, tag)
 SELECT tracker_item.id, old_tag.tag
@@ -114,8 +113,6 @@ INNER JOIN collection_items tracker_item ON tracker_item.username_hash = old_ite
   AND tracker_item.imdb_id = old_item.imdb_id
   AND tracker_item.list_type = 'movie-tracker'
 WHERE old_item.list_type = 'library'
-  AND old_tag.tag != '#watched'
-  AND old_tag.tag NOT IN ('#completed', '#favorite', '#watch-later', '#wishlist', '#series')
   AND EXISTS (SELECT 1 FROM collection_item_tags_old watched WHERE watched.item_id = old_item.id AND watched.tag = '#watched')
   AND EXISTS (SELECT 1 FROM collection_item_tags_old movie WHERE movie.item_id = old_item.id AND movie.tag = '#movie');
 

@@ -1,10 +1,7 @@
-import type { CollectionListTypeModel } from '../models/collection-item-model';
+import type { CollectionItemContentTypeModel, CollectionListTypeModel } from '../models/collection-item-model';
 
 export type CollectionItemTagValidationError =
-  | { kind: 'usedInternalTag' }
-  | { kind: 'virtualTag' }
   | { kind: 'invalidInternalCollectionTag' }
-  | { kind: 'missingTypeTag' }
   | { kind: 'invalidNonLibraryTag' }
   | { kind: 'invalidSeriesTrackerTags' }
   | { kind: 'invalidSharedListCreate' }
@@ -12,13 +9,15 @@ export type CollectionItemTagValidationError =
   | { kind: 'sharedInternalCollectionItemUpdate' };
 
 export interface CollectionItemCreateTagValidationInput {
-  tags: readonly string[];
+  contentType: CollectionItemContentTypeModel;
+  favorite: boolean;
   listType: CollectionListTypeModel;
   targetOwnerShareCode?: unknown;
 }
 
 export interface CollectionItemChangeTagValidationInput {
-  tags: readonly string[];
+  contentType: CollectionItemContentTypeModel;
+  favorite: boolean;
   listType: CollectionListTypeModel;
   existingListType: CollectionListTypeModel;
   requesterIsOwner: boolean;

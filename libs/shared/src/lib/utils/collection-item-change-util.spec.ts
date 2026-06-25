@@ -18,6 +18,8 @@ describe('toCollectionItemChange', () => {
         hash: 'hash',
         actors: 'Actors',
         plot: 'Plot',
+        contentType: 'movie',
+        favorite: false,
         listType: 'library',
         watchedAt: null,
       })
@@ -34,6 +36,8 @@ describe('toCollectionItemChange', () => {
       userRate: 8.7,
       actors: 'Actors',
       plot: 'Plot',
+      contentType: 'movie',
+      favorite: false,
     });
   });
 });

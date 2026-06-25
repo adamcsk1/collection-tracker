@@ -1,9 +1,10 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { hashText } from '../core/crypto';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const COMPLETED_TAG = '#completed';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase()
@@ -34,7 +35,7 @@ const updatedItem = {
   title: 'Updated',
   genre: ['Drama'],
   IMDbId: 'tt-change',
-  tags: ['#movie'],
+  tags: [],
   year: '2024',
   rate: '7.1',
   rottenTomatoesRate: '96%',
@@ -42,6 +43,8 @@ const updatedItem = {
   userRate: 8.7,
   actors: 'Actor One, Actor Two',
   plot: 'Updated plot',
+  contentType: 'movie',
+  favorite: false,
 };
 
 describe('change-api', () => {
@@ -108,7 +111,7 @@ describe('change-api', () => {
     const request: any = {
       params: { imdbId: 'tt-change' },
       query: { listType: 'series-tracker' },
-      body: { ...updatedItem, tags: ['#series'], hash: 'abc123' },
+      body: { ...updatedItem, contentType: 'series', hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -121,9 +124,94 @@ describe('change-api', () => {
       item: expect.objectContaining({
         title: 'Updated',
         listType: 'series-tracker',
-        tags: ['#series'],
+        contentType: 'series',
+        tags: [],
       }),
     });
+  });
+
+  it('updates a wishlist item when listType is provided', async () => {
+    insertItem('abc123', 'user', 'wishlist');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      query: { listType: 'wishlist' },
+      body: { ...updatedItem, tags: ['#custom'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        title: 'Updated',
+        listType: 'wishlist',
+        tags: ['#custom'],
+      }),
+    });
+  });
+
+  it('updates a watch later item when listType is provided', async () => {
+    insertItem('abc123', 'user', 'watch-later');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      query: { listType: 'watch-later' },
+      body: { ...updatedItem, tags: ['#custom'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        title: 'Updated',
+        listType: 'watch-later',
+        tags: ['#custom'],
+      }),
+    });
+  });
+
+  it('returns 400 when updating a watch later item as favorite', async () => {
+    insertItem('abc123', 'user', 'watch-later');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      query: { listType: 'watch-later' },
+      body: { ...updatedItem, favorite: true, hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when updating a wishlist item as favorite', async () => {
+    insertItem('abc123', 'user', 'wishlist');
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      query: { listType: 'wishlist' },
+      body: { ...updatedItem, favorite: true, hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('preserves completed tag when updating a completed series tracker item', async () => {
@@ -142,7 +230,7 @@ describe('change-api', () => {
     const request: any = {
       params: { imdbId: 'tt-change' },
       query: { listType: 'series-tracker' },
-      body: { ...updatedItem, tags: ['#series'], hash: 'abc123' },
+      body: { ...updatedItem, contentType: 'series', hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -153,7 +241,9 @@ describe('change-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({
-        tags: ['#completed', '#series'],
+        contentType: 'series',
+        tags: [],
+        watchedAt: expect.any(String),
       }),
     });
   });
@@ -181,7 +271,7 @@ describe('change-api', () => {
     const response = mockResponse();
     const request: any = {
       params: { imdbId: 'tt-change' },
-      body: { ...updatedItem, tags: ['#action'], hash: 'abc123' },
+      body: { ...updatedItem, contentType: 'other', tags: ['#action'], hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -193,7 +283,7 @@ describe('change-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('returns 400 when updating an item with a virtual tag', async () => {
+  it('accepts a former virtual tag as a custom tag when updating an item', async () => {
     insertItem();
     const response = mockResponse();
     const request: any = {
@@ -207,7 +297,28 @@ describe('change-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ tags: ['#movie', '#unwatched'] }),
+    });
+  });
+
+  it('accepts a former system tag name as a custom tag when updating an item', async () => {
+    insertItem();
+    const response = mockResponse();
+    const request: any = {
+      params: { imdbId: 'tt-change' },
+      body: { ...updatedItem, tags: ['#movie'], hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ tags: ['#movie'] }),
+    });
   });
 
   it('updates an item in a shared library when update permission is granted', async () => {
@@ -327,7 +438,7 @@ describe('change-api', () => {
     const response = mockResponse();
     const request: any = {
       params: { imdbId: 'tt-change' },
-      body: { ...updatedItem, tags: ['#movie', '#watch-later'], hash: 'abc123' },
+      body: { ...updatedItem, contentType: 'other', hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -344,7 +455,7 @@ describe('change-api', () => {
     const response = mockResponse();
     const request: any = {
       params: { imdbId: 'tt-change' },
-      body: { ...updatedItem, tags: ['#movie', '#wishlist'], hash: 'abc123' },
+      body: { ...updatedItem, favorite: 'yes', hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -424,7 +535,7 @@ describe('change-api', () => {
     expect(response.code).toHaveBeenCalledWith(404);
   });
 
-  it('returns 404 when a watch later item is updated with custom tags', async () => {
+  it('returns 404 when a watch later item is updated without listType', async () => {
     insertItem('abc123', 'user', 'watch-later');
     const response = mockResponse();
     const request: any = {
@@ -441,7 +552,7 @@ describe('change-api', () => {
     expect(response.code).toHaveBeenCalledWith(404);
   });
 
-  it('returns 404 when a wishlist item is updated with custom tags', async () => {
+  it('returns 404 when a wishlist item is updated without listType', async () => {
     insertItem('abc123', 'user', 'wishlist');
     const response = mockResponse();
     const request: any = {

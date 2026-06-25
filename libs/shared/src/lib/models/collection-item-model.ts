@@ -1,4 +1,5 @@
 export type CollectionListTypeModel = 'library' | 'watch-later' | 'wishlist' | 'series-tracker' | 'movie-tracker';
+export type CollectionItemContentTypeModel = 'movie' | 'series';
 export type CollectionItemYearModel = string | null;
 
 export interface CollectionItemModel {
@@ -17,6 +18,8 @@ export interface CollectionItemModel {
   actors: string;
   plot: string;
   listType: CollectionListTypeModel;
+  contentType: CollectionItemContentTypeModel;
+  favorite: boolean;
   watched?: boolean;
   watchedAt: string | null;
   ownerShareCode?: string;

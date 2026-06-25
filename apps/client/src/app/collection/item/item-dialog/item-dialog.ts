@@ -4,6 +4,7 @@ import { form, FormField, FormRoot, max, min, submit, validate } from '@angular/
 import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
+import { Select } from '@components/select/select';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { Textarea } from '@components/textarea/textarea';
 import { toastStateToken } from '@components/toast/toast-store';
@@ -12,15 +13,8 @@ import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import {
-  COMPLETED_TAG,
-  FAVORITE_TAG,
-  MOVIE_TAG,
-  SERIES_TAG,
-  WATCH_LATER_TAG,
-  WISHLIST_TAG,
-} from '@shared/constants/tags-const';
-import {
   CollectionItemChangeApiModel,
+  CollectionItemContentTypeModel,
   SeriesTrackerSeasonMetadataModel,
   SeriesTrackerWatchedEpisodeModel,
 } from '@shared/models/api-model';
@@ -37,16 +31,7 @@ import { SeriesSeasonMetadataDialog } from '../../series-tracker/series-season-m
 import { WatchedEpisodesDialog } from '../../series-tracker/watched-episodes-dialog/watched-episodes-dialog';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
 import { formatSeriesTrackerEpisode } from '../../series-tracker/utils/series-tracker-progress-util';
-import {
-  filterDisplayTags,
-  filterEditorPreservedTags,
-  filterEditableTags,
-  invalidInternalCollectionTagValidation,
-  serverManagedTagValidation,
-  typeTagValidation,
-  userActionTagValidation,
-  virtualTagValidation,
-} from '../../validators/tag-validators';
+import { filterDisplayTags, filterEditableTags } from '../../validators/tag-validators';
 import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
 import { ItemDialogActions } from './item-dialog-actions';
 import { ItemDialogDetail } from './item-dialog-detail';
@@ -54,7 +39,6 @@ import {
   buildIMDbUrl,
   buildTrailerUrl,
   buildWebSearchUrl,
-  isSystemDisplayTag,
   validateOptionalIMDbRateFormat,
   validateOptionalMetacriticRateFormat,
   validateOptionalRottenTomatoesRateFormat,
@@ -73,11 +57,22 @@ interface ItemDialogFormModel {
   tagsText: string;
   actors: string;
   plot: string;
+  contentType: CollectionItemContentTypeModel;
 }
 
 @Component({
   selector: 'ct-item-dialog',
-  imports: [FormField, FormRoot, DialogShell, Autocomplete, Input, Textarea, ItemDialogDetail, ItemDialogActions],
+  imports: [
+    FormField,
+    FormRoot,
+    DialogShell,
+    Autocomplete,
+    Input,
+    Select,
+    Textarea,
+    ItemDialogDetail,
+    ItemDialogActions,
+  ],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
   providers: [TagSuggestionService, GenreSuggestionService],
@@ -98,7 +93,6 @@ export class ItemDialog implements OnInit {
   private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
   private readonly lastSavedItem = signal<CollectionItemChangeApiModel | null>(null);
-  private readonly originalInternalTags = signal<string[]>([]);
   protected readonly translations = {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
     titleMovieTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.MovieTrackerItem')),
@@ -118,12 +112,14 @@ export class ItemDialog implements OnInit {
     genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
     hintSeparateGenres: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateGenres')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
-    systemTags: computed(() => this.ngxSignalTranslate.translate('SystemTags')),
     watchedUpTo: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo')),
     manageWatchedEpisodes: computed(() => this.ngxSignalTranslate.translate('ManageWatchedEpisodes')),
     hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
     actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
     plot: computed(() => this.ngxSignalTranslate.translate('Plot')),
+    type: computed(() => this.ngxSignalTranslate.translate('Type')),
+    movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
+    seriesLabel: computed(() => this.ngxSignalTranslate.translate('Series')),
     fallbackUnknownYear: computed(() => this.ngxSignalTranslate.translate('Fallback.UnknownYear')),
     fallbackNotAvailable: computed(() => this.ngxSignalTranslate.translate('Fallback.NotAvailable')),
     links: computed(() => this.ngxSignalTranslate.translate('Links')),
@@ -137,6 +133,10 @@ export class ItemDialog implements OnInit {
           return this.ngxSignalTranslate.translate('EditMovieTrackerItem');
         case 'series-tracker':
           return this.ngxSignalTranslate.translate('EditSeriesTrackerItem');
+        case 'watch-later':
+          return this.ngxSignalTranslate.translate('EditWatchLaterItem');
+        case 'wishlist':
+          return this.ngxSignalTranslate.translate('EditWishlistItem');
         default:
           return this.ngxSignalTranslate.translate('EditCollectionItem');
       }
@@ -166,9 +166,6 @@ export class ItemDialog implements OnInit {
     }),
     shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
     validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
-    validationVirtualTag: computed(() => this.ngxSignalTranslate.translate('Toast.VirtualTagNotAllowed')),
-    validationUsedInternalTag: computed(() => this.ngxSignalTranslate.translate('Toast.UsedInternalTag')),
-    validationMissingTypeTag: computed(() => this.ngxSignalTranslate.translate('Toast.MissingTypeTag')),
     validationIMDbRate: computed(() => this.ngxSignalTranslate.translate('Validation.IMDbRate')),
     validationMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Validation.MetacriticRate')),
     validationRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('Validation.RottenTomatoesRate')),
@@ -190,32 +187,13 @@ export class ItemDialog implements OnInit {
     tagsText: '',
     actors: '',
     plot: '',
+    contentType: 'movie',
   });
   protected readonly form = form(
     this.formModel,
     (item) => {
       validate(item.title, ({ value }) => (value()?.trim() ? undefined : { kind: 'required' }));
       validate(item.IMDbId, ({ value }) => (value()?.trim() ? undefined : { kind: 'required' }));
-      validate(item.tagsText, ({ value }) => {
-        const tags = [...parseTagText(value()), ...this.originalInternalTags()];
-        return virtualTagValidation(tags);
-      });
-      validate(item.tagsText, ({ value }) => {
-        const tags = [...parseTagText(value()), ...this.originalInternalTags()];
-        return serverManagedTagValidation(tags);
-      });
-      validate(item.tagsText, ({ value }) => {
-        const tags = [...parseTagText(value()), ...this.originalInternalTags()];
-        return userActionTagValidation(tags);
-      });
-      validate(item.tagsText, ({ value }) => {
-        const tags = [...parseTagText(value()), ...this.originalInternalTags()];
-        return invalidInternalCollectionTagValidation(tags);
-      });
-      validate(item.tagsText, ({ value }) => {
-        const tags = [...parseTagText(value()), ...this.originalInternalTags()];
-        return typeTagValidation(tags);
-      });
       validate(item.rate, ({ value }) => validateOptionalIMDbRateFormat(value()));
       validate(item.rottenTomatoesRate, ({ value }) => validateOptionalRottenTomatoesRateFormat(value()));
       validate(item.metacriticRate, ({ value }) => validateOptionalMetacriticRateFormat(value()));
@@ -248,32 +226,6 @@ export class ItemDialog implements OnInit {
           .IMDbId()
           .errors()
           .some((error) => error.kind === 'required')
-      ),
-    },
-    tagsText: {
-      virtualTag: computed(() =>
-        this.form
-          .tagsText()
-          .errors()
-          .some((error) => error.kind === 'virtualTag')
-      ),
-      invalidInternalCollectionTag: computed(() =>
-        this.form
-          .tagsText()
-          .errors()
-          .some((error) => error.kind === 'invalidInternalCollectionTag')
-      ),
-      usedInternalTag: computed(() =>
-        this.form
-          .tagsText()
-          .errors()
-          .some((error) => error.kind === 'usedInternalTag')
-      ),
-      missingTypeTag: computed(() =>
-        this.form
-          .tagsText()
-          .errors()
-          .some((error) => error.kind === 'missingTypeTag')
       ),
     },
     rate: {
@@ -323,6 +275,10 @@ export class ItemDialog implements OnInit {
   };
   protected readonly genreText = computed(() => this.form.genreText().value());
   protected readonly tagsText = computed(() => this.form.tagsText().value());
+  protected readonly contentTypeOptions = computed(() => [
+    { text: this.translations.movies(), value: 'movie' },
+    { text: this.translations.seriesLabel(), value: 'series' },
+  ]);
   protected readonly seriesSeasons = signal<SeriesTrackerSeasonMetadataModel[]>([]);
   protected readonly watchedEpisodes = signal<SeriesTrackerWatchedEpisodeModel[]>([]);
   protected readonly seriesSeasonsLoaded = signal(false);
@@ -332,8 +288,7 @@ export class ItemDialog implements OnInit {
   protected readonly seriesTrackerHash = signal<string | undefined>(undefined);
   protected readonly movieTrackerHash = signal<string | undefined>(undefined);
   protected readonly allEpisodesWatched = computed(() => {
-    if (!this.seriesSeasonsLoaded() || !this.watchedEpisodesLoaded())
-      return this.collectionItem().tags.includes(COMPLETED_TAG);
+    if (!this.seriesSeasonsLoaded() || !this.watchedEpisodesLoaded()) return this.collectionItem().watchedAt !== null;
 
     const seasons = this.seriesSeasons();
     if (!seasons.length) return false;
@@ -352,12 +307,7 @@ export class ItemDialog implements OnInit {
     const last = episodes[episodes.length - 1];
     return { season: last.season, episode: last.episode };
   });
-  protected readonly detailTags = computed(() =>
-    filterDisplayTags(this.collectionItem().tags).filter((tag) => !isSystemDisplayTag(tag))
-  );
-  protected readonly systemTags = computed(() =>
-    filterDisplayTags(this.collectionItem().tags).filter((tag) => isSystemDisplayTag(tag))
-  );
+  protected readonly detailTags = computed(() => filterDisplayTags(this.collectionItem().tags));
   protected readonly episodeProgressText = computed(() => {
     return formatSeriesTrackerEpisode(this.lastWatchedEpisode()) ?? this.translations.fallbackNotAvailable();
   });
@@ -387,6 +337,8 @@ export class ItemDialog implements OnInit {
       .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
     if (item.listType === 'series-tracker') return this.isOwnItem();
     if (item.listType === 'movie-tracker') return this.isOwnItem();
+    if (item.listType === 'watch-later') return this.isOwnItem();
+    if (item.listType === 'wishlist') return this.isOwnItem();
     if (item.listType !== 'library') return false;
     if (this.isOwnItem()) return true;
     return share?.canUpdate === true;
@@ -396,8 +348,8 @@ export class ItemDialog implements OnInit {
   protected readonly inSeriesTracker = computed(() => this.seriesTrackerExists());
   protected readonly inMovieTracker = computed(() => this.movieTrackerExists());
   protected readonly movieTracker = computed(() => this.collectionItem().listType === 'movie-tracker');
-  protected readonly movie = computed(() => this.collectionItem().tags.includes(MOVIE_TAG));
-  protected readonly series = computed(() => this.collectionItem().tags.includes(SERIES_TAG));
+  protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
+  protected readonly series = computed(() => this.collectionItem().contentType === 'series');
   protected readonly permissionWatch = computed(() => this.libraryItem() && (this.movie() || this.series()));
   protected readonly permissionDelete = computed(() => {
     const item = this.collectionItem();
@@ -408,18 +360,9 @@ export class ItemDialog implements OnInit {
     return share?.canDelete === true;
   });
   protected readonly watched = computed(() => this.collectionItem().watched === true || this.movieTracker());
-  protected readonly favorite = computed(() => this.collectionItem().tags.includes(FAVORITE_TAG));
+  protected readonly favorite = computed(() => this.collectionItem().favorite);
   protected readonly watchLater = computed(() => this.collectionItem().listType === 'watch-later');
   protected readonly wishlist = computed(() => this.collectionItem().listType === 'wishlist');
-  protected readonly internalCollectionTag = computed(() => {
-    if (this.watchLater()) return WATCH_LATER_TAG;
-    if (this.wishlist()) return WISHLIST_TAG;
-    return null;
-  });
-  protected readonly hasInternalCollectionTag = computed(() => {
-    const tags = this.collectionItem().tags;
-    return tags.includes(WATCH_LATER_TAG) || tags.includes(WISHLIST_TAG);
-  });
   protected readonly dialogTitle = computed(() => {
     if (this.watchLater()) return this.translations.titleWatchLaterItem();
     if (this.wishlist()) return this.translations.titleWishlistItem();
@@ -505,8 +448,6 @@ export class ItemDialog implements OnInit {
 
   private resetFormFromItem(item: CollectionItemModel): void {
     const change = toCollectionItemChange(item);
-    const internalTags = change.tags.filter((tag) => tag === WATCH_LATER_TAG || tag === WISHLIST_TAG);
-    this.originalInternalTags.set(internalTags);
     this.form().reset({
       title: change.title,
       IMDbId: change.IMDbId,
@@ -520,6 +461,7 @@ export class ItemDialog implements OnInit {
       tagsText: filterEditableTags(change.tags).join(' '),
       actors: change.actors,
       plot: change.plot,
+      contentType: change.contentType,
     });
     this.lastSavedItem.set(change);
   }
@@ -540,11 +482,7 @@ export class ItemDialog implements OnInit {
 
   private buildItemFromForm(): CollectionItemChangeApiModel {
     const formValues = this.form().value();
-    let tags = [...parseTagText(formValues.tagsText), ...filterEditorPreservedTags(this.collectionItem().tags)];
-    const internalCollectionTag = this.internalCollectionTag();
-    if (internalCollectionTag && !tags.includes(internalCollectionTag)) {
-      tags = [...tags, internalCollectionTag];
-    }
+    const tags = parseTagText(formValues.tagsText);
     const imdbIdChanged = formValues.IMDbId !== this.collectionItem().IMDbId;
     return {
       title: formValues.title,
@@ -559,15 +497,9 @@ export class ItemDialog implements OnInit {
       tags,
       actors: formValues.actors,
       plot: formValues.plot,
+      contentType: formValues.contentType,
+      favorite: this.collectionItem().favorite,
     };
-  }
-
-  private buildItemWithUpdatedTags(tagsToAdd: string[], tagsToRemove: string[]): CollectionItemChangeApiModel {
-    const item = this.buildItemFromForm();
-    item.tags = [...item.tags.filter((tag) => !tagsToRemove.includes(tag)), ...tagsToAdd].filter(
-      (tag, index, tags) => tags.indexOf(tag) === index
-    );
-    return item;
   }
 
   protected onDelete(): void {
@@ -622,6 +554,7 @@ export class ItemDialog implements OnInit {
         tagsText: filterEditableTags(lastSavedItem.tags).join(' '),
         actors: lastSavedItem.actors,
         plot: lastSavedItem.plot,
+        contentType: lastSavedItem.contentType,
       });
     }
     this.editMode.set(false);
@@ -635,7 +568,9 @@ export class ItemDialog implements OnInit {
     if (
       this.collectionItem().listType !== 'library' &&
       this.collectionItem().listType !== 'series-tracker' &&
-      this.collectionItem().listType !== 'movie-tracker'
+      this.collectionItem().listType !== 'movie-tracker' &&
+      this.collectionItem().listType !== 'watch-later' &&
+      this.collectionItem().listType !== 'wishlist'
     )
       return;
     await submit(this.form);
@@ -650,11 +585,16 @@ export class ItemDialog implements OnInit {
           mergeMap((confirmed) => {
             if (confirmed) {
               this.spinnerLoadingState.setState('show', true);
-              const updateListType = this.seriesTracker()
-                ? 'series-tracker'
-                : this.movieTracker()
-                  ? 'movie-tracker'
-                  : undefined;
+              let updateListType: 'series-tracker' | 'movie-tracker' | 'watch-later' | 'wishlist' | undefined;
+              if (this.seriesTracker()) {
+                updateListType = 'series-tracker';
+              } else if (this.movieTracker()) {
+                updateListType = 'movie-tracker';
+              } else if (this.watchLater()) {
+                updateListType = 'watch-later';
+              } else if (this.wishlist()) {
+                updateListType = 'wishlist';
+              }
               const updateRequest = updateListType
                 ? this.api.update(
                     this.collectionItem().IMDbId,
@@ -826,13 +766,13 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMarkAsFavorite(): Promise<void> {
-    if (this.internalCollectionTag() || this.hasInternalCollectionTag()) return;
-    if (this.collectionItem().tags.includes(FAVORITE_TAG)) return;
-    await this.doSave(this.buildItemWithUpdatedTags([FAVORITE_TAG], []));
+    if (!this.libraryItem() || this.collectionItem().favorite) return;
+    await this.doSave({ ...this.buildItemFromForm(), favorite: true });
   }
 
   protected async onRemoveFavorite(): Promise<void> {
-    await this.doSave(this.buildItemWithUpdatedTags([], [FAVORITE_TAG]));
+    if (!this.libraryItem()) return;
+    await this.doSave({ ...this.buildItemFromForm(), favorite: false });
   }
 
   protected onManageSeriesMetadata(): void {

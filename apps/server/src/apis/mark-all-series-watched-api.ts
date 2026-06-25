@@ -1,5 +1,4 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { MarkAllSeriesWatchedApiResponseModel, SeriesTrackerWatchedEpisodeModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
@@ -76,11 +75,11 @@ export const register = (app: FastifyInstance): void => {
         if (!seasons.length) continue;
 
         const existingWatchedEpisodes = findWatchedEpisodes(db, request.usernameHash, item.IMDbId);
-        const hadCompletedTag = item.tags.includes(COMPLETED_TAG);
+        const wasCompleted = Boolean(item.watchedAt);
         const watchedEpisodes = markAllEpisodesWatched(db, request.usernameHash, item.IMDbId, seasons);
         const syncedItem = syncSeriesTrackerCompletedTag(db, request.usernameHash, item.IMDbId);
-        const hasCompletedTag = syncedItem?.tags.includes(COMPLETED_TAG) ?? false;
-        if (!watchedEpisodesEqual(existingWatchedEpisodes, watchedEpisodes) || hadCompletedTag !== hasCompletedTag) {
+        const isCompleted = Boolean(syncedItem?.watchedAt);
+        if (!watchedEpisodesEqual(existingWatchedEpisodes, watchedEpisodes) || wasCompleted !== isCompleted) {
           progressChangedCount++;
         }
       }

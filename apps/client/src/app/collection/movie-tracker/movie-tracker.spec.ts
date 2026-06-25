@@ -28,7 +28,7 @@ describe('MovieTracker', () => {
     orderDirection: 'desc' as const,
   });
 
-  const createFixture = (searchText = '', querySearch = '') => {
+  const createFixture = (searchText = '', queryParams: Record<string, string> = {}) => {
     TestBed.configureTestingModule({
       imports: [MovieTracker],
       providers: [
@@ -39,8 +39,8 @@ describe('MovieTracker', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { queryParams: { search: querySearch } },
-            queryParamMap: of({ get: (key: string) => (key === 'search' ? querySearch : null) }),
+            snapshot: { queryParams },
+            queryParamMap: of({ get: (key: string) => queryParams[key] ?? null }),
           },
         },
       ],
@@ -75,7 +75,7 @@ describe('MovieTracker', () => {
   it('initializes search text from query param when present', () => {
     TestBed.resetTestingModule();
 
-    createFixture('', '#unwatched');
+    createFixture('', { search: '#unwatched' });
 
     expect(collectionState.state.searchText()).toBe('#unwatched');
     expect(fixture.componentInstance['searchTextModel']()).toBe('#unwatched');

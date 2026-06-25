@@ -1,4 +1,3 @@
-import { COMPLETED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS } from '@shared/constants/tags-const';
 import {
   CollectionItemFiltersApiModel,
   CollectionListTypeModel,
@@ -6,12 +5,17 @@ import {
 } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
 import { buildItemWhere } from './collection-query';
-import { INTERNAL_TAGS } from './collection-tags';
 
 interface WatchedYearCountRow {
   watched_year: string;
   count: number;
 }
+
+const movieContentCondition = `collection_items.content_type = 'movie'`;
+
+const seriesContentCondition = `collection_items.content_type = 'series'`;
+
+const favoriteCondition = `collection_items.favorite = 1`;
 
 export const getCollectionStatistics = (
   db: Database.Database,
@@ -23,19 +27,16 @@ export const getCollectionStatistics = (
   const queryParts = buildItemWhere(usernameHashes, filters, undefined, viewerUsernameHash);
   const whereSql = queryParts.where.join(' AND ');
   const matchingItemsSql = `SELECT id FROM collection_items WHERE ${whereSql}`;
-  const countTag = (tag: string, exists = true): number =>
+  const countWhere = (condition: string): number =>
     (
       db
         .prepare(
           `SELECT COUNT(*) as count
-           FROM collection_items
-           WHERE ${whereSql}
-           AND ${exists ? '' : 'NOT '}EXISTS (
-             SELECT 1 FROM collection_item_tags
-             WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-           )`
+            FROM collection_items
+            WHERE ${whereSql}
+            AND ${condition}`
         )
-        .get(...queryParts.params, tag) as { count: number }
+        .get(...queryParts.params) as { count: number }
     ).count;
 
   const totalItems = (
@@ -65,10 +66,7 @@ export const getCollectionStatistics = (
         `SELECT COUNT(*) as count
          FROM collection_items
          WHERE ${whereSql}
-           AND EXISTS (
-             SELECT 1 FROM collection_item_tags
-             WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-           )
+             AND ${movieContentCondition}
            AND EXISTS (
              SELECT 1 FROM collection_items movie_tracker
              WHERE movie_tracker.username_hash = ?
@@ -76,7 +74,7 @@ export const getCollectionStatistics = (
                AND movie_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, MOVIE_TAG, viewerUsernameHash, 'movie-tracker') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'movie-tracker') as { count: number }
   ).count;
 
   const unwatchedMovieCount = (
@@ -85,10 +83,7 @@ export const getCollectionStatistics = (
         `SELECT COUNT(*) as count
          FROM collection_items
          WHERE ${whereSql}
-           AND EXISTS (
-             SELECT 1 FROM collection_item_tags
-             WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-           )
+             AND ${movieContentCondition}
            AND NOT EXISTS (
              SELECT 1 FROM collection_items movie_tracker
              WHERE movie_tracker.username_hash = ?
@@ -96,7 +91,7 @@ export const getCollectionStatistics = (
                AND movie_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, MOVIE_TAG, viewerUsernameHash, 'movie-tracker') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'movie-tracker') as { count: number }
   ).count;
 
   const watchedSeriesCount = (
@@ -105,10 +100,7 @@ export const getCollectionStatistics = (
         `SELECT COUNT(*) as count
          FROM collection_items
          WHERE ${whereSql}
-           AND EXISTS (
-             SELECT 1 FROM collection_item_tags
-             WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-           )
+             AND ${seriesContentCondition}
            AND EXISTS (
              SELECT 1 FROM collection_items series_tracker
              WHERE series_tracker.username_hash = ?
@@ -116,7 +108,7 @@ export const getCollectionStatistics = (
                AND series_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, SERIES_TAG, viewerUsernameHash, 'series-tracker') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'series-tracker') as { count: number }
   ).count;
 
   const unwatchedLibrarySeriesCount = (
@@ -125,10 +117,7 @@ export const getCollectionStatistics = (
         `SELECT COUNT(*) as count
          FROM collection_items
          WHERE ${whereSql}
-           AND EXISTS (
-             SELECT 1 FROM collection_item_tags
-             WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-           )
+             AND ${seriesContentCondition}
            AND NOT EXISTS (
              SELECT 1 FROM collection_items series_tracker
              WHERE series_tracker.username_hash = ?
@@ -136,7 +125,7 @@ export const getCollectionStatistics = (
                AND series_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, SERIES_TAG, viewerUsernameHash, 'series-tracker') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'series-tracker') as { count: number }
   ).count;
 
   const shouldCountTrackerSeries = !filters?.listType || filters.listType === 'series-tracker';
@@ -155,12 +144,9 @@ export const getCollectionStatistics = (
             `SELECT COUNT(*) as count
              FROM collection_items
              WHERE ${trackerWhereSql}
-               AND NOT EXISTS (
-                 SELECT 1 FROM collection_item_tags
-                 WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-               )`
+                AND collection_items.watched_at IS NULL`
           )
-          .get(...trackerQueryParts.params, COMPLETED_TAG) as { count: number }
+          .get(...trackerQueryParts.params) as { count: number }
       ).count
     : 0;
 
@@ -171,12 +157,9 @@ export const getCollectionStatistics = (
             `SELECT COUNT(*) as count
              FROM collection_items
              WHERE ${trackerWhereSql}
-               AND EXISTS (
-                 SELECT 1 FROM collection_item_tags
-                 WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-               )`
+                AND collection_items.watched_at IS NOT NULL`
           )
-          .get(...trackerQueryParts.params, COMPLETED_TAG) as { count: number }
+          .get(...trackerQueryParts.params) as { count: number }
       ).count
     : 0;
 
@@ -184,12 +167,11 @@ export const getCollectionStatistics = (
     .prepare(
       `SELECT tag, COUNT(*) as count
        FROM collection_item_tags
-       WHERE item_id IN (${matchingItemsSql})
-       AND tag NOT IN (${[...INTERNAL_TAGS, ...VIRTUAL_TAGS].map(() => '?').join(', ')})
-       GROUP BY tag
-       ORDER BY count DESC, tag`
+        WHERE item_id IN (${matchingItemsSql})
+        GROUP BY tag
+        ORDER BY count DESC, tag`
     )
-    .all(...queryParts.params, ...INTERNAL_TAGS, ...VIRTUAL_TAGS) as Array<{ tag: string; count: number }>;
+    .all(...queryParts.params) as Array<{ tag: string; count: number }>;
 
   const genreCounts = db
     .prepare(
@@ -211,13 +193,10 @@ export const getCollectionStatistics = (
         AND movie_tracker.list_type = ?
         AND movie_tracker.watched_at IS NOT NULL
        WHERE ${whereSql}
-         AND EXISTS (
-           SELECT 1 FROM collection_item_tags
-           WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-         )
-        GROUP BY watched_year`
+           AND ${movieContentCondition}
+          GROUP BY watched_year`
     )
-    .all(viewerUsernameHash, 'movie-tracker', ...queryParts.params, MOVIE_TAG) as WatchedYearCountRow[];
+    .all(viewerUsernameHash, 'movie-tracker', ...queryParts.params) as WatchedYearCountRow[];
 
   const watchedSeriesYearCounts = db
     .prepare(
@@ -229,13 +208,10 @@ export const getCollectionStatistics = (
         AND series_tracker.list_type = ?
         AND series_tracker.watched_at IS NOT NULL
        WHERE ${whereSql}
-         AND EXISTS (
-           SELECT 1 FROM collection_item_tags
-           WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-         )
-        GROUP BY watched_year`
+           AND ${seriesContentCondition}
+          GROUP BY watched_year`
     )
-    .all(viewerUsernameHash, 'series-tracker', ...queryParts.params, SERIES_TAG) as WatchedYearCountRow[];
+    .all(viewerUsernameHash, 'series-tracker', ...queryParts.params) as WatchedYearCountRow[];
 
   const watchedYearCountMap = new Map<
     string,
@@ -265,9 +241,9 @@ export const getCollectionStatistics = (
 
   return {
     totalItems,
-    movieCount: countTag(MOVIE_TAG),
-    seriesCount: countTag(SERIES_TAG),
-    favoriteCount: countTag(FAVORITE_TAG),
+    movieCount: countWhere(movieContentCondition),
+    seriesCount: countWhere(seriesContentCondition),
+    favoriteCount: countWhere(favoriteCondition),
     watchLaterCount,
     wishlistCount,
     watchedMovieCount,

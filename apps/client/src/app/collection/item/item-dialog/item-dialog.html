@@ -33,6 +33,12 @@
           </ng-container>
         </libc-input>
         <libc-input data-test-id="item-dialog-year" [label]="translations.labelYear()" [formField]="form.year" />
+        <libc-select
+          data-test-id="item-dialog-content-type"
+          [label]="translations.type()"
+          [formField]="form.contentType"
+          [options]="contentTypeOptions()"
+        />
         <libc-input data-test-id="item-dialog-rate" [label]="translations.labelIMDbRate()" [formField]="form.rate">
           <ng-container errors>
             @if (formErrors.rate.rateFormat()) {
@@ -98,22 +104,7 @@
           [hint]="translations.hintSeparateTags()"
           [formField]="form.tagsText"
           [autocompleteService]="tagSuggestionService"
-        >
-          <ng-container errors>
-            @if (formErrors.tagsText.virtualTag()) {
-              {{ translations.validationVirtualTag() }}
-            }
-            @if (formErrors.tagsText.invalidInternalCollectionTag()) {
-              {{ translations.validationUsedInternalTag() }}
-            }
-            @if (formErrors.tagsText.usedInternalTag()) {
-              {{ translations.validationUsedInternalTag() }}
-            }
-            @if (formErrors.tagsText.missingTypeTag()) {
-              {{ translations.validationMissingTypeTag() }}
-            }
-          </ng-container>
-        </libc-autocomplete>
+        />
         <libc-input data-test-id="item-dialog-actors" [label]="translations.actors()" [formField]="form.actors" />
         <libc-textarea
           data-test-id="item-dialog-plot"
@@ -135,7 +126,6 @@
         [isShared]="isShared()"
         [library]="library()"
         [detailTags]="detailTags()"
-        [systemTags]="systemTags()"
         [seriesTracker]="seriesTracker()"
         [episodeProgressText]="episodeProgressText()"
         (posterImageError)="onPosterImageError()"
@@ -176,7 +166,6 @@
       [favorite]="favorite()"
       [inSeriesTracker]="inSeriesTracker()"
       [inMovieTracker]="inMovieTracker()"
-      [internalCollectionTag]="internalCollectionTag()"
       (manageWatchedEpisodes)="onManageWatchedEpisodes()"
       (manageSeriesMetadata)="onManageSeriesMetadata()"
       (markAsUnwatched)="onMarkAsUnwatched()"

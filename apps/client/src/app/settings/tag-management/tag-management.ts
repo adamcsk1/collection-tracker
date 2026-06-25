@@ -14,7 +14,6 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
-import { INTERNAL_USED_TAGS, VIRTUAL_TAGS } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY, tap } from 'rxjs';
 import { TagManagementCard } from './tag-management-card/tag-management-card';
@@ -39,7 +38,6 @@ export class TagManagement {
   private readonly tagManagementState = inject(tagManagementStateToken);
   private readonly destroyRef = inject(DestroyRef);
   private readonly uniqueTags = signal<string[]>([]);
-  private readonly tagIgnoreList = [...INTERNAL_USED_TAGS, ...VIRTUAL_TAGS];
   protected readonly translations = {
     tagManagement: computed(() => this.ngxSignalTranslate.translate('TagManagement')),
     messageTagManagement: computed(() => this.ngxSignalTranslate.translate('Message.TagManagement')),
@@ -54,7 +52,6 @@ export class TagManagement {
     const filter = this.filterText().trim().toLowerCase();
 
     return uniqueTags
-      .filter((tag) => !this.tagIgnoreList.includes(tag))
       .filter((tag) => tag.toLowerCase().includes(filter))
       .map((tag) => {
         const storedConfig = storedConfigs.find((config) => config.tag === tag);

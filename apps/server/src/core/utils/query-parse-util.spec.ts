@@ -96,7 +96,12 @@ describe('query-parse-util', () => {
         genres: 'drama',
         tagMode: 'all',
         type: 'movie',
+        favorite: 'true',
         watched: 'true',
+        completed: 'false',
+        listType: 'library',
+        orderBy: 'alphabet',
+        orderDirection: 'asc',
       });
 
       expect(result).toEqual({
@@ -105,7 +110,12 @@ describe('query-parse-util', () => {
         genres: ['drama'],
         tagMode: 'all',
         type: 'movie',
+        favorite: true,
         watched: true,
+        completed: false,
+        listType: 'library',
+        orderBy: 'alphabet',
+        orderDirection: 'asc',
       });
     });
 
@@ -117,7 +127,12 @@ describe('query-parse-util', () => {
         genres: undefined,
         tagMode: undefined,
         type: undefined,
+        favorite: undefined,
         watched: undefined,
+        completed: undefined,
+        listType: undefined,
+        orderBy: undefined,
+        orderDirection: undefined,
       });
     });
 
@@ -129,7 +144,12 @@ describe('query-parse-util', () => {
         genres: undefined,
         tagMode: undefined,
         type: undefined,
+        favorite: undefined,
         watched: undefined,
+        completed: undefined,
+        listType: undefined,
+        orderBy: undefined,
+        orderDirection: undefined,
       });
     });
   });

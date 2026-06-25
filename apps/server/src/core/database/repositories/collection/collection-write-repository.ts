@@ -1,4 +1,3 @@
-import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import {
   CollectionItemApiModel,
   CollectionItemChangeApiModel,
@@ -23,20 +22,19 @@ export const insertCollectionItem = (
 ): CollectionItemApiModel => {
   const normalizedListType = normalizeListType(listType);
   const canStoreWatchedAt = normalizedListType === 'movie-tracker' || normalizedListType === 'series-tracker';
-  const useCurrentWatchedAt =
-    !watchedAt &&
-    (normalizedListType === 'movie-tracker' ||
-      (normalizedListType === 'series-tracker' && item.tags.includes(COMPLETED_TAG)));
+  const useCurrentWatchedAt = !watchedAt && normalizedListType === 'movie-tracker';
   const result = db
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash, watched_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE ? END)`
+       (username_hash, imdb_id, list_type, content_type, favorite, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash, watched_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE ? END)`
     )
     .run(
       usernameHash,
       item.IMDbId,
       normalizedListType,
+      item.contentType,
+      item.favorite ? 1 : 0,
       item.title,
       item.title.toLowerCase(),
       item.year ?? '',
@@ -79,10 +77,12 @@ export const updateCollectionItem = (
 
   db.prepare(
     `UPDATE collection_items SET
-     imdb_id = ?, title = ?, title_lower = ?, year = ?, rate = ?, rotten_tomatoes_rate = ?, metacritic_rate = ?, user_rate = ?, actors = ?, plot = ?, image = ?, content_hash = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?`
+     imdb_id = ?, content_type = ?, favorite = ?, title = ?, title_lower = ?, year = ?, rate = ?, rotten_tomatoes_rate = ?, metacritic_rate = ?, user_rate = ?, actors = ?, plot = ?, image = ?, content_hash = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`
   ).run(
     updatedItem.IMDbId,
+    updatedItem.contentType,
+    updatedItem.favorite ? 1 : 0,
     updatedItem.title,
     updatedItem.title.toLowerCase(),
     updatedItem.year ?? '',
@@ -161,20 +161,18 @@ export const syncSeriesTrackerCompletedTag = (
     watchedEpisodes.length === availableEpisodes.size &&
     watchedEpisodes.every((episode) => availableEpisodes.has(`${episode.season}-${episode.episode}`));
   const item = toApiItem(db, row);
-  const hasCompletedTag = item.tags.includes(COMPLETED_TAG);
-  if (completed === hasCompletedTag && ((completed && row.watched_at) || (!completed && !row.watched_at))) return item;
+  if ((completed && row.watched_at) || (!completed && !row.watched_at)) return item;
 
   if (completed) {
-    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(row.id, COMPLETED_TAG);
     db.prepare('UPDATE collection_items SET watched_at = COALESCE(watched_at, CURRENT_TIMESTAMP) WHERE id = ?').run(
       row.id
     );
   } else {
-    db.prepare('DELETE FROM collection_item_tags WHERE item_id = ? AND tag = ?').run(row.id, COMPLETED_TAG);
     db.prepare('UPDATE collection_items SET watched_at = NULL WHERE id = ?').run(row.id);
   }
 
-  const syncedItem = toApiItem(db, row);
+  const refreshedRow = findCollectionItemByImdbId(db, usernameHash, imdbId, 'series-tracker')!;
+  const syncedItem = toApiItem(db, refreshedRow);
   const hash = getItemHash(toCollectionItemChange(syncedItem));
   db.prepare('UPDATE collection_items SET content_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
     hash,

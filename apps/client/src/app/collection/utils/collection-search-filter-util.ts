@@ -1,17 +1,52 @@
 import { effect, untracked } from '@angular/core';
-import { VIRTUAL_UNCOMPLETED_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { StandardSearchSetupOptions } from './collection-search-filter-model';
 
+interface QueryParamReader {
+  get: (name: string) => string | null;
+}
+
 export const buildStandardSearchFilters = (
   searchText: string,
-  listType: CollectionListTypeModel
+  listType: CollectionListTypeModel,
+  explicitFilters: Partial<CollectionItemFiltersApiModel> = {}
 ): CollectionItemFiltersApiModel => {
   const search = searchText.trim();
-  if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false, listType };
-  if (search === VIRTUAL_UNCOMPLETED_TAG) return { completed: false, listType };
-  if (search.startsWith('#')) return { tags: [search], tagMode: 'all', listType };
-  return search ? { search, listType } : { listType };
+  const filters = search.startsWith('#') ? { tags: [search], tagMode: 'all' as const } : search ? { search } : {};
+
+  return { ...filters, ...explicitFilters, listType };
+};
+
+export const buildCollectionRouteFilters = (queryParams: QueryParamReader): Partial<CollectionItemFiltersApiModel> => {
+  const type = queryParams.get('type');
+  const favorite = queryParams.get('favorite');
+  const watched = queryParams.get('watched');
+  const completed = queryParams.get('completed');
+
+  return {
+    ...(type === 'movie' || type === 'series' ? { type } : {}),
+    ...(favorite === 'true' ? { favorite: true } : {}),
+    ...(watched === 'false' ? { watched: false } : watched === 'true' ? { watched: true } : {}),
+    ...(completed === 'false' ? { completed: false } : completed === 'true' ? { completed: true } : {}),
+  };
+};
+
+export const buildCollectionRouteFilterKey = (filters: Partial<CollectionItemFiltersApiModel>): string => {
+  if (
+    filters.type === undefined &&
+    filters.favorite === undefined &&
+    filters.watched === undefined &&
+    filters.completed === undefined
+  ) {
+    return '';
+  }
+
+  return JSON.stringify({
+    type: filters.type ?? null,
+    favorite: filters.favorite ?? null,
+    watched: filters.watched ?? null,
+    completed: filters.completed ?? null,
+  });
 };
 
 export const setupStandardCollectionSearch = ({

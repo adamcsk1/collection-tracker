@@ -1,13 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import {
-  COMPLETED_TAG,
-  FAVORITE_TAG,
-  MOVIE_TAG,
-  SERIES_TAG,
-  VIRTUAL_UNWATCHED_TAG,
-} from '@shared/constants/tags-const';
 import { CollectionListDisplayRatingModel } from '@shared/models/collection-list-display-preferences-model';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -44,12 +37,12 @@ export class ListItem {
   protected readonly watched = computed(
     () => this.collectionItem().watched === true || this.collectionItem().listType === 'movie-tracker'
   );
-  protected readonly favorite = computed(() => this.collectionItem().tags.includes(FAVORITE_TAG) ?? false);
+  protected readonly favorite = computed(() => this.collectionItem().favorite);
   protected readonly imageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
   );
-  protected readonly movie = computed(() => this.collectionItem().tags.includes(MOVIE_TAG) ?? false);
-  protected readonly series = computed(() => this.collectionItem().tags.includes(SERIES_TAG) ?? false);
+  protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
+  protected readonly series = computed(() => this.collectionItem().contentType === 'series');
   protected readonly imageBorderColor = computed(() => {
     if (this.watchedStyle()) return;
     return this.tagManagementColorPipe.transform(this.collectionItem().tags, { checkUseForImageBorder: true });
@@ -62,9 +55,7 @@ export class ListItem {
   });
   protected readonly tags = computed(() => {
     const imageBadgeTag = this.imageBadgeTag();
-    return this.collectionItem().tags.filter(
-      (tag) => ![FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, imageBadgeTag].includes(tag)
-    );
+    return this.collectionItem().tags.filter((tag) => tag !== imageBadgeTag);
   });
   protected readonly badgeBackgroundColor = computed(() => {
     const imageBadgeTag = this.imageBadgeTag();
@@ -97,7 +88,7 @@ export class ListItem {
   });
   protected readonly seriesTrackerCompleted = computed(() => {
     const item = this.collectionItem();
-    return item.listType === 'series-tracker' && item.tags.includes(COMPLETED_TAG);
+    return item.listType === 'series-tracker' && item.watchedAt !== null;
   });
   protected readonly watchedStyle = computed(
     () => (this.watched() && this.collectionItem().listType === 'movie-tracker') || this.seriesTrackerCompleted()
@@ -116,9 +107,6 @@ export class ListItem {
     shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
     watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
   };
-  protected readonly MOVIE_TAG = MOVIE_TAG;
-  protected readonly SERIES_TAG = SERIES_TAG;
-  protected readonly VIRTUAL_UNWATCHED_TAG = VIRTUAL_UNWATCHED_TAG;
   public readonly collectionItem = input.required<CollectionItemModel>();
 
   private getRatingDisplayValue(

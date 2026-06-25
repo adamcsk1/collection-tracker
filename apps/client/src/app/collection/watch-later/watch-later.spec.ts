@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -35,6 +36,10 @@ describe('WatchLater', () => {
         { provide: PortalService, useValue: portal },
         { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParams: {} }, queryParamMap: of({ get: () => null }) },
+        },
       ],
     });
 
@@ -85,6 +90,34 @@ describe('WatchLater', () => {
       { search: 'alien', listType: 'watch-later', orderBy: 'createdAt', orderDirection: 'desc' },
       10,
       25
+    );
+  });
+
+  it('merges type query filters into watch later searches', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [WatchLater],
+      providers: [
+        provideStore(initialCollectionState, collectionStateToken),
+        { provide: PortalService, useValue: portal },
+        { provide: ApiService, useValue: api },
+        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParams: { type: 'movie' } }, queryParamMap: of({ get: () => 'movie' }) },
+        },
+      ],
+    });
+    TestBed.overrideComponent(WatchLater, { set: { template: '<ng-template #floatSearch></ng-template>' } });
+    fixture = TestBed.createComponent(WatchLater);
+    fixture.detectChanges();
+
+    fixture.componentInstance['watchLaterDataSource'](dataSourceRequest(''));
+
+    expect(api.searchItems).toHaveBeenCalledWith(
+      { type: 'movie', listType: 'watch-later', orderBy: 'createdAt', orderDirection: 'desc' },
+      0,
+      50
     );
   });
 

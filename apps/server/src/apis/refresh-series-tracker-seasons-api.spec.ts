@@ -1,7 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { insertSeriesTrackerItem } from '../../test/mocks/series-tracker-item-mock';
-import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,7 +40,7 @@ describe('refresh-series-tracker-seasons-api', () => {
     );
   });
 
-  it('syncs completed tag after refreshed metadata changes completion status', async () => {
+  it('sets watched timestamp after refreshed metadata changes completion status', async () => {
     const itemId = insertSeriesTrackerItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
@@ -62,10 +61,8 @@ describe('refresh-series-tracker-seasons-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(
-      getDatabase()
-        .prepare('SELECT 1 FROM collection_item_tags WHERE item_id = ? AND tag = ?')
-        .get(itemId, COMPLETED_TAG)
-    ).toBeTruthy();
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
+      watched_at: expect.any(String),
+    });
   });
 });

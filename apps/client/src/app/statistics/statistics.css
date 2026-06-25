@@ -142,7 +142,7 @@
   min-height: 220px;
 }
 
-@media (width > 768px) {
+@media (width > 1250px) {
   .chart-card-wide .chart-container {
     min-height: 280px;
   }

@@ -10,7 +10,7 @@ Source: [`apps/client`](../apps/client)
 - `collection/favorites`, `collection/watch-later`, `collection/wishlist`, `collection/movie-tracker`, and `collection/series-tracker`: filtered collection subroutes for saved item lists, watched movies, and series progress tracking
 - statistics dialog: tag-driven summaries and Chart.js visualizations opened from the main menu
 - `settings/tag-management`: per-tag color, weight, and presentation rules
-- `settings/export-import`: export and import collection data and tag management settings
+- `settings/export-import`: export and import collection data, tag management settings, and series tracker progress using the current `collection-tracker-export` format
 - `settings/collection-list-display`: per-user collection list metadata and preferred rating display rules
 - `settings/media-refresh`: refresh stored images and external ratings from OMDb-backed APIs
 - `settings/manage-tracker-data`: mark all visible collection items watched or unwatched

@@ -48,6 +48,7 @@ describe('proxy-ai-query-api', () => {
       actors?: string;
       genre?: string[];
       tags?: string[];
+      favorite?: boolean;
       rottenTomatoesRate?: string;
       metacriticRate?: string;
     }[]
@@ -57,14 +58,15 @@ describe('proxy-ai-query-api', () => {
     for (const file of files) {
       const result = db
         .prepare(
-          `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, favorite, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           'user',
           file.imdbId,
           file.title,
           file.title.toLowerCase(),
+          file.favorite ? 1 : 0,
           '',
           '',
           file.rottenTomatoesRate ?? '',
@@ -126,7 +128,8 @@ describe('proxy-ai-query-api', () => {
           plot: 'A computer hacker learns about the true nature of reality.',
           actors: 'Keanu Reeves, Carrie-Anne Moss',
           genre: ['Action', 'Sci-Fi'],
-          tags: ['#family', '#favorite'],
+          tags: ['#family'],
+          favorite: true,
           rottenTomatoesRate: '83%',
           metacriticRate: '73/100',
         },
@@ -152,7 +155,8 @@ describe('proxy-ai-query-api', () => {
       expect(payload.prompt).toContain('User search request:\nWhich are family sci-fi movies?');
       expect(payload.prompt).toContain('IMDbId:\ntt0133093');
       expect(payload.prompt).toContain('genre:\nAction,Sci-Fi');
-      expect(payload.prompt).toContain('tags:\n#family,#favorite');
+      expect(payload.prompt).toContain('tags:\n#family');
+      expect(payload.prompt).toContain('favorite:\ntrue');
       expect(payload.prompt).toContain('rottenTomatoesRate:\n83%');
       expect(payload.prompt).toContain('metacriticRate:\n73/100');
       expect(payload.prompt).toContain('actors:\nKeanu Reeves, Carrie-Anne Moss');

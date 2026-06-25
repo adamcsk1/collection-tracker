@@ -71,17 +71,6 @@
       </section>
     }
 
-    @if (systemTags().length) {
-      <section data-test-id="item-dialog-system-tags-section">
-        <h4>{{ translations().systemTags() }}</h4>
-        <div class="chip-list">
-          @for (tag of systemTags(); track tag) {
-            <span class="chip chip-system">{{ tag }}</span>
-          }
-        </div>
-      </section>
-    }
-
     @if (seriesTracker()) {
       <section data-test-id="item-dialog-episode-progress-section">
         <h4>{{ translations().watchedUpTo() }}</h4>

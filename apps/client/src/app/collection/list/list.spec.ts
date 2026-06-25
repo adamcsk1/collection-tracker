@@ -1,5 +1,6 @@
 import { ElementRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { AiSearchService } from '../search/ai-search-service';
@@ -10,7 +11,6 @@ import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_COLLECTION_LIST_ORDER_PREFERENCES } from '@shared/constants/storage-const';
-import { VIRTUAL_UNCOMPLETED_TAG, VIRTUAL_UNWATCHED_TAG, WATCH_LATER_TAG } from '@shared/constants/tags-const';
 import { CollectionItemFiltersApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -22,6 +22,7 @@ import { initialSharesState, sharesStateToken } from '../../shares/shares-store'
 import { FloatActionButtons } from '../float-action-buttons/float-action-buttons';
 import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
 import { List } from './list';
+import { FLOAT_ACTION_SCROLLING_IDLE_MS } from './list-const';
 
 vi.mock('marked', () => ({ marked: { parse: () => '' } }));
 
@@ -46,11 +47,10 @@ describe('List', () => {
   let actionButtons: FloatActionButtonsService;
   let scrollSpy: ReturnType<typeof vi.fn>;
   let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
+  let router: { navigate: ReturnType<typeof vi.fn> };
 
   const buildFilters = (searchText: string): CollectionItemFiltersApiModel => {
     const search = searchText.trim();
-    if (search === VIRTUAL_UNWATCHED_TAG) return { watched: false };
-    if (search === VIRTUAL_UNCOMPLETED_TAG) return { completed: false };
     if (search.startsWith('#')) return { tags: [search], tagMode: 'all' };
     return search ? { search } : {};
   };
@@ -71,11 +71,14 @@ describe('List', () => {
     actors: '',
     plot: '',
     listType: 'library',
+    contentType: 'movie',
+    favorite: false,
     watchedAt: null,
   });
 
   beforeEach(() => {
     portal = { open: vi.fn() };
+    router = { navigate: vi.fn(() => Promise.resolve(true)) };
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
     api = {
       searchItems: vi.fn((_filters, offset = 0, limit = 50) => {
@@ -91,6 +94,7 @@ describe('List', () => {
       imports: [List],
       providers: [
         { provide: PortalService, useValue: portal },
+        { provide: Router, useValue: router },
         { provide: WebstorageService, useValue: webstorage },
         { provide: ApiService, useValue: api },
         {
@@ -212,31 +216,31 @@ describe('List', () => {
     }
   });
 
-  it('maps virtual unwatched search to watched=false server filter', async () => {
+  it('treats old virtual unwatched search as a custom tag filter', async () => {
     vi.useFakeTimers();
     try {
-      collectionState.setState('searchText', VIRTUAL_UNWATCHED_TAG);
+      collectionState.setState('searchText', '#unwatched');
       fixture.detectChanges();
       await fixture.whenStable();
       await vi.runAllTimersAsync();
       fixture.detectChanges();
 
-      expect(api.searchItems).toHaveBeenLastCalledWith({ watched: false }, 0, 50);
+      expect(api.searchItems).toHaveBeenLastCalledWith({ tags: ['#unwatched'], tagMode: 'all' }, 0, 50);
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it('maps virtual uncompleted search to completed=false server filter', async () => {
+  it('treats old virtual uncompleted search as a custom tag filter', async () => {
     vi.useFakeTimers();
     try {
-      collectionState.setState('searchText', VIRTUAL_UNCOMPLETED_TAG);
+      collectionState.setState('searchText', '#uncompleted');
       fixture.detectChanges();
       await fixture.whenStable();
       await vi.runAllTimersAsync();
       fixture.detectChanges();
 
-      expect(api.searchItems).toHaveBeenLastCalledWith({ completed: false }, 0, 50);
+      expect(api.searchItems).toHaveBeenLastCalledWith({ tags: ['#uncompleted'], tagMode: 'all' }, 0, 50);
     } finally {
       vi.useRealTimers();
     }
@@ -323,7 +327,7 @@ describe('List', () => {
   it('loads more route-filtered items when scrolled on a prefiltered page', async () => {
     vi.useFakeTimers();
     try {
-      fixture.componentRef.setInput('routeSearchText', WATCH_LATER_TAG);
+      fixture.componentRef.setInput('routeSearchText', '#watch-later');
       fixture.detectChanges();
       await fixture.whenStable();
       await vi.runAllTimersAsync();
@@ -337,7 +341,7 @@ describe('List', () => {
 
       component['onScroll']();
 
-      expect(api.searchItems).toHaveBeenCalledWith({ tags: [WATCH_LATER_TAG], tagMode: 'all' }, 1, 50);
+      expect(api.searchItems).toHaveBeenCalledWith({ tags: ['#watch-later'], tagMode: 'all' }, 1, 50);
     } finally {
       vi.useRealTimers();
     }
@@ -362,6 +366,27 @@ describe('List', () => {
     }
   });
 
+  it('publishes scrolling state while the list is actively scrolling', async () => {
+    vi.useFakeTimers();
+    try {
+      fixture.detectChanges();
+      const element = { scrollHeight: 1000, scrollTop: 120, clientHeight: 900 };
+      (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
+
+      component['onScroll']();
+      fixture.detectChanges();
+
+      expect(floatActions.config().scrolling).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(FLOAT_ACTION_SCROLLING_IDLE_MS);
+      fixture.detectChanges();
+
+      expect(floatActions.config().scrolling).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('emits when float button functions are shown', () => {
     const showFunctions = vi.fn();
     fixture.componentRef.instance.showFunctions.subscribe(showFunctions);
@@ -377,6 +402,8 @@ describe('List', () => {
     expect(actionButtons.config().showActions).toBe(true);
     expect(actionButtons.config().showAiSearchButton).toBe(true);
     expect(actionButtons.config().showOrderButtons).toBe(true);
+    expect(actionButtons.config().filterActions).toEqual(['movie', 'series', 'unwatched']);
+    expect(actionButtons.config().activeFilterActions).toEqual([]);
     expect(actionButtons.config().orderBy).toBe('createdAt');
     expect(actionButtons.config().orderDirection).toBe('desc');
     expect(floatActions.actionsComponent()).toBe(FloatActionButtons);
@@ -395,6 +422,100 @@ describe('List', () => {
     actionButtons.addNew();
 
     expect(addNewSpy).toHaveBeenCalled();
+  });
+
+  it('navigates when a filter action is applied', () => {
+    fixture.detectChanges();
+
+    actionButtons.applyFilter('completed');
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { completed: 'true' },
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('applies the unwatched filter without constraining content type', () => {
+    fixture.detectChanges();
+
+    actionButtons.applyFilter('unwatched');
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { watched: 'false' },
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('removes an active content type filter when it is applied again', () => {
+    fixture.componentRef.setInput(
+      'routeFilterKey',
+      JSON.stringify({ type: 'movie', favorite: null, watched: false, completed: null })
+    );
+    fixture.detectChanges();
+
+    actionButtons.applyFilter('movie');
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { type: null },
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('removes an active watched filter when it is applied again', () => {
+    fixture.componentRef.setInput(
+      'routeFilterKey',
+      JSON.stringify({ type: 'series', favorite: null, watched: false, completed: null })
+    );
+    fixture.detectChanges();
+
+    actionButtons.applyFilter('unwatched');
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { watched: null },
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('removes an active completed filter when it is applied again', () => {
+    fixture.componentRef.setInput(
+      'routeFilterKey',
+      JSON.stringify({ type: null, favorite: null, watched: null, completed: false })
+    );
+    fixture.detectChanges();
+
+    actionButtons.applyFilter('uncompleted');
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { completed: null },
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('publishes contextual filter actions for series tracker', () => {
+    fixture.componentRef.setInput('listType', 'series-tracker');
+    fixture.detectChanges();
+
+    expect(actionButtons.config().filterActions).toEqual(['completed', 'uncompleted']);
+  });
+
+  it('publishes active filter actions from the route filter key', () => {
+    fixture.componentRef.setInput(
+      'routeFilterKey',
+      JSON.stringify({ type: 'series', favorite: null, watched: false, completed: null })
+    );
+    fixture.detectChanges();
+
+    expect(actionButtons.config().activeFilterActions).toEqual(['series', 'unwatched']);
+  });
+
+  it('publishes active completed filters from the route filter key', () => {
+    fixture.componentRef.setInput(
+      'routeFilterKey',
+      JSON.stringify({ type: null, favorite: null, watched: null, completed: false })
+    );
+    fixture.detectChanges();
+
+    expect(actionButtons.config().activeFilterActions).toEqual(['uncompleted']);
   });
 
   it('restores list order preference from local storage', () => {

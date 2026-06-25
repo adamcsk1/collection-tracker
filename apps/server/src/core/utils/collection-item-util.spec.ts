@@ -7,7 +7,7 @@ const validItem: CollectionItemChangeApiModel = {
   title: 'Test',
   genre: ['Drama'],
   IMDbId: 'tt0000001',
-  tags: ['#movie'],
+  tags: [],
   year: '2024',
   rate: '7.1',
   rottenTomatoesRate: '96%',
@@ -15,6 +15,8 @@ const validItem: CollectionItemChangeApiModel = {
   userRate: 8.7,
   actors: 'Actor One',
   plot: 'Plot',
+  contentType: 'movie',
+  favorite: false,
 };
 
 describe('collection-item-util', () => {

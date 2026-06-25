@@ -115,7 +115,7 @@ describe('NewItemDialogService', () => {
         title: 'Title',
         genre: ['Drama', 'Action'],
         IMDbId: 'tt123',
-        tags: ['#movie', '#tag'],
+        tags: ['#tag'],
         year: '2020',
         rate: '9.0',
         rottenTomatoesRate: '96%',
@@ -123,6 +123,8 @@ describe('NewItemDialogService', () => {
         userRate: 8.7,
         actors: 'Actors',
         plot: 'Plot',
+        contentType: 'movie',
+        favorite: false,
       },
       undefined
     );
@@ -173,7 +175,7 @@ describe('NewItemDialogService', () => {
     await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'watch-later' }));
 
     expect(api.create).toHaveBeenCalledWith(
-      expect.objectContaining({ tags: ['#movie', '#tag'] }),
+      expect.objectContaining({ tags: ['#tag'], contentType: 'movie' }),
       undefined,
       'watch-later'
     );
@@ -189,7 +191,7 @@ describe('NewItemDialogService', () => {
     await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'wishlist' }));
 
     expect(api.create).toHaveBeenCalledWith(
-      expect.objectContaining({ tags: ['#movie', '#tag'] }),
+      expect.objectContaining({ tags: ['#tag'], contentType: 'movie' }),
       undefined,
       'wishlist'
     );
@@ -202,7 +204,7 @@ describe('NewItemDialogService', () => {
     await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'series-tracker' }));
 
     expect(api.create).toHaveBeenCalledWith(
-      expect.objectContaining({ tags: ['#series', '#tag'] }),
+      expect.objectContaining({ tags: ['#tag'], contentType: 'series' }),
       undefined,
       'series-tracker'
     );

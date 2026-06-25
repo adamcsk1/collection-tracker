@@ -276,6 +276,8 @@ components:
           actors,
           plot,
           listType,
+          contentType,
+          favorite,
           watched,
           watchedAt,
         ]
@@ -322,6 +324,13 @@ components:
           type: string
           enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
           description: Logical list containing the item. `library` is the main collection.
+        contentType:
+          type: string
+          enum: [movie, series]
+          description: Item media type. This replaces the legacy `#movie` and `#series` system tags.
+        favorite:
+          type: boolean
+          description: Whether the item is marked as a favorite. This replaces the legacy `#favorite` system tag.
         watched:
           type: boolean
           description: Whether the authenticated viewer has this movie in their movie tracker.
@@ -335,7 +344,22 @@ components:
     CollectionItemChange:
       type: object
       required:
-        [image, title, genre, IMDbId, tags, year, rate, rottenTomatoesRate, metacriticRate, userRate, actors, plot]
+        [
+          image,
+          title,
+          genre,
+          IMDbId,
+          tags,
+          year,
+          rate,
+          rottenTomatoesRate,
+          metacriticRate,
+          userRate,
+          actors,
+          plot,
+          contentType,
+          favorite,
+        ]
       properties:
         image:
           type: string
@@ -369,6 +393,11 @@ components:
           type: string
         plot:
           type: string
+        contentType:
+          type: string
+          enum: [movie, series]
+        favorite:
+          type: boolean
 
     CollectionItemsResponse:
       type: object
@@ -421,6 +450,8 @@ components:
             watched:
               type: boolean
             completed:
+              type: boolean
+            favorite:
               type: boolean
             listType:
               type: string
@@ -867,18 +898,168 @@ components:
                 items:
                   $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
 
-    ImportRequest:
+    ImportCollectionItemBase:
+      type: object
+      required:
+        [
+          image,
+          title,
+          genre,
+          IMDbId,
+          tags,
+          year,
+          rate,
+          rottenTomatoesRate,
+          metacriticRate,
+          userRate,
+          actors,
+          plot,
+          listType,
+          watchedAt,
+        ]
+      properties:
+        image:
+          type: string
+        title:
+          type: string
+        genre:
+          type: array
+          items:
+            type: string
+        IMDbId:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        year:
+          type: ['string', 'null']
+        rate:
+          type: string
+        rottenTomatoesRate:
+          type: string
+        metacriticRate:
+          type: string
+        userRate:
+          type: ['number', 'null']
+          minimum: 0
+          maximum: 10
+          multipleOf: 0.1
+        actors:
+          type: string
+        plot:
+          type: string
+        listType:
+          type: string
+          enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+        watchedAt:
+          type: ['string', 'null']
+
+    ImportCollectionItemV2:
       allOf:
+        - $ref: '#/components/schemas/ImportCollectionItemBase'
         - type: object
-          required: [type, version]
           properties:
-            type:
+            contentType:
               type: string
-              const: collection-tracker-export
-            version:
-              type: integer
-              const: 2
-        - $ref: '#/components/schemas/ExportResponse'
+              enum: [movie, series]
+              description: Optional for version 2 imports; derived from legacy tags when omitted.
+            favorite:
+              type: boolean
+              description: Optional for version 2 imports; derived from legacy tags when omitted.
+
+    ImportCollectionItemV3:
+      allOf:
+        - $ref: '#/components/schemas/ImportCollectionItemBase'
+        - type: object
+          required: [contentType, favorite]
+          properties:
+            contentType:
+              type: string
+              enum: [movie, series]
+            favorite:
+              type: boolean
+
+    ImportDataV2:
+      type: object
+      required: [userSettings, collectionItems, tagManagement, seriesTrackerData]
+      properties:
+        userSettings:
+          $ref: '#/components/schemas/UserSettingsResponse'
+        collectionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportCollectionItemV2'
+        tagManagement:
+          $ref: '#/components/schemas/TagManagementResponse'
+        seriesTrackerData:
+          type: object
+          additionalProperties:
+            type: object
+            required: [seasons, watchedEpisodes]
+            properties:
+              seasons:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeriesTrackerSeason'
+              watchedEpisodes:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
+
+    ImportDataV3:
+      type: object
+      required: [userSettings, collectionItems, tagManagement, seriesTrackerData]
+      properties:
+        userSettings:
+          $ref: '#/components/schemas/UserSettingsResponse'
+        collectionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportCollectionItemV3'
+        tagManagement:
+          $ref: '#/components/schemas/TagManagementResponse'
+        seriesTrackerData:
+          type: object
+          additionalProperties:
+            type: object
+            required: [seasons, watchedEpisodes]
+            properties:
+              seasons:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeriesTrackerSeason'
+              watchedEpisodes:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
+
+    ImportRequest:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [type, version]
+              properties:
+                type:
+                  type: string
+                  const: collection-tracker-export
+                version:
+                  type: integer
+                  const: 2
+                  description: Version 2 backups are accepted for restore.
+            - $ref: '#/components/schemas/ImportDataV2'
+        - allOf:
+            - type: object
+              required: [type, version]
+              properties:
+                type:
+                  type: string
+                  const: collection-tracker-export
+                version:
+                  type: integer
+                  const: 3
+                  description: Version 3 is exported by current clients.
+            - $ref: '#/components/schemas/ImportDataV3'
 
     ImportResponse:
       type: object
@@ -1213,7 +1394,7 @@ paths:
     get:
       operationId: searchItems
       summary: Search collection items
-      description: Returns a server-filtered and paginated collection result. System tag filters use `type`, `watched`, and `completed`; custom tags use `tags`. `listType` defaults to `library`.
+      description: Returns a server-filtered and paginated collection result. Structured filters use `type`, `favorite`, `watched`, and `completed`; custom tags use `tags`. `listType` defaults to `library`.
       tags: [Collection]
       parameters:
         - name: offset
@@ -1251,6 +1432,10 @@ paths:
           schema:
             type: string
             enum: [movie, series]
+        - name: favorite
+          in: query
+          schema:
+            type: boolean
         - name: watched
           in: query
           schema:
@@ -1557,7 +1742,7 @@ paths:
     get:
       operationId: getTagSuggestions
       summary: Get custom tag suggestions
-      description: Internal and virtual tags are excluded unless `includeInternal=true` is provided.
+      description: Returns matching stored custom tags.
       tags: [Collection]
       parameters:
         - name: query
@@ -1569,11 +1754,6 @@ paths:
           schema:
             type: integer
             default: 10
-        - name: includeInternal
-          in: query
-          schema:
-            type: boolean
-            default: false
       responses:
         '200':
           description: Tag suggestions.
@@ -1643,6 +1823,10 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: favorite
+          in: query
+          schema:
+            type: boolean
       responses:
         '200':
           description: Collection statistics.
@@ -1655,7 +1839,12 @@ paths:
     post:
       operationId: createItem
       summary: Create a collection item
-      description: Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list. Tags must include `#movie` or `#series`. Virtual tags, the internal `#watch-later` and `#wishlist` tags, and server-managed action tags are rejected. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later, wishlist, series-tracker, and movie-tracker items cannot be created in shared libraries and cannot use `#favorite`. Series-tracker items must use `#series` and cannot use `#movie`; movie-tracker items must use `#movie` and cannot use `#series`.
+      description: >-
+        Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list.
+        Custom tags must not use reserved system or virtual tags. Optionally pass `targetOwnerShareCode` to create
+        in a shared library where you have create permission. Watch-later, wishlist, series-tracker, and
+        movie-tracker items cannot be created in shared libraries and cannot be favorites. Series-tracker items must
+        use `contentType: series`; movie-tracker items must use `contentType: movie`.
       tags: [Collection]
       requestBody:
         required: true
@@ -1681,7 +1870,10 @@ paths:
     put:
       operationId: changeItem
       summary: Update a collection item
-      description: Updates a library, series-tracker, or movie-tracker item. Tags must include `#movie` or `#series`. Virtual tags, the internal `#watch-later` and `#wishlist` tags, and server-managed action tags are rejected. Watch-later and wishlist items are not modified by this endpoint. Series-tracker items must use `#series` and cannot use `#movie` or `#favorite`; movie-tracker items must use `#movie` and cannot use `#series` or `#favorite`.
+      description: >-
+        Updates a library, watch-later, wishlist, series-tracker, or movie-tracker item. Series-tracker items must
+        use `contentType: series` and cannot be favorites; movie-tracker items must use `contentType: movie` and
+        cannot be favorites; watch-later and wishlist items cannot be favorites.
       tags: [Collection]
       parameters:
         - name: imdbId
@@ -1699,10 +1891,10 @@ paths:
         - name: listType
           in: query
           required: false
-          description: List containing the item. Defaults to `library`. Use `series-tracker` or `movie-tracker` to update tracker items.
+          description: List containing the item. Defaults to `library`. Use `watch-later`, `wishlist`, `series-tracker`, or `movie-tracker` to update non-library items.
           schema:
             type: string
-            enum: [library, series-tracker, movie-tracker]
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
             default: library
       requestBody:
         required: true
@@ -2268,7 +2460,7 @@ paths:
     post:
       operationId: updateTagManagement
       summary: Replace tag management
-      description: Replaces the full tag management array and returns the stored result.
+      description: Replaces the full tag management array and returns the stored result. Reserved system, virtual, and generated episode-progress tags are rejected.
       tags: [Tag]
       requestBody:
         required: true
@@ -2283,3 +2475,5 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TagManagementResponse'
+        '400':
+          description: The request body is not a valid tag management array or contains reserved tags.

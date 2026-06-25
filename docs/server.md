@@ -7,7 +7,7 @@ Source: [`apps/server`](../apps/server)
 ## Responsibilities
 
 - sign-up, sign-in, logout, and access-token lifecycle management
-- CRUD for per-user collection items stored in SQLite, including matched-item, existence, random-item, and search-suggestion APIs
+- CRUD for per-user collection items stored in SQLite, including structured media type, favorite state, matched-item, existence, random-item, and search-suggestion APIs
 - tag management, user-settings, user-share, and collection-list display persistence
 - statistics summaries, media refresh, external rating refresh, and manage tracker data updates split across movie tracker rows and series progress
 - movie tracker items, series tracker season metadata, watched episodes, and watched-state bulk updates
@@ -33,7 +33,13 @@ Source: [`apps/server`](../apps/server)
 - `logs/`
 - `cache/` — image proxy cache files and metadata
 
-Collection items, users, tokens, settings, shares, collection-list display preferences, series tracker data, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations).
+Collection items, users, tokens, settings, shares, collection-list display preferences, series tracker data, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations). Collection item media type and favorite state are stored as item fields; legacy export imports can derive those values from older system tags.
+
+## Import And Export
+
+- Current collection data exports use `collection-tracker-export` version 3.
+- Version 3 collection items include explicit `contentType` and `favorite` fields.
+- The import API still accepts version 2 exports and derives `contentType` and `favorite` from legacy `#movie`, `#series`, and `#favorite` tags when those fields are missing.
 
 ## Important Paths
 

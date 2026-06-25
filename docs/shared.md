@@ -6,7 +6,7 @@ Source: [`libs/shared`](../libs/shared)
 
 ## Contents
 
-- `constants/`: API prefix, storage keys, and tag constants
+- `constants/`: API prefix, storage keys, export/import metadata, and series-tracker limits
 - `models/`: API DTOs and shared AI search, collection item, collection-list display, language, share, statistics, theme, select, and OMDb types
 - `omdb/`: reusable OMDb helpers such as IMDb ID extraction
 - `styles/`: reset styles, design tokens, shared component CSS, and animation styles

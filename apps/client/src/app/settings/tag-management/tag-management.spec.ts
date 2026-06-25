@@ -96,7 +96,7 @@ describe('TagManagement component', () => {
     toastState = TestBed.inject(toastStateToken);
   });
 
-  it('builds tag management entries from collection tags while ignoring internal/virtual tags', () => {
+  it('builds tag management entries from collection tags including former internal and virtual tags', () => {
     createComponent(['#a', '#b', '#series', '#movie', '#unwatched', '#a', '#tag-with-weight']);
 
     tagManagementState.setState('configs', [buildTagManagement('#tag-with-weight', { color: '#aabbcc', weight: 7 })]);
@@ -105,6 +105,9 @@ describe('TagManagement component', () => {
     expect(component['tagManagement']()).toEqual([
       buildTagManagement('#a', {}),
       buildTagManagement('#b', {}),
+      buildTagManagement('#movie', {}),
+      buildTagManagement('#series', {}),
+      buildTagManagement('#unwatched', {}),
       buildTagManagement('#tag-with-weight', { color: '#aabbcc', weight: 7 }),
     ]);
   });

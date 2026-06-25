@@ -1,12 +1,4 @@
 import {
-  COMPLETED_TAG,
-  FAVORITE_TAG,
-  MOVIE_TAG,
-  SERIES_TAG,
-  WATCH_LATER_TAG,
-  WISHLIST_TAG,
-} from '@shared/constants/tags-const';
-import {
   CollectionItemApiModel,
   CollectionItemChangeApiModel,
   CollectionListTypeModel,
@@ -20,14 +12,13 @@ import { deleteCollectionItem, insertCollectionItem } from './collection/collect
 import { toApiItem } from './collection/collection-mapper';
 import { CollectionItemRow } from './collection/collection-types';
 
-const TRACKER_FORBIDDEN_TAGS = [COMPLETED_TAG, FAVORITE_TAG, WATCH_LATER_TAG, WISHLIST_TAG, SERIES_TAG];
+const movieContentCondition = `content_type = 'movie'`;
 
 const toMovieTrackerChange = (db: Database.Database, row: CollectionItemRow): CollectionItemChangeApiModel | null => {
   const sourceItem = toApiItem(db, row, row.username_hash);
-  if (!sourceItem.tags.includes(MOVIE_TAG) || sourceItem.tags.includes(SERIES_TAG)) return null;
+  if (sourceItem.contentType !== 'movie') return null;
   const item = toCollectionItemChange(sourceItem);
-  item.tags = item.tags.filter((tag) => !TRACKER_FORBIDDEN_TAGS.includes(tag));
-  if (!item.tags.includes(MOVIE_TAG)) item.tags.push(MOVIE_TAG);
+  item.favorite = false;
   return item;
 };
 
@@ -89,10 +80,7 @@ export const markAllMoviesAsWatched = (
       `SELECT * FROM collection_items
        WHERE username_hash = ?
          AND list_type = ?
-         AND EXISTS (
-           SELECT 1 FROM collection_item_tags
-           WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-          )
+           AND ${movieContentCondition}
           AND NOT EXISTS (
             SELECT 1 FROM collection_items movie_tracker
             WHERE movie_tracker.username_hash = ?
@@ -100,7 +88,7 @@ export const markAllMoviesAsWatched = (
               AND movie_tracker.list_type = ?
           )`
     )
-    .all(sourceOwnerHash, 'library', MOVIE_TAG, usernameHash, 'movie-tracker') as CollectionItemRow[];
+    .all(sourceOwnerHash, 'library', usernameHash, 'movie-tracker') as CollectionItemRow[];
 
   void debugLog(
     `markAllMoviesAsWatched candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`

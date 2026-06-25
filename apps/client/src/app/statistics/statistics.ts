@@ -159,6 +159,10 @@ export class Statistics implements AfterViewInit {
     this.closeAfterNavigation(navigation);
   }
 
+  protected onNavigateToCollectionType(type: 'movie' | 'series'): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'library'], { queryParams: { type } }));
+  }
+
   protected onNavigateToWatchLater(): void {
     this.closeAfterNavigation(this.router.navigate(['/collection', 'watch-later']));
   }
@@ -181,25 +185,25 @@ export class Statistics implements AfterViewInit {
 
   protected onNavigateToUnwatchedMovies(): void {
     this.closeAfterNavigation(
-      this.router.navigate(['/collection', 'library'], { queryParams: { search: '#unwatched', type: 'movie' } })
+      this.router.navigate(['/collection', 'library'], { queryParams: { watched: false, type: 'movie' } })
     );
   }
 
   protected onNavigateToUnwatchedLibrarySeries(): void {
     this.closeAfterNavigation(
-      this.router.navigate(['/collection', 'library'], { queryParams: { search: '#unwatched', type: 'series' } })
+      this.router.navigate(['/collection', 'library'], { queryParams: { watched: false, type: 'series' } })
     );
   }
 
   protected onNavigateToUnwatchedTrackerSeries(): void {
     this.closeAfterNavigation(
-      this.router.navigate(['/collection', 'series-tracker'], { queryParams: { search: '#uncompleted' } })
+      this.router.navigate(['/collection', 'series-tracker'], { queryParams: { completed: false } })
     );
   }
 
   protected onNavigateToCompletedTrackerSeries(): void {
     this.closeAfterNavigation(
-      this.router.navigate(['/collection', 'series-tracker'], { queryParams: { search: '#completed' } })
+      this.router.navigate(['/collection', 'series-tracker'], { queryParams: { completed: true } })
     );
   }
 

@@ -1,16 +1,17 @@
-import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const COMPLETED_TAG = '#completed';
+
 const insertUserAndItems = () => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt001', 'Movie One', 'movie one', '1999', '8.0', 'Plot one', 'img1.jpg', 'hash1');
+    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, content_type, favorite)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'tt001', 'Movie One', 'movie one', '1999', '8.0', 'Plot one', 'img1.jpg', 'hash1', 'movie', 1);
   const item1Id = Number(
     (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt001')! as { id: number }).id
   );
@@ -20,8 +21,8 @@ const insertUserAndItems = () => {
   db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item1Id, 'Action');
 
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, watched_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type, watched_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     'user',
     'tt001',
@@ -33,6 +34,7 @@ const insertUserAndItems = () => {
     'Plot one',
     'img1.jpg',
     'hash1-watched',
+    'movie',
     '2026-03-04 00:00:00'
   );
   const movieTrackerItemId = Number(
@@ -48,9 +50,9 @@ const insertUserAndItems = () => {
   );
 
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt002', 'Series One', 'series one', '2000', '7.5', 'Plot two', 'img2.jpg', 'hash2');
+    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, content_type)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'tt002', 'Series One', 'series one', '2000', '7.5', 'Plot two', 'img2.jpg', 'hash2', 'series');
   const item2Id = Number(
     (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt002')! as { id: number }).id
   );
@@ -59,8 +61,8 @@ const insertUserAndItems = () => {
   db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item2Id, 'Drama');
 
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     'user',
     'tt003',
@@ -71,7 +73,8 @@ const insertUserAndItems = () => {
     '7.1',
     'Plot three',
     'img3.jpg',
-    'hash3'
+    'hash3',
+    'movie'
   );
   const item3Id = Number(
     (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt003')! as { id: number }).id
@@ -79,9 +82,21 @@ const insertUserAndItems = () => {
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item3Id, '#movie');
 
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt004', 'wishlist', 'Wishlist One', 'wishlist one', '2002', '7.2', 'Plot four', 'img4.jpg', 'hash4');
+    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    'user',
+    'tt004',
+    'wishlist',
+    'Wishlist One',
+    'wishlist one',
+    '2002',
+    '7.2',
+    'Plot four',
+    'img4.jpg',
+    'hash4',
+    'movie'
+  );
   const item4Id = Number(
     (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt004')! as { id: number }).id
   );
@@ -106,9 +121,21 @@ const insertShare = (ownerHash: string, sharedWithHash: string) => {
 const insertSeriesTrackerItem = (usernameHash: string, imdbId: string, title: string) => {
   const db = getDatabase();
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(usernameHash, imdbId, 'series-tracker', title, title.toLowerCase(), '2001', '7.0', '', '', `${imdbId}-hash`);
+    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    usernameHash,
+    imdbId,
+    'series-tracker',
+    title,
+    title.toLowerCase(),
+    '2001',
+    '7.0',
+    '',
+    '',
+    `${imdbId}-hash`,
+    'series'
+  );
   const itemId = Number(
     (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get(imdbId)! as { id: number }).id
   );
@@ -217,10 +244,7 @@ describe('statistics-api', () => {
           .get('tt-series-2', 'series-tracker')! as { id: number }
       ).id
     );
-    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(
-      completedItemId,
-      COMPLETED_TAG
-    );
+    db.prepare('UPDATE collection_items SET watched_at = ? WHERE id = ?').run('2025-09-01 00:00:00', completedItemId);
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: {} };
@@ -242,9 +266,9 @@ describe('statistics-api', () => {
     insertUser('user');
     const db = getDatabase();
     db.prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run('user', 'tt-series', 'Series', 'series', '2024', '8.0', '', '', 'library-series-hash');
+      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run('user', 'tt-series', 'Series', 'series', '2024', '8.0', '', '', 'library-series-hash', 'series');
     const libraryItemId = Number(
       (
         db
@@ -254,8 +278,8 @@ describe('statistics-api', () => {
     );
     db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(libraryItemId, '#series');
     db.prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, watched_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type, watched_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       'user',
       'tt-series',
@@ -267,6 +291,7 @@ describe('statistics-api', () => {
       '',
       '',
       'tracker-series-hash',
+      'series',
       '2025-09-01 00:00:00'
     );
     const trackerItemId = Number(

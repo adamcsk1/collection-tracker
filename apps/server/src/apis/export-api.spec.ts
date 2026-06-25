@@ -74,10 +74,10 @@ describe('export-api', () => {
       'img3.jpg',
       'hash3'
     );
-    db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(1, '#movie');
+    db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(1, '#owned');
     db.prepare(
       'INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run('user', '#movie', '#111111', 1, 0, 0, 1);
+    ).run('user', '#owned', '#111111', 1, 0, 0, 1);
     db.prepare(
       'INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles) VALUES (?, ?, ?, ?)'
     ).run(2, 1, 10, JSON.stringify(['Episode 1']));
@@ -98,7 +98,7 @@ describe('export-api', () => {
           IMDbId: 'tt123',
           listType: 'library',
           title: 'Movie',
-          tags: ['#movie'],
+          tags: ['#owned'],
         }),
         expect.objectContaining({
           IMDbId: 'tt789',
@@ -114,7 +114,7 @@ describe('export-api', () => {
       ],
       tagManagement: [
         {
-          tag: '#movie',
+          tag: '#owned',
           color: '#111111',
           useForImageBorder: true,
           useForTextColor: false,

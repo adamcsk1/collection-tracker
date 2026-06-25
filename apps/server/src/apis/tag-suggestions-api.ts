@@ -18,12 +18,11 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler(async (request, response) => {
       const queryParams = request.query as Record<string, unknown>;
       const query = typeof queryParams.query === 'string' ? queryParams.query : '';
-      const includeInternal = queryParams.includeInternal === 'true';
       const db = getDatabase();
       const usernameHashes = [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
 
       response.send({
-        tags: findTagSuggestions(db, usernameHashes, query, parseLimit(queryParams.limit), includeInternal),
+        tags: findTagSuggestions(db, usernameHashes, query, parseLimit(queryParams.limit)),
       });
     })
   );

@@ -1,10 +1,11 @@
 import { Component, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute, convertToParamMap, Params } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
-import { FAVORITE_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { describe, expect, it } from 'vitest';
+import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 import { Favorites } from './favorites';
 
 @Component({
@@ -18,16 +19,23 @@ class ListStub {
   public readonly showRandomPickButton = input(true);
   public readonly orderStorageKey = input('');
   public readonly routeSearchText = input('');
+  public readonly routeFilterKey = input('');
   public readonly dataSource = input<unknown>();
 }
 
 describe('Favorites', () => {
-  const createFixture = (): ComponentFixture<Favorites> => {
+  const searchItems = vi.fn();
+  const createFixture = (queryParams: Params = {}): ComponentFixture<Favorites> => {
+    searchItems.mockReset();
     TestBed.configureTestingModule({
       imports: [Favorites],
       providers: [
-        { provide: ApiService, useValue: { searchItems: () => null } },
+        { provide: ApiService, useValue: { searchItems } },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParams }, queryParamMap: of(convertToParamMap(queryParams)) },
+        },
       ],
     });
     TestBed.overrideComponent(Favorites, { set: { imports: [ListStub] } });
@@ -37,15 +45,53 @@ describe('Favorites', () => {
     return fixture;
   };
 
-  it('passes the favorite tag and disables add-only list actions', () => {
+  it('uses favorite filter and disables add-only list actions', () => {
     const fixture = createFixture();
     const list = fixture.debugElement.query(By.directive(ListStub)).componentInstance as ListStub;
 
-    expect(list.routeSearchText()).toBe(FAVORITE_TAG);
+    const dataSource = list.dataSource() as (request: {
+      offset: number;
+      limit: number;
+      orderBy: 'createdAt';
+      orderDirection: 'desc';
+    }) => unknown;
+    dataSource({ offset: 0, limit: 50, orderBy: 'createdAt', orderDirection: 'desc' });
+
+    expect(searchItems).toHaveBeenCalledWith(
+      { favorite: true, listType: 'library', orderBy: 'createdAt', orderDirection: 'desc' },
+      0,
+      50
+    );
     expect(list.showAddButton()).toBe(false);
     expect(list.showAiSearchButton()).toBe(false);
     expect(list.showRandomPickButton()).toBe(false);
     expect(list.orderStorageKey()).toBe('favorites');
+  });
+
+  it('applies route filters while keeping favorite forced', () => {
+    const fixture = createFixture({ type: 'movie', favorite: 'false', watched: 'false' });
+    const list = fixture.debugElement.query(By.directive(ListStub)).componentInstance as ListStub;
+
+    const dataSource = list.dataSource() as (request: {
+      offset: number;
+      limit: number;
+      orderBy: 'createdAt';
+      orderDirection: 'desc';
+    }) => unknown;
+    dataSource({ offset: 0, limit: 50, orderBy: 'createdAt', orderDirection: 'desc' });
+
+    expect(searchItems).toHaveBeenCalledWith(
+      {
+        type: 'movie',
+        watched: false,
+        favorite: true,
+        listType: 'library',
+        orderBy: 'createdAt',
+        orderDirection: 'desc',
+      },
+      0,
+      50
+    );
   });
 
   it('renders the favorites empty state', () => {

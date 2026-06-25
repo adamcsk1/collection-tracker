@@ -26,7 +26,8 @@ export const register = (app: FastifyInstance): void => {
       }
 
       const tagValidationError = createCollectionItemTagValidation({
-        tags: item.tags,
+        contentType: item.contentType,
+        favorite: item.favorite,
         listType,
         targetOwnerShareCode: body.targetOwnerShareCode,
       });

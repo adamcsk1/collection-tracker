@@ -71,6 +71,7 @@ export const parseFilters = (query: Record<string, unknown>): CollectionItemFilt
     genres: parseList(query.genres),
     tagMode: parseTagMode(query.tagMode),
     type: parseType(query.type),
+    favorite: parseBoolean(query.favorite),
     watched: parseBoolean(query.watched),
     completed: parseBoolean(query.completed),
     listType,

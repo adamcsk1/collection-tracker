@@ -1,4 +1,3 @@
-import { COMPLETED_TAG, MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import {
   CollectionItemFiltersApiModel,
   CollectionItemTagMode,
@@ -59,6 +58,24 @@ const addSeriesTrackerExists = (queryParts: QueryParts, usernameHash: string, ex
   queryParts.params.push(usernameHash, 'series-tracker');
 };
 
+const addWatchedExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
+  queryParts.where.push(`(
+    (${movieContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
+      SELECT 1 FROM collection_items movie_tracker_filter
+      WHERE movie_tracker_filter.username_hash = ?
+        AND movie_tracker_filter.imdb_id = collection_items.imdb_id
+        AND movie_tracker_filter.list_type = ?
+    ))
+    OR (${seriesContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
+      SELECT 1 FROM collection_items series_tracker_filter
+      WHERE series_tracker_filter.username_hash = ?
+        AND series_tracker_filter.imdb_id = collection_items.imdb_id
+        AND series_tracker_filter.list_type = ?
+    ))
+  )`);
+  queryParts.params.push(usernameHash, 'movie-tracker', usernameHash, 'series-tracker');
+};
+
 const addSearchFilter = (queryParts: QueryParts, search: string): void => {
   const lowerSearch = search.trim().toLowerCase();
   if (!lowerSearch) return;
@@ -96,6 +113,10 @@ const addSearchFilter = (queryParts: QueryParts, search: string): void => {
   );
 };
 
+const movieContentCondition = `collection_items.content_type = 'movie'`;
+
+const seriesContentCondition = `collection_items.content_type = 'series'`;
+
 const addFilters = (
   queryParts: QueryParts,
   filters: CollectionItemFiltersApiModel | undefined,
@@ -115,8 +136,12 @@ const addFilters = (
 
   addSearchFilter(queryParts, filters.search ?? '');
 
-  if (filters.type === 'movie') addTagExists(queryParts, MOVIE_TAG);
-  if (filters.type === 'series') addTagExists(queryParts, SERIES_TAG);
+  if (filters.type === 'movie') {
+    queryParts.where.push(movieContentCondition);
+  }
+  if (filters.type === 'series') {
+    queryParts.where.push(seriesContentCondition);
+  }
   if (
     filters.watched !== undefined &&
     viewerUsernameHash &&
@@ -125,10 +150,13 @@ const addFilters = (
   ) {
     const exists = filters.watched;
     if (filters.type === 'series') addSeriesTrackerExists(queryParts, viewerUsernameHash, exists);
-    else addMovieTrackerExists(queryParts, viewerUsernameHash, exists);
+    else if (filters.type === 'movie') addMovieTrackerExists(queryParts, viewerUsernameHash, exists);
+    else addWatchedExists(queryParts, viewerUsernameHash, exists);
   }
-  if (filters.completed === true) addTagExists(queryParts, COMPLETED_TAG);
-  if (filters.completed === false) addTagExists(queryParts, COMPLETED_TAG, false);
+  if (filters.completed === true) queryParts.where.push('collection_items.watched_at IS NOT NULL');
+  if (filters.completed === false) queryParts.where.push('collection_items.watched_at IS NULL');
+  if (filters.favorite === true) queryParts.where.push('collection_items.favorite = 1');
+  if (filters.favorite === false) queryParts.where.push('collection_items.favorite = 0');
 
   for (const genre of filters.genres ?? []) {
     const normalizedGenre = genre.trim();

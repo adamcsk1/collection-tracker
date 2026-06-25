@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNCOMPLETED_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -29,7 +28,7 @@ describe('SeriesTracker', () => {
     orderDirection: 'desc' as const,
   });
 
-  const createFixture = (searchText = '', querySearch = '') => {
+  const createFixture = (searchText = '', queryParams: Record<string, string> = {}) => {
     TestBed.configureTestingModule({
       imports: [SeriesTracker],
       providers: [
@@ -40,8 +39,8 @@ describe('SeriesTracker', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { queryParams: { search: querySearch } },
-            queryParamMap: of({ get: (key: string) => (key === 'search' ? querySearch : null) }),
+            snapshot: { queryParams },
+            queryParamMap: of({ get: (key: string) => queryParams[key] ?? null }),
           },
         },
       ],
@@ -76,7 +75,7 @@ describe('SeriesTracker', () => {
   it('initializes search text from query param when present', () => {
     TestBed.resetTestingModule();
 
-    createFixture('', '#uncompleted');
+    createFixture('', { search: '#uncompleted' });
 
     expect(collectionState.state.searchText()).toBe('#uncompleted');
     expect(fixture.componentInstance['searchTextModel']()).toBe('#uncompleted');
@@ -116,18 +115,27 @@ describe('SeriesTracker', () => {
     );
   });
 
-  it('maps virtual unwatched search to series tracker filters', () => {
-    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(VIRTUAL_UNWATCHED_TAG));
+  it('treats old virtual unwatched search as a custom tag filter', () => {
+    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest('#unwatched'));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { watched: false, listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      {
+        tags: ['#unwatched'],
+        tagMode: 'all',
+        listType: 'series-tracker',
+        orderBy: 'createdAt',
+        orderDirection: 'desc',
+      },
       0,
       50
     );
   });
 
-  it('maps virtual uncompleted search to series tracker filters', () => {
-    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(VIRTUAL_UNCOMPLETED_TAG));
+  it('merges completed query filters into series tracker searches', () => {
+    TestBed.resetTestingModule();
+    createFixture('', { completed: 'false' });
+
+    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(''));
 
     expect(api.searchItems).toHaveBeenCalledWith(
       { completed: false, listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },

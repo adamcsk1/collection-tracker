@@ -22,7 +22,7 @@
       <button
         data-test-id="statistics-summary-movies"
         class="card card-interactive stat-card"
-        (click)="onNavigateToCollection('#movie')"
+        (click)="onNavigateToCollectionType('movie')"
         [attr.aria-label]="translations.movies() + ': ' + summary.movies"
       >
         <span class="stat-value">{{ summary.movies }}</span>
@@ -31,7 +31,7 @@
       <button
         data-test-id="statistics-summary-series"
         class="card card-interactive stat-card"
-        (click)="onNavigateToCollection('#series')"
+        (click)="onNavigateToCollectionType('series')"
         [attr.aria-label]="translations.series() + ': ' + summary.series"
       >
         <span class="stat-value">{{ summary.series }}</span>

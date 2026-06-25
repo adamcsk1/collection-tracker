@@ -23,6 +23,8 @@ const recomputeCollectionItemHashes = (db: Database.Database): void => {
     actors: string;
     plot: string;
     image: string;
+    content_type?: 'movie' | 'series';
+    favorite?: 0 | 1;
   }>;
 
   const genresByItem = db.prepare('SELECT genre FROM collection_item_genres WHERE item_id = ? ORDER BY genre');
@@ -47,6 +49,8 @@ const recomputeCollectionItemHashes = (db: Database.Database): void => {
           userRate: row.user_rate,
           actors: row.actors,
           plot: row.plot,
+          contentType: row.content_type ?? 'movie',
+          favorite: row.favorite === 1,
         }),
         row.id
       );
@@ -83,7 +87,9 @@ export const runMigrations = async (db: Database.Database, migrationsDir: string
 
     try {
       db.exec(sql);
-      if (file === '015_add_movie_tracker_list_type.sql') recomputeCollectionItemHashes(db);
+      if (file === '015_add_movie_tracker_list_type.sql' || file === '017_move_system_tags_to_columns.sql') {
+        recomputeCollectionItemHashes(db);
+      }
       db.prepare('INSERT INTO schema_migrations (id) VALUES (?)').run(file);
       appliedIds.add(file);
     } catch (error: unknown) {

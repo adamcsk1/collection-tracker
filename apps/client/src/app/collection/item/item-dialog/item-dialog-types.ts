@@ -26,7 +26,6 @@ export interface ItemDialogTranslations {
   ratings: Signal<string>;
   removeFavorite: Signal<string>;
   removeFromSeriesTracker: Signal<string>;
-  systemTags: Signal<string>;
   tags: Signal<string>;
   watchedUpTo: Signal<string>;
 }

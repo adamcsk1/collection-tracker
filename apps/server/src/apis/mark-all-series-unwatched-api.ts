@@ -1,5 +1,4 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { MarkAllUnwatchedApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
@@ -48,8 +47,7 @@ export const register = (app: FastifyInstance): void => {
 
       for (const item of trackerItems) {
         const watchedEpisodes = findWatchedEpisodes(db, request.usernameHash, item.IMDbId);
-        const hasCompletedTag = item.tags.includes(COMPLETED_TAG);
-        if (!watchedEpisodes.length && !hasCompletedTag) continue;
+        if (!watchedEpisodes.length && !item.watchedAt) continue;
 
         deleteWatchedEpisodes(db, request.usernameHash, item.IMDbId);
         syncSeriesTrackerCompletedTag(db, request.usernameHash, item.IMDbId);

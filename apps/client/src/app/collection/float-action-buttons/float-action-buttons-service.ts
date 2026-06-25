@@ -1,6 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 import { CollectionItemOrderBy, CollectionItemOrderDirection } from '@shared/models/api-model';
 
+export type FloatActionFilter = 'movie' | 'series' | 'unwatched' | 'completed' | 'uncompleted';
+
 export interface FloatActionButtonsConfig {
   collectionLength: number;
   showActions: boolean;
@@ -8,6 +10,8 @@ export interface FloatActionButtonsConfig {
   showAiSearchButton: boolean;
   showRandomPickButton: boolean;
   showOrderButtons: boolean;
+  filterActions: FloatActionFilter[];
+  activeFilterActions: FloatActionFilter[];
   useAiSearch: boolean;
   orderBy: CollectionItemOrderBy;
   orderDirection: CollectionItemOrderDirection;
@@ -19,6 +23,7 @@ export interface FloatActionButtonsCallbacks {
   toggleAiSearch: () => void;
   toggleOrderBy: () => void;
   toggleOrderDirection: () => void;
+  applyFilter: (filter: FloatActionFilter) => void;
   showFunctions: () => void;
 }
 
@@ -29,6 +34,8 @@ const initialConfig: FloatActionButtonsConfig = {
   showAiSearchButton: true,
   showRandomPickButton: true,
   showOrderButtons: false,
+  filterActions: [],
+  activeFilterActions: [],
   useAiSearch: false,
   orderBy: 'createdAt',
   orderDirection: 'desc',
@@ -40,6 +47,7 @@ const noopCallbacks: FloatActionButtonsCallbacks = {
   toggleAiSearch: () => void 0,
   toggleOrderBy: () => void 0,
   toggleOrderDirection: () => void 0,
+  applyFilter: () => void 0,
   showFunctions: () => void 0,
 };
 
@@ -82,6 +90,10 @@ export class FloatActionButtonsService {
 
   public toggleOrderDirection(): void {
     this.callbacks.toggleOrderDirection();
+  }
+
+  public applyFilter(filter: FloatActionFilter): void {
+    this.callbacks.applyFilter(filter);
   }
 
   public showFunctions(): void {

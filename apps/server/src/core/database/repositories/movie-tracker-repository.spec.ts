@@ -25,13 +25,14 @@ const insertItem = (
     plot: string;
     image: string;
     contentHash: string;
+    contentType: string;
   }> = {}
 ) => {
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       usernameHash,
@@ -43,7 +44,8 @@ const insertItem = (
       overrides.rate ?? '',
       overrides.plot ?? '',
       overrides.image ?? '',
-      overrides.contentHash ?? `${usernameHash}-${listType}-${imdbId}`
+      overrides.contentHash ?? `${usernameHash}-${listType}-${imdbId}`,
+      overrides.contentType ?? 'movie'
     );
   const itemId = Number(result.lastInsertRowid);
   for (const tag of tags) {
@@ -73,7 +75,8 @@ describe('movie-tracker-repository', () => {
       expect.objectContaining({
         IMDbId: 'tt-1',
         listType: 'movie-tracker',
-        tags: expect.arrayContaining(['#movie', '#action']),
+        contentType: 'movie',
+        tags: ['#action', '#movie'],
       })
     );
     const trackerRow = db
@@ -102,7 +105,7 @@ describe('movie-tracker-repository', () => {
     expect(count.count).toBe(1);
   });
 
-  it('strips forbidden tags and ensures movie tag remains', () => {
+  it('preserves former system tags as custom tags and keeps the movie content type', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#movie', '#completed', '#favorite', '#watch-later', '#wishlist', '#action']);
     const db = getDatabase();
@@ -110,13 +113,12 @@ describe('movie-tracker-repository', () => {
     const result = copyLibraryMovieToMovieTracker(db, 'user', 'user', 'tt-1');
 
     expect(result).toBeTruthy();
-    expect(result!.tags).toContain('#movie');
+    expect(result!.contentType).toBe('movie');
     expect(result!.tags).toContain('#action');
-    expect(result!.tags).not.toContain('#completed');
-    expect(result!.tags).not.toContain('#favorite');
-    expect(result!.tags).not.toContain('#watch-later');
-    expect(result!.tags).not.toContain('#wishlist');
-    expect(result!.tags).not.toContain('#series');
+    expect(result!.tags).toContain('#completed');
+    expect(result!.tags).toContain('#favorite');
+    expect(result!.tags).toContain('#watch-later');
+    expect(result!.tags).toContain('#wishlist');
   });
 
   it('deletes source item when deleteSource is true', () => {
@@ -143,7 +145,7 @@ describe('movie-tracker-repository', () => {
 
   it('returns null when source item is not a movie', () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#series']);
+    insertItem('user', 'tt-1', ['#series'], 'library', { contentType: 'series' });
     const db = getDatabase();
 
     const result = copyLibraryMovieToMovieTracker(db, 'user', 'user', 'tt-1');
@@ -209,7 +211,7 @@ describe('movie-tracker-repository', () => {
   it('markAllMoviesAsWatched copies unwatched library movies to tracker', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#movie']);
-    insertItem('user', 'tt-2', ['#series']);
+    insertItem('user', 'tt-2', ['#series'], 'library', { contentType: 'series' });
     const db = getDatabase();
 
     const changedCount = markAllMoviesAsWatched(db, 'user', 'user');

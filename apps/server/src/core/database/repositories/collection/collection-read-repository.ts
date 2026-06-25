@@ -29,6 +29,10 @@ const toAiSearchItem = (db: Database.Database, row: CollectionItemRow): AiSearch
   const apiItem = toApiItem(db, row);
   const fields = [
     apiItem.title,
+    apiItem.contentType,
+    apiItem.favorite,
+    apiItem.listType,
+    apiItem.watchedAt,
     apiItem.year,
     apiItem.genre.join(', '),
     apiItem.tags.join(', '),

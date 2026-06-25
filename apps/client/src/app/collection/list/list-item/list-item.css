@@ -18,6 +18,7 @@
 
   .image {
     width: 100%;
+    flex-shrink: 0;
     aspect-ratio: var(--card-aspect-ratio);
     position: relative;
     overflow: hidden;

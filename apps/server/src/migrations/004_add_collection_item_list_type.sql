@@ -82,7 +82,7 @@ CREATE TABLE collection_item_tags (
 );
 
 INSERT INTO collection_item_tags (item_id, tag)
-SELECT item_id, tag FROM collection_item_tags_old WHERE tag NOT IN ('#watch-later', '#wishlist');
+SELECT item_id, tag FROM collection_item_tags_old;
 
 DROP TABLE collection_item_tags_old;
 

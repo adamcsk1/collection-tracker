@@ -22,7 +22,12 @@ import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
 import { List } from '../list/list';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
-import { buildStandardSearchFilters, setupStandardCollectionSearch } from '../utils/collection-search-filter-util';
+import {
+  buildCollectionRouteFilterKey,
+  buildCollectionRouteFilters,
+  buildStandardSearchFilters,
+  setupStandardCollectionSearch,
+} from '../utils/collection-search-filter-util';
 
 @Component({
   selector: 'ct-series-tracker',
@@ -49,6 +54,15 @@ export class SeriesTracker {
     this.route.queryParamMap.pipe(map((queryParamMap) => queryParamMap.get('search')?.trim() ?? '')),
     { initialValue: this.route.snapshot.queryParams['search']?.trim?.() ?? '' }
   );
+  protected readonly queryFilters = toSignal(
+    this.route.queryParamMap.pipe(map((queryParamMap) => buildCollectionRouteFilters(queryParamMap))),
+    {
+      initialValue: buildCollectionRouteFilters({
+        get: (name) => `${this.route.snapshot.queryParams[name] ?? ''}` || null,
+      }),
+    }
+  );
+  protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
   protected readonly seriesTrackerDataSource = ({
@@ -59,7 +73,7 @@ export class SeriesTracker {
     orderDirection,
   }: CollectionListDataSourceRequest) =>
     this.api.searchItems(
-      { ...buildStandardSearchFilters(searchText, 'series-tracker'), orderBy, orderDirection },
+      { ...buildStandardSearchFilters(searchText, 'series-tracker', this.queryFilters()), orderBy, orderDirection },
       offset,
       limit
     );

@@ -22,7 +22,12 @@ import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { List } from '../list/list';
-import { buildStandardSearchFilters, setupStandardCollectionSearch } from '../utils/collection-search-filter-util';
+import {
+  buildCollectionRouteFilterKey,
+  buildCollectionRouteFilters,
+  buildStandardSearchFilters,
+  setupStandardCollectionSearch,
+} from '../utils/collection-search-filter-util';
 
 @Component({
   selector: 'ct-movie-tracker',
@@ -49,6 +54,15 @@ export class MovieTracker {
     this.route.queryParamMap.pipe(map((queryParamMap) => queryParamMap.get('search')?.trim() ?? '')),
     { initialValue: this.route.snapshot.queryParams['search']?.trim?.() ?? '' }
   );
+  protected readonly queryFilters = toSignal(
+    this.route.queryParamMap.pipe(map((queryParamMap) => buildCollectionRouteFilters(queryParamMap))),
+    {
+      initialValue: buildCollectionRouteFilters({
+        get: (name) => `${this.route.snapshot.queryParams[name] ?? ''}` || null,
+      }),
+    }
+  );
+  protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
   protected readonly movieTrackerDataSource = ({
@@ -59,7 +73,7 @@ export class MovieTracker {
     orderDirection,
   }: CollectionListDataSourceRequest) =>
     this.api.searchItems(
-      { ...buildStandardSearchFilters(searchText, 'movie-tracker'), orderBy, orderDirection },
+      { ...buildStandardSearchFilters(searchText, 'movie-tracker', this.queryFilters()), orderBy, orderDirection },
       offset,
       limit
     );

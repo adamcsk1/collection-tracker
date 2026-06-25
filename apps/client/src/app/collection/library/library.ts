@@ -25,13 +25,17 @@ import { collectionStateToken } from '../collection-store';
 import { ItemDialog } from '../item/item-dialog/item-dialog';
 import { List } from '../list/list';
 import { AiSearchService } from '../search/ai-search-service';
-import { buildStandardSearchFilters } from '../utils/collection-search-filter-util';
-import { AiSearchInput } from './ai-search/ai-search-input';
+import {
+  buildCollectionRouteFilterKey,
+  buildCollectionRouteFilters,
+  buildStandardSearchFilters,
+} from '../utils/collection-search-filter-util';
+import { AiSearchDialog } from './ai-search/ai-search-dialog';
 import { SearchSuggestionService } from './search/search-suggestion-service';
 
 @Component({
   selector: 'ct-collection-library',
-  imports: [List, FormField, Autocomplete, AiSearchInput],
+  imports: [List, FormField, Autocomplete],
   templateUrl: './library.html',
   styleUrl: '../collection.css',
   providers: [{ provide: AutocompleteService, useClass: SearchSuggestionService }],
@@ -64,15 +68,15 @@ export class CollectionLibrary {
     this.route.queryParamMap.pipe(map((queryParamMap) => queryParamMap.get('search')?.trim() ?? '')),
     { initialValue: this.route.snapshot.queryParams['search']?.trim?.() ?? '' }
   );
-  protected readonly queryType = toSignal(
-    this.route.queryParamMap.pipe(
-      map((queryParamMap): 'movie' | 'series' | undefined => {
-        const type = queryParamMap.get('type');
-        return type === 'movie' || type === 'series' ? type : undefined;
-      })
-    ),
-    { initialValue: undefined }
+  protected readonly queryFilters = toSignal(
+    this.route.queryParamMap.pipe(map((queryParamMap) => buildCollectionRouteFilters(queryParamMap))),
+    {
+      initialValue: buildCollectionRouteFilters({
+        get: (name) => `${this.route.snapshot.queryParams[name] ?? ''}` || null,
+      }),
+    }
   );
+  protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
   protected readonly translations = {
     placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
     placeholderSearchInCollection: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInCollection')),
@@ -109,8 +113,7 @@ export class CollectionLibrary {
       return this.api.searchItems({ listType: 'library', orderBy, orderDirection }, offset, limit);
     }
 
-    const type = this.queryType();
-    const filters = { ...buildStandardSearchFilters(searchText, 'library'), ...(type && { type }) };
+    const filters = buildStandardSearchFilters(searchText, 'library', this.queryFilters());
 
     return this.api.searchItems({ ...filters, orderBy, orderDirection }, offset, limit);
   };
@@ -118,9 +121,10 @@ export class CollectionLibrary {
   constructor() {
     effect(() => {
       const querySearch = this.querySearch();
+      const queryFilterKey = this.queryFilterKey();
 
       untracked(() => {
-        this.collectionState.setState('forceStandardSearch', !!querySearch);
+        this.collectionState.setState('forceStandardSearch', !!querySearch || !!queryFilterKey);
         this.collectionState.setState('searchText', querySearch);
       });
     });
@@ -151,7 +155,11 @@ export class CollectionLibrary {
     });
 
     effect(() => {
-      this.floatActions.setSearchTemplate(this.floatSearchTemplate() ?? null);
+      if (this.useStandardSearch()) {
+        this.floatActions.setSearchTemplate(this.floatSearchTemplate() ?? null);
+      } else {
+        this.floatActions.setSearchTemplate(null, () => this.openAiSearchDialog());
+      }
     });
 
     this.destroyRef.onDestroy(() => this.floatActions.setSearchTemplate(null));
@@ -175,6 +183,14 @@ export class CollectionLibrary {
     this.collectionState.setState('aiSearchSendVersion', this.collectionState.state.aiSearchSendVersion() + 1);
   }
 
+  private openAiSearchDialog(): void {
+    this.portal.open(AiSearchDialog, {
+      formField: this.aiSearchPromptTextField,
+      placeholder: this.translations.placeholderReply(),
+      send: () => this.onAiSearchSend(),
+    });
+  }
+
   protected onRandomPick(): void {
     this.api
       .getRandomItem()
@@ -185,12 +201,13 @@ export class CollectionLibrary {
   protected onToggleAiSearch(): void {
     const useAiSearch = this.aiSearch.useAiSearch();
     const querySearch = this.querySearch();
+    const queryFilterKey = this.queryFilterKey();
     this.aiSearch.useAiSearch.set(!useAiSearch);
     this.collectionState.setState('searchText', querySearch || '');
 
     if (useAiSearch) {
       this.mainCollectionState.setState('reloadTrigger', this.mainCollectionState.state.reloadTrigger() + 1);
-    } else if (!querySearch) {
+    } else if (!querySearch && !queryFilterKey) {
       this.collectionState.setState('forceStandardSearch', false);
     }
   }

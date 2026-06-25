@@ -60,6 +60,32 @@ describe('update-tag-management-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
+  it('accepts former system tag management', async () => {
+    const response = mockResponse();
+    const request: any = {
+      body: [
+        {
+          tag: '#favorite',
+          color: '#111111',
+          useForImageBorder: true,
+          useForTextColor: false,
+          useForImageBadge: false,
+          weight: 1,
+        },
+      ],
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+    getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+
+    const { register } = await import('./update-tag-management-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).not.toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith(request.body);
+  });
+
   it('updates user tag management and returns updated entries', async () => {
     const response = mockResponse();
     const request: any = {

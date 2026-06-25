@@ -14,4 +14,6 @@ export const toCollectionItemChange = (item: CollectionItemModel): CollectionIte
   userRate: item.userRate,
   actors: item.actors,
   plot: item.plot,
+  contentType: item.contentType,
+  favorite: item.favorite,
 });

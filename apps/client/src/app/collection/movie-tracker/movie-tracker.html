@@ -8,7 +8,12 @@
       [suggestionListPlacement]="'top'"
     />
   </ng-template>
-  <ct-list [listType]="'movie-tracker'" [dataSource]="movieTrackerDataSource" [routeSearchText]="querySearch()">
+  <ct-list
+    [listType]="'movie-tracker'"
+    [dataSource]="movieTrackerDataSource"
+    [routeSearchText]="querySearch()"
+    [routeFilterKey]="queryFilterKey()"
+  >
     <span list-empty>
       {{ translations.messageEmptyMovieTracker() }}<br />
       <a data-test-id="add-first-movie-tracker-item" href="#" role="button" (click)="onAddMovieTracker($event)">{{

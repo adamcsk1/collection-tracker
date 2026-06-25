@@ -1,6 +1,9 @@
-import { VIRTUAL_UNCOMPLETED_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { describe, expect, it } from 'vitest';
-import { buildStandardSearchFilters } from './collection-search-filter-util';
+import {
+  buildCollectionRouteFilterKey,
+  buildCollectionRouteFilters,
+  buildStandardSearchFilters,
+} from './collection-search-filter-util';
 
 describe('buildStandardSearchFilters', () => {
   it('builds default list type filters without search text', () => {
@@ -22,17 +25,50 @@ describe('buildStandardSearchFilters', () => {
     });
   });
 
-  it('builds virtual unwatched filters', () => {
-    expect(buildStandardSearchFilters(VIRTUAL_UNWATCHED_TAG, 'library')).toEqual({
+  it('treats old system tag names as custom tag searches', () => {
+    expect(buildStandardSearchFilters('#completed', 'series-tracker')).toEqual({
+      tags: ['#completed'],
+      tagMode: 'all',
+      listType: 'series-tracker',
+    });
+  });
+
+  it('merges explicit route filters into standard search filters', () => {
+    expect(buildStandardSearchFilters(' dark ', 'library', { type: 'movie', watched: false })).toEqual({
+      search: 'dark',
+      type: 'movie',
       watched: false,
       listType: 'library',
     });
   });
+});
 
-  it('builds virtual uncompleted filters', () => {
-    expect(buildStandardSearchFilters(VIRTUAL_UNCOMPLETED_TAG, 'series-tracker')).toEqual({
-      completed: false,
-      listType: 'series-tracker',
+describe('buildCollectionRouteFilters', () => {
+  it('builds explicit filters from query params', () => {
+    const queryParams = new Map([
+      ['type', 'series'],
+      ['favorite', 'true'],
+      ['watched', 'false'],
+      ['completed', 'true'],
+    ]);
+
+    expect(buildCollectionRouteFilters({ get: (name) => queryParams.get(name) ?? null })).toEqual({
+      type: 'series',
+      favorite: true,
+      watched: false,
+      completed: true,
     });
+  });
+});
+
+describe('buildCollectionRouteFilterKey', () => {
+  it('returns an empty key when no explicit filters are active', () => {
+    expect(buildCollectionRouteFilterKey({})).toBe('');
+  });
+
+  it('builds a stable key from explicit filters', () => {
+    expect(buildCollectionRouteFilterKey({ type: 'movie', watched: false })).toBe(
+      JSON.stringify({ type: 'movie', favorite: null, watched: false, completed: null })
+    );
   });
 });

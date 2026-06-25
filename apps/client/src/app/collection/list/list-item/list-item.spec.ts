@@ -2,7 +2,6 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { COMPLETED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,13 +17,18 @@ import { CollectionState, collectionStateToken, initialCollectionState } from '.
 import { AiSearchService } from '../../search/ai-search-service';
 import { ListItem } from './list-item';
 
+const COMPLETED_TAG = '#completed';
+const FAVORITE_TAG = '#favorite';
+const MOVIE_TAG = '#movie';
+const SERIES_TAG = '#series';
+
 const buildItem = (title: string, tags: string[] = []): CollectionItemModel => ({
   image: '',
   title,
   titleLower: title.toLowerCase(),
   genre: [],
   IMDbId: '',
-  tags,
+  tags: tags.filter((tag) => ![FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, COMPLETED_TAG].includes(tag)),
   year: null,
   rate: '',
   rottenTomatoesRate: '',
@@ -34,7 +38,9 @@ const buildItem = (title: string, tags: string[] = []): CollectionItemModel => (
   actors: '',
   plot: '',
   listType: 'library',
-  watchedAt: null,
+  contentType: tags.includes(SERIES_TAG) && !tags.includes(MOVIE_TAG) ? 'series' : 'movie',
+  favorite: tags.includes(FAVORITE_TAG),
+  watchedAt: tags.includes(COMPLETED_TAG) ? '2025-01-01 00:00:00' : null,
 });
 
 const normalizeHexColor = (hex: string): string => {
@@ -125,9 +131,10 @@ describe('ListItem', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-shared"]')).not.toBeNull();
   });
 
-  it('derives watched, favorite, movie, series, and non-internal tags', () => {
+  it('derives watched, favorite, movie, series, and display tags', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2']),
+      tags: [FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2'],
       watched: true,
     });
     fixture.detectChanges();
@@ -135,11 +142,8 @@ describe('ListItem', () => {
     expect(component['watched']()).toBe(true);
     expect(component['favorite']()).toBe(true);
     expect(component['movie']()).toBe(true);
-    expect(component['series']()).toBe(true);
-    expect(component['tags']()).toEqual(['#tag1', '#tag2']);
-    expect(component['MOVIE_TAG']).toBe(MOVIE_TAG);
-    expect(component['SERIES_TAG']).toBe(SERIES_TAG);
-    expect(component['VIRTUAL_UNWATCHED_TAG']).toBe('#unwatched');
+    expect(component['series']()).toBe(false);
+    expect(component['tags']()).toEqual([FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2']);
   });
 
   it('renders a favorite star for favorite items', () => {

@@ -8,14 +8,32 @@ const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertItem = (imdbId: string, tags: string[] = [], listType = 'library', usernameHash = 'user') => {
+const insertItem = (
+  imdbId: string,
+  tags: string[] = [],
+  listType = 'library',
+  usernameHash = 'user',
+  contentType = 'movie'
+) => {
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', `${usernameHash}-${listType}-${imdbId}`);
+    .run(
+      usernameHash,
+      imdbId,
+      listType,
+      'Title',
+      'title',
+      '',
+      '',
+      '',
+      '',
+      `${usernameHash}-${listType}-${imdbId}`,
+      contentType
+    );
   const itemId = Number(result.lastInsertRowid);
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
@@ -40,7 +58,7 @@ describe('mark-all-watched-api', () => {
   it('copies unwatched library movies to the movie tracker', async () => {
     insertUser();
     insertItem('tt-1', ['#movie']);
-    insertItem('tt-2', ['#series']);
+    insertItem('tt-2', ['#series'], 'library', 'user', 'series');
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
@@ -98,7 +116,7 @@ describe('mark-all-watched-api', () => {
     insertShare('owner', 'user', true);
     insertItem('tt-own', ['#movie'], 'library', 'user');
     insertItem('tt-shared', ['#movie'], 'library', 'owner');
-    insertItem('tt-series', ['#series'], 'library', 'owner');
+    insertItem('tt-series', ['#series'], 'library', 'owner', 'series');
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };

@@ -30,6 +30,8 @@ const item = {
   hash: 'hash',
   listType: 'library',
   watchedAt: null,
+  contentType: 'movie',
+  favorite: false,
 };
 
 const seriesTrackerItem = {
@@ -40,6 +42,7 @@ const seriesTrackerItem = {
   tags: ['#completed', '#series'],
   listType: 'series-tracker',
   watchedAt: '2026-05-06 00:00:00',
+  contentType: 'series',
 };
 
 const movieTrackerItem = {
@@ -102,7 +105,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 2,
+        version: 3,
         userSettings: { theme: 'dark', animatedBackground: false, language: 'en' },
         collectionItems: [
           item,
@@ -112,7 +115,15 @@ describe('import-api', () => {
         ],
         tagManagement: [
           {
-            tag: '#movie',
+            tag: '#favorite',
+            color: '#222222',
+            useForImageBorder: false,
+            useForTextColor: true,
+            useForImageBadge: false,
+            weight: 3,
+          },
+          {
+            tag: '#custom',
             color: '#111111',
             useForImageBorder: true,
             useForTextColor: false,
@@ -137,7 +148,7 @@ describe('import-api', () => {
 
     expect(response.send).toHaveBeenCalledWith({
       importedCollectionItems: 4,
-      importedTagManagement: 1,
+      importedTagManagement: 2,
       importedSeriesTrackerSeasons: 1,
       importedSeriesTrackerWatchedEpisodes: 1,
     });
@@ -169,6 +180,46 @@ describe('import-api', () => {
     });
   });
 
+  it('imports version 2 backups by deriving explicit fields from legacy tags', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    const response = mockResponse();
+    const { contentType, favorite, ...legacyItem } = {
+      ...item,
+      IMDbId: 'tt0000010',
+      tags: ['#series', '#favorite', '#custom'],
+    };
+    void contentType;
+    void favorite;
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 2,
+        userSettings: {},
+        collectionItems: [legacyItem],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.send).toHaveBeenCalledWith({
+      importedCollectionItems: 1,
+      importedTagManagement: 0,
+      importedSeriesTrackerSeasons: 0,
+      importedSeriesTrackerWatchedEpisodes: 0,
+    });
+    expect(
+      db.prepare('SELECT content_type, favorite FROM collection_items WHERE imdb_id = ?').get('tt0000010')
+    ).toEqual({ content_type: 'series', favorite: 1 });
+  });
+
   it('clears watched_at for imported incomplete series even when a timestamp is present', async () => {
     insertUser('user');
     const response = mockResponse();
@@ -176,7 +227,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 2,
+        version: 3,
         userSettings: {},
         collectionItems: [{ ...seriesTrackerItem, tags: ['#series'], watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
@@ -209,7 +260,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 2,
+        version: 3,
         userSettings: {},
         collectionItems: [{ ...movieTrackerItem, watchedAt: 'not-a-date' }],
         tagManagement: [],
@@ -231,7 +282,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 2,
+        version: 3,
         userSettings: {},
         collectionItems: [{ ...movieTrackerItem, watchedAt: '2026-02-31 00:00:00' }],
         tagManagement: [],
@@ -254,7 +305,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 2,
+        version: 3,
         userSettings: {},
         collectionItems: [{ ...seriesTrackerItem, watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
@@ -294,7 +345,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 2,
+        version: 3,
         userSettings: { collectionListDisplayPreferences: { preferredRating: 'imdb' } },
         collectionItems: [],
         tagManagement: [],
@@ -316,12 +367,12 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 2,
+        version: 3,
         userSettings: {},
         collectionItems: [],
         tagManagement: [
           {
-            tag: '#movie',
+            tag: '#custom',
             color: '#111111',
             useForImageBorder: true,
             useForTextColor: false,
@@ -329,7 +380,7 @@ describe('import-api', () => {
             weight: 2,
           },
           {
-            tag: '#movie',
+            tag: '#custom',
             color: '#222222',
             useForImageBorder: false,
             useForTextColor: true,
@@ -349,13 +400,53 @@ describe('import-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
+  it('imports former system tag management entries', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 3,
+        userSettings: { theme: 'dark', animatedBackground: false, language: 'en' },
+        collectionItems: [],
+        tagManagement: [
+          {
+            tag: '#favorite',
+            color: '#111111',
+            useForImageBorder: true,
+            useForTextColor: false,
+            useForImageBadge: false,
+            weight: 2,
+          },
+        ],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    expect(response.send).toHaveBeenCalledWith({
+      importedCollectionItems: 0,
+      importedTagManagement: 1,
+      importedSeriesTrackerSeasons: 0,
+      importedSeriesTrackerWatchedEpisodes: 0,
+    });
+    expect(getDatabase().prepare('SELECT tag FROM tag_configs WHERE username_hash = ?').all('user')).toEqual([
+      { tag: '#favorite' },
+    ]);
+  });
+
   it('returns 400 for invalid series tracker import metadata', async () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 2,
+        version: 3,
         userSettings: {},
         collectionItems: [seriesTrackerItem],
         tagManagement: [],

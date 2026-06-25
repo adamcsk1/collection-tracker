@@ -19,6 +19,8 @@ describe('FloatActionButtonsService', () => {
       showAiSearchButton: false,
       showRandomPickButton: true,
       showOrderButtons: false,
+      filterActions: [],
+      activeFilterActions: [],
       useAiSearch: false,
       orderBy: 'createdAt',
       orderDirection: 'desc',
@@ -32,6 +34,7 @@ describe('FloatActionButtonsService', () => {
       toggleAiSearch: vi.fn(),
       toggleOrderBy: vi.fn(),
       toggleOrderDirection: vi.fn(),
+      applyFilter: vi.fn(),
       showFunctions: vi.fn(),
     };
     service.setCallbacks(callbacks);
@@ -41,6 +44,7 @@ describe('FloatActionButtonsService', () => {
     service.toggleAiSearch();
     service.toggleOrderBy();
     service.toggleOrderDirection();
+    service.applyFilter('movie');
     service.showFunctions();
 
     expect(callbacks.addNew).toHaveBeenCalledTimes(1);
@@ -48,6 +52,7 @@ describe('FloatActionButtonsService', () => {
     expect(callbacks.toggleAiSearch).toHaveBeenCalledTimes(1);
     expect(callbacks.toggleOrderBy).toHaveBeenCalledTimes(1);
     expect(callbacks.toggleOrderDirection).toHaveBeenCalledTimes(1);
+    expect(callbacks.applyFilter).toHaveBeenCalledWith('movie');
     expect(callbacks.showFunctions).toHaveBeenCalledTimes(1);
   });
 
@@ -60,6 +65,7 @@ describe('FloatActionButtonsService', () => {
       toggleAiSearch: vi.fn(),
       toggleOrderBy: vi.fn(),
       toggleOrderDirection: vi.fn(),
+      applyFilter: vi.fn(),
       showFunctions: vi.fn(),
     });
 
@@ -73,6 +79,8 @@ describe('FloatActionButtonsService', () => {
       showAiSearchButton: true,
       showRandomPickButton: true,
       showOrderButtons: false,
+      filterActions: [],
+      activeFilterActions: [],
       useAiSearch: false,
       orderBy: 'createdAt',
       orderDirection: 'desc',

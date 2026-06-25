@@ -100,7 +100,7 @@
       </button>
     }
   }
-  @if (permissionUpdate() && !internalCollectionTag()) {
+  @if (permissionUpdate()) {
     <button class="button-borderless unaligned" data-test-id="item-dialog-edit" (click)="edit.emit()">
       <i class="material-icons" aria-hidden="true"> edit </i>
       {{ translations().edit() }}

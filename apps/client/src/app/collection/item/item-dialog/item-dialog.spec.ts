@@ -8,15 +8,6 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import {
-  COMPLETED_TAG,
-  FAVORITE_TAG,
-  MOVIE_TAG,
-  SERIES_TAG,
-  VIRTUAL_UNWATCHED_TAG,
-  WATCH_LATER_TAG,
-  WISHLIST_TAG,
-} from '@shared/constants/tags-const';
 import { CollectionItemApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -28,49 +19,51 @@ import { CollectionItemModel } from '../../collection-model';
 import { CollectionService } from '../../collection-service';
 import { ItemDialog } from './item-dialog';
 import { SeriesSeasonMetadataDialog } from '../../series-tracker/series-season-metadata-dialog/series-season-metadata-dialog';
-import { isSystemDisplayTag } from './utils/item-dialog-util';
 
 const CUSTOM_WATCHED_TAG = '#watched';
+const COMPLETED_TAG = '#completed';
+const FAVORITE_TAG = '#favorite';
+const MOVIE_TAG = '#movie';
+const SERIES_TAG = '#series';
+const CUSTOM_UNWATCHED_TAG = '#unwatched';
+const WATCH_LATER_TAG = '#watch-later';
+const WISHLIST_TAG = '#wishlist';
 
-const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItemModel => ({
-  image: 'https://example.com/poster.jpg',
-  title: 'Test Movie',
-  titleLower: 'test movie',
-  genre: ['Drama', 'Thriller'],
-  IMDbId: 'tt1234567',
-  tags: [MOVIE_TAG, '#action'],
-  year: '2020',
-  rate: '8.5',
-  rottenTomatoesRate: '',
-  metacriticRate: '',
-  userRate: null,
-  hash: 'testhash',
-  actors: 'Actor One, Actor Two',
-  plot: 'A test plot.',
-  listType: 'library',
-  watchedAt: null,
-  ...overrides,
-});
+const getContentType = (tags: string[]): CollectionItemModel['contentType'] =>
+  tags.includes(SERIES_TAG) && !tags.includes(MOVIE_TAG) ? 'series' : 'movie';
 
-const buildApiItem = (overrides: Partial<CollectionItemApiModel> = {}): CollectionItemApiModel => ({
-  image: 'https://example.com/poster.jpg',
-  title: 'Test Movie',
-  titleLower: 'test movie',
-  genre: ['Drama', 'Thriller'],
-  IMDbId: 'tt1234567',
-  tags: [MOVIE_TAG, '#action'],
-  year: '2020',
-  rate: '8.5',
-  rottenTomatoesRate: '',
-  metacriticRate: '',
-  userRate: null,
-  hash: 'newhash',
-  actors: 'Actor One, Actor Two',
-  plot: 'A test plot.',
-  listType: 'library',
-  watchedAt: null,
-  ...overrides,
-});
+const getCustomTags = (tags: string[]): string[] =>
+  tags.filter(
+    (tag) => ![MOVIE_TAG, SERIES_TAG, FAVORITE_TAG, COMPLETED_TAG, WATCH_LATER_TAG, WISHLIST_TAG].includes(tag)
+  );
+
+const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItemModel => {
+  const tags = overrides.tags ?? [MOVIE_TAG, '#action'];
+  return {
+    image: 'https://example.com/poster.jpg',
+    title: 'Test Movie',
+    titleLower: 'test movie',
+    genre: ['Drama', 'Thriller'],
+    IMDbId: 'tt1234567',
+    tags: getCustomTags(tags),
+    year: '2020',
+    rate: '8.5',
+    rottenTomatoesRate: '',
+    metacriticRate: '',
+    userRate: null,
+    hash: 'testhash',
+    actors: 'Actor One, Actor Two',
+    plot: 'A test plot.',
+    listType: 'library',
+    contentType: getContentType(tags),
+    favorite: tags.includes(FAVORITE_TAG),
+    watchedAt: tags.includes(COMPLETED_TAG) ? '2025-01-01 00:00:00' : null,
+    ...overrides,
+  };
+};
+
+const buildApiItem = (overrides: Partial<CollectionItemApiModel> = {}): CollectionItemApiModel =>
+  buildItem({ ...overrides, hash: overrides.hash ?? 'newhash' });
 
 describe('ItemDialog', () => {
   let fixture: ComponentFixture<ItemDialog>;
@@ -190,7 +183,8 @@ describe('ItemDialog', () => {
   it('initializes draft item from the input model', () => {
     expect(component['form'].title().value()).toBe('Test Movie');
     expect(component['form'].IMDbId().value()).toBe('tt1234567');
-    expect(component['form'].tagsText().value()).toBe(`${MOVIE_TAG} #action`);
+    expect(component['form'].tagsText().value()).toBe('#action');
+    expect(component['form'].contentType().value()).toBe('movie');
   });
 
   it('initializes external rating fields from the input model', () => {
@@ -215,10 +209,12 @@ describe('ItemDialog', () => {
   it('restores last saved item when switching back to read-only', () => {
     component['onEdit']();
     component['form'].title().value.set('Modified Title');
+    component['form'].contentType().value.set('series');
     expect(component['form'].title().value()).toBe('Modified Title');
 
     component['onReadOnly']();
     expect(component['form'].title().value()).toBe('Test Movie');
+    expect(component['form'].contentType().value()).toBe('movie');
     expect(component['editMode']()).toBe(false);
   });
 
@@ -231,7 +227,7 @@ describe('ItemDialog', () => {
     expect(component['watched']()).toBe(true);
   });
 
-  it('computes favorite status from tags', () => {
+  it('computes favorite status from the favorite field', () => {
     expect(component['favorite']()).toBe(false);
 
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG] }));
@@ -252,6 +248,20 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
 
     expect(component['wishlist']()).toBe(true);
+  });
+
+  it('allows own wishlist item changes', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist' }));
+    fixture.detectChanges();
+
+    expect(component['permissionUpdate']()).toBe(true);
+  });
+
+  it('allows own watch later item changes', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
+    fixture.detectChanges();
+
+    expect(component['permissionUpdate']()).toBe(true);
   });
 
   it('returns collection item title for normal items', () => {
@@ -285,10 +295,12 @@ describe('ItemDialog', () => {
 
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
     fixture.detectChanges();
+    expect(component['translations'].edit()).toBe('EditWatchLaterItem');
     expect(component['translations'].delete()).toBe('DeleteFromWatchLater');
 
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist' }));
     fixture.detectChanges();
+    expect(component['translations'].edit()).toBe('EditWishlistItem');
     expect(component['translations'].delete()).toBe('DeleteFromWishlist');
 
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
@@ -368,39 +380,39 @@ describe('ItemDialog', () => {
 
   it('computes genre and tags text from draft item', () => {
     expect(component['genreText']()).toBe('Drama, Thriller');
-    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+    expect(component['tagsText']()).toBe('#action');
   });
 
-  it('hides the internal watch later tag from editable tag text', () => {
+  it('keeps the former watch later tag in editable tag text', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WATCH_LATER_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action ${WATCH_LATER_TAG}`);
   });
 
-  it('hides the internal wishlist tag from editable tag text', () => {
+  it('keeps the former wishlist tag in editable tag text', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WISHLIST_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action ${WISHLIST_TAG}`);
   });
 
-  it('hides completed from editable tag text', () => {
+  it('keeps completed in editable tag text', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, COMPLETED_TAG, '#action'] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+    expect(component['tagsText']()).toBe(`${MOVIE_TAG} ${COMPLETED_TAG} #action`);
   });
 
-  it('hides favorite from editable tag text', () => {
+  it('keeps favorite in editable tag text', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG, '#action'] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+    expect(component['tagsText']()).toBe(`${MOVIE_TAG} ${FAVORITE_TAG} #action`);
   });
 
   it('keeps watched as editable custom tag text', () => {
@@ -411,52 +423,39 @@ describe('ItemDialog', () => {
     expect(component['tagsText']()).toBe(`${MOVIE_TAG} ${CUSTOM_WATCHED_TAG} #action`);
   });
 
-  it('hides the internal watch later tag from detail tags', () => {
+  it('keeps the former watch later tag in detail tags', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WATCH_LATER_TAG] }));
     fixture.detectChanges();
 
-    expect(component['detailTags']()).toEqual(['#action']);
-    expect(component['systemTags']()).toEqual([MOVIE_TAG]);
+    expect(component['detailTags']()).toEqual([MOVIE_TAG, '#action', WATCH_LATER_TAG]);
   });
 
-  it('hides the internal wishlist tag from detail tags', () => {
+  it('keeps the former wishlist tag in detail tags', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, '#action', WISHLIST_TAG] }));
     fixture.detectChanges();
 
-    expect(component['detailTags']()).toEqual(['#action']);
-    expect(component['systemTags']()).toEqual([MOVIE_TAG]);
+    expect(component['detailTags']()).toEqual([MOVIE_TAG, '#action', WISHLIST_TAG]);
   });
 
-  it('shows completed in system tags', () => {
+  it('keeps completed in detail tags', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, COMPLETED_TAG, '#action'] }));
     fixture.detectChanges();
 
-    expect(component['detailTags']()).toEqual(['#action']);
-    expect(component['systemTags']()).toEqual([MOVIE_TAG, COMPLETED_TAG]);
+    expect(component['detailTags']()).toEqual([MOVIE_TAG, COMPLETED_TAG, '#action']);
   });
 
-  it('shows favorite in system tags', () => {
+  it('keeps favorite in detail tags', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG, '#action'] }));
     fixture.detectChanges();
 
-    expect(component['detailTags']()).toEqual(['#action']);
-    expect(component['systemTags']()).toEqual([MOVIE_TAG, FAVORITE_TAG]);
+    expect(component['detailTags']()).toEqual([MOVIE_TAG, FAVORITE_TAG, '#action']);
   });
 
   it('shows watched as a custom detail tag', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, CUSTOM_WATCHED_TAG, '#action'] }));
     fixture.detectChanges();
 
-    expect(component['detailTags']()).toEqual([CUSTOM_WATCHED_TAG, '#action']);
-    expect(component['systemTags']()).toEqual([MOVIE_TAG]);
-  });
-
-  it('detects system display tags', () => {
-    expect(isSystemDisplayTag(MOVIE_TAG)).toBe(true);
-    expect(isSystemDisplayTag(SERIES_TAG)).toBe(true);
-    expect(isSystemDisplayTag(FAVORITE_TAG)).toBe(true);
-    expect(isSystemDisplayTag(COMPLETED_TAG)).toBe(true);
-    expect(isSystemDisplayTag('#action')).toBe(false);
+    expect(component['detailTags']()).toEqual([MOVIE_TAG, CUSTOM_WATCHED_TAG, '#action']);
   });
 
   it('uses N/A when series tracker episode progress is not set', () => {
@@ -636,6 +635,20 @@ describe('ItemDialog', () => {
     );
   });
 
+  it('saves edited content type', async () => {
+    confirm.open.mockReturnValue(of(true));
+    component['form'].contentType().value.set('series');
+
+    await component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ contentType: 'series' }),
+      'testhash',
+      undefined
+    );
+  });
+
   it('validates edited IMDb rate format', async () => {
     for (const validRate of ['', '0', '0.0', '8.5', '10', '10.0']) {
       component['form'].rate().value.set(validRate);
@@ -698,13 +711,13 @@ describe('ItemDialog', () => {
 
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
-      expect.objectContaining({ tags: [MOVIE_TAG, '#action', FAVORITE_TAG] }),
+      expect.objectContaining({ tags: [MOVIE_TAG, FAVORITE_TAG, '#action'], favorite: true }),
       'testhash',
       undefined
     );
   });
 
-  it('does not send completed when saving regular edits', async () => {
+  it('preserves completed when saving regular edits', async () => {
     confirm.open.mockReturnValue(of(true));
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, COMPLETED_TAG, '#action'] }));
     fixture.detectChanges();
@@ -715,7 +728,7 @@ describe('ItemDialog', () => {
 
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
-      expect.objectContaining({ tags: [MOVIE_TAG, '#action'] }),
+      expect.objectContaining({ tags: [MOVIE_TAG, COMPLETED_TAG, '#action'] }),
       'testhash',
       undefined
     );
@@ -769,106 +782,139 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('');
   });
 
-  it('does not save when tags contain virtual tags', async () => {
-    component['form'].tagsText().value.set(`${MOVIE_TAG} ${VIRTUAL_UNWATCHED_TAG}`);
+  it('saves former virtual tags as custom tags', async () => {
+    confirm.open.mockReturnValue(of(true));
+    component['form'].tagsText().value.set(CUSTOM_UNWATCHED_TAG);
 
     await component['onSaveChanges']();
 
-    expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [CUSTOM_UNWATCHED_TAG], contentType: 'movie' }),
+      'testhash',
+      undefined
+    );
   });
 
-  it('shows an internal tag error when tags contain server-managed tags', async () => {
-    component['form'].tagsText().value.set(`${MOVIE_TAG} ${COMPLETED_TAG}`);
+  it('saves former server-managed tags as custom tags', async () => {
+    confirm.open.mockReturnValue(of(true));
+    component['form'].tagsText().value.set(COMPLETED_TAG);
 
     await component['onSaveChanges']();
 
-    expect(component['formErrors'].tagsText.usedInternalTag()).toBe(true);
-    expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [COMPLETED_TAG], contentType: 'movie' }),
+      'testhash',
+      undefined
+    );
   });
 
-  it('shows an internal tag error when tags contain user action tags', async () => {
-    component['form'].tagsText().value.set(`${MOVIE_TAG} ${FAVORITE_TAG}`);
+  it('saves former user action tags as custom tags', async () => {
+    confirm.open.mockReturnValue(of(true));
+    component['form'].tagsText().value.set(FAVORITE_TAG);
 
     await component['onSaveChanges']();
 
-    expect(component['formErrors'].tagsText.usedInternalTag()).toBe(true);
-    expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [FAVORITE_TAG], contentType: 'movie' }),
+      'testhash',
+      undefined
+    );
   });
 
-  it('does not save when a normal item is changed to watch later', async () => {
-    component['form'].tagsText().value.set(`${MOVIE_TAG} ${WATCH_LATER_TAG}`);
+  it('saves former watch later tags as custom tags', async () => {
+    confirm.open.mockReturnValue(of(true));
+    component['form'].tagsText().value.set(WATCH_LATER_TAG);
 
     await component['onSaveChanges']();
 
-    expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [WATCH_LATER_TAG], contentType: 'movie' }),
+      'testhash',
+      undefined
+    );
   });
 
-  it('does not save when a normal item is changed to wishlist', async () => {
-    component['form'].tagsText().value.set(`${MOVIE_TAG} ${WISHLIST_TAG}`);
+  it('saves former wishlist tags as custom tags', async () => {
+    confirm.open.mockReturnValue(of(true));
+    component['form'].tagsText().value.set(WISHLIST_TAG);
 
     await component['onSaveChanges']();
 
-    expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [WISHLIST_TAG], contentType: 'movie' }),
+      'testhash',
+      undefined
+    );
   });
 
-  it('does not save when a watch later item is edited through the normal item flow', async () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
-    fixture.detectChanges();
-    component.ngOnInit();
-    component['form'].tagsText().value.set(`${MOVIE_TAG} ${WATCH_LATER_TAG} #custom`);
-
-    await component['onSaveChanges']();
-
-    expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
-  });
-
-  it('does not update watch later items', async () => {
+  it('updates watch later items against the watch later list', async () => {
     confirm.open.mockReturnValue(of(true));
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
     fixture.detectChanges();
     component.ngOnInit();
-    component['form'].tagsText().value.set(`${MOVIE_TAG} #later`);
+    component['form'].tagsText().value.set('#later');
 
     await component['onSaveChanges']();
 
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: ['#later'] }),
+      'testhash',
+      undefined,
+      'watch-later'
+    );
   });
 
-  it('does not update wishlist items', async () => {
+  it('updates wishlist items against the wishlist list', async () => {
     confirm.open.mockReturnValue(of(true));
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist' }));
     fixture.detectChanges();
     component.ngOnInit();
-    component['form'].tagsText().value.set(`${MOVIE_TAG} #wishlist-custom`);
+    component['form'].tagsText().value.set('#wishlist-custom');
 
     await component['onSaveChanges']();
 
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: ['#wishlist-custom'] }),
+      'testhash',
+      undefined,
+      'wishlist'
+    );
   });
 
-  it('does not save when tags lack a type tag', async () => {
+  it('saves custom tags without a type tag', async () => {
+    confirm.open.mockReturnValue(of(true));
     component['form'].tagsText().value.set('#action');
 
     await component['onSaveChanges']();
 
-    expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(confirm.open).toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: ['#action'], contentType: 'movie' }),
+      'testhash',
+      undefined
+    );
   });
 
-  it('allows series tag as valid type tag', async () => {
+  it('saves former type tags as custom tags', async () => {
     confirm.open.mockReturnValue(of(true));
     component['form'].tagsText().value.set(`${SERIES_TAG} #drama`);
 
     await component['onSaveChanges']();
 
-    expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalled();
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ tags: [SERIES_TAG, '#drama'], contentType: 'movie' }),
+      'testhash',
+      undefined
+    );
   });
 
   it('allows tracker actions for library series items', () => {
@@ -1004,7 +1050,7 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });
 
-  it('marks item as favorite by appending favorite tag and saving', async () => {
+  it('marks item as favorite and saves', async () => {
     confirm.open.mockReturnValue(of(true));
 
     await component['onMarkAsFavorite']();
@@ -1012,7 +1058,7 @@ describe('ItemDialog', () => {
     expect(confirm.open).toHaveBeenCalled();
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
-      expect.objectContaining({ tags: expect.arrayContaining([FAVORITE_TAG]) }),
+      expect.objectContaining({ favorite: true, tags: ['#action'] }),
       'testhash',
       undefined
     );
@@ -1032,7 +1078,7 @@ describe('ItemDialog', () => {
   });
 
   it('does not mark wishlist items as favorite', async () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist', tags: [MOVIE_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
@@ -1043,7 +1089,7 @@ describe('ItemDialog', () => {
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('removes favorite tag and saves', async () => {
+  it('removes favorite and saves', async () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG, '#action'] }));
     fixture.detectChanges();
     component.ngOnInit();
@@ -1054,7 +1100,7 @@ describe('ItemDialog', () => {
     expect(confirm.open).toHaveBeenCalled();
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
-      expect.objectContaining({ tags: expect.not.arrayContaining([FAVORITE_TAG]) }),
+      expect.objectContaining({ favorite: false, tags: [MOVIE_TAG, FAVORITE_TAG, '#action'] }),
       'testhash',
       undefined
     );

@@ -213,7 +213,7 @@ describe('runMigrations', () => {
   });
 
   describe('004_add_collection_item_list_type', () => {
-    it('converts watch-later and wishlist tags into list_type values and cleans stale tags', async () => {
+    it('converts watch-later and wishlist tags into list_type values and preserves tags', async () => {
       const { db, migrationsDir } = await preparePreMigrationState('004_add_collection_item_list_type.sql', tempDirs);
 
       db.exec(`
@@ -248,12 +248,12 @@ describe('runMigrations', () => {
       const tags1 = db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(1) as Array<{
         tag: string;
       }>;
-      expect(tags1.map((t) => t.tag)).toEqual(['#favorite', 'custom']);
+      expect(tags1.map((t) => t.tag)).toEqual(['#favorite', '#watch-later', 'custom']);
 
       const tags2 = db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(2) as Array<{
         tag: string;
       }>;
-      expect(tags2.map((t) => t.tag)).toEqual(['tag2']);
+      expect(tags2.map((t) => t.tag)).toEqual(['#wishlist', 'tag2']);
 
       const tags3 = db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(3) as Array<{
         tag: string;
@@ -749,7 +749,10 @@ describe('runMigrations', () => {
       { item_id: 1, season: 2, episode: 2 },
       { item_id: 2, season: 1, episode: 3 },
     ]);
-    expect(db.prepare('SELECT tag FROM collection_item_tags ORDER BY item_id').all()).toEqual([]);
+    expect(db.prepare('SELECT item_id, tag FROM collection_item_tags ORDER BY item_id').all()).toEqual([
+      { item_id: 1, tag: '#episode-s02e02' },
+      { item_id: 2, tag: '#episode-s01e03' },
+    ]);
 
     db.close();
   });
@@ -867,19 +870,33 @@ describe('runMigrations', () => {
 
     await runMigrations(db, migrationsDir);
 
+    expect(db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = 1 ORDER BY tag').all()).toEqual([
+      { tag: '#favorite' },
+      { tag: '#movie' },
+      { tag: '#watch-later' },
+      { tag: '#watched' },
+      { tag: 'custom' },
+    ]);
+
     const trackerItem = db
       .prepare('SELECT id, content_hash FROM collection_items WHERE imdb_id = ? AND list_type = ?')
       .get('tt001', 'movie-tracker') as { id: number; content_hash: string };
     expect(
       db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(trackerItem.id)
-    ).toEqual([{ tag: '#movie' }, { tag: 'custom' }]);
+    ).toEqual([
+      { tag: '#favorite' },
+      { tag: '#movie' },
+      { tag: '#watch-later' },
+      { tag: '#watched' },
+      { tag: 'custom' },
+    ]);
     expect(trackerItem.content_hash).toBe(
       getItemHash({
         image: 'image',
         title: 'Movie',
         genre: ['Drama'],
         IMDbId: 'tt001',
-        tags: ['#movie', 'custom'],
+        tags: ['#favorite', '#movie', '#watch-later', '#watched', 'custom'],
         year: '2024',
         rate: '8.0',
         rottenTomatoesRate: '95%',
@@ -887,6 +904,8 @@ describe('runMigrations', () => {
         userRate: 8.5,
         actors: 'Actor',
         plot: 'Plot',
+        contentType: 'movie',
+        favorite: false,
       })
     );
 
@@ -926,6 +945,85 @@ describe('runMigrations', () => {
           .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?")
           .get('idx_collection_items_watched_at')
       ).toBeTruthy();
+
+      db.close();
+    });
+  });
+
+  describe('017_move_system_tags_to_columns', () => {
+    it('derives columns from legacy system tags while preserving tags and recomputing item hashes', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('017_move_system_tags_to_columns.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, imdb_id, list_type, title, title_lower, year, rate, user_rate, actors, plot, image, content_hash, rotten_tomatoes_rate, metacritic_rate, watched_at)
+        VALUES
+          ('user', 'tt-series', 'library', 'Series', 'series', '2024', '8.0', 8.5, 'Actor', 'Plot', 'image', 'legacy-hash', '95%', '80/100', '2024-01-02 00:00:00');
+        INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES
+          (1, '#series'),
+          (1, '#favorite'),
+          (1, '#completed'),
+          (1, '#watch-later'),
+          (1, '#episode-s01e01'),
+          (1, '#episode-sxxeyy'),
+          (1, 'custom');
+        INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight)
+        VALUES
+          ('user', '#favorite', '#111111', 1, 0, 0, 3),
+          ('user', '#episode-s01e01', '#222222', 0, 1, 0, 2),
+          ('user', '#episode-sxxeyy', '#444444', 0, 0, 1, 4),
+          ('user', 'custom', '#333333', 0, 0, 1, 1);
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '017_move_system_tags_to_columns.sql'),
+        join(migrationsDir, '017_move_system_tags_to_columns.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      const item = db
+        .prepare('SELECT content_type, favorite, content_hash FROM collection_items WHERE id = ?')
+        .get(1) as {
+        content_type: string;
+        favorite: number;
+        content_hash: string;
+      };
+      expect(item).toEqual({
+        content_type: 'series',
+        favorite: 1,
+        content_hash: getItemHash({
+          image: 'image',
+          title: 'Series',
+          genre: ['Drama'],
+          IMDbId: 'tt-series',
+          tags: ['#completed', '#episode-s01e01', '#episode-sxxeyy', '#favorite', '#series', '#watch-later', 'custom'],
+          year: '2024',
+          rate: '8.0',
+          rottenTomatoesRate: '95%',
+          metacriticRate: '80/100',
+          userRate: 8.5,
+          actors: 'Actor',
+          plot: 'Plot',
+          contentType: 'series',
+          favorite: true,
+        }),
+      });
+      expect(db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(1)).toEqual([
+        { tag: '#completed' },
+        { tag: '#episode-s01e01' },
+        { tag: '#episode-sxxeyy' },
+        { tag: '#favorite' },
+        { tag: '#series' },
+        { tag: '#watch-later' },
+        { tag: 'custom' },
+      ]);
+      expect(db.prepare('SELECT tag FROM tag_configs WHERE username_hash = ? ORDER BY tag').all('user')).toEqual([
+        { tag: '#episode-s01e01' },
+        { tag: '#episode-sxxeyy' },
+        { tag: '#favorite' },
+        { tag: 'custom' },
+      ]);
 
       db.close();
     });

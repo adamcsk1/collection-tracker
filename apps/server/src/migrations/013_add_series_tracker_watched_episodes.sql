@@ -61,7 +61,3 @@ WHERE NOT EXISTS (
   WHERE seasons.item_id = legacy_progress.item_id
     AND seasons.season = legacy_progress.target_season
 );
-
--- Delete the migrated episode progress tags from collection_item_tags
-DELETE FROM collection_item_tags
-WHERE tag LIKE '#episode-s__e__';

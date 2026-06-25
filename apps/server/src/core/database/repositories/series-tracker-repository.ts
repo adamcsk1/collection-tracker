@@ -1,12 +1,4 @@
 import {
-  COMPLETED_TAG,
-  FAVORITE_TAG,
-  MOVIE_TAG,
-  SERIES_TAG,
-  WATCH_LATER_TAG,
-  WISHLIST_TAG,
-} from '@shared/constants/tags-const';
-import {
   CollectionItemApiModel,
   CollectionItemChangeApiModel,
   CollectionListTypeModel,
@@ -20,14 +12,15 @@ import { findCollectionItemByImdbId } from './collection/collection-read-reposit
 import { CollectionItemRow } from './collection/collection-types';
 import { deleteCollectionItem, insertCollectionItem } from './collection/collection-write-repository';
 
-const TRACKER_FORBIDDEN_TAGS = [COMPLETED_TAG, FAVORITE_TAG, WATCH_LATER_TAG, WISHLIST_TAG, MOVIE_TAG];
+const seriesContentCondition = `collection_items.content_type = 'series'`;
+
+const librarySeriesContentCondition = `library_item.content_type = 'series'`;
 
 const toSeriesTrackerChange = (db: Database.Database, row: CollectionItemRow): CollectionItemChangeApiModel | null => {
   const sourceItem = toApiItem(db, row, row.username_hash);
-  if (!sourceItem.tags.includes(SERIES_TAG) || sourceItem.tags.includes(MOVIE_TAG)) return null;
+  if (sourceItem.contentType !== 'series') return null;
   const item = toCollectionItemChange(sourceItem);
-  item.tags = item.tags.filter((tag) => !TRACKER_FORBIDDEN_TAGS.includes(tag));
-  if (!item.tags.includes(SERIES_TAG)) item.tags.push(SERIES_TAG);
+  item.favorite = false;
   return item;
 };
 
@@ -67,10 +60,7 @@ export const markAllSeriesAsWatched = (
       `SELECT * FROM collection_items
        WHERE username_hash = ?
          AND list_type = ?
-         AND EXISTS (
-           SELECT 1 FROM collection_item_tags
-           WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-         )
+           AND ${seriesContentCondition}
          AND NOT EXISTS (
            SELECT 1 FROM collection_items series_tracker
            WHERE series_tracker.username_hash = ?
@@ -78,7 +68,7 @@ export const markAllSeriesAsWatched = (
              AND series_tracker.list_type = ?
          )`
     )
-    .all(sourceOwnerHash, 'library', SERIES_TAG, usernameHash, 'series-tracker') as CollectionItemRow[];
+    .all(sourceOwnerHash, 'library', usernameHash, 'series-tracker') as CollectionItemRow[];
 
   void debugLog(
     `markAllSeriesAsWatched candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
@@ -110,13 +100,10 @@ export const findSeriesTrackerItemsForLibrarySeries = (
            WHERE library_item.username_hash = ?
              AND library_item.imdb_id = series_tracker.imdb_id
              AND library_item.list_type = ?
-             AND EXISTS (
-               SELECT 1 FROM collection_item_tags
-               WHERE collection_item_tags.item_id = library_item.id AND collection_item_tags.tag = ?
-             )
-         )`
+               AND ${librarySeriesContentCondition}
+           )`
     )
-    .all(usernameHash, 'series-tracker', sourceOwnerHash, 'library', SERIES_TAG) as CollectionItemRow[];
+    .all(usernameHash, 'series-tracker', sourceOwnerHash, 'library') as CollectionItemRow[];
 
   return rows.map((row) => toApiItem(db, row, usernameHash));
 };

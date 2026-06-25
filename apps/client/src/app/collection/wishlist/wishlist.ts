@@ -9,6 +9,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
@@ -19,7 +21,13 @@ import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
 import { List } from '../list/list';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
-import { buildStandardSearchFilters, setupStandardCollectionSearch } from '../utils/collection-search-filter-util';
+import {
+  buildCollectionRouteFilterKey,
+  buildCollectionRouteFilters,
+  buildStandardSearchFilters,
+  setupStandardCollectionSearch,
+} from '../utils/collection-search-filter-util';
+import { map } from 'rxjs';
 
 @Component({
   selector: 'ct-wishlist',
@@ -39,9 +47,19 @@ export class Wishlist {
   private readonly api = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly floatActions = inject(FloatActionsService);
+  private readonly route = inject(ActivatedRoute);
   private readonly floatSearchTemplate = viewChild<TemplateRef<unknown>>('floatSearch');
 
   protected readonly searchTextModel = signal('');
+  protected readonly queryFilters = toSignal(
+    this.route.queryParamMap.pipe(map((queryParamMap) => buildCollectionRouteFilters(queryParamMap))),
+    {
+      initialValue: buildCollectionRouteFilters({
+        get: (name) => `${this.route.snapshot.queryParams[name] ?? ''}` || null,
+      }),
+    }
+  );
+  protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
   protected readonly searchTextField = form(this.searchTextModel);
   protected readonly wishlistDataSource = ({
     offset,
@@ -51,7 +69,7 @@ export class Wishlist {
     orderDirection,
   }: CollectionListDataSourceRequest) =>
     this.api.searchItems(
-      { ...buildStandardSearchFilters(searchText, 'wishlist'), orderBy, orderDirection },
+      { ...buildStandardSearchFilters(searchText, 'wishlist', this.queryFilters()), orderBy, orderDirection },
       offset,
       limit
     );

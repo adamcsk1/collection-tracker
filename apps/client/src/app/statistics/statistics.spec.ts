@@ -161,10 +161,10 @@ describe('Statistics component', () => {
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library']);
   });
 
-  it('navigates to collection with search query when clicking a stat card', () => {
-    component['onNavigateToCollection']('#movie');
+  it('navigates to collection with type query when clicking a type stat card', () => {
+    component['onNavigateToCollectionType']('movie');
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], { queryParams: { search: '#movie' } });
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], { queryParams: { type: 'movie' } });
   });
 
   it('navigates to favorites when clicking the favorites stat card', () => {
@@ -201,7 +201,7 @@ describe('Statistics component', () => {
     component['onNavigateToUnwatchedMovies']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], {
-      queryParams: { search: '#unwatched', type: 'movie' },
+      queryParams: { watched: false, type: 'movie' },
     });
   });
 
@@ -209,7 +209,7 @@ describe('Statistics component', () => {
     component['onNavigateToUnwatchedLibrarySeries']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], {
-      queryParams: { search: '#unwatched', type: 'series' },
+      queryParams: { watched: false, type: 'series' },
     });
   });
 
@@ -217,7 +217,7 @@ describe('Statistics component', () => {
     component['onNavigateToUnwatchedTrackerSeries']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'series-tracker'], {
-      queryParams: { search: '#uncompleted' },
+      queryParams: { completed: false },
     });
   });
 
@@ -225,7 +225,7 @@ describe('Statistics component', () => {
     component['onNavigateToCompletedTrackerSeries']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'series-tracker'], {
-      queryParams: { search: '#completed' },
+      queryParams: { completed: true },
     });
   });
 

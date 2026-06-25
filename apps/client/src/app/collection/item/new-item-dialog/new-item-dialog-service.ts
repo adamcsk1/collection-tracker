@@ -4,7 +4,6 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
-import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
@@ -71,14 +70,13 @@ export class NewItemDialogService {
           if (listType === 'movie-tracker' && selectedContentType !== 'movie') {
             throw new Error('Movie tracker items must be movies.');
           }
-          const typeTag = selectedContentType === 'movie' ? MOVIE_TAG : SERIES_TAG;
           return {
             item: {
               image: selectedContent.Poster,
               title: selectedContent.Title,
               genre: parseGenreText(selectedContent.Genre),
               IMDbId: selectedContent.imdbID,
-              tags: typeTag ? [typeTag, ...parseTagText(tags)] : parseTagText(tags),
+              tags: parseTagText(tags),
               year: this.parseYear(selectedContent.Year),
               rate: selectedContent.imdbRating,
               rottenTomatoesRate: this.getRating(selectedContent.Ratings, 'Rotten Tomatoes'),
@@ -86,6 +84,8 @@ export class NewItemDialogService {
               userRate,
               actors: selectedContent.Actors,
               plot: selectedContent.Plot,
+              contentType: selectedContentType === 'series' ? 'series' : 'movie',
+              favorite: false,
             },
             selectedContentIsMovie: selectedContentType === 'movie',
             selectedContentIsSeries: selectedContentType === 'series',

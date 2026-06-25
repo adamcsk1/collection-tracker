@@ -24,7 +24,6 @@ import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, sw
 import { mainStateToken } from '../../../main/main-store';
 import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { sharesStateToken } from '../../../shares/shares-store';
-import { forbiddenInternalTagValidation } from '../../validators/tag-validators';
 import { NewItemModel, SaveMode, SaveOptions } from './new-item-dialog-model';
 import { NewItemDialogService } from './new-item-dialog-service';
 import { TagSuggestionService } from './suggestion/tag-suggestion-service';
@@ -88,7 +87,6 @@ export class NewItemDialog {
     validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
     messageTags: computed(() => this.ngxSignalTranslate.translate('Message.Tags')),
-    validationUsedInternalTag: computed(() => this.ngxSignalTranslate.translate('Validation.UsedInternalTag')),
     collectionItemWatched: computed(() => this.ngxSignalTranslate.translate('CollectionItemWatched')),
     copyToSeriesTrackerAsWatched: computed(() => this.ngxSignalTranslate.translate('CopyToSeriesTrackerAsWatched')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
@@ -121,7 +119,6 @@ export class NewItemDialog {
         if (userRate === null) return null;
         return Math.abs(userRate * 10 - Math.round(userRate * 10)) <= 1e-9 ? null : { kind: 'userRate' };
       });
-      validate(newItem.tags, ({ value }) => forbiddenInternalTagValidation(value()));
     },
     {
       submission: {
@@ -136,14 +133,6 @@ export class NewItemDialog {
           .selectedIMDbId()
           .errors()
           .some((error) => error.kind === 'knownIMDbId')
-      ),
-    },
-    tags: {
-      usedInternalTag: computed(() =>
-        this.form
-          .tags()
-          .errors()
-          .some((error) => error.kind === 'usedInternalTag')
       ),
     },
     userRate: {

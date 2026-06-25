@@ -1,4 +1,5 @@
 import {
+  CollectionItemContentTypeModel,
   CollectionItemFiltersApiModel,
   CollectionItemOrderBy,
   CollectionItemOrderDirection,
@@ -10,6 +11,8 @@ export interface CollectionItemRow {
   username_hash: string;
   imdb_id: string;
   list_type: CollectionListTypeModel;
+  content_type: CollectionItemContentTypeModel;
+  favorite: 0 | 1;
   title: string;
   title_lower: string;
   year: string;

@@ -23,7 +23,6 @@ import { getIMDbIds } from '@shared/omdb/get-imdb-id-util';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import type { FastifyInstance } from 'fastify';
 import { API_PREFIX } from '@shared/constants/api-const';
-import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import { getDatabase } from '../core/database/database';
 import {
   collectionItemExistsByImdbId,
@@ -44,6 +43,15 @@ import { normalizeSeriesTrackerSeasons } from '../core/utils/series-tracker-seas
 
 const MAX_COLLECTION_ITEM_IMPORT_SOURCE_LENGTH = 1_000_000;
 const MAX_COLLECTION_ITEM_IMPORT_IMDB_IDS = 100;
+const SUPPORTED_IMPORT_VERSIONS = [2, EXPORT_VERSION] as const;
+
+type SupportedImportVersion = (typeof SUPPORTED_IMPORT_VERSIONS)[number];
+type ImportedCollectionItemApiModel = Omit<CollectionItemApiModel, 'contentType' | 'favorite'> &
+  Partial<Pick<CollectionItemApiModel, 'contentType' | 'favorite'>>;
+type ImportedUserRequestModel = Omit<UserImportApiRequestModel, 'version' | 'collectionItems'> & {
+  version: SupportedImportVersion;
+  collectionItems: ImportedCollectionItemApiModel[];
+};
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -172,7 +180,10 @@ const isWatchedAt = (value: unknown): value is string | null => {
   );
 };
 
-const isCollectionItem = (value: unknown): value is CollectionItemApiModel => {
+const isSupportedImportVersion = (value: unknown): value is SupportedImportVersion =>
+  value === 2 || value === EXPORT_VERSION;
+
+const isCollectionItem = (value: unknown, version: SupportedImportVersion): value is ImportedCollectionItemApiModel => {
   if (!isPlainObject(value)) return false;
   return (
     typeof value['image'] === 'string' &&
@@ -187,6 +198,10 @@ const isCollectionItem = (value: unknown): value is CollectionItemApiModel => {
     (typeof value['userRate'] === 'number' || value['userRate'] === null) &&
     typeof value['actors'] === 'string' &&
     typeof value['plot'] === 'string' &&
+    (version === 2 || value['contentType'] === 'movie' || value['contentType'] === 'series') &&
+    (version === 2 || typeof value['favorite'] === 'boolean') &&
+    (value['contentType'] === undefined || value['contentType'] === 'movie' || value['contentType'] === 'series') &&
+    (value['favorite'] === undefined || typeof value['favorite'] === 'boolean') &&
     typeof value['listType'] === 'string' &&
     parseListType(value['listType']) !== undefined &&
     value['watchedAt'] !== undefined &&
@@ -194,11 +209,17 @@ const isCollectionItem = (value: unknown): value is CollectionItemApiModel => {
   );
 };
 
-const isUserImport = (value: unknown): value is UserImportApiRequestModel => {
+const isUserImport = (value: unknown): value is ImportedUserRequestModel => {
   if (!isPlainObject(value)) return false;
-  if (value['type'] !== EXPORT_TYPE || value['version'] !== EXPORT_VERSION) return false;
+  const importVersion = value['version'];
+  if (value['type'] !== EXPORT_TYPE || !isSupportedImportVersion(importVersion)) return false;
   if (!isUserSettings(value['userSettings'])) return false;
-  if (!Array.isArray(value['collectionItems']) || !value['collectionItems'].every(isCollectionItem)) return false;
+  if (
+    !Array.isArray(value['collectionItems']) ||
+    !value['collectionItems'].every((item) => isCollectionItem(item, importVersion))
+  ) {
+    return false;
+  }
   if (!Array.isArray(value['tagManagement']) || !value['tagManagement'].every(isTagManagement)) return false;
   if (!isPlainObject(value['seriesTrackerData'])) return false;
 
@@ -215,7 +236,7 @@ const isUserImport = (value: unknown): value is UserImportApiRequestModel => {
   );
 };
 
-const toCollectionItemChange = (item: CollectionItemApiModel): CollectionItemChangeApiModel => ({
+const toCollectionItemChange = (item: ImportedCollectionItemApiModel): CollectionItemChangeApiModel => ({
   image: item.image,
   title: item.title,
   genre: item.genre,
@@ -228,6 +249,9 @@ const toCollectionItemChange = (item: CollectionItemApiModel): CollectionItemCha
   userRate: item.userRate,
   actors: item.actors,
   plot: item.plot,
+  contentType:
+    item.contentType ?? (item.tags.includes('#series') && !item.tags.includes('#movie') ? 'series' : 'movie'),
+  favorite: item.favorite ?? item.tags.includes('#favorite'),
 });
 
 const normalizeWatchedEpisodes = (
@@ -277,7 +301,7 @@ const watchedEpisodesExistInSeasons = (
 };
 
 const normalizeSeriesTrackerImportData = (
-  importData: UserImportApiRequestModel,
+  importData: ImportedUserRequestModel,
   seriesTrackerImdbIds: Set<string>
 ): UserImportApiRequestModel['seriesTrackerData'] | null => {
   const normalizedSeriesTrackerData: UserImportApiRequestModel['seriesTrackerData'] = {};
@@ -315,8 +339,8 @@ const toCollectionItemFromOMDb = (omdbItem: OMDbResponseItemModel): CollectionIt
   if (!isPlainObject(omdbItem)) return null;
 
   const type = typeof omdbItem.Type === 'string' ? omdbItem.Type.trim().toLowerCase() : '';
-  const typeTag = type === 'movie' ? MOVIE_TAG : type === 'series' ? SERIES_TAG : null;
-  if (!typeTag || typeof omdbItem.imdbID !== 'string') return null;
+  const contentType = type === 'series' ? 'series' : type === 'movie' ? 'movie' : null;
+  if (!contentType || typeof omdbItem.imdbID !== 'string') return null;
 
   return {
     image: typeof omdbItem.Poster === 'string' ? omdbItem.Poster : '',
@@ -326,7 +350,7 @@ const toCollectionItemFromOMDb = (omdbItem: OMDbResponseItemModel): CollectionIt
       .map((genre) => genre.trim())
       .filter(Boolean),
     IMDbId: omdbItem.imdbID.toLowerCase(),
-    tags: [typeTag],
+    tags: [],
     year: parseYear(typeof omdbItem.Year === 'string' ? omdbItem.Year : ''),
     rate: typeof omdbItem.imdbRating === 'string' ? omdbItem.imdbRating : '',
     rottenTomatoesRate: getRating(omdbItem.Ratings, 'Rotten Tomatoes'),
@@ -334,6 +358,8 @@ const toCollectionItemFromOMDb = (omdbItem: OMDbResponseItemModel): CollectionIt
     userRate: null,
     actors: typeof omdbItem.Actors === 'string' ? omdbItem.Actors : '',
     plot: typeof omdbItem.Plot === 'string' ? omdbItem.Plot : '',
+    contentType,
+    favorite: false,
   };
 };
 

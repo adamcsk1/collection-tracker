@@ -30,6 +30,8 @@ describe('CollectionService', () => {
     actors: '',
     plot: '',
     listType: 'library',
+    contentType: 'movie',
+    favorite: false,
     watchedAt: null,
     ownerShareCode,
   });

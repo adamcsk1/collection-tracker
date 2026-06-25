@@ -53,7 +53,8 @@ export const register = (app: FastifyInstance): void => {
       }
 
       const tagValidationError = changeCollectionItemTagValidation({
-        tags: item.tags,
+        contentType: item.contentType,
+        favorite: item.favorite,
         listType,
         existingListType: existingItem.list_type,
         requesterIsOwner: ownerHash === request.usernameHash,

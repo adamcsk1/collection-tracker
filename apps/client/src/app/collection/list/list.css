@@ -1,12 +1,16 @@
 .list {
-  max-height: calc(100vh - var(--header-height) - 2 * var(--size-md) - 72px);
-  max-height: calc(100svh - var(--header-height) - 2 * var(--size-md) - 72px);
-  max-height: calc(100dvh - var(--header-height) - 2 * var(--size-md) - 72px);
+  box-sizing: border-box;
+  height: calc(100vh - var(--header-height) - 2 * var(--size-md));
+  height: calc(100svh - var(--header-height) - 2 * var(--size-md));
+  height: calc(100dvh - var(--header-height) - 2 * var(--size-md));
   overflow: hidden auto;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: var(--size-md);
   padding: var(--size-md);
+  padding-bottom: calc(var(--size-md) + var(--float-actions-safe-area, 72px));
 
   .list-empty {
     display: flex;
@@ -31,10 +35,10 @@
   }
 }
 
-@media (width > 768px) {
+@media (width > 1250px) {
   .list {
-    max-height: calc(100vh - 2 * var(--size-md) - 72px);
-    max-height: calc(100svh - 2 * var(--size-md) - 72px);
-    max-height: calc(100dvh - 2 * var(--size-md) - 72px);
+    height: calc(100vh - 2 * var(--size-md));
+    height: calc(100svh - 2 * var(--size-md));
+    height: calc(100dvh - 2 * var(--size-md));
   }
 }

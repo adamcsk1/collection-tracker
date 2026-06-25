@@ -9,23 +9,11 @@
   z-index: 1;
   display: block;
   position: relative;
-  max-width: min(var(--container-max-width), 95vw);
+  max-width: var(--container-max-width);
   border-radius: var(--border-radius);
-
-  @media (width <= 520px) {
-    max-width: var(--container-max-width-mobile);
-  }
 
   libc-autocomplete {
     display: block;
     padding: var(--size-xs);
-  }
-
-  .search-input {
-    padding: var(--size-xs);
-
-    ct-ai-search-input {
-      display: block;
-    }
   }
 }

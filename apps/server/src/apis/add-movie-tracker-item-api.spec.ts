@@ -8,14 +8,20 @@ const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertItem = (usernameHash: string, imdbId: string, tags: string[], listType = 'library') => {
+const insertItem = (
+  usernameHash: string,
+  imdbId: string,
+  tags: string[],
+  listType = 'library',
+  contentType = 'movie'
+) => {
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', 'hash');
+    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', 'hash', contentType);
   const itemId = Number(result.lastInsertRowid);
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
@@ -78,7 +84,7 @@ describe('add-movie-tracker-item-api', () => {
 
   it('rejects non-movie library items', async () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#series']);
+    insertItem('user', 'tt-1', ['#series'], 'library', 'series');
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: {} };

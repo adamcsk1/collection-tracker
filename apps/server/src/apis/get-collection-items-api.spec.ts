@@ -1,7 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
-import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const insertUserAndItems = () => {
@@ -44,6 +43,9 @@ const insertTypedItem = (
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(usernameHash, imdbId, listType, title, title.toLowerCase(), '2001', '7.0', '', '', `${imdbId}-hash`);
+  if (listType === 'series-tracker') {
+    getDatabase().prepare('UPDATE collection_items SET content_type = ? WHERE imdb_id = ?').run('series', imdbId);
+  }
 };
 
 const insertTag = (imdbId: string, tag: string) => {
@@ -105,6 +107,25 @@ describe('get-collection-items-api', () => {
         total: 2,
         offset: 1,
         limit: 1,
+      })
+    );
+  });
+
+  it('filters favorites from query parameters', async () => {
+    insertUserAndItems();
+    getDatabase().prepare('UPDATE collection_items SET favorite = 1 WHERE imdb_id = ?').run('tt002');
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { favorite: 'true' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [expect.objectContaining({ title: 'Beta', favorite: true })],
+        total: 1,
       })
     );
   });
@@ -273,7 +294,9 @@ describe('get-collection-items-api', () => {
     insertUser('user');
     insertTypedItem('user', 'tt-completed-series-tracker', 'Completed Tracked Series', 'series-tracker');
     insertTypedItem('user', 'tt-uncompleted-series-tracker', 'Uncompleted Tracked Series', 'series-tracker');
-    insertTag('tt-completed-series-tracker', COMPLETED_TAG);
+    getDatabase()
+      .prepare('UPDATE collection_items SET watched_at = ? WHERE imdb_id = ?')
+      .run('2026-01-01 00:00:00', 'tt-completed-series-tracker');
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { listType: 'series-tracker', completed: 'false' } };
     const { app, handlerPromise } = buildApp(request, response);

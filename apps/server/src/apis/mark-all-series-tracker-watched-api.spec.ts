@@ -1,7 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { insertSeriesTrackerItem } from '../../test/mocks/series-tracker-item-mock';
-import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -40,11 +39,9 @@ describe('mark-all-series-tracker-watched-api', () => {
         item: expect.objectContaining({ IMDbId: 'tt-series' }),
       })
     );
-    expect(
-      getDatabase()
-        .prepare('SELECT 1 FROM collection_item_tags WHERE item_id = ? AND tag = ?')
-        .get(itemId, COMPLETED_TAG)
-    ).toBeTruthy();
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
+      watched_at: expect.any(String),
+    });
   });
 
   it('returns 400 when no season metadata exists', async () => {

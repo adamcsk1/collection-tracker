@@ -25,17 +25,18 @@ import {
   CollectionListTypeModel,
 } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { asyncScheduler, catchError, debounceTime, EMPTY, fromEvent, Observable } from 'rxjs';
+import { Router } from '@angular/router';
+import { asyncScheduler, catchError, debounceTime, EMPTY, fromEvent, Observable, Subscription } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { SharesLoaderService } from '../../shares/shares-loader-service';
 import { CollectionItemModel, CollectionListDataSource, CollectionListOrderPreference } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
 import { FloatActionButtons } from '../float-action-buttons/float-action-buttons';
-import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
+import { FloatActionButtonsService, FloatActionFilter } from '../float-action-buttons/float-action-buttons-service';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
-import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS } from './list-const';
+import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS, FLOAT_ACTION_SCROLLING_IDLE_MS } from './list-const';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
 import { ListItem } from './list-item/list-item';
 
@@ -58,6 +59,7 @@ export class List implements OnDestroy {
   private readonly floatActions = inject(FloatActionsService);
   private readonly actionButtons = inject(FloatActionButtonsService);
   private readonly webstorage = inject(WebstorageService);
+  private readonly router = inject(Router);
   private readonly aiSearch = inject(AiSearchService, { optional: true });
   protected readonly debouncedSearchText = signal('');
   private readonly routeSearchVersion = signal(0);
@@ -76,6 +78,7 @@ export class List implements OnDestroy {
   protected readonly hasMore = computed(() => this.visibleCollection().length < this.collectionLength());
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly scrollToTopAvailable = signal(false);
+  protected readonly scrolling = signal(false);
   protected readonly isInternalCollectionPrefiltered = computed(() => this.listType() !== 'library');
   public readonly hideFloatActions = input(false);
   public readonly showAddButton = input(true);
@@ -83,11 +86,13 @@ export class List implements OnDestroy {
   public readonly showRandomPickButton = input(true);
   public readonly orderStorageKey = input('');
   public readonly routeSearchText = input('');
+  public readonly routeFilterKey = input('');
   public readonly listType = input<CollectionListTypeModel>('library');
   public readonly dataSource = input.required<CollectionListDataSource>();
   public readonly randomPick = output<void>();
   public readonly toggleAiSearch = output<void>();
   public readonly showFunctions = output<void>();
+  private scrollingIdleSubscription: Subscription | null = null;
 
   constructor() {
     this.sharesLoader.load(this.destroyRef);
@@ -97,6 +102,7 @@ export class List implements OnDestroy {
       toggleAiSearch: () => this.onToggleAiSearch(),
       toggleOrderBy: () => this.onToggleOrderBy(),
       toggleOrderDirection: () => this.onToggleOrderDirection(),
+      applyFilter: (filter) => this.onApplyFilter(filter),
       showFunctions: () => this.onShowFunctions(),
     });
     this.floatActions.setScrollToTopCallback(() => this.onResetScrollPosition());
@@ -146,6 +152,7 @@ export class List implements OnDestroy {
       const searchText = this.debouncedSearchText();
       const orderBy = this.orderBy();
       const orderDirection = this.orderDirection();
+      this.routeFilterKey();
       this.mainCollectionState.state.reloadTrigger();
       untracked(() => this.loadItems(true, searchText, orderBy, orderDirection));
     });
@@ -154,6 +161,7 @@ export class List implements OnDestroy {
       this.debouncedSearchText();
       this.orderBy();
       this.orderDirection();
+      this.routeFilterKey();
       this.onResetScrollPosition();
     });
 
@@ -169,6 +177,7 @@ export class List implements OnDestroy {
       this.floatActions.updateConfig({
         scrollToTopAvailable: this.scrollToTopAvailable(),
         actionsAvailable: showActions,
+        scrolling: this.scrolling(),
       });
       this.actionButtons.updateConfig({
         collectionLength: this.collectionLength(),
@@ -177,6 +186,8 @@ export class List implements OnDestroy {
         showAiSearchButton: this.showAiSearchButton() && !this.isInternalCollectionPrefiltered(),
         showRandomPickButton: this.showRandomPickButton() && !this.isInternalCollectionPrefiltered(),
         showOrderButtons: showActions,
+        filterActions: this.getFilterActions(),
+        activeFilterActions: this.getActiveFilterActions(),
         useAiSearch: this.aiSearch?.useAiSearch() ?? false,
         orderBy: this.orderBy(),
         orderDirection: this.orderDirection(),
@@ -185,6 +196,7 @@ export class List implements OnDestroy {
   }
 
   public ngOnDestroy(): void {
+    this.scrollingIdleSubscription?.unsubscribe();
     this.floatActions.resetActions();
     this.actionButtons.reset();
   }
@@ -206,6 +218,7 @@ export class List implements OnDestroy {
     if (!element) return;
 
     this.scrollToTopAvailable.set(element.scrollTop !== 0);
+    this.markScrolling();
 
     if (!this.hasMore() || this.apiLoadNetworkStatus() === 'pending') return;
     const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
@@ -224,6 +237,18 @@ export class List implements OnDestroy {
 
   protected onToggleOrderDirection(): void {
     this.orderDirection.update((orderDirection) => (orderDirection === 'asc' ? 'desc' : 'asc'));
+  }
+
+  protected onApplyFilter(filter: FloatActionFilter): void {
+    const active = this.getActiveFilterActions().includes(filter);
+    const queryParams: Record<string, string | null> =
+      filter === 'movie' || filter === 'series'
+        ? { type: active ? null : filter }
+        : filter === 'unwatched'
+          ? { watched: active ? null : 'false' }
+          : { completed: active ? null : filter === 'completed' ? 'true' : 'false' };
+
+    void this.router.navigate([], { queryParams, queryParamsHandling: 'merge' });
   }
 
   protected onShowFunctions(): void {
@@ -285,6 +310,15 @@ export class List implements OnDestroy {
     );
   }
 
+  private markScrolling(): void {
+    this.scrolling.set(true);
+    this.scrollingIdleSubscription?.unsubscribe();
+    this.scrollingIdleSubscription = asyncScheduler.schedule(() => {
+      this.scrolling.set(false);
+      this.scrollingIdleSubscription = null;
+    }, FLOAT_ACTION_SCROLLING_IDLE_MS);
+  }
+
   private applyItemsResponse(response: CollectionItemsApiResponseModel, reset: boolean): void {
     this.visibleCollection.set(reset ? response.items : [...this.visibleCollection(), ...response.items]);
     this.collectionLength.set(response.total);
@@ -293,6 +327,40 @@ export class List implements OnDestroy {
 
   private getOrderStorageKey(): string {
     return this.orderStorageKey() || this.listType();
+  }
+
+  private getFilterActions(): FloatActionFilter[] {
+    if (this.hideFloatActions()) return [];
+
+    switch (this.listType()) {
+      case 'library':
+        return ['movie', 'series', 'unwatched'];
+      case 'watch-later':
+      case 'wishlist':
+        return ['movie', 'series'];
+      case 'series-tracker':
+        return ['completed', 'uncompleted'];
+      case 'movie-tracker':
+        return [];
+    }
+  }
+
+  private getActiveFilterActions(): FloatActionFilter[] {
+    const routeFilterKey = this.routeFilterKey();
+    if (!routeFilterKey) return [];
+
+    try {
+      const filters = JSON.parse(routeFilterKey) as { type?: unknown; watched?: unknown; completed?: unknown };
+      return [
+        ...(filters.type === 'movie' ? (['movie'] as const) : []),
+        ...(filters.type === 'series' ? (['series'] as const) : []),
+        ...(filters.watched === false ? (['unwatched'] as const) : []),
+        ...(filters.completed === true ? (['completed'] as const) : []),
+        ...(filters.completed === false ? (['uncompleted'] as const) : []),
+      ];
+    } catch {
+      return [];
+    }
   }
 
   private readOrderPreference(storageKey: string): CollectionListOrderPreference {

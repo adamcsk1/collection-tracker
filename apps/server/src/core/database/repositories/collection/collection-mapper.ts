@@ -24,13 +24,13 @@ const isWatchedMovie = (db: Database.Database, row: CollectionItemRow, viewerUse
       .prepare(
         `SELECT 1
          FROM collection_items movie_tracker
-         INNER JOIN collection_item_tags movie_tag ON movie_tag.item_id = movie_tracker.id AND movie_tag.tag = '#movie'
-         WHERE movie_tracker.username_hash = ?
-           AND movie_tracker.imdb_id = ?
-           AND movie_tracker.list_type = ?
-         LIMIT 1`
+          WHERE movie_tracker.username_hash = ?
+            AND movie_tracker.imdb_id = ?
+            AND movie_tracker.list_type = ?
+            AND movie_tracker.content_type = ?
+          LIMIT 1`
       )
-      .get(viewerUsernameHash, row.imdb_id, 'movie-tracker')
+      .get(viewerUsernameHash, row.imdb_id, 'movie-tracker', 'movie')
   );
 };
 
@@ -53,6 +53,8 @@ export const toApiItem = (
     userRate: row.user_rate,
     actors: row.actors,
     plot: row.plot,
+    contentType: row.content_type,
+    favorite: row.favorite === 1,
   };
 
   return {

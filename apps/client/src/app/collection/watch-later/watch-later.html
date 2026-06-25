@@ -8,7 +8,7 @@
       [suggestionListPlacement]="'top'"
     />
   </ng-template>
-  <ct-list [listType]="'watch-later'" [dataSource]="watchLaterDataSource">
+  <ct-list [listType]="'watch-later'" [dataSource]="watchLaterDataSource" [routeFilterKey]="queryFilterKey()">
     <span list-empty>
       {{ translations.messageEmptyWatchLater() }}<br />
       <a data-test-id="add-first-watch-later-item" href="#" role="button" (click)="onAddWatchLater($event)">{{
