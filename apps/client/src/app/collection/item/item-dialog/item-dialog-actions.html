@@ -17,7 +17,7 @@
       {{ translations().manageSeriesMetadata() }}
     </button>
   }
-  @if (permissionUpdate() && libraryItem()) {
+  @if (permissionWatch() && libraryItem() && movie()) {
     @if (watched()) {
       <button
         class="button-borderless unaligned"
@@ -37,6 +37,49 @@
         {{ translations().markAsWatched() }}
       </button>
     }
+  }
+  @if (permissionWatch() && libraryItem() && series()) {
+    @if (inSeriesTracker()) {
+      <button
+        class="button-borderless unaligned"
+        data-test-id="item-dialog-remove-series-tracker"
+        (click)="removeFromSeriesTracker.emit()"
+      >
+        <i class="material-icons" aria-hidden="true"> live_tv </i>
+        {{ translations().removeFromSeriesTracker() }}
+      </button>
+    } @else {
+      <button
+        class="button-borderless unaligned"
+        data-test-id="item-dialog-copy-series-tracker"
+        (click)="copyToSeriesTracker.emit()"
+      >
+        <i class="material-icons" aria-hidden="true"> live_tv </i>
+        {{ translations().copyToSeriesTracker() }}
+      </button>
+    }
+  }
+  @if (watchLater() && movie() && !inMovieTracker()) {
+    <button
+      class="button-borderless unaligned"
+      data-test-id="item-dialog-move-movie-tracker"
+      (click)="moveToMovieTracker.emit()"
+    >
+      <i class="material-icons" aria-hidden="true"> movie </i>
+      {{ translations().moveToMovieTracker() }}
+    </button>
+  }
+  @if (watchLater() && series() && !inSeriesTracker()) {
+    <button
+      class="button-borderless unaligned"
+      data-test-id="item-dialog-move-series-tracker"
+      (click)="moveToSeriesTracker.emit()"
+    >
+      <i class="material-icons" aria-hidden="true"> live_tv </i>
+      {{ translations().moveToSeriesTracker() }}
+    </button>
+  }
+  @if (permissionUpdate() && libraryItem()) {
     @if (favorite()) {
       <button
         class="button-borderless unaligned"

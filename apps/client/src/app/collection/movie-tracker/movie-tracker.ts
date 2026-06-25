@@ -20,22 +20,22 @@ import { FloatActionsService } from '../../main/float-actions/float-actions-serv
 import { CollectionListDataSourceRequest } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
-import { List } from '../list/list';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
+import { List } from '../list/list';
 import { buildStandardSearchFilters, setupStandardCollectionSearch } from '../utils/collection-search-filter-util';
 
 @Component({
-  selector: 'ct-series-tracker',
+  selector: 'ct-movie-tracker',
   imports: [List, FormField, Autocomplete],
-  templateUrl: './series-tracker.html',
+  templateUrl: './movie-tracker.html',
   styleUrl: '../collection.css',
   providers: [
     { provide: AutocompleteService, useClass: SearchSuggestionService },
-    { provide: searchSuggestionListTypeToken, useValue: 'series-tracker' },
+    { provide: searchSuggestionListTypeToken, useValue: 'movie-tracker' },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SeriesTracker {
+export class MovieTracker {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
   private readonly portal = inject(PortalService);
@@ -51,7 +51,7 @@ export class SeriesTracker {
   );
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
-  protected readonly seriesTrackerDataSource = ({
+  protected readonly movieTrackerDataSource = ({
     offset,
     limit,
     searchText,
@@ -59,15 +59,15 @@ export class SeriesTracker {
     orderDirection,
   }: CollectionListDataSourceRequest) =>
     this.api.searchItems(
-      { ...buildStandardSearchFilters(searchText, 'series-tracker'), orderBy, orderDirection },
+      { ...buildStandardSearchFilters(searchText, 'movie-tracker'), orderBy, orderDirection },
       offset,
       limit
     );
   protected readonly translations = {
-    messageEmptySeriesTracker: computed(() => this.ngxSignalTranslate.translate('Message.EmptySeriesTracker')),
-    messageAddFirstSeriesTracker: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstSeriesTracker')),
-    placeholderSearchInSeriesTracker: computed(() =>
-      this.ngxSignalTranslate.translate('Placeholder.SearchInSeriesTracker')
+    messageEmptyMovieTracker: computed(() => this.ngxSignalTranslate.translate('Message.EmptyMovieTracker')),
+    messageAddFirstMovieTracker: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstMovieTracker')),
+    placeholderSearchInMovieTracker: computed(() =>
+      this.ngxSignalTranslate.translate('Placeholder.SearchInMovieTracker')
     ),
   };
 
@@ -82,8 +82,8 @@ export class SeriesTracker {
     });
   }
 
-  protected onAddSeriesTracker(event: Event): void {
+  protected onAddMovieTracker(event: Event): void {
     event.preventDefault();
-    this.portal.open(NewItemDialog, { seriesTracker: true });
+    this.portal.open(NewItemDialog, { movieTracker: true });
   }
 }

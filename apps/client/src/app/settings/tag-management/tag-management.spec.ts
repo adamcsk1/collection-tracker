@@ -38,8 +38,11 @@ const mockStatistics = (tags: string[]) =>
     favoriteCount: 0,
     watchLaterCount: 0,
     wishlistCount: 0,
-    watchedCount: 0,
-    unwatchedCount: 0,
+    watchedMovieCount: 0,
+    watchedSeriesCount: 0,
+    unwatchedMovieCount: 0,
+    unwatchedLibrarySeriesCount: 0,
+    unwatchedTrackerSeriesCount: 0,
     tagCounts: tags.map((tag) => ({ tag, count: 1 })),
     genreCounts: [],
   });

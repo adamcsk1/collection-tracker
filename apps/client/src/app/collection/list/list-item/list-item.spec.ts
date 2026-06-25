@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
-import { COMPLETED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { COMPLETED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -96,13 +96,13 @@ describe('ListItem', () => {
   });
 
   it('opens the item dialog with current collection item', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem('Sample', [WATCHED_TAG]));
+    fixture.componentRef.setInput('collectionItem', buildItem('Sample', ['#action']));
     fixture.detectChanges();
 
     component['onOpenDetail']();
 
     expect(portal.open).toHaveBeenCalledWith(expect.any(Function), {
-      collectionItem: expect.objectContaining(buildItem('Sample', [WATCHED_TAG])),
+      collectionItem: expect.objectContaining(buildItem('Sample', ['#action'])),
     });
   });
 
@@ -125,10 +125,10 @@ describe('ListItem', () => {
   });
 
   it('derives watched, favorite, movie, series, and non-internal tags', () => {
-    fixture.componentRef.setInput(
-      'collectionItem',
-      buildItem('Sample', [WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2'])
-    );
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Sample', [FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2']),
+      watched: true,
+    });
     fixture.detectChanges();
 
     expect(component['watched']()).toBe(true);
@@ -136,7 +136,6 @@ describe('ListItem', () => {
     expect(component['movie']()).toBe(true);
     expect(component['series']()).toBe(true);
     expect(component['tags']()).toEqual(['#tag1', '#tag2']);
-    expect(component['WATCHED_TAG']).toBe(WATCHED_TAG);
     expect(component['MOVIE_TAG']).toBe(MOVIE_TAG);
     expect(component['SERIES_TAG']).toBe(SERIES_TAG);
     expect(component['VIRTUAL_UNWATCHED_TAG']).toBe('#unwatched');
@@ -163,6 +162,23 @@ describe('ListItem', () => {
     expect(completed?.textContent?.trim()).toBe('check_circle');
     expect(completed?.getAttribute('aria-label')).toBe('Completed');
     expect(completed?.getAttribute('title')).toBe('Completed');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).toContain(
+      'completed-image'
+    );
+  });
+
+  it('renders watched status for movie tracker items', () => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Sample', [MOVIE_TAG]),
+      listType: 'movie-tracker',
+    });
+    fixture.detectChanges();
+
+    const watched = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-watched"]');
+    expect(watched).not.toBeNull();
+    expect(watched?.textContent?.trim()).toBe('check_circle');
+    expect(watched?.getAttribute('aria-label')).toBe('Watched');
+    expect(watched?.getAttribute('title')).toBe('Watched');
     expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).toContain(
       'completed-image'
     );

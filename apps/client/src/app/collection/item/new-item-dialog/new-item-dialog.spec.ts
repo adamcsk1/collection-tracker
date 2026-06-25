@@ -4,7 +4,6 @@ import { initialMainCollectionState, mainCollectionStateToken } from '../../../m
 import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { ApiService } from '@services/api/api-service';
-import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,10 +13,12 @@ import { NewItemDialog } from './new-item-dialog';
 import { NewItemDialogService } from './new-item-dialog-service';
 
 describe('NewItemDialog component', () => {
+  type MatchedContent = { text: string; value: string };
+
   let fixture: ComponentFixture<NewItemDialog>;
   let component: NewItemDialog;
   let service: {
-    matchedContent: ReturnType<typeof vi.fn>;
+    matchedContent: ReturnType<typeof signal<MatchedContent[]>>;
     completedSearchText: ReturnType<typeof signal<string>>;
     search: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
@@ -29,7 +30,7 @@ describe('NewItemDialog component', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     service = {
-      matchedContent: vi.fn(() => [{ text: 'First', value: 'tt123' }]),
+      matchedContent: signal([{ text: 'First', value: 'tt123' }]),
       completedSearchText: signal(''),
       search: vi.fn(),
       save: vi.fn(() => of(undefined)),
@@ -125,11 +126,11 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', 8.7, '#tag', 'new', undefined, undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', 8.7, '#tag', 'new', {});
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
-  it('appends watched tag before saving in new mode', async () => {
+  it('does not append watched tag before saving in new mode', async () => {
     const formRoot = component['form']();
     vi.spyOn(formRoot, 'reset');
 
@@ -139,20 +140,12 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith(
-      'tt123',
-      null,
-      `#tag ${WATCHED_TAG}`,
-      'new',
-      undefined,
-      undefined,
-      undefined
-    );
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'new', {});
     expect(formRoot.reset).toHaveBeenCalled();
     expect(component['form'].watched().value()).toBe(false);
   });
 
-  it('saves only watched tag when no tags are provided in new mode', async () => {
+  it('saves empty tags when only watched is selected in new mode', async () => {
     const formRoot = component['form']();
     vi.spyOn(formRoot, 'reset');
 
@@ -161,8 +154,79 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, WATCHED_TAG, 'new', undefined, undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'new', {});
     expect(formRoot.reset).toHaveBeenCalled();
+  });
+
+  it('passes watched only for selected library movie content', async () => {
+    service.matchedContent.set([{ text: '(movie) Test Movie (2020)', value: 'tt-movie' }]);
+    component['form'].selectedIMDbId().value.set('tt-movie');
+    component['form'].watched().value.set(true);
+
+    expect(component['showWatchedCheckbox']()).toBe(true);
+
+    await component['onSave']('close');
+
+    expect(service.save).toHaveBeenCalledWith('tt-movie', null, '', 'close', { watched: true });
+  });
+
+  it('hides watched for selected series content', async () => {
+    service.matchedContent.set([{ text: '(series) Test Series (2020)', value: 'tt-series' }]);
+    component['form'].selectedIMDbId().value.set('tt-series');
+    component['form'].watched().value.set(true);
+
+    await component['onSave']('close');
+
+    expect(component['showWatchedCheckbox']()).toBe(false);
+    expect(service.save).toHaveBeenCalledWith('tt-series', null, '', 'close', { copyToSeriesTrackerAsWatched: false });
+  });
+
+  it('shows copy-to-series-tracker checkbox for selected series content in library mode', () => {
+    service.matchedContent.set([{ text: '(series) Test Series (2020)', value: 'tt-series' }]);
+    component['form'].selectedIMDbId().value.set('tt-series');
+
+    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(true);
+  });
+
+  it('hides copy-to-series-tracker checkbox for selected movie content', () => {
+    service.matchedContent.set([{ text: '(movie) Test Movie (2020)', value: 'tt-movie' }]);
+    component['form'].selectedIMDbId().value.set('tt-movie');
+
+    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+  });
+
+  it('hides copy-to-series-tracker checkbox for manual imdb id selection', () => {
+    service.matchedContent.set([{ text: 'IMDb id: tt123', value: 'tt123' }]);
+    component['form'].selectedIMDbId().value.set('tt123');
+
+    expect(component['showWatchedCheckbox']()).toBe(true);
+    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+  });
+
+  it('hides copy-to-series-tracker checkbox in internal list modes', () => {
+    service.matchedContent.set([{ text: '(series) Test Series (2020)', value: 'tt-series' }]);
+    component['form'].selectedIMDbId().value.set('tt-series');
+
+    fixture.componentRef.setInput('watchLater', true);
+    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+
+    fixture.componentRef.setInput('watchLater', false);
+    fixture.componentRef.setInput('wishlist', true);
+    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+
+    fixture.componentRef.setInput('wishlist', false);
+    fixture.componentRef.setInput('seriesTracker', true);
+    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+  });
+
+  it('passes copy-to-series-tracker-as-watched flag when checked', async () => {
+    service.matchedContent.set([{ text: '(series) Test Series (2020)', value: 'tt-series' }]);
+    component['form'].selectedIMDbId().value.set('tt-series');
+    component['form'].copyToSeriesTrackerAsWatched().value.set(true);
+
+    await component['onSave']('close');
+
+    expect(service.save).toHaveBeenCalledWith('tt-series', null, '', 'close', { copyToSeriesTrackerAsWatched: true });
   });
 
   it('resets only the IMDb ID field when mode is not new', async () => {
@@ -172,7 +236,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt456', null, '', 'close', undefined, undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt456', null, '', 'close', {});
     expect(selectedIMDbId.reset).toHaveBeenCalledWith(null);
   });
 
@@ -192,7 +256,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'close', 'owner-code', undefined, undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'close', { targetOwnerShareCode: 'owner-code' });
   });
 
   it('selects the configured default shared library', () => {
@@ -238,7 +302,7 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', undefined, 'wishlist', undefined);
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', { listType: 'wishlist' });
   });
 
   it('saves series tracker items without watched, user rate, or shared library values', async () => {
@@ -251,12 +315,12 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', undefined, 'series-tracker', true);
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', { listType: 'series-tracker' });
   });
 
   it('filters matched content to series in series tracker mode', () => {
     fixture.componentRef.setInput('seriesTracker', true);
-    service.matchedContent.mockReturnValue([
+    service.matchedContent.set([
       { text: 'IMDb id: tt-id', value: 'tt-id' },
       { text: '(movie) Test Movie (2020)', value: 'tt-movie' },
       { text: '(series) Test Series (2021)', value: 'tt-series' },

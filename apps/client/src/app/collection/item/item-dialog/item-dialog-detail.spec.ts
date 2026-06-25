@@ -29,6 +29,9 @@ const translations: ItemDialogTranslations = {
   markAsFavorite: signal('Mark as favorite'),
   markAsUnwatched: signal('Mark as unwatched'),
   markAsWatched: signal('Mark as watched'),
+  copyToSeriesTracker: signal('Copy to series tracker'),
+  moveToMovieTracker: signal('Move to movie tracker'),
+  moveToSeriesTracker: signal('Move to series tracker'),
   removeFavorite: signal('Remove favorite'),
 };
 

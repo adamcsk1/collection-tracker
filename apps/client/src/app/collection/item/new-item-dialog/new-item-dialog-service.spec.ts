@@ -39,7 +39,12 @@ const buildSelectedContent = (overrides: Partial<OMDbResponseItemModel> = {}): O
 
 describe('NewItemDialogService', () => {
   let service: NewItemDialogService;
-  let api: { create: ReturnType<typeof vi.fn> };
+  let api: {
+    create: ReturnType<typeof vi.fn>;
+    addMovieTrackerItem: ReturnType<typeof vi.fn>;
+    addSeriesTrackerItem: ReturnType<typeof vi.fn>;
+    markAllSeriesTrackerWatched: ReturnType<typeof vi.fn>;
+  };
   let omdb: {
     matchedContent: ReturnType<typeof signal<SelectInputModel>>;
     completedSearchText: ReturnType<typeof signal<string>>;
@@ -53,7 +58,16 @@ describe('NewItemDialogService', () => {
   let translate: { translate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    api = { create: vi.fn() };
+    api = {
+      create: vi.fn(),
+      addMovieTrackerItem: vi.fn(() => of({ item: { title: 'Title', IMDbId: 'tt123', listType: 'movie-tracker' } })),
+      addSeriesTrackerItem: vi.fn(() => of({ item: { title: 'Title', IMDbId: 'tt123', listType: 'series-tracker' } })),
+      markAllSeriesTrackerWatched: vi.fn(() =>
+        of({
+          item: { title: 'Title', IMDbId: 'tt123', listType: 'series-tracker', tags: ['#series', '#completed'] },
+        })
+      ),
+    };
     omdb = {
       matchedContent: signal<SelectInputModel>([]),
       completedSearchText: signal(''),
@@ -119,6 +133,31 @@ describe('NewItemDialogService', () => {
     expect(spinnerStore.state.show()).toBe(false);
   });
 
+  it('creates a movie tracker copy when saving a watched library movie', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(
+      service.save('tt123', null, '', 'close', { targetOwnerShareCode: 'owner-code', watched: true })
+    );
+
+    expect(api.addMovieTrackerItem).toHaveBeenCalledWith('tt123', 'owner-code');
+    expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123', watched: true }, true);
+    expect(collection.addCollectionItem).toHaveBeenCalledWith(
+      { title: 'Title', IMDbId: 'tt123', listType: 'movie-tracker' },
+      true
+    );
+  });
+
+  it('does not create a movie tracker copy when saving a watched library series', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'series' }) as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123', tags: ['#series'] } }));
+
+    await firstValueFrom(service.save('tt123', null, '', 'close', { watched: true }));
+
+    expect(api.addMovieTrackerItem).not.toHaveBeenCalled();
+  });
+
   it('save stops spinner and rethrows on API error', async () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(throwError(() => new Error('fail')));
@@ -131,13 +170,12 @@ describe('NewItemDialogService', () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await firstValueFrom(service.save('tt123', null, '#tag', 'close', undefined, 'watch-later'));
+    await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'watch-later' }));
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#movie', '#tag'] }),
       undefined,
-      'watch-later',
-      undefined
+      'watch-later'
     );
     expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
     expect(collection.triggerReload).toHaveBeenCalled();
@@ -148,13 +186,12 @@ describe('NewItemDialogService', () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await firstValueFrom(service.save('tt123', null, '#tag', 'close', undefined, 'wishlist'));
+    await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'wishlist' }));
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#movie', '#tag'] }),
       undefined,
-      'wishlist',
-      undefined
+      'wishlist'
     );
   });
 
@@ -162,13 +199,12 @@ describe('NewItemDialogService', () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'series' }) as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await firstValueFrom(service.save('tt123', null, '#tag', 'close', undefined, 'series-tracker', true));
+    await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'series-tracker' }));
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#series', '#tag'] }),
       undefined,
-      'series-tracker',
-      true
+      'series-tracker'
     );
   });
 
@@ -203,11 +239,51 @@ describe('NewItemDialogService', () => {
     omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
-    await expect(firstValueFrom(service.save('tt123', null, '', 'close', undefined, 'series-tracker'))).rejects.toEqual(
-      new Error('Series tracker items must be series.')
-    );
+    await expect(
+      firstValueFrom(service.save('tt123', null, '', 'close', { listType: 'series-tracker' }))
+    ).rejects.toEqual(new Error('Series tracker items must be series.'));
 
     expect(api.create).not.toHaveBeenCalled();
     expect(spinnerStore.state.show()).toBe(false);
+  });
+
+  it('creates a series tracker copy and marks all watched when saving a library series with copy flag', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'series' }) as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(
+      service.save('tt123', null, '', 'close', {
+        targetOwnerShareCode: 'owner-code',
+        copyToSeriesTrackerAsWatched: true,
+      })
+    );
+
+    expect(api.addSeriesTrackerItem).toHaveBeenCalledWith('tt123', undefined, 'owner-code');
+    expect(api.markAllSeriesTrackerWatched).toHaveBeenCalledWith('tt123');
+    expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
+    expect(collection.addCollectionItem).toHaveBeenCalledWith(
+      { title: 'Title', IMDbId: 'tt123', listType: 'series-tracker', tags: ['#series', '#completed'] },
+      true
+    );
+  });
+
+  it('does not create a series tracker copy when copy flag is false', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'series' }) as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(service.save('tt123', null, '', 'close', {}));
+
+    expect(api.addSeriesTrackerItem).not.toHaveBeenCalled();
+    expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
+  });
+
+  it('ignores copy-to-series-tracker flag for movies', async () => {
+    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'movie' }) as any));
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(service.save('tt123', null, '', 'close', { copyToSeriesTrackerAsWatched: true }));
+
+    expect(api.addSeriesTrackerItem).not.toHaveBeenCalled();
+    expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
   });
 });

@@ -214,6 +214,27 @@ describe('Collection library component', () => {
     expect(collectionState.state.forceStandardSearch()).toBe(true);
   });
 
+  it('calls searchItems with library listType when AI search is active without prompt text', () => {
+    aiSearch.useAiSearch.set(true);
+    collectionState.setState('aiSearchPromptText', '');
+    collectionState.setState('forceStandardSearch', false);
+
+    fixture.componentInstance['collectionDataSource']({
+      offset: 0,
+      limit: 50,
+      searchText: '',
+      orderBy: 'createdAt',
+      orderDirection: 'desc',
+    });
+
+    expect(api.searchItems).toHaveBeenCalledWith(
+      { listType: 'library', orderBy: 'createdAt', orderDirection: 'desc' },
+      0,
+      50
+    );
+    expect(api.getMatchedItems).not.toHaveBeenCalled();
+  });
+
   it('registers and clears the float search template', () => {
     expect(floatActions.searchTemplate()).toBeTruthy();
 

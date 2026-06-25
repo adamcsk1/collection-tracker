@@ -14,7 +14,6 @@ import {
   MOVIE_TAG,
   SERIES_TAG,
   VIRTUAL_UNWATCHED_TAG,
-  WATCHED_TAG,
   WATCH_LATER_TAG,
   WISHLIST_TAG,
 } from '@shared/constants/tags-const';
@@ -30,6 +29,8 @@ import { CollectionService } from '../../collection-service';
 import { ItemDialog } from './item-dialog';
 import { SeriesSeasonMetadataDialog } from '../../series-tracker/series-season-metadata-dialog/series-season-metadata-dialog';
 import { isSystemDisplayTag } from './utils/item-dialog-util';
+
+const CUSTOM_WATCHED_TAG = '#watched';
 
 const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItemModel => ({
   image: 'https://example.com/poster.jpg',
@@ -73,6 +74,7 @@ describe('ItemDialog', () => {
   let fixture: ComponentFixture<ItemDialog>;
   let component: ItemDialog;
   let collectionService: {
+    addCollectionItem: ReturnType<typeof vi.fn>;
     deleteCollectionItem: ReturnType<typeof vi.fn>;
     updateCollectionItem: ReturnType<typeof vi.fn>;
     triggerReload: ReturnType<typeof vi.fn>;
@@ -92,13 +94,19 @@ describe('ItemDialog', () => {
     refreshSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
     deleteSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
     markAllSeriesTrackerWatched: ReturnType<typeof vi.fn>;
+    addMovieTrackerItem: ReturnType<typeof vi.fn>;
+    addSeriesTrackerItem: ReturnType<typeof vi.fn>;
+    deleteMovieTrackerItem: ReturnType<typeof vi.fn>;
+    collectionItemExists: ReturnType<typeof vi.fn>;
   };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
+  let spinnerLoadingState: NgxSimpleSignalStoreService<{ show: boolean }>;
   let sharesState: NgxSimpleSignalStoreService<SharesState>;
   let translate: { translate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     collectionService = {
+      addCollectionItem: vi.fn(),
       deleteCollectionItem: vi.fn(),
       updateCollectionItem: vi.fn(),
       triggerReload: vi.fn(),
@@ -139,6 +147,10 @@ describe('ItemDialog', () => {
           item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG, COMPLETED_TAG], hash: 'completed-hash' }),
         })
       ),
+      addMovieTrackerItem: vi.fn(() => of({ item: buildApiItem({ listType: 'movie-tracker', watched: true }) })),
+      addSeriesTrackerItem: vi.fn(() => of({ item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG] }) })),
+      deleteMovieTrackerItem: vi.fn(() => of(undefined)),
+      collectionItemExists: vi.fn(() => of({ exists: false })),
     };
     translate = { translate: vi.fn((key: string) => key) };
 
@@ -166,6 +178,7 @@ describe('ItemDialog', () => {
     fixture = TestBed.createComponent(ItemDialog);
     component = fixture.componentInstance;
     toastState = TestBed.inject(toastStateToken);
+    spinnerLoadingState = TestBed.inject(spinnerLoadingStateToken);
     sharesState = TestBed.inject(sharesStateToken);
 
     fixture.componentRef.setInput('collectionItem', buildItem());
@@ -207,10 +220,10 @@ describe('ItemDialog', () => {
     expect(component['editMode']()).toBe(false);
   });
 
-  it('computes watched status from tags', () => {
+  it('computes watched status from the watched field', () => {
     expect(component['watched']()).toBe(false);
 
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCHED_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG], watched: true }));
     fixture.detectChanges();
 
     expect(component['watched']()).toBe(true);
@@ -262,6 +275,29 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
 
     expect(component['dialogTitle']()).toBe('Title.SeriesTrackerItem');
+  });
+
+  it('uses contextual edit and delete action labels', () => {
+    expect(component['translations'].edit()).toBe('EditCollectionItem');
+    expect(component['translations'].delete()).toBe('DeleteFromCollection');
+
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
+    fixture.detectChanges();
+    expect(component['translations'].delete()).toBe('DeleteFromWatchLater');
+
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist' }));
+    fixture.detectChanges();
+    expect(component['translations'].delete()).toBe('DeleteFromWishlist');
+
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    expect(component['translations'].edit()).toBe('EditSeriesTrackerItem');
+    expect(component['translations'].delete()).toBe('DeleteFromSeriesTracker');
+
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'movie-tracker' }));
+    fixture.detectChanges();
+    expect(component['translations'].edit()).toBe('EditMovieTrackerItem');
+    expect(component['translations'].delete()).toBe('DeleteFromMovieTracker');
   });
 
   it('uses incoming share permissions for shared collection items', () => {
@@ -357,15 +393,20 @@ describe('ItemDialog', () => {
     expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
   });
 
-  it('hides watched and favorite from editable tag text', () => {
-    fixture.componentRef.setInput(
-      'collectionItem',
-      buildItem({ tags: [MOVIE_TAG, WATCHED_TAG, FAVORITE_TAG, '#action'] })
-    );
+  it('hides favorite from editable tag text', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG, '#action'] }));
     fixture.detectChanges();
     component.ngOnInit();
 
     expect(component['tagsText']()).toBe(`${MOVIE_TAG} #action`);
+  });
+
+  it('keeps watched as editable custom tag text', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, CUSTOM_WATCHED_TAG, '#action'] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['tagsText']()).toBe(`${MOVIE_TAG} ${CUSTOM_WATCHED_TAG} #action`);
   });
 
   it('hides the internal watch later tag from detail tags', () => {
@@ -392,21 +433,25 @@ describe('ItemDialog', () => {
     expect(component['systemTags']()).toEqual([MOVIE_TAG, COMPLETED_TAG]);
   });
 
-  it('shows watched and favorite in system tags', () => {
-    fixture.componentRef.setInput(
-      'collectionItem',
-      buildItem({ tags: [MOVIE_TAG, WATCHED_TAG, FAVORITE_TAG, '#action'] })
-    );
+  it('shows favorite in system tags', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG, '#action'] }));
     fixture.detectChanges();
 
     expect(component['detailTags']()).toEqual(['#action']);
-    expect(component['systemTags']()).toEqual([MOVIE_TAG, WATCHED_TAG, FAVORITE_TAG]);
+    expect(component['systemTags']()).toEqual([MOVIE_TAG, FAVORITE_TAG]);
+  });
+
+  it('shows watched as a custom detail tag', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, CUSTOM_WATCHED_TAG, '#action'] }));
+    fixture.detectChanges();
+
+    expect(component['detailTags']()).toEqual([CUSTOM_WATCHED_TAG, '#action']);
+    expect(component['systemTags']()).toEqual([MOVIE_TAG]);
   });
 
   it('detects system display tags', () => {
     expect(isSystemDisplayTag(MOVIE_TAG)).toBe(true);
     expect(isSystemDisplayTag(SERIES_TAG)).toBe(true);
-    expect(isSystemDisplayTag(WATCHED_TAG)).toBe(true);
     expect(isSystemDisplayTag(FAVORITE_TAG)).toBe(true);
     expect(isSystemDisplayTag(COMPLETED_TAG)).toBe(true);
     expect(isSystemDisplayTag('#action')).toBe(false);
@@ -502,6 +547,7 @@ describe('ItemDialog', () => {
   });
 
   it('deletes an item after confirmation', () => {
+    const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
     confirm.open.mockReturnValue(of(true));
 
     component['onDelete']();
@@ -511,6 +557,8 @@ describe('ItemDialog', () => {
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', undefined);
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(portal.closeAll).toHaveBeenCalled();
+    expect(spinnerSetState).toHaveBeenCalledWith('show', true);
+    expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(toastState.state.message()).toBe('Toast.DeleteItem');
   });
 
@@ -526,6 +574,7 @@ describe('ItemDialog', () => {
   });
 
   it('saves changes after confirmation and updates state', async () => {
+    const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
     confirm.open.mockReturnValue(of(true));
     component['form'].title().value.set('Updated Title');
 
@@ -545,8 +594,28 @@ describe('ItemDialog', () => {
       'library'
     );
     expect(collectionService.triggerReload).toHaveBeenCalled();
+    expect(spinnerSetState).toHaveBeenCalledWith('show', true);
+    expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(toastState.state.message()).toBe('Toast.EditItem');
     expect(component['editMode']()).toBe(false);
+  });
+
+  it('saves movie tracker item changes against the movie tracker list', async () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'movie-tracker', watched: true }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['form'].title().value.set('Updated Title');
+
+    await component['onSaveChanges']();
+
+    expect(api.update).toHaveBeenCalledWith(
+      'tt1234567',
+      expect.objectContaining({ title: 'Updated Title' }),
+      'testhash',
+      undefined,
+      'movie-tracker'
+    );
   });
 
   it('saves edited external ratings', async () => {
@@ -616,12 +685,9 @@ describe('ItemDialog', () => {
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('preserves hidden user action tags when saving regular edits', async () => {
+  it('preserves favorite when saving regular edits', async () => {
     confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput(
-      'collectionItem',
-      buildItem({ tags: [MOVIE_TAG, WATCHED_TAG, FAVORITE_TAG, '#action'] })
-    );
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, FAVORITE_TAG, '#action'] }));
     fixture.detectChanges();
     component.ngOnInit();
     component['form'].title().value.set('Updated Title');
@@ -630,7 +696,7 @@ describe('ItemDialog', () => {
 
     expect(api.update).toHaveBeenCalledWith(
       'tt1234567',
-      expect.objectContaining({ tags: [MOVIE_TAG, '#action', WATCHED_TAG, FAVORITE_TAG] }),
+      expect.objectContaining({ tags: [MOVIE_TAG, '#action', FAVORITE_TAG] }),
       'testhash',
       undefined
     );
@@ -721,7 +787,7 @@ describe('ItemDialog', () => {
   });
 
   it('shows an internal tag error when tags contain user action tags', async () => {
-    component['form'].tagsText().value.set(`${MOVIE_TAG} ${WATCHED_TAG}`);
+    component['form'].tagsText().value.set(`${MOVIE_TAG} ${FAVORITE_TAG}`);
 
     await component['onSaveChanges']();
 
@@ -748,11 +814,11 @@ describe('ItemDialog', () => {
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it('does not save when a watch later item is marked watched', async () => {
+  it('does not save when a watch later item is edited through the normal item flow', async () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later' }));
     fixture.detectChanges();
     component.ngOnInit();
-    component['form'].tagsText().value.set(`${MOVIE_TAG} ${WATCH_LATER_TAG} ${WATCHED_TAG}`);
+    component['form'].tagsText().value.set(`${MOVIE_TAG} ${WATCH_LATER_TAG} #custom`);
 
     await component['onSaveChanges']();
 
@@ -803,23 +869,102 @@ describe('ItemDialog', () => {
     expect(api.update).toHaveBeenCalled();
   });
 
-  it('marks item as watched by appending watched tag and saving', async () => {
-    confirm.open.mockReturnValue(of(true));
+  it('allows tracker actions for library series items', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+
+    expect(component['permissionWatch']()).toBe(true);
+  });
+
+  it('marks item as watched by copying it to movie tracker', async () => {
+    const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
 
     await component['onMarkAsWatched']();
 
-    expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalledWith(
-      'tt1234567',
-      expect.objectContaining({ tags: expect.arrayContaining([WATCHED_TAG]) }),
-      'testhash',
-      undefined
+    expect(api.addMovieTrackerItem).toHaveBeenCalledWith('tt1234567', undefined);
+    expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({ listType: 'movie-tracker' }),
+      true
     );
+    expect(spinnerSetState).toHaveBeenCalledWith('show', true);
+    expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });
 
+  it('moves watch later movie items to movie tracker', async () => {
+    const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'watch-later', ownerShareCode: 'own-code', tags: [MOVIE_TAG] })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    await component['onMoveToMovieTracker']();
+
+    expect(api.addMovieTrackerItem).toHaveBeenCalledWith('tt1234567', undefined, 'watch-later');
+    expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({ listType: 'movie-tracker' }),
+      true
+    );
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', 'own-code', 'watch-later');
+    expect(component['movieTrackerExists']()).toBe(true);
+    expect(component['movieTrackerHash']()).toBe('newhash');
+    expect(spinnerSetState).toHaveBeenCalledWith('show', true);
+    expect(spinnerSetState).toHaveBeenCalledWith('show', false);
+    expect(portal.closeAll).toHaveBeenCalled();
+  });
+
+  it('moves watch later series items to series tracker', async () => {
+    const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'watch-later', ownerShareCode: 'own-code', tags: [SERIES_TAG] })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    await component['onMoveToSeriesTracker']();
+
+    expect(api.addSeriesTrackerItem).toHaveBeenCalledWith('tt1234567', 'watch-later');
+    expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({ listType: 'series-tracker' }),
+      true
+    );
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', 'own-code', 'watch-later');
+    expect(component['seriesTrackerExists']()).toBe(true);
+    expect(component['seriesTrackerHash']()).toBe('newhash');
+    expect(spinnerSetState).toHaveBeenCalledWith('show', true);
+    expect(spinnerSetState).toHaveBeenCalledWith('show', false);
+    expect(portal.closeAll).toHaveBeenCalled();
+  });
+
+  it('copies library series items to series tracker without deleting the source', async () => {
+    const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'library', ownerShareCode: 'owner-code', tags: [SERIES_TAG] })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    await component['onCopyToSeriesTracker']();
+
+    expect(api.addSeriesTrackerItem).toHaveBeenCalledWith('tt1234567', undefined, 'owner-code');
+    expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({ listType: 'series-tracker' }),
+      true
+    );
+    expect(collectionService.deleteCollectionItem).not.toHaveBeenCalled();
+    expect(component['seriesTrackerExists']()).toBe(true);
+    expect(component['seriesTrackerHash']()).toBe('newhash');
+    expect(collectionService.triggerReload).toHaveBeenCalled();
+    expect(spinnerSetState).toHaveBeenCalledWith('show', true);
+    expect(spinnerSetState).toHaveBeenCalledWith('show', false);
+  });
+
   it('does not re-save when already watched', async () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCHED_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG], watched: true }));
     fixture.detectChanges();
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
@@ -827,11 +972,11 @@ describe('ItemDialog', () => {
     await component['onMarkAsWatched']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.addMovieTrackerItem).not.toHaveBeenCalled();
   });
 
   it('does not mark wishlist items as watched', async () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WISHLIST_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist', tags: [MOVIE_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
@@ -839,24 +984,21 @@ describe('ItemDialog', () => {
     await component['onMarkAsWatched']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.addMovieTrackerItem).not.toHaveBeenCalled();
   });
 
-  it('marks item as unwatched by removing watched tag and saving', async () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG, WATCHED_TAG, '#action'] }));
+  it('marks item as unwatched by removing the movie tracker item', async () => {
+    const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
+    fixture.componentRef.setInput('collectionItem', buildItem({ watched: true, tags: [MOVIE_TAG, '#action'] }));
     fixture.detectChanges();
     component.ngOnInit();
-    confirm.open.mockReturnValue(of(true));
 
     await component['onMarkAsUnwatched']();
 
-    expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalledWith(
-      'tt1234567',
-      expect.objectContaining({ tags: expect.not.arrayContaining([WATCHED_TAG]) }),
-      'testhash',
-      undefined
-    );
+    expect(api.deleteMovieTrackerItem).toHaveBeenCalledWith('tt1234567');
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', undefined, 'movie-tracker');
+    expect(spinnerSetState).toHaveBeenCalledWith('show', true);
+    expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });
 
@@ -951,5 +1093,100 @@ describe('ItemDialog', () => {
     expect(component['trailerUrl']()).toContain('youtube.com');
     expect(component['imdbUrl']()).toBe('https://www.imdb.com/title/tt1234567/');
     expect(component['webSearchUrl']()).toContain('duckduckgo.com');
+  });
+
+  it('loads series tracker state for library series on init', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(api.collectionItemExists).toHaveBeenCalledWith('tt1234567', undefined, 'series-tracker');
+  });
+
+  it('loads movie tracker state for watch-later movie on init', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later', tags: [MOVIE_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(api.collectionItemExists).toHaveBeenCalledWith('tt1234567', undefined, 'movie-tracker');
+  });
+
+  it('loads series tracker state for watch-later series on init', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(api.collectionItemExists).toHaveBeenCalledWith('tt1234567', undefined, 'series-tracker');
+  });
+
+  it('does not load tracker state for library movies on init', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(api.collectionItemExists).not.toHaveBeenCalled();
+  });
+
+  it('computes inSeriesTracker true when API says series tracker exists', () => {
+    api.collectionItemExists.mockReturnValue(of({ exists: true, hash: 'tracker-hash' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['inSeriesTracker']()).toBe(true);
+    expect(component['seriesTrackerHash']()).toBe('tracker-hash');
+  });
+
+  it('computes inSeriesTracker false when API says series tracker does not exist', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['inSeriesTracker']()).toBe(false);
+  });
+
+  it('computes inMovieTracker true when API says movie tracker exists', () => {
+    api.collectionItemExists.mockReturnValue(of({ exists: true, hash: 'movie-hash' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later', tags: [MOVIE_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+
+    expect(component['inMovieTracker']()).toBe(true);
+    expect(component['movieTrackerHash']()).toBe('movie-hash');
+  });
+
+  it('removes from series tracker after confirmation', () => {
+    const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
+    api.collectionItemExists.mockReturnValue(of({ exists: true, hash: 'tracker-hash' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    confirm.open.mockReturnValue(of(true));
+
+    component['onRemoveFromSeriesTracker']();
+
+    expect(confirm.open).toHaveBeenCalled();
+    expect(api.delete).toHaveBeenCalledWith('tt1234567', 'tracker-hash', undefined, 'series-tracker');
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', undefined, 'series-tracker');
+    expect(collectionService.triggerReload).toHaveBeenCalled();
+    expect(spinnerSetState).toHaveBeenCalledWith('show', true);
+    expect(spinnerSetState).toHaveBeenCalledWith('show', false);
+    expect(toastState.state.message()).toBe('Toast.DeleteItem');
+    expect(component['seriesTrackerExists']()).toBe(false);
+    expect(component['seriesTrackerHash']()).toBeUndefined();
+  });
+
+  it('does not remove from series tracker when confirmation is declined', () => {
+    api.collectionItemExists.mockReturnValue(of({ exists: true, hash: 'tracker-hash' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    confirm.open.mockReturnValue(of(false));
+
+    component['onRemoveFromSeriesTracker']();
+
+    expect(api.delete).not.toHaveBeenCalled();
+    expect(collectionService.deleteCollectionItem).not.toHaveBeenCalled();
+    expect(toastState.state.message()).toBe('');
   });
 });

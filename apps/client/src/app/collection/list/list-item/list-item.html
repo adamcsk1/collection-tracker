@@ -10,7 +10,7 @@
   >
     <span
       class="poster-image"
-      [class.completed-image]="seriesTrackerCompleted()"
+      [class.completed-image]="watchedStyle()"
       [style.backgroundImage]="'url(' + imageUrl() + ')'"
       aria-hidden="true"
     ></span>
@@ -27,12 +27,12 @@
         {{ imageBadgeTag }}
       </a>
     }
-    @if (seriesTrackerCompleted()) {
+    @if (watchedStyle()) {
       <span
         class="completed"
-        data-test-id="list-item-series-tracker-completed"
-        [attr.aria-label]="translations.completed()"
-        [title]="translations.completed()"
+        [attr.data-test-id]="watchedStyleTestId()"
+        [attr.aria-label]="watchedStyleLabel()"
+        [title]="watchedStyleLabel()"
       >
         <i class="material-icons" aria-hidden="true">check_circle</i>
       </span>

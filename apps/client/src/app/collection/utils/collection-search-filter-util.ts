@@ -20,8 +20,9 @@ export const setupStandardCollectionSearch = ({
   floatActions,
   floatSearchTemplate,
   destroyRef,
+  initialSearchText = '',
 }: StandardSearchSetupOptions): void => {
-  collectionState.setState('searchText', '');
+  collectionState.setState('searchText', initialSearchText);
 
   effect(() => {
     const searchText = collectionState.state.searchText();

@@ -64,6 +64,15 @@ export class CollectionLibrary {
     this.route.queryParamMap.pipe(map((queryParamMap) => queryParamMap.get('search')?.trim() ?? '')),
     { initialValue: this.route.snapshot.queryParams['search']?.trim?.() ?? '' }
   );
+  protected readonly queryType = toSignal(
+    this.route.queryParamMap.pipe(
+      map((queryParamMap): 'movie' | 'series' | undefined => {
+        const type = queryParamMap.get('type');
+        return type === 'movie' || type === 'series' ? type : undefined;
+      })
+    ),
+    { initialValue: undefined }
+  );
   protected readonly translations = {
     placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
     placeholderSearchInCollection: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInCollection')),
@@ -92,15 +101,18 @@ export class CollectionLibrary {
       return EMPTY;
     }
 
-    return useAiSearch
-      ? promptText
-        ? this.api.getMatchedItems({ imdbIds: aiIds as string[], offset, limit })
-        : this.api.searchItems({ listType: 'library', orderBy, orderDirection }, offset, limit)
-      : this.api.searchItems(
-          { ...buildStandardSearchFilters(searchText, 'library'), orderBy, orderDirection },
-          offset,
-          limit
-        );
+    if (useAiSearch && promptText) {
+      return this.api.getMatchedItems({ imdbIds: aiIds as string[], offset, limit });
+    }
+
+    if (useAiSearch) {
+      return this.api.searchItems({ listType: 'library', orderBy, orderDirection }, offset, limit);
+    }
+
+    const type = this.queryType();
+    const filters = { ...buildStandardSearchFilters(searchText, 'library'), ...(type && { type }) };
+
+    return this.api.searchItems({ ...filters, orderBy, orderDirection }, offset, limit);
   };
 
   constructor() {

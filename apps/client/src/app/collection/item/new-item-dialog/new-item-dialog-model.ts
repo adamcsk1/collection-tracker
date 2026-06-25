@@ -1,11 +1,20 @@
+import { CollectionListTypeModel } from '@shared/models/api-model';
+
 export interface NewItemModel {
   searchText: string;
   selectedIMDbId: string | null;
   userRate: number | null;
   tags: string;
   watched: boolean;
+  copyToSeriesTrackerAsWatched: boolean;
   targetOwnerShareCode: string | null;
-  fetchSeriesMetadata: boolean;
 }
 
 export type SaveMode = 'new' | 'close' | null;
+
+export interface SaveOptions {
+  targetOwnerShareCode?: string;
+  listType?: CollectionListTypeModel;
+  watched?: boolean;
+  copyToSeriesTrackerAsWatched?: boolean;
+}

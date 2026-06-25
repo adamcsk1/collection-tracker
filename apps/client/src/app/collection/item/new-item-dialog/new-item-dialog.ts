@@ -18,7 +18,6 @@ import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
-import { WATCHED_TAG } from '@shared/constants/tags-const';
 import { CollectionListTypeModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap } from 'rxjs';
@@ -26,7 +25,7 @@ import { mainStateToken } from '../../../main/main-store';
 import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { sharesStateToken } from '../../../shares/shares-store';
 import { forbiddenInternalTagValidation } from '../../validators/tag-validators';
-import { NewItemModel, SaveMode } from './new-item-dialog-model';
+import { NewItemModel, SaveMode, SaveOptions } from './new-item-dialog-model';
 import { NewItemDialogService } from './new-item-dialog-service';
 import { TagSuggestionService } from './suggestion/tag-suggestion-service';
 import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
@@ -63,6 +62,7 @@ export class NewItemDialog {
     titleNewWatchLaterItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchLaterItem')),
     titleNewWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWishlistItem')),
     titleNewSeriesTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.NewSeriesTrackerItem')),
+    titleNewMovieTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.NewMovieTrackerItem')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
     ariaSearchDuckDuckGoForTitleNewTab: computed(() =>
       this.ngxSignalTranslate.translate('Aria.SearchDuckDuckGoForTitleNewTab')
@@ -90,8 +90,7 @@ export class NewItemDialog {
     messageTags: computed(() => this.ngxSignalTranslate.translate('Message.Tags')),
     validationUsedInternalTag: computed(() => this.ngxSignalTranslate.translate('Validation.UsedInternalTag')),
     collectionItemWatched: computed(() => this.ngxSignalTranslate.translate('CollectionItemWatched')),
-    fetchSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('FetchSeriesMetadata')),
-    messageFetchSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('Message.FetchSeriesMetadata')),
+    copyToSeriesTrackerAsWatched: computed(() => this.ngxSignalTranslate.translate('CopyToSeriesTrackerAsWatched')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     saveAndNew: computed(() => this.ngxSignalTranslate.translate('SaveAndNew')),
     saveAndClose: computed(() => this.ngxSignalTranslate.translate('SaveAndClose')),
@@ -106,8 +105,8 @@ export class NewItemDialog {
     userRate: null,
     tags: '',
     watched: false,
+    copyToSeriesTrackerAsWatched: false,
     targetOwnerShareCode: null,
-    fetchSeriesMetadata: true,
   });
   protected readonly form = form(
     this.newItemModel,
@@ -164,10 +163,11 @@ export class NewItemDialog {
   };
   protected readonly matchedContent = computed(() => {
     const matchedContent = this.service.matchedContent();
-    return this.seriesTracker()
+    return this.seriesTracker() || this.movieTracker()
       ? matchedContent.filter((content) => {
           const text = `${content.text}`.toLowerCase();
-          return text.startsWith('(series)') || text.startsWith('imdb id:');
+          if (text.startsWith('imdb id:')) return true;
+          return this.seriesTracker() ? text.startsWith('(series)') : text.startsWith('(movie)');
         })
       : matchedContent;
   });
@@ -178,6 +178,26 @@ export class NewItemDialog {
   });
   protected readonly imdbSearchUrl = computed(() => buildIMDbSearchUrl(this.completedSearchText()));
   protected readonly webSearchUrl = computed(() => buildWebSearchUrl(this.completedSearchText(), null));
+  protected readonly selectedContentIsMovie = computed(() => {
+    const selectedIMDbId = this.form.selectedIMDbId().value();
+    if (!selectedIMDbId) return false;
+
+    const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedIMDbId);
+    const selectedContentText = `${selectedContent?.text ?? ''}`.toLowerCase();
+    return selectedContentText.startsWith('(movie)') || selectedContentText.startsWith('imdb id:');
+  });
+  protected readonly selectedContentIsSeries = computed(() => {
+    const selectedIMDbId = this.form.selectedIMDbId().value();
+    if (!selectedIMDbId) return false;
+
+    const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedIMDbId);
+    const selectedContentText = `${selectedContent?.text ?? ''}`.toLowerCase();
+    return selectedContentText.startsWith('(series)');
+  });
+  protected readonly showWatchedCheckbox = computed(() => !this.internalListMode() && this.selectedContentIsMovie());
+  protected readonly showCopyToSeriesTrackerCheckbox = computed(
+    () => !this.internalListMode() && this.selectedContentIsSeries()
+  );
   protected readonly libraryOptions = computed(() => {
     const options = [{ text: this.translations.myLibrary(), value: '' }];
     for (const share of this.sharesState.state.incoming()) {
@@ -204,25 +224,24 @@ export class NewItemDialog {
   public readonly watchLater = input(false);
   public readonly wishlist = input(false);
   public readonly seriesTracker = input(false);
-  protected readonly internalListMode = computed(() => this.watchLater() || this.wishlist() || this.seriesTracker());
-  protected readonly dialogTitle = computed(() =>
-    this.watchLater()
-      ? this.translations.titleNewWatchLaterItem()
-      : this.wishlist()
-        ? this.translations.titleNewWishlistItem()
-        : this.seriesTracker()
-          ? this.translations.titleNewSeriesTrackerItem()
-          : this.translations.titleNewCollectionItem()
+  public readonly movieTracker = input(false);
+  protected readonly internalListMode = computed(
+    () => this.watchLater() || this.wishlist() || this.seriesTracker() || this.movieTracker()
   );
-  private readonly listType = computed<CollectionListTypeModel>(() =>
-    this.watchLater()
-      ? 'watch-later'
-      : this.wishlist()
-        ? 'wishlist'
-        : this.seriesTracker()
-          ? 'series-tracker'
-          : 'library'
-  );
+  protected readonly dialogTitle = computed(() => {
+    if (this.watchLater()) return this.translations.titleNewWatchLaterItem();
+    if (this.wishlist()) return this.translations.titleNewWishlistItem();
+    if (this.seriesTracker()) return this.translations.titleNewSeriesTrackerItem();
+    if (this.movieTracker()) return this.translations.titleNewMovieTrackerItem();
+    return this.translations.titleNewCollectionItem();
+  });
+  private readonly listType = computed<CollectionListTypeModel>(() => {
+    if (this.watchLater()) return 'watch-later';
+    if (this.wishlist()) return 'wishlist';
+    if (this.seriesTracker()) return 'series-tracker';
+    if (this.movieTracker()) return 'movie-tracker';
+    return 'library';
+  });
 
   constructor() {
     effect(() => {
@@ -287,21 +306,23 @@ export class NewItemDialog {
     const selectedIMDbId = this.form.selectedIMDbId().value();
     if (!selectedIMDbId) return;
 
-    let tags = this.form.tags().value().trim();
-    const watched = !this.internalListMode() && this.form.watched().value();
-    if (watched) tags = tags ? `${tags} ${WATCHED_TAG}` : WATCHED_TAG;
+    const tags = this.form.tags().value().trim();
 
     const targetOwnerShareCode = this.internalListMode()
       ? undefined
       : this.form.targetOwnerShareCode().value() || undefined;
+    const options: SaveOptions = {};
+    if (targetOwnerShareCode) options.targetOwnerShareCode = targetOwnerShareCode;
+    if (this.listType() !== 'library') options.listType = this.listType();
+    if (this.showWatchedCheckbox()) options.watched = this.form.watched().value();
+    if (this.showCopyToSeriesTrackerCheckbox())
+      options.copyToSeriesTrackerAsWatched = this.form.copyToSeriesTrackerAsWatched().value();
     const saveRequest = this.service.save(
       selectedIMDbId,
       this.internalListMode() ? null : this.form.userRate().value(),
       tags,
       mode,
-      targetOwnerShareCode,
-      this.listType() === 'library' ? undefined : this.listType(),
-      this.seriesTracker() ? this.form.fetchSeriesMetadata().value() : undefined
+      options
     );
     await firstValueFrom(saveRequest);
 
@@ -312,8 +333,8 @@ export class NewItemDialog {
         userRate: null,
         tags: '',
         watched: false,
+        copyToSeriesTrackerAsWatched: false,
         targetOwnerShareCode: this.defaultTargetOwnerShareCode(),
-        fetchSeriesMetadata: true,
       });
     } else {
       this.form.selectedIMDbId().reset(null);

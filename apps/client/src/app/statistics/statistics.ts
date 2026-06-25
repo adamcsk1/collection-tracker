@@ -44,8 +44,12 @@ export class Statistics implements AfterViewInit {
     favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     watchLater: computed(() => this.ngxSignalTranslate.translate('WatchLater')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
-    watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
-    unwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
+    watchedMovies: computed(() => this.ngxSignalTranslate.translate('WatchedMovies')),
+    watchedSeries: computed(() => this.ngxSignalTranslate.translate('WatchedSeries')),
+    unwatchedMovies: computed(() => this.ngxSignalTranslate.translate('UnwatchedMovies')),
+    unwatchedLibrarySeries: computed(() => this.ngxSignalTranslate.translate('UnwatchedLibrarySeries')),
+    unwatchedTrackerSeries: computed(() => this.ngxSignalTranslate.translate('UnwatchedTrackerSeries')),
+    completedTrackerSeries: computed(() => this.ngxSignalTranslate.translate('CompletedTrackerSeries')),
     chart: computed(() => this.ngxSignalTranslate.translate('Chart')),
     availableTags: computed(() => this.ngxSignalTranslate.translate('AvailableTags')),
     clearSelectedTags: computed(() => this.ngxSignalTranslate.translate('ClearSelectedTags')),
@@ -56,7 +60,7 @@ export class Statistics implements AfterViewInit {
     ),
     messageEmptyTagFilter: computed(() => this.ngxSignalTranslate.translate('Message.EmptyTagFilter')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
-    globalWatchStatus: computed(() => this.ngxSignalTranslate.translate('GlobalWatchStatus')),
+    trackerStatus: computed(() => this.ngxSignalTranslate.translate('TrackerStatus')),
     type: computed(() => this.ngxSignalTranslate.translate('Type')),
     genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
   };
@@ -92,8 +96,12 @@ export class Statistics implements AfterViewInit {
       watchLater: statistics?.watchLaterCount ?? 0,
       wishlist: statistics?.wishlistCount ?? 0,
       all: statistics?.totalItems ?? 0,
-      watched: statistics?.watchedCount ?? 0,
-      unwatched: statistics?.unwatchedCount ?? 0,
+      watchedMovies: statistics?.watchedMovieCount ?? 0,
+      watchedSeries: statistics?.watchedSeriesCount ?? 0,
+      unwatchedMovies: statistics?.unwatchedMovieCount ?? 0,
+      unwatchedLibrarySeries: statistics?.unwatchedLibrarySeriesCount ?? 0,
+      unwatchedTrackerSeries: statistics?.unwatchedTrackerSeriesCount ?? 0,
+      completedTrackerSeries: statistics?.completedTrackerSeriesCount ?? 0,
     };
   });
   protected readonly defaultOpenSelectedTags: boolean;
@@ -157,6 +165,38 @@ export class Statistics implements AfterViewInit {
 
   protected onNavigateToFavorites(): void {
     this.closeAfterNavigation(this.router.navigate(['/collection', 'favorites']));
+  }
+
+  protected onNavigateToMovieTracker(): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'movie-tracker']));
+  }
+
+  protected onNavigateToSeriesTracker(): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'series-tracker']));
+  }
+
+  protected onNavigateToUnwatchedMovies(): void {
+    this.closeAfterNavigation(
+      this.router.navigate(['/collection', 'library'], { queryParams: { search: '#unwatched', type: 'movie' } })
+    );
+  }
+
+  protected onNavigateToUnwatchedLibrarySeries(): void {
+    this.closeAfterNavigation(
+      this.router.navigate(['/collection', 'library'], { queryParams: { search: '#unwatched', type: 'series' } })
+    );
+  }
+
+  protected onNavigateToUnwatchedTrackerSeries(): void {
+    this.closeAfterNavigation(
+      this.router.navigate(['/collection', 'series-tracker'], { queryParams: { search: '#uncompleted' } })
+    );
+  }
+
+  protected onNavigateToCompletedTrackerSeries(): void {
+    this.closeAfterNavigation(
+      this.router.navigate(['/collection', 'series-tracker'], { queryParams: { search: '#completed' } })
+    );
   }
 
   private closeAfterNavigation(navigation: Promise<boolean>): void {

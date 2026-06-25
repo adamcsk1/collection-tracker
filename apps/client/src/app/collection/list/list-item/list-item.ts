@@ -7,14 +7,13 @@ import {
   MOVIE_TAG,
   SERIES_TAG,
   VIRTUAL_UNWATCHED_TAG,
-  WATCHED_TAG,
 } from '@shared/constants/tags-const';
 import { CollectionListDisplayRatingModel } from '@shared/models/collection-list-display-preferences-model';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { TagManagementColorPipe } from '../../../tag-management/tag-management-color-pipe';
 import { mainStateToken } from '../../../main/main-store';
 import { sharesStateToken } from '../../../shares/shares-store';
+import { TagManagementColorPipe } from '../../../tag-management/tag-management-color-pipe';
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
 import { ItemDialog } from '../../item/item-dialog/item-dialog';
@@ -42,23 +41,29 @@ export class ListItem {
   private readonly tagManagementColorPipe = inject(TagManagementColorPipe);
   private readonly aiSearch = inject(AiSearchService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG) ?? false);
+  protected readonly watched = computed(
+    () => this.collectionItem().watched === true || this.collectionItem().listType === 'movie-tracker'
+  );
   protected readonly favorite = computed(() => this.collectionItem().tags.includes(FAVORITE_TAG) ?? false);
   protected readonly imageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
   );
   protected readonly movie = computed(() => this.collectionItem().tags.includes(MOVIE_TAG) ?? false);
   protected readonly series = computed(() => this.collectionItem().tags.includes(SERIES_TAG) ?? false);
-  protected readonly imageBorderColor = computed(() =>
-    this.tagManagementColorPipe.transform(this.collectionItem().tags, { checkUseForImageBorder: true })
-  );
-  protected readonly imageBadgeTag = computed(() =>
-    this.collectionItem().tags.find((tag) => this.tagManagementColorPipe.transform(tag, { useForImageBadge: true }))
-  );
+  protected readonly imageBorderColor = computed(() => {
+    if (this.watchedStyle()) return;
+    return this.tagManagementColorPipe.transform(this.collectionItem().tags, { checkUseForImageBorder: true });
+  });
+  protected readonly imageBadgeTag = computed(() => {
+    if (this.watchedStyle()) return;
+    return this.collectionItem().tags.find((tag) =>
+      this.tagManagementColorPipe.transform(tag, { useForImageBadge: true })
+    );
+  });
   protected readonly tags = computed(() => {
     const imageBadgeTag = this.imageBadgeTag();
     return this.collectionItem().tags.filter(
-      (tag) => ![WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, imageBadgeTag].includes(tag)
+      (tag) => ![FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, imageBadgeTag].includes(tag)
     );
   });
   protected readonly badgeBackgroundColor = computed(() => {
@@ -94,14 +99,23 @@ export class ListItem {
     const item = this.collectionItem();
     return item.listType === 'series-tracker' && item.tags.includes(COMPLETED_TAG);
   });
+  protected readonly watchedStyle = computed(
+    () => (this.watched() && this.collectionItem().listType === 'movie-tracker') || this.seriesTrackerCompleted()
+  );
+  protected readonly watchedStyleLabel = computed(() =>
+    this.seriesTrackerCompleted() ? this.translations.completed() : this.translations.watched()
+  );
+  protected readonly watchedStyleTestId = computed(() =>
+    this.seriesTrackerCompleted() ? 'list-item-series-tracker-completed' : 'list-item-watched'
+  );
   protected readonly translations = {
     completed: computed(() => this.ngxSignalTranslate.translate('Completed')),
     favorite: computed(() => this.ngxSignalTranslate.translate('Favorite')),
     metacriticShort: computed(() => this.ngxSignalTranslate.translate('MetacriticShort')),
     rottenTomatoesShort: computed(() => this.ngxSignalTranslate.translate('RottenTomatoesShort')),
     shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
+    watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
   };
-  protected readonly WATCHED_TAG = WATCHED_TAG;
   protected readonly MOVIE_TAG = MOVIE_TAG;
   protected readonly SERIES_TAG = SERIES_TAG;
   protected readonly VIRTUAL_UNWATCHED_TAG = VIRTUAL_UNWATCHED_TAG;

@@ -1,0 +1,19 @@
+<div class="collection-container">
+  <ng-template #floatSearch>
+    <libc-autocomplete
+      data-test-id="movie-tracker-search"
+      [placeholder]="translations.placeholderSearchInMovieTracker()"
+      [formField]="searchTextField"
+      [showReset]="true"
+      [suggestionListPlacement]="'top'"
+    />
+  </ng-template>
+  <ct-list [listType]="'movie-tracker'" [dataSource]="movieTrackerDataSource" [routeSearchText]="querySearch()">
+    <span list-empty>
+      {{ translations.messageEmptyMovieTracker() }}<br />
+      <a data-test-id="add-first-movie-tracker-item" href="#" role="button" (click)="onAddMovieTracker($event)">{{
+        translations.messageAddFirstMovieTracker()
+      }}</a>
+    </span>
+  </ct-list>
+</div>

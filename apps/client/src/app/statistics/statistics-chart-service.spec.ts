@@ -29,8 +29,12 @@ describe('StatisticsChartService', () => {
         favoriteCount: 0,
         watchLaterCount: 0,
         wishlistCount: 0,
-        watchedCount: 1,
-        unwatchedCount: 1,
+        watchedMovieCount: 1,
+        watchedSeriesCount: 0,
+        unwatchedMovieCount: 0,
+        unwatchedLibrarySeriesCount: 1,
+        unwatchedTrackerSeriesCount: 0,
+        completedTrackerSeriesCount: 0,
         tagCounts: [
           { tag: '#drama', count: 2 },
           { tag: '#action', count: 1 },
@@ -55,8 +59,12 @@ describe('StatisticsChartService', () => {
       favoriteCount: 0,
       watchLaterCount: 0,
       wishlistCount: 0,
-      watchedCount: 2,
-      unwatchedCount: 2,
+      watchedMovieCount: 2,
+      watchedSeriesCount: 1,
+      unwatchedMovieCount: 1,
+      unwatchedLibrarySeriesCount: 0,
+      unwatchedTrackerSeriesCount: 0,
+      completedTrackerSeriesCount: 0,
       tagCounts: [],
       genreCounts: [],
     };
@@ -64,8 +72,14 @@ describe('StatisticsChartService', () => {
     service.updateWatchedChart(watchedChart, statistics);
     service.updateTypeChart(typeChart, statistics);
 
-    expect(watchedChart.data.labels).toEqual(['Watched', 'Unwatched']);
-    expect(watchedChart.data.datasets[0].data).toEqual([2, 2]);
+    expect(watchedChart.data.labels).toEqual([
+      'WatchedMovies',
+      'UnwatchedMovies',
+      'CompletedSeries',
+      'InProgressSeries',
+      'UnwatchedLibrarySeries',
+    ]);
+    expect(watchedChart.data.datasets[0].data).toEqual([2, 1, 1, 0, 0]);
     expect(typeChart.data.labels).toEqual(['Movies', 'Series']);
     expect(typeChart.data.datasets[0].data).toEqual([3, 1]);
   });
@@ -80,8 +94,12 @@ describe('StatisticsChartService', () => {
       favoriteCount: 0,
       watchLaterCount: 0,
       wishlistCount: 0,
-      watchedCount: 0,
-      unwatchedCount: 0,
+      watchedMovieCount: 0,
+      watchedSeriesCount: 0,
+      unwatchedMovieCount: 0,
+      unwatchedLibrarySeriesCount: 0,
+      unwatchedTrackerSeriesCount: 0,
+      completedTrackerSeriesCount: 0,
       tagCounts: [],
       genreCounts: [
         { genre: 'Low', count: 1 },

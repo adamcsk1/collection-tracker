@@ -94,12 +94,30 @@ export class StatisticsChartService {
   ): void {
     if (!chart || !statistics) return;
 
-    chart.data.labels = [this.ngxSignalTranslate.translate('Watched'), this.ngxSignalTranslate.translate('Unwatched')];
+    chart.data.labels = [
+      this.ngxSignalTranslate.translate('WatchedMovies'),
+      this.ngxSignalTranslate.translate('UnwatchedMovies'),
+      this.ngxSignalTranslate.translate('CompletedSeries'),
+      this.ngxSignalTranslate.translate('InProgressSeries'),
+      this.ngxSignalTranslate.translate('UnwatchedLibrarySeries'),
+    ];
     chart.data.datasets = [
       {
         label: this.ngxSignalTranslate.translate('Count'),
-        data: [statistics.watchedCount, statistics.unwatchedCount],
-        backgroundColor: [textToHexColor('watched'), textToHexColor('unwatched')],
+        data: [
+          statistics.watchedMovieCount,
+          statistics.unwatchedMovieCount,
+          Math.max(0, statistics.watchedSeriesCount - statistics.unwatchedTrackerSeriesCount),
+          statistics.unwatchedTrackerSeriesCount,
+          statistics.unwatchedLibrarySeriesCount,
+        ],
+        backgroundColor: [
+          textToHexColor('watchedMovies'),
+          textToHexColor('unwatchedMovies'),
+          textToHexColor('completedSeries'),
+          textToHexColor('inProgressSeries'),
+          textToHexColor('unwatchedLibrarySeries'),
+        ],
       },
     ];
     chart.update();

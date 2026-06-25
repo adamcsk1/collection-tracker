@@ -8,7 +8,7 @@
       [suggestionListPlacement]="'top'"
     />
   </ng-template>
-  <ct-list [listType]="'series-tracker'" [dataSource]="seriesTrackerDataSource">
+  <ct-list [listType]="'series-tracker'" [dataSource]="seriesTrackerDataSource" [routeSearchText]="querySearch()">
     <span list-empty>
       {{ translations.messageEmptySeriesTracker() }}<br />
       <a data-test-id="add-first-series-tracker-item" href="#" role="button" (click)="onAddSeriesTracker($event)">{{

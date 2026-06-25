@@ -81,9 +81,7 @@ export class TagManagement {
       )
       .subscribe((statistics) => {
         const tags = statistics.tagCounts.map((tagCount) => tagCount.tag);
-        this.uniqueTags.set(
-          [...new Set(tags)].sort((a, b) => (a.length > b.length ? 1 : b.length > a.length ? -1 : 0))
-        );
+        this.uniqueTags.set([...new Set(tags)].sort((a, b) => a.length - b.length));
       });
 
     const effectRef = effect(() => {

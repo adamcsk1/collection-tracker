@@ -25,8 +25,12 @@ describe('Statistics component', () => {
     favoriteCount: 1,
     watchLaterCount: 1,
     wishlistCount: 1,
-    watchedCount: 1,
-    unwatchedCount: 1,
+    watchedMovieCount: 1,
+    watchedSeriesCount: 0,
+    unwatchedMovieCount: 0,
+    unwatchedLibrarySeriesCount: 1,
+    unwatchedTrackerSeriesCount: 0,
+    completedTrackerSeriesCount: 0,
     tagCounts: [
       { tag: '#drama', count: 1 },
       { tag: '#action', count: 2 },
@@ -72,8 +76,12 @@ describe('Statistics component', () => {
       watchLater: 1,
       wishlist: 1,
       all: 2,
-      watched: 1,
-      unwatched: 1,
+      watchedMovies: 1,
+      watchedSeries: 0,
+      unwatchedMovies: 0,
+      unwatchedLibrarySeries: 1,
+      unwatchedTrackerSeries: 0,
+      completedTrackerSeries: 0,
     });
     expect(component['tags']()).toEqual(['#drama', '#action']);
   });
@@ -173,6 +181,50 @@ describe('Statistics component', () => {
     component['onNavigateToWishlist']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'wishlist']);
+  });
+
+  it('navigates to movie tracker when clicking the watched movies stat card', () => {
+    component['onNavigateToMovieTracker']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'movie-tracker']);
+  });
+
+  it('navigates to series tracker when clicking the watched series stat card', () => {
+    component['onNavigateToSeriesTracker']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'series-tracker']);
+  });
+
+  it('navigates to unwatched movies when clicking the unwatched movies stat card', () => {
+    component['onNavigateToUnwatchedMovies']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], {
+      queryParams: { search: '#unwatched', type: 'movie' },
+    });
+  });
+
+  it('navigates to unwatched library series when clicking the unwatched library series stat card', () => {
+    component['onNavigateToUnwatchedLibrarySeries']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], {
+      queryParams: { search: '#unwatched', type: 'series' },
+    });
+  });
+
+  it('navigates to unwatched tracker series when clicking the unwatched tracker series stat card', () => {
+    component['onNavigateToUnwatchedTrackerSeries']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'series-tracker'], {
+      queryParams: { search: '#uncompleted' },
+    });
+  });
+
+  it('navigates to completed tracker series when clicking the completed tracker series stat card', () => {
+    component['onNavigateToCompletedTrackerSeries']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'series-tracker'], {
+      queryParams: { search: '#completed' },
+    });
   });
 
   it('closes the dialog after a successful stat navigation', async () => {

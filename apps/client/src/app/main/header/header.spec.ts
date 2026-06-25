@@ -42,6 +42,12 @@ describe('Header component', () => {
     expect(component['currentNavTitle']()).toBe('Favorites');
   });
 
+  it('uses movie tracker as the title for movie tracker page', () => {
+    routerEvents.next(new NavigationEnd(1, '/collection/movie-tracker', '/collection/movie-tracker'));
+
+    expect(component['currentNavTitle']()).toBe('MovieTracker');
+  });
+
   it('uses settings as the title for settings child pages', () => {
     routerEvents.next(new NavigationEnd(1, '/settings/tag-management', '/settings/tag-management'));
 

@@ -19,9 +19,13 @@ export interface ItemDialogTranslations {
   markAsFavorite: Signal<string>;
   markAsUnwatched: Signal<string>;
   markAsWatched: Signal<string>;
+  copyToSeriesTracker: Signal<string>;
+  moveToMovieTracker: Signal<string>;
+  moveToSeriesTracker: Signal<string>;
   plot: Signal<string>;
   ratings: Signal<string>;
   removeFavorite: Signal<string>;
+  removeFromSeriesTracker: Signal<string>;
   systemTags: Signal<string>;
   tags: Signal<string>;
   watchedUpTo: Signal<string>;

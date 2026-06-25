@@ -4,13 +4,21 @@ import { form, FormField, FormRoot, max, min, submit, validate } from '@angular/
 import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
+import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { Textarea } from '@components/textarea/textarea';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
-import { COMPLETED_TAG, FAVORITE_TAG, WATCH_LATER_TAG, WATCHED_TAG, WISHLIST_TAG } from '@shared/constants/tags-const';
+import {
+  COMPLETED_TAG,
+  FAVORITE_TAG,
+  MOVIE_TAG,
+  SERIES_TAG,
+  WATCH_LATER_TAG,
+  WISHLIST_TAG,
+} from '@shared/constants/tags-const';
 import {
   CollectionItemChangeApiModel,
   SeriesTrackerSeasonMetadataModel,
@@ -20,7 +28,7 @@ import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { firstValueFrom, map, mergeMap, of } from 'rxjs';
+import { finalize, firstValueFrom, map, mergeMap, of } from 'rxjs';
 import { sharesStateToken } from '../../../shares/shares-store';
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionService } from '../../collection-service';
@@ -83,6 +91,7 @@ export class ItemDialog implements OnInit {
   private readonly portal = inject(PortalService);
   private readonly sharesState = inject(sharesStateToken);
   private readonly toastState = inject(toastStateToken);
+  private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly confirm = inject(ConfirmService);
   private readonly api = inject(ApiService);
@@ -92,6 +101,7 @@ export class ItemDialog implements OnInit {
   private readonly originalInternalTags = signal<string[]>([]);
   protected readonly translations = {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
+    titleMovieTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.MovieTrackerItem')),
     titleSeriesTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.SeriesTrackerItem')),
     titleWatchLaterItem: computed(() => this.ngxSignalTranslate.translate('Title.WatchLaterItem')),
     titleWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.WishlistItem')),
@@ -121,13 +131,39 @@ export class ItemDialog implements OnInit {
     linkWebSearch: computed(() => this.ngxSignalTranslate.translate('Link.WebSearch')),
     readOnly: computed(() => this.ngxSignalTranslate.translate('ReadOnly')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
-    edit: computed(() => this.ngxSignalTranslate.translate('Edit')),
+    edit: computed(() => {
+      switch (this.collectionItem().listType) {
+        case 'movie-tracker':
+          return this.ngxSignalTranslate.translate('EditMovieTrackerItem');
+        case 'series-tracker':
+          return this.ngxSignalTranslate.translate('EditSeriesTrackerItem');
+        default:
+          return this.ngxSignalTranslate.translate('EditCollectionItem');
+      }
+    }),
     markAsFavorite: computed(() => this.ngxSignalTranslate.translate('MarkAsFavorite')),
     markAsUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAsUnwatched')),
     markAsWatched: computed(() => this.ngxSignalTranslate.translate('MarkAsWatched')),
+    copyToSeriesTracker: computed(() => this.ngxSignalTranslate.translate('CopyToSeriesTracker')),
+    moveToMovieTracker: computed(() => this.ngxSignalTranslate.translate('MoveToMovieTracker')),
+    moveToSeriesTracker: computed(() => this.ngxSignalTranslate.translate('MoveToSeriesTracker')),
     manageSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('ManageSeriesMetadata')),
     removeFavorite: computed(() => this.ngxSignalTranslate.translate('RemoveFavorite')),
-    delete: computed(() => this.ngxSignalTranslate.translate('Delete')),
+    removeFromSeriesTracker: computed(() => this.ngxSignalTranslate.translate('RemoveFromSeriesTracker')),
+    delete: computed(() => {
+      switch (this.collectionItem().listType) {
+        case 'movie-tracker':
+          return this.ngxSignalTranslate.translate('DeleteFromMovieTracker');
+        case 'series-tracker':
+          return this.ngxSignalTranslate.translate('DeleteFromSeriesTracker');
+        case 'watch-later':
+          return this.ngxSignalTranslate.translate('DeleteFromWatchLater');
+        case 'wishlist':
+          return this.ngxSignalTranslate.translate('DeleteFromWishlist');
+        default:
+          return this.ngxSignalTranslate.translate('DeleteFromCollection');
+      }
+    }),
     shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
     validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
     validationVirtualTag: computed(() => this.ngxSignalTranslate.translate('Toast.VirtualTagNotAllowed')),
@@ -291,6 +327,10 @@ export class ItemDialog implements OnInit {
   protected readonly watchedEpisodes = signal<SeriesTrackerWatchedEpisodeModel[]>([]);
   protected readonly seriesSeasonsLoaded = signal(false);
   protected readonly watchedEpisodesLoaded = signal(false);
+  protected readonly seriesTrackerExists = signal(false);
+  protected readonly movieTrackerExists = signal(false);
+  protected readonly seriesTrackerHash = signal<string | undefined>(undefined);
+  protected readonly movieTrackerHash = signal<string | undefined>(undefined);
   protected readonly allEpisodesWatched = computed(() => {
     if (!this.seriesSeasonsLoaded() || !this.watchedEpisodesLoaded())
       return this.collectionItem().tags.includes(COMPLETED_TAG);
@@ -346,12 +386,19 @@ export class ItemDialog implements OnInit {
       .incoming()
       .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
     if (item.listType === 'series-tracker') return this.isOwnItem();
+    if (item.listType === 'movie-tracker') return this.isOwnItem();
     if (item.listType !== 'library') return false;
     if (this.isOwnItem()) return true;
     return share?.canUpdate === true;
   });
   protected readonly libraryItem = computed(() => this.collectionItem().listType === 'library');
   protected readonly seriesTracker = computed(() => this.collectionItem().listType === 'series-tracker');
+  protected readonly inSeriesTracker = computed(() => this.seriesTrackerExists());
+  protected readonly inMovieTracker = computed(() => this.movieTrackerExists());
+  protected readonly movieTracker = computed(() => this.collectionItem().listType === 'movie-tracker');
+  protected readonly movie = computed(() => this.collectionItem().tags.includes(MOVIE_TAG));
+  protected readonly series = computed(() => this.collectionItem().tags.includes(SERIES_TAG));
+  protected readonly permissionWatch = computed(() => this.libraryItem() && (this.movie() || this.series()));
   protected readonly permissionDelete = computed(() => {
     const item = this.collectionItem();
     const share = this.sharesState.state
@@ -360,7 +407,7 @@ export class ItemDialog implements OnInit {
     if (this.isOwnItem()) return true;
     return share?.canDelete === true;
   });
-  protected readonly watched = computed(() => this.collectionItem().tags.includes(WATCHED_TAG));
+  protected readonly watched = computed(() => this.collectionItem().watched === true || this.movieTracker());
   protected readonly favorite = computed(() => this.collectionItem().tags.includes(FAVORITE_TAG));
   protected readonly watchLater = computed(() => this.collectionItem().listType === 'watch-later');
   protected readonly wishlist = computed(() => this.collectionItem().listType === 'wishlist');
@@ -373,15 +420,13 @@ export class ItemDialog implements OnInit {
     const tags = this.collectionItem().tags;
     return tags.includes(WATCH_LATER_TAG) || tags.includes(WISHLIST_TAG);
   });
-  protected readonly dialogTitle = computed(() =>
-    this.watchLater()
-      ? this.translations.titleWatchLaterItem()
-      : this.wishlist()
-        ? this.translations.titleWishlistItem()
-        : this.seriesTracker()
-          ? this.translations.titleSeriesTrackerItem()
-          : this.translations.titleCollectionItem()
-  );
+  protected readonly dialogTitle = computed(() => {
+    if (this.watchLater()) return this.translations.titleWatchLaterItem();
+    if (this.wishlist()) return this.translations.titleWishlistItem();
+    if (this.seriesTracker()) return this.translations.titleSeriesTrackerItem();
+    if (this.movieTracker()) return this.translations.titleMovieTrackerItem();
+    return this.translations.titleCollectionItem();
+  });
   protected readonly draftImageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.form.image().value())
   );
@@ -400,8 +445,40 @@ export class ItemDialog implements OnInit {
 
   public ngOnInit(): void {
     this.resetFormFromItem(this.collectionItem());
+    this.loadTrackerStates();
     this.loadSeriesSeasons();
     this.loadWatchedEpisodes();
+  }
+
+  private loadTrackerStates(): void {
+    const item = this.collectionItem();
+    if (this.libraryItem() && this.series()) {
+      this.api
+        .collectionItemExists(item.IMDbId, undefined, 'series-tracker')
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((response) => {
+          this.seriesTrackerExists.set(response.exists);
+          this.seriesTrackerHash.set(response.hash);
+        });
+    }
+    if (this.watchLater() && this.movie()) {
+      this.api
+        .collectionItemExists(item.IMDbId, undefined, 'movie-tracker')
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((response) => {
+          this.movieTrackerExists.set(response.exists);
+          this.movieTrackerHash.set(response.hash);
+        });
+    }
+    if (this.watchLater() && this.series()) {
+      this.api
+        .collectionItemExists(item.IMDbId, undefined, 'series-tracker')
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((response) => {
+          this.seriesTrackerExists.set(response.exists);
+          this.seriesTrackerHash.set(response.hash);
+        });
+    }
   }
 
   private loadSeriesSeasons(): void {
@@ -501,10 +578,14 @@ export class ItemDialog implements OnInit {
       .pipe(
         mergeMap((confirmed) => {
           if (confirmed) {
+            this.spinnerLoadingState.setState('show', true);
             const deleteRequest = listType
               ? this.api.delete(this.collectionItem().IMDbId, this.collectionItem().hash, ownerShareCode, listType)
               : this.api.delete(this.collectionItem().IMDbId, this.collectionItem().hash, ownerShareCode);
-            return deleteRequest.pipe(map(() => confirmed));
+            return deleteRequest.pipe(
+              map(() => confirmed),
+              finalize(() => this.spinnerLoadingState.setState('show', false))
+            );
           } else return of(confirmed);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -551,7 +632,12 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onSaveChanges(): Promise<void> {
-    if (this.collectionItem().listType !== 'library' && this.collectionItem().listType !== 'series-tracker') return;
+    if (
+      this.collectionItem().listType !== 'library' &&
+      this.collectionItem().listType !== 'series-tracker' &&
+      this.collectionItem().listType !== 'movie-tracker'
+    )
+      return;
     await submit(this.form);
   }
 
@@ -563,16 +649,25 @@ export class ItemDialog implements OnInit {
         .pipe(
           mergeMap((confirmed) => {
             if (confirmed) {
-              const updateRequest = this.seriesTracker()
+              this.spinnerLoadingState.setState('show', true);
+              const updateListType = this.seriesTracker()
+                ? 'series-tracker'
+                : this.movieTracker()
+                  ? 'movie-tracker'
+                  : undefined;
+              const updateRequest = updateListType
                 ? this.api.update(
                     this.collectionItem().IMDbId,
                     item,
                     this.collectionItem().hash,
                     ownerShareCode,
-                    'series-tracker'
+                    updateListType
                   )
                 : this.api.update(this.collectionItem().IMDbId, item, this.collectionItem().hash, ownerShareCode);
-              return updateRequest.pipe(map((result) => ({ confirmed, item: result.item })));
+              return updateRequest.pipe(
+                map((result) => ({ confirmed, item: result.item })),
+                finalize(() => this.spinnerLoadingState.setState('show', false))
+              );
             } else return of({ confirmed, item: null });
           })
         )
@@ -594,13 +689,140 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMarkAsWatched(): Promise<void> {
-    if (this.internalCollectionTag() || this.hasInternalCollectionTag()) return;
-    if (this.collectionItem().tags.includes(WATCHED_TAG)) return;
-    await this.doSave(this.buildItemWithUpdatedTags([WATCHED_TAG], []));
+    if (!this.permissionWatch() || this.watched()) return;
+    this.spinnerLoadingState.setState('show', true);
+    try {
+      const item = await firstValueFrom(
+        this.api.addMovieTrackerItem(this.collectionItem().IMDbId, this.collectionItem().ownerShareCode)
+      );
+      this.collectionService.addCollectionItem(item.item, true);
+      const updatedSource = { ...this.collectionItem(), watched: true };
+      this.collectionService.updateCollectionItem(
+        updatedSource.IMDbId,
+        updatedSource,
+        updatedSource.ownerShareCode,
+        updatedSource.listType
+      );
+      this.collectionService.triggerReload();
+      this.collectionItem.set(updatedSource);
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
+    } finally {
+      this.spinnerLoadingState.setState('show', false);
+    }
+  }
+
+  protected async onMoveToMovieTracker(): Promise<void> {
+    if (!this.watchLater() || !this.movie()) return;
+    this.spinnerLoadingState.setState('show', true);
+    try {
+      const item = await firstValueFrom(
+        this.api.addMovieTrackerItem(this.collectionItem().IMDbId, undefined, 'watch-later')
+      );
+      this.collectionService.addCollectionItem(item.item, true);
+      this.movieTrackerExists.set(true);
+      this.movieTrackerHash.set(item.item.hash);
+      this.collectionService.deleteCollectionItem(
+        this.collectionItem().IMDbId,
+        this.collectionItem().ownerShareCode,
+        'watch-later'
+      );
+      this.collectionService.triggerReload();
+      this.portal.closeAll();
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
+    } finally {
+      this.spinnerLoadingState.setState('show', false);
+    }
+  }
+
+  protected async onMoveToSeriesTracker(): Promise<void> {
+    if (!this.watchLater() || !this.series()) return;
+    this.spinnerLoadingState.setState('show', true);
+    try {
+      const item = await firstValueFrom(this.api.addSeriesTrackerItem(this.collectionItem().IMDbId, 'watch-later'));
+      this.collectionService.addCollectionItem(item.item, true);
+      this.seriesTrackerExists.set(true);
+      this.seriesTrackerHash.set(item.item.hash);
+      this.collectionService.deleteCollectionItem(
+        this.collectionItem().IMDbId,
+        this.collectionItem().ownerShareCode,
+        'watch-later'
+      );
+      this.collectionService.triggerReload();
+      this.portal.closeAll();
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
+    } finally {
+      this.spinnerLoadingState.setState('show', false);
+    }
+  }
+
+  protected async onCopyToSeriesTracker(): Promise<void> {
+    if (!this.libraryItem() || !this.series()) return;
+    this.spinnerLoadingState.setState('show', true);
+    try {
+      const item = await firstValueFrom(
+        this.api.addSeriesTrackerItem(this.collectionItem().IMDbId, undefined, this.collectionItem().ownerShareCode)
+      );
+      this.collectionService.addCollectionItem(item.item, true);
+      this.seriesTrackerExists.set(true);
+      this.seriesTrackerHash.set(item.item.hash);
+      this.collectionService.triggerReload();
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
+    } finally {
+      this.spinnerLoadingState.setState('show', false);
+    }
+  }
+
+  protected async onRemoveFromSeriesTracker(): Promise<void> {
+    if (!this.libraryItem() || !this.series() || !this.inSeriesTracker()) return;
+    const item = this.collectionItem();
+    const trackerHash = this.seriesTrackerHash();
+    if (!trackerHash) return;
+
+    this.confirm
+      .open(this.ngxSignalTranslate.translate('Confirm.Delete', { name: item.title }))
+      .pipe(
+        mergeMap((confirmed) => {
+          if (confirmed) {
+            this.spinnerLoadingState.setState('show', true);
+            return this.api.delete(item.IMDbId, trackerHash, undefined, 'series-tracker').pipe(
+              map(() => confirmed),
+              finalize(() => this.spinnerLoadingState.setState('show', false))
+            );
+          }
+          return of(confirmed);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
+          this.collectionService.deleteCollectionItem(item.IMDbId, undefined, 'series-tracker');
+          this.seriesTrackerExists.set(false);
+          this.seriesTrackerHash.set(undefined);
+          this.collectionService.triggerReload();
+        }
+      });
   }
 
   protected async onMarkAsUnwatched(): Promise<void> {
-    await this.doSave(this.buildItemWithUpdatedTags([], [WATCHED_TAG]));
+    if (!this.permissionWatch() || !this.watched()) return;
+    this.spinnerLoadingState.setState('show', true);
+    try {
+      await firstValueFrom(this.api.deleteMovieTrackerItem(this.collectionItem().IMDbId));
+      const updatedSource = { ...this.collectionItem(), watched: false };
+      this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId, undefined, 'movie-tracker');
+      this.collectionService.updateCollectionItem(
+        updatedSource.IMDbId,
+        updatedSource,
+        updatedSource.ownerShareCode,
+        updatedSource.listType
+      );
+      this.collectionService.triggerReload();
+      this.collectionItem.set(updatedSource);
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
+    } finally {
+      this.spinnerLoadingState.setState('show', false);
+    }
   }
 
   protected async onMarkAsFavorite(): Promise<void> {

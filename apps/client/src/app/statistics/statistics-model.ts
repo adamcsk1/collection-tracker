@@ -5,6 +5,10 @@ export interface StatisticsSummaryModel {
   watchLater: number;
   wishlist: number;
   all: number;
-  watched: number;
-  unwatched: number;
+  watchedMovies: number;
+  watchedSeries: number;
+  unwatchedMovies: number;
+  unwatchedLibrarySeries: number;
+  unwatchedTrackerSeries: number;
+  completedTrackerSeries: number;
 }

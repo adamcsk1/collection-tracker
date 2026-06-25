@@ -65,22 +65,58 @@
         <span class="stat-label">{{ translations.wishlist() }}</span>
       </button>
       <button
-        data-test-id="statistics-summary-watched"
+        data-test-id="statistics-summary-watched-movies"
         class="card card-interactive stat-card"
-        (click)="onNavigateToCollection('#watched')"
-        [attr.aria-label]="translations.watched() + ': ' + summary.watched"
+        (click)="onNavigateToMovieTracker()"
+        [attr.aria-label]="translations.watchedMovies() + ': ' + summary.watchedMovies"
       >
-        <span class="stat-value">{{ summary.watched }}</span>
-        <span class="stat-label">{{ translations.watched() }}</span>
+        <span class="stat-value">{{ summary.watchedMovies }}</span>
+        <span class="stat-label">{{ translations.watchedMovies() }}</span>
       </button>
       <button
-        data-test-id="statistics-summary-unwatched"
+        data-test-id="statistics-summary-watched-series"
         class="card card-interactive stat-card"
-        (click)="onNavigateToCollection('#unwatched')"
-        [attr.aria-label]="translations.unwatched() + ': ' + summary.unwatched"
+        (click)="onNavigateToSeriesTracker()"
+        [attr.aria-label]="translations.watchedSeries() + ': ' + summary.watchedSeries"
       >
-        <span class="stat-value">{{ summary.unwatched }}</span>
-        <span class="stat-label">{{ translations.unwatched() }}</span>
+        <span class="stat-value">{{ summary.watchedSeries }}</span>
+        <span class="stat-label">{{ translations.watchedSeries() }}</span>
+      </button>
+      <button
+        data-test-id="statistics-summary-unwatched-movies"
+        class="card card-interactive stat-card"
+        (click)="onNavigateToUnwatchedMovies()"
+        [attr.aria-label]="translations.unwatchedMovies() + ': ' + summary.unwatchedMovies"
+      >
+        <span class="stat-value">{{ summary.unwatchedMovies }}</span>
+        <span class="stat-label">{{ translations.unwatchedMovies() }}</span>
+      </button>
+      <button
+        data-test-id="statistics-summary-unwatched-library-series"
+        class="card card-interactive stat-card"
+        (click)="onNavigateToUnwatchedLibrarySeries()"
+        [attr.aria-label]="translations.unwatchedLibrarySeries() + ': ' + summary.unwatchedLibrarySeries"
+      >
+        <span class="stat-value">{{ summary.unwatchedLibrarySeries }}</span>
+        <span class="stat-label">{{ translations.unwatchedLibrarySeries() }}</span>
+      </button>
+      <button
+        data-test-id="statistics-summary-unwatched-tracker-series"
+        class="card card-interactive stat-card"
+        (click)="onNavigateToUnwatchedTrackerSeries()"
+        [attr.aria-label]="translations.unwatchedTrackerSeries() + ': ' + summary.unwatchedTrackerSeries"
+      >
+        <span class="stat-value">{{ summary.unwatchedTrackerSeries }}</span>
+        <span class="stat-label">{{ translations.unwatchedTrackerSeries() }}</span>
+      </button>
+      <button
+        data-test-id="statistics-summary-completed-tracker-series"
+        class="card card-interactive stat-card"
+        (click)="onNavigateToCompletedTrackerSeries()"
+        [attr.aria-label]="translations.completedTrackerSeries() + ': ' + summary.completedTrackerSeries"
+      >
+        <span class="stat-value">{{ summary.completedTrackerSeries }}</span>
+        <span class="stat-label">{{ translations.completedTrackerSeries() }}</span>
       </button>
     </div>
   }
@@ -194,7 +230,7 @@
   </div>
 
   <div class="card chart-card">
-    <h3>{{ translations.globalWatchStatus() }}</h3>
+    <h3>{{ translations.trackerStatus() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-watched-chart">{{ watchedChart() }}</canvas>
     </div>

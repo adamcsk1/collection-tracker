@@ -9,4 +9,5 @@ export interface StandardSearchSetupOptions {
   floatActions: FloatActionsService;
   floatSearchTemplate: Signal<TemplateRef<unknown> | undefined>;
   destroyRef: DestroyRef;
+  initialSearchText?: string;
 }

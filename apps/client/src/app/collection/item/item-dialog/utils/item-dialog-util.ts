@@ -1,4 +1,4 @@
-import { COMPLETED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { COMPLETED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 
 const imdbRatePattern = /^(?:10(?:\.0)?|[0-9](?:\.[0-9])?)$/;
 const rottenTomatoesRatePattern = /^(?:100|[1-9]?\d)%$/;
@@ -13,7 +13,7 @@ export const validateOptionalMetacriticRateFormat = (value: string) =>
   optionalRateFormatValidation(value, metacriticRatePattern);
 
 export const isSystemDisplayTag = (tag: string): boolean =>
-  [WATCHED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, COMPLETED_TAG].includes(tag);
+  [FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, COMPLETED_TAG].includes(tag);
 
 export const buildTrailerUrl = (title: string, year: string | number | null): string =>
   `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} ${year ?? ''} trailer`.trim())}`;

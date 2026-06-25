@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
-import { VIRTUAL_UNCOMPLETED_TAG, VIRTUAL_UNWATCHED_TAG } from '@shared/constants/tags-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -10,10 +9,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
-import { SeriesTracker } from './series-tracker';
+import { MovieTracker } from './movie-tracker';
 
-describe('SeriesTracker', () => {
-  let fixture: ComponentFixture<SeriesTracker>;
+describe('MovieTracker', () => {
+  let fixture: ComponentFixture<MovieTracker>;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let floatActions: FloatActionsService;
   const portal = { open: vi.fn() };
@@ -31,7 +30,7 @@ describe('SeriesTracker', () => {
 
   const createFixture = (searchText = '', querySearch = '') => {
     TestBed.configureTestingModule({
-      imports: [SeriesTracker],
+      imports: [MovieTracker],
       providers: [
         provideStore({ ...initialCollectionState, searchText }, collectionStateToken),
         { provide: PortalService, useValue: portal },
@@ -47,13 +46,13 @@ describe('SeriesTracker', () => {
       ],
     });
 
-    TestBed.overrideComponent(SeriesTracker, {
+    TestBed.overrideComponent(MovieTracker, {
       set: {
         template: '<ng-template #floatSearch></ng-template>',
       },
     });
 
-    fixture = TestBed.createComponent(SeriesTracker);
+    fixture = TestBed.createComponent(MovieTracker);
     collectionState = fixture.debugElement.injector.get(collectionStateToken);
     floatActions = TestBed.inject(FloatActionsService);
     fixture.detectChanges();
@@ -76,71 +75,51 @@ describe('SeriesTracker', () => {
   it('initializes search text from query param when present', () => {
     TestBed.resetTestingModule();
 
-    createFixture('', '#uncompleted');
+    createFixture('', '#unwatched');
 
-    expect(collectionState.state.searchText()).toBe('#uncompleted');
-    expect(fixture.componentInstance['searchTextModel']()).toBe('#uncompleted');
+    expect(collectionState.state.searchText()).toBe('#unwatched');
+    expect(fixture.componentInstance['searchTextModel']()).toBe('#unwatched');
   });
 
   it('syncs search text from store to the control', () => {
-    collectionState.setState('searchText', 'fringe');
+    collectionState.setState('searchText', 'inception');
     fixture.detectChanges();
 
-    expect(fixture.componentInstance['searchTextModel']()).toBe('fringe');
+    expect(fixture.componentInstance['searchTextModel']()).toBe('inception');
   });
 
   it('persists search text changes back to the store', () => {
-    fixture.componentInstance['searchTextModel'].set('lost');
+    fixture.componentInstance['searchTextModel'].set('interstellar');
     fixture.detectChanges();
 
-    expect(collectionState.state.searchText()).toBe('lost');
+    expect(collectionState.state.searchText()).toBe('interstellar');
   });
 
-  it('searches series tracker items by standard text', () => {
-    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(' dark ', 10, 25));
+  it('searches movie tracker items by standard text', () => {
+    fixture.componentInstance['movieTrackerDataSource'](dataSourceRequest(' dark ', 10, 25));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { search: 'dark', listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      { search: 'dark', listType: 'movie-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
       10,
       25
     );
   });
 
-  it('searches series tracker items by tag', () => {
-    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest('#drama'));
+  it('searches movie tracker items by tag', () => {
+    fixture.componentInstance['movieTrackerDataSource'](dataSourceRequest('#action'));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { tags: ['#drama'], tagMode: 'all', listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      { tags: ['#action'], tagMode: 'all', listType: 'movie-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
   });
 
-  it('maps virtual unwatched search to series tracker filters', () => {
-    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(VIRTUAL_UNWATCHED_TAG));
+  it('searches movie tracker items without a text filter by default', () => {
+    fixture.componentInstance['movieTrackerDataSource'](dataSourceRequest(''));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { watched: false, listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
-      0,
-      50
-    );
-  });
-
-  it('maps virtual uncompleted search to series tracker filters', () => {
-    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(VIRTUAL_UNCOMPLETED_TAG));
-
-    expect(api.searchItems).toHaveBeenCalledWith(
-      { completed: false, listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
-      0,
-      50
-    );
-  });
-
-  it('searches series tracker items without a text filter by default', () => {
-    fixture.componentInstance['seriesTrackerDataSource'](dataSourceRequest(''));
-
-    expect(api.searchItems).toHaveBeenCalledWith(
-      { listType: 'series-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      { listType: 'movie-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
@@ -154,13 +133,13 @@ describe('SeriesTracker', () => {
     expect(floatActions.searchTemplate()).toBeNull();
   });
 
-  it('opens the series tracker dialog from the empty CTA', () => {
+  it('opens the movie tracker dialog from the empty CTA', () => {
     const event = new Event('click');
     const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
-    fixture.componentInstance['onAddSeriesTracker'](event);
+    fixture.componentInstance['onAddMovieTracker'](event);
 
     expect(preventDefaultSpy).toHaveBeenCalled();
-    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { seriesTracker: true });
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { movieTracker: true });
   });
 });

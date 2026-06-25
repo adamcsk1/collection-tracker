@@ -85,19 +85,18 @@
             }
           </ng-container></libc-autocomplete
         >
-        @if (!internalListMode()) {
+        @if (showWatchedCheckbox()) {
           <libc-checkbox
             data-test-id="new-item-watched"
             [formField]="form.watched"
             [label]="translations.collectionItemWatched()"
           />
         }
-        @if (seriesTracker()) {
+        @if (showCopyToSeriesTrackerCheckbox()) {
           <libc-checkbox
-            data-test-id="new-item-fetch-series-metadata"
-            [formField]="form.fetchSeriesMetadata"
-            [label]="translations.fetchSeriesMetadata()"
-            [hint]="translations.messageFetchSeriesMetadata()"
+            data-test-id="new-item-copy-to-series-tracker-as-watched"
+            [formField]="form.copyToSeriesTrackerAsWatched"
+            [label]="translations.copyToSeriesTrackerAsWatched()"
           />
         }
       }

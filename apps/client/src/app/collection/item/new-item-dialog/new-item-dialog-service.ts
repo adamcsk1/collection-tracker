@@ -5,13 +5,13 @@ import { ApiService } from '@services/api/api-service';
 import { OMDbService } from '@services/omdb/omdb-service';
 import { PortalService } from '@services/portal-service';
 import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
-import { CollectionItemChangeApiModel, CollectionListTypeModel } from '@shared/models/api-model';
+import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, filter, map, mergeMap, skip, take, tap, throwError } from 'rxjs';
+import { catchError, filter, map, mergeMap, of, skip, take, tap, throwError } from 'rxjs';
 import { CollectionService } from '../../collection-service';
-import { SaveMode } from './new-item-dialog-model';
+import { SaveMode, SaveOptions } from './new-item-dialog-model';
 
 @Injectable()
 export class NewItemDialogService {
@@ -42,54 +42,104 @@ export class NewItemDialogService {
     userRate: number | null,
     tags: string,
     mode: SaveMode,
-    targetOwnerShareCode?: string,
-    listType: CollectionListTypeModel = 'library',
-    fetchSeriesMetadata?: boolean
+    options: SaveOptions = {}
   ) {
+    const {
+      targetOwnerShareCode,
+      listType = 'library',
+      watched = false,
+      copyToSeriesTrackerAsWatched = false,
+    } = options;
+
     return this.omdb.getSelectedContent(selectedIMDbId).pipe(
       skip(1),
       take(1),
       filter((selectedContent) => !!selectedContent),
       filter((selectedContent) => !!selectedContent?.imdbID),
-      map((selectedContent): CollectionItemChangeApiModel => {
-        const selectedContentType = selectedContent.Type.trim().toLowerCase();
-        if (listType === 'series-tracker' && selectedContentType !== 'series') {
-          throw new Error('Series tracker items must be series.');
+      map(
+        (
+          selectedContent
+        ): {
+          item: CollectionItemChangeApiModel;
+          selectedContentIsMovie: boolean;
+          selectedContentIsSeries: boolean;
+        } => {
+          const selectedContentType = selectedContent.Type.trim().toLowerCase();
+          if (listType === 'series-tracker' && selectedContentType !== 'series') {
+            throw new Error('Series tracker items must be series.');
+          }
+          if (listType === 'movie-tracker' && selectedContentType !== 'movie') {
+            throw new Error('Movie tracker items must be movies.');
+          }
+          const typeTag = selectedContentType === 'movie' ? MOVIE_TAG : SERIES_TAG;
+          return {
+            item: {
+              image: selectedContent.Poster,
+              title: selectedContent.Title,
+              genre: parseGenreText(selectedContent.Genre),
+              IMDbId: selectedContent.imdbID,
+              tags: typeTag ? [typeTag, ...parseTagText(tags)] : parseTagText(tags),
+              year: this.parseYear(selectedContent.Year),
+              rate: selectedContent.imdbRating,
+              rottenTomatoesRate: this.getRating(selectedContent.Ratings, 'Rotten Tomatoes'),
+              metacriticRate: this.getRating(selectedContent.Ratings, 'Metacritic'),
+              userRate,
+              actors: selectedContent.Actors,
+              plot: selectedContent.Plot,
+            },
+            selectedContentIsMovie: selectedContentType === 'movie',
+            selectedContentIsSeries: selectedContentType === 'series',
+          };
         }
-        const typeTag = selectedContentType === 'movie' ? MOVIE_TAG : SERIES_TAG;
-        return {
-          image: selectedContent.Poster,
-          title: selectedContent.Title,
-          genre: parseGenreText(selectedContent.Genre),
-          IMDbId: selectedContent.imdbID,
-          tags: typeTag ? [typeTag, ...parseTagText(tags)] : parseTagText(tags),
-          year: this.parseYear(selectedContent.Year),
-          rate: selectedContent.imdbRating,
-          rottenTomatoesRate: this.getRating(selectedContent.Ratings, 'Rotten Tomatoes'),
-          metacriticRate: this.getRating(selectedContent.Ratings, 'Metacritic'),
-          userRate,
-          actors: selectedContent.Actors,
-          plot: selectedContent.Plot,
-        };
-      }),
-      tap(() => this.spinnerLoadingState.setState('show', true)),
-      mergeMap((collectionItem) =>
-        (listType === 'library'
-          ? this.api.create(collectionItem, targetOwnerShareCode)
-          : this.api.create(collectionItem, targetOwnerShareCode, listType, fetchSeriesMetadata)
-        ).pipe(map((response) => response.item))
       ),
+      tap(() => this.spinnerLoadingState.setState('show', true)),
+      mergeMap(({ item, selectedContentIsMovie, selectedContentIsSeries }) =>
+        (listType === 'library'
+          ? this.api.create(item, targetOwnerShareCode)
+          : this.api.create(item, targetOwnerShareCode, listType)
+        ).pipe(map((response) => ({ collectionItem: response.item, selectedContentIsMovie, selectedContentIsSeries })))
+      ),
+      mergeMap(({ collectionItem, selectedContentIsMovie, selectedContentIsSeries }) => {
+        if (listType === 'library' && watched && selectedContentIsMovie) {
+          return this.api.addMovieTrackerItem(collectionItem.IMDbId, targetOwnerShareCode).pipe(
+            map((response) => ({
+              collectionItem: { ...collectionItem, watched: true },
+              movieTrackerItem: response.item,
+              seriesTrackerItem: null,
+            }))
+          );
+        }
+
+        if (listType === 'library' && copyToSeriesTrackerAsWatched && selectedContentIsSeries) {
+          return this.api.addSeriesTrackerItem(collectionItem.IMDbId, undefined, targetOwnerShareCode).pipe(
+            mergeMap((response) =>
+              this.api.markAllSeriesTrackerWatched(collectionItem.IMDbId).pipe(
+                map((watchedResponse) => ({
+                  collectionItem,
+                  movieTrackerItem: null,
+                  seriesTrackerItem: watchedResponse.item ?? response.item,
+                }))
+              )
+            )
+          );
+        }
+
+        return of({ collectionItem, movieTrackerItem: null, seriesTrackerItem: null });
+      }),
       catchError((error) => {
         this.spinnerLoadingState.setState('show', false);
         return throwError(() => error);
       }),
-      tap((collectionItem) => {
+      tap(({ collectionItem, movieTrackerItem, seriesTrackerItem }) => {
         this.spinnerLoadingState.setState('show', false);
         this.collection.addCollectionItem(collectionItem, true);
+        if (movieTrackerItem) this.collection.addCollectionItem(movieTrackerItem, true);
+        if (seriesTrackerItem) this.collection.addCollectionItem(seriesTrackerItem, true);
         this.collection.triggerReload();
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewItem'));
         if (mode === 'close') this.portal.closeAll();
-      })
+      }),
+      map(({ collectionItem }) => collectionItem)
     );
   }
 
