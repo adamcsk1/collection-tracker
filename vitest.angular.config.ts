@@ -5,13 +5,15 @@ import { coverageExclude } from './vitest.config';
 
 const require = createRequire(import.meta.url);
 const angular = require('@analogjs/vite-plugin-angular').default;
-const tsconfigPaths = require('vite-tsconfig-paths').default;
 
 const defineAngularConfig = (appName: string, dirname: string, target: 'apps' | 'lib' = 'apps') =>
   defineConfig({
     root: dirname,
     cacheDir: `../../node_modules/.vitest/${target}/${appName}`,
-    plugins: [angular(), tsconfigPaths()],
+    plugins: [angular()],
+    resolve: {
+      tsconfigPaths: true,
+    },
     test: {
       globals: true,
       environment: 'jsdom',

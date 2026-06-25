@@ -1,4 +1,3 @@
-import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
@@ -18,13 +17,12 @@ const coverageExclude = [
   '**/*.css',
 ];
 
-const require = createRequire(import.meta.url);
-const tsconfigPaths = require('vite-tsconfig-paths').default;
-
 export default defineConfig({
   root: __dirname,
   cacheDir: '../../node_modules/.vitest/apps/server',
-  plugins: [tsconfigPaths()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     globals: true,
     environment: 'node',
