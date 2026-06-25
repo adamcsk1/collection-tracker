@@ -10,7 +10,7 @@ type AuthCookie = {
   value: string;
 };
 
-const collectionListTypes = ['library', 'watch-later', 'wishlist', 'series-tracker'] as const;
+const collectionListTypes = ['library', 'watch-later', 'wishlist', 'series-tracker', 'movie-tracker'] as const;
 
 const getSetCookieHeaders = (headers: Cypress.Response<unknown>['headers']): string[] => {
   const setCookie = headers['set-cookie'];

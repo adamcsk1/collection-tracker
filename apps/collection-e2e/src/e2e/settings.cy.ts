@@ -20,7 +20,7 @@ const openSettingsSections = () => {
     win.localStorage.setItem('CT.DetailsUser', 'true');
     win.localStorage.setItem('CT.DetailsAccess tokens', 'true');
     win.localStorage.setItem('CT.DetailsImages', 'true');
-    win.localStorage.setItem('CT.DetailsGlobal watch status', 'true');
+    win.localStorage.setItem('CT.DetailsManage tracker data', 'true');
   });
 };
 
@@ -119,10 +119,10 @@ describe('Settings - collection list display page', () => {
   });
 });
 
-describe('Settings - global watch status page', () => {
+describe('Settings - manage tracker data page', () => {
   beforeEach(() => {
     cy.autoLogin();
-    SettingsPage.visitGlobalWatchStatus();
+    SettingsPage.visitManageTrackerData();
   });
 
   it('shows the mark-all-watched button', () => {
@@ -132,6 +132,22 @@ describe('Settings - global watch status page', () => {
   it('shows the mark-all-unwatched button', () => {
     SettingsPage.getMarkAllUnwatchedButton().should('be.visible');
   });
+
+  it('shows the mark-all-series-watched button', () => {
+    SettingsPage.getMarkAllSeriesWatchedButton().should('be.visible');
+  });
+
+  it('shows the mark-all-series-unwatched button', () => {
+    SettingsPage.getMarkAllSeriesUnwatchedButton().should('be.visible');
+  });
+
+  it('shows the remove-all-tracked-movie-data button', () => {
+    SettingsPage.getRemoveAllTrackedMovieDataButton().should('be.visible');
+  });
+
+  it('shows the remove-all-tracked-series-data button', () => {
+    SettingsPage.getRemoveAllTrackedSeriesDataButton().should('be.visible');
+  });
 });
 
 describe('Settings - mark all watched / unwatched', () => {
@@ -139,6 +155,10 @@ describe('Settings - mark all watched / unwatched', () => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie A', 'movie', 'tt8000001'));
     cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie B', 'movie', 'tt8000002'));
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Watch Test Series', 'series', 'tt8000003'),
+      tags: ['#series'],
+    });
     // Force a full page reload so Angular reboots and its boot-time loadCollection()
     // picks up the seeded items. ChangeWatchedStatusService reads from the in-memory
     // store, not the API — the store must contain the items before we act.
@@ -148,11 +168,11 @@ describe('Settings - mark all watched / unwatched', () => {
     cy.intercept('GET', '/api/v1/items*').as('collectionLoad');
     cy.reload();
     cy.wait('@collectionLoad');
-    // Navigate to global watch status page
-    SettingsPage.visitGlobalWatchStatus();
+    // Navigate to manage tracker data page
+    SettingsPage.visitManageTrackerData();
   });
 
-  it('mark all as watched calls the bulk update API', () => {
+  it('mark all movies as watched calls the bulk update API', () => {
     cy.intercept('POST', '/api/v1/items/mark-all-watched').as('markAllWatched');
     cy.on('window:confirm', () => true);
 
@@ -161,7 +181,7 @@ describe('Settings - mark all watched / unwatched', () => {
     cy.wait('@markAllWatched').its('response.statusCode').should('eq', 200);
   });
 
-  it('mark all as unwatched calls the bulk update API', () => {
+  it('mark all movies as unwatched calls the bulk update API', () => {
     cy.on('window:confirm', () => true);
     cy.intercept('POST', '/api/v1/items/mark-all-watched').as('markAllWatched');
     cy.intercept('POST', '/api/v1/items/mark-all-unwatched').as('markAllUnwatched');
@@ -172,6 +192,61 @@ describe('Settings - mark all watched / unwatched', () => {
 
     SettingsPage.getMarkAllUnwatchedButton().click();
     cy.wait('@markAllUnwatched').its('response.statusCode').should('eq', 200);
+  });
+
+  it('mark all series as watched calls the bulk update API', () => {
+    cy.intercept('POST', '/api/v1/items/mark-all-series-watched').as('markAllSeriesWatched');
+    cy.on('window:confirm', () => true);
+
+    SettingsPage.getMarkAllSeriesWatchedButton().click();
+
+    cy.wait('@markAllSeriesWatched').its('response.statusCode').should('eq', 200);
+  });
+
+  it('mark all series as unwatched calls the bulk update API', () => {
+    cy.on('window:confirm', () => true);
+    cy.intercept('POST', '/api/v1/items/mark-all-series-watched').as('markAllSeriesWatched');
+    cy.intercept('POST', '/api/v1/items/mark-all-series-unwatched').as('markAllSeriesUnwatched');
+
+    SettingsPage.getMarkAllSeriesWatchedButton().click();
+    cy.wait('@markAllSeriesWatched').its('response.statusCode').should('eq', 200);
+
+    SettingsPage.getMarkAllSeriesUnwatchedButton().click();
+    cy.wait('@markAllSeriesUnwatched').its('response.statusCode').should('eq', 200);
+  });
+
+  it('remove all tracked movie data calls the delete API and empties the tracker', () => {
+    cy.intercept('DELETE', '/api/v1/movie-tracker').as('deleteMovieTracker');
+    cy.on('window:confirm', () => true);
+
+    // Seed a movie tracker item
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Tracked Movie', 'movie', 'tt8000004'),
+      listType: 'movie-tracker',
+    });
+
+    SettingsPage.getRemoveAllTrackedMovieDataButton().click();
+
+    cy.wait('@deleteMovieTracker').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.visitMovieTracker();
+    CollectionPage.getEmptyState().should('be.visible');
+  });
+
+  it('remove all tracked series data calls the delete API', () => {
+    cy.intercept('DELETE', '/api/v1/series-tracker').as('deleteSeriesTracker');
+    cy.on('window:confirm', () => true);
+
+    // Seed a series tracker item
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Tracked Series', 'series', 'tt8000005'),
+      listType: 'series-tracker',
+      tags: ['#series'],
+    });
+
+    SettingsPage.getRemoveAllTrackedSeriesDataButton().click();
+
+    cy.wait('@deleteSeriesTracker').its('response.statusCode').should('eq', 200);
   });
 });
 

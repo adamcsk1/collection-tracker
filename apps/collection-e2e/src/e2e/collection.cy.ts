@@ -370,6 +370,14 @@ describe('Collection — standard search in secondary lists', () => {
       ...buildCollectionItem('Series Tracker Search Beta', 'series', 'tt8300006'),
       listType: 'series-tracker',
     });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Movie Tracker Search Alpha', 'movie', 'tt8300007'),
+      listType: 'movie-tracker',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Movie Tracker Search Beta', 'movie', 'tt8300008'),
+      listType: 'movie-tracker',
+    });
   });
 
   it('filters wishlist items and requests wishlist-scoped suggestions', () => {
@@ -403,6 +411,16 @@ describe('Collection — standard search in secondary lists', () => {
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Series Tracker Search Alpha');
     CollectionPage.getListItems().should('not.contain.text', 'Series Tracker Search Beta');
+  });
+
+  it('filters movie tracker items', () => {
+    CommonPage.openMenu();
+    CommonPage.getNavMovieTrackerLink().click();
+
+    CollectionPage.getMovieTrackerSearchInput().should('be.visible').type('Alpha');
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', 'Movie Tracker Search Alpha');
+    CollectionPage.getListItems().should('not.contain.text', 'Movie Tracker Search Beta');
   });
 });
 
@@ -511,6 +529,10 @@ describe('Collection — order controls', () => {
       listType: 'series-tracker',
     });
     cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Movie Tracker Order', 'movie', 'tt8400025'),
+      listType: 'movie-tracker',
+    });
+    cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Favorite Order', 'movie', 'tt8400024'),
       tags: ['#movie', '#favorite'],
     });
@@ -530,6 +552,12 @@ describe('Collection — order controls', () => {
     CommonPage.openMenu();
     CommonPage.getNavSeriesTrackerLink().click();
     cy.url().should('include', '#/collection/series-tracker');
+    cy.wait('@getItems');
+    showOrderControls();
+
+    CommonPage.openMenu();
+    CommonPage.getNavMovieTrackerLink().click();
+    cy.url().should('include', '#/collection/movie-tracker');
     cy.wait('@getItems');
     showOrderControls();
 
@@ -688,6 +716,125 @@ describe('Collection — series tracker', () => {
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
   });
+});
+
+describe('Collection — movie tracker', () => {
+  const movieTitle = 'Movie Tracker Test Movie';
+
+  beforeEach(() => {
+    cy.intercept('GET', '/api/v1/proxy/omdb/search*', {
+      statusCode: 200,
+      body: {
+        Search: [
+          { Title: 'Filtered Series Result', Year: '2020', imdbID: 'tt8300000', Type: 'series', Poster: 'N/A' },
+          { Title: movieTitle, Year: '2021', imdbID: 'tt8300001', Type: 'movie', Poster: 'N/A' },
+        ],
+        totalResults: '2',
+        Response: 'True',
+      },
+    }).as('movieTrackerOmdbSearch');
+    cy.intercept('GET', '/api/v1/proxy/omdb/item*', {
+      statusCode: 200,
+      body: buildOmdbItem(movieTitle, 'tt8300001', 'movie'),
+    }).as('movieTrackerOmdbItem');
+
+    cy.autoLogin();
+  });
+
+  it('navigates via the menu and adds a movie tracker item from the empty state', () => {
+    CommonPage.openMenu();
+    CommonPage.getNavMovieTrackerLink().click();
+
+    cy.url().should('include', '#/collection/movie-tracker');
+    cy.getByTestId('collection-search').should('not.exist');
+    CollectionPage.getAddFirstMovieTrackerItemLink().click();
+
+    CollectionPage.getNewItemSearchInput().type(movieTitle);
+    cy.wait('@movieTrackerOmdbSearch');
+    CollectionPage.getNewItemContentSelect().find('option').should('have.length', 1).and('contain.text', movieTitle);
+    cy.getByTestId('new-item-user-rate').should('not.exist');
+    cy.getByTestId('new-item-watched').should('not.exist');
+    CollectionPage.getNewItemSaveAndCloseButton().click();
+    cy.wait('@movieTrackerOmdbItem');
+
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', movieTitle);
+    CollectionPage.getMovieTrackerWatchedBadges().should('have.length', 1);
+  });
+
+  it('opens the item dialog and shows watched status without episode controls', () => {
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem(movieTitle, 'movie', 'tt8300001'),
+      listType: 'movie-tracker',
+    });
+    CollectionPage.visitMovieTracker();
+
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogCompletedChip().should('not.exist');
+    CollectionPage.getItemDialogManageWatchedEpisodesButton().should('not.exist');
+    CollectionPage.getItemDialogManageSeriesMetadataButton().should('not.exist');
+
+    CollectionPage.closeActiveDialogByOverlay();
+  });
+
+  it('moves a movie from watch-later to movie tracker', () => {
+    cy.intercept('POST', '/api/v1/movie-tracker/*').as('moveToMovieTracker');
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Watch Later Move Movie', 'movie', 'tt8300002'),
+      listType: 'watch-later',
+    });
+    CollectionPage.visitWatchLater();
+
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogMoveMovieTrackerButton().click();
+    cy.wait('@moveToMovieTracker').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.getEmptyState().should('be.visible');
+
+    CollectionPage.visitMovieTracker();
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', 'Watch Later Move Movie');
+  });
+
+  it('deletes a movie tracker item and shows empty state', () => {
+    cy.intercept('DELETE', '/api/v1/delete/*').as('deleteMovieTrackerItem');
+    cy.on('window:confirm', () => true);
+
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Delete Tracker Movie', 'movie', 'tt8300003'),
+      listType: 'movie-tracker',
+    });
+    CollectionPage.visitMovieTracker();
+
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.getItemDialogDeleteButton().click();
+    cy.wait('@deleteMovieTrackerItem').its('response.statusCode').should('eq', 204);
+
+    CollectionPage.getEmptyState().should('be.visible');
+  });
+
+  it('filters movie tracker items via search', () => {
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Alpha Movie', 'movie', 'tt8300004'),
+      listType: 'movie-tracker',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Beta Movie', 'movie', 'tt8300005'),
+      listType: 'movie-tracker',
+    });
+    CollectionPage.visitMovieTracker();
+
+    CollectionPage.getListItems().should('have.length', 2);
+    CollectionPage.getMovieTrackerSearchInput().type('Alpha');
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', 'Alpha Movie');
+  });
+
+
 });
 
 describe('Collection - sync', () => {

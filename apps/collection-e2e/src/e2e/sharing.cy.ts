@@ -107,18 +107,16 @@ const visitSharedCollection = (sharedUser: TestUser): void => {
 };
 
 const assertDialogPermissions = (permissions: { update: boolean; delete: boolean }): void => {
-  if (permissions.update || permissions.delete) {
-    CollectionPage.openItemDialogActionsMenu();
-  }
+  CollectionPage.openItemDialogActionsMenu();
 
   if (permissions.update) {
     CollectionPage.getItemDialogEditButton().should('be.visible');
-    CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');
   } else {
     cy.getByTestId('item-dialog-edit').should('not.exist');
-    cy.getByTestId('item-dialog-mark-watched').should('not.exist');
-    cy.getByTestId('item-dialog-mark-unwatched').should('not.exist');
   }
+
+  // Mark watched is available for all library movies regardless of share permissions
+  CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');
 
   if (permissions.delete) {
     CollectionPage.getItemDialogDeleteButton().should('be.visible');
@@ -266,7 +264,7 @@ describe('Collection sharing - item permissions', () => {
     });
   });
 
-  it('allows deleting with delete permission but hides edit and watched actions', () => {
+  it('allows deleting with delete permission but hides edit action', () => {
     setupShare({ canRead: true, canCreate: false, canUpdate: false, canDelete: true }).then(({ owner, sharedUser }) => {
       seedOwnerItem(owner, 'Shared Delete Movie', `tt${uniqueId().slice(0, 7)}`);
       visitSharedCollection(sharedUser);
@@ -311,6 +309,34 @@ describe('Collection sharing - image refresh', () => {
         expect(interception.request.url).to.include(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
         expect(interception.response?.statusCode).to.eq(200);
       });
+    });
+  });
+});
+
+describe('Collection sharing - movie tracker from shared library', () => {
+  it('copies a shared library movie to the shared user own movie tracker when marked as watched', () => {
+    setupShare({ canRead: true, canCreate: false, canUpdate: false, canDelete: false }).then(({ owner, sharedUser }) => {
+      const title = 'Shared Tracker Movie';
+      const imdbId = `tt${uniqueId().slice(0, 7)}`;
+      seedOwnerItem(owner, title, imdbId);
+      visitSharedCollection(sharedUser);
+
+      cy.intercept('POST', '/api/v1/movie-tracker/*').as('markWatched');
+      cy.on('window:confirm', () => true);
+
+      CollectionPage.getListItems().contains(title).click();
+      CollectionPage.openItemDialogActionsMenu();
+      CollectionPage.getItemDialogMarkWatchedButton().click();
+
+      cy.wait('@markWatched').then((interception) => {
+        expect(interception.request.url).to.include(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
+        expect(interception.response?.statusCode).to.eq(200);
+      });
+
+      cy.intercept('GET', '/api/v1/items?*listType=movie-tracker*').as('getMovieTrackerItems');
+      CollectionPage.visitMovieTracker();
+      cy.wait('@getMovieTrackerItems');
+      CollectionPage.getListItems().should('contain.text', title);
     });
   });
 });

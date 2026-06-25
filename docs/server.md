@@ -9,8 +9,8 @@ Source: [`apps/server`](../apps/server)
 - sign-up, sign-in, logout, and access-token lifecycle management
 - CRUD for per-user collection items stored in SQLite, including matched-item, existence, random-item, and search-suggestion APIs
 - tag management, user-settings, user-share, and collection-list display persistence
-- statistics summaries, media refresh, external rating refresh, and global watch-status updates
-- series tracker season metadata, watched episodes, and watched-state bulk updates
+- statistics summaries, media refresh, external rating refresh, and manage tracker data updates split across movie tracker rows and series progress
+- movie tracker items, series tracker season metadata, watched episodes, and watched-state bulk updates
 - SQLite database initialization and schema migrations
 - OMDb API proxying — forwards search and item lookups to OMDb using the server-side `OMDB_API_KEY` environment variable
 - AI search proxying — embeds collection metadata, retrieves semantic candidates, and forwards filtered IMDB-ID-based queries to Ollama using `ollama.config.json` in the active data folder

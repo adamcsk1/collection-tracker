@@ -7,15 +7,15 @@ Source: [`apps/client`](../apps/client)
 ## Functional Areas
 
 - `collection/library`: search and browse stored collection items; includes AI natural-language search via `AiSearchService` and `AiSearchInput`
-- `collection/favorites`, `collection/watch-later`, `collection/wishlist`, and `collection/series-tracker`: filtered collection subroutes for saved item lists and series progress tracking
+- `collection/favorites`, `collection/watch-later`, `collection/wishlist`, `collection/movie-tracker`, and `collection/series-tracker`: filtered collection subroutes for saved item lists, watched movies, and series progress tracking
 - statistics dialog: tag-driven summaries and Chart.js visualizations opened from the main menu
 - `settings/tag-management`: per-tag color, weight, and presentation rules
 - `settings/export-import`: export and import collection data and tag management settings
 - `settings/collection-list-display`: per-user collection list metadata and preferred rating display rules
 - `settings/media-refresh`: refresh stored images and external ratings from OMDb-backed APIs
-- `settings/global-watch-status`: mark all visible collection items watched or unwatched
+- `settings/manage-tracker-data`: mark all visible collection items watched or unwatched
 - `settings/shares`: manage outgoing and incoming collection shares by user share code
-- `settings`: theme, language, search, app-mode, settings-lock, account actions, access tokens, media refresh, sharing, and global watch-status actions
+- `settings`: theme, language, search, app-mode, settings-lock, account actions, access tokens, media refresh, sharing, and manage tracker data actions
 - about dialog: build metadata and settings-lock release flow opened from the main menu
 
 ## Technical Notes

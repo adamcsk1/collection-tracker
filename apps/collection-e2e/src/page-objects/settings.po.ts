@@ -23,8 +23,8 @@ export const SettingsPage = {
     cy.visit('/client/#/settings/collection-list-display');
   },
 
-  visitGlobalWatchStatus: () => {
-    cy.visit('/client/#/settings/global-watch-status');
+  visitManageTrackerData: () => {
+    cy.visit('/client/#/settings/manage-tracker-data');
   },
 
   // Basic form fields (always visible when settingsLock is off)
@@ -54,9 +54,13 @@ export const SettingsPage = {
     cy.getByTestId('settings-external-ratings-refresh-start').scrollIntoView(),
   getImageRefreshStatus: () => cy.getByTestId('settings-image-refresh-status').scrollIntoView(),
 
-  // Global watch status page
+  // Manage tracker data page
   getMarkAllWatchedButton: () => cy.getByTestId('settings-mark-all-watched').scrollIntoView(),
   getMarkAllUnwatchedButton: () => cy.getByTestId('settings-mark-all-unwatched').scrollIntoView(),
+  getMarkAllSeriesWatchedButton: () => cy.getByTestId('settings-mark-all-series-watched').scrollIntoView(),
+  getMarkAllSeriesUnwatchedButton: () => cy.getByTestId('settings-mark-all-series-unwatched').scrollIntoView(),
+  getRemoveAllTrackedMovieDataButton: () => cy.getByTestId('settings-remove-all-tracked-movie-data').scrollIntoView(),
+  getRemoveAllTrackedSeriesDataButton: () => cy.getByTestId('settings-remove-all-tracked-series-data').scrollIntoView(),
 
   // Account Actions page
   getAccountActionsSection: () => cy.getByTestId('settings-account-actions'),

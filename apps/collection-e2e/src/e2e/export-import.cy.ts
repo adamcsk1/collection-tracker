@@ -98,6 +98,7 @@ describe('Export/Import — tag management export and import', () => {
 describe('Export/Import — collection data export', () => {
   const exportPath = 'cypress/downloads/collection-tracker-export.json';
   const seriesImdbId = 'tt8400001';
+  const movieTrackerImdbId = 'tt8400002';
 
   beforeEach(() => {
     cy.autoLogin();
@@ -107,6 +108,10 @@ describe('Export/Import — collection data export', () => {
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Export Series', 'series', seriesImdbId),
       listType: 'series-tracker',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Export Tracker Movie', 'movie', movieTrackerImdbId),
+      listType: 'movie-tracker',
     });
     cy.request('PUT', `/api/v1/series-tracker/${seriesImdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Second'] }],
@@ -132,6 +137,12 @@ describe('Export/Import — collection data export', () => {
         seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Second'] }],
         watchedEpisodes: [{ season: 1, episode: 1 }],
       });
+      const trackerItem = parsed.collectionItems.find(
+        (item: { IMDbId: string; listType: string }) =>
+          item.IMDbId === movieTrackerImdbId && item.listType === 'movie-tracker'
+      );
+      expect(trackerItem).to.not.be.undefined;
+      expect(trackerItem.title).to.equal('Export Tracker Movie');
     });
   });
 
@@ -162,6 +173,12 @@ describe('Export/Import — collection data export', () => {
     cy.request('GET', `/api/v1/series-tracker/${seriesImdbId}/watched-episodes`)
       .its('body.watchedEpisodes')
       .should('deep.equal', [{ season: 1, episode: 1 }]);
+    cy.request('GET', '/api/v1/items?limit=1000&offset=0&listType=movie-tracker')
+      .its('body.items')
+      .should((items) => {
+        const titles = items.map((item: { title: string }) => item.title);
+        expect(titles).to.include('Export Tracker Movie');
+      });
   });
 
   it('sends selected IMDb ID file content for collection-item import', () => {

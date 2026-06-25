@@ -52,12 +52,54 @@ describe('Statistics — with movies and series', () => {
     StatisticsPage.getSummaryFavorites().should('contain.text', '1');
   });
 
-  it('shows the correct watched count', () => {
-    StatisticsPage.getSummaryWatched().should('contain.text', '0');
+  it('shows the correct watched movies count', () => {
+    StatisticsPage.getSummaryWatchedMovies().should('contain.text', '0');
   });
 
-  it('shows the correct unwatched count', () => {
-    StatisticsPage.getSummaryUnwatched().should('contain.text', '3');
+  it('shows the correct watched series count', () => {
+    StatisticsPage.getSummaryWatchedSeries().should('contain.text', '0');
+  });
+
+  it('shows the correct unwatched movies count', () => {
+    StatisticsPage.getSummaryUnwatchedMovies().should('contain.text', '2');
+  });
+
+  it('shows the correct unwatched library series count', () => {
+    StatisticsPage.getSummaryUnwatchedLibrarySeries().should('contain.text', '1');
+  });
+
+  it('shows the correct unwatched tracker series count', () => {
+    StatisticsPage.getSummaryUnwatchedTrackerSeries().should('contain.text', '0');
+  });
+
+  it('navigates to the movie tracker when the watched movies summary card is clicked', () => {
+    StatisticsPage.getSummaryWatchedMovies().click();
+    cy.url().should('include', '#/collection/movie-tracker');
+  });
+
+  it('navigates to the series tracker when the watched series summary card is clicked', () => {
+    StatisticsPage.getSummaryWatchedSeries().click();
+    cy.url().should('include', '#/collection/series-tracker');
+  });
+
+  it('navigates to the collection filtered by unwatched movies when the unwatched movies summary card is clicked', () => {
+    StatisticsPage.getSummaryUnwatchedMovies().click();
+    cy.url().should('include', '#/collection/library');
+    cy.url().should('include', 'search=%23unwatched');
+    cy.url().should('include', 'type=movie');
+  });
+
+  it('navigates to the collection filtered by unwatched library series when the unwatched library series summary card is clicked', () => {
+    StatisticsPage.getSummaryUnwatchedLibrarySeries().click();
+    cy.url().should('include', '#/collection/library');
+    cy.url().should('include', 'search=%23unwatched');
+    cy.url().should('include', 'type=series');
+  });
+
+  it('navigates to the series tracker filtered by uncompleted when the unwatched tracker series summary card is clicked', () => {
+    StatisticsPage.getSummaryUnwatchedTrackerSeries().click();
+    cy.url().should('include', '#/collection/series-tracker');
+    cy.url().should('include', 'search=%23uncompleted');
   });
 
   it('navigates to the collection when the all summary card is clicked', () => {
@@ -115,6 +157,44 @@ describe('Statistics — with movies and series', () => {
     StatisticsPage.getSelectedTagButton('#action').should('have.attr', 'aria-pressed', 'true');
     StatisticsPage.clickAvailableTagButton('#drama');
     StatisticsPage.getTagChartCard().should('not.have.class', 'chart-hidden');
+  });
+});
+
+describe('Statistics — with series tracker items', () => {
+  const librarySeries = {
+    ...buildCollectionItem('Stats Library Series', 'series', 'tt9000004'),
+    tags: ['#series', '#sci-fi'],
+  };
+
+  beforeEach(() => {
+    cy.autoLogin();
+    cy.request('POST', '/api/v1/create', librarySeries);
+    cy.request('POST', '/api/v1/series-tracker/tt9000004');
+    StatisticsPage.visit();
+  });
+
+  it('shows the correct unwatched library series count when a tracker exists', () => {
+    StatisticsPage.getSummaryUnwatchedLibrarySeries().should('contain.text', '0');
+  });
+
+  it('shows the correct unwatched tracker series count for an incomplete tracker', () => {
+    StatisticsPage.getSummaryUnwatchedTrackerSeries().should('contain.text', '1');
+  });
+
+  it('shows the correct completed tracker series count for an incomplete tracker', () => {
+    StatisticsPage.getSummaryCompletedTrackerSeries().should('contain.text', '0');
+  });
+
+  it('navigates to the series tracker filtered by uncompleted when the unwatched tracker series card is clicked', () => {
+    StatisticsPage.getSummaryUnwatchedTrackerSeries().click();
+    cy.url().should('include', '#/collection/series-tracker');
+    cy.url().should('include', 'search=%23uncompleted');
+  });
+
+  it('navigates to the series tracker filtered by completed when the completed tracker series card is clicked', () => {
+    StatisticsPage.getSummaryCompletedTrackerSeries().click();
+    cy.url().should('include', '#/collection/series-tracker');
+    cy.url().should('include', 'search=%23completed');
   });
 });
 

@@ -14,21 +14,6 @@ AI search is powered by Ollama. Local development and Docker Compose read Ollama
 | `APP_UID`          | `1000`                   | Runtime user ID used for writable Docker files. Set to `$(id -u)` on Linux hosts so `./.data` remains accessible.  |
 | `APP_GID`          | `1000`                   | Runtime group ID used for writable Docker files. Set to `$(id -g)` on Linux hosts so `./.data` remains accessible. |
 
-## RTK Commands
-
-When running shell commands, always prefix with `rtk`. This reduces context usage with no behavior change. If `rtk` has no filter for a command, it passes through unchanged.
-
-```bash
-rtk git status
-rtk git diff
-rtk git log
-rtk npm run test
-rtk npm run lint
-rtk npm run typecheck
-```
-
-In command chains, prefix each segment: `rtk git add . && rtk git commit -m "msg"`.
-
 ## Apps
 
 | App                   | Purpose                                                       |

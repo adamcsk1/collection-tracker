@@ -11,6 +11,7 @@ export const CommonPage = {
   getNavWatchLaterLink: () => cy.getByTestId('nav-watch-later'),
   getNavWishlistLink: () => cy.getByTestId('nav-wishlist'),
   getNavSeriesTrackerLink: () => cy.getByTestId('nav-series-tracker'),
+  getNavMovieTrackerLink: () => cy.getByTestId('nav-movie-tracker'),
   getNavSyncLink: () => cy.getByTestId('nav-sync'),
   getNavSettingsLink: () => cy.getByTestId('nav-settings'),
   getNavStatisticsLink: () => cy.getByTestId('nav-statistics'),

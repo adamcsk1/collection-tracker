@@ -35,10 +35,17 @@ export const CollectionPage = {
   visitSeriesTracker: () => {
     cy.visit('/client/#/collection/series-tracker');
   },
+  visitMovieTracker: () => {
+    cy.visit('/client/#/collection/movie-tracker');
+  },
+  visitWatchLater: () => {
+    cy.visit('/client/#/collection/watch-later');
+  },
 
   // Search
   getSearchInput: () => cy.getByTestId('collection-search').find('input'),
   getSeriesTrackerSearchInput: () => cy.getByTestId('series-tracker-search').find('input'),
+  getMovieTrackerSearchInput: () => cy.getByTestId('movie-tracker-search').find('input'),
   getWatchLaterSearchInput: () => cy.getByTestId('watch-later-search').find('input'),
   getWishlistSearchInput: () => cy.getByTestId('wishlist-search').find('input'),
 
@@ -48,6 +55,7 @@ export const CollectionPage = {
     cy.getByTestId('list-item-title', options),
   getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
   getSeriesTrackerCompletedBadges: () => cy.getByTestId('list-item-series-tracker-completed'),
+  getMovieTrackerWatchedBadges: () => cy.getByTestId('list-item-watched'),
   getSharedBadges: () => cy.getByTestId('list-item-shared'),
   getListItemYears: () => cy.getByTestId('list-item-year'),
   getListItemImdbRatings: () => cy.getByTestId('list-item-rating-imdb'),
@@ -60,6 +68,7 @@ export const CollectionPage = {
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
   getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
   getAddFirstSeriesTrackerItemLink: () => cy.getByTestId('add-first-series-tracker-item'),
+  getAddFirstMovieTrackerItemLink: () => cy.getByTestId('add-first-movie-tracker-item'),
   setListPreferredRatingToUser: () =>
     cy.request('POST', '/api/v1/user/settings', {
       collectionListDisplayPreferences: {
@@ -90,6 +99,8 @@ export const CollectionPage = {
   getNewItemLibrarySelect: () => cy.getByTestId('new-item-library').find('select'),
   getNewItemContentSelect: () => cy.getByTestId('new-item-content-select').find('select'),
   getNewItemUserRateInput: () => cy.getByTestId('new-item-user-rate').find('input'),
+  getNewItemCopyToSeriesTrackerAsWatchedCheckbox: () =>
+    cy.getByTestId('new-item-copy-to-series-tracker-as-watched').find('input[type="checkbox"]'),
   getNewItemSaveButton: () => cy.getByTestId('new-item-save'),
   getNewItemSaveAndNewButton: () => cy.getByTestId('new-item-save-and-new'),
   getNewItemSaveAndCloseButton: () => cy.getByTestId('new-item-save-and-close'),
@@ -120,6 +131,7 @@ export const CollectionPage = {
   getItemDialogRemoveFavoriteButton: () => getItemDialog().find('[data-test-id="item-dialog-remove-favorite"]'),
   getItemDialogMarkWatchedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-watched"]'),
   getItemDialogMarkUnwatchedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-unwatched"]'),
+  getItemDialogMoveMovieTrackerButton: () => getItemDialog().find('[data-test-id="item-dialog-move-movie-tracker"]'),
   getItemDialogSharedLibraryBadge: () => getItemDialog().find('[data-test-id="item-dialog-shared-library"]'),
   getItemDialogUserRateChip: () => getItemDialog().find('[data-test-id="item-dialog-user-rate-chip"]'),
   getItemDialogTitleInput: () => getItemDialog().find('[data-test-id="item-dialog-title"] input'),

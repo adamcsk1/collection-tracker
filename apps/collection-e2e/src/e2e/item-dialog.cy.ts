@@ -186,14 +186,14 @@ describe('Item dialog — mark watched / unwatched', () => {
   });
 
   it('marks an unwatched item as watched', () => {
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.intercept('POST', '/api/v1/movie-tracker/*').as('markWatched');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
 
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkWatchedButton().click();
-    cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
+    cy.wait('@markWatched').its('response.statusCode').should('eq', 200);
 
     // After marking watched, the button should switch to mark-unwatched
     CollectionPage.openItemDialogActionsMenu();
@@ -201,19 +201,20 @@ describe('Item dialog — mark watched / unwatched', () => {
   });
 
   it('marks a watched item as unwatched', () => {
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.intercept('POST', '/api/v1/movie-tracker/*').as('markWatched');
+    cy.intercept('DELETE', '/api/v1/movie-tracker/*').as('markUnwatched');
     cy.on('window:confirm', () => true);
 
     // First mark as watched
     CollectionPage.getListItemImages().first().click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkWatchedButton().click();
-    cy.wait('@updateItem');
+    cy.wait('@markWatched');
 
     // Now mark as unwatched
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogMarkUnwatchedButton().click();
-    cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
+    cy.wait('@markUnwatched').its('response.statusCode').should('eq', 204);
 
     // Button should switch back to mark-watched
     CollectionPage.openItemDialogActionsMenu();

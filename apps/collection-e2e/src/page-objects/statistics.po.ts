@@ -15,8 +15,12 @@ export const StatisticsPage = {
   getSummaryFavorites: () => cy.getByTestId('statistics-summary-favorites'),
   getSummaryWatchLater: () => cy.getByTestId('statistics-summary-watch-later'),
   getSummaryWishlist: () => cy.getByTestId('statistics-summary-wishlist'),
-  getSummaryWatched: () => cy.getByTestId('statistics-summary-watched'),
-  getSummaryUnwatched: () => cy.getByTestId('statistics-summary-unwatched'),
+  getSummaryWatchedMovies: () => cy.getByTestId('statistics-summary-watched-movies'),
+  getSummaryWatchedSeries: () => cy.getByTestId('statistics-summary-watched-series'),
+  getSummaryUnwatchedMovies: () => cy.getByTestId('statistics-summary-unwatched-movies'),
+  getSummaryUnwatchedLibrarySeries: () => cy.getByTestId('statistics-summary-unwatched-library-series'),
+  getSummaryUnwatchedTrackerSeries: () => cy.getByTestId('statistics-summary-unwatched-tracker-series'),
+  getSummaryCompletedTrackerSeries: () => cy.getByTestId('statistics-summary-completed-tracker-series'),
   openTagsDetails: () => {
     cy.getByTestId('statistics-tags-details')
       .find('details')
