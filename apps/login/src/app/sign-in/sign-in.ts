@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, FormRoot, maxLength, minLength, required } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { Input } from '@components/input/input';
@@ -7,6 +17,7 @@ import { SignInModel } from './sign-in-model';
 import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { SharedApiService } from '@services/api/shared-api-service';
+import { ConfirmService } from '@services/confirm-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
@@ -33,6 +44,8 @@ export class SignIn implements OnInit {
   private readonly theme = inject(ThemeService);
   private readonly publicApi = inject(PublicApiService);
   private readonly sharedApi = inject(SharedApiService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly translations = {
     welcomeBack: computed(() => this.ngxSignalTranslate.translate('WelcomeBack')),
     messageSignIn: computed(() => this.ngxSignalTranslate.translate('Message.SignIn')),
@@ -46,6 +59,7 @@ export class SignIn implements OnInit {
     continue: computed(() => this.ngxSignalTranslate.translate('Continue')),
     signUp: computed(() => this.ngxSignalTranslate.translate('SignUp')),
     companionAppReset: computed(() => this.ngxSignalTranslate.translate('CompanionAppReset')),
+    confirmCompanionAppReset: computed(() => this.ngxSignalTranslate.translate('Confirm.CompanionAppReset')),
     changeApiUrl: computed(() => this.ngxSignalTranslate.translate('ChangeApiUrl')),
     language: computed(() => this.ngxSignalTranslate.translate('Language')),
     theme: computed(() => this.ngxSignalTranslate.translate('Theme')),
@@ -151,6 +165,9 @@ export class SignIn implements OnInit {
   }
 
   protected onResetCompanionAppConfig(): void {
-    resetCompanionAppConfig();
+    this.confirm
+      .ifConfirmed(this.translations.confirmCompanionAppReset())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => resetCompanionAppConfig());
   }
 }

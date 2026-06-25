@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
 import { SharedApiService } from '@services/api/shared-api-service';
+import { ConfirmService } from '@services/confirm-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, ThemeState, themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
@@ -21,6 +22,7 @@ describe('SignIn component', () => {
   let publicApiService: { signIn: Mock };
   let sharedApiService: { updateUserSettings: Mock };
   let webStorage: { getItem: Mock; setItem: Mock };
+  let confirm: { ifConfirmed: Mock };
   let translateService: { languageOptions: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
   let themeService: { themeOptions: Mock };
@@ -40,6 +42,7 @@ describe('SignIn component', () => {
       getItem: vi.fn(() => null),
       setItem: vi.fn(),
     };
+    confirm = { ifConfirmed: vi.fn(() => of(true)) };
     translateService = { languageOptions: vi.fn(() => [{ text: 'English', value: 'en' }]) };
     ngxTranslate = { translate: vi.fn((value: string) => value), setLanguage: vi.fn() };
     themeService = { themeOptions: vi.fn(() => [{ text: 'Light', value: 'light' }]) };
@@ -49,6 +52,7 @@ describe('SignIn component', () => {
       providers: [
         { provide: PublicApiService, useValue: publicApiService },
         { provide: SharedApiService, useValue: sharedApiService },
+        { provide: ConfirmService, useValue: confirm },
         { provide: WebstorageService, useValue: webStorage },
         { provide: TranslateService, useValue: translateService },
         { provide: ThemeService, useValue: themeService },
@@ -140,14 +144,26 @@ describe('SignIn component', () => {
     expect(fixture.componentInstance['companionAppDetected']).toBe(true);
   });
 
-  it('calls companion app reset function when configured', () => {
+  it('calls companion app reset function when confirmed', () => {
     const resetAppConfig = vi.fn(() => true);
     window.CollectionTrackerInterface = { resetAppConfig };
     initializeFixture();
 
     fixture.componentInstance['onResetCompanionAppConfig']();
 
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.CompanionAppReset');
     expect(resetAppConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not reset companion app config when not confirmed', () => {
+    const resetAppConfig = vi.fn(() => true);
+    confirm.ifConfirmed.mockReturnValue(of());
+    window.CollectionTrackerInterface = { resetAppConfig };
+    initializeFixture();
+
+    fixture.componentInstance['onResetCompanionAppConfig']();
+
+    expect(resetAppConfig).not.toHaveBeenCalled();
   });
 
   it('does nothing when companion app reset function is unavailable', () => {

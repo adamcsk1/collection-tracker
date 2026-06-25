@@ -54,7 +54,12 @@
     <div>
       <a data-test-id="sign-up-link" [routerLink]="['/', 'sign-up']"> {{ translations.signUp() }} </a>
       @if (companionAppDetected) {
-        <button type="button" class="button-basic button-custom" (click)="onResetCompanionAppConfig()">
+        <button
+          type="button"
+          data-test-id="sign-in-reset-companion-app"
+          class="button-basic button-custom"
+          (click)="onResetCompanionAppConfig()"
+        >
           {{ translations.companionAppReset() }}
         </button>
       } @else {
