@@ -53,7 +53,7 @@ export const register = (app: FastifyInstance): void => {
       const hash = getItemHash(item);
       const createdItem = insertCollectionItem(db, targetOwnerHash, hash, item, listType);
 
-      if (listType === 'series-tracker' && body.fetchSeriesMetadata === true) {
+      if (listType === 'series-tracker') {
         const seasons = await fetchSeriesSeasonMetadata(item.IMDbId);
         if (seasons.length) replaceSeriesTrackerSeasons(db, targetOwnerHash, item.IMDbId, seasons);
       }

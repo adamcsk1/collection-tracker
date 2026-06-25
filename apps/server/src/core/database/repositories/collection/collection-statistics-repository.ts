@@ -1,4 +1,4 @@
-import { FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS, WATCHED_TAG } from '@shared/constants/tags-const';
+import { COMPLETED_TAG, FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, VIRTUAL_TAGS } from '@shared/constants/tags-const';
 import {
   CollectionItemFiltersApiModel,
   CollectionListTypeModel,
@@ -14,7 +14,8 @@ export const getCollectionStatistics = (
   filters?: CollectionItemFiltersApiModel,
   internalCollectionUsernameHash?: string
 ): CollectionStatisticsApiResponseModel => {
-  const queryParts = buildItemWhere(usernameHashes, filters);
+  const viewerUsernameHash = internalCollectionUsernameHash ?? usernameHashes[0];
+  const queryParts = buildItemWhere(usernameHashes, filters, undefined, viewerUsernameHash);
   const whereSql = queryParts.where.join(' AND ');
   const matchingItemsSql = `SELECT id FROM collection_items WHERE ${whereSql}`;
   const countTag = (tag: string, exists = true): number =>
@@ -53,6 +54,127 @@ export const getCollectionStatistics = (
   const watchLaterCount = countListType('watch-later');
   const wishlistCount = countListType('wishlist');
 
+  const watchedMovieCount = (
+    db
+      .prepare(
+        `SELECT COUNT(*) as count
+         FROM collection_items
+         WHERE ${whereSql}
+           AND EXISTS (
+             SELECT 1 FROM collection_item_tags
+             WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+           )
+           AND EXISTS (
+             SELECT 1 FROM collection_items movie_tracker
+             WHERE movie_tracker.username_hash = ?
+               AND movie_tracker.imdb_id = collection_items.imdb_id
+               AND movie_tracker.list_type = ?
+           )`
+      )
+      .get(...queryParts.params, MOVIE_TAG, viewerUsernameHash, 'movie-tracker') as { count: number }
+  ).count;
+
+  const unwatchedMovieCount = (
+    db
+      .prepare(
+        `SELECT COUNT(*) as count
+         FROM collection_items
+         WHERE ${whereSql}
+           AND EXISTS (
+             SELECT 1 FROM collection_item_tags
+             WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+           )
+           AND NOT EXISTS (
+             SELECT 1 FROM collection_items movie_tracker
+             WHERE movie_tracker.username_hash = ?
+               AND movie_tracker.imdb_id = collection_items.imdb_id
+               AND movie_tracker.list_type = ?
+           )`
+      )
+      .get(...queryParts.params, MOVIE_TAG, viewerUsernameHash, 'movie-tracker') as { count: number }
+  ).count;
+
+  const watchedSeriesCount = (
+    db
+      .prepare(
+        `SELECT COUNT(*) as count
+         FROM collection_items
+         WHERE ${whereSql}
+           AND EXISTS (
+             SELECT 1 FROM collection_item_tags
+             WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+           )
+           AND EXISTS (
+             SELECT 1 FROM collection_items series_tracker
+             WHERE series_tracker.username_hash = ?
+               AND series_tracker.imdb_id = collection_items.imdb_id
+               AND series_tracker.list_type = ?
+           )`
+      )
+      .get(...queryParts.params, SERIES_TAG, viewerUsernameHash, 'series-tracker') as { count: number }
+  ).count;
+
+  const unwatchedLibrarySeriesCount = (
+    db
+      .prepare(
+        `SELECT COUNT(*) as count
+         FROM collection_items
+         WHERE ${whereSql}
+           AND EXISTS (
+             SELECT 1 FROM collection_item_tags
+             WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+           )
+           AND NOT EXISTS (
+             SELECT 1 FROM collection_items series_tracker
+             WHERE series_tracker.username_hash = ?
+               AND series_tracker.imdb_id = collection_items.imdb_id
+               AND series_tracker.list_type = ?
+           )`
+      )
+      .get(...queryParts.params, SERIES_TAG, viewerUsernameHash, 'series-tracker') as { count: number }
+  ).count;
+
+  const shouldCountTrackerSeries = !filters?.listType || filters.listType === 'series-tracker';
+  const trackerQueryParts = buildItemWhere(
+    usernameHashes,
+    { ...filters, listType: 'series-tracker' },
+    undefined,
+    viewerUsernameHash
+  );
+  const trackerWhereSql = trackerQueryParts.where.join(' AND ');
+
+  const unwatchedTrackerSeriesCount = shouldCountTrackerSeries
+    ? (
+        db
+          .prepare(
+            `SELECT COUNT(*) as count
+             FROM collection_items
+             WHERE ${trackerWhereSql}
+               AND NOT EXISTS (
+                 SELECT 1 FROM collection_item_tags
+                 WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+               )`
+          )
+          .get(...trackerQueryParts.params, COMPLETED_TAG) as { count: number }
+      ).count
+    : 0;
+
+  const completedTrackerSeriesCount = shouldCountTrackerSeries
+    ? (
+        db
+          .prepare(
+            `SELECT COUNT(*) as count
+             FROM collection_items
+             WHERE ${trackerWhereSql}
+               AND EXISTS (
+                 SELECT 1 FROM collection_item_tags
+                 WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+               )`
+          )
+          .get(...trackerQueryParts.params, COMPLETED_TAG) as { count: number }
+      ).count
+    : 0;
+
   const tagCounts = db
     .prepare(
       `SELECT tag, COUNT(*) as count
@@ -81,8 +203,12 @@ export const getCollectionStatistics = (
     favoriteCount: countTag(FAVORITE_TAG),
     watchLaterCount,
     wishlistCount,
-    watchedCount: countTag(WATCHED_TAG),
-    unwatchedCount: countTag(WATCHED_TAG, false),
+    watchedMovieCount,
+    watchedSeriesCount,
+    unwatchedMovieCount,
+    unwatchedLibrarySeriesCount,
+    unwatchedTrackerSeriesCount,
+    completedTrackerSeriesCount,
     tagCounts,
     genreCounts,
   };

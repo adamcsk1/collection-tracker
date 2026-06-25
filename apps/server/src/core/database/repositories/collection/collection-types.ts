@@ -30,6 +30,7 @@ export interface CollectionItemQueryOptions {
   offset: number;
   limit: number;
   matchedImdbIds?: string[];
+  viewerUsernameHash?: string;
 }
 
 export interface CollectionItemOrderOptions {

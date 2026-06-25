@@ -16,7 +16,29 @@ const getItemRelations = (db: Database.Database, itemId: number): { genre: strin
   ).map((row) => row.tag),
 });
 
-export const toApiItem = (db: Database.Database, row: CollectionItemRow): CollectionItemApiModel => {
+const isWatchedMovie = (db: Database.Database, row: CollectionItemRow, viewerUsernameHash: string): boolean => {
+  if (row.list_type === 'movie-tracker') return true;
+  if (row.list_type !== 'library') return false;
+  return Boolean(
+    db
+      .prepare(
+        `SELECT 1
+         FROM collection_items movie_tracker
+         INNER JOIN collection_item_tags movie_tag ON movie_tag.item_id = movie_tracker.id AND movie_tag.tag = '#movie'
+         WHERE movie_tracker.username_hash = ?
+           AND movie_tracker.imdb_id = ?
+           AND movie_tracker.list_type = ?
+         LIMIT 1`
+      )
+      .get(viewerUsernameHash, row.imdb_id, 'movie-tracker')
+  );
+};
+
+export const toApiItem = (
+  db: Database.Database,
+  row: CollectionItemRow,
+  viewerUsernameHash = row.username_hash
+): CollectionItemApiModel => {
   const relations = getItemRelations(db, row.id);
   const item: CollectionItemChangeApiModel = {
     image: row.image,
@@ -38,6 +60,7 @@ export const toApiItem = (db: Database.Database, row: CollectionItemRow): Collec
     titleLower: row.title_lower,
     hash: row.content_hash,
     listType: row.list_type,
+    watched: isWatchedMovie(db, row, viewerUsernameHash),
     ownerShareCode: getUserShareCode(row.username_hash),
   };
 };

@@ -53,7 +53,8 @@ export const findCollectionItems = (
   usernameHashes: string[],
   offset: number,
   limit: number,
-  listType: CollectionListTypeModel = 'library'
+  listType: CollectionListTypeModel = 'library',
+  viewerUsernameHash = usernameHashes[0]
 ): CollectionItemApiModel[] => {
   const normalizedListType = normalizeListType(listType);
   const rows = db
@@ -67,7 +68,7 @@ export const findCollectionItems = (
     )
     .all(...usernameHashes, normalizedListType, limit, offset) as CollectionItemRow[];
 
-  return rows.map((row) => toApiItem(db, row));
+  return rows.map((row) => toApiItem(db, row, viewerUsernameHash));
 };
 
 export const searchCollectionItems = (
@@ -77,7 +78,8 @@ export const searchCollectionItems = (
 ): CollectionItemsApiResponseModel => {
   const offset = normalizeOffset(options.offset);
   const limit = normalizeLimit(options.limit);
-  const queryParts = buildItemWhere(usernameHashes, options.filters, options.matchedImdbIds);
+  const viewerUsernameHash = options.viewerUsernameHash ?? usernameHashes[0];
+  const queryParts = buildItemWhere(usernameHashes, options.filters, options.matchedImdbIds, viewerUsernameHash);
   const whereSql = queryParts.where.join(' AND ');
   const orderBySql = buildCollectionOrderBy({
     orderBy: options.filters?.orderBy,
@@ -106,7 +108,7 @@ export const searchCollectionItems = (
     const items = rows
       .sort((firstItem, secondItem) => rankByImdbId.get(firstItem.imdb_id)! - rankByImdbId.get(secondItem.imdb_id)!)
       .slice(offset, offset + limit)
-      .map((row) => toApiItem(db, row));
+      .map((row) => toApiItem(db, row, viewerUsernameHash));
 
     return { items, total, offset, limit };
   }
@@ -121,7 +123,7 @@ export const searchCollectionItems = (
     )
     .all(...queryParts.params, limit, offset) as CollectionItemRow[];
 
-  return { items: rows.map((row) => toApiItem(db, row)), total, offset, limit };
+  return { items: rows.map((row) => toApiItem(db, row, viewerUsernameHash)), total, offset, limit };
 };
 
 export const collectionItemExistsInList = (

@@ -151,7 +151,7 @@ describe('create-api', () => {
     insertUser();
     const response = mockResponse();
     const request: any = {
-      body: { ...item, tags: ['#series'], listType: 'series-tracker', fetchSeriesMetadata: true },
+      body: { ...item, tags: ['#series'], listType: 'series-tracker' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -178,7 +178,7 @@ describe('create-api', () => {
     insertUser();
     const response = mockResponse();
     const request: any = {
-      body: { ...item, tags: ['#series'], listType: 'series-tracker', fetchSeriesMetadata: true },
+      body: { ...item, tags: ['#series'], listType: 'series-tracker' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);

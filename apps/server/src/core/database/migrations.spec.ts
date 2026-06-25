@@ -1,9 +1,33 @@
 import Database from 'better-sqlite3';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { getItemHash } from '../utils/collection-item-util';
 import { hasSqlMigrations, runMigrations } from './migrations';
+
+const MIGRATIONS_SRC_DIR = join(__dirname, '..', '..', 'migrations');
+
+const preparePreMigrationState = async (
+  targetFile: string,
+  tempDirs: string[]
+): Promise<{ db: Database.Database; migrationsDir: string }> => {
+  const db = new Database(':memory:');
+  const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+  tempDirs.push(migrationsDir);
+
+  const files = readdirSync(MIGRATIONS_SRC_DIR)
+    .filter((file) => /^\d+_.+\.sql$/.test(file))
+    .sort();
+
+  for (const file of files) {
+    if (file >= targetFile) break;
+    copyFileSync(join(MIGRATIONS_SRC_DIR, file), join(migrationsDir, file));
+  }
+
+  await runMigrations(db, migrationsDir);
+  return { db, migrationsDir };
+};
 
 describe('runMigrations', () => {
   const tempDirs: string[] = [];
@@ -26,6 +50,352 @@ describe('runMigrations', () => {
     writeFileSync(join(migrationsDir, '011_add_collection_item_external_ratings.sql'), 'SELECT 1;');
 
     expect(hasSqlMigrations(migrationsDir)).toBe(true);
+  });
+
+  describe('001_initial_schema', () => {
+    it('creates the initial schema with all tables, indexes, and foreign keys', async () => {
+      const db = new Database(':memory:');
+      const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+      tempDirs.push(migrationsDir);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, '001_initial_schema.sql'), join(migrationsDir, '001_initial_schema.sql'));
+
+      await runMigrations(db, migrationsDir);
+
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user1', 'tok1');
+        INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent)
+          VALUES ('user1', 'hash1', '2024-01-01T00:00:00Z', 'Mozilla/5.0');
+        INSERT INTO refresh_tokens (username_hash, token_hash, created_at, user_agent)
+          VALUES ('user1', 'hash2', '2024-01-01T00:00:00Z', 'Mozilla/5.0');
+        INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, actors, image, content_hash)
+          VALUES ('user1', 'tt0111161', 'The Shawshank Redemption', 'the shawshank redemption', '1994', '9.3',
+                  'Two imprisoned men bond over a number of years...', 'Tim Robbins, Morgan Freeman', 'img1', 'hash1');
+        INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES (1, '#movie'), (1, 'custom-tag');
+        INSERT INTO user_settings (username_hash, theme, animated_background, language)
+          VALUES ('user1', 'dark', 1, 'en');
+        INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight)
+          VALUES ('user1', '#movie', '#ff0000', 1, 0, 1, 10);
+      `);
+
+      const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all() as Array<{
+        name: string;
+      }>;
+      expect(tables.map((t) => t.name).filter((name) => name !== 'sqlite_sequence')).toEqual([
+        'access_tokens',
+        'collection_item_genres',
+        'collection_item_tags',
+        'collection_items',
+        'refresh_tokens',
+        'schema_migrations',
+        'tag_configs',
+        'user_settings',
+        'users',
+      ]);
+
+      const indexes = db
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL ORDER BY name")
+        .all() as Array<{ name: string }>;
+      expect(indexes.map((i) => i.name)).toEqual([
+        'idx_access_tokens_username',
+        'idx_collection_item_genres_item',
+        'idx_collection_item_tags_item',
+        'idx_collection_items_created',
+        'idx_collection_items_username',
+        'idx_refresh_tokens_username',
+        'idx_tag_configs_username',
+      ]);
+
+      const fks = db.prepare('PRAGMA foreign_key_list(collection_items)').all() as Array<{
+        table: string;
+        from: string;
+        to: string;
+        on_delete: string;
+      }>;
+      expect(fks).toEqual([
+        expect.objectContaining({
+          table: 'users',
+          from: 'username_hash',
+          to: 'username_hash',
+          on_delete: 'CASCADE',
+        }),
+      ]);
+
+      expect(db.prepare('SELECT id FROM schema_migrations').all()).toEqual([{ id: '001_initial_schema.sql' }]);
+
+      db.close();
+    });
+  });
+
+  describe('002_add_sharing', () => {
+    it('creates user_shares table with indexes and cascade foreign keys', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('002_add_sharing.sql', tempDirs);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, '002_add_sharing.sql'), join(migrationsDir, '002_add_sharing.sql'));
+
+      await runMigrations(db, migrationsDir);
+
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('owner', 'tok1'), ('shared', 'tok2');
+        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
+          VALUES ('owner', 'shared', 1, 0, 1, 0);
+      `);
+
+      const tables = db
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'user_shares'")
+        .all() as Array<{ name: string }>;
+      expect(tables).toHaveLength(1);
+
+      const fks = db.prepare('PRAGMA foreign_key_list(user_shares)').all() as Array<{
+        table: string;
+        from: string;
+        to: string;
+        on_delete: string;
+      }>;
+      expect(fks).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            table: 'users',
+            from: 'owner_username_hash',
+            to: 'username_hash',
+            on_delete: 'CASCADE',
+          }),
+          expect.objectContaining({
+            table: 'users',
+            from: 'shared_with_username_hash',
+            to: 'username_hash',
+            on_delete: 'CASCADE',
+          }),
+        ])
+      );
+
+      const indexes = db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'user_shares' AND sql IS NOT NULL ORDER BY name"
+        )
+        .all() as Array<{ name: string }>;
+      expect(indexes.map((i) => i.name)).toEqual(['idx_user_shares_owner', 'idx_user_shares_shared_with']);
+
+      db.prepare("DELETE FROM users WHERE username_hash = 'owner'").run();
+      expect(db.prepare('SELECT * FROM user_shares').all()).toHaveLength(0);
+
+      db.close();
+    });
+  });
+
+  describe('003_add_user_display_names', () => {
+    it('adds nullable username display name column', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('003_add_user_display_names.sql', tempDirs);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '003_add_user_display_names.sql'),
+        join(migrationsDir, '003_add_user_display_names.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      db.exec(`INSERT INTO users (username_hash, user_token_hash, username) VALUES ('user1', 'tok1', 'Alice');`);
+
+      const cols = db.prepare('PRAGMA table_info(users)').all() as Array<{ name: string }>;
+      expect(cols.map((c) => c.name)).toContain('username');
+
+      const user = db.prepare('SELECT username FROM users WHERE username_hash = ?').get('user1') as {
+        username: string | null;
+      };
+      expect(user.username).toBe('Alice');
+
+      db.prepare("UPDATE users SET username = NULL WHERE username_hash = 'user1'").run();
+      const updated = db.prepare('SELECT username FROM users WHERE username_hash = ?').get('user1') as {
+        username: string | null;
+      };
+      expect(updated.username).toBeNull();
+
+      db.close();
+    });
+  });
+
+  describe('004_add_collection_item_list_type', () => {
+    it('converts watch-later and wishlist tags into list_type values and cleans stale tags', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('004_add_collection_item_list_type.sql', tempDirs);
+
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user1', 'tok1');
+        INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, actors, image, content_hash)
+          VALUES ('user1', 'tt001', 'Movie A', 'movie a', '2020', '8.0', 'Plot A', 'Actor A', 'img1', 'hash1'),
+                 ('user1', 'tt002', 'Movie B', 'movie b', '2021', '7.5', 'Plot B', 'Actor B', 'img2', 'hash2'),
+                 ('user1', 'tt003', 'Movie C', 'movie c', '2022', '9.0', 'Plot C', 'Actor C', 'img3', 'hash3');
+        INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama'), (2, 'Action'), (3, 'Comedy');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES
+          (1, '#watch-later'), (1, '#favorite'), (1, 'custom'),
+          (2, '#wishlist'), (2, 'tag2'),
+          (3, 'tag3');
+      `);
+
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '004_add_collection_item_list_type.sql'),
+        join(migrationsDir, '004_add_collection_item_list_type.sql')
+      );
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt001')).toEqual({
+        list_type: 'watch-later',
+      });
+      expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt002')).toEqual({
+        list_type: 'wishlist',
+      });
+      expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt003')).toEqual({
+        list_type: 'library',
+      });
+
+      const tags1 = db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(1) as Array<{
+        tag: string;
+      }>;
+      expect(tags1.map((t) => t.tag)).toEqual(['#favorite', 'custom']);
+
+      const tags2 = db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(2) as Array<{
+        tag: string;
+      }>;
+      expect(tags2.map((t) => t.tag)).toEqual(['tag2']);
+
+      const tags3 = db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(3) as Array<{
+        tag: string;
+      }>;
+      expect(tags3.map((t) => t.tag)).toEqual(['tag3']);
+
+      const indexes = db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'collection_items' AND sql IS NOT NULL ORDER BY name"
+        )
+        .all() as Array<{ name: string }>;
+      expect(indexes.map((i) => i.name)).toContain('idx_collection_items_list_type');
+
+      db.close();
+    });
+  });
+
+  describe('005_add_collection_item_user_rate', () => {
+    it('adds user_rate column with one-decimal CHECK constraint', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('005_add_collection_item_user_rate.sql', tempDirs);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '005_add_collection_item_user_rate.sql'),
+        join(migrationsDir, '005_add_collection_item_user_rate.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user1', 'tok1');
+        INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, actors, image, content_hash, list_type)
+          VALUES ('user1', 'tt001', 'Movie', 'movie', '2020', '8.0', 'Plot', 'Actor', 'img', 'hash', 'library');
+      `);
+
+      db.prepare('UPDATE collection_items SET user_rate = ? WHERE imdb_id = ?').run(null, 'tt001');
+      db.prepare('UPDATE collection_items SET user_rate = ? WHERE imdb_id = ?').run(0, 'tt001');
+      db.prepare('UPDATE collection_items SET user_rate = ? WHERE imdb_id = ?').run(8.5, 'tt001');
+      db.prepare('UPDATE collection_items SET user_rate = ? WHERE imdb_id = ?').run(10, 'tt001');
+
+      expect(() =>
+        db.prepare('UPDATE collection_items SET user_rate = ? WHERE imdb_id = ?').run(8.75, 'tt001')
+      ).toThrow();
+      expect(() =>
+        db.prepare('UPDATE collection_items SET user_rate = ? WHERE imdb_id = ?').run(-1, 'tt001')
+      ).toThrow();
+      expect(() =>
+        db.prepare('UPDATE collection_items SET user_rate = ? WHERE imdb_id = ?').run(11, 'tt001')
+      ).toThrow();
+
+      db.close();
+    });
+  });
+
+  describe('006_add_default_library_setting', () => {
+    it('adds default_library_owner_share_code column to user_settings', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('006_add_default_library_setting.sql', tempDirs);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '006_add_default_library_setting.sql'),
+        join(migrationsDir, '006_add_default_library_setting.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user1', 'tok1');
+        INSERT INTO user_settings (username_hash) VALUES ('user1');
+      `);
+
+      const cols = db.prepare('PRAGMA table_info(user_settings)').all() as Array<{ name: string }>;
+      expect(cols.map((c) => c.name)).toContain('default_library_owner_share_code');
+
+      db.prepare(
+        "UPDATE user_settings SET default_library_owner_share_code = 'share-abc' WHERE username_hash = 'user1'"
+      ).run();
+      const setting = db
+        .prepare('SELECT default_library_owner_share_code FROM user_settings WHERE username_hash = ?')
+        .get('user1') as { default_library_owner_share_code: string | null };
+      expect(setting.default_library_owner_share_code).toBe('share-abc');
+
+      db.close();
+    });
+  });
+
+  it('preserves the user rate check when adding series tracker list type', async () => {
+    const db = new Database(':memory:');
+    db.exec(`
+      CREATE TABLE schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+      CREATE TABLE users (username_hash TEXT PRIMARY KEY, user_token_hash TEXT NOT NULL);
+      CREATE TABLE collection_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username_hash TEXT NOT NULL,
+        imdb_id TEXT NOT NULL,
+        list_type TEXT NOT NULL DEFAULT 'library' CHECK (list_type IN ('library', 'watch-later', 'wishlist')),
+        title TEXT NOT NULL,
+        title_lower TEXT NOT NULL,
+        year TEXT NOT NULL,
+        rate TEXT NOT NULL,
+        user_rate REAL CHECK (user_rate IS NULL OR (user_rate >= 0 AND user_rate <= 10 AND ROUND(user_rate * 10) = user_rate * 10)),
+        actors TEXT NOT NULL DEFAULT '',
+        plot TEXT NOT NULL,
+        image TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(username_hash, imdb_id, list_type),
+        FOREIGN KEY (username_hash) REFERENCES users(username_hash) ON DELETE CASCADE
+      );
+      CREATE TABLE collection_item_genres (
+        item_id INTEGER NOT NULL,
+        genre TEXT NOT NULL,
+        PRIMARY KEY (item_id, genre),
+        FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+      );
+      CREATE TABLE collection_item_tags (
+        item_id INTEGER NOT NULL,
+        tag TEXT NOT NULL,
+        PRIMARY KEY (item_id, tag),
+        FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+      );
+      INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+      INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, user_rate)
+      VALUES ('user', 'tt001', 'Title', 'title', '2024', '8.0', 'Plot', 'image', 'hash', 9.1);
+    `);
+    const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+    tempDirs.push(migrationsDir);
+    writeFileSync(
+      join(migrationsDir, '007_add_series_tracker_list_type.sql'),
+      readFileSync(join(process.cwd(), 'apps/server/src/migrations/007_add_series_tracker_list_type.sql'), 'utf8')
+    );
+
+    await runMigrations(db, migrationsDir);
+
+    expect(() => {
+      db.prepare(
+        `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, user_rate)
+         VALUES ('user', 'tt002', 'Invalid', 'invalid', '2024', '8.0', 'Plot', 'image', 'hash2', 8.75)`
+      ).run();
+    }).toThrow();
+    expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt001')).toEqual({
+      list_type: 'library',
+    });
+
+    db.close();
   });
 
   it('repairs collection item relation foreign keys that point to a renamed table', async () => {
@@ -148,66 +518,48 @@ describe('runMigrations', () => {
     db.close();
   });
 
-  it('preserves the user rate check when adding series tracker list type', async () => {
-    const db = new Database(':memory:');
-    db.exec(`
-      CREATE TABLE schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
-      CREATE TABLE users (username_hash TEXT PRIMARY KEY, user_token_hash TEXT NOT NULL);
-      CREATE TABLE collection_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username_hash TEXT NOT NULL,
-        imdb_id TEXT NOT NULL,
-        list_type TEXT NOT NULL DEFAULT 'library' CHECK (list_type IN ('library', 'watch-later', 'wishlist')),
-        title TEXT NOT NULL,
-        title_lower TEXT NOT NULL,
-        year TEXT NOT NULL,
-        rate TEXT NOT NULL,
-        user_rate REAL CHECK (user_rate IS NULL OR (user_rate >= 0 AND user_rate <= 10 AND ROUND(user_rate * 10) = user_rate * 10)),
-        actors TEXT NOT NULL DEFAULT '',
-        plot TEXT NOT NULL,
-        image TEXT NOT NULL,
-        content_hash TEXT NOT NULL,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(username_hash, imdb_id, list_type),
-        FOREIGN KEY (username_hash) REFERENCES users(username_hash) ON DELETE CASCADE
+  describe('010_add_series_tracker_seasons', () => {
+    it('creates series_tracker_seasons table with CHECK constraints, FK cascade, and index', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('010_add_series_tracker_seasons.sql', tempDirs);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '010_add_series_tracker_seasons.sql'),
+        join(migrationsDir, '010_add_series_tracker_seasons.sql')
       );
-      CREATE TABLE collection_item_genres (
-        item_id INTEGER NOT NULL,
-        genre TEXT NOT NULL,
-        PRIMARY KEY (item_id, genre),
-        FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
-      );
-      CREATE TABLE collection_item_tags (
-        item_id INTEGER NOT NULL,
-        tag TEXT NOT NULL,
-        PRIMARY KEY (item_id, tag),
-        FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
-      );
-      INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
-      INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, user_rate)
-      VALUES ('user', 'tt001', 'Title', 'title', '2024', '8.0', 'Plot', 'image', 'hash', 9.1);
-    `);
-    const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
-    tempDirs.push(migrationsDir);
-    writeFileSync(
-      join(migrationsDir, '007_add_series_tracker_list_type.sql'),
-      readFileSync(join(process.cwd(), 'apps/server/src/migrations/007_add_series_tracker_list_type.sql'), 'utf8')
-    );
 
-    await runMigrations(db, migrationsDir);
+      await runMigrations(db, migrationsDir);
 
-    expect(() => {
-      db.prepare(
-        `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, user_rate)
-         VALUES ('user', 'tt002', 'Invalid', 'invalid', '2024', '8.0', 'Plot', 'image', 'hash2', 8.75)`
-      ).run();
-    }).toThrow();
-    expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt001')).toEqual({
-      list_type: 'library',
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user1', 'tok1');
+        INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, actors, image, content_hash, list_type)
+          VALUES ('user1', 'tt001', 'Series', 'series', '2020', '8.0', 'Plot', 'Actor', 'img', 'hash', 'series-tracker');
+      `);
+
+      db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(1, 1, 10);
+      db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(1, 2, 12);
+
+      expect(() =>
+        db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(1, 0, 10)
+      ).toThrow();
+      expect(() =>
+        db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(1, 51, 10)
+      ).toThrow();
+      expect(() =>
+        db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(1, 1, 0)
+      ).toThrow();
+      expect(() =>
+        db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(1, 1, 101)
+      ).toThrow();
+
+      db.prepare('DELETE FROM collection_items WHERE id = 1').run();
+      expect(db.prepare('SELECT * FROM series_tracker_seasons').all()).toHaveLength(0);
+
+      const indexes = db
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'series_tracker_seasons'")
+        .all() as Array<{ name: string }>;
+      expect(indexes.map((i) => i.name)).toContain('idx_series_tracker_seasons_item');
+
+      db.close();
     });
-
-    db.close();
   });
 
   it('adds external rating columns with empty defaults', async () => {
@@ -280,6 +632,74 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  describe('011_add_series_tracker_episode_titles', () => {
+    it('adds nullable episode_titles column to series_tracker_seasons', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState(
+        '011_add_series_tracker_episode_titles.sql',
+        tempDirs
+      );
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '011_add_series_tracker_episode_titles.sql'),
+        join(migrationsDir, '011_add_series_tracker_episode_titles.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user1', 'tok1');
+        INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, actors, image, content_hash, list_type)
+          VALUES ('user1', 'tt001', 'Series', 'series', '2020', '8.0', 'Plot', 'Actor', 'img', 'hash', 'series-tracker');
+        INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (1, 1, 3);
+      `);
+
+      const cols = db.prepare('PRAGMA table_info(series_tracker_seasons)').all() as Array<{ name: string }>;
+      expect(cols.map((c) => c.name)).toContain('episode_titles');
+
+      db.prepare('UPDATE series_tracker_seasons SET episode_titles = ? WHERE item_id = 1 AND season = 1').run(
+        '["Pilot","Episode 2","Finale"]'
+      );
+      const row = db
+        .prepare('SELECT episode_titles FROM series_tracker_seasons WHERE item_id = 1 AND season = 1')
+        .get() as { episode_titles: string | null };
+      expect(row.episode_titles).toBe('["Pilot","Episode 2","Finale"]');
+
+      db.close();
+    });
+  });
+
+  describe('012_add_collection_list_display_preferences', () => {
+    it('adds collection_list_display_preferences column to user_settings', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState(
+        '012_add_collection_list_display_preferences.sql',
+        tempDirs
+      );
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '012_add_collection_list_display_preferences.sql'),
+        join(migrationsDir, '012_add_collection_list_display_preferences.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user1', 'tok1');
+        INSERT INTO user_settings (username_hash) VALUES ('user1');
+      `);
+
+      const cols = db.prepare('PRAGMA table_info(user_settings)').all() as Array<{ name: string }>;
+      expect(cols.map((c) => c.name)).toContain('collection_list_display_preferences');
+
+      db.prepare(
+        "UPDATE user_settings SET collection_list_display_preferences = '{\"compact\":true}' WHERE username_hash = 'user1'"
+      ).run();
+      const setting = db
+        .prepare('SELECT collection_list_display_preferences FROM user_settings WHERE username_hash = ?')
+        .get('user1') as { collection_list_display_preferences: string | null };
+      expect(setting.collection_list_display_preferences).toBe('{"compact":true}');
+
+      db.close();
+    });
+  });
+
   it('expands legacy series tracker episode progress tags into watched episodes', async () => {
     const db = new Database(':memory:');
     db.exec(`
@@ -332,5 +752,339 @@ describe('runMigrations', () => {
     expect(db.prepare('SELECT tag FROM collection_item_tags ORDER BY item_id').all()).toEqual([]);
 
     db.close();
+  });
+
+  describe('014_add_ai_search_embeddings', () => {
+    it('creates ai_search_embeddings table with composite PK, FK cascade, and index', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('014_add_ai_search_embeddings.sql', tempDirs);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '014_add_ai_search_embeddings.sql'),
+        join(migrationsDir, '014_add_ai_search_embeddings.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user1', 'tok1');
+        INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, actors, image, content_hash, list_type)
+          VALUES ('user1', 'tt001', 'Movie', 'movie', '2020', '8.0', 'Plot', 'Actor', 'img', 'hash', 'library');
+      `);
+
+      db.prepare(
+        `
+        INSERT INTO ai_search_embeddings (item_id, embedding_model, content_hash, embedding_json)
+        VALUES (?, ?, ?, ?)
+      `
+      ).run(1, 'mxbai-embed-large', 'hash1', '[0.1,0.2,0.3]');
+
+      expect(() =>
+        db
+          .prepare(
+            `
+          INSERT INTO ai_search_embeddings (item_id, embedding_model, content_hash, embedding_json)
+          VALUES (?, ?, ?, ?)
+        `
+          )
+          .run(1, 'mxbai-embed-large', 'hash2', '[0.4,0.5,0.6]')
+      ).toThrow();
+
+      db.prepare(
+        `
+        INSERT INTO ai_search_embeddings (item_id, embedding_model, content_hash, embedding_json)
+        VALUES (?, ?, ?, ?)
+      `
+      ).run(1, 'other-model', 'hash2', '[0.4,0.5,0.6]');
+
+      db.prepare('DELETE FROM collection_items WHERE id = 1').run();
+      expect(db.prepare('SELECT * FROM ai_search_embeddings').all()).toHaveLength(0);
+
+      const indexes = db
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'ai_search_embeddings'")
+        .all() as Array<{ name: string }>;
+      expect(indexes.map((i) => i.name)).toContain('idx_ai_search_embeddings_item');
+
+      db.close();
+    });
+  });
+
+  it('moves legacy watched movies into sanitized movie tracker rows with current hashes', async () => {
+    const db = new Database(':memory:');
+    db.exec(`
+      CREATE TABLE schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+      CREATE TABLE users (username_hash TEXT PRIMARY KEY, user_token_hash TEXT NOT NULL);
+      CREATE TABLE collection_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username_hash TEXT NOT NULL,
+        imdb_id TEXT NOT NULL,
+        list_type TEXT NOT NULL DEFAULT 'library' CHECK (list_type IN ('library', 'watch-later', 'wishlist', 'series-tracker')),
+        title TEXT NOT NULL,
+        title_lower TEXT NOT NULL,
+        year TEXT NOT NULL,
+        rate TEXT NOT NULL,
+        user_rate REAL CHECK (user_rate IS NULL OR (user_rate >= 0 AND user_rate <= 10 AND ROUND(user_rate * 10) = user_rate * 10)),
+        actors TEXT NOT NULL DEFAULT '',
+        plot TEXT NOT NULL,
+        image TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        rotten_tomatoes_rate TEXT NOT NULL DEFAULT '',
+        metacritic_rate TEXT NOT NULL DEFAULT '',
+        UNIQUE(username_hash, imdb_id, list_type),
+        FOREIGN KEY (username_hash) REFERENCES users(username_hash) ON DELETE CASCADE
+      );
+      CREATE TABLE collection_item_genres (
+        item_id INTEGER NOT NULL,
+        genre TEXT NOT NULL,
+        PRIMARY KEY (item_id, genre),
+        FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+      );
+      CREATE TABLE collection_item_tags (
+        item_id INTEGER NOT NULL,
+        tag TEXT NOT NULL,
+        PRIMARY KEY (item_id, tag),
+        FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+      );
+      INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+      INSERT INTO collection_items
+        (id, username_hash, imdb_id, title, title_lower, year, rate, user_rate, actors, plot, image, content_hash, rotten_tomatoes_rate, metacritic_rate)
+      VALUES
+        (1, 'user', 'tt001', 'Movie', 'movie', '2024', '8.0', 8.5, 'Actor', 'Plot', 'image', 'legacy-hash', '95%', '80/100');
+      INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama');
+      INSERT INTO collection_item_tags (item_id, tag) VALUES
+        (1, '#movie'),
+        (1, '#watched'),
+        (1, '#favorite'),
+        (1, '#watch-later'),
+        (1, 'custom');
+    `);
+    const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+    tempDirs.push(migrationsDir);
+    writeFileSync(
+      join(migrationsDir, '015_add_movie_tracker_list_type.sql'),
+      readFileSync(join(process.cwd(), 'apps/server/src/migrations/015_add_movie_tracker_list_type.sql'), 'utf8')
+    );
+
+    await runMigrations(db, migrationsDir);
+
+    const trackerItem = db
+      .prepare('SELECT id, content_hash FROM collection_items WHERE imdb_id = ? AND list_type = ?')
+      .get('tt001', 'movie-tracker') as { id: number; content_hash: string };
+    expect(
+      db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag').all(trackerItem.id)
+    ).toEqual([{ tag: '#movie' }, { tag: 'custom' }]);
+    expect(trackerItem.content_hash).toBe(
+      getItemHash({
+        image: 'image',
+        title: 'Movie',
+        genre: ['Drama'],
+        IMDbId: 'tt001',
+        tags: ['#movie', 'custom'],
+        year: '2024',
+        rate: '8.0',
+        rottenTomatoesRate: '95%',
+        metacriticRate: '80/100',
+        userRate: 8.5,
+        actors: 'Actor',
+        plot: 'Plot',
+      })
+    );
+
+    db.close();
+  });
+
+  describe('runner behavior', () => {
+    it('runs the full migration chain 001 to 015 and produces the expected final schema', async () => {
+      const db = new Database(':memory:');
+      const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+      tempDirs.push(migrationsDir);
+
+      const files = readdirSync(MIGRATIONS_SRC_DIR)
+        .filter((file) => /^\d+_.+\.sql$/.test(file))
+        .sort();
+
+      for (const file of files) {
+        copyFileSync(join(MIGRATIONS_SRC_DIR, file), join(migrationsDir, file));
+      }
+
+      await runMigrations(db, migrationsDir);
+
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash, username) VALUES ('user1', 'tok1', 'Alice'), ('user2', 'tok2', 'Bob');
+        INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent)
+          VALUES ('user1', 'hash1', '2024-01-01T00:00:00Z', 'Mozilla/5.0');
+        INSERT INTO refresh_tokens (username_hash, token_hash, created_at, user_agent)
+          VALUES ('user1', 'hash2', '2024-01-01T00:00:00Z', 'Mozilla/5.0');
+        INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, user_rate, plot, actors, image, content_hash, rotten_tomatoes_rate, metacritic_rate)
+          VALUES ('user1', 'tt001', 'library', 'Movie', 'movie', '2020', '8.0', 8.5, 'Plot', 'Actor', 'img', 'hash', '95%', '80/100');
+        INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES (1, '#movie'), (1, 'custom');
+        INSERT INTO user_settings (username_hash, theme, animated_background, language, default_library_owner_share_code, collection_list_display_preferences)
+          VALUES ('user1', 'dark', 1, 'en', 'share-abc', '{"grid":true}');
+        INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight)
+          VALUES ('user1', '#movie', '#ff0000', 1, 0, 1, 10);
+        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
+          VALUES ('user1', 'user2', 1, 0, 0, 0);
+        INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles)
+          VALUES (1, 1, 3, '["E1","E2","E3"]');
+        INSERT INTO series_tracker_watched_episodes (item_id, season, episode)
+          VALUES (1, 1, 1), (1, 1, 2);
+        INSERT INTO ai_search_embeddings (item_id, embedding_model, content_hash, embedding_json)
+          VALUES (1, 'mxbai-embed-large', 'hash', '[0.1]');
+      `);
+
+      const applied = db.prepare('SELECT id FROM schema_migrations ORDER BY id').all() as Array<{ id: string }>;
+      expect(applied).toHaveLength(files.length);
+
+      const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all() as Array<{
+        name: string;
+      }>;
+      expect(tables.map((t) => t.name).filter((name) => name !== 'sqlite_sequence')).toEqual(
+        expect.arrayContaining([
+          'access_tokens',
+          'ai_search_embeddings',
+          'collection_item_genres',
+          'collection_item_tags',
+          'collection_items',
+          'refresh_tokens',
+          'schema_migrations',
+          'series_tracker_seasons',
+          'series_tracker_watched_episodes',
+          'tag_configs',
+          'user_settings',
+          'user_shares',
+          'users',
+        ])
+      );
+
+      const itemCols = db.prepare('PRAGMA table_info(collection_items)').all() as Array<{
+        name: string;
+        type: string;
+        notnull: number;
+      }>;
+      const itemColMap = new Map(itemCols.map((c) => [c.name, c]));
+      expect(itemColMap.get('list_type')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 1 }));
+      expect(itemColMap.get('user_rate')).toEqual(expect.objectContaining({ type: 'REAL', notnull: 0 }));
+      expect(itemColMap.get('rotten_tomatoes_rate')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 1 }));
+      expect(itemColMap.get('metacritic_rate')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 1 }));
+
+      expect(() =>
+        db
+          .prepare(
+            `
+          INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, actors, image, content_hash)
+          VALUES ('user1', 'tt999', 'invalid', 'Bad', 'bad', '2020', '8.0', 'Plot', 'Actor', 'img', 'hash2')
+        `
+          )
+          .run()
+      ).toThrow();
+
+      expect(() =>
+        db.prepare(`INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (1, 51, 10)`).run()
+      ).toThrow();
+
+      expect(() =>
+        db.prepare(`INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (1, 1, 101)`).run()
+      ).toThrow();
+
+      const indexes = db
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL ORDER BY name")
+        .all() as Array<{ name: string }>;
+      expect(indexes.map((i) => i.name)).toEqual(
+        expect.arrayContaining([
+          'idx_access_tokens_username',
+          'idx_ai_search_embeddings_item',
+          'idx_collection_item_genres_item',
+          'idx_collection_item_tags_item',
+          'idx_collection_items_created',
+          'idx_collection_items_list_type',
+          'idx_collection_items_username',
+          'idx_refresh_tokens_username',
+          'idx_series_tracker_seasons_item',
+          'idx_series_tracker_watched_episodes_item',
+          'idx_tag_configs_username',
+          'idx_user_shares_owner',
+          'idx_user_shares_shared_with',
+        ])
+      );
+
+      db.close();
+    });
+
+    it('is idempotent when run multiple times against the same database', async () => {
+      const db = new Database(':memory:');
+      const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+      tempDirs.push(migrationsDir);
+
+      const files = readdirSync(MIGRATIONS_SRC_DIR)
+        .filter((file) => /^\d+_.+\.sql$/.test(file))
+        .sort();
+
+      for (const file of files) {
+        copyFileSync(join(MIGRATIONS_SRC_DIR, file), join(migrationsDir, file));
+      }
+
+      await runMigrations(db, migrationsDir);
+      db.exec(`INSERT INTO users (username_hash, user_token_hash) VALUES ('user1', 'tok1');`);
+
+      await runMigrations(db, migrationsDir);
+
+      const applied = db.prepare('SELECT id FROM schema_migrations ORDER BY id').all() as Array<{ id: string }>;
+      expect(applied).toHaveLength(files.length);
+      expect(db.prepare('SELECT username_hash FROM users').all()).toEqual([{ username_hash: 'user1' }]);
+
+      db.close();
+    });
+
+    it('resumes from partial application without re-running already applied migrations', async () => {
+      const db = new Database(':memory:');
+      const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+      tempDirs.push(migrationsDir);
+
+      const files = readdirSync(MIGRATIONS_SRC_DIR)
+        .filter((file) => /^\d+_.+\.sql$/.test(file))
+        .sort();
+
+      const firstBatch = files.slice(0, 5);
+      for (const file of firstBatch) {
+        copyFileSync(join(MIGRATIONS_SRC_DIR, file), join(migrationsDir, file));
+      }
+
+      await runMigrations(db, migrationsDir);
+      const appliedAfterFirst = db.prepare('SELECT id FROM schema_migrations ORDER BY id').all() as Array<{
+        id: string;
+      }>;
+      expect(appliedAfterFirst).toHaveLength(5);
+
+      for (const file of files.slice(5)) {
+        copyFileSync(join(MIGRATIONS_SRC_DIR, file), join(migrationsDir, file));
+      }
+
+      await runMigrations(db, migrationsDir);
+      const appliedAfterSecond = db.prepare('SELECT id FROM schema_migrations ORDER BY id').all() as Array<{
+        id: string;
+      }>;
+      expect(appliedAfterSecond).toHaveLength(files.length);
+
+      db.close();
+    });
+
+    it('does not record a migration that fails, and throws the error', async () => {
+      const db = new Database(':memory:');
+      const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+      tempDirs.push(migrationsDir);
+
+      copyFileSync(join(MIGRATIONS_SRC_DIR, '001_initial_schema.sql'), join(migrationsDir, '001_initial_schema.sql'));
+      await runMigrations(db, migrationsDir);
+
+      writeFileSync(join(migrationsDir, '002_bad_migration.sql'), 'INVALID SQL HERE;');
+
+      await expect(runMigrations(db, migrationsDir)).rejects.toThrow();
+
+      const applied = db.prepare('SELECT id FROM schema_migrations ORDER BY id').all() as Array<{ id: string }>;
+      expect(applied).toEqual([{ id: '001_initial_schema.sql' }]);
+
+      db.close();
+    });
   });
 });

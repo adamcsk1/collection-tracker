@@ -1,0 +1,252 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { buildApp } from '../../test/mocks/build-app-mock';
+import { mockResponse } from '../../test/mocks/response-mock';
+import { getDatabase } from '../core/database/database';
+import { getUserShareCode } from '../core/database/repositories/user-repository';
+
+const insertUser = (usernameHash: string) => {
+  getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
+};
+
+const insertItem = (usernameHash: string, imdbId: string, tags: string[], listType = 'watch-later') => {
+  const db = getDatabase();
+  const result = db
+    .prepare(
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', 'hash');
+  const itemId = Number(result.lastInsertRowid);
+  for (const tag of tags) {
+    db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
+  }
+};
+
+const insertShare = (ownerHash: string, sharedWithHash: string, canRead: boolean) => {
+  getDatabase()
+    .prepare(
+      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(ownerHash, sharedWithHash, canRead ? 1 : 0, 0, 0, 0);
+};
+
+describe('add-series-tracker-item-api', () => {
+  afterEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+    delete process.env.OMDB_API_KEY;
+  });
+
+  it('moves an own watch later series to the series tracker and fetches metadata', async () => {
+    process.env.OMDB_API_KEY = 'key';
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
+    );
+    insertUser('user');
+    insertItem('user', 'tt-1', ['#series', '#watch-later']);
+
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      params: { imdbId: 'tt-1' },
+      query: { sourceListType: 'watch-later' },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-series-tracker-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'series-tracker', tags: ['#series'] }),
+    });
+    expect(
+      getDatabase()
+        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+        .get('user', 'tt-1', 'watch-later')
+    ).toBeUndefined();
+    expect(
+      getDatabase()
+        .prepare(
+          `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
+           FROM series_tracker_seasons
+           INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
+           WHERE collection_items.imdb_id = ?`
+        )
+        .all('tt-1')
+    ).toEqual([{ season: 1, episodes: 2 }]);
+  });
+
+  it('copies an own library series to the series tracker and fetches metadata', async () => {
+    process.env.OMDB_API_KEY = 'key';
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
+    );
+    insertUser('user');
+    insertItem('user', 'tt-1', ['#series'], 'library');
+
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      params: { imdbId: 'tt-1' },
+      query: {},
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-series-tracker-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'series-tracker', tags: ['#series'] }),
+    });
+    expect(
+      getDatabase()
+        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+        .get('user', 'tt-1', 'library')
+    ).toEqual({ 1: 1 });
+    expect(
+      getDatabase()
+        .prepare(
+          `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
+           FROM series_tracker_seasons
+           INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
+           WHERE collection_items.imdb_id = ? AND collection_items.list_type = ?`
+        )
+        .all('tt-1', 'series-tracker')
+    ).toEqual([{ season: 1, episodes: 2 }]);
+  });
+
+  it('fetches series metadata by default when the query flag is omitted', async () => {
+    process.env.OMDB_API_KEY = 'key';
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
+    );
+    insertUser('user');
+    insertItem('user', 'tt-1', ['#series'], 'library');
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: {} };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-series-tracker-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(
+      getDatabase()
+        .prepare(
+          `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
+           FROM series_tracker_seasons
+           INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
+           WHERE collection_items.imdb_id = ? AND collection_items.list_type = ?`
+        )
+        .all('tt-1', 'series-tracker')
+    ).toEqual([{ season: 1, episodes: 2 }]);
+  });
+
+  it('copies a readable shared library series and keeps the shared source item', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertShare('owner', 'user', true);
+    insertItem('owner', 'tt-1', ['#series'], 'library');
+
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      params: { imdbId: 'tt-1' },
+      query: { ownerShareCode: getUserShareCode('owner') },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-series-tracker-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'series-tracker' }),
+    });
+    expect(
+      getDatabase()
+        .prepare('SELECT username_hash, list_type FROM collection_items WHERE imdb_id = ? ORDER BY username_hash')
+        .all('tt-1')
+    ).toEqual([
+      { username_hash: 'owner', list_type: 'library' },
+      { username_hash: 'user', list_type: 'series-tracker' },
+    ]);
+  });
+
+  it('returns 403 when copying from a shared library without read permission', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertShare('owner', 'user', false);
+    insertItem('owner', 'tt-1', ['#series'], 'library');
+
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      params: { imdbId: 'tt-1' },
+      query: { ownerShareCode: getUserShareCode('owner') },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-series-tracker-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
+    expect(response.send).toHaveBeenCalledWith();
+  });
+
+  it('rejects watch later movie items', async () => {
+    insertUser('user');
+    insertItem('user', 'tt-1', ['#movie', '#watch-later']);
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: { sourceListType: 'watch-later' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-series-tracker-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(404);
+  });
+
+  it('removes watch later series when it already exists in the series tracker', async () => {
+    insertUser('user');
+    insertItem('user', 'tt-1', ['#series', '#watch-later']);
+    insertItem('user', 'tt-1', ['#series'], 'series-tracker');
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: { sourceListType: 'watch-later' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-series-tracker-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'series-tracker' }),
+    });
+    expect(
+      getDatabase()
+        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+        .get('user', 'tt-1', 'watch-later')
+    ).toBeUndefined();
+  });
+});

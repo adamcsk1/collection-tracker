@@ -61,7 +61,7 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ exists: true });
+    expect(response.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
   });
 
   it('returns false when item does not exist', async () => {
@@ -74,7 +74,7 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ exists: false });
+    expect(response.send).toHaveBeenCalledWith({ exists: false, hash: undefined });
   });
 
   it('checks watch later existence using listType', async () => {
@@ -88,7 +88,7 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ exists: true });
+    expect(response.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
   });
 
   it('checks wishlist existence using listType', async () => {
@@ -102,7 +102,7 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ exists: true });
+    expect(response.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
   });
 
   it('returns true when a shared normal item exists', async () => {
@@ -122,7 +122,7 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ exists: true });
+    expect(response.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
   });
 
   it('returns false when a shared watch later item exists', async () => {
@@ -142,7 +142,7 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ exists: false });
+    expect(response.send).toHaveBeenCalledWith({ exists: false, hash: undefined });
   });
 
   it('returns false when a shared wishlist item exists', async () => {
@@ -162,7 +162,7 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ exists: false });
+    expect(response.send).toHaveBeenCalledWith({ exists: false, hash: undefined });
   });
 
   it('returns 400 when imdbId is missing', async () => {

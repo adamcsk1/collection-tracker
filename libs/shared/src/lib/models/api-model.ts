@@ -59,6 +59,7 @@ export interface GenreSuggestionsApiResponseModel {
 
 export interface CollectionItemExistsApiResponseModel {
   exists: boolean;
+  hash?: string;
 }
 
 export interface RandomImagesApiResponseModel {
@@ -72,8 +73,12 @@ export interface CollectionStatisticsApiResponseModel {
   favoriteCount: number;
   watchLaterCount: number;
   wishlistCount: number;
-  watchedCount: number;
-  unwatchedCount: number;
+  watchedMovieCount: number;
+  watchedSeriesCount: number;
+  unwatchedMovieCount: number;
+  unwatchedLibrarySeriesCount: number;
+  unwatchedTrackerSeriesCount: number;
+  completedTrackerSeriesCount: number;
   tagCounts: Array<{ tag: string; count: number }>;
   genreCounts: Array<{ genre: string; count: number }>;
 }
@@ -96,7 +101,6 @@ export type CollectionItemChangeApiModel = Pick<
 
 export interface CreateApiRequestModel extends CollectionItemChangeApiModel {
   listType?: CollectionListTypeModel;
-  fetchSeriesMetadata?: boolean;
 }
 
 export interface CreateApiResponseModel {
@@ -180,8 +184,21 @@ export interface MarkAllWatchedApiResponseModel {
   changedCount: number;
 }
 
+export interface MarkAllSeriesWatchedApiResponseModel {
+  trackedCount: number;
+  progressChangedCount: number;
+}
+
 export interface MarkAllUnwatchedApiResponseModel {
   changedCount: number;
+}
+
+export interface MovieTrackerApiResponseModel {
+  item: CollectionItemApiModel;
+}
+
+export interface SeriesTrackerApiResponseModel {
+  item: CollectionItemApiModel;
 }
 
 export interface RefreshImagesApiResponseModel {

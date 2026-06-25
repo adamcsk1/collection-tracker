@@ -34,7 +34,13 @@ export const parseTagMode = (value: unknown): CollectionItemTagMode | undefined 
 };
 
 export const parseListType = (value: unknown): CollectionListTypeModel | undefined => {
-  if (value === 'library' || value === 'watch-later' || value === 'wishlist' || value === 'series-tracker') {
+  if (
+    value === 'library' ||
+    value === 'watch-later' ||
+    value === 'wishlist' ||
+    value === 'series-tracker' ||
+    value === 'movie-tracker'
+  ) {
     return value;
   }
   return;

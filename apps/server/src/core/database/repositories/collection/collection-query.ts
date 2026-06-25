@@ -1,4 +1,4 @@
-import { COMPLETED_TAG, MOVIE_TAG, SERIES_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { COMPLETED_TAG, MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import {
   CollectionItemFiltersApiModel,
   CollectionItemTagMode,
@@ -13,7 +13,13 @@ export const normalizeLimit = (limit: number): number => Math.min(Math.max(Math.
 export const normalizeOffset = (offset: number): number => Math.max(Math.floor(offset) || 0, 0);
 
 export const normalizeListType = (listType: CollectionListTypeModel | undefined): CollectionListTypeModel => {
-  if (listType === 'watch-later' || listType === 'wishlist' || listType === 'series-tracker') return listType;
+  if (
+    listType === 'watch-later' ||
+    listType === 'wishlist' ||
+    listType === 'series-tracker' ||
+    listType === 'movie-tracker'
+  )
+    return listType;
   return 'library';
 };
 
@@ -31,6 +37,26 @@ const addGenreExists = (queryParts: QueryParts, genre: string): void => {
     WHERE genre_filter.item_id = collection_items.id AND LOWER(genre_filter.genre) = ?
   )`);
   queryParts.params.push(genre.toLowerCase());
+};
+
+const addMovieTrackerExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
+  queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
+    SELECT 1 FROM collection_items movie_tracker_filter
+    WHERE movie_tracker_filter.username_hash = ?
+      AND movie_tracker_filter.imdb_id = collection_items.imdb_id
+      AND movie_tracker_filter.list_type = ?
+  )`);
+  queryParts.params.push(usernameHash, 'movie-tracker');
+};
+
+const addSeriesTrackerExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
+  queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
+    SELECT 1 FROM collection_items series_tracker_filter
+    WHERE series_tracker_filter.username_hash = ?
+      AND series_tracker_filter.imdb_id = collection_items.imdb_id
+      AND series_tracker_filter.list_type = ?
+  )`);
+  queryParts.params.push(usernameHash, 'series-tracker');
 };
 
 const addSearchFilter = (queryParts: QueryParts, search: string): void => {
@@ -70,7 +96,11 @@ const addSearchFilter = (queryParts: QueryParts, search: string): void => {
   );
 };
 
-const addFilters = (queryParts: QueryParts, filters: CollectionItemFiltersApiModel | undefined): void => {
+const addFilters = (
+  queryParts: QueryParts,
+  filters: CollectionItemFiltersApiModel | undefined,
+  viewerUsernameHash?: string
+): void => {
   const listType = normalizeListType(filters?.listType);
   if (listType === 'library') {
     queryParts.where.push('collection_items.list_type = ?');
@@ -87,8 +117,16 @@ const addFilters = (queryParts: QueryParts, filters: CollectionItemFiltersApiMod
 
   if (filters.type === 'movie') addTagExists(queryParts, MOVIE_TAG);
   if (filters.type === 'series') addTagExists(queryParts, SERIES_TAG);
-  if (filters.watched === true) addTagExists(queryParts, WATCHED_TAG);
-  if (filters.watched === false) addTagExists(queryParts, WATCHED_TAG, false);
+  if (
+    filters.watched !== undefined &&
+    viewerUsernameHash &&
+    listType !== 'movie-tracker' &&
+    listType !== 'series-tracker'
+  ) {
+    const exists = filters.watched;
+    if (filters.type === 'series') addSeriesTrackerExists(queryParts, viewerUsernameHash, exists);
+    else addMovieTrackerExists(queryParts, viewerUsernameHash, exists);
+  }
   if (filters.completed === true) addTagExists(queryParts, COMPLETED_TAG);
   if (filters.completed === false) addTagExists(queryParts, COMPLETED_TAG, false);
 
@@ -113,13 +151,14 @@ const addFilters = (queryParts: QueryParts, filters: CollectionItemFiltersApiMod
 export const buildItemWhere = (
   usernameHashes: string[],
   filters: CollectionItemFiltersApiModel | undefined,
-  matchedImdbIds?: string[]
+  matchedImdbIds?: string[],
+  viewerUsernameHash?: string
 ): QueryParts => {
   const queryParts: QueryParts = {
     where: [`collection_items.username_hash IN (${usernameHashes.map(() => '?').join(', ')})`],
     params: [...usernameHashes],
   };
-  addFilters(queryParts, filters);
+  addFilters(queryParts, filters, viewerUsernameHash);
 
   if (matchedImdbIds?.length) {
     queryParts.where.push(`collection_items.imdb_id IN (${matchedImdbIds.map(() => '?').join(', ')})`);

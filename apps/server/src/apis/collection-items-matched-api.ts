@@ -35,6 +35,7 @@ export const register = (app: FastifyInstance): void => {
           offset: parseNumber(body.offset, 0),
           limit: parseNumber(body.limit, 50),
           matchedImdbIds: body.imdbIds,
+          viewerUsernameHash: request.usernameHash,
         })
       );
     })

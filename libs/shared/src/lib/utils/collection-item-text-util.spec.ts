@@ -8,6 +8,6 @@ describe('parseGenreText', () => {
 
 describe('parseTagText', () => {
   it('splits whitespace-separated tag text and removes blank values', () => {
-    expect(parseTagText(' #owned  #watched\n#favorite ')).toEqual(['#owned', '#watched', '#favorite']);
+    expect(parseTagText(' #owned  #bluray\n#favorite ')).toEqual(['#owned', '#bluray', '#favorite']);
   });
 });

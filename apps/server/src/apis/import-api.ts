@@ -1,6 +1,5 @@
 import { EXPORT_TYPE, EXPORT_VERSION } from '@shared/constants/export-import-const';
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
-import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import {
   CollectionItemChangeApiModel,
   CollectionItemApiModel,
@@ -24,6 +23,7 @@ import { getIMDbIds } from '@shared/omdb/get-imdb-id-util';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import type { FastifyInstance } from 'fastify';
 import { API_PREFIX } from '@shared/constants/api-const';
+import { MOVIE_TAG, SERIES_TAG } from '@shared/constants/tags-const';
 import { getDatabase } from '../core/database/database';
 import {
   collectionItemExistsByImdbId,
@@ -292,10 +292,11 @@ export const register = (app: FastifyInstance): void => {
       const body = request.body as unknown;
       if (!isUserImport(body)) return response.code(400).send();
 
-      const normalizedItems = body.collectionItems.map((item) => ({
-        item: normalizeItem(toCollectionItemChange(item)),
-        listType: parseListType(item.listType),
-      }));
+      const normalizedItems = body.collectionItems.map((item) => {
+        const normalizedItem = normalizeItem(toCollectionItemChange(item));
+        const listType = parseListType(item.listType);
+        return { item: normalizedItem, listType };
+      });
       if (normalizedItems.some((entry) => !entry.item || !entry.listType)) return response.code(400).send();
 
       const uniqueItems = new Set<string>();

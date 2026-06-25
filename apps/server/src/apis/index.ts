@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { register as registerAccessTokens } from './access-tokens-api';
+import { register as registerAddMovieTrackerItem } from './add-movie-tracker-item-api';
+import { register as registerAddSeriesTrackerItem } from './add-series-tracker-item-api';
 import { register as registerModify } from './change-api';
 import { register as registerUpdateTagManagement } from './update-tag-management-api';
 import { register as registerChangeToken } from './change-token-api';
@@ -10,10 +12,15 @@ import { register as registerCollectionItemsSearchSuggestions } from './collecti
 import { register as registerChangeSeriesTrackerSeasons } from './change-series-tracker-seasons-api';
 import { register as registerChangeSeriesTrackerWatchedEpisodes } from './change-series-tracker-watched-episodes-api';
 import { register as registerMarkAllSeriesTrackerWatched } from './mark-all-series-tracker-watched-api';
+import { register as registerMarkAllSeriesUnwatched } from './mark-all-series-unwatched-api';
+import { register as registerMarkAllSeriesWatched } from './mark-all-series-watched-api';
 import { register as registerCreateAccessToken } from './create-access-token-api';
 import { register as registerCreate } from './create-api';
 import { register as registerDeleteAccessToken } from './delete-access-token-api';
 import { register as registerDelete } from './delete-api';
+import { register as registerDeleteMovieTrackerItem } from './delete-movie-tracker-item-api';
+import { register as registerDeleteMovieTrackerItems } from './delete-movie-tracker-items-api';
+import { register as registerDeleteSeriesTrackerItems } from './delete-series-tracker-items-api';
 import { register as registerDeleteSeriesTrackerSeasons } from './delete-series-tracker-seasons-api';
 import { register as registerDeleteUser } from './delete-user-api';
 import { register as registerGenreSuggestions } from './genre-suggestions-api';
@@ -64,6 +71,13 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerRandomImages(app);
   registerMarkAllWatched(app);
   registerMarkAllUnwatched(app);
+  registerMarkAllSeriesWatched(app);
+  registerMarkAllSeriesUnwatched(app);
+  registerAddMovieTrackerItem(app);
+  registerAddSeriesTrackerItem(app);
+  registerDeleteMovieTrackerItems(app);
+  registerDeleteMovieTrackerItem(app);
+  registerDeleteSeriesTrackerItems(app);
   registerRefreshExternalRatings(app);
   registerRefreshImages(app);
   registerCreate(app);

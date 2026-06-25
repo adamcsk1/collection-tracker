@@ -276,6 +276,7 @@ components:
           actors,
           plot,
           listType,
+          watched,
         ]
       properties:
         image:
@@ -318,8 +319,11 @@ components:
           type: string
         listType:
           type: string
-          enum: [library, watch-later, wishlist, series-tracker]
+          enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
           description: Logical list containing the item. `library` is the main collection.
+        watched:
+          type: boolean
+          description: Whether the authenticated viewer has this movie in their movie tracker.
         ownerShareCode:
           type: string
           description: Share code of the item owner. Present when the item belongs to a shared library.
@@ -416,7 +420,7 @@ components:
               type: boolean
             listType:
               type: string
-              enum: [library, watch-later, wishlist, series-tracker]
+              enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
             orderBy:
               type: string
               enum: [createdAt, alphabet]
@@ -468,6 +472,9 @@ components:
       properties:
         exists:
           type: boolean
+        hash:
+          type: string
+          description: Content hash of the existing item, when it exists.
 
     RandomImagesResponse:
       type: object
@@ -488,8 +495,11 @@ components:
           favoriteCount,
           watchLaterCount,
           wishlistCount,
-          watchedCount,
-          unwatchedCount,
+          watchedMovieCount,
+          watchedSeriesCount,
+          unwatchedMovieCount,
+          unwatchedLibrarySeriesCount,
+          unwatchedTrackerSeriesCount,
           tagCounts,
           genreCounts,
         ]
@@ -506,9 +516,15 @@ components:
           type: integer
         wishlistCount:
           type: integer
-        watchedCount:
+        watchedMovieCount:
           type: integer
-        unwatchedCount:
+        watchedSeriesCount:
+          type: integer
+        unwatchedMovieCount:
+          type: integer
+        unwatchedLibrarySeriesCount:
+          type: integer
+        unwatchedTrackerSeriesCount:
           type: integer
         tagCounts:
           type: array
@@ -541,7 +557,7 @@ components:
               description: Optional owner share code to create the item in a shared library. Defaults to the authenticated user.
             listType:
               type: string
-              enum: [library, watch-later, wishlist, series-tracker]
+              enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
               default: library
               description: Target list. Defaults to `library`.
 
@@ -575,6 +591,17 @@ components:
       properties:
         changedCount:
           type: integer
+
+    MarkAllSeriesWatchedResponse:
+      type: object
+      required: [trackedCount, progressChangedCount]
+      properties:
+        trackedCount:
+          type: integer
+          description: Number of library series newly copied into the authenticated user's series tracker.
+        progressChangedCount:
+          type: integer
+          description: Number of series tracker items whose watched episode progress or completed status changed.
 
     MarkAllUnwatchedResponse:
       type: object
@@ -1214,7 +1241,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker]
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
             default: library
         - name: orderBy
           in: query
@@ -1310,7 +1337,7 @@ paths:
           description: List to check. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker]
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
             default: library
       responses:
         '200':
@@ -1363,9 +1390,15 @@ paths:
   /items/mark-all-watched:
     post:
       operationId: markAllAsWatched
-      summary: Mark all collection items as watched
-      description: Adds the #watched tag to every item in the user's collection that does not already have it.
+      summary: Mark all movies as watched
+      description: Copies every unwatched movie in the selected library into the authenticated user's movie tracker. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
       tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
       responses:
         '200':
           description: Number of items that were updated.
@@ -1373,13 +1406,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MarkAllWatchedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
 
   /items/mark-all-unwatched:
     post:
       operationId: markAllAsUnwatched
-      summary: Mark all collection items as unwatched
-      description: Removes the #watched tag from every item in the user's collection that has it.
+      summary: Mark all movies as unwatched
+      description: Removes authenticated-user movie tracker copies that correspond to movies in the selected library. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
       tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
       responses:
         '200':
           description: Number of items that were updated.
@@ -1387,6 +1430,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
+  /items/mark-all-series-watched:
+    post:
+      operationId: markAllSeriesAsWatched
+      summary: Mark all series as watched
+      description: Copies every untracked series in the selected library into the authenticated user's series tracker, fetches season metadata from OMDb only for newly added series, and marks all available episodes watched for matching tracker items. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
+      responses:
+        '200':
+          description: Number of series tracker items newly tracked and number with changed progress.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllSeriesWatchedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
+  /items/mark-all-series-unwatched:
+    post:
+      operationId: markAllSeriesAsUnwatched
+      summary: Mark all series as unwatched
+      description: Clears watched episode progress for authenticated-user series tracker items that correspond to series in the selected library. Series tracker items and season metadata are kept. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
 
   /items/refresh-images:
     post:
@@ -1520,7 +1615,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker]
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
             default: library
         - name: watched
           in: query
@@ -1538,7 +1633,7 @@ paths:
     post:
       operationId: createItem
       summary: Create a collection item
-      description: Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list. Tags must include `#movie` or `#series`. Virtual tags, the internal `#watch-later` and `#wishlist` tags, and the server-managed `#completed` tag are rejected. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later, wishlist, and series-tracker items cannot be created in shared libraries and cannot use `#favorite` or `#watched`. Series-tracker items must use `#series` and cannot use `#movie`.
+      description: Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list. Tags must include `#movie` or `#series`. Virtual tags, the internal `#watch-later` and `#wishlist` tags, and server-managed action tags are rejected. Optionally pass `targetOwnerShareCode` to create in a shared library where you have create permission. Watch-later, wishlist, series-tracker, and movie-tracker items cannot be created in shared libraries and cannot use `#favorite`. Series-tracker items must use `#series` and cannot use `#movie`; movie-tracker items must use `#movie` and cannot use `#series`.
       tags: [Collection]
       requestBody:
         required: true
@@ -1564,7 +1659,7 @@ paths:
     put:
       operationId: changeItem
       summary: Update a collection item
-      description: Updates a library or series-tracker item. Tags must include `#movie` or `#series`. Virtual tags and the internal `#watch-later` and `#wishlist` tags are rejected. Watch-later and wishlist items are not modified by this endpoint. Series-tracker items must use `#series` and cannot use `#movie`, `#favorite`, or `#watched`.
+      description: Updates a library, series-tracker, or movie-tracker item. Tags must include `#movie` or `#series`. Virtual tags, the internal `#watch-later` and `#wishlist` tags, and server-managed action tags are rejected. Watch-later and wishlist items are not modified by this endpoint. Series-tracker items must use `#series` and cannot use `#movie` or `#favorite`; movie-tracker items must use `#movie` and cannot use `#series` or `#favorite`.
       tags: [Collection]
       parameters:
         - name: imdbId
@@ -1582,10 +1677,10 @@ paths:
         - name: listType
           in: query
           required: false
-          description: List containing the item. Defaults to `library`. Use `series-tracker` to update a series tracker item.
+          description: List containing the item. Defaults to `library`. Use `series-tracker` or `movie-tracker` to update tracker items.
           schema:
             type: string
-            enum: [library, series-tracker]
+            enum: [library, series-tracker, movie-tracker]
             default: library
       requestBody:
         required: true
@@ -1613,7 +1708,7 @@ paths:
     delete:
       operationId: deleteItem
       summary: Delete a collection item
-      description: Deletes an item from the requested list when the supplied hash matches. Shared watch-later, wishlist, and series-tracker items cannot be deleted by users other than their owner.
+      description: Deletes an item from the requested list when the supplied hash matches. Shared watch-later, wishlist, series-tracker, and movie-tracker items cannot be deleted by users other than their owner.
       tags: [Collection]
       parameters:
         - name: imdbId
@@ -1640,7 +1735,7 @@ paths:
           description: List containing the item. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker]
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
             default: library
       responses:
         '204':
@@ -1653,6 +1748,125 @@ paths:
           description: Item not found.
         '409':
           description: Hash mismatch — the stored content has changed.
+
+  /movie-tracker:
+    delete:
+      operationId: deleteAllMovieTrackerItems
+      summary: Remove all movie tracker data
+      description: Deletes every movie tracker item owned by the authenticated user. This affects only the user's own tracker data and cannot remove or change shared library owner items.
+      tags: [Collection]
+      responses:
+        '200':
+          description: Number of movie tracker items deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+
+  /movie-tracker/{imdbId}:
+    post:
+      operationId: addMovieTrackerItem
+      summary: Add a movie to movie tracker
+      description: Copies an accessible library movie into the authenticated user's movie tracker. When `ownerShareCode` is provided, the source movie is read from that shared library without mutating the owner's item. When `sourceListType=watch-later`, moves the authenticated user's watch-later movie into movie tracker and removes it from watch later.
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sourceListType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [library, watch-later]
+            default: library
+      responses:
+        '200':
+          description: Movie tracker item created or already present.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+        '403':
+          description: The authenticated user cannot read the source library.
+        '404':
+          description: Source item was not found or is not a movie.
+    delete:
+      operationId: deleteMovieTrackerItem
+      summary: Remove a movie from movie tracker
+      description: Deletes the authenticated user's movie tracker item for the IMDb ID.
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Movie tracker item deleted.
+        '404':
+          description: Movie tracker item was not found.
+
+  /series-tracker:
+    delete:
+      operationId: deleteAllSeriesTrackerItems
+      summary: Remove all series tracker data
+      description: Deletes every series tracker item owned by the authenticated user. Related season metadata and watched episode progress are removed with the tracker items. This affects only the user's own tracker data and cannot remove or change shared library owner items.
+      tags: [Collection]
+      responses:
+        '200':
+          description: Number of series tracker items deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+
+  /series-tracker/{imdbId}:
+    post:
+      operationId: addSeriesTrackerItem
+      summary: Add a series to series tracker
+      description: Copies a series from the selected library into the authenticated user's series tracker, or moves the authenticated user's watch-later series into series tracker when `sourceListType=watch-later`. Library copies leave the source item unchanged. OMDb season metadata can be fetched for the tracker item.
+      tags: [Collection]
+      parameters:
+        - name: imdbId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sourceListType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [library, watch-later]
+            default: library
+        - name: ownerShareCode
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional owner share code for copying a series from an incoming shared library. Only applies when sourceListType is library.
+      responses:
+        '200':
+          description: Series tracker item created or already present.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+        '400':
+          description: Unsupported source list type.
+        '403':
+          description: The authenticated user cannot read the requested shared library.
+        '404':
+          description: Source item or shared library owner was not found, or the source item is not a series.
 
   /series-tracker/{imdbId}/seasons:
     get:
@@ -1963,7 +2177,7 @@ paths:
     get:
       operationId: getUserExport
       summary: Export all user-owned data
-      description: Returns a JSON export of all user-owned data including settings, collection items, tag management, and series tracker metadata.
+      description: Returns a JSON export of all user-owned data including settings, collection items (library, watch-later, wishlist, series-tracker, and movie-tracker), tag management, and series tracker metadata.
       tags: [User]
       responses:
         '200':

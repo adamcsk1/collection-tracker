@@ -1,10 +1,6 @@
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { getItemHash, normalizeItem } from './collection-item-util';
-
-vi.mock('@server/core/crypto', () => ({
-  hashText: vi.fn((text: string) => `hashed-${text}`),
-}));
 
 const validItem: CollectionItemChangeApiModel = {
   image: 'poster.jpg',
@@ -118,9 +114,10 @@ describe('collection-item-util', () => {
   });
 
   describe('getItemHash', () => {
-    it('returns hashed JSON string of the item', () => {
+    it('returns a sha-512 hex hash of the JSON string', () => {
       const result = getItemHash(validItem);
-      expect(result).toBe(`hashed-${JSON.stringify(validItem)}`);
+
+      expect(result).toMatch(/^[a-f0-9]{128}$/);
     });
   });
 });

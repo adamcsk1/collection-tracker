@@ -23,6 +23,7 @@ export const register = (app: FastifyInstance): void => {
           filters,
           offset: parseNumber((request.query as Record<string, unknown>).offset, 0),
           limit: parseNumber((request.query as Record<string, unknown>).limit, 50),
+          viewerUsernameHash: request.usernameHash,
         })
       );
     })

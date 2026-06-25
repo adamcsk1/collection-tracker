@@ -40,6 +40,15 @@ const seriesTrackerItem = {
   listType: 'series-tracker',
 };
 
+const movieTrackerItem = {
+  ...item,
+  title: 'Imported Tracker Movie',
+  titleLower: 'imported tracker movie',
+  IMDbId: 'tt0000004',
+  tags: ['#movie'],
+  listType: 'movie-tracker',
+};
+
 const insertUser = (usernameHash = 'user') => {
   getDatabase()
     .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
@@ -93,7 +102,12 @@ describe('import-api', () => {
         type: 'collection-tracker-export',
         version: 1,
         userSettings: { theme: 'dark', animatedBackground: false, language: 'en' },
-        collectionItems: [item, { ...item, IMDbId: 'tt0000003', listType: 'watch-later' }, seriesTrackerItem],
+        collectionItems: [
+          item,
+          { ...item, IMDbId: 'tt0000003', listType: 'watch-later' },
+          seriesTrackerItem,
+          movieTrackerItem,
+        ],
         tagManagement: [
           {
             tag: '#movie',
@@ -120,7 +134,7 @@ describe('import-api', () => {
     await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith({
-      importedCollectionItems: 3,
+      importedCollectionItems: 4,
       importedTagManagement: 1,
       importedSeriesTrackerSeasons: 1,
       importedSeriesTrackerWatchedEpisodes: 1,
@@ -128,6 +142,9 @@ describe('import-api', () => {
     expect(db.prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt9999999')).toBeUndefined();
     expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt0000003')).toEqual({
       list_type: 'watch-later',
+    });
+    expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt0000004')).toEqual({
+      list_type: 'movie-tracker',
     });
     expect(db.prepare('SELECT token_hash FROM access_tokens WHERE username_hash = ?').get('user')).toEqual({
       token_hash: 'access-token',

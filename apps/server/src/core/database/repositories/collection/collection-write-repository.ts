@@ -1,4 +1,4 @@
-import { COMPLETED_TAG, WATCHED_TAG } from '@shared/constants/tags-const';
+import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import {
   CollectionItemApiModel,
   CollectionItemChangeApiModel,
@@ -12,7 +12,6 @@ import { findWatchedEpisodes } from '../series-tracker-watched-episodes-reposito
 import { toApiItem } from './collection-mapper';
 import { normalizeListType } from './collection-query';
 import { findCollectionItemByImdbId } from './collection-read-repository';
-import { CollectionItemRow } from './collection-types';
 
 export const insertCollectionItem = (
   db: Database.Database,
@@ -169,66 +168,4 @@ export const syncSeriesTrackerCompletedTag = (
     row.id
   );
   return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, imdbId, 'series-tracker')!);
-};
-
-export const markAllAsWatched = (db: Database.Database, usernameHash: string): number => {
-  const rows = db
-    .prepare(
-      `SELECT * FROM collection_items
-       WHERE username_hash = ?
-        AND list_type = ?
-       AND NOT EXISTS (
-         SELECT 1 FROM collection_item_tags
-         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-       )`
-    )
-    .all(usernameHash, 'library', WATCHED_TAG) as CollectionItemRow[];
-
-  let changedCount = 0;
-  const transaction = db.transaction(() => {
-    for (const row of rows) {
-      const item = toApiItem(db, row);
-      const updatedItem: CollectionItemChangeApiModel = {
-        ...item,
-        tags: [...item.tags, WATCHED_TAG],
-      };
-      const newHash = getItemHash(updatedItem);
-      updateCollectionItem(db, usernameHash, item.IMDbId, newHash, updatedItem);
-      changedCount++;
-    }
-  });
-
-  transaction();
-  return changedCount;
-};
-
-export const markAllAsUnwatched = (db: Database.Database, usernameHash: string): number => {
-  const rows = db
-    .prepare(
-      `SELECT * FROM collection_items
-       WHERE username_hash = ?
-        AND list_type = ?
-       AND EXISTS (
-         SELECT 1 FROM collection_item_tags
-         WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
-       )`
-    )
-    .all(usernameHash, 'library', WATCHED_TAG) as CollectionItemRow[];
-
-  let changedCount = 0;
-  const transaction = db.transaction(() => {
-    for (const row of rows) {
-      const item = toApiItem(db, row);
-      const updatedItem: CollectionItemChangeApiModel = {
-        ...item,
-        tags: item.tags.filter((tag) => tag !== WATCHED_TAG),
-      };
-      const newHash = getItemHash(updatedItem);
-      updateCollectionItem(db, usernameHash, item.IMDbId, newHash, updatedItem);
-      changedCount++;
-    }
-  });
-
-  transaction();
-  return changedCount;
 };

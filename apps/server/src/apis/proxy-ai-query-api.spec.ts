@@ -126,7 +126,7 @@ describe('proxy-ai-query-api', () => {
           plot: 'A computer hacker learns about the true nature of reality.',
           actors: 'Keanu Reeves, Carrie-Anne Moss',
           genre: ['Action', 'Sci-Fi'],
-          tags: ['#family', '#watched'],
+          tags: ['#family', '#favorite'],
           rottenTomatoesRate: '83%',
           metacriticRate: '73/100',
         },
@@ -152,7 +152,7 @@ describe('proxy-ai-query-api', () => {
       expect(payload.prompt).toContain('User search request:\nWhich are family sci-fi movies?');
       expect(payload.prompt).toContain('IMDbId:\ntt0133093');
       expect(payload.prompt).toContain('genre:\nAction,Sci-Fi');
-      expect(payload.prompt).toContain('tags:\n#family,#watched');
+      expect(payload.prompt).toContain('tags:\n#family,#favorite');
       expect(payload.prompt).toContain('rottenTomatoesRate:\n83%');
       expect(payload.prompt).toContain('metacriticRate:\n73/100');
       expect(payload.prompt).toContain('actors:\nKeanu Reeves, Carrie-Anne Moss');

@@ -39,11 +39,13 @@ export const register = (app: FastifyInstance): void => {
       const existingItem = findCollectionItemByImdbId(db, targetOwnerHash, imdbId, listType);
       const isSharedInternalCollectionItem =
         targetOwnerHash !== request.usernameHash && !!existingItem && listType !== 'library';
+      const exists = isSharedInternalCollectionItem
+        ? false
+        : collectionItemExistsInList(db, [targetOwnerHash], imdbId, listType);
 
       response.send({
-        exists: isSharedInternalCollectionItem
-          ? false
-          : collectionItemExistsInList(db, [targetOwnerHash], imdbId, listType),
+        exists,
+        hash: exists ? existingItem?.content_hash : undefined,
       });
     })
   );

@@ -55,7 +55,25 @@ describe('export-api', () => {
       'img2.jpg',
       'hash2'
     );
-    db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?), (?, ?)').run(1, '#movie', 1, '#watched');
+    db.prepare(
+      'INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(
+      'user',
+      'tt789',
+      'movie-tracker',
+      'Tracker Movie',
+      'tracker movie',
+      '2022',
+      '9.0',
+      '95',
+      '90',
+      10.0,
+      'Actor',
+      'Plot',
+      'img3.jpg',
+      'hash3'
+    );
+    db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(1, '#movie');
     db.prepare(
       'INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run('user', '#movie', '#111111', 1, 0, 0, 1);
@@ -79,7 +97,12 @@ describe('export-api', () => {
           IMDbId: 'tt123',
           listType: 'library',
           title: 'Movie',
-          tags: ['#movie', '#watched'],
+          tags: ['#movie'],
+        }),
+        expect.objectContaining({
+          IMDbId: 'tt789',
+          listType: 'movie-tracker',
+          title: 'Tracker Movie',
         }),
         expect.objectContaining({
           IMDbId: 'tt456',

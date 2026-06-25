@@ -181,6 +181,26 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({});
   });
 
+  it('deletes all movie tracker items', async () => {
+    const promise = lastValueFrom(service.deleteAllMovieTrackerItems());
+
+    const deleteRequest = httpMock.expectOne('https://api.test/movie-tracker');
+    expect(deleteRequest.request.method).toBe('DELETE');
+    deleteRequest.flush({ changedCount: 2 });
+
+    await expect(promise).resolves.toEqual({ changedCount: 2 });
+  });
+
+  it('deletes all series tracker items', async () => {
+    const promise = lastValueFrom(service.deleteAllSeriesTrackerItems());
+
+    const deleteRequest = httpMock.expectOne('https://api.test/series-tracker');
+    expect(deleteRequest.request.method).toBe('DELETE');
+    deleteRequest.flush({ changedCount: 3 });
+
+    await expect(promise).resolves.toEqual({ changedCount: 3 });
+  });
+
   it('retrieves user tag management', async () => {
     const promise = lastValueFrom(service.getUserTagManagement());
 
@@ -449,6 +469,60 @@ describe('ApiService', () => {
 
     await expect(promise).rejects.toMatchObject({ status: 404 });
     expect(alertSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks all movies as watched for the selected shared library', async () => {
+    const promise = lastValueFrom(service.markAllMoviesAsWatched('owner-code'));
+
+    const markAllRequest = httpMock.expectOne('https://api.test/items/mark-all-watched?ownerShareCode=owner-code');
+    expect(markAllRequest.request.method).toBe('POST');
+    markAllRequest.flush({ changedCount: 2 });
+
+    await expect(promise).resolves.toEqual({ changedCount: 2 });
+  });
+
+  it('marks all movies as unwatched for the selected shared library', async () => {
+    const promise = lastValueFrom(service.markAllMoviesAsUnwatched('owner-code'));
+
+    const markAllRequest = httpMock.expectOne('https://api.test/items/mark-all-unwatched?ownerShareCode=owner-code');
+    expect(markAllRequest.request.method).toBe('POST');
+    markAllRequest.flush({ changedCount: 1 });
+
+    await expect(promise).resolves.toEqual({ changedCount: 1 });
+  });
+
+  it('marks all series as watched for the selected shared library', async () => {
+    const promise = lastValueFrom(service.markAllSeriesAsWatched('owner-code'));
+
+    const markAllRequest = httpMock.expectOne(
+      'https://api.test/items/mark-all-series-watched?ownerShareCode=owner-code'
+    );
+    expect(markAllRequest.request.method).toBe('POST');
+    markAllRequest.flush({ trackedCount: 2, progressChangedCount: 3 });
+
+    await expect(promise).resolves.toEqual({ trackedCount: 2, progressChangedCount: 3 });
+  });
+
+  it('marks all series as unwatched for the selected shared library', async () => {
+    const promise = lastValueFrom(service.markAllSeriesAsUnwatched('owner-code'));
+
+    const markAllRequest = httpMock.expectOne(
+      'https://api.test/items/mark-all-series-unwatched?ownerShareCode=owner-code'
+    );
+    expect(markAllRequest.request.method).toBe('POST');
+    markAllRequest.flush({ changedCount: 1 });
+
+    await expect(promise).resolves.toEqual({ changedCount: 1 });
+  });
+
+  it('copies a shared library series to the series tracker', async () => {
+    const promise = lastValueFrom(service.addSeriesTrackerItem('tt-series', undefined, 'owner-code'));
+
+    const request = httpMock.expectOne('https://api.test/series-tracker/tt-series?ownerShareCode=owner-code');
+    expect(request.request.method).toBe('POST');
+    request.flush({ item: { IMDbId: 'tt-series', listType: 'series-tracker' } });
+
+    await expect(promise).resolves.toEqual({ item: { IMDbId: 'tt-series', listType: 'series-tracker' } });
   });
 
   it('refreshes images and returns summary', async () => {

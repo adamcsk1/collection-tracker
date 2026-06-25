@@ -23,7 +23,7 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler(async (request, response) => {
       await debugLog('POST /items/refresh-images started');
       const db = getDatabase();
-      const apiKey = process.env.OMDB_API_KEY!;
+      const apiKey = process.env.OMDB_API_KEY;
       const query = (request.query ?? {}) as Record<string, unknown>;
       const ownerHash =
         typeof query.ownerShareCode === 'string'
@@ -60,6 +60,12 @@ export const register = (app: FastifyInstance): void => {
           }
 
           await debugLog(`[${item.IMDbId}] Image missing, fetching OMDb`);
+          if (!apiKey) {
+            await debugLog(`[${item.IMDbId}] OMDb API key is missing`);
+            errors++;
+            continue;
+          }
+
           const omdbItem = await fetchOMDbItem(item.IMDbId, apiKey);
 
           if (omdbItem?.imdbID && omdbItem.Poster && omdbItem.Poster !== item.image) {

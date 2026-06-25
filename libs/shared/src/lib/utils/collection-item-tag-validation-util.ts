@@ -5,7 +5,6 @@ import {
   MOVIE_TAG,
   SERIES_TAG,
   VIRTUAL_TAGS,
-  WATCHED_TAG,
   WATCH_LATER_TAG,
   WISHLIST_TAG,
 } from '../constants/tags-const';
@@ -18,11 +17,11 @@ import { parseTagText } from './collection-item-text-util';
 
 const INTERNAL_COLLECTION_TAGS = [WATCH_LATER_TAG, WISHLIST_TAG];
 const TYPE_TAGS = [MOVIE_TAG, SERIES_TAG];
-const FORBIDDEN_NON_LIBRARY_TAGS = [FAVORITE_TAG, WATCHED_TAG];
-const USER_ACTION_TAGS = [FAVORITE_TAG, WATCHED_TAG];
+const FORBIDDEN_NON_LIBRARY_TAGS = [FAVORITE_TAG];
+const USER_ACTION_TAGS = [FAVORITE_TAG];
 const SERVER_MANAGED_TAGS = [COMPLETED_TAG];
 const EDITOR_HIDDEN_TAGS = [...INTERNAL_COLLECTION_TAGS, ...USER_ACTION_TAGS, ...SERVER_MANAGED_TAGS];
-const EDITOR_PRESERVED_TAGS = [...INTERNAL_COLLECTION_TAGS, ...USER_ACTION_TAGS];
+const EDITOR_PRESERVED_TAGS = [...INTERNAL_COLLECTION_TAGS, FAVORITE_TAG];
 const EPISODE_PROGRESS_TAG_PATTERN = /^#episode-s(\d{2})e(\d{2})$/;
 
 export const forbiddenEpisodeProgressTagValidation = (
@@ -90,6 +89,9 @@ export const createCollectionItemTagValidation = ({
   if (listType === 'series-tracker' && (!tags.includes(SERIES_TAG) || tags.includes(MOVIE_TAG))) {
     return { kind: 'invalidSeriesTrackerTags' };
   }
+  if (listType === 'movie-tracker' && (!tags.includes(MOVIE_TAG) || tags.includes(SERIES_TAG))) {
+    return { kind: 'invalidInternalCollectionTag' };
+  }
   return undefined;
 };
 
@@ -104,7 +106,7 @@ export const changeCollectionItemTagValidation = ({
   }
   const tagValidation = collectionItemTagValidation(tags);
   if (tagValidation) return tagValidation;
-  if (existingListType !== 'library' && listType !== 'series-tracker') {
+  if (existingListType !== 'library' && listType !== 'series-tracker' && listType !== 'movie-tracker') {
     return { kind: 'invalidInternalCollectionItemUpdate' };
   }
   if (
@@ -114,6 +116,14 @@ export const changeCollectionItemTagValidation = ({
       tags.some((tag) => FORBIDDEN_NON_LIBRARY_TAGS.includes(tag)))
   ) {
     return { kind: 'invalidSeriesTrackerTags' };
+  }
+  if (
+    listType === 'movie-tracker' &&
+    (!tags.includes(MOVIE_TAG) ||
+      tags.includes(SERIES_TAG) ||
+      tags.some((tag) => FORBIDDEN_NON_LIBRARY_TAGS.includes(tag)))
+  ) {
+    return { kind: 'invalidInternalCollectionTag' };
   }
   return undefined;
 };

@@ -17,11 +17,14 @@ import {
   CreateAccessTokenApiResponseModel,
   CreateApiResponseModel,
   GenreSuggestionsApiResponseModel,
+  MarkAllSeriesWatchedApiResponseModel,
   MarkAllUnwatchedApiResponseModel,
   MarkAllWatchedApiResponseModel,
+  MovieTrackerApiResponseModel,
   RandomImagesApiResponseModel,
   RefreshExternalRatingsApiResponseModel,
   RefreshImagesApiResponseModel,
+  SeriesTrackerApiResponseModel,
   SeriesTrackerSeasonsApiRequestModel,
   SeriesTrackerSeasonsApiResponseModel,
   SeriesTrackerWatchedEpisodesApiRequestModel,
@@ -79,12 +82,48 @@ export class ApiService extends BaseApiService {
     return this.request('GET', `/items/random-images${this.buildQuery({ count })}`);
   }
 
-  public markAllAsWatched(): Observable<MarkAllWatchedApiResponseModel> {
-    return this.request('POST', '/items/mark-all-watched');
+  public markAllMoviesAsWatched(ownerShareCode?: string): Observable<MarkAllWatchedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-watched${this.buildQuery({ ownerShareCode })}`);
   }
 
-  public markAllAsUnwatched(): Observable<MarkAllUnwatchedApiResponseModel> {
-    return this.request('POST', '/items/mark-all-unwatched');
+  public markAllMoviesAsUnwatched(ownerShareCode?: string): Observable<MarkAllUnwatchedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-unwatched${this.buildQuery({ ownerShareCode })}`);
+  }
+
+  public markAllSeriesAsWatched(ownerShareCode?: string): Observable<MarkAllSeriesWatchedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-series-watched${this.buildQuery({ ownerShareCode })}`);
+  }
+
+  public markAllSeriesAsUnwatched(ownerShareCode?: string): Observable<MarkAllUnwatchedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-series-unwatched${this.buildQuery({ ownerShareCode })}`);
+  }
+
+  public addMovieTrackerItem(
+    imdbId: string,
+    ownerShareCode?: string,
+    sourceListType?: CollectionListTypeModel
+  ): Observable<MovieTrackerApiResponseModel> {
+    return this.request('POST', `/movie-tracker/${imdbId}${this.buildQuery({ ownerShareCode, sourceListType })}`, {});
+  }
+
+  public addSeriesTrackerItem(
+    imdbId: string,
+    sourceListType?: CollectionListTypeModel,
+    ownerShareCode?: string
+  ): Observable<SeriesTrackerApiResponseModel> {
+    return this.request('POST', `/series-tracker/${imdbId}${this.buildQuery({ sourceListType, ownerShareCode })}`, {});
+  }
+
+  public deleteMovieTrackerItem(imdbId: string): Observable<void> {
+    return this.request('DELETE', `/movie-tracker/${imdbId}`);
+  }
+
+  public deleteAllMovieTrackerItems(): Observable<MarkAllUnwatchedApiResponseModel> {
+    return this.request('DELETE', '/movie-tracker');
+  }
+
+  public deleteAllSeriesTrackerItems(): Observable<MarkAllUnwatchedApiResponseModel> {
+    return this.request('DELETE', '/series-tracker');
   }
 
   public refreshImages(ownerShareCode?: string): Observable<RefreshImagesApiResponseModel> {
@@ -126,10 +165,9 @@ export class ApiService extends BaseApiService {
   public create(
     item: CollectionItemChangeApiModel,
     targetOwnerShareCode?: string,
-    listType?: CollectionListTypeModel,
-    fetchSeriesMetadata?: boolean
+    listType?: CollectionListTypeModel
   ): Observable<CreateApiResponseModel> {
-    return this.request('POST', '/create', { ...item, targetOwnerShareCode, listType, fetchSeriesMetadata });
+    return this.request('POST', '/create', { ...item, targetOwnerShareCode, listType });
   }
 
   public update(

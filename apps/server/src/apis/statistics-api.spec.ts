@@ -1,3 +1,4 @@
+import { COMPLETED_TAG } from '@shared/constants/tags-const';
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
@@ -14,10 +15,36 @@ const insertUserAndItems = () => {
     (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt001')! as { id: number }).id
   );
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#movie');
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#watched');
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#favorite');
   db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, 'sci-fi');
   db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item1Id, 'Action');
+
+  db.prepare(
+    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    'user',
+    'tt001',
+    'movie-tracker',
+    'Movie One',
+    'movie one',
+    '1999',
+    '8.0',
+    'Plot one',
+    'img1.jpg',
+    'hash1-watched'
+  );
+  const movieTrackerItemId = Number(
+    (
+      db
+        .prepare('SELECT id FROM collection_items WHERE imdb_id = ? AND list_type = ?')
+        .get('tt001', 'movie-tracker')! as { id: number }
+    ).id
+  );
+  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(
+    movieTrackerItemId,
+    '#movie'
+  );
 
   db.prepare(
     `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
@@ -111,8 +138,11 @@ describe('statistics-api', () => {
         favoriteCount: 1,
         watchLaterCount: 1,
         wishlistCount: 1,
-        watchedCount: 1,
-        unwatchedCount: 1,
+        watchedMovieCount: 1,
+        watchedSeriesCount: 0,
+        unwatchedMovieCount: 0,
+        unwatchedLibrarySeriesCount: 1,
+        unwatchedTrackerSeriesCount: 0,
         tagCounts: expect.arrayContaining([
           expect.objectContaining({ tag: 'sci-fi', count: 1 }),
           expect.objectContaining({ tag: 'drama', count: 1 }),
@@ -140,6 +170,68 @@ describe('statistics-api', () => {
         totalItems: 1,
         movieCount: 1,
         seriesCount: 0,
+        watchedMovieCount: 1,
+        watchedSeriesCount: 0,
+        unwatchedMovieCount: 0,
+        unwatchedLibrarySeriesCount: 0,
+        unwatchedTrackerSeriesCount: 0,
+      })
+    );
+  });
+
+  it('applies search filters to watched statistics', async () => {
+    insertUserAndItems();
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { search: 'series' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./statistics-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        totalItems: 1,
+        movieCount: 0,
+        seriesCount: 1,
+        watchedMovieCount: 0,
+        watchedSeriesCount: 0,
+        unwatchedMovieCount: 0,
+        unwatchedLibrarySeriesCount: 1,
+        unwatchedTrackerSeriesCount: 0,
+      })
+    );
+  });
+
+  it('counts tracker series correctly without listType filter', async () => {
+    insertUser('user');
+    insertSeriesTrackerItem('user', 'tt-series-1', 'Incomplete Series');
+    insertSeriesTrackerItem('user', 'tt-series-2', 'Completed Series');
+    const db = getDatabase();
+    const completedItemId = Number(
+      (
+        db
+          .prepare('SELECT id FROM collection_items WHERE imdb_id = ? AND list_type = ?')
+          .get('tt-series-2', 'series-tracker')! as { id: number }
+      ).id
+    );
+    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(
+      completedItemId,
+      COMPLETED_TAG
+    );
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: {} };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./statistics-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        unwatchedTrackerSeriesCount: 1,
+        completedTrackerSeriesCount: 1,
       })
     );
   });

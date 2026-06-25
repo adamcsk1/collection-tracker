@@ -424,12 +424,12 @@ describe('change-api', () => {
     expect(response.code).toHaveBeenCalledWith(404);
   });
 
-  it('returns 404 when a watch later item is marked watched', async () => {
+  it('returns 404 when a watch later item is updated with custom tags', async () => {
     insertItem('abc123', 'user', 'watch-later');
     const response = mockResponse();
     const request: any = {
       params: { imdbId: 'tt-change' },
-      body: { ...updatedItem, tags: ['#movie', '#watch-later', '#watched'], hash: 'abc123' },
+      body: { ...updatedItem, tags: ['#movie', '#watch-later', '#custom'], hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -441,12 +441,12 @@ describe('change-api', () => {
     expect(response.code).toHaveBeenCalledWith(404);
   });
 
-  it('returns 404 when a wishlist item is marked watched', async () => {
+  it('returns 404 when a wishlist item is updated with custom tags', async () => {
     insertItem('abc123', 'user', 'wishlist');
     const response = mockResponse();
     const request: any = {
       params: { imdbId: 'tt-change' },
-      body: { ...updatedItem, tags: ['#movie', '#wishlist', '#watched'], hash: 'abc123' },
+      body: { ...updatedItem, tags: ['#movie', '#wishlist', '#custom'], hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
