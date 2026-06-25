@@ -51,6 +51,7 @@ const mockExportResponse: UserExportApiResponseModel = {
       actors: 'Actor',
       plot: 'Plot',
       listType: 'library',
+      watchedAt: null,
     },
     {
       image: 'img2.jpg',
@@ -68,6 +69,7 @@ const mockExportResponse: UserExportApiResponseModel = {
       actors: 'Actor',
       plot: 'Plot',
       listType: 'movie-tracker',
+      watchedAt: null,
     },
   ],
   tagManagement: [buildTagManagement('#movie', { color: '#111111' })],

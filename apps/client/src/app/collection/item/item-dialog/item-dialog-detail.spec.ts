@@ -33,6 +33,7 @@ const translations: ItemDialogTranslations = {
   moveToMovieTracker: signal('Move to movie tracker'),
   moveToSeriesTracker: signal('Move to series tracker'),
   removeFavorite: signal('Remove favorite'),
+  removeFromSeriesTracker: signal('Remove from series tracker'),
 };
 
 const item: CollectionItemModel = {

@@ -220,6 +220,7 @@ describe('Collection library component', () => {
     collectionState.setState('forceStandardSearch', false);
 
     fixture.componentInstance['collectionDataSource']({
+      reset: false,
       offset: 0,
       limit: 50,
       searchText: '',

@@ -68,6 +68,7 @@ const buildApiItem = (overrides: Partial<CollectionItemApiModel> = {}): Collecti
   actors: 'Actor One, Actor Two',
   plot: 'A test plot.',
   listType: 'library',
+  watchedAt: null,
   ...overrides,
 });
 
