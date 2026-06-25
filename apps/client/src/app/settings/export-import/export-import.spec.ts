@@ -153,7 +153,7 @@ describe('ExportImport component', () => {
     const blob = vi.mocked(URL.createObjectURL).mock.calls[0][0] as Blob;
     await expect(blob.text().then((source) => JSON.parse(source))).resolves.toEqual({
       type: 'collection-tracker-export',
-      version: 1,
+      version: 2,
       ...mockExportResponse,
     });
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:export');
@@ -184,14 +184,14 @@ describe('ExportImport component', () => {
   it('imports collection data after confirmation', () => {
     confirm.open.mockReturnValueOnce(of(true));
     createComponent();
-    const source = JSON.stringify({ type: 'collection-tracker-export', version: 1, ...mockExportResponse });
+    const source = JSON.stringify({ type: 'collection-tracker-export', version: 2, ...mockExportResponse });
 
     component['importCollectionData'](source);
 
     expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportCollectionData');
     expect(api.importUserExport).toHaveBeenCalledWith({
       type: 'collection-tracker-export',
-      version: 1,
+      version: 2,
       ...mockExportResponse,
     });
     expect(settingsService.preloadUserSettings).toHaveBeenCalled();
@@ -204,7 +204,7 @@ describe('ExportImport component', () => {
     createComponent();
 
     component['importCollectionData'](
-      JSON.stringify({ type: 'collection-tracker-export', version: 1, ...mockExportResponse })
+      JSON.stringify({ type: 'collection-tracker-export', version: 2, ...mockExportResponse })
     );
 
     expect(api.importUserExport).not.toHaveBeenCalled();
@@ -226,7 +226,7 @@ describe('ExportImport component', () => {
     createComponent();
 
     component['importCollectionData'](
-      JSON.stringify({ type: 'collection-tracker-export', version: 1, ...mockExportResponse })
+      JSON.stringify({ type: 'collection-tracker-export', version: 2, ...mockExportResponse })
     );
 
     expect(toastState.state.message()).toBe('Toast.CollectionDataImportError');

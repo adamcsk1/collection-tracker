@@ -71,6 +71,7 @@ describe('List', () => {
     actors: '',
     plot: '',
     listType: 'library',
+    watchedAt: null,
   });
 
   beforeEach(() => {

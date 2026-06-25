@@ -77,9 +77,12 @@ describe('movie-tracker-repository', () => {
       })
     );
     const trackerRow = db
-      .prepare('SELECT list_type FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
-      .get('user', 'tt-1', 'movie-tracker') as { list_type: string } | undefined;
+      .prepare(
+        'SELECT list_type, watched_at FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?'
+      )
+      .get('user', 'tt-1', 'movie-tracker') as { list_type: string; watched_at: string | null } | undefined;
     expect(trackerRow?.list_type).toBe('movie-tracker');
+    expect(trackerRow?.watched_at).toEqual(expect.any(String));
   });
 
   it('returns existing tracker item when already present (idempotent)', () => {
@@ -213,9 +216,12 @@ describe('movie-tracker-repository', () => {
 
     expect(changedCount).toBe(1);
     const tracker = db
-      .prepare('SELECT list_type FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
-      .get('user', 'tt-1', 'movie-tracker') as { list_type: string } | undefined;
+      .prepare(
+        'SELECT list_type, watched_at FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?'
+      )
+      .get('user', 'tt-1', 'movie-tracker') as { list_type: string; watched_at: string | null } | undefined;
     expect(tracker?.list_type).toBe('movie-tracker');
+    expect(tracker?.watched_at).toEqual(expect.any(String));
   });
 
   it('markAllMoviesAsWatched skips items already in tracker', () => {

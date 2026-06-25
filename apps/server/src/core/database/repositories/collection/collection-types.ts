@@ -23,6 +23,7 @@ export interface CollectionItemRow {
   content_hash: string;
   created_at: string;
   updated_at: string;
+  watched_at: string | null;
 }
 
 export interface CollectionItemQueryOptions {

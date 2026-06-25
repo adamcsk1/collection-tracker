@@ -62,6 +62,28 @@ export class StatisticsChartService {
     });
   }
 
+  public createWatchedYearChart(chart: Chart<'bar', number[], string> | null): Chart<'bar', number[], string> | null {
+    if (chart) return chart;
+    const canvas = this.document.getElementById('statistics-watched-year-chart') as HTMLCanvasElement | null;
+    if (!canvas) return null;
+
+    return new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true },
+          y: { stacked: true, ticks: { precision: 0 } },
+        },
+      },
+    });
+  }
+
   public updateTagChart(
     chart: Chart<'pie', number[], string> | null,
     statistics: CollectionStatisticsApiResponseModel | null,
@@ -107,7 +129,7 @@ export class StatisticsChartService {
         data: [
           statistics.watchedMovieCount,
           statistics.unwatchedMovieCount,
-          Math.max(0, statistics.watchedSeriesCount - statistics.unwatchedTrackerSeriesCount),
+          statistics.completedTrackerSeriesCount,
           statistics.unwatchedTrackerSeriesCount,
           statistics.unwatchedLibrarySeriesCount,
         ],
@@ -155,6 +177,29 @@ export class StatisticsChartService {
         label: this.ngxSignalTranslate.translate('Count'),
         data: sortedGenres.map((genreCount) => genreCount.count),
         backgroundColor: sortedGenres.map((genreCount) => textToHexColor(genreCount.genre)),
+      },
+    ];
+    chart.update();
+  }
+
+  public updateWatchedYearChart(
+    chart: Chart<'bar', number[], string> | null,
+    statistics: CollectionStatisticsApiResponseModel | null
+  ): void {
+    const watchedYearCounts = statistics?.watchedYearCounts ?? [];
+    if (!chart) return;
+
+    chart.data.labels = watchedYearCounts.map((yearCount) => yearCount.year);
+    chart.data.datasets = [
+      {
+        label: this.ngxSignalTranslate.translate('Movies'),
+        data: watchedYearCounts.map((yearCount) => yearCount.movieCount),
+        backgroundColor: textToHexColor('watchedMovies'),
+      },
+      {
+        label: this.ngxSignalTranslate.translate('Series'),
+        data: watchedYearCounts.map((yearCount) => yearCount.seriesCount),
+        backgroundColor: textToHexColor('completedSeries'),
       },
     ];
     chart.update();

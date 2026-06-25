@@ -49,4 +49,5 @@ export const StatisticsPage = {
       }),
   getTagsEmpty: () => cy.getByTestId('statistics-tags-empty').scrollIntoView(),
   getTagChartCard: () => cy.getByTestId('statistics-tag-chart-card'),
+  getWatchedYearChartCard: () => cy.getByTestId('statistics-watched-year-chart-card'),
 };

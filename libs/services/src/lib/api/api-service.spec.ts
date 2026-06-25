@@ -303,7 +303,7 @@ describe('ApiService', () => {
   it('imports user export data', async () => {
     const importData = {
       type: 'collection-tracker-export',
-      version: 1,
+      version: 2,
       userSettings: {},
       collectionItems: [],
       tagManagement: [],

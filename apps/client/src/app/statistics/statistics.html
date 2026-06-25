@@ -217,11 +217,11 @@
   }
 }
 
-<div class="charts-grid" [class.chart-hidden]="apiLoadNetworkStatus() !== 'finished' || tags().length === 0">
+<div class="charts-grid" [class.chart-hidden]="apiLoadNetworkStatus() !== 'finished'">
   <div
     data-test-id="statistics-tag-chart-card"
     class="card chart-card"
-    [class.chart-hidden]="selectedTags().length === 0"
+    [class.chart-hidden]="tags().length === 0 || selectedTags().length === 0"
   >
     <h3>{{ translations.tags() }}</h3>
     <div class="chart-container">
@@ -247,6 +247,17 @@
     <h3>{{ translations.genre() }}</h3>
     <div class="chart-container">
       <canvas id="statistics-genre-chart">{{ genreChart() }}</canvas>
+    </div>
+  </div>
+
+  <div
+    data-test-id="statistics-watched-year-chart-card"
+    class="card chart-card chart-card-wide"
+    [class.chart-hidden]="(statistics()?.watchedYearCounts ?? []).length === 0"
+  >
+    <h3>{{ translations.watchedByYear() }}</h3>
+    <div class="chart-container">
+      <canvas id="statistics-watched-year-chart">{{ watchedYearChart() }}</canvas>
     </div>
   </div>
 </div>

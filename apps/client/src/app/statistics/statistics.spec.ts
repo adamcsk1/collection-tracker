@@ -31,6 +31,7 @@ describe('Statistics component', () => {
     unwatchedLibrarySeriesCount: 1,
     unwatchedTrackerSeriesCount: 0,
     completedTrackerSeriesCount: 0,
+    watchedYearCounts: [{ year: '2026', movieCount: 1, seriesCount: 0, count: 1 }],
     tagCounts: [
       { tag: '#drama', count: 1 },
       { tag: '#action', count: 2 },
@@ -65,6 +66,7 @@ describe('Statistics component', () => {
     component['watchedChart'].set(mockChart());
     component['typeChart'].set(mockChart());
     component['genreChart'].set(mockChart());
+    component['watchedYearChart'].set(mockChart());
   });
 
   it('loads summary and tags from the statistics endpoint', () => {

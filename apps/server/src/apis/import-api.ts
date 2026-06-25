@@ -29,6 +29,7 @@ import {
   collectionItemExistsByImdbId,
   deleteCollectionItemsByUser,
   insertCollectionItem,
+  syncSeriesTrackerCompletedTag,
 } from '../core/database/repositories/collection';
 import { replaceSeriesTrackerSeasons } from '../core/database/repositories/series-tracker-season-repository';
 import { replaceWatchedEpisodes } from '../core/database/repositories/series-tracker-watched-episodes-repository';
@@ -121,6 +122,56 @@ const isWatchedEpisode = (value: unknown): value is SeriesTrackerWatchedEpisodeM
   );
 };
 
+const isWatchedAt = (value: unknown): value is string | null => {
+  if (value === null) return true;
+  if (typeof value !== 'string') return false;
+  const normalizedValue = value.trim();
+  if (normalizedValue !== value) return false;
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?(?:Z|[+-](\d{2}):(\d{2}))?)?$/.exec(value);
+  if (!match) return false;
+
+  const [
+    ,
+    yearText,
+    monthText,
+    dayText,
+    hourText,
+    minuteText,
+    secondText,
+    millisecondText,
+    offsetHourText,
+    offsetMinuteText,
+  ] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = hourText === undefined ? 0 : Number(hourText);
+  const minute = minuteText === undefined ? 0 : Number(minuteText);
+  const second = secondText === undefined ? 0 : Number(secondText);
+  const millisecond = millisecondText === undefined ? 0 : Number(millisecondText.padEnd(3, '0'));
+  const offsetHour = offsetHourText === undefined ? 0 : Number(offsetHourText);
+  const offsetMinute = offsetMinuteText === undefined ? 0 : Number(offsetMinuteText);
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+  return (
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= daysInMonth &&
+    hour >= 0 &&
+    hour <= 23 &&
+    minute >= 0 &&
+    minute <= 59 &&
+    second >= 0 &&
+    second <= 59 &&
+    millisecond >= 0 &&
+    millisecond <= 999 &&
+    offsetHour <= 23 &&
+    offsetMinute <= 59
+  );
+};
+
 const isCollectionItem = (value: unknown): value is CollectionItemApiModel => {
   if (!isPlainObject(value)) return false;
   return (
@@ -137,7 +188,9 @@ const isCollectionItem = (value: unknown): value is CollectionItemApiModel => {
     typeof value['actors'] === 'string' &&
     typeof value['plot'] === 'string' &&
     typeof value['listType'] === 'string' &&
-    parseListType(value['listType']) !== undefined
+    parseListType(value['listType']) !== undefined &&
+    value['watchedAt'] !== undefined &&
+    isWatchedAt(value['watchedAt'])
   );
 };
 
@@ -295,7 +348,7 @@ export const register = (app: FastifyInstance): void => {
       const normalizedItems = body.collectionItems.map((item) => {
         const normalizedItem = normalizeItem(toCollectionItemChange(item));
         const listType = parseListType(item.listType);
-        return { item: normalizedItem, listType };
+        return { item: normalizedItem, listType, watchedAt: item.watchedAt };
       });
       if (normalizedItems.some((entry) => !entry.item || !entry.listType)) return response.code(400).send();
 
@@ -325,7 +378,7 @@ export const register = (app: FastifyInstance): void => {
 
         for (const entry of normalizedItems) {
           const item = entry.item!;
-          insertCollectionItem(db, usernameHash, getItemHash(item), item, entry.listType);
+          insertCollectionItem(db, usernameHash, getItemHash(item), item, entry.listType, entry.watchedAt);
         }
 
         for (const [imdbId, seriesTrackerData] of Object.entries(normalizedSeriesTrackerData)) {
@@ -333,6 +386,10 @@ export const register = (app: FastifyInstance): void => {
           const watchedEpisodes = replaceWatchedEpisodes(db, usernameHash, imdbId, seriesTrackerData.watchedEpisodes);
           importedSeriesTrackerSeasons += seasons.length;
           importedSeriesTrackerWatchedEpisodes += watchedEpisodes.length;
+        }
+
+        for (const imdbId of seriesTrackerImdbIds) {
+          syncSeriesTrackerCompletedTag(db, usernameHash, imdbId);
         }
       })();
 

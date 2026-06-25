@@ -358,6 +358,7 @@
   "Validation.UserRate": "Your rate must be between 0 and 10 in 0.1 increments.",
   "ViewOnGitHub": "View on GitHub",
   "Watched": "Watched",
+  "WatchedByYear": "Watched by year",
   "WatchedMovies": "Watched movies",
   "WatchedSeries": "Watched series",
   "WatchedUpTo": "Watched up to",

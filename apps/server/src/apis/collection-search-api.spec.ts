@@ -327,6 +327,8 @@ describe('collection search APIs', () => {
         unwatchedMovieCount: 0,
         unwatchedLibrarySeriesCount: 1,
         unwatchedTrackerSeriesCount: 0,
+        completedTrackerSeriesCount: 0,
+        watchedYearCounts: [],
         tagCounts: [
           { tag: '#drama', count: 1 },
           { tag: '#space', count: 1 },

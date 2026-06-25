@@ -34,6 +34,7 @@ const buildItem = (title: string, tags: string[] = []): CollectionItemModel => (
   actors: '',
   plot: '',
   listType: 'library',
+  watchedAt: null,
 });
 
 const normalizeHexColor = (hex: string): string => {

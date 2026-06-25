@@ -20,8 +20,8 @@ const insertUserAndItems = () => {
   db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item1Id, 'Action');
 
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, watched_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     'user',
     'tt001',
@@ -32,7 +32,8 @@ const insertUserAndItems = () => {
     '8.0',
     'Plot one',
     'img1.jpg',
-    'hash1-watched'
+    'hash1-watched',
+    '2026-03-04 00:00:00'
   );
   const movieTrackerItemId = Number(
     (
@@ -143,6 +144,7 @@ describe('statistics-api', () => {
         unwatchedMovieCount: 0,
         unwatchedLibrarySeriesCount: 1,
         unwatchedTrackerSeriesCount: 0,
+        watchedYearCounts: [{ year: '2026', movieCount: 1, seriesCount: 0, count: 1 }],
         tagCounts: expect.arrayContaining([
           expect.objectContaining({ tag: 'sci-fi', count: 1 }),
           expect.objectContaining({ tag: 'drama', count: 1 }),
@@ -232,6 +234,65 @@ describe('statistics-api', () => {
       expect.objectContaining({
         unwatchedTrackerSeriesCount: 1,
         completedTrackerSeriesCount: 1,
+      })
+    );
+  });
+
+  it('returns completed series in watched year statistics', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    db.prepare(
+      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run('user', 'tt-series', 'Series', 'series', '2024', '8.0', '', '', 'library-series-hash');
+    const libraryItemId = Number(
+      (
+        db
+          .prepare('SELECT id FROM collection_items WHERE imdb_id = ? AND list_type = ?')
+          .get('tt-series', 'library')! as { id: number }
+      ).id
+    );
+    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(libraryItemId, '#series');
+    db.prepare(
+      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, watched_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      'tt-series',
+      'series-tracker',
+      'Series',
+      'series',
+      '2024',
+      '8.0',
+      '',
+      '',
+      'tracker-series-hash',
+      '2025-09-01 00:00:00'
+    );
+    const trackerItemId = Number(
+      (
+        db
+          .prepare('SELECT id FROM collection_items WHERE imdb_id = ? AND list_type = ?')
+          .get('tt-series', 'series-tracker')! as { id: number }
+      ).id
+    );
+    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(trackerItemId, '#series');
+    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(
+      trackerItemId,
+      COMPLETED_TAG
+    );
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: {} };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./statistics-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        watchedYearCounts: [{ year: '2025', movieCount: 0, seriesCount: 1, count: 1 }],
       })
     );
   });

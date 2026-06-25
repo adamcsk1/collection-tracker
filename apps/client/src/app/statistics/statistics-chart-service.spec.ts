@@ -35,6 +35,7 @@ describe('StatisticsChartService', () => {
         unwatchedLibrarySeriesCount: 1,
         unwatchedTrackerSeriesCount: 0,
         completedTrackerSeriesCount: 0,
+        watchedYearCounts: [],
         tagCounts: [
           { tag: '#drama', count: 2 },
           { tag: '#action', count: 1 },
@@ -60,11 +61,12 @@ describe('StatisticsChartService', () => {
       watchLaterCount: 0,
       wishlistCount: 0,
       watchedMovieCount: 2,
-      watchedSeriesCount: 1,
+      watchedSeriesCount: 7,
       unwatchedMovieCount: 1,
       unwatchedLibrarySeriesCount: 0,
-      unwatchedTrackerSeriesCount: 0,
-      completedTrackerSeriesCount: 0,
+      unwatchedTrackerSeriesCount: 2,
+      completedTrackerSeriesCount: 3,
+      watchedYearCounts: [],
       tagCounts: [],
       genreCounts: [],
     };
@@ -79,7 +81,7 @@ describe('StatisticsChartService', () => {
       'InProgressSeries',
       'UnwatchedLibrarySeries',
     ]);
-    expect(watchedChart.data.datasets[0].data).toEqual([2, 1, 1, 0, 0]);
+    expect(watchedChart.data.datasets[0].data).toEqual([2, 1, 3, 2, 0]);
     expect(typeChart.data.labels).toEqual(['Movies', 'Series']);
     expect(typeChart.data.datasets[0].data).toEqual([3, 1]);
   });
@@ -100,6 +102,7 @@ describe('StatisticsChartService', () => {
       unwatchedLibrarySeriesCount: 0,
       unwatchedTrackerSeriesCount: 0,
       completedTrackerSeriesCount: 0,
+      watchedYearCounts: [],
       tagCounts: [],
       genreCounts: [
         { genre: 'Low', count: 1 },
@@ -110,6 +113,37 @@ describe('StatisticsChartService', () => {
 
     expect(chart.data.labels).toEqual(['High', 'Mid', 'Low']);
     expect(chart.data.datasets[0].data).toEqual([3, 2, 1]);
+  });
+
+  it('updates the watched year chart with movie and series datasets', () => {
+    const chart = buildChart<'bar'>();
+
+    service.updateWatchedYearChart(chart, {
+      totalItems: 0,
+      movieCount: 0,
+      seriesCount: 0,
+      favoriteCount: 0,
+      watchLaterCount: 0,
+      wishlistCount: 0,
+      watchedMovieCount: 0,
+      watchedSeriesCount: 0,
+      unwatchedMovieCount: 0,
+      unwatchedLibrarySeriesCount: 0,
+      unwatchedTrackerSeriesCount: 0,
+      completedTrackerSeriesCount: 0,
+      watchedYearCounts: [
+        { year: '2025', movieCount: 2, seriesCount: 1, count: 3 },
+        { year: '2026', movieCount: 0, seriesCount: 1, count: 1 },
+      ],
+      tagCounts: [],
+      genreCounts: [],
+    });
+
+    expect(chart.data.labels).toEqual(['2025', '2026']);
+    expect(chart.data.datasets[0].label).toBe('Movies');
+    expect(chart.data.datasets[0].data).toEqual([2, 0]);
+    expect(chart.data.datasets[1].label).toBe('Series');
+    expect(chart.data.datasets[1].data).toEqual([1, 1]);
   });
 
   const buildChart = <TType extends 'pie' | 'doughnut' | 'bar'>() =>

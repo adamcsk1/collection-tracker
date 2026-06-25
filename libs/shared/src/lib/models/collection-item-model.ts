@@ -18,6 +18,7 @@ export interface CollectionItemModel {
   plot: string;
   listType: CollectionListTypeModel;
   watched?: boolean;
+  watchedAt: string | null;
   ownerShareCode?: string;
 }
 

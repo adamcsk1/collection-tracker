@@ -95,6 +95,9 @@ describe('change-series-tracker-watched-episodes-api', () => {
         .prepare('SELECT 1 FROM collection_item_tags WHERE item_id = ? AND tag = ?')
         .get(itemId, COMPLETED_TAG)
     ).toBeTruthy();
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
+      watched_at: expect.any(String),
+    });
   });
 
   it('rejects watched episodes outside saved metadata', async () => {
@@ -154,6 +157,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
     getDatabase().prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, COMPLETED_TAG);
+    getDatabase().prepare('UPDATE collection_items SET watched_at = ? WHERE id = ?').run('2025-01-01 00:00:00', itemId);
     const response = mockResponse();
     const request: any = {
       params: { imdbId: 'tt-series' },
@@ -171,6 +175,9 @@ describe('change-series-tracker-watched-episodes-api', () => {
         .prepare('SELECT 1 FROM collection_item_tags WHERE item_id = ? AND tag = ?')
         .get(itemId, COMPLETED_TAG)
     ).toBeUndefined();
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
+      watched_at: null,
+    });
   });
 
   it('rejects invalid season numbers', async () => {

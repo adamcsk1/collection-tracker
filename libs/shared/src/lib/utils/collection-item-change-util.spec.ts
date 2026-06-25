@@ -19,6 +19,7 @@ describe('toCollectionItemChange', () => {
         actors: 'Actors',
         plot: 'Plot',
         listType: 'library',
+        watchedAt: null,
       })
     ).toEqual({
       image: 'poster-url',

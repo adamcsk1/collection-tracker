@@ -893,6 +893,44 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  describe('016_add_collection_item_watched_at', () => {
+    it('adds watched_at and backfills watched tracker items', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('016_add_collection_item_watched_at.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, created_at, updated_at)
+        VALUES
+          ('user', 'tt-movie', 'movie-tracker', 'Movie', 'movie', '2024', '8.0', '', '', 'movie-hash', '2024-01-01 00:00:00', '2024-01-02 00:00:00'),
+          ('user', 'tt-complete', 'series-tracker', 'Complete', 'complete', '2024', '8.0', '', '', 'complete-hash', '2024-02-01 00:00:00', '2024-03-01 00:00:00'),
+          ('user', 'tt-incomplete', 'series-tracker', 'Incomplete', 'incomplete', '2024', '8.0', '', '', 'incomplete-hash', '2024-04-01 00:00:00', '2024-04-02 00:00:00');
+      `);
+      const completedSeriesId = Number(
+        (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt-complete')! as { id: number }).id
+      );
+      db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(completedSeriesId, '#completed');
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '016_add_collection_item_watched_at.sql'),
+        join(migrationsDir, '016_add_collection_item_watched_at.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT imdb_id, watched_at FROM collection_items ORDER BY imdb_id').all()).toEqual([
+        { imdb_id: 'tt-complete', watched_at: '2024-03-01 00:00:00' },
+        { imdb_id: 'tt-incomplete', watched_at: null },
+        { imdb_id: 'tt-movie', watched_at: '2024-01-01 00:00:00' },
+      ]);
+      expect(
+        db
+          .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?")
+          .get('idx_collection_items_watched_at')
+      ).toBeTruthy();
+
+      db.close();
+    });
+  });
+
   describe('runner behavior', () => {
     it('runs the full migration chain 001 to 015 and produces the expected final schema', async () => {
       const db = new Database(':memory:');
@@ -967,6 +1005,7 @@ describe('runMigrations', () => {
       expect(itemColMap.get('user_rate')).toEqual(expect.objectContaining({ type: 'REAL', notnull: 0 }));
       expect(itemColMap.get('rotten_tomatoes_rate')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 1 }));
       expect(itemColMap.get('metacritic_rate')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 1 }));
+      expect(itemColMap.get('watched_at')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 0 }));
 
       expect(() =>
         db
@@ -999,6 +1038,7 @@ describe('runMigrations', () => {
           'idx_collection_items_created',
           'idx_collection_items_list_type',
           'idx_collection_items_username',
+          'idx_collection_items_watched_at',
           'idx_refresh_tokens_username',
           'idx_series_tracker_seasons_item',
           'idx_series_tracker_watched_episodes_item',

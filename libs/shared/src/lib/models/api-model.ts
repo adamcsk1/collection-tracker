@@ -79,6 +79,7 @@ export interface CollectionStatisticsApiResponseModel {
   unwatchedLibrarySeriesCount: number;
   unwatchedTrackerSeriesCount: number;
   completedTrackerSeriesCount: number;
+  watchedYearCounts: Array<{ year: string; movieCount: number; seriesCount: number; count: number }>;
   tagCounts: Array<{ tag: string; count: number }>;
   genreCounts: Array<{ genre: string; count: number }>;
 }

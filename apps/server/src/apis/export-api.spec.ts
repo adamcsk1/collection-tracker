@@ -38,7 +38,7 @@ describe('export-api', () => {
       'hash1'
     );
     db.prepare(
-      'INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash, watched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       'user',
       'tt456',
@@ -53,7 +53,8 @@ describe('export-api', () => {
       'Actor',
       'Plot',
       'img2.jpg',
-      'hash2'
+      'hash2',
+      '2026-04-05 00:00:00'
     );
     db.prepare(
       'INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -108,6 +109,7 @@ describe('export-api', () => {
           IMDbId: 'tt456',
           listType: 'series-tracker',
           title: 'Series',
+          watchedAt: '2026-04-05 00:00:00',
         }),
       ],
       tagManagement: [

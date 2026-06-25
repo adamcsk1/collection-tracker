@@ -61,6 +61,7 @@ export const toApiItem = (
     hash: row.content_hash,
     listType: row.list_type,
     watched: isWatchedMovie(db, row, viewerUsernameHash),
+    watchedAt: row.watched_at,
     ownerShareCode: getUserShareCode(row.username_hash),
   };
 };

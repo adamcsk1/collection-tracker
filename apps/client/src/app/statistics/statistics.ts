@@ -63,6 +63,7 @@ export class Statistics implements AfterViewInit {
     trackerStatus: computed(() => this.ngxSignalTranslate.translate('TrackerStatus')),
     type: computed(() => this.ngxSignalTranslate.translate('Type')),
     genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
+    watchedByYear: computed(() => this.ngxSignalTranslate.translate('WatchedByYear')),
   };
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly statistics = signal<CollectionStatisticsApiResponseModel | null>(null);
@@ -71,6 +72,7 @@ export class Statistics implements AfterViewInit {
   protected readonly watchedChart = signal<Chart<'doughnut', number[], string> | null>(null);
   protected readonly typeChart = signal<Chart<'doughnut', number[], string> | null>(null);
   protected readonly genreChart = signal<Chart<'bar', number[], string> | null>(null);
+  protected readonly watchedYearChart = signal<Chart<'bar', number[], string> | null>(null);
   protected readonly selectedTags = signal<string[]>([]);
   protected readonly tagFilter = signal('');
   protected readonly normalizedTagFilter = computed(() => this.tagFilter().trim().toLowerCase());
@@ -118,11 +120,13 @@ export class Statistics implements AfterViewInit {
     this.createWatchedChart();
     this.createTypeChart();
     this.createGenreChart();
+    this.createWatchedYearChart();
 
     if (this.selectedTags().length > 0) this.updateTagChart();
     this.updateWatchedChart();
     this.updateTypeChart();
     this.updateGenreChart();
+    this.updateWatchedYearChart();
   }
 
   public onToggleTag(tag: string): void {
@@ -221,6 +225,10 @@ export class Statistics implements AfterViewInit {
     this.genreChart.set(this.charts.createGenreChart(this.genreChart()));
   }
 
+  private createWatchedYearChart(): void {
+    this.watchedYearChart.set(this.charts.createWatchedYearChart(this.watchedYearChart()));
+  }
+
   private updateTagChart(): void {
     this.charts.updateTagChart(this.tagChart(), this.statistics(), this.selectedTags());
   }
@@ -235,6 +243,10 @@ export class Statistics implements AfterViewInit {
 
   private updateGenreChart(): void {
     this.charts.updateGenreChart(this.genreChart(), this.statistics());
+  }
+
+  private updateWatchedYearChart(): void {
+    this.charts.updateWatchedYearChart(this.watchedYearChart(), this.statistics());
   }
 
   private persistSelectedTags(): void {
@@ -259,10 +271,12 @@ export class Statistics implements AfterViewInit {
         this.createWatchedChart();
         this.createTypeChart();
         this.createGenreChart();
+        this.createWatchedYearChart();
         if (this.tagChart()) this.updateTagChart();
         this.updateWatchedChart();
         this.updateTypeChart();
         this.updateGenreChart();
+        this.updateWatchedYearChart();
       });
   }
 }

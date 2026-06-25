@@ -8,6 +8,11 @@ import Database from 'better-sqlite3';
 import { buildItemWhere } from './collection-query';
 import { INTERNAL_TAGS } from './collection-tags';
 
+interface WatchedYearCountRow {
+  watched_year: string;
+  count: number;
+}
+
 export const getCollectionStatistics = (
   db: Database.Database,
   usernameHashes: string[],
@@ -196,6 +201,68 @@ export const getCollectionStatistics = (
     )
     .all(...queryParts.params) as Array<{ genre: string; count: number }>;
 
+  const watchedMovieYearCounts = db
+    .prepare(
+      `SELECT strftime('%Y', movie_tracker.watched_at) as watched_year, COUNT(*) as count
+       FROM collection_items
+       INNER JOIN collection_items movie_tracker
+         ON movie_tracker.username_hash = ?
+        AND movie_tracker.imdb_id = collection_items.imdb_id
+        AND movie_tracker.list_type = ?
+        AND movie_tracker.watched_at IS NOT NULL
+       WHERE ${whereSql}
+         AND EXISTS (
+           SELECT 1 FROM collection_item_tags
+           WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+         )
+        GROUP BY watched_year`
+    )
+    .all(viewerUsernameHash, 'movie-tracker', ...queryParts.params, MOVIE_TAG) as WatchedYearCountRow[];
+
+  const watchedSeriesYearCounts = db
+    .prepare(
+      `SELECT strftime('%Y', series_tracker.watched_at) as watched_year, COUNT(*) as count
+       FROM collection_items
+       INNER JOIN collection_items series_tracker
+         ON series_tracker.username_hash = ?
+        AND series_tracker.imdb_id = collection_items.imdb_id
+        AND series_tracker.list_type = ?
+        AND series_tracker.watched_at IS NOT NULL
+       WHERE ${whereSql}
+         AND EXISTS (
+           SELECT 1 FROM collection_item_tags
+           WHERE collection_item_tags.item_id = collection_items.id AND collection_item_tags.tag = ?
+         )
+        GROUP BY watched_year`
+    )
+    .all(viewerUsernameHash, 'series-tracker', ...queryParts.params, SERIES_TAG) as WatchedYearCountRow[];
+
+  const watchedYearCountMap = new Map<
+    string,
+    { year: string; movieCount: number; seriesCount: number; count: number }
+  >();
+  for (const row of watchedMovieYearCounts) {
+    watchedYearCountMap.set(row.watched_year, {
+      year: row.watched_year,
+      movieCount: row.count,
+      seriesCount: 0,
+      count: row.count,
+    });
+  }
+  for (const row of watchedSeriesYearCounts) {
+    const existingCount = watchedYearCountMap.get(row.watched_year) ?? {
+      year: row.watched_year,
+      movieCount: 0,
+      seriesCount: 0,
+      count: 0,
+    };
+    existingCount.seriesCount = row.count;
+    existingCount.count = existingCount.movieCount + existingCount.seriesCount;
+    watchedYearCountMap.set(row.watched_year, existingCount);
+  }
+
+  const watchedYearCounts = [...watchedYearCountMap.values()].sort((a, b) => a.year.localeCompare(b.year));
+
   return {
     totalItems,
     movieCount: countTag(MOVIE_TAG),
@@ -209,6 +276,7 @@ export const getCollectionStatistics = (
     unwatchedLibrarySeriesCount,
     unwatchedTrackerSeriesCount,
     completedTrackerSeriesCount,
+    watchedYearCounts,
     tagCounts,
     genreCounts,
   };

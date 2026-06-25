@@ -48,6 +48,7 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
   actors: 'Actor One, Actor Two',
   plot: 'A test plot.',
   listType: 'library',
+  watchedAt: null,
   ...overrides,
 });
 

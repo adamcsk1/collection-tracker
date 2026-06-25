@@ -18,18 +18,25 @@ export const insertCollectionItem = (
   usernameHash: string,
   hash: string,
   item: CollectionItemChangeApiModel,
-  listType: CollectionListTypeModel = 'library'
+  listType: CollectionListTypeModel = 'library',
+  watchedAt?: string | null
 ): CollectionItemApiModel => {
+  const normalizedListType = normalizeListType(listType);
+  const canStoreWatchedAt = normalizedListType === 'movie-tracker' || normalizedListType === 'series-tracker';
+  const useCurrentWatchedAt =
+    !watchedAt &&
+    (normalizedListType === 'movie-tracker' ||
+      (normalizedListType === 'series-tracker' && item.tags.includes(COMPLETED_TAG)));
   const result = db
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash, watched_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE ? END)`
     )
     .run(
       usernameHash,
       item.IMDbId,
-      normalizeListType(listType),
+      normalizedListType,
       item.title,
       item.title.toLowerCase(),
       item.year ?? '',
@@ -40,7 +47,9 @@ export const insertCollectionItem = (
       item.actors,
       item.plot,
       item.image,
-      hash
+      hash,
+      useCurrentWatchedAt ? 1 : 0,
+      canStoreWatchedAt ? (watchedAt ?? null) : null
     );
 
   const itemId = Number(result.lastInsertRowid);
@@ -53,7 +62,7 @@ export const insertCollectionItem = (
     db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
 
-  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, item.IMDbId, listType)!);
+  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, item.IMDbId, normalizedListType)!);
 };
 
 export const updateCollectionItem = (
@@ -153,12 +162,16 @@ export const syncSeriesTrackerCompletedTag = (
     watchedEpisodes.every((episode) => availableEpisodes.has(`${episode.season}-${episode.episode}`));
   const item = toApiItem(db, row);
   const hasCompletedTag = item.tags.includes(COMPLETED_TAG);
-  if (completed === hasCompletedTag) return item;
+  if (completed === hasCompletedTag && ((completed && row.watched_at) || (!completed && !row.watched_at))) return item;
 
   if (completed) {
     db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(row.id, COMPLETED_TAG);
+    db.prepare('UPDATE collection_items SET watched_at = COALESCE(watched_at, CURRENT_TIMESTAMP) WHERE id = ?').run(
+      row.id
+    );
   } else {
     db.prepare('DELETE FROM collection_item_tags WHERE item_id = ? AND tag = ?').run(row.id, COMPLETED_TAG);
+    db.prepare('UPDATE collection_items SET watched_at = NULL WHERE id = ?').run(row.id);
   }
 
   const syncedItem = toApiItem(db, row);

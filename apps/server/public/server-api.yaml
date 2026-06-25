@@ -277,6 +277,7 @@ components:
           plot,
           listType,
           watched,
+          watchedAt,
         ]
       properties:
         image:
@@ -324,6 +325,9 @@ components:
         watched:
           type: boolean
           description: Whether the authenticated viewer has this movie in their movie tracker.
+        watchedAt:
+          type: ['string', 'null']
+          description: Timestamp when a tracker item was watched. For series this is set only while completed.
         ownerShareCode:
           type: string
           description: Share code of the item owner. Present when the item belongs to a shared library.
@@ -500,6 +504,8 @@ components:
           unwatchedMovieCount,
           unwatchedLibrarySeriesCount,
           unwatchedTrackerSeriesCount,
+          completedTrackerSeriesCount,
+          watchedYearCounts,
           tagCounts,
           genreCounts,
         ]
@@ -526,6 +532,22 @@ components:
           type: integer
         unwatchedTrackerSeriesCount:
           type: integer
+        completedTrackerSeriesCount:
+          type: integer
+        watchedYearCounts:
+          type: array
+          items:
+            type: object
+            required: [year, movieCount, seriesCount, count]
+            properties:
+              year:
+                type: string
+              movieCount:
+                type: integer
+              seriesCount:
+                type: integer
+              count:
+                type: integer
         tagCounts:
           type: array
           items:
@@ -855,7 +877,7 @@ components:
               const: collection-tracker-export
             version:
               type: integer
-              const: 1
+              const: 2
         - $ref: '#/components/schemas/ExportResponse'
 
     ImportResponse:

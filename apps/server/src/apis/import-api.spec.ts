@@ -29,6 +29,7 @@ const item = {
   plot: 'Plot',
   hash: 'hash',
   listType: 'library',
+  watchedAt: null,
 };
 
 const seriesTrackerItem = {
@@ -36,8 +37,9 @@ const seriesTrackerItem = {
   title: 'Imported Series',
   titleLower: 'imported series',
   IMDbId: 'tt0000002',
-  tags: ['#series'],
+  tags: ['#completed', '#series'],
   listType: 'series-tracker',
+  watchedAt: '2026-05-06 00:00:00',
 };
 
 const movieTrackerItem = {
@@ -100,7 +102,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 1,
+        version: 2,
         userSettings: { theme: 'dark', animatedBackground: false, language: 'en' },
         collectionItems: [
           item,
@@ -120,7 +122,7 @@ describe('import-api', () => {
         ],
         seriesTrackerData: {
           tt0000002: {
-            seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Second'] }],
+            seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }],
             watchedEpisodes: [{ season: 1, episode: 1 }],
           },
         },
@@ -162,6 +164,116 @@ describe('import-api', () => {
         )
         .all('tt0000002')
     ).toEqual([{ season: 1, episode: 1 }]);
+    expect(db.prepare('SELECT watched_at FROM collection_items WHERE imdb_id = ?').get('tt0000002')).toEqual({
+      watched_at: '2026-05-06 00:00:00',
+    });
+  });
+
+  it('clears watched_at for imported incomplete series even when a timestamp is present', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 2,
+        userSettings: {},
+        collectionItems: [{ ...seriesTrackerItem, tags: ['#series'], watchedAt: '2026-05-06 00:00:00' }],
+        tagManagement: [],
+        seriesTrackerData: {
+          tt0000002: {
+            seasons: [{ season: 1, episodes: 2 }],
+            watchedEpisodes: [{ season: 1, episode: 1 }],
+          },
+        },
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 1 }));
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE imdb_id = ?').get('tt0000002')).toEqual(
+      {
+        watched_at: null,
+      }
+    );
+  });
+
+  it('returns 400 for invalid imported watchedAt timestamps', async () => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 2,
+        userSettings: {},
+        collectionItems: [{ ...movieTrackerItem, watchedAt: 'not-a-date' }],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 for calendar-invalid imported watchedAt timestamps', async () => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 2,
+        userSettings: {},
+        collectionItems: [{ ...movieTrackerItem, watchedAt: '2026-02-31 00:00:00' }],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('clears watched_at for completed series imports without tracker data', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 2,
+        userSettings: {},
+        collectionItems: [{ ...seriesTrackerItem, watchedAt: '2026-05-06 00:00:00' }],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 1 }));
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE imdb_id = ?').get('tt0000002')).toEqual(
+      {
+        watched_at: null,
+      }
+    );
   });
 
   it('returns 400 for an invalid full import envelope', async () => {
@@ -182,7 +294,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 1,
+        version: 2,
         userSettings: { collectionListDisplayPreferences: { preferredRating: 'imdb' } },
         collectionItems: [],
         tagManagement: [],
@@ -204,7 +316,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 1,
+        version: 2,
         userSettings: {},
         collectionItems: [],
         tagManagement: [
@@ -243,7 +355,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 1,
+        version: 2,
         userSettings: {},
         collectionItems: [seriesTrackerItem],
         tagManagement: [],

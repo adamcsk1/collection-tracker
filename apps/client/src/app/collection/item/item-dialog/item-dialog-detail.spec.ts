@@ -51,6 +51,7 @@ const item: CollectionItemModel = {
   actors: 'Actor One',
   plot: 'Plot text',
   listType: 'library',
+  watchedAt: null,
 };
 
 describe('ItemDialogDetail', () => {
