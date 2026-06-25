@@ -1,0 +1,76 @@
+<p>{{ translations.messageManageTrackerData() }}</p>
+@if (showLibrarySelect()) {
+  <libc-select
+    data-test-id="settings-manage-tracker-data-library"
+    [label]="translations.library()"
+    [value]="selectedOwnerShareCode()"
+    [options]="libraryOptions()"
+    [disabled]="apiLoadNetworkStatus() === 'pending'"
+    (valueChange)="onLibraryChange($event)"
+  />
+}
+<h4>{{ translations.movies() }}</h4>
+<div class="actions">
+  <button
+    data-test-id="settings-mark-all-watched"
+    type="button"
+    [disabled]="apiLoadNetworkStatus() === 'pending'"
+    (click)="onMarkAllMoviesAsWatched()"
+  >
+    <i class="material-icons" [title]="translations.markAllMoviesAsWatched()"> visibility </i>
+    {{ translations.markAllMoviesAsWatched() }}
+  </button>
+  <button
+    data-test-id="settings-mark-all-unwatched"
+    type="button"
+    class="button-danger"
+    [disabled]="apiLoadNetworkStatus() === 'pending'"
+    (click)="onMarkAllMoviesAsUnwatched()"
+  >
+    <i class="material-icons" [title]="translations.markAllMoviesAsUnwatched()"> visibility_off </i>
+    {{ translations.markAllMoviesAsUnwatched() }}
+  </button>
+</div>
+<h4>{{ translations.series() }}</h4>
+<div class="actions">
+  <button
+    data-test-id="settings-mark-all-series-watched"
+    type="button"
+    [disabled]="apiLoadNetworkStatus() === 'pending'"
+    (click)="onMarkAllSeriesAsWatched()"
+  >
+    <i class="material-icons" [title]="translations.markAllSeriesAsWatched()"> playlist_add_check </i>
+    {{ translations.markAllSeriesAsWatched() }}
+  </button>
+  <button
+    data-test-id="settings-mark-all-series-unwatched"
+    type="button"
+    class="button-danger"
+    [disabled]="apiLoadNetworkStatus() === 'pending'"
+    (click)="onMarkAllSeriesAsUnwatched()"
+  >
+    <i class="material-icons" [title]="translations.markAllSeriesAsUnwatched()"> playlist_remove </i>
+    {{ translations.markAllSeriesAsUnwatched() }}
+  </button>
+  <p class="tracker-cleanup-message">{{ translations.messageTrackerCleanup() }}</p>
+  <button
+    data-test-id="settings-remove-all-tracked-movie-data"
+    type="button"
+    class="button-danger"
+    [disabled]="apiLoadNetworkStatus() === 'pending' || !!selectedOwnerShareCode()"
+    (click)="onRemoveAllTrackedMovieData()"
+  >
+    <i class="material-icons" [title]="translations.removeAllTrackedMovieData()"> delete_sweep </i>
+    {{ translations.removeAllTrackedMovieData() }}
+  </button>
+  <button
+    data-test-id="settings-remove-all-tracked-series-data"
+    type="button"
+    class="button-danger"
+    [disabled]="apiLoadNetworkStatus() === 'pending' || !!selectedOwnerShareCode()"
+    (click)="onRemoveAllTrackedSeriesData()"
+  >
+    <i class="material-icons" [title]="translations.removeAllTrackedSeriesData()"> delete_forever </i>
+    {{ translations.removeAllTrackedSeriesData() }}
+  </button>
+</div>

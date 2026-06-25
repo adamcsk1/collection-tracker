@@ -34,9 +34,9 @@ export const settingsRoutes: Routes = [
         loadComponent: () => import('./media-refresh/media-refresh').then((module) => module.SettingsMediaRefresh),
       },
       {
-        path: 'global-watch-status',
+        path: 'manage-tracker-data',
         loadComponent: () =>
-          import('./global-watch-status/global-watch-status').then((module) => module.SettingsGlobalWatchStatus),
+          import('./manage-tracker-data/manage-tracker-data').then((module) => module.SettingsManageTrackerData),
       },
       {
         path: 'shares',

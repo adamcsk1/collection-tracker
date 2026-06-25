@@ -28,7 +28,7 @@ export class Settings {
     tagManagement: computed(() => this.ngxSignalTranslate.translate('TagManagement')),
     collectionListDisplay: computed(() => this.ngxSignalTranslate.translate('CollectionListDisplay')),
     mediaRefresh: computed(() => this.ngxSignalTranslate.translate('MediaRefresh')),
-    globalWatchStatus: computed(() => this.ngxSignalTranslate.translate('GlobalWatchStatus')),
+    manageTrackerData: computed(() => this.ngxSignalTranslate.translate('ManageTrackerData')),
     shares: computed(() => this.ngxSignalTranslate.translate('Shares')),
     exportImport: computed(() => this.ngxSignalTranslate.translate('ExportImport')),
   };
