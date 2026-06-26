@@ -1,3 +1,4 @@
+import type { Interception } from 'cypress/types/net-stubbing';
 import { generate } from 'random-words';
 import { buildCollectionItem, buildCollectionItems } from '../fixtures/collection-item';
 import { buildOmdbItem, buildOmdbSearchResult } from '../fixtures/omdb';
@@ -15,6 +16,18 @@ const expectVisibleTitles = (titles: string[]) => {
   CollectionPage.getListItems().should('have.length', titles.length);
   titles.forEach((title, index) => {
     CollectionPage.getListItems().eq(index).should('contain.text', title);
+  });
+};
+
+const waitForItemsRequestIncluding = (expectedUrlParts: string[]): Cypress.Chainable<Interception> => {
+  return cy.wait('@getItems').then((interception) => {
+    const requestUrl = interception.request.url;
+
+    if (expectedUrlParts.every((expectedUrlPart) => requestUrl.includes(expectedUrlPart))) {
+      return cy.wrap(interception, { log: false });
+    }
+
+    return waitForItemsRequestIncluding(expectedUrlParts);
   });
 };
 
@@ -443,24 +456,21 @@ describe('Collection — order controls', () => {
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderDirectionToggleButton().click();
-    cy.wait('@getItems').its('request.url').should('include', 'orderDirection=asc');
+    waitForItemsRequestIncluding(['orderDirection=asc']);
     expectVisibleTitles(['Order Alpha', 'Order Charlie', 'Order Bravo']);
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderByToggleButton().click();
-    cy.wait('@getItems').its('request.url').should('include', 'orderBy=alphabet');
+    waitForItemsRequestIncluding(['orderBy=alphabet']);
     expectVisibleTitles(['Order Alpha', 'Order Bravo', 'Order Charlie']);
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderDirectionToggleButton().click();
-    cy.wait('@getItems').its('request.url').should('include', 'orderDirection=desc');
+    waitForItemsRequestIncluding(['orderDirection=desc']);
     expectVisibleTitles(['Order Charlie', 'Order Bravo', 'Order Alpha']);
 
     cy.reload();
-    cy.wait('@getItems').then((interception) => {
-      expect(interception.request.url).to.include('orderBy=alphabet');
-      expect(interception.request.url).to.include('orderDirection=desc');
-    });
+    waitForItemsRequestIncluding(['orderBy=alphabet', 'orderDirection=desc']);
     expectVisibleTitles(['Order Charlie', 'Order Bravo', 'Order Alpha']);
   });
 
@@ -486,31 +496,24 @@ describe('Collection — order controls', () => {
     cy.wait('@getItems');
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderDirectionToggleButton().click();
-    cy.wait('@getItems');
+    waitForItemsRequestIncluding(['orderBy=alphabet', 'orderDirection=asc']);
     expectVisibleTitles(['Library Alpha', 'Library Bravo']);
 
     CommonPage.openMenu();
     CommonPage.getNavWishlistLink().click();
-    cy.wait('@getItems').then((interception) => {
-      expect(interception.request.url).to.include('listType=wishlist');
-      expect(interception.request.url).to.include('orderBy=createdAt');
-      expect(interception.request.url).to.include('orderDirection=desc');
-    });
+    waitForItemsRequestIncluding(['listType=wishlist', 'orderBy=createdAt', 'orderDirection=desc']);
     expectVisibleTitles(['Wishlist Bravo', 'Wishlist Alpha']);
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getOrderByToggleButton().click();
-    cy.wait('@getItems').its('request.url').should('include', 'orderBy=alphabet');
+    waitForItemsRequestIncluding(['listType=wishlist', 'orderBy=alphabet']);
     cy.reload();
-    cy.wait('@getItems').its('request.url').should('include', 'orderBy=alphabet');
+    waitForItemsRequestIncluding(['listType=wishlist', 'orderBy=alphabet']);
     expectVisibleTitles(['Wishlist Bravo', 'Wishlist Alpha']);
 
     CommonPage.openMenu();
     CommonPage.getNavCollectionLink().click();
-    cy.wait('@getItems').then((interception) => {
-      expect(interception.request.url).to.include('orderBy=alphabet');
-      expect(interception.request.url).to.include('orderDirection=asc');
-    });
+    waitForItemsRequestIncluding(['listType=library', 'orderBy=alphabet', 'orderDirection=asc']);
     expectVisibleTitles(['Library Alpha', 'Library Bravo']);
   });
 
