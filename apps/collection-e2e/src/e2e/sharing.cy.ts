@@ -17,6 +17,8 @@ interface TestUser {
   shareCode: string;
 }
 
+const createdUsers: TestUser[] = [];
+
 const uniqueId = () => `${Date.now()}${Math.random().toString(36).slice(2, 7)}`;
 
 const getSetCookieHeaders = (headers: Cypress.Response<unknown>['headers']): string[] => {
@@ -31,6 +33,13 @@ const toCookieHeader = (response: Cypress.Response<unknown>): string => {
     .map((cookie) => cookie.split(';')[0])
     .filter((cookie) => cookie.startsWith('CT.Token=') || cookie.startsWith('CT.RefreshToken='))
     .join('; ');
+};
+
+const resetPermissionStorage = (browserWindow: Window): void => {
+  browserWindow.sessionStorage.removeItem('CT.AppMode');
+  browserWindow.sessionStorage.removeItem('CT.SettingLock');
+  browserWindow.localStorage.setItem('CT.AppMode', 'full');
+  browserWindow.localStorage.removeItem('CT.SettingLock');
 };
 
 const requestAs = <ResponseBody = unknown>(
@@ -51,30 +60,44 @@ const createUser = (label: string): Cypress.Chainable<TestUser> => {
   const username = `share-${label}-${uniqueId()}`;
 
   return cy
-    .request<{ token: string }>('POST', '/api/v1/sign-up', { username })
+    .request<{ token: string }>({
+      method: 'POST',
+      url: '/api/v1/sign-up',
+      body: { username },
+      headers: { Cookie: '' },
+    })
     .then((signUpResponse) => {
       const token = signUpResponse.body.token;
-      return cy.request('POST', '/api/v1/sign-in', { username, token }).then((signInResponse) => ({
-        username,
-        token,
-        cookie: toCookieHeader(signInResponse),
-      }));
+      return cy
+        .request({ method: 'POST', url: '/api/v1/sign-in', body: { username, token }, headers: { Cookie: '' } })
+        .then((signInResponse) => ({
+          username,
+          token,
+          cookie: toCookieHeader(signInResponse),
+        }));
     })
     .then((user) =>
-      requestAs<{ userShareCode: string }>(user, 'GET', '/api/v1/user/shares').then((sharesResponse) => ({
-        ...user,
-        shareCode: sharesResponse.body.userShareCode,
-      }))
+      requestAs<{ userShareCode: string }>(user, 'GET', '/api/v1/user/shares').then((sharesResponse) => {
+        const createdUser = {
+          ...user,
+          shareCode: sharesResponse.body.userShareCode,
+        };
+        createdUsers.push(createdUser);
+        return createdUser;
+      })
     );
+};
+
+const cleanupCreatedUsers = (): void => {
+  createdUsers.splice(0).forEach((user) => {
+    requestAs(user, 'DELETE', '/api/v1/user');
+  });
 };
 
 const signInThroughUi = (user: TestUser): void => {
   cy.clearCookies({ log: false });
   cy.visit('/login/#/sign-in', {
-    onBeforeLoad: (win) => {
-      win.localStorage.setItem('CT.AppMode', 'full');
-      win.localStorage.removeItem('CT.SettingLock');
-    },
+    onBeforeLoad: resetPermissionStorage,
   });
   cy.getByTestId('sign-in-username').find('input').type(user.username);
   cy.getByTestId('sign-in-token').find('input').type(user.token, { delay: 0 });
@@ -85,12 +108,10 @@ const signInThroughUi = (user: TestUser): void => {
 const setupShare = (permissions: SharePermissions): Cypress.Chainable<{ owner: TestUser; sharedUser: TestUser }> => {
   return createUser('owner').then((owner) =>
     createUser('shared').then((sharedUser) => {
-      requestAs(owner, 'POST', '/api/v1/user/shares', {
+      return requestAs(owner, 'POST', '/api/v1/user/shares', {
         sharedWithUserShareCode: sharedUser.shareCode,
         ...permissions,
-      });
-
-      return cy.wrap({ owner, sharedUser }, { log: false });
+      }).then(() => ({ owner, sharedUser }));
     })
   );
 };
@@ -125,9 +146,13 @@ const assertDialogPermissions = (permissions: { update: boolean; delete: boolean
   }
 };
 
+afterEach(() => {
+  cleanupCreatedUsers();
+});
+
 describe('Collection sharing - settings management', () => {
   it('creates, updates, removes, and revokes shares from the settings page', () => {
-    createUser('owner').then((owner) => {
+    return createUser('owner').then((owner) =>
       createUser('shared').then((sharedUser) => {
         signInThroughUi(owner);
         SettingsPage.visitShares();
@@ -168,8 +193,8 @@ describe('Collection sharing - settings management', () => {
         cy.intercept('DELETE', '/api/v1/user/shares/incoming/*').as('revokeShare');
         SettingsPage.getRevokeIncomingShareButton().click();
         cy.wait('@revokeShare').its('response.statusCode').should('eq', 204);
-      });
-    });
+      })
+    );
   });
 });
 
