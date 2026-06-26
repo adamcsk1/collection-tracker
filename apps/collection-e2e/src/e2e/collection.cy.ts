@@ -514,7 +514,7 @@ describe('Collection — order controls', () => {
     expectVisibleTitles(['Library Alpha', 'Library Bravo']);
   });
 
-  it('shows order controls on secondary collection pages and favorites', () => {
+  it('shows order controls on secondary collection pages', () => {
     cy.intercept('GET', '/api/v1/items*').as('getItems');
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Later Order', 'movie', 'tt8400021'),
@@ -532,11 +532,6 @@ describe('Collection — order controls', () => {
       ...buildCollectionItem('Movie Tracker Order', 'movie', 'tt8400025'),
       listType: 'movie-tracker',
     });
-    cy.request('POST', '/api/v1/create', {
-      ...buildCollectionItem('Favorite Order', 'movie', 'tt8400024'),
-      favorite: true,
-    });
-
     CommonPage.openMenu();
     CommonPage.getNavWatchLaterLink().click();
     cy.url().should('include', '#/collection/watch-later');
@@ -560,13 +555,6 @@ describe('Collection — order controls', () => {
     cy.url().should('include', '#/collection/movie-tracker');
     cy.wait('@getItems');
     showOrderControls();
-
-    CommonPage.openMenu();
-    CommonPage.getNavFavoritesLink().click();
-    cy.url().should('include', '#/collection/favorites');
-    cy.wait('@getItems');
-    cy.getByTestId('collection-search').should('not.exist');
-    showOrderControls();
   });
 });
 
@@ -580,7 +568,7 @@ describe('Collection — favorites', () => {
     CollectionPage.visit();
   });
 
-  it('marks an item as favorite and filters favorites from the nav menu', () => {
+  it('marks an item as favorite and filters favorites from the library actions menu', () => {
     cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
     cy.on('window:confirm', () => true);
 
@@ -596,19 +584,21 @@ describe('Collection — favorites', () => {
     CollectionPage.closeActiveDialogByOverlay();
     CollectionPage.getFavoriteBadges().should('have.length', 1);
 
-    CommonPage.openMenu();
-    CommonPage.getNavFavoritesLink().click();
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getCollectionFilterButton('favorite').click();
 
-    cy.url().should('include', '#/collection/favorites');
-    cy.getByTestId('collection-search').should('not.exist');
+    cy.url().should('include', '#/collection/library');
+    cy.url().should('include', 'favorite=true');
+    CollectionPage.getSearchInput().should('have.value', '');
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Favorite Test Movie');
     CollectionPage.getListItems().should('not.contain.text', 'Regular Test Movie');
 
-    CommonPage.openMenu();
-    CommonPage.getNavCollectionLink().click();
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getCollectionFilterButton('favorite').click();
 
     cy.url().should('not.include', 'search=');
+    cy.url().should('not.include', 'favorite=true');
     cy.url().should('include', '#/collection/library');
     CollectionPage.getSearchInput().should('have.value', '');
     CollectionPage.getListItems().should('have.length', 2);
@@ -833,8 +823,6 @@ describe('Collection — movie tracker', () => {
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Alpha Movie');
   });
-
-
 });
 
 describe('Collection - sync', () => {

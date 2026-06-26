@@ -37,9 +37,9 @@ describe('Header component', () => {
   it('shows the current top-level navigation title', () => {
     expect(component['currentNavTitle']()).toBe('Collection');
 
-    routerEvents.next(new NavigationEnd(1, '/collection/favorites', '/collection/favorites'));
+    routerEvents.next(new NavigationEnd(1, '/collection/library?favorite=true', '/collection/library?favorite=true'));
 
-    expect(component['currentNavTitle']()).toBe('Favorites');
+    expect(component['currentNavTitle']()).toBe('Collection');
   });
 
   it('uses movie tracker as the title for movie tracker page', () => {

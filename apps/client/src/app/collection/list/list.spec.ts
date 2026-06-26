@@ -264,6 +264,28 @@ describe('List', () => {
     }
   });
 
+  it('shows the filtered empty message when route filters return no items', async () => {
+    api.searchItems.mockReturnValue(of({ items: [], total: 0, offset: 0, limit: 50 }));
+    fixture.componentRef.setInput(
+      'routeFilterKey',
+      JSON.stringify({ type: null, favorite: true, watched: null, completed: null })
+    );
+    vi.useFakeTimers();
+    try {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await vi.runAllTimersAsync();
+      fixture.detectChanges();
+
+      const emptyMessage = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-empty"]');
+      expect(emptyMessage?.textContent).toContain('Message.EmptySearch');
+      expect(emptyMessage?.textContent).not.toContain('Message.EmptyCollection');
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="add-first-item"]')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('opens the new item dialog in watch later mode on the watch later page', () => {
     fixture.componentRef.setInput('listType', 'watch-later');
     fixture.detectChanges();
@@ -402,7 +424,7 @@ describe('List', () => {
     expect(actionButtons.config().showActions).toBe(true);
     expect(actionButtons.config().showAiSearchButton).toBe(true);
     expect(actionButtons.config().showOrderButtons).toBe(true);
-    expect(actionButtons.config().filterActions).toEqual(['movie', 'series', 'unwatched']);
+    expect(actionButtons.config().filterActions).toEqual(['movie', 'series', 'unwatched', 'favorite']);
     expect(actionButtons.config().activeFilterActions).toEqual([]);
     expect(actionButtons.config().orderBy).toBe('createdAt');
     expect(actionButtons.config().orderDirection).toBe('desc');
@@ -446,6 +468,17 @@ describe('List', () => {
     });
   });
 
+  it('applies the favorite filter without constraining content type', () => {
+    fixture.detectChanges();
+
+    actionButtons.applyFilter('favorite');
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { favorite: 'true' },
+      queryParamsHandling: 'merge',
+    });
+  });
+
   it('removes an active content type filter when it is applied again', () => {
     fixture.componentRef.setInput(
       'routeFilterKey',
@@ -476,6 +509,21 @@ describe('List', () => {
     });
   });
 
+  it('removes an active favorite filter when it is applied again', () => {
+    fixture.componentRef.setInput(
+      'routeFilterKey',
+      JSON.stringify({ type: null, favorite: true, watched: null, completed: null })
+    );
+    fixture.detectChanges();
+
+    actionButtons.applyFilter('favorite');
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { favorite: null },
+      queryParamsHandling: 'merge',
+    });
+  });
+
   it('removes an active completed filter when it is applied again', () => {
     fixture.componentRef.setInput(
       'routeFilterKey',
@@ -501,11 +549,11 @@ describe('List', () => {
   it('publishes active filter actions from the route filter key', () => {
     fixture.componentRef.setInput(
       'routeFilterKey',
-      JSON.stringify({ type: 'series', favorite: null, watched: false, completed: null })
+      JSON.stringify({ type: 'series', favorite: true, watched: false, completed: null })
     );
     fixture.detectChanges();
 
-    expect(actionButtons.config().activeFilterActions).toEqual(['series', 'unwatched']);
+    expect(actionButtons.config().activeFilterActions).toEqual(['series', 'unwatched', 'favorite']);
   });
 
   it('publishes active completed filters from the route filter key', () => {
@@ -539,16 +587,5 @@ describe('List', () => {
     const latestStoredValue = webstorage.setItem.mock.calls.at(-1)?.[1] as string;
     expect(webstorage.setItem.mock.calls.at(-1)?.[0]).toBe(STORAGE_COLLECTION_LIST_ORDER_PREFERENCES);
     expect(JSON.parse(latestStoredValue)).toEqual({ wishlist: { orderBy: 'alphabet', orderDirection: 'asc' } });
-  });
-
-  it('uses an explicit order storage key when provided', () => {
-    fixture.componentRef.setInput('orderStorageKey', 'favorites');
-    fixture.detectChanges();
-
-    component['onToggleOrderBy']();
-    fixture.detectChanges();
-
-    const latestStoredValue = webstorage.setItem.mock.calls.at(-1)?.[1] as string;
-    expect(JSON.parse(latestStoredValue)).toEqual({ favorites: { orderBy: 'alphabet', orderDirection: 'desc' } });
   });
 });

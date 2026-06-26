@@ -11,10 +11,6 @@ export const collectionRoutes: Routes = [
         loadComponent: () => import('./library/library').then((module) => module.CollectionLibrary),
       },
       {
-        path: 'favorites',
-        loadComponent: () => import('./library/favorites/favorites').then((module) => module.Favorites),
-      },
-      {
         path: 'watch-later',
         loadComponent: () => import('./watch-later/watch-later').then((module) => module.WatchLater),
       },

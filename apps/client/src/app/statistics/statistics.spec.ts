@@ -170,7 +170,7 @@ describe('Statistics component', () => {
   it('navigates to favorites when clicking the favorites stat card', () => {
     component['onNavigateToFavorites']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'favorites']);
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], { queryParams: { favorite: 'true' } });
   });
 
   it('navigates to watch later when clicking the watch later stat card', () => {

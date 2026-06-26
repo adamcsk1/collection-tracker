@@ -125,8 +125,9 @@ describe('Statistics — with movies and series', () => {
 
   it('navigates to the collection filtered by favorites when the favorites summary card is clicked', () => {
     StatisticsPage.getSummaryFavorites().click();
-    cy.url().should('include', '#/collection/favorites');
-    CollectionPage.getSearchHost().should('not.exist');
+    cy.url().should('include', '#/collection/library');
+    cy.url().should('include', 'favorite=true');
+    CollectionPage.getSearchInput().should('have.value', '');
   });
 
   it('shows tag buttons for custom tags', () => {

@@ -246,7 +246,9 @@ export class List implements OnDestroy {
         ? { type: active ? null : filter }
         : filter === 'unwatched'
           ? { watched: active ? null : 'false' }
-          : { completed: active ? null : filter === 'completed' ? 'true' : 'false' };
+          : filter === 'favorite'
+            ? { favorite: active ? null : 'true' }
+            : { completed: active ? null : filter === 'completed' ? 'true' : 'false' };
 
     void this.router.navigate([], { queryParams, queryParamsHandling: 'merge' });
   }
@@ -334,7 +336,7 @@ export class List implements OnDestroy {
 
     switch (this.listType()) {
       case 'library':
-        return ['movie', 'series', 'unwatched'];
+        return ['movie', 'series', 'unwatched', 'favorite'];
       case 'watch-later':
       case 'wishlist':
         return ['movie', 'series'];
@@ -350,11 +352,17 @@ export class List implements OnDestroy {
     if (!routeFilterKey) return [];
 
     try {
-      const filters = JSON.parse(routeFilterKey) as { type?: unknown; watched?: unknown; completed?: unknown };
+      const filters = JSON.parse(routeFilterKey) as {
+        type?: unknown;
+        favorite?: unknown;
+        watched?: unknown;
+        completed?: unknown;
+      };
       return [
         ...(filters.type === 'movie' ? (['movie'] as const) : []),
         ...(filters.type === 'series' ? (['series'] as const) : []),
         ...(filters.watched === false ? (['unwatched'] as const) : []),
+        ...(filters.favorite === true ? (['favorite'] as const) : []),
         ...(filters.completed === true ? (['completed'] as const) : []),
         ...(filters.completed === false ? (['uncompleted'] as const) : []),
       ];

@@ -17,16 +17,6 @@
     {{ translations.collection() }}
   </a>
   <a
-    data-test-id="nav-favorites"
-    [routerLink]="['/', 'collection', 'favorites']"
-    routerLinkActive="active"
-    class="highlight"
-    (click)="onClose()"
-  >
-    <i class="material-icons">star</i>
-    {{ translations.favorites() }}
-  </a>
-  <a
     data-test-id="nav-watch-later"
     [routerLink]="['/', 'collection', 'watch-later']"
     routerLinkActive="active"

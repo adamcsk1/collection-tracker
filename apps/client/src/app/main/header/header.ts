@@ -37,9 +37,6 @@ export class Header {
   private currentNavTitleKey(): string {
     const currentPath = this.currentUrl().split('?')[0].split('#')[0];
 
-    if (currentPath.startsWith('/collection/favorites')) {
-      return 'Favorites';
-    }
     if (currentPath.startsWith('/collection/watch-later')) {
       return 'WatchLater';
     }

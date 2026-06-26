@@ -172,7 +172,7 @@ export class Statistics implements AfterViewInit {
   }
 
   protected onNavigateToFavorites(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'favorites']));
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'library'], { queryParams: { favorite: 'true' } }));
   }
 
   protected onNavigateToMovieTracker(): void {

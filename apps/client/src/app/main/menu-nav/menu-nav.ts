@@ -30,7 +30,6 @@ export class MenuNav {
     title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
     menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
     collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
-    favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     watchLater: computed(() => this.ngxSignalTranslate.translate('WatchLater')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
     seriesTracker: computed(() => this.ngxSignalTranslate.translate('SeriesTracker')),

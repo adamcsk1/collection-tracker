@@ -7,7 +7,6 @@ export const CommonPage = {
     cy.get('ct-menu-dialog').should('exist');
   },
   getNavCollectionLink: () => getNavLink('nav-collection'),
-  getNavFavoritesLink: () => getNavLink('nav-favorites'),
   getNavWatchLaterLink: () => getNavLink('nav-watch-later'),
   getNavWishlistLink: () => getNavLink('nav-wishlist'),
   getNavSeriesTrackerLink: () => getNavLink('nav-series-tracker'),

@@ -30,7 +30,7 @@
       <div data-test-id="list-empty" class="list-empty">
         <i class="material-icons">movie</i>
         <ng-content select="[list-empty]">
-          @if (!debouncedSearchText().trim() && collectionLength() === 0) {
+          @if (!debouncedSearchText().trim() && !routeFilterKey() && collectionLength() === 0) {
             {{ translations.messageEmptyCollection() }}<br />
             <a data-test-id="add-first-item" href="#" role="button" (click)="onAddNew()">{{
               translations.messageAddFirstCollectionItem()

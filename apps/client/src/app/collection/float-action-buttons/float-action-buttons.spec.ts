@@ -187,29 +187,30 @@ describe('FloatActionButtons', () => {
       applyFilter,
       showFunctions: vi.fn(),
     });
-    actionButtons.updateConfig({ filterActions: ['movie', 'completed'] });
+    actionButtons.updateConfig({ filterActions: ['movie', 'favorite'] });
     component['onShowFunctions']();
     fixture.detectChanges();
 
     fixture.nativeElement.querySelector('[data-test-id="collection-filter-movie"]').click();
     component['onShowFunctions']();
     fixture.detectChanges();
-    fixture.nativeElement.querySelector('[data-test-id="collection-filter-completed"]').click();
+    fixture.nativeElement.querySelector('[data-test-id="collection-filter-favorite"]').click();
 
     expect(applyFilter).toHaveBeenNthCalledWith(1, 'movie');
-    expect(applyFilter).toHaveBeenNthCalledWith(2, 'completed');
+    expect(applyFilter).toHaveBeenNthCalledWith(2, 'favorite');
   });
 
   it('marks active filter actions as current', () => {
-    actionButtons.updateConfig({ filterActions: ['movie', 'series'], activeFilterActions: ['movie'] });
+    actionButtons.updateConfig({ filterActions: ['movie', 'favorite'], activeFilterActions: ['favorite'] });
     component['onShowFunctions']();
     fixture.detectChanges();
 
     const movieFilter = fixture.nativeElement.querySelector('[data-test-id="collection-filter-movie"]');
-    const seriesFilter = fixture.nativeElement.querySelector('[data-test-id="collection-filter-series"]');
+    const favoriteFilter = fixture.nativeElement.querySelector('[data-test-id="collection-filter-favorite"]');
 
     expect(movieFilter?.textContent).toContain('Movies');
-    expect(movieFilter?.getAttribute('aria-current')).toBe('true');
-    expect(seriesFilter?.getAttribute('aria-current')).toBeNull();
+    expect(favoriteFilter?.textContent).toContain('Favorites');
+    expect(movieFilter?.getAttribute('aria-current')).toBeNull();
+    expect(favoriteFilter?.getAttribute('aria-current')).toBe('true');
   });
 });

@@ -45,6 +45,7 @@ export class FloatActionButtons implements OnDestroy {
     filterMovie: computed(() => this.ngxSignalTranslate.translate('Movies')),
     filterSeries: computed(() => this.ngxSignalTranslate.translate('Series')),
     filterUnwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
+    filterFavorite: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     filterCompleted: computed(() => this.ngxSignalTranslate.translate('Completed')),
     filterUncompleted: computed(() => this.ngxSignalTranslate.translate('Uncompleted')),
   };
@@ -155,6 +156,7 @@ export class FloatActionButtons implements OnDestroy {
       movie: this.translations.filterMovie(),
       series: this.translations.filterSeries(),
       unwatched: this.translations.filterUnwatched(),
+      favorite: this.translations.filterFavorite(),
       completed: this.translations.filterCompleted(),
       uncompleted: this.translations.filterUncompleted(),
     };
@@ -167,6 +169,7 @@ export class FloatActionButtons implements OnDestroy {
       movie: 'movie',
       series: 'live_tv',
       unwatched: 'visibility_off',
+      favorite: 'star',
       completed: 'check_circle',
       uncompleted: 'radio_button_unchecked',
     };

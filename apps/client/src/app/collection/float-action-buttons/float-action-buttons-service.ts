@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { CollectionItemOrderBy, CollectionItemOrderDirection } from '@shared/models/api-model';
 
-export type FloatActionFilter = 'movie' | 'series' | 'unwatched' | 'completed' | 'uncompleted';
+export type FloatActionFilter = 'movie' | 'series' | 'unwatched' | 'favorite' | 'completed' | 'uncompleted';
 
 export interface FloatActionButtonsConfig {
   collectionLength: number;
