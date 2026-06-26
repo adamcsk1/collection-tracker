@@ -1,26 +1,26 @@
+const getNavLink = (testId: string) =>
+  cy.get(`ct-menu-dialog [data-test-id="${testId}"]`).scrollIntoView().should('be.visible');
+
 export const CommonPage = {
   openMenu: () => {
-    cy.getByTestId('nav-menu-button').then(($btn) => {
-      if ($btn.is(':visible')) {
-        cy.wrap($btn).click();
-      }
-    });
+    cy.getByTestId('nav-menu-button').should('be.visible').click();
+    cy.get('ct-menu-dialog').should('exist');
   },
-  getNavCollectionLink: () => cy.getByTestId('nav-collection'),
-  getNavFavoritesLink: () => cy.getByTestId('nav-favorites'),
-  getNavWatchLaterLink: () => cy.getByTestId('nav-watch-later'),
-  getNavWishlistLink: () => cy.getByTestId('nav-wishlist'),
-  getNavSeriesTrackerLink: () => cy.getByTestId('nav-series-tracker'),
-  getNavMovieTrackerLink: () => cy.getByTestId('nav-movie-tracker'),
-  getNavSyncLink: () => cy.getByTestId('nav-sync'),
-  getNavSettingsLink: () => cy.getByTestId('nav-settings'),
-  getNavStatisticsLink: () => cy.getByTestId('nav-statistics'),
+  getNavCollectionLink: () => getNavLink('nav-collection'),
+  getNavFavoritesLink: () => getNavLink('nav-favorites'),
+  getNavWatchLaterLink: () => getNavLink('nav-watch-later'),
+  getNavWishlistLink: () => getNavLink('nav-wishlist'),
+  getNavSeriesTrackerLink: () => getNavLink('nav-series-tracker'),
+  getNavMovieTrackerLink: () => getNavLink('nav-movie-tracker'),
+  getNavSyncLink: () => getNavLink('nav-sync'),
+  getNavSettingsLink: () => getNavLink('nav-settings'),
+  getNavStatisticsLink: () => getNavLink('nav-statistics'),
 
-  getNavAboutLink: () => cy.getByTestId('nav-about'),
-  getNavLogoutLink: () => cy.getByTestId('nav-logout'),
+  getNavAboutLink: () => getNavLink('nav-about'),
+  getNavLogoutLink: () => getNavLink('nav-logout'),
 
   navigateToSettingsViaMenu: () => {
     CommonPage.openMenu();
-    cy.getByTestId('nav-settings').click();
+    CommonPage.getNavSettingsLink().click();
   },
 };

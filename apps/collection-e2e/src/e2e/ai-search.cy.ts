@@ -31,7 +31,9 @@ describe('AI search - toggle', () => {
   it('switches to AI search input when toggle is clicked', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAiSearchToggleButton().click();
-    CollectionPage.getAiSearchTrigger().should('be.visible');
+    CollectionPage.getFloatSearchToggleButton().should('be.visible');
+    CollectionPage.openAiSearchDialog();
+    CollectionPage.getAiSearchTextarea().should('be.visible');
   });
 
   it('hides the standard search input when AI search is active', () => {
@@ -43,12 +45,12 @@ describe('AI search - toggle', () => {
   it('restores the standard search input when toggle is clicked again', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAiSearchToggleButton().click();
-    CollectionPage.getAiSearchTrigger().should('be.visible');
+    CollectionPage.getFloatSearchToggleButton().should('be.visible');
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAiSearchToggleButton().click();
     CollectionPage.getSearchInput().should('be.visible');
-    CollectionPage.getAiSearchTrigger().should('not.exist');
+    cy.getByTestId('ai-search-textarea').should('not.exist');
   });
 
   it('persists the AI search preference in localStorage', () => {
@@ -65,7 +67,9 @@ describe('AI search - toggle', () => {
     CollectionPage.getAiSearchToggleButton().click();
 
     CollectionPage.visit();
-    CollectionPage.getAiSearchTrigger().should('be.visible');
+    CollectionPage.getFloatSearchToggleButton().should('be.visible');
+    CollectionPage.openAiSearchDialog();
+    CollectionPage.getAiSearchTextarea().should('be.visible');
   });
 });
 
@@ -79,15 +83,15 @@ describe('AI search - input interaction', () => {
     CollectionPage.getAiSearchToggleButton().click();
   });
 
-  it('expands the panel when the compact trigger is clicked', () => {
-    CollectionPage.getAiSearchTrigger().click();
+  it('opens the AI search dialog when the search button is clicked', () => {
+    CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().should('be.visible');
     CollectionPage.getAiSearchSendButton().should('be.visible');
   });
 
-  it('collapses the panel when send is clicked', () => {
+  it('closes the dialog when send is clicked', () => {
     cy.intercept('POST', '/api/v1/proxy/ai/query', { statusCode: 200, body: { matchedIds: [] } }).as('aiQuery');
-    CollectionPage.getAiSearchTrigger().click();
+    CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().type('any prompt');
     CollectionPage.getAiSearchSendButton().click();
     CollectionPage.getAiSearchSendButton().should('not.exist');
@@ -116,7 +120,7 @@ describe('AI search - filtering', () => {
     }).as('aiQuery');
     cy.intercept('POST', '/api/v1/items/matched').as('matchedItems');
 
-    CollectionPage.getAiSearchTrigger().click();
+    CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().type('sci-fi movies');
     CollectionPage.getAiSearchSendButton().click();
 
@@ -133,7 +137,7 @@ describe('AI search - filtering', () => {
     }).as('aiQuery');
     cy.intercept('POST', '/api/v1/items/matched').as('matchedItems');
 
-    CollectionPage.getAiSearchTrigger().click();
+    CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().type('something that matches nothing');
     CollectionPage.getAiSearchSendButton().click();
 
@@ -152,7 +156,7 @@ describe('AI search - filtering', () => {
       body: { matchedIds: [] },
     }).as('aiQuery');
 
-    CollectionPage.getAiSearchTrigger().click();
+    CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().type('show me action films');
     CollectionPage.getAiSearchSendButton().click();
 

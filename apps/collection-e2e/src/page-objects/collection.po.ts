@@ -7,6 +7,24 @@ const getSeriesMetadataDialog = () => getDialogFrame(cy.getByTestId('series-meta
 const getWatchedEpisodesDialogHost = () => cy.getByTestId('watched-episodes-dialog');
 const getWatchedEpisodesDialog = () => getWatchedEpisodesDialogHost().last();
 const getDialogComponentHost = (testId: string) => cy.getByTestId(testId).last().parents('.dialog').first();
+const expandFloatSearch = (testId: string) => {
+  cy.get('body')
+    .should((body) => {
+      const targetSearch = body.find(`[data-test-id="${testId}"]`);
+      const searchToggle = body.find('[data-test-id="float-search-toggle"]');
+      expect(targetSearch.length + searchToggle.length).to.be.greaterThan(0);
+    })
+    .then((body) => {
+      const targetSearch = body.find(`[data-test-id="${testId}"]`);
+      if (!targetSearch.length) {
+        cy.getByTestId('float-search-toggle').click();
+      }
+    });
+};
+const getFloatSearchInput = (testId: string) => {
+  expandFloatSearch(testId);
+  return cy.getByTestId(testId).find('input');
+};
 const swipeActiveDialog = (startX: number, endX: number) =>
   getActiveDialogFrame()
     .trigger('pointerdown', {
@@ -43,12 +61,12 @@ export const CollectionPage = {
   },
 
   // Search
-  getSearchInput: () => cy.getByTestId('collection-search').find('input'),
+  getSearchInput: () => getFloatSearchInput('collection-search'),
   getSearchHost: () => cy.getByTestId('collection-search'),
-  getSeriesTrackerSearchInput: () => cy.getByTestId('series-tracker-search').find('input'),
-  getMovieTrackerSearchInput: () => cy.getByTestId('movie-tracker-search').find('input'),
-  getWatchLaterSearchInput: () => cy.getByTestId('watch-later-search').find('input'),
-  getWishlistSearchInput: () => cy.getByTestId('wishlist-search').find('input'),
+  getSeriesTrackerSearchInput: () => getFloatSearchInput('series-tracker-search'),
+  getMovieTrackerSearchInput: () => getFloatSearchInput('movie-tracker-search'),
+  getWatchLaterSearchInput: () => getFloatSearchInput('watch-later-search'),
+  getWishlistSearchInput: () => getFloatSearchInput('wishlist-search'),
 
   // List
   getList: () => cy.getByTestId('collection-list'),
@@ -86,12 +104,13 @@ export const CollectionPage = {
   getRandomPickButton: () => cy.getByTestId('random-pick'),
   getScrollToTopButton: () => cy.getByTestId('scroll-to-top'),
   getAiSearchToggleButton: () => cy.getByTestId('ai-search-toggle'),
+  getFloatSearchToggleButton: () => cy.getByTestId('float-search-toggle'),
   getOrderByToggleButton: () => cy.getByTestId('list-order-by-toggle'),
   getOrderDirectionToggleButton: () => cy.getByTestId('list-order-direction-toggle'),
   getCollectionFilterButton: (filter: string) => cy.getByTestId(`collection-filter-${filter}`),
 
   // AI search input
-  getAiSearchTrigger: () => cy.getByTestId('ai-search-trigger'),
+  openAiSearchDialog: () => cy.getByTestId('float-search-toggle').click(),
   getAiSearchTextarea: () => cy.getByTestId('ai-search-textarea').find('textarea'),
   getAiSearchSendButton: () => cy.getByTestId('ai-search-send'),
 
