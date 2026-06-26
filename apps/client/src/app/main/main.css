@@ -1,4 +1,6 @@
 :host {
+  --float-actions-safe-area: 72px;
+
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -9,7 +11,7 @@
   z-index: 2;
 }
 
-@media (width > 768px) {
+@media (width > 1250px) {
   .main-header {
     display: none;
   }
@@ -31,7 +33,7 @@
   z-index: 1;
 }
 
-@media (width > 768px) {
+@media (width > 1250px) {
   .sidebar {
     display: flex;
     flex-direction: column;
@@ -39,8 +41,9 @@
 }
 
 .main-body {
+  box-sizing: border-box;
   padding: var(--size-md);
-  padding-bottom: calc(var(--size-md) + 72px);
+  padding-bottom: calc(var(--size-md) + var(--float-actions-safe-area));
   overflow: auto;
   flex: 1;
   max-height: calc(100vh - var(--header-height));
@@ -49,15 +52,15 @@
   z-index: 1;
 }
 
-@media (width > 768px) {
+.main-body:has(ct-list) {
+  padding-bottom: var(--size-md);
+}
+
+@media (width > 1250px) {
   .main-body {
     padding-bottom: var(--size-md);
     max-height: 100vh;
     max-height: 100svh;
     max-height: 100dvh;
-  }
-
-  .main-body-float-bar-present {
-    padding-bottom: calc(var(--size-md) + 72px);
   }
 }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
@@ -16,11 +16,24 @@ import { FloatActionsService } from './float-actions-service';
 })
 class TestFloatActionButtons {}
 
+@Component({
+  selector: 'ct-test-search-template',
+  template: `
+    <ng-template #standardSearch>
+      <input data-test-id="projected-search" />
+    </ng-template>
+  `,
+})
+class TestSearchTemplate {
+  @ViewChild('standardSearch', { static: true }) public standardSearch!: TemplateRef<unknown>;
+}
+
 describe('FloatActions', () => {
   let fixture: ComponentFixture<FloatActions>;
   let component: FloatActions;
   let service: FloatActionsService;
   let portal: { open: ReturnType<typeof vi.fn> };
+  let searchTemplateFixture: ComponentFixture<TestSearchTemplate>;
 
   beforeEach(() => {
     portal = { open: vi.fn() };
@@ -39,6 +52,8 @@ describe('FloatActions', () => {
     fixture = TestBed.createComponent(FloatActions);
     component = fixture.componentInstance;
     service = TestBed.inject(FloatActionsService);
+    searchTemplateFixture = TestBed.createComponent(TestSearchTemplate);
+    searchTemplateFixture.detectChanges();
     service.updateConfig({ actionsAvailable: true });
     fixture.detectChanges();
   });
@@ -50,15 +65,14 @@ describe('FloatActions', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="test-action-button"]')).toBeTruthy();
   });
 
-  it('does not offset scroll-to-top when the registered action menu is expanded', () => {
+  it('hides scroll-to-top when the registered action menu is expanded', () => {
     service.setActionsComponent(TestFloatActionButtons);
     service.setActionButtonsVisible(true);
     service.updateConfig({ scrollToTopAvailable: true });
 
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-test-id="scroll-to-top"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.float-button-scroll-to-top-actions-offset')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="scroll-to-top"]')).toBeNull();
   });
 
   it('renders scroll-to-top as a labelled icon button outside the action slot', () => {
@@ -86,6 +100,14 @@ describe('FloatActions', () => {
     );
   });
 
+  it('marks the float actions as scrolling when configured', () => {
+    service.updateConfig({ scrolling: true });
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.classList).toContain('float-actions-scrolling');
+  });
+
   it('opens the mobile menu dialog', () => {
     component['onOpenMenu']();
 
@@ -97,6 +119,93 @@ describe('FloatActions', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-test-id="nav-menu-button"]')).toBeTruthy();
+  });
+
+  it('renders a collapsed search button before showing a registered search template', () => {
+    service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeNull();
+  });
+
+  it('shows and focuses the registered search template from the collapsed search button', async () => {
+    const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus');
+    service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]').click();
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const searchInput = fixture.nativeElement.querySelector('[data-test-id="projected-search"]');
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-bar"]').classList).toContain(
+      'float-search-bar-search-expanded'
+    );
+    expect(searchInput).toBeTruthy();
+    expect(focusSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the registered search template open when focus leaves it', async () => {
+    service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]').click();
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const searchInput = fixture.nativeElement.querySelector('[data-test-id="projected-search"]');
+    fixture.nativeElement.querySelector('[data-test-id="nav-menu-button"]').focus();
+    searchInput.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeTruthy();
+  });
+
+  it('collapses the registered search template when clicking outside float actions', async () => {
+    service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]').click();
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeNull();
+  });
+
+  it('collapses the registered search template when scrolling starts', async () => {
+    service.setSearchTemplate(searchTemplateFixture.componentInstance.standardSearch);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]').click();
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    service.updateConfig({ scrolling: true });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test-id="projected-search"]')).toBeNull();
+  });
+
+  it('runs the registered search action without rendering a search template', () => {
+    const searchAction = vi.fn();
+    service.setSearchTemplate(null, searchAction);
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-test-id="float-search-toggle"]').click();
+    fixture.detectChanges();
+
+    expect(searchAction).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.querySelector('[data-test-id="ai-search-trigger"]')).toBeNull();
   });
 
   it('marks the float bar as menu-only when no search or actions are registered', () => {

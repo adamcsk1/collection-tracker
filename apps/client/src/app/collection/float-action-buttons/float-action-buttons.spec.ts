@@ -43,7 +43,28 @@ describe('FloatActionButtons', () => {
 
     expect(fixture.nativeElement.querySelector('[data-test-id="add-new"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test-id="random-pick"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test-id="add-new"]')?.textContent).toContain('AddNew');
+    expect(fixture.nativeElement.querySelector('[data-test-id="random-pick"]')?.textContent).toContain('RandomPick');
+    expect(fixture.nativeElement.textContent).toContain('Actions');
+    expect(fixture.nativeElement.textContent).not.toContain('Filtering');
+    expect(fixture.nativeElement.textContent).not.toContain('Sorting');
     expect(floatActions.actionButtonsVisible()).toBe(true);
+  });
+
+  it('shows only section titles for groups with visible actions', () => {
+    actionButtons.updateConfig({
+      showAddButton: false,
+      showAiSearchButton: false,
+      showRandomPickButton: false,
+      showOrderButtons: true,
+      filterActions: ['movie'],
+    });
+    component['onShowFunctions']();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Filtering');
+    expect(fixture.nativeElement.textContent).toContain('Sorting');
+    expect(fixture.nativeElement.textContent).not.toContain('Actions');
   });
 
   it('runs registered callbacks and closes the action menu', () => {
@@ -54,6 +75,7 @@ describe('FloatActionButtons', () => {
       toggleAiSearch: vi.fn(),
       toggleOrderBy: vi.fn(),
       toggleOrderDirection: vi.fn(),
+      applyFilter: vi.fn(),
       showFunctions: vi.fn(),
     });
     component['onShowFunctions']();
@@ -74,6 +96,7 @@ describe('FloatActionButtons', () => {
       toggleAiSearch: vi.fn(),
       toggleOrderBy: vi.fn(),
       toggleOrderDirection: vi.fn(),
+      applyFilter: vi.fn(),
       showFunctions: vi.fn(),
     });
     actionButtons.updateConfig({ showAiSearchButton: false, showRandomPickButton: false });
@@ -103,6 +126,7 @@ describe('FloatActionButtons', () => {
       toggleAiSearch: vi.fn(),
       toggleOrderBy: vi.fn(),
       toggleOrderDirection: vi.fn(),
+      applyFilter: vi.fn(),
       showFunctions: vi.fn(),
     });
     actionButtons.updateConfig({ showRandomPickButton: false });
@@ -136,6 +160,7 @@ describe('FloatActionButtons', () => {
       toggleAiSearch: vi.fn(),
       toggleOrderBy,
       toggleOrderDirection,
+      applyFilter: vi.fn(),
       showFunctions: vi.fn(),
     });
     actionButtons.updateConfig({ showOrderButtons: true });
@@ -149,5 +174,42 @@ describe('FloatActionButtons', () => {
 
     expect(toggleOrderBy).toHaveBeenCalledTimes(1);
     expect(toggleOrderDirection).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs filter callbacks from the action menu', () => {
+    const applyFilter = vi.fn();
+    actionButtons.setCallbacks({
+      addNew: vi.fn(),
+      randomPick: vi.fn(),
+      toggleAiSearch: vi.fn(),
+      toggleOrderBy: vi.fn(),
+      toggleOrderDirection: vi.fn(),
+      applyFilter,
+      showFunctions: vi.fn(),
+    });
+    actionButtons.updateConfig({ filterActions: ['movie', 'completed'] });
+    component['onShowFunctions']();
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-test-id="collection-filter-movie"]').click();
+    component['onShowFunctions']();
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('[data-test-id="collection-filter-completed"]').click();
+
+    expect(applyFilter).toHaveBeenNthCalledWith(1, 'movie');
+    expect(applyFilter).toHaveBeenNthCalledWith(2, 'completed');
+  });
+
+  it('marks active filter actions as current', () => {
+    actionButtons.updateConfig({ filterActions: ['movie', 'series'], activeFilterActions: ['movie'] });
+    component['onShowFunctions']();
+    fixture.detectChanges();
+
+    const movieFilter = fixture.nativeElement.querySelector('[data-test-id="collection-filter-movie"]');
+    const seriesFilter = fixture.nativeElement.querySelector('[data-test-id="collection-filter-series"]');
+
+    expect(movieFilter?.textContent).toContain('Movies');
+    expect(movieFilter?.getAttribute('aria-current')).toBe('true');
+    expect(seriesFilter?.getAttribute('aria-current')).toBeNull();
   });
 });

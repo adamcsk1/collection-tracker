@@ -3,8 +3,7 @@
   --glassy-background: rgb(from var(--background-color-alt) r g b / 85%);
   --image-width: 90px;
   --image-height: 125px;
-  --container-max-width: 1200px;
-  --container-max-width-mobile: 95vw;
+  --container-max-width: min(1200px, 95vw);
   --sidebar-width: 280px;
   --logo-small-size: 40px;
 

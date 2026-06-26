@@ -1,75 +1,103 @@
 @if (actionButtonsVisible()) {
-  <div class="float-buttons-container" animate.enter="animation-scale-in">
-    @if (config().showAddButton) {
-      <div class="float-button">
-        <button
-          data-test-id="add-new"
-          class="button-icon material-icons"
-          [attr.aria-label]="translations.addNew()"
-          [title]="translations.addNew()"
-          [disabled]="apiLoadNetworkStatus() === 'pending'"
-          (click)="onAddNew()"
-        >
-          add
-        </button>
-      </div>
-    }
-    @if (showAiSearchButton()) {
-      <div class="float-button">
-        <button
-          data-test-id="ai-search-toggle"
-          class="button-icon material-icons"
-          [attr.aria-label]="translations.searchSwitchButtonLabel()"
-          [title]="translations.searchSwitchButtonLabel()"
-          [disabled]="apiLoadNetworkStatus() === 'pending'"
-          (click)="onToggleAiSearch()"
-        >
-          {{ aiSearchIcon() }}
-        </button>
-      </div>
-    }
-    @if (config().showRandomPickButton) {
-      <div class="float-button">
-        <button
-          data-test-id="random-pick"
-          class="button-icon material-icons"
-          [attr.aria-label]="translations.randomPick()"
-          [title]="translations.randomPick()"
-          [disabled]="apiLoadNetworkStatus() === 'pending' || config().collectionLength === 0"
-          (click)="onRandomPick()"
-        >
-          casino
-        </button>
+  <div class="float-buttons-container" animate.enter="animation-scale-in" animate.leave="animation-scale-out">
+    @if (config().filterActions.length > 0) {
+      <div class="float-action-section">
+        <div class="float-action-section-title">{{ translations.filtering() }}</div>
+        @for (filter of config().filterActions; track filter) {
+          <div class="float-action" [class.float-action-current]="isFilterActive(filter)">
+            <button
+              [attr.data-test-id]="'collection-filter-' + filter"
+              [attr.aria-label]="filterActionLabel(filter)"
+              [attr.aria-current]="isFilterActive(filter) ? 'true' : null"
+              [title]="filterActionLabel(filter)"
+              [disabled]="apiLoadNetworkStatus() === 'pending'"
+              (click)="onApplyFilter(filter)"
+            >
+              <i class="material-icons">{{ filterActionIcon(filter) }}</i>
+              <span>{{ filterActionLabel(filter) }}</span>
+            </button>
+          </div>
+        }
       </div>
     }
     @if (config().showOrderButtons) {
-      <div class="float-button">
-        <button
-          data-test-id="list-order-by-toggle"
-          class="button-icon material-icons"
-          [attr.aria-label]="translations.orderBySwitchButtonLabel()"
-          [title]="translations.orderBySwitchButtonLabel()"
-          [disabled]="apiLoadNetworkStatus() === 'pending'"
-          (click)="onToggleOrderBy()"
-        >
-          {{ orderByIcon() }}
-        </button>
+      <div class="float-action-section">
+        <div class="float-action-section-title">{{ translations.sorting() }}</div>
+        <div class="float-action">
+          <button
+            data-test-id="list-order-by-toggle"
+            [attr.aria-label]="translations.orderBySwitchButtonLabel()"
+            [title]="translations.orderBySwitchButtonLabel()"
+            [disabled]="apiLoadNetworkStatus() === 'pending'"
+            (click)="onToggleOrderBy()"
+          >
+            <i class="material-icons">{{ orderByIcon() }}</i>
+            <span>{{ translations.orderBySwitchButtonLabel() }}</span>
+          </button>
+        </div>
+        <div class="float-action">
+          <button
+            data-test-id="list-order-direction-toggle"
+            [attr.aria-label]="translations.orderDirectionSwitchButtonLabel()"
+            [title]="translations.orderDirectionSwitchButtonLabel()"
+            [disabled]="apiLoadNetworkStatus() === 'pending'"
+            (click)="onToggleOrderDirection()"
+          >
+            <i class="material-icons">{{ orderDirectionIcon() }}</i>
+            <span>{{ translations.orderDirectionSwitchButtonLabel() }}</span>
+          </button>
+        </div>
       </div>
-      <div class="float-button">
-        <button
-          data-test-id="list-order-direction-toggle"
-          class="button-icon material-icons"
-          [attr.aria-label]="translations.orderDirectionSwitchButtonLabel()"
-          [title]="translations.orderDirectionSwitchButtonLabel()"
-          [disabled]="apiLoadNetworkStatus() === 'pending'"
-          (click)="onToggleOrderDirection()"
-        >
-          {{ orderDirectionIcon() }}
-        </button>
+    }
+    @if (showActionSection()) {
+      <div class="float-action-section">
+        <div class="float-action-section-title">{{ translations.actions() }}</div>
+        @if (config().showAddButton) {
+          <div class="float-action">
+            <button
+              data-test-id="add-new"
+              [attr.aria-label]="translations.addNew()"
+              [title]="translations.addNew()"
+              [disabled]="apiLoadNetworkStatus() === 'pending'"
+              (click)="onAddNew()"
+            >
+              <i class="material-icons">add</i>
+              <span>{{ translations.addNew() }}</span>
+            </button>
+          </div>
+        }
+        @if (showAiSearchButton()) {
+          <div class="float-action">
+            <button
+              data-test-id="ai-search-toggle"
+              [attr.aria-label]="translations.searchSwitchButtonLabel()"
+              [title]="translations.searchSwitchButtonLabel()"
+              [disabled]="apiLoadNetworkStatus() === 'pending'"
+              (click)="onToggleAiSearch()"
+            >
+              <i class="material-icons">{{ aiSearchIcon() }}</i>
+              <span>{{ translations.searchSwitchButtonLabel() }}</span>
+            </button>
+          </div>
+        }
+        @if (config().showRandomPickButton) {
+          <div class="float-action">
+            <button
+              data-test-id="random-pick"
+              [attr.aria-label]="translations.randomPick()"
+              [title]="translations.randomPick()"
+              [disabled]="apiLoadNetworkStatus() === 'pending' || config().collectionLength === 0"
+              (click)="onRandomPick()"
+            >
+              <i class="material-icons">casino</i>
+              <span>{{ translations.randomPick() }}</span>
+            </button>
+          </div>
+        }
       </div>
     }
   </div>
-  <div class="float-button float-show-button float-button-basic" animate.enter="animation-scale-in">
+  <div class="float-button float-show-button float-button-basic">
     <button
       data-test-id="hide-functions"
       class="button-icon material-icons"
@@ -81,7 +109,7 @@
     </button>
   </div>
 } @else if (showFloatActions()) {
-  <div class="float-button float-show-button float-button-basic" animate.enter="animation-scale-in">
+  <div class="float-button float-show-button float-button-basic">
     @if (addOnlyMode()) {
       <button
         data-test-id="add-new"

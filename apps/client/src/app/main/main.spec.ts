@@ -14,7 +14,6 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AndroidBackHandlerService } from './android-back-handler-service';
-import { FloatActionsService } from './float-actions/float-actions-service';
 import { Main } from './main';
 
 describe('Main component (client)', () => {
@@ -30,7 +29,6 @@ describe('Main component (client)', () => {
   let portal: { setViewContainerRef: ReturnType<typeof vi.fn> };
   let tokenValidation: { startValidation: ReturnType<typeof vi.fn> };
   let androidBackHandler: { listen: ReturnType<typeof vi.fn> };
-  let floatActions: FloatActionsService;
 
   beforeEach(() => {
     mainService = {
@@ -68,7 +66,6 @@ describe('Main component (client)', () => {
     fixture = TestBed.createComponent(Main);
     apiState = TestBed.inject(apiStateToken);
     spinnerState = TestBed.inject(spinnerLoadingStateToken) as NgxSimpleSignalStoreService<{ show: boolean }>;
-    floatActions = TestBed.inject(FloatActionsService);
     fixture.detectChanges();
   });
 
@@ -97,13 +94,5 @@ describe('Main component (client)', () => {
 
   it('starts the Android back handler on init', () => {
     expect(androidBackHandler.listen).toHaveBeenCalledOnce();
-  });
-
-  it('reserves desktop float space when only scroll-to-top is visible', () => {
-    expect(fixture.componentInstance['floatBarPresent']()).toBe(false);
-
-    floatActions.updateConfig({ scrollToTopAvailable: true });
-
-    expect(fixture.componentInstance['floatBarPresent']()).toBe(true);
   });
 });

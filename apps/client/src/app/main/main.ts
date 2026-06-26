@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  OnInit,
-  viewChild,
-  ViewContainerRef,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, OnInit, viewChild, ViewContainerRef } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Background } from './background/background';
 import { FloatActions } from './float-actions/float-actions';
@@ -25,7 +16,6 @@ import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { AndroidBackHandlerService } from './android-back-handler-service';
-import { FloatActionsService } from './float-actions/float-actions-service';
 
 @Component({
   selector: 'ct-root',
@@ -44,15 +34,8 @@ export class Main implements OnInit {
   private readonly tokenValidation = inject(TokenValidationService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly theme = inject(ThemeService);
-  private readonly floatActions = inject(FloatActionsService);
   private readonly collectionDialogsRef = viewChild('portal', { read: ViewContainerRef });
   protected readonly useAnimatedBackground = this.mainState.state.animatedBackground;
-  protected readonly floatBarPresent = computed(
-    () =>
-      this.floatActions.config().scrollToTopAvailable ||
-      !!this.floatActions.searchTemplate() ||
-      (this.floatActions.config().actionsAvailable && !!this.floatActions.actionsComponent())
-  );
 
   constructor() {
     effect(() => {

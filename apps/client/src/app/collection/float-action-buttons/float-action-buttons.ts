@@ -3,7 +3,7 @@ import { apiStateToken } from '@services/api/api-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainStateToken } from '../../main/main-store';
-import { FloatActionButtonsService } from './float-action-buttons-service';
+import { FloatActionButtonsService, FloatActionFilter } from './float-action-buttons-service';
 
 @Component({
   selector: 'ct-float-action-buttons',
@@ -27,6 +27,9 @@ export class FloatActionButtons implements OnDestroy {
     ),
     aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
     randomPick: computed(() => this.ngxSignalTranslate.translate('RandomPick')),
+    actions: computed(() => this.ngxSignalTranslate.translate('Actions')),
+    filtering: computed(() => this.ngxSignalTranslate.translate('Filtering')),
+    sorting: computed(() => this.ngxSignalTranslate.translate('Sorting')),
     orderBySwitchButtonLabel: computed(() =>
       this.config().orderBy === 'createdAt'
         ? this.ngxSignalTranslate.translate('SwitchToAlphabetOrder')
@@ -39,6 +42,11 @@ export class FloatActionButtons implements OnDestroy {
     ),
     hideFunctions: computed(() => this.ngxSignalTranslate.translate('HideFunctions')),
     showFunctions: computed(() => this.ngxSignalTranslate.translate('ShowFunctions')),
+    filterMovie: computed(() => this.ngxSignalTranslate.translate('Movies')),
+    filterSeries: computed(() => this.ngxSignalTranslate.translate('Series')),
+    filterUnwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
+    filterCompleted: computed(() => this.ngxSignalTranslate.translate('Completed')),
+    filterUncompleted: computed(() => this.ngxSignalTranslate.translate('Uncompleted')),
   };
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly aiAvailable = this.mainState.state.aiAvailable;
@@ -56,14 +64,27 @@ export class FloatActionButtons implements OnDestroy {
   );
   protected readonly showFloatButtons = signal(false);
   protected readonly actionButtonsVisible = computed(() => this.config().showActions && this.showFloatButtons());
+  protected readonly showActionSection = computed(
+    () => this.config().showAddButton || this.showAiSearchButton() || this.config().showRandomPickButton
+  );
   protected readonly canShowActionButton = computed(() => {
     const config = this.config();
-    return config.showAddButton || this.showAiSearchButton() || config.showRandomPickButton || config.showOrderButtons;
+    return (
+      config.showAddButton ||
+      this.showAiSearchButton() ||
+      config.showRandomPickButton ||
+      config.showOrderButtons ||
+      config.filterActions.length > 0
+    );
   });
   protected readonly addOnlyMode = computed(() => {
     const config = this.config();
     return (
-      config.showAddButton && !this.showAiSearchButton() && !config.showRandomPickButton && !config.showOrderButtons
+      config.showAddButton &&
+      !this.showAiSearchButton() &&
+      !config.showRandomPickButton &&
+      !config.showOrderButtons &&
+      config.filterActions.length === 0
     );
   });
   protected readonly showFloatActions = computed(() => this.config().showActions && this.canShowActionButton());
@@ -119,8 +140,41 @@ export class FloatActionButtons implements OnDestroy {
     this.showFloatButtons.set(false);
   }
 
+  protected onApplyFilter(filter: FloatActionFilter): void {
+    this.actionButtons.applyFilter(filter);
+    this.showFloatButtons.set(false);
+  }
+
   protected onAddNew(): void {
     this.actionButtons.addNew();
     this.showFloatButtons.set(false);
+  }
+
+  protected filterActionLabel(filter: FloatActionFilter): string {
+    const labels: Record<FloatActionFilter, string> = {
+      movie: this.translations.filterMovie(),
+      series: this.translations.filterSeries(),
+      unwatched: this.translations.filterUnwatched(),
+      completed: this.translations.filterCompleted(),
+      uncompleted: this.translations.filterUncompleted(),
+    };
+
+    return labels[filter];
+  }
+
+  protected filterActionIcon(filter: FloatActionFilter): string {
+    const icons: Record<FloatActionFilter, string> = {
+      movie: 'movie',
+      series: 'live_tv',
+      unwatched: 'visibility_off',
+      completed: 'check_circle',
+      uncompleted: 'radio_button_unchecked',
+    };
+
+    return icons[filter];
+  }
+
+  protected isFilterActive(filter: FloatActionFilter): boolean {
+    return this.config().activeFilterActions.includes(filter);
   }
 }

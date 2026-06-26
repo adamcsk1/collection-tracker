@@ -4,13 +4,18 @@
 
 .float-buttons-container {
   position: absolute;
-  right: 0;
+  left: 50%;
   bottom: calc(100% + var(--size-md));
+  translate: -50%;
+  transform-origin: bottom center;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   gap: var(--size-xs);
   flex-shrink: 0;
+  background-color: var(--glassy-background);
+  padding: var(--size-sm);
+  border-radius: var(--border-radius);
 }
 
 .float-button {
@@ -33,7 +38,37 @@
   background: none;
 }
 
+.float-action {
+  pointer-events: auto;
+
+  button {
+    min-width: 12rem;
+    background-color: var(--background-color);
+    justify-content: flex-start;
+  }
+}
+
+.float-action-section {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--size-xs);
+}
+
+.float-action-section-title {
+  color: var(--main-color);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.float-action-current {
+  button {
+    outline: var(--outline-style);
+    outline-color: var(--main-color);
+  }
+}
+
 .float-show-button {
   flex-shrink: 0;
-  margin-left: auto;
 }

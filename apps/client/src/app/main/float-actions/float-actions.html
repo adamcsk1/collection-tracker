@@ -1,8 +1,9 @@
 <section
   class="float-search-bar"
   data-test-id="float-search-bar"
-  [class.float-search-bar-no-search]="!searchTemplate()"
+  [class.float-search-bar-no-search]="!searchAvailable()"
   [class.float-search-bar-menu-only]="showMenuOnlyBar()"
+  [class.float-search-bar-search-expanded]="searchAvailable() && searchExpanded()"
 >
   <button
     data-test-id="nav-menu-button"
@@ -13,10 +14,30 @@
   >
     menu
   </button>
-  @if (searchTemplate(); as template) {
-    <div class="float-search-content">
-      <ng-container [ngTemplateOutlet]="template" />
-    </div>
+  @if (searchAvailable()) {
+    @let template = searchTemplate();
+    @if (searchExpanded()) {
+      <div
+        #searchContent
+        class="float-search-content"
+        animate.enter="float-search-content-enter"
+        animate.leave="float-search-content-leave"
+      >
+        @if (template) {
+          <ng-container [ngTemplateOutlet]="template" />
+        }
+      </div>
+    } @else {
+      <button
+        data-test-id="float-search-toggle"
+        class="search-toggle-button button-icon material-icons"
+        [attr.aria-label]="translations.search()"
+        [title]="translations.search()"
+        (click)="onShowSearch()"
+      >
+        search
+      </button>
+    }
   }
 
   @if (showFloatActions() && actionsComponent(); as component) {
@@ -26,10 +47,10 @@
   }
 </section>
 
-@if (config().scrollToTopAvailable) {
+@if (config().scrollToTopAvailable && !actionButtonsVisible()) {
   <div
     class="float-button float-button-scroll-to-top"
-    [class.float-button-scroll-to-top-no-search-bar]="!searchTemplate() && !showFloatActions()"
+    [class.float-button-scroll-to-top-no-search-bar]="!searchAvailable() && !showFloatActions()"
     animate.enter="animation-fade-in"
     animate.leave="animation-fade-out"
   >
