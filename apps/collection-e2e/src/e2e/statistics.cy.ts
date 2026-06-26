@@ -17,10 +17,11 @@ describe('Statistics — empty collection', () => {
 describe('Statistics — with movies and series', () => {
   const movieOne = {
     ...buildCollectionItem('Stats Movie One', 'movie', 'tt9000001'),
-    tags: ['#movie', '#favorite', '#action'],
+    tags: ['#action'],
+    favorite: true,
   };
-  const movieTwo = { ...buildCollectionItem('Stats Movie Two', 'movie', 'tt9000002'), tags: ['#movie', '#drama'] };
-  const seriesOne = { ...buildCollectionItem('Stats Series One', 'series', 'tt9000003'), tags: ['#series', '#action'] };
+  const movieTwo = { ...buildCollectionItem('Stats Movie Two', 'movie', 'tt9000002'), tags: ['#drama'] };
+  const seriesOne = { ...buildCollectionItem('Stats Series One', 'series', 'tt9000003'), tags: ['#action'] };
 
   beforeEach(() => {
     cy.autoLogin();
@@ -85,21 +86,21 @@ describe('Statistics — with movies and series', () => {
   it('navigates to the collection filtered by unwatched movies when the unwatched movies summary card is clicked', () => {
     StatisticsPage.getSummaryUnwatchedMovies().click();
     cy.url().should('include', '#/collection/library');
-    cy.url().should('include', 'search=%23unwatched');
     cy.url().should('include', 'type=movie');
+    cy.url().should('include', 'watched=false');
   });
 
   it('navigates to the collection filtered by unwatched library series when the unwatched library series summary card is clicked', () => {
     StatisticsPage.getSummaryUnwatchedLibrarySeries().click();
     cy.url().should('include', '#/collection/library');
-    cy.url().should('include', 'search=%23unwatched');
     cy.url().should('include', 'type=series');
+    cy.url().should('include', 'watched=false');
   });
 
   it('navigates to the series tracker filtered by uncompleted when the unwatched tracker series summary card is clicked', () => {
     StatisticsPage.getSummaryUnwatchedTrackerSeries().click();
     cy.url().should('include', '#/collection/series-tracker');
-    cy.url().should('include', 'search=%23uncompleted');
+    cy.url().should('include', 'completed=false');
   });
 
   it('navigates to the collection when the all summary card is clicked', () => {
@@ -111,19 +112,21 @@ describe('Statistics — with movies and series', () => {
   it('navigates to the collection filtered by movies when the movies summary card is clicked', () => {
     StatisticsPage.getSummaryMovies().click();
     cy.url().should('include', '#/collection/library');
-    CollectionPage.getSearchInput().should('have.value', '#movie');
+    cy.url().should('include', 'type=movie');
+    CollectionPage.getSearchInput().should('have.value', '');
   });
 
   it('navigates to the collection filtered by series when the series summary card is clicked', () => {
     StatisticsPage.getSummarySeries().click();
     cy.url().should('include', '#/collection/library');
-    CollectionPage.getSearchInput().should('have.value', '#series');
+    cy.url().should('include', 'type=series');
+    CollectionPage.getSearchInput().should('have.value', '');
   });
 
   it('navigates to the collection filtered by favorites when the favorites summary card is clicked', () => {
     StatisticsPage.getSummaryFavorites().click();
     cy.url().should('include', '#/collection/favorites');
-    cy.getByTestId('collection-search').should('not.exist');
+    CollectionPage.getSearchHost().should('not.exist');
   });
 
   it('shows tag buttons for custom tags', () => {
@@ -163,7 +166,7 @@ describe('Statistics — with movies and series', () => {
 describe('Statistics — with series tracker items', () => {
   const librarySeries = {
     ...buildCollectionItem('Stats Library Series', 'series', 'tt9000004'),
-    tags: ['#series', '#sci-fi'],
+    tags: ['#sci-fi'],
   };
 
   beforeEach(() => {
@@ -188,13 +191,13 @@ describe('Statistics — with series tracker items', () => {
   it('navigates to the series tracker filtered by uncompleted when the unwatched tracker series card is clicked', () => {
     StatisticsPage.getSummaryUnwatchedTrackerSeries().click();
     cy.url().should('include', '#/collection/series-tracker');
-    cy.url().should('include', 'search=%23uncompleted');
+    cy.url().should('include', 'completed=false');
   });
 
   it('navigates to the series tracker filtered by completed when the completed tracker series card is clicked', () => {
     StatisticsPage.getSummaryCompletedTrackerSeries().click();
     cy.url().should('include', '#/collection/series-tracker');
-    cy.url().should('include', 'search=%23completed');
+    cy.url().should('include', 'completed=true');
   });
 });
 
@@ -216,7 +219,7 @@ describe('Statistics — wishlist', () => {
     StatisticsPage.getSummaryWishlist().click();
 
     cy.url().should('include', '#/collection/wishlist');
-    cy.getByTestId('collection-search').should('not.exist');
+    CollectionPage.getSearchHost().should('not.exist');
     CollectionPage.getListItems().should('contain.text', 'Stats Wishlist Movie');
   });
 });

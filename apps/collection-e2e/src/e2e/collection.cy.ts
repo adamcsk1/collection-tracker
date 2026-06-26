@@ -534,7 +534,7 @@ describe('Collection — order controls', () => {
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Favorite Order', 'movie', 'tt8400024'),
-      tags: ['#movie', '#favorite'],
+      favorite: true,
     });
 
     CommonPage.openMenu();
@@ -858,7 +858,7 @@ describe('Collection - tag badge filtering', () => {
   beforeEach(() => {
     cy.autoLogin();
     // Create item with a custom tag
-    cy.request('POST', '/api/v1/create', { ...taggedItem, tags: ['#movie', '#action'] });
+    cy.request('POST', '/api/v1/create', { ...taggedItem, tags: ['#action'] });
     // Enable image badge for the custom tag via API
     cy.request('POST', '/api/v1/tag-management', [
       {

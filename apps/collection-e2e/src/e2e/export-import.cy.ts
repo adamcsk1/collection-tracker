@@ -36,7 +36,7 @@ describe('Export/Import — tag management export and import', () => {
   const importedTag = `#export-imported-${Date.now()}`;
   const item = {
     ...buildItemWithCustomTag('Import Export Tag Management Movie', existingTag),
-    tags: ['#movie', existingTag, importedTag],
+    tags: [existingTag, importedTag],
   };
   const exportPath = 'cypress/downloads/collection-tracker-tag-management.json';
   const exportedExistingConfig = buildTagManagement(existingTag, {
@@ -129,7 +129,7 @@ describe('Export/Import — collection data export', () => {
     cy.readFile(exportPath, null, { timeout: 15000 }).should((source) => {
       const parsed = JSON.parse(source.toString('utf8'));
       expect(parsed.type).to.equal('collection-tracker-export');
-      expect(parsed.version).to.equal(2);
+      expect(parsed.version).to.equal(3);
       expect(parsed.collectionItems).to.be.an('array');
       expect(parsed.collectionItems.length).to.be.greaterThan(0);
       expect(parsed.tagManagement).to.be.an('array');
@@ -143,6 +143,8 @@ describe('Export/Import — collection data export', () => {
       );
       expect(trackerItem).to.not.be.undefined;
       expect(trackerItem.title).to.equal('Export Tracker Movie');
+      expect(trackerItem.contentType).to.equal('movie');
+      expect(trackerItem.favorite).to.equal(false);
     });
   });
 

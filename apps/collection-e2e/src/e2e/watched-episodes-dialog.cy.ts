@@ -194,19 +194,20 @@ describe('Watched episodes dialog', () => {
     CollectionPage.closeDialogByOverlay();
     CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
-    CollectionPage.getItemDialogSystemTagsSection().should('contain.text', '#completed');
     CollectionPage.closeDialogByOverlay();
     cy.getByTestId('item-dialog').should('not.exist');
     cy.get('.dialog').should('not.exist');
 
     CollectionPage.visitSeriesTracker();
     waitForSeriesTrackerItem(imdbId);
-    CollectionPage.getSeriesTrackerSearchInput().clear().type('#completed');
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getCollectionFilterButton('completed').click();
     CollectionPage.getListItems().should('have.length', 1).and('contain.text', seriesTitle);
-    CollectionPage.getSeriesTrackerSearchInput().clear().type('#uncompleted');
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getCollectionFilterButton('uncompleted').click();
     CollectionPage.getListItems().should('have.length', 1).and('contain.text', incompleteSeriesTitle);
 
-    CollectionPage.getSeriesTrackerSearchInput().clear();
+    CollectionPage.visitSeriesTracker();
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -220,14 +221,14 @@ describe('Watched episodes dialog', () => {
     CollectionPage.closeDialogByOverlay();
     CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'N/A');
-    CollectionPage.getItemDialogSystemTagsSection().should('not.contain.text', '#completed');
     CollectionPage.closeDialogByOverlay();
     cy.getByTestId('item-dialog').should('not.exist');
     cy.get('.dialog').should('not.exist');
 
     CollectionPage.visitSeriesTracker();
     waitForSeriesTrackerItem(imdbId);
-    CollectionPage.getSeriesTrackerSearchInput().clear().type('#uncompleted');
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getCollectionFilterButton('uncompleted').click();
     CollectionPage.getListItems().should('have.length', 2);
   });
 

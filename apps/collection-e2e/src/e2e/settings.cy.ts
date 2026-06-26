@@ -157,7 +157,6 @@ describe('Settings - mark all watched / unwatched', () => {
     cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie B', 'movie', 'tt8000002'));
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Test Series', 'series', 'tt8000003'),
-      tags: ['#series'],
     });
     // Force a full page reload so Angular reboots and its boot-time loadCollection()
     // picks up the seeded items. ChangeWatchedStatusService reads from the in-memory
@@ -241,7 +240,6 @@ describe('Settings - mark all watched / unwatched', () => {
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Tracked Series', 'series', 'tt8000005'),
       listType: 'series-tracker',
-      tags: ['#series'],
     });
 
     SettingsPage.getRemoveAllTrackedSeriesDataButton().click();

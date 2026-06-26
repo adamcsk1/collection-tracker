@@ -3,7 +3,7 @@ import { CollectionPage } from '../page-objects/collection.po';
 import { TagManagementPage } from '../page-objects/tag-management.po';
 
 /**
- * Builds a collection item that also carries a custom tag alongside #movie.
+ * Builds a movie collection item that also carries a custom tag.
  */
 const buildItemWithCustomTag = (title: string, customTag: string) => {
   const item = buildCollectionItem(title, 'movie');

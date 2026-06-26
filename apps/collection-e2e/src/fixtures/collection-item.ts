@@ -13,6 +13,8 @@ interface CollectionItemFixture {
   userRate: number | null;
   actors: string;
   plot: string;
+  contentType: ItemType;
+  favorite: boolean;
 }
 
 export const buildCollectionItem = (
@@ -24,7 +26,7 @@ export const buildCollectionItem = (
   title,
   genre: ['Action', 'Adventure'],
   IMDbId: imdbId,
-  tags: [`#${type}`],
+  tags: [],
   year: '2020',
   rate: '8.5',
   rottenTomatoesRate: '',
@@ -32,6 +34,8 @@ export const buildCollectionItem = (
   userRate: null,
   actors: 'Actor One, Actor Two',
   plot: `A great ${type} for e2e testing.`,
+  contentType: type,
+  favorite: false,
 });
 
 export const buildCollectionItems = (titles: string[], type: ItemType = 'movie'): CollectionItemFixture[] =>

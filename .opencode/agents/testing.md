@@ -56,7 +56,7 @@ apps/collection-e2e/src/
 - **Dynamic test IDs in `@for` loops** — use `[attr.data-test-id]="'prefix-' + item.key"`; PO methods accept the key as a parameter (e.g., `getWeightInput(tag: string)`)
 - **window.confirm** — stub with `cy.on('window:confirm', () => true)` before any action that calls `ConfirmService` (e.g., delete, reset tag management)
 - **Seeding tag management** — use `cy.request('POST', '/api/v1/tag-management', [...TagManagementModel])` to pre-configure tag settings; GET endpoint is `/api/v1/tag-management`; **never seed tag management via API before visiting the tag-management page** — the component may re-POST an empty list that overwrites the seeded values; set config state via the UI after the page loads
-- **Internal tags excluded from tag-management** — `#movie`, `#series`, and `#favorite` are filtered out; seed items with a custom tag (e.g. `#action`) and add it on the same line as `#movie`, space-separated; the tags parser regex captures only one line
+- **Former system tags are custom tags** — `#movie`, `#series`, `#favorite`, and other old process tags are editable user tags; seed type, favorite, list, and watched state through explicit item fields or route query params rather than special tag names
 - **Destructive account tests** — use `cy.autoLoginWithNewUser()`, never `cy.autoLogin()`, in any describe block that creates a new user token or deletes the user; failure to isolate cascades as 401 failures across subsequent specs
 
 ### AppMode

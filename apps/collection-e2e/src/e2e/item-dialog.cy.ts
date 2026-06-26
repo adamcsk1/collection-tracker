@@ -46,7 +46,7 @@ describe('Item dialog — edit flow', () => {
 
     CollectionPage.getItemDialogYearInput().clear().type('2025');
     CollectionPage.getItemDialogGenreInput().clear().type('Drama, Comedy');
-    CollectionPage.getItemDialogTagsInput().clear().type('#movie #updated');
+    CollectionPage.getItemDialogTagsInput().clear().type('#updated');
     CollectionPage.getItemDialogActorsInput().clear().type('New Actor One, New Actor Two');
     CollectionPage.getItemDialogPlotInput().clear().type('An updated plot for testing.');
 

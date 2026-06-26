@@ -44,6 +44,7 @@ export const CollectionPage = {
 
   // Search
   getSearchInput: () => cy.getByTestId('collection-search').find('input'),
+  getSearchHost: () => cy.getByTestId('collection-search'),
   getSeriesTrackerSearchInput: () => cy.getByTestId('series-tracker-search').find('input'),
   getMovieTrackerSearchInput: () => cy.getByTestId('movie-tracker-search').find('input'),
   getWatchLaterSearchInput: () => cy.getByTestId('watch-later-search').find('input'),
@@ -87,6 +88,7 @@ export const CollectionPage = {
   getAiSearchToggleButton: () => cy.getByTestId('ai-search-toggle'),
   getOrderByToggleButton: () => cy.getByTestId('list-order-by-toggle'),
   getOrderDirectionToggleButton: () => cy.getByTestId('list-order-direction-toggle'),
+  getCollectionFilterButton: (filter: string) => cy.getByTestId(`collection-filter-${filter}`),
 
   // AI search input
   getAiSearchTrigger: () => cy.getByTestId('ai-search-trigger'),
@@ -143,7 +145,6 @@ export const CollectionPage = {
   getItemDialogUserRateInput: () => getItemDialog().find('[data-test-id="item-dialog-user-rate"] input'),
   getItemDialogEpisodeProgressChip: () => getItemDialog().find('[data-test-id="item-dialog-episode-progress-chip"]'),
   getItemDialogCompletedChip: () => getItemDialog().find('[data-test-id="item-dialog-completed-chip"]'),
-  getItemDialogSystemTagsSection: () => getItemDialog().find('[data-test-id="item-dialog-system-tags-section"]'),
   getItemDialogManageWatchedEpisodesButton: () =>
     getItemDialog().find('[data-test-id="item-dialog-manage-watched-episodes"]'),
   getItemDialogManageSeriesMetadataButton: () =>
