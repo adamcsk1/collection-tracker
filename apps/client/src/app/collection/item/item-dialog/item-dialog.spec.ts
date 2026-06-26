@@ -264,6 +264,26 @@ describe('ItemDialog', () => {
     expect(component['permissionUpdate']()).toBe(true);
   });
 
+  it('keeps watch later items with unavailable IMDb ratings valid in edit mode', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later', rate: 'N/A' }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['onEdit']();
+
+    expect(component['form'].rate().value()).toBe('N/A');
+    expect(component['form']().invalid()).toBe(false);
+  });
+
+  it('keeps wishlist items with unavailable IMDb ratings valid in edit mode', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist', rate: 'N/A' }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['onEdit']();
+
+    expect(component['form'].rate().value()).toBe('N/A');
+    expect(component['form']().invalid()).toBe(false);
+  });
+
   it('returns collection item title for normal items', () => {
     expect(component['dialogTitle']()).toBe('Title.CollectionItem');
   });

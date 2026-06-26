@@ -1029,6 +1029,79 @@ describe('runMigrations', () => {
     });
   });
 
+  describe('018_remove_legacy_type_tags', () => {
+    it('removes legacy type tags from all list types and recomputes item hashes', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('018_remove_legacy_type_tags.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, imdb_id, list_type, title, title_lower, year, rate, user_rate, actors, plot, image, content_hash, rotten_tomatoes_rate, metacritic_rate, content_type, favorite, watched_at)
+        VALUES
+          ('user', 'tt-library', 'library', 'Library Movie', 'library movie', '2024', '8.0', NULL, 'Actor', 'Plot', 'image', 'legacy-library-hash', '', '', 'movie', 1, NULL),
+          ('user', 'tt-watch-later', 'watch-later', 'Watch Later Series', 'watch later series', '2023', 'N/A', NULL, 'Actor', 'Plot', 'image', 'legacy-watch-later-hash', '', '', 'series', 0, NULL),
+          ('user', 'tt-wishlist', 'wishlist', 'Wishlist Movie', 'wishlist movie', '2022', '7.0', 7.5, 'Actor', 'Plot', 'image', 'legacy-wishlist-hash', '90%', '80/100', 'movie', 0, NULL),
+          ('user', 'tt-series-tracker', 'series-tracker', 'Tracked Series', 'tracked series', '2021', '9.0', NULL, 'Actor', 'Plot', 'image', 'legacy-series-tracker-hash', '', '', 'series', 0, '2024-01-02 00:00:00');
+        INSERT INTO collection_item_genres (item_id, genre) VALUES
+          (1, 'Drama'),
+          (2, 'Action'),
+          (3, 'Comedy'),
+          (4, 'Sci-Fi');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES
+          (1, '#movie'),
+          (1, '#favorite'),
+          (1, 'custom-library'),
+          (2, '#series'),
+          (2, 'custom-watch-later'),
+          (3, '#movie'),
+          (3, '#series'),
+          (3, 'custom-wishlist'),
+          (4, '#series'),
+          (4, 'custom-series-tracker');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '018_remove_legacy_type_tags.sql'),
+        join(migrationsDir, '018_remove_legacy_type_tags.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT tag FROM collection_item_tags WHERE tag IN (?, ?)').all('#movie', '#series')).toEqual(
+        []
+      );
+      expect(db.prepare('SELECT item_id, tag FROM collection_item_tags ORDER BY item_id, tag').all()).toEqual([
+        { item_id: 1, tag: '#favorite' },
+        { item_id: 1, tag: 'custom-library' },
+        { item_id: 2, tag: 'custom-watch-later' },
+        { item_id: 3, tag: 'custom-wishlist' },
+        { item_id: 4, tag: 'custom-series-tracker' },
+      ]);
+
+      const libraryItem = db
+        .prepare('SELECT content_hash FROM collection_items WHERE imdb_id = ?')
+        .get('tt-library') as { content_hash: string };
+      expect(libraryItem.content_hash).toBe(
+        getItemHash({
+          image: 'image',
+          title: 'Library Movie',
+          genre: ['Drama'],
+          IMDbId: 'tt-library',
+          tags: ['#favorite', 'custom-library'],
+          year: '2024',
+          rate: '8.0',
+          rottenTomatoesRate: '',
+          metacriticRate: '',
+          userRate: null,
+          actors: 'Actor',
+          plot: 'Plot',
+          contentType: 'movie',
+          favorite: true,
+        })
+      );
+
+      db.close();
+    });
+  });
+
   describe('runner behavior', () => {
     it('runs the full migration chain 001 to 015 and produces the expected final schema', async () => {
       const db = new Database(':memory:');

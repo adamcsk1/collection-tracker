@@ -1,4 +1,4 @@
-const imdbRatePattern = /^(?:10(?:\.0)?|[0-9](?:\.[0-9])?)$/;
+const imdbRatePattern = /^(?:N\/A|10(?:\.0)?|[0-9](?:\.[0-9])?)$/;
 const rottenTomatoesRatePattern = /^(?:100|[1-9]?\d)%$/;
 const metacriticRatePattern = /^(?:100|[1-9]?\d)\/100$/;
 

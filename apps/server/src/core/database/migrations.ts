@@ -87,7 +87,11 @@ export const runMigrations = async (db: Database.Database, migrationsDir: string
 
     try {
       db.exec(sql);
-      if (file === '015_add_movie_tracker_list_type.sql' || file === '017_move_system_tags_to_columns.sql') {
+      if (
+        file === '015_add_movie_tracker_list_type.sql' ||
+        file === '017_move_system_tags_to_columns.sql' ||
+        file === '018_remove_legacy_type_tags.sql'
+      ) {
         recomputeCollectionItemHashes(db);
       }
       db.prepare('INSERT INTO schema_migrations (id) VALUES (?)').run(file);
