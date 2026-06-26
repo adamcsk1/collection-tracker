@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { syncSeriesTrackerCompletedTag } from '../core/database/repositories/collection';
 import { replaceSeriesTrackerSeasons } from '../core/database/repositories/series-tracker-season-repository';
+import { deleteWatchedEpisodesOutsideSeasons } from '../core/database/repositories/series-tracker-watched-episodes-repository';
 import { jwtGuard } from '../core/jwt';
 import { fetchSeriesSeasonMetadata } from '../core/omdb/series-season-metadata';
 import { withErrorHandler } from '../core/utils/api-error-handler';
@@ -20,6 +21,7 @@ export const register = (app: FastifyInstance): void => {
       const seasons = await fetchSeriesSeasonMetadata(imdbId);
       const db = getDatabase();
       const savedSeasons = replaceSeriesTrackerSeasons(db, request.usernameHash, imdbId, seasons);
+      deleteWatchedEpisodesOutsideSeasons(db, request.usernameHash, imdbId, savedSeasons);
       const item = syncSeriesTrackerCompletedTag(db, request.usernameHash, imdbId);
       const result: SeriesTrackerSeasonsApiResponseModel = { seasons: savedSeasons, item };
       response.send(result);

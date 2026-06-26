@@ -65,4 +65,68 @@ describe('refresh-series-tracker-seasons-api', () => {
       watched_at: expect.any(String),
     });
   });
+
+  it('clears watched timestamp when refreshed metadata adds unwatched episodes', async () => {
+    const itemId = insertSeriesTrackerItem();
+    getDatabase().prepare('UPDATE collection_items SET watched_at = ? WHERE id = ?').run('2025-01-01 00:00:00', itemId);
+    getDatabase()
+      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
+      .run(itemId, 1, 1);
+    process.env.OMDB_API_KEY = 'key';
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }, { Title: 'Episode 2' }] }),
+        })
+    );
+    const response = mockResponse();
+    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-series-tracker-seasons-api');
+    register(app);
+
+    await handlerPromise();
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
+      watched_at: null,
+    });
+  });
+
+  it('prunes watched episodes outside refreshed metadata before syncing completion', async () => {
+    const itemId = insertSeriesTrackerItem();
+    getDatabase().prepare('UPDATE collection_items SET watched_at = ? WHERE id = ?').run('2025-01-01 00:00:00', itemId);
+    getDatabase()
+      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?), (?, ?, ?)')
+      .run(itemId, 1, 1, itemId, 1, 3);
+    process.env.OMDB_API_KEY = 'key';
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }] }) })
+    );
+    const response = mockResponse();
+    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-series-tracker-seasons-api');
+    register(app);
+
+    await handlerPromise();
+    expect(
+      getDatabase()
+        .prepare(
+          'SELECT season, episode FROM series_tracker_watched_episodes WHERE item_id = ? ORDER BY season, episode'
+        )
+        .all(itemId)
+    ).toEqual([{ season: 1, episode: 1 }]);
+    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
+      watched_at: expect.any(String),
+    });
+  });
 });
