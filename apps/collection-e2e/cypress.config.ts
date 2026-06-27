@@ -8,6 +8,10 @@ export default defineConfig({
     screenshotsFolder: 'apps/collection-e2e/cypress/screenshots',
     videosFolder: 'apps/collection-e2e/cypress/videos',
     video: false,
+    retries: {
+      runMode: 2,
+      openMode: 0,
+    },
     chromeWebSecurity: false,
     allowCypressEnv: false,
   },

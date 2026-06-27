@@ -9,7 +9,7 @@ export const buildOmdbItem = (title: string, imdbId = 'tt1234567', type = 'movie
   Year: '2020',
   imdbID: imdbId,
   Type: type,
-  Poster: 'https://placehold.co/90x133',
+  Poster: 'N/A',
   Genre: 'Action, Adventure',
   Director: 'Test Director',
   Actors: 'Actor One, Actor Two',

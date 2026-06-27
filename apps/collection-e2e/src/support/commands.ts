@@ -11,6 +11,18 @@ type AuthCookie = {
 };
 
 const collectionListTypes = ['library', 'watch-later', 'wishlist', 'series-tracker', 'movie-tracker'] as const;
+const defaultUserSettings = {
+  theme: 'system',
+  animatedBackground: true,
+  language: 'en',
+  defaultLibraryOwnerShareCode: null,
+  collectionListDisplayPreferences: {
+    showYear: true,
+    showSharedIcon: true,
+    preferredRating: 'imdb',
+    imdbRatingFallback: false,
+  },
+};
 
 const getSetCookieHeaders = (headers: Cypress.Response<unknown>['headers']): string[] => {
   const setCookie = headers['set-cookie'];
@@ -149,6 +161,7 @@ Cypress.Commands.add('autoLogin', () => {
   });
 
   cy.request('POST', '/api/v1/tag-management', []);
+  cy.request('POST', '/api/v1/user/settings', defaultUserSettings);
 
   signInThroughUi(username, token);
 
