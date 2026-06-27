@@ -47,6 +47,7 @@ const swipeActiveDialog = (startX: number, endX: number) =>
 export const CollectionPage = {
   visit: () => {
     cy.visit('/client/#/collection/library');
+    cy.reload();
   },
 
   visitSeriesTracker: () => {
