@@ -14,6 +14,7 @@ import { NewItemDialogService } from './new-item-dialog-service';
 
 describe('NewItemDialog component', () => {
   type MatchedContent = { text: string; value: string };
+  const matrixReference = 'omdb/tt123';
 
   let fixture: ComponentFixture<NewItemDialog>;
   let component: NewItemDialog;
@@ -22,6 +23,7 @@ describe('NewItemDialog component', () => {
     completedSearchText: ReturnType<typeof signal<string>>;
     search: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
+    getProviderReference: ReturnType<typeof vi.fn>;
   };
   let api: { collectionItemExists: ReturnType<typeof vi.fn>; getShares: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
@@ -34,6 +36,9 @@ describe('NewItemDialog component', () => {
       completedSearchText: signal(''),
       search: vi.fn(),
       save: vi.fn(() => of(undefined)),
+      getProviderReference: vi.fn((value: string | null) =>
+        value === matrixReference ? { identitySource: 'omdb', identityId: 'tt123' } : null
+      ),
     };
     api = {
       collectionItemExists: vi.fn(() => of({ exists: false })),
@@ -120,13 +125,13 @@ describe('NewItemDialog component', () => {
   it('invokes save and resets when mode is new', async () => {
     const formRoot = component['form']();
     vi.spyOn(formRoot, 'reset');
-    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].selectedIMDbId().value.set(matrixReference);
     component['form'].userRate().value.set(8.7);
     component['form'].tags().value.set('#tag');
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', 8.7, '#tag', 'new', {});
+    expect(service.save).toHaveBeenCalledWith(matrixReference, 8.7, '#tag', 'new', {});
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
@@ -361,14 +366,22 @@ describe('NewItemDialog component', () => {
   });
 
   it('checks duplicate IMDb IDs again when the target library changes', async () => {
-    component['form'].selectedIMDbId().value.set('tt123');
+    service.matchedContent.set([{ text: 'IMDb id: tt123', value: matrixReference }]);
+    component['form'].selectedIMDbId().value.set(matrixReference);
     await vi.advanceTimersByTimeAsync(150);
     api.collectionItemExists.mockClear();
 
     component['form'].targetOwnerShareCode().value.set('owner-code');
     await vi.advanceTimersByTimeAsync(150);
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('tt123', 'owner-code');
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt123', 'owner-code', undefined, undefined);
+  });
+
+  it('does not check duplicate IMDb IDs when the selected value has no provider item ID', async () => {
+    component['form'].selectedIMDbId().value.set('tt123');
+    await vi.advanceTimersByTimeAsync(150);
+
+    expect(api.collectionItemExists).not.toHaveBeenCalled();
   });
 
   it('exits when there is no selected IMDb id', () => {

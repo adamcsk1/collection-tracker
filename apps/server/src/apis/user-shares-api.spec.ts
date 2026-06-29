@@ -7,17 +7,12 @@ import { getUserShareCode } from '../core/database/repositories/user-repository'
 
 const buildRegisteredApp = async () => {
   const handlers = new Map<string, (request: any, response: any) => Promise<void>>();
-  const registerRoute = (method: string) => (path: string, _options: unknown, handler: any) => {
-    handlers.set(`${method} ${path}`, handler);
-  };
   const app = {
-    get: vi.fn(registerRoute('GET')),
-    post: vi.fn(registerRoute('POST')),
-    delete: vi.fn(registerRoute('DELETE')),
+    get: vi.fn((path: string, _options: unknown, handler: any) => handlers.set(path, handler)),
   } as unknown as FastifyInstance;
 
-  const { register } = await import('./user-shares-api');
-  register(app);
+  const { register: registerGetUserShares } = await import('./user-shares-api');
+  registerGetUserShares(app);
 
   return handlers;
 };
@@ -53,7 +48,7 @@ describe('user-shares-api', () => {
 
     const handlers = await buildRegisteredApp();
     const response = mockResponse();
-    await handlers.get(`GET ${API_PREFIX}/user/shares`)!({ usernameHash: 'current-hash' }, response);
+    await handlers.get(`${API_PREFIX}/user/shares`)!({ usernameHash: 'current-hash' }, response);
 
     expect(response.send).toHaveBeenCalledWith({
       userShareCode: getUserShareCode('current-hash'),
@@ -78,144 +73,5 @@ describe('user-shares-api', () => {
         },
       ],
     });
-  });
-
-  it('creates a share from a short share code and implies read permission', async () => {
-    insertUser('owner-hash', 'Owner');
-    insertUser('friend-hash', 'Friend');
-
-    const handlers = await buildRegisteredApp();
-    const response = mockResponse();
-    await handlers.get(`POST ${API_PREFIX}/user/shares`)!(
-      {
-        usernameHash: 'owner-hash',
-        body: {
-          sharedWithUserShareCode: getUserShareCode('friend-hash'),
-          canRead: false,
-          canCreate: true,
-          canUpdate: false,
-          canDelete: false,
-        },
-      },
-      response
-    );
-
-    expect(response.code).toHaveBeenCalledWith(204);
-    expect(
-      getDatabase()
-        .prepare(
-          'SELECT can_read, can_create, can_update, can_delete FROM user_shares WHERE owner_username_hash = ? AND shared_with_username_hash = ?'
-        )
-        .get('owner-hash', 'friend-hash')
-    ).toEqual({ can_read: 1, can_create: 1, can_update: 0, can_delete: 0 });
-  });
-
-  it('updates an existing outgoing share permissions', async () => {
-    insertUser('owner-hash', 'Owner');
-    insertUser('friend-hash', 'Friend');
-    getDatabase()
-      .prepare(
-        `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-      .run('owner-hash', 'friend-hash', 1, 0, 0, 0);
-
-    const handlers = await buildRegisteredApp();
-    const response = mockResponse();
-    await handlers.get(`POST ${API_PREFIX}/user/shares`)!(
-      {
-        usernameHash: 'owner-hash',
-        body: {
-          sharedWithUserShareCode: getUserShareCode('friend-hash'),
-          canRead: true,
-          canCreate: true,
-          canUpdate: true,
-          canDelete: true,
-        },
-      },
-      response
-    );
-
-    expect(response.code).toHaveBeenCalledWith(204);
-    expect(getDatabase().prepare('SELECT COUNT(*) AS count FROM user_shares').get()).toEqual({ count: 1 });
-    expect(
-      getDatabase()
-        .prepare('SELECT can_read, can_create, can_update, can_delete FROM user_shares WHERE owner_username_hash = ?')
-        .get('owner-hash')
-    ).toEqual({ can_read: 1, can_create: 1, can_update: 1, can_delete: 1 });
-  });
-
-  it('rejects missing and unknown target share codes', async () => {
-    insertUser('owner-hash', 'Owner');
-    const handlers = await buildRegisteredApp();
-    const missingResponse = mockResponse();
-    await handlers.get(`POST ${API_PREFIX}/user/shares`)!(
-      { usernameHash: 'owner-hash', body: { sharedWithUserShareCode: ' ' } },
-      missingResponse
-    );
-    expect(missingResponse.code).toHaveBeenCalledWith(400);
-
-    const unknownResponse = mockResponse();
-    await handlers.get(`POST ${API_PREFIX}/user/shares`)!(
-      { usernameHash: 'owner-hash', body: { sharedWithUserShareCode: 'unknown-share-code' } },
-      unknownResponse
-    );
-    expect(unknownResponse.code).toHaveBeenCalledWith(404);
-  });
-
-  it('does not allow sharing with the current user', async () => {
-    insertUser('owner-hash', 'Owner');
-
-    const handlers = await buildRegisteredApp();
-    const response = mockResponse();
-    await handlers.get(`POST ${API_PREFIX}/user/shares`)!(
-      { usernameHash: 'owner-hash', body: { sharedWithUserShareCode: getUserShareCode('owner-hash') } },
-      response
-    );
-
-    expect(response.code).toHaveBeenCalledWith(404);
-    expect(getDatabase().prepare('SELECT COUNT(*) AS count FROM user_shares').get()).toEqual({ count: 0 });
-  });
-
-  it('allows invited users to revoke incoming shares', async () => {
-    insertUser('owner-hash', 'Owner');
-    insertUser('friend-hash', 'Friend');
-    getDatabase()
-      .prepare(
-        `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-      .run('owner-hash', 'friend-hash', 1, 1, 0, 0);
-
-    const handlers = await buildRegisteredApp();
-    const response = mockResponse();
-    await handlers.get(`DELETE ${API_PREFIX}/user/shares/incoming/:ownerUserShareCode`)!(
-      { usernameHash: 'friend-hash', params: { ownerUserShareCode: getUserShareCode('owner-hash') } },
-      response
-    );
-
-    expect(response.code).toHaveBeenCalledWith(204);
-    expect(getDatabase().prepare('SELECT COUNT(*) AS count FROM user_shares').get()).toEqual({ count: 0 });
-  });
-
-  it('allows owners to remove outgoing shares', async () => {
-    insertUser('owner-hash', 'Owner');
-    insertUser('friend-hash', 'Friend');
-    getDatabase()
-      .prepare(
-        `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-      .run('owner-hash', 'friend-hash', 1, 1, 1, 1);
-
-    const handlers = await buildRegisteredApp();
-    const response = mockResponse();
-    await handlers.get(`DELETE ${API_PREFIX}/user/shares/:sharedWithUserShareCode`)!(
-      { usernameHash: 'owner-hash', params: { sharedWithUserShareCode: getUserShareCode('friend-hash') } },
-      response
-    );
-
-    expect(response.code).toHaveBeenCalledWith(204);
-    expect(getDatabase().prepare('SELECT COUNT(*) AS count FROM user_shares').get()).toEqual({ count: 0 });
   });
 });

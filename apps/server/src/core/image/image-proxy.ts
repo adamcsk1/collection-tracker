@@ -8,7 +8,7 @@ import { extname, join } from 'path';
 import { getArgv } from '../argv/argv';
 import { FOLDERS } from '../main-const';
 import { CONTENT_TYPE_EXTENSIONS, FETCH_TIMEOUT_MS, MAX_IMAGE_BYTES } from './image-proxy-const';
-import { ImageCacheMetadata, ProxiedImageResponse, PublicTarget } from './image-proxy-model';
+import { ImageCacheMetadata, ImageProxyResult, ProxiedImageResponse, PublicTarget } from './image-proxy-model';
 
 const getImageCacheFolder = (): string => {
   const folder = join(getArgv().dataFolder, FOLDERS.cache);
@@ -140,16 +140,6 @@ const readMetadata = (path: string): ImageCacheMetadata | null => {
     return null;
   }
 };
-
-export type ImageProxyResult =
-  | { kind: 'cached' }
-  | { kind: 'fetched' }
-  | { kind: 'invalid-url' }
-  | { kind: 'blocked' }
-  | { kind: 'redirect' }
-  | { kind: 'upstream-error'; statusCode: number }
-  | { kind: 'not-image' }
-  | { kind: 'too-large' };
 
 export const fetchAndCacheImageWithDetails = async (sourceUrl: string): Promise<ImageProxyResult> => {
   let url: URL;

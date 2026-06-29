@@ -61,6 +61,8 @@ describe('List', () => {
     titleLower: title.toLowerCase(),
     genre: [],
     IMDbId,
+    externalProvider: 'omdb',
+    externalItemId: IMDbId,
     tags: [],
     year: null,
     rate: '',

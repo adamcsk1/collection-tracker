@@ -150,11 +150,13 @@ Cypress.Commands.add('autoLogin', () => {
   collectionListTypes.forEach((listType) => {
     const listItemsUrl = `/api/v1/items?limit=1000&offset=0&listType=${encodeURIComponent(listType)}`;
     cy.request('GET', listItemsUrl).then((response) => {
-      const items = (response.body as { items: Array<{ IMDbId: string; hash: string }> }).items;
+      const items = (response.body as {
+        items: Array<{ externalProvider: string; externalItemId: string; hash: string }>;
+      }).items;
       items.forEach((item) => {
-        const deleteUrl = `/api/v1/delete/${encodeURIComponent(item.IMDbId)}?hash=${encodeURIComponent(
-          item.hash
-        )}&listType=${encodeURIComponent(listType)}`;
+        const deleteUrl = `/api/v1/items/${encodeURIComponent(item.externalProvider)}/${encodeURIComponent(
+          item.externalItemId
+        )}?hash=${encodeURIComponent(item.hash)}&listType=${encodeURIComponent(listType)}`;
         cy.request('DELETE', deleteUrl);
       });
     });

@@ -322,6 +322,67 @@ describe('statistics-api', () => {
     );
   });
 
+  it('matches watched statistics by canonical identity when IMDb ID is absent', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      null,
+      'omdb',
+      'provider-library-id',
+      'imdb:tt-canonical',
+      'Canonical Movie',
+      'canonical movie',
+      '2024',
+      '8.0',
+      '',
+      '',
+      'library-movie-hash',
+      'movie'
+    );
+    db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type, watched_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      null,
+      'omdb',
+      'provider-tracker-id',
+      'imdb:tt-canonical',
+      'movie-tracker',
+      'Canonical Movie',
+      'canonical movie',
+      '2024',
+      '8.0',
+      '',
+      '',
+      'tracker-movie-hash',
+      'movie',
+      '2025-01-02 00:00:00'
+    );
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: {} };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./statistics-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        watchedMovieCount: 1,
+        unwatchedMovieCount: 0,
+        watchedYearCounts: [{ year: '2025', movieCount: 1, seriesCount: 0, count: 1 }],
+      })
+    );
+  });
+
   it('does not include shared-owner internal lists in filtered statistics', async () => {
     insertUser('user');
     insertUser('owner');

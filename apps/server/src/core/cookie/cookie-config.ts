@@ -1,7 +1,5 @@
 import dayjs, { ManipulateType } from 'dayjs';
-import type { FastifyCookieOptions } from '@fastify/cookie';
-
-type CookieConfig = NonNullable<FastifyCookieOptions['parseOptions']> & { expires: Date };
+import { CookieConfig } from './cookie-model';
 
 export const accessCookieExpiration = {
   value: 15,

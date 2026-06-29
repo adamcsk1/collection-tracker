@@ -1,13 +1,18 @@
 import { API_PREFIX } from '@shared/constants/api-const';
+import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
 import { ChangeApiRequestModel, ChangeApiResponseModel } from '@shared/models/api-model';
 import { changeCollectionItemTagValidation } from '@shared/utils/collection-item-tag-validation-util';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
+  findCollectionItemByExternalId,
+  findCollectionItemByExternalIdOrCanonicalItemId,
   findCollectionItemByImdbId,
-  syncSeriesTrackerCompletedTag,
-  updateCollectionItem,
+  findCollectionItemByCanonicalItemId,
+  syncSeriesTrackerCompletedTagByExternalId,
+  updateCollectionItemByRow,
 } from '../core/database/repositories/collection';
+import { resolveCanonicalItemIds } from '../core/database/repositories/external-item-identity-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
@@ -17,10 +22,11 @@ import { parseListType } from '../core/utils/query-parse-util';
 
 export const register = (app: FastifyInstance): void => {
   app.put(
-    `${API_PREFIX}/change/:imdbId`,
+    `${API_PREFIX}/items/:externalIdentitySource/:externalIdentityId/change`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      const { imdbId } = request.params as Record<string, string>;
+      const { externalIdentitySource, externalIdentityId } = request.params as Record<string, string>;
+      if (!isExternalItemIdentitySourceName(externalIdentitySource)) return response.code(400).send();
       const { hash } = request.body as ChangeApiRequestModel;
       const item = normalizeItem(request.body as ChangeApiRequestModel);
       if (!item || typeof hash !== 'string') {
@@ -42,8 +48,13 @@ export const register = (app: FastifyInstance): void => {
         return response.code(403).send();
       }
 
-      const existingItem = findCollectionItemByImdbId(db, ownerHash, `${imdbId}`, listType);
-
+      const existingItem = findCollectionItemByExternalIdOrCanonicalItemId(
+        db,
+        ownerHash,
+        externalIdentitySource,
+        externalIdentityId,
+        listType
+      );
       if (!existingItem) {
         return response.code(404).send();
       }
@@ -64,17 +75,44 @@ export const register = (app: FastifyInstance): void => {
         return response.code(status).send();
       }
 
-      if (item.IMDbId !== imdbId) {
+      if (item.IMDbId && item.IMDbId !== existingItem.imdb_id) {
         const conflictItem = findCollectionItemByImdbId(db, ownerHash, item.IMDbId, listType);
         if (conflictItem) {
           return response.code(409).send();
         }
       }
 
+      const externalConflictItem = findCollectionItemByExternalId(
+        db,
+        ownerHash,
+        item.externalProvider,
+        item.externalItemId,
+        listType
+      );
+      if (externalConflictItem && externalConflictItem.id !== existingItem.id) {
+        return response.code(409).send();
+      }
+
+      const canonicalItemIds = resolveCanonicalItemIds(
+        db,
+        ownerHash,
+        item.externalProvider,
+        item.externalItemId,
+        item.externalIds
+      );
+      const canonicalConflictItem = canonicalItemIds
+        .map((canonicalItemId) => findCollectionItemByCanonicalItemId(db, ownerHash, canonicalItemId, listType))
+        .find((collectionItem) => !!collectionItem);
+      if (canonicalConflictItem && canonicalConflictItem.id !== existingItem.id) {
+        return response.code(409).send();
+      }
+
       const newHash = getItemHash(item);
-      let updatedItem = updateCollectionItem(db, ownerHash, `${imdbId}`, newHash, item, listType);
+      let updatedItem = updateCollectionItemByRow(db, ownerHash, existingItem, newHash, item, listType);
       if (listType === 'series-tracker') {
-        updatedItem = syncSeriesTrackerCompletedTag(db, ownerHash, item.IMDbId) ?? updatedItem;
+        updatedItem =
+          syncSeriesTrackerCompletedTagByExternalId(db, ownerHash, item.externalProvider, item.externalItemId) ??
+          updatedItem;
       }
 
       const result: ChangeApiResponseModel = { item: updatedItem! };

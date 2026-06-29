@@ -2,10 +2,10 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { MarkAllSeriesWatchedApiResponseModel, SeriesTrackerWatchedEpisodeModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { syncSeriesTrackerCompletedTag } from '../core/database/repositories/collection';
+import { syncSeriesTrackerCompletedTagByExternalId } from '../core/database/repositories/collection';
 import {
-  findSeriesTrackerSeasons,
-  replaceSeriesTrackerSeasons,
+  findSeriesTrackerSeasonsByExternalId,
+  replaceSeriesTrackerSeasonsByExternalId,
 } from '../core/database/repositories/series-tracker-season-repository';
 import {
   findOwnSeriesTrackerItems,
@@ -13,14 +13,14 @@ import {
   markAllSeriesAsWatched,
 } from '../core/database/repositories/series-tracker-repository';
 import {
-  findWatchedEpisodes,
-  markAllEpisodesWatched,
+  findWatchedEpisodesByExternalId,
+  markAllEpisodesWatchedByExternalId,
 } from '../core/database/repositories/series-tracker-watched-episodes-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
-import { fetchSeriesSeasonMetadata } from '../core/omdb/series-season-metadata';
+import { fetchSeriesSeasonMetadata } from '../core/external-metadata/series-season-metadata';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
 const watchedEpisodesEqual = (
@@ -59,10 +59,16 @@ export const register = (app: FastifyInstance): void => {
       const selectedOwnLibrary = ownerHash === request.usernameHash && typeof query.ownerShareCode !== 'string';
 
       for (const item of insertedItems) {
-        const seasons = await fetchSeriesSeasonMetadata(item.IMDbId);
+        const seasons = await fetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);
         if (!seasons.length) continue;
 
-        replaceSeriesTrackerSeasons(db, request.usernameHash, item.IMDbId, seasons);
+        replaceSeriesTrackerSeasonsByExternalId(
+          db,
+          request.usernameHash,
+          item.externalProvider,
+          item.externalItemId,
+          seasons
+        );
       }
 
       const trackerItems = selectedOwnLibrary
@@ -71,13 +77,34 @@ export const register = (app: FastifyInstance): void => {
       let progressChangedCount = 0;
 
       for (const item of trackerItems) {
-        const seasons = findSeriesTrackerSeasons(db, request.usernameHash, item.IMDbId);
+        const seasons = findSeriesTrackerSeasonsByExternalId(
+          db,
+          request.usernameHash,
+          item.externalProvider,
+          item.externalItemId
+        );
         if (!seasons.length) continue;
 
-        const existingWatchedEpisodes = findWatchedEpisodes(db, request.usernameHash, item.IMDbId);
+        const existingWatchedEpisodes = findWatchedEpisodesByExternalId(
+          db,
+          request.usernameHash,
+          item.externalProvider,
+          item.externalItemId
+        );
         const wasCompleted = Boolean(item.watchedAt);
-        const watchedEpisodes = markAllEpisodesWatched(db, request.usernameHash, item.IMDbId, seasons);
-        const syncedItem = syncSeriesTrackerCompletedTag(db, request.usernameHash, item.IMDbId);
+        const watchedEpisodes = markAllEpisodesWatchedByExternalId(
+          db,
+          request.usernameHash,
+          item.externalProvider,
+          item.externalItemId,
+          seasons
+        );
+        const syncedItem = syncSeriesTrackerCompletedTagByExternalId(
+          db,
+          request.usernameHash,
+          item.externalProvider,
+          item.externalItemId
+        );
         const isCompleted = Boolean(syncedItem?.watchedAt);
         if (!watchedEpisodesEqual(existingWatchedEpisodes, watchedEpisodes) || wasCompleted !== isCompleted) {
           progressChangedCount++;

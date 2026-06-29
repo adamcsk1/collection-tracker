@@ -17,7 +17,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
       .run(itemId, 1, 5, itemId, 2, 3);
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: {
         watchedEpisodes: [
           { season: 2, episode: 3 },
@@ -48,7 +48,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { watchedEpisodes: [] },
       usernameHash: 'user',
     };
@@ -74,7 +74,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
       .run(itemId, 1, 2);
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: {
         watchedEpisodes: [
           { season: 1, episode: 1 },
@@ -101,7 +101,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
       .run(itemId, 1, 2);
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: {
         watchedEpisodes: [
           { season: 1, episode: 1 },
@@ -129,7 +129,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
       .run(itemId, 1, 2);
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { watchedEpisodes: [{ season: 1, episode: 3 }] },
       usernameHash: 'user',
     };
@@ -153,7 +153,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
     getDatabase().prepare('UPDATE collection_items SET watched_at = ? WHERE id = ?').run('2025-01-01 00:00:00', itemId);
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { watchedEpisodes: [{ season: 1, episode: 1 }] },
       usernameHash: 'user',
     };
@@ -172,7 +172,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { watchedEpisodes: [{ season: 0, episode: 1 }] },
       usernameHash: 'user',
     };
@@ -189,7 +189,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { watchedEpisodes: [{ season: 1, episode: 0 }] },
       usernameHash: 'user',
     };
@@ -206,7 +206,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: {
         watchedEpisodes: [
           { season: 1, episode: 1 },
@@ -228,7 +228,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { watchedEpisodes: null },
       usernameHash: 'user',
     };
@@ -244,7 +244,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
   it('returns 404 for non-existent item', async () => {
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-unknown' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-unknown' },
       body: { watchedEpisodes: [{ season: 1, episode: 1 }] },
       usernameHash: 'user',
     };

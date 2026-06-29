@@ -170,6 +170,36 @@ describe('refresh-external-ratings-api', () => {
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
   });
 
+  it('does not update ratings when the provider returns a different-cased item ID', async () => {
+    insertUser();
+    insertItem('tt-1');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          imdbID: 'TT-1',
+          imdbRating: '9.9',
+          Ratings: [{ Source: 'Rotten Tomatoes', Value: '100%' }],
+        }),
+      }))
+    );
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-external-ratings-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
+    expect(
+      getDatabase().prepare('SELECT rate, rotten_tomatoes_rate FROM collection_items WHERE imdb_id = ?').get('tt-1')
+    ).toEqual({ rate: '7.0', rotten_tomatoes_rate: '' });
+  });
+
   it('refreshes a shared library when the user has update permission', async () => {
     insertUser('user');
     insertUser('owner');

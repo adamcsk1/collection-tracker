@@ -14,6 +14,7 @@ const tables = [
   'ai_search_embeddings',
   'collection_item_tags',
   'collection_item_genres',
+  'external_item_identities',
   'collection_items',
   'access_tokens',
   'refresh_tokens',

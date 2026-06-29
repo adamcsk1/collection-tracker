@@ -20,18 +20,20 @@
             }
           </ng-container>
         </libc-input>
-        <libc-input
-          data-test-id="item-dialog-imdb-id"
-          [mandatory]="true"
-          [label]="translations.labelIMDbId()"
-          [formField]="form.IMDbId"
-        >
-          <ng-container errors>
-            @if (formErrors.IMDbId.required()) {
-              {{ translations.validationRequired() }}
-            }
-          </ng-container>
-        </libc-input>
+        @if (canEditOmdbIdentity()) {
+          <libc-input
+            data-test-id="item-dialog-imdb-id"
+            [mandatory]="true"
+            [label]="translations.labelIMDbId()"
+            [formField]="form.IMDbId"
+          >
+            <ng-container errors>
+              @if (formErrors.IMDbId.required()) {
+                {{ translations.validationRequired() }}
+              }
+            </ng-container>
+          </libc-input>
+        }
         <libc-input data-test-id="item-dialog-year" [label]="translations.labelYear()" [formField]="form.year" />
         <libc-select
           data-test-id="item-dialog-content-type"

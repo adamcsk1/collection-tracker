@@ -106,7 +106,11 @@ export class CollectionLibrary {
     }
 
     if (useAiSearch && promptText) {
-      return this.api.getMatchedItems({ imdbIds: aiIds as string[], offset, limit });
+      return this.api.getMatchedItems({
+        identities: (aiIds as string[]).map((id) => ({ source: 'imdb', id })),
+        offset,
+        limit,
+      });
     }
 
     if (useAiSearch) {

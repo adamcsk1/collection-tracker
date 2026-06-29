@@ -9,8 +9,8 @@ import {
 } from '@components/spinner-loading/spinner-loading-store';
 import { initialToastState, ToastState, toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
-import { OMDbService } from '@services/omdb/omdb-service';
-import { OMDbResponseItemModel } from '@shared/models/omdb-model';
+import { ExternalMetadataService } from '@services/external-metadata/external-metadata-service';
+import { ExternalMetadataItemModel } from '@shared/models/external-metadata-model';
 import { SelectInputModel } from '@shared/models/select-model';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -18,22 +18,21 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const buildSelectedContent = (overrides: Partial<OMDbResponseItemModel> = {}): OMDbResponseItemModel => ({
-  Title: 'Title',
-  Year: '2020',
-  imdbID: 'tt123',
-  imdbRating: '9.0',
-  Ratings: [
-    { Source: 'Internet Movie Database', Value: '9.0/10' },
-    { Source: 'Rotten Tomatoes', Value: '96%' },
-    { Source: 'Metacritic', Value: '85/100' },
+const buildSelectedContent = (overrides: Partial<ExternalMetadataItemModel> = {}): ExternalMetadataItemModel => ({
+  provider: 'omdb',
+  providerItemId: 'tt123',
+  title: 'Title',
+  year: '2020',
+  contentType: 'movie',
+  poster: 'poster-url',
+  plot: 'Plot',
+  actors: 'Actors',
+  genres: ['Drama', 'Action'],
+  ratings: [
+    { source: 'Internet Movie Database', value: '9.0' },
+    { source: 'Rotten Tomatoes', value: '96%' },
+    { source: 'Metacritic', value: '85/100' },
   ],
-  Plot: 'Plot',
-  Poster: 'poster-url',
-  Director: 'Director',
-  Genre: 'Drama, Action',
-  Actors: 'Actors',
-  Type: 'movie',
   ...overrides,
 });
 
@@ -41,15 +40,16 @@ describe('NewItemDialogService', () => {
   let service: NewItemDialogService;
   let api: {
     create: ReturnType<typeof vi.fn>;
-    addMovieTrackerItem: ReturnType<typeof vi.fn>;
-    addSeriesTrackerItem: ReturnType<typeof vi.fn>;
-    markAllSeriesTrackerWatched: ReturnType<typeof vi.fn>;
+    addMovieTrackerItemByExternalId: ReturnType<typeof vi.fn>;
+    addSeriesTrackerItemByExternalId: ReturnType<typeof vi.fn>;
+    markAllSeriesTrackerWatchedByExternalId: ReturnType<typeof vi.fn>;
   };
-  let omdb: {
+  let externalMetadata: {
     matchedContent: ReturnType<typeof signal<SelectInputModel>>;
     completedSearchText: ReturnType<typeof signal<string>>;
     getMatchedContents: ReturnType<typeof vi.fn>;
     getSelectedContent: ReturnType<typeof vi.fn>;
+    getProviderReference: ReturnType<typeof vi.fn>;
   };
   let collection: { addCollectionItem: ReturnType<typeof vi.fn>; triggerReload: ReturnType<typeof vi.fn> };
   let spinnerStore: NgxSimpleSignalStoreService<SpinnerLoadingState>;
@@ -60,19 +60,47 @@ describe('NewItemDialogService', () => {
   beforeEach(() => {
     api = {
       create: vi.fn(),
-      addMovieTrackerItem: vi.fn(() => of({ item: { title: 'Title', IMDbId: 'tt123', listType: 'movie-tracker' } })),
-      addSeriesTrackerItem: vi.fn(() => of({ item: { title: 'Title', IMDbId: 'tt123', listType: 'series-tracker' } })),
-      markAllSeriesTrackerWatched: vi.fn(() =>
+      addMovieTrackerItemByExternalId: vi.fn(() =>
         of({
-          item: { title: 'Title', IMDbId: 'tt123', listType: 'series-tracker', tags: ['#series', '#completed'] },
+          item: {
+            title: 'Title',
+            IMDbId: 'tt123',
+            externalProvider: 'omdb',
+            externalItemId: 'tt123',
+            listType: 'movie-tracker',
+          },
+        })
+      ),
+      addSeriesTrackerItemByExternalId: vi.fn(() =>
+        of({
+          item: {
+            title: 'Title',
+            IMDbId: 'tt123',
+            externalProvider: 'omdb',
+            externalItemId: 'tt123',
+            listType: 'series-tracker',
+          },
+        })
+      ),
+      markAllSeriesTrackerWatchedByExternalId: vi.fn(() =>
+        of({
+          item: {
+            title: 'Title',
+            IMDbId: 'tt123',
+            externalProvider: 'omdb',
+            externalItemId: 'tt123',
+            listType: 'series-tracker',
+            tags: ['#series', '#completed'],
+          },
         })
       ),
     };
-    omdb = {
+    externalMetadata = {
       matchedContent: signal<SelectInputModel>([]),
       completedSearchText: signal(''),
       getMatchedContents: vi.fn(),
       getSelectedContent: vi.fn(),
+      getProviderReference: vi.fn(),
     };
     collection = { addCollectionItem: vi.fn(), triggerReload: vi.fn() };
     portal = { closeAll: vi.fn() };
@@ -82,7 +110,7 @@ describe('NewItemDialogService', () => {
       providers: [
         NewItemDialogService,
         { provide: ApiService, useValue: api },
-        { provide: OMDbService, useValue: omdb },
+        { provide: ExternalMetadataService, useValue: externalMetadata },
         { provide: CollectionService, useValue: collection },
         { provide: PortalService, useValue: portal },
         { provide: NgxSignalTranslateService, useValue: translate },
@@ -96,16 +124,25 @@ describe('NewItemDialogService', () => {
     toastStore = TestBed.inject(toastStateToken);
   });
 
-  it('search triggers OMDb lookup and shows spinner', () => {
+  it('search triggers external metadata lookup and shows spinner', () => {
     service.search('matrix');
 
     expect(spinnerStore.state.show()).toBe(true);
-    expect(omdb.getMatchedContents).toHaveBeenCalledWith('matrix');
+    expect(externalMetadata.getMatchedContents).toHaveBeenCalledWith('matrix');
+  });
+
+  it('returns typed provider references from external metadata', () => {
+    externalMetadata.getProviderReference.mockReturnValue({ identitySource: 'omdb', identityId: 'tt123' });
+
+    expect(service.getProviderReference('omdb/tt123')).toEqual({ identitySource: 'omdb', identityId: 'tt123' });
+    expect(externalMetadata.getProviderReference).toHaveBeenCalledWith('omdb/tt123');
   });
 
   it('save persists selected content and closes when requested', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    api.create.mockReturnValue(
+      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+    );
 
     await firstValueFrom(service.save('tt123', 8.7, '#tag', 'close'));
 
@@ -115,6 +152,8 @@ describe('NewItemDialogService', () => {
         title: 'Title',
         genre: ['Drama', 'Action'],
         IMDbId: 'tt123',
+        externalProvider: 'omdb',
+        externalItemId: 'tt123',
         tags: ['#tag'],
         year: '2020',
         rate: '9.0',
@@ -128,7 +167,10 @@ describe('NewItemDialogService', () => {
       },
       undefined
     );
-    expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
+    expect(collection.addCollectionItem).toHaveBeenCalledWith(
+      { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' },
+      true
+    );
     expect(collection.triggerReload).toHaveBeenCalled();
     expect(toastStore.state.message()).toBe('t:Toast.NewItem');
     expect(portal.closeAll).toHaveBeenCalled();
@@ -136,32 +178,39 @@ describe('NewItemDialogService', () => {
   });
 
   it('creates a movie tracker copy when saving a watched library movie', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    api.create.mockReturnValue(
+      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+    );
 
     await firstValueFrom(
       service.save('tt123', null, '', 'close', { targetOwnerShareCode: 'owner-code', watched: true })
     );
 
-    expect(api.addMovieTrackerItem).toHaveBeenCalledWith('tt123', 'owner-code');
-    expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123', watched: true }, true);
+    expect(api.addMovieTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt123', 'owner-code');
     expect(collection.addCollectionItem).toHaveBeenCalledWith(
-      { title: 'Title', IMDbId: 'tt123', listType: 'movie-tracker' },
+      { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123', watched: true },
+      true
+    );
+    expect(collection.addCollectionItem).toHaveBeenCalledWith(
+      { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123', listType: 'movie-tracker' },
       true
     );
   });
 
   it('does not create a movie tracker copy when saving a watched library series', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'series' }) as any));
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(null, buildSelectedContent({ contentType: 'series' }) as any)
+    );
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123', tags: ['#series'] } }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close', { watched: true }));
 
-    expect(api.addMovieTrackerItem).not.toHaveBeenCalled();
+    expect(api.addMovieTrackerItemByExternalId).not.toHaveBeenCalled();
   });
 
   it('save stops spinner and rethrows on API error', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(throwError(() => new Error('fail')));
 
     await expect(firstValueFrom(service.save('tt123', null, '#tag', null))).rejects.toEqual(new Error('fail'));
@@ -169,8 +218,10 @@ describe('NewItemDialogService', () => {
   });
 
   it('saves watch later items with the watch later list type', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    api.create.mockReturnValue(
+      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+    );
 
     await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'watch-later' }));
 
@@ -179,14 +230,19 @@ describe('NewItemDialogService', () => {
       undefined,
       'watch-later'
     );
-    expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
+    expect(collection.addCollectionItem).toHaveBeenCalledWith(
+      { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' },
+      true
+    );
     expect(collection.triggerReload).toHaveBeenCalled();
     expect(portal.closeAll).toHaveBeenCalled();
   });
 
   it('saves wishlist items with the wishlist list type', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    api.create.mockReturnValue(
+      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+    );
 
     await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'wishlist' }));
 
@@ -198,8 +254,12 @@ describe('NewItemDialogService', () => {
   });
 
   it('saves series tracker items with the series tracker list type', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'series' }) as any));
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(null, buildSelectedContent({ contentType: 'series' }) as any)
+    );
+    api.create.mockReturnValue(
+      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+    );
 
     await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'series-tracker' }));
 
@@ -211,7 +271,7 @@ describe('NewItemDialogService', () => {
   });
 
   it('keeps year intervals from selected content', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Year: '2026-2028' }) as any));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ year: '2026-2028' }) as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close'));
@@ -220,7 +280,7 @@ describe('NewItemDialogService', () => {
   });
 
   it('keeps open year intervals from selected content', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Year: '2027–' }) as any));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ year: '2027–' }) as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close'));
@@ -229,7 +289,7 @@ describe('NewItemDialogService', () => {
   });
 
   it('normalizes decimal year artifacts from selected content', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Year: '2005.0' }) as any));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ year: '2005.0' }) as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close'));
@@ -238,7 +298,7 @@ describe('NewItemDialogService', () => {
   });
 
   it('rejects non-series content for series tracker items', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
     await expect(
@@ -250,8 +310,12 @@ describe('NewItemDialogService', () => {
   });
 
   it('creates a series tracker copy and marks all watched when saving a library series with copy flag', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'series' }) as any));
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(null, buildSelectedContent({ contentType: 'series' }) as any)
+    );
+    api.create.mockReturnValue(
+      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+    );
 
     await firstValueFrom(
       service.save('tt123', null, '', 'close', {
@@ -260,32 +324,46 @@ describe('NewItemDialogService', () => {
       })
     );
 
-    expect(api.addSeriesTrackerItem).toHaveBeenCalledWith('tt123', undefined, 'owner-code');
-    expect(api.markAllSeriesTrackerWatched).toHaveBeenCalledWith('tt123');
-    expect(collection.addCollectionItem).toHaveBeenCalledWith({ title: 'Title', IMDbId: 'tt123' }, true);
+    expect(api.addSeriesTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt123', undefined, 'owner-code');
+    expect(api.markAllSeriesTrackerWatchedByExternalId).toHaveBeenCalledWith('omdb', 'tt123');
     expect(collection.addCollectionItem).toHaveBeenCalledWith(
-      { title: 'Title', IMDbId: 'tt123', listType: 'series-tracker', tags: ['#series', '#completed'] },
+      { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' },
+      true
+    );
+    expect(collection.addCollectionItem).toHaveBeenCalledWith(
+      {
+        title: 'Title',
+        IMDbId: 'tt123',
+        externalProvider: 'omdb',
+        externalItemId: 'tt123',
+        listType: 'series-tracker',
+        tags: ['#series', '#completed'],
+      },
       true
     );
   });
 
   it('does not create a series tracker copy when copy flag is false', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'series' }) as any));
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(null, buildSelectedContent({ contentType: 'series' }) as any)
+    );
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close', {}));
 
-    expect(api.addSeriesTrackerItem).not.toHaveBeenCalled();
-    expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
+    expect(api.addSeriesTrackerItemByExternalId).not.toHaveBeenCalled();
+    expect(api.markAllSeriesTrackerWatchedByExternalId).not.toHaveBeenCalled();
   });
 
   it('ignores copy-to-series-tracker flag for movies', async () => {
-    omdb.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ Type: 'movie' }) as any));
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(null, buildSelectedContent({ contentType: 'movie' }) as any)
+    );
     api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close', { copyToSeriesTrackerAsWatched: true }));
 
-    expect(api.addSeriesTrackerItem).not.toHaveBeenCalled();
-    expect(api.markAllSeriesTrackerWatched).not.toHaveBeenCalled();
+    expect(api.addSeriesTrackerItemByExternalId).not.toHaveBeenCalled();
+    expect(api.markAllSeriesTrackerWatchedByExternalId).not.toHaveBeenCalled();
   });
 });

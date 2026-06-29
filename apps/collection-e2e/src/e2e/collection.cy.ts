@@ -74,11 +74,11 @@ describe('Collection — add a new element', () => {
   const newTitle = 'Test Movie Alpha';
 
   beforeEach(() => {
-    cy.intercept('GET', '/api/v1/proxy/omdb/search*', {
+    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
       statusCode: 200,
       body: buildOmdbSearchResult(newTitle),
     }).as('omdbSearch');
-    cy.intercept('GET', '/api/v1/proxy/omdb/item*', {
+    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
       statusCode: 200,
       body: buildOmdbItem(newTitle),
     }).as('omdbItem');
@@ -92,7 +92,7 @@ describe('Collection — add a new element', () => {
     CollectionPage.getNewItemSearchInput().should('be.visible');
   });
 
-  it('searches OMDB, saves the item, and it appears in the list', () => {
+  it('searches external metadata, saves the item, and it appears in the list', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAddNewButton().click();
 
@@ -106,7 +106,7 @@ describe('Collection — add a new element', () => {
     CollectionPage.getListItems().first().should('contain.text', newTitle);
   });
 
-  it('searches OMDB when enter is pressed in the new-item search', () => {
+  it('searches external metadata when enter is pressed in the new-item search', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAddNewButton().click();
 
@@ -122,14 +122,14 @@ describe('Collection — add a new element', () => {
     const secondTitle = 'Save And New Movie Two';
 
     cy.intercept(
-      { method: 'GET', url: '/api/v1/proxy/omdb/search*', times: 1 },
+      { method: 'GET', url: '/api/v1/proxy/external-metadata/search*', times: 1 },
       {
         statusCode: 200,
         body: buildOmdbSearchResult(firstTitle, 'tt5000001'),
       }
     ).as('omdbSearchFirst');
     cy.intercept(
-      { method: 'GET', url: '/api/v1/proxy/omdb/item*', times: 1 },
+      { method: 'GET', url: '/api/v1/proxy/external-metadata/item*', times: 1 },
       {
         statusCode: 200,
         body: buildOmdbItem(firstTitle, 'tt5000001'),
@@ -149,14 +149,14 @@ describe('Collection — add a new element', () => {
     CollectionPage.getListItems().should('contain.text', firstTitle);
 
     cy.intercept(
-      { method: 'GET', url: '/api/v1/proxy/omdb/search*', times: 1 },
+      { method: 'GET', url: '/api/v1/proxy/external-metadata/search*', times: 1 },
       {
         statusCode: 200,
         body: buildOmdbSearchResult(secondTitle, 'tt5000002'),
       }
     ).as('omdbSearchSecond');
     cy.intercept(
-      { method: 'GET', url: '/api/v1/proxy/omdb/item*', times: 1 },
+      { method: 'GET', url: '/api/v1/proxy/external-metadata/item*', times: 1 },
       {
         statusCode: 200,
         body: buildOmdbItem(secondTitle, 'tt5000002'),
@@ -572,7 +572,7 @@ describe('Collection — favorites', () => {
   });
 
   it('marks an item as favorite and filters favorites from the library actions menu', () => {
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().should('have.length', 2);
@@ -612,11 +612,11 @@ describe('Collection — wishlist', () => {
   const wishlistTitle = 'Wishlist Test Movie';
 
   beforeEach(() => {
-    cy.intercept('GET', '/api/v1/proxy/omdb/search*', {
+    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
       statusCode: 200,
       body: buildOmdbSearchResult(wishlistTitle, 'tt8100001'),
     }).as('wishlistOmdbSearch');
-    cy.intercept('GET', '/api/v1/proxy/omdb/item*', {
+    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
       statusCode: 200,
       body: buildOmdbItem(wishlistTitle, 'tt8100001'),
     }).as('wishlistOmdbItem');
@@ -647,18 +647,16 @@ describe('Collection — series tracker', () => {
   const seriesTitle = 'Series Tracker Test Show';
 
   beforeEach(() => {
-    cy.intercept('GET', '/api/v1/proxy/omdb/search*', {
+    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
       statusCode: 200,
       body: {
-        Search: [
-          { Title: 'Filtered Movie Result', Year: '2020', imdbID: 'tt8200000', Type: 'movie', Poster: 'N/A' },
-          { Title: seriesTitle, Year: '2021', imdbID: 'tt8200001', Type: 'series', Poster: 'N/A' },
+        results: [
+          buildOmdbItem('Filtered Movie Result', 'tt8200000', 'movie'),
+          buildOmdbItem(seriesTitle, 'tt8200001', 'series'),
         ],
-        totalResults: '2',
-        Response: 'True',
       },
     }).as('seriesTrackerOmdbSearch');
-    cy.intercept('GET', '/api/v1/proxy/omdb/item*', {
+    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
       statusCode: 200,
       body: buildOmdbItem(seriesTitle, 'tt8200001', 'series'),
     }).as('seriesTrackerOmdbItem');
@@ -667,7 +665,7 @@ describe('Collection — series tracker', () => {
   });
 
   it('adds a series and persists watched-up-to progress', () => {
-    cy.intercept('PUT', `/api/v1/series-tracker/tt8200001/watched-episodes`).as('saveWatchedEpisodes');
+    cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes').as('saveWatchedEpisodes');
     cy.on('window:confirm', () => true);
 
     CommonPage.openMenu();
@@ -688,7 +686,7 @@ describe('Collection — series tracker', () => {
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', seriesTitle);
 
-    cy.request('PUT', `/api/v1/series-tracker/tt8200001/seasons`, {
+    cy.request('PUT', '/api/v1/series-tracker/omdb/tt8200001/seasons', {
       seasons: [{ season: 1, episodes: 3 }],
     });
     CollectionPage.visitSeriesTracker();
@@ -715,18 +713,16 @@ describe('Collection — movie tracker', () => {
   const movieTitle = 'Movie Tracker Test Movie';
 
   beforeEach(() => {
-    cy.intercept('GET', '/api/v1/proxy/omdb/search*', {
+    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
       statusCode: 200,
       body: {
-        Search: [
-          { Title: 'Filtered Series Result', Year: '2020', imdbID: 'tt8300000', Type: 'series', Poster: 'N/A' },
-          { Title: movieTitle, Year: '2021', imdbID: 'tt8300001', Type: 'movie', Poster: 'N/A' },
+        results: [
+          buildOmdbItem('Filtered Series Result', 'tt8300000', 'series'),
+          buildOmdbItem(movieTitle, 'tt8300001', 'movie'),
         ],
-        totalResults: '2',
-        Response: 'True',
       },
     }).as('movieTrackerOmdbSearch');
-    cy.intercept('GET', '/api/v1/proxy/omdb/item*', {
+    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
       statusCode: 200,
       body: buildOmdbItem(movieTitle, 'tt8300001', 'movie'),
     }).as('movieTrackerOmdbItem');
@@ -771,7 +767,7 @@ describe('Collection — movie tracker', () => {
   });
 
   it('moves a movie from watch-later to movie tracker', () => {
-    cy.intercept('POST', '/api/v1/movie-tracker/*').as('moveToMovieTracker');
+    cy.intercept('POST', '/api/v1/movie-tracker/**').as('moveToMovieTracker');
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Later Move Movie', 'movie', 'tt8300002'),
       listType: 'watch-later',
@@ -792,7 +788,7 @@ describe('Collection — movie tracker', () => {
   });
 
   it('deletes a movie tracker item and shows empty state', () => {
-    cy.intercept('DELETE', '/api/v1/delete/*').as('deleteMovieTrackerItem');
+    cy.intercept('DELETE', '/api/v1/items/**').as('deleteMovieTrackerItem');
     cy.on('window:confirm', () => true);
 
     cy.request('POST', '/api/v1/create', {

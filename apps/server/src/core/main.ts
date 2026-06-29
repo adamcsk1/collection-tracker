@@ -26,8 +26,6 @@ export const main = async () => {
 
     dotenv.config({ path: `${dataFolder}/.env`, override: true });
 
-    if (!process.env.OMDB_API_KEY?.trim()) throw new Error('OMDB_API_KEY is not set. Please add it to your .env file.');
-
     initializeFolders(dataFolder);
 
     const db = initializeDatabase(dataFolder);

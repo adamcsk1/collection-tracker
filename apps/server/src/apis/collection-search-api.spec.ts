@@ -213,14 +213,21 @@ describe('collection search APIs', () => {
     );
   });
 
-  it('returns matched IMDb IDs in the caller-provided order', async () => {
+  it('returns matched identities in the caller-provided order', async () => {
     insertUser();
     insertItem({ imdbId: 'tt-first', title: 'First', createdAt: '2024-01-01T00:00:00.000Z' });
     insertItem({ imdbId: 'tt-second', title: 'Second', createdAt: '2024-01-02T00:00:00.000Z' });
     const { register } = await import('./collection-items-matched-api');
 
     const response = await callRoute(register, 'post', '/api/v1/items/matched', {
-      body: { imdbIds: ['tt-first', 'tt-second'], limit: 10, offset: 0 },
+      body: {
+        identities: [
+          { source: 'imdb', id: 'tt-first' },
+          { source: 'imdb', id: 'tt-second' },
+        ],
+        limit: 10,
+        offset: 0,
+      },
       usernameHash: 'user',
     });
 

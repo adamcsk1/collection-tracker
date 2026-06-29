@@ -14,7 +14,7 @@ const insertUser = (usernameHash: string) => {
 
 const insertItem = (
   usernameHash: string,
-  imdbId: string,
+  imdbId: string | null,
   tags: string[],
   listType = 'library',
   overrides: Partial<{
@@ -25,17 +25,24 @@ const insertItem = (
     image: string;
     contentHash: string;
     contentType: string;
+    externalProvider: string;
+    externalItemId: string;
+    canonicalItemId: string;
   }> = {}
 ) => {
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       usernameHash,
       imdbId,
+      overrides.externalProvider ?? 'omdb',
+      overrides.externalItemId ?? imdbId,
+      overrides.canonicalItemId ??
+        (imdbId ? `imdb:${imdbId}` : `${overrides.externalProvider ?? 'omdb'}:${overrides.externalItemId ?? imdbId}`),
       listType,
       overrides.title ?? 'Title',
       overrides.title?.toLowerCase() ?? 'title',
@@ -98,6 +105,46 @@ describe('series-tracker-repository', () => {
         'SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?'
       )
       .get('user', 'tt-1', 'series-tracker') as { count: number };
+    expect(count.count).toBe(1);
+  });
+
+  it('returns existing tracker item by provider identity when legacy IMDb IDs differ', () => {
+    insertUser('user');
+    insertItem('user', 'tt-library', ['#series'], 'library', { externalItemId: 'provider-series-1' });
+    insertItem('user', 'tt-tracker', ['#series'], 'series-tracker', { externalItemId: 'provider-series-1' });
+    const db = getDatabase();
+
+    const result = copySeriesToSeriesTracker(db, 'user', 'user', 'tt-library', 'library');
+
+    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-tracker', listType: 'series-tracker' }));
+    const count = db
+      .prepare(
+        'SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
+      )
+      .get('user', 'omdb', 'provider-series-1', 'series-tracker') as { count: number };
+    expect(count.count).toBe(1);
+  });
+
+  it('returns existing tracker item by canonical identity when providers differ', () => {
+    insertUser('user');
+    insertItem('user', 'tt-library', ['#series'], 'library', {
+      externalProvider: 'omdb',
+      externalItemId: 'series-1',
+      canonicalItemId: 'imdb:tt-same',
+    });
+    insertItem('user', 'tt-tracker', ['#series'], 'series-tracker', {
+      externalProvider: 'omdb',
+      externalItemId: 'tt-same',
+      canonicalItemId: 'imdb:tt-same',
+    });
+    const db = getDatabase();
+
+    const result = copySeriesToSeriesTracker(db, 'user', 'user', 'tt-library', 'library');
+
+    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-tracker', listType: 'series-tracker' }));
+    const count = db
+      .prepare('SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND list_type = ?')
+      .get('user', 'series-tracker') as { count: number };
     expect(count.count).toBe(1);
   });
 
@@ -188,6 +235,25 @@ describe('series-tracker-repository', () => {
     expect(result).toHaveLength(0);
   });
 
+  it('markAllSeriesAsWatched skips items already in tracker by canonical identity', () => {
+    insertUser('user');
+    insertItem('user', 'tt-library', ['#series'], 'library', {
+      externalProvider: 'omdb',
+      externalItemId: 'series-1',
+      canonicalItemId: 'imdb:tt-same',
+    });
+    insertItem('user', 'tt-tracker', ['#series'], 'series-tracker', {
+      externalProvider: 'omdb',
+      externalItemId: 'tt-same',
+      canonicalItemId: 'imdb:tt-same',
+    });
+    const db = getDatabase();
+
+    const result = markAllSeriesAsWatched(db, 'user', 'user');
+
+    expect(result).toHaveLength(0);
+  });
+
   it('markAllSeriesAsWatched copies from readable shared library', () => {
     insertUser('user');
     insertUser('owner');
@@ -199,6 +265,30 @@ describe('series-tracker-repository', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual(expect.objectContaining({ IMDbId: 'tt-shared', listType: 'series-tracker' }));
+  });
+
+  it('markAllSeriesAsWatched copies provider-only library series', () => {
+    insertUser('user');
+    insertItem('user', null, ['#series'], 'library', {
+      externalProvider: 'omdb',
+      externalItemId: 'series-1',
+      contentHash: 'provider-series-library',
+    });
+    const db = getDatabase();
+
+    const result = markAllSeriesAsWatched(db, 'user', 'user');
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual(
+      expect.objectContaining({ IMDbId: undefined, externalProvider: 'omdb', externalItemId: 'series-1' })
+    );
+    expect(
+      db
+        .prepare(
+          'SELECT imdb_id, list_type FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
+        )
+        .get('user', 'omdb', 'series-1', 'series-tracker')
+    ).toEqual({ imdb_id: null, list_type: 'series-tracker' });
   });
 
   it('markAllSeriesAsWatched returns empty array when no candidates exist', () => {
@@ -223,6 +313,26 @@ describe('series-tracker-repository', () => {
     expect(result[0].IMDbId).toBe('tt-1');
   });
 
+  it('findSeriesTrackerItemsForLibrarySeries matches corresponding library series by canonical identity', () => {
+    insertUser('user');
+    insertItem('user', 'tt-library', ['#series'], 'library', {
+      externalProvider: 'omdb',
+      externalItemId: 'series-1',
+      canonicalItemId: 'imdb:tt-same',
+    });
+    insertItem('user', 'tt-tracker', ['#series'], 'series-tracker', {
+      externalProvider: 'omdb',
+      externalItemId: 'tt-same',
+      canonicalItemId: 'imdb:tt-same',
+    });
+    const db = getDatabase();
+
+    const result = findSeriesTrackerItemsForLibrarySeries(db, 'user', 'user');
+
+    expect(result).toHaveLength(1);
+    expect(result[0].IMDbId).toBe('tt-tracker');
+  });
+
   it('findOwnSeriesTrackerItems returns only own tracker items', () => {
     insertUser('user');
     insertUser('other');
@@ -242,6 +352,14 @@ describe('series-tracker-repository', () => {
     insertItem('user', 'tt-2', ['#series'], 'series-tracker');
     insertItem('user', 'tt-3', ['#series'], 'library');
     const db = getDatabase();
+    const insertIdentity = db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    );
+    insertIdentity.run('user', 'imdb:tt-1', 'imdb', 'tt-1', 'provider');
+    insertIdentity.run('user', 'imdb:tt-2', 'imdb', 'tt-2', 'provider');
+    insertIdentity.run('user', 'imdb:tt-3', 'imdb', 'tt-3', 'provider');
 
     const changedCount = deleteAllSeriesTrackerItems(db, 'user');
 
@@ -250,5 +368,12 @@ describe('series-tracker-repository', () => {
       .prepare('SELECT imdb_id FROM collection_items WHERE username_hash = ? AND list_type = ?')
       .all('user', 'series-tracker') as { imdb_id: string }[];
     expect(rows).toEqual([]);
+    expect(
+      db
+        .prepare(
+          'SELECT canonical_item_id FROM external_item_identities WHERE username_hash = ? ORDER BY canonical_item_id'
+        )
+        .all('user')
+    ).toEqual([{ canonical_item_id: 'imdb:tt-3' }]);
   });
 });

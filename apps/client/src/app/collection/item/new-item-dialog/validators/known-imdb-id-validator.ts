@@ -1,8 +1,5 @@
 import { Signal } from '@angular/core';
-
-export type KnownIMDbIdValidationError = {
-  kind: 'knownIMDbId';
-};
+import { KnownIMDbIdValidationError } from './known-imdb-id-validator-model';
 
 export const knownIMDbIdValidationFactory = (knownIMDbIdExists: Signal<boolean>) => {
   return (IMDbId: string | null): KnownIMDbIdValidationError | undefined => {

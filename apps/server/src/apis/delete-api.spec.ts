@@ -1,5 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
+import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -40,6 +41,16 @@ const insertTypedItem = (
   ).run(usernameHash, 'tt-delete', listType, '', '', '', '', '', '', hash);
 };
 
+const buildRouteApp = () =>
+  ({
+    delete: vi.fn(),
+  }) as any;
+
+const getDeleteHandler = (app: { delete: ReturnType<typeof vi.fn> }, path: string) => {
+  const call = app.delete.mock.calls.find(([routePath]) => routePath === path);
+  return call?.[2] as ((request: any, response: any) => Promise<void> | void) | undefined;
+};
+
 describe('delete-api', () => {
   afterEach(() => {
     vi.resetModules();
@@ -47,7 +58,27 @@ describe('delete-api', () => {
   });
 
   it('returns 400 when hash query param is missing', async () => {
-    const request: any = { params: { imdbId: 'tt-delete' }, query: {}, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
+      query: {},
+      usernameHash: 'user',
+    };
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when external provider is unsupported', async () => {
+    const request: any = {
+      params: { externalIdentitySource: 'tmdb', externalIdentityId: '603' },
+      query: { hash: 'abc123' },
+      usernameHash: 'user',
+    };
     const response = mockResponse();
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -60,7 +91,11 @@ describe('delete-api', () => {
 
   it('deletes existing DB item when hash matches', async () => {
     insertItem();
-    const request: any = { params: { imdbId: 'tt-delete' }, query: { hash: 'abc123' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
+      query: { hash: 'abc123' },
+      usernameHash: 'user',
+    };
     const response = mockResponse();
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -77,7 +112,7 @@ describe('delete-api', () => {
   it('deletes a watch later item when listType is provided', async () => {
     insertTypedItem('watch-later');
     const request: any = {
-      params: { imdbId: 'tt-delete' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
       query: { hash: 'abc123', listType: 'watch-later' },
       usernameHash: 'user',
     };
@@ -97,7 +132,7 @@ describe('delete-api', () => {
   it('deletes a wishlist item when listType is provided', async () => {
     insertTypedItem('wishlist');
     const request: any = {
-      params: { imdbId: 'tt-delete' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
       query: { hash: 'abc123', listType: 'wishlist' },
       usernameHash: 'user',
     };
@@ -114,7 +149,7 @@ describe('delete-api', () => {
   it('deletes a series tracker item when listType is provided', async () => {
     insertTypedItem('series-tracker');
     const request: any = {
-      params: { imdbId: 'tt-delete' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
       query: { hash: 'abc123', listType: 'series-tracker' },
       usernameHash: 'user',
     };
@@ -128,13 +163,60 @@ describe('delete-api', () => {
     expect(response.code).toHaveBeenCalledWith(204);
   });
 
+  it('deletes an item by canonical matching external identity', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      'tt0133093',
+      'omdb',
+      'tt0133093',
+      'imdb:tt0133093',
+      'series-tracker',
+      'Title',
+      'title',
+      '',
+      '',
+      '',
+      '',
+      'abc123'
+    );
+    db.prepare(
+      `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'imdb:tt0133093', 'imdb', 'tt0133093', 'provider');
+    const request: any = {
+      params: { externalIdentitySource: 'imdb', externalIdentityId: 'tt0133093' },
+      query: { hash: 'abc123', listType: 'series-tracker' },
+      usernameHash: 'user',
+    };
+    const response = mockResponse();
+    const app = buildRouteApp();
+
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await getDeleteHandler(app, `${API_PREFIX}/items/:externalIdentitySource/:externalIdentityId`)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(204);
+    expect(
+      db
+        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?')
+        .get('user', 'series-tracker')
+    ).toBeUndefined();
+  });
+
   it('deletes an item from a shared library when delete permission is granted', async () => {
     insertItem('abc123', 'owner');
     insertUser('user');
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
-      params: { imdbId: 'tt-delete' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
       query: { hash: 'abc123', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
@@ -159,7 +241,7 @@ describe('delete-api', () => {
     insertShare('owner', 'user', false);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
-      params: { imdbId: 'tt-delete' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
       query: { hash: 'abc123', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
@@ -179,7 +261,7 @@ describe('delete-api', () => {
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
-      params: { imdbId: 'tt-delete' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
       query: { hash: 'abc123', listType: 'watch-later', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
@@ -199,7 +281,7 @@ describe('delete-api', () => {
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
-      params: { imdbId: 'tt-delete' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
       query: { hash: 'abc123', listType: 'watch-later', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
@@ -219,7 +301,7 @@ describe('delete-api', () => {
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
-      params: { imdbId: 'tt-delete' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
       query: { hash: 'abc123', listType: 'wishlist', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
@@ -235,7 +317,11 @@ describe('delete-api', () => {
 
   it('returns 409 when hash does not match', async () => {
     insertItem('correct-hash');
-    const request: any = { params: { imdbId: 'tt-delete' }, query: { hash: 'wrong-hash' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
+      query: { hash: 'wrong-hash' },
+      usernameHash: 'user',
+    };
     const response = mockResponse();
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -247,7 +333,11 @@ describe('delete-api', () => {
   });
 
   it('returns 404 when item is not found', async () => {
-    const request: any = { params: { imdbId: 'tt-missing' }, query: { hash: 'abc123' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-missing' },
+      query: { hash: 'abc123' },
+      usernameHash: 'user',
+    };
     const response = mockResponse();
     const { app, handlerPromise } = buildApp(request, response);
 

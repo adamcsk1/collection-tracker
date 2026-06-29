@@ -3,12 +3,17 @@ import { CreateApiRequestModel, CreateApiResponseModel } from '@shared/models/ap
 import { createCollectionItemTagValidation } from '@shared/utils/collection-item-tag-validation-util';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { findCollectionItemByImdbId, insertCollectionItem } from '../core/database/repositories/collection';
-import { replaceSeriesTrackerSeasons } from '../core/database/repositories/series-tracker-season-repository';
+import {
+  findCollectionItemByCanonicalItemId,
+  findCollectionItemByExternalId,
+  insertCollectionItem,
+} from '../core/database/repositories/collection';
+import { resolveCanonicalItemIds } from '../core/database/repositories/external-item-identity-repository';
+import { replaceSeriesTrackerSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
-import { fetchSeriesSeasonMetadata } from '../core/omdb/series-season-metadata';
+import { fetchSeriesSeasonMetadata } from '../core/external-metadata/series-season-metadata';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
 import { parseListType } from '../core/utils/query-parse-util';
@@ -46,7 +51,18 @@ export const register = (app: FastifyInstance): void => {
         return response.code(403).send();
       }
 
-      const existingItem = findCollectionItemByImdbId(db, targetOwnerHash, item.IMDbId, listType);
+      const canonicalItemIds = resolveCanonicalItemIds(
+        db,
+        targetOwnerHash,
+        item.externalProvider,
+        item.externalItemId,
+        item.externalIds
+      );
+      const existingItem =
+        canonicalItemIds
+          .map((canonicalItemId) => findCollectionItemByCanonicalItemId(db, targetOwnerHash, canonicalItemId, listType))
+          .find((collectionItem) => !!collectionItem) ??
+        findCollectionItemByExternalId(db, targetOwnerHash, item.externalProvider, item.externalItemId, listType);
       if (existingItem) {
         return response.code(409).send();
       }
@@ -55,8 +71,16 @@ export const register = (app: FastifyInstance): void => {
       const createdItem = insertCollectionItem(db, targetOwnerHash, hash, item, listType);
 
       if (listType === 'series-tracker') {
-        const seasons = await fetchSeriesSeasonMetadata(item.IMDbId);
-        if (seasons.length) replaceSeriesTrackerSeasons(db, targetOwnerHash, item.IMDbId, seasons);
+        const seasons = await fetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);
+        if (seasons.length) {
+          replaceSeriesTrackerSeasonsByExternalId(
+            db,
+            targetOwnerHash,
+            item.externalProvider,
+            item.externalItemId,
+            seasons
+          );
+        }
       }
 
       const result: CreateApiResponseModel = { item: createdItem };

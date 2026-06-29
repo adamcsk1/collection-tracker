@@ -12,7 +12,7 @@ Source: [`apps/server`](../apps/server)
 - statistics summaries, media refresh, external rating refresh, and manage tracker data updates split across movie tracker rows and series progress
 - movie tracker items, series tracker season metadata, watched episodes, and watched-state bulk updates
 - SQLite database initialization and schema migrations
-- OMDb API proxying — forwards search and item lookups to OMDb using the server-side `OMDB_API_KEY` environment variable
+- external metadata proxying — forwards search and item lookups to the configured provider; OMDb is used when `OMDB_API_KEY` is set
 - AI search proxying — embeds collection metadata, retrieves semantic candidates, and forwards filtered IMDB-ID-based queries to Ollama using `ollama.config.json` in the active data folder
 - runtime safeguards through Fastify plugins for Helmet, no-cache headers, CORS validation, request limits, form bodies, and signed cookies
 
@@ -20,7 +20,7 @@ Source: [`apps/server`](../apps/server)
 
 - Default data folder: `.data`
 - CLI flags: `--dataFolder=<path>` and `--debug=true|false`
-- Startup expects `.env` in the active data folder and loads it before registering APIs; `OMDB_API_KEY` must be set for the server to start; AI search reads `ollama.config.json` from the active data folder and merges configured options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`; Ollama availability is checked by the AI query API rather than during server startup
+- Startup expects `.env` in the active data folder and loads it before registering APIs; `OMDB_API_KEY` enables the OMDb external metadata provider when set, but the server starts without it; AI search reads `ollama.config.json` from the active data folder and merges configured options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`; Ollama availability is checked by the AI query API rather than during server startup
 - `RATE_LIMIT` — default maximum number of requests per 1-minute window per IP. Defaults to `120` when not set. Collection entry workflow routes use their own higher per-route limit so adding several items in a row does not exhaust a small global bucket. Set a big enough number to avoid rate limiting (used by the E2E test container)
 - `LOG_LEVEL` — controls console log verbosity. Defaults to `info` when not set. Set to `DEBUG` to echo all log levels (info, warning, error, debug) to the console, equivalent to `--debug=true`
 - `npm start` creates `.data/.env` and `.data/ollama.config.json` from [`apps/server/scripts`](../apps/server/scripts) for local development
@@ -33,13 +33,27 @@ Source: [`apps/server`](../apps/server)
 - `logs/`
 - `cache/` — image proxy cache files and metadata
 
-Collection items, users, tokens, settings, shares, collection-list display preferences, series tracker data, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations). Collection item media type and favorite state are stored as item fields; legacy export imports can derive those values from older system tags.
+Collection items, users, tokens, settings, shares, collection-list display preferences, series tracker data, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations). Collection item media type and favorite state are stored as item fields.
 
 ## Import And Export
 
-- Current collection data exports use `collection-tracker-export` version 3.
-- Version 3 collection items include explicit `contentType` and `favorite` fields.
-- The import API still accepts version 2 exports and derives `contentType` and `favorite` from legacy `#movie`, `#series`, and `#favorite` tags when those fields are missing.
+- Current collection data exports use `collection-tracker-export` version 5.
+- Version 5 collection items include explicit `externalProvider` and `externalItemId` fields.
+- The full import API accepts only current version 5 exports.
+
+## External Metadata Providers
+
+The provider seam supports provider-qualified search and external identity item lookup. Search aggregates all configured metadata providers when the `provider` query parameter is omitted. Providers can advertise direct IMDb ID lookup support for pasted IMDb shortcuts through the regular `/proxy/external-metadata/item?externalIdentitySource=imdb&externalIdentityId=...` endpoint. Collection items persist `externalProvider` and `externalItemId` for metadata refreshes, duplicate checks, imports, exports, and tracker copy flows. Existing rows are backfilled as `externalProvider = 'omdb'` and `externalItemId = IMDbId`.
+
+Provider implementations must return canonical provider item IDs; persistence treats `externalItemId` as the provider's canonical, case-sensitive identifier. Provider names are normalized to lowercase at collection item boundaries.
+
+Duplicate checks stay local to the app database. Collection items also store a local `canonicalItemId` and `external_item_identities` mappings so known cross-provider IDs, such as an OMDb item and a future TMDb item that both expose the same IMDb ID, can resolve to the same existing collection item without calling external providers or using fuzzy title/year matching.
+
+Ratings are normalized into the current storage contract: IMDb, Rotten Tomatoes, and Metacritic columns. Providers with different rating sources can still expose them in metadata responses, but only those normalized sources are persisted and displayed today.
+
+`IMDbId` remains in the public collection model as a legacy compatibility identifier. Provider-qualified routes own collection and tracker item URLs. Bulk text import remains IMDb-specific for now:
+
+1. Bulk text import: `/import/collection-items` extracts IMDb IDs and imports through OMDb only.
 
 ## Important Paths
 

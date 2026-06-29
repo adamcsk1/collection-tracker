@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { ItemDialogTranslations } from './item-dialog-types';
+import { ItemDialogTranslations } from './item-dialog-model';
 
 @Component({
   selector: 'ct-item-dialog-actions',

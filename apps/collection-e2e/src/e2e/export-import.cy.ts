@@ -113,10 +113,10 @@ describe('Export/Import — collection data export', () => {
       ...buildCollectionItem('Export Tracker Movie', 'movie', movieTrackerImdbId),
       listType: 'movie-tracker',
     });
-    cy.request('PUT', `/api/v1/series-tracker/${seriesImdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/series-tracker/omdb/${seriesImdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Second'] }],
     });
-    cy.request('PUT', `/api/v1/series-tracker/${seriesImdbId}/watched-episodes`, {
+    cy.request('PUT', `/api/v1/series-tracker/omdb/${seriesImdbId}/watched-episodes`, {
       watchedEpisodes: [{ season: 1, episode: 1 }],
     });
     cy.intercept('GET', '/api/v1/export').as('getExport');
@@ -129,11 +129,11 @@ describe('Export/Import — collection data export', () => {
     cy.readFile(exportPath, null, { timeout: 15000 }).should((source) => {
       const parsed = JSON.parse(source.toString('utf8'));
       expect(parsed.type).to.equal('collection-tracker-export');
-      expect(parsed.version).to.equal(3);
+      expect(parsed.version).to.equal(5);
       expect(parsed.collectionItems).to.be.an('array');
       expect(parsed.collectionItems.length).to.be.greaterThan(0);
       expect(parsed.tagManagement).to.be.an('array');
-      expect(parsed.seriesTrackerData[seriesImdbId]).to.deep.equal({
+      expect(parsed.seriesTrackerData[`omdb/${seriesImdbId}`]).to.deep.equal({
         seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Second'] }],
         watchedEpisodes: [{ season: 1, episode: 1 }],
       });
@@ -172,7 +172,7 @@ describe('Export/Import — collection data export', () => {
         expect(titles).to.include('Export Movie');
         expect(titles).not.to.include('Imported State Should Remove This');
       });
-    cy.request('GET', `/api/v1/series-tracker/${seriesImdbId}/watched-episodes`)
+    cy.request('GET', `/api/v1/series-tracker/omdb/${seriesImdbId}/watched-episodes`)
       .its('body.watchedEpisodes')
       .should('deep.equal', [{ season: 1, episode: 1 }]);
     cy.request('GET', '/api/v1/items?limit=1000&offset=0&listType=movie-tracker')

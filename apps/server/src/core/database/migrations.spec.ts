@@ -896,6 +896,8 @@ describe('runMigrations', () => {
         title: 'Movie',
         genre: ['Drama'],
         IMDbId: 'tt001',
+        externalProvider: 'omdb',
+        externalItemId: 'tt001',
         tags: ['#favorite', '#movie', '#watch-later', '#watched', 'custom'],
         year: '2024',
         rate: '8.0',
@@ -997,6 +999,8 @@ describe('runMigrations', () => {
           title: 'Series',
           genre: ['Drama'],
           IMDbId: 'tt-series',
+          externalProvider: 'omdb',
+          externalItemId: 'tt-series',
           tags: ['#completed', '#episode-s01e01', '#episode-sxxeyy', '#favorite', '#series', '#watch-later', 'custom'],
           year: '2024',
           rate: '8.0',
@@ -1085,6 +1089,8 @@ describe('runMigrations', () => {
           title: 'Library Movie',
           genre: ['Drama'],
           IMDbId: 'tt-library',
+          externalProvider: 'omdb',
+          externalItemId: 'tt-library',
           tags: ['#favorite', 'custom-library'],
           year: '2024',
           rate: '8.0',
@@ -1097,6 +1103,264 @@ describe('runMigrations', () => {
           favorite: true,
         })
       );
+
+      db.close();
+    });
+  });
+
+  describe('019_add_collection_item_external_provider', () => {
+    it('removes duplicate legacy identities before creating the external identity index', async () => {
+      const db = new Database(':memory:');
+      db.exec(`
+        CREATE TABLE schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+        CREATE TABLE users (username_hash TEXT PRIMARY KEY, user_token_hash TEXT NOT NULL);
+        CREATE TABLE collection_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username_hash TEXT NOT NULL,
+          imdb_id TEXT NOT NULL,
+          list_type TEXT NOT NULL DEFAULT 'library',
+          title TEXT NOT NULL,
+          title_lower TEXT NOT NULL,
+          year TEXT NOT NULL,
+          rate TEXT NOT NULL,
+          user_rate REAL,
+          actors TEXT NOT NULL DEFAULT '',
+          plot TEXT NOT NULL,
+          image TEXT NOT NULL,
+          content_hash TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          rotten_tomatoes_rate TEXT NOT NULL DEFAULT '',
+          metacritic_rate TEXT NOT NULL DEFAULT '',
+          watched_at TEXT,
+          content_type TEXT NOT NULL DEFAULT 'movie',
+          favorite INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE TABLE collection_item_genres (
+          item_id INTEGER NOT NULL,
+          genre TEXT NOT NULL,
+          PRIMARY KEY (item_id, genre),
+          FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+        );
+        CREATE TABLE collection_item_tags (
+          item_id INTEGER NOT NULL,
+          tag TEXT NOT NULL,
+          PRIMARY KEY (item_id, tag),
+          FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+        );
+        CREATE TABLE series_tracker_seasons (
+          item_id INTEGER NOT NULL,
+          season INTEGER NOT NULL,
+          episodes INTEGER NOT NULL,
+          episode_titles TEXT,
+          PRIMARY KEY (item_id, season),
+          FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+        );
+        CREATE TABLE series_tracker_watched_episodes (
+          item_id INTEGER NOT NULL,
+          season INTEGER NOT NULL,
+          episode INTEGER NOT NULL,
+          PRIMARY KEY (item_id, season, episode),
+          FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+        );
+        CREATE TABLE ai_search_embeddings (
+          item_id INTEGER NOT NULL,
+          embedding_model TEXT NOT NULL,
+          content_hash TEXT NOT NULL,
+          embedding_json TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (item_id, embedding_model),
+          FOREIGN KEY (item_id) REFERENCES collection_items(id) ON DELETE CASCADE
+        );
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (id, username_hash, imdb_id, list_type, title, title_lower, year, rate, user_rate, actors, plot, image, content_hash)
+        VALUES
+          (1, 'user', 'tt-duplicate', 'library', 'Kept', 'kept', '2024', '8.0', NULL, 'Actor', 'Plot', 'image', 'old-hash-1'),
+          (2, 'user', 'tt-duplicate', 'library', 'Removed', 'removed', '2024', '8.0', NULL, 'Actor', 'Plot', 'image', 'old-hash-2');
+        INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama'), (2, 'Comedy');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES (1, 'kept-tag'), (2, 'removed-tag');
+        INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (2, 1, 1);
+        INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (2, 1, 1);
+        INSERT INTO ai_search_embeddings (item_id, embedding_model, content_hash, embedding_json)
+          VALUES (2, 'model', 'hash', '[0.1]');
+      `);
+      const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+      tempDirs.push(migrationsDir);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '019_add_collection_item_external_provider.sql'),
+        join(migrationsDir, '019_add_collection_item_external_provider.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT id, external_provider, external_item_id FROM collection_items').all()).toEqual([
+        { id: 1, external_provider: 'omdb', external_item_id: 'tt-duplicate' },
+      ]);
+      expect(db.prepare('SELECT item_id, genre FROM collection_item_genres').all()).toEqual([
+        { item_id: 1, genre: 'Drama' },
+      ]);
+      expect(db.prepare('SELECT item_id, tag FROM collection_item_tags').all()).toEqual([
+        { item_id: 1, tag: 'kept-tag' },
+      ]);
+      expect(db.prepare('SELECT * FROM series_tracker_seasons').all()).toEqual([]);
+      expect(db.prepare('SELECT * FROM series_tracker_watched_episodes').all()).toEqual([]);
+      expect(db.prepare('SELECT * FROM ai_search_embeddings').all()).toEqual([]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      expect(db.prepare('PRAGMA foreign_key_list(collection_item_genres)').all()).toEqual([
+        expect.objectContaining({ table: 'collection_items', from: 'item_id', to: 'id', on_delete: 'CASCADE' }),
+      ]);
+      expect(db.prepare('PRAGMA foreign_key_list(series_tracker_seasons)').all()).toEqual([
+        expect.objectContaining({ table: 'collection_items', from: 'item_id', to: 'id', on_delete: 'CASCADE' }),
+      ]);
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO collection_items
+              (username_hash, imdb_id, external_provider, external_item_id, list_type, title, title_lower, year, rate, actors, plot, image, content_hash)
+             VALUES ('user', 'tt-other', 'omdb', 'tt-duplicate', 'library', 'Duplicate', 'duplicate', '2024', '8.0', 'Actor', 'Plot', 'image', 'hash')`
+          )
+          .run()
+      ).toThrow();
+
+      db.close();
+    });
+  });
+
+  describe('020_add_collection_item_canonical_identity', () => {
+    it('backfills canonical item IDs and external identity mappings', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState(
+        '020_add_collection_item_canonical_identity.sql',
+        tempDirs
+      );
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+        VALUES
+          ('user', 'tt0133093', 'omdb', 'tt0133093', 'library', 'The Matrix', 'the matrix', '1999', '8.7', 'Plot', 'image', 'hash-1'),
+          ('user', 'tt0000603', 'omdb', 'tt0000603', 'watch-later', 'Direct IMDb Movie', 'direct imdb movie', '1999', '8.7', 'Plot', 'image', 'hash-2'),
+          ('user', 'tt123abc', 'omdb', 'tt123abc', 'wishlist', 'Malformed IMDb', 'malformed imdb', '1999', '8.7', 'Plot', 'image', 'hash-3');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '020_add_collection_item_canonical_identity.sql'),
+        join(migrationsDir, '020_add_collection_item_canonical_identity.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(
+        db
+          .prepare('SELECT external_provider, external_item_id, canonical_item_id FROM collection_items ORDER BY id')
+          .all()
+      ).toEqual([
+        { external_provider: 'omdb', external_item_id: 'tt0133093', canonical_item_id: 'imdb:tt0133093' },
+        { external_provider: 'omdb', external_item_id: 'tt0000603', canonical_item_id: 'imdb:tt0000603' },
+        { external_provider: 'omdb', external_item_id: 'tt123abc', canonical_item_id: 'omdb:tt123abc' },
+      ]);
+      expect(
+        db
+          .prepare(
+            'SELECT username_hash, external_provider, external_item_id, canonical_item_id FROM external_item_identities ORDER BY external_provider, external_item_id'
+          )
+          .all()
+      ).toEqual([
+        {
+          username_hash: 'user',
+          external_provider: 'imdb',
+          external_item_id: 'tt0000603',
+          canonical_item_id: 'imdb:tt0000603',
+        },
+        {
+          username_hash: 'user',
+          external_provider: 'imdb',
+          external_item_id: 'tt0133093',
+          canonical_item_id: 'imdb:tt0133093',
+        },
+        {
+          username_hash: 'user',
+          external_provider: 'omdb',
+          external_item_id: 'tt0000603',
+          canonical_item_id: 'imdb:tt0000603',
+        },
+        {
+          username_hash: 'user',
+          external_provider: 'omdb',
+          external_item_id: 'tt0133093',
+          canonical_item_id: 'imdb:tt0133093',
+        },
+        {
+          username_hash: 'user',
+          external_provider: 'omdb',
+          external_item_id: 'tt123abc',
+          canonical_item_id: 'omdb:tt123abc',
+        },
+      ]);
+
+      const fks = db.prepare('PRAGMA foreign_key_list(external_item_identities)').all() as Array<{
+        table: string;
+        from: string;
+        to: string;
+        on_delete: string;
+      }>;
+      expect(fks).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            table: 'users',
+            from: 'username_hash',
+            to: 'username_hash',
+            on_delete: 'CASCADE',
+          }),
+        ])
+      );
+
+      db.prepare("DELETE FROM users WHERE username_hash = 'user'").run();
+      expect(db.prepare('SELECT * FROM external_item_identities').all()).toHaveLength(0);
+
+      db.close();
+    });
+  });
+
+  describe('021_add_unique_collection_item_canonical_identity', () => {
+    it('removes duplicate canonical items and enforces unique canonical identities per list', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState(
+        '021_add_unique_collection_item_canonical_identity.sql',
+        tempDirs
+      );
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+        VALUES
+          ('user', 'tt001', 'omdb', 'tt001', 'imdb:tt001', 'library', 'Original', 'original', '2024', '8.0', 'Plot', 'image', 'hash-1'),
+          ('user', 'tt001-alt', 'omdb', 'tt001-alt', 'imdb:tt001', 'library', 'Duplicate', 'duplicate', '2024', '8.0', 'Plot', 'image', 'hash-2'),
+          ('user', 'tt001', 'omdb', 'tt001', 'imdb:tt001', 'watch-later', 'Other List', 'other list', '2024', '8.0', 'Plot', 'image', 'hash-3');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES (2, 'duplicate-tag');
+        INSERT INTO collection_item_genres (item_id, genre) VALUES (2, 'Duplicate Genre');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '021_add_unique_collection_item_canonical_identity.sql'),
+        join(migrationsDir, '021_add_unique_collection_item_canonical_identity.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT title, canonical_item_id, list_type FROM collection_items ORDER BY id').all()).toEqual([
+        { title: 'Original', canonical_item_id: 'imdb:tt001', list_type: 'library' },
+        { title: 'Other List', canonical_item_id: 'imdb:tt001', list_type: 'watch-later' },
+      ]);
+      expect(db.prepare('SELECT * FROM collection_item_tags WHERE tag = ?').all('duplicate-tag')).toHaveLength(0);
+      expect(db.prepare('SELECT * FROM collection_item_genres WHERE genre = ?').all('Duplicate Genre')).toHaveLength(0);
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO collection_items
+              (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+             VALUES ('user', 'tt001-new', 'omdb', 'tt001-new', 'imdb:tt001', 'library', 'New Duplicate', 'new duplicate', '2024', '8.0', 'Plot', 'image', 'hash-4')`
+          )
+          .run()
+      ).toThrow();
 
       db.close();
     });
@@ -1206,7 +1470,10 @@ describe('runMigrations', () => {
           'idx_ai_search_embeddings_item',
           'idx_collection_item_genres_item',
           'idx_collection_item_tags_item',
+          'idx_collection_items_content_type',
           'idx_collection_items_created',
+          'idx_collection_items_external_identity',
+          'idx_collection_items_favorite',
           'idx_collection_items_list_type',
           'idx_collection_items_username',
           'idx_collection_items_watched_at',

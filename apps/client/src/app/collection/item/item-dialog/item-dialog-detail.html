@@ -7,7 +7,9 @@
   <div class="detail-content">
     <header class="detail-header">
       <p class="eyebrow">{{ collectionItem().year || translations().fallbackUnknownYear() }}</p>
-      <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
+      @if (collectionItem().IMDbId) {
+        <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
+      }
       <h3>{{ collectionItem().title }}</h3>
       <div class="metadata-row">
         <div class="chip-list">

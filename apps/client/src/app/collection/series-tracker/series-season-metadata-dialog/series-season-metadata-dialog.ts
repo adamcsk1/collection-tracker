@@ -30,7 +30,9 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   private readonly confirm = inject(ConfirmService);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  public readonly imdbId = input.required<string>();
+  public readonly imdbId = input<string | undefined>();
+  public readonly externalProvider = input('omdb');
+  public readonly externalItemId = input<string | undefined>();
   public readonly initialSeasons = input<SeriesTrackerSeasonMetadataModel[]>([]);
   public readonly saved = input<(seasons: SeriesTrackerSeasonMetadataModel[], item?: CollectionItemApiModel) => void>(
     () => undefined
@@ -85,6 +87,10 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     this.resetForm(this.initialSeasons());
   }
 
+  private providerItemId(): string {
+    return this.externalItemId() ?? this.imdbId() ?? '';
+  }
+
   private resetForm(seasons: SeriesTrackerSeasonMetadataModel[]): void {
     this.form().reset({
       seasons: seasons.map((season) => ({
@@ -133,7 +139,9 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     const seasons = this.formModel()
       .seasons.map((season) => ({ season: season.season, episodes: season.episodes, titles: season.titles }))
       .sort((firstSeason, secondSeason) => firstSeason.season - secondSeason.season);
-    const result = await firstValueFrom(this.api.updateSeriesTrackerSeasons(this.imdbId(), { seasons }));
+    const result = await firstValueFrom(
+      this.api.updateSeriesTrackerSeasonsByExternalId(this.externalProvider(), this.providerItemId(), { seasons })
+    );
     this.saved()(result.seasons, result.item);
     this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataSaved'));
     this.onClose();
@@ -151,7 +159,9 @@ export class SeriesSeasonMetadataDialog implements OnInit {
 
     this.spinnerLoadingState.setState('show', true);
     try {
-      const result = await firstValueFrom(this.api.refreshSeriesTrackerSeasons(this.imdbId()));
+      const result = await firstValueFrom(
+        this.api.refreshSeriesTrackerSeasonsByExternalId(this.externalProvider(), this.providerItemId())
+      );
       this.resetForm(result.seasons);
       this.saved()(result.seasons, result.item);
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataRefreshed'));
@@ -166,7 +176,9 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     );
     if (!confirmed) return;
 
-    const result = await firstValueFrom(this.api.deleteSeriesTrackerSeasons(this.imdbId()));
+    const result = await firstValueFrom(
+      this.api.deleteSeriesTrackerSeasonsByExternalId(this.externalProvider(), this.providerItemId())
+    );
     this.resetForm(result.seasons);
     this.saved()(result.seasons, result.item);
     this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataDeleted'));

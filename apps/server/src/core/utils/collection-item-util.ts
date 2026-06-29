@@ -1,3 +1,7 @@
+import {
+  isExternalItemIdentitySourceName,
+  isExternalMetadataProviderName,
+} from '@shared/constants/external-metadata-const';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { hashText } from '../crypto';
 
@@ -15,7 +19,14 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
   if (
     typeof item?.title !== 'string' ||
     typeof item?.image !== 'string' ||
-    typeof item?.IMDbId !== 'string' ||
+    (typeof item?.IMDbId !== 'string' && item?.IMDbId !== undefined) ||
+    typeof item?.externalProvider !== 'string' ||
+    typeof item?.externalItemId !== 'string' ||
+    (item?.externalIds !== undefined &&
+      (!Array.isArray(item.externalIds) ||
+        item.externalIds.some(
+          (externalId) => typeof externalId?.source !== 'string' || typeof externalId?.id !== 'string'
+        ))) ||
     typeof item?.rate !== 'string' ||
     typeof item?.rottenTomatoesRate !== 'string' ||
     typeof item?.metacriticRate !== 'string' ||
@@ -36,11 +47,22 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     return;
   }
 
+  const externalProvider = item.externalProvider.trim().toLowerCase();
+  if (!isExternalMetadataProviderName(externalProvider)) return;
+  const externalIds = item.externalIds?.flatMap((externalId) => {
+    const source = externalId.source.trim().toLowerCase();
+    const id = externalId.id.trim();
+    return source && id && isExternalItemIdentitySourceName(source) ? [{ source, id }] : [];
+  });
+
   const normalized: CollectionItemChangeApiModel = {
     image: item.image.trim(),
     title: item.title.trim(),
     genre: item.genre.map((genre) => `${genre}`.trim()).filter(Boolean),
-    IMDbId: item.IMDbId.trim(),
+    IMDbId: item.IMDbId?.trim() || undefined,
+    externalProvider,
+    externalItemId: item.externalItemId.trim(),
+    externalIds,
     tags: rawTags,
     year: normalizeYear(year),
     rate: item.rate.trim(),
@@ -53,7 +75,7 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     favorite,
   };
 
-  if (!normalized.title || !normalized.IMDbId) return;
+  if (!normalized.title || !normalized.externalProvider || !normalized.externalItemId) return;
   return normalized;
 };
 

@@ -35,6 +35,8 @@ const updatedItem = {
   title: 'Updated',
   genre: ['Drama'],
   IMDbId: 'tt-change',
+  externalProvider: 'omdb',
+  externalItemId: 'tt-change',
   tags: [],
   year: '2024',
   rate: '7.1',
@@ -55,7 +57,11 @@ describe('change-api', () => {
 
   it('returns 400 when content is missing', async () => {
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-change' }, body: {}, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
+      body: {},
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./change-api');
@@ -67,7 +73,27 @@ describe('change-api', () => {
 
   it('returns 400 when hash is missing', async () => {
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-change' }, body: { content: 'updated' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
+      body: { content: 'updated' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when external provider is unsupported', async () => {
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'tmdb', externalIdentityId: '603' },
+      body: { ...updatedItem, hash: 'abc123' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./change-api');
@@ -81,7 +107,7 @@ describe('change-api', () => {
     insertItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -105,11 +131,103 @@ describe('change-api', () => {
     });
   });
 
+  it('updates an existing DB item when addressed by IMDb external identity', async () => {
+    insertItem();
+    getDatabase()
+      .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE username_hash = ? AND imdb_id = ?')
+      .run('imdb:tt-change', 'user', 'tt-change');
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'imdb', externalIdentityId: 'tt-change' },
+      body: { ...updatedItem, hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ title: 'Updated', hash: hashText(JSON.stringify(updatedItem)) }),
+    });
+  });
+
+  it('returns 409 when changing provider identity to an existing item', async () => {
+    insertItem();
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items (username_hash, imdb_id, external_provider, external_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run('user', 'tt-other', 'omdb', 'tt-other', 'library', 'Other', 'other', '', '', '', '', 'other-hash');
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
+      body: { ...updatedItem, externalItemId: 'tt-other', hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(409);
+  });
+
+  it('returns 409 when changing canonical identity to an existing item', async () => {
+    insertItem();
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        'user',
+        'tt-conflict',
+        'omdb',
+        'tt-conflict',
+        'imdb:tt-conflict',
+        'library',
+        'Conflict',
+        'conflict',
+        '',
+        '',
+        '',
+        '',
+        'conflict-hash'
+      );
+    getDatabase()
+      .prepare(
+        `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run('user', 'imdb:tt-conflict', 'omdb', 'tt-alias', 'provider');
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
+      body: {
+        ...updatedItem,
+        externalItemId: 'tt-alias',
+        hash: 'abc123',
+      },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(409);
+  });
+
   it('updates a series tracker item when listType is provided', async () => {
     insertItem('abc123', 'user', 'series-tracker');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { listType: 'series-tracker' },
       body: { ...updatedItem, contentType: 'series', hash: 'abc123' },
       usernameHash: 'user',
@@ -134,7 +252,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'wishlist');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { listType: 'wishlist' },
       body: { ...updatedItem, tags: ['#custom'], hash: 'abc123' },
       usernameHash: 'user',
@@ -158,7 +276,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'watch-later');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { listType: 'watch-later' },
       body: { ...updatedItem, tags: ['#custom'], hash: 'abc123' },
       usernameHash: 'user',
@@ -182,7 +300,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'watch-later');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { listType: 'watch-later' },
       body: { ...updatedItem, favorite: true, hash: 'abc123' },
       usernameHash: 'user',
@@ -200,7 +318,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'wishlist');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { listType: 'wishlist' },
       body: { ...updatedItem, favorite: true, hash: 'abc123' },
       usernameHash: 'user',
@@ -228,7 +346,7 @@ describe('change-api', () => {
     );
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { listType: 'series-tracker' },
       body: { ...updatedItem, contentType: 'series', hash: 'abc123' },
       usernameHash: 'user',
@@ -252,7 +370,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'series-tracker');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { listType: 'series-tracker' },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
@@ -270,7 +388,7 @@ describe('change-api', () => {
     insertItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, contentType: 'other', tags: ['#action'], hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -287,7 +405,7 @@ describe('change-api', () => {
     insertItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, tags: ['#movie', '#unwatched'], hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -306,7 +424,7 @@ describe('change-api', () => {
     insertItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, tags: ['#movie'], hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -328,7 +446,7 @@ describe('change-api', () => {
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { ownerShareCode: getUserShareCode('owner') },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
@@ -356,7 +474,7 @@ describe('change-api', () => {
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { ownerShareCode: getUserShareCode('owner') },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
@@ -377,7 +495,7 @@ describe('change-api', () => {
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { ownerShareCode: getUserShareCode('owner'), listType: 'watch-later' },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
@@ -398,7 +516,7 @@ describe('change-api', () => {
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { ownerShareCode: getUserShareCode('owner') },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
@@ -419,7 +537,7 @@ describe('change-api', () => {
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { ownerShareCode: getUserShareCode('owner') },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
@@ -437,7 +555,7 @@ describe('change-api', () => {
     insertItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, contentType: 'other', hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -454,7 +572,7 @@ describe('change-api', () => {
     insertItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, favorite: 'yes', hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -471,7 +589,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'watch-later');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -488,7 +606,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'wishlist');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -505,7 +623,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'watch-later');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, tags: ['#movie', '#wishlist'], hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -522,7 +640,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'wishlist');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, tags: ['#movie', '#watch-later'], hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -539,7 +657,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'watch-later');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, tags: ['#movie', '#watch-later', '#custom'], hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -556,7 +674,7 @@ describe('change-api', () => {
     insertItem('abc123', 'user', 'wishlist');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, tags: ['#movie', '#wishlist', '#custom'], hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -573,7 +691,7 @@ describe('change-api', () => {
     insertItem('correct-hash');
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, hash: 'wrong-hash' },
       usernameHash: 'user',
     };
@@ -596,7 +714,7 @@ describe('change-api', () => {
 
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-change' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       body: { ...updatedItem, IMDbId: 'tt-conflict', hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -611,7 +729,7 @@ describe('change-api', () => {
 
   it('returns 404 when item is missing', async () => {
     const request: any = {
-      params: { imdbId: 'tt-missing' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-missing' },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
     };

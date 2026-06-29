@@ -1,8 +1,9 @@
 import { API_PREFIX } from '@shared/constants/api-const';
+import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
 import { MovieTrackerApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { copyMovieToMovieTracker } from '../core/database/repositories/movie-tracker-repository';
+import { copyMovieToMovieTrackerByExternalId } from '../core/database/repositories/movie-tracker-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
@@ -16,11 +17,12 @@ const findSourceOwnerHash = (query: Record<string, unknown>, requesterUsernameHa
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/movie-tracker/:imdbId`,
+    `${API_PREFIX}/movie-tracker/:externalIdentitySource/:externalIdentityId`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      const { imdbId } = request.params as Record<string, string>;
+      const { externalIdentitySource, externalIdentityId } = request.params as Record<string, string>;
       const query = (request.query ?? {}) as Record<string, unknown>;
+      if (!isExternalItemIdentitySourceName(externalIdentitySource)) return response.code(400).send();
       const db = getDatabase();
       const sourceOwnerHash = findSourceOwnerHash(query, request.usernameHash);
       if (!sourceOwnerHash) return response.code(404).send();
@@ -30,11 +32,12 @@ export const register = (app: FastifyInstance): void => {
       const moveFromWatchLater = sourceListType === 'watch-later';
       if (moveFromWatchLater && sourceOwnerHash !== request.usernameHash) return response.code(403).send();
 
-      const item = copyMovieToMovieTracker(
+      const item = copyMovieToMovieTrackerByExternalId(
         db,
         request.usernameHash,
         sourceOwnerHash,
-        imdbId,
+        externalIdentitySource,
+        externalIdentityId,
         sourceListType,
         moveFromWatchLater
       );

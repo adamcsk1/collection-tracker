@@ -25,7 +25,7 @@ describe('Series metadata dialog', () => {
   });
 
   it('saves manual season metadata', () => {
-    cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/seasons`).as('saveSeriesMetadata');
+    cy.intercept('PUT', '/api/v1/series-tracker/**/seasons').as('saveSeriesMetadata');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().contains(seriesTitle).click();
@@ -34,7 +34,10 @@ describe('Series metadata dialog', () => {
     CollectionPage.openItemDialogActionsMenu();
     CollectionPage.getSeriesMetadataRefreshButton().should('be.visible');
 
-    CollectionPage.getSeriesMetadataMessage().should('contain.text', 'Season and episode counts can come from OMDb');
+    CollectionPage.getSeriesMetadataMessage().should(
+      'contain.text',
+      'Season and episode counts can come from the configured external metadata provider'
+    );
     CollectionPage.getSeriesMetadataAddButton().click();
     CollectionPage.getSeriesMetadataAddButton().click();
 
@@ -66,13 +69,13 @@ describe('Series metadata dialog', () => {
   });
 
   it('removes stored season metadata', () => {
-    cy.request('PUT', `/api/v1/series-tracker/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/seasons`, {
       seasons: [
         { season: 1, episodes: 3 },
         { season: 2, episodes: 2 },
       ],
     });
-    cy.intercept('DELETE', `/api/v1/series-tracker/${imdbId}/seasons`).as('deleteSeriesMetadata');
+    cy.intercept('DELETE', '/api/v1/series-tracker/**/seasons').as('deleteSeriesMetadata');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().contains(seriesTitle).click();
@@ -100,7 +103,7 @@ describe('Series metadata dialog', () => {
   });
 
   it('saves and restores episode titles in the metadata dialog', () => {
-    cy.intercept('PUT', `/api/v1/series-tracker/${imdbId}/seasons`).as('saveSeriesMetadata');
+    cy.intercept('PUT', '/api/v1/series-tracker/**/seasons').as('saveSeriesMetadata');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.openItemDialogActionsMenu();

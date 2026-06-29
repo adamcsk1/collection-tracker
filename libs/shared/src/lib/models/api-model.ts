@@ -1,3 +1,4 @@
+import { ExternalItemIdentityModel } from './external-metadata-provider-model';
 import { CollectionItemModel, CollectionListTypeModel } from './collection-item-model';
 import { CollectionListDisplayPreferencesModel } from './collection-list-display-preferences-model';
 import { LanguageModel } from './language-model';
@@ -34,7 +35,7 @@ export interface CollectionItemsApiResponseModel {
 }
 
 export interface CollectionMatchedItemsApiRequestModel {
-  imdbIds: string[];
+  identities: ExternalItemIdentityModel[];
   offset?: number;
   limit?: number;
   filters?: CollectionItemFiltersApiModel;
@@ -62,6 +63,8 @@ export interface CollectionItemExistsApiResponseModel {
   exists: boolean;
   hash?: string;
 }
+
+export type CollectionItemExternalIdentityApiModel = ExternalItemIdentityModel;
 
 export interface RandomImagesApiResponseModel {
   images: string[];
@@ -91,6 +94,9 @@ export type CollectionItemChangeApiModel = Pick<
   | 'title'
   | 'genre'
   | 'IMDbId'
+  | 'externalProvider'
+  | 'externalItemId'
+  | 'externalIds'
   | 'tags'
   | 'year'
   | 'rate'

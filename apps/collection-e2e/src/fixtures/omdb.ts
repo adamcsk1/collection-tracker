@@ -1,19 +1,29 @@
 export const buildOmdbSearchResult = (title: string, imdbId = 'tt1234567', type = 'movie') => ({
-  Search: [{ Title: title, Year: '2020', imdbID: imdbId, Type: type, Poster: 'N/A' }],
-  totalResults: '1',
-  Response: 'True',
+  results: [
+    {
+      provider: 'omdb',
+      providerItemId: imdbId,
+      title,
+      year: '2020',
+      contentType: type,
+      poster: 'N/A',
+      plot: 'A test plot for e2e testing.',
+      actors: 'Actor One, Actor Two',
+      genres: ['Action', 'Adventure'],
+      ratings: [{ source: 'Internet Movie Database', value: '8.5' }],
+    },
+  ],
 });
 
 export const buildOmdbItem = (title: string, imdbId = 'tt1234567', type = 'movie') => ({
-  Title: title,
-  Year: '2020',
-  imdbID: imdbId,
-  Type: type,
-  Poster: 'N/A',
-  Genre: 'Action, Adventure',
-  Director: 'Test Director',
-  Actors: 'Actor One, Actor Two',
-  Plot: 'A test plot for e2e testing.',
-  imdbRating: '8.5',
-  Response: 'True',
+  provider: 'omdb',
+  providerItemId: imdbId,
+  title,
+  year: '2020',
+  contentType: type,
+  poster: 'N/A',
+  plot: 'A test plot for e2e testing.',
+  actors: 'Actor One, Actor Two',
+  genres: ['Action', 'Adventure'],
+  ratings: [{ source: 'Internet Movie Database', value: '8.5' }],
 });

@@ -1,23 +1,20 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { CollectionItemApiModel, RefreshExternalRatingsApiResponseModel } from '@shared/models/api-model';
-import { OMDbResponseRatingModel } from '@shared/models/omdb-model';
+import { getExternalMetadataRating } from '@shared/utils/external-metadata-ratings-util';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
   countCollectionItems,
   findCollectionItems,
-  updateCollectionItem,
+  updateCollectionItemByExternalId,
 } from '../core/database/repositories/collection';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
+import { getExternalMetadataProviderByName } from '../core/external-metadata/external-metadata-provider-factory';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
-import { fetchOMDbItem } from '../core/omdb/omdb-item';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash } from '../core/utils/collection-item-util';
-
-const getRating = (ratings: OMDbResponseRatingModel[] | undefined, source: string): string =>
-  ratings?.find((rating) => rating.Source === source)?.Value ?? '';
 
 const buildUpdatedItem = (
   item: CollectionItemApiModel,
@@ -38,7 +35,6 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler(async (request, response) => {
       await debugLog('POST /items/refresh-external-ratings started');
       const db = getDatabase();
-      const apiKey = process.env.OMDB_API_KEY;
       const query = (request.query ?? {}) as Record<string, unknown>;
       const ownerHash =
         typeof query.ownerShareCode === 'string'
@@ -67,25 +63,37 @@ export const register = (app: FastifyInstance): void => {
         for (const item of items) {
           checked++;
 
-          if (!apiKey?.trim()) {
-            await debugLog(`[${item.IMDbId}] OMDb API key is missing`);
+          const provider = getExternalMetadataProviderByName(item.externalProvider);
+          if (!provider) {
+            await debugLog(`[${item.IMDbId}] External metadata provider is not configured`);
             errors++;
             continue;
           }
 
-          await debugLog(`[${item.IMDbId}] Fetching OMDb ratings`);
-          const omdbItem = await fetchOMDbItem(item.IMDbId, apiKey);
-          if (!omdbItem?.imdbID) {
-            await debugLog(`[${item.IMDbId}] No OMDb item available`);
+          await debugLog(`[${item.IMDbId}] Fetching external ratings`);
+          let metadataItem: Awaited<ReturnType<typeof provider.getItem>>;
+          try {
+            metadataItem = await provider.getItem(item.externalItemId);
+          } catch {
+            errors++;
+            continue;
+          }
+
+          if (
+            !metadataItem?.providerItemId ||
+            metadataItem.provider !== item.externalProvider ||
+            metadataItem.providerItemId !== item.externalItemId
+          ) {
+            await debugLog(`[${item.IMDbId}] No external metadata item available`);
             errors++;
             continue;
           }
 
           const updatedItem = buildUpdatedItem(
             item,
-            omdbItem.imdbRating ?? item.rate,
-            getRating(omdbItem.Ratings, 'Rotten Tomatoes'),
-            getRating(omdbItem.Ratings, 'Metacritic')
+            getExternalMetadataRating(metadataItem.ratings, 'Internet Movie Database') || item.rate,
+            getExternalMetadataRating(metadataItem.ratings, 'Rotten Tomatoes'),
+            getExternalMetadataRating(metadataItem.ratings, 'Metacritic')
           );
 
           if (
@@ -99,7 +107,15 @@ export const register = (app: FastifyInstance): void => {
 
           await debugLog(`[${item.IMDbId}] Ratings changed, updating item`);
           const newHash = getItemHash(updatedItem);
-          updateCollectionItem(db, ownerHash, item.IMDbId, newHash, updatedItem);
+          updateCollectionItemByExternalId(
+            db,
+            ownerHash,
+            item.externalProvider,
+            item.externalItemId,
+            newHash,
+            updatedItem,
+            item.listType
+          );
           fixed++;
         }
         offset += batchSize;

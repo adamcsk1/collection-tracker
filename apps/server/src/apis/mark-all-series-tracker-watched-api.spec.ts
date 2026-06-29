@@ -19,7 +19,10 @@ describe('mark-all-series-tracker-watched-api', () => {
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 2, 2);
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./mark-all-series-tracker-watched-api');
@@ -47,7 +50,10 @@ describe('mark-all-series-tracker-watched-api', () => {
   it('returns 400 when no season metadata exists', async () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./mark-all-series-tracker-watched-api');
@@ -59,7 +65,10 @@ describe('mark-all-series-tracker-watched-api', () => {
 
   it('returns 404 for non-existent item', async () => {
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-unknown' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-unknown' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./mark-all-series-tracker-watched-api');

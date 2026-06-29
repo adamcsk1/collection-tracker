@@ -60,7 +60,7 @@ describe('add-series-tracker-item-api', () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      params: { imdbId: 'tt-1' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
       query: { sourceListType: 'watch-later' },
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -94,6 +94,22 @@ describe('add-series-tracker-item-api', () => {
     ).toEqual([{ season: 1, episodes: 2 }]);
   });
 
+  it('returns 400 when external provider is unsupported', async () => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'tmdb', externalIdentityId: '603' },
+      query: { sourceListType: 'watch-later' },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-series-tracker-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('copies an own library series to the series tracker and fetches metadata', async () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
@@ -109,7 +125,7 @@ describe('add-series-tracker-item-api', () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      params: { imdbId: 'tt-1' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
       query: {},
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -156,7 +172,11 @@ describe('add-series-tracker-item-api', () => {
     insertItem('user', 'tt-1', ['#series'], 'library');
 
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: {} };
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
+      query: {},
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./add-series-tracker-item-api');
@@ -184,7 +204,7 @@ describe('add-series-tracker-item-api', () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      params: { imdbId: 'tt-1' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
       query: { ownerShareCode: getUserShareCode('owner') },
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -215,7 +235,7 @@ describe('add-series-tracker-item-api', () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      params: { imdbId: 'tt-1' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
       query: { ownerShareCode: getUserShareCode('owner') },
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -233,7 +253,11 @@ describe('add-series-tracker-item-api', () => {
     insertItem('user', 'tt-1', ['#movie', '#watch-later'], 'watch-later', 'movie');
 
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: { sourceListType: 'watch-later' } };
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
+      query: { sourceListType: 'watch-later' },
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./add-series-tracker-item-api');
@@ -249,7 +273,11 @@ describe('add-series-tracker-item-api', () => {
     insertItem('user', 'tt-1', ['#series'], 'series-tracker');
 
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: { sourceListType: 'watch-later' } };
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
+      query: { sourceListType: 'watch-later' },
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./add-series-tracker-item-api');

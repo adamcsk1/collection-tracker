@@ -20,6 +20,8 @@ describe('CollectionService', () => {
     titleLower: title.toLowerCase(),
     genre: [],
     IMDbId: `tt-${title}`,
+    externalProvider: 'omdb',
+    externalItemId: `tt-${title}`,
     tags: [],
     year: null,
     rate: '',
@@ -75,17 +77,17 @@ describe('CollectionService', () => {
     ]);
   });
 
-  it('replaces an existing item with the same owner, list type, and IMDb ID', () => {
+  it('replaces an existing item with the same owner, list type, and provider identity', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('target')]);
 
-    service.addCollectionItem({ ...buildCollectionItem('updated'), IMDbId: 'tt-target' }, true);
+    service.addCollectionItem({ ...buildCollectionItem('updated'), externalItemId: 'tt-target' }, true);
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
-      { ...buildCollectionItem('updated'), IMDbId: 'tt-target' },
+      { ...buildCollectionItem('updated'), externalItemId: 'tt-target' },
     ]);
   });
 
-  it('adds an item with the same IMDb ID but a different list type', () => {
+  it('adds an item with the same provider identity but a different list type', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('same')]);
 
     service.addCollectionItem({ ...buildCollectionItem('same'), listType: 'watch-later' }, true);
@@ -96,7 +98,7 @@ describe('CollectionService', () => {
     ]);
   });
 
-  it('adds an item with the same IMDb ID but a different owner', () => {
+  it('adds an item with the same provider identity but a different owner', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('same', 'owner-one')]);
 
     service.addCollectionItem(buildCollectionItem('same', 'owner-two'), true);
@@ -110,29 +112,29 @@ describe('CollectionService', () => {
   it('deletes a collection item by name', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('keep'), buildCollectionItem('remove')]);
 
-    service.deleteCollectionItem('tt-remove');
+    service.deleteCollectionItem(buildCollectionItem('remove'));
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('keep')]);
   });
 
-  it('deletes only the matching shared-library item when IMDb IDs overlap', () => {
+  it('deletes only the matching shared-library item when provider identities overlap', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('same', 'own-code'),
       buildCollectionItem('same', 'owner-code'),
     ]);
 
-    service.deleteCollectionItem('tt-same', 'owner-code');
+    service.deleteCollectionItem(buildCollectionItem('same'), 'owner-code');
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('same', 'own-code')]);
   });
 
-  it('deletes only the matching list item when IMDb IDs overlap', () => {
+  it('deletes only the matching list item when provider identities overlap', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('same'),
       { ...buildCollectionItem('same'), listType: 'watch-later' },
     ]);
 
-    service.deleteCollectionItem('tt-same', undefined, 'watch-later');
+    service.deleteCollectionItem(buildCollectionItem('same'), undefined, 'watch-later');
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('same')]);
   });
@@ -140,18 +142,22 @@ describe('CollectionService', () => {
   it('updates an existing collection item by name', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('target')]);
 
-    service.updateCollectionItem('tt-target', buildCollectionItem('updated'));
+    service.updateCollectionItem(buildCollectionItem('target'), buildCollectionItem('updated'));
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('updated')]);
   });
 
-  it('updates only the matching shared-library item when IMDb IDs overlap', () => {
+  it('updates only the matching shared-library item when provider identities overlap', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('target', 'own-code'),
       buildCollectionItem('target', 'owner-code'),
     ]);
 
-    service.updateCollectionItem('tt-target', buildCollectionItem('updated', 'owner-code'), 'owner-code');
+    service.updateCollectionItem(
+      buildCollectionItem('target'),
+      buildCollectionItem('updated', 'owner-code'),
+      'owner-code'
+    );
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('target', 'own-code'),
@@ -159,32 +165,35 @@ describe('CollectionService', () => {
     ]);
   });
 
-  it('updates only the matching list item when IMDb IDs overlap', () => {
+  it('updates only the matching list item when provider identities overlap', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('target'),
       { ...buildCollectionItem('target'), listType: 'watch-later' },
     ]);
 
-    service.updateCollectionItem('tt-target', {
-      ...buildCollectionItem('updated'),
-      IMDbId: 'tt-target',
-      listType: 'watch-later',
-    });
+    service.updateCollectionItem(
+      { ...buildCollectionItem('target'), listType: 'watch-later' },
+      {
+        ...buildCollectionItem('updated'),
+        externalItemId: 'tt-target',
+        listType: 'watch-later',
+      }
+    );
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('target'),
-      { ...buildCollectionItem('updated'), IMDbId: 'tt-target', listType: 'watch-later' },
+      { ...buildCollectionItem('updated'), externalItemId: 'tt-target', listType: 'watch-later' },
     ]);
   });
 
-  it('replaces the old keyed item with the backend-returned item when IMDb ID changes', () => {
+  it('replaces the old keyed item with the backend-returned item when legacy IMDb ID changes', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('target'),
       { ...buildCollectionItem('target'), listType: 'series-tracker' },
     ]);
 
     service.updateCollectionItem(
-      'tt-target',
+      { ...buildCollectionItem('target'), listType: 'series-tracker' },
       { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'series-tracker' },
       undefined,
       'series-tracker'

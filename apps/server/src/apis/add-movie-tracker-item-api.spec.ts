@@ -39,7 +39,11 @@ describe('add-movie-tracker-item-api', () => {
     insertItem('user', 'tt-1', ['#movie', '#action']);
 
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: {} };
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
+      query: {},
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./add-movie-tracker-item-api');
@@ -49,6 +53,22 @@ describe('add-movie-tracker-item-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'movie-tracker', watched: true }),
     });
+  });
+
+  it('returns 400 when external provider is unsupported', async () => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'tmdb', externalIdentityId: '603' },
+      query: {},
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./add-movie-tracker-item-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('copies a shared library movie to the requester movie tracker', async () => {
@@ -64,7 +84,7 @@ describe('add-movie-tracker-item-api', () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'viewer',
-      params: { imdbId: 'tt-1' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
       query: { ownerShareCode: getUserShareCode('owner') },
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -87,7 +107,11 @@ describe('add-movie-tracker-item-api', () => {
     insertItem('user', 'tt-1', ['#series'], 'library', 'series');
 
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: {} };
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
+      query: {},
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./add-movie-tracker-item-api');
@@ -102,7 +126,11 @@ describe('add-movie-tracker-item-api', () => {
     insertItem('user', 'tt-1', ['#movie', '#watch-later'], 'watch-later');
 
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: { sourceListType: 'watch-later' } };
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
+      query: { sourceListType: 'watch-later' },
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./add-movie-tracker-item-api');
@@ -124,7 +152,11 @@ describe('add-movie-tracker-item-api', () => {
     insertItem('user', 'tt-1', ['#movie'], 'movie-tracker');
 
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', params: { imdbId: 'tt-1' }, query: { sourceListType: 'watch-later' } };
+    const request: any = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
+      query: { sourceListType: 'watch-later' },
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./add-movie-tracker-item-api');

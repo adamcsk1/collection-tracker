@@ -20,7 +20,10 @@ describe('delete-series-tracker-seasons-api', () => {
       .run(itemId, 1, 1);
     getDatabase().prepare('UPDATE collection_items SET watched_at = ? WHERE id = ?').run('2025-01-01 00:00:00', itemId);
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./delete-series-tracker-seasons-api');

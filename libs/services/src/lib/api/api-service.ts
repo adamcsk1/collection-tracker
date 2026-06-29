@@ -39,7 +39,12 @@ import {
   UserSharesApiResponseModel,
 } from '@shared/models/api-model';
 import { AiQueryRequestModel, AiQueryResponseModel } from '@shared/models/ai-model';
-import { OMDbResponseItemModel, OMDbResponseModel } from '@shared/models/omdb-model';
+import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
+import {
+  ExternalMetadataItemModel,
+  ExternalMetadataProvidersResponseModel,
+  ExternalMetadataSearchResponseModel,
+} from '@shared/models/external-metadata-model';
 import { Observable } from 'rxjs';
 import { BaseApiService } from './base-api-service';
 
@@ -98,24 +103,37 @@ export class ApiService extends BaseApiService {
     return this.request('POST', `/items/mark-all-series-unwatched${this.buildQuery({ ownerShareCode })}`);
   }
 
-  public addMovieTrackerItem(
-    imdbId: string,
+  public addMovieTrackerItemByExternalId(
+    externalProvider: string,
+    externalItemId: string,
     ownerShareCode?: string,
     sourceListType?: CollectionListTypeModel
   ): Observable<MovieTrackerApiResponseModel> {
-    return this.request('POST', `/movie-tracker/${imdbId}${this.buildQuery({ ownerShareCode, sourceListType })}`, {});
+    return this.request(
+      'POST',
+      `/movie-tracker/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ ownerShareCode, sourceListType })}`,
+      {}
+    );
   }
 
-  public addSeriesTrackerItem(
-    imdbId: string,
+  public addSeriesTrackerItemByExternalId(
+    externalProvider: string,
+    externalItemId: string,
     sourceListType?: CollectionListTypeModel,
     ownerShareCode?: string
   ): Observable<SeriesTrackerApiResponseModel> {
-    return this.request('POST', `/series-tracker/${imdbId}${this.buildQuery({ sourceListType, ownerShareCode })}`, {});
+    return this.request(
+      'POST',
+      `/series-tracker/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ sourceListType, ownerShareCode })}`,
+      {}
+    );
   }
 
-  public deleteMovieTrackerItem(imdbId: string): Observable<void> {
-    return this.request('DELETE', `/movie-tracker/${imdbId}`);
+  public deleteMovieTrackerItemByExternalId(externalProvider: string, externalItemId: string): Observable<void> {
+    return this.request(
+      'DELETE',
+      `/movie-tracker/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}`
+    );
   }
 
   public deleteAllMovieTrackerItems(): Observable<MarkAllUnwatchedApiResponseModel> {
@@ -151,11 +169,17 @@ export class ApiService extends BaseApiService {
   }
 
   public collectionItemExists(
-    imdbId: string,
+    externalIdentitySource: string,
+    externalIdentityId: string,
     ownerShareCode?: string,
-    listType?: CollectionListTypeModel
+    listType?: CollectionListTypeModel,
+    externalIds?: ExternalItemIdentityModel[]
   ): Observable<CollectionItemExistsApiResponseModel> {
-    return this.request('GET', `/items/exists${this.buildQuery({ imdbId, ownerShareCode, listType })}`);
+    const externalIdParams = externalIds?.length ? JSON.stringify(externalIds) : undefined;
+    return this.request(
+      'GET',
+      `/items/exists${this.buildQuery({ externalIdentitySource, externalIdentityId, ownerShareCode, listType, externalIds: externalIdParams })}`
+    );
   }
 
   public getStatistics(filters: CollectionItemFiltersApiModel = {}): Observable<CollectionStatisticsApiResponseModel> {
@@ -170,23 +194,32 @@ export class ApiService extends BaseApiService {
     return this.request('POST', '/create', { ...item, targetOwnerShareCode, listType });
   }
 
-  public update(
-    imdbId: string,
+  public updateByExternalId(
+    externalProvider: string,
+    externalItemId: string,
     item: CollectionItemChangeApiModel,
     hash: string,
     ownerShareCode?: string,
     listType?: CollectionListTypeModel
   ): Observable<ChangeApiResponseModel> {
-    return this.request('PUT', `/change/${imdbId}${this.buildQuery({ ownerShareCode, listType })}`, { ...item, hash });
+    return this.request(
+      'PUT',
+      `/items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/change${this.buildQuery({ ownerShareCode, listType })}`,
+      { ...item, hash }
+    );
   }
 
-  public delete(
-    imdbId: string,
+  public deleteByExternalId(
+    externalProvider: string,
+    externalItemId: string,
     hash: string,
     ownerShareCode?: string,
     listType?: CollectionListTypeModel
   ): Observable<void> {
-    return this.request('DELETE', `/delete/${imdbId}${this.buildQuery({ hash, ownerShareCode, listType })}`);
+    return this.request(
+      'DELETE',
+      `/items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ hash, ownerShareCode, listType })}`
+    );
   }
 
   public getAccessTokens(): Observable<AccessTokensApiResponseModel> {
@@ -243,46 +276,104 @@ export class ApiService extends BaseApiService {
     return this.request('POST', '/tag-management', tagManagement);
   }
 
-  public getOMDbData(queryParams: { i: string | null }): Observable<OMDbResponseItemModel> {
-    return this.request('GET', `/proxy/omdb/item?i=${queryParams.i}`);
+  public getExternalMetadataItem(queryParams: {
+    externalIdentitySource: string | null;
+    externalIdentityId: string | null;
+  }): Observable<ExternalMetadataItemModel> {
+    return this.request(
+      'GET',
+      `/proxy/external-metadata/item?externalIdentitySource=${encodeURIComponent(queryParams.externalIdentitySource ?? '')}&externalIdentityId=${encodeURIComponent(queryParams.externalIdentityId ?? '')}`
+    );
   }
 
-  public getOMDbSearchData(queryParams: { s: string | null }): Observable<OMDbResponseModel> {
-    return this.request('GET', `/proxy/omdb/search?s=${queryParams.s}`);
+  public getExternalMetadataProviders(): Observable<ExternalMetadataProvidersResponseModel> {
+    return this.request('GET', '/proxy/external-metadata/providers');
   }
 
-  public getSeriesTrackerSeasons(imdbId: string): Observable<SeriesTrackerSeasonsApiResponseModel> {
-    return this.request('GET', `/series-tracker/${imdbId}/seasons`);
+  public searchExternalMetadata(queryParams: {
+    s: string | null;
+    provider?: string | null;
+  }): Observable<ExternalMetadataSearchResponseModel> {
+    const providerQuery = queryParams.provider ? `&provider=${encodeURIComponent(queryParams.provider)}` : '';
+    return this.request(
+      'GET',
+      `/proxy/external-metadata/search?s=${encodeURIComponent(queryParams.s ?? '')}${providerQuery}`
+    );
   }
 
-  public refreshSeriesTrackerSeasons(imdbId: string): Observable<SeriesTrackerSeasonsApiResponseModel> {
-    return this.request('POST', `/series-tracker/${imdbId}/seasons/refresh`, {});
+  public getSeriesTrackerSeasonsByExternalId(
+    externalProvider: string,
+    externalItemId: string
+  ): Observable<SeriesTrackerSeasonsApiResponseModel> {
+    return this.request(
+      'GET',
+      `/series-tracker/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`
+    );
   }
 
-  public updateSeriesTrackerSeasons(
-    imdbId: string,
+  public refreshSeriesTrackerSeasonsByExternalId(
+    externalProvider: string,
+    externalItemId: string
+  ): Observable<SeriesTrackerSeasonsApiResponseModel> {
+    return this.request(
+      'POST',
+      `/series-tracker/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons/refresh`,
+      {}
+    );
+  }
+
+  public updateSeriesTrackerSeasonsByExternalId(
+    externalProvider: string,
+    externalItemId: string,
     request: SeriesTrackerSeasonsApiRequestModel
   ): Observable<SeriesTrackerSeasonsApiResponseModel> {
-    return this.request('PUT', `/series-tracker/${imdbId}/seasons`, request);
+    return this.request(
+      'PUT',
+      `/series-tracker/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`,
+      request
+    );
   }
 
-  public deleteSeriesTrackerSeasons(imdbId: string): Observable<SeriesTrackerSeasonsApiResponseModel> {
-    return this.request('DELETE', `/series-tracker/${imdbId}/seasons`);
+  public deleteSeriesTrackerSeasonsByExternalId(
+    externalProvider: string,
+    externalItemId: string
+  ): Observable<SeriesTrackerSeasonsApiResponseModel> {
+    return this.request(
+      'DELETE',
+      `/series-tracker/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`
+    );
   }
 
-  public getSeriesTrackerWatchedEpisodes(imdbId: string): Observable<SeriesTrackerWatchedEpisodesApiResponseModel> {
-    return this.request('GET', `/series-tracker/${imdbId}/watched-episodes`);
+  public getSeriesTrackerWatchedEpisodesByExternalId(
+    externalProvider: string,
+    externalItemId: string
+  ): Observable<SeriesTrackerWatchedEpisodesApiResponseModel> {
+    return this.request(
+      'GET',
+      `/series-tracker/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/watched-episodes`
+    );
   }
 
-  public updateSeriesTrackerWatchedEpisodes(
-    imdbId: string,
+  public updateSeriesTrackerWatchedEpisodesByExternalId(
+    externalProvider: string,
+    externalItemId: string,
     request: SeriesTrackerWatchedEpisodesApiRequestModel
   ): Observable<SeriesTrackerWatchedEpisodesApiResponseModel> {
-    return this.request('PUT', `/series-tracker/${imdbId}/watched-episodes`, request);
+    return this.request(
+      'PUT',
+      `/series-tracker/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/watched-episodes`,
+      request
+    );
   }
 
-  public markAllSeriesTrackerWatched(imdbId: string): Observable<SeriesTrackerWatchedEpisodesApiResponseModel> {
-    return this.request('PUT', `/series-tracker/${imdbId}/mark-all-watched`);
+  public markAllSeriesTrackerWatchedByExternalId(
+    externalProvider: string,
+    externalItemId: string
+  ): Observable<SeriesTrackerWatchedEpisodesApiResponseModel> {
+    return this.request(
+      'PUT',
+      `/series-tracker/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/mark-all-watched`
+    );
   }
 
   public getAiQueryData(prompt: string): Observable<AiQueryResponseModel> {

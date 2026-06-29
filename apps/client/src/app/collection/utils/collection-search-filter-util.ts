@@ -1,10 +1,6 @@
 import { effect, untracked } from '@angular/core';
 import { CollectionItemFiltersApiModel, CollectionListTypeModel } from '@shared/models/api-model';
-import { StandardSearchSetupOptions } from './collection-search-filter-model';
-
-interface QueryParamReader {
-  get: (name: string) => string | null;
-}
+import { QueryParamReader, StandardSearchSetupOptions } from './collection-search-filter-model';
 
 export const buildStandardSearchFilters = (
   searchText: string,

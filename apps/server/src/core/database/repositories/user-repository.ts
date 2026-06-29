@@ -10,12 +10,7 @@ import {
   COLLECTION_LIST_DISPLAY_RATINGS,
 } from '@shared/models/collection-list-display-preferences-model';
 import { hashText } from '../../crypto';
-
-export interface UserRow {
-  username_hash: string;
-  user_token_hash: string;
-  username: string | null;
-}
+import { UserRow } from './user-model';
 
 export const getUserShareCode = (usernameHash: string): string => hashText(usernameHash).slice(0, 16);
 

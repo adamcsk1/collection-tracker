@@ -9,7 +9,7 @@ describe('Item dialog — edit flow', () => {
   });
 
   it('edits the title of an existing item and persists the change', () => {
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
     cy.on('window:confirm', () => true);
 
     // Open the item dialog
@@ -37,7 +37,7 @@ describe('Item dialog — edit flow', () => {
   });
 
   it('edits multiple fields and persists the changes', () => {
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
@@ -63,7 +63,7 @@ describe('Item dialog — edit flow', () => {
   });
 
   it('edits the user rate and persists the change', () => {
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
@@ -82,7 +82,7 @@ describe('Item dialog — edit flow', () => {
   });
 
   it('clears an existing user rate', () => {
-    cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
@@ -186,7 +186,7 @@ describe('Item dialog — mark watched / unwatched', () => {
   });
 
   it('marks an unwatched item as watched', () => {
-    cy.intercept('POST', '/api/v1/movie-tracker/*').as('markWatched');
+    cy.intercept('POST', '/api/v1/movie-tracker/**').as('markWatched');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
@@ -201,8 +201,8 @@ describe('Item dialog — mark watched / unwatched', () => {
   });
 
   it('marks a watched item as unwatched', () => {
-    cy.intercept('POST', '/api/v1/movie-tracker/*').as('markWatched');
-    cy.intercept('DELETE', '/api/v1/movie-tracker/*').as('markUnwatched');
+    cy.intercept('POST', '/api/v1/movie-tracker/**').as('markWatched');
+    cy.intercept('DELETE', '/api/v1/movie-tracker/**').as('markUnwatched');
     cy.on('window:confirm', () => true);
 
     // First mark as watched

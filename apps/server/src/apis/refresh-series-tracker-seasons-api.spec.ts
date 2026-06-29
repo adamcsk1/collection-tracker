@@ -25,7 +25,10 @@ describe('refresh-series-tracker-seasons-api', () => {
       .mockRejectedValueOnce(new Error('season failed'));
     vi.stubGlobal('fetch', fetchMock);
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./refresh-series-tracker-seasons-api');
@@ -38,6 +41,52 @@ describe('refresh-series-tracker-seasons-api', () => {
         item: expect.objectContaining({ IMDbId: 'tt-series' }),
       })
     );
+  });
+
+  it('refreshes metadata through the stored provider when addressed by IMDb identity', async () => {
+    insertSeriesTrackerItem();
+    getDatabase()
+      .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE username_hash = ? AND imdb_id = ?')
+      .run('imdb:tt-series', 'user', 'tt-series');
+    process.env.OMDB_API_KEY = 'key';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }] }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'imdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-series-tracker-seasons-api');
+    register(app);
+
+    await handlerPromise();
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('i=tt-series'));
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({ seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }] })
+    );
+  });
+
+  it('returns 400 when external provider is unsupported', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'tmdb', externalIdentityId: '603' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-series-tracker-seasons-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('sets watched timestamp after refreshed metadata changes completion status', async () => {
@@ -54,7 +103,10 @@ describe('refresh-series-tracker-seasons-api', () => {
         .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }] }) })
     );
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./refresh-series-tracker-seasons-api');
@@ -84,7 +136,10 @@ describe('refresh-series-tracker-seasons-api', () => {
         })
     );
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./refresh-series-tracker-seasons-api');
@@ -111,7 +166,10 @@ describe('refresh-series-tracker-seasons-api', () => {
         .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }] }) })
     );
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./refresh-series-tracker-seasons-api');

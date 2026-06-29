@@ -27,6 +27,40 @@ const insertItem = (usernameHash: string, imdbId: string) => {
     .run(usernameHash, imdbId, 'Shared Item', 'shared item', '1999', '8.0', 'Plot', 'img.jpg', 'hash');
 };
 
+const insertCanonicalItem = (
+  usernameHash: string,
+  provider: string,
+  externalItemId: string,
+  canonicalItemId: string
+) => {
+  getDatabase()
+    .prepare(
+      `INSERT INTO collection_items
+        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      usernameHash,
+      externalItemId,
+      'omdb',
+      externalItemId,
+      canonicalItemId,
+      'Canonical Item',
+      'canonical item',
+      '1999',
+      '8.0',
+      'Plot',
+      'img.jpg',
+      'hash'
+    );
+  getDatabase()
+    .prepare(
+      `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(usernameHash, canonicalItemId, provider, externalItemId, 'provider');
+};
+
 const insertTypedItem = (usernameHash: string, imdbId: string, listType: 'watch-later' | 'wishlist') => {
   getDatabase()
     .prepare(
@@ -62,6 +96,60 @@ describe('collection-items-exists-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
+  });
+
+  it('returns true when item exists by external identity', async () => {
+    insertUserAndItem();
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      query: { externalIdentitySource: 'omdb', externalIdentityId: 'tt001' },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-exists-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
+  });
+
+  it('returns true when submitted external IDs resolve to an existing canonical item', async () => {
+    insertUser('user');
+    insertCanonicalItem('user', 'imdb', 'tt001', 'imdb:tt001');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      query: {
+        externalIdentitySource: 'omdb',
+        externalIdentityId: 'tt-omdb',
+        externalIds: JSON.stringify([{ source: 'imdb', id: 'tt001' }]),
+      },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-exists-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
+  });
+
+  it('returns false when provider-only identities do not share a canonical item', async () => {
+    insertUser('user');
+    insertCanonicalItem('user', 'omdb', 'tt001', 'imdb:tt001');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      query: { externalIdentitySource: 'imdb', externalIdentityId: 'tt123' },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-exists-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ exists: false, hash: undefined });
   });
 
   it('returns false when item does not exist', async () => {
@@ -180,6 +268,30 @@ describe('collection-items-exists-api', () => {
   it('returns 400 when imdbId is empty string', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { imdbId: '  ' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-exists-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when external identity is partial even with an imdbId fallback', async () => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { imdbId: 'tt001', externalIdentitySource: 'omdb' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-exists-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when external provider is unsupported', async () => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { externalIdentitySource: 'tmdb', externalIdentityId: '603' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./collection-items-exists-api');

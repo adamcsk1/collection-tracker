@@ -218,11 +218,11 @@ describe('Collection sharing - item permissions', () => {
     setupShare({ canRead: true, canCreate: true, canUpdate: false, canDelete: false }).then(({ owner, sharedUser }) => {
       const title = 'Shared Create Movie';
       const imdbId = `tt${uniqueId().slice(0, 7)}`;
-      cy.intercept('GET', '/api/v1/proxy/omdb/search*', {
+      cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
         statusCode: 200,
         body: buildOmdbSearchResult(title, imdbId),
       }).as('omdbSearch');
-      cy.intercept('GET', '/api/v1/proxy/omdb/item*', { statusCode: 200, body: buildOmdbItem(title, imdbId) }).as(
+      cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', { statusCode: 200, body: buildOmdbItem(title, imdbId) }).as(
         'omdbItem'
       );
 
@@ -245,11 +245,11 @@ describe('Collection sharing - item permissions', () => {
     setupShare({ canRead: true, canCreate: true, canUpdate: false, canDelete: false }).then(({ owner, sharedUser }) => {
       const title = 'Shared Default Movie';
       const imdbId = `tt${uniqueId().slice(0, 7)}`;
-      cy.intercept('GET', '/api/v1/proxy/omdb/search*', {
+      cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
         statusCode: 200,
         body: buildOmdbSearchResult(title, imdbId),
       }).as('omdbSearch');
-      cy.intercept('GET', '/api/v1/proxy/omdb/item*', { statusCode: 200, body: buildOmdbItem(title, imdbId) }).as(
+      cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', { statusCode: 200, body: buildOmdbItem(title, imdbId) }).as(
         'omdbItem'
       );
 
@@ -275,7 +275,7 @@ describe('Collection sharing - item permissions', () => {
       seedOwnerItem(owner, 'Shared Update Movie', `tt${uniqueId().slice(0, 7)}`);
       visitSharedCollection(sharedUser);
 
-      cy.intercept('PUT', '/api/v1/change/*').as('updateItem');
+      cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
       cy.on('window:confirm', () => true);
       CollectionPage.getListItemImages().first().click();
       assertDialogPermissions({ update: true, delete: false });
@@ -294,7 +294,7 @@ describe('Collection sharing - item permissions', () => {
       seedOwnerItem(owner, 'Shared Delete Movie', `tt${uniqueId().slice(0, 7)}`);
       visitSharedCollection(sharedUser);
 
-      cy.intercept('DELETE', '/api/v1/delete/*').as('deleteItem');
+      cy.intercept('DELETE', '/api/v1/items/**').as('deleteItem');
       cy.on('window:confirm', () => true);
       CollectionPage.getListItemImages().first().click();
       assertDialogPermissions({ update: false, delete: true });
@@ -346,7 +346,7 @@ describe('Collection sharing - movie tracker from shared library', () => {
       seedOwnerItem(owner, title, imdbId);
       visitSharedCollection(sharedUser);
 
-      cy.intercept('POST', '/api/v1/movie-tracker/*').as('markWatched');
+      cy.intercept('POST', '/api/v1/movie-tracker/**').as('markWatched');
       cy.on('window:confirm', () => true);
 
       CollectionPage.getListItems().contains(title).click();

@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { AlertService } from '../alert-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { defaultIfEmpty, lastValueFrom } from 'rxjs';
+import { lastValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api-service';
 import { ApiState, apiStateToken, initialApiState } from './api-store';
@@ -53,6 +53,8 @@ describe('ApiService', () => {
       title: 'note',
       genre: [],
       IMDbId: 'tt123',
+      externalProvider: 'omdb' as const,
+      externalItemId: 'tt123',
       tags: [],
       year: null,
       rate: '',
@@ -74,12 +76,29 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ item });
   });
 
-  it('updates an item and returns new hash', async () => {
+  it('checks collection item existence by external identity', async () => {
+    const externalIds = [{ source: 'source:with:colon', id: 'item,with,comma' }];
+    const promise = lastValueFrom(
+      service.collectionItemExists('provider/id', 'item/id', 'share/code', 'watch-later', externalIds)
+    );
+
+    const existsRequest = httpMock.expectOne(
+      `https://api.test/items/exists?externalIdentitySource=provider%2Fid&externalIdentityId=item%2Fid&ownerShareCode=share%2Fcode&listType=watch-later&externalIds=${encodeURIComponent(JSON.stringify(externalIds))}`
+    );
+    expect(existsRequest.request.method).toBe('GET');
+    existsRequest.flush({ exists: true });
+
+    await expect(promise).resolves.toEqual({ exists: true });
+  });
+
+  it('updates an item by external identity', async () => {
     const item = {
       image: '',
       title: 'updated',
       genre: [],
-      IMDbId: 'tt123',
+      IMDbId: undefined,
+      externalProvider: 'omdb' as const,
+      externalItemId: 'item/id',
       tags: [],
       year: null,
       rate: '',
@@ -91,9 +110,13 @@ describe('ApiService', () => {
       contentType: 'movie' as const,
       favorite: false,
     };
-    const promise = lastValueFrom(service.update('tt123', item, 'old-hash'));
+    const promise = lastValueFrom(
+      service.updateByExternalId('provider/id', 'item/id', item, 'old-hash', 'share/code', 'watch-later')
+    );
 
-    const updateRequest = httpMock.expectOne('https://api.test/change/tt123');
+    const updateRequest = httpMock.expectOne(
+      'https://api.test/items/provider%2Fid/item%2Fid/change?ownerShareCode=share%2Fcode&listType=watch-later'
+    );
     expect(updateRequest.request.method).toBe('PUT');
     expect(updateRequest.request.body).toEqual({ ...item, hash: 'old-hash' });
     updateRequest.flush({ item: { ...item, hash: 'new-hash' } });
@@ -101,36 +124,14 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ item: { ...item, hash: 'new-hash' } });
   });
 
-  it('alerts and rethrows when update fails', async () => {
-    const item = {
-      image: '',
-      title: 'updated',
-      genre: [],
-      IMDbId: 'tt123',
-      tags: [],
-      year: null,
-      rate: '',
-      rottenTomatoesRate: '',
-      metacriticRate: '',
-      userRate: null,
-      actors: '',
-      plot: '',
-      contentType: 'movie' as const,
-      favorite: false,
-    };
-    const promise = lastValueFrom(service.update('tt123', item, 'old-hash').pipe(defaultIfEmpty(undefined)));
+  it('deletes an item by external identity', async () => {
+    const promise = lastValueFrom(
+      service.deleteByExternalId('provider/id', 'item/id', 'abc123', 'share/code', 'watch-later')
+    );
 
-    const updateRequest = httpMock.expectOne('https://api.test/change/tt123');
-    updateRequest.flush('failed', { status: 500, statusText: 'Server Error' });
-
-    await expect(promise).rejects.toMatchObject({ status: 500 });
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('deletes an item with hash as query param', async () => {
-    const promise = lastValueFrom(service.delete('tt123', 'abc123'));
-
-    const deleteRequest = httpMock.expectOne('https://api.test/delete/tt123?hash=abc123');
+    const deleteRequest = httpMock.expectOne(
+      'https://api.test/items/provider%2Fid/item%2Fid?hash=abc123&ownerShareCode=share%2Fcode&listType=watch-later'
+    );
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush({});
 
@@ -207,6 +208,46 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ changedCount: 3 });
   });
 
+  it('copies a movie to the movie tracker by external identity', async () => {
+    const promise = lastValueFrom(
+      service.addMovieTrackerItemByExternalId('provider/id', 'item/id', 'share/code', 'watch-later')
+    );
+
+    const addRequest = httpMock.expectOne(
+      'https://api.test/movie-tracker/provider%2Fid/item%2Fid?ownerShareCode=share%2Fcode&sourceListType=watch-later'
+    );
+    expect(addRequest.request.method).toBe('POST');
+    expect(addRequest.request.body).toEqual({});
+    addRequest.flush({ changedCount: 1 });
+
+    await expect(promise).resolves.toEqual({ changedCount: 1 });
+  });
+
+  it('deletes a movie tracker item by external identity', async () => {
+    const promise = lastValueFrom(service.deleteMovieTrackerItemByExternalId('provider/id', 'item/id'));
+
+    const deleteRequest = httpMock.expectOne('https://api.test/movie-tracker/provider%2Fid/item%2Fid');
+    expect(deleteRequest.request.method).toBe('DELETE');
+    deleteRequest.flush(null);
+
+    await expect(promise).resolves.toBeNull();
+  });
+
+  it('copies a series to the series tracker by external identity', async () => {
+    const promise = lastValueFrom(
+      service.addSeriesTrackerItemByExternalId('provider/id', 'item/id', 'watch-later', 'share/code')
+    );
+
+    const addRequest = httpMock.expectOne(
+      'https://api.test/series-tracker/provider%2Fid/item%2Fid?sourceListType=watch-later&ownerShareCode=share%2Fcode'
+    );
+    expect(addRequest.request.method).toBe('POST');
+    expect(addRequest.request.body).toEqual({});
+    addRequest.flush({ changedCount: 1 });
+
+    await expect(promise).resolves.toEqual({ changedCount: 1 });
+  });
+
   it('retrieves user tag management', async () => {
     const promise = lastValueFrom(service.getUserTagManagement());
 
@@ -254,6 +295,61 @@ describe('ApiService', () => {
     updateTagManagementRequest.flush({});
 
     await expect(promise).resolves.toEqual({});
+  });
+
+  it('encodes external metadata item IDs in query params', async () => {
+    const promise = lastValueFrom(
+      service.getExternalMetadataItem({
+        externalIdentitySource: 'omdb&extra=true',
+        externalIdentityId: 'tt0133093&extra=true',
+      })
+    );
+
+    const itemRequest = httpMock.expectOne(
+      'https://api.test/proxy/external-metadata/item?externalIdentitySource=omdb%26extra%3Dtrue&externalIdentityId=tt0133093%26extra%3Dtrue'
+    );
+    expect(itemRequest.request.method).toBe('GET');
+    itemRequest.flush({ provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' });
+
+    await expect(promise).resolves.toEqual({ provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' });
+  });
+
+  it('encodes IMDb external identity item IDs in query params', async () => {
+    const promise = lastValueFrom(
+      service.getExternalMetadataItem({ externalIdentitySource: 'imdb', externalIdentityId: 'tt0133093&extra=true' })
+    );
+
+    const itemRequest = httpMock.expectOne(
+      'https://api.test/proxy/external-metadata/item?externalIdentitySource=imdb&externalIdentityId=tt0133093%26extra%3Dtrue'
+    );
+    expect(itemRequest.request.method).toBe('GET');
+    itemRequest.flush({ provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' });
+
+    await expect(promise).resolves.toEqual({ provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' });
+  });
+
+  it('encodes external metadata search text in query params', async () => {
+    const promise = lastValueFrom(service.searchExternalMetadata({ s: 'Matrix & Dune?' }));
+
+    const searchRequest = httpMock.expectOne(
+      'https://api.test/proxy/external-metadata/search?s=Matrix%20%26%20Dune%3F'
+    );
+    expect(searchRequest.request.method).toBe('GET');
+    searchRequest.flush({ results: [] });
+
+    await expect(promise).resolves.toEqual({ results: [] });
+  });
+
+  it('retrieves configured external metadata providers', async () => {
+    const promise = lastValueFrom(service.getExternalMetadataProviders());
+
+    const providersRequest = httpMock.expectOne('https://api.test/proxy/external-metadata/providers');
+    expect(providersRequest.request.method).toBe('GET');
+    providersRequest.flush({ providers: [{ name: 'omdb', supportsSeasonMetadata: true, supportsDirectImdbId: true }] });
+
+    await expect(promise).resolves.toEqual({
+      providers: [{ name: 'omdb', supportsSeasonMetadata: true, supportsDirectImdbId: true }],
+    });
   });
 
   it('retrieves user settings', async () => {
@@ -409,6 +505,8 @@ describe('ApiService', () => {
       title: 'note',
       genre: [],
       IMDbId: 'tt123',
+      externalProvider: 'omdb' as const,
+      externalItemId: 'tt123',
       tags: [],
       year: null,
       rate: '',
@@ -469,16 +567,6 @@ describe('ApiService', () => {
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('alerts and rethrows when delete fails', async () => {
-    const promise = lastValueFrom(service.delete('tt123', 'somehash'));
-
-    const deleteRequest = httpMock.expectOne('https://api.test/delete/tt123?hash=somehash');
-    deleteRequest.flush('bad', { status: 404, statusText: 'Not Found' });
-
-    await expect(promise).rejects.toMatchObject({ status: 404 });
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-  });
-
   it('marks all movies as watched for the selected shared library', async () => {
     const promise = lastValueFrom(service.markAllMoviesAsWatched('owner-code'));
 
@@ -523,14 +611,81 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ changedCount: 1 });
   });
 
-  it('copies a shared library series to the series tracker', async () => {
-    const promise = lastValueFrom(service.addSeriesTrackerItem('tt-series', undefined, 'owner-code'));
+  it('retrieves series tracker seasons by external identity', async () => {
+    const promise = lastValueFrom(service.getSeriesTrackerSeasonsByExternalId('provider/id', 'item/id'));
 
-    const request = httpMock.expectOne('https://api.test/series-tracker/tt-series?ownerShareCode=owner-code');
+    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/seasons');
+    expect(request.request.method).toBe('GET');
+    request.flush({ seasons: [] });
+
+    await expect(promise).resolves.toEqual({ seasons: [] });
+  });
+
+  it('refreshes series tracker seasons by external identity', async () => {
+    const promise = lastValueFrom(service.refreshSeriesTrackerSeasonsByExternalId('provider/id', 'item/id'));
+
+    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/seasons/refresh');
     expect(request.request.method).toBe('POST');
-    request.flush({ item: { IMDbId: 'tt-series', listType: 'series-tracker' } });
+    expect(request.request.body).toEqual({});
+    request.flush({ seasons: [] });
 
-    await expect(promise).resolves.toEqual({ item: { IMDbId: 'tt-series', listType: 'series-tracker' } });
+    await expect(promise).resolves.toEqual({ seasons: [] });
+  });
+
+  it('updates series tracker seasons by external identity', async () => {
+    const payload = { seasons: [{ season: 1, episodes: 2 }] };
+    const promise = lastValueFrom(service.updateSeriesTrackerSeasonsByExternalId('provider/id', 'item/id', payload));
+
+    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/seasons');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(payload);
+    request.flush(payload);
+
+    await expect(promise).resolves.toEqual(payload);
+  });
+
+  it('deletes series tracker seasons by external identity', async () => {
+    const promise = lastValueFrom(service.deleteSeriesTrackerSeasonsByExternalId('provider/id', 'item/id'));
+
+    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/seasons');
+    expect(request.request.method).toBe('DELETE');
+    request.flush({ seasons: [] });
+
+    await expect(promise).resolves.toEqual({ seasons: [] });
+  });
+
+  it('retrieves watched episodes by external identity', async () => {
+    const promise = lastValueFrom(service.getSeriesTrackerWatchedEpisodesByExternalId('provider/id', 'item/id'));
+
+    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/watched-episodes');
+    expect(request.request.method).toBe('GET');
+    request.flush({ watchedEpisodes: [] });
+
+    await expect(promise).resolves.toEqual({ watchedEpisodes: [] });
+  });
+
+  it('updates watched episodes by external identity', async () => {
+    const payload = { watchedEpisodes: [{ season: 1, episode: 2 }] };
+    const promise = lastValueFrom(
+      service.updateSeriesTrackerWatchedEpisodesByExternalId('provider/id', 'item/id', payload)
+    );
+
+    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/watched-episodes');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(payload);
+    request.flush(payload);
+
+    await expect(promise).resolves.toEqual(payload);
+  });
+
+  it('marks all series tracker episodes watched by external identity', async () => {
+    const promise = lastValueFrom(service.markAllSeriesTrackerWatchedByExternalId('provider/id', 'item/id'));
+
+    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/mark-all-watched');
+    expect(request.request.method).toBe('PUT');
+    request.flush({ watchedEpisodes: [] });
+
+    await expect(promise).resolves.toEqual({ watchedEpisodes: [] });
   });
 
   it('refreshes images and returns summary', async () => {

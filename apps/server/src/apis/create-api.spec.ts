@@ -24,6 +24,8 @@ const item = {
   title: 'Custom File',
   genre: ['Drama'],
   IMDbId: 'tt0000001',
+  externalProvider: 'omdb',
+  externalItemId: 'tt0000001',
   tags: [],
   year: '2024',
   rate: '7.1',
@@ -91,6 +93,251 @@ describe('create-api', () => {
       rotten_tomatoes_rate: '96%',
       metacritic_rate: '85/100',
     });
+  });
+
+  it('stores canonical identity mappings from external IDs', async () => {
+    insertUser();
+    const response = mockResponse();
+    const request: any = {
+      body: {
+        ...item,
+        externalProvider: 'omdb',
+        externalItemId: '603',
+        IMDbId: undefined,
+        externalIds: [{ source: 'imdb', id: 'tt0133093' }],
+      },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(
+      getDatabase()
+        .prepare(
+          'SELECT external_provider, external_item_id, canonical_item_id FROM collection_items WHERE external_provider = ?'
+        )
+        .get('omdb')
+    ).toEqual({ external_provider: 'omdb', external_item_id: '603', canonical_item_id: 'imdb:tt0133093' });
+    expect(
+      getDatabase()
+        .prepare(
+          'SELECT external_provider, external_item_id, canonical_item_id FROM external_item_identities WHERE username_hash = ? AND canonical_item_id = ? ORDER BY external_provider, external_item_id'
+        )
+        .all('user', 'imdb:tt0133093')
+    ).toEqual([
+      { external_provider: 'imdb', external_item_id: '603', canonical_item_id: 'imdb:tt0133093' },
+      { external_provider: 'imdb', external_item_id: 'tt0133093', canonical_item_id: 'imdb:tt0133093' },
+      { external_provider: 'omdb', external_item_id: '603', canonical_item_id: 'imdb:tt0133093' },
+    ]);
+  });
+
+  it('returns 409 when external IDs match an existing canonical item', async () => {
+    insertUser();
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        'user',
+        'tt0133093',
+        'omdb',
+        'tt0133093',
+        'imdb:tt0133093',
+        'The Matrix',
+        'the matrix',
+        '1999',
+        '8.7',
+        'Plot',
+        'img.jpg',
+        'hash'
+      );
+    const response = mockResponse();
+    const request: any = {
+      body: {
+        ...item,
+        externalProvider: 'omdb',
+        externalItemId: '603',
+        IMDbId: undefined,
+        externalIds: [{ source: 'imdb', id: 'tt0133093' }],
+      },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(409);
+  });
+
+  it('prefers submitted IMDb identity over an existing provider fallback mapping', async () => {
+    insertUser();
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        'user',
+        'tt0133093',
+        'omdb',
+        'tt0133093',
+        'imdb:tt0133093',
+        'The Matrix',
+        'the matrix',
+        '1999',
+        '8.7',
+        'Plot',
+        'img.jpg',
+        'hash'
+      );
+    getDatabase()
+      .prepare(
+        `INSERT OR REPLACE INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run('user', 'omdb:603', 'omdb', '603', 'fallback');
+    const response = mockResponse();
+    const request: any = {
+      body: {
+        ...item,
+        externalProvider: 'omdb',
+        externalItemId: '603',
+        IMDbId: undefined,
+        externalIds: [{ source: 'imdb', id: 'tt0133093' }],
+      },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(409);
+  });
+
+  it('keeps existing fallback canonical rows when adding provider identity evidence', async () => {
+    insertUser('fallback-user');
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        'fallback-user',
+        null,
+        'omdb',
+        '603',
+        'omdb:603',
+        'watch-later',
+        'Provider Movie',
+        'provider movie',
+        '1999',
+        '7.0',
+        'Plot',
+        'img.jpg',
+        'old-hash'
+      );
+    getDatabase()
+      .prepare(
+        `INSERT OR REPLACE INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run('fallback-user', 'omdb:603', 'omdb', '603', 'fallback');
+    const response = mockResponse();
+    const request: any = {
+      body: {
+        ...item,
+        externalProvider: 'omdb',
+        externalItemId: '603',
+        IMDbId: undefined,
+        externalIds: [{ source: 'imdb', id: 'tt0133093' }],
+      },
+      usernameHash: 'fallback-user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ canonicalItemId: 'omdb:603' }),
+    });
+    expect(
+      getDatabase()
+        .prepare('SELECT canonical_item_id FROM collection_items WHERE username_hash = ? AND list_type = ?')
+        .get('fallback-user', 'watch-later')
+    ).toEqual({ canonical_item_id: 'omdb:603' });
+    expect(
+      getDatabase()
+        .prepare(
+          'SELECT canonical_item_id FROM external_item_identities WHERE username_hash = ? AND external_provider = ? AND external_item_id = ?'
+        )
+        .get('fallback-user', 'imdb', 'tt0133093')
+    ).toEqual({ canonical_item_id: 'omdb:603' });
+  });
+
+  it('returns 409 instead of inserting when provider evidence resolves to a same-list fallback item', async () => {
+    insertUser();
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        'user',
+        null,
+        'omdb',
+        '603',
+        'omdb:603',
+        'Provider Movie',
+        'provider movie',
+        '1999',
+        '7.0',
+        'Plot',
+        'img.jpg',
+        'old-hash'
+      );
+    getDatabase()
+      .prepare(
+        `INSERT OR REPLACE INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run('user', 'omdb:603', 'omdb', '603', 'fallback');
+    const response = mockResponse();
+    const request: any = {
+      body: {
+        ...item,
+        externalProvider: 'omdb',
+        externalItemId: '603',
+        IMDbId: undefined,
+        externalIds: [{ source: 'imdb', id: 'tt0133093' }],
+      },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(409);
+    expect(
+      getDatabase().prepare('SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ?').get('user')
+    ).toEqual({ count: 1 });
   });
 
   it('creates a watch later item using listType', async () => {

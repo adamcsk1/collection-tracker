@@ -5,14 +5,14 @@ import { getDatabase } from '../core/database/database';
 import {
   countCollectionItems,
   findCollectionItems,
-  updateCollectionItem,
+  updateCollectionItemByExternalId,
 } from '../core/database/repositories/collection';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { fetchAndCacheImage } from '../core/image/image-proxy';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
-import { fetchOMDbItem } from '../core/omdb/omdb-item';
+import { getExternalMetadataProviderByName } from '../core/external-metadata/external-metadata-provider-factory';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash } from '../core/utils/collection-item-util';
 
@@ -23,7 +23,6 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler(async (request, response) => {
       await debugLog('POST /items/refresh-images started');
       const db = getDatabase();
-      const apiKey = process.env.OMDB_API_KEY;
       const query = (request.query ?? {}) as Record<string, unknown>;
       const ownerHash =
         typeof query.ownerShareCode === 'string'
@@ -59,26 +58,47 @@ export const register = (app: FastifyInstance): void => {
             continue;
           }
 
-          await debugLog(`[${item.IMDbId}] Image missing, fetching OMDb`);
-          if (!apiKey) {
-            await debugLog(`[${item.IMDbId}] OMDb API key is missing`);
+          await debugLog(`[${item.IMDbId}] Image missing, fetching external metadata`);
+          const provider = getExternalMetadataProviderByName(item.externalProvider);
+          if (!provider) {
+            await debugLog(`[${item.IMDbId}] External metadata provider is not configured`);
             errors++;
             continue;
           }
 
-          const omdbItem = await fetchOMDbItem(item.IMDbId, apiKey);
+          let metadataItem: Awaited<ReturnType<typeof provider.getItem>>;
+          try {
+            metadataItem = await provider.getItem(item.externalItemId);
+          } catch {
+            errors++;
+            continue;
+          }
 
-          if (omdbItem?.imdbID && omdbItem.Poster && omdbItem.Poster !== item.image) {
+          if (
+            metadataItem?.providerItemId &&
+            metadataItem.provider === item.externalProvider &&
+            metadataItem.providerItemId === item.externalItemId &&
+            metadataItem.poster &&
+            metadataItem.poster !== item.image
+          ) {
             await debugLog(`[${item.IMDbId}] New poster found, updating item`);
             const updatedItem = {
               ...item,
-              image: omdbItem.Poster,
+              image: metadataItem.poster,
             };
             const newHash = getItemHash(updatedItem);
-            updateCollectionItem(db, ownerHash, item.IMDbId, newHash, updatedItem);
+            updateCollectionItemByExternalId(
+              db,
+              ownerHash,
+              item.externalProvider,
+              item.externalItemId,
+              newHash,
+              updatedItem,
+              item.listType
+            );
             fixed++;
           } else {
-            await debugLog(`[${item.IMDbId}] No new poster available from OMDb`);
+            await debugLog(`[${item.IMDbId}] No new poster available from external metadata`);
             errors++;
           }
         }

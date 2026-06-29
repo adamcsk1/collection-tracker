@@ -17,7 +17,7 @@ import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { ApiService } from '@services/api/api-service';
-import { OMDbService } from '@services/omdb/omdb-service';
+import { ExternalMetadataService } from '@services/external-metadata/external-metadata-service';
 import { CollectionListTypeModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap } from 'rxjs';
@@ -36,7 +36,7 @@ import { buildIMDbSearchUrl, buildWebSearchUrl } from '../item-dialog/utils/item
   templateUrl: './new-item-dialog.html',
   styleUrl: './new-item-dialog.css',
   providers: [
-    OMDbService,
+    ExternalMetadataService,
     NewItemDialogService,
     SharesLoaderService,
     { provide: AutocompleteService, useClass: TagSuggestionService },
@@ -268,13 +268,26 @@ export class NewItemDialog {
     ])
       .pipe(
         debounceTime(150),
-        switchMap(([imdbId, targetOwnerShareCode]) => {
-          if (!imdbId) return of({ exists: false });
+        switchMap(([selectedExternalMetadataValue, targetOwnerShareCode]) => {
+          const providerReference = this.service.getProviderReference(selectedExternalMetadataValue);
+          if (!providerReference) return of({ exists: false });
           const ownerShareCode = targetOwnerShareCode || undefined;
           const listType = this.listType();
           return listType === 'library'
-            ? this.api.collectionItemExists(imdbId, ownerShareCode)
-            : this.api.collectionItemExists(imdbId, ownerShareCode, listType);
+            ? this.api.collectionItemExists(
+                providerReference.identitySource,
+                providerReference.identityId,
+                ownerShareCode,
+                undefined,
+                providerReference.externalIds
+              )
+            : this.api.collectionItemExists(
+                providerReference.identitySource,
+                providerReference.identityId,
+                ownerShareCode,
+                listType,
+                providerReference.externalIds
+              );
         }),
         catchError(() => of({ exists: false })),
         takeUntilDestroyed(this.destroyRef)

@@ -57,7 +57,7 @@ docker buildx build --load -t collection-tracker .
 docker run --rm -p 3001:3001 -e APP_UID=$(id -u) -e APP_GID=$(id -g) -v ${PWD}/.data:/data collection-tracker
 ```
 
-> The server requires `OMDB_API_KEY` in `/data/.env`. If you mount an existing `.data` folder with a configured `.env`, the container uses it. Otherwise, the startup script creates a minimal default `/data/.env` with an empty `OMDB_API_KEY=` placeholder; you must set the key before OMDb proxying will work.
+> `OMDB_API_KEY` in `/data/.env` enables the OMDb external metadata provider. If it is omitted or empty, the server still starts, but metadata search, metadata import, image refresh, rating refresh, and season metadata refresh cannot fetch provider data.
 
 AI search uses Ollama. Install Ollama on the host and run:
 

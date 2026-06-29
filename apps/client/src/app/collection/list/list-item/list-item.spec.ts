@@ -28,6 +28,8 @@ const buildItem = (title: string, tags: string[] = []): CollectionItemModel => (
   titleLower: title.toLowerCase(),
   genre: [],
   IMDbId: '',
+  externalProvider: 'omdb',
+  externalItemId: '',
   tags: tags.filter((tag) => ![FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, COMPLETED_TAG].includes(tag)),
   year: null,
   rate: '',

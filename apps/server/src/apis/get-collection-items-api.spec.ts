@@ -317,6 +317,66 @@ describe('get-collection-items-api', () => {
     );
   });
 
+  it('filters watched library movies by canonical tracker identity', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, rate, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      'tt0133093',
+      'omdb',
+      'tt0133093',
+      'imdb:tt0133093',
+      'library',
+      'movie',
+      'Canonical Library Movie',
+      'canonical library movie',
+      '1999',
+      '8.7',
+      'Plot',
+      'img.jpg',
+      'library-hash'
+    );
+    db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, rate, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      'tt0133093',
+      'omdb',
+      'tt0133093',
+      'imdb:tt0133093',
+      'movie-tracker',
+      'movie',
+      'Canonical Tracker Movie',
+      'canonical tracker movie',
+      '1999',
+      '8.7',
+      'Plot',
+      'img.jpg',
+      'tracker-hash'
+    );
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { watched: 'true' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [expect.objectContaining({ title: 'Canonical Library Movie', watched: true })],
+        total: 1,
+      })
+    );
+  });
+
   it('returns own watch later items when listType is provided', async () => {
     insertUser('user');
     insertUser('owner');

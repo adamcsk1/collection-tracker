@@ -14,3 +14,13 @@ export interface ProxiedImageResponse {
   contentType: string;
   image: Buffer | null;
 }
+
+export type ImageProxyResult =
+  | { kind: 'cached' }
+  | { kind: 'fetched' }
+  | { kind: 'invalid-url' }
+  | { kind: 'blocked' }
+  | { kind: 'redirect' }
+  | { kind: 'upstream-error'; statusCode: number }
+  | { kind: 'not-image' }
+  | { kind: 'too-large' };

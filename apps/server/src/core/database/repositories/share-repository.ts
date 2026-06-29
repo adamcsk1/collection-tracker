@@ -1,15 +1,5 @@
 import Database from 'better-sqlite3';
-
-export interface UserShareRow {
-  id: number;
-  owner_username_hash: string;
-  shared_with_username_hash: string;
-  can_read: number;
-  can_create: number;
-  can_update: number;
-  can_delete: number;
-  created_at: string;
-}
+import { UserShareRow } from './share-model';
 
 export const findOutgoingShares = (db: Database.Database, usernameHash: string): UserShareRow[] => {
   return db.prepare('SELECT * FROM user_shares WHERE owner_username_hash = ?').all(usernameHash) as UserShareRow[];

@@ -22,12 +22,17 @@ describe('collection-items-matched-api', () => {
     vi.clearAllMocks();
   });
 
-  it('returns matched items ordered by imdbIds', async () => {
+  it('returns matched items ordered by identities', async () => {
     insertUserAndItems();
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      body: { imdbIds: ['tt002', 'tt001'] },
+      body: {
+        identities: [
+          { source: 'imdb', id: 'tt002' },
+          { source: 'imdb', id: 'tt001' },
+        ],
+      },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -46,7 +51,52 @@ describe('collection-items-matched-api', () => {
     );
   });
 
-  it('returns 400 when imdbIds is missing', async () => {
+  it('matches items by resolved canonical identities', async () => {
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      null,
+      'omdb',
+      'provider-item-id',
+      'imdb:tt001',
+      'Canonical Item',
+      'canonical item',
+      '2001',
+      '8.0',
+      '',
+      '',
+      'hash'
+    );
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'imdb:tt001', 'imdb', 'tt001', 'provider');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: { identities: [{ source: 'imdb', id: 'tt001' }] },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-matched-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [expect.objectContaining({ title: 'Canonical Item' })],
+        total: 1,
+      })
+    );
+  });
+
+  it('returns 400 when identities are missing', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user', body: {} };
     const { app, handlerPromise } = buildApp(request, response);
@@ -58,9 +108,9 @@ describe('collection-items-matched-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('returns 400 when imdbIds contains non-string values', async () => {
+  it('returns 400 when identities contain invalid values', async () => {
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', body: { imdbIds: ['tt001', 42] } };
+    const request: any = { usernameHash: 'user', body: { identities: [{ source: 'imdb', id: 'tt001' }, 42] } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./collection-items-matched-api');
@@ -70,10 +120,10 @@ describe('collection-items-matched-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('returns empty when no imdbIds match', async () => {
+  it('returns empty when no identities match', async () => {
     insertUserAndItems();
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', body: { imdbIds: [] } };
+    const request: any = { usernameHash: 'user', body: { identities: [] } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./collection-items-matched-api');

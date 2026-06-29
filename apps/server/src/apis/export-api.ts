@@ -5,10 +5,13 @@ import { getDatabase } from '../core/database/database';
 import { findUserSettings } from '../core/database/repositories/user-repository';
 import { findTagManagement } from '../core/database/repositories/tag-management-repository';
 import { findAllCollectionItemsByUser } from '../core/database/repositories/collection/collection-read-repository';
-import { findSeriesTrackerSeasons } from '../core/database/repositories/series-tracker-season-repository';
-import { findWatchedEpisodes } from '../core/database/repositories/series-tracker-watched-episodes-repository';
+import { findSeriesTrackerSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { findWatchedEpisodesByExternalId } from '../core/database/repositories/series-tracker-watched-episodes-repository';
 import { UserExportApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
+
+const getSeriesTrackerDataKey = (externalProvider: string, externalItemId: string): string =>
+  `${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}`;
 
 export const register = (app: FastifyInstance): void => {
   app.get(
@@ -25,10 +28,15 @@ export const register = (app: FastifyInstance): void => {
       const seriesTrackerData: UserExportApiResponseModel['seriesTrackerData'] = {};
       for (const item of collectionItems) {
         if (item.listType === 'series-tracker') {
-          const imdbId = item.IMDbId;
-          seriesTrackerData[imdbId] = {
-            seasons: findSeriesTrackerSeasons(db, usernameHash, imdbId),
-            watchedEpisodes: findWatchedEpisodes(db, usernameHash, imdbId),
+          const seriesTrackerDataKey = getSeriesTrackerDataKey(item.externalProvider, item.externalItemId);
+          seriesTrackerData[seriesTrackerDataKey] = {
+            seasons: findSeriesTrackerSeasonsByExternalId(db, usernameHash, item.externalProvider, item.externalItemId),
+            watchedEpisodes: findWatchedEpisodesByExternalId(
+              db,
+              usernameHash,
+              item.externalProvider,
+              item.externalItemId
+            ),
           };
         }
       }

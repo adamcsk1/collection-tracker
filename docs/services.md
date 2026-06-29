@@ -7,8 +7,7 @@ Source: [`libs/services`](../libs/services)
 ## Modules
 
 - `api/`: HTTP client, auth/session integration, pagination, API store, collection CRUD, statistics, shares, media refresh, movie tracker, series tracker, and AI search query (`getAiQueryData`)
-- `omdb/`: OMDb lookup logic (search and item fetch via server proxy)
-- `md-content-generator/`: Markdown generation from OMDb payloads
+- `external-metadata/`: external metadata lookup logic (search and item fetch via server proxy)
 - `theme/`: theme state and DOM class management
 - `webstorage/`: local and session storage abstraction
 - root services: `alert-service.ts`, `confirm-service.ts`, `portal-service.ts`, `translate-service.ts`

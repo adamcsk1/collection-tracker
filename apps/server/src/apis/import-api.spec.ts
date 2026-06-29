@@ -19,6 +19,8 @@ const item = {
   titleLower: 'imported movie',
   genre: ['Drama'],
   IMDbId: 'tt0000001',
+  externalProvider: 'omdb',
+  externalItemId: 'tt0000001',
   tags: ['#movie'],
   year: '2024',
   rate: '7.1',
@@ -39,6 +41,7 @@ const seriesTrackerItem = {
   title: 'Imported Series',
   titleLower: 'imported series',
   IMDbId: 'tt0000002',
+  externalItemId: 'tt0000002',
   tags: ['#completed', '#series'],
   listType: 'series-tracker',
   watchedAt: '2026-05-06 00:00:00',
@@ -50,6 +53,7 @@ const movieTrackerItem = {
   title: 'Imported Tracker Movie',
   titleLower: 'imported tracker movie',
   IMDbId: 'tt0000004',
+  externalItemId: 'tt0000004',
   tags: ['#movie'],
   listType: 'movie-tracker',
 };
@@ -79,6 +83,14 @@ describe('import-api', () => {
       expect.not.objectContaining({ config: expect.anything() }),
       expect.any(Function)
     );
+  });
+
+  it('registers collection item import route without endpoint rate limit overrides', async () => {
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-collection-items-api');
+    register(app);
+
     expect(app.post).toHaveBeenCalledWith(
       `${API_PREFIX}/import/collection-items`,
       expect.not.objectContaining({ config: expect.anything() }),
@@ -105,11 +117,18 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 3,
+        version: 5,
         userSettings: { theme: 'dark', animatedBackground: false, language: 'en' },
         collectionItems: [
           item,
-          { ...item, IMDbId: 'tt0000003', listType: 'watch-later' },
+          { ...item, IMDbId: 'tt0000003', externalItemId: 'tt0000003', listType: 'watch-later' },
+          {
+            ...item,
+            IMDbId: undefined,
+            externalProvider: 'omdb',
+            externalItemId: 'tt0000123',
+            title: 'Provider Movie',
+          },
           seriesTrackerItem,
           movieTrackerItem,
         ],
@@ -132,7 +151,7 @@ describe('import-api', () => {
           },
         ],
         seriesTrackerData: {
-          tt0000002: {
+          'omdb/tt0000002': {
             seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }],
             watchedEpisodes: [{ season: 1, episode: 1 }],
           },
@@ -147,7 +166,7 @@ describe('import-api', () => {
     await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith({
-      importedCollectionItems: 4,
+      importedCollectionItems: 5,
       importedTagManagement: 2,
       importedSeriesTrackerSeasons: 1,
       importedSeriesTrackerWatchedEpisodes: 1,
@@ -159,6 +178,11 @@ describe('import-api', () => {
     expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt0000004')).toEqual({
       list_type: 'movie-tracker',
     });
+    expect(
+      db
+        .prepare('SELECT imdb_id FROM collection_items WHERE external_provider = ? AND external_item_id = ?')
+        .get('omdb', 'tt0000123')
+    ).toEqual({ imdb_id: null });
     expect(db.prepare('SELECT token_hash FROM access_tokens WHERE username_hash = ?').get('user')).toEqual({
       token_hash: 'access-token',
     });
@@ -180,24 +204,15 @@ describe('import-api', () => {
     });
   });
 
-  it('imports version 2 backups by deriving explicit fields from legacy tags', async () => {
-    insertUser('user');
-    const db = getDatabase();
+  it('returns 400 for unsupported full import versions', async () => {
     const response = mockResponse();
-    const { contentType, favorite, ...legacyItem } = {
-      ...item,
-      IMDbId: 'tt0000010',
-      tags: ['#series', '#favorite', '#custom'],
-    };
-    void contentType;
-    void favorite;
     const request: any = {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
         version: 2,
         userSettings: {},
-        collectionItems: [legacyItem],
+        collectionItems: [item],
         tagManagement: [],
         seriesTrackerData: {},
       },
@@ -209,15 +224,155 @@ describe('import-api', () => {
 
     await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
 
-    expect(response.send).toHaveBeenCalledWith({
-      importedCollectionItems: 1,
-      importedTagManagement: 0,
-      importedSeriesTrackerSeasons: 0,
-      importedSeriesTrackerWatchedEpisodes: 0,
-    });
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 for duplicate canonical item identities in the same imported list', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 5,
+        userSettings: {},
+        collectionItems: [
+          item,
+          {
+            ...item,
+            IMDbId: undefined,
+            externalProvider: 'tmdb',
+            externalItemId: '603',
+            externalIds: [{ source: 'imdb', id: 'tt0000001' }],
+          },
+        ],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 for duplicate imported external identity aliases in the same list', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 5,
+        userSettings: {},
+        collectionItems: [
+          {
+            ...item,
+            IMDbId: undefined,
+            externalItemId: 'provider-a',
+            externalIds: [{ source: 'imdb', id: 'tt0000001' }],
+          },
+          {
+            ...item,
+            IMDbId: undefined,
+            externalItemId: 'provider-b',
+            externalIds: [
+              { source: 'imdb', id: 'tt0000002' },
+              { source: 'omdb', id: 'provider-a' },
+            ],
+          },
+        ],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('preserves imported canonical item ids', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 5,
+        userSettings: {},
+        collectionItems: [
+          {
+            ...item,
+            IMDbId: undefined,
+            externalItemId: 'provider-a',
+            canonicalItemId: 'imdb:tt9999999',
+            externalIds: [{ source: 'omdb', id: 'provider-current' }],
+          },
+        ],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 1 }));
     expect(
-      db.prepare('SELECT content_type, favorite FROM collection_items WHERE imdb_id = ?').get('tt0000010')
-    ).toEqual({ content_type: 'series', favorite: 1 });
+      getDatabase().prepare('SELECT canonical_item_id FROM collection_items WHERE username_hash = ?').get('user')
+    ).toEqual({ canonical_item_id: 'imdb:tt9999999' });
+    expect(
+      getDatabase()
+        .prepare(
+          'SELECT external_provider, external_item_id, canonical_item_id FROM external_item_identities WHERE username_hash = ? AND external_provider = ? AND external_item_id = ?'
+        )
+        .get('user', 'omdb', 'provider-current')
+    ).toEqual({
+      external_provider: 'omdb',
+      external_item_id: 'provider-current',
+      canonical_item_id: 'imdb:tt9999999',
+    });
+  });
+
+  it('returns 400 for external identity provider fields', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 5,
+        userSettings: {},
+        collectionItems: [
+          {
+            ...item,
+            externalIds: [{ provider: 'omdb', id: 'provider-field' }],
+          },
+        ],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('clears watched_at for imported incomplete series even when a timestamp is present', async () => {
@@ -227,12 +382,12 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 3,
+        version: 5,
         userSettings: {},
         collectionItems: [{ ...seriesTrackerItem, tags: ['#series'], watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
         seriesTrackerData: {
-          tt0000002: {
+          'omdb/tt0000002': {
             seasons: [{ season: 1, episodes: 2 }],
             watchedEpisodes: [{ season: 1, episode: 1 }],
           },
@@ -260,7 +415,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 3,
+        version: 5,
         userSettings: {},
         collectionItems: [{ ...movieTrackerItem, watchedAt: 'not-a-date' }],
         tagManagement: [],
@@ -282,7 +437,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 3,
+        version: 5,
         userSettings: {},
         collectionItems: [{ ...movieTrackerItem, watchedAt: '2026-02-31 00:00:00' }],
         tagManagement: [],
@@ -305,7 +460,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 3,
+        version: 5,
         userSettings: {},
         collectionItems: [{ ...seriesTrackerItem, watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
@@ -345,7 +500,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 3,
+        version: 5,
         userSettings: { collectionListDisplayPreferences: { preferredRating: 'imdb' } },
         collectionItems: [],
         tagManagement: [],
@@ -367,7 +522,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 3,
+        version: 5,
         userSettings: {},
         collectionItems: [],
         tagManagement: [
@@ -407,7 +562,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 3,
+        version: 5,
         userSettings: { theme: 'dark', animatedBackground: false, language: 'en' },
         collectionItems: [],
         tagManagement: [
@@ -446,14 +601,41 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 3,
+        version: 5,
         userSettings: {},
         collectionItems: [seriesTrackerItem],
         tagManagement: [],
         seriesTrackerData: {
-          tt0000002: {
+          'omdb/tt0000002': {
             seasons: [{ season: 1, episodes: 1 }],
             watchedEpisodes: [{ season: 1, episode: 2 }],
+          },
+        },
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 for malformed encoded series tracker import keys', async () => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 5,
+        userSettings: {},
+        collectionItems: [seriesTrackerItem],
+        tagManagement: [],
+        seriesTrackerData: {
+          'omdb/%E0%A4%A': {
+            seasons: [{ season: 1, episodes: 1 }],
+            watchedEpisodes: [],
           },
         },
       },
@@ -511,7 +693,7 @@ describe('import-api', () => {
     const request: any = { usernameHash: 'user', body: { source: 'tt0000001 tt0000002 tt0000003 tt0000002' } };
     const app = buildRouteApp();
 
-    const { register } = await import('./import-api');
+    const { register } = await import('./import-collection-items-api');
     register(app);
 
     await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
@@ -522,6 +704,44 @@ describe('import-api', () => {
       list_type: 'library',
     });
     expect(db.prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt0000003')).toBeUndefined();
+  });
+
+  it('skips IMDb ID imports when a canonical equivalent already exists under another provider', async () => {
+    process.env.OMDB_API_KEY = 'key';
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    insertUser('user');
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        'user',
+        'tt0000002',
+        'omdb',
+        'tt0000002',
+        'imdb:tt0000002',
+        'Existing Movie',
+        'existing movie',
+        '2020',
+        '8.0',
+        'Plot',
+        'poster.jpg',
+        'hash'
+      );
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', body: { source: 'tt0000002' } };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-collection-items-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
+
+    expect(response.send).toHaveBeenCalledWith({ totalCount: 1, importedCount: 0, skippedCount: 1, errorCount: 0 });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('counts malformed OMDb item responses as import errors', async () => {
@@ -538,7 +758,7 @@ describe('import-api', () => {
     const request: any = { usernameHash: 'user', body: { source: 'tt0000004' } };
     const app = buildRouteApp();
 
-    const { register } = await import('./import-api');
+    const { register } = await import('./import-collection-items-api');
     register(app);
 
     await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
@@ -575,7 +795,7 @@ describe('import-api', () => {
     const request: any = { usernameHash: 'user', body: { source: 'tt0000005' } };
     const app = buildRouteApp();
 
-    const { register } = await import('./import-api');
+    const { register } = await import('./import-collection-items-api');
     register(app);
 
     await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
@@ -592,7 +812,7 @@ describe('import-api', () => {
     const request: any = { usernameHash: 'user', body: { source } };
     const app = buildRouteApp();
 
-    const { register } = await import('./import-api');
+    const { register } = await import('./import-collection-items-api');
     register(app);
 
     await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
@@ -604,7 +824,7 @@ describe('import-api', () => {
     const request: any = { usernameHash: 'user', body: {} };
     const app = buildRouteApp();
 
-    const { register } = await import('./import-api');
+    const { register } = await import('./import-collection-items-api');
     register(app);
 
     await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
@@ -616,7 +836,7 @@ describe('import-api', () => {
     const request: any = { usernameHash: 'user', body: { source: ['tt0000001'] } };
     const app = buildRouteApp();
 
-    const { register } = await import('./import-api');
+    const { register } = await import('./import-collection-items-api');
     register(app);
 
     await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
@@ -628,7 +848,7 @@ describe('import-api', () => {
     const request: any = { usernameHash: 'user', body: { source: 'x'.repeat(1_000_001) } };
     const app = buildRouteApp();
 
-    const { register } = await import('./import-api');
+    const { register } = await import('./import-collection-items-api');
     register(app);
 
     await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);

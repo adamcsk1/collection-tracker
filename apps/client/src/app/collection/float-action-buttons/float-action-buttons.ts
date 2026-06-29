@@ -3,7 +3,8 @@ import { apiStateToken } from '@services/api/api-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainStateToken } from '../../main/main-store';
-import { FloatActionButtonsService, FloatActionFilter } from './float-action-buttons-service';
+import { FloatActionFilter } from './float-action-buttons-model';
+import { FloatActionButtonsService } from './float-action-buttons-service';
 
 @Component({
   selector: 'ct-float-action-buttons',

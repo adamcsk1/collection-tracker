@@ -4,15 +4,15 @@ import {
   CollectionItemsApiResponseModel,
 } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
+import { resolveCanonicalItemId } from '../external-item-identity-repository';
 import { toApiItem } from './collection-mapper';
 import { buildItemWhere, normalizeLimit, normalizeListType, normalizeOffset } from './collection-query';
-import { CollectionItemOrderOptions, CollectionItemQueryOptions, CollectionItemRow } from './collection-types';
-
-export interface AiSearchCollectionItem extends CollectionItemApiModel {
-  itemId: number;
-  aiSearchContentHash: string;
-  aiSearchText: string;
-}
+import {
+  AiSearchCollectionItem,
+  CollectionItemOrderOptions,
+  CollectionItemQueryOptions,
+  CollectionItemRow,
+} from './collection-model';
 
 const stringifySearchValue = (value: unknown): string => `${value ?? ''}`.replace(/\s+/g, ' ').trim();
 
@@ -83,14 +83,20 @@ export const searchCollectionItems = (
   const offset = normalizeOffset(options.offset);
   const limit = normalizeLimit(options.limit);
   const viewerUsernameHash = options.viewerUsernameHash ?? usernameHashes[0];
-  const queryParts = buildItemWhere(usernameHashes, options.filters, options.matchedImdbIds, viewerUsernameHash);
+  const queryParts = buildItemWhere(
+    usernameHashes,
+    options.filters,
+    options.matchedIdentities,
+    options.matchedCanonicalItemIds,
+    viewerUsernameHash
+  );
   const whereSql = queryParts.where.join(' AND ');
   const orderBySql = buildCollectionOrderBy({
     orderBy: options.filters?.orderBy,
     orderDirection: options.filters?.orderDirection,
   });
 
-  if (options.matchedImdbIds?.length === 0) {
+  if (options.matchedIdentities?.length === 0) {
     return { items: [], total: 0, offset, limit };
   }
 
@@ -100,7 +106,7 @@ export const searchCollectionItems = (
     }
   ).count;
 
-  if (options.matchedImdbIds?.length) {
+  if (options.matchedIdentities?.length) {
     const rows = db
       .prepare(
         `SELECT *
@@ -108,9 +114,28 @@ export const searchCollectionItems = (
          WHERE ${whereSql}`
       )
       .all(...queryParts.params) as CollectionItemRow[];
-    const rankByImdbId = new Map(options.matchedImdbIds.map((imdbId, index) => [imdbId, index]));
+    const rankByCanonicalItemId = new Map(
+      (options.matchedCanonicalItemIds ?? []).map((canonicalItemId, index) => [canonicalItemId, index])
+    );
+    const rankByIdentity = new Map(
+      options.matchedIdentities.map((identity, index) => [`${identity.source}\u0000${identity.id}`, index])
+    );
+    const getRank = (row: CollectionItemRow): number =>
+      Math.min(
+        row.canonical_item_id
+          ? (rankByCanonicalItemId.get(row.canonical_item_id) ?? Number.POSITIVE_INFINITY)
+          : Number.POSITIVE_INFINITY,
+        rankByIdentity.get(`${row.external_provider}\u0000${row.external_item_id ?? row.imdb_id ?? ''}`) ??
+          Number.POSITIVE_INFINITY,
+        row.imdb_id
+          ? (rankByIdentity.get(`imdb\u0000${row.imdb_id}`) ?? Number.POSITIVE_INFINITY)
+          : Number.POSITIVE_INFINITY
+      );
     const items = rows
-      .sort((firstItem, secondItem) => rankByImdbId.get(firstItem.imdb_id)! - rankByImdbId.get(secondItem.imdb_id)!)
+      .sort((firstItem, secondItem) => {
+        const rankDifference = getRank(firstItem) - getRank(secondItem);
+        return Number.isFinite(rankDifference) ? rankDifference : firstItem.id - secondItem.id;
+      })
       .slice(offset, offset + limit)
       .map((row) => toApiItem(db, row, viewerUsernameHash));
 
@@ -144,6 +169,48 @@ export const collectionItemExistsInList = (
   return !!row;
 };
 
+export const collectionExternalItemExistsInList = (
+  db: Database.Database,
+  usernameHashes: string[],
+  externalProvider: string,
+  externalItemId: string,
+  listType: CollectionListTypeModel = 'library'
+): boolean => {
+  const row = db
+    .prepare(
+      `SELECT 1 FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND external_provider = ? AND external_item_id = ? AND list_type = ? LIMIT 1`
+    )
+    .get(...usernameHashes, externalProvider, externalItemId, normalizeListType(listType));
+  return !!row;
+};
+
+export const collectionCanonicalItemExistsInList = (
+  db: Database.Database,
+  usernameHashes: string[],
+  canonicalItemId: string,
+  listType: CollectionListTypeModel = 'library'
+): boolean => {
+  const row = db
+    .prepare(
+      `SELECT 1 FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND canonical_item_id = ? AND list_type = ? LIMIT 1`
+    )
+    .get(...usernameHashes, canonicalItemId, normalizeListType(listType));
+  return !!row;
+};
+
+export const collectionCanonicalItemExists = (
+  db: Database.Database,
+  usernameHashes: string[],
+  canonicalItemId: string
+): boolean => {
+  const row = db
+    .prepare(
+      `SELECT 1 FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND canonical_item_id = ? LIMIT 1`
+    )
+    .get(...usernameHashes, canonicalItemId);
+  return !!row;
+};
+
 export const findCollectionItemsForPrompt = (
   db: Database.Database,
   usernameHashes: string[]
@@ -159,7 +226,6 @@ export const findCollectionItemsForPrompt = (
     .all(...usernameHashes, 'library') as CollectionItemRow[];
 
   return rows.reduce<CollectionItemApiModel[]>((items, row) => {
-    if (!row.imdb_id) return items;
     const apiItem = toApiItem(db, row);
     items.push(apiItem);
     return items;
@@ -181,7 +247,6 @@ export const findCollectionItemsForAiSearch = (
     .all(...usernameHashes, 'library') as CollectionItemRow[];
 
   return rows.reduce<AiSearchCollectionItem[]>((items, row) => {
-    if (!row.imdb_id) return items;
     items.push(toAiSearchItem(db, row));
     return items;
   }, []);
@@ -240,6 +305,45 @@ export const findCollectionItemByImdbId = (
   return db
     .prepare('SELECT * FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
     .get(usernameHash, imdbId, normalizeListType(listType)) as CollectionItemRow | undefined;
+};
+
+export const findCollectionItemByExternalId = (
+  db: Database.Database,
+  usernameHash: string,
+  externalProvider: string,
+  externalItemId: string,
+  listType: CollectionListTypeModel = 'library'
+): CollectionItemRow | undefined => {
+  return db
+    .prepare(
+      'SELECT * FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
+    )
+    .get(usernameHash, externalProvider, externalItemId, normalizeListType(listType)) as CollectionItemRow | undefined;
+};
+
+export const findCollectionItemByCanonicalItemId = (
+  db: Database.Database,
+  usernameHash: string,
+  canonicalItemId: string,
+  listType: CollectionListTypeModel = 'library'
+): CollectionItemRow | undefined => {
+  return db
+    .prepare('SELECT * FROM collection_items WHERE username_hash = ? AND canonical_item_id = ? AND list_type = ?')
+    .get(usernameHash, canonicalItemId, normalizeListType(listType)) as CollectionItemRow | undefined;
+};
+
+export const findCollectionItemByExternalIdOrCanonicalItemId = (
+  db: Database.Database,
+  usernameHash: string,
+  externalProvider: string,
+  externalItemId: string,
+  listType: CollectionListTypeModel = 'library'
+): CollectionItemRow | undefined => {
+  const exactItem = findCollectionItemByExternalId(db, usernameHash, externalProvider, externalItemId, listType);
+  if (exactItem) return exactItem;
+
+  const canonicalItemId = resolveCanonicalItemId(db, usernameHash, externalProvider, externalItemId);
+  return findCollectionItemByCanonicalItemId(db, usernameHash, canonicalItemId, listType);
 };
 
 export const findAllCollectionItemsByUser = (db: Database.Database, usernameHash: string): CollectionItemApiModel[] => {

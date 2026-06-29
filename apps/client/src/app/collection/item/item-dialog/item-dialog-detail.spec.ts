@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectionItemModel } from '../../collection-model';
 import { ItemDialogDetail } from './item-dialog-detail';
-import { ItemDialogTranslations } from './item-dialog-types';
+import { ItemDialogTranslations } from './item-dialog-model';
 
 const translations: ItemDialogTranslations = {
   delete: signal('Delete'),
@@ -41,6 +41,8 @@ const item: CollectionItemModel = {
   titleLower: 'test movie',
   genre: ['Drama'],
   IMDbId: 'tt1234567',
+  externalProvider: 'omdb',
+  externalItemId: 'tt1234567',
   tags: [],
   year: '2020',
   rate: '8.5',

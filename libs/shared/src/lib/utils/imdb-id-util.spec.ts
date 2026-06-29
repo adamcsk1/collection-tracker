@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getIMDbId, getIMDbIds } from './get-imdb-id-util';
+import { getIMDbId, getIMDbIds } from './imdb-id-util';
 
 describe('getIMDbId', () => {
   it('extracts the IMDb id when present', () => {

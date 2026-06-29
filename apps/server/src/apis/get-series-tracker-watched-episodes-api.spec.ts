@@ -13,7 +13,10 @@ describe('get-series-tracker-watched-episodes-api', () => {
   it('returns empty watched episodes when none exist', async () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-series-tracker-watched-episodes-api');
@@ -32,7 +35,10 @@ describe('get-series-tracker-watched-episodes-api', () => {
       .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 2, 5);
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-series-tracker-watched-episodes-api');
@@ -48,9 +54,44 @@ describe('get-series-tracker-watched-episodes-api', () => {
     });
   });
 
+  it('returns watched episodes by canonical alias', async () => {
+    const itemId = insertSeriesTrackerItem();
+    getDatabase()
+      .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE id = ?')
+      .run('imdb:tt-series', itemId);
+    getDatabase()
+      .prepare(
+        `INSERT INTO external_item_identities
+          (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run('user', 'imdb:tt-series', 'imdb', 'tt-series', 'provider');
+    getDatabase()
+      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
+      .run(itemId, 1, 2);
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'imdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-series-tracker-watched-episodes-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      watchedEpisodes: [{ season: 1, episode: 2 }],
+      lastWatchedEpisode: { season: 1, episode: 2 },
+    });
+  });
+
   it('returns 404 for non-existent item', async () => {
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-unknown' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-unknown' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-series-tracker-watched-episodes-api');

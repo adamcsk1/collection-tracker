@@ -7,10 +7,9 @@ Source: [`libs/shared`](../libs/shared)
 ## Contents
 
 - `constants/`: API prefix, storage keys, export/import metadata, and series-tracker limits
-- `models/`: API DTOs and shared AI search, collection item, collection-list display, language, share, statistics, theme, select, and OMDb types
-- `omdb/`: reusable OMDb helpers such as IMDb ID extraction
+- `models/`: API DTOs and shared AI search, collection item, collection-list display, external metadata, language, share, statistics, theme, select, and provider DTO types
 - `styles/`: reset styles, design tokens, shared component CSS, and animation styles
-- `utils/`: collection item helpers, color helpers, clipboard helpers, device heuristics, and general utilities
+- `utils/`: collection item helpers, color helpers, clipboard helpers, device heuristics, IMDb ID helpers, and general utilities
 
 ## Integration Notes
 

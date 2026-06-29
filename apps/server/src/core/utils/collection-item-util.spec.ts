@@ -7,6 +7,8 @@ const validItem: CollectionItemChangeApiModel = {
   title: 'Test',
   genre: ['Drama'],
   IMDbId: 'tt0000001',
+  externalProvider: 'omdb',
+  externalItemId: 'tt0000001',
   tags: [],
   year: '2024',
   rate: '7.1',
@@ -33,6 +35,8 @@ describe('collection-item-util', () => {
         title: '  Test  ',
         image: '  poster.jpg  ',
         IMDbId: '  tt0000001  ',
+        externalProvider: '  omdb  ' as any,
+        externalItemId: '  tt0000001  ',
         rate: '  7.1  ',
         rottenTomatoesRate: '  96%  ',
         metacriticRate: '  85/100  ',
@@ -47,6 +51,8 @@ describe('collection-item-util', () => {
         title: 'Test',
         image: 'poster.jpg',
         IMDbId: 'tt0000001',
+        externalProvider: 'omdb',
+        externalItemId: 'tt0000001',
         rate: '7.1',
         rottenTomatoesRate: '96%',
         metacriticRate: '85/100',
@@ -61,8 +67,16 @@ describe('collection-item-util', () => {
       expect(normalizeItem({ ...validItem, title: '' })).toBeUndefined();
     });
 
-    it('returns undefined when IMDbId is missing', () => {
-      expect(normalizeItem({ ...validItem, IMDbId: '' })).toBeUndefined();
+    it('keeps legacy IMDbId unset when IMDbId is missing', () => {
+      expect(normalizeItem({ ...validItem, IMDbId: '' })).toEqual({ ...validItem, IMDbId: undefined });
+    });
+
+    it('returns undefined when external provider is missing', () => {
+      expect(normalizeItem({ ...validItem, externalProvider: '' as any })).toBeUndefined();
+    });
+
+    it('returns undefined when external item ID is missing', () => {
+      expect(normalizeItem({ ...validItem, externalItemId: '' })).toBeUndefined();
     });
 
     it('returns undefined when a required string field has wrong type', () => {

@@ -149,6 +149,42 @@ describe('refresh-images-api', () => {
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
   });
 
+  it('does not update the image when the provider returns a different-cased item ID', async () => {
+    insertUser();
+    insertItem('tt-1', 'https://images.example/broken.jpg');
+
+    fetchAndCacheImageResult = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          imdbID: 'TT-1',
+          Poster: 'https://images.example/wrong-poster.jpg',
+        }),
+      }))
+    );
+
+    vi.doMock('../core/image/image-proxy', () => ({
+      fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
+    }));
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-images-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
+    expect(
+      (getDatabase().prepare('SELECT image FROM collection_items WHERE imdb_id = ?').get('tt-1') as { image: string })
+        .image
+    ).toBe('https://images.example/broken.jpg');
+  });
+
   it('increments errors when OMDb API key is missing', async () => {
     insertUser();
     insertItem('tt-1', 'https://images.example/broken.jpg');

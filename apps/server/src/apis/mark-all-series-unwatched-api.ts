@@ -2,14 +2,14 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { MarkAllUnwatchedApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { syncSeriesTrackerCompletedTag } from '../core/database/repositories/collection';
+import { syncSeriesTrackerCompletedTagByExternalId } from '../core/database/repositories/collection';
 import {
   findOwnSeriesTrackerItems,
   findSeriesTrackerItemsForLibrarySeries,
 } from '../core/database/repositories/series-tracker-repository';
 import {
-  deleteWatchedEpisodes,
-  findWatchedEpisodes,
+  deleteWatchedEpisodesByExternalId,
+  findWatchedEpisodesByExternalId,
 } from '../core/database/repositories/series-tracker-watched-episodes-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
@@ -46,11 +46,16 @@ export const register = (app: FastifyInstance): void => {
         : findSeriesTrackerItemsForLibrarySeries(db, request.usernameHash, ownerHash);
 
       for (const item of trackerItems) {
-        const watchedEpisodes = findWatchedEpisodes(db, request.usernameHash, item.IMDbId);
+        const watchedEpisodes = findWatchedEpisodesByExternalId(
+          db,
+          request.usernameHash,
+          item.externalProvider,
+          item.externalItemId
+        );
         if (!watchedEpisodes.length && !item.watchedAt) continue;
 
-        deleteWatchedEpisodes(db, request.usernameHash, item.IMDbId);
-        syncSeriesTrackerCompletedTag(db, request.usernameHash, item.IMDbId);
+        deleteWatchedEpisodesByExternalId(db, request.usernameHash, item.externalProvider, item.externalItemId);
+        syncSeriesTrackerCompletedTagByExternalId(db, request.usernameHash, item.externalProvider, item.externalItemId);
         changedCount++;
       }
       await debugLog(`POST /items/mark-all-series-unwatched finished: changed=${changedCount}`);

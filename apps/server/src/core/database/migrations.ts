@@ -1,3 +1,4 @@
+import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
 import Database from 'better-sqlite3';
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -13,7 +14,9 @@ const recomputeCollectionItemHashes = (db: Database.Database): void => {
 
   const rows = db.prepare('SELECT * FROM collection_items').all() as Array<{
     id: number;
-    imdb_id: string;
+    imdb_id: string | null;
+    external_provider?: string;
+    external_item_id?: string;
     title: string;
     year: string;
     rate: string;
@@ -40,7 +43,9 @@ const recomputeCollectionItemHashes = (db: Database.Database): void => {
           image: row.image,
           title: row.title,
           genre,
-          IMDbId: row.imdb_id,
+          IMDbId: row.imdb_id ?? row.external_item_id ?? '',
+          externalProvider: DEFAULT_EXTERNAL_METADATA_PROVIDER,
+          externalItemId: row.external_item_id ?? row.imdb_id ?? '',
           tags,
           year: row.year || null,
           rate: row.rate,
@@ -90,7 +95,8 @@ export const runMigrations = async (db: Database.Database, migrationsDir: string
       if (
         file === '015_add_movie_tracker_list_type.sql' ||
         file === '017_move_system_tags_to_columns.sql' ||
-        file === '018_remove_legacy_type_tags.sql'
+        file === '018_remove_legacy_type_tags.sql' ||
+        file === '019_add_collection_item_external_provider.sql'
       ) {
         recomputeCollectionItemHashes(db);
       }

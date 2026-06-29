@@ -4,12 +4,8 @@ import {
   CollectionStatisticsApiResponseModel,
 } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
-import { buildItemWhere } from './collection-query';
-
-interface WatchedYearCountRow {
-  watched_year: string;
-  count: number;
-}
+import { buildItemWhere, canonicalOrExactIdentityMatch } from './collection-query';
+import { WatchedYearCountRow } from './collection-model';
 
 const movieContentCondition = `collection_items.content_type = 'movie'`;
 
@@ -24,7 +20,7 @@ export const getCollectionStatistics = (
   internalCollectionUsernameHash?: string
 ): CollectionStatisticsApiResponseModel => {
   const viewerUsernameHash = internalCollectionUsernameHash ?? usernameHashes[0];
-  const queryParts = buildItemWhere(usernameHashes, filters, undefined, viewerUsernameHash);
+  const queryParts = buildItemWhere(usernameHashes, filters, undefined, undefined, viewerUsernameHash);
   const whereSql = queryParts.where.join(' AND ');
   const matchingItemsSql = `SELECT id FROM collection_items WHERE ${whereSql}`;
   const countWhere = (condition: string): number =>
@@ -70,7 +66,7 @@ export const getCollectionStatistics = (
            AND EXISTS (
              SELECT 1 FROM collection_items movie_tracker
              WHERE movie_tracker.username_hash = ?
-               AND movie_tracker.imdb_id = collection_items.imdb_id
+               AND ${canonicalOrExactIdentityMatch('movie_tracker')}
                AND movie_tracker.list_type = ?
            )`
       )
@@ -87,7 +83,7 @@ export const getCollectionStatistics = (
            AND NOT EXISTS (
              SELECT 1 FROM collection_items movie_tracker
              WHERE movie_tracker.username_hash = ?
-               AND movie_tracker.imdb_id = collection_items.imdb_id
+                AND ${canonicalOrExactIdentityMatch('movie_tracker')}
                AND movie_tracker.list_type = ?
            )`
       )
@@ -104,7 +100,7 @@ export const getCollectionStatistics = (
            AND EXISTS (
              SELECT 1 FROM collection_items series_tracker
              WHERE series_tracker.username_hash = ?
-               AND series_tracker.imdb_id = collection_items.imdb_id
+                AND ${canonicalOrExactIdentityMatch('series_tracker')}
                AND series_tracker.list_type = ?
            )`
       )
@@ -121,7 +117,7 @@ export const getCollectionStatistics = (
            AND NOT EXISTS (
              SELECT 1 FROM collection_items series_tracker
              WHERE series_tracker.username_hash = ?
-               AND series_tracker.imdb_id = collection_items.imdb_id
+                AND ${canonicalOrExactIdentityMatch('series_tracker')}
                AND series_tracker.list_type = ?
            )`
       )
@@ -132,6 +128,7 @@ export const getCollectionStatistics = (
   const trackerQueryParts = buildItemWhere(
     usernameHashes,
     { ...filters, listType: 'series-tracker' },
+    undefined,
     undefined,
     viewerUsernameHash
   );
@@ -189,7 +186,7 @@ export const getCollectionStatistics = (
        FROM collection_items
        INNER JOIN collection_items movie_tracker
          ON movie_tracker.username_hash = ?
-        AND movie_tracker.imdb_id = collection_items.imdb_id
+        AND ${canonicalOrExactIdentityMatch('movie_tracker')}
         AND movie_tracker.list_type = ?
         AND movie_tracker.watched_at IS NOT NULL
        WHERE ${whereSql}
@@ -204,7 +201,7 @@ export const getCollectionStatistics = (
        FROM collection_items
        INNER JOIN collection_items series_tracker
          ON series_tracker.username_hash = ?
-        AND series_tracker.imdb_id = collection_items.imdb_id
+        AND ${canonicalOrExactIdentityMatch('series_tracker')}
         AND series_tracker.list_type = ?
         AND series_tracker.watched_at IS NOT NULL
        WHERE ${whereSql}

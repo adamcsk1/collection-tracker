@@ -1,4 +1,22 @@
 import { Signal } from '@angular/core';
+import { CollectionItemContentTypeModel } from '@shared/models/api-model';
+import { CollectionItemYearModel } from '@shared/models/collection-item-model';
+
+export interface ItemDialogFormModel {
+  title: string;
+  IMDbId: string;
+  year: CollectionItemYearModel;
+  rate: string;
+  rottenTomatoesRate: string;
+  metacriticRate: string;
+  userRate: number | null;
+  image: string;
+  genreText: string;
+  tagsText: string;
+  actors: string;
+  plot: string;
+  contentType: CollectionItemContentTypeModel;
+}
 
 export interface ItemDialogTranslations {
   actors: Signal<string>;

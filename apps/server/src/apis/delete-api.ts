@@ -1,7 +1,13 @@
 import { API_PREFIX } from '@shared/constants/api-const';
+import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { deleteCollectionItem, findCollectionItemByImdbId } from '../core/database/repositories/collection';
+import {
+  deleteCollectionItemByExternalId,
+  findCollectionItemByCanonicalItemId,
+  findCollectionItemByExternalId,
+} from '../core/database/repositories/collection';
+import { resolveCanonicalItemId } from '../core/database/repositories/external-item-identity-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
@@ -10,12 +16,12 @@ import { parseListType } from '../core/utils/query-parse-util';
 
 export const register = (app: FastifyInstance): void => {
   app.delete(
-    `${API_PREFIX}/delete/:imdbId`,
+    `${API_PREFIX}/items/:externalIdentitySource/:externalIdentityId`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      const { imdbId } = request.params as Record<string, string>;
+      const { externalIdentitySource, externalIdentityId } = request.params as Record<string, string>;
       const { hash } = request.query as Record<string, unknown> as { hash: string };
-      if (typeof hash !== 'string') {
+      if (typeof hash !== 'string' || !isExternalItemIdentitySourceName(externalIdentitySource)) {
         return response.code(400).send();
       }
 
@@ -34,7 +40,10 @@ export const register = (app: FastifyInstance): void => {
         return response.code(403).send();
       }
 
-      const existingItem = findCollectionItemByImdbId(db, ownerHash, `${imdbId}`, listType);
+      const canonicalItemId = resolveCanonicalItemId(db, ownerHash, externalIdentitySource, externalIdentityId);
+      const existingItem =
+        findCollectionItemByCanonicalItemId(db, ownerHash, canonicalItemId, listType) ??
+        findCollectionItemByExternalId(db, ownerHash, externalIdentitySource, externalIdentityId, listType);
 
       if (!existingItem) {
         return response.code(404).send();
@@ -49,7 +58,13 @@ export const register = (app: FastifyInstance): void => {
         return response.code(403).send();
       }
 
-      deleteCollectionItem(db, ownerHash, `${imdbId}`, listType);
+      deleteCollectionItemByExternalId(
+        db,
+        ownerHash,
+        existingItem.external_provider,
+        existingItem.external_item_id ?? existingItem.imdb_id ?? '',
+        listType
+      );
 
       response.code(204).send();
     })

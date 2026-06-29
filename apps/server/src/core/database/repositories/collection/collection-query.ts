@@ -3,7 +3,8 @@ import {
   CollectionItemTagMode,
   CollectionListTypeModel,
 } from '@shared/models/api-model';
-import { QueryParts } from './collection-types';
+import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
+import { QueryParts } from './collection-model';
 
 export const escapeLike = (value: string): string => value.replace(/[\\%_]/g, (match) => `\\${match}`);
 
@@ -42,7 +43,7 @@ const addMovieTrackerExists = (queryParts: QueryParts, usernameHash: string, exi
   queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
     SELECT 1 FROM collection_items movie_tracker_filter
     WHERE movie_tracker_filter.username_hash = ?
-      AND movie_tracker_filter.imdb_id = collection_items.imdb_id
+      AND ${canonicalOrExactIdentityMatch('movie_tracker_filter')}
       AND movie_tracker_filter.list_type = ?
   )`);
   queryParts.params.push(usernameHash, 'movie-tracker');
@@ -52,7 +53,7 @@ const addSeriesTrackerExists = (queryParts: QueryParts, usernameHash: string, ex
   queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
     SELECT 1 FROM collection_items series_tracker_filter
     WHERE series_tracker_filter.username_hash = ?
-      AND series_tracker_filter.imdb_id = collection_items.imdb_id
+      AND ${canonicalOrExactIdentityMatch('series_tracker_filter')}
       AND series_tracker_filter.list_type = ?
   )`);
   queryParts.params.push(usernameHash, 'series-tracker');
@@ -63,17 +64,52 @@ const addWatchedExists = (queryParts: QueryParts, usernameHash: string, exists =
     (${movieContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
       SELECT 1 FROM collection_items movie_tracker_filter
       WHERE movie_tracker_filter.username_hash = ?
-        AND movie_tracker_filter.imdb_id = collection_items.imdb_id
+        AND ${canonicalOrExactIdentityMatch('movie_tracker_filter')}
         AND movie_tracker_filter.list_type = ?
     ))
     OR (${seriesContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
       SELECT 1 FROM collection_items series_tracker_filter
       WHERE series_tracker_filter.username_hash = ?
-        AND series_tracker_filter.imdb_id = collection_items.imdb_id
+        AND ${canonicalOrExactIdentityMatch('series_tracker_filter')}
         AND series_tracker_filter.list_type = ?
     ))
   )`);
   queryParts.params.push(usernameHash, 'movie-tracker', usernameHash, 'series-tracker');
+};
+
+export const canonicalOrExactIdentityMatch = (alias: string): string => `(
+  (${alias}.canonical_item_id IS NOT NULL AND ${alias}.canonical_item_id = collection_items.canonical_item_id)
+  OR (
+    COALESCE(${alias}.external_provider, 'omdb') = COALESCE(collection_items.external_provider, 'omdb')
+    AND COALESCE(${alias}.external_item_id, ${alias}.imdb_id) = COALESCE(collection_items.external_item_id, collection_items.imdb_id)
+  )
+)`;
+
+const addMatchedIdentityFilter = (
+  queryParts: QueryParts,
+  matchedIdentities: ExternalItemIdentityModel[] | undefined,
+  matchedCanonicalItemIds: string[] | undefined
+): void => {
+  const conditions: string[] = [];
+  const uniqueCanonicalItemIds = [...new Set(matchedCanonicalItemIds ?? [])];
+  if (uniqueCanonicalItemIds.length) {
+    conditions.push(`collection_items.canonical_item_id IN (${uniqueCanonicalItemIds.map(() => '?').join(', ')})`);
+    queryParts.params.push(...uniqueCanonicalItemIds);
+  }
+
+  for (const identity of matchedIdentities ?? []) {
+    conditions.push(`(
+      collection_items.external_provider = ?
+      AND COALESCE(collection_items.external_item_id, collection_items.imdb_id) = ?
+    )`);
+    queryParts.params.push(identity.source, identity.id);
+    if (identity.source === 'imdb') {
+      conditions.push('collection_items.imdb_id = ?');
+      queryParts.params.push(identity.id);
+    }
+  }
+
+  if (conditions.length) queryParts.where.push(`(${conditions.join(' OR ')})`);
 };
 
 const addSearchFilter = (queryParts: QueryParts, search: string): void => {
@@ -179,7 +215,8 @@ const addFilters = (
 export const buildItemWhere = (
   usernameHashes: string[],
   filters: CollectionItemFiltersApiModel | undefined,
-  matchedImdbIds?: string[],
+  matchedIdentities?: ExternalItemIdentityModel[],
+  matchedCanonicalItemIds?: string[],
   viewerUsernameHash?: string
 ): QueryParts => {
   const queryParts: QueryParts = {
@@ -187,11 +224,7 @@ export const buildItemWhere = (
     params: [...usernameHashes],
   };
   addFilters(queryParts, filters, viewerUsernameHash);
-
-  if (matchedImdbIds?.length) {
-    queryParts.where.push(`collection_items.imdb_id IN (${matchedImdbIds.map(() => '?').join(', ')})`);
-    queryParts.params.push(...matchedImdbIds);
-  }
+  addMatchedIdentityFilter(queryParts, matchedIdentities, matchedCanonicalItemIds);
 
   return queryParts;
 };

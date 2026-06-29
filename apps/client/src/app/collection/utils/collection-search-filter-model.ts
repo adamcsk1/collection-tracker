@@ -11,3 +11,7 @@ export interface StandardSearchSetupOptions {
   destroyRef: DestroyRef;
   initialSearchText?: string;
 }
+
+export interface QueryParamReader {
+  get: (name: string) => string | null;
+}

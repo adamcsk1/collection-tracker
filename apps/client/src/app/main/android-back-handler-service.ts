@@ -1,7 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, inject, Injectable } from '@angular/core';
-
-type AndroidBackWindow = Window & { CollectionTrackerAndroidBack?: () => boolean };
+import { AndroidBackWindow } from './android-back-handler-model';
 
 @Injectable({
   providedIn: 'root',

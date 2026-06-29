@@ -1,10 +1,8 @@
 import { EXPORT_TYPE, EXPORT_VERSION } from '@shared/constants/export-import-const';
+import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
 import {
   CollectionItemChangeApiModel,
-  CollectionItemApiModel,
-  CollectionItemsImportApiRequestModel,
-  CollectionItemsImportApiResponseModel,
   SeriesTrackerSeasonMetadataModel,
   SeriesTrackerWatchedEpisodeModel,
   TagManagementApiModel,
@@ -12,46 +10,36 @@ import {
   UserImportApiResponseModel,
   UserSettingsApiResponseModel,
 } from '@shared/models/api-model';
+import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import {
   CollectionListDisplayPreferencesModel,
   COLLECTION_LIST_DISPLAY_RATINGS,
 } from '@shared/models/collection-list-display-preferences-model';
 import { LANGUAGES } from '@shared/models/language-model';
-import { OMDbResponseItemModel, OMDbResponseRatingModel } from '@shared/models/omdb-model';
 import { THEMES } from '@shared/models/theme-model';
-import { getIMDbIds } from '@shared/omdb/get-imdb-id-util';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import type { FastifyInstance } from 'fastify';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import {
-  collectionItemExistsByImdbId,
   deleteCollectionItemsByUser,
   insertCollectionItem,
-  syncSeriesTrackerCompletedTag,
+  syncSeriesTrackerCompletedTagByExternalId,
 } from '../core/database/repositories/collection';
-import { replaceSeriesTrackerSeasons } from '../core/database/repositories/series-tracker-season-repository';
-import { replaceWatchedEpisodes } from '../core/database/repositories/series-tracker-watched-episodes-repository';
+import {
+  inferCanonicalItemId,
+  normalizeExternalIdentities,
+} from '../core/database/repositories/external-item-identity-repository';
+import { replaceSeriesTrackerSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { replaceWatchedEpisodesByExternalId } from '../core/database/repositories/series-tracker-watched-episodes-repository';
 import { deleteTagManagement, upsertTagManagement } from '../core/database/repositories/tag-management-repository';
 import { deleteUserSettings, upsertUserSettings } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
-import { fetchOMDbItem } from '../core/omdb/omdb-item';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
 import { parseListType } from '../core/utils/query-parse-util';
 import { normalizeSeriesTrackerSeasons } from '../core/utils/series-tracker-seasons-api-util';
-
-const MAX_COLLECTION_ITEM_IMPORT_SOURCE_LENGTH = 1_000_000;
-const MAX_COLLECTION_ITEM_IMPORT_IMDB_IDS = 100;
-const SUPPORTED_IMPORT_VERSIONS = [2, EXPORT_VERSION] as const;
-
-type SupportedImportVersion = (typeof SUPPORTED_IMPORT_VERSIONS)[number];
-type ImportedCollectionItemApiModel = Omit<CollectionItemApiModel, 'contentType' | 'favorite'> &
-  Partial<Pick<CollectionItemApiModel, 'contentType' | 'favorite'>>;
-type ImportedUserRequestModel = Omit<UserImportApiRequestModel, 'version' | 'collectionItems'> & {
-  version: SupportedImportVersion;
-  collectionItems: ImportedCollectionItemApiModel[];
-};
+import { ImportedCollectionItemApiModel, ImportedUserRequestModel } from './import-api-model';
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -103,6 +91,11 @@ const isTagManagement = (value: unknown): value is TagManagementApiModel => {
     typeof value['weight'] === 'number' &&
     Number.isFinite(value['weight'])
   );
+};
+
+const isImportedExternalIdentity = (value: unknown): value is ExternalItemIdentityModel => {
+  if (!isPlainObject(value) || typeof value['id'] !== 'string') return false;
+  return typeof value['source'] === 'string' && isExternalItemIdentitySourceName(value['source']);
 };
 
 const isSeason = (value: unknown): value is SeriesTrackerSeasonMetadataModel => {
@@ -180,16 +173,18 @@ const isWatchedAt = (value: unknown): value is string | null => {
   );
 };
 
-const isSupportedImportVersion = (value: unknown): value is SupportedImportVersion =>
-  value === 2 || value === EXPORT_VERSION;
-
-const isCollectionItem = (value: unknown, version: SupportedImportVersion): value is ImportedCollectionItemApiModel => {
+const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiModel => {
   if (!isPlainObject(value)) return false;
   return (
     typeof value['image'] === 'string' &&
     typeof value['title'] === 'string' &&
     isStringArray(value['genre']) &&
-    typeof value['IMDbId'] === 'string' &&
+    (typeof value['IMDbId'] === 'string' || value['IMDbId'] === undefined) &&
+    typeof value['externalProvider'] === 'string' &&
+    typeof value['externalItemId'] === 'string' &&
+    (value['externalIds'] === undefined ||
+      (Array.isArray(value['externalIds']) && value['externalIds'].every(isImportedExternalIdentity))) &&
+    (typeof value['canonicalItemId'] === 'string' || value['canonicalItemId'] === undefined) &&
     isStringArray(value['tags']) &&
     (typeof value['year'] === 'string' || value['year'] === null) &&
     typeof value['rate'] === 'string' &&
@@ -198,10 +193,8 @@ const isCollectionItem = (value: unknown, version: SupportedImportVersion): valu
     (typeof value['userRate'] === 'number' || value['userRate'] === null) &&
     typeof value['actors'] === 'string' &&
     typeof value['plot'] === 'string' &&
-    (version === 2 || value['contentType'] === 'movie' || value['contentType'] === 'series') &&
-    (version === 2 || typeof value['favorite'] === 'boolean') &&
-    (value['contentType'] === undefined || value['contentType'] === 'movie' || value['contentType'] === 'series') &&
-    (value['favorite'] === undefined || typeof value['favorite'] === 'boolean') &&
+    (value['contentType'] === 'movie' || value['contentType'] === 'series') &&
+    typeof value['favorite'] === 'boolean' &&
     typeof value['listType'] === 'string' &&
     parseListType(value['listType']) !== undefined &&
     value['watchedAt'] !== undefined &&
@@ -212,12 +205,9 @@ const isCollectionItem = (value: unknown, version: SupportedImportVersion): valu
 const isUserImport = (value: unknown): value is ImportedUserRequestModel => {
   if (!isPlainObject(value)) return false;
   const importVersion = value['version'];
-  if (value['type'] !== EXPORT_TYPE || !isSupportedImportVersion(importVersion)) return false;
+  if (value['type'] !== EXPORT_TYPE || importVersion !== EXPORT_VERSION) return false;
   if (!isUserSettings(value['userSettings'])) return false;
-  if (
-    !Array.isArray(value['collectionItems']) ||
-    !value['collectionItems'].every((item) => isCollectionItem(item, importVersion))
-  ) {
+  if (!Array.isArray(value['collectionItems']) || !value['collectionItems'].every(isCollectionItem)) {
     return false;
   }
   if (!Array.isArray(value['tagManagement']) || !value['tagManagement'].every(isTagManagement)) return false;
@@ -241,6 +231,9 @@ const toCollectionItemChange = (item: ImportedCollectionItemApiModel): Collectio
   title: item.title,
   genre: item.genre,
   IMDbId: item.IMDbId,
+  externalProvider: item.externalProvider,
+  externalItemId: item.externalItemId,
+  externalIds: item.externalIds,
   tags: item.tags,
   year: item.year,
   rate: item.rate,
@@ -249,10 +242,27 @@ const toCollectionItemChange = (item: ImportedCollectionItemApiModel): Collectio
   userRate: item.userRate,
   actors: item.actors,
   plot: item.plot,
-  contentType:
-    item.contentType ?? (item.tags.includes('#series') && !item.tags.includes('#movie') ? 'series' : 'movie'),
-  favorite: item.favorite ?? item.tags.includes('#favorite'),
+  contentType: item.contentType,
+  favorite: item.favorite,
 });
+
+const getSeriesTrackerDataKey = (externalProvider: string, externalItemId: string): string =>
+  `${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}`;
+
+const parseSeriesTrackerDataKey = (
+  seriesTrackerDataKey: string
+): { externalProvider: string; externalItemId: string } | null => {
+  const separatorIndex = seriesTrackerDataKey.indexOf('/');
+  if (separatorIndex <= 0 || separatorIndex === seriesTrackerDataKey.length - 1) return null;
+  try {
+    return {
+      externalProvider: decodeURIComponent(seriesTrackerDataKey.slice(0, separatorIndex)),
+      externalItemId: decodeURIComponent(seriesTrackerDataKey.slice(separatorIndex + 1)),
+    };
+  } catch {
+    return null;
+  }
+};
 
 const normalizeWatchedEpisodes = (
   watchedEpisodes: SeriesTrackerWatchedEpisodeModel[]
@@ -302,65 +312,22 @@ const watchedEpisodesExistInSeasons = (
 
 const normalizeSeriesTrackerImportData = (
   importData: ImportedUserRequestModel,
-  seriesTrackerImdbIds: Set<string>
+  seriesTrackerDataKeys: Set<string>
 ): UserImportApiRequestModel['seriesTrackerData'] | null => {
   const normalizedSeriesTrackerData: UserImportApiRequestModel['seriesTrackerData'] = {};
 
-  for (const [imdbId, seriesTrackerData] of Object.entries(importData.seriesTrackerData)) {
-    if (!seriesTrackerImdbIds.has(imdbId)) return null;
+  for (const [seriesTrackerDataKey, seriesTrackerData] of Object.entries(importData.seriesTrackerData)) {
+    if (!seriesTrackerDataKeys.has(seriesTrackerDataKey) || !parseSeriesTrackerDataKey(seriesTrackerDataKey))
+      return null;
 
     const seasons = normalizeSeriesTrackerSeasons({ seasons: seriesTrackerData.seasons });
     const watchedEpisodes = normalizeWatchedEpisodes(seriesTrackerData.watchedEpisodes);
     if (!seasons || !watchedEpisodes || !watchedEpisodesExistInSeasons(watchedEpisodes, seasons)) return null;
 
-    normalizedSeriesTrackerData[imdbId] = { seasons, watchedEpisodes };
+    normalizedSeriesTrackerData[seriesTrackerDataKey] = { seasons, watchedEpisodes };
   }
 
   return normalizedSeriesTrackerData;
-};
-
-const parseYear = (year: string): string | null => {
-  const normalizedYear = year
-    .trim()
-    .replace('–', '-')
-    .replace(/^(\d{4})\.0$/, '$1');
-  return normalizedYear && normalizedYear !== 'N/A' ? normalizedYear : null;
-};
-
-const getRating = (ratings: OMDbResponseRatingModel[] | undefined, source: string): string => {
-  if (!Array.isArray(ratings)) return '';
-  const rating = ratings.find(
-    (candidate) => isPlainObject(candidate) && candidate['Source'] === source && typeof candidate['Value'] === 'string'
-  );
-  return rating?.Value.trim() ?? '';
-};
-
-const toCollectionItemFromOMDb = (omdbItem: OMDbResponseItemModel): CollectionItemChangeApiModel | null => {
-  if (!isPlainObject(omdbItem)) return null;
-
-  const type = typeof omdbItem.Type === 'string' ? omdbItem.Type.trim().toLowerCase() : '';
-  const contentType = type === 'series' ? 'series' : type === 'movie' ? 'movie' : null;
-  if (!contentType || typeof omdbItem.imdbID !== 'string') return null;
-
-  return {
-    image: typeof omdbItem.Poster === 'string' ? omdbItem.Poster : '',
-    title: typeof omdbItem.Title === 'string' ? omdbItem.Title : '',
-    genre: `${typeof omdbItem.Genre === 'string' ? omdbItem.Genre : ''}`
-      .split(',')
-      .map((genre) => genre.trim())
-      .filter(Boolean),
-    IMDbId: omdbItem.imdbID.toLowerCase(),
-    tags: [],
-    year: parseYear(typeof omdbItem.Year === 'string' ? omdbItem.Year : ''),
-    rate: typeof omdbItem.imdbRating === 'string' ? omdbItem.imdbRating : '',
-    rottenTomatoesRate: getRating(omdbItem.Ratings, 'Rotten Tomatoes'),
-    metacriticRate: getRating(omdbItem.Ratings, 'Metacritic'),
-    userRate: null,
-    actors: typeof omdbItem.Actors === 'string' ? omdbItem.Actors : '',
-    plot: typeof omdbItem.Plot === 'string' ? omdbItem.Plot : '',
-    contentType,
-    favorite: false,
-  };
 };
 
 export const register = (app: FastifyInstance): void => {
@@ -370,27 +337,46 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler((request, response) => {
       const body = request.body as unknown;
       if (!isUserImport(body)) return response.code(400).send();
+      const importData = body;
 
-      const normalizedItems = body.collectionItems.map((item) => {
+      const normalizedItems = importData.collectionItems.map((item) => {
         const normalizedItem = normalizeItem(toCollectionItemChange(item));
         const listType = parseListType(item.listType);
-        return { item: normalizedItem, listType, watchedAt: item.watchedAt };
+        return { item: normalizedItem, listType, watchedAt: item.watchedAt, canonicalItemId: item.canonicalItemId };
       });
       if (normalizedItems.some((entry) => !entry.item || !entry.listType)) return response.code(400).send();
 
-      const uniqueItems = new Set<string>();
-      const seriesTrackerImdbIds = new Set<string>();
-      for (const entry of normalizedItems) {
-        const key = `${entry.item!.IMDbId}\u0000${entry.listType}`;
-        if (uniqueItems.has(key)) return response.code(400).send();
-        uniqueItems.add(key);
-        if (entry.listType === 'series-tracker') seriesTrackerImdbIds.add(entry.item!.IMDbId);
-      }
-      const normalizedSeriesTrackerData = normalizeSeriesTrackerImportData(body, seriesTrackerImdbIds);
-      if (!normalizedSeriesTrackerData) return response.code(400).send();
-
       const db = getDatabase();
       const usernameHash = request.usernameHash;
+      const uniqueItems = new Set<string>();
+      const uniqueCanonicalItems = new Set<string>();
+      const uniqueExternalIdentities = new Set<string>();
+      const seriesTrackerDataKeys = new Set<string>();
+      for (const entry of normalizedItems) {
+        const key = `${entry.item!.externalProvider}\u0000${entry.item!.externalItemId}\u0000${entry.listType}`;
+        if (uniqueItems.has(key)) return response.code(400).send();
+        uniqueItems.add(key);
+        const identities = normalizeExternalIdentities(
+          entry.item!.externalProvider,
+          entry.item!.externalItemId,
+          entry.item!.externalIds
+        );
+        for (const identity of identities) {
+          const identityKey = `${identity.source}\u0000${identity.id}\u0000${entry.listType}`;
+          if (uniqueExternalIdentities.has(identityKey)) return response.code(400).send();
+          uniqueExternalIdentities.add(identityKey);
+        }
+        const canonicalItemId = entry.canonicalItemId ?? inferCanonicalItemId(identities);
+        const canonicalKey = `${canonicalItemId}\u0000${entry.listType}`;
+        if (uniqueCanonicalItems.has(canonicalKey)) return response.code(400).send();
+        uniqueCanonicalItems.add(canonicalKey);
+        if (entry.listType === 'series-tracker') {
+          seriesTrackerDataKeys.add(getSeriesTrackerDataKey(entry.item!.externalProvider, entry.item!.externalItemId));
+        }
+      }
+      const normalizedSeriesTrackerData = normalizeSeriesTrackerImportData(importData, seriesTrackerDataKeys);
+      if (!normalizedSeriesTrackerData) return response.code(400).send();
+
       let importedSeriesTrackerSeasons = 0;
       let importedSeriesTrackerWatchedEpisodes = 0;
 
@@ -399,86 +385,58 @@ export const register = (app: FastifyInstance): void => {
         deleteTagManagement(db, usernameHash);
         deleteCollectionItemsByUser(db, usernameHash);
 
-        upsertUserSettings(db, usernameHash, body.userSettings);
-        upsertTagManagement(db, usernameHash, body.tagManagement);
+        upsertUserSettings(db, usernameHash, importData.userSettings);
+        upsertTagManagement(db, usernameHash, importData.tagManagement);
 
         for (const entry of normalizedItems) {
           const item = entry.item!;
-          insertCollectionItem(db, usernameHash, getItemHash(item), item, entry.listType, entry.watchedAt);
+          insertCollectionItem(
+            db,
+            usernameHash,
+            getItemHash(item),
+            item,
+            entry.listType,
+            entry.watchedAt,
+            entry.canonicalItemId
+          );
         }
 
-        for (const [imdbId, seriesTrackerData] of Object.entries(normalizedSeriesTrackerData)) {
-          const seasons = replaceSeriesTrackerSeasons(db, usernameHash, imdbId, seriesTrackerData.seasons);
-          const watchedEpisodes = replaceWatchedEpisodes(db, usernameHash, imdbId, seriesTrackerData.watchedEpisodes);
+        for (const [seriesTrackerDataKey, seriesTrackerData] of Object.entries(normalizedSeriesTrackerData)) {
+          const externalIdentity = parseSeriesTrackerDataKey(seriesTrackerDataKey)!;
+          const seasons = replaceSeriesTrackerSeasonsByExternalId(
+            db,
+            usernameHash,
+            externalIdentity.externalProvider,
+            externalIdentity.externalItemId,
+            seriesTrackerData.seasons
+          );
+          const watchedEpisodes = replaceWatchedEpisodesByExternalId(
+            db,
+            usernameHash,
+            externalIdentity.externalProvider,
+            externalIdentity.externalItemId,
+            seriesTrackerData.watchedEpisodes
+          );
           importedSeriesTrackerSeasons += seasons.length;
           importedSeriesTrackerWatchedEpisodes += watchedEpisodes.length;
         }
 
-        for (const imdbId of seriesTrackerImdbIds) {
-          syncSeriesTrackerCompletedTag(db, usernameHash, imdbId);
+        for (const seriesTrackerDataKey of seriesTrackerDataKeys) {
+          const externalIdentity = parseSeriesTrackerDataKey(seriesTrackerDataKey)!;
+          syncSeriesTrackerCompletedTagByExternalId(
+            db,
+            usernameHash,
+            externalIdentity.externalProvider,
+            externalIdentity.externalItemId
+          );
         }
       })();
 
       const result: UserImportApiResponseModel = {
         importedCollectionItems: body.collectionItems.length,
-        importedTagManagement: body.tagManagement.length,
+        importedTagManagement: importData.tagManagement.length,
         importedSeriesTrackerSeasons,
         importedSeriesTrackerWatchedEpisodes,
-      };
-      response.send(result);
-    })
-  );
-
-  app.post(
-    `${API_PREFIX}/import/collection-items`,
-    { preHandler: jwtGuard },
-    withErrorHandler(async (request, response) => {
-      const body = request.body as Partial<CollectionItemsImportApiRequestModel>;
-      if (typeof body?.source !== 'string' || body.source.length > MAX_COLLECTION_ITEM_IMPORT_SOURCE_LENGTH) {
-        return response.code(400).send();
-      }
-
-      const imdbIds = getIMDbIds(body.source);
-      if (imdbIds.length > MAX_COLLECTION_ITEM_IMPORT_IMDB_IDS) return response.code(400).send();
-      const db = getDatabase();
-      const usernameHash = request.usernameHash;
-      let importedCount = 0;
-      let skippedCount = 0;
-      let errorCount = 0;
-
-      for (const imdbId of imdbIds) {
-        if (collectionItemExistsByImdbId(db, usernameHash, imdbId)) {
-          skippedCount++;
-          continue;
-        }
-
-        const omdbItem = await fetchOMDbItem(imdbId, process.env.OMDB_API_KEY ?? '');
-        if (omdbItem?.imdbID?.toLowerCase() !== imdbId) {
-          errorCount++;
-          continue;
-        }
-        const item = omdbItem
-          ? normalizeItem(toCollectionItemFromOMDb(omdbItem) as CollectionItemChangeApiModel)
-          : null;
-        if (!item) {
-          errorCount++;
-          continue;
-        }
-
-        if (collectionItemExistsByImdbId(db, usernameHash, item.IMDbId)) {
-          skippedCount++;
-          continue;
-        }
-
-        insertCollectionItem(db, usernameHash, getItemHash(item), item, 'library');
-        importedCount++;
-      }
-
-      const result: CollectionItemsImportApiResponseModel = {
-        totalCount: imdbIds.length,
-        importedCount,
-        skippedCount,
-        errorCount,
       };
       response.send(result);
     })

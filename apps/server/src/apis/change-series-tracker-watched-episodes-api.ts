@@ -1,4 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
+import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
 import {
   SeriesTrackerWatchedEpisodesApiRequestModel,
   SeriesTrackerWatchedEpisodesApiResponseModel,
@@ -7,12 +8,14 @@ import {
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { syncSeriesTrackerCompletedTag } from '../core/database/repositories/collection';
-import { findSeriesTrackerSeasons } from '../core/database/repositories/series-tracker-season-repository';
-import { replaceWatchedEpisodes } from '../core/database/repositories/series-tracker-watched-episodes-repository';
+import {
+  findCollectionItemByExternalIdOrCanonicalItemId,
+  syncSeriesTrackerCompletedTagByExternalId,
+} from '../core/database/repositories/collection';
+import { findSeriesTrackerSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { replaceWatchedEpisodesByExternalId } from '../core/database/repositories/series-tracker-watched-episodes-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
-import { hasOwnSeriesTrackerItem } from '../core/utils/series-tracker-seasons-api-util';
 
 const normalizeWatchedEpisodes = (
   body: SeriesTrackerWatchedEpisodesApiRequestModel
@@ -50,7 +53,7 @@ const normalizeWatchedEpisodes = (
 
 const episodesExistInSeasons = (
   episodes: SeriesTrackerWatchedEpisodeModel[],
-  seasons: ReturnType<typeof findSeriesTrackerSeasons>
+  seasons: ReturnType<typeof findSeriesTrackerSeasonsByExternalId>
 ): boolean => {
   if (!episodes.length) return true;
 
@@ -66,21 +69,48 @@ const episodesExistInSeasons = (
 
 export const register = (app: FastifyInstance): void => {
   app.put(
-    `${API_PREFIX}/series-tracker/:imdbId/watched-episodes`,
+    `${API_PREFIX}/series-tracker/:externalIdentitySource/:externalIdentityId/watched-episodes`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      const { imdbId } = request.params as Record<string, string>;
-      if (!hasOwnSeriesTrackerItem(request.usernameHash, imdbId)) return response.code(404).send();
+      const { externalIdentitySource, externalIdentityId } = request.params as Record<string, string>;
+      if (!isExternalItemIdentitySourceName(externalIdentitySource)) return response.code(400).send();
+      const db = getDatabase();
+      if (
+        !findCollectionItemByExternalIdOrCanonicalItemId(
+          db,
+          request.usernameHash,
+          externalIdentitySource,
+          externalIdentityId,
+          'series-tracker'
+        )
+      ) {
+        return response.code(404).send();
+      }
 
       const episodes = normalizeWatchedEpisodes(request.body as SeriesTrackerWatchedEpisodesApiRequestModel);
       if (!episodes) return response.code(400).send();
 
-      const db = getDatabase();
-      const seasons = findSeriesTrackerSeasons(db, request.usernameHash, imdbId);
+      const seasons = findSeriesTrackerSeasonsByExternalId(
+        db,
+        request.usernameHash,
+        externalIdentitySource,
+        externalIdentityId
+      );
       if (!episodesExistInSeasons(episodes, seasons)) return response.code(400).send();
 
-      const savedEpisodes = replaceWatchedEpisodes(db, request.usernameHash, imdbId, episodes);
-      const item = syncSeriesTrackerCompletedTag(db, request.usernameHash, imdbId);
+      const savedEpisodes = replaceWatchedEpisodesByExternalId(
+        db,
+        request.usernameHash,
+        externalIdentitySource,
+        externalIdentityId,
+        episodes
+      );
+      const item = syncSeriesTrackerCompletedTagByExternalId(
+        db,
+        request.usernameHash,
+        externalIdentitySource,
+        externalIdentityId
+      );
       const result: SeriesTrackerWatchedEpisodesApiResponseModel = {
         watchedEpisodes: savedEpisodes,
         lastWatchedEpisode: savedEpisodes.length

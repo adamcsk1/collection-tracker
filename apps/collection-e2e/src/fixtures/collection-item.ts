@@ -5,6 +5,8 @@ interface CollectionItemFixture {
   title: string;
   genre: string[];
   IMDbId: string;
+  externalProvider: string;
+  externalItemId: string;
   tags: string[];
   year: string | null;
   rate: string;
@@ -26,6 +28,8 @@ export const buildCollectionItem = (
   title,
   genre: ['Action', 'Adventure'],
   IMDbId: imdbId,
+  externalProvider: 'omdb',
+  externalItemId: imdbId,
   tags: [],
   year: '2020',
   rate: '8.5',

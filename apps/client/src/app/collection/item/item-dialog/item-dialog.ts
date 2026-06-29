@@ -18,7 +18,6 @@ import {
   SeriesTrackerSeasonMetadataModel,
   SeriesTrackerWatchedEpisodeModel,
 } from '@shared/models/api-model';
-import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -35,6 +34,7 @@ import { filterDisplayTags, filterEditableTags } from '../../validators/tag-vali
 import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
 import { ItemDialogActions } from './item-dialog-actions';
 import { ItemDialogDetail } from './item-dialog-detail';
+import { ItemDialogFormModel } from './item-dialog-model';
 import {
   buildIMDbUrl,
   buildTrailerUrl,
@@ -43,22 +43,6 @@ import {
   validateOptionalMetacriticRateFormat,
   validateOptionalRottenTomatoesRateFormat,
 } from './utils/item-dialog-util';
-
-interface ItemDialogFormModel {
-  title: string;
-  IMDbId: string;
-  year: CollectionItemYearModel;
-  rate: string;
-  rottenTomatoesRate: string;
-  metacriticRate: string;
-  userRate: number | null;
-  image: string;
-  genreText: string;
-  tagsText: string;
-  actors: string;
-  plot: string;
-  contentType: CollectionItemContentTypeModel;
-}
 
 @Component({
   selector: 'ct-item-dialog',
@@ -193,7 +177,9 @@ export class ItemDialog implements OnInit {
     this.formModel,
     (item) => {
       validate(item.title, ({ value }) => (value()?.trim() ? undefined : { kind: 'required' }));
-      validate(item.IMDbId, ({ value }) => (value()?.trim() ? undefined : { kind: 'required' }));
+      validate(item.IMDbId, ({ value }) =>
+        !this.canEditOmdbIdentity() || value()?.trim() ? undefined : { kind: 'required' }
+      );
       validate(item.rate, ({ value }) => validateOptionalIMDbRateFormat(value()));
       validate(item.rottenTomatoesRate, ({ value }) => validateOptionalRottenTomatoesRateFormat(value()));
       validate(item.metacriticRate, ({ value }) => validateOptionalMetacriticRateFormat(value()));
@@ -350,6 +336,7 @@ export class ItemDialog implements OnInit {
   protected readonly movieTracker = computed(() => this.collectionItem().listType === 'movie-tracker');
   protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
   protected readonly series = computed(() => this.collectionItem().contentType === 'series');
+  protected readonly canEditOmdbIdentity = computed(() => this.collectionItem().externalProvider === 'omdb');
   protected readonly permissionWatch = computed(() => this.libraryItem() && (this.movie() || this.series()));
   protected readonly permissionDelete = computed(() => {
     const item = this.collectionItem();
@@ -379,7 +366,10 @@ export class ItemDialog implements OnInit {
   protected readonly trailerUrl = computed(() =>
     buildTrailerUrl(this.collectionItem().title, this.collectionItem().year)
   );
-  protected readonly imdbUrl = computed(() => buildIMDbUrl(this.collectionItem().IMDbId));
+  protected readonly imdbUrl = computed(() => {
+    const imdbId = this.collectionItem().IMDbId;
+    return imdbId ? buildIMDbUrl(imdbId) : '';
+  });
   protected readonly webSearchUrl = computed(() => {
     const item = this.collectionItem();
     return buildWebSearchUrl(item.title, item.year);
@@ -395,9 +385,11 @@ export class ItemDialog implements OnInit {
 
   private loadTrackerStates(): void {
     const item = this.collectionItem();
+    const externalProvider = item.externalProvider;
+    const externalItemId = item.externalItemId;
     if (this.libraryItem() && this.series()) {
       this.api
-        .collectionItemExists(item.IMDbId, undefined, 'series-tracker')
+        .collectionItemExists(externalProvider, externalItemId, undefined, 'series-tracker', item.externalIds)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((response) => {
           this.seriesTrackerExists.set(response.exists);
@@ -406,7 +398,7 @@ export class ItemDialog implements OnInit {
     }
     if (this.watchLater() && this.movie()) {
       this.api
-        .collectionItemExists(item.IMDbId, undefined, 'movie-tracker')
+        .collectionItemExists(externalProvider, externalItemId, undefined, 'movie-tracker', item.externalIds)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((response) => {
           this.movieTrackerExists.set(response.exists);
@@ -415,7 +407,7 @@ export class ItemDialog implements OnInit {
     }
     if (this.watchLater() && this.series()) {
       this.api
-        .collectionItemExists(item.IMDbId, undefined, 'series-tracker')
+        .collectionItemExists(externalProvider, externalItemId, undefined, 'series-tracker', item.externalIds)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((response) => {
           this.seriesTrackerExists.set(response.exists);
@@ -427,7 +419,7 @@ export class ItemDialog implements OnInit {
   private loadSeriesSeasons(): void {
     if (!this.seriesTracker() || !this.isOwnItem()) return;
     this.api
-      .getSeriesTrackerSeasons(this.collectionItem().IMDbId)
+      .getSeriesTrackerSeasonsByExternalId(this.collectionItem().externalProvider, this.collectionItem().externalItemId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
         this.seriesSeasons.set(response.seasons);
@@ -438,7 +430,10 @@ export class ItemDialog implements OnInit {
   private loadWatchedEpisodes(): void {
     if (!this.seriesTracker() || !this.isOwnItem()) return;
     this.api
-      .getSeriesTrackerWatchedEpisodes(this.collectionItem().IMDbId)
+      .getSeriesTrackerWatchedEpisodesByExternalId(
+        this.collectionItem().externalProvider,
+        this.collectionItem().externalItemId
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
         this.watchedEpisodes.set(response.watchedEpisodes);
@@ -450,7 +445,7 @@ export class ItemDialog implements OnInit {
     const change = toCollectionItemChange(item);
     this.form().reset({
       title: change.title,
-      IMDbId: change.IMDbId,
+      IMDbId: change.IMDbId ?? change.externalItemId,
       year: change.year,
       rate: change.rate,
       rottenTomatoesRate: change.rottenTomatoesRate,
@@ -469,12 +464,7 @@ export class ItemDialog implements OnInit {
   private applySyncedCollectionItem(item: CollectionItemModel | undefined): void {
     if (!item) return;
     const currentItem = this.collectionItem();
-    this.collectionService.updateCollectionItem(
-      currentItem.IMDbId,
-      item,
-      currentItem.ownerShareCode,
-      currentItem.listType
-    );
+    this.collectionService.updateCollectionItem(currentItem, item, currentItem.ownerShareCode, currentItem.listType);
     this.collectionItem.set(item);
     this.resetFormFromItem(item);
     this.posterImageFailed.set(false);
@@ -483,10 +473,15 @@ export class ItemDialog implements OnInit {
   private buildItemFromForm(): CollectionItemChangeApiModel {
     const formValues = this.form().value();
     const tags = parseTagText(formValues.tagsText);
-    const imdbIdChanged = formValues.IMDbId !== this.collectionItem().IMDbId;
+    const currentItem = this.collectionItem();
+    const canEditOmdbIdentity = this.canEditOmdbIdentity();
+    const imdbIdChanged = canEditOmdbIdentity && formValues.IMDbId !== currentItem.IMDbId;
     return {
       title: formValues.title,
-      IMDbId: formValues.IMDbId,
+      IMDbId: canEditOmdbIdentity ? formValues.IMDbId : currentItem.IMDbId,
+      externalProvider: currentItem.externalProvider,
+      externalItemId: imdbIdChanged ? formValues.IMDbId : currentItem.externalItemId,
+      externalIds: imdbIdChanged ? undefined : currentItem.externalIds,
       year: formValues.year,
       rate: formValues.rate,
       rottenTomatoesRate: imdbIdChanged ? '' : formValues.rottenTomatoesRate,
@@ -512,8 +507,19 @@ export class ItemDialog implements OnInit {
           if (confirmed) {
             this.spinnerLoadingState.setState('show', true);
             const deleteRequest = listType
-              ? this.api.delete(this.collectionItem().IMDbId, this.collectionItem().hash, ownerShareCode, listType)
-              : this.api.delete(this.collectionItem().IMDbId, this.collectionItem().hash, ownerShareCode);
+              ? this.api.deleteByExternalId(
+                  this.collectionItem().externalProvider,
+                  this.collectionItem().externalItemId,
+                  this.collectionItem().hash,
+                  ownerShareCode,
+                  listType
+                )
+              : this.api.deleteByExternalId(
+                  this.collectionItem().externalProvider,
+                  this.collectionItem().externalItemId,
+                  this.collectionItem().hash,
+                  ownerShareCode
+                );
             return deleteRequest.pipe(
               map(() => confirmed),
               finalize(() => this.spinnerLoadingState.setState('show', false))
@@ -525,9 +531,8 @@ export class ItemDialog implements OnInit {
       .subscribe((confirmed) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
-          if (listType)
-            this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId, ownerShareCode, listType);
-          else this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId, ownerShareCode);
+          if (listType) this.collectionService.deleteCollectionItem(this.collectionItem(), ownerShareCode, listType);
+          else this.collectionService.deleteCollectionItem(this.collectionItem(), ownerShareCode);
           this.collectionService.triggerReload();
           this.portal.closeAll();
         }
@@ -543,7 +548,7 @@ export class ItemDialog implements OnInit {
     if (lastSavedItem) {
       this.form().reset({
         title: lastSavedItem.title,
-        IMDbId: lastSavedItem.IMDbId,
+        IMDbId: lastSavedItem.IMDbId ?? lastSavedItem.externalItemId,
         year: lastSavedItem.year,
         rate: lastSavedItem.rate,
         rottenTomatoesRate: lastSavedItem.rottenTomatoesRate,
@@ -596,14 +601,21 @@ export class ItemDialog implements OnInit {
                 updateListType = 'wishlist';
               }
               const updateRequest = updateListType
-                ? this.api.update(
-                    this.collectionItem().IMDbId,
+                ? this.api.updateByExternalId(
+                    this.collectionItem().externalProvider,
+                    this.collectionItem().externalItemId,
                     item,
                     this.collectionItem().hash,
                     ownerShareCode,
                     updateListType
                   )
-                : this.api.update(this.collectionItem().IMDbId, item, this.collectionItem().hash, ownerShareCode);
+                : this.api.updateByExternalId(
+                    this.collectionItem().externalProvider,
+                    this.collectionItem().externalItemId,
+                    item,
+                    this.collectionItem().hash,
+                    ownerShareCode
+                  );
               return updateRequest.pipe(
                 map((result) => ({ confirmed, item: result.item })),
                 finalize(() => this.spinnerLoadingState.setState('show', false))
@@ -615,7 +627,7 @@ export class ItemDialog implements OnInit {
     if (confirmed.confirmed && confirmed.item) {
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
       this.collectionService.updateCollectionItem(
-        this.collectionItem().IMDbId,
+        this.collectionItem(),
         confirmed.item,
         ownerShareCode,
         this.collectionItem().listType
@@ -633,12 +645,16 @@ export class ItemDialog implements OnInit {
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
-        this.api.addMovieTrackerItem(this.collectionItem().IMDbId, this.collectionItem().ownerShareCode)
+        this.api.addMovieTrackerItemByExternalId(
+          this.collectionItem().externalProvider,
+          this.collectionItem().externalItemId,
+          this.collectionItem().ownerShareCode
+        )
       );
       this.collectionService.addCollectionItem(item.item, true);
       const updatedSource = { ...this.collectionItem(), watched: true };
       this.collectionService.updateCollectionItem(
-        updatedSource.IMDbId,
+        this.collectionItem(),
         updatedSource,
         updatedSource.ownerShareCode,
         updatedSource.listType
@@ -656,13 +672,18 @@ export class ItemDialog implements OnInit {
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
-        this.api.addMovieTrackerItem(this.collectionItem().IMDbId, undefined, 'watch-later')
+        this.api.addMovieTrackerItemByExternalId(
+          this.collectionItem().externalProvider,
+          this.collectionItem().externalItemId,
+          undefined,
+          'watch-later'
+        )
       );
       this.collectionService.addCollectionItem(item.item, true);
       this.movieTrackerExists.set(true);
       this.movieTrackerHash.set(item.item.hash);
       this.collectionService.deleteCollectionItem(
-        this.collectionItem().IMDbId,
+        this.collectionItem(),
         this.collectionItem().ownerShareCode,
         'watch-later'
       );
@@ -678,12 +699,18 @@ export class ItemDialog implements OnInit {
     if (!this.watchLater() || !this.series()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
-      const item = await firstValueFrom(this.api.addSeriesTrackerItem(this.collectionItem().IMDbId, 'watch-later'));
+      const item = await firstValueFrom(
+        this.api.addSeriesTrackerItemByExternalId(
+          this.collectionItem().externalProvider,
+          this.collectionItem().externalItemId,
+          'watch-later'
+        )
+      );
       this.collectionService.addCollectionItem(item.item, true);
       this.seriesTrackerExists.set(true);
       this.seriesTrackerHash.set(item.item.hash);
       this.collectionService.deleteCollectionItem(
-        this.collectionItem().IMDbId,
+        this.collectionItem(),
         this.collectionItem().ownerShareCode,
         'watch-later'
       );
@@ -700,7 +727,12 @@ export class ItemDialog implements OnInit {
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
-        this.api.addSeriesTrackerItem(this.collectionItem().IMDbId, undefined, this.collectionItem().ownerShareCode)
+        this.api.addSeriesTrackerItemByExternalId(
+          this.collectionItem().externalProvider,
+          this.collectionItem().externalItemId,
+          undefined,
+          this.collectionItem().ownerShareCode
+        )
       );
       this.collectionService.addCollectionItem(item.item, true);
       this.seriesTrackerExists.set(true);
@@ -724,10 +756,12 @@ export class ItemDialog implements OnInit {
         mergeMap((confirmed) => {
           if (confirmed) {
             this.spinnerLoadingState.setState('show', true);
-            return this.api.delete(item.IMDbId, trackerHash, undefined, 'series-tracker').pipe(
-              map(() => confirmed),
-              finalize(() => this.spinnerLoadingState.setState('show', false))
-            );
+            return this.api
+              .deleteByExternalId(item.externalProvider, item.externalItemId, trackerHash, undefined, 'series-tracker')
+              .pipe(
+                map(() => confirmed),
+                finalize(() => this.spinnerLoadingState.setState('show', false))
+              );
           }
           return of(confirmed);
         }),
@@ -736,7 +770,11 @@ export class ItemDialog implements OnInit {
       .subscribe((confirmed) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
-          this.collectionService.deleteCollectionItem(item.IMDbId, undefined, 'series-tracker');
+          this.collectionService.deleteCollectionItem(
+            { ...item, listType: 'series-tracker' },
+            undefined,
+            'series-tracker'
+          );
           this.seriesTrackerExists.set(false);
           this.seriesTrackerHash.set(undefined);
           this.collectionService.triggerReload();
@@ -748,11 +786,20 @@ export class ItemDialog implements OnInit {
     if (!this.permissionWatch() || !this.watched()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
-      await firstValueFrom(this.api.deleteMovieTrackerItem(this.collectionItem().IMDbId));
+      await firstValueFrom(
+        this.api.deleteMovieTrackerItemByExternalId(
+          this.collectionItem().externalProvider,
+          this.collectionItem().externalItemId
+        )
+      );
       const updatedSource = { ...this.collectionItem(), watched: false };
-      this.collectionService.deleteCollectionItem(this.collectionItem().IMDbId, undefined, 'movie-tracker');
+      this.collectionService.deleteCollectionItem(
+        { ...this.collectionItem(), listType: 'movie-tracker' },
+        undefined,
+        'movie-tracker'
+      );
       this.collectionService.updateCollectionItem(
-        updatedSource.IMDbId,
+        this.collectionItem(),
         updatedSource,
         updatedSource.ownerShareCode,
         updatedSource.listType
@@ -778,8 +825,13 @@ export class ItemDialog implements OnInit {
   protected onManageSeriesMetadata(): void {
     if (!this.seriesTracker() || !this.permissionUpdate()) return;
     let collectionItem = this.collectionItem();
+    const providerInputs =
+      collectionItem.externalProvider === 'omdb'
+        ? {}
+        : { externalProvider: collectionItem.externalProvider, externalItemId: collectionItem.externalItemId };
     this.portal.openStacked(SeriesSeasonMetadataDialog, {
       imdbId: collectionItem.IMDbId,
+      ...providerInputs,
       initialSeasons: this.seriesSeasons(),
       saved: (seasons: SeriesTrackerSeasonMetadataModel[], item?: CollectionItemModel) => {
         this.seriesSeasons.set(seasons);
@@ -795,8 +847,13 @@ export class ItemDialog implements OnInit {
   protected onManageWatchedEpisodes(): void {
     if (!this.seriesTracker() || !this.permissionUpdate()) return;
     let collectionItem = this.collectionItem();
+    const providerInputs =
+      collectionItem.externalProvider === 'omdb'
+        ? {}
+        : { externalProvider: collectionItem.externalProvider, externalItemId: collectionItem.externalItemId };
     this.portal.openStacked(WatchedEpisodesDialog, {
       imdbId: collectionItem.IMDbId,
+      ...providerInputs,
       saved: (watchedEpisodes: SeriesTrackerWatchedEpisodeModel[], item?: CollectionItemModel) => {
         this.watchedEpisodes.set(watchedEpisodes);
         if (item) {

@@ -123,7 +123,7 @@ describe('export-api', () => {
         },
       ],
       seriesTrackerData: {
-        tt456: {
+        'omdb/tt456': {
           seasons: [{ season: 1, episodes: 10, titles: ['Episode 1'] }],
           watchedEpisodes: [{ season: 1, episode: 1 }],
         },

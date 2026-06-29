@@ -173,7 +173,7 @@ describe('Statistics — with series tracker items', () => {
   beforeEach(() => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', librarySeries);
-    cy.request('POST', '/api/v1/series-tracker/tt9000004');
+    cy.request('POST', '/api/v1/series-tracker/omdb/tt9000004');
     StatisticsPage.visit();
   });
 

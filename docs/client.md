@@ -12,7 +12,7 @@ Source: [`apps/client`](../apps/client)
 - `settings/tag-management`: per-tag color, weight, and presentation rules
 - `settings/export-import`: export and import collection data, tag management settings, and series tracker progress using the current `collection-tracker-export` format
 - `settings/collection-list-display`: per-user collection list metadata and preferred rating display rules
-- `settings/media-refresh`: refresh stored images and external ratings from OMDb-backed APIs
+- `settings/media-refresh`: refresh stored images and external ratings from external metadata provider-backed APIs
 - `settings/manage-tracker-data`: mark all visible collection items watched or unwatched
 - `settings/shares`: manage outgoing and incoming collection shares by user share code
 - `settings`: theme, language, search, app-mode, settings-lock, account actions, access tokens, media refresh, sharing, and manage tracker data actions

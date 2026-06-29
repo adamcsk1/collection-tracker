@@ -1,3 +1,5 @@
+import { ExternalItemIdentityModel, ExternalMetadataProviderNameModel } from './external-metadata-provider-model';
+
 export type CollectionListTypeModel = 'library' | 'watch-later' | 'wishlist' | 'series-tracker' | 'movie-tracker';
 export type CollectionItemContentTypeModel = 'movie' | 'series';
 export type CollectionItemYearModel = string | null;
@@ -7,7 +9,11 @@ export interface CollectionItemModel {
   title: string;
   titleLower: string; // The lowercase cached version of title for faster searching.
   genre: string[];
-  IMDbId: string;
+  IMDbId?: string;
+  externalProvider: ExternalMetadataProviderNameModel;
+  externalItemId: string;
+  externalIds?: ExternalItemIdentityModel[];
+  canonicalItemId?: string;
   tags: string[];
   year: CollectionItemYearModel;
   rate: string;

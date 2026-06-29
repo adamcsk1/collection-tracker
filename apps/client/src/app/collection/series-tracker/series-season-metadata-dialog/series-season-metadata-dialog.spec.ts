@@ -17,9 +17,9 @@ describe('SeriesSeasonMetadataDialog', () => {
   let fixture: ComponentFixture<SeriesSeasonMetadataDialog>;
   let component: SeriesSeasonMetadataDialog;
   let api: {
-    updateSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
-    refreshSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
-    deleteSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
+    updateSeriesTrackerSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    refreshSeriesTrackerSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    deleteSeriesTrackerSeasonsByExternalId: ReturnType<typeof vi.fn>;
   };
   let portal: { closeTop: ReturnType<typeof vi.fn> };
   let confirm: { open: ReturnType<typeof vi.fn> };
@@ -27,11 +27,11 @@ describe('SeriesSeasonMetadataDialog', () => {
 
   beforeEach(() => {
     api = {
-      updateSeriesTrackerSeasons: vi.fn(() => of({ seasons: [{ season: 1, episodes: 2 }] })),
-      refreshSeriesTrackerSeasons: vi.fn(() =>
+      updateSeriesTrackerSeasonsByExternalId: vi.fn(() => of({ seasons: [{ season: 1, episodes: 2 }] })),
+      refreshSeriesTrackerSeasonsByExternalId: vi.fn(() =>
         of({ seasons: [{ season: 1, episodes: 3, titles: ['Pilot'] }], item: { hash: 'refreshed-hash' } })
       ),
-      deleteSeriesTrackerSeasons: vi.fn(() => of({ seasons: [], item: { hash: 'metadata-deleted-hash' } })),
+      deleteSeriesTrackerSeasonsByExternalId: vi.fn(() => of({ seasons: [], item: { hash: 'metadata-deleted-hash' } })),
     };
     portal = { closeTop: vi.fn() };
     confirm = { open: vi.fn(() => of(true)) };
@@ -74,7 +74,9 @@ describe('SeriesSeasonMetadataDialog', () => {
   });
 
   it('saves sorted metadata with titles and closes', async () => {
-    api.updateSeriesTrackerSeasons.mockReturnValue(of({ seasons: [{ season: 1, episodes: 2, titles: ['Pilot'] }] }));
+    api.updateSeriesTrackerSeasonsByExternalId.mockReturnValue(
+      of({ seasons: [{ season: 1, episodes: 2, titles: ['Pilot'] }] })
+    );
     const saved = vi.fn();
     fixture.componentRef.setInput('saved', saved);
     component['form']().reset({
@@ -86,7 +88,7 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onSave']();
 
-    expect(api.updateSeriesTrackerSeasons).toHaveBeenCalledWith('tt-series', {
+    expect(api.updateSeriesTrackerSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
       seasons: [
         { season: 1, episodes: 3, titles: ['Pilot'] },
         { season: 2, episodes: 4, titles: [] },
@@ -127,7 +129,7 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRefreshSeriesMetadata']();
 
-    expect(api.refreshSeriesTrackerSeasons).toHaveBeenCalledWith('tt-series');
+    expect(api.refreshSeriesTrackerSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['seasons']()).toEqual([{ season: 1, episodes: 3 }]);
     expect(component['getEpisodeTitle'](0, 0)).toBe('Pilot');
     expect(saved).toHaveBeenCalledWith([{ season: 1, episodes: 3, titles: ['Pilot'] }], { hash: 'refreshed-hash' });
@@ -139,7 +141,7 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRefreshSeriesMetadata']();
 
-    expect(api.refreshSeriesTrackerSeasons).not.toHaveBeenCalled();
+    expect(api.refreshSeriesTrackerSeasonsByExternalId).not.toHaveBeenCalled();
   });
 
   it('removes series metadata after confirmation', async () => {
@@ -148,7 +150,7 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRemoveSeriesMetadata']();
 
-    expect(api.deleteSeriesTrackerSeasons).toHaveBeenCalledWith('tt-series');
+    expect(api.deleteSeriesTrackerSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['formModel']().seasons).toEqual([]);
     expect(saved).toHaveBeenCalledWith([], { hash: 'metadata-deleted-hash' });
     expect(toastState.state.message()).toBe('Toast.SeriesMetadataDeleted');
@@ -159,6 +161,6 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRemoveSeriesMetadata']();
 
-    expect(api.deleteSeriesTrackerSeasons).not.toHaveBeenCalled();
+    expect(api.deleteSeriesTrackerSeasonsByExternalId).not.toHaveBeenCalled();
   });
 });

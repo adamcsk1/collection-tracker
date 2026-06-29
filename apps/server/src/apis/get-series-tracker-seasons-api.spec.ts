@@ -16,7 +16,10 @@ describe('get-series-tracker-seasons-api', () => {
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 10);
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-series-tracker-seasons-api');
@@ -26,13 +29,31 @@ describe('get-series-tracker-seasons-api', () => {
     expect(response.send).toHaveBeenCalledWith({ seasons: [{ season: 1, episodes: 10, titles: [] }] });
   });
 
+  it('returns 400 when external provider is unsupported', async () => {
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'tmdb', externalIdentityId: '603' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-series-tracker-seasons-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('returns stored episode titles', async () => {
     const itemId = insertSeriesTrackerItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles) VALUES (?, ?, ?, ?)')
       .run(itemId, 1, 2, JSON.stringify(['Pilot', 'Episode 2']));
     const response = mockResponse();
-    const request: any = { params: { imdbId: 'tt-series' }, usernameHash: 'user' };
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-series-tracker-seasons-api');
@@ -42,5 +63,34 @@ describe('get-series-tracker-seasons-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Episode 2'] }],
     });
+  });
+
+  it('returns stored season metadata by canonical alias', async () => {
+    const itemId = insertSeriesTrackerItem();
+    getDatabase()
+      .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE id = ?')
+      .run('imdb:tt-series', itemId);
+    getDatabase()
+      .prepare(
+        `INSERT INTO external_item_identities
+          (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run('user', 'imdb:tt-series', 'imdb', 'tt-series', 'provider');
+    getDatabase()
+      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .run(itemId, 1, 10);
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'imdb', externalIdentityId: 'tt-series' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-series-tracker-seasons-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ seasons: [{ season: 1, episodes: 10, titles: [] }] });
   });
 });

@@ -45,6 +45,8 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
     titleLower: 'test movie',
     genre: ['Drama', 'Thriller'],
     IMDbId: 'tt1234567',
+    externalProvider: 'omdb',
+    externalItemId: 'tt1234567',
     tags: getCustomTags(tags),
     year: '2020',
     rate: '8.5',
@@ -81,17 +83,17 @@ describe('ItemDialog', () => {
   };
   let confirm: { open: ReturnType<typeof vi.fn> };
   let api: {
-    delete: ReturnType<typeof vi.fn>;
-    update: ReturnType<typeof vi.fn>;
-    getSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
-    getSeriesTrackerWatchedEpisodes: ReturnType<typeof vi.fn>;
-    updateSeriesTrackerWatchedEpisodes: ReturnType<typeof vi.fn>;
-    refreshSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
-    deleteSeriesTrackerSeasons: ReturnType<typeof vi.fn>;
-    markAllSeriesTrackerWatched: ReturnType<typeof vi.fn>;
-    addMovieTrackerItem: ReturnType<typeof vi.fn>;
-    addSeriesTrackerItem: ReturnType<typeof vi.fn>;
-    deleteMovieTrackerItem: ReturnType<typeof vi.fn>;
+    deleteByExternalId: ReturnType<typeof vi.fn>;
+    updateByExternalId: ReturnType<typeof vi.fn>;
+    getSeriesTrackerSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    getSeriesTrackerWatchedEpisodesByExternalId: ReturnType<typeof vi.fn>;
+    updateSeriesTrackerWatchedEpisodesByExternalId: ReturnType<typeof vi.fn>;
+    refreshSeriesTrackerSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    deleteSeriesTrackerSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    markAllSeriesTrackerWatchedByExternalId: ReturnType<typeof vi.fn>;
+    addMovieTrackerItemByExternalId: ReturnType<typeof vi.fn>;
+    addSeriesTrackerItemByExternalId: ReturnType<typeof vi.fn>;
+    deleteMovieTrackerItemByExternalId: ReturnType<typeof vi.fn>;
     collectionItemExists: ReturnType<typeof vi.fn>;
   };
   let toastState: NgxSimpleSignalStoreService<ToastState>;
@@ -109,30 +111,30 @@ describe('ItemDialog', () => {
     portal = { closeAll: vi.fn(), open: vi.fn(), openStacked: vi.fn() };
     confirm = { open: vi.fn() };
     api = {
-      delete: vi.fn(() => of(undefined)),
-      update: vi.fn(() => of({ item: buildApiItem() })),
-      getSeriesTrackerSeasons: vi.fn(() => of({ seasons: [] })),
-      getSeriesTrackerWatchedEpisodes: vi.fn(() => of({ watchedEpisodes: [], lastWatchedEpisode: null })),
-      updateSeriesTrackerWatchedEpisodes: vi.fn(() =>
+      deleteByExternalId: vi.fn(() => of(undefined)),
+      updateByExternalId: vi.fn(() => of({ item: buildApiItem() })),
+      getSeriesTrackerSeasonsByExternalId: vi.fn(() => of({ seasons: [] })),
+      getSeriesTrackerWatchedEpisodesByExternalId: vi.fn(() => of({ watchedEpisodes: [], lastWatchedEpisode: null })),
+      updateSeriesTrackerWatchedEpisodesByExternalId: vi.fn(() =>
         of({
           watchedEpisodes: [],
           lastWatchedEpisode: null,
           item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG], hash: 'unwatched-hash' }),
         })
       ),
-      refreshSeriesTrackerSeasons: vi.fn(() =>
+      refreshSeriesTrackerSeasonsByExternalId: vi.fn(() =>
         of({
           seasons: [{ season: 1, episodes: 2 }],
           item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG], hash: 'refreshed-hash' }),
         })
       ),
-      deleteSeriesTrackerSeasons: vi.fn(() =>
+      deleteSeriesTrackerSeasonsByExternalId: vi.fn(() =>
         of({
           seasons: [],
           item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG], hash: 'metadata-deleted-hash' }),
         })
       ),
-      markAllSeriesTrackerWatched: vi.fn(() =>
+      markAllSeriesTrackerWatchedByExternalId: vi.fn(() =>
         of({
           watchedEpisodes: [
             { season: 1, episode: 1 },
@@ -142,9 +144,13 @@ describe('ItemDialog', () => {
           item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG, COMPLETED_TAG], hash: 'completed-hash' }),
         })
       ),
-      addMovieTrackerItem: vi.fn(() => of({ item: buildApiItem({ listType: 'movie-tracker', watched: true }) })),
-      addSeriesTrackerItem: vi.fn(() => of({ item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG] }) })),
-      deleteMovieTrackerItem: vi.fn(() => of(undefined)),
+      addMovieTrackerItemByExternalId: vi.fn(() =>
+        of({ item: buildApiItem({ listType: 'movie-tracker', watched: true }) })
+      ),
+      addSeriesTrackerItemByExternalId: vi.fn(() =>
+        of({ item: buildApiItem({ listType: 'series-tracker', tags: [SERIES_TAG] }) })
+      ),
+      deleteMovieTrackerItemByExternalId: vi.fn(() => of(undefined)),
       collectionItemExists: vi.fn(() => of({ exists: false })),
     };
     translate = { translate: vi.fn((key: string) => key) };
@@ -380,7 +386,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ title: 'Updated Shared Title' }),
       'testhash',
@@ -395,7 +402,7 @@ describe('ItemDialog', () => {
 
     component['onDelete']();
 
-    expect(api.delete).toHaveBeenCalledWith('tt1234567', 'testhash', 'owner-code');
+    expect(api.deleteByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'testhash', 'owner-code');
   });
 
   it('computes genre and tags text from draft item', () => {
@@ -486,14 +493,14 @@ describe('ItemDialog', () => {
   });
 
   it('loads watched episodes on init for series tracker items', () => {
-    api.getSeriesTrackerWatchedEpisodes.mockReturnValue(
+    api.getSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(
       of({ watchedEpisodes: [{ season: 1, episode: 2 }], lastWatchedEpisode: { season: 1, episode: 2 } })
     );
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'series-tracker', tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.getSeriesTrackerWatchedEpisodes).toHaveBeenCalledWith('tt1234567');
+    expect(api.getSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
     expect(component['watchedEpisodes']()).toEqual([{ season: 1, episode: 2 }]);
     expect(component['episodeProgressText']()).toBe('S01E02');
   });
@@ -574,8 +581,11 @@ describe('ItemDialog', () => {
     component['onDelete']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.delete).toHaveBeenCalledWith('tt1234567', 'testhash', undefined);
-    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', undefined);
+    expect(api.deleteByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'testhash', undefined);
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
+      undefined
+    );
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(portal.closeAll).toHaveBeenCalled();
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
@@ -588,7 +598,7 @@ describe('ItemDialog', () => {
 
     component['onDelete']();
 
-    expect(api.delete).not.toHaveBeenCalled();
+    expect(api.deleteByExternalId).not.toHaveBeenCalled();
     expect(collectionService.deleteCollectionItem).not.toHaveBeenCalled();
     expect(portal.closeAll).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('');
@@ -602,14 +612,15 @@ describe('ItemDialog', () => {
     await component['onSaveChanges']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ title: 'Updated Title' }),
       'testhash',
       undefined
     );
     expect(collectionService.updateCollectionItem).toHaveBeenCalledWith(
-      'tt1234567',
+      expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
       expect.any(Object),
       undefined,
       'library'
@@ -630,7 +641,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ title: 'Updated Title' }),
       'testhash',
@@ -647,7 +659,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ rate: '8.6', rottenTomatoesRate: '97%', metacriticRate: '86/100' }),
       'testhash',
@@ -661,7 +674,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ contentType: 'series' }),
       'testhash',
@@ -683,7 +697,7 @@ describe('ItemDialog', () => {
     await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.updateByExternalId).not.toHaveBeenCalled();
   });
 
   it('validates edited Rotten Tomatoes rate format', async () => {
@@ -700,7 +714,7 @@ describe('ItemDialog', () => {
     await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.updateByExternalId).not.toHaveBeenCalled();
   });
 
   it('validates edited Metacritic rate format', async () => {
@@ -717,7 +731,7 @@ describe('ItemDialog', () => {
     await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.updateByExternalId).not.toHaveBeenCalled();
   });
 
   it('preserves favorite when saving regular edits', async () => {
@@ -729,7 +743,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: [MOVIE_TAG, FAVORITE_TAG, '#action'], favorite: true }),
       'testhash',
@@ -746,7 +761,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: [MOVIE_TAG, COMPLETED_TAG, '#action'] }),
       'testhash',
@@ -763,7 +779,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ IMDbId: 'tt7654321', rottenTomatoesRate: '', metacriticRate: '' }),
       'testhash',
@@ -777,7 +794,7 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.updateByExternalId).not.toHaveBeenCalled();
     expect(collectionService.updateCollectionItem).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('');
   });
@@ -788,7 +805,7 @@ describe('ItemDialog', () => {
     await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.updateByExternalId).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('');
   });
 
@@ -798,7 +815,7 @@ describe('ItemDialog', () => {
     await component['onSaveChanges']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.updateByExternalId).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('');
   });
 
@@ -808,7 +825,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: [CUSTOM_UNWATCHED_TAG], contentType: 'movie' }),
       'testhash',
@@ -822,7 +840,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: [COMPLETED_TAG], contentType: 'movie' }),
       'testhash',
@@ -836,7 +855,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: [FAVORITE_TAG], contentType: 'movie' }),
       'testhash',
@@ -850,7 +870,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: [WATCH_LATER_TAG], contentType: 'movie' }),
       'testhash',
@@ -864,7 +885,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: [WISHLIST_TAG], contentType: 'movie' }),
       'testhash',
@@ -881,7 +903,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: ['#later'] }),
       'testhash',
@@ -899,7 +922,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: ['#wishlist-custom'] }),
       'testhash',
@@ -915,7 +939,8 @@ describe('ItemDialog', () => {
     await component['onSaveChanges']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: ['#action'], contentType: 'movie' }),
       'testhash',
@@ -929,7 +954,8 @@ describe('ItemDialog', () => {
 
     await component['onSaveChanges']();
 
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ tags: [SERIES_TAG, '#drama'], contentType: 'movie' }),
       'testhash',
@@ -949,7 +975,7 @@ describe('ItemDialog', () => {
 
     await component['onMarkAsWatched']();
 
-    expect(api.addMovieTrackerItem).toHaveBeenCalledWith('tt1234567', undefined);
+    expect(api.addMovieTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined);
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ listType: 'movie-tracker' }),
       true
@@ -970,12 +996,16 @@ describe('ItemDialog', () => {
 
     await component['onMoveToMovieTracker']();
 
-    expect(api.addMovieTrackerItem).toHaveBeenCalledWith('tt1234567', undefined, 'watch-later');
+    expect(api.addMovieTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'watch-later');
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ listType: 'movie-tracker' }),
       true
     );
-    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', 'own-code', 'watch-later');
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
+      'own-code',
+      'watch-later'
+    );
     expect(component['movieTrackerExists']()).toBe(true);
     expect(component['movieTrackerHash']()).toBe('newhash');
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
@@ -994,12 +1024,16 @@ describe('ItemDialog', () => {
 
     await component['onMoveToSeriesTracker']();
 
-    expect(api.addSeriesTrackerItem).toHaveBeenCalledWith('tt1234567', 'watch-later');
+    expect(api.addSeriesTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'watch-later');
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ listType: 'series-tracker' }),
       true
     );
-    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', 'own-code', 'watch-later');
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
+      'own-code',
+      'watch-later'
+    );
     expect(component['seriesTrackerExists']()).toBe(true);
     expect(component['seriesTrackerHash']()).toBe('newhash');
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
@@ -1018,7 +1052,7 @@ describe('ItemDialog', () => {
 
     await component['onCopyToSeriesTracker']();
 
-    expect(api.addSeriesTrackerItem).toHaveBeenCalledWith('tt1234567', undefined, 'owner-code');
+    expect(api.addSeriesTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'owner-code');
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ listType: 'series-tracker' }),
       true
@@ -1040,7 +1074,7 @@ describe('ItemDialog', () => {
     await component['onMarkAsWatched']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.addMovieTrackerItem).not.toHaveBeenCalled();
+    expect(api.addMovieTrackerItemByExternalId).not.toHaveBeenCalled();
   });
 
   it('does not mark wishlist items as watched', async () => {
@@ -1052,7 +1086,7 @@ describe('ItemDialog', () => {
     await component['onMarkAsWatched']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.addMovieTrackerItem).not.toHaveBeenCalled();
+    expect(api.addMovieTrackerItemByExternalId).not.toHaveBeenCalled();
   });
 
   it('marks item as unwatched by removing the movie tracker item', async () => {
@@ -1063,8 +1097,12 @@ describe('ItemDialog', () => {
 
     await component['onMarkAsUnwatched']();
 
-    expect(api.deleteMovieTrackerItem).toHaveBeenCalledWith('tt1234567');
-    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', undefined, 'movie-tracker');
+    expect(api.deleteMovieTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
+      undefined,
+      'movie-tracker'
+    );
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(toastState.state.message()).toBe('Toast.EditItem');
@@ -1076,7 +1114,8 @@ describe('ItemDialog', () => {
     await component['onMarkAsFavorite']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ favorite: true, tags: ['#action'] }),
       'testhash',
@@ -1094,7 +1133,7 @@ describe('ItemDialog', () => {
     await component['onMarkAsFavorite']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.updateByExternalId).not.toHaveBeenCalled();
   });
 
   it('does not mark wishlist items as favorite', async () => {
@@ -1106,7 +1145,7 @@ describe('ItemDialog', () => {
     await component['onMarkAsFavorite']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.update).not.toHaveBeenCalled();
+    expect(api.updateByExternalId).not.toHaveBeenCalled();
   });
 
   it('removes favorite and saves', async () => {
@@ -1118,7 +1157,8 @@ describe('ItemDialog', () => {
     await component['onRemoveFavorite']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.update).toHaveBeenCalledWith(
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
       'tt1234567',
       expect.objectContaining({ favorite: false, tags: [MOVIE_TAG, FAVORITE_TAG, '#action'] }),
       'testhash',
@@ -1164,11 +1204,18 @@ describe('ItemDialog', () => {
   });
 
   it('loads series tracker state for library series on init', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
+    const externalIds = [{ source: 'imdb' as const, id: 'tt1234567' }];
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG], externalIds }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('tt1234567', undefined, 'series-tracker');
+    expect(api.collectionItemExists).toHaveBeenCalledWith(
+      'omdb',
+      'tt1234567',
+      undefined,
+      'series-tracker',
+      externalIds
+    );
   });
 
   it('loads movie tracker state for watch-later movie on init', () => {
@@ -1176,7 +1223,7 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('tt1234567', undefined, 'movie-tracker');
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'movie-tracker', undefined);
   });
 
   it('loads series tracker state for watch-later series on init', () => {
@@ -1184,7 +1231,7 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('tt1234567', undefined, 'series-tracker');
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'series-tracker', undefined);
   });
 
   it('does not load tracker state for library movies on init', () => {
@@ -1234,8 +1281,18 @@ describe('ItemDialog', () => {
     component['onRemoveFromSeriesTracker']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.delete).toHaveBeenCalledWith('tt1234567', 'tracker-hash', undefined, 'series-tracker');
-    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith('tt1234567', undefined, 'series-tracker');
+    expect(api.deleteByExternalId).toHaveBeenCalledWith(
+      'omdb',
+      'tt1234567',
+      'tracker-hash',
+      undefined,
+      'series-tracker'
+    );
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
+      undefined,
+      'series-tracker'
+    );
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
@@ -1253,7 +1310,7 @@ describe('ItemDialog', () => {
 
     component['onRemoveFromSeriesTracker']();
 
-    expect(api.delete).not.toHaveBeenCalled();
+    expect(api.deleteByExternalId).not.toHaveBeenCalled();
     expect(collectionService.deleteCollectionItem).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('');
   });

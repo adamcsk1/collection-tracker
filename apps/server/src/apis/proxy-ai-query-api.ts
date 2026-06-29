@@ -428,7 +428,7 @@ export const register = (app: FastifyInstance): void => {
 
         const matchedIdSet = new Set(parsedMatchedIds);
         return batch
-          .map((item) => item.IMDbId)
+          .map((item) => item.IMDbId ?? item.externalItemId)
           .filter((imdbid) => validBatchImdbIds.has(imdbid) && matchedIdSet.has(imdbid));
       };
 

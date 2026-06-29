@@ -1,7 +1,12 @@
-import { CollectionItemApiModel, CollectionItemChangeApiModel } from '@shared/models/api-model';
+import {
+  DEFAULT_EXTERNAL_METADATA_PROVIDER,
+  isExternalMetadataProviderName,
+} from '@shared/constants/external-metadata-const';
+import { CollectionItemApiModel } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
+import { findExternalItemIdentitiesByCanonicalItemId } from '../external-item-identity-repository';
 import { getUserShareCode } from '../user-repository';
-import { CollectionItemRow } from './collection-types';
+import { CollectionItemRow } from './collection-model';
 
 const getItemRelations = (db: Database.Database, itemId: number): { genre: string[]; tags: string[] } => ({
   genre: (
@@ -19,18 +24,23 @@ const getItemRelations = (db: Database.Database, itemId: number): { genre: strin
 const isWatchedMovie = (db: Database.Database, row: CollectionItemRow, viewerUsernameHash: string): boolean => {
   if (row.list_type === 'movie-tracker') return true;
   if (row.list_type !== 'library') return false;
+  const externalProvider = row.external_provider;
+  const externalItemId = row.external_item_id ?? row.imdb_id ?? '';
   return Boolean(
     db
       .prepare(
         `SELECT 1
          FROM collection_items movie_tracker
-          WHERE movie_tracker.username_hash = ?
-            AND movie_tracker.imdb_id = ?
-            AND movie_tracker.list_type = ?
-            AND movie_tracker.content_type = ?
-          LIMIT 1`
+           WHERE movie_tracker.username_hash = ?
+             AND (
+               (movie_tracker.canonical_item_id IS NOT NULL AND movie_tracker.canonical_item_id = ?)
+               OR (movie_tracker.external_provider = ? AND movie_tracker.external_item_id = ?)
+             )
+             AND movie_tracker.list_type = ?
+             AND movie_tracker.content_type = ?
+           LIMIT 1`
       )
-      .get(viewerUsernameHash, row.imdb_id, 'movie-tracker', 'movie')
+      .get(viewerUsernameHash, row.canonical_item_id, externalProvider, externalItemId, 'movie-tracker', 'movie')
   );
 };
 
@@ -40,11 +50,20 @@ export const toApiItem = (
   viewerUsernameHash = row.username_hash
 ): CollectionItemApiModel => {
   const relations = getItemRelations(db, row.id);
-  const item: CollectionItemChangeApiModel = {
+  const externalProvider = isExternalMetadataProviderName(row.external_provider)
+    ? row.external_provider
+    : DEFAULT_EXTERNAL_METADATA_PROVIDER;
+  const item: CollectionItemApiModel = {
     image: row.image,
     title: row.title,
     genre: relations.genre,
-    IMDbId: row.imdb_id,
+    IMDbId: row.imdb_id ?? undefined,
+    externalProvider,
+    externalItemId: row.external_item_id ?? row.imdb_id ?? '',
+    externalIds: row.canonical_item_id
+      ? findExternalItemIdentitiesByCanonicalItemId(db, row.username_hash, row.canonical_item_id)
+      : undefined,
+    canonicalItemId: row.canonical_item_id ?? undefined,
     tags: relations.tags,
     year: row.year || null,
     rate: row.rate,
@@ -55,10 +74,6 @@ export const toApiItem = (
     plot: row.plot,
     contentType: row.content_type,
     favorite: row.favorite === 1,
-  };
-
-  return {
-    ...item,
     titleLower: row.title_lower,
     hash: row.content_hash,
     listType: row.list_type,
@@ -66,4 +81,6 @@ export const toApiItem = (
     watchedAt: row.watched_at,
     ownerShareCode: getUserShareCode(row.username_hash),
   };
+
+  return item;
 };

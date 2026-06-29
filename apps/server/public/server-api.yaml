@@ -265,7 +265,8 @@ components:
           title,
           titleLower,
           genre,
-          IMDbId,
+          externalProvider,
+          externalItemId,
           tags,
           year,
           rate,
@@ -295,6 +296,22 @@ components:
             type: string
         IMDbId:
           type: string
+          description: Legacy IMDb-compatible identifier.
+        externalProvider:
+          type: string
+          enum: [omdb]
+          description: External metadata provider that owns `externalItemId`, such as `omdb`.
+        externalItemId:
+          type: string
+          description: Provider-native item identifier used for metadata refreshes and duplicate checks.
+        externalIds:
+          type: array
+          description: Optional cross-provider identifiers known for this item. Used as duplicate-check evidence.
+          items:
+            $ref: '#/components/schemas/ExternalItemIdentity'
+        canonicalItemId:
+          type: string
+          description: Local canonical identity used for cross-provider duplicate checks when known.
         tags:
           type: array
           items:
@@ -348,7 +365,8 @@ components:
           image,
           title,
           genre,
-          IMDbId,
+          externalProvider,
+          externalItemId,
           tags,
           year,
           rate,
@@ -371,6 +389,17 @@ components:
             type: string
         IMDbId:
           type: string
+          description: Legacy IMDb-compatible identifier. For OMDb-backed items this matches `externalItemId`.
+        externalProvider:
+          type: string
+          enum: [omdb]
+        externalItemId:
+          type: string
+        externalIds:
+          type: array
+          description: Optional cross-provider identifiers known for this item. Used as duplicate-check evidence.
+          items:
+            $ref: '#/components/schemas/ExternalItemIdentity'
         tags:
           type: array
           items:
@@ -416,12 +445,13 @@ components:
 
     CollectionMatchedItemsRequest:
       type: object
-      required: [imdbIds]
+      required: [identities]
       properties:
-        imdbIds:
+        identities:
           type: array
+          description: External identities to match, in result ranking order.
           items:
-            type: string
+            $ref: '#/components/schemas/ExternalItemIdentity'
         offset:
           type: integer
           default: 0
@@ -675,7 +705,7 @@ components:
           description: Number of images checked.
         fixed:
           type: integer
-          description: Number of images updated from OMDb.
+          description: Number of images updated from external metadata.
         errors:
           type: integer
           description: Number of images that could not be fixed.
@@ -751,7 +781,7 @@ components:
 
     SeriesTrackerWatchedEpisodesRequest:
       type: object
-      required: [watchedEpisodes, lastWatchedEpisode]
+      required: [watchedEpisodes]
       properties:
         watchedEpisodes:
           type: array
@@ -760,7 +790,7 @@ components:
 
     SeriesTrackerWatchedEpisodesResponse:
       type: object
-      required: [watchedEpisodes]
+      required: [watchedEpisodes, lastWatchedEpisode]
       properties:
         watchedEpisodes:
           type: array
@@ -779,49 +809,90 @@ components:
           $ref: '#/components/schemas/CollectionItem'
           description: Updated collection item when this response is returned from a mutating endpoint.
 
-    OMDbItem:
+    ExternalMetadataItem:
       type: object
-      required: [imdbID, imdbRating, Plot, Poster, Type, Title, Year, Director, Genre, Actors]
+      required: [provider, providerItemId, title, year, contentType, poster, plot, actors, genres, ratings]
       properties:
-        imdbID:
+        provider:
           type: string
-        imdbRating:
+          enum: [omdb]
+        providerItemId:
           type: string
-        Plot:
+        externalIds:
+          type: array
+          description: Cross-provider identifiers known for this metadata item.
+          items:
+            $ref: '#/components/schemas/ExternalItemIdentity'
+        title:
           type: string
-        Poster:
+        year:
           type: string
-        Type:
+        contentType:
           type: string
-        Title:
+          enum: [movie, series]
+        poster:
           type: string
-        Year:
+        plot:
           type: string
-        Director:
+        actors:
           type: string
-        Genre:
-          type: string
-        Actors:
-          type: string
-        Ratings:
+        genres:
+          type: array
+          items:
+            type: string
+        ratings:
           type: array
           items:
             type: object
-            required: [Source, Value]
+            required: [source, value]
             properties:
-              Source:
+              source:
                 type: string
-              Value:
+              value:
                 type: string
 
-    OMDbSearchResponse:
+    ExternalItemIdentity:
       type: object
-      required: [Search]
+      required: [source, id]
       properties:
-        Search:
+        source:
+          type: string
+          enum: [omdb, imdb]
+        id:
+          type: string
+
+    ExternalMetadataSearchResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
           type: array
           items:
-            $ref: '#/components/schemas/OMDbItem'
+            $ref: '#/components/schemas/ExternalMetadataItem'
+
+    ExternalMetadataProvider:
+      type: object
+      required: [name, supportsSeasonMetadata, supportsDirectImdbId]
+      properties:
+        name:
+          type: string
+          enum: [omdb]
+          description: Configured external metadata provider identifier.
+        supportsSeasonMetadata:
+          type: boolean
+          description: Whether the provider can fetch series season metadata.
+        supportsDirectImdbId:
+          type: boolean
+          description: Whether the provider can resolve a pasted IMDb ID directly.
+
+    ExternalMetadataProvidersResponse:
+      type: object
+      required: [providers]
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExternalMetadataProvider'
 
     AiQueryRequest:
       type: object
@@ -905,7 +976,6 @@ components:
           image,
           title,
           genre,
-          IMDbId,
           tags,
           year,
           rate,
@@ -914,6 +984,8 @@ components:
           userRate,
           actors,
           plot,
+          externalProvider,
+          externalItemId,
           listType,
           watchedAt,
         ]
@@ -949,26 +1021,28 @@ components:
           type: string
         plot:
           type: string
+        externalProvider:
+          type: string
+          enum: [omdb]
+          description: External metadata provider that owns the canonical item identity.
+        externalItemId:
+          type: string
+          description: Provider-specific canonical item ID.
+        externalIds:
+          type: array
+          description: Optional cross-provider identifiers known for this item.
+          items:
+            $ref: '#/components/schemas/ExternalItemIdentity'
+        canonicalItemId:
+          type: string
+          description: Optional local canonical identity preserved from exports.
         listType:
           type: string
           enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
         watchedAt:
           type: ['string', 'null']
 
-    ImportCollectionItemV2:
-      allOf:
-        - $ref: '#/components/schemas/ImportCollectionItemBase'
-        - type: object
-          properties:
-            contentType:
-              type: string
-              enum: [movie, series]
-              description: Optional for version 2 imports; derived from legacy tags when omitted.
-            favorite:
-              type: boolean
-              description: Optional for version 2 imports; derived from legacy tags when omitted.
-
-    ImportCollectionItemV3:
+    ImportCollectionItemV5:
       allOf:
         - $ref: '#/components/schemas/ImportCollectionItemBase'
         - type: object
@@ -980,7 +1054,7 @@ components:
             favorite:
               type: boolean
 
-    ImportDataV2:
+    ImportDataV5:
       type: object
       required: [userSettings, collectionItems, tagManagement, seriesTrackerData]
       properties:
@@ -989,38 +1063,12 @@ components:
         collectionItems:
           type: array
           items:
-            $ref: '#/components/schemas/ImportCollectionItemV2'
+            $ref: '#/components/schemas/ImportCollectionItemV5'
         tagManagement:
           $ref: '#/components/schemas/TagManagementResponse'
         seriesTrackerData:
           type: object
-          additionalProperties:
-            type: object
-            required: [seasons, watchedEpisodes]
-            properties:
-              seasons:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SeriesTrackerSeason'
-              watchedEpisodes:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
-
-    ImportDataV3:
-      type: object
-      required: [userSettings, collectionItems, tagManagement, seriesTrackerData]
-      properties:
-        userSettings:
-          $ref: '#/components/schemas/UserSettingsResponse'
-        collectionItems:
-          type: array
-          items:
-            $ref: '#/components/schemas/ImportCollectionItemV3'
-        tagManagement:
-          $ref: '#/components/schemas/TagManagementResponse'
-        seriesTrackerData:
-          type: object
+          description: Series tracker data keyed by encoded provider identity, formatted as provider/externalItemId.
           additionalProperties:
             type: object
             required: [seasons, watchedEpisodes]
@@ -1035,31 +1083,18 @@ components:
                   $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
 
     ImportRequest:
-      oneOf:
-        - allOf:
-            - type: object
-              required: [type, version]
-              properties:
-                type:
-                  type: string
-                  const: collection-tracker-export
-                version:
-                  type: integer
-                  const: 2
-                  description: Version 2 backups are accepted for restore.
-            - $ref: '#/components/schemas/ImportDataV2'
-        - allOf:
-            - type: object
-              required: [type, version]
-              properties:
-                type:
-                  type: string
-                  const: collection-tracker-export
-                version:
-                  type: integer
-                  const: 3
-                  description: Version 3 is exported by current clients.
-            - $ref: '#/components/schemas/ImportDataV3'
+      allOf:
+        - type: object
+          required: [type, version]
+          properties:
+            type:
+              type: string
+              const: collection-tracker-export
+            version:
+              type: integer
+              const: 5
+              description: Version 5 is exported by current clients and requires provider identity on every item.
+        - $ref: '#/components/schemas/ImportDataV5'
 
     ImportResponse:
       type: object
@@ -1104,7 +1139,7 @@ components:
           description: Number of IMDb IDs skipped because they already exist in one of the caller's lists.
         errorCount:
           type: integer
-          description: Number of IMDb IDs that could not be imported from OMDb.
+          description: Number of IMDb IDs that could not be imported from external metadata.
 
 security:
   - cookieAuth: []
@@ -1119,8 +1154,8 @@ tags:
     description: User account and settings.
   - name: Collection
     description: CRUD operations for structured collection items.
-  - name: OMDb Proxy
-    description: Proxy endpoints for the OMDb API. Require `OMDB_API_KEY` on the server.
+  - name: External Metadata Proxy
+    description: Proxy endpoints for the configured external metadata provider. OMDb is used when `OMDB_API_KEY` is configured.
   - name: Image Proxy
     description: Cached proxy endpoint for external collection item images.
   - name: AI Proxy
@@ -1473,8 +1508,8 @@ paths:
   /items/matched:
     post:
       operationId: getMatchedItems
-      summary: Get collection items from matched IMDb IDs
-      description: Returns paginated items from an IMDb ID set, preserving the request order by default for AI search results.
+      summary: Get collection items from matched external identities
+      description: Returns paginated items from an external identity set, preserving the request order by default for AI search results.
       tags: [Collection]
       requestBody:
         required: true
@@ -1524,12 +1559,33 @@ paths:
   /items/exists:
     get:
       operationId: itemExists
-      summary: Check whether an IMDb ID already exists
+      summary: Check whether an external metadata item already exists
       tags: [Collection]
       parameters:
         - name: imdbId
           in: query
-          required: true
+          required: false
+          deprecated: true
+          description: Legacy IMDb ID fallback. Prefer `externalIdentitySource` plus `externalIdentityId`.
+          schema:
+            type: string
+        - name: externalIdentitySource
+          in: query
+          required: false
+          description: External identity source name. Required with `externalIdentityId` unless `imdbId` is used.
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
+          in: query
+          required: false
+          description: External identity ID. Required with `externalIdentitySource` unless `imdbId` is used.
+          schema:
+            type: string
+        - name: externalIds
+          in: query
+          required: false
+          description: 'JSON array of `{ "source": string, "id": string }` identities used to resolve cross-provider duplicates locally.'
           schema:
             type: string
         - name: ownerShareCode
@@ -1554,7 +1610,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CollectionItemExistsResponse'
         '400':
-          description: Missing IMDb ID.
+          description: Missing external identity.
         '403':
           description: Not allowed to read the target library.
 
@@ -1646,7 +1702,7 @@ paths:
     post:
       operationId: markAllSeriesAsWatched
       summary: Mark all series as watched
-      description: Copies every untracked series in the selected library into the authenticated user's series tracker, fetches season metadata from OMDb only for newly added series, and marks all available episodes watched for matching tracker items. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      description: Copies every untracked series in the selected library into the authenticated user's series tracker, fetches season metadata from the configured external metadata provider only for newly added series, and marks all available episodes watched for matching tracker items. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1694,7 +1750,7 @@ paths:
     post:
       operationId: refreshImages
       summary: Refresh collection item images
-      description: Checks every collection item image through the image proxy, caches available images, and fetches updated poster URLs from OMDb for broken images. When `ownerShareCode` is provided, the refresh targets that shared library and requires update permission.
+      description: Checks every collection item image through the image proxy, caches available images, and fetches updated poster URLs from the configured external metadata provider for broken images. When `ownerShareCode` is provided, the refresh targets that shared library and requires update permission.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1718,7 +1774,7 @@ paths:
     post:
       operationId: refreshExternalRatings
       summary: Refresh collection item external ratings
-      description: Fetches every collection item from OMDb and refreshes IMDb, Rotten Tomatoes, and Metacritic ratings. When `ownerShareCode` is provided, the refresh targets that shared library and requires update permission.
+      description: Fetches every collection item from the configured external metadata provider and refreshes IMDb, Rotten Tomatoes, and Metacritic ratings. When `ownerShareCode` is provided, the refresh targets that shared library and requires update permission.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1840,7 +1896,8 @@ paths:
       operationId: createItem
       summary: Create a collection item
       description: >-
-        Creates a structured item in the requested `listType`. `IMDbId` must be unique within the target list.
+        Creates a structured item in the requested `listType`. External provider identity and locally resolved
+        canonical identity must be unique within the target list.
         Custom tags must not use reserved system or virtual tags. Optionally pass `targetOwnerShareCode` to create
         in a shared library where you have create permission. Watch-later, wishlist, series-tracker, and
         movie-tracker items cannot be created in shared libraries and cannot be favorites. Series-tracker items must
@@ -1864,22 +1921,54 @@ paths:
         '403':
           description: Not allowed to create in the target library.
         '409':
-          description: An item with this IMDb ID already exists in the target list.
+          description: An item with this external or canonical identity already exists in the target list.
 
-  /change/{imdbId}:
+  /movie-tracker:
+    delete:
+      operationId: deleteAllMovieTrackerItems
+      summary: Remove all movie tracker data
+      description: Deletes every movie tracker item owned by the authenticated user. This affects only the user's own tracker data and cannot remove or change shared library owner items.
+      tags: [Collection]
+      responses:
+        '200':
+          description: Number of movie tracker items deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+
+  /series-tracker:
+    delete:
+      operationId: deleteAllSeriesTrackerItems
+      summary: Remove all series tracker data
+      description: Deletes every series tracker item owned by the authenticated user. Related season metadata and watched episode progress are removed with the tracker items. This affects only the user's own tracker data and cannot remove or change shared library owner items.
+      tags: [Collection]
+      responses:
+        '200':
+          description: Number of series tracker items deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+
+  /items/{externalIdentitySource}/{externalIdentityId}/change:
     put:
-      operationId: changeItem
-      summary: Update a collection item
-      description: >-
-        Updates a library, watch-later, wishlist, series-tracker, or movie-tracker item. Series-tracker items must
-        use `contentType: series` and cannot be favorites; movie-tracker items must use `contentType: movie` and
-        cannot be favorites; watch-later and wishlist items cannot be favorites.
+      operationId: changeItemByExternalId
+      summary: Update a collection item by external identity
+      description: Updates an item using an external identity source and ID instead of legacy IMDb-only identity.
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
           in: path
           required: true
-          description: IMDb ID of the item to update.
+          description: External identity source identifier.
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
+          in: path
+          required: true
+          description: External identity ID.
           schema:
             type: string
         - name: ownerShareCode
@@ -1891,7 +1980,7 @@ paths:
         - name: listType
           in: query
           required: false
-          description: List containing the item. Defaults to `library`. Use `watch-later`, `wishlist`, `series-tracker`, or `movie-tracker` to update non-library items.
+          description: List containing the item. Defaults to `library`.
           schema:
             type: string
             enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
@@ -1910,25 +1999,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/ChangeResponse'
         '400':
-          description: Request body is missing required item fields, contains invalid values, or attempts an invalid tag/list transition.
+          description: Invalid external identity source, or request body is missing required item fields or contains invalid values.
         '403':
           description: Not allowed to update in the target library or to update a shared internal collection item.
         '404':
           description: Item not found.
         '409':
-          description: Hash mismatch — the stored content has changed.
+          description: Hash mismatch or external identity conflict.
 
-  /delete/{imdbId}:
+  /items/{externalIdentitySource}/{externalIdentityId}:
     delete:
-      operationId: deleteItem
-      summary: Delete a collection item
-      description: Deletes an item from the requested list when the supplied hash matches. Shared watch-later, wishlist, series-tracker, and movie-tracker items cannot be deleted by users other than their owner.
+      operationId: deleteItemByExternalId
+      summary: Delete a collection item by external identity
+      description: Deletes an item from the requested list using an external identity source and ID when the supplied hash matches.
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
           in: path
           required: true
-          description: IMDb ID of the item to delete.
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
+          in: path
+          required: true
           schema:
             type: string
         - name: hash
@@ -1940,13 +2034,11 @@ paths:
         - name: ownerShareCode
           in: query
           required: false
-          description: Owner share code of the library containing the item. Defaults to the authenticated user.
           schema:
             type: string
         - name: listType
           in: query
           required: false
-          description: List containing the item. Defaults to `library`.
           schema:
             type: string
             enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
@@ -1961,30 +2053,22 @@ paths:
         '404':
           description: Item not found.
         '409':
-          description: Hash mismatch — the stored content has changed.
+          description: Hash mismatch.
 
-  /movie-tracker:
-    delete:
-      operationId: deleteAllMovieTrackerItems
-      summary: Remove all movie tracker data
-      description: Deletes every movie tracker item owned by the authenticated user. This affects only the user's own tracker data and cannot remove or change shared library owner items.
-      tags: [Collection]
-      responses:
-        '200':
-          description: Number of movie tracker items deleted.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
-
-  /movie-tracker/{imdbId}:
+  /movie-tracker/{externalIdentitySource}/{externalIdentityId}:
     post:
-      operationId: addMovieTrackerItem
-      summary: Add a movie to movie tracker
-      description: Copies an accessible library movie into the authenticated user's movie tracker. When `ownerShareCode` is provided, the source movie is read from that shared library without mutating the owner's item. When `sourceListType=watch-later`, moves the authenticated user's watch-later movie into movie tracker and removes it from watch later.
+      operationId: addMovieTrackerItemByExternalId
+      summary: Add a movie to movie tracker by external identity
+      description: Copies an accessible library movie into the authenticated user's movie tracker using canonical provider identity.
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
           in: path
           required: true
           schema:
@@ -2008,17 +2092,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateResponse'
+        '400':
+          description: Invalid external metadata provider or source list type.
         '403':
           description: The authenticated user cannot read the source library.
         '404':
           description: Source item was not found or is not a movie.
     delete:
-      operationId: deleteMovieTrackerItem
-      summary: Remove a movie from movie tracker
-      description: Deletes the authenticated user's movie tracker item for the IMDb ID.
+      operationId: deleteMovieTrackerItemByExternalId
+      summary: Delete a movie tracker item by external identity
+      description: Removes the authenticated user's movie tracker row using canonical provider identity.
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
           in: path
           required: true
           schema:
@@ -2026,31 +2118,25 @@ paths:
       responses:
         '204':
           description: Movie tracker item deleted.
+        '400':
+          description: Invalid external metadata provider.
         '404':
           description: Movie tracker item was not found.
 
-  /series-tracker:
-    delete:
-      operationId: deleteAllSeriesTrackerItems
-      summary: Remove all series tracker data
-      description: Deletes every series tracker item owned by the authenticated user. Related season metadata and watched episode progress are removed with the tracker items. This affects only the user's own tracker data and cannot remove or change shared library owner items.
-      tags: [Collection]
-      responses:
-        '200':
-          description: Number of series tracker items deleted.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
-
-  /series-tracker/{imdbId}:
+  /series-tracker/{externalIdentitySource}/{externalIdentityId}:
     post:
-      operationId: addSeriesTrackerItem
-      summary: Add a series to series tracker
-      description: Copies a series from the selected library into the authenticated user's series tracker, or moves the authenticated user's watch-later series into series tracker when `sourceListType=watch-later`. Library copies leave the source item unchanged. OMDb season metadata can be fetched for the tracker item.
+      operationId: addSeriesTrackerItemByExternalId
+      summary: Add a series to series tracker by external identity
+      description: Copies a series into the authenticated user's series tracker using canonical provider identity.
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
           in: path
           required: true
           schema:
@@ -2067,7 +2153,6 @@ paths:
           required: false
           schema:
             type: string
-          description: Optional owner share code for copying a series from an incoming shared library. Only applies when sourceListType is library.
       responses:
         '200':
           description: Series tracker item created or already present.
@@ -2076,20 +2161,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreateResponse'
         '400':
-          description: Unsupported source list type.
+          description: Invalid external metadata provider or unsupported source list type.
         '403':
           description: The authenticated user cannot read the requested shared library.
         '404':
           description: Source item or shared library owner was not found, or the source item is not a series.
 
-  /series-tracker/{imdbId}/seasons:
+  /series-tracker/{externalIdentitySource}/{externalIdentityId}/seasons:
     get:
-      operationId: getSeriesTrackerSeasons
-      summary: Get series tracker season metadata
-      description: Returns stored season episode counts for the authenticated user's own series tracker item.
+      operationId: getSeriesTrackerSeasonsByExternalId
+      summary: Get series tracker season metadata by external identity
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
           in: path
           required: true
           schema:
@@ -2101,15 +2191,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+        '400':
+          description: Invalid external metadata provider.
         '404':
           description: Series tracker item not found.
     put:
-      operationId: updateSeriesTrackerSeasons
-      summary: Replace series tracker season metadata
-      description: Replaces manual season episode counts for the authenticated user's own series tracker item.
+      operationId: updateSeriesTrackerSeasonsByExternalId
+      summary: Replace series tracker season metadata by external identity
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
           in: path
           required: true
           schema:
@@ -2128,16 +2225,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
         '400':
-          description: Invalid season metadata.
+          description: Invalid external metadata provider or season metadata.
         '404':
           description: Series tracker item not found.
     delete:
-      operationId: deleteSeriesTrackerSeasons
-      summary: Delete series tracker season metadata
-      description: Removes stored season metadata so the client falls back to default season and episode options.
+      operationId: deleteSeriesTrackerSeasonsByExternalId
+      summary: Delete series tracker season metadata by external identity
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
           in: path
           required: true
           schema:
@@ -2149,17 +2251,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+        '400':
+          description: Invalid external metadata provider.
         '404':
           description: Series tracker item not found.
 
-  /series-tracker/{imdbId}/seasons/refresh:
+  /series-tracker/{externalIdentitySource}/{externalIdentityId}/seasons/refresh:
     post:
-      operationId: refreshSeriesTrackerSeasons
-      summary: Refresh series tracker season metadata from OMDb
-      description: Fetches best-effort OMDb season episode counts and replaces stored metadata for the authenticated user's own series tracker item.
+      operationId: refreshSeriesTrackerSeasonsByExternalId
+      summary: Refresh series tracker season metadata by external identity
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
           in: path
           required: true
           schema:
@@ -2171,17 +2280,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+        '400':
+          description: Invalid external metadata provider.
         '404':
           description: Series tracker item not found.
 
-  /series-tracker/{imdbId}/mark-all-watched:
+  /series-tracker/{externalIdentitySource}/{externalIdentityId}/mark-all-watched:
     put:
-      operationId: markAllSeriesTrackerWatched
-      summary: Mark all episodes as watched for a series tracker item
-      description: Marks every episode in every season as watched for the authenticated user's own series tracker item.
+      operationId: markAllSeriesTrackerWatchedByExternalId
+      summary: Mark all episodes as watched by external identity
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
           in: path
           required: true
           schema:
@@ -2194,18 +2310,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesResponse'
         '400':
-          description: No season metadata exists for the item.
+          description: Invalid external metadata provider or no season metadata exists for the item.
         '404':
           description: Series tracker item not found.
 
-  /series-tracker/{imdbId}/watched-episodes:
+  /series-tracker/{externalIdentitySource}/{externalIdentityId}/watched-episodes:
     get:
-      operationId: getSeriesTrackerWatchedEpisodes
-      summary: Get watched episodes for a series tracker item
-      description: Returns all watched episodes and the last watched episode for the authenticated user's own series tracker item.
+      operationId: getSeriesTrackerWatchedEpisodesByExternalId
+      summary: Get watched episodes by external identity
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
           in: path
           required: true
           schema:
@@ -2217,15 +2338,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesResponse'
+        '400':
+          description: Invalid external metadata provider.
         '404':
           description: Series tracker item not found.
     put:
-      operationId: updateSeriesTrackerWatchedEpisodes
-      summary: Replace watched episodes for a series tracker item
-      description: Replaces all watched episodes for the authenticated user's own series tracker item.
+      operationId: updateSeriesTrackerWatchedEpisodesByExternalId
+      summary: Replace watched episodes by external identity
       tags: [Collection]
       parameters:
-        - name: imdbId
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
           in: path
           required: true
           schema:
@@ -2244,16 +2372,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesResponse'
         '400':
-          description: Invalid watched episode data.
+          description: Invalid external metadata provider or watched episode data.
         '404':
           description: Series tracker item not found.
 
-  /proxy/omdb/search:
+  /proxy/external-metadata/providers:
     get:
-      operationId: proxyOmdbSearch
-      summary: Search OMDb by title
-      description: Proxies to the OMDb API using the server's `OMDB_API_KEY`. The key is never exposed to the client.
-      tags: [OMDb Proxy]
+      operationId: proxyExternalMetadataProviders
+      summary: List configured external metadata providers
+      description: Returns provider identifiers available on the server without exposing provider credentials.
+      tags: [External Metadata Proxy]
+      responses:
+        '200':
+          description: Configured external metadata providers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalMetadataProvidersResponse'
+
+  /proxy/external-metadata/search:
+    get:
+      operationId: proxyExternalMetadataSearch
+      summary: Search external metadata by title
+      description: Searches the requested external metadata provider, or all configured providers when provider is omitted. Provider credentials are never exposed to the client.
+      tags: [External Metadata Proxy]
       parameters:
         - name: s
           in: query
@@ -2261,38 +2403,62 @@ paths:
           description: Title search string.
           schema:
             type: string
+        - name: provider
+          in: query
+          required: false
+          description: External metadata provider to search. When omitted, the server aggregates all configured providers.
+          schema:
+            type: string
+            enum: [omdb]
       responses:
         '200':
-          description: OMDb search results.
+          description: External metadata search results.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OMDbSearchResponse'
+                $ref: '#/components/schemas/ExternalMetadataSearchResponse'
+        '400':
+          description: Missing or invalid search text, or unsupported external metadata provider.
+        '502':
+          description: External metadata provider request failed. For aggregate searches, all configured provider requests failed.
         '503':
-          description: OMDB_API_KEY not configured on the server.
+          description: No external metadata provider is configured on the server.
 
-  /proxy/omdb/item:
+  /proxy/external-metadata/item:
     get:
-      operationId: proxyOmdbItem
-      summary: Get an OMDb item by IMDb ID
-      description: Proxies to the OMDb API using the server's `OMDB_API_KEY`. The key is never exposed to the client.
-      tags: [OMDb Proxy]
+      operationId: proxyExternalMetadataItem
+      summary: Get an external metadata item by external identity
+      description: Proxies to the configured external metadata provider for `externalIdentitySource=omdb`; `externalIdentitySource=imdb` resolves the IMDb identity through a configured metadata provider that supports direct IMDb lookup. Provider credentials are never exposed to the client.
+      tags: [External Metadata Proxy]
       parameters:
-        - name: i
+        - name: externalIdentitySource
           in: query
           required: true
-          description: IMDb ID.
+          description: External identity source returned by search results, or `imdb` for direct IMDb ID lookup.
+          schema:
+            type: string
+            enum: [omdb, imdb]
+        - name: externalIdentityId
+          in: query
+          required: true
+          description: External identity ID. For `omdb` and `imdb` this is the IMDb ID.
           schema:
             type: string
       responses:
         '200':
-          description: OMDb item detail.
+          description: External metadata item detail.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OMDbItem'
+                $ref: '#/components/schemas/ExternalMetadataItem'
+        '400':
+          description: Missing or invalid external identity source or external identity ID.
+        '404':
+          description: External metadata item not found.
+        '502':
+          description: External metadata provider request failed.
         '503':
-          description: OMDB_API_KEY not configured on the server.
+          description: No configured external metadata provider can resolve the requested external identity.
 
   /proxy/image:
     get:
@@ -2427,7 +2593,7 @@ paths:
     post:
       operationId: importCollectionItemsByImdbId
       summary: Import collection library items by IMDb ID
-      description: Extracts IMDb IDs from JSON, Markdown, or plain text content, fetches metadata from OMDb, imports new items into the collection library, and skips IDs that already exist in any of the caller's lists.
+      description: Extracts IMDb IDs from JSON, Markdown, or plain text content, fetches metadata through the OMDb provider when configured, imports new items into the collection library, and skips IDs that already exist in any of the caller's lists.
       tags: [Collection]
       requestBody:
         required: true

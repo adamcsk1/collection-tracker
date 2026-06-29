@@ -14,7 +14,7 @@ describe('change-series-tracker-seasons-api', () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { seasons: [{ season: 2, episodes: 8 }] },
       usernameHash: 'user',
     };
@@ -36,7 +36,7 @@ describe('change-series-tracker-seasons-api', () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { seasons: [{ season: 1, episodes: 0 }] },
       usernameHash: 'user',
     };
@@ -53,7 +53,7 @@ describe('change-series-tracker-seasons-api', () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { seasons: [{ season: 1, episodes: 101 }] },
       usernameHash: 'user',
     };
@@ -70,7 +70,7 @@ describe('change-series-tracker-seasons-api', () => {
     insertSeriesTrackerItem();
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Episode 2'] }] },
       usernameHash: 'user',
     };
@@ -96,7 +96,7 @@ describe('change-series-tracker-seasons-api', () => {
       .run(itemId, 1, 1);
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { seasons: [{ season: 1, episodes: 2 }] },
       usernameHash: 'user',
     };
@@ -121,7 +121,7 @@ describe('change-series-tracker-seasons-api', () => {
       .run(itemId, 1, 1, itemId, 1, 3);
     const response = mockResponse();
     const request: any = {
-      params: { imdbId: 'tt-series' },
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: { seasons: [{ season: 1, episodes: 1 }] },
       usernameHash: 'user',
     };
