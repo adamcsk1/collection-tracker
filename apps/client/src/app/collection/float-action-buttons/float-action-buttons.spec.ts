@@ -167,13 +167,68 @@ describe('FloatActionButtons', () => {
     component['onShowFunctions']();
     fixture.detectChanges();
 
-    fixture.nativeElement.querySelector('[data-test-id="list-order-by-toggle"]').click();
+    fixture.nativeElement.querySelector('[data-test-id="list-order-by-alphabet"]').click();
     component['onShowFunctions']();
     fixture.detectChanges();
-    fixture.nativeElement.querySelector('[data-test-id="list-order-direction-toggle"]').click();
+    fixture.nativeElement.querySelector('[data-test-id="list-order-direction-asc"]').click();
 
     expect(toggleOrderBy).toHaveBeenCalledTimes(1);
     expect(toggleOrderDirection).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks active sorting actions as current', () => {
+    actionButtons.updateConfig({ showOrderButtons: true, orderBy: 'createdAt', orderDirection: 'desc' });
+    component['onShowFunctions']();
+    fixture.detectChanges();
+
+    const createdAtOrder = fixture.nativeElement.querySelector('[data-test-id="list-order-by-created-at"]');
+    const alphabetOrder = fixture.nativeElement.querySelector('[data-test-id="list-order-by-alphabet"]');
+    const descendingOrder = fixture.nativeElement.querySelector('[data-test-id="list-order-direction-desc"]');
+    const ascendingOrder = fixture.nativeElement.querySelector('[data-test-id="list-order-direction-asc"]');
+
+    expect(createdAtOrder?.textContent).toContain('SortCreatedAtShort');
+    expect(alphabetOrder?.textContent).toContain('SortAlphabetShort');
+    expect(descendingOrder?.textContent).toContain('SortDescendingShort');
+    expect(ascendingOrder?.textContent).toContain('SortAscendingShort');
+    expect(createdAtOrder?.textContent).not.toContain('SwitchToCreatedAtOrder');
+    expect(alphabetOrder?.textContent).not.toContain('SwitchToAlphabetOrder');
+    expect(descendingOrder?.textContent).not.toContain('SwitchToDescendingOrder');
+    expect(ascendingOrder?.textContent).not.toContain('SwitchToAscendingOrder');
+    expect(createdAtOrder?.getAttribute('aria-label')).toBe('SwitchToCreatedAtOrder');
+    expect(alphabetOrder?.getAttribute('aria-label')).toBe('SwitchToAlphabetOrder');
+    expect(descendingOrder?.getAttribute('aria-label')).toBe('SwitchToDescendingOrder');
+    expect(ascendingOrder?.getAttribute('aria-label')).toBe('SwitchToAscendingOrder');
+    expect(createdAtOrder?.getAttribute('title')).toBe('SwitchToCreatedAtOrder');
+    expect(alphabetOrder?.getAttribute('title')).toBe('SwitchToAlphabetOrder');
+    expect(descendingOrder?.getAttribute('title')).toBe('SwitchToDescendingOrder');
+    expect(ascendingOrder?.getAttribute('title')).toBe('SwitchToAscendingOrder');
+    expect(createdAtOrder?.getAttribute('aria-current')).toBe('true');
+    expect(alphabetOrder?.getAttribute('aria-current')).toBeNull();
+    expect(descendingOrder?.getAttribute('aria-current')).toBe('true');
+    expect(ascendingOrder?.getAttribute('aria-current')).toBeNull();
+  });
+
+  it('does not run order callbacks when active sorting actions are clicked', () => {
+    const toggleOrderBy = vi.fn();
+    const toggleOrderDirection = vi.fn();
+    actionButtons.setCallbacks({
+      addNew: vi.fn(),
+      randomPick: vi.fn(),
+      toggleAiSearch: vi.fn(),
+      toggleOrderBy,
+      toggleOrderDirection,
+      applyFilter: vi.fn(),
+      showFunctions: vi.fn(),
+    });
+    actionButtons.updateConfig({ showOrderButtons: true, orderBy: 'createdAt', orderDirection: 'desc' });
+    component['onShowFunctions']();
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-test-id="list-order-by-created-at"]').click();
+    fixture.nativeElement.querySelector('[data-test-id="list-order-direction-desc"]').click();
+
+    expect(toggleOrderBy).not.toHaveBeenCalled();
+    expect(toggleOrderDirection).not.toHaveBeenCalled();
   });
 
   it('runs filter callbacks from the action menu', () => {

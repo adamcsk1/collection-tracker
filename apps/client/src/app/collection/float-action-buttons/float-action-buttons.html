@@ -23,29 +23,61 @@
     @if (config().showOrderButtons) {
       <div class="float-action-section">
         <div class="float-action-section-title">{{ translations.sorting() }}</div>
-        <div class="float-action">
-          <button
-            data-test-id="list-order-by-toggle"
-            [attr.aria-label]="translations.orderBySwitchButtonLabel()"
-            [title]="translations.orderBySwitchButtonLabel()"
-            [disabled]="apiLoadNetworkStatus() === 'pending'"
-            (click)="onToggleOrderBy()"
-          >
-            <i class="material-icons">{{ orderByIcon() }}</i>
-            <span>{{ translations.orderBySwitchButtonLabel() }}</span>
-          </button>
+        <div class="float-action-row">
+          <div class="float-action" [class.float-action-current]="isOrderByActive('createdAt')">
+            <button
+              data-test-id="list-order-by-created-at"
+              [attr.aria-label]="translations.orderByCreatedAt()"
+              [attr.aria-current]="isOrderByActive('createdAt') ? 'true' : null"
+              [title]="translations.orderByCreatedAt()"
+              [disabled]="apiLoadNetworkStatus() === 'pending'"
+              (click)="onSelectOrderBy('createdAt')"
+            >
+              <i class="material-icons">schedule</i>
+              <span>{{ translations.orderByCreatedAtShort() }}</span>
+            </button>
+          </div>
+          <div class="float-action" [class.float-action-current]="isOrderByActive('alphabet')">
+            <button
+              data-test-id="list-order-by-alphabet"
+              [attr.aria-label]="translations.orderByAlphabet()"
+              [attr.aria-current]="isOrderByActive('alphabet') ? 'true' : null"
+              [title]="translations.orderByAlphabet()"
+              [disabled]="apiLoadNetworkStatus() === 'pending'"
+              (click)="onSelectOrderBy('alphabet')"
+            >
+              <i class="material-icons">sort_by_alpha</i>
+              <span>{{ translations.orderByAlphabetShort() }}</span>
+            </button>
+          </div>
         </div>
-        <div class="float-action">
-          <button
-            data-test-id="list-order-direction-toggle"
-            [attr.aria-label]="translations.orderDirectionSwitchButtonLabel()"
-            [title]="translations.orderDirectionSwitchButtonLabel()"
-            [disabled]="apiLoadNetworkStatus() === 'pending'"
-            (click)="onToggleOrderDirection()"
-          >
-            <i class="material-icons">{{ orderDirectionIcon() }}</i>
-            <span>{{ translations.orderDirectionSwitchButtonLabel() }}</span>
-          </button>
+        <div class="float-action-row">
+          <div class="float-action" [class.float-action-current]="isOrderDirectionActive('desc')">
+            <button
+              data-test-id="list-order-direction-desc"
+              [attr.aria-label]="translations.orderDirectionDescending()"
+              [attr.aria-current]="isOrderDirectionActive('desc') ? 'true' : null"
+              [title]="translations.orderDirectionDescending()"
+              [disabled]="apiLoadNetworkStatus() === 'pending'"
+              (click)="onSelectOrderDirection('desc')"
+            >
+              <i class="material-icons">arrow_downward</i>
+              <span>{{ translations.orderDirectionDescendingShort() }}</span>
+            </button>
+          </div>
+          <div class="float-action" [class.float-action-current]="isOrderDirectionActive('asc')">
+            <button
+              data-test-id="list-order-direction-asc"
+              [attr.aria-label]="translations.orderDirectionAscending()"
+              [attr.aria-current]="isOrderDirectionActive('asc') ? 'true' : null"
+              [title]="translations.orderDirectionAscending()"
+              [disabled]="apiLoadNetworkStatus() === 'pending'"
+              (click)="onSelectOrderDirection('asc')"
+            >
+              <i class="material-icons">arrow_upward</i>
+              <span>{{ translations.orderDirectionAscendingShort() }}</span>
+            </button>
+          </div>
         </div>
       </div>
     }

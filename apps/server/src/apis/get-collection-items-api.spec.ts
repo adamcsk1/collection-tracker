@@ -92,6 +92,33 @@ describe('get-collection-items-api', () => {
     );
   });
 
+  it('returns newly created library items first when ordering by created date descending', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    db.prepare(
+      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run('user', 'tt-old', 'Old Item', 'old item', '2001', '7.0', '', '', 'tt-old-hash', '2026-01-01 00:00:00');
+    db.prepare(
+      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run('user', 'tt-new', 'New Item', 'new item', '2002', '8.0', '', '', 'tt-new-hash', '2026-01-02 00:00:00');
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { orderBy: 'createdAt', orderDirection: 'desc' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [expect.objectContaining({ IMDbId: 'tt-new' }), expect.objectContaining({ IMDbId: 'tt-old' })],
+        total: 2,
+      })
+    );
+  });
+
   it('respects offset and limit', async () => {
     insertUserAndItems();
     const response = mockResponse();

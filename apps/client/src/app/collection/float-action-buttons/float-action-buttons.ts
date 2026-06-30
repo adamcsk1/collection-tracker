@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, OnDestroy, signal } from '@angular/core';
 import { apiStateToken } from '@services/api/api-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
+import { CollectionItemOrderBy, CollectionItemOrderDirection } from '@shared/models/api-model';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainStateToken } from '../../main/main-store';
 import { FloatActionFilter } from './float-action-buttons-model';
@@ -31,16 +32,14 @@ export class FloatActionButtons implements OnDestroy {
     actions: computed(() => this.ngxSignalTranslate.translate('Actions')),
     filtering: computed(() => this.ngxSignalTranslate.translate('Filtering')),
     sorting: computed(() => this.ngxSignalTranslate.translate('Sorting')),
-    orderBySwitchButtonLabel: computed(() =>
-      this.config().orderBy === 'createdAt'
-        ? this.ngxSignalTranslate.translate('SwitchToAlphabetOrder')
-        : this.ngxSignalTranslate.translate('SwitchToCreatedAtOrder')
-    ),
-    orderDirectionSwitchButtonLabel: computed(() =>
-      this.config().orderDirection === 'asc'
-        ? this.ngxSignalTranslate.translate('SwitchToDescendingOrder')
-        : this.ngxSignalTranslate.translate('SwitchToAscendingOrder')
-    ),
+    orderByCreatedAt: computed(() => this.ngxSignalTranslate.translate('SwitchToCreatedAtOrder')),
+    orderByAlphabet: computed(() => this.ngxSignalTranslate.translate('SwitchToAlphabetOrder')),
+    orderDirectionDescending: computed(() => this.ngxSignalTranslate.translate('SwitchToDescendingOrder')),
+    orderDirectionAscending: computed(() => this.ngxSignalTranslate.translate('SwitchToAscendingOrder')),
+    orderByCreatedAtShort: computed(() => this.ngxSignalTranslate.translate('SortCreatedAtShort')),
+    orderByAlphabetShort: computed(() => this.ngxSignalTranslate.translate('SortAlphabetShort')),
+    orderDirectionDescendingShort: computed(() => this.ngxSignalTranslate.translate('SortDescendingShort')),
+    orderDirectionAscendingShort: computed(() => this.ngxSignalTranslate.translate('SortAscendingShort')),
     hideFunctions: computed(() => this.ngxSignalTranslate.translate('HideFunctions')),
     showFunctions: computed(() => this.ngxSignalTranslate.translate('ShowFunctions')),
     filterMovie: computed(() => this.ngxSignalTranslate.translate('Movies')),
@@ -57,12 +56,6 @@ export class FloatActionButtons implements OnDestroy {
   protected readonly showAiSearchButton = computed(() => this.config().showAiSearchButton && this.aiAvailable());
   protected readonly aiSearchIcon = computed(() =>
     !this.useAiSearch() && this.aiAvailable() ? 'search' : 'psychology'
-  );
-  protected readonly orderByIcon = computed(() =>
-    this.config().orderBy === 'createdAt' ? 'schedule' : 'sort_by_alpha'
-  );
-  protected readonly orderDirectionIcon = computed(() =>
-    this.config().orderDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'
   );
   protected readonly showFloatButtons = signal(false);
   protected readonly actionButtonsVisible = computed(() => this.config().showActions && this.showFloatButtons());
@@ -142,6 +135,16 @@ export class FloatActionButtons implements OnDestroy {
     this.showFloatButtons.set(false);
   }
 
+  protected onSelectOrderBy(orderBy: CollectionItemOrderBy): void {
+    if (this.isOrderByActive(orderBy)) return;
+    this.onToggleOrderBy();
+  }
+
+  protected onSelectOrderDirection(orderDirection: CollectionItemOrderDirection): void {
+    if (this.isOrderDirectionActive(orderDirection)) return;
+    this.onToggleOrderDirection();
+  }
+
   protected onApplyFilter(filter: FloatActionFilter): void {
     this.actionButtons.applyFilter(filter);
     this.showFloatButtons.set(false);
@@ -180,5 +183,13 @@ export class FloatActionButtons implements OnDestroy {
 
   protected isFilterActive(filter: FloatActionFilter): boolean {
     return this.config().activeFilterActions.includes(filter);
+  }
+
+  protected isOrderByActive(orderBy: CollectionItemOrderBy): boolean {
+    return this.config().orderBy === orderBy;
+  }
+
+  protected isOrderDirectionActive(orderDirection: CollectionItemOrderDirection): boolean {
+    return this.config().orderDirection === orderDirection;
   }
 }
