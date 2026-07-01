@@ -112,8 +112,11 @@ export class TagManagement {
   }
 
   protected onRenameTag(oldTag: string, newTag: string): void {
-    const sanitizedNewTag = newTag.trim();
-    if (!sanitizedNewTag || sanitizedNewTag === oldTag) return;
+    const trimmedNewTag = newTag.trim();
+    if (!trimmedNewTag) return;
+
+    const sanitizedNewTag = trimmedNewTag.startsWith('#') ? trimmedNewTag : `#${trimmedNewTag}`;
+    if (sanitizedNewTag === oldTag) return;
 
     this.confirm
       .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RenameTag', { oldTag, newTag: sanitizedNewTag }))

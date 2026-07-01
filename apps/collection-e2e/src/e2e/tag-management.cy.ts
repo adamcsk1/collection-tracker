@@ -170,11 +170,11 @@ describe('Tag Management — custom tag in collection', () => {
     cy.intercept('GET', '/api/v1/statistics').as('getStatistics');
     TagManagementPage.visit();
     cy.wait('@getStatistics');
-    TagManagementPage.getList().should('contain.text', customTag);
+    TagManagementPage.getRenameInput(customTag).should('have.value', customTag);
   });
 
   it('shows the custom tag in the management list', () => {
-    TagManagementPage.getList().should('contain.text', customTag);
+    TagManagementPage.getRenameInput(customTag).should('have.value', customTag);
   });
 
   it('shows the color button for the custom tag', () => {
@@ -272,11 +272,12 @@ describe('Tag Management — rename', () => {
     cy.wait('@getStatistics');
 
     cy.on('window:confirm', () => true);
-    TagManagementPage.getRenameInput(oldTag).type(newTag);
+    TagManagementPage.getRenameInput(oldTag).type(`{selectall}${newTag}`);
     TagManagementPage.getRenameButton(oldTag).click();
     cy.wait('@renameTag');
 
-    TagManagementPage.getList().should('contain.text', newTag).and('not.contain.text', oldTag);
+    TagManagementPage.getRenameInput(newTag).should('have.value', newTag);
+    TagManagementPage.findRenameInputHost(oldTag).should('not.exist');
     cy.request('/api/v1/statistics').its('body.tagCounts').should('deep.include', { tag: newTag, count: 1 });
   });
 
@@ -291,11 +292,12 @@ describe('Tag Management — rename', () => {
     cy.wait('@getStatistics');
 
     cy.on('window:confirm', () => true);
-    TagManagementPage.getRenameInput(oldTag).type(newTag);
+    TagManagementPage.getRenameInput(oldTag).type(`{selectall}${newTag}`);
     TagManagementPage.getRenameButton(oldTag).click();
     cy.wait('@renameTag');
 
-    TagManagementPage.getList().should('contain.text', newTag).and('not.contain.text', oldTag);
+    TagManagementPage.getRenameInput(newTag).should('have.value', newTag);
+    TagManagementPage.findRenameInputHost(oldTag).should('not.exist');
     cy.request('/api/v1/statistics').its('body.tagCounts').should('deep.include', { tag: newTag, count: 2 });
   });
 
@@ -325,11 +327,12 @@ describe('Tag Management — rename', () => {
         cy.wait('@getStatistics');
 
         cy.on('window:confirm', () => true);
-        TagManagementPage.getRenameInput(oldTag).type(newTag);
+        TagManagementPage.getRenameInput(oldTag).type(`{selectall}${newTag}`);
         TagManagementPage.getRenameButton(oldTag).click();
         cy.wait('@renameTag');
 
-        TagManagementPage.getList().should('contain.text', oldTag).and('contain.text', newTag);
+        TagManagementPage.getRenameInput(oldTag).should('have.value', oldTag);
+        TagManagementPage.getRenameInput(newTag).should('have.value', newTag);
         requestAs<{ tagCounts: Array<{ tag: string; count: number }> }>(sharedUser, 'GET', '/api/v1/statistics')
           .its('body.tagCounts')
           .should('deep.include', { tag: oldTag, count: 1 })
@@ -358,11 +361,12 @@ describe('Tag Management — rename', () => {
         cy.wait('@getStatistics');
 
         cy.on('window:confirm', () => true);
-        TagManagementPage.getRenameInput(oldTag).type(newTag);
+        TagManagementPage.getRenameInput(oldTag).type(`{selectall}${newTag}`);
         TagManagementPage.getRenameButton(oldTag).click();
         cy.wait('@renameTag').its('response.body.renamedItemCount').should('eq', 0);
 
-        TagManagementPage.getList().should('contain.text', oldTag).and('not.contain.text', newTag);
+        TagManagementPage.getRenameInput(oldTag).should('have.value', oldTag);
+        TagManagementPage.findRenameInputHost(newTag).should('not.exist');
         requestAs<{ tagCounts: Array<{ tag: string; count: number }> }>(sharedUser, 'GET', '/api/v1/statistics')
           .its('body.tagCounts')
           .should('deep.include', { tag: oldTag, count: 1 })
@@ -387,7 +391,7 @@ describe('Tag Management — rename', () => {
     cy.wait('@getStatistics');
 
     cy.on('window:confirm', () => true);
-    TagManagementPage.getRenameInput(oldTag).type(newTag);
+    TagManagementPage.getRenameInput(oldTag).type(`{selectall}${newTag}`);
     TagManagementPage.getRenameButton(oldTag).click();
     cy.wait('@renameTag');
 

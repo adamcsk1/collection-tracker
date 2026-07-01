@@ -29,11 +29,15 @@ describe('TagManagementCard', () => {
     fixture.detectChanges();
   });
 
-  it('disables rename while no new tag name is entered', () => {
+  it('prefills rename with the current tag and disables rename while unchanged', () => {
+    const renameInput = fixture.nativeElement.querySelector(
+      '[data-test-id="tag-management-rename-input-#old"] input'
+    ) as HTMLInputElement;
     const renameButton = fixture.nativeElement.querySelector(
       '[data-test-id="tag-management-rename-#old"]'
     ) as HTMLButtonElement;
 
+    expect(renameInput.value).toBe('#old');
     expect(renameButton.disabled).toBe(true);
   });
 
@@ -51,7 +55,37 @@ describe('TagManagementCard', () => {
     renameInput.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     renameButton.click();
+    fixture.detectChanges();
 
     expect(emitted).toHaveBeenCalledWith('#new');
+    expect(renameInput.value).toBe('#old');
+  });
+
+  it('keeps a draft rename when unrelated tag management settings change', () => {
+    const renameInput = fixture.nativeElement.querySelector(
+      '[data-test-id="tag-management-rename-input-#old"] input'
+    ) as HTMLInputElement;
+
+    renameInput.value = '#draft';
+    renameInput.dispatchEvent(new Event('input'));
+    fixture.componentRef.setInput('tagManagement', { ...tagManagement, weight: 1 });
+    fixture.detectChanges();
+
+    expect(renameInput.value).toBe('#draft');
+  });
+
+  it('keeps rename disabled when the normalized tag is unchanged', () => {
+    const renameInput = fixture.nativeElement.querySelector(
+      '[data-test-id="tag-management-rename-input-#old"] input'
+    ) as HTMLInputElement;
+    const renameButton = fixture.nativeElement.querySelector(
+      '[data-test-id="tag-management-rename-#old"]'
+    ) as HTMLButtonElement;
+
+    renameInput.value = 'old';
+    renameInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(renameButton.disabled).toBe(true);
   });
 });

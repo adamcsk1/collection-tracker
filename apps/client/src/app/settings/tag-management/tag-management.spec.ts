@@ -336,6 +336,15 @@ describe('TagManagement component', () => {
     expect(toastState.state.message()).toBe('Toast.TagRenamed');
   });
 
+  it('adds a leading hash before renaming when the new tag omits it', () => {
+    createComponent(['#old']);
+
+    component['onRenameTag']('#old', 'new');
+
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RenameTag');
+    expect(tagManagementService.renameTag).toHaveBeenCalledWith('#old', '#new');
+  });
+
   it('merges the displayed tag list when renaming to an existing tag', () => {
     createComponent(['#old', '#new']);
     api.getStatistics.mockReturnValue(mockStatistics(['#new']));

@@ -2,8 +2,23 @@
   class="card card-interactive tag-management-card"
   [attr.data-test-id]="'tag-management-card-' + tagManagement().tag"
 >
-  <h3 class="card-title">{{ tagManagement().tag }}</h3>
   <div class="card-body">
+    <div class="tag-management-card-rename">
+      <libc-input
+        [attr.data-test-id]="'tag-management-rename-input-' + tagManagement().tag"
+        [placeholder]="translations.newTagName()"
+        type="text"
+        [value]="renameValue()"
+        (valueChange)="onRenameInputChange($event)"
+      />
+      <button
+        [attr.data-test-id]="'tag-management-rename-' + tagManagement().tag"
+        [disabled]="!canRename()"
+        (click)="onRenameClick()"
+      >
+        {{ translations.rename() }}
+      </button>
+    </div>
     <div class="tag-management-card-color">
       <button
         class="color-button"
@@ -37,22 +52,6 @@
       [value]="tagManagement().weight"
       (valueChange)="onWeightChange($event)"
     />
-    <div class="tag-management-card-rename">
-      <libc-input
-        [attr.data-test-id]="'tag-management-rename-input-' + tagManagement().tag"
-        [placeholder]="translations.newTagName()"
-        type="text"
-        [value]="renameValue()"
-        (valueChange)="onRenameInputChange($event)"
-      />
-      <button
-        [attr.data-test-id]="'tag-management-rename-' + tagManagement().tag"
-        [disabled]="renameValue().trim().length === 0"
-        (click)="onRenameClick()"
-      >
-        {{ translations.rename() }}
-      </button>
-    </div>
     <libc-checkbox
       [attr.data-test-id]="'tag-management-image-border-' + tagManagement().tag"
       [label]="translations.useTagColorForImageBorder()"

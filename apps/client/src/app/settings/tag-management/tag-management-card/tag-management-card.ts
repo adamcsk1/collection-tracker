@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, computed, inject, linkedSignal } from '@angular/core';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Input } from '@components/input/input';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -30,7 +30,14 @@ export class TagManagementCard {
   public readonly textColorChange = output<boolean>();
   public readonly imageBadgeChange = output<boolean>();
   public readonly rename = output<string>();
-  protected readonly renameValue = signal('');
+  protected readonly renameValue = linkedSignal({
+    source: () => this.tagManagement().tag,
+    computation: (tag) => tag,
+  });
+  protected readonly canRename = computed(() => {
+    const renameValue = this.renameValue().trim();
+    return renameValue.length > 0 && this.normalizeRenameValue(renameValue) !== this.tagManagement().tag;
+  });
 
   protected contrastColor(hex: string | null): string | null {
     if (hex === null) return null;
@@ -76,5 +83,10 @@ export class TagManagementCard {
 
   protected onRenameClick(): void {
     this.rename.emit(this.renameValue().trim());
+    this.renameValue.set(this.tagManagement().tag);
+  }
+
+  private normalizeRenameValue(renameValue: string): string {
+    return renameValue.startsWith('#') ? renameValue : `#${renameValue}`;
   }
 }
