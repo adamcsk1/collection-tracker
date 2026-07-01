@@ -35,7 +35,7 @@ const showOrderControls = () => {
   cy.get('body')
     .should((body) => {
       expect(
-        body.find('[data-test-id="show-functions"], [data-test-id="list-order-by-toggle"]').length
+        body.find('[data-test-id="show-functions"], [data-test-id="list-order-by-created-at"]').length
       ).to.be.greaterThan(0);
     })
     .then((body) => {
@@ -43,8 +43,10 @@ const showOrderControls = () => {
         CollectionPage.getShowFunctionsButton().click();
       }
     });
-  CollectionPage.getOrderByToggleButton().should('be.visible');
-  CollectionPage.getOrderDirectionToggleButton().should('be.visible');
+  CollectionPage.getOrderByCreatedAtButton().should('be.visible');
+  CollectionPage.getOrderByAlphabetButton().should('be.visible');
+  CollectionPage.getOrderDirectionDescButton().should('be.visible');
+  CollectionPage.getOrderDirectionAscButton().should('be.visible');
 };
 
 describe('Collection — empty state', () => {
@@ -455,17 +457,17 @@ describe('Collection — order controls', () => {
     expectVisibleTitles(['Order Bravo', 'Order Charlie', 'Order Alpha']);
 
     CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getOrderDirectionToggleButton().click();
+    CollectionPage.getOrderDirectionAscButton().click();
     waitForItemsRequestIncluding(['orderDirection=asc']);
     expectVisibleTitles(['Order Alpha', 'Order Charlie', 'Order Bravo']);
 
     CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getOrderByToggleButton().click();
+    CollectionPage.getOrderByAlphabetButton().click();
     waitForItemsRequestIncluding(['orderBy=alphabet']);
     expectVisibleTitles(['Order Alpha', 'Order Bravo', 'Order Charlie']);
 
     CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getOrderDirectionToggleButton().click();
+    CollectionPage.getOrderDirectionDescButton().click();
     waitForItemsRequestIncluding(['orderDirection=desc']);
     expectVisibleTitles(['Order Charlie', 'Order Bravo', 'Order Alpha']);
 
@@ -492,10 +494,10 @@ describe('Collection — order controls', () => {
     cy.wait('@getItems');
 
     CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getOrderByToggleButton().click();
+    CollectionPage.getOrderByAlphabetButton().click();
     cy.wait('@getItems');
     CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getOrderDirectionToggleButton().click();
+    CollectionPage.getOrderDirectionAscButton().click();
     waitForItemsRequestIncluding(['orderBy=alphabet', 'orderDirection=asc']);
     expectVisibleTitles(['Library Alpha', 'Library Bravo']);
 
@@ -505,7 +507,7 @@ describe('Collection — order controls', () => {
     expectVisibleTitles(['Wishlist Bravo', 'Wishlist Alpha']);
 
     CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getOrderByToggleButton().click();
+    CollectionPage.getOrderByAlphabetButton().click();
     waitForItemsRequestIncluding(['listType=wishlist', 'orderBy=alphabet']);
     cy.reload();
     waitForItemsRequestIncluding(['listType=wishlist', 'orderBy=alphabet']);

@@ -105,8 +105,10 @@ export const CollectionPage = {
   getScrollToTopButton: () => cy.getByTestId('scroll-to-top'),
   getAiSearchToggleButton: () => cy.getByTestId('ai-search-toggle'),
   getFloatSearchToggleButton: () => cy.getByTestId('float-search-toggle'),
-  getOrderByToggleButton: () => cy.getByTestId('list-order-by-toggle'),
-  getOrderDirectionToggleButton: () => cy.getByTestId('list-order-direction-toggle'),
+  getOrderByCreatedAtButton: () => cy.getByTestId('list-order-by-created-at'),
+  getOrderByAlphabetButton: () => cy.getByTestId('list-order-by-alphabet'),
+  getOrderDirectionDescButton: () => cy.getByTestId('list-order-direction-desc'),
+  getOrderDirectionAscButton: () => cy.getByTestId('list-order-direction-asc'),
   getCollectionFilterButton: (filter: string) => cy.getByTestId(`collection-filter-${filter}`),
 
   // AI search input
