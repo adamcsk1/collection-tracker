@@ -51,4 +51,9 @@
   button {
     flex: 0 0 auto;
   }
+
+  @media (width <= 520px) {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
