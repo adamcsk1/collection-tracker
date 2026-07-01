@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, computed, inject, signal } from '@angular/core';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { Input } from '@components/input/input';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -16,6 +16,8 @@ export class TagManagementCard {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   protected readonly translations = {
     selectColor: computed(() => this.ngxSignalTranslate.translate('SelectColor')),
+    rename: computed(() => this.ngxSignalTranslate.translate('Rename')),
+    newTagName: computed(() => this.ngxSignalTranslate.translate('Placeholder.NewTagName')),
     weight: computed(() => this.ngxSignalTranslate.translate('Weight')),
     useTagColorForImageBorder: computed(() => this.ngxSignalTranslate.translate('UseTagColorForImageBorder')),
     useTagColorForTextColor: computed(() => this.ngxSignalTranslate.translate('UseTagColorForTextColor')),
@@ -27,6 +29,8 @@ export class TagManagementCard {
   public readonly imageBorderChange = output<boolean>();
   public readonly textColorChange = output<boolean>();
   public readonly imageBadgeChange = output<boolean>();
+  public readonly rename = output<string>();
+  protected readonly renameValue = signal('');
 
   protected contrastColor(hex: string | null): string | null {
     if (hex === null) return null;
@@ -64,5 +68,13 @@ export class TagManagementCard {
 
   protected onImageBadgeChange(value: boolean | null): void {
     this.imageBadgeChange.emit(!!value);
+  }
+
+  protected onRenameInputChange(value: string | null): void {
+    this.renameValue.set(value ?? '');
+  }
+
+  protected onRenameClick(): void {
+    this.rename.emit(this.renameValue().trim());
   }
 }

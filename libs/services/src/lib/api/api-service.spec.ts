@@ -297,6 +297,17 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({});
   });
 
+  it('renames a tag', async () => {
+    const promise = lastValueFrom(service.renameTag('#old', '#new'));
+
+    const renameTagRequest = httpMock.expectOne('https://api.test/tag-management/rename');
+    expect(renameTagRequest.request.method).toBe('POST');
+    expect(renameTagRequest.request.body).toEqual({ oldTag: '#old', newTag: '#new' });
+    renameTagRequest.flush({ renamedItemCount: 1, tagManagement: [] });
+
+    await expect(promise).resolves.toEqual({ renamedItemCount: 1, tagManagement: [] });
+  });
+
   it('encodes external metadata item IDs in query params', async () => {
     const promise = lastValueFrom(
       service.getExternalMetadataItem({

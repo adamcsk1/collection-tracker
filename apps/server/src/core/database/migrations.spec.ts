@@ -1366,6 +1366,67 @@ describe('runMigrations', () => {
     });
   });
 
+  describe('022_normalize_imdb_rating_text', () => {
+    it('normalizes IMDb ratings with /10 denominators and recomputes content hashes', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('022_normalize_imdb_rating_text.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, actors, image, content_hash, content_type, favorite, rotten_tomatoes_rate, metacritic_rate)
+        VALUES
+          ('user', 'tt001', 'omdb', 'tt001', 'imdb:tt001', 'library', 'Rating Movie', 'rating movie', '2024', '8.0/10', 'Plot', 'Actor', 'image', 'stale-hash', 'movie', 0, '95%', '80/100'),
+          ('user', 'tt002', 'omdb', 'tt002', 'imdb:tt002', 'library', 'Already Normalized', 'already normalized', '2024', '7.5', 'Plot', 'Actor', 'image', 'unchanged-hash', 'movie', 0, '95%', '80/100'),
+          ('user', 'tt003', 'omdb', 'tt003', 'imdb:tt003', 'library', 'Unavailable', 'unavailable', '2024', 'N/A', 'Plot', 'Actor', 'image', 'unavailable-hash', 'movie', 0, '95%', '80/100');
+        INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+          VALUES ('user', 'imdb:tt001', 'imdb', 'tt001', 'provider');
+        INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama'), (2, 'Drama'), (3, 'Drama');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES (1, '#movie'), (2, '#movie'), (3, '#movie');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '022_normalize_imdb_rating_text.sql'),
+        join(migrationsDir, '022_normalize_imdb_rating_text.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      const rows = db
+        .prepare('SELECT imdb_id, rate, content_hash FROM collection_items ORDER BY imdb_id')
+        .all() as Array<{
+        imdb_id: string;
+        rate: string;
+        content_hash: string;
+      }>;
+      expect(rows.map(({ imdb_id, rate }) => ({ imdb_id, rate }))).toEqual([
+        { imdb_id: 'tt001', rate: '8.0' },
+        { imdb_id: 'tt002', rate: '7.5' },
+        { imdb_id: 'tt003', rate: 'N/A' },
+      ]);
+      expect(rows[0]?.content_hash).toBe(
+        getItemHash({
+          image: 'image',
+          title: 'Rating Movie',
+          genre: ['Drama'],
+          IMDbId: 'tt001',
+          externalProvider: 'omdb',
+          externalItemId: 'tt001',
+          externalIds: [{ source: 'imdb', id: 'tt001' }],
+          tags: ['#movie'],
+          year: '2024',
+          rate: '8.0',
+          rottenTomatoesRate: '95%',
+          metacriticRate: '80/100',
+          userRate: null,
+          actors: 'Actor',
+          plot: 'Plot',
+          contentType: 'movie',
+          favorite: false,
+        })
+      );
+
+      db.close();
+    });
+  });
+
   describe('runner behavior', () => {
     it('runs the full migration chain 001 to 015 and produces the expected final schema', async () => {
       const db = new Database(':memory:');

@@ -1,4 +1,8 @@
 import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
+import type {
+  ExternalItemIdentityModel,
+  ExternalMetadataProviderNameModel,
+} from '@shared/models/external-metadata-provider-model';
 import Database from 'better-sqlite3';
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -14,9 +18,11 @@ const recomputeCollectionItemHashes = (db: Database.Database): void => {
 
   const rows = db.prepare('SELECT * FROM collection_items').all() as Array<{
     id: number;
+    username_hash: string;
     imdb_id: string | null;
-    external_provider?: string;
+    external_provider?: ExternalMetadataProviderNameModel;
     external_item_id?: string;
+    canonical_item_id?: string;
     title: string;
     year: string;
     rate: string;
@@ -33,19 +39,36 @@ const recomputeCollectionItemHashes = (db: Database.Database): void => {
   const genresByItem = db.prepare('SELECT genre FROM collection_item_genres WHERE item_id = ? ORDER BY genre');
   const tagsByItem = db.prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag');
   const updateHash = db.prepare('UPDATE collection_items SET content_hash = ? WHERE id = ?');
+  const externalItemIdentitiesTableExists = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'external_item_identities'")
+    .get();
+  const externalIdsByCanonicalItem = externalItemIdentitiesTableExists
+    ? db.prepare(
+        `SELECT external_provider AS source, external_item_id AS id
+           FROM external_item_identities
+          WHERE username_hash = ? AND canonical_item_id = ?
+          ORDER BY external_provider, external_item_id`
+      )
+    : undefined;
 
   const transaction = db.transaction(() => {
     for (const row of rows) {
       const genre = (genresByItem.all(row.id) as Array<{ genre: string }>).map((genreRow) => genreRow.genre);
       const tags = (tagsByItem.all(row.id) as Array<{ tag: string }>).map((tagRow) => tagRow.tag);
+      const externalIds = row.canonical_item_id
+        ? (externalIdsByCanonicalItem?.all(row.username_hash, row.canonical_item_id) as
+            | ExternalItemIdentityModel[]
+            | undefined)
+        : undefined;
       updateHash.run(
         getItemHash({
           image: row.image,
           title: row.title,
           genre,
           IMDbId: row.imdb_id ?? row.external_item_id ?? '',
-          externalProvider: DEFAULT_EXTERNAL_METADATA_PROVIDER,
+          externalProvider: row.external_provider ?? DEFAULT_EXTERNAL_METADATA_PROVIDER,
           externalItemId: row.external_item_id ?? row.imdb_id ?? '',
+          externalIds,
           tags,
           year: row.year || null,
           rate: row.rate,
@@ -96,7 +119,8 @@ export const runMigrations = async (db: Database.Database, migrationsDir: string
         file === '015_add_movie_tracker_list_type.sql' ||
         file === '017_move_system_tags_to_columns.sql' ||
         file === '018_remove_legacy_type_tags.sql' ||
-        file === '019_add_collection_item_external_provider.sql'
+        file === '019_add_collection_item_external_provider.sql' ||
+        file === '022_normalize_imdb_rating_text.sql'
       ) {
         recomputeCollectionItemHashes(db);
       }

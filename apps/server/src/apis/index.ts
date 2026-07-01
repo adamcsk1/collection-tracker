@@ -4,6 +4,7 @@ import { register as registerAddMovieTrackerItem } from './add-movie-tracker-ite
 import { register as registerAddSeriesTrackerItem } from './add-series-tracker-item-api';
 import { register as registerModify } from './change-api';
 import { register as registerUpdateTagManagement } from './update-tag-management-api';
+import { register as registerRenameTagManagement } from './rename-tag-management-api';
 import { register as registerChangeToken } from './change-token-api';
 import { register as registerChangeUserSettings } from './change-user-settings-api';
 import { register as registerCollectionItemsExists } from './collection-items-exists-api';
@@ -90,6 +91,7 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerDelete(app);
   registerTagManagement(app);
   registerUpdateTagManagement(app);
+  registerRenameTagManagement(app);
   registerUserSettings(app);
   registerChangeUserSettings(app);
   registerUserShares(app);

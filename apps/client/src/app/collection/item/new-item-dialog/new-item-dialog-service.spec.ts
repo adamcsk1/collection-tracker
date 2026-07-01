@@ -177,6 +177,17 @@ describe('NewItemDialogService', () => {
     expect(spinnerStore.state.show()).toBe(false);
   });
 
+  it('normalizes selected IMDb ratings with /10 denominators before creating an item', async () => {
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(null, buildSelectedContent({ ratings: [{ source: 'Internet Movie Database', value: '8.0/10' }] }) as any)
+    );
+    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+
+    await firstValueFrom(service.save('tt123', null, '', 'close'));
+
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ rate: '8.0' }), undefined);
+  });
+
   it('creates a movie tracker copy when saving a watched library movie', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
     api.create.mockReturnValue(

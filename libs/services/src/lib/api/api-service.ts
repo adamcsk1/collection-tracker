@@ -24,6 +24,7 @@ import {
   RandomImagesApiResponseModel,
   RefreshExternalRatingsApiResponseModel,
   RefreshImagesApiResponseModel,
+  RenameTagApiResponseModel,
   SeriesTrackerApiResponseModel,
   SeriesTrackerSeasonsApiRequestModel,
   SeriesTrackerSeasonsApiResponseModel,
@@ -274,6 +275,10 @@ export class ApiService extends BaseApiService {
 
   public updateUserTagManagement(tagManagement: TagManagementApiRequestModel): Observable<void> {
     return this.request('POST', '/tag-management', tagManagement);
+  }
+
+  public renameTag(oldTag: string, newTag: string): Observable<RenameTagApiResponseModel> {
+    return this.request('POST', '/tag-management/rename', { oldTag, newTag });
   }
 
   public getExternalMetadataItem(queryParams: {

@@ -14,12 +14,12 @@ import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import {
   CollectionItemChangeApiModel,
-  CollectionItemContentTypeModel,
   SeriesTrackerSeasonMetadataModel,
   SeriesTrackerWatchedEpisodeModel,
 } from '@shared/models/api-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
+import { normalizeIMDbRating } from '@shared/utils/external-metadata-ratings-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { finalize, firstValueFrom, map, mergeMap, of } from 'rxjs';
 import { sharesStateToken } from '../../../shares/shares-store';
@@ -442,7 +442,7 @@ export class ItemDialog implements OnInit {
   }
 
   private resetFormFromItem(item: CollectionItemModel): void {
-    const change = toCollectionItemChange(item);
+    const change = { ...toCollectionItemChange(item), rate: normalizeIMDbRating(item.rate) };
     this.form().reset({
       title: change.title,
       IMDbId: change.IMDbId ?? change.externalItemId,

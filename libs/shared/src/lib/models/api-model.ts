@@ -190,6 +190,16 @@ export interface TagManagementApiModel {
 export type TagManagementApiResponseModel = TagManagementApiModel[];
 export type TagManagementApiRequestModel = TagManagementApiResponseModel;
 
+export interface RenameTagApiRequestModel {
+  oldTag: string;
+  newTag: string;
+}
+
+export interface RenameTagApiResponseModel {
+  renamedItemCount: number;
+  tagManagement: TagManagementApiResponseModel;
+}
+
 export interface MarkAllWatchedApiResponseModel {
   changedCount: number;
 }

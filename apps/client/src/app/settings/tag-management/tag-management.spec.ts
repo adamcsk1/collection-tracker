@@ -55,7 +55,7 @@ describe('TagManagement component', () => {
   let tagManagementState: NgxSimpleSignalStoreService<TagManagementState>;
   let toastState: NgxSimpleSignalStoreService<ToastState>;
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn>; open: ReturnType<typeof vi.fn> };
-  let tagManagementService: { syncUserTagManagement: ReturnType<typeof vi.fn> };
+  let tagManagementService: { syncUserTagManagement: ReturnType<typeof vi.fn>; renameTag: ReturnType<typeof vi.fn> };
   let api: { getStatistics: ReturnType<typeof vi.fn> };
 
   const createComponent = (tags: string[] = []) => {
@@ -75,6 +75,7 @@ describe('TagManagement component', () => {
         );
         return of(void 0);
       }),
+      renameTag: vi.fn(() => of({ renamedItemCount: 1, tagManagement: [] })),
     };
     api = { getStatistics: vi.fn(() => mockStatistics([])) };
 
@@ -320,5 +321,76 @@ describe('TagManagement component', () => {
     component['onTagColorChange']('#tag', '#123456');
 
     expect(toastState.state.message()).toBe('Toast.TagManagementSyncError');
+  });
+
+  it('renames a tag after confirmation and updates the list', () => {
+    createComponent(['#old']);
+    toastState.setState('message', '');
+    api.getStatistics.mockReturnValue(mockStatistics(['#new']));
+
+    component['onRenameTag']('#old', '  #new  ');
+
+    expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RenameTag');
+    expect(tagManagementService.renameTag).toHaveBeenCalledWith('#old', '#new');
+    expect(component['tagManagement']()).toEqual([buildTagManagement('#new', {})]);
+    expect(toastState.state.message()).toBe('Toast.TagRenamed');
+  });
+
+  it('merges the displayed tag list when renaming to an existing tag', () => {
+    createComponent(['#old', '#new']);
+    api.getStatistics.mockReturnValue(mockStatistics(['#new']));
+
+    component['onRenameTag']('#old', '#new');
+
+    expect(component['tagManagement']()).toEqual([buildTagManagement('#new', {})]);
+  });
+
+  it('keeps shared visible tags when owned tags are renamed', () => {
+    createComponent(['#old']);
+    api.getStatistics.mockReturnValue(mockStatistics(['#old', '#new']));
+
+    component['onRenameTag']('#old', '#new');
+
+    expect(component['tagManagement']()).toEqual([buildTagManagement('#old', {}), buildTagManagement('#new', {})]);
+  });
+
+  it('does not rename when the new tag is empty or unchanged', () => {
+    createComponent(['#old']);
+
+    component['onRenameTag']('#old', '   ');
+    component['onRenameTag']('#old', '#old');
+
+    expect(confirm.ifConfirmed).not.toHaveBeenCalled();
+    expect(tagManagementService.renameTag).not.toHaveBeenCalled();
+  });
+
+  it('does not rename when rename is not confirmed', () => {
+    confirm.ifConfirmed = vi.fn(() => EMPTY);
+    createComponent(['#old']);
+
+    component['onRenameTag']('#old', '#new');
+
+    expect(tagManagementService.renameTag).not.toHaveBeenCalled();
+    expect(component['tagManagement']()).toEqual([buildTagManagement('#old', {})]);
+  });
+
+  it('shows toast message when renaming a tag fails', () => {
+    createComponent(['#old']);
+    tagManagementService.renameTag.mockReturnValueOnce(throwError(() => new Error('fail')));
+
+    component['onRenameTag']('#old', '#new');
+
+    expect(toastState.state.message()).toBe('Toast.TagRenameError');
+    expect(component['tagManagement']()).toEqual([buildTagManagement('#old', {})]);
+  });
+
+  it('does not update the list when the server reports no owned renamed items', () => {
+    createComponent(['#shared']);
+    tagManagementService.renameTag.mockReturnValueOnce(of({ renamedItemCount: 0, tagManagement: [] }));
+
+    component['onRenameTag']('#shared', '#new');
+
+    expect(toastState.state.message()).toBe('Toast.TagRenameNoOwnedItems');
+    expect(component['tagManagement']()).toEqual([buildTagManagement('#shared', {})]);
   });
 });

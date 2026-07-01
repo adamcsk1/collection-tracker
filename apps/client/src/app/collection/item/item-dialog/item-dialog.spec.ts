@@ -280,6 +280,16 @@ describe('ItemDialog', () => {
     expect(component['form']().invalid()).toBe(false);
   });
 
+  it('normalizes IMDb ratings with /10 denominators before validating edit mode', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watch-later', rate: '8.0/10' }));
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['onEdit']();
+
+    expect(component['form'].rate().value()).toBe('8.0');
+    expect(component['form']().invalid()).toBe(false);
+  });
+
   it('keeps wishlist items with unavailable IMDb ratings valid in edit mode', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist', rate: 'N/A' }));
     fixture.detectChanges();

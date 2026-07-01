@@ -942,6 +942,29 @@ components:
       items:
         $ref: '#/components/schemas/TagManagement'
 
+    RenameTagRequest:
+      type: object
+      required: [oldTag, newTag]
+      properties:
+        oldTag:
+          type: string
+          examples:
+            - '#old'
+        newTag:
+          type: string
+          examples:
+            - '#new'
+
+    RenameTagResponse:
+      type: object
+      required: [renamedItemCount, tagManagement]
+      properties:
+        renamedItemCount:
+          type: integer
+          description: Number of the caller's own collection items that had the old tag.
+        tagManagement:
+          $ref: '#/components/schemas/TagManagementResponse'
+
     ExportResponse:
       type: object
       required: [userSettings, collectionItems, tagManagement, seriesTrackerData]
@@ -2643,3 +2666,25 @@ paths:
                 $ref: '#/components/schemas/TagManagementResponse'
         '400':
           description: The request body is not a valid tag management array or contains reserved tags.
+
+  /tag-management/rename:
+    post:
+      operationId: renameTag
+      summary: Rename a tag
+      description: Renames the caller's own collection-item tag usage. If the target tag already exists on an item, the tags are merged. If both tag-management configs exist, the target tag config is kept.
+      tags: [Tag]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameTagRequest'
+      responses:
+        '200':
+          description: Updated tag management.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenameTagResponse'
+        '400':
+          description: The request body is not a valid tag rename request.

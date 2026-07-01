@@ -15,6 +15,7 @@ describe('TagManagementService', () => {
   let api: {
     getUserTagManagement: ReturnType<typeof vi.fn>;
     updateUserTagManagement: ReturnType<typeof vi.fn>;
+    renameTag: ReturnType<typeof vi.fn>;
   };
   let tagManagementState: NgxSimpleSignalStoreService<TagManagementState>;
 
@@ -41,6 +42,21 @@ describe('TagManagementService', () => {
         ])
       ),
       updateUserTagManagement: vi.fn(() => of(void 0)),
+      renameTag: vi.fn(() =>
+        of({
+          renamedItemCount: 1,
+          tagManagement: [
+            {
+              tag: '#renamed',
+              color: '#333333',
+              useForImageBorder: false,
+              useForTextColor: true,
+              useForImageBadge: false,
+              weight: 5,
+            },
+          ],
+        })
+      ),
     };
 
     TestBed.configureTestingModule({
@@ -215,5 +231,45 @@ describe('TagManagementService', () => {
         useForImageBadge: false,
       },
     ]);
+  });
+
+  it('renames a tag, returns the API result, and stores returned configs sorted by weight', () => {
+    let renamedItemCount = 0;
+
+    service.renameTag('#old', '#renamed').subscribe((response) => {
+      renamedItemCount = response.renamedItemCount;
+    });
+
+    expect(api.renameTag).toHaveBeenCalledWith('#old', '#renamed');
+    expect(renamedItemCount).toBe(1);
+    expect(tagManagementState.state.configs()).toEqual([
+      {
+        tag: '#renamed',
+        color: '#333333',
+        useForImageBorder: false,
+        useForTextColor: true,
+        useForImageBadge: false,
+        weight: 5,
+      },
+    ]);
+  });
+
+  it('does not update stored configs when no owned items were renamed', () => {
+    const initialConfigs = [
+      {
+        tag: '#old',
+        color: '#111111',
+        useForImageBorder: false,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: 1,
+      },
+    ];
+    tagManagementState.setState('configs', initialConfigs);
+    api.renameTag.mockReturnValueOnce(of({ renamedItemCount: 0, tagManagement: [] }));
+
+    service.renameTag('#old', '#new').subscribe();
+
+    expect(tagManagementState.state.configs()).toEqual(initialConfigs);
   });
 });

@@ -15,7 +15,7 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ConfirmService } from '@services/confirm-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY, tap } from 'rxjs';
+import { catchError, EMPTY, of, switchMap, tap } from 'rxjs';
 import { TagManagementCard } from './tag-management-card/tag-management-card';
 import { TagManagementModel } from './tag-management-model';
 import { TagManagementService } from './tag-management-service';
@@ -67,19 +67,7 @@ export class TagManagement {
   });
 
   constructor() {
-    this.api
-      .getStatistics()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        catchError(() => {
-          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.LoadStatisticsError'));
-          return EMPTY;
-        })
-      )
-      .subscribe((statistics) => {
-        const tags = statistics.tagCounts.map((tagCount) => tagCount.tag);
-        this.uniqueTags.set([...new Set(tags)].sort((a, b) => a.length - b.length));
-      });
+    this.loadUniqueTags().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
 
     const effectRef = effect(() => {
       let storedConfigs = this.tagManagementState.state.configs();
@@ -121,6 +109,16 @@ export class TagManagement {
       .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.ResetTagManagement'))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.storeTagManagement([]));
+  }
+
+  protected onRenameTag(oldTag: string, newTag: string): void {
+    const sanitizedNewTag = newTag.trim();
+    if (!sanitizedNewTag || sanitizedNewTag === oldTag) return;
+
+    this.confirm
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RenameTag', { oldTag, newTag: sanitizedNewTag }))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.renameTag(oldTag, sanitizedNewTag));
   }
 
   protected onFilterChange(value: string | null): void {
@@ -181,5 +179,42 @@ export class TagManagement {
         })
       )
       .subscribe();
+  }
+
+  private renameTag(oldTag: string, newTag: string): void {
+    this.tagManagementService
+      .renameTag(oldTag, newTag)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        switchMap((response) =>
+          response.renamedItemCount === 0 ? of(response) : this.loadUniqueTags().pipe(switchMap(() => of(response)))
+        ),
+        tap((response) => {
+          if (response.renamedItemCount === 0) {
+            this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.TagRenameNoOwnedItems'));
+            return;
+          }
+
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.TagRenamed'));
+        }),
+        catchError(() => {
+          this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.TagRenameError'));
+          return EMPTY;
+        })
+      )
+      .subscribe();
+  }
+
+  private loadUniqueTags(): ReturnType<ApiService['getStatistics']> {
+    return this.api.getStatistics().pipe(
+      tap((statistics) => {
+        const tags = statistics.tagCounts.map((tagCount) => tagCount.tag);
+        this.uniqueTags.set([...new Set(tags)].sort((a, b) => a.length - b.length));
+      }),
+      catchError(() => {
+        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.LoadStatisticsError'));
+        return EMPTY;
+      })
+    );
   }
 }

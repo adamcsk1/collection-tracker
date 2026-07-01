@@ -36,3 +36,13 @@
   opacity: 0;
   position: absolute;
 }
+
+.tag-management-card-rename {
+  display: flex;
+  align-items: center;
+  gap: var(--size-xs);
+
+  libc-input {
+    flex: 1 1 auto;
+  }
+}
