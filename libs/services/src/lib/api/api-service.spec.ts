@@ -77,7 +77,7 @@ describe('ApiService', () => {
   });
 
   it('checks collection item existence by external identity', async () => {
-    const externalIds = [{ source: 'source:with:colon', id: 'item,with,comma' }];
+    const externalIds = [{ source: 'omdb' as const, id: 'item,with,comma' }];
     const promise = lastValueFrom(
       service.collectionItemExists('provider/id', 'item/id', 'share/code', 'watch-later', externalIds)
     );
