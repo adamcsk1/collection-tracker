@@ -5,7 +5,7 @@ form {
 .external-search-help {
   color: var(--text-color);
   font-size: 0.95rem;
-  margin: -0.5rem 0 1rem;
+  margin: -0.5rem 0;
 
   a {
     color: var(--main-color);
