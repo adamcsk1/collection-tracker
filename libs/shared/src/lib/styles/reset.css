@@ -15,6 +15,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+@media (pointer: coarse) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
 img,
 picture,
 video,
