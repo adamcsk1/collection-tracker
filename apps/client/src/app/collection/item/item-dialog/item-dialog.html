@@ -8,6 +8,20 @@
   <ng-container dialog-shell-content>
     @if (editMode()) {
       <form id="item-edit-form" class="item-form" role="form" [formRoot]="form">
+        <div class="full-width image-url-field">
+          @if (form.image().value()) {
+            <div class="image-preview-card">
+              <img class="image-example" [src]="draftImageUrl()" [attr.alt]="translations.altImageExample()" />
+            </div>
+          }
+          <div class="image-url-input">
+            <libc-input
+              data-test-id="item-dialog-image"
+              [label]="translations.labelImageUrl()"
+              [formField]="form.image"
+            />
+          </div>
+        </div>
         <libc-input
           data-test-id="item-dialog-title"
           [mandatory]="true"
@@ -83,16 +97,6 @@
             }
           </ng-container>
         </libc-input>
-        <div class="full-width image-url-field">
-          <libc-input
-            data-test-id="item-dialog-image"
-            [label]="translations.labelImageUrl()"
-            [formField]="form.image"
-          />
-          @if (form.image().value()) {
-            <img class="image-example" [src]="draftImageUrl()" [attr.alt]="translations.altImageExample()" />
-          }
-        </div>
         <libc-autocomplete
           data-test-id="item-dialog-genre"
           [label]="translations.genre()"

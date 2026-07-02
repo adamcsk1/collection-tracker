@@ -11,18 +11,32 @@
 
 .image-url-field {
   display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
+  grid-template-columns: 1fr;
+  gap: var(--size-md);
+}
+
+.image-preview-card {
+  justify-self: center;
+  width: min(calc(9 * var(--size-md)), 100%);
+  aspect-ratio: var(--card-aspect-ratio);
+  min-height: calc(7 * var(--size-md));
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--background-color-alt) 85%, transparent);
+  border: var(--border-style);
+  box-shadow: 0 var(--size-2xs) var(--size-md) rgb(0 0 0 / 20%);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
 .image-example {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  width: calc(4.5 * var(--size-md));
-  height: calc(6.5 * var(--size-md));
-  border-radius: var(--border-radius);
-  object-fit: cover;
-  border: var(--border-style);
+  width: 100%;
+  height: 100%;
 }
 
 .item-detail {
