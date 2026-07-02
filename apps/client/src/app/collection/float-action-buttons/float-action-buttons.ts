@@ -22,15 +22,14 @@ export class FloatActionButtons implements OnDestroy {
 
   protected readonly translations = {
     addNew: computed(() => this.ngxSignalTranslate.translate('AddNew')),
-    searchSwitchButtonLabel: computed(() =>
-      this.useAiSearch()
-        ? this.ngxSignalTranslate.translate('SwitchToStandardSearch')
-        : this.ngxSignalTranslate.translate('SwitchToAiSearch')
-    ),
+    standardSearch: computed(() => this.ngxSignalTranslate.translate('SwitchToStandardSearch')),
+    standardSearchShort: computed(() => this.ngxSignalTranslate.translate('Standard')),
     aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
+    aiSearchShort: computed(() => this.ngxSignalTranslate.translate('Ai')),
     randomPick: computed(() => this.ngxSignalTranslate.translate('RandomPick')),
     actions: computed(() => this.ngxSignalTranslate.translate('Actions')),
     filtering: computed(() => this.ngxSignalTranslate.translate('Filtering')),
+    search: computed(() => this.ngxSignalTranslate.translate('Search')),
     sorting: computed(() => this.ngxSignalTranslate.translate('Sorting')),
     orderByCreatedAt: computed(() => this.ngxSignalTranslate.translate('SwitchToCreatedAtOrder')),
     orderByAlphabet: computed(() => this.ngxSignalTranslate.translate('SwitchToAlphabetOrder')),
@@ -54,13 +53,16 @@ export class FloatActionButtons implements OnDestroy {
   protected readonly config = this.actionButtons.config;
   protected readonly useAiSearch = computed(() => this.config().useAiSearch);
   protected readonly showAiSearchButton = computed(() => this.config().showAiSearchButton && this.aiAvailable());
-  protected readonly aiSearchIcon = computed(() =>
-    !this.useAiSearch() && this.aiAvailable() ? 'search' : 'psychology'
-  );
   protected readonly showFloatButtons = signal(false);
   protected readonly actionButtonsVisible = computed(() => this.config().showActions && this.showFloatButtons());
+  protected readonly rowFilterActions = computed(() =>
+    this.config().filterActions.filter((filter) => filter === 'movie' || filter === 'series')
+  );
+  protected readonly stackedFilterActions = computed(() =>
+    this.config().filterActions.filter((filter) => filter !== 'movie' && filter !== 'series')
+  );
   protected readonly showActionSection = computed(
-    () => this.config().showAddButton || this.showAiSearchButton() || this.config().showRandomPickButton
+    () => this.config().showAddButton || this.config().showRandomPickButton
   );
   protected readonly canShowActionButton = computed(() => {
     const config = this.config();
@@ -145,6 +147,11 @@ export class FloatActionButtons implements OnDestroy {
     this.onToggleOrderDirection();
   }
 
+  protected onSelectSearchMode(searchMode: 'standard' | 'ai'): void {
+    if (this.isSearchModeActive(searchMode)) return;
+    this.onToggleAiSearch();
+  }
+
   protected onApplyFilter(filter: FloatActionFilter): void {
     this.actionButtons.applyFilter(filter);
     this.showFloatButtons.set(false);
@@ -191,5 +198,9 @@ export class FloatActionButtons implements OnDestroy {
 
   protected isOrderDirectionActive(orderDirection: CollectionItemOrderDirection): boolean {
     return this.config().orderDirection === orderDirection;
+  }
+
+  protected isSearchModeActive(searchMode: 'standard' | 'ai'): boolean {
+    return searchMode === 'ai' ? this.useAiSearch() : !this.useAiSearch();
   }
 }

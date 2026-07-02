@@ -47,6 +47,7 @@ describe('FloatActionButtons', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="random-pick"]')?.textContent).toContain('RandomPick');
     expect(fixture.nativeElement.textContent).toContain('Actions');
     expect(fixture.nativeElement.textContent).not.toContain('Filtering');
+    expect(fixture.nativeElement.textContent).toContain('Search');
     expect(fixture.nativeElement.textContent).not.toContain('Sorting');
     expect(floatActions.actionButtonsVisible()).toBe(true);
   });
@@ -64,6 +65,7 @@ describe('FloatActionButtons', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Filtering');
     expect(fixture.nativeElement.textContent).toContain('Sorting');
+    expect(fixture.nativeElement.textContent).not.toContain('Search');
     expect(fixture.nativeElement.textContent).not.toContain('Actions');
   });
 
@@ -116,6 +118,49 @@ describe('FloatActionButtons', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-test-id="ai-search-toggle"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="standard-search-toggle"]')).toBeNull();
+  });
+
+  it('shows search mode actions as a current option row', () => {
+    actionButtons.updateConfig({ useAiSearch: false });
+    component['onShowFunctions']();
+    fixture.detectChanges();
+
+    const standardSearch = fixture.nativeElement.querySelector('[data-test-id="standard-search-toggle"]');
+    const aiSearch = fixture.nativeElement.querySelector('[data-test-id="ai-search-toggle"]');
+
+    expect(fixture.nativeElement.textContent).toContain('Search');
+    expect(standardSearch?.textContent).toContain('Standard');
+    expect(aiSearch?.textContent).toContain('Ai');
+    expect(standardSearch?.textContent).not.toContain('SwitchToStandardSearch');
+    expect(aiSearch?.textContent).not.toContain('AiSearch');
+    expect(standardSearch?.getAttribute('aria-label')).toBe('SwitchToStandardSearch');
+    expect(aiSearch?.getAttribute('aria-label')).toBe('AiSearch');
+    expect(standardSearch?.getAttribute('title')).toBe('SwitchToStandardSearch');
+    expect(aiSearch?.getAttribute('title')).toBe('AiSearch');
+    expect(standardSearch?.getAttribute('aria-current')).toBe('true');
+    expect(aiSearch?.getAttribute('aria-current')).toBeNull();
+  });
+
+  it('runs the search mode callback only when an inactive search mode is clicked', () => {
+    const toggleAiSearch = vi.fn();
+    actionButtons.setCallbacks({
+      addNew: vi.fn(),
+      randomPick: vi.fn(),
+      toggleAiSearch,
+      toggleOrderBy: vi.fn(),
+      toggleOrderDirection: vi.fn(),
+      applyFilter: vi.fn(),
+      showFunctions: vi.fn(),
+    });
+    actionButtons.updateConfig({ useAiSearch: false });
+    component['onShowFunctions']();
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-test-id="standard-search-toggle"]').click();
+    fixture.nativeElement.querySelector('[data-test-id="ai-search-toggle"]').click();
+
+    expect(toggleAiSearch).toHaveBeenCalledTimes(1);
   });
 
   it('uses direct add mode when AI search is unavailable and random pick is hidden', () => {
@@ -267,5 +312,20 @@ describe('FloatActionButtons', () => {
     expect(favoriteFilter?.textContent).toContain('Favorites');
     expect(movieFilter?.getAttribute('aria-current')).toBeNull();
     expect(favoriteFilter?.getAttribute('aria-current')).toBe('true');
+  });
+
+  it('renders movie and series filters in a row while keeping other filters stacked', () => {
+    actionButtons.updateConfig({ filterActions: ['movie', 'series', 'unwatched', 'favorite'] });
+    component['onShowFunctions']();
+    fixture.detectChanges();
+
+    const filterRow = fixture.nativeElement.querySelector('.float-action-row');
+
+    expect(filterRow.querySelector('[data-test-id="collection-filter-movie"]')).toBeTruthy();
+    expect(filterRow.querySelector('[data-test-id="collection-filter-series"]')).toBeTruthy();
+    expect(filterRow.querySelector('[data-test-id="collection-filter-unwatched"]')).toBeNull();
+    expect(filterRow.querySelector('[data-test-id="collection-filter-favorite"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="collection-filter-unwatched"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test-id="collection-filter-favorite"]')).toBeTruthy();
   });
 });

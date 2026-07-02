@@ -25,6 +25,7 @@ describe('AI search - toggle', () => {
 
   it('shows the AI search toggle button in the float buttons menu', () => {
     CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getStandardSearchToggleButton().should('be.visible');
     CollectionPage.getAiSearchToggleButton().should('be.visible');
   });
 
@@ -48,7 +49,7 @@ describe('AI search - toggle', () => {
     CollectionPage.getFloatSearchToggleButton().should('be.visible');
 
     CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getAiSearchToggleButton().click();
+    CollectionPage.getStandardSearchToggleButton().click();
     CollectionPage.getSearchInput().should('be.visible');
     cy.getByTestId('ai-search-textarea').should('not.exist');
   });

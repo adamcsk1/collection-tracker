@@ -3,7 +3,26 @@
     @if (config().filterActions.length > 0) {
       <div class="float-action-section">
         <div class="float-action-section-title">{{ translations.filtering() }}</div>
-        @for (filter of config().filterActions; track filter) {
+        @if (rowFilterActions().length > 0) {
+          <div class="float-action-row">
+            @for (filter of rowFilterActions(); track filter) {
+              <div class="float-action" [class.float-action-current]="isFilterActive(filter)">
+                <button
+                  [attr.data-test-id]="'collection-filter-' + filter"
+                  [attr.aria-label]="filterActionLabel(filter)"
+                  [attr.aria-current]="isFilterActive(filter) ? 'true' : null"
+                  [title]="filterActionLabel(filter)"
+                  [disabled]="apiLoadNetworkStatus() === 'pending'"
+                  (click)="onApplyFilter(filter)"
+                >
+                  <i class="material-icons">{{ filterActionIcon(filter) }}</i>
+                  <span>{{ filterActionLabel(filter) }}</span>
+                </button>
+              </div>
+            }
+          </div>
+        }
+        @for (filter of stackedFilterActions(); track filter) {
           <div class="float-action" [class.float-action-current]="isFilterActive(filter)">
             <button
               [attr.data-test-id]="'collection-filter-' + filter"
@@ -81,6 +100,39 @@
         </div>
       </div>
     }
+    @if (showAiSearchButton()) {
+      <div class="float-action-section">
+        <div class="float-action-section-title">{{ translations.search() }}</div>
+        <div class="float-action-row">
+          <div class="float-action" [class.float-action-current]="isSearchModeActive('standard')">
+            <button
+              data-test-id="standard-search-toggle"
+              [attr.aria-label]="translations.standardSearch()"
+              [attr.aria-current]="isSearchModeActive('standard') ? 'true' : null"
+              [title]="translations.standardSearch()"
+              [disabled]="apiLoadNetworkStatus() === 'pending'"
+              (click)="onSelectSearchMode('standard')"
+            >
+              <i class="material-icons">search</i>
+              <span>{{ translations.standardSearchShort() }}</span>
+            </button>
+          </div>
+          <div class="float-action" [class.float-action-current]="isSearchModeActive('ai')">
+            <button
+              data-test-id="ai-search-toggle"
+              [attr.aria-label]="translations.aiSearch()"
+              [attr.aria-current]="isSearchModeActive('ai') ? 'true' : null"
+              [title]="translations.aiSearch()"
+              [disabled]="apiLoadNetworkStatus() === 'pending'"
+              (click)="onSelectSearchMode('ai')"
+            >
+              <i class="material-icons">psychology</i>
+              <span>{{ translations.aiSearchShort() }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
     @if (showActionSection()) {
       <div class="float-action-section">
         <div class="float-action-section-title">{{ translations.actions() }}</div>
@@ -95,20 +147,6 @@
             >
               <i class="material-icons">add</i>
               <span>{{ translations.addNew() }}</span>
-            </button>
-          </div>
-        }
-        @if (showAiSearchButton()) {
-          <div class="float-action">
-            <button
-              data-test-id="ai-search-toggle"
-              [attr.aria-label]="translations.searchSwitchButtonLabel()"
-              [title]="translations.searchSwitchButtonLabel()"
-              [disabled]="apiLoadNetworkStatus() === 'pending'"
-              (click)="onToggleAiSearch()"
-            >
-              <i class="material-icons">{{ aiSearchIcon() }}</i>
-              <span>{{ translations.searchSwitchButtonLabel() }}</span>
             </button>
           </div>
         }

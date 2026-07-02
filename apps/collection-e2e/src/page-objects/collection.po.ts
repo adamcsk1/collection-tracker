@@ -103,6 +103,7 @@ export const CollectionPage = {
   getAddNewButton: () => cy.getByTestId('add-new'),
   getRandomPickButton: () => cy.getByTestId('random-pick'),
   getScrollToTopButton: () => cy.getByTestId('scroll-to-top'),
+  getStandardSearchToggleButton: () => cy.getByTestId('standard-search-toggle'),
   getAiSearchToggleButton: () => cy.getByTestId('ai-search-toggle'),
   getFloatSearchToggleButton: () => cy.getByTestId('float-search-toggle'),
   getOrderByCreatedAtButton: () => cy.getByTestId('list-order-by-created-at'),
