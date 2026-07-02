@@ -1,7 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { StatisticsSummaryModel } from './statistics-model';
+import { Router } from '@angular/router';
 import { Details } from '@components/details/details';
 import { Input } from '@components/input/input';
 import { ApiService } from '@services/api/api-service';
@@ -15,6 +14,7 @@ import Chart from 'chart.js/auto';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
 import { StatisticsChartService } from './statistics-chart-service';
+import { StatisticsSummaryModel } from './statistics-model';
 
 @Component({
   selector: 'ct-statistics',
@@ -22,6 +22,9 @@ import { StatisticsChartService } from './statistics-chart-service';
   templateUrl: './statistics.html',
   styleUrl: './statistics.css',
   providers: [StatisticsChartService],
+  host: {
+    class: 'page',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Statistics implements AfterViewInit {
@@ -34,6 +37,7 @@ export class Statistics implements AfterViewInit {
   private readonly portal = inject(PortalService);
   private readonly charts = inject(StatisticsChartService);
   protected readonly translations = {
+    statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
     messageLoadStatistics: computed(() => this.ngxSignalTranslate.translate('Message.LoadStatistics')),
     messageEmptyStatistics: computed(() => this.ngxSignalTranslate.translate('Message.EmptyStatistics')),
     messageEmptyTags: computed(() => this.ngxSignalTranslate.translate('Message.EmptyTags')),

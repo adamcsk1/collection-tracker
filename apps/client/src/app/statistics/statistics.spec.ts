@@ -71,6 +71,7 @@ describe('Statistics component', () => {
 
   it('loads summary and tags from the statistics endpoint', () => {
     expect(api.getStatistics).toHaveBeenCalled();
+    expect(component['translations'].statistics()).toBe('Statistics');
     expect(component['summary']()).toEqual({
       movies: 1,
       series: 1,

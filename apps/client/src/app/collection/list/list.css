@@ -10,7 +10,6 @@
   align-content: start;
   gap: var(--size-md);
   padding: var(--size-md);
-  padding-bottom: calc(var(--size-md) + var(--float-actions-safe-area, 72px));
 
   .list-empty {
     display: flex;

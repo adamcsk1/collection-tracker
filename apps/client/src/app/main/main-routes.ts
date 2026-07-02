@@ -9,6 +9,11 @@ export const routes: Routes = [
     canActivate: [mainGuard],
   },
   {
+    path: 'statistics',
+    loadComponent: () => import('../statistics/statistics').then((module) => module.Statistics),
+    canActivate: [mainGuard],
+  },
+  {
     path: 'settings',
     loadChildren: () => import('../settings/settings-routes').then((module) => module.settingsRoutes),
     canActivate: [mainGuard, settingsLockedGuard],

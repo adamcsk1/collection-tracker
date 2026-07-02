@@ -43,7 +43,6 @@
 .main-body {
   box-sizing: border-box;
   padding: var(--size-md);
-  padding-bottom: calc(var(--size-md) + var(--float-actions-safe-area));
   overflow: auto;
   flex: 1;
   max-height: calc(100vh - var(--header-height));
@@ -53,7 +52,8 @@
 }
 
 .main-body:has(ct-list),
-.main-body:has(ct-settings) {
+.main-body:has(ct-settings),
+.main-body:has(ct-statistics) {
   padding-bottom: var(--size-md);
 }
 

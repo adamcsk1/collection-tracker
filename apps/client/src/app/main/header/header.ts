@@ -52,6 +52,9 @@ export class Header {
     if (currentPath.startsWith('/settings')) {
       return 'Settings';
     }
+    if (currentPath.startsWith('/statistics')) {
+      return 'Statistics';
+    }
     return 'Collection';
   }
 }

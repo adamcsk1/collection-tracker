@@ -53,4 +53,10 @@ describe('Header component', () => {
 
     expect(component['currentNavTitle']()).toBe('Settings');
   });
+
+  it('uses statistics as the title for the statistics page', () => {
+    routerEvents.next(new NavigationEnd(1, '/statistics', '/statistics'));
+
+    expect(component['currentNavTitle']()).toBe('Statistics');
+  });
 });

@@ -1,10 +1,6 @@
-import { CommonPage } from './common.po';
-
 export const StatisticsPage = {
   visit: () => {
-    cy.visit('/client/#/collection/library');
-    CommonPage.openMenu();
-    CommonPage.getNavStatisticsLink().click();
+    cy.visit('/client/#/statistics');
   },
 
   getEmptyMessage: () => cy.getByTestId('statistics-empty', { timeout: 10000 }),
