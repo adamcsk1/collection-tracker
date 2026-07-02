@@ -12,9 +12,12 @@ import { collectionStateToken } from '../../collection-store';
 import { ItemDialog } from '../../item/item-dialog/item-dialog';
 import { AiSearchService } from '../../search/ai-search-service';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
+import { ListItemCard } from '../list-item-card/list-item-card';
+import { ListItemCardRatingModel } from '../list-item-card/list-item-card-model';
 
 @Component({
   selector: 'ct-list-item',
+  imports: [ListItemCard],
   templateUrl: './list-item.html',
   styleUrl: './list-item.css',
   providers: [TagManagementColorPipe],
@@ -48,9 +51,11 @@ export class ListItem {
     return this.tagManagementColorPipe.transform(this.collectionItem().tags, { checkUseForImageBorder: true });
   });
   protected readonly imageBadgeTag = computed(() => {
-    if (this.watchedStyle()) return;
-    return this.collectionItem().tags.find((tag) =>
-      this.tagManagementColorPipe.transform(tag, { useForImageBadge: true })
+    if (this.watchedStyle()) return null;
+    return (
+      this.collectionItem().tags.find((tag) =>
+        this.tagManagementColorPipe.transform(tag, { useForImageBadge: true })
+      ) ?? null
     );
   });
   protected readonly tags = computed(() => {
@@ -70,6 +75,7 @@ export class ListItem {
     return getContrastColorHex(badgeBackgroundColor);
   });
   protected readonly useAiSearch = this.aiSearch.useAiSearch.asReadonly();
+  protected readonly imageBadgeDisabled = computed(() => this.useAiSearch() === true);
   protected readonly listDisplayPreferences = this.mainState.state.collectionListDisplayPreferences;
   protected readonly selectedRating = computed(() => {
     const item = this.collectionItem();
@@ -109,10 +115,15 @@ export class ListItem {
   };
   public readonly collectionItem = input.required<CollectionItemModel>();
 
+  protected readonly itemMeta = computed(() => {
+    const item = this.collectionItem();
+    return this.listDisplayPreferences().showYear && item.year ? item.year : null;
+  });
+
   private getRatingDisplayValue(
     rating: CollectionListDisplayRatingModel,
     item: CollectionItemModel
-  ): { label: string; value: string | number; testId: string; icon: string } | null {
+  ): ListItemCardRatingModel | null {
     switch (rating) {
       case 'imdb':
         return item.rate ? { label: '', value: item.rate, testId: 'list-item-rating-imdb', icon: 'star_rate' } : null;

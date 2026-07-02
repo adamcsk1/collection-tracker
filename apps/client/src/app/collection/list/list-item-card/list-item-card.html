@@ -1,0 +1,79 @@
+<div
+  [attr.data-test-id]="imageTestId()"
+  class="image"
+  [attr.tabindex]="interactive() ? 0 : null"
+  [attr.role]="interactive() ? 'button' : null"
+  [attr.aria-label]="interactive() ? title() : null"
+  (click)="onOpen($event)"
+  (keyup.enter)="onOpen($event)"
+  (keyup.space)="onOpen($event)"
+>
+  <span
+    class="poster-image"
+    [class.completed-image]="completedImage()"
+    [style.backgroundImage]="'url(' + imageUrl() + ')'"
+    aria-hidden="true"
+  ></span>
+  @if (imageBadgeText(); as imageBadgeText) {
+    <a
+      href="#"
+      data-test-id="list-item-image-badge"
+      class="badge"
+      [style.backgroundColor]="imageBadgeBackgroundColor()"
+      [style.color]="imageBadgeTextColor()"
+      [class.silent-disabled]="imageBadgeDisabled()"
+      (click)="onImageBadgeClick($event)"
+    >
+      {{ imageBadgeText }}
+    </a>
+  }
+  @if (completed()) {
+    <span
+      class="completed"
+      [attr.data-test-id]="completedTestId()"
+      [attr.aria-label]="completedLabel()"
+      [title]="completedLabel()"
+    >
+      <i class="material-icons" aria-hidden="true">check_circle</i>
+    </span>
+  }
+</div>
+<div class="content">
+  <h3 [attr.data-test-id]="titleTestId()" [title]="title()">
+    @if (interactive()) {
+      <a href="#" role="button" (click)="onOpen($event)" (keyup.enter)="onOpen($event)" (keyup.space)="onOpen($event)">
+        {{ title() }}
+      </a>
+    } @else {
+      {{ title() }}
+    }
+  </h3>
+  <div class="meta">
+    <span class="meta-column">
+      @if (meta(); as meta) {
+        <span [attr.data-test-id]="metaTestId()">{{ meta }}</span>
+      }
+      @if (rating(); as rating) {
+        <span class="rating" [attr.data-test-id]="rating.testId">
+          <i class="material-icons" aria-hidden="true"> {{ rating.icon }} </i>
+          @if (rating.label) {
+            {{ rating.label }}
+          }
+          {{ rating.value }}
+        </span>
+      }
+    </span>
+    <span class="meta-column">
+      @if (favorite()) {
+        <span class="favorite" data-test-id="list-item-favorite" [title]="favoriteLabel()">
+          <i class="material-icons" aria-hidden="true">star</i>
+        </span>
+      }
+      @if (shared()) {
+        <span class="shared" data-test-id="list-item-shared" [title]="sharedLabel()">
+          <i class="material-icons" aria-hidden="true">share</i>
+        </span>
+      }
+    </span>
+  </div>
+</div>

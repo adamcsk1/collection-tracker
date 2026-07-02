@@ -4,6 +4,7 @@ import {
   ExternalMetadataProviderNameModel,
 } from './external-metadata-provider-model';
 import { CollectionItemContentTypeModel } from './collection-item-model';
+import { SelectDataModel } from './select-model';
 
 export interface ExternalMetadataRatingModel {
   source: string;
@@ -32,6 +33,12 @@ export interface ExternalMetadataItemModel {
 
 export interface ExternalMetadataSearchResponseModel {
   results: ExternalMetadataItemModel[];
+}
+
+export interface ExternalMetadataSelectDataModel extends SelectDataModel {
+  contentType?: CollectionItemContentTypeModel;
+  poster?: string;
+  year?: string;
 }
 
 export interface ExternalMetadataProviderModel {

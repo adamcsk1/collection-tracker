@@ -79,7 +79,15 @@ describe('ExternalMetadataService', () => {
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(service.matchedContent()).toEqual([{ text: '(movie) The Matrix (1999)', value: matrixReference }]);
+    expect(service.matchedContent()).toEqual([
+      {
+        contentType: 'movie',
+        poster: '',
+        text: 'The Matrix',
+        value: matrixReference,
+        year: '1999',
+      },
+    ]);
     expect(service.getProviderReference(matrixReference)).toEqual({ identitySource: 'omdb', identityId: 'tt0133093' });
     expect(service.completedSearchText()).toBe('Matrix');
   });
@@ -109,7 +117,13 @@ describe('ExternalMetadataService', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     const encodedReference = 'provider%3Aname/id%2Cwith%2Fslash';
     expect(service.matchedContent()).toEqual([
-      { text: '(movie) Provider Punctuation (1999)', value: encodedReference },
+      {
+        contentType: 'movie',
+        poster: '',
+        text: 'Provider Punctuation',
+        value: encodedReference,
+        year: '1999',
+      },
     ]);
     expect(service.getProviderReference(encodedReference)).toEqual({
       identitySource: 'provider:name',
@@ -162,7 +176,15 @@ describe('ExternalMetadataService', () => {
       ],
     });
 
-    expect(service.matchedContent()).toEqual([{ text: '(movie) Dune (2021)', value: duneReference }]);
+    expect(service.matchedContent()).toEqual([
+      {
+        contentType: 'movie',
+        poster: '',
+        text: 'Dune',
+        value: duneReference,
+        year: '2021',
+      },
+    ]);
     expect(service.getProviderReference(matrixReference)).toBeNull();
     expect(service.getProviderReference(duneReference)).toEqual({ identitySource: 'omdb', identityId: 'tt1160419' });
     expect(service.completedSearchText()).toBe('Dune');

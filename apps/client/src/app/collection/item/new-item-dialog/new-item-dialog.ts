@@ -17,22 +17,26 @@ import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { Select } from '@components/select/select';
 import { ApiService } from '@services/api/api-service';
+import { apiStateToken } from '@services/api/api-store';
 import { ExternalMetadataService } from '@services/external-metadata/external-metadata-service';
 import { CollectionListTypeModel } from '@shared/models/api-model';
+import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadata-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap } from 'rxjs';
 import { mainStateToken } from '../../../main/main-store';
 import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { sharesStateToken } from '../../../shares/shares-store';
+import { ListItemCard } from '../../list/list-item-card/list-item-card';
+import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
+import { buildIMDbSearchUrl, buildWebSearchUrl } from '../item-dialog/utils/item-dialog-util';
 import { NewItemModel, SaveMode, SaveOptions } from './new-item-dialog-model';
 import { NewItemDialogService } from './new-item-dialog-service';
 import { TagSuggestionService } from './suggestion/tag-suggestion-service';
 import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
-import { buildIMDbSearchUrl, buildWebSearchUrl } from '../item-dialog/utils/item-dialog-util';
 
 @Component({
   selector: 'ct-new-item-dialog',
-  imports: [FormField, FormRoot, Input, Select, DialogShell, Autocomplete, Checkbox],
+  imports: [FormField, FormRoot, Input, Select, DialogShell, Autocomplete, Checkbox, ListItemCard],
   templateUrl: './new-item-dialog.html',
   styleUrl: './new-item-dialog.css',
   providers: [
@@ -50,6 +54,7 @@ export class NewItemDialog {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(ApiService);
+  private readonly apiState = inject(apiStateToken);
   private readonly service = inject(NewItemDialogService);
   private readonly mainState = inject(mainStateToken);
   private readonly sharesState = inject(sharesStateToken);
@@ -154,9 +159,8 @@ export class NewItemDialog {
     const matchedContent = this.service.matchedContent();
     return this.seriesTracker() || this.movieTracker()
       ? matchedContent.filter((content) => {
-          const text = `${content.text}`.toLowerCase();
-          if (text.startsWith('imdb id:')) return true;
-          return this.seriesTracker() ? text.startsWith('(series)') : text.startsWith('(movie)');
+          if (`${content.text}`.toLowerCase().startsWith('imdb id:')) return true;
+          return this.seriesTracker() ? content.contentType === 'series' : content.contentType === 'movie';
         })
       : matchedContent;
   });
@@ -173,15 +177,14 @@ export class NewItemDialog {
 
     const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedIMDbId);
     const selectedContentText = `${selectedContent?.text ?? ''}`.toLowerCase();
-    return selectedContentText.startsWith('(movie)') || selectedContentText.startsWith('imdb id:');
+    return selectedContent?.contentType === 'movie' || selectedContentText.startsWith('imdb id:');
   });
   protected readonly selectedContentIsSeries = computed(() => {
     const selectedIMDbId = this.form.selectedIMDbId().value();
     if (!selectedIMDbId) return false;
 
     const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedIMDbId);
-    const selectedContentText = `${selectedContent?.text ?? ''}`.toLowerCase();
-    return selectedContentText.startsWith('(series)');
+    return selectedContent?.contentType === 'series';
   });
   protected readonly showWatchedCheckbox = computed(() => !this.internalListMode() && this.selectedContentIsMovie());
   protected readonly showCopyToSeriesTrackerCheckbox = computed(
@@ -200,6 +203,7 @@ export class NewItemDialog {
     return options;
   });
   protected readonly showLibrarySelect = computed(() => !this.internalListMode() && this.libraryOptions().length > 1);
+  protected readonly selectedIMDbId = computed(() => this.form.selectedIMDbId().value());
   private readonly defaultTargetOwnerShareCode = computed(() => {
     if (this.internalListMode()) return null;
 
@@ -302,6 +306,25 @@ export class NewItemDialog {
 
     const searchText = this.form.searchText().value().trim();
     if (searchText) this.service.search(searchText);
+  }
+
+  protected getMatchedContentImageUrl(content: ExternalMetadataSelectDataModel): string {
+    return getProxyImageUrl(this.apiState.state.apiUrl(), content.poster ?? '');
+  }
+
+  protected getMatchedContentMeta(content: ExternalMetadataSelectDataModel): string | null {
+    if (content.contentType && content.year) return `(${content.contentType}) ${content.year}`;
+    if (content.contentType) return `(${content.contentType})`;
+    return content.year ?? null;
+  }
+
+  protected isMatchedContentSelected(content: ExternalMetadataSelectDataModel): boolean {
+    return `${content.value}` === this.selectedIMDbId();
+  }
+
+  protected onSelectMatchedContent(content: ExternalMetadataSelectDataModel): void {
+    this.form.selectedIMDbId().value.set(`${content.value}`);
+    this.form.selectedIMDbId().markAsTouched();
   }
 
   private async onSave(mode: SaveMode | null = null): Promise<void> {

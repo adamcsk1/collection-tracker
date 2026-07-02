@@ -1,7 +1,10 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { ExternalMetadataItemModel, ExternalMetadataReferenceModel } from '@shared/models/external-metadata-model';
-import { SelectInputModel } from '@shared/models/select-model';
+import {
+  ExternalMetadataItemModel,
+  ExternalMetadataReferenceModel,
+  ExternalMetadataSelectDataModel,
+} from '@shared/models/external-metadata-model';
 import { getIMDbId } from '@shared/utils/imdb-id-util';
 import { catchError, EMPTY, Observable } from 'rxjs';
 import { AlertService } from '../alert-service';
@@ -15,7 +18,7 @@ export class ExternalMetadataService {
   private searchText = '';
   private directImdbId: string | null = null;
   private searchRequestId = 0;
-  private readonly _matchedContent = signal<SelectInputModel>([]);
+  private readonly _matchedContent = signal<ExternalMetadataSelectDataModel[]>([]);
   private readonly _matchedReferences = signal<Record<string, ExternalMetadataReferenceModel>>({});
   private readonly _selectedContent = signal<ExternalMetadataItemModel | null>(null);
   private readonly _completedSearchText = signal('');
@@ -99,7 +102,7 @@ export class ExternalMetadataService {
         .subscribe((response) => {
           if (searchRequestId !== this.searchRequestId) return;
 
-          const result: SelectInputModel = [];
+          const result: ExternalMetadataSelectDataModel[] = [];
           const references: Record<string, ExternalMetadataReferenceModel> = {};
           if (Array.isArray(response?.results)) {
             for (const responseItem of response.results) {
@@ -110,8 +113,11 @@ export class ExternalMetadataService {
                 externalIds: responseItem.externalIds,
               };
               result.push({
-                text: `(${responseItem.contentType}) ${responseItem.title} (${responseItem.year})`,
+                contentType: responseItem.contentType,
+                poster: responseItem.poster,
+                text: responseItem.title,
                 value,
+                year: responseItem.year,
               });
             }
           }

@@ -50,19 +50,41 @@
             [options]="libraryOptions()"
           />
         }
-        <libc-select
+        <section
+          class="content-selector"
           data-test-id="new-item-content-select"
-          [mandatory]="true"
-          [label]="translations.selectedContent()"
-          [formField]="form.selectedIMDbId"
-          [options]="matchedContent()"
+          [attr.aria-label]="translations.selectedContent()"
         >
-          <ng-container errors>
-            @if (formErrors.selectedIMDbId.knownIMDbId()) {
-              {{ translations.validationKnownIMDbId() }}
+          <span class="content-selector-label">
+            {{ translations.selectedContent() }}
+            <span>*</span>
+          </span>
+          <div class="content-options" data-test-id="new-item-content-options">
+            @for (content of matchedContent(); track content.value) {
+              <button
+                type="button"
+                class="content-option card card-interactive"
+                data-test-id="new-item-content-option"
+                [class.selected]="isMatchedContentSelected(content)"
+                [attr.aria-pressed]="isMatchedContentSelected(content)"
+                (click)="onSelectMatchedContent(content)"
+              >
+                <ct-list-item-card
+                  [imageUrl]="getMatchedContentImageUrl(content)"
+                  [title]="content.text"
+                  [meta]="getMatchedContentMeta(content)"
+                  [interactive]="false"
+                  imageTestId="new-item-content-option-image"
+                  titleTestId="new-item-content-option-title"
+                  metaTestId="new-item-content-option-meta"
+                />
+              </button>
             }
-          </ng-container>
-        </libc-select>
+          </div>
+          @if (formErrors.selectedIMDbId.knownIMDbId()) {
+            <small class="error">{{ translations.validationKnownIMDbId() }}</small>
+          }
+        </section>
         @if (!internalListMode()) {
           <libc-input
             data-test-id="new-item-user-rate"

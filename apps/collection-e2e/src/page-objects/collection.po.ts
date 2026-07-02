@@ -120,7 +120,8 @@ export const CollectionPage = {
   getNewItemSearch: () => cy.get('[data-test-id="new-item-search"]'),
   getNewItemSearchInput: () => cy.getByTestId('new-item-search').find('input'),
   getNewItemLibrarySelect: () => cy.getByTestId('new-item-library').find('select'),
-  getNewItemContentSelect: () => cy.getByTestId('new-item-content-select').find('select'),
+  getNewItemContentSelect: () => cy.getByTestId('new-item-content-select'),
+  getNewItemContentOptions: () => cy.getByTestId('new-item-content-option'),
   getNewItemUserRateInput: () => cy.getByTestId('new-item-user-rate').find('input'),
   getNewItemCopyToSeriesTrackerAsWatchedCheckbox: () =>
     cy.getByTestId('new-item-copy-to-series-tracker-as-watched').find('input[type="checkbox"]'),

@@ -12,3 +12,59 @@ form {
     font-weight: 600;
   }
 }
+
+.content-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-xs);
+  margin-bottom: var(--size-md);
+}
+
+.content-selector-label {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2xs);
+
+  span {
+    color: var(--color-crimson);
+  }
+}
+
+.content-options {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--size-sm);
+  overflow-x: auto;
+  padding: var(--size-sm);
+  scroll-padding-inline: var(--size-sm);
+  scroll-snap-type: x proximity;
+}
+
+.content-option {
+  box-sizing: border-box;
+  color: var(--text-color);
+  cursor: pointer;
+  display: flex;
+  flex: 0 0 var(--card-width);
+  flex-direction: column;
+  font: inherit;
+  height: max-content;
+  min-width: 0;
+  padding: 0;
+  scroll-snap-align: start;
+  text-align: left;
+
+  &:hover,
+  &:focus-visible {
+    outline: var(--outline-style);
+    outline-color: var(--focus-border-color);
+  }
+
+  &.selected {
+    border-color: var(--main-color);
+  }
+}
+
+.error {
+  color: var(--color-crimson);
+}

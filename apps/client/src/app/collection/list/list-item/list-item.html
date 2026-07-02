@@ -1,74 +1,23 @@
 @if (collectionItem(); as collectionItem) {
-  <div
-    data-test-id="list-item-image"
-    class="image"
-    tabindex="0"
-    role="button"
-    [attr.aria-label]="collectionItem.title"
-    (click)="onOpenDetail()"
-    (keyup)="onOpenDetail()"
-  >
-    <span
-      class="poster-image"
-      [class.completed-image]="watchedStyle()"
-      [style.backgroundImage]="'url(' + imageUrl() + ')'"
-      aria-hidden="true"
-    ></span>
-    @if (imageBadgeTag(); as imageBadgeTag) {
-      <a
-        href="#"
-        data-test-id="list-item-image-badge"
-        class="badge"
-        [style.backgroundColor]="badgeBackgroundColor()"
-        [style.color]="badgeTextColor()"
-        [class.silent-disabled]="useAiSearch()"
-        (click)="onSetSearchText(imageBadgeTag, $event)"
-      >
-        {{ imageBadgeTag }}
-      </a>
-    }
-    @if (watchedStyle()) {
-      <span
-        class="completed"
-        [attr.data-test-id]="watchedStyleTestId()"
-        [attr.aria-label]="watchedStyleLabel()"
-        [title]="watchedStyleLabel()"
-      >
-        <i class="material-icons" aria-hidden="true">check_circle</i>
-      </span>
-    }
-  </div>
-  <div class="content">
-    <h3 data-test-id="list-item-title">
-      <a href="#" role="button" (click)="onOpenDetail()" (keyup)="onOpenDetail()"> {{ collectionItem.title }} </a>
-    </h3>
-    <div class="meta">
-      <span class="meta-column">
-        @if (listDisplayPreferences().showYear && collectionItem.year) {
-          <span data-test-id="list-item-year">{{ collectionItem.year }}</span>
-        }
-        @if (selectedRating(); as rating) {
-          <span class="rating" [attr.data-test-id]="rating.testId">
-            <i class="material-icons" aria-hidden="true"> {{ rating.icon }} </i>
-            @if (rating.label) {
-              {{ rating.label }}
-            }
-            {{ rating.value }}
-          </span>
-        }
-      </span>
-      <span class="meta-column">
-        @if (favorite()) {
-          <span class="favorite" data-test-id="list-item-favorite" [title]="translations.favorite()">
-            <i class="material-icons" aria-hidden="true">star</i>
-          </span>
-        }
-        @if (listDisplayPreferences().showSharedIcon && shared()) {
-          <span class="shared" data-test-id="list-item-shared" [title]="translations.shared()">
-            <i class="material-icons" aria-hidden="true">share</i>
-          </span>
-        }
-      </span>
-    </div>
-  </div>
+  <ct-list-item-card
+    [imageUrl]="imageUrl()"
+    [title]="collectionItem.title"
+    [meta]="itemMeta()"
+    metaTestId="list-item-year"
+    [completed]="watchedStyle()"
+    [completedImage]="watchedStyle()"
+    [completedLabel]="watchedStyleLabel()"
+    [completedTestId]="watchedStyleTestId()"
+    [imageBadgeText]="imageBadgeTag()"
+    [imageBadgeBackgroundColor]="badgeBackgroundColor()"
+    [imageBadgeTextColor]="badgeTextColor()"
+    [imageBadgeDisabled]="imageBadgeDisabled()"
+    [rating]="selectedRating()"
+    [favorite]="favorite()"
+    [favoriteLabel]="translations.favorite()"
+    [shared]="listDisplayPreferences().showSharedIcon && shared()"
+    [sharedLabel]="translations.shared()"
+    (open)="onOpenDetail()"
+    (imageBadgeClick)="onSetSearchText(imageBadgeTag())"
+  />
 }

@@ -101,7 +101,7 @@ describe('Collection — add a new element', () => {
     CollectionPage.getNewItemSearchInput().type(newTitle);
     cy.wait('@omdbSearch');
 
-    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
     CollectionPage.getNewItemSaveButton().click();
 
     CollectionPage.getListItems().should('have.length', 1);
@@ -116,7 +116,7 @@ describe('Collection — add a new element', () => {
 
     cy.wait('@omdbSearch');
     CollectionPage.getNewItemSearchInput().should('have.value', newTitle);
-    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
   });
 
   it('saves a new item and keeps the dialog open for another item', () => {
@@ -143,11 +143,11 @@ describe('Collection — add a new element', () => {
 
     CollectionPage.getNewItemSearchInput().clear().type(firstTitle);
     cy.wait('@omdbSearchFirst');
-    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
     CollectionPage.getNewItemSaveAndNewButton().click();
     cy.wait('@omdbItemFirst');
 
-    CollectionPage.getNewItemSearchInput().should('be.visible').and('have.value', '');
+    CollectionPage.getNewItemSearchInput().scrollIntoView().should('be.visible').and('have.value', '');
     CollectionPage.getListItems().should('contain.text', firstTitle);
 
     cy.intercept(
@@ -167,7 +167,7 @@ describe('Collection — add a new element', () => {
 
     CollectionPage.getNewItemSearchInput().type(secondTitle);
     cy.wait('@omdbSearchSecond');
-    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
     CollectionPage.getNewItemSaveAndCloseButton().click();
     cy.wait('@omdbItemSecond');
 
@@ -183,7 +183,7 @@ describe('Collection — add a new element', () => {
     CollectionPage.getNewItemSearchInput().type(newTitle);
     cy.wait('@omdbSearch');
 
-    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
     cy.getByTestId('new-item-watched').find('input[type="checkbox"]').check();
     CollectionPage.getNewItemSaveAndCloseButton().click();
 
@@ -200,7 +200,7 @@ describe('Collection — add a new element', () => {
     CollectionPage.getNewItemSearchInput().type(newTitle);
     cy.wait('@omdbSearch');
 
-    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
     CollectionPage.getNewItemUserRateInput().type('8.7');
     CollectionPage.getNewItemSaveAndCloseButton().click();
 
@@ -218,7 +218,7 @@ describe('Collection — add a new element', () => {
     CollectionPage.getNewItemSearchInput().type(newTitle);
     cy.wait('@omdbSearch');
 
-    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
     CollectionPage.getNewItemUserRateInput().type('10.1');
     CollectionPage.getNewItemSaveAndCloseButton().should('be.disabled');
   });
@@ -636,7 +636,7 @@ describe('Collection — wishlist', () => {
 
     CollectionPage.getNewItemSearchInput().type(wishlistTitle);
     cy.wait('@wishlistOmdbSearch');
-    CollectionPage.getNewItemContentSelect().find('option').should('have.length.at.least', 1);
+    CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
     CollectionPage.getNewItemSaveAndCloseButton().click();
     cy.wait('@wishlistOmdbItem');
 
@@ -679,7 +679,7 @@ describe('Collection — series tracker', () => {
 
     CollectionPage.getNewItemSearchInput().type(seriesTitle);
     cy.wait('@seriesTrackerOmdbSearch');
-    CollectionPage.getNewItemContentSelect().find('option').should('have.length', 1).and('contain.text', seriesTitle);
+    CollectionPage.getNewItemContentOptions().should('have.length', 1).and('contain.text', seriesTitle);
     cy.getByTestId('new-item-user-rate').should('not.exist');
     cy.getByTestId('new-item-watched').should('not.exist');
     CollectionPage.getNewItemSaveAndCloseButton().click();
@@ -742,7 +742,7 @@ describe('Collection — movie tracker', () => {
 
     CollectionPage.getNewItemSearchInput().type(movieTitle);
     cy.wait('@movieTrackerOmdbSearch');
-    CollectionPage.getNewItemContentSelect().find('option').should('have.length', 1).and('contain.text', movieTitle);
+    CollectionPage.getNewItemContentOptions().should('have.length', 1).and('contain.text', movieTitle);
     cy.getByTestId('new-item-user-rate').should('not.exist');
     cy.getByTestId('new-item-watched').should('not.exist');
     CollectionPage.getNewItemSaveAndCloseButton().click();

@@ -1,25 +1,26 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { initialMainCollectionState, mainCollectionStateToken } from '../../../main/main-collection-store';
-import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
 import { AutocompleteService } from '@components/autocomplete/autocomplete';
 import { ApiService } from '@services/api/api-service';
+import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadata-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { initialMainCollectionState, mainCollectionStateToken } from '../../../main/main-collection-store';
+import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
 import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { initialSharesState, SharesState, sharesStateToken } from '../../../shares/shares-store';
 import { NewItemDialog } from './new-item-dialog';
 import { NewItemDialogService } from './new-item-dialog-service';
 
 describe('NewItemDialog component', () => {
-  type MatchedContent = { text: string; value: string };
   const matrixReference = 'omdb/tt123';
 
   let fixture: ComponentFixture<NewItemDialog>;
   let component: NewItemDialog;
   let service: {
-    matchedContent: ReturnType<typeof signal<MatchedContent[]>>;
+    matchedContent: ReturnType<typeof signal<ExternalMetadataSelectDataModel[]>>;
     completedSearchText: ReturnType<typeof signal<string>>;
     search: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
@@ -50,6 +51,7 @@ describe('NewItemDialog component', () => {
       providers: [
         provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialMainState, mainStateToken),
+        provideStore(initialApiState, apiStateToken),
         provideStore(initialSharesState, sharesStateToken),
       ],
     });
@@ -104,6 +106,42 @@ describe('NewItemDialog component', () => {
     expect(preventDefault).toHaveBeenCalled();
     expect(service.search).toHaveBeenCalledWith('matrix');
     expect(component['form'].searchText().value()).toBe('matrix');
+  });
+
+  it('selects matched content from the card selector and marks the control as touched', () => {
+    const control = component['form'].selectedIMDbId();
+    service.matchedContent.set([
+      { contentType: 'movie', text: 'First Movie', value: 'omdb/tt-first', year: '1999' },
+      { contentType: 'movie', text: 'Second Movie', value: 'omdb/tt-second', year: '2000' },
+    ]);
+    control.reset(null);
+
+    component['onSelectMatchedContent'](service.matchedContent()[1]!);
+
+    expect(control.value()).toBe('omdb/tt-second');
+    expect(control.touched()).toBe(true);
+    expect(component['isMatchedContentSelected'](service.matchedContent()[1]!)).toBe(true);
+  });
+
+  it('formats matched content card metadata and image URLs', () => {
+    const apiState = TestBed.inject(apiStateToken);
+    apiState.setState('apiUrl', '/api/v1');
+    const content = {
+      contentType: 'movie',
+      poster: 'https://images.example/poster.jpg',
+      text: 'Test Movie',
+      value: 'omdb/tt-test',
+      year: '2026',
+    } satisfies ExternalMetadataSelectDataModel;
+
+    expect(component['getMatchedContentImageUrl'](content)).toBe(
+      '/api/v1/proxy/image?url=https%3A%2F%2Fimages.example%2Fposter.jpg'
+    );
+    expect(component['getMatchedContentMeta'](content)).toBe('(movie) 2026');
+  });
+
+  it('omits matched content card metadata for direct IMDb ID matches', () => {
+    expect(component['getMatchedContentMeta']({ text: 'IMDb id: tt123', value: matrixReference })).toBeNull();
   });
 
   it('shows external search links for the completed title search', () => {
@@ -164,7 +202,7 @@ describe('NewItemDialog component', () => {
   });
 
   it('passes watched only for selected library movie content', async () => {
-    service.matchedContent.set([{ text: '(movie) Test Movie (2020)', value: 'tt-movie' }]);
+    service.matchedContent.set([{ contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' }]);
     component['form'].selectedIMDbId().value.set('tt-movie');
     component['form'].watched().value.set(true);
 
@@ -176,7 +214,7 @@ describe('NewItemDialog component', () => {
   });
 
   it('hides watched for selected series content', async () => {
-    service.matchedContent.set([{ text: '(series) Test Series (2020)', value: 'tt-series' }]);
+    service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['form'].selectedIMDbId().value.set('tt-series');
     component['form'].watched().value.set(true);
 
@@ -187,14 +225,14 @@ describe('NewItemDialog component', () => {
   });
 
   it('shows copy-to-series-tracker checkbox for selected series content in library mode', () => {
-    service.matchedContent.set([{ text: '(series) Test Series (2020)', value: 'tt-series' }]);
+    service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['form'].selectedIMDbId().value.set('tt-series');
 
     expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(true);
   });
 
   it('hides copy-to-series-tracker checkbox for selected movie content', () => {
-    service.matchedContent.set([{ text: '(movie) Test Movie (2020)', value: 'tt-movie' }]);
+    service.matchedContent.set([{ contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' }]);
     component['form'].selectedIMDbId().value.set('tt-movie');
 
     expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
@@ -209,7 +247,7 @@ describe('NewItemDialog component', () => {
   });
 
   it('hides copy-to-series-tracker checkbox in internal list modes', () => {
-    service.matchedContent.set([{ text: '(series) Test Series (2020)', value: 'tt-series' }]);
+    service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['form'].selectedIMDbId().value.set('tt-series');
 
     fixture.componentRef.setInput('watchLater', true);
@@ -225,7 +263,7 @@ describe('NewItemDialog component', () => {
   });
 
   it('passes copy-to-series-tracker-as-watched flag when checked', async () => {
-    service.matchedContent.set([{ text: '(series) Test Series (2020)', value: 'tt-series' }]);
+    service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['form'].selectedIMDbId().value.set('tt-series');
     component['form'].copyToSeriesTrackerAsWatched().value.set(true);
 
@@ -327,14 +365,14 @@ describe('NewItemDialog component', () => {
     fixture.componentRef.setInput('seriesTracker', true);
     service.matchedContent.set([
       { text: 'IMDb id: tt-id', value: 'tt-id' },
-      { text: '(movie) Test Movie (2020)', value: 'tt-movie' },
-      { text: '(series) Test Series (2021)', value: 'tt-series' },
+      { contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' },
+      { contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2021' },
     ]);
     fixture.detectChanges();
 
     expect(component['matchedContent']()).toEqual([
       { text: 'IMDb id: tt-id', value: 'tt-id' },
-      { text: '(series) Test Series (2021)', value: 'tt-series' },
+      { contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2021' },
     ]);
   });
 
