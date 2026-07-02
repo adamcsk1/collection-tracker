@@ -5,12 +5,14 @@
 .badge {
   position: absolute;
   top: var(--size-xs);
-  right: var(--size-xs);
+  left: 50%;
+  transform: translateX(-50%);
   font-size: var(--font-size-sm);
-  padding: var(--size-2xs) var(--size-xs);
+  padding: var(--size-2xs);
   border: 0;
   border-radius: var(--border-radius);
   cursor: pointer;
+  opacity: 0.9;
 
   @media (width <= 520px) {
     font-size: var(--font-size-sm);
