@@ -31,16 +31,23 @@ describe('sign-in-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    delete process.env.AUTH_RATE_LIMIT;
   });
 
   it('returns 400 when body is invalid', async () => {
     const response = mockResponse();
     const request: any = { body: { username: '', token: 'token' }, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
+    process.env.AUTH_RATE_LIMIT = '123';
 
     const { register } = await import('./sign-in-api');
     register(app);
 
+    expect(app.post).toHaveBeenCalledWith(
+      expect.any(String),
+      { config: { rateLimit: { max: 123, timeWindow: '1 minute' } } },
+      expect.any(Function)
+    );
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(400);
   });

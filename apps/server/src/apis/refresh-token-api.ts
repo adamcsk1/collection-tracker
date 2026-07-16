@@ -1,4 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
+import type {} from '@fastify/rate-limit';
 import dayjs from 'dayjs';
 import type { FastifyInstance } from 'fastify';
 import type jwt from 'jsonwebtoken';
@@ -16,6 +17,7 @@ import { generateAccessToken } from '../core/jwt';
 import { debugLog, errorLog } from '../core/logger';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getUserAccessToken } from '../core/utils/users-util';
+import { getRefreshRateLimit } from '../core/constants/rate-limit-const';
 
 const hasUsername = (data: jwtLib.JwtPayload | string | undefined): data is { username: string } =>
   typeof data === 'object' && data !== null && 'username' in data && typeof data.username === 'string';
@@ -23,6 +25,7 @@ const hasUsername = (data: jwtLib.JwtPayload | string | undefined): data is { us
 export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/session/refresh`,
+    { config: { rateLimit: { max: getRefreshRateLimit(), timeWindow: '1 minute' } } },
     withErrorHandler(async (request, response) => {
       const signedCookieToken = request.cookies[COOKIE_REFRESH_TOKEN];
       const cookieToken = signedCookieToken ? request.unsignCookie(signedCookieToken).value : undefined;

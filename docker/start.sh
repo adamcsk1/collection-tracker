@@ -12,8 +12,10 @@ BASE_PATH_REPLACEMENT=$(printf '%s' "$BASE_PATH" | sed 's/[&|]/\\&/g')
 # Generate nginx config from template
 NGINX_TEMPLATE=/etc/nginx/nginx.conf.template
 NGINX_CONF=/etc/nginx/nginx.conf
+TRUSTED_PROXY_CONF=/etc/nginx/trusted-proxies.conf
 
 if [ -f "$NGINX_TEMPLATE" ]; then
+  TRUSTED_PROXY_CIDRS=${TRUSTED_PROXY_CIDRS:-} node /app/trusted-proxy-config.mjs > "$TRUSTED_PROXY_CONF"
   cp "$NGINX_TEMPLATE" "$NGINX_CONF"
   sed -i "s|\${BASE_PATH}|${BASE_PATH_REPLACEMENT}|g" "$NGINX_CONF"
 
@@ -64,15 +66,21 @@ if [ ! -f "$ENTRY" ]; then
   exit 1
 fi
 
-# Ensure .env exists in data folder; create a minimal one if missing
+# Ensure .env exists in data folder; generate persistent secrets on first start
 if [ ! -f "/data/.env" ]; then
-  echo "INFO: /data/.env not found. Creating a minimal default one."
-  cat > /data/.env <<'EOF'
-# Minimal defaults; override by mounting your own /data/.env
+  echo "INFO: /data/.env not found. Creating secure defaults."
+  JWT_SECRET=$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")
+  COOKIE_SECRET=$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")
+  SALT=$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")
+  cat > /data/.env <<EOF
+# Generated defaults; preserve these secrets when changing other settings
 HOST=0.0.0.0
 PORT=3000
 CORS_ORIGIN=*
 OMDB_API_KEY=
+JWT_SECRET=$JWT_SECRET
+COOKIE_SECRET=$COOKIE_SECRET
+SALT=$SALT
 EOF
   chmod 600 /data/.env
 fi

@@ -1226,6 +1226,8 @@ paths:
           description: Registration is disabled or the configured user limit has been reached.
         '409':
           description: A user with this username already exists.
+        '429':
+          description: Authentication rate limit exceeded.
 
   /sign-in:
     post:
@@ -1257,6 +1259,8 @@ paths:
           description: User token is invalid.
         '404':
           description: User not found.
+        '429':
+          description: Authentication rate limit exceeded.
 
   /logout:
     delete:
@@ -1337,6 +1341,8 @@ paths:
           description: No refresh token provided.
         '403':
           description: Refresh token is invalid, expired, or not recognized.
+        '429':
+          description: Authentication rate limit exceeded.
 
   /user:
     delete:

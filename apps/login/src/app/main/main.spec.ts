@@ -109,6 +109,16 @@ describe('Main component', () => {
     expect(webStorage.removeItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN);
   });
 
+  it('hides the blocker without clearing the session when validation is rate limited', () => {
+    webStorage.getItem.mockReturnValue('true');
+    apiService.validateSession.mockReturnValue(throwError(() => ({ status: 429 })));
+
+    fixture.componentInstance.ngAfterViewInit();
+
+    expect(blockerState.state.show()).toBe(false);
+    expect(webStorage.removeItem).not.toHaveBeenCalled();
+  });
+
   it('redirects to client app with base path after successful validation', () => {
     webStorage.getItem.mockReturnValue('true');
     apiService.validateSession.mockReturnValue(of(void 0));

@@ -6,11 +6,12 @@ import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/ap
 import { getDatabase } from '../core/database/database';
 import { countUsers, findUserByHash, insertUser } from '../core/database/repositories/user-repository';
 import type { FastifyInstance } from 'fastify';
+import { getAuthRateLimit } from '../core/constants/rate-limit-const';
 
 export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/sign-up`,
-    { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
+    { config: { rateLimit: { max: getAuthRateLimit(), timeWindow: '1 minute' } } },
     withErrorHandler((request, response) => {
       if (Number(process.env.DISABLE_REGISTRATION)) {
         return response.code(403).send();
@@ -34,7 +35,7 @@ export const register = (app: FastifyInstance): void => {
         return response.code(409).send();
       }
 
-      const userToken = generateRandomToken(username);
+      const userToken = generateRandomToken();
       const userTokenHash = hashText(userToken);
 
       insertUser(db, usernameHash, userTokenHash, username);

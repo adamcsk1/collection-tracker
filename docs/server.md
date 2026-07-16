@@ -20,11 +20,14 @@ Source: [`apps/server`](../apps/server)
 
 - Default data folder: `.data`
 - CLI flags: `--dataFolder=<path>` and `--debug=true|false`
-- Startup expects `.env` in the active data folder and loads it before registering APIs; `OMDB_API_KEY` enables the OMDb external metadata provider when set, but the server starts without it; AI search reads `ollama.config.json` from the active data folder and merges configured options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`; Ollama availability is checked by the AI query API rather than during server startup
-- `RATE_LIMIT` — default maximum number of requests per 1-minute window per IP. Defaults to `120` when not set. Collection entry workflow routes use their own higher per-route limit so adding several items in a row does not exhaust a small global bucket. Set a big enough number to avoid rate limiting (used by the E2E test container)
+- Startup expects `.env` in the active data folder and requires non-empty `JWT_SECRET` and `COOKIE_SECRET` values plus an explicitly configured `SALT`; `OMDB_API_KEY` enables the OMDb external metadata provider when set, but the server starts without it; AI search reads `ollama.config.json` from the active data folder and merges configured options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`; Ollama availability is checked by the AI query API rather than during server startup
+- `RATE_LIMIT` — default maximum number of requests per 1-minute window per Fastify-validated client IP. Defaults to `120` when not set. Collection entry workflow routes use their own higher per-route limit so adding several items in a row does not exhaust a small global bucket.
+- `AUTH_RATE_LIMIT` — independent per-IP limit for sign-in and sign-up. Defaults to `10` when missing or invalid.
+- `REFRESH_RATE_LIMIT` — independent per-IP limit for session refresh. Defaults to `60` when missing or invalid so multiple users and tabs behind one address do not share the stricter credential endpoint budget. A refresh `429` preserves the browser's logged-in state so a later request can retry.
 - `LOG_LEVEL` — controls console log verbosity. Defaults to `info` when not set. Set to `DEBUG` to echo all log levels (info, warning, error, debug) to the console, equivalent to `--debug=true`
 - `npm start` creates `.data/.env` and `.data/ollama.config.json` from [`apps/server/scripts`](../apps/server/scripts) for local development
 - Production deployments should run behind an HTTPS reverse proxy; see [Docker deployment](./docker.md)
+- `SALT` participates in persisted hashes and must remain unchanged after data has been created. Legacy deployments that previously omitted it can use an explicit `SALT=` value to preserve their existing hashes.
 
 ## Data Layout
 

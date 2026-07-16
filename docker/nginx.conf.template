@@ -10,6 +10,7 @@ events {
 
 http {
   include       /etc/nginx/mime.types;
+  include       /etc/nginx/trusted-proxies.conf;
   default_type  application/octet-stream;
   # Temp paths writable by non-root user
   client_body_temp_path /var/cache/nginx/client_temp;
@@ -88,7 +89,7 @@ http {
     location ~ ^/(?:[^/]+/)?api/(.*)$ {
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-For $remote_addr;
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_connect_timeout 60s;
       proxy_send_timeout 300s;

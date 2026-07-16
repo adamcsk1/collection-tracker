@@ -4,6 +4,7 @@ import { mainStateToken } from './main-store';
 import { SENSITIVE_DATA_STORAGE_MODES } from '../settings/settings-const';
 import { apiStateToken } from '@services/api/api-store';
 import { PublicApiService } from '@services/api/public-api-service';
+import { isRateLimitError } from '@services/api/http-error-util';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_API_URL,
@@ -43,7 +44,11 @@ export class MainService {
     this.api
       .validateSession()
       .pipe(
-        catchError(() => {
+        catchError((error: unknown) => {
+          if (isRateLimitError(error)) {
+            this._tokenValid.set(true);
+            return EMPTY;
+          }
           this._tokenValid.set(false);
           this.webstorage.removeItem(STORAGE_LOGGED_IN);
           return EMPTY;

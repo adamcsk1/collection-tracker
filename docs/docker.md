@@ -40,6 +40,10 @@ docker run --rm \
 - `/api/` is proxied to the Node server on `127.0.0.1:3000`.
 - `/data` is the writable volume for `.env`, `ollama.config.json`, the SQLite database, logs, and image cache files.
 
+When `/data/.env` does not exist, the container creates it with independent cryptographically random `JWT_SECRET`, `COOKIE_SECRET`, and `SALT` values and mode `0600`. The file is reused unchanged on later starts. An existing file missing `JWT_SECRET`, `COOKIE_SECRET`, or `SALT` causes startup to fail rather than silently rotating credentials.
+
+Keep an existing `SALT` value unchanged because it participates in persisted account and share hashes. A deployment created by an older Docker fallback without a salt should add `SALT=` explicitly to preserve those hashes, then add new random `JWT_SECRET` and `COOKIE_SECRET` values.
+
 ## Build Prerequisites
 
 The image expects existing build artifacts:
@@ -95,13 +99,14 @@ The Docker default uses `host.docker.internal` so the container can reach Ollama
 
 ## Environment Variables
 
-| Variable           | Default                  | Description                                                                                                      |
-| ------------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `BASE_PATH`        | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.      |
-| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.  |
-| `APP_PORT`         | `3001`                   | Host port mapped to the container's nginx listener.                                                              |
-| `APP_UID`          | `1000`                   | Runtime user ID used for writable files. Set to `$(id -u)` on Linux hosts so `./.data` remains user-accessible.  |
-| `APP_GID`          | `1000`                   | Runtime group ID used for writable files. Set to `$(id -g)` on Linux hosts so `./.data` remains user-accessible. |
+| Variable              | Default                  | Description                                                                                                      |
+| --------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `BASE_PATH`           | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.      |
+| `HEALTH_CHECK_URL`    | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.  |
+| `TRUSTED_PROXY_CIDRS` | _(empty)_                | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address.                     |
+| `APP_PORT`            | `3001`                   | Host port mapped to the container's nginx listener.                                                              |
+| `APP_UID`             | `1000`                   | Runtime user ID used for writable files. Set to `$(id -u)` on Linux hosts so `./.data` remains user-accessible.  |
+| `APP_GID`             | `1000`                   | Runtime group ID used for writable files. Set to `$(id -g)` on Linux hosts so `./.data` remains user-accessible. |
 
 ## Docker Compose (Recommended for VPS)
 
@@ -148,6 +153,7 @@ services:
     environment:
       BASE_PATH: ${BASE_PATH:-}
       HEALTH_CHECK_URL: ${HEALTH_CHECK_URL:-}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
       APP_UID: ${APP_UID:-1000}
       APP_GID: ${APP_GID:-1000}
     volumes:
@@ -186,6 +192,10 @@ A typical setup is:
 - public `https://your-domain.example` on the reverse proxy
 - reverse proxy forwards requests to `http://127.0.0.1:3001`
 - the container port stays private to the host or internal network
+
+The bundled nginx proxy ignores incoming forwarded-IP headers by default, and Fastify trusts only its loopback nginx. When an outer reverse proxy is the only route to the container, set `TRUSTED_PROXY_CIDRS` to the proxy addresses as seen by the container. Nginx will then resolve the original client from `X-Forwarded-For`, while headers from any other sender remain untrusted.
+
+For example, use `TRUSTED_PROXY_CIDRS=172.18.0.0/16` when the outer proxy is attached to a dedicated Docker network with that subnet. For a host-level proxy, use the host gateway address or CIDR visible from the container. Trust the narrowest range possible, and keep port `3001` private so clients cannot connect through an address in the trusted range.
 
 This is the recommended deployment model for secure cookie handling, TLS certificates, and standard production traffic management.
 

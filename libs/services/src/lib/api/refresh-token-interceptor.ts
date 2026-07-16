@@ -1,7 +1,8 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { redirectToLogin } from '@shared/utils/redirect-to-login-util';
-import { catchError, EMPTY, switchMap } from 'rxjs';
+import { catchError, EMPTY, switchMap, throwError } from 'rxjs';
+import { isRateLimitError } from './http-error-util';
 import { RefreshTokenService } from './refresh-token-service';
 
 export const refreshTokenInterceptor: HttpInterceptorFn = (req, next) => {
@@ -13,7 +14,8 @@ export const refreshTokenInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 401 && !isAuthRequest) {
         return refreshService.refresh().pipe(
           switchMap(() => next(req)),
-          catchError(() => {
+          catchError((refreshError: unknown) => {
+            if (isRateLimitError(refreshError)) return throwError(() => refreshError);
             redirectToLogin();
             return EMPTY;
           })

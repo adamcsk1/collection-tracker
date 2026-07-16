@@ -89,4 +89,13 @@ describe('MainService', () => {
     expect(service.tokenValid()).toBe(false);
     expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN);
   });
+
+  it('preserves the logged-in session when validation is rate limited', () => {
+    api.validateSession.mockReturnValue(throwError(() => ({ status: 429 })));
+
+    service.validateSession();
+
+    expect(service.tokenValid()).toBe(true);
+    expect(webstorage.removeItem).not.toHaveBeenCalled();
+  });
 });

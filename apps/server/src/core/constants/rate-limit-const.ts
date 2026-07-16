@@ -1,9 +1,12 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 
-export const RATE_LIMIT_EXCLUDED_PATHS: string[] = [
-  `${API_PREFIX}/proxy/image`,
-  `${API_PREFIX}/health`,
-  `${API_PREFIX}/sign-in`,
-  `${API_PREFIX}/sign-up`,
-  `${API_PREFIX}/session/refresh`,
-];
+export const RATE_LIMIT_EXCLUDED_PATHS: string[] = [`${API_PREFIX}/proxy/image`, `${API_PREFIX}/health`];
+
+const getRateLimit = (name: 'AUTH_RATE_LIMIT' | 'REFRESH_RATE_LIMIT', defaultLimit: number): number => {
+  const configuredLimit = Number(process.env[name]);
+  return Number.isInteger(configuredLimit) && configuredLimit > 0 ? configuredLimit : defaultLimit;
+};
+
+export const getAuthRateLimit = (): number => getRateLimit('AUTH_RATE_LIMIT', 10);
+
+export const getRefreshRateLimit = (): number => getRateLimit('REFRESH_RATE_LIMIT', 60);

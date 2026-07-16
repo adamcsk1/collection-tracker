@@ -32,6 +32,7 @@ RUN groupadd -r app && useradd -r -g app app && \
 # Copy Nginx config and startup scripts
 WORKDIR /app
 COPY docker/nginx.conf.template /etc/nginx/nginx.conf.template
+COPY docker/trusted-proxy-config.mjs /app/trusted-proxy-config.mjs
 COPY docker/start.sh /app/start.sh
 COPY docker/entrypoint.sh /app/entrypoint.sh
 # Normalize line endings (Windows -> Unix) and make executable

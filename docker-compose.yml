@@ -8,6 +8,7 @@ services:
     environment:
       BASE_PATH: ${BASE_PATH:-}
       HEALTH_CHECK_URL: ${HEALTH_CHECK_URL:-}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
       APP_UID: ${APP_UID:-1000}
       APP_GID: ${APP_GID:-1000}
     ports:

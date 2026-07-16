@@ -1,14 +1,5 @@
 import { generateRandomToken, hashText } from './crypto';
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('random-words', () => ({
-  __esModule: true,
-  generate: vi.fn(({ exactly, seed }: { exactly: number; seed?: string }) =>
-    Array(exactly)
-      .fill(seed ? `seed-${seed}` : 'word')
-      .join(' ')
-  ),
-}));
+import { describe, expect, it } from 'vitest';
 
 describe('crypto', () => {
   it('hashes text with salt', () => {
@@ -20,9 +11,12 @@ describe('crypto', () => {
     expect(hash).toHaveLength(128);
   });
 
-  it('generates random token with expected length', () => {
-    const token = generateRandomToken('seed', 5);
-    const words = token.split(' ');
-    expect(words.length).toBe(10);
+  it('generates distinct base64url tokens with 256 bits of entropy', () => {
+    const firstToken = generateRandomToken();
+    const secondToken = generateRandomToken();
+
+    expect(firstToken).toMatch(/^[\w-]{43}$/);
+    expect(secondToken).toMatch(/^[\w-]{43}$/);
+    expect(secondToken).not.toBe(firstToken);
   });
 });

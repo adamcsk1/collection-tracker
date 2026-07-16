@@ -16,7 +16,7 @@ import { initializeDatabase } from './database/database';
 import { hasSqlMigrations, runMigrations } from './database/migrations';
 import { debugLog, errorLog, infoLog } from './logger';
 import { SERVER_MAX_PARAM_LENGTH } from './main-const';
-import { getRateLimitKey } from './utils/rate-limit-util';
+import { validateEnvironment } from './utils/environment-util';
 
 export const main = async () => {
   try {
@@ -25,6 +25,7 @@ export const main = async () => {
     if (!existsSync(`${dataFolder}/.env`)) throw new Error(`.env file not found in ${dataFolder}. Please create it.`);
 
     dotenv.config({ path: `${dataFolder}/.env`, override: true });
+    validateEnvironment();
 
     initializeFolders(dataFolder);
 
@@ -44,7 +45,7 @@ export const main = async () => {
     }
 
     const app = fastify({
-      trustProxy: true,
+      trustProxy: '127.0.0.1',
       bodyLimit: 50 * 1024 * 1024,
       routerOptions: { maxParamLength: SERVER_MAX_PARAM_LENGTH },
     });
@@ -72,7 +73,6 @@ export const main = async () => {
       timeWindow: 60 * 1000,
       enableDraftSpec: true,
       allowList: (request) => RATE_LIMIT_EXCLUDED_PATHS.includes(request.routeOptions.url ?? request.url),
-      keyGenerator: getRateLimitKey,
     });
     debugLog('Applying rate limiting middleware');
     await app.register(fastifyCors, {

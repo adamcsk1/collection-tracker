@@ -4,15 +4,20 @@ Collection Tracker is a self-hosted media catalog application for managing perso
 
 AI search is powered by Ollama. Local development and Docker Compose read Ollama settings from `ollama.config.json` in the active data folder. Docker Compose does not run Ollama. The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:14b`, embedding model `mxbai-embed-large`, `batchSize: 10`, `parallelRequests: 1`, and `semanticCandidateLimit: 90`. Configured generate `options` are merged over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`. Optional root-level `keep_alive` is passed to Ollama generate and embed requests only when present in the config file.
 
+Server startup requires non-empty `JWT_SECRET` and `COOKIE_SECRET` values and an explicitly configured `SALT`. Docker creates persistent random values when `/data/.env` is missing and never replaces an existing file. `SALT` participates in persisted hashes and must not be changed after data is created; an explicit empty value is supported only to preserve legacy deployments that previously ran without a configured salt.
+
+Rate limiting defaults to `120` requests per IP per minute globally, `10` for sign-in and sign-up through `AUTH_RATE_LIMIT`, and `60` for session refresh through `REFRESH_RATE_LIMIT`. A refresh `429` preserves browser login state so a later request can retry. Reverse-proxy deployments must configure `TRUSTED_PROXY_CIDRS` so unrelated clients do not share one rate-limit identity.
+
 ## Docker Deployment Environment Variables
 
-| Variable           | Default                  | Description                                                                                                        |
-| ------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `BASE_PATH`        | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.        |
-| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.    |
-| `APP_PORT`         | `3001`                   | Host port mapped to the container's nginx listener.                                                                |
-| `APP_UID`          | `1000`                   | Runtime user ID used for writable Docker files. Set to `$(id -u)` on Linux hosts so `./.data` remains accessible.  |
-| `APP_GID`          | `1000`                   | Runtime group ID used for writable Docker files. Set to `$(id -g)` on Linux hosts so `./.data` remains accessible. |
+| Variable              | Default                  | Description                                                                                                        |
+| --------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `BASE_PATH`           | _(empty)_                | URL subpath prefix (e.g. `/collection-tracker`). When set, all apps and the API are served under this path.        |
+| `HEALTH_CHECK_URL`    | `http://127.0.0.1:3001/` | URL the server uses to verify nginx frontend status. Override when `BASE_PATH` changes the reachable root path.    |
+| `TRUSTED_PROXY_CIDRS` | _(empty)_                | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address.                       |
+| `APP_PORT`            | `3001`                   | Host port mapped to the container's nginx listener.                                                                |
+| `APP_UID`             | `1000`                   | Runtime user ID used for writable Docker files. Set to `$(id -u)` on Linux hosts so `./.data` remains accessible.  |
+| `APP_GID`             | `1000`                   | Runtime group ID used for writable Docker files. Set to `$(id -g)` on Linux hosts so `./.data` remains accessible. |
 
 ## Apps
 

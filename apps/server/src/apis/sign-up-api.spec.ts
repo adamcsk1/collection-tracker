@@ -13,6 +13,7 @@ describe('sign-up-api', () => {
     vi.clearAllMocks();
     delete process.env.DISABLE_REGISTRATION;
     delete process.env.USER_LIMIT;
+    delete process.env.AUTH_RATE_LIMIT;
   });
 
   it('returns 400 when username is missing', async () => {
@@ -20,10 +21,16 @@ describe('sign-up-api', () => {
     const request: any = { body: {} };
     const { app, handlerPromise } = buildApp(request, response);
     process.env.DISABLE_REGISTRATION = '0';
+    process.env.AUTH_RATE_LIMIT = '123';
 
     const { register } = await import('./sign-up-api');
     register(app);
 
+    expect(app.post).toHaveBeenCalledWith(
+      expect.any(String),
+      { config: { rateLimit: { max: 123, timeWindow: '1 minute' } } },
+      expect.any(Function)
+    );
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(400);
   });

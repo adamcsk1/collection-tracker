@@ -85,6 +85,7 @@ services:
     environment:
       BASE_PATH: ${BASE_PATH:-}
       HEALTH_CHECK_URL: ${HEALTH_CHECK_URL:-}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
       APP_UID: ${APP_UID:-1000}
       APP_GID: ${APP_GID:-1000}
     volumes:
@@ -106,15 +107,18 @@ See [Docker deployment](./docs/docker.md) for GHCR tags, runtime variables, Olla
 
 The server reads runtime configuration from `.data/.env` by default. AI search reads Ollama settings from `.data/ollama.config.json`. `npm start` runs `apps/server/scripts/create-dev-env.js`, which creates both files from [apps/server/scripts](./apps/server/scripts) when they are missing.
 
+`JWT_SECRET` and `COOKIE_SECRET` must be non-empty, and `SALT` must be explicitly configured. Keep `SALT` unchanged after users or data have been created because it participates in persisted hashes. Docker generates and persists all three values when it creates `/data/.env` on first start; it never replaces an existing file.
+
 Docker deployments also support these container-level variables:
 
-| Variable           | Default                  | Description                                                          |
-| ------------------ | ------------------------ | -------------------------------------------------------------------- |
-| `BASE_PATH`        | _(empty)_                | URL subpath prefix, such as `/collection-tracker`.                   |
-| `HEALTH_CHECK_URL` | `http://127.0.0.1:3001/` | URL used by the server health endpoint to check the nginx frontend.  |
-| `APP_PORT`         | `3001`                   | Host port mapped to the container nginx listener.                    |
-| `APP_UID`          | `1000`                   | Runtime user ID for Docker writable files. Use `$(id -u)` on Linux.  |
-| `APP_GID`          | `1000`                   | Runtime group ID for Docker writable files. Use `$(id -g)` on Linux. |
+| Variable              | Default                  | Description                                                                                  |
+| --------------------- | ------------------------ | -------------------------------------------------------------------------------------------- |
+| `BASE_PATH`           | _(empty)_                | URL subpath prefix, such as `/collection-tracker`.                                           |
+| `HEALTH_CHECK_URL`    | `http://127.0.0.1:3001/` | URL used by the server health endpoint to check the nginx frontend.                          |
+| `TRUSTED_PROXY_CIDRS` | _(empty)_                | Comma-separated outer reverse-proxy IPs/CIDRs allowed to supply the original client address. |
+| `APP_PORT`            | `3001`                   | Host port mapped to the container nginx listener.                                            |
+| `APP_UID`             | `1000`                   | Runtime user ID for Docker writable files. Use `$(id -u)` on Linux.                          |
+| `APP_GID`             | `1000`                   | Runtime group ID for Docker writable files. Use `$(id -g)` on Linux.                         |
 
 Minimal runtime example:
 
@@ -170,9 +174,12 @@ OMDB_API_KEY="your_omdb_api_key"
 CORS_ORIGIN="*"
 CACHE_MAX=200
 RATE_LIMIT=120
+AUTH_RATE_LIMIT=10
+REFRESH_RATE_LIMIT=60
 ```
 
 `RATE_LIMIT` controls the default per-IP request limit for a 1-minute window. When omitted, it defaults to `120`. High-frequency collection entry routes have their own higher per-route limit so adding multiple items in a row does not quickly exhaust the default bucket.
+`AUTH_RATE_LIMIT` controls sign-in and sign-up requests per IP per minute and defaults to `10`. `REFRESH_RATE_LIMIT` separately controls session refresh requests and defaults to `60`, allowing multiple users and tabs behind one address without weakening credential endpoint protection. The bundled nginx proxy ignores forwarded client-IP headers unless the immediate sender matches `TRUSTED_PROXY_CIDRS`.
 
 See the server documentation for the full runtime model and data layout.
 

@@ -28,7 +28,7 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
 
-      const newUserToken = generateRandomToken(request.username);
+      const newUserToken = generateRandomToken();
       const accessCookie = accessCookieConfig();
       const refreshCookie = refreshCookieConfig();
       const newAccessToken = await generateAccessToken(

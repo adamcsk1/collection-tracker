@@ -29,16 +29,24 @@ describe('refresh-token-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    delete process.env.AUTH_RATE_LIMIT;
+    delete process.env.REFRESH_RATE_LIMIT;
   });
 
   it('returns 401 when no refresh token is provided', async () => {
     const response = mockResponse();
     const request: any = { cookies: {}, headers: {} };
     const { app, handlerPromise } = buildApp(request, response);
+    process.env.REFRESH_RATE_LIMIT = '123';
 
     const { register } = await import('./refresh-token-api');
     register(app);
 
+    expect(app.post).toHaveBeenCalledWith(
+      expect.any(String),
+      { config: { rateLimit: { max: 123, timeWindow: '1 minute' } } },
+      expect.any(Function)
+    );
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(401);
   });

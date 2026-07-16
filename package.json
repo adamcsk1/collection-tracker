@@ -63,7 +63,6 @@
     "jsonwebtoken": "^9.0.3",
     "ngx-signal-translate": "^22.0.0",
     "ngx-simple-signal-store": "^22.0.0",
-    "random-words": "^2.0.1",
     "rxjs": "~7.8.2",
     "tslib": "^2.3.0"
   },
@@ -96,6 +95,7 @@
     "jsdom": "^29.1.1",
     "nx": "23.0.0",
     "prettier": "^3.8.4",
+    "random-words": "^2.0.1",
     "ts-node": "^10.9.2",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.61.1",
