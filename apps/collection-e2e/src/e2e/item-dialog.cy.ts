@@ -36,13 +36,16 @@ describe('Item dialog — edit flow', () => {
           expect(tooltip.text().trim()).to.equal(label);
         });
         CollectionPage.getItemDialogEditButton().then((button) => {
-          CollectionPage.getDialogActionTooltip().then((tooltip) => {
-            const buttonRect = button[0].getBoundingClientRect();
-            const tooltipRect = tooltip[0].getBoundingClientRect();
-            expect(tooltipRect.left + tooltipRect.width / 2).to.be.closeTo(
-              buttonRect.left + buttonRect.width / 2,
-              tooltipCenterTolerance
-            );
+          CollectionPage.getItemDialogHost().then((dialog) => {
+            CollectionPage.getDialogActionTooltip().should((tooltip) => {
+              const buttonRect = button[0].getBoundingClientRect();
+              const dialogRect = dialog[0].getBoundingClientRect();
+              const tooltipLeft = Number.parseFloat(tooltip[0].style.left);
+              expect(tooltipLeft).to.be.closeTo(
+                buttonRect.left + buttonRect.width / 2 - dialogRect.left,
+                tooltipCenterTolerance
+              );
+            });
           });
         });
         CollectionPage.releaseHeldItemDialogAction('item-dialog-edit');
@@ -69,8 +72,10 @@ describe('Item dialog — edit flow', () => {
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogEditButton().click();
 
-    CollectionPage.getItemDialogSaveButton().focus();
-    CollectionPage.getItemDialogSaveButton().find('.button-reveal-label-text').should('be.visible');
+    CollectionPage.getItemDialogReadOnlyButton().focus();
+    cy.press(Cypress.Keyboard.Keys.TAB);
+    CollectionPage.getItemDialogSaveButton().should('have.focus');
+    CollectionPage.getItemDialogSaveLabel().should('be.visible');
   });
 
   it('edits the title of an existing item and persists the change', () => {

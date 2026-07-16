@@ -57,6 +57,17 @@ button {
     > .button-reveal-label-text {
       display: none;
     }
+
+    &:focus-visible > .button-reveal-label-text {
+      display: grid;
+      grid-template-columns: 1fr;
+      opacity: 1;
+
+      > span {
+        min-width: 0;
+        overflow: hidden;
+      }
+    }
   }
 
   &[disabled] {

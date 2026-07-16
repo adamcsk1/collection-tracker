@@ -144,6 +144,7 @@ export const CollectionPage = {
   getItemDialogEditButton: () => getItemDialog().find('[data-test-id="item-dialog-edit"]'),
   getItemDialogReadOnlyButton: () => getItemDialog().find('[data-test-id="item-dialog-read-only"]'),
   getItemDialogSaveButton: () => getItemDialog().find('[data-test-id="item-dialog-save"]'),
+  getItemDialogSaveLabel: () => getItemDialog().find('[data-test-id="item-dialog-save-label"]'),
   getItemDialogDeleteButton: () => getItemDialog().find('[data-test-id="item-dialog-delete"]'),
   closeDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),
   closeActiveDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),

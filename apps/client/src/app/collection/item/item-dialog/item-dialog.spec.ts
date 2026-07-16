@@ -215,6 +215,7 @@ describe('ItemDialog', () => {
       '[data-test-id="item-dialog-read-only"]'
     ) as HTMLButtonElement;
     const saveButton = fixture.nativeElement.querySelector('[data-test-id="item-dialog-save"]') as HTMLButtonElement;
+    const saveLabel = fixture.nativeElement.querySelector('[data-test-id="item-dialog-save-label"]') as HTMLElement;
 
     expect(backButton.type).toBe('button');
     expect(backButton.getAttribute('aria-label')).toBe('BackToDetails');
@@ -223,6 +224,7 @@ describe('ItemDialog', () => {
     expect(saveButton.getAttribute('form')).toBe('item-edit-form');
     expect(saveButton.getAttribute('aria-label')).toBe('Save');
     expect(saveButton.title).toBe('Save');
+    expect(saveLabel.textContent?.trim()).toBe('Save');
     expect(saveButton.disabled).toBe(false);
 
     component['form'].title().value.set('');
