@@ -139,15 +139,6 @@ jobs:
           SMOKE_TAG: collection-tracker:smoke-${{ github.event.workflow_run.head_sha }}
         run: |
           mkdir -p smoke-data
-          printf '%s\n' \
-            'HOST=0.0.0.0' \
-            'PORT=3000' \
-            'CORS_ORIGIN=*' \
-            'OMDB_API_KEY=smoke-test' \
-            'COOKIE_SECRET=smoke-test-cookie-secret' \
-            'JWT_SECRET=smoke-test-jwt-secret' \
-            'SALT=smoke-test-salt' \
-            > smoke-data/.env
 
           docker run \
             --detach \
@@ -159,17 +150,73 @@ jobs:
             --volume "$PWD/smoke-data:/data" \
             "$SMOKE_TAG"
 
-          trap 'docker logs collection-tracker-smoke; docker rm --force collection-tracker-smoke' EXIT
+          trap 'docker logs collection-tracker-smoke 2>/dev/null || true; docker logs collection-tracker-trusted-proxy-smoke 2>/dev/null || true; docker rm --force collection-tracker-smoke collection-tracker-trusted-proxy-smoke 2>/dev/null || true' EXIT
 
+          ready=false
           for attempt in {1..30}; do
             if curl --fail --silent --show-error http://127.0.0.1:3001/ > /dev/null && \
               curl --fail --silent --show-error http://127.0.0.1:3001/api/v1/health > /dev/null; then
-              exit 0
+              ready=true
+              break
             fi
             sleep 2
           done
 
-          exit 1
+          test "$ready" = true
+          grep -Eq '^JWT_SECRET=[[:xdigit:]]{64}$' smoke-data/.env
+          grep -Eq '^COOKIE_SECRET=[[:xdigit:]]{64}$' smoke-data/.env
+          grep -Eq '^SALT=[[:xdigit:]]{64}$' smoke-data/.env
+
+          for attempt in {1..10}; do
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              --header "X-Forwarded-For: 203.0.113.$attempt" \
+              --header 'Content-Type: application/json' \
+              --data '{}' \
+              http://127.0.0.1:3001/api/v1/sign-in)
+            test "$status" = 400
+          done
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --header 'X-Forwarded-For: 198.51.100.1' \
+            --header 'Content-Type: application/json' \
+            --data '{}' \
+            http://127.0.0.1:3001/api/v1/sign-in)
+          test "$status" = 429
+
+          cp smoke-data/.env smoke-data/.env.initial
+          docker restart collection-tracker-smoke
+          cmp smoke-data/.env.initial smoke-data/.env
+
+          trusted_proxy=$(docker inspect collection-tracker-smoke --format '{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}')
+          docker rm --force collection-tracker-smoke
+          docker run \
+            --detach \
+            --name collection-tracker-trusted-proxy-smoke \
+            --publish 3001:3001 \
+            --add-host=host.docker.internal:host-gateway \
+            --env APP_UID=$(id -u) \
+            --env APP_GID=$(id -g) \
+            --env TRUSTED_PROXY_CIDRS="$trusted_proxy" \
+            --volume "$PWD/smoke-data:/data" \
+            "$SMOKE_TAG"
+
+          ready=false
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3001/api/v1/health > /dev/null; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          test "$ready" = true
+
+          for attempt in {1..11}; do
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              --header "X-Forwarded-For: 203.0.113.$attempt" \
+              --header 'Content-Type: application/json' \
+              --data '{}' \
+              http://127.0.0.1:3001/api/v1/sign-in)
+            test "$status" = 400
+          done
 
       - name: Recheck default branch tip
         if: steps.gate.outputs.ready == 'true'
