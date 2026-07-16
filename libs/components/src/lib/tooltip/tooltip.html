@@ -1,0 +1,13 @@
+@if (visible()) {
+  <span
+    #tooltip
+    [id]="tooltipId()"
+    [attr.data-test-id]="dataTestId()"
+    role="tooltip"
+    animate.enter="animation-scale-in"
+    animate.leave="animation-scale-out"
+    [style.left.px]="resolvedLeft()"
+  >
+    {{ text() }}
+  </span>
+}

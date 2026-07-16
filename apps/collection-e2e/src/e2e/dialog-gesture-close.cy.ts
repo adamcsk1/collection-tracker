@@ -51,7 +51,7 @@ describe('Dialog gesture close', () => {
     CollectionPage.visitSeriesTracker();
     CollectionPage.getListItems().contains(title).click();
     CollectionPage.getItemDialogHost().should('be.visible');
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
     CollectionPage.getSeriesMetadataDialog().should('be.visible');
 

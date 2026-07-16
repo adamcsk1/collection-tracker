@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
+import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { Textarea } from '@components/textarea/textarea';
 import { AlertService } from '@services/alert-service';
 import { PortalService } from '@services/portal-service';
@@ -17,7 +18,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 
 @Component({
   selector: 'ct-ai-search-dialog',
-  imports: [DialogShell, Textarea, FormField],
+  imports: [DialogShell, RevealLabel, Textarea, FormField],
   templateUrl: './ai-search-dialog.html',
   styleUrl: './ai-search-dialog.css',
   host: {

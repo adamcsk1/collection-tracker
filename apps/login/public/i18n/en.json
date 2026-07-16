@@ -20,7 +20,6 @@
   "Message.SignIn": "Sign in to explore your collection.",
   "Message.SignUp": "Please sign up to begin using the Collection tracker. To do this, you need to select a username.",
   "Message.SignUpSecret": "This is your secret key for your user account. You can use it to authenticate yourself in the Collection tracker. Please ensure you keep it safe.",
-  "MoreActions": "More actions",
   "ResetInput": "Reset input",
   "Secret": "Secret",
   "ShowSecret": "Show secret",

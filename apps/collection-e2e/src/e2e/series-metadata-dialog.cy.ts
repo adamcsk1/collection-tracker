@@ -29,9 +29,9 @@ describe('Series metadata dialog', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getSeriesMetadataRefreshButton().should('be.visible');
 
     CollectionPage.getSeriesMetadataMessage().should(
@@ -51,20 +51,20 @@ describe('Series metadata dialog', () => {
     CollectionPage.getSeriesMetadataSaveButton().click();
 
     cy.wait('@saveSeriesMetadata').its('response.statusCode').should('eq', 200);
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().should('be.visible');
   });
 
   it('reopens the item dialog when the metadata dialog is closed without saving', () => {
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     CollectionPage.getSeriesMetadataAddButton().click();
     CollectionPage.closeActiveDialogByOverlay();
 
     CollectionPage.getItemDialogHost().should('be.visible');
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().should('be.visible');
   });
 
@@ -79,7 +79,7 @@ describe('Series metadata dialog', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesDialog().should('be.visible');
@@ -88,16 +88,16 @@ describe('Series metadata dialog', () => {
 
     cy.getByTestId('watched-episodes-dialog').should('not.exist');
     CollectionPage.getItemDialogHost().should('be.visible');
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getSeriesMetadataRemoveAllButton().click();
 
     cy.wait('@deleteSeriesMetadata').its('response.statusCode').should('eq', 200);
     CollectionPage.closeDialogByOverlay();
     CollectionPage.getSeriesMetadataDialogHost().should('not.exist');
     CollectionPage.getItemDialogHost().should('be.visible');
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
     CollectionPage.getWatchedEpisodesNoMetadataMessage().should('be.visible');
   });
@@ -106,7 +106,7 @@ describe('Series metadata dialog', () => {
     cy.intercept('PUT', '/api/v1/series-tracker/**/seasons').as('saveSeriesMetadata');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     CollectionPage.getSeriesMetadataAddButton().click();
@@ -119,7 +119,7 @@ describe('Series metadata dialog', () => {
     CollectionPage.getSeriesMetadataSaveButton().click();
     cy.wait('@saveSeriesMetadata').its('response.statusCode').should('eq', 200);
 
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     CollectionPage.getSeriesMetadataEpisodeTitleToggles().first().click();
@@ -129,7 +129,7 @@ describe('Series metadata dialog', () => {
 
   it('shows no-metadata message when no metadata is set', () => {
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
 
     CollectionPage.getSeriesMetadataNoMetadataMessage().should('be.visible');

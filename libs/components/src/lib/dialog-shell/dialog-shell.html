@@ -46,44 +46,16 @@
       <div>
         <ng-content select="[dialog-shell-top-content]" />
       </div>
-      <div class="dialog-header-actions">
-        @if (hasMenuContent()) {
-          <button
-            #menuButton
-            type="button"
-            data-test-id="dialog-actions-menu-button"
-            class="button-icon material-icons"
-            [attr.aria-controls]="actionsMenuId"
-            [attr.aria-expanded]="menuOpen()"
-            [attr.aria-label]="translations.moreActions()"
-            [title]="translations.moreActions()"
-            (click)="onToggleMenu()"
-          >
-            more_vert
-          </button>
-        }
-        <div
-          #menuContainer
-          [id]="actionsMenuId"
-          data-test-id="dialog-actions-menu"
-          class="dialog-actions-menu"
-          [class.dialog-actions-menu-open]="menuOpen()"
-          [attr.hidden]="hasMenuContent() && menuOpen() ? null : ''"
-        >
-          <div
-            #menuContent
-            class="dialog-actions-menu-content"
-            tabindex="-1"
-            (click)="onMenuContentClick()"
-            (keydown.enter)="onMenuContentClick()"
-          >
-            <ng-content select="[dialog-shell-menu-content]" />
-          </div>
-        </div>
-      </div>
     </div>
     <div class="dialog-body">
       <ng-content select="[dialog-shell-content]" />
+    </div>
+    <div class="dialog-actions" [attr.hidden]="hasMenuContent() ? null : ''">
+      <div data-test-id="dialog-actions-menu" class="dialog-actions-menu">
+        <div #menuContent class="dialog-actions-menu-content">
+          <ng-content select="[dialog-shell-menu-content]" />
+        </div>
+      </div>
     </div>
     <div class="dialog-footer">
       <ng-content select="[dialog-shell-bottom-content]" />

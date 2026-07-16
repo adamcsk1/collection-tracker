@@ -189,7 +189,7 @@ describe('Collection — add a new element', () => {
 
     // Open the item and verify it shows the mark-unwatched button (watched state)
     CollectionPage.getListItems().contains(newTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogMarkUnwatchedButton().should('be.visible');
   });
 
@@ -233,13 +233,13 @@ describe('Collection — edit an element', () => {
 
   it('opens item dialog and shows edit button', () => {
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().should('be.visible');
   });
 
   it('enters edit mode and the save button appears', () => {
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().click();
     CollectionPage.getItemDialogSaveButton().should('be.visible');
   });
@@ -255,7 +255,7 @@ describe('Collection — delete an element', () => {
   it('deletes the item and the empty state becomes visible', () => {
     cy.on('window:confirm', () => true);
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogDeleteButton().click();
     CollectionPage.getEmptyState().should('be.visible');
   });
@@ -304,7 +304,7 @@ describe('Collection — random pick', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getRandomPickButton().should('not.be.disabled');
     CollectionPage.getRandomPickButton().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().should('be.visible');
   });
 });
@@ -580,10 +580,10 @@ describe('Collection — favorites', () => {
     CollectionPage.getListItems().should('have.length', 2);
     CollectionPage.getListItems().contains('Favorite Test Movie').click();
 
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogMarkFavoriteButton().click();
     cy.wait('@updateItem').its('response.statusCode').should('eq', 200);
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogRemoveFavoriteButton().should('be.visible');
 
     CollectionPage.closeActiveDialogByOverlay();
@@ -694,7 +694,7 @@ describe('Collection — series tracker', () => {
     CollectionPage.visitSeriesTracker();
 
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
     cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
@@ -778,7 +778,7 @@ describe('Collection — movie tracker', () => {
 
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogMoveMovieTrackerButton().click();
     cy.wait('@moveToMovieTracker').its('response.statusCode').should('eq', 200);
 
@@ -801,7 +801,7 @@ describe('Collection — movie tracker', () => {
 
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogDeleteButton().click();
     cy.wait('@deleteMovieTrackerItem').its('response.statusCode').should('eq', 204);
 

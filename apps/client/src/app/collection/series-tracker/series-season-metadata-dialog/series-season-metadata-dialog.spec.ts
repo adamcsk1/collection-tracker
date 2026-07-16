@@ -7,6 +7,7 @@ import { initialToastState, ToastState, toastStateToken } from '@components/toas
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
+import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -42,13 +43,12 @@ describe('SeriesSeasonMetadataDialog', () => {
         { provide: ApiService, useValue: api },
         { provide: PortalService, useValue: portal },
         { provide: ConfirmService, useValue: confirm },
+        { provide: WebstorageService, useValue: { getItem: vi.fn(() => null), setItem: vi.fn() } },
         { provide: NgxSignalTranslateService, useValue: { translate: vi.fn((key: string) => key) } },
         provideStore(initialToastState, toastStateToken),
         provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
       ],
     });
-    TestBed.overrideComponent(SeriesSeasonMetadataDialog, { set: { template: '' } });
-
     fixture = TestBed.createComponent(SeriesSeasonMetadataDialog);
     component = fixture.componentInstance;
     toastState = TestBed.inject(toastStateToken);
@@ -59,6 +59,32 @@ describe('SeriesSeasonMetadataDialog', () => {
 
   it('initializes rows from input metadata', () => {
     expect(component['seasons']()).toEqual([{ season: 1, episodes: 2 }]);
+  });
+
+  it('renders labelled action controls and disables save for invalid metadata', () => {
+    const saveButton = fixture.nativeElement.querySelector(
+      '[data-test-id="series-metadata-save"]'
+    ) as HTMLButtonElement;
+    const refreshButton = fixture.nativeElement.querySelector(
+      '[data-test-id="series-metadata-refresh"]'
+    ) as HTMLButtonElement;
+    const removeButton = fixture.nativeElement.querySelector(
+      '[data-test-id="series-metadata-remove-all"]'
+    ) as HTMLButtonElement;
+
+    expect(saveButton.type).toBe('button');
+    expect(saveButton.disabled).toBe(false);
+    expect(saveButton.getAttribute('aria-label')).toBe('Save');
+    expect(saveButton.title).toBe('Save');
+    expect(refreshButton.classList.contains('button-icon')).toBe(true);
+    expect(refreshButton.getAttribute('aria-label')).toBe('RefreshSeriesMetadata');
+    expect(removeButton.classList.contains('button-danger')).toBe(true);
+    expect(removeButton.getAttribute('aria-label')).toBe('RemoveSeriesMetadata');
+
+    component['form'].seasons[0].episodes().value.set(0);
+    fixture.detectChanges();
+
+    expect(saveButton.disabled).toBe(true);
   });
 
   it('requires positive episode counts', () => {

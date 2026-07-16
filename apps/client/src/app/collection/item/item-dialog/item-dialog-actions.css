@@ -1,0 +1,7 @@
+:host {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--size-2xs);
+  min-width: max-content;
+}

@@ -26,7 +26,7 @@ describe('Watched episodes dialog', () => {
 
   it('opens dialog and shows no-metadata message when no metadata exists', () => {
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesNoMetadataMessage().should('be.visible');
@@ -42,7 +42,7 @@ describe('Watched episodes dialog', () => {
     });
 
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesNoMetadataMessage().should('not.exist');
@@ -57,7 +57,7 @@ describe('Watched episodes dialog', () => {
     cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes').as('saveWatchedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
@@ -77,7 +77,7 @@ describe('Watched episodes dialog', () => {
     cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes').as('saveWatchedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesSeasonToggle().first().check();
@@ -106,7 +106,7 @@ describe('Watched episodes dialog', () => {
     cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes').as('saveWatchedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(2).should('be.checked').uncheck({ force: true });
@@ -125,7 +125,7 @@ describe('Watched episodes dialog', () => {
     cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes').as('saveWatchedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
@@ -134,7 +134,7 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
     CollectionPage.getItemDialogHost().should('be.visible');
 
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).should('be.checked');
   });
@@ -150,7 +150,7 @@ describe('Watched episodes dialog', () => {
     }).as('saveWatchedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
 
     CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
@@ -186,9 +186,9 @@ describe('Watched episodes dialog', () => {
     cy.reload();
     waitForSeriesTrackerItem(imdbId);
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getWatchedEpisodesMarkAllWatchedButton().click();
     cy.wait('@markAllWatched').its('response.statusCode').should('eq', 200);
     CollectionPage.closeDialogByOverlay();
@@ -209,9 +209,9 @@ describe('Watched episodes dialog', () => {
 
     CollectionPage.visitSeriesTracker();
     CollectionPage.getListItems().contains(seriesTitle).click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getWatchedEpisodesMarkAllWatchedButton().should('not.exist');
     CollectionPage.getWatchedEpisodesMarkAllUnwatchedButton().click();
     cy.wait('@markAllUnwatched').then((interception) => {

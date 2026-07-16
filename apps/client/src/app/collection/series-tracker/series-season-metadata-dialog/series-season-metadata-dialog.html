@@ -72,29 +72,50 @@
     </button>
   </ng-container>
   <ng-container dialog-shell-bottom-content>
-    <button data-test-id="series-metadata-save" type="button" [disabled]="!valid()" (click)="onSave()">
+    <button
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations.save()"
+      data-test-id="series-metadata-save"
+      type="button"
+      [attr.aria-label]="translations.save()"
+      [title]="translations.save()"
+      [disabled]="!valid()"
+      (click)="onSave()"
+    >
       <i class="material-icons" aria-hidden="true"> save </i>
-      {{ translations.save() }}
+      <span class="button-reveal-label-text"
+        ><span>{{ translations.save() }}</span></span
+      >
     </button>
   </ng-container>
   <ng-container dialog-shell-menu-content>
     <button
-      class="button-borderless unaligned"
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations.refreshSeriesMetadata()"
       data-test-id="series-metadata-refresh"
       type="button"
+      [attr.aria-label]="translations.refreshSeriesMetadata()"
+      [title]="translations.refreshSeriesMetadata()"
       (click)="onRefreshSeriesMetadata()"
     >
       <i class="material-icons" aria-hidden="true"> sync </i>
-      {{ translations.refreshSeriesMetadata() }}
+      <span class="button-reveal-label-text"
+        ><span>{{ translations.refreshSeriesMetadata() }}</span></span
+      >
     </button>
     <button
-      class="button-borderless unaligned"
+      class="button-icon button-reveal-label button-danger"
+      [libcRevealLabel]="translations.removeSeriesMetadata()"
       data-test-id="series-metadata-remove-all"
       type="button"
+      [attr.aria-label]="translations.removeSeriesMetadata()"
+      [title]="translations.removeSeriesMetadata()"
       (click)="onRemoveSeriesMetadata()"
     >
       <i class="material-icons" aria-hidden="true"> playlist_remove </i>
-      {{ translations.removeSeriesMetadata() }}
+      <span class="button-reveal-label-text"
+        ><span>{{ translations.removeSeriesMetadata() }}</span></span
+      >
     </button>
   </ng-container>
 </libc-dialog-shell>

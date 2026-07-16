@@ -37,7 +37,7 @@
   max-width: none;
   padding: var(--size-md);
   border-radius: var(--mobile-top-border-radius) var(--mobile-top-border-radius) 0 0;
-  touch-action: pan-y;
+  touch-action: manipulation;
   translate: -50% 0;
 
   .dialog-top-bar {
@@ -92,43 +92,32 @@
     justify-content: space-between;
     align-items: center;
     padding-bottom: var(--size-2xs);
+    touch-action: pan-y;
   }
 
-  .dialog-header-actions {
+  .dialog-actions {
     position: relative;
     flex: 0 0 auto;
+    min-width: 0;
   }
 
   .dialog-actions-menu {
-    position: absolute;
-    top: calc(100% + var(--size-2xs));
-    right: 0;
-    z-index: 2;
-    display: none;
-    width: max-content;
-    max-width: min(100vw - calc(2 * var(--size-md)), calc(28 * var(--size-md)));
-    overflow: hidden;
-    border: var(--border-style);
-    border-radius: var(--border-radius);
-    background: var(--background-color);
-    box-shadow: 0 var(--size-2xs) var(--size-md) rgb(0 0 0 / 20%);
-    padding: var(--size-2xs);
-
-    &.dialog-actions-menu-open {
-      display: flex;
-      flex-direction: column;
-    }
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: var(--size-xs);
+    scrollbar-width: thin;
+    touch-action: pan-x;
   }
 
   .dialog-actions-menu-content {
     display: flex;
-    flex-direction: column;
-
-    @media (width <= 520px) {
-      :host ::ng-deep button {
-        justify-content: flex-start;
-      }
-    }
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: var(--size-2xs);
+    margin-inline: auto;
+    min-width: max-content;
   }
 
   .dialog-body {
@@ -137,13 +126,16 @@
     overflow-x: hidden;
     overflow-y: auto;
     padding: var(--size-2xs);
+    touch-action: pan-y;
   }
 
   .dialog-footer {
     display: flex;
     flex: 0 0 auto;
     flex-wrap: wrap;
+    justify-content: center;
     gap: var(--size-xs);
+    touch-action: pan-y;
 
     &:has(*) {
       padding-top: var(--size-md);

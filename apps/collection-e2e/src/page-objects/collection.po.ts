@@ -7,6 +7,7 @@ const getSeriesMetadataDialog = () => getDialogFrame(cy.getByTestId('series-meta
 const getWatchedEpisodesDialogHost = () => cy.getByTestId('watched-episodes-dialog');
 const getWatchedEpisodesDialog = () => getWatchedEpisodesDialogHost().last();
 const getDialogComponentHost = (testId: string) => cy.getByTestId(testId).last().parents('.dialog').first();
+const dialogActionHoldDuration = 500;
 const expandFloatSearch = (testId: string) => {
   cy.get('body')
     .should((body) => {
@@ -146,11 +147,42 @@ export const CollectionPage = {
   getItemDialogDeleteButton: () => getItemDialog().find('[data-test-id="item-dialog-delete"]'),
   closeDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),
   closeActiveDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),
-  openItemDialogActionsMenu: () => {
+  expectItemDialogActionsVisible: () => {
     getActiveDialog().then((dialog) => {
-      cy.wrap(dialog).find('[data-test-id="dialog-actions-menu-button"]').click();
       cy.wrap(dialog).find('[data-test-id="dialog-actions-menu"]').should('be.visible');
     });
+  },
+  getDialogActionTooltip: () => getActiveDialog().find('[data-test-id="reveal-label-tooltip"]'),
+  getItemDialogActionButtons: () => getItemDialog().find('.button-reveal-label'),
+  holdItemDialogAction: (testId: string) => {
+    getItemDialog().find(`[data-test-id="${testId}"]`).trigger('pointerdown', {
+      pointerId: 1,
+      pointerType: 'touch',
+      isPrimary: true,
+      clientX: 100,
+      clientY: 100,
+    });
+    cy.wait(dialogActionHoldDuration);
+  },
+  releaseHeldItemDialogAction: (testId: string) => {
+    getItemDialog()
+      .find(`[data-test-id="${testId}"]`)
+      .then((button) => {
+        const element = button[0];
+        const window = element.ownerDocument.defaultView;
+        if (!window) throw new Error('Dialog action window is unavailable');
+        element.dispatchEvent(
+          new window.PointerEvent('pointerup', {
+            bubbles: true,
+            pointerId: 1,
+            pointerType: 'touch',
+            isPrimary: true,
+            clientX: 100,
+            clientY: 100,
+          })
+        );
+        element.click();
+      });
   },
   getItemDialogMarkFavoriteButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-favorite"]'),
   getItemDialogRemoveFavoriteButton: () => getItemDialog().find('[data-test-id="item-dialog-remove-favorite"]'),

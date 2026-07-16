@@ -38,6 +38,27 @@ button {
     border: none;
   }
 
+  &.button-reveal-label {
+    --button-reveal-label-duration: 180ms;
+    --button-reveal-label-fade-duration: 120ms;
+
+    display: flex;
+    align-items: center;
+    align-self: center;
+    flex: 0 0 auto;
+    gap: var(--size-2xs);
+    line-height: 1;
+    white-space: nowrap;
+
+    > .material-icons {
+      flex: 0 0 auto;
+    }
+
+    > .button-reveal-label-text {
+      display: none;
+    }
+  }
+
   &[disabled] {
     cursor: default;
     filter: grayscale(1);
@@ -66,5 +87,39 @@ button {
   &.unaligned {
     width: auto !important;
     justify-content: flex-start !important;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button.button-reveal-label {
+    gap: 0;
+
+    > .button-reveal-label-text {
+      display: grid;
+      grid-template-columns: 0fr;
+      margin-inline-start: 0;
+      opacity: 0;
+      transition:
+        grid-template-columns var(--button-reveal-label-duration) ease-out,
+        margin-inline-start var(--button-reveal-label-duration) ease-out,
+        opacity var(--button-reveal-label-fade-duration) ease-out;
+
+      > span {
+        min-width: 0;
+        overflow: hidden;
+      }
+    }
+
+    &:is(:hover, :focus-visible) > .button-reveal-label-text {
+      grid-template-columns: 1fr;
+      margin-inline-start: var(--size-2xs);
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    button.button-reveal-label > .button-reveal-label-text {
+      transition: none;
+    }
   }
 }

@@ -4,6 +4,7 @@ import { form, FormField, FormRoot, max, min, submit, validate } from '@angular/
 import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
+import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { Select } from '@components/select/select';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { Textarea } from '@components/textarea/textarea';
@@ -50,6 +51,7 @@ import {
     FormField,
     FormRoot,
     DialogShell,
+    RevealLabel,
     Autocomplete,
     Input,
     Select,
@@ -109,7 +111,7 @@ export class ItemDialog implements OnInit {
     links: computed(() => this.ngxSignalTranslate.translate('Links')),
     linkYouTubeTrailer: computed(() => this.ngxSignalTranslate.translate('Link.YouTubeTrailer')),
     linkWebSearch: computed(() => this.ngxSignalTranslate.translate('Link.WebSearch')),
-    readOnly: computed(() => this.ngxSignalTranslate.translate('ReadOnly')),
+    backToDetails: computed(() => this.ngxSignalTranslate.translate('BackToDetails')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     edit: computed(() => {
       switch (this.collectionItem().listType) {

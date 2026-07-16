@@ -3,6 +3,7 @@ import { applyEach, form, FormField, max, min, validate } from '@angular/forms/s
 import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
+import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
@@ -15,7 +16,7 @@ import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'ct-series-season-metadata-dialog',
-  imports: [Details, DialogShell, FormField, Input],
+  imports: [Details, DialogShell, FormField, Input, RevealLabel],
   templateUrl: './series-season-metadata-dialog.html',
   styleUrl: './series-season-metadata-dialog.css',
   host: {

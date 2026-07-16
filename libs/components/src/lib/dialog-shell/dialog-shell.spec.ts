@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RevealLabel } from '../reveal-label/reveal-label';
 import { DialogShell } from './dialog-shell';
 
 @Component({
@@ -44,15 +45,62 @@ class LabelledHostComponent {}
 
 @Component({
   selector: 'libc-test-dialog-shell-menu-host',
-  imports: [DialogShell],
+  imports: [DialogShell, RevealLabel],
   template: `
     <libc-dialog-shell>
       <div dialog-shell-content>Content</div>
-      <button type="button" dialog-shell-menu-content (click)="onAction()">Projected action</button>
+      <button
+        type="button"
+        class="button-icon button-reveal-label"
+        libcRevealLabel="Projected action"
+        aria-label="Projected action"
+        dialog-shell-menu-content
+        (click)="onAction()"
+      >
+        <i class="material-icons" aria-hidden="true">edit</i>
+        <span class="button-reveal-label-text"><span>Projected action</span></span>
+      </button>
     </libc-dialog-shell>
   `,
 })
 class MenuHostComponent {
+  public readonly onAction = vi.fn();
+}
+
+@Component({
+  selector: 'libc-test-dialog-shell-footer-host',
+  imports: [DialogShell, RevealLabel],
+  template: `
+    <libc-dialog-shell>
+      <div dialog-shell-content>Content</div>
+      <div dialog-shell-bottom-content>
+        <button
+          type="button"
+          class="button-icon button-reveal-label"
+          libcRevealLabel="Footer action"
+          data-test-id="footer-action"
+          aria-label="Footer action"
+          (click)="onAction()"
+        >
+          <i class="material-icons" aria-hidden="true">save</i>
+          <span class="button-reveal-label-text"><span>Footer action</span></span>
+        </button>
+        <button
+          type="button"
+          class="button-icon button-reveal-label"
+          libcRevealLabel="Disabled footer action"
+          data-test-id="disabled-footer-action"
+          aria-label="Disabled footer action"
+          disabled
+        >
+          <i class="material-icons" aria-hidden="true">block</i>
+          <span class="button-reveal-label-text"><span>Disabled footer action</span></span>
+        </button>
+      </div>
+    </libc-dialog-shell>
+  `,
+})
+class FooterHostComponent {
   public readonly onAction = vi.fn();
 }
 
@@ -62,9 +110,11 @@ class MenuHostComponent {
   template: `
     <libc-dialog-shell>
       <div dialog-shell-content>Content</div>
-      @if (showActions()) {
-        <button type="button" dialog-shell-menu-content>Projected action</button>
-      }
+      <div dialog-shell-menu-content>
+        @if (showActions()) {
+          <button type="button">Projected action</button>
+        }
+      </div>
     </libc-dialog-shell>
   `,
 })
@@ -78,6 +128,18 @@ describe('DialogShell component', () => {
 
   const finishCloseAnimation = (): void => {
     vi.advanceTimersByTime(200);
+  };
+
+  const finishActionHold = (): void => {
+    vi.advanceTimersByTime(500);
+  };
+
+  const delaySynthesizedClick = (): void => {
+    vi.advanceTimersByTime(100);
+  };
+
+  const finishClickSuppressionFallback = (): void => {
+    vi.advanceTimersByTime(1000);
   };
 
   const setViewport = (width: number, isMobile: boolean): void => {
@@ -344,20 +406,15 @@ describe('DialogShell component', () => {
     expect(closeSpy).not.toHaveBeenCalled();
   });
 
-  it('does not close from a mobile edge swipe while the actions menu is open', () => {
+  it('does not close from a mobile edge swipe starting on the actions area', () => {
     setViewport(390, true);
     const menuFixture = TestBed.createComponent(MenuHostComponent);
     menuFixture.detectChanges();
     menuFixture.detectChanges();
-    const dialogRoot = menuFixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
-    const menuButton = menuFixture.nativeElement.querySelector(
-      '[data-test-id="dialog-actions-menu-button"]'
-    ) as HTMLButtonElement;
+    const menu = menuFixture.nativeElement.querySelector('[data-test-id="dialog-actions-menu"]') as HTMLElement;
 
-    menuButton.click();
-    menuFixture.detectChanges();
-    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 388);
-    dispatchPointerEvent(dialogRoot, 'pointerup', 108, 300);
+    dispatchPointerEvent(menu, 'pointerdown', 100, 388);
+    dispatchPointerEvent(menu, 'pointerup', 108, 300);
     finishCloseAnimation();
 
     expect(closeSpy).not.toHaveBeenCalled();
@@ -391,78 +448,215 @@ describe('DialogShell component', () => {
     expect(closeSpy).not.toHaveBeenCalled();
   });
 
-  it('shows projected actions in a three-dot menu', () => {
+  it('shows projected actions inline', () => {
     const menuFixture = TestBed.createComponent(MenuHostComponent);
     menuFixture.detectChanges();
     menuFixture.detectChanges();
 
     const closeButton = menuFixture.nativeElement.querySelector('[data-test-id="dialog-close-button"]');
-    const menuButton = menuFixture.nativeElement.querySelector(
-      '[data-test-id="dialog-actions-menu-button"]'
-    ) as HTMLButtonElement;
-    const menu = menuFixture.nativeElement.querySelector('[data-test-id="dialog-actions-menu"]') as HTMLElement;
+    const actions = menuFixture.nativeElement.querySelector('.dialog-actions') as HTMLElement;
 
     expect(closeButton).toBeNull();
-    expect(menuButton).not.toBeNull();
-    expect(menu.hasAttribute('hidden')).toBe(true);
-
-    menuButton.click();
-    menuFixture.detectChanges();
-
-    expect(menu.hasAttribute('hidden')).toBe(false);
+    expect(actions.hasAttribute('hidden')).toBe(false);
 
     const projectedAction = menuFixture.nativeElement.querySelector('[dialog-shell-menu-content]') as HTMLButtonElement;
+    const projectedActionLabel = projectedAction.querySelector('.button-reveal-label-text');
+
+    expect(projectedAction.classList.contains('button-reveal-label')).toBe(true);
+    expect(projectedAction.classList.contains('button-icon')).toBe(true);
+    expect(projectedAction.getAttribute('aria-label')).toBe('Projected action');
+    expect(projectedActionLabel?.textContent).toContain('Projected action');
+
     projectedAction.click();
     menuFixture.detectChanges();
 
     expect(menuFixture.componentInstance.onAction).toHaveBeenCalledTimes(1);
-    expect(menu.hasAttribute('hidden')).toBe(true);
+    expect(actions.hasAttribute('hidden')).toBe(false);
 
     expect(closeSpy).not.toHaveBeenCalled();
   });
 
-  it('closes the actions menu when clicking outside of it', () => {
+  it('executes a projected action after a quick touch tap', () => {
     const menuFixture = TestBed.createComponent(MenuHostComponent);
     menuFixture.detectChanges();
     menuFixture.detectChanges();
+    const projectedAction = menuFixture.nativeElement.querySelector('[dialog-shell-menu-content]') as HTMLButtonElement;
 
-    const menuButton = menuFixture.nativeElement.querySelector(
-      '[data-test-id="dialog-actions-menu-button"]'
-    ) as HTMLButtonElement;
-    const menu = menuFixture.nativeElement.querySelector('[data-test-id="dialog-actions-menu"]') as HTMLElement;
-    const content = menuFixture.nativeElement.querySelector('[dialog-shell-content]') as HTMLElement;
+    dispatchPointerEvent(projectedAction, 'pointerdown', 100, 100);
+    dispatchPointerEvent(projectedAction, 'pointerup', 100, 100);
+    projectedAction.click();
 
-    menuButton.click();
-    menuFixture.detectChanges();
-
-    expect(menu.hasAttribute('hidden')).toBe(false);
-
-    content.click();
-    menuFixture.detectChanges();
-
-    expect(menu.hasAttribute('hidden')).toBe(true);
+    expect(menuFixture.componentInstance.onAction).toHaveBeenCalledTimes(1);
+    expect(menuFixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
   });
 
-  it('closes the actions menu when clicking the menu content', () => {
+  it('shows a touch hold label without executing the projected action', () => {
     const menuFixture = TestBed.createComponent(MenuHostComponent);
     menuFixture.detectChanges();
     menuFixture.detectChanges();
+    const projectedAction = menuFixture.nativeElement.querySelector('[dialog-shell-menu-content]') as HTMLButtonElement;
+    const dialogRoot = menuFixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+    vi.spyOn(dialogRoot, 'getBoundingClientRect').mockReturnValue(new DOMRect(20, 0, 300, 200));
+    vi.spyOn(projectedAction, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 8, 40, 24));
+    projectedAction.setAttribute('aria-describedby', 'existing-description');
 
-    const menuButton = menuFixture.nativeElement.querySelector(
-      '[data-test-id="dialog-actions-menu-button"]'
+    dispatchPointerEvent(projectedAction, 'pointerdown', 100, 100);
+    finishActionHold();
+    menuFixture.detectChanges();
+
+    const tooltip = menuFixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]') as HTMLElement;
+    const tooltipHost = tooltip.closest('libc-tooltip') as HTMLElement;
+    expect(tooltip.textContent).toContain('Projected action');
+    expect(tooltip.style.left).toBe('100px');
+    expect(tooltipHost.style.bottom).toBe('192px');
+    expect(projectedAction.getAttribute('aria-describedby')).toBe(`existing-description ${tooltip.id}`);
+
+    dispatchPointerEvent(projectedAction, 'pointerup', 100, 100);
+    menuFixture.detectChanges();
+    expect(projectedAction.getAttribute('aria-describedby')).toBe('existing-description');
+    delaySynthesizedClick();
+    projectedAction.click();
+
+    expect(menuFixture.componentInstance.onAction).not.toHaveBeenCalled();
+
+    dispatchPointerEvent(projectedAction, 'pointerdown', 100, 100);
+    expect(projectedAction.getAttribute('aria-describedby')).toBe('existing-description');
+    dispatchPointerEvent(projectedAction, 'pointerup', 100, 100);
+    projectedAction.click();
+
+    expect(menuFixture.componentInstance.onAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('executes a projected footer action after a quick touch tap', () => {
+    const footerFixture = TestBed.createComponent(FooterHostComponent);
+    footerFixture.detectChanges();
+    const footerAction = footerFixture.nativeElement.querySelector(
+      '[data-test-id="footer-action"]'
     ) as HTMLButtonElement;
-    const menu = menuFixture.nativeElement.querySelector('[data-test-id="dialog-actions-menu"]') as HTMLElement;
-    const menuContent = menuFixture.nativeElement.querySelector('.dialog-actions-menu-content') as HTMLElement;
 
-    menuButton.click();
+    dispatchPointerEvent(footerAction, 'pointerdown', 180, 100);
+    dispatchPointerEvent(footerAction, 'pointerup', 180, 100);
+    footerAction.click();
+
+    expect(footerFixture.componentInstance.onAction).toHaveBeenCalledTimes(1);
+    expect(footerFixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
+
+  it('shows a frame-positioned touch hold label without executing a projected footer action', () => {
+    const footerFixture = TestBed.createComponent(FooterHostComponent);
+    footerFixture.detectChanges();
+    const dialogRoot = footerFixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+    const footerAction = footerFixture.nativeElement.querySelector(
+      '[data-test-id="footer-action"]'
+    ) as HTMLButtonElement;
+    vi.spyOn(dialogRoot, 'getBoundingClientRect').mockReturnValue(new DOMRect(20, 10, 300, 200));
+    vi.spyOn(footerAction, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 170, 40, 24));
+
+    dispatchPointerEvent(footerAction, 'pointerdown', 180, 100);
+    finishActionHold();
+    footerFixture.detectChanges();
+
+    const tooltip = footerFixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]') as HTMLElement;
+    const tooltipHost = tooltip.closest('libc-tooltip') as HTMLElement;
+    expect(tooltip.textContent).toContain('Footer action');
+    expect(tooltip.style.left).toBe('100px');
+    expect(tooltipHost.style.bottom).toBe('40px');
+
+    dispatchPointerEvent(footerAction, 'pointerup', 180, 100);
+    delaySynthesizedClick();
+    footerAction.click();
+
+    expect(footerFixture.componentInstance.onAction).not.toHaveBeenCalled();
+  });
+
+  it('ignores touch holds on disabled projected footer actions', () => {
+    const footerFixture = TestBed.createComponent(FooterHostComponent);
+    footerFixture.detectChanges();
+    const disabledFooterAction = footerFixture.nativeElement.querySelector(
+      '[data-test-id="disabled-footer-action"]'
+    ) as HTMLButtonElement;
+
+    dispatchPointerEvent(disabledFooterAction, 'pointerdown', 180, 100);
+    finishActionHold();
+    footerFixture.detectChanges();
+
+    expect(footerFixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
+
+  it('cancels the touch hold label when the pointer moves', () => {
+    const menuFixture = TestBed.createComponent(MenuHostComponent);
+    menuFixture.detectChanges();
+    menuFixture.detectChanges();
+    const projectedAction = menuFixture.nativeElement.querySelector('[dialog-shell-menu-content]') as HTMLButtonElement;
+
+    dispatchPointerEvent(projectedAction, 'pointerdown', 100, 100);
+    dispatchPointerEvent(projectedAction, 'pointermove', 100, 109);
+    finishActionHold();
     menuFixture.detectChanges();
 
-    expect(menu.hasAttribute('hidden')).toBe(false);
+    expect(menuFixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
 
-    menuContent.click();
+  it('suppresses the action when the pointer moves after a touch hold', () => {
+    const menuFixture = TestBed.createComponent(MenuHostComponent);
+    menuFixture.detectChanges();
+    menuFixture.detectChanges();
+    const projectedAction = menuFixture.nativeElement.querySelector('[dialog-shell-menu-content]') as HTMLButtonElement;
+
+    dispatchPointerEvent(projectedAction, 'pointerdown', 100, 100);
+    finishActionHold();
+    dispatchPointerEvent(projectedAction, 'pointermove', 100, 109);
+    menuFixture.detectChanges();
+    dispatchPointerEvent(projectedAction, 'pointerup', 100, 109);
+    delaySynthesizedClick();
+    projectedAction.click();
+
+    expect(menuFixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+    expect(menuFixture.componentInstance.onAction).not.toHaveBeenCalled();
+  });
+
+  it('releases click suppression when a touch hold produces no click', () => {
+    const menuFixture = TestBed.createComponent(MenuHostComponent);
+    menuFixture.detectChanges();
+    menuFixture.detectChanges();
+    const projectedAction = menuFixture.nativeElement.querySelector('[dialog-shell-menu-content]') as HTMLButtonElement;
+
+    dispatchPointerEvent(projectedAction, 'pointerdown', 100, 100);
+    finishActionHold();
+    dispatchPointerEvent(projectedAction, 'pointerup', 100, 100);
+    finishClickSuppressionFallback();
+    projectedAction.click();
+
+    expect(menuFixture.componentInstance.onAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels the touch hold label when the pointer is cancelled', () => {
+    const menuFixture = TestBed.createComponent(MenuHostComponent);
+    menuFixture.detectChanges();
+    menuFixture.detectChanges();
+    const projectedAction = menuFixture.nativeElement.querySelector('[dialog-shell-menu-content]') as HTMLButtonElement;
+
+    dispatchPointerEvent(projectedAction, 'pointerdown', 100, 100);
+    dispatchPointerEvent(projectedAction, 'pointercancel', 100, 100);
+    finishActionHold();
     menuFixture.detectChanges();
 
-    expect(menu.hasAttribute('hidden')).toBe(true);
+    expect(menuFixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
+
+  it('does not show a hold label for mouse input', () => {
+    const menuFixture = TestBed.createComponent(MenuHostComponent);
+    menuFixture.detectChanges();
+    menuFixture.detectChanges();
+    const projectedAction = menuFixture.nativeElement.querySelector('[dialog-shell-menu-content]') as HTMLButtonElement;
+
+    dispatchPointerEvent(projectedAction, 'pointerdown', 100, 100, 1, 'mouse');
+    finishActionHold();
+    projectedAction.click();
+    menuFixture.detectChanges();
+
+    expect(menuFixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+    expect(menuFixture.componentInstance.onAction).toHaveBeenCalledTimes(1);
   });
 
   it('detects projected actions added after initialization', async () => {
@@ -470,15 +664,15 @@ describe('DialogShell component', () => {
     dynamicMenuFixture.detectChanges();
     dynamicMenuFixture.detectChanges();
 
-    expect(dynamicMenuFixture.nativeElement.querySelector('[data-test-id="dialog-actions-menu-button"]')).toBeNull();
+    const actions = dynamicMenuFixture.nativeElement.querySelector('.dialog-actions') as HTMLElement;
+
+    expect(actions.hasAttribute('hidden')).toBe(true);
 
     dynamicMenuFixture.componentInstance.showActions.set(true);
     dynamicMenuFixture.detectChanges();
     await Promise.resolve();
     dynamicMenuFixture.detectChanges();
 
-    expect(
-      dynamicMenuFixture.nativeElement.querySelector('[data-test-id="dialog-actions-menu-button"]')
-    ).not.toBeNull();
+    expect(actions.hasAttribute('hidden')).toBe(false);
   });
 });

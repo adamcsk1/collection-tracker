@@ -1,115 +1,183 @@
 @if (!editMode()) {
   @if (permissionUpdate() && seriesTracker()) {
     <button
-      class="button-borderless unaligned"
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations().manageWatchedEpisodes()"
       data-test-id="item-dialog-manage-watched-episodes"
+      [attr.aria-label]="translations().manageWatchedEpisodes()"
+      [title]="translations().manageWatchedEpisodes()"
       (click)="manageWatchedEpisodes.emit()"
     >
       <i class="material-icons" aria-hidden="true"> check_circle </i>
-      {{ translations().manageWatchedEpisodes() }}
+      <span class="button-reveal-label-text"
+        ><span>{{ translations().manageWatchedEpisodes() }}</span></span
+      >
     </button>
     <button
-      class="button-borderless unaligned"
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations().manageSeriesMetadata()"
       data-test-id="item-dialog-manage-series-metadata"
+      [attr.aria-label]="translations().manageSeriesMetadata()"
+      [title]="translations().manageSeriesMetadata()"
       (click)="manageSeriesMetadata.emit()"
     >
       <i class="material-icons" aria-hidden="true"> list </i>
-      {{ translations().manageSeriesMetadata() }}
+      <span class="button-reveal-label-text"
+        ><span>{{ translations().manageSeriesMetadata() }}</span></span
+      >
     </button>
   }
   @if (permissionWatch() && libraryItem() && movie()) {
     @if (watched()) {
       <button
-        class="button-borderless unaligned"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations().markAsUnwatched()"
         data-test-id="item-dialog-mark-unwatched"
+        [attr.aria-label]="translations().markAsUnwatched()"
+        [title]="translations().markAsUnwatched()"
         (click)="markAsUnwatched.emit()"
       >
         <i class="material-icons" aria-hidden="true"> visibility_off </i>
-        {{ translations().markAsUnwatched() }}
+        <span class="button-reveal-label-text"
+          ><span>{{ translations().markAsUnwatched() }}</span></span
+        >
       </button>
     } @else {
       <button
-        class="button-borderless unaligned"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations().markAsWatched()"
         data-test-id="item-dialog-mark-watched"
+        [attr.aria-label]="translations().markAsWatched()"
+        [title]="translations().markAsWatched()"
         (click)="markAsWatched.emit()"
       >
         <i class="material-icons" aria-hidden="true"> visibility </i>
-        {{ translations().markAsWatched() }}
+        <span class="button-reveal-label-text"
+          ><span>{{ translations().markAsWatched() }}</span></span
+        >
       </button>
     }
   }
   @if (permissionWatch() && libraryItem() && series()) {
     @if (inSeriesTracker()) {
       <button
-        class="button-borderless unaligned"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations().removeFromSeriesTracker()"
         data-test-id="item-dialog-remove-series-tracker"
+        [attr.aria-label]="translations().removeFromSeriesTracker()"
+        [title]="translations().removeFromSeriesTracker()"
         (click)="removeFromSeriesTracker.emit()"
       >
         <i class="material-icons" aria-hidden="true"> live_tv </i>
-        {{ translations().removeFromSeriesTracker() }}
+        <span class="button-reveal-label-text"
+          ><span>{{ translations().removeFromSeriesTracker() }}</span></span
+        >
       </button>
     } @else {
       <button
-        class="button-borderless unaligned"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations().copyToSeriesTracker()"
         data-test-id="item-dialog-copy-series-tracker"
+        [attr.aria-label]="translations().copyToSeriesTracker()"
+        [title]="translations().copyToSeriesTracker()"
         (click)="copyToSeriesTracker.emit()"
       >
         <i class="material-icons" aria-hidden="true"> live_tv </i>
-        {{ translations().copyToSeriesTracker() }}
+        <span class="button-reveal-label-text"
+          ><span>{{ translations().copyToSeriesTracker() }}</span></span
+        >
       </button>
     }
   }
   @if (watchLater() && movie() && !inMovieTracker()) {
     <button
-      class="button-borderless unaligned"
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations().moveToMovieTracker()"
       data-test-id="item-dialog-move-movie-tracker"
+      [attr.aria-label]="translations().moveToMovieTracker()"
+      [title]="translations().moveToMovieTracker()"
       (click)="moveToMovieTracker.emit()"
     >
       <i class="material-icons" aria-hidden="true"> movie </i>
-      {{ translations().moveToMovieTracker() }}
+      <span class="button-reveal-label-text"
+        ><span>{{ translations().moveToMovieTracker() }}</span></span
+      >
     </button>
   }
   @if (watchLater() && series() && !inSeriesTracker()) {
     <button
-      class="button-borderless unaligned"
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations().moveToSeriesTracker()"
       data-test-id="item-dialog-move-series-tracker"
+      [attr.aria-label]="translations().moveToSeriesTracker()"
+      [title]="translations().moveToSeriesTracker()"
       (click)="moveToSeriesTracker.emit()"
     >
       <i class="material-icons" aria-hidden="true"> live_tv </i>
-      {{ translations().moveToSeriesTracker() }}
+      <span class="button-reveal-label-text"
+        ><span>{{ translations().moveToSeriesTracker() }}</span></span
+      >
     </button>
   }
   @if (permissionUpdate() && libraryItem()) {
     @if (favorite()) {
       <button
-        class="button-borderless unaligned"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations().removeFavorite()"
         data-test-id="item-dialog-remove-favorite"
+        [attr.aria-label]="translations().removeFavorite()"
+        [title]="translations().removeFavorite()"
         (click)="removeFavorite.emit()"
       >
         <i class="material-icons" aria-hidden="true"> star_outline </i>
-        {{ translations().removeFavorite() }}
+        <span class="button-reveal-label-text"
+          ><span>{{ translations().removeFavorite() }}</span></span
+        >
       </button>
     } @else {
       <button
-        class="button-borderless unaligned"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations().markAsFavorite()"
         data-test-id="item-dialog-mark-favorite"
+        [attr.aria-label]="translations().markAsFavorite()"
+        [title]="translations().markAsFavorite()"
         (click)="markAsFavorite.emit()"
       >
         <i class="material-icons" aria-hidden="true"> star_rate </i>
-        {{ translations().markAsFavorite() }}
+        <span class="button-reveal-label-text"
+          ><span>{{ translations().markAsFavorite() }}</span></span
+        >
       </button>
     }
   }
   @if (permissionUpdate()) {
-    <button class="button-borderless unaligned" data-test-id="item-dialog-edit" (click)="edit.emit()">
+    <button
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations().edit()"
+      data-test-id="item-dialog-edit"
+      [attr.aria-label]="translations().edit()"
+      [title]="translations().edit()"
+      (click)="edit.emit()"
+    >
       <i class="material-icons" aria-hidden="true"> edit </i>
-      {{ translations().edit() }}
+      <span class="button-reveal-label-text"
+        ><span>{{ translations().edit() }}</span></span
+      >
     </button>
   }
   @if (permissionDelete()) {
-    <button class="button-borderless unaligned button-danger" data-test-id="item-dialog-delete" (click)="delete.emit()">
+    <button
+      class="button-icon button-reveal-label button-danger"
+      [libcRevealLabel]="translations().delete()"
+      data-test-id="item-dialog-delete"
+      [attr.aria-label]="translations().delete()"
+      [title]="translations().delete()"
+      (click)="delete.emit()"
+    >
       <i class="material-icons" aria-hidden="true"> delete </i>
-      {{ translations().delete() }}
+      <span class="button-reveal-label-text"
+        ><span>{{ translations().delete() }}</span></span
+      >
     </button>
   }
 }

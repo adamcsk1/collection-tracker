@@ -400,7 +400,7 @@ describe('Settings - appMode: full (all permissions)', () => {
   it('the item dialog shows edit, delete, and mark-watched buttons', () => {
     CollectionPage.getListItemImages().first().click();
 
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().should('be.visible');
     CollectionPage.getItemDialogDeleteButton().should('be.visible');
     CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');

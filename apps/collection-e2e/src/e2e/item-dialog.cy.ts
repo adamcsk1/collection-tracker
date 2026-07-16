@@ -1,11 +1,76 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { CollectionPage } from '../page-objects/collection.po';
 
+const tooltipCenterTolerance = 1;
+const actionIconAlignmentTolerance = 1;
+
 describe('Item dialog — edit flow', () => {
   beforeEach(() => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', buildCollectionItem('Edit Test Movie', 'movie', 'tt7000001'));
     CollectionPage.visit();
+  });
+
+  it('shows an action label on touch hold without executing the action', () => {
+    cy.viewport('iphone-x');
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.expectItemDialogActionsVisible();
+    CollectionPage.getItemDialogEditButton().find('.button-reveal-label-text').should('not.be.visible');
+    CollectionPage.getItemDialogActionButtons().then((buttons) => {
+      const iconCenters = [...buttons].map((button) => {
+        const icon = button.querySelector('.material-icons');
+        if (!icon) throw new Error('Dialog action icon is unavailable');
+        const iconRect = icon.getBoundingClientRect();
+        return iconRect.top + iconRect.height / 2;
+      });
+      iconCenters.slice(1).forEach((iconCenter) => {
+        expect(iconCenter).to.be.closeTo(iconCenters[0], actionIconAlignmentTolerance);
+      });
+    });
+
+    CollectionPage.getItemDialogEditButton()
+      .invoke('attr', 'aria-label')
+      .then((label) => {
+        CollectionPage.holdItemDialogAction('item-dialog-edit');
+        CollectionPage.getDialogActionTooltip().should((tooltip) => {
+          expect(tooltip.text().trim()).to.equal(label);
+        });
+        CollectionPage.getItemDialogEditButton().then((button) => {
+          CollectionPage.getDialogActionTooltip().then((tooltip) => {
+            const buttonRect = button[0].getBoundingClientRect();
+            const tooltipRect = tooltip[0].getBoundingClientRect();
+            expect(tooltipRect.left + tooltipRect.width / 2).to.be.closeTo(
+              buttonRect.left + buttonRect.width / 2,
+              tooltipCenterTolerance
+            );
+          });
+        });
+        CollectionPage.releaseHeldItemDialogAction('item-dialog-edit');
+        CollectionPage.getDialogActionTooltip().should('not.exist');
+      });
+    CollectionPage.getItemDialogSaveButton().should('not.exist');
+
+    CollectionPage.getItemDialogEditButton().click();
+    CollectionPage.getItemDialogSaveButton().should('be.visible');
+    CollectionPage.getItemDialogSaveButton().find('.button-reveal-label-text').should('not.be.visible');
+    CollectionPage.getItemDialogSaveButton()
+      .invoke('attr', 'aria-label')
+      .then((label) => {
+        CollectionPage.holdItemDialogAction('item-dialog-save');
+        CollectionPage.getDialogActionTooltip().should((tooltip) => {
+          expect(tooltip.text().trim()).to.equal(label);
+        });
+        CollectionPage.releaseHeldItemDialogAction('item-dialog-save');
+      });
+    CollectionPage.getItemDialogSaveButton().should('be.visible');
+  });
+
+  it('reveals a footer action label on keyboard focus', () => {
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogEditButton().click();
+
+    CollectionPage.getItemDialogSaveButton().focus();
+    CollectionPage.getItemDialogSaveButton().find('.button-reveal-label-text').should('be.visible');
   });
 
   it('edits the title of an existing item and persists the change', () => {
@@ -16,7 +81,7 @@ describe('Item dialog — edit flow', () => {
     CollectionPage.getListItemImages().first().click();
 
     // Enter edit mode
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().click();
 
     // Change the title
@@ -41,7 +106,7 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogYearInput().clear().type('2025');
@@ -67,7 +132,7 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogUserRateInput().type('9.4');
@@ -86,14 +151,14 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogUserRateInput().type('9.4');
     CollectionPage.getItemDialogSaveButton().click();
     cy.wait('@updateItem');
 
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().click();
     CollectionPage.getItemDialogUserRateInput().clear();
     CollectionPage.getItemDialogSaveButton().click();
@@ -108,7 +173,7 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogUserRateInput().type('8.75');
@@ -119,7 +184,7 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogIMDbRateInput().clear().type('10.1');
@@ -138,7 +203,7 @@ describe('Item dialog — edit flow', () => {
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().click();
 
     CollectionPage.getItemDialogTitleInput().clear().type('Discarded Title');
@@ -191,12 +256,12 @@ describe('Item dialog — mark watched / unwatched', () => {
 
     CollectionPage.getListItemImages().first().click();
 
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogMarkWatchedButton().click();
     cy.wait('@markWatched').its('response.statusCode').should('eq', 200);
 
     // After marking watched, the button should switch to mark-unwatched
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogMarkUnwatchedButton().should('be.visible');
   });
 
@@ -207,17 +272,17 @@ describe('Item dialog — mark watched / unwatched', () => {
 
     // First mark as watched
     CollectionPage.getListItemImages().first().click();
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogMarkWatchedButton().click();
     cy.wait('@markWatched');
 
     // Now mark as unwatched
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogMarkUnwatchedButton().click();
     cy.wait('@markUnwatched').its('response.statusCode').should('eq', 204);
 
     // Button should switch back to mark-watched
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');
   });
 });

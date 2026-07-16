@@ -170,12 +170,6 @@ describe('ItemDialog', () => {
         provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
       ],
     });
-    TestBed.overrideComponent(ItemDialog, {
-      set: {
-        template: '',
-      },
-    });
-
     fixture = TestBed.createComponent(ItemDialog);
     component = fixture.componentInstance;
     toastState = TestBed.inject(toastStateToken);
@@ -203,6 +197,7 @@ describe('ItemDialog', () => {
   });
 
   it('toggles edit mode', () => {
+    expect(component['translations'].backToDetails()).toBe('BackToDetails');
     expect(component['editMode']()).toBe(false);
 
     component['onEdit']();
@@ -210,6 +205,30 @@ describe('ItemDialog', () => {
 
     component['onReadOnly']();
     expect(component['editMode']()).toBe(false);
+  });
+
+  it('renders form-associated edit footer controls with translated labels', () => {
+    component['onEdit']();
+    fixture.detectChanges();
+
+    const backButton = fixture.nativeElement.querySelector(
+      '[data-test-id="item-dialog-read-only"]'
+    ) as HTMLButtonElement;
+    const saveButton = fixture.nativeElement.querySelector('[data-test-id="item-dialog-save"]') as HTMLButtonElement;
+
+    expect(backButton.type).toBe('button');
+    expect(backButton.getAttribute('aria-label')).toBe('BackToDetails');
+    expect(backButton.title).toBe('BackToDetails');
+    expect(saveButton.type).toBe('submit');
+    expect(saveButton.getAttribute('form')).toBe('item-edit-form');
+    expect(saveButton.getAttribute('aria-label')).toBe('Save');
+    expect(saveButton.title).toBe('Save');
+    expect(saveButton.disabled).toBe(false);
+
+    component['form'].title().value.set('');
+    fixture.detectChanges();
+
+    expect(saveButton.disabled).toBe(true);
   });
 
   it('restores last saved item when switching back to read-only', () => {

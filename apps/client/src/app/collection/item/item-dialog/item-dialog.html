@@ -140,19 +140,34 @@
   </ng-container>
   <ng-container dialog-shell-bottom-content>
     @if (editMode()) {
-      <button class="dialog-footer-button" data-test-id="item-dialog-read-only" type="button" (click)="onReadOnly()">
-        <i class="material-icons" aria-hidden="true"> visibility </i>
-        {{ translations.readOnly() }}
+      <button
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations.backToDetails()"
+        data-test-id="item-dialog-read-only"
+        type="button"
+        [attr.aria-label]="translations.backToDetails()"
+        [title]="translations.backToDetails()"
+        (click)="onReadOnly()"
+      >
+        <i class="material-icons" aria-hidden="true"> arrow_back </i>
+        <span class="button-reveal-label-text"
+          ><span>{{ translations.backToDetails() }}</span></span
+        >
       </button>
       <button
-        class="dialog-footer-button"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations.save()"
         data-test-id="item-dialog-save"
         type="submit"
         form="item-edit-form"
+        [attr.aria-label]="translations.save()"
+        [title]="translations.save()"
         [disabled]="form().invalid()"
       >
         <i class="material-icons" aria-hidden="true"> save </i>
-        {{ translations.save() }}
+        <span class="button-reveal-label-text"
+          ><span>{{ translations.save() }}</span></span
+        >
       </button>
     }
   </ng-container>

@@ -7,6 +7,7 @@ import { initialToastState, ToastState, toastStateToken } from '@components/toas
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
+import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of, Subject } from 'rxjs';
@@ -61,13 +62,12 @@ describe('WatchedEpisodesDialog', () => {
         { provide: ApiService, useValue: api },
         { provide: PortalService, useValue: portal },
         { provide: ConfirmService, useValue: confirm },
+        { provide: WebstorageService, useValue: { getItem: vi.fn(() => null), setItem: vi.fn() } },
         { provide: NgxSignalTranslateService, useValue: { translate: vi.fn((key: string) => key) } },
         provideStore(initialToastState, toastStateToken),
         provideStore(initialSpinnerLoadingState, spinnerLoadingStateToken),
       ],
     });
-    TestBed.overrideComponent(WatchedEpisodesDialog, { set: { template: '' } });
-
     fixture = TestBed.createComponent(WatchedEpisodesDialog);
     component = fixture.componentInstance;
     toastState = TestBed.inject(toastStateToken);
@@ -82,6 +82,31 @@ describe('WatchedEpisodesDialog', () => {
     expect(api.getSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['seasonsMetadata']()).toEqual([{ season: 1, episodes: 3, titles: [] }]);
     expect(component['watchedEpisodes']()).toEqual([{ season: 1, episode: 2 }]);
+  });
+
+  it('renders the translated mark-all action for both watched states', () => {
+    const markWatchedButton = fixture.nativeElement.querySelector(
+      '[data-test-id="watched-episodes-mark-all-watched"]'
+    ) as HTMLButtonElement;
+
+    expect(markWatchedButton.type).toBe('button');
+    expect(markWatchedButton.classList.contains('button-icon')).toBe(true);
+    expect(markWatchedButton.getAttribute('aria-label')).toBe('MarkAllEpisodesWatched');
+    expect(markWatchedButton.title).toBe('MarkAllEpisodesWatched');
+
+    component['watchedEpisodes'].set([
+      { season: 1, episode: 1 },
+      { season: 1, episode: 2 },
+      { season: 1, episode: 3 },
+    ]);
+    fixture.detectChanges();
+
+    const markUnwatchedButton = fixture.nativeElement.querySelector(
+      '[data-test-id="watched-episodes-mark-all-unwatched"]'
+    ) as HTMLButtonElement;
+    expect(markUnwatchedButton.classList.contains('button-icon')).toBe(true);
+    expect(markUnwatchedButton.getAttribute('aria-label')).toBe('MarkAllEpisodesUnwatched');
+    expect(markUnwatchedButton.title).toBe('MarkAllEpisodesUnwatched');
   });
 
   it('computes watched set from episodes', () => {

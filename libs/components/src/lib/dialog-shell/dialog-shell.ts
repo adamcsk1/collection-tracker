@@ -16,8 +16,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { asyncScheduler, timer } from 'rxjs';
-
-let nextDialogShellActionsMenuId = 0;
 const closeAnimationDuration = 200;
 const dragCloseThreshold = 32;
 const edgeSwipeStartWidth = 32;
@@ -45,8 +43,6 @@ export class DialogShell implements AfterViewInit {
   private readonly document = inject(DOCUMENT);
   private readonly dialogRoot = viewChild<ElementRef<HTMLDivElement>>('dialogRoot');
   private readonly menuContent = viewChild<ElementRef<HTMLDivElement>>('menuContent');
-  private readonly menuButton = viewChild<ElementRef<HTMLButtonElement>>('menuButton');
-  private readonly menuContainer = viewChild<ElementRef<HTMLDivElement>>('menuContainer');
   private dragStartY: number | null = null;
   private dragPointerId: number | null = null;
   private edgeSwipeStartX: number | null = null;
@@ -58,7 +54,6 @@ export class DialogShell implements AfterViewInit {
   public readonly ariaLabelledBy = input('');
   public readonly closed = output<void>();
   protected readonly hasMenuContent = signal(false);
-  protected readonly menuOpen = signal(false);
   protected readonly closing = signal(false);
   protected readonly dragOffset = signal(0);
   protected readonly dragOffsetCss = computed(() => `${this.dragOffset()}px`);
@@ -66,26 +61,11 @@ export class DialogShell implements AfterViewInit {
     const offset = this.dragOffset();
     return offset > 0 ? `translateY(${offset}px)` : null;
   });
-  protected readonly actionsMenuId = `dialog-shell-actions-menu-${nextDialogShellActionsMenuId++}`;
 
   protected readonly translations = {
     close: computed(() => this.ngxSignalTranslate.translate('Close')),
     dragToClose: computed(() => this.ngxSignalTranslate.translate('DragToClose')),
-    moreActions: computed(() => this.ngxSignalTranslate.translate('MoreActions')),
   };
-
-  constructor() {
-    const onDocumentClick = (event: MouseEvent): void => {
-      if (!this.menuOpen()) return;
-      const button = this.menuButton()?.nativeElement;
-      const menu = this.menuContainer()?.nativeElement;
-      if (button && !button.contains(event.target as Node) && menu && !menu.contains(event.target as Node)) {
-        this.menuOpen.set(false);
-      }
-    };
-    this.document.addEventListener('click', onDocumentClick);
-    this.destroyRef.onDestroy(() => this.document.removeEventListener('click', onDocumentClick));
-  }
 
   public ngAfterViewInit(): void {
     this.previouslyFocusedElement =
@@ -95,30 +75,18 @@ export class DialogShell implements AfterViewInit {
     const menuContentElement = this.menuContent()?.nativeElement;
     if (menuContentElement) {
       const updateHasMenuContent = (): void => {
-        const hasActions = Boolean(menuContentElement.childElementCount);
+        const hasActions = Boolean(menuContentElement.querySelector('button'));
         this.hasMenuContent.set(hasActions);
-        if (!hasActions) {
-          this.menuOpen.set(false);
-        }
       };
       updateHasMenuContent();
       const observer = new MutationObserver(updateHasMenuContent);
-      observer.observe(menuContentElement, { childList: true });
+      observer.observe(menuContentElement, { childList: true, subtree: true });
       this.destroyRef.onDestroy(() => observer.disconnect());
     }
   }
 
-  protected onToggleMenu(): void {
-    this.menuOpen.update((isOpen) => !isOpen);
-  }
-
-  protected onMenuContentClick(): void {
-    this.menuOpen.set(false);
-  }
-
   protected onClose(): void {
     if (this.closing()) return;
-    this.menuOpen.set(false);
     this.closing.set(true);
     timer(closeAnimationDuration, asyncScheduler)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -228,7 +196,7 @@ export class DialogShell implements AfterViewInit {
   }
 
   private canStartEdgeSwipe(event: PointerEvent): boolean {
-    if (event.isPrimary === false || event.pointerType !== 'touch' || this.menuOpen() || this.closing()) return false;
+    if (event.isPrimary === false || event.pointerType !== 'touch' || this.closing()) return false;
 
     const window = this.document.defaultView;
     const dialogRoot = this.dialogRoot()?.nativeElement;

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
+import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
@@ -21,7 +22,7 @@ import { getOpenSeasons } from './utils/get-open-seasons-util';
 
 @Component({
   selector: 'ct-watched-episodes-dialog',
-  imports: [DialogShell, Details],
+  imports: [DialogShell, Details, RevealLabel],
   templateUrl: './watched-episodes-dialog.html',
   styleUrl: './watched-episodes-dialog.css',
   host: {

@@ -13,24 +13,32 @@
       <button
         type="button"
         data-test-id="ai-search-send"
-        class="button-icon"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations.sendPrompt()"
         [attr.aria-label]="translations.sendPrompt()"
         [title]="translations.sendPrompt()"
         (click)="onSend()"
         (keydown.enter)="onSend()"
       >
         <i class="material-icons" aria-hidden="true">send</i>
+        <span class="button-reveal-label-text"
+          ><span>{{ translations.sendPrompt() }}</span></span
+        >
       </button>
       <button
         type="button"
         data-test-id="ai-search-info"
-        class="text-button"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations.aiSearchInfo()"
+        [attr.aria-label]="translations.aiSearchInfo()"
         [title]="translations.messageAiSearch()"
         [attr.aria-description]="translations.messageAiSearch()"
         (click)="onShowMessage()"
       >
         <i class="material-icons" aria-hidden="true">psychology</i>
-        <span>{{ translations.aiSearchInfo() }}</span>
+        <span class="button-reveal-label-text"
+          ><span>{{ translations.aiSearchInfo() }}</span></span
+        >
       </button>
     </div>
   </ng-container>

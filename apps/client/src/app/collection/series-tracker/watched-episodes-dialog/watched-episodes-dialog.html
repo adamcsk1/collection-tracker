@@ -70,23 +70,33 @@
   <ng-container dialog-shell-menu-content>
     @if (allEpisodesWatched()) {
       <button
-        class="button-borderless unaligned"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations.markAllEpisodesUnwatched()"
         data-test-id="watched-episodes-mark-all-unwatched"
         type="button"
+        [attr.aria-label]="translations.markAllEpisodesUnwatched()"
+        [title]="translations.markAllEpisodesUnwatched()"
         (click)="onMarkAllEpisodesUnwatched()"
       >
         <i class="material-icons" aria-hidden="true"> remove_circle_outline </i>
-        {{ translations.markAllEpisodesUnwatched() }}
+        <span class="button-reveal-label-text"
+          ><span>{{ translations.markAllEpisodesUnwatched() }}</span></span
+        >
       </button>
     } @else {
       <button
-        class="button-borderless unaligned"
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations.markAllEpisodesWatched()"
         data-test-id="watched-episodes-mark-all-watched"
         type="button"
+        [attr.aria-label]="translations.markAllEpisodesWatched()"
+        [title]="translations.markAllEpisodesWatched()"
         (click)="onMarkAllEpisodesWatched()"
       >
         <i class="material-icons" aria-hidden="true"> check_circle_outline </i>
-        {{ translations.markAllEpisodesWatched() }}
+        <span class="button-reveal-label-text"
+          ><span>{{ translations.markAllEpisodesWatched() }}</span></span
+        >
       </button>
     }
   </ng-container>

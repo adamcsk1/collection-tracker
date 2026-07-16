@@ -77,8 +77,19 @@ describe('ItemDialogActions', () => {
   it('renders provided edit and delete labels', () => {
     createComponent();
 
-    expect(getButton('item-dialog-edit').textContent).toContain('Edit');
-    expect(getButton('item-dialog-delete').textContent).toContain('Delete');
+    const editButton = getButton('item-dialog-edit');
+    const deleteButton = getButton('item-dialog-delete');
+
+    expect(editButton.textContent).toContain('Edit');
+    expect(editButton.classList.contains('button-icon')).toBe(true);
+    expect(editButton.getAttribute('aria-label')).toBe('Edit');
+    expect(editButton.getAttribute('title')).toBe('Edit');
+    expect(editButton.querySelector('.button-reveal-label-text')?.textContent).toContain('Edit');
+    expect(deleteButton.textContent).toContain('Delete');
+    expect(deleteButton.classList.contains('button-icon')).toBe(true);
+    expect(deleteButton.getAttribute('aria-label')).toBe('Delete');
+    expect(deleteButton.getAttribute('title')).toBe('Delete');
+    expect(deleteButton.querySelector('.button-reveal-label-text')?.textContent).toContain('Delete');
   });
 
   it('renders series tracker actions when update permission is available', () => {

@@ -128,7 +128,7 @@ const visitSharedCollection = (sharedUser: TestUser): void => {
 };
 
 const assertDialogPermissions = (permissions: { update: boolean; delete: boolean }): void => {
-  CollectionPage.openItemDialogActionsMenu();
+  CollectionPage.expectItemDialogActionsVisible();
 
   if (permissions.update) {
     CollectionPage.getItemDialogEditButton().should('be.visible');
@@ -350,7 +350,7 @@ describe('Collection sharing - movie tracker from shared library', () => {
       cy.on('window:confirm', () => true);
 
       CollectionPage.getListItems().contains(title).click();
-      CollectionPage.openItemDialogActionsMenu();
+      CollectionPage.expectItemDialogActionsVisible();
       CollectionPage.getItemDialogMarkWatchedButton().click();
 
       cy.wait('@markWatched').then((interception) => {

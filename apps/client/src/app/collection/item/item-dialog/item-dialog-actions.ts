@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { ItemDialogTranslations } from './item-dialog-model';
 
 @Component({
   selector: 'ct-item-dialog-actions',
+  imports: [RevealLabel],
   templateUrl: './item-dialog-actions.html',
+  styleUrl: './item-dialog-actions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ItemDialogActions {

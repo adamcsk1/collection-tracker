@@ -63,7 +63,7 @@ describe('Stacked dialogs', () => {
     expectDialogHostActive(CollectionPage.getItemDialogComponentHost());
     expectActiveDialogFocused();
 
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
     CollectionPage.getSeriesMetadataDialog().should('be.visible');
     expectDialogHostStacked(CollectionPage.getItemDialogComponentHost());
@@ -75,7 +75,7 @@ describe('Stacked dialogs', () => {
     expectDialogHostActive(CollectionPage.getItemDialogComponentHost());
     expectActiveDialogFocused();
 
-    CollectionPage.openItemDialogActionsMenu();
+    CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
     CollectionPage.getWatchedEpisodesDialog().should('be.visible');
     expectDialogHostStacked(CollectionPage.getItemDialogComponentHost());

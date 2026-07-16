@@ -1,0 +1,21 @@
+:host {
+  position: absolute;
+  right: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+span {
+  position: absolute;
+  bottom: 0;
+  display: block;
+  max-width: calc(100% - 2 * var(--size-xs));
+  border: var(--border-style);
+  border-radius: var(--border-radius);
+  background: var(--background-color);
+  color: var(--main-color);
+  padding: var(--size-2xs) var(--size-xs);
+  text-align: center;
+  translate: -50%;
+  white-space: normal;
+}

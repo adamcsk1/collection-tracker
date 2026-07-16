@@ -55,6 +55,12 @@ describe('AiSearchDialog component', () => {
 
   it('calls send and closes the portal when the send button is clicked', () => {
     const sendButton: HTMLElement = fixture.nativeElement.querySelector('[data-test-id="ai-search-send"]');
+
+    expect(sendButton.classList.contains('button-reveal-label')).toBe(true);
+    expect(sendButton.getAttribute('aria-label')).toBe('SendPrompt');
+    expect(sendButton.getAttribute('title')).toBe('SendPrompt');
+    expect(sendButton.querySelector('.button-reveal-label-text')?.textContent?.trim()).toBe('SendPrompt');
+
     sendButton.click();
     fixture.detectChanges();
 
@@ -64,6 +70,13 @@ describe('AiSearchDialog component', () => {
 
   it('shows an alert when the info button is clicked', () => {
     const infoButton: HTMLElement = fixture.nativeElement.querySelector('[data-test-id="ai-search-info"]');
+
+    expect(infoButton.classList.contains('button-reveal-label')).toBe(true);
+    expect(infoButton.getAttribute('aria-label')).toBe('AiSearchInfo');
+    expect(infoButton.getAttribute('title')).toBe('Message.AiSearch');
+    expect(infoButton.getAttribute('aria-description')).toBe('Message.AiSearch');
+    expect(infoButton.querySelector('.button-reveal-label-text')?.textContent?.trim()).toBe('AiSearchInfo');
+
     infoButton.click();
     fixture.detectChanges();
 
