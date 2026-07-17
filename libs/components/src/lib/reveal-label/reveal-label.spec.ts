@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { asyncScheduler, Subscription } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RevealLabel } from './reveal-label';
 
@@ -79,6 +80,13 @@ describe('RevealLabel directive', () => {
     button.click();
 
     expect(fixture.componentInstance.onSave).not.toHaveBeenCalled();
+    expect(button.getAttribute('aria-describedby')).toBe(`existing-description ${tooltip.id}`);
+    expect(fixture.nativeElement.querySelector('libc-tooltip')).not.toBeNull();
+
+    vi.advanceTimersByTime(999);
+    expect(fixture.nativeElement.querySelector('libc-tooltip')).not.toBeNull();
+
+    vi.advanceTimersByTime(1);
     expect(button.getAttribute('aria-describedby')).toBe('existing-description');
     expect(fixture.nativeElement.querySelector('libc-tooltip')).toBeNull();
   });
@@ -89,5 +97,38 @@ describe('RevealLabel directive', () => {
     vi.advanceTimersByTime(500);
 
     expect(fixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
+
+  it('cancels the previous dismissal schedule when another hold starts', () => {
+    const dialogFrame = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+    vi.spyOn(dialogFrame, 'getBoundingClientRect').mockReturnValue(new DOMRect(20, 10, 300, 200));
+    vi.spyOn(button, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 170, 40, 24));
+
+    dispatchPointerEvent('pointerdown');
+    vi.advanceTimersByTime(500);
+    dispatchPointerEvent('pointerup');
+
+    dispatchPointerEvent('pointerdown');
+    vi.advanceTimersByTime(500);
+    const tooltip = fixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]') as HTMLElement;
+
+    vi.advanceTimersByTime(500);
+
+    expect(tooltip.isConnected).toBe(true);
+  });
+
+  it('unsubscribes from pending schedules when destroyed', () => {
+    const scheduleSpy = vi.spyOn(asyncScheduler, 'schedule');
+    dispatchPointerEvent('pointerdown');
+    vi.advanceTimersByTime(500);
+    dispatchPointerEvent('pointerup');
+    const subscriptions = scheduleSpy.mock.results.map((result) => result.value as Subscription);
+
+    expect(subscriptions).toHaveLength(3);
+    expect(subscriptions.slice(1).every((subscription) => !subscription.closed)).toBe(true);
+
+    fixture.destroy();
+
+    expect(subscriptions.slice(1).every((subscription) => subscription.closed)).toBe(true);
   });
 });

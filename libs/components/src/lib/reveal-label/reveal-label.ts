@@ -9,10 +9,12 @@ import {
   inject,
   input,
 } from '@angular/core';
+import { asyncScheduler, Subscription } from 'rxjs';
 import { Tooltip } from '../tooltip/tooltip';
 
 const holdDuration = 500;
 const holdMoveTolerance = 8;
+const tooltipDismissDelay = 1000;
 const clickSuppressionFallbackDuration = 1000;
 let nextTooltipId = 0;
 
@@ -29,8 +31,9 @@ export class RevealLabel {
   private readonly element = inject<ElementRef<HTMLButtonElement>>(ElementRef);
   private readonly document = this.element.nativeElement.ownerDocument;
   private readonly tooltipId = `reveal-label-tooltip-${nextTooltipId++}`;
-  private holdTimer: number | null = null;
-  private clickSuppressionTimer: number | null = null;
+  private holdSubscription: Subscription | null = null;
+  private tooltipDismissSubscription: Subscription | null = null;
+  private clickSuppressionSubscription: Subscription | null = null;
   private pointerId: number | null = null;
   private startX: number | null = null;
   private startY: number | null = null;
@@ -75,13 +78,13 @@ export class RevealLabel {
   private onPointerDown(event: PointerEvent): void {
     this.reset();
     const button = this.element.nativeElement;
-    const window = this.document.defaultView;
-    if (button.disabled || event.isPrimary === false || event.pointerType !== 'touch' || !window) return;
+    if (button.disabled || event.isPrimary === false || event.pointerType !== 'touch') return;
 
     this.pointerId = event.pointerId;
     this.startX = event.clientX;
     this.startY = event.clientY;
-    this.holdTimer = window.setTimeout(() => {
+    this.holdSubscription = asyncScheduler.schedule(() => {
+      this.holdSubscription = null;
       if (this.pointerId !== event.pointerId) return;
       this.suppressClick = true;
       this.showTooltip();
@@ -98,7 +101,7 @@ export class RevealLabel {
     }
 
     if (this.suppressClick) {
-      this.clearHoldTimer();
+      this.clearHoldSubscription();
       this.startX = null;
       this.startY = null;
       this.clearTooltip();
@@ -110,20 +113,20 @@ export class RevealLabel {
   private onPointerUp(event: PointerEvent): void {
     if (this.pointerId !== event.pointerId) return;
 
-    this.clearHoldTimer();
+    this.clearHoldSubscription();
     this.pointerId = null;
     this.startX = null;
     this.startY = null;
     if (!this.suppressClick) return;
 
-    this.clearTooltip();
-    const window = this.document.defaultView;
-    if (window) {
-      this.clickSuppressionTimer = window.setTimeout(() => {
-        this.suppressClick = false;
-        this.clickSuppressionTimer = null;
-      }, clickSuppressionFallbackDuration);
-    }
+    this.tooltipDismissSubscription = asyncScheduler.schedule(() => {
+      this.tooltipDismissSubscription = null;
+      this.clearTooltip();
+    }, tooltipDismissDelay);
+    this.clickSuppressionSubscription = asyncScheduler.schedule(() => {
+      this.suppressClick = false;
+      this.clickSuppressionSubscription = null;
+    }, clickSuppressionFallbackDuration);
   }
 
   private onClick(event: MouseEvent): void {
@@ -132,8 +135,7 @@ export class RevealLabel {
     event.preventDefault();
     event.stopImmediatePropagation();
     this.suppressClick = false;
-    this.clearClickSuppressionTimer();
-    this.clearTooltip();
+    this.clearClickSuppressionSubscription();
   }
 
   private showTooltip(): void {
@@ -167,8 +169,8 @@ export class RevealLabel {
   }
 
   private reset(): void {
-    this.clearHoldTimer();
-    this.clearClickSuppressionTimer();
+    this.clearHoldSubscription();
+    this.clearClickSuppressionSubscription();
     this.pointerId = null;
     this.startX = null;
     this.startY = null;
@@ -177,6 +179,7 @@ export class RevealLabel {
   }
 
   private clearTooltip(): void {
+    this.clearTooltipDismissSubscription();
     const hadTooltip = this.tooltipRef !== null;
     if (this.tooltipRef) {
       const tooltipHost = this.tooltipRef.location.nativeElement as HTMLElement;
@@ -197,15 +200,18 @@ export class RevealLabel {
     this.previousDescription = null;
   }
 
-  private clearHoldTimer(): void {
-    const window = this.document.defaultView;
-    if (window && this.holdTimer !== null) window.clearTimeout(this.holdTimer);
-    this.holdTimer = null;
+  private clearHoldSubscription(): void {
+    this.holdSubscription?.unsubscribe();
+    this.holdSubscription = null;
   }
 
-  private clearClickSuppressionTimer(): void {
-    const window = this.document.defaultView;
-    if (window && this.clickSuppressionTimer !== null) window.clearTimeout(this.clickSuppressionTimer);
-    this.clickSuppressionTimer = null;
+  private clearTooltipDismissSubscription(): void {
+    this.tooltipDismissSubscription?.unsubscribe();
+    this.tooltipDismissSubscription = null;
+  }
+
+  private clearClickSuppressionSubscription(): void {
+    this.clickSuppressionSubscription?.unsubscribe();
+    this.clickSuppressionSubscription = null;
   }
 }

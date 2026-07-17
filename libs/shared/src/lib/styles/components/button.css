@@ -38,6 +38,13 @@ button {
     border: none;
   }
 
+  &.button-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
   &.button-reveal-label {
     --button-reveal-label-duration: 180ms;
     --button-reveal-label-fade-duration: 120ms;

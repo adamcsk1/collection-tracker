@@ -513,11 +513,14 @@ describe('DialogShell component', () => {
 
     dispatchPointerEvent(projectedAction, 'pointerup', 100, 100);
     menuFixture.detectChanges();
-    expect(projectedAction.getAttribute('aria-describedby')).toBe('existing-description');
+    expect(projectedAction.getAttribute('aria-describedby')).toBe(`existing-description ${tooltip.id}`);
     delaySynthesizedClick();
     projectedAction.click();
 
     expect(menuFixture.componentInstance.onAction).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(900);
+    expect(projectedAction.getAttribute('aria-describedby')).toBe('existing-description');
+    expect(menuFixture.nativeElement.querySelector('libc-tooltip')).toBeNull();
 
     dispatchPointerEvent(projectedAction, 'pointerdown', 100, 100);
     expect(projectedAction.getAttribute('aria-describedby')).toBe('existing-description');
