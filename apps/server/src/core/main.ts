@@ -44,8 +44,18 @@ export const main = async () => {
       throw new Error('Could not find migrations directory. Database schema may not be up to date.');
     }
 
+    let trustProxy: string | string[] | boolean = '127.0.0.1';
+    if (process.env.TRUSTED_PROXY_CIDRS) {
+      const proxies = process.env.TRUSTED_PROXY_CIDRS.split(',')
+        .map((proxy) => proxy.trim())
+        .filter(Boolean);
+      if (proxies.length > 0) {
+        trustProxy = ['127.0.0.1', ...proxies];
+      }
+    }
+
     const app = fastify({
-      trustProxy: '127.0.0.1',
+      trustProxy,
       bodyLimit: 50 * 1024 * 1024,
       routerOptions: { maxParamLength: SERVER_MAX_PARAM_LENGTH },
     });
