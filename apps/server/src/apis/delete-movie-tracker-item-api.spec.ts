@@ -185,7 +185,7 @@ describe('delete-movie-tracker-item-api', () => {
     db.prepare(
       `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
-    ).run('user', 'imdb:tt0133093', 'imdb', 'tt0133093', 'provider');
+    ).run('user', 'imdb:tt0133093', 'imdb', 'tt0133093', 'alias');
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',

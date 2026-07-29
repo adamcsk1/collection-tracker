@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { getExternalMetadataProviderByName, getExternalMetadataProviders } from './external-metadata-provider-factory';
+import {
+  getDirectImdbExternalMetadataProvider,
+  getExternalMetadataProviderByName,
+  getExternalMetadataProviders,
+} from './external-metadata-provider-factory';
 
 describe('external-metadata-provider-factory', () => {
   const originalEnv = process.env;
@@ -12,6 +16,7 @@ describe('external-metadata-provider-factory', () => {
     process.env = { ...originalEnv, OMDB_API_KEY: 'key' };
 
     expect(getExternalMetadataProviderByName('omdb')?.name).toBe('omdb');
+    expect(getDirectImdbExternalMetadataProvider()?.name).toBe('omdb');
   });
 
   it('returns an empty provider list when no provider is configured', () => {
@@ -19,5 +24,6 @@ describe('external-metadata-provider-factory', () => {
     delete process.env.OMDB_API_KEY;
 
     expect(getExternalMetadataProviders()).toEqual([]);
+    expect(getDirectImdbExternalMetadataProvider()).toBeNull();
   });
 });

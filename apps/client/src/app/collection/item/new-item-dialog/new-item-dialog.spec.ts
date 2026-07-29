@@ -82,7 +82,7 @@ describe('NewItemDialog component', () => {
   });
 
   it('preselects the first matched content and marks control as touched', () => {
-    const control = component['form'].selectedIMDbId();
+    const control = component['form'].selectedExternalReference();
 
     expect(control.value()).toBe('tt123');
     expect(control.touched()).toBe(true);
@@ -109,7 +109,7 @@ describe('NewItemDialog component', () => {
   });
 
   it('selects matched content from the card selector and marks the control as touched', () => {
-    const control = component['form'].selectedIMDbId();
+    const control = component['form'].selectedExternalReference();
     service.matchedContent.set([
       { contentType: 'movie', text: 'First Movie', value: 'omdb/tt-first', year: '1999' },
       { contentType: 'movie', text: 'Second Movie', value: 'omdb/tt-second', year: '2000' },
@@ -163,7 +163,7 @@ describe('NewItemDialog component', () => {
   it('invokes save and resets when mode is new', async () => {
     const formRoot = component['form']();
     vi.spyOn(formRoot, 'reset');
-    component['form'].selectedIMDbId().value.set(matrixReference);
+    component['form'].selectedExternalReference().value.set(matrixReference);
     component['form'].userRate().value.set(8.7);
     component['form'].tags().value.set('#tag');
 
@@ -177,7 +177,7 @@ describe('NewItemDialog component', () => {
     const formRoot = component['form']();
     vi.spyOn(formRoot, 'reset');
 
-    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].selectedExternalReference().value.set('tt123');
     component['form'].tags().value.set('#tag');
     component['form'].watched().value.set(true);
 
@@ -192,7 +192,7 @@ describe('NewItemDialog component', () => {
     const formRoot = component['form']();
     vi.spyOn(formRoot, 'reset');
 
-    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].selectedExternalReference().value.set('tt123');
     component['form'].watched().value.set(true);
 
     await component['onSave']('new');
@@ -203,7 +203,7 @@ describe('NewItemDialog component', () => {
 
   it('passes watched only for selected library movie content', async () => {
     service.matchedContent.set([{ contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' }]);
-    component['form'].selectedIMDbId().value.set('tt-movie');
+    component['form'].selectedExternalReference().value.set('tt-movie');
     component['form'].watched().value.set(true);
 
     expect(component['showWatchedCheckbox']()).toBe(true);
@@ -215,7 +215,7 @@ describe('NewItemDialog component', () => {
 
   it('hides watched for selected series content', async () => {
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
-    component['form'].selectedIMDbId().value.set('tt-series');
+    component['form'].selectedExternalReference().value.set('tt-series');
     component['form'].watched().value.set(true);
 
     await component['onSave']('close');
@@ -226,21 +226,21 @@ describe('NewItemDialog component', () => {
 
   it('shows copy-to-series-tracker checkbox for selected series content in library mode', () => {
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
-    component['form'].selectedIMDbId().value.set('tt-series');
+    component['form'].selectedExternalReference().value.set('tt-series');
 
     expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(true);
   });
 
   it('hides copy-to-series-tracker checkbox for selected movie content', () => {
     service.matchedContent.set([{ contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' }]);
-    component['form'].selectedIMDbId().value.set('tt-movie');
+    component['form'].selectedExternalReference().value.set('tt-movie');
 
     expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
   });
 
   it('hides copy-to-series-tracker checkbox for manual imdb id selection', () => {
     service.matchedContent.set([{ text: 'IMDb id: tt123', value: 'tt123' }]);
-    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].selectedExternalReference().value.set('tt123');
 
     expect(component['showWatchedCheckbox']()).toBe(true);
     expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
@@ -248,7 +248,7 @@ describe('NewItemDialog component', () => {
 
   it('hides copy-to-series-tracker checkbox in internal list modes', () => {
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
-    component['form'].selectedIMDbId().value.set('tt-series');
+    component['form'].selectedExternalReference().value.set('tt-series');
 
     fixture.componentRef.setInput('watchLater', true);
     expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
@@ -264,7 +264,7 @@ describe('NewItemDialog component', () => {
 
   it('passes copy-to-series-tracker-as-watched flag when checked', async () => {
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
-    component['form'].selectedIMDbId().value.set('tt-series');
+    component['form'].selectedExternalReference().value.set('tt-series');
     component['form'].copyToSeriesTrackerAsWatched().value.set(true);
 
     await component['onSave']('close');
@@ -273,14 +273,14 @@ describe('NewItemDialog component', () => {
   });
 
   it('resets only the IMDb ID field when mode is not new', async () => {
-    const selectedIMDbId = component['form'].selectedIMDbId();
-    vi.spyOn(selectedIMDbId, 'reset');
-    selectedIMDbId.value.set('tt456');
+    const selectedExternalReference = component['form'].selectedExternalReference();
+    vi.spyOn(selectedExternalReference, 'reset');
+    selectedExternalReference.value.set('tt456');
 
     await component['onSave']('close');
 
     expect(service.save).toHaveBeenCalledWith('tt456', null, '', 'close', {});
-    expect(selectedIMDbId.reset).toHaveBeenCalledWith(null);
+    expect(selectedExternalReference.reset).toHaveBeenCalledWith(null);
   });
 
   it('saves to the selected shared library', async () => {
@@ -294,7 +294,7 @@ describe('NewItemDialog component', () => {
         canDelete: false,
       },
     ]);
-    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].selectedExternalReference().value.set('tt123');
     component['form'].targetOwnerShareCode().value.set('owner-code');
 
     await component['onSave']('close');
@@ -338,7 +338,7 @@ describe('NewItemDialog component', () => {
 
   it('saves wishlist items without watched or shared library values', async () => {
     fixture.componentRef.setInput('wishlist', true);
-    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].selectedExternalReference().value.set('tt123');
     component['form'].tags().value.set('#tag');
     component['form'].watched().value.set(true);
     component['form'].targetOwnerShareCode().value.set('owner-code');
@@ -350,7 +350,7 @@ describe('NewItemDialog component', () => {
 
   it('saves series tracker items without watched, user rate, or shared library values', async () => {
     fixture.componentRef.setInput('seriesTracker', true);
-    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].selectedExternalReference().value.set('tt123');
     component['form'].tags().value.set('#tag');
     component['form'].watched().value.set(true);
     component['form'].userRate().value.set(8.2);
@@ -405,7 +405,7 @@ describe('NewItemDialog component', () => {
 
   it('checks duplicate IMDb IDs again when the target library changes', async () => {
     service.matchedContent.set([{ text: 'IMDb id: tt123', value: matrixReference }]);
-    component['form'].selectedIMDbId().value.set(matrixReference);
+    component['form'].selectedExternalReference().value.set(matrixReference);
     await vi.advanceTimersByTimeAsync(150);
     api.collectionItemExists.mockClear();
 
@@ -416,14 +416,14 @@ describe('NewItemDialog component', () => {
   });
 
   it('does not check duplicate IMDb IDs when the selected value has no provider item ID', async () => {
-    component['form'].selectedIMDbId().value.set('tt123');
+    component['form'].selectedExternalReference().value.set('tt123');
     await vi.advanceTimersByTimeAsync(150);
 
     expect(api.collectionItemExists).not.toHaveBeenCalled();
   });
 
   it('exits when there is no selected IMDb id', () => {
-    component['form'].selectedIMDbId().value.set(null);
+    component['form'].selectedExternalReference().value.set(null);
 
     component['onSave']();
 

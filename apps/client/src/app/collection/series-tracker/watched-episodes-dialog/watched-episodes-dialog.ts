@@ -8,6 +8,7 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
+import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
 import {
   CollectionItemApiModel,
   SeriesTrackerSeasonMetadataModel,
@@ -42,7 +43,7 @@ export class WatchedEpisodesDialog implements OnInit {
   private saveWatchedEpisodesVersion = 0;
   private hasLocalWatchedEpisodeChanges = false;
   public readonly imdbId = input<string | undefined>();
-  public readonly externalProvider = input('omdb');
+  public readonly externalProvider = input(DEFAULT_EXTERNAL_METADATA_PROVIDER);
   public readonly externalItemId = input<string | undefined>();
   public readonly saved = input<
     (watchedEpisodes: SeriesTrackerWatchedEpisodeModel[], item?: CollectionItemApiModel) => void
@@ -223,13 +224,10 @@ export class WatchedEpisodesDialog implements OnInit {
   }
 
   protected onManageSeasonMetadata(): void {
-    const providerInputs =
-      this.externalProvider() === 'omdb'
-        ? {}
-        : { externalProvider: this.externalProvider(), externalItemId: this.providerItemId() };
     this.portal.openStacked(SeriesSeasonMetadataDialog, {
       imdbId: this.imdbId(),
-      ...providerInputs,
+      externalProvider: this.externalProvider(),
+      externalItemId: this.providerItemId(),
       initialSeasons: this.seasonsMetadata(),
       saved: (seasons: SeriesTrackerSeasonMetadataModel[], item?: CollectionItemApiModel) => {
         this.seasonsMetadata.set(seasons);

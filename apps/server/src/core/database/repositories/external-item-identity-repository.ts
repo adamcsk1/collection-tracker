@@ -1,7 +1,4 @@
-import {
-  DEFAULT_EXTERNAL_METADATA_PROVIDER,
-  isExternalItemIdentitySourceName,
-} from '@shared/constants/external-metadata-const';
+import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
 import {
   ExternalItemIdentityModel,
   ExternalItemIdentitySourceNameModel,
@@ -32,8 +29,11 @@ export const normalizeExternalIdentities = (
   };
 
   addIdentity(identitySource, identityId);
-  if (identitySource === DEFAULT_EXTERNAL_METADATA_PROVIDER) addIdentity('imdb', identityId);
-  for (const externalId of externalIds) addIdentity(externalId.source, externalId.id);
+  if (/^tt\d+$/i.test(identityId.trim())) addIdentity('imdb', identityId);
+  for (const externalId of externalIds) {
+    addIdentity(externalId.source, externalId.id);
+    if (/^tt\d+$/i.test(externalId.id.trim())) addIdentity('imdb', externalId.id);
+  }
 
   return [...identities.values()];
 };
@@ -123,7 +123,7 @@ export const upsertExternalItemIdentities = (
      ON CONFLICT(username_hash, external_provider, external_item_id) DO UPDATE SET
        canonical_item_id = excluded.canonical_item_id,
        source_confidence = excluded.source_confidence
-     WHERE external_item_identities.source_confidence = 'fallback'`
+     WHERE external_item_identities.source_confidence = 'primary'`
   );
 
   for (const identity of identities) {
@@ -139,16 +139,16 @@ export const upsertExternalItemIdentities = (
       canonicalItemId,
       identity.source,
       identity.id,
-      identity.source === externalProvider ? 'fallback' : 'provider'
+      identity.source === externalProvider ? 'primary' : 'alias'
     );
-    if (existingRow?.source_confidence === 'fallback' && existingRow.canonical_item_id !== canonicalItemId) {
+    if (existingRow?.source_confidence === 'primary' && existingRow.canonical_item_id !== canonicalItemId) {
       db.prepare(
         'UPDATE collection_items SET canonical_item_id = ? WHERE username_hash = ? AND canonical_item_id = ?'
       ).run(canonicalItemId, usernameHash, existingRow.canonical_item_id);
       db.prepare(
         `UPDATE external_item_identities
          SET canonical_item_id = ?
-         WHERE username_hash = ? AND canonical_item_id = ? AND source_confidence = 'fallback'`
+         WHERE username_hash = ? AND canonical_item_id = ? AND source_confidence = 'primary'`
       ).run(canonicalItemId, usernameHash, existingRow.canonical_item_id);
     }
   }

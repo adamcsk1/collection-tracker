@@ -104,7 +104,7 @@ export class NewItemDialog {
   protected readonly submitMode = signal<SaveMode | null>(null);
   protected readonly newItemModel = signal<NewItemModel>({
     searchText: '',
-    selectedIMDbId: null,
+    selectedExternalReference: null,
     userRate: null,
     tags: '',
     watched: false,
@@ -115,8 +115,8 @@ export class NewItemDialog {
     this.newItemModel,
     (newItem) => {
       required(newItem.searchText);
-      required(newItem.selectedIMDbId);
-      validate(newItem.selectedIMDbId, ({ value }) => this.knownIMDbIdValidationError(value()));
+      required(newItem.selectedExternalReference);
+      validate(newItem.selectedExternalReference, ({ value }) => this.knownIMDbIdValidationError(value()));
       min(newItem.userRate, 0, { error: { kind: 'min' } });
       max(newItem.userRate, 10, { error: { kind: 'max' } });
       validate(newItem.userRate, ({ value }) => {
@@ -132,10 +132,10 @@ export class NewItemDialog {
     }
   );
   protected readonly formErrors = {
-    selectedIMDbId: {
+    selectedExternalReference: {
       knownIMDbId: computed(() =>
         this.form
-          .selectedIMDbId()
+          .selectedExternalReference()
           .errors()
           .some((error) => error.kind === 'knownIMDbId')
       ),
@@ -172,18 +172,18 @@ export class NewItemDialog {
   protected readonly imdbSearchUrl = computed(() => buildIMDbSearchUrl(this.completedSearchText()));
   protected readonly webSearchUrl = computed(() => buildWebSearchUrl(this.completedSearchText(), null));
   protected readonly selectedContentIsMovie = computed(() => {
-    const selectedIMDbId = this.form.selectedIMDbId().value();
-    if (!selectedIMDbId) return false;
+    const selectedExternalReference = this.form.selectedExternalReference().value();
+    if (!selectedExternalReference) return false;
 
-    const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedIMDbId);
+    const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedExternalReference);
     const selectedContentText = `${selectedContent?.text ?? ''}`.toLowerCase();
     return selectedContent?.contentType === 'movie' || selectedContentText.startsWith('imdb id:');
   });
   protected readonly selectedContentIsSeries = computed(() => {
-    const selectedIMDbId = this.form.selectedIMDbId().value();
-    if (!selectedIMDbId) return false;
+    const selectedExternalReference = this.form.selectedExternalReference().value();
+    if (!selectedExternalReference) return false;
 
-    const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedIMDbId);
+    const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedExternalReference);
     return selectedContent?.contentType === 'series';
   });
   protected readonly showWatchedCheckbox = computed(() => !this.internalListMode() && this.selectedContentIsMovie());
@@ -203,7 +203,7 @@ export class NewItemDialog {
     return options;
   });
   protected readonly showLibrarySelect = computed(() => !this.internalListMode() && this.libraryOptions().length > 1);
-  protected readonly selectedIMDbId = computed(() => this.form.selectedIMDbId().value());
+  protected readonly selectedExternalReference = computed(() => this.form.selectedExternalReference().value());
   private readonly defaultTargetOwnerShareCode = computed(() => {
     if (this.internalListMode()) return null;
 
@@ -239,13 +239,13 @@ export class NewItemDialog {
   constructor() {
     effect(() => {
       const matchedContent = this.matchedContent();
-      const selectedIMDbId = this.form.selectedIMDbId();
+      const selectedExternalReference = this.form.selectedExternalReference();
 
       if (matchedContent.length) {
-        selectedIMDbId.value.set(`${matchedContent[0].value}`);
-        selectedIMDbId.markAsTouched();
+        selectedExternalReference.value.set(`${matchedContent[0].value}`);
+        selectedExternalReference.markAsTouched();
       } else {
-        selectedIMDbId.reset(null);
+        selectedExternalReference.reset(null);
       }
     });
 
@@ -267,7 +267,7 @@ export class NewItemDialog {
       .subscribe((searchText) => this.service.search(searchText));
 
     combineLatest([
-      toObservable(this.form.selectedIMDbId().value),
+      toObservable(this.form.selectedExternalReference().value),
       toObservable(this.form.targetOwnerShareCode().value),
     ])
       .pipe(
@@ -319,17 +319,17 @@ export class NewItemDialog {
   }
 
   protected isMatchedContentSelected(content: ExternalMetadataSelectDataModel): boolean {
-    return `${content.value}` === this.selectedIMDbId();
+    return `${content.value}` === this.selectedExternalReference();
   }
 
   protected onSelectMatchedContent(content: ExternalMetadataSelectDataModel): void {
-    this.form.selectedIMDbId().value.set(`${content.value}`);
-    this.form.selectedIMDbId().markAsTouched();
+    this.form.selectedExternalReference().value.set(`${content.value}`);
+    this.form.selectedExternalReference().markAsTouched();
   }
 
   private async onSave(mode: SaveMode | null = null): Promise<void> {
-    const selectedIMDbId = this.form.selectedIMDbId().value();
-    if (!selectedIMDbId) return;
+    const selectedExternalReference = this.form.selectedExternalReference().value();
+    if (!selectedExternalReference) return;
 
     const tags = this.form.tags().value().trim();
 
@@ -343,7 +343,7 @@ export class NewItemDialog {
     if (this.showCopyToSeriesTrackerCheckbox())
       options.copyToSeriesTrackerAsWatched = this.form.copyToSeriesTrackerAsWatched().value();
     const saveRequest = this.service.save(
-      selectedIMDbId,
+      selectedExternalReference,
       this.internalListMode() ? null : this.form.userRate().value(),
       tags,
       mode,
@@ -354,7 +354,7 @@ export class NewItemDialog {
     if (mode === 'new') {
       this.form().reset({
         searchText: '',
-        selectedIMDbId: null,
+        selectedExternalReference: null,
         userRate: null,
         tags: '',
         watched: false,
@@ -362,7 +362,7 @@ export class NewItemDialog {
         targetOwnerShareCode: this.defaultTargetOwnerShareCode(),
       });
     } else {
-      this.form.selectedIMDbId().reset(null);
+      this.form.selectedExternalReference().reset(null);
     }
   }
 }

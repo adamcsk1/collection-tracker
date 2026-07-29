@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
+import { isExternalMetadataProviderName } from '@shared/constants/external-metadata-const';
 import { ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
 import type { FastifyInstance } from 'fastify';
 import {
@@ -31,21 +31,21 @@ export const register = (app: FastifyInstance): void => {
         return;
       }
 
-      const requestedProvider = typeof query.provider === 'string' ? query.provider.trim() : '';
-      if (requestedProvider && requestedProvider !== DEFAULT_EXTERNAL_METADATA_PROVIDER) {
+      const requestedProvider = typeof query.provider === 'string' ? query.provider.trim().toLowerCase() : '';
+      if (requestedProvider && !isExternalMetadataProviderName(requestedProvider)) {
         response.code(400).send();
         return;
       }
-      const provider = requestedProvider ? getExternalMetadataProviderByName(requestedProvider) : null;
+
       if (!requestedProvider && getExternalMetadataProviders().length === 0) {
         response.code(503).send();
         return;
       }
-      if (!provider) {
-        if (requestedProvider) {
-          response.code(503).send();
-          return;
-        }
+
+      const provider = requestedProvider ? getExternalMetadataProviderByName(requestedProvider) : null;
+      if (requestedProvider && !provider) {
+        response.code(503).send();
+        return;
       }
 
       try {

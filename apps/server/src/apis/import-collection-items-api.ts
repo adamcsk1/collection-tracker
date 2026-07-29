@@ -1,11 +1,11 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
 import {
   CollectionItemChangeApiModel,
   CollectionItemsImportApiRequestModel,
   CollectionItemsImportApiResponseModel,
 } from '@shared/models/api-model';
 import { ExternalMetadataItemModel } from '@shared/models/external-metadata-model';
+import { getImdbIdFromExternalMetadata } from '@shared/utils/external-metadata-identity-util';
 import { getExternalMetadataRating } from '@shared/utils/external-metadata-ratings-util';
 import { getIMDbIds } from '@shared/utils/imdb-id-util';
 import type { FastifyInstance } from 'fastify';
@@ -19,7 +19,7 @@ import {
   resolveCanonicalItemId,
   resolveCanonicalItemIds,
 } from '../core/database/repositories/external-item-identity-repository';
-import { getExternalMetadataProviderByName } from '../core/external-metadata/external-metadata-provider-factory';
+import { getDirectImdbExternalMetadataProvider } from '../core/external-metadata/external-metadata-provider-factory';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
@@ -42,10 +42,7 @@ const toCollectionItemFromExternalMetadata = (
     image: metadataItem.poster,
     title: metadataItem.title,
     genre: metadataItem.genres,
-    IMDbId:
-      metadataItem.provider === DEFAULT_EXTERNAL_METADATA_PROVIDER
-        ? metadataItem.providerItemId.toLowerCase()
-        : metadataItem.externalIds?.find((externalId) => externalId.source === 'imdb')?.id,
+    IMDbId: getImdbIdFromExternalMetadata(metadataItem),
     externalProvider: metadataItem.provider,
     externalItemId: metadataItem.providerItemId,
     externalIds: metadataItem.externalIds,
@@ -76,13 +73,15 @@ export const register = (app: FastifyInstance): void => {
       if (imdbIds.length > MAX_COLLECTION_ITEM_IMPORT_IMDB_IDS) return response.code(400).send();
       const db = getDatabase();
       const usernameHash = request.usernameHash;
-      const provider = getExternalMetadataProviderByName(DEFAULT_EXTERNAL_METADATA_PROVIDER);
+      const provider = getDirectImdbExternalMetadataProvider();
       let importedCount = 0;
       let skippedCount = 0;
       let errorCount = 0;
 
       for (const imdbId of imdbIds) {
-        const canonicalItemId = resolveCanonicalItemId(db, usernameHash, DEFAULT_EXTERNAL_METADATA_PROVIDER, imdbId);
+        const canonicalItemId = resolveCanonicalItemId(db, usernameHash, 'imdb', imdbId, [
+          { source: 'imdb', id: imdbId },
+        ]);
         if (collectionCanonicalItemExists(db, [usernameHash], canonicalItemId)) {
           skippedCount++;
           continue;
@@ -93,12 +92,7 @@ export const register = (app: FastifyInstance): void => {
           continue;
         }
 
-        if (!provider) {
-          errorCount++;
-          continue;
-        }
-
-        if (!provider.getItemByImdbId) {
+        if (!provider?.getItemByImdbId) {
           errorCount++;
           continue;
         }
@@ -111,7 +105,8 @@ export const register = (app: FastifyInstance): void => {
           continue;
         }
 
-        if (metadataItem?.providerItemId?.toLowerCase() !== imdbId) {
+        const metadataImdbId = metadataItem ? getImdbIdFromExternalMetadata(metadataItem)?.toLowerCase() : undefined;
+        if (!metadataItem || metadataImdbId !== imdbId) {
           errorCount++;
           continue;
         }

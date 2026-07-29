@@ -5,8 +5,8 @@ import {
 } from '@shared/constants/external-metadata-const';
 import type { FastifyInstance } from 'fastify';
 import {
+  getDirectImdbExternalMetadataProvider,
   getExternalMetadataProviderByName,
-  getExternalMetadataProviders,
 } from '../core/external-metadata/external-metadata-provider-factory';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
@@ -20,10 +20,7 @@ const getItemByExternalIdentity = async (identitySource: string, identityId: str
   }
 
   if (identitySource === 'imdb') {
-    const provider = getExternalMetadataProviders().find(
-      (externalMetadataProvider) =>
-        externalMetadataProvider.supportsDirectImdbId && externalMetadataProvider.getItemByImdbId
-    );
+    const provider = getDirectImdbExternalMetadataProvider();
     return provider?.getItemByImdbId
       ? { item: await provider.getItemByImdbId(identityId), providerFound: true }
       : { item: null, providerFound: false };

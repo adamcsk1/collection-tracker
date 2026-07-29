@@ -20,6 +20,7 @@ import {
 } from '@shared/models/api-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
+import { isImdbShapedExternalItemId, mergeImdbExternalId } from '@shared/utils/external-metadata-identity-util';
 import { normalizeIMDbRating } from '@shared/utils/external-metadata-ratings-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { finalize, firstValueFrom, map, mergeMap, of } from 'rxjs';
@@ -180,7 +181,7 @@ export class ItemDialog implements OnInit {
     (item) => {
       validate(item.title, ({ value }) => (value()?.trim() ? undefined : { kind: 'required' }));
       validate(item.IMDbId, ({ value }) =>
-        !this.canEditOmdbIdentity() || value()?.trim() ? undefined : { kind: 'required' }
+        !this.canEditImdbIdentity() || value()?.trim() ? undefined : { kind: 'required' }
       );
       validate(item.rate, ({ value }) => validateOptionalIMDbRateFormat(value()));
       validate(item.rottenTomatoesRate, ({ value }) => validateOptionalRottenTomatoesRateFormat(value()));
@@ -338,7 +339,9 @@ export class ItemDialog implements OnInit {
   protected readonly movieTracker = computed(() => this.collectionItem().listType === 'movie-tracker');
   protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
   protected readonly series = computed(() => this.collectionItem().contentType === 'series');
-  protected readonly canEditOmdbIdentity = computed(() => this.collectionItem().externalProvider === 'omdb');
+  protected readonly canEditImdbIdentity = computed(() =>
+    isImdbShapedExternalItemId(this.collectionItem().externalItemId)
+  );
   protected readonly permissionWatch = computed(() => this.libraryItem() && (this.movie() || this.series()));
   protected readonly permissionDelete = computed(() => {
     const item = this.collectionItem();
@@ -476,14 +479,18 @@ export class ItemDialog implements OnInit {
     const formValues = this.form().value();
     const tags = parseTagText(formValues.tagsText);
     const currentItem = this.collectionItem();
-    const canEditOmdbIdentity = this.canEditOmdbIdentity();
-    const imdbIdChanged = canEditOmdbIdentity && formValues.IMDbId !== currentItem.IMDbId;
+    const canEditImdbIdentity = this.canEditImdbIdentity();
+    const imdbIdChanged = canEditImdbIdentity && formValues.IMDbId !== currentItem.IMDbId;
+    const nextImdbId = canEditImdbIdentity ? formValues.IMDbId : currentItem.IMDbId;
+    const nextExternalIds = imdbIdChanged
+      ? mergeImdbExternalId(currentItem.externalIds, nextImdbId)
+      : currentItem.externalIds;
     return {
       title: formValues.title,
-      IMDbId: canEditOmdbIdentity ? formValues.IMDbId : currentItem.IMDbId,
+      IMDbId: nextImdbId,
       externalProvider: currentItem.externalProvider,
       externalItemId: imdbIdChanged ? formValues.IMDbId : currentItem.externalItemId,
-      externalIds: imdbIdChanged ? undefined : currentItem.externalIds,
+      externalIds: nextExternalIds,
       year: formValues.year,
       rate: formValues.rate,
       rottenTomatoesRate: imdbIdChanged ? '' : formValues.rottenTomatoesRate,

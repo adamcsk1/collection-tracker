@@ -49,20 +49,26 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
 
   const externalProvider = item.externalProvider.trim().toLowerCase();
   if (!isExternalMetadataProviderName(externalProvider)) return;
-  const externalIds = item.externalIds?.flatMap((externalId) => {
-    const source = externalId.source.trim().toLowerCase();
-    const id = externalId.id.trim();
-    return source && id && isExternalItemIdentitySourceName(source) ? [{ source, id }] : [];
-  });
+  const externalIds = [
+    ...(item.externalIds ?? []).flatMap((externalId) => {
+      const source = externalId.source.trim().toLowerCase();
+      const id = externalId.id.trim();
+      return source && id && isExternalItemIdentitySourceName(source) ? [{ source, id }] : [];
+    }),
+  ];
+  const imdbId = item.IMDbId?.trim() || undefined;
+  if (imdbId && !externalIds.some((externalId) => externalId.source === 'imdb' && externalId.id === imdbId)) {
+    externalIds.push({ source: 'imdb', id: imdbId });
+  }
 
   const normalized: CollectionItemChangeApiModel = {
     image: item.image.trim(),
     title: item.title.trim(),
     genre: item.genre.map((genre) => `${genre}`.trim()).filter(Boolean),
-    IMDbId: item.IMDbId?.trim() || undefined,
+    IMDbId: imdbId,
     externalProvider,
     externalItemId: item.externalItemId.trim(),
-    externalIds,
+    externalIds: externalIds.length > 0 ? externalIds : undefined,
     tags: rawTags,
     year: normalizeYear(year),
     rate: item.rate.trim(),

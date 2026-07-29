@@ -250,9 +250,9 @@ describe('movie-tracker-repository', () => {
         (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
     );
-    insertIdentity.run('user', 'imdb:tt-1', 'imdb', 'tt-1', 'provider');
-    insertIdentity.run('user', 'imdb:tt-2', 'imdb', 'tt-2', 'provider');
-    insertIdentity.run('user', 'imdb:tt-3', 'imdb', 'tt-3', 'provider');
+    insertIdentity.run('user', 'imdb:tt-1', 'imdb', 'tt-1', 'alias');
+    insertIdentity.run('user', 'imdb:tt-2', 'imdb', 'tt-2', 'alias');
+    insertIdentity.run('user', 'imdb:tt-3', 'imdb', 'tt-3', 'alias');
 
     const changedCount = deleteAllMovieTrackerItems(db, 'user');
 

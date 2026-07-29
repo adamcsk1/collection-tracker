@@ -58,7 +58,7 @@ const insertCanonicalItem = (
       `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, canonicalItemId, provider, externalItemId, 'provider');
+    .run(usernameHash, canonicalItemId, provider, externalItemId, 'alias');
 };
 
 const insertTypedItem = (usernameHash: string, imdbId: string, listType: 'watch-later' | 'wishlist') => {

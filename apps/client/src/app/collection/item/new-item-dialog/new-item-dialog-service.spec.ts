@@ -21,6 +21,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const buildSelectedContent = (overrides: Partial<ExternalMetadataItemModel> = {}): ExternalMetadataItemModel => ({
   provider: 'omdb',
   providerItemId: 'tt123',
+  externalIds: [{ source: 'imdb', id: 'tt123' }],
   title: 'Title',
   year: '2020',
   contentType: 'movie',
@@ -154,6 +155,7 @@ describe('NewItemDialogService', () => {
         IMDbId: 'tt123',
         externalProvider: 'omdb',
         externalItemId: 'tt123',
+        externalIds: [{ source: 'imdb', id: 'tt123' }],
         tags: ['#tag'],
         year: '2020',
         rate: '9.0',

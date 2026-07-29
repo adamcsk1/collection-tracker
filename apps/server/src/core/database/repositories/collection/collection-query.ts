@@ -1,3 +1,4 @@
+import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
 import {
   CollectionItemFiltersApiModel,
   CollectionItemTagMode,
@@ -80,7 +81,7 @@ const addWatchedExists = (queryParts: QueryParts, usernameHash: string, exists =
 export const canonicalOrExactIdentityMatch = (alias: string): string => `(
   (${alias}.canonical_item_id IS NOT NULL AND ${alias}.canonical_item_id = collection_items.canonical_item_id)
   OR (
-    COALESCE(${alias}.external_provider, 'omdb') = COALESCE(collection_items.external_provider, 'omdb')
+    COALESCE(${alias}.external_provider, '${DEFAULT_EXTERNAL_METADATA_PROVIDER}') = COALESCE(collection_items.external_provider, '${DEFAULT_EXTERNAL_METADATA_PROVIDER}')
     AND COALESCE(${alias}.external_item_id, ${alias}.imdb_id) = COALESCE(collection_items.external_item_id, collection_items.imdb_id)
   )
 )`;

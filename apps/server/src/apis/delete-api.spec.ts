@@ -188,7 +188,7 @@ describe('delete-api', () => {
     db.prepare(
       `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
-    ).run('user', 'imdb:tt0133093', 'imdb', 'tt0133093', 'provider');
+    ).run('user', 'imdb:tt0133093', 'imdb', 'tt0133093', 'alias');
     const request: any = {
       params: { externalIdentitySource: 'imdb', externalIdentityId: 'tt0133093' },
       query: { hash: 'abc123', listType: 'series-tracker' },

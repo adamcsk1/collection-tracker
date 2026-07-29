@@ -98,6 +98,38 @@ describe('proxy-external-metadata-search-api', () => {
       expect(response.code).toHaveBeenCalledWith(400);
     });
 
+    it('searches a known configured provider when provider is supplied', async () => {
+      process.env.OMDB_API_KEY = 'test-key';
+      const response = mockResponse();
+      const request: any = { query: { s: 'Matrix', provider: 'omdb' } };
+      const { app, handlerPromise } = buildApp(request, response);
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ Search: [{ imdbID: 'tt0133093', Title: 'The Matrix', Type: 'movie' }] }),
+      } as any);
+
+      const { register } = await import('./proxy-external-metadata-search-api');
+      register(app);
+
+      await handlerPromise();
+      expect(response.send).toHaveBeenCalledWith({
+        results: [expect.objectContaining({ provider: 'omdb', providerItemId: 'tt0133093' })],
+      });
+    });
+
+    it('returns 503 when a known provider is requested but not configured', async () => {
+      delete process.env.OMDB_API_KEY;
+      const response = mockResponse();
+      const request: any = { query: { s: 'Matrix', provider: 'omdb' } };
+      const { app, handlerPromise } = buildApp(request, response);
+
+      const { register } = await import('./proxy-external-metadata-search-api');
+      register(app);
+
+      await handlerPromise();
+      expect(response.code).toHaveBeenCalledWith(503);
+    });
+
     it('returns 502 when the configured provider search fails', async () => {
       process.env.OMDB_API_KEY = 'test-key';
       const response = mockResponse();

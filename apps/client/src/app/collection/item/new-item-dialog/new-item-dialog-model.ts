@@ -2,7 +2,7 @@ import { CollectionListTypeModel } from '@shared/models/api-model';
 
 export interface NewItemModel {
   searchText: string;
-  selectedIMDbId: string | null;
+  selectedExternalReference: string | null;
   userRate: number | null;
   tags: string;
   watched: boolean;

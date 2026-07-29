@@ -46,17 +46,17 @@ Collection items, users, tokens, settings, shares, collection-list display prefe
 
 ## External Metadata Providers
 
-The provider seam supports provider-qualified search and external identity item lookup. Search aggregates all configured metadata providers when the `provider` query parameter is omitted. Providers can advertise direct IMDb ID lookup support for pasted IMDb shortcuts through the regular `/proxy/external-metadata/item?externalIdentitySource=imdb&externalIdentityId=...` endpoint. Collection items persist `externalProvider` and `externalItemId` for metadata refreshes, duplicate checks, imports, exports, and tracker copy flows. Existing rows are backfilled as `externalProvider = 'omdb'` and `externalItemId = IMDbId`.
+The provider seam supports provider-qualified search and external identity item lookup. Search aggregates all configured metadata providers when the `provider` query parameter is omitted, or filters to one known provider name when supplied. Unknown provider names return `400`; known but unconfigured providers return `503`. Providers can advertise direct IMDb ID lookup support for pasted IMDb shortcuts through the regular `/proxy/external-metadata/item?externalIdentitySource=imdb&externalIdentityId=...` endpoint. Collection items persist `externalProvider` and `externalItemId` for metadata refreshes, duplicate checks, imports, exports, and tracker copy flows. Existing rows are backfilled as `externalProvider = 'omdb'` and `externalItemId = IMDbId`.
 
-Provider implementations must return canonical provider item IDs; persistence treats `externalItemId` as the provider's canonical, case-sensitive identifier. Provider names are normalized to lowercase at collection item boundaries.
+Provider implementations must return canonical provider item IDs and should emit cross-source aliases in `externalIds` (for example `{ source: 'imdb', id: 'tt…' }`). Persistence treats `externalItemId` as the provider's canonical, case-sensitive identifier. Provider names are normalized to lowercase at collection item boundaries. Known provider names live in `EXTERNAL_METADATA_PROVIDER_NAMES`; the database does not hard-check provider name values so a new provider only needs a shared name entry, factory registration, and adapter.
 
-Duplicate checks stay local to the app database. Collection items also store a local `canonicalItemId` and `external_item_identities` mappings so known cross-provider IDs, such as an OMDb item and a future TMDb item that both expose the same IMDb ID, can resolve to the same existing collection item without calling external providers or using fuzzy title/year matching.
+Duplicate checks stay local to the app database. Collection items also store a local `canonicalItemId` and `external_item_identities` mappings so known cross-provider IDs, such as an OMDb item and a future TMDb item that both expose the same IMDb ID, can resolve to the same existing collection item without calling external providers or using fuzzy title/year matching. Identity rows use `source_confidence` of `primary` (owning provider mapping) or `alias` (cross-source mapping).
 
 Ratings are normalized into the current storage contract: IMDb, Rotten Tomatoes, and Metacritic columns. Providers with different rating sources can still expose them in metadata responses, but only those normalized sources are persisted and displayed today.
 
 `IMDbId` remains in the public collection model as a legacy compatibility identifier. Provider-qualified routes own collection and tracker item URLs. Bulk text import remains IMDb-specific for now:
 
-1. Bulk text import: `/import/collection-items` extracts IMDb IDs and imports through OMDb only.
+1. Bulk text import: `/import/collection-items` extracts IMDb IDs and imports through the first configured provider that supports direct IMDb lookup.
 
 ## Important Paths
 

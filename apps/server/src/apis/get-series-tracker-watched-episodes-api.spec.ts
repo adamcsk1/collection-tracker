@@ -65,7 +65,7 @@ describe('get-series-tracker-watched-episodes-api', () => {
           (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
          VALUES (?, ?, ?, ?, ?)`
       )
-      .run('user', 'imdb:tt-series', 'imdb', 'tt-series', 'provider');
+      .run('user', 'imdb:tt-series', 'imdb', 'tt-series', 'alias');
     getDatabase()
       .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);

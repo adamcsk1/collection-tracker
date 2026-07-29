@@ -128,7 +128,6 @@ describe('create-api', () => {
         )
         .all('user', 'imdb:tt0133093')
     ).toEqual([
-      { external_provider: 'imdb', external_item_id: '603', canonical_item_id: 'imdb:tt0133093' },
       { external_provider: 'imdb', external_item_id: 'tt0133093', canonical_item_id: 'imdb:tt0133093' },
       { external_provider: 'omdb', external_item_id: '603', canonical_item_id: 'imdb:tt0133093' },
     ]);
@@ -176,7 +175,7 @@ describe('create-api', () => {
     expect(response.code).toHaveBeenCalledWith(409);
   });
 
-  it('prefers submitted IMDb identity over an existing provider fallback mapping', async () => {
+  it('prefers submitted IMDb identity over an existing provider primary mapping', async () => {
     insertUser();
     getDatabase()
       .prepare(
@@ -203,7 +202,7 @@ describe('create-api', () => {
         `INSERT OR REPLACE INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
          VALUES (?, ?, ?, ?, ?)`
       )
-      .run('user', 'omdb:603', 'omdb', '603', 'fallback');
+      .run('user', 'omdb:603', 'omdb', '603', 'primary');
     const response = mockResponse();
     const request: any = {
       body: {
@@ -224,7 +223,7 @@ describe('create-api', () => {
     expect(response.code).toHaveBeenCalledWith(409);
   });
 
-  it('keeps existing fallback canonical rows when adding provider identity evidence', async () => {
+  it('keeps existing primary canonical rows when adding provider identity evidence', async () => {
     insertUser('fallback-user');
     getDatabase()
       .prepare(
@@ -252,7 +251,7 @@ describe('create-api', () => {
         `INSERT OR REPLACE INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
          VALUES (?, ?, ?, ?, ?)`
       )
-      .run('fallback-user', 'omdb:603', 'omdb', '603', 'fallback');
+      .run('fallback-user', 'omdb:603', 'omdb', '603', 'primary');
     const response = mockResponse();
     const request: any = {
       body: {
@@ -288,7 +287,7 @@ describe('create-api', () => {
     ).toEqual({ canonical_item_id: 'omdb:603' });
   });
 
-  it('returns 409 instead of inserting when provider evidence resolves to a same-list fallback item', async () => {
+  it('returns 409 instead of inserting when provider evidence resolves to a same-list primary item', async () => {
     insertUser();
     getDatabase()
       .prepare(
@@ -315,7 +314,7 @@ describe('create-api', () => {
         `INSERT OR REPLACE INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
          VALUES (?, ?, ?, ?, ?)`
       )
-      .run('user', 'omdb:603', 'omdb', '603', 'fallback');
+      .run('user', 'omdb:603', 'omdb', '603', 'primary');
     const response = mockResponse();
     const request: any = {
       body: {

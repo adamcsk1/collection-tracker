@@ -9,3 +9,8 @@ export const getExternalMetadataProviders = (): ExternalMetadataProvider[] => {
   const omdbApiKey = process.env.OMDB_API_KEY?.trim();
   return omdbApiKey ? [new OmdbExternalMetadataProvider(omdbApiKey)] : [];
 };
+
+export const getDirectImdbExternalMetadataProvider = (): ExternalMetadataProvider | null =>
+  getExternalMetadataProviders().find(
+    (provider) => provider.supportsDirectImdbId === true && typeof provider.getItemByImdbId === 'function'
+  ) ?? null;

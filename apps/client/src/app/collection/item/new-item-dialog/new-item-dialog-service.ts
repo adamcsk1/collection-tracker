@@ -6,18 +6,14 @@ import { ExternalMetadataService } from '@services/external-metadata/external-me
 import { PortalService } from '@services/portal-service';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { CollectionItemYearModel } from '@shared/models/collection-item-model';
-import { ExternalMetadataItemModel, ExternalMetadataReferenceModel } from '@shared/models/external-metadata-model';
+import { ExternalMetadataReferenceModel } from '@shared/models/external-metadata-model';
+import { getImdbIdFromExternalMetadata } from '@shared/utils/external-metadata-identity-util';
 import { getExternalMetadataRating } from '@shared/utils/external-metadata-ratings-util';
 import { parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, filter, map, mergeMap, of, skip, take, tap, throwError } from 'rxjs';
 import { CollectionService } from '../../collection-service';
 import { SaveMode, SaveOptions } from './new-item-dialog-model';
-
-const getIMDbIdFromExternalMetadata = (selectedContent: ExternalMetadataItemModel): string | undefined =>
-  selectedContent.provider === 'omdb'
-    ? selectedContent.providerItemId
-    : selectedContent.externalIds?.find((externalId) => externalId.source === 'imdb')?.id;
 
 @Injectable()
 export class NewItemDialogService {
@@ -86,7 +82,7 @@ export class NewItemDialogService {
               image: selectedContent.poster,
               title: selectedContent.title,
               genre: selectedContent.genres,
-              IMDbId: getIMDbIdFromExternalMetadata(selectedContent),
+              IMDbId: getImdbIdFromExternalMetadata(selectedContent),
               externalProvider: selectedContent.provider,
               externalItemId: selectedContent.providerItemId,
               externalIds: selectedContent.externalIds,

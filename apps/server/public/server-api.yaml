@@ -2435,7 +2435,7 @@ paths:
         - name: provider
           in: query
           required: false
-          description: External metadata provider to search. When omitted, the server aggregates all configured providers.
+          description: Known external metadata provider name to search. When omitted, the server aggregates all configured providers. Unknown names return 400; known but unconfigured providers return 503.
           schema:
             type: string
             enum: [omdb]

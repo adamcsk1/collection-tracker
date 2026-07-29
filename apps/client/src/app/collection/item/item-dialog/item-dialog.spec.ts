@@ -803,7 +803,17 @@ describe('ItemDialog', () => {
 
   it('clears external ratings when changing the IMDb ID', async () => {
     confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput('collectionItem', buildItem({ rottenTomatoesRate: '96%', metacriticRate: '85/100' }));
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        rottenTomatoesRate: '96%',
+        metacriticRate: '85/100',
+        externalIds: [
+          { source: 'omdb', id: 'tt1234567' },
+          { source: 'imdb', id: 'tt1234567' },
+        ],
+      })
+    );
     fixture.detectChanges();
     component.ngOnInit();
     component['form'].IMDbId().value.set('tt7654321');
@@ -813,7 +823,15 @@ describe('ItemDialog', () => {
     expect(api.updateByExternalId).toHaveBeenCalledWith(
       'omdb',
       'tt1234567',
-      expect.objectContaining({ IMDbId: 'tt7654321', rottenTomatoesRate: '', metacriticRate: '' }),
+      expect.objectContaining({
+        IMDbId: 'tt7654321',
+        rottenTomatoesRate: '',
+        metacriticRate: '',
+        externalIds: [
+          { source: 'omdb', id: 'tt1234567' },
+          { source: 'imdb', id: 'tt7654321' },
+        ],
+      }),
       'testhash',
       undefined
     );

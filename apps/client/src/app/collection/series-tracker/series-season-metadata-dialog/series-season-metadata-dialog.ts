@@ -9,6 +9,7 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
+import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
 import { CollectionItemApiModel, SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -32,7 +33,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   public readonly imdbId = input<string | undefined>();
-  public readonly externalProvider = input('omdb');
+  public readonly externalProvider = input(DEFAULT_EXTERNAL_METADATA_PROVIDER);
   public readonly externalItemId = input<string | undefined>();
   public readonly initialSeasons = input<SeriesTrackerSeasonMetadataModel[]>([]);
   public readonly saved = input<(seasons: SeriesTrackerSeasonMetadataModel[], item?: CollectionItemApiModel) => void>(

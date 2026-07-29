@@ -395,6 +395,8 @@ describe('WatchedEpisodesDialog', () => {
 
     expect(portal.openStacked).toHaveBeenCalledWith(SeriesSeasonMetadataDialog, {
       imdbId: 'tt-series',
+      externalProvider: 'omdb',
+      externalItemId: 'tt-series',
       initialSeasons: [{ season: 1, episodes: 3, titles: [] }],
       saved: expect.any(Function),
     });

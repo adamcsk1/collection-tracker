@@ -81,7 +81,7 @@
               </button>
             }
           </div>
-          @if (formErrors.selectedIMDbId.knownIMDbId()) {
+          @if (formErrors.selectedExternalReference.knownIMDbId()) {
             <small class="error">{{ translations.validationKnownIMDbId() }}</small>
           }
         </section>

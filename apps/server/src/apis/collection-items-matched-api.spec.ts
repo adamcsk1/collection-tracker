@@ -76,7 +76,7 @@ describe('collection-items-matched-api', () => {
       `INSERT INTO external_item_identities
         (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
-    ).run('user', 'imdb:tt001', 'imdb', 'tt001', 'provider');
+    ).run('user', 'imdb:tt001', 'imdb', 'tt001', 'alias');
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',

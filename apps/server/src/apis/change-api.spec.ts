@@ -203,7 +203,7 @@ describe('change-api', () => {
         `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
          VALUES (?, ?, ?, ?, ?)`
       )
-      .run('user', 'imdb:tt-conflict', 'omdb', 'tt-alias', 'provider');
+      .run('user', 'imdb:tt-conflict', 'omdb', 'tt-alias', 'alias');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },

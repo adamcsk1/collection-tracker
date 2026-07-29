@@ -1427,6 +1427,100 @@ describe('runMigrations', () => {
     });
   });
 
+  describe('023_open_external_provider_constraints', () => {
+    it('drops closed provider checks and renames identity confidence values', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState(
+        '023_open_external_provider_constraints.sql',
+        tempDirs
+      );
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+        VALUES
+          ('user', 'tt001', 'omdb', 'tt001', 'imdb:tt001', 'library', 'Movie', 'movie', '2024', '8.0', 'Plot', 'image', 'hash-1'),
+          ('user', null, 'omdb', 'custom-id', 'omdb:custom-id', 'watch-later', 'Custom', 'custom', '2024', '7.0', 'Plot', 'image', 'hash-2');
+        INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama'), (2, 'Action');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES (1, '#movie'), (2, '#custom');
+        INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles) VALUES (1, 1, 3, '[]');
+        INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (1, 1, 1);
+        INSERT INTO ai_search_embeddings (item_id, embedding_model, content_hash, embedding_json)
+          VALUES (1, 'model', 'hash-1', '[0.1]');
+        INSERT INTO external_item_identities
+          (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+        VALUES
+          ('user', 'imdb:tt001', 'omdb', 'tt001', 'fallback'),
+          ('user', 'imdb:tt001', 'imdb', 'tt001', 'provider'),
+          ('user', 'omdb:custom-id', 'omdb', 'custom-id', 'provider');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '023_open_external_provider_constraints.sql'),
+        join(migrationsDir, '023_open_external_provider_constraints.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(
+        db
+          .prepare(
+            `SELECT external_provider, external_item_id, source_confidence
+             FROM external_item_identities
+             ORDER BY external_provider, external_item_id`
+          )
+          .all()
+      ).toEqual([
+        { external_provider: 'imdb', external_item_id: 'tt001', source_confidence: 'alias' },
+        { external_provider: 'omdb', external_item_id: 'custom-id', source_confidence: 'primary' },
+        { external_provider: 'omdb', external_item_id: 'tt001', source_confidence: 'primary' },
+      ]);
+      expect(
+        db.prepare('SELECT title, external_provider, canonical_item_id FROM collection_items ORDER BY id').all()
+      ).toEqual([
+        { title: 'Movie', external_provider: 'omdb', canonical_item_id: 'imdb:tt001' },
+        { title: 'Custom', external_provider: 'omdb', canonical_item_id: 'omdb:custom-id' },
+      ]);
+      expect(db.prepare('SELECT genre FROM collection_item_genres ORDER BY genre').all()).toEqual([
+        { genre: 'Action' },
+        { genre: 'Drama' },
+      ]);
+      expect(db.prepare('SELECT tag FROM collection_item_tags ORDER BY tag').all()).toEqual([
+        { tag: '#custom' },
+        { tag: '#movie' },
+      ]);
+      expect(db.prepare('SELECT season, episodes FROM series_tracker_seasons').all()).toEqual([
+        { season: 1, episodes: 3 },
+      ]);
+      expect(db.prepare('SELECT season, episode FROM series_tracker_watched_episodes').all()).toEqual([
+        { season: 1, episode: 1 },
+      ]);
+      expect(db.prepare('SELECT embedding_model FROM ai_search_embeddings').all()).toEqual([
+        { embedding_model: 'model' },
+      ]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO collection_items
+              (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
+             VALUES ('user', null, 'tmdb', '603', 'tmdb:603', 'library', 'Future Provider', 'future provider', '2024', '8.0', 'Plot', 'image', 'hash-3')`
+          )
+          .run()
+      ).not.toThrow();
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO external_item_identities
+              (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+             VALUES ('user', 'tmdb:603', 'tmdb', '603', 'primary')`
+          )
+          .run()
+      ).not.toThrow();
+
+      db.close();
+    });
+  });
+
   describe('runner behavior', () => {
     it('runs the full migration chain 001 to 015 and produces the expected final schema', async () => {
       const db = new Database(':memory:');

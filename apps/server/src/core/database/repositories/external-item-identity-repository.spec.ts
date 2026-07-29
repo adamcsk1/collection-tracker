@@ -31,7 +31,7 @@ const insertItem = (usernameHash: string, canonicalItemId: string): void => {
 };
 
 describe('external-item-identity-repository', () => {
-  it('normalizes providers, IMDb ids, OMDb aliases, and duplicate identities', () => {
+  it('normalizes providers, IMDb ids, and tt-shaped aliases without forcing non-tt provider ids onto imdb', () => {
     expect(
       normalizeExternalIdentities(' OMDB ', ' TT0133093 ', [
         { source: 'imdb', id: 'TT0133093' },
@@ -41,6 +41,11 @@ describe('external-item-identity-repository', () => {
       { source: 'omdb', id: 'TT0133093' },
       { source: 'imdb', id: 'tt0133093' },
     ]);
+    expect(normalizeExternalIdentities('omdb', 'tt0133093')).toEqual([
+      { source: 'omdb', id: 'tt0133093' },
+      { source: 'imdb', id: 'tt0133093' },
+    ]);
+    expect(normalizeExternalIdentities('omdb', '603')).toEqual([{ source: 'omdb', id: '603' }]);
   });
 
   it('ignores unknown providers and blank ids when normalizing', () => {
@@ -67,7 +72,7 @@ describe('external-item-identity-repository', () => {
       `INSERT INTO external_item_identities
         (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
-    ).run('user-a', 'imdb:tt9999999', 'imdb', 'tt0133093', 'provider');
+    ).run('user-a', 'imdb:tt9999999', 'imdb', 'tt0133093', 'alias');
 
     expect(resolveCanonicalItemId(db, 'user-a', 'omdb', 'tt0133093')).toBe('imdb:tt9999999');
     expect(resolveCanonicalItemId(db, 'user-b', 'omdb', 'tt0133093')).toBe('imdb:tt0133093');
@@ -80,7 +85,7 @@ describe('external-item-identity-repository', () => {
       `INSERT INTO external_item_identities
         (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
-    ).run('user', 'imdb:tt9999999', 'imdb', 'tt0133093', 'provider');
+    ).run('user', 'imdb:tt9999999', 'imdb', 'tt0133093', 'alias');
 
     expect(resolveCanonicalItemIds(db, 'user', 'omdb', 'tt0133093')).toEqual(['imdb:tt9999999', 'imdb:tt0133093']);
   });
@@ -89,7 +94,11 @@ describe('external-item-identity-repository', () => {
     expect(resolveCanonicalItemId(getDatabase(), 'user', 'omdb', 'custom-id')).toBe('omdb:custom-id');
   });
 
-  it('upserts fallback and provider identity mappings', () => {
+  it('infers imdb canonical ids from tt-shaped provider ids without externalIds', () => {
+    expect(resolveCanonicalItemId(getDatabase(), 'user', 'omdb', 'tt0133093')).toBe('imdb:tt0133093');
+  });
+
+  it('upserts primary and alias identity mappings', () => {
     const db = getDatabase();
     insertUser('user');
 
@@ -111,18 +120,18 @@ describe('external-item-identity-repository', () => {
         canonical_item_id: 'imdb:tt0133093',
         external_provider: 'imdb',
         external_item_id: 'tt0133093',
-        source_confidence: 'provider',
+        source_confidence: 'alias',
       },
       {
         canonical_item_id: 'imdb:tt0133093',
         external_provider: 'omdb',
         external_item_id: 'tt0133093',
-        source_confidence: 'fallback',
+        source_confidence: 'primary',
       },
     ]);
   });
 
-  it('merges fallback mappings into upgraded provider canonical ids', () => {
+  it('merges primary mappings into upgraded alias canonical ids', () => {
     const db = getDatabase();
     insertUser('user');
     insertItem('user', 'omdb:temporary');
@@ -130,7 +139,7 @@ describe('external-item-identity-repository', () => {
       `INSERT INTO external_item_identities
         (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
-    ).run('user', 'omdb:temporary', 'omdb', 'temporary', 'fallback');
+    ).run('user', 'omdb:temporary', 'omdb', 'temporary', 'primary');
 
     upsertExternalItemIdentities(db, 'user', 'imdb:tt0133093', 'omdb', 'temporary', [
       { source: 'imdb', id: 'tt0133093' },
@@ -151,9 +160,9 @@ describe('external-item-identity-repository', () => {
         (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
     );
-    statement.run('user-a', 'imdb:tt0133093', 'omdb', 'tt0133093', 'fallback');
-    statement.run('user-a', 'imdb:tt0133093', 'imdb', 'tt0133093', 'provider');
-    statement.run('user-b', 'imdb:tt0133093', 'imdb', 'tt0000001', 'provider');
+    statement.run('user-a', 'imdb:tt0133093', 'omdb', 'tt0133093', 'primary');
+    statement.run('user-a', 'imdb:tt0133093', 'imdb', 'tt0133093', 'alias');
+    statement.run('user-b', 'imdb:tt0133093', 'imdb', 'tt0000001', 'alias');
 
     expect(findExternalItemIdentitiesByCanonicalItemId(db, 'user-a', 'imdb:tt0133093')).toEqual([
       { source: 'imdb', id: 'tt0133093' },
@@ -170,10 +179,10 @@ describe('external-item-identity-repository', () => {
         (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
     );
-    statement.run('user-a', 'imdb:tt0133093', 'omdb', 'tt0133093', 'fallback');
-    statement.run('user-a', 'imdb:tt0133093', 'imdb', 'tt0133093', 'provider');
-    statement.run('user-b', 'imdb:tt0133093', 'imdb', 'tt0133093', 'provider');
-    statement.run('user-a', 'imdb:tt0000001', 'imdb', 'tt0000001', 'provider');
+    statement.run('user-a', 'imdb:tt0133093', 'omdb', 'tt0133093', 'primary');
+    statement.run('user-a', 'imdb:tt0133093', 'imdb', 'tt0133093', 'alias');
+    statement.run('user-b', 'imdb:tt0133093', 'imdb', 'tt0133093', 'alias');
+    statement.run('user-a', 'imdb:tt0000001', 'imdb', 'tt0000001', 'alias');
 
     deleteExternalItemIdentitiesForCanonicalItemId(db, 'user-a', 'imdb:tt0133093');
 

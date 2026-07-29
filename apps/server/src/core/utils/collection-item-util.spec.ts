@@ -26,7 +26,10 @@ describe('collection-item-util', () => {
     it('returns normalized item for valid input', () => {
       const result = normalizeItem(validItem);
 
-      expect(result).toEqual(validItem);
+      expect(result).toEqual({
+        ...validItem,
+        externalIds: [{ source: 'imdb', id: 'tt0000001' }],
+      });
     });
 
     it('trims string fields and filters empty genre/tags', () => {
@@ -53,6 +56,7 @@ describe('collection-item-util', () => {
         IMDbId: 'tt0000001',
         externalProvider: 'omdb',
         externalItemId: 'tt0000001',
+        externalIds: [{ source: 'imdb', id: 'tt0000001' }],
         rate: '7.1',
         rottenTomatoesRate: '96%',
         metacriticRate: '85/100',
@@ -69,6 +73,18 @@ describe('collection-item-util', () => {
 
     it('keeps legacy IMDbId unset when IMDbId is missing', () => {
       expect(normalizeItem({ ...validItem, IMDbId: '' })).toEqual({ ...validItem, IMDbId: undefined });
+    });
+
+    it('does not duplicate imdb external ids already present', () => {
+      expect(
+        normalizeItem({
+          ...validItem,
+          externalIds: [{ source: 'imdb', id: 'tt0000001' }],
+        })
+      ).toEqual({
+        ...validItem,
+        externalIds: [{ source: 'imdb', id: 'tt0000001' }],
+      });
     });
 
     it('returns undefined when external provider is missing', () => {
