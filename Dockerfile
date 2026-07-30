@@ -17,11 +17,15 @@ COPY dist/apps/health/browser/ /usr/share/nginx/html/health/
 COPY dist/apps/login/browser/ /usr/share/nginx/html/login/
 COPY dist/apps/server/ /app/server/
 
-# Install server production dependencies if package.json is present
+# Install server production dependencies, compiling native modules when no prebuilt binary is available
 WORKDIR /app/server
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev; \
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends python3 make g++ && \
+  if [ -f package-lock.json ]; then npm ci --omit=dev; \
   elif [ -f package.json ]; then npm install --omit=dev; \
-  else echo "No package.json in server dist. Ensure npm run build generated server package metadata." && exit 1; fi
+  else echo "No package.json in server dist. Ensure npm run build generated server package metadata." && exit 1; fi && \
+  apt-get purge -y --auto-remove python3 make g++ && \
+  rm -rf /var/lib/apt/lists/*
 
 # Create non-root user and required folders
 RUN groupadd -r app && useradd -r -g app app && \

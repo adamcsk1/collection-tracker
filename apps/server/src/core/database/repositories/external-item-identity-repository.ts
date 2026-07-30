@@ -6,6 +6,8 @@ import {
 import Database from 'better-sqlite3';
 import { ExternalIdentityRow } from './external-item-identity-model';
 
+const IDENTITY_LOOKUP_CHUNK_SIZE = 400;
+
 const normalizeIdentitySource = (source: string): ExternalItemIdentitySourceNameModel | null => {
   const normalizedSource = source.trim().toLowerCase();
   return isExternalItemIdentitySourceName(normalizedSource) ? normalizedSource : null;
@@ -103,6 +105,60 @@ export const resolveCanonicalItemIds = (
     }
   }
   canonicalItemIds.add(inferCanonicalItemId(identities));
+
+  return [...canonicalItemIds];
+};
+
+export const resolveCanonicalItemIdsForIdentities = (
+  db: Database.Database,
+  usernameHash: string,
+  identities: ExternalItemIdentityModel[]
+): string[] => {
+  const normalizedIdentityGroups = identities.map((identity) =>
+    normalizeExternalIdentities(identity.source, identity.id)
+  );
+  const identityIdsBySource = new Map<ExternalItemIdentitySourceNameModel, Set<string>>();
+  for (const normalizedIdentities of normalizedIdentityGroups) {
+    for (const identity of normalizedIdentities) {
+      const identityIds = identityIdsBySource.get(identity.source) ?? new Set<string>();
+      identityIds.add(identity.id);
+      identityIdsBySource.set(identity.source, identityIds);
+    }
+  }
+
+  const mappedCanonicalItemIds = new Map<string, string>();
+  for (const [source, identityIdSet] of identityIdsBySource) {
+    const identityIds = [...identityIdSet];
+    for (let identityIndex = 0; identityIndex < identityIds.length; identityIndex += IDENTITY_LOOKUP_CHUNK_SIZE) {
+      const identityIdChunk = identityIds.slice(identityIndex, identityIndex + IDENTITY_LOOKUP_CHUNK_SIZE);
+      const rows = db
+        .prepare(
+          `SELECT canonical_item_id, external_provider, external_item_id
+           FROM external_item_identities
+           WHERE username_hash = ?
+             AND external_provider = ?
+             AND external_item_id IN (${identityIdChunk.map(() => '?').join(', ')})`
+        )
+        .all(usernameHash, source, ...identityIdChunk) as ExternalIdentityRow[];
+      for (const row of rows) {
+        mappedCanonicalItemIds.set(`${row.external_provider}\u0000${row.external_item_id}`, row.canonical_item_id);
+      }
+    }
+  }
+
+  const canonicalItemIds = new Set<string>();
+  for (const normalizedIdentities of normalizedIdentityGroups) {
+    for (const identity of normalizedIdentities) {
+      const mappedCanonicalItemId = mappedCanonicalItemIds.get(`${identity.source}\u0000${identity.id}`);
+      if (mappedCanonicalItemId) canonicalItemIds.add(mappedCanonicalItemId);
+    }
+    for (const identity of normalizedIdentities) {
+      if (identity.source === 'imdb' && /^tt\d+$/i.test(identity.id)) {
+        canonicalItemIds.add(`imdb:${identity.id.toLowerCase()}`);
+      }
+    }
+    if (normalizedIdentities.length) canonicalItemIds.add(inferCanonicalItemId(normalizedIdentities));
+  }
 
   return [...canonicalItemIds];
 };

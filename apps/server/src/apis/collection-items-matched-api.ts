@@ -4,7 +4,7 @@ import { CollectionMatchedItemsApiRequestModel } from '@shared/models/api-model'
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { searchCollectionItems } from '../core/database/repositories/collection';
-import { resolveCanonicalItemIds } from '../core/database/repositories/external-item-identity-repository';
+import { resolveCanonicalItemIdsForIdentities } from '../core/database/repositories/external-item-identity-repository';
 import { findReadableOwnerHashes } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
@@ -39,13 +39,7 @@ export const register = (app: FastifyInstance): void => {
         source: identity.source,
         id: identity.source === 'imdb' ? identity.id.trim().toLowerCase() : identity.id.trim(),
       }));
-      const matchedCanonicalItemIds = [
-        ...new Set(
-          matchedIdentities.flatMap((identity) =>
-            resolveCanonicalItemIds(db, request.usernameHash, identity.source, identity.id)
-          )
-        ),
-      ];
+      const matchedCanonicalItemIds = resolveCanonicalItemIdsForIdentities(db, request.usernameHash, matchedIdentities);
       const usernameHashes =
         body.filters?.listType && body.filters.listType !== 'library'
           ? [request.usernameHash]

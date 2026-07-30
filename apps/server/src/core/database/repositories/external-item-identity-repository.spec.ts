@@ -6,6 +6,7 @@ import {
   normalizeExternalIdentities,
   resolveCanonicalItemId,
   resolveCanonicalItemIds,
+  resolveCanonicalItemIdsForIdentities,
   upsertExternalItemIdentities,
 } from './external-item-identity-repository';
 
@@ -88,6 +89,23 @@ describe('external-item-identity-repository', () => {
     ).run('user', 'imdb:tt9999999', 'imdb', 'tt0133093', 'alias');
 
     expect(resolveCanonicalItemIds(db, 'user', 'omdb', 'tt0133093')).toEqual(['imdb:tt9999999', 'imdb:tt0133093']);
+  });
+
+  it('resolves identity batches with mapped candidates before caller-ordered inferred candidates', () => {
+    const db = getDatabase();
+    insertUser('user');
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'imdb:tt9999999', 'omdb', 'custom-id', 'alias');
+
+    expect(
+      resolveCanonicalItemIdsForIdentities(db, 'user', [
+        { source: 'omdb', id: 'custom-id' },
+        { source: 'imdb', id: 'TT0133093' },
+      ])
+    ).toEqual(['imdb:tt9999999', 'omdb:custom-id', 'imdb:tt0133093']);
   });
 
   it('falls back to provider-scoped canonical ids when no IMDb identity exists', () => {
