@@ -6,6 +6,7 @@
     },
     "editor.formatOnSave": true
   },
+  "eslint.runtime": "node",
   "eslint.workingDirectories": [
     {
       "mode": "auto"
