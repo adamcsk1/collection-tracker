@@ -1,7 +1,8 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { hashText } from '../core/crypto';
+import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { getDatabase } from '../core/database/database';
+import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const COMPLETED_TAG = '#completed';
@@ -30,7 +31,7 @@ const insertItem = (hash = 'abc123', usernameHash = 'user', listType = 'library'
   ).run(usernameHash, 'tt-change', listType, 'Old', 'old', '', '', '', '', hash);
 };
 
-const updatedItem = {
+const updatedItem: CollectionItemChangeApiModel = {
   image: 'poster.jpg',
   title: 'Updated',
   genre: ['Drama'],
@@ -48,6 +49,8 @@ const updatedItem = {
   contentType: 'movie',
   favorite: false,
 };
+
+const updatedItemHash = getItemHash(normalizeItem(updatedItem)!);
 
 describe('change-api', () => {
   afterEach(() => {
@@ -118,7 +121,7 @@ describe('change-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ title: 'Updated', hash: hashText(JSON.stringify(updatedItem)) }),
+      item: expect.objectContaining({ title: 'Updated', hash: updatedItemHash }),
     });
     expect(
       getDatabase()
@@ -149,7 +152,7 @@ describe('change-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ title: 'Updated', hash: hashText(JSON.stringify(updatedItem)) }),
+      item: expect.objectContaining({ title: 'Updated', hash: updatedItemHash }),
     });
   });
 

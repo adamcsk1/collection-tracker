@@ -1,4 +1,4 @@
-import { ElementRef, signal } from '@angular/core';
+import { ElementRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { CollectionItemModel } from '../collection-model';
