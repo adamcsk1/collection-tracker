@@ -54,7 +54,6 @@ export const setupCollectionAiSearch = ({
   const aiSearchPromptTextModel = signal(collectionState.state.aiSearchPromptText());
   const aiSearchPromptTextField = form(aiSearchPromptTextModel);
 
-  aiSearch.setListType(listType);
   collectionState.setState('aiSearchPromptText', '');
   collectionState.setState('aiSearchSendVersion', 0);
   aiSearchPromptTextModel.set('');
@@ -67,7 +66,7 @@ export const setupCollectionAiSearch = ({
   const aiSearchMatchedIds = toSignal(
     toObservable(aiSearchSendTrigger).pipe(
       debounceTime(500),
-      switchMap(({ promptText }) => aiSearch.getMatchedIds(promptText)),
+      switchMap(({ promptText }) => aiSearch.getMatchedIds(promptText, listType)),
       startWith(null)
     ),
     { initialValue: null }
@@ -119,10 +118,13 @@ export const setupCollectionAiSearch = ({
     });
   });
 
+  let destroyed = false;
+
   effect(() => {
     const available = aiAvailable();
     const active = aiFilterActive();
     untracked(() => {
+      if (destroyed) return;
       floatActions.setAiSearchAction(available, active, () => {
         checkAiAvailableOnOpen();
         openAiSearchDialog();
@@ -131,9 +133,10 @@ export const setupCollectionAiSearch = ({
   });
 
   destroyRef.onDestroy(() => {
-    floatActions.setAiSearchAction(false, false);
+    destroyed = true;
     collectionState.setState('aiSearchPromptText', '');
     collectionState.setState('aiSearchSendVersion', 0);
+    floatActions.setAiSearchAction(false, false);
   });
 
   const dataSource: CollectionListDataSource = ({

@@ -47,7 +47,6 @@ describe('Collection library component', () => {
         {
           provide: AiSearchService,
           useFactory: () => ({
-            setListType: vi.fn(),
             getMatchedIds: () => of(null),
             searchInProgress: signal(false),
             checkAiAvailable: vi.fn(() => of(true)),
@@ -107,7 +106,6 @@ describe('Collection library component', () => {
         {
           provide: AiSearchService,
           useFactory: () => ({
-            setListType: vi.fn(),
             getMatchedIds: () => of(null),
             searchInProgress: signal(false),
             checkAiAvailable: vi.fn(() => of(true)),

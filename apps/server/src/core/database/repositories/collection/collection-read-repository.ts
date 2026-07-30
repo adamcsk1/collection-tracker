@@ -25,14 +25,93 @@ const buildCollectionOrderBy = ({
   return `created_at ${directionSql}, id ${directionSql}`;
 };
 
-const toAiSearchItem = (db: Database.Database, row: CollectionItemRow): AiSearchCollectionItem => {
+const EPISODE_COUNT_IN_CHUNK_SIZE = 400;
+
+const loadSeriesTrackerEpisodeCounts = (
+  db: Database.Database,
+  itemIds: number[]
+): Map<number, { watchedEpisodes: number; totalEpisodes: number }> => {
+  const countsByItemId = new Map<number, { watchedEpisodes: number; totalEpisodes: number }>();
+  if (!itemIds.length) return countsByItemId;
+
+  for (const itemId of itemIds) {
+    countsByItemId.set(itemId, { watchedEpisodes: 0, totalEpisodes: 0 });
+  }
+
+  for (let itemIndex = 0; itemIndex < itemIds.length; itemIndex += EPISODE_COUNT_IN_CHUNK_SIZE) {
+    const chunk = itemIds.slice(itemIndex, itemIndex + EPISODE_COUNT_IN_CHUNK_SIZE);
+    const placeholders = chunk.map(() => '?').join(', ');
+
+    const totalRows = db
+      .prepare(
+        `SELECT item_id AS itemId, COALESCE(SUM(episodes), 0) AS total
+         FROM series_tracker_seasons
+         WHERE item_id IN (${placeholders})
+         GROUP BY item_id`
+      )
+      .all(...chunk) as Array<{ itemId: number; total: number }>;
+
+    for (const row of totalRows) {
+      const current = countsByItemId.get(row.itemId) ?? { watchedEpisodes: 0, totalEpisodes: 0 };
+      current.totalEpisodes = Number(row.total) || 0;
+      countsByItemId.set(row.itemId, current);
+    }
+
+    const watchedRows = db
+      .prepare(
+        `SELECT item_id AS itemId, COUNT(*) AS count
+         FROM series_tracker_watched_episodes
+         WHERE item_id IN (${placeholders})
+         GROUP BY item_id`
+      )
+      .all(...chunk) as Array<{ itemId: number; count: number }>;
+
+    for (const row of watchedRows) {
+      const current = countsByItemId.get(row.itemId) ?? { watchedEpisodes: 0, totalEpisodes: 0 };
+      current.watchedEpisodes = Number(row.count) || 0;
+      countsByItemId.set(row.itemId, current);
+    }
+  }
+
+  return countsByItemId;
+};
+
+const toAiSearchItem = (
+  db: Database.Database,
+  row: CollectionItemRow,
+  episodeCountsByItemId?: Map<number, { watchedEpisodes: number; totalEpisodes: number }>
+): AiSearchCollectionItem => {
   const apiItem = toApiItem(db, row);
+  let completed: boolean | null = null;
+  let watchStatus: AiSearchCollectionItem['watchStatus'] = 'not-applicable';
+  let watchedEpisodes: number | null = null;
+  let totalEpisodes: number | null = null;
+  let progressPercent: number | null = null;
+
+  if (apiItem.listType === 'series-tracker') {
+    completed = apiItem.watchedAt !== null;
+    watchStatus = completed ? 'completed' : 'unfinished';
+    const episodeCounts = episodeCountsByItemId?.get(row.id) ?? { watchedEpisodes: 0, totalEpisodes: 0 };
+    watchedEpisodes = episodeCounts.watchedEpisodes;
+    totalEpisodes = episodeCounts.totalEpisodes;
+    progressPercent =
+      totalEpisodes > 0 ? Math.min(100, Math.round((watchedEpisodes / totalEpisodes) * 100)) : completed ? 100 : 0;
+  } else if (apiItem.listType === 'movie-tracker') {
+    completed = true;
+    watchStatus = 'watched';
+  }
+
   const fields = [
     apiItem.title,
     apiItem.contentType,
     apiItem.favorite,
     apiItem.listType,
     apiItem.watchedAt,
+    completed,
+    watchStatus,
+    watchedEpisodes,
+    totalEpisodes,
+    progressPercent,
     apiItem.year,
     apiItem.genre.join(', '),
     apiItem.tags.join(', '),
@@ -47,8 +126,13 @@ const toAiSearchItem = (db: Database.Database, row: CollectionItemRow): AiSearch
   return {
     ...apiItem,
     itemId: row.id,
+    completed,
+    watchStatus,
+    watchedEpisodes,
+    totalEpisodes,
+    progressPercent,
     aiSearchContentHash: JSON.stringify(fields),
-    aiSearchText: fields.filter(Boolean).join('\n'),
+    aiSearchText: fields.filter((value) => value !== '').join('\n'),
   };
 };
 
@@ -247,8 +331,14 @@ export const findCollectionItemsForAiSearch = (
     )
     .all(...usernameHashes, listType) as CollectionItemRow[];
 
+  const seriesTrackerItemIds =
+    listType === 'series-tracker'
+      ? rows.map((row) => row.id)
+      : rows.filter((row) => row.list_type === 'series-tracker').map((row) => row.id);
+  const episodeCountsByItemId = loadSeriesTrackerEpisodeCounts(db, seriesTrackerItemIds);
+
   return rows.reduce<AiSearchCollectionItem[]>((items, row) => {
-    items.push(toAiSearchItem(db, row));
+    items.push(toAiSearchItem(db, row, episodeCountsByItemId));
     return items;
   }, []);
 };

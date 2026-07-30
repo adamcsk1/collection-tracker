@@ -11,7 +11,6 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_SENSITIVE_DATA_STORAGE,
-  STORAGE_USE_AI_SEARCH,
 } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
@@ -158,23 +157,21 @@ describe('SettingsService', () => {
     expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({ collectionListDisplayPreferences: preferences });
   });
 
-  it('disables AI search when preloaded AI availability reports unavailable', () => {
+  it('updates AI availability when preloaded AI availability reports unavailable', () => {
     mainState.setState('aiAvailable', true);
     api.getAiAvailable.mockReturnValue(of({ aiAvailable: false }));
 
     service.preloadUserSettings().subscribe();
 
     expect(mainState.state.aiAvailable()).toBe(false);
-    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_USE_AI_SEARCH);
   });
 
-  it('disables AI search when AI availability check fails', () => {
+  it('updates AI availability when AI availability check fails', () => {
     mainState.setState('aiAvailable', true);
     api.getAiAvailable.mockReturnValue(throwError(() => new Error('network')));
 
     service.preloadUserSettings().subscribe();
 
     expect(mainState.state.aiAvailable()).toBe(false);
-    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_USE_AI_SEARCH);
   });
 });

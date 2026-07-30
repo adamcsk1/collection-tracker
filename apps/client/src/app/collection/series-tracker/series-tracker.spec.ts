@@ -44,7 +44,6 @@ describe('SeriesTracker', () => {
         {
           provide: AiSearchService,
           useValue: {
-            setListType: vi.fn(),
             getMatchedIds: () => of(null),
             searchInProgress: signal(false),
             checkAiAvailable: vi.fn(() => of(true)),

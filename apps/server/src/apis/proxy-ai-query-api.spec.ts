@@ -53,6 +53,10 @@ describe('proxy-ai-query-api', () => {
       metacriticRate?: string;
       listType?: string;
       usernameHash?: string;
+      contentType?: string;
+      watchedAt?: string | null;
+      totalEpisodes?: number;
+      watchedEpisodes?: number;
     }[]
   ) => {
     const db = getDatabase();
@@ -60,13 +64,14 @@ describe('proxy-ai-query-api', () => {
     for (const file of files) {
       const result = db
         .prepare(
-          `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, favorite, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO collection_items (username_hash, imdb_id, list_type, content_type, title, title_lower, favorite, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash, watched_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           file.usernameHash ?? 'user',
           file.imdbId,
           file.listType ?? 'library',
+          file.contentType ?? 'movie',
           file.title,
           file.title.toLowerCase(),
           file.favorite ? 1 : 0,
@@ -77,7 +82,8 @@ describe('proxy-ai-query-api', () => {
           file.actors ?? '',
           file.plot,
           '',
-          file.imdbId
+          file.imdbId,
+          file.watchedAt === undefined ? null : file.watchedAt
         );
       const itemId = Number(result.lastInsertRowid);
 
@@ -87,6 +93,22 @@ describe('proxy-ai-query-api', () => {
 
       for (const tag of file.tags ?? []) {
         db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
+      }
+
+      if (file.totalEpisodes) {
+        db.prepare(
+          'INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles) VALUES (?, ?, ?, ?)'
+        ).run(itemId, 1, file.totalEpisodes, '[]');
+      }
+
+      if (file.watchedEpisodes) {
+        for (let episode = 1; episode <= file.watchedEpisodes; episode += 1) {
+          db.prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(
+            itemId,
+            1,
+            episode
+          );
+        }
       }
     }
   };
@@ -152,14 +174,18 @@ describe('proxy-ai-query-api', () => {
       expect(payload.system).toContain('Default to excluding an item.');
       expect(payload.system).toContain('rottenTomatoesRate');
       expect(payload.system).toContain('metacriticRate');
+      expect(payload.system).toContain('watchStatus');
+      expect(payload.system).toContain('series-tracker: unfinished');
       expect(payload.system).toContain(
         'Do not mark every candidate as match:true unless every single candidate clearly matches the request.'
       );
+      expect(payload.prompt).toContain('Active list: library');
       expect(payload.prompt).toContain('User search request:\nWhich are family sci-fi movies?');
       expect(payload.prompt).toContain('IMDbId:\ntt0133093');
       expect(payload.prompt).toContain('genre:\nAction,Sci-Fi');
       expect(payload.prompt).toContain('tags:\n#family');
       expect(payload.prompt).toContain('favorite:\ntrue');
+      expect(payload.prompt).toContain('watchStatus:\nnot-applicable');
       expect(payload.prompt).toContain('rottenTomatoesRate:\n83%');
       expect(payload.prompt).toContain('metacriticRate:\n73/100');
       expect(payload.prompt).toContain('actors:\nKeanu Reeves, Carrie-Anne Moss');
@@ -172,6 +198,135 @@ describe('proxy-ai-query-api', () => {
         additionalProperties: false,
       });
       expect(payload.options).toEqual({ num_predict: 64, temperature: 0, top_k: 10, num_thread: 4 });
+    });
+
+    it('returns unfinished series-tracker items without calling the LLM for pure status intents', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('unfinished series', 'series-tracker'), response);
+      setupCollection([
+        {
+          imdbId: 'tt-unfinished',
+          title: 'Ongoing Show',
+          plot: 'A story about unfinished business.',
+          listType: 'series-tracker',
+          contentType: 'series',
+          watchedAt: null,
+          totalEpisodes: 10,
+          watchedEpisodes: 3,
+        },
+        {
+          imdbId: 'tt-finished',
+          title: 'Finished Show',
+          plot: 'A completed arc.',
+          listType: 'series-tracker',
+          contentType: 'series',
+          watchedAt: '2024-01-01T00:00:00.000Z',
+          totalEpisodes: 8,
+          watchedEpisodes: 8,
+        },
+      ]);
+      const generate = await mockGenerate('{"matchedIds":["tt-finished"]}');
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(generate).not.toHaveBeenCalled();
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt-unfinished'] });
+    });
+
+    it('serves pure status intents without requiring Ollama', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('favorites', 'library'), response);
+      setupCollection([
+        {
+          imdbId: 'tt-fav',
+          title: 'Favorite Movie',
+          plot: 'A favorite film.',
+          favorite: true,
+        },
+        {
+          imdbId: 'tt-other',
+          title: 'Other Movie',
+          plot: 'Not favorite.',
+        },
+      ]);
+      const { validateOllamaConnection } = await import('../core/ollama/ollama');
+      const validateSpy = vi.mocked(validateOllamaConnection);
+      validateSpy.mockRejectedValue(new Error('Ollama unavailable'));
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(validateSpy).not.toHaveBeenCalled();
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt-fav'] });
+      validateSpy.mockReset();
+      validateSpy.mockResolvedValue(undefined);
+    });
+
+    it('does not prefilter library items for unfinished-looking thematic prompts', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('films about unfinished business', 'library'), response);
+      setupCollection([
+        {
+          imdbId: 'tt-business',
+          title: 'Unfinished Business',
+          plot: 'A comedy about unfinished business.',
+        },
+      ]);
+      const { validateOllamaConnection } = await import('../core/ollama/ollama');
+      vi.mocked(validateOllamaConnection).mockResolvedValue(undefined);
+      const generate = await mockGenerate('{"matchedIds":["tt-business"]}');
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(generate).toHaveBeenCalledTimes(1);
+      expect(generate.mock.calls[0][0].prompt).toContain('tt-business');
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt-business'] });
+    });
+
+    it('prefilters unfinished candidates before LLM for mixed status queries', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('unfinished sci-fi series', 'series-tracker'), response);
+      setupCollection([
+        {
+          imdbId: 'tt-unfinished-scifi',
+          title: 'Space Drift',
+          plot: 'A sci-fi journey.',
+          listType: 'series-tracker',
+          contentType: 'series',
+          genre: ['Sci-Fi'],
+          watchedAt: null,
+          totalEpisodes: 10,
+          watchedEpisodes: 2,
+        },
+        {
+          imdbId: 'tt-finished-scifi',
+          title: 'Space Done',
+          plot: 'A finished sci-fi epic.',
+          listType: 'series-tracker',
+          contentType: 'series',
+          genre: ['Sci-Fi'],
+          watchedAt: '2024-02-01T00:00:00.000Z',
+          totalEpisodes: 10,
+          watchedEpisodes: 10,
+        },
+      ]);
+      const generate = await mockGenerate('{"matchedIds":["tt-unfinished-scifi"]}');
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(generate).toHaveBeenCalledTimes(1);
+      expect(generate.mock.calls[0][0].prompt).toContain('tt-unfinished-scifi');
+      expect(generate.mock.calls[0][0].prompt).not.toContain('tt-finished-scifi');
+      expect(generate.mock.calls[0][0].prompt).toContain('watchStatus:\nunfinished');
+      expect(generate.mock.calls[0][0].prompt).toContain('Active list: series-tracker');
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt-unfinished-scifi'] });
     });
 
     it('passes configured keep_alive to Ollama', async () => {
@@ -566,6 +721,13 @@ describe('proxy-ai-query-api', () => {
     it('returns 502 when Ollama is unavailable', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi?'), response);
+      setupCollection([
+        {
+          imdbId: 'tt0133093',
+          title: 'The Matrix',
+          plot: 'A computer hacker learns about the true nature of reality.',
+        },
+      ]);
       const { validateOllamaConnection } = await import('../core/ollama/ollama');
       vi.mocked(validateOllamaConnection).mockRejectedValueOnce(new Error('Ollama unavailable'));
 

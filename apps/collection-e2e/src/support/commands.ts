@@ -63,7 +63,6 @@ const resetPermissionStorage = (win: Window): void => {
   win.localStorage.removeItem('CT.SensitiveDataStorage');
   win.localStorage.removeItem('CT.ClearLocalStorageAfterLogout');
   win.localStorage.removeItem('CT.CollectionListOrderPreferences');
-  win.localStorage.removeItem('CT.UseAiSearch');
 };
 
 const signInThroughUi = (username: string, token: string): void => {

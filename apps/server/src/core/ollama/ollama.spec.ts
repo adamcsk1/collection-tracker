@@ -87,9 +87,9 @@ describe('ollama config', () => {
       host: 'http://127.0.0.1:11434',
       model: 'qwen2.5:14b',
       embeddingModel: 'mxbai-embed-large',
-      options: { temperature: 0, top_k: 10, num_thread: 10, num_ctx: 8192 },
+      options: { temperature: 0, top_k: 20, num_thread: 16, num_ctx: 16384 },
       parallelRequests: 1,
-      semanticCandidateLimit: 90,
+      semanticCandidateLimit: 120,
     });
   });
 
@@ -104,13 +104,13 @@ describe('ollama config', () => {
     expect(getOllamaConfig().host).toBe('http://ollama.test');
     expect(getOllamaConfig().model).toBe('gemma2:2b');
     expect(getOllamaConfig().embeddingModel).toBe('nomic-embed-text');
-    expect(getOllamaConfig().options).toEqual({ temperature: 0.2, top_k: 20, num_thread: 10, num_ctx: 8192 });
+    expect(getOllamaConfig().options).toEqual({ temperature: 0.2, top_k: 20, num_thread: 16, num_ctx: 16384 });
   });
 
   it('merges configured Ollama options over deterministic defaults', async () => {
     const { getOllamaConfig } = await importOllama({ options: { num_thread: 24 } });
 
-    expect(getOllamaConfig().options).toEqual({ temperature: 0, top_k: 10, num_thread: 24, num_ctx: 8192 });
+    expect(getOllamaConfig().options).toEqual({ temperature: 0, top_k: 20, num_thread: 24, num_ctx: 16384 });
   });
 
   it('reads the semantic candidate limit from the config file', async () => {
@@ -122,7 +122,7 @@ describe('ollama config', () => {
   it('falls back to the default semantic candidate limit for invalid values', async () => {
     const { getOllamaConfig } = await importOllama({ semanticCandidateLimit: 1.5 });
 
-    expect(getOllamaConfig().semanticCandidateLimit).toBe(90);
+    expect(getOllamaConfig().semanticCandidateLimit).toBe(120);
   });
 
   it('falls back to defaults for invalid Ollama config properties', async () => {
@@ -132,9 +132,9 @@ describe('ollama config', () => {
       host: 'http://127.0.0.1:11434',
       model: 'qwen2.5:14b',
       embeddingModel: 'mxbai-embed-large',
-      options: { temperature: 0, top_k: 10, num_thread: 10, num_ctx: 8192 },
+      options: { temperature: 0, top_k: 20, num_thread: 16, num_ctx: 16384 },
       parallelRequests: 1,
-      semanticCandidateLimit: 90,
+      semanticCandidateLimit: 120,
     });
   });
 

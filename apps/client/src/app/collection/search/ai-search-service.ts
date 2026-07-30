@@ -10,20 +10,15 @@ export class AiSearchService {
   private readonly api = inject(ApiService);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly mainState = inject(mainStateToken);
-  private readonly listType = signal<CollectionListTypeModel>('library');
   public readonly searchInProgress = signal(false);
 
-  public setListType(listType: CollectionListTypeModel): void {
-    this.listType.set(listType);
-  }
-
-  public getMatchedIds(searchText: string): Observable<string[] | null> {
+  public getMatchedIds(searchText: string, listType: CollectionListTypeModel): Observable<string[] | null> {
     if (!searchText) return of(null);
 
     this.searchInProgress.set(true);
     this.spinnerLoadingState.setState('show', true);
 
-    return this.api.getAiQueryData(searchText, this.listType()).pipe(
+    return this.api.getAiQueryData(searchText, listType).pipe(
       map((result) => result.matchedIds),
       tap(() => this.spinnerLoadingState.setState('show', false)),
       tap(() => this.searchInProgress.set(false)),

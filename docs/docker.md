@@ -78,14 +78,14 @@ Docker Compose does not start an Ollama service. AI search reads `/data/ollama.c
   "model": "qwen2.5:14b",
   "embeddingModel": "mxbai-embed-large",
   "keep_alive": "15m",
-  "batchSize": 10,
-  "parallelRequests": 1,
-  "semanticCandidateLimit": 90,
+  "batchSize": 16,
+  "parallelRequests": 2,
+  "semanticCandidateLimit": 120,
   "options": {
     "temperature": 0,
-    "top_k": 10,
-    "num_thread": 10,
-    "num_ctx": 8192
+    "top_k": 20,
+    "num_thread": 16,
+    "num_ctx": 16384
   }
 }
 ```
@@ -93,7 +93,7 @@ Docker Compose does not start an Ollama service. AI search reads `/data/ollama.c
 `embeddingModel` is used for semantic candidate retrieval before the language model filters results. `semanticCandidateLimit` controls how many ranked candidates are sent to the language model.
 Add root-level `keep_alive` to pass an Ollama keep-alive value with generate and embed requests. When omitted, the API does not send `keep_alive`.
 
-Configured `options` are merged over the server `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`, so omitted option fields keep their deterministic defaults.
+Configured `options` are merged over the server `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 20, "num_thread": 16, "num_ctx": 16384 }`, so omitted option fields keep their deterministic defaults.
 
 The Docker default uses `host.docker.internal` so the container can reach Ollama running on the Docker host. Docker Compose maps that name to the host gateway for Linux hosts.
 

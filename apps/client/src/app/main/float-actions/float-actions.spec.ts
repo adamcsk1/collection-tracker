@@ -208,6 +208,38 @@ describe('FloatActions', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="ai-search-trigger"]')).toBeNull();
   });
 
+  it('renders the AI search button when AI search is available', () => {
+    service.setAiSearchAction(true, false, vi.fn());
+    fixture.detectChanges();
+
+    const aiButton = fixture.nativeElement.querySelector('[data-test-id="float-ai-search-button"]');
+    expect(aiButton).toBeTruthy();
+    expect(aiButton.getAttribute('aria-pressed')).toBe('false');
+    expect(aiButton.classList.contains('ai-search-button-active')).toBe(false);
+  });
+
+  it('hides the AI search button when AI search is unavailable', () => {
+    service.setAiSearchAction(false, false, vi.fn());
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="float-ai-search-button"]')).toBeNull();
+  });
+
+  it('marks the AI search button active and runs the registered callback', () => {
+    const aiSearchAction = vi.fn();
+    service.setAiSearchAction(true, true, aiSearchAction);
+    fixture.detectChanges();
+
+    const aiButton = fixture.nativeElement.querySelector('[data-test-id="float-ai-search-button"]');
+    expect(aiButton.getAttribute('aria-pressed')).toBe('true');
+    expect(aiButton.classList.contains('ai-search-button-active')).toBe(true);
+
+    aiButton.click();
+    fixture.detectChanges();
+
+    expect(aiSearchAction).toHaveBeenCalledTimes(1);
+  });
+
   it('marks the float bar as menu-only when no search or actions are registered', () => {
     service.setSearchTemplate(null);
     fixture.detectChanges();

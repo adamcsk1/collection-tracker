@@ -143,22 +143,23 @@ Ollama config example (`.data/ollama.config.json`):
   "keep_alive": "15m",
   "options": {
     "temperature": 0,
-    "top_k": 10,
-    "num_thread": 10,
-    "num_ctx": 8192
+    "top_k": 20,
+    "num_thread": 16,
+    "num_ctx": 16384
   },
-  "batchSize": 10,
-  "parallelRequests": 1,
-  "semanticCandidateLimit": 90
+  "batchSize": 16,
+  "parallelRequests": 2,
+  "semanticCandidateLimit": 120
 }
 ```
 
 AI search first embeds the prompt and collection items with `embeddingModel`, ranks the best semantic candidates, then asks `model` to filter those candidates and return ordered IMDb IDs.
+Status intents such as unfinished/completed/favorite are pre-filtered from derived item fields; pure status queries can skip the language model.
 `semanticCandidateLimit` controls how many ranked candidates are sent to the language model after embedding retrieval.
 `batchSize` controls how many ranked candidates are sent to Ollama per generate request. When omitted, the full candidate set is sent in a single unbatched request.
 `parallelRequests` controls how many Ollama batch requests may run at once. When omitted or invalid, it defaults to `1`.
 `keep_alive` is passed to Ollama generate and embed requests when present. When omitted, the API does not send `keep_alive`.
-Configured `options` are merged over the server `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`, so omitted option fields keep their deterministic defaults.
+Configured `options` are merged over the server `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 20, "num_thread": 16, "num_ctx": 16384 }`, so omitted option fields keep their deterministic defaults.
 
 Full runtime example:
 

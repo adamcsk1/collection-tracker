@@ -8,7 +8,6 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_SENSITIVE_DATA_STORAGE,
-  STORAGE_USE_AI_SEARCH,
 } from '@shared/constants/storage-const';
 import {
   CollectionListDisplayPreferencesModel,
@@ -122,7 +121,6 @@ export class SettingsService {
 
   private applyAiAvailable(result: { aiAvailable: boolean }): void {
     this.mainState.setState('aiAvailable', result.aiAvailable);
-    if (!result.aiAvailable) this.webstorage.removeItem(STORAGE_USE_AI_SEARCH);
   }
 
   public storeFormData(formData: SettingsModel): void {

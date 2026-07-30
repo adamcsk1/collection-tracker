@@ -13,14 +13,14 @@ Source: [`apps/server`](../apps/server)
 - movie tracker items, series tracker season metadata, watched episodes, and watched-state bulk updates
 - SQLite database initialization and schema migrations
 - external metadata proxying — forwards search and item lookups to the configured provider; OMDb is used when `OMDB_API_KEY` is set
-- AI search proxying — embeds collection metadata for a requested `listType`, retrieves semantic candidates, and forwards filtered IMDB-ID-based queries to Ollama using `ollama.config.json` in the active data folder
+- AI search proxying — embeds collection metadata for a requested `listType` (including derived watch status and series progress), applies deterministic status pre-filters for intents like unfinished/completed/favorite, retrieves semantic candidates, and forwards filtered IMDB-ID-based queries to Ollama using `ollama.config.json` in the active data folder
 - runtime safeguards through Fastify plugins for Helmet, no-cache headers, CORS validation, request limits, form bodies, and signed cookies
 
 ## Runtime Model
 
 - Default data folder: `.data`
 - CLI flags: `--dataFolder=<path>` and `--debug=true|false`
-- Startup expects `.env` in the active data folder and requires non-empty `JWT_SECRET` and `COOKIE_SECRET` values plus an explicitly configured `SALT`; `OMDB_API_KEY` enables the OMDb external metadata provider when set, but the server starts without it; AI search reads `ollama.config.json` from the active data folder and merges configured options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`; Ollama availability is checked by the AI query API rather than during server startup
+- Startup expects `.env` in the active data folder and requires non-empty `JWT_SECRET` and `COOKIE_SECRET` values plus an explicitly configured `SALT`; `OMDB_API_KEY` enables the OMDb external metadata provider when set, but the server starts without it; AI search reads `ollama.config.json` from the active data folder and merges configured options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 20, "num_thread": 16, "num_ctx": 16384 }`; Ollama availability is checked by the AI query API rather than during server startup
 - `RATE_LIMIT` — default maximum number of requests per 1-minute window per Fastify-validated client IP. Defaults to `120` when not set. Collection entry workflow routes use their own higher per-route limit so adding several items in a row does not exhaust a small global bucket.
 - `AUTH_RATE_LIMIT` — independent per-IP limit for sign-in and sign-up. Defaults to `10` when missing or invalid.
 - `REFRESH_RATE_LIMIT` — independent per-IP limit for session refresh. Defaults to `60` when missing or invalid so multiple users and tabs behind one address do not share the stricter credential endpoint budget. A refresh `429` preserves the browser's logged-in state so a later request can retry.
@@ -32,7 +32,7 @@ Source: [`apps/server`](../apps/server)
 ## Data Layout
 
 - `database/collection-tracker.sqlite`
-- `ollama.config.json` — Ollama host, model, embedding model, optional root-level `keep_alive`, generate options, optional `batchSize`, optional `parallelRequests`, and optional `semanticCandidateLimit` for AI search
+- `ollama.config.json` — Ollama host, model, embedding model, optional root-level `keep_alive`, generate options, optional `batchSize`, optional `parallelRequests`, and optional `semanticCandidateLimit` for AI search. Defaults favor a local GPU desktop (`batchSize: 16`, `parallelRequests: 2`, `semanticCandidateLimit: 120`, `num_ctx: 16384`). Pure status queries such as “unfinished series” on series-tracker (or favorites on any list) resolve from derived item fields without calling Ollama; unfinished/completed pre-filters apply only on tracker lists so thematic library prompts are not emptied.
 - `logs/`
 - `cache/` — image proxy cache files and metadata
 

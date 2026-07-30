@@ -2552,7 +2552,8 @@ paths:
         The server reads the caller's collection metadata for the requested `listType` from the database, embeds collection items, retrieves semantic candidates, and builds the final filtering prompt internally.
         The client supplies the natural-language question and target list type.
         Library searches include readable shared owners; other list types search only the caller's own items.
-        The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:14b`, embedding model `mxbai-embed-large`, and merges configured generate options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`.
+        The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:14b`, embedding model `mxbai-embed-large`, and merges configured generate options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 20, "num_thread": 16, "num_ctx": 16384 }`.
+        Candidates include derived watch status and series progress. Pure status intents such as unfinished/completed/favorite may be resolved without calling the language model.
         Ollama availability and model presence for both the language and embedding models are checked by this endpoint before querying.
       tags: [AI Proxy]
       requestBody:

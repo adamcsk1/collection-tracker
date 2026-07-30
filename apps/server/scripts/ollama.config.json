@@ -3,13 +3,13 @@
   "model": "qwen2.5:14b",
   "embeddingModel": "mxbai-embed-large",
   "keep_alive": "15m",
-  "batchSize": 10,
-  "parallelRequests": 1,
-  "semanticCandidateLimit": 90,
+  "batchSize": 16,
+  "parallelRequests": 2,
+  "semanticCandidateLimit": 120,
   "options": {
     "temperature": 0,
-    "top_k": 10,
-    "num_thread": 10,
-    "num_ctx": 8192
+    "top_k": 20,
+    "num_thread": 16,
+    "num_ctx": 16384
   }
 }

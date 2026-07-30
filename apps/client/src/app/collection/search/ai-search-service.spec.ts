@@ -44,38 +44,28 @@ describe('AiSearchService', () => {
     setup();
 
     let result: string[] | null | undefined;
-    service.getMatchedIds('').subscribe((value) => (result = value));
+    service.getMatchedIds('', 'library').subscribe((value) => (result = value));
 
     expect(result).toBeNull();
     expect(getAiQueryDataSpy).not.toHaveBeenCalled();
   });
 
-  it('calls getAiQueryData with the configured list type and returns matched IDs', () => {
+  it('calls getAiQueryData with the provided list type and returns matched IDs', () => {
     setup();
-    service.setListType('watch-later');
     getAiQueryDataSpy.mockReturnValue(of({ matchedIds: ['tt0133093', 'tt0372784'] }));
 
     let result: string[] | null | undefined;
-    service.getMatchedIds('sci-fi movies').subscribe((value) => (result = value));
+    service.getMatchedIds('sci-fi movies', 'watch-later').subscribe((value) => (result = value));
 
     expect(getAiQueryDataSpy).toHaveBeenCalledWith('sci-fi movies', 'watch-later');
     expect(result).toEqual(['tt0133093', 'tt0372784']);
-  });
-
-  it('defaults list type to library', () => {
-    setup();
-    getAiQueryDataSpy.mockReturnValue(of({ matchedIds: [] }));
-
-    service.getMatchedIds('query').subscribe();
-
-    expect(getAiQueryDataSpy).toHaveBeenCalledWith('query', 'library');
   });
 
   it('resets searchInProgress and spinner after a successful response', () => {
     setup();
     getAiQueryDataSpy.mockReturnValue(of({ matchedIds: [] }));
 
-    service.getMatchedIds('query').subscribe();
+    service.getMatchedIds('query', 'library').subscribe();
 
     expect(service.searchInProgress()).toBe(false);
     expect(spinnerState.state.show()).toBe(false);
@@ -86,7 +76,7 @@ describe('AiSearchService', () => {
     getAiQueryDataSpy.mockReturnValue(throwError(() => new Error('network error')));
 
     let result: string[] | null | undefined;
-    service.getMatchedIds('sci-fi').subscribe((value) => (result = value));
+    service.getMatchedIds('sci-fi', 'library').subscribe((value) => (result = value));
 
     expect(result).toBeNull();
     expect(service.searchInProgress()).toBe(false);

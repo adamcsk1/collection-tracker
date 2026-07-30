@@ -86,6 +86,27 @@ export const canonicalOrExactIdentityMatch = (alias: string): string => `(
   )
 )`;
 
+/** Keep IN-lists well under SQLite expression-tree and bind-variable limits. */
+const MATCHED_IDENTITY_IN_CHUNK_SIZE = 400;
+
+const pushInClauseConditions = (
+  conditions: string[],
+  queryParts: QueryParts,
+  columnExpression: string,
+  values: string[]
+): void => {
+  if (!values.length) return;
+
+  const chunkConditions: string[] = [];
+  for (let valueIndex = 0; valueIndex < values.length; valueIndex += MATCHED_IDENTITY_IN_CHUNK_SIZE) {
+    const chunk = values.slice(valueIndex, valueIndex + MATCHED_IDENTITY_IN_CHUNK_SIZE);
+    chunkConditions.push(`${columnExpression} IN (${chunk.map(() => '?').join(', ')})`);
+    queryParts.params.push(...chunk);
+  }
+
+  conditions.push(chunkConditions.length === 1 ? chunkConditions[0] : `(${chunkConditions.join(' OR ')})`);
+};
+
 const addMatchedIdentityFilter = (
   queryParts: QueryParts,
   matchedIdentities: ExternalItemIdentityModel[] | undefined,
@@ -93,20 +114,28 @@ const addMatchedIdentityFilter = (
 ): void => {
   const conditions: string[] = [];
   const uniqueCanonicalItemIds = [...new Set(matchedCanonicalItemIds ?? [])];
-  if (uniqueCanonicalItemIds.length) {
-    conditions.push(`collection_items.canonical_item_id IN (${uniqueCanonicalItemIds.map(() => '?').join(', ')})`);
-    queryParts.params.push(...uniqueCanonicalItemIds);
+  pushInClauseConditions(conditions, queryParts, 'collection_items.canonical_item_id', uniqueCanonicalItemIds);
+
+  const identitiesBySource = new Map<string, string[]>();
+  for (const identity of matchedIdentities ?? []) {
+    const sourceIds = identitiesBySource.get(identity.source) ?? [];
+    sourceIds.push(identity.id);
+    identitiesBySource.set(identity.source, sourceIds);
   }
 
-  for (const identity of matchedIdentities ?? []) {
-    conditions.push(`(
-      collection_items.external_provider = ?
-      AND COALESCE(collection_items.external_item_id, collection_items.imdb_id) = ?
-    )`);
-    queryParts.params.push(identity.source, identity.id);
-    if (identity.source === 'imdb') {
-      conditions.push('collection_items.imdb_id = ?');
-      queryParts.params.push(identity.id);
+  for (const [source, sourceIds] of identitiesBySource) {
+    const uniqueSourceIds = [...new Set(sourceIds)];
+    if (source === 'imdb') {
+      pushInClauseConditions(conditions, queryParts, 'collection_items.imdb_id', uniqueSourceIds);
+    }
+
+    for (let valueIndex = 0; valueIndex < uniqueSourceIds.length; valueIndex += MATCHED_IDENTITY_IN_CHUNK_SIZE) {
+      const chunk = uniqueSourceIds.slice(valueIndex, valueIndex + MATCHED_IDENTITY_IN_CHUNK_SIZE);
+      conditions.push(`(
+        collection_items.external_provider = ?
+        AND COALESCE(collection_items.external_item_id, collection_items.imdb_id) IN (${chunk.map(() => '?').join(', ')})
+      )`);
+      queryParts.params.push(source, ...chunk);
     }
   }
 

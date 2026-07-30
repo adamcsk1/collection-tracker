@@ -239,6 +239,43 @@ describe('collection search APIs', () => {
     );
   });
 
+  it('handles large matched identity lists without exceeding SQLite expression depth', async () => {
+    insertUser();
+    const identities = Array.from({ length: 1200 }, (_, index) => {
+      const imdbId = `tt${String(index).padStart(7, '0')}`;
+      insertItem({
+        imdbId,
+        title: `Title ${index}`,
+        listType: 'series-tracker',
+        contentType: 'series',
+        createdAt: `2024-01-01T00:00:${String(index % 60).padStart(2, '0')}.000Z`,
+      });
+      return { source: 'imdb' as const, id: imdbId };
+    });
+    const { register } = await import('./collection-items-matched-api');
+
+    const response = await callRoute(register, 'post', '/api/v1/items/matched', {
+      body: {
+        identities,
+        filters: { listType: 'series-tracker' },
+        limit: 50,
+        offset: 0,
+      },
+      usernameHash: 'user',
+    });
+
+    expect(response.code).not.toHaveBeenCalledWith(500);
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        total: 1200,
+        limit: 50,
+        offset: 0,
+        items: expect.arrayContaining([expect.objectContaining({ IMDbId: 'tt0000000' })]),
+      })
+    );
+    expect(response.send.mock.calls[0][0].items).toHaveLength(50);
+  });
+
   it('returns search suggestions and known item validation', async () => {
     insertUser();
     insertItem({ imdbId: 'tt-alien', title: 'Alien Movie', tags: ['#space'], actors: 'Sigourney Weaver' });

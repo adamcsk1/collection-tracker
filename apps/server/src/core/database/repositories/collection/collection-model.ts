@@ -34,10 +34,17 @@ export interface CollectionItemRow {
   watched_at: string | null;
 }
 
+export type AiSearchWatchStatus = 'completed' | 'unfinished' | 'watched' | 'unwatched' | 'not-applicable';
+
 export interface AiSearchCollectionItem extends CollectionItemApiModel {
   itemId: number;
   aiSearchContentHash: string;
   aiSearchText: string;
+  completed: boolean | null;
+  watchStatus: AiSearchWatchStatus;
+  watchedEpisodes: number | null;
+  totalEpisodes: number | null;
+  progressPercent: number | null;
 }
 
 export interface CollectionItemQueryOptions {
