@@ -234,7 +234,8 @@ export const findCollectionItemsForPrompt = (
 
 export const findCollectionItemsForAiSearch = (
   db: Database.Database,
-  usernameHashes: string[]
+  usernameHashes: string[],
+  listType: CollectionListTypeModel = 'library'
 ): AiSearchCollectionItem[] => {
   const rows = db
     .prepare(
@@ -244,7 +245,7 @@ export const findCollectionItemsForAiSearch = (
          AND list_type = ?
         ORDER BY created_at DESC, id DESC`
     )
-    .all(...usernameHashes, 'library') as CollectionItemRow[];
+    .all(...usernameHashes, listType) as CollectionItemRow[];
 
   return rows.reduce<AiSearchCollectionItem[]>((items, row) => {
     items.push(toAiSearchItem(db, row));

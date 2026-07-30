@@ -13,6 +13,7 @@ import {
   mainCollectionStateToken,
   type MainCollectionState,
 } from '../../main/main-collection-store';
+import { initialMainState, mainStateToken } from '../../main/main-store';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { AiSearchService } from '../search/ai-search-service';
 import { CollectionLibrary } from './library';
@@ -23,7 +24,6 @@ describe('Collection library component', () => {
   let fixture: ComponentFixture<CollectionLibrary>;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
-  let aiSearch: { useAiSearch: ReturnType<typeof signal<boolean>> };
   let floatActions: FloatActionsService;
   let queryParamMap: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
@@ -35,21 +35,19 @@ describe('Collection library component', () => {
 
   const createFixture = (queryParams: Record<string, unknown> = {}) => {
     queryParamMap = new BehaviorSubject(convertToParamMap(queryParams));
-    aiSearch = {
-      useAiSearch: signal(false),
-    };
     TestBed.configureTestingModule({
       imports: [CollectionLibrary],
       providers: [
         provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialCollectionState, collectionStateToken),
+        provideStore(initialMainState, mainStateToken),
         { provide: ApiService, useValue: api },
         { provide: PortalService, useValue: { open: vi.fn() } },
         { provide: AutocompleteService, useValue: { search: vi.fn() } },
         {
           provide: AiSearchService,
           useFactory: () => ({
-            useAiSearch: aiSearch.useAiSearch,
+            setListType: vi.fn(),
             getMatchedIds: () => of(null),
             searchInProgress: signal(false),
             checkAiAvailable: vi.fn(() => of(true)),
@@ -102,13 +100,14 @@ describe('Collection library component', () => {
       providers: [
         provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialCollectionState, collectionStateToken),
+        provideStore(initialMainState, mainStateToken),
         { provide: ApiService, useValue: api },
         { provide: PortalService, useValue: { open: vi.fn() } },
         { provide: AutocompleteService, useValue: { search: vi.fn() } },
         {
           provide: AiSearchService,
           useFactory: () => ({
-            useAiSearch: signal(false),
+            setListType: vi.fn(),
             getMatchedIds: () => of(null),
             searchInProgress: signal(false),
             checkAiAvailable: vi.fn(() => of(true)),
@@ -150,7 +149,6 @@ describe('Collection library component', () => {
     fixture.detectChanges();
 
     expect(collectionState.state.searchText()).toBe('');
-    expect(collectionState.state.forceStandardSearch()).toBe(false);
   });
 
   it('forces standard search when query params contain structured filters', () => {
@@ -161,81 +159,27 @@ describe('Collection library component', () => {
     expect(collectionState.state.forceStandardSearch()).toBe(true);
   });
 
-  it('does not force standard search again when a suggestion is accepted in standard search mode', () => {
+  it('clears AI filter when standard search is used', () => {
+    collectionState.setState('aiSearchPromptText', 'sci-fi');
+    collectionState.setState('forceStandardSearch', false);
+
+    fixture.componentInstance['onSearchFromUser']();
+
+    expect(collectionState.state.aiSearchPromptText()).toBe('');
+    expect(collectionState.state.forceStandardSearch()).toBe(true);
+  });
+
+  it('clears AI filter when a suggestion is accepted', () => {
+    collectionState.setState('aiSearchPromptText', 'sci-fi');
     collectionState.setState('forceStandardSearch', false);
 
     fixture.componentInstance['onSearchAccepted']();
 
-    expect(collectionState.state.forceStandardSearch()).toBe(false);
-  });
-
-  it('does not reset standard search state again while typing', () => {
-    collectionState.setState('forceStandardSearch', false);
-    const setStateSpy = vi.spyOn(collectionState, 'setState');
-
-    fixture.componentInstance['onSearchFromUser']();
-
-    expect(setStateSpy).not.toHaveBeenCalledWith('forceStandardSearch', false);
-  });
-
-  it('reloads the unfiltered list when switching from AI search to standard search', () => {
-    aiSearch.useAiSearch.set(true);
-    collectionState.setState('searchText', '');
-    mainCollectionState.setState('reloadTrigger', 3);
-
-    fixture.componentInstance['onToggleAiSearch']();
-
-    expect(aiSearch.useAiSearch()).toBe(false);
-    expect(collectionState.state.searchText()).toBe('');
-    expect(mainCollectionState.state.reloadTrigger()).toBe(4);
-  });
-
-  it('does not force a reload when switching from standard search to AI search', () => {
-    aiSearch.useAiSearch.set(false);
-    mainCollectionState.setState('reloadTrigger', 3);
-
-    fixture.componentInstance['onToggleAiSearch']();
-
-    expect(aiSearch.useAiSearch()).toBe(true);
-    expect(mainCollectionState.state.reloadTrigger()).toBe(3);
-  });
-
-  it('clears forced standard search when switching from standard search to AI search', () => {
-    aiSearch.useAiSearch.set(false);
-    collectionState.setState('forceStandardSearch', true);
-
-    fixture.componentInstance['onToggleAiSearch']();
-
-    expect(aiSearch.useAiSearch()).toBe(true);
-    expect(collectionState.state.forceStandardSearch()).toBe(false);
-  });
-
-  it('keeps forced standard search when switching to AI search with a route search filter', () => {
-    queryParamMap.next(convertToParamMap({ search: '#action' }));
-    fixture.detectChanges();
-    aiSearch.useAiSearch.set(false);
-
-    fixture.componentInstance['onToggleAiSearch']();
-
-    expect(aiSearch.useAiSearch()).toBe(true);
-    expect(collectionState.state.searchText()).toBe('#action');
+    expect(collectionState.state.aiSearchPromptText()).toBe('');
     expect(collectionState.state.forceStandardSearch()).toBe(true);
   });
 
-  it('keeps forced standard search when switching to AI search with a route structured filter', () => {
-    queryParamMap.next(convertToParamMap({ type: 'movie' }));
-    fixture.detectChanges();
-    aiSearch.useAiSearch.set(false);
-
-    fixture.componentInstance['onToggleAiSearch']();
-
-    expect(aiSearch.useAiSearch()).toBe(true);
-    expect(collectionState.state.searchText()).toBe('');
-    expect(collectionState.state.forceStandardSearch()).toBe(true);
-  });
-
-  it('calls searchItems with library listType when AI search is active without prompt text', () => {
-    aiSearch.useAiSearch.set(true);
+  it('calls searchItems with library listType when AI filter is inactive', () => {
     collectionState.setState('aiSearchPromptText', '');
     collectionState.setState('forceStandardSearch', false);
 
@@ -262,5 +206,9 @@ describe('Collection library component', () => {
     fixture.destroy();
 
     expect(floatActions.searchTemplate()).toBeNull();
+  });
+
+  it('keeps main collection reload trigger available for AI results', () => {
+    expect(mainCollectionState.state.reloadTrigger()).toBe(0);
   });
 });

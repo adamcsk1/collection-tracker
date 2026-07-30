@@ -13,7 +13,7 @@ Source: [`apps/server`](../apps/server)
 - movie tracker items, series tracker season metadata, watched episodes, and watched-state bulk updates
 - SQLite database initialization and schema migrations
 - external metadata proxying — forwards search and item lookups to the configured provider; OMDb is used when `OMDB_API_KEY` is set
-- AI search proxying — embeds collection metadata, retrieves semantic candidates, and forwards filtered IMDB-ID-based queries to Ollama using `ollama.config.json` in the active data folder
+- AI search proxying — embeds collection metadata for a requested `listType`, retrieves semantic candidates, and forwards filtered IMDB-ID-based queries to Ollama using `ollama.config.json` in the active data folder
 - runtime safeguards through Fastify plugins for Helmet, no-cache headers, CORS validation, request limits, form bodies, and signed cookies
 
 ## Runtime Model

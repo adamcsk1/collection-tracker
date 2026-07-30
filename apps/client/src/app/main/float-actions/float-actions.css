@@ -44,11 +44,16 @@
   max-width: var(--float-search-expanded-width);
 }
 
-.search-toggle-button {
+.search-toggle-button,
+.ai-search-button {
   flex: 0 0 var(--float-button-container-size);
   height: var(--float-button-container-size);
   width: var(--float-button-container-size);
   border-radius: var(--border-radius);
+}
+
+.ai-search-button-active {
+  color: var(--main-color);
 }
 
 .menu-button {

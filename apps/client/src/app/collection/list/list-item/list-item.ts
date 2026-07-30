@@ -10,7 +10,6 @@ import { TagManagementColorPipe } from '../../../tag-management/tag-management-c
 import { CollectionItemModel } from '../../collection-model';
 import { collectionStateToken } from '../../collection-store';
 import { ItemDialog } from '../../item/item-dialog/item-dialog';
-import { AiSearchService } from '../../search/ai-search-service';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
 import { ListItemCard } from '../list-item-card/list-item-card';
 import { ListItemCardRatingModel } from '../list-item-card/list-item-card-model';
@@ -35,7 +34,6 @@ export class ListItem {
   private readonly mainState = inject(mainStateToken);
   private readonly sharesState = inject(sharesStateToken);
   private readonly tagManagementColorPipe = inject(TagManagementColorPipe);
-  private readonly aiSearch = inject(AiSearchService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   protected readonly watched = computed(
     () => this.collectionItem().watched === true || this.collectionItem().listType === 'movie-tracker'
@@ -74,8 +72,10 @@ export class ListItem {
 
     return getContrastColorHex(badgeBackgroundColor);
   });
-  protected readonly useAiSearch = this.aiSearch.useAiSearch.asReadonly();
-  protected readonly imageBadgeDisabled = computed(() => this.useAiSearch() === true);
+  protected readonly aiFilterActive = computed(
+    () => !!this.collectionState.state.aiSearchPromptText().trim() && !this.collectionState.state.forceStandardSearch()
+  );
+  protected readonly imageBadgeDisabled = computed(() => this.aiFilterActive());
   protected readonly listDisplayPreferences = this.mainState.state.collectionListDisplayPreferences;
   protected readonly selectedRating = computed(() => {
     const item = this.collectionItem();
@@ -155,9 +155,10 @@ export class ListItem {
   protected onSetSearchText(searchValue: string | number | null, event?: Event): void {
     event?.stopPropagation();
     event?.preventDefault();
-    if (this.useAiSearch()) return;
+    if (this.aiFilterActive()) return;
 
     if (searchValue !== null) {
+      this.collectionState.setState('aiSearchPromptText', '');
       this.collectionState.setState('forceStandardSearch', true);
       this.collectionState.setState('searchText', `${searchValue}`);
     }

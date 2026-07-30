@@ -5,12 +5,10 @@ const initialConfig: FloatActionButtonsConfig = {
   collectionLength: 0,
   showActions: false,
   showAddButton: true,
-  showAiSearchButton: true,
   showRandomPickButton: true,
   showOrderButtons: false,
   filterActions: [],
   activeFilterActions: [],
-  useAiSearch: false,
   orderBy: 'createdAt',
   orderDirection: 'desc',
 };
@@ -18,7 +16,6 @@ const initialConfig: FloatActionButtonsConfig = {
 const noopCallbacks: FloatActionButtonsCallbacks = {
   addNew: () => void 0,
   randomPick: () => void 0,
-  toggleAiSearch: () => void 0,
   toggleOrderBy: () => void 0,
   toggleOrderDirection: () => void 0,
   applyFilter: () => void 0,
@@ -52,10 +49,6 @@ export class FloatActionButtonsService {
 
   public randomPick(): void {
     this.callbacks.randomPick();
-  }
-
-  public toggleAiSearch(): void {
-    this.callbacks.toggleAiSearch();
   }
 
   public toggleOrderBy(): void {

@@ -896,13 +896,17 @@ components:
 
     AiQueryRequest:
       type: object
-      required: [prompt]
+      required: [prompt, listType]
       properties:
         prompt:
           type: string
-          description: Natural-language question about the caller's collection.
+          description: Natural-language question about the caller's collection list.
           examples:
             - Which are sci-fi movies?
+        listType:
+          type: string
+          enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+          description: Collection list to search within.
 
     AiQueryResponse:
       type: object
@@ -912,7 +916,7 @@ components:
           type: array
           items:
             type: string
-          description: IMDb IDs matched by AI search from the caller's collection.
+          description: IMDb IDs matched by AI search from the caller's selected collection list.
           examples:
             - - tt0133093
 
@@ -2542,11 +2546,12 @@ paths:
   /proxy/ai/query:
     post:
       operationId: proxyAiQuery
-      summary: Natural-language collection search via local AI
+      summary: Natural-language collection list search via local AI
       description: |
         Proxies a prompt to the Ollama API using `ollama.config.json` in the server data folder.
-        The server reads the caller's collection metadata from the database, embeds collection items, retrieves semantic candidates, and builds the final filtering prompt internally.
-        Only the natural-language question is supplied by the client.
+        The server reads the caller's collection metadata for the requested `listType` from the database, embeds collection items, retrieves semantic candidates, and builds the final filtering prompt internally.
+        The client supplies the natural-language question and target list type.
+        Library searches include readable shared owners; other list types search only the caller's own items.
         The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:14b`, embedding model `mxbai-embed-large`, and merges configured generate options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 10, "num_thread": 10, "num_ctx": 8192 }`.
         Ollama availability and model presence for both the language and embedding models are checked by this endpoint before querying.
       tags: [AI Proxy]
@@ -2558,13 +2563,13 @@ paths:
               $ref: '#/components/schemas/AiQueryRequest'
       responses:
         '200':
-          description: IMDb IDs matched by AI search from the caller's collection.
+          description: IMDb IDs matched by AI search from the caller's selected collection list.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AiQueryResponse'
         '400':
-          description: Missing or empty `prompt`.
+          description: Missing or empty `prompt`, or invalid `listType`.
         '502':
           description: Ollama is unavailable, a configured model is missing, or Ollama returned an unparseable, truncated, or invalid embedding response.
 

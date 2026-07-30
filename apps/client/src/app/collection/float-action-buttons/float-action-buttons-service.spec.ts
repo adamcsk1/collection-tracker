@@ -10,18 +10,16 @@ describe('FloatActionButtonsService', () => {
 
   it('merges partial config updates', () => {
     service.updateConfig({ showActions: true, collectionLength: 5 });
-    service.updateConfig({ showAiSearchButton: false });
+    service.updateConfig({ showRandomPickButton: false });
 
     expect(service.config()).toEqual({
       collectionLength: 5,
       showActions: true,
       showAddButton: true,
-      showAiSearchButton: false,
-      showRandomPickButton: true,
+      showRandomPickButton: false,
       showOrderButtons: false,
       filterActions: [],
       activeFilterActions: [],
-      useAiSearch: false,
       orderBy: 'createdAt',
       orderDirection: 'desc',
     });
@@ -31,7 +29,6 @@ describe('FloatActionButtonsService', () => {
     const callbacks = {
       addNew: vi.fn(),
       randomPick: vi.fn(),
-      toggleAiSearch: vi.fn(),
       toggleOrderBy: vi.fn(),
       toggleOrderDirection: vi.fn(),
       applyFilter: vi.fn(),
@@ -41,7 +38,6 @@ describe('FloatActionButtonsService', () => {
 
     service.addNew();
     service.randomPick();
-    service.toggleAiSearch();
     service.toggleOrderBy();
     service.toggleOrderDirection();
     service.applyFilter('movie');
@@ -49,7 +45,6 @@ describe('FloatActionButtonsService', () => {
 
     expect(callbacks.addNew).toHaveBeenCalledTimes(1);
     expect(callbacks.randomPick).toHaveBeenCalledTimes(1);
-    expect(callbacks.toggleAiSearch).toHaveBeenCalledTimes(1);
     expect(callbacks.toggleOrderBy).toHaveBeenCalledTimes(1);
     expect(callbacks.toggleOrderDirection).toHaveBeenCalledTimes(1);
     expect(callbacks.applyFilter).toHaveBeenCalledWith('movie');
@@ -62,7 +57,6 @@ describe('FloatActionButtonsService', () => {
     service.setCallbacks({
       addNew,
       randomPick: vi.fn(),
-      toggleAiSearch: vi.fn(),
       toggleOrderBy: vi.fn(),
       toggleOrderDirection: vi.fn(),
       applyFilter: vi.fn(),
@@ -76,12 +70,10 @@ describe('FloatActionButtonsService', () => {
       collectionLength: 0,
       showActions: false,
       showAddButton: true,
-      showAiSearchButton: true,
       showRandomPickButton: true,
       showOrderButtons: false,
       filterActions: [],
       activeFilterActions: [],
-      useAiSearch: false,
       orderBy: 'createdAt',
       orderDirection: 'desc',
     });

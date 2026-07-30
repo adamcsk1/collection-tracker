@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
@@ -7,8 +8,11 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
+import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
+import { initialMainState, mainStateToken } from '../../main/main-store';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
+import { AiSearchService } from '../search/ai-search-service';
 import { MovieTracker } from './movie-tracker';
 
 describe('MovieTracker', () => {
@@ -33,8 +37,19 @@ describe('MovieTracker', () => {
       imports: [MovieTracker],
       providers: [
         provideStore({ ...initialCollectionState, searchText }, collectionStateToken),
+        provideStore(initialMainCollectionState, mainCollectionStateToken),
+        provideStore(initialMainState, mainStateToken),
         { provide: PortalService, useValue: portal },
         { provide: ApiService, useValue: api },
+        {
+          provide: AiSearchService,
+          useValue: {
+            setListType: vi.fn(),
+            getMatchedIds: () => of(null),
+            searchInProgress: signal(false),
+            checkAiAvailable: vi.fn(() => of(true)),
+          },
+        },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         {
           provide: ActivatedRoute,

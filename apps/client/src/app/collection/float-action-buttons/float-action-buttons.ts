@@ -3,7 +3,6 @@ import { apiStateToken } from '@services/api/api-store';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { CollectionItemOrderBy, CollectionItemOrderDirection } from '@shared/models/api-model';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
-import { mainStateToken } from '../../main/main-store';
 import { FloatActionFilter } from './float-action-buttons-model';
 import { FloatActionButtonsService } from './float-action-buttons-service';
 
@@ -15,21 +14,15 @@ import { FloatActionButtonsService } from './float-action-buttons-service';
 })
 export class FloatActionButtons implements OnDestroy {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly mainState = inject(mainStateToken);
   private readonly apiState = inject(apiStateToken);
   private readonly floatActions = inject(FloatActionsService);
   private readonly actionButtons = inject(FloatActionButtonsService);
 
   protected readonly translations = {
     addNew: computed(() => this.ngxSignalTranslate.translate('AddNew')),
-    standardSearch: computed(() => this.ngxSignalTranslate.translate('SwitchToStandardSearch')),
-    standardSearchShort: computed(() => this.ngxSignalTranslate.translate('Standard')),
-    aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
-    aiSearchShort: computed(() => this.ngxSignalTranslate.translate('Ai')),
     randomPick: computed(() => this.ngxSignalTranslate.translate('RandomPick')),
     actions: computed(() => this.ngxSignalTranslate.translate('Actions')),
     filtering: computed(() => this.ngxSignalTranslate.translate('Filtering')),
-    search: computed(() => this.ngxSignalTranslate.translate('Search')),
     sorting: computed(() => this.ngxSignalTranslate.translate('Sorting')),
     orderByCreatedAt: computed(() => this.ngxSignalTranslate.translate('SwitchToCreatedAtOrder')),
     orderByAlphabet: computed(() => this.ngxSignalTranslate.translate('SwitchToAlphabetOrder')),
@@ -49,10 +42,7 @@ export class FloatActionButtons implements OnDestroy {
     filterUncompleted: computed(() => this.ngxSignalTranslate.translate('Uncompleted')),
   };
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
-  protected readonly aiAvailable = this.mainState.state.aiAvailable;
   protected readonly config = this.actionButtons.config;
-  protected readonly useAiSearch = computed(() => this.config().useAiSearch);
-  protected readonly showAiSearchButton = computed(() => this.config().showAiSearchButton && this.aiAvailable());
   protected readonly showFloatButtons = signal(false);
   protected readonly actionButtonsVisible = computed(() => this.config().showActions && this.showFloatButtons());
   protected readonly rowFilterActions = computed(() =>
@@ -67,18 +57,13 @@ export class FloatActionButtons implements OnDestroy {
   protected readonly canShowActionButton = computed(() => {
     const config = this.config();
     return (
-      config.showAddButton ||
-      this.showAiSearchButton() ||
-      config.showRandomPickButton ||
-      config.showOrderButtons ||
-      config.filterActions.length > 0
+      config.showAddButton || config.showRandomPickButton || config.showOrderButtons || config.filterActions.length > 0
     );
   });
   protected readonly addOnlyMode = computed(() => {
     const config = this.config();
     return (
       config.showAddButton &&
-      !this.showAiSearchButton() &&
       !config.showRandomPickButton &&
       !config.showOrderButtons &&
       config.filterActions.length === 0
@@ -122,11 +107,6 @@ export class FloatActionButtons implements OnDestroy {
     this.showFloatButtons.set(false);
   }
 
-  protected onToggleAiSearch(): void {
-    this.actionButtons.toggleAiSearch();
-    this.showFloatButtons.set(false);
-  }
-
   protected onToggleOrderBy(): void {
     this.actionButtons.toggleOrderBy();
     this.showFloatButtons.set(false);
@@ -145,11 +125,6 @@ export class FloatActionButtons implements OnDestroy {
   protected onSelectOrderDirection(orderDirection: CollectionItemOrderDirection): void {
     if (this.isOrderDirectionActive(orderDirection)) return;
     this.onToggleOrderDirection();
-  }
-
-  protected onSelectSearchMode(searchMode: 'standard' | 'ai'): void {
-    if (this.isSearchModeActive(searchMode)) return;
-    this.onToggleAiSearch();
   }
 
   protected onApplyFilter(filter: FloatActionFilter): void {
@@ -198,9 +173,5 @@ export class FloatActionButtons implements OnDestroy {
 
   protected isOrderDirectionActive(orderDirection: CollectionItemOrderDirection): boolean {
     return this.config().orderDirection === orderDirection;
-  }
-
-  protected isSearchModeActive(searchMode: 'standard' | 'ai'): boolean {
-    return searchMode === 'ai' ? this.useAiSearch() : !this.useAiSearch();
   }
 }

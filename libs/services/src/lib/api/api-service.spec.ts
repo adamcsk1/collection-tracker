@@ -392,11 +392,11 @@ describe('ApiService', () => {
   });
 
   it('posts a prompt to the AI query endpoint and returns matched IDs', async () => {
-    const promise = lastValueFrom(service.getAiQueryData('sci-fi movies'));
+    const promise = lastValueFrom(service.getAiQueryData('sci-fi movies', 'library'));
 
     const aiRequest = httpMock.expectOne('https://api.test/proxy/ai/query');
     expect(aiRequest.request.method).toBe('POST');
-    expect(aiRequest.request.body).toEqual({ prompt: 'sci-fi movies' });
+    expect(aiRequest.request.body).toEqual({ prompt: 'sci-fi movies', listType: 'library' });
     aiRequest.flush({ matchedIds: ['tt0133093', 'tt0372784'] });
 
     await expect(promise).resolves.toEqual({ matchedIds: ['tt0133093', 'tt0372784'] });
@@ -450,9 +450,10 @@ describe('ApiService', () => {
   });
 
   it('alerts and rethrows when AI query fails', async () => {
-    const promise = lastValueFrom(service.getAiQueryData('sci-fi movies'));
+    const promise = lastValueFrom(service.getAiQueryData('sci-fi movies', 'watch-later'));
 
     const aiRequest = httpMock.expectOne('https://api.test/proxy/ai/query');
+    expect(aiRequest.request.body).toEqual({ prompt: 'sci-fi movies', listType: 'watch-later' });
     aiRequest.flush('bad', { status: 502, statusText: 'Bad Gateway' });
 
     await expect(promise).rejects.toMatchObject({ status: 502 });

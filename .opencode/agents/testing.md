@@ -94,12 +94,12 @@ Stored as `CT.SettingLock = 'true'` in localStorage. When enabled, the Settings 
 
 ### AI search
 
-All calls to `POST /api/v1/proxy/ai/query` must be mocked with `cy.intercept`. Tests live in `ai-search.cy.ts` and must use `cy.autoLogin()`.
+All calls to `POST /api/v1/proxy/ai/query` must be mocked with `cy.intercept`. Tests live in `ai-search.cy.ts` and must use `cy.autoLogin()`. Also mock `GET /api/v1/proxy/ai/available` with `{ aiAvailable: true }` so the floating AI button is shown.
 
-- **Toggle** — `data-test-id="ai-search-toggle"` appears in the float buttons panel (expand with `show-functions`); clicking it replaces the standard search with `AiSearchInput`
-- **Input UI** — trigger button `data-test-id="ai-search-trigger"` expands a panel with textarea `data-test-id="ai-search-textarea"` (reach with `.find('textarea')`) and send button `data-test-id="ai-search-send"`; clicking send collapses the panel
-- **Filtering** — the client filters client-side based on IMDb IDs returned by the proxy; seed items with distinct IMDb IDs using `buildCollectionItem(title, type, imdbId)`; mock response format: `{ matchedIds: ['tt…'] }`
-- **localStorage cleanup** — `CT.UseAiSearch` stores the toggle preference; `cy.autoLogin()` does NOT clear it; `ai-search.cy.ts` has a top-level `afterEach` that calls `win.localStorage.removeItem('CT.UseAiSearch')` after every test
+- **Floating button** — `data-test-id="float-ai-search-button"` sits in the main float bar next to standard search; available on all collection lists when AI is available
+- **Dialog UI** — clicking the AI button opens a dialog with textarea `data-test-id="ai-search-textarea"` (reach with `.find('textarea')`) and send button `data-test-id="ai-search-send"`
+- **Request body** — AI query posts `{ prompt, listType }` where `listType` matches the current collection page
+- **Filtering** — the client loads matched items via `POST /api/v1/items/matched` using IMDb IDs returned by the proxy; seed items with distinct IMDb IDs using `buildCollectionItem(title, type, imdbId)`; mock response format: `{ matchedIds: ['tt…'] }`
 
 ---
 

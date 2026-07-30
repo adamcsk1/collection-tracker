@@ -16,15 +16,16 @@ import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
-import { CollectionListDataSourceRequest } from '../collection-model';
+import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
 import { List } from '../list/list';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
+import { AiSearchService } from '../search/ai-search-service';
+import { setupCollectionAiSearch } from '../utils/collection-ai-search-util';
 import {
   buildCollectionRouteFilterKey,
   buildCollectionRouteFilters,
-  buildStandardSearchFilters,
   setupStandardCollectionSearch,
 } from '../utils/collection-search-filter-util';
 import { map } from 'rxjs';
@@ -43,10 +44,12 @@ import { map } from 'rxjs';
 export class Wishlist {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
+  private readonly aiSearch = inject(AiSearchService);
   private readonly portal = inject(PortalService);
   private readonly api = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly floatActions = inject(FloatActionsService);
+  private readonly mainState = inject(mainStateToken);
   private readonly route = inject(ActivatedRoute);
   private readonly floatSearchTemplate = viewChild<TemplateRef<unknown>>('floatSearch');
 
@@ -60,24 +63,30 @@ export class Wishlist {
     }
   );
   protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
+  protected readonly forceStandardSearch = computed(
+    () => !!this.queryFilterKey() || this.collectionState.state.forceStandardSearch()
+  );
   protected readonly searchTextField = form(this.searchTextModel);
-  protected readonly wishlistDataSource = ({
-    offset,
-    limit,
-    searchText,
-    orderBy,
-    orderDirection,
-  }: CollectionListDataSourceRequest) =>
-    this.api.searchItems(
-      { ...buildStandardSearchFilters(searchText, 'wishlist', this.queryFilters()), orderBy, orderDirection },
-      offset,
-      limit
-    );
   protected readonly translations = {
     messageEmptyWishlist: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWishlist')),
     messageAddFirstWishlist: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWishlist')),
     placeholderSearchInWishlist: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInWishlist')),
+    placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
   };
+  private readonly aiSearchSetup = setupCollectionAiSearch({
+    collectionState: this.collectionState,
+    aiSearch: this.aiSearch,
+    api: this.api,
+    portal: this.portal,
+    floatActions: this.floatActions,
+    destroyRef: this.destroyRef,
+    listType: 'wishlist',
+    queryFilters: this.queryFilters,
+    forceStandardSearch: this.forceStandardSearch,
+    placeholder: this.translations.placeholderReply,
+    aiAvailable: this.mainState.state.aiAvailable,
+  });
+  protected readonly wishlistDataSource = this.aiSearchSetup.dataSource;
 
   constructor() {
     setupStandardCollectionSearch({
@@ -87,6 +96,10 @@ export class Wishlist {
       floatSearchTemplate: this.floatSearchTemplate,
       destroyRef: this.destroyRef,
     });
+  }
+
+  protected onSearchFromUser(): void {
+    this.aiSearchSetup.clearAiFilterOnStandardSearch();
   }
 
   protected onAddWishlist(event: Event): void {

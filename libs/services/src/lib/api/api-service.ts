@@ -381,9 +381,9 @@ export class ApiService extends BaseApiService {
     );
   }
 
-  public getAiQueryData(prompt: string): Observable<AiQueryResponseModel> {
-    const body: AiQueryRequestModel = { prompt };
-    return this.request('POST', '/proxy/ai/query', { prompt: body.prompt });
+  public getAiQueryData(prompt: string, listType: CollectionListTypeModel): Observable<AiQueryResponseModel> {
+    const body: AiQueryRequestModel = { prompt, listType };
+    return this.request('POST', '/proxy/ai/query', body);
   }
 
   public getAiAvailable(): Observable<AiAvailableApiResponseModel> {

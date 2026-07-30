@@ -39,17 +39,22 @@ export class FloatActions {
   protected readonly translations = {
     menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
+    aiSearch: computed(() => this.ngxSignalTranslate.translate('AiSearch')),
     scrollToTop: computed(() => this.ngxSignalTranslate.translate('ScrollToTop')),
   };
   protected readonly config = this.service.config;
   protected readonly searchTemplate = this.service.searchTemplate;
   protected readonly searchActionAvailable = this.service.searchActionAvailable;
+  protected readonly aiSearchAvailable = this.service.aiSearchAvailable;
+  protected readonly aiSearchActive = this.service.aiSearchActive;
   protected readonly actionsComponent = this.service.actionsComponent;
   protected readonly actionButtonsVisible = this.service.actionButtonsVisible;
   protected readonly searchExpanded = signal(false);
   protected readonly searchAvailable = computed(() => !!this.searchTemplate() || this.searchActionAvailable());
   protected readonly showFloatActions = computed(() => this.config().actionsAvailable && !!this.actionsComponent());
-  protected readonly showMenuOnlyBar = computed(() => !this.searchAvailable() && !this.showFloatActions());
+  protected readonly showMenuOnlyBar = computed(
+    () => !this.searchAvailable() && !this.aiSearchAvailable() && !this.showFloatActions()
+  );
 
   constructor() {
     effect(() => {
@@ -87,6 +92,10 @@ export class FloatActions {
 
     this.searchExpanded.set(true);
     this.searchFocusRequest.update((request) => request + 1);
+  }
+
+  protected onOpenAiSearch(): void {
+    this.service.triggerAiSearchAction();
   }
 
   @HostListener('document:pointerdown', ['$event'])

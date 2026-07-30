@@ -9,13 +9,7 @@ const seedAndVisit = (items: ReturnType<typeof buildCollectionItem>[]) => {
   CollectionPage.visit();
 };
 
-// Always reset the AI search preference after each test so subsequent spec files
-// start with standard search. CT.UseAiSearch is NOT cleared by cy.autoLogin().
-afterEach(() => {
-  cy.window().then((win) => win.localStorage.removeItem('CT.UseAiSearch'));
-});
-
-describe('AI search - toggle', () => {
+describe('AI search - floating button', () => {
   beforeEach(() => {
     cy.autoLogin();
     cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
@@ -23,52 +17,16 @@ describe('AI search - toggle', () => {
     );
   });
 
-  it('shows the AI search toggle button in the float buttons menu', () => {
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getStandardSearchToggleButton().should('be.visible');
-    CollectionPage.getAiSearchToggleButton().should('be.visible');
+  it('shows the AI search button in the float bar', () => {
+    CollectionPage.getAiSearchButton().should('be.visible');
   });
 
-  it('switches to AI search input when toggle is clicked', () => {
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getAiSearchToggleButton().click();
-    CollectionPage.getFloatSearchToggleButton().should('be.visible');
-    CollectionPage.openAiSearchDialog();
-    CollectionPage.getAiSearchTextarea().should('be.visible');
-  });
-
-  it('hides the standard search input when AI search is active', () => {
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getAiSearchToggleButton().click();
-    cy.getByTestId('collection-search').should('not.exist');
-  });
-
-  it('restores the standard search input when toggle is clicked again', () => {
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getAiSearchToggleButton().click();
-    CollectionPage.getFloatSearchToggleButton().should('be.visible');
-
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getStandardSearchToggleButton().click();
+  it('keeps standard search available alongside AI search', () => {
+    CollectionPage.getAiSearchButton().should('be.visible');
     CollectionPage.getSearchInput().should('be.visible');
-    cy.getByTestId('ai-search-textarea').should('not.exist');
   });
 
-  it('persists the AI search preference in localStorage', () => {
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getAiSearchToggleButton().click();
-
-    cy.window().then((win) => {
-      expect(win.localStorage.getItem('CT.UseAiSearch')).to.equal('true');
-    });
-  });
-
-  it('restores AI search input on page reload when preference was saved', () => {
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getAiSearchToggleButton().click();
-
-    CollectionPage.visit();
-    CollectionPage.getFloatSearchToggleButton().should('be.visible');
+  it('opens the AI search dialog from the floating button', () => {
     CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().should('be.visible');
   });
@@ -80,11 +38,9 @@ describe('AI search - input interaction', () => {
     cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
       'aiAvailable'
     );
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getAiSearchToggleButton().click();
   });
 
-  it('opens the AI search dialog when the search button is clicked', () => {
+  it('opens the AI search dialog when the AI button is clicked', () => {
     CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().should('be.visible');
     CollectionPage.getAiSearchSendButton().should('be.visible');
@@ -110,8 +66,6 @@ describe('AI search - filtering', () => {
       'aiAvailable'
     );
     seedAndVisit([movieA, movieB, movieC]);
-    CollectionPage.getShowFunctionsButton().click();
-    CollectionPage.getAiSearchToggleButton().click();
   });
 
   it('filters the list to only matched items when AI returns IDs', () => {
@@ -151,7 +105,7 @@ describe('AI search - filtering', () => {
     CollectionPage.getAllItems().should('have.length', 3);
   });
 
-  it('sends the prompt text to the AI proxy endpoint', () => {
+  it('sends the prompt text and library listType to the AI proxy endpoint', () => {
     cy.intercept('POST', '/api/v1/proxy/ai/query', {
       statusCode: 200,
       body: { matchedIds: [] },
@@ -161,6 +115,37 @@ describe('AI search - filtering', () => {
     CollectionPage.getAiSearchTextarea().type('show me action films');
     CollectionPage.getAiSearchSendButton().click();
 
-    cy.wait('@aiQuery').its('request.body').should('deep.equal', { prompt: 'show me action films' });
+    cy.wait('@aiQuery')
+      .its('request.body')
+      .should('deep.equal', { prompt: 'show me action films', listType: 'library' });
+  });
+});
+
+describe('AI search - watch-later list', () => {
+  const movieA = buildCollectionItem('Sci-Fi Alpha', 'movie', 'tt2000001');
+
+  beforeEach(() => {
+    cy.autoLogin();
+    cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
+      'aiAvailable'
+    );
+    cy.request('POST', '/api/v1/create?listType=watch-later', movieA);
+    CollectionPage.visitWatchLater();
+  });
+
+  it('shows the AI button and sends watch-later listType', () => {
+    cy.intercept('POST', '/api/v1/proxy/ai/query', {
+      statusCode: 200,
+      body: { matchedIds: ['tt2000001'] },
+    }).as('aiQuery');
+
+    CollectionPage.getAiSearchButton().should('be.visible');
+    CollectionPage.openAiSearchDialog();
+    CollectionPage.getAiSearchTextarea().type('sci-fi');
+    CollectionPage.getAiSearchSendButton().click();
+
+    cy.wait('@aiQuery')
+      .its('request.body')
+      .should('deep.equal', { prompt: 'sci-fi', listType: 'watch-later' });
   });
 });

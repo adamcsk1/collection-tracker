@@ -51,6 +51,8 @@ describe('proxy-ai-query-api', () => {
       favorite?: boolean;
       rottenTomatoesRate?: string;
       metacriticRate?: string;
+      listType?: string;
+      usernameHash?: string;
     }[]
   ) => {
     const db = getDatabase();
@@ -58,12 +60,13 @@ describe('proxy-ai-query-api', () => {
     for (const file of files) {
       const result = db
         .prepare(
-          `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, favorite, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, favorite, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
-          'user',
+          file.usernameHash ?? 'user',
           file.imdbId,
+          file.listType ?? 'library',
           file.title,
           file.title.toLowerCase(),
           file.favorite ? 1 : 0,
@@ -88,8 +91,8 @@ describe('proxy-ai-query-api', () => {
     }
   };
 
-  const request = (prompt: string): any => ({
-    body: { prompt },
+  const request = (prompt: string, listType = 'library'): any => ({
+    body: { prompt, listType },
     usernameHash: 'user',
   });
 
@@ -506,7 +509,10 @@ describe('proxy-ai-query-api', () => {
 
     it('returns 400 on invalid request body (empty prompt)', async () => {
       const response = mockResponse();
-      const { app, handlerPromise } = buildApp({ body: { prompt: '' }, usernameHash: 'user' }, response);
+      const { app, handlerPromise } = buildApp(
+        { body: { prompt: '', listType: 'library' }, usernameHash: 'user' },
+        response
+      );
 
       const { register } = await import('./proxy-ai-query-api');
       register(app);
@@ -514,6 +520,47 @@ describe('proxy-ai-query-api', () => {
       await handlerPromise();
       expect(response.code).toHaveBeenCalledWith(400);
       expect(response.send).toHaveBeenCalledWith({ error: 'Invalid request body' });
+    });
+
+    it('returns 400 when listType is missing or invalid', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp({ body: { prompt: 'sci-fi' }, usernameHash: 'user' }, response);
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(response.code).toHaveBeenCalledWith(400);
+      expect(response.send).toHaveBeenCalledWith({ error: 'Invalid request body' });
+    });
+
+    it('searches only items from the requested list type', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('sci-fi', 'watch-later'), response);
+      setupCollection([
+        {
+          imdbId: 'tt0133093',
+          title: 'The Matrix',
+          plot: 'A computer hacker learns about the true nature of reality.',
+          listType: 'library',
+        },
+        {
+          imdbId: 'tt0372784',
+          title: 'Batman Begins',
+          plot: 'The origin story of Batman.',
+          listType: 'watch-later',
+        },
+      ]);
+      const generate = await mockGenerate('{"matchedIds":["tt0372784"]}');
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(generate).toHaveBeenCalledTimes(1);
+      expect(generate.mock.calls[0][0].prompt).toContain('tt0372784');
+      expect(generate.mock.calls[0][0].prompt).not.toContain('tt0133093');
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0372784'] });
     });
 
     it('returns 502 when Ollama is unavailable', async () => {

@@ -6,6 +6,7 @@
       [formField]="searchTextField"
       [showReset]="true"
       [suggestionListPlacement]="'top'"
+      (userEvent)="onSearchFromUser()"
     />
   </ng-template>
   <ct-list

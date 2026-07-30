@@ -6,8 +6,8 @@ Source: [`apps/client`](../apps/client)
 
 ## Functional Areas
 
-- `collection/library`: search and browse stored collection items; includes AI natural-language search via `AiSearchService` and `AiSearchInput`; favorites are available through the library `favorite=true` filter
-- `collection/watch-later`, `collection/wishlist`, `collection/movie-tracker`, and `collection/series-tracker`: filtered collection subroutes for saved item lists, watched movies, and series progress tracking
+- `collection/library`: search and browse stored collection items; includes AI natural-language list search via the floating AI button and `AiSearchService`; favorites are available through the library `favorite=true` filter
+- `collection/watch-later`, `collection/wishlist`, `collection/movie-tracker`, and `collection/series-tracker`: filtered collection subroutes for saved item lists, watched movies, and series progress tracking; each list supports the same floating AI search scoped to that list type
 - statistics dialog: tag-driven summaries and Chart.js visualizations opened from the main menu
 - `settings/tag-management`: per-tag color, weight, and presentation rules
 - `settings/export-import`: export and import collection data, tag management settings, and series tracker progress using the current `collection-tracker-export` format

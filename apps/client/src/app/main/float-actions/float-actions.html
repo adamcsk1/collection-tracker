@@ -40,6 +40,20 @@
     }
   }
 
+  @if (aiSearchAvailable()) {
+    <button
+      data-test-id="float-ai-search-button"
+      class="ai-search-button button-icon material-icons"
+      [class.ai-search-button-active]="aiSearchActive()"
+      [attr.aria-label]="translations.aiSearch()"
+      [attr.aria-pressed]="aiSearchActive() ? 'true' : 'false'"
+      [title]="translations.aiSearch()"
+      (click)="onOpenAiSearch()"
+    >
+      psychology
+    </button>
+  }
+
   @if (showFloatActions() && actionsComponent(); as component) {
     <div class="float-actions-slot">
       <ng-container [ngComponentOutlet]="component" />

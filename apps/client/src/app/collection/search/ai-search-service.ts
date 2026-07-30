@@ -1,48 +1,29 @@
-import { effect, inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { spinnerLoadingStateToken } from '@components/spinner-loading/spinner-loading-store';
 import { ApiService } from '@services/api/api-service';
-import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { STORAGE_USE_AI_SEARCH } from '@shared/constants/storage-const';
+import { CollectionListTypeModel } from '@shared/models/api-model';
 import { catchError, map, Observable, of, tap } from 'rxjs';
 import { mainStateToken } from '../../main/main-store';
 
 @Injectable()
 export class AiSearchService {
   private readonly api = inject(ApiService);
-  private readonly webstorage = inject(WebstorageService);
   private readonly spinnerLoadingState = inject(spinnerLoadingStateToken);
   private readonly mainState = inject(mainStateToken);
+  private readonly listType = signal<CollectionListTypeModel>('library');
   public readonly searchInProgress = signal(false);
-  public readonly useAiSearch = signal<boolean | null>(null);
 
-  constructor() {
-    effect(() => {
-      if (this.useAiSearch() === null) {
-        const storedValue = this.webstorage.getItem(STORAGE_USE_AI_SEARCH);
-        this.useAiSearch.set(storedValue === 'true');
-      }
-
-      this.webstorage.setItem(STORAGE_USE_AI_SEARCH, String(this.useAiSearch()));
-    });
-
-    let previousAiAvailable = this.mainState.state.aiAvailable();
-    effect(() => {
-      const aiAvailable = this.mainState.state.aiAvailable();
-      if (!aiAvailable && previousAiAvailable && this.useAiSearch()) {
-        this.useAiSearch.set(false);
-        this.webstorage.removeItem(STORAGE_USE_AI_SEARCH);
-      }
-      previousAiAvailable = aiAvailable;
-    });
+  public setListType(listType: CollectionListTypeModel): void {
+    this.listType.set(listType);
   }
 
   public getMatchedIds(searchText: string): Observable<string[] | null> {
-    if (!this.useAiSearch() || !searchText) return of(null);
+    if (!searchText) return of(null);
 
     this.searchInProgress.set(true);
     this.spinnerLoadingState.setState('show', true);
 
-    return this.api.getAiQueryData(searchText).pipe(
+    return this.api.getAiQueryData(searchText, this.listType()).pipe(
       map((result) => result.matchedIds),
       tap(() => this.spinnerLoadingState.setState('show', false)),
       tap(() => this.searchInProgress.set(false)),

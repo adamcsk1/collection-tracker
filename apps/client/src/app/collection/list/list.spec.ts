@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { CollectionItemModel } from '../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
-import { AiSearchService } from '../search/ai-search-service';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { initialMainState, mainStateToken } from '../../main/main-store';
 import { ApiService } from '@services/api/api-service';
@@ -99,15 +98,7 @@ describe('List', () => {
         { provide: Router, useValue: router },
         { provide: WebstorageService, useValue: webstorage },
         { provide: ApiService, useValue: api },
-        {
-          provide: AiSearchService,
-          useFactory: () => ({
-            useAiSearch: signal(false),
-            getMatchedIds: () => of(['tt-ai']),
-            searchInProgress: signal(false),
-            checkAiAvailable: vi.fn(() => of(true)),
-          }),
-        },
+
         provideStore(initialMainCollectionState, mainCollectionStateToken),
         provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
@@ -424,7 +415,6 @@ describe('List', () => {
 
     expect(floatActions.config().actionsAvailable).toBe(true);
     expect(actionButtons.config().showActions).toBe(true);
-    expect(actionButtons.config().showAiSearchButton).toBe(true);
     expect(actionButtons.config().showOrderButtons).toBe(true);
     expect(actionButtons.config().filterActions).toEqual(['movie', 'series', 'unwatched', 'favorite']);
     expect(actionButtons.config().activeFilterActions).toEqual([]);

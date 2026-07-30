@@ -1,6 +1,6 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { AiQueryRequestModel, AiQueryResponseModel } from '@shared/models/ai-model';
-import { CollectionItemApiModel } from '@shared/models/api-model';
+import { CollectionItemApiModel, CollectionListTypeModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
@@ -14,6 +14,7 @@ import { debugLog, errorLog, warningLog } from '../core/logger';
 import { createOllamaClient, getOllamaConfig, validateOllamaConnection } from '../core/ollama/ollama';
 import { DEFAULT_OLLAMA_EMBEDDING_MODEL, DEFAULT_OLLAMA_SEMANTIC_CANDIDATE_LIMIT } from '../core/ollama/ollama-const';
 import { withErrorHandler } from '../core/utils/api-error-handler';
+import { parseListType } from '../core/utils/query-parse-util';
 
 const SYSTEM_PROMPT = `
 You are a strict movie and series collection search filter.
@@ -58,10 +59,11 @@ const EMBEDDING_BATCH_SIZE = 32;
 
 const stringifyPromptValue = (value: unknown): string => `${value}`.replace(/\s+/g, ' ').trim();
 
-const readCollectionItems = (usernameHash: string): AiSearchCollectionItem[] => {
+const readCollectionItems = (usernameHash: string, listType: CollectionListTypeModel): AiSearchCollectionItem[] => {
   const db = getDatabase();
-  const usernameHashes = [usernameHash, ...findReadableOwnerHashes(db, usernameHash)];
-  return findCollectionItemsForAiSearch(db, usernameHashes);
+  const usernameHashes =
+    listType === 'library' ? [usernameHash, ...findReadableOwnerHashes(db, usernameHash)] : [usernameHash];
+  return findCollectionItemsForAiSearch(db, usernameHashes, listType);
 };
 
 const toPromptItem = (item: CollectionItemApiModel): string => {
@@ -367,9 +369,11 @@ export const register = (app: FastifyInstance): void => {
       const ollamaConfig = getOllamaConfig();
       const model = ollamaConfig.model;
 
-      const { prompt } = request.body as AiQueryRequestModel;
+      const body = request.body as AiQueryRequestModel;
+      const prompt = body?.prompt;
+      const listType = parseListType(body?.listType);
 
-      if (typeof prompt !== 'string' || !prompt.trim()) {
+      if (typeof prompt !== 'string' || !prompt.trim() || !listType) {
         response.code(400).send({ error: 'Invalid request body' });
         return;
       }
@@ -381,7 +385,7 @@ export const register = (app: FastifyInstance): void => {
         return;
       }
 
-      const items = await readCollectionItems(request.usernameHash);
+      const items = readCollectionItems(request.usernameHash, listType);
 
       if (!items.length) {
         response.send({ matchedIds: [] } as AiQueryResponseModel);

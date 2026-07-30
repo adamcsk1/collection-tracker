@@ -1,4 +1,3 @@
-import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
@@ -14,7 +13,6 @@ import {
 import { initialSharesState, SharesState, sharesStateToken } from '../../../shares/shares-store';
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../../collection-store';
-import { AiSearchService } from '../../search/ai-search-service';
 import { ListItem } from './list-item';
 
 const COMPLETED_TAG = '#completed';
@@ -64,12 +62,10 @@ describe('ListItem', () => {
   let mainState: NgxSimpleSignalStoreService<MainState>;
   let sharesState: NgxSimpleSignalStoreService<SharesState>;
   let portal: { open: ReturnType<typeof vi.fn> };
-  let useAiSearch: ReturnType<typeof signal<boolean | null>>;
   let translate: { translate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     portal = { open: vi.fn() };
-    useAiSearch = signal<boolean | null>(false);
     translate = {
       translate: vi.fn((key: string) => ({ MetacriticShort: 'MC', RottenTomatoesShort: 'RT' })[key] ?? key),
     };
@@ -77,7 +73,6 @@ describe('ListItem', () => {
       imports: [ListItem],
       providers: [
         { provide: PortalService, useValue: portal },
-        { provide: AiSearchService, useValue: { useAiSearch } },
         { provide: NgxSignalTranslateService, useValue: translate },
         provideStore(initialApiState, apiStateToken),
         provideStore(initialCollectionState, collectionStateToken),
@@ -394,8 +389,9 @@ describe('ListItem', () => {
     );
   });
 
-  it('does nothing when AI search is active', () => {
-    useAiSearch.set(true);
+  it('does nothing when AI filter is active', () => {
+    collectionState.setState('aiSearchPromptText', 'sci-fi');
+    collectionState.setState('forceStandardSearch', false);
 
     component['onSetSearchText']('query');
 

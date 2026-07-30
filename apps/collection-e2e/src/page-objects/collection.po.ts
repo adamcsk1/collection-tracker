@@ -104,9 +104,8 @@ export const CollectionPage = {
   getAddNewButton: () => cy.getByTestId('add-new'),
   getRandomPickButton: () => cy.getByTestId('random-pick'),
   getScrollToTopButton: () => cy.getByTestId('scroll-to-top'),
-  getStandardSearchToggleButton: () => cy.getByTestId('standard-search-toggle'),
-  getAiSearchToggleButton: () => cy.getByTestId('ai-search-toggle'),
   getFloatSearchToggleButton: () => cy.getByTestId('float-search-toggle'),
+  getAiSearchButton: () => cy.getByTestId('float-ai-search-button'),
   getOrderByCreatedAtButton: () => cy.getByTestId('list-order-by-created-at'),
   getOrderByAlphabetButton: () => cy.getByTestId('list-order-by-alphabet'),
   getOrderDirectionDescButton: () => cy.getByTestId('list-order-direction-desc'),
@@ -114,7 +113,7 @@ export const CollectionPage = {
   getCollectionFilterButton: (filter: string) => cy.getByTestId(`collection-filter-${filter}`),
 
   // AI search input
-  openAiSearchDialog: () => cy.getByTestId('float-search-toggle').click(),
+  openAiSearchDialog: () => cy.getByTestId('float-ai-search-button').click(),
   getAiSearchTextarea: () => cy.getByTestId('ai-search-textarea').find('textarea'),
   getAiSearchSendButton: () => cy.getByTestId('ai-search-send'),
 

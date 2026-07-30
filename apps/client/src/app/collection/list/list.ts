@@ -36,7 +36,6 @@ import { FloatActionButtons } from '../float-action-buttons/float-action-buttons
 import { FloatActionFilter } from '../float-action-buttons/float-action-buttons-model';
 import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
-import { AiSearchService } from '../search/ai-search-service';
 import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS, FLOAT_ACTION_SCROLLING_IDLE_MS } from './list-const';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
 import { ListItem } from './list-item/list-item';
@@ -61,7 +60,6 @@ export class List implements OnDestroy {
   private readonly actionButtons = inject(FloatActionButtonsService);
   private readonly webstorage = inject(WebstorageService);
   private readonly router = inject(Router);
-  private readonly aiSearch = inject(AiSearchService, { optional: true });
   protected readonly debouncedSearchText = signal('');
   private readonly routeSearchVersion = signal(0);
   private lastRouteSearchText: string | null = null;
@@ -83,7 +81,6 @@ export class List implements OnDestroy {
   protected readonly isInternalCollectionPrefiltered = computed(() => this.listType() !== 'library');
   public readonly hideFloatActions = input(false);
   public readonly showAddButton = input(true);
-  public readonly showAiSearchButton = input(true);
   public readonly showRandomPickButton = input(true);
   public readonly orderStorageKey = input('');
   public readonly routeSearchText = input('');
@@ -91,7 +88,6 @@ export class List implements OnDestroy {
   public readonly listType = input<CollectionListTypeModel>('library');
   public readonly dataSource = input.required<CollectionListDataSource>();
   public readonly randomPick = output<void>();
-  public readonly toggleAiSearch = output<void>();
   public readonly showFunctions = output<void>();
   private scrollingIdleSubscription: Subscription | null = null;
 
@@ -100,7 +96,6 @@ export class List implements OnDestroy {
     this.actionButtons.setCallbacks({
       addNew: () => this.onAddNew(),
       randomPick: () => this.onRandomPick(),
-      toggleAiSearch: () => this.onToggleAiSearch(),
       toggleOrderBy: () => this.onToggleOrderBy(),
       toggleOrderDirection: () => this.onToggleOrderDirection(),
       applyFilter: (filter) => this.onApplyFilter(filter),
@@ -182,14 +177,12 @@ export class List implements OnDestroy {
       });
       this.actionButtons.updateConfig({
         collectionLength: this.collectionLength(),
-        showActions,
+        showActions: showActions,
         showAddButton: this.showAddButton(),
-        showAiSearchButton: this.showAiSearchButton() && !this.isInternalCollectionPrefiltered(),
         showRandomPickButton: this.showRandomPickButton() && !this.isInternalCollectionPrefiltered(),
         showOrderButtons: showActions,
         filterActions: this.getFilterActions(),
         activeFilterActions: this.getActiveFilterActions(),
-        useAiSearch: this.aiSearch?.useAiSearch() ?? false,
         orderBy: this.orderBy(),
         orderDirection: this.orderDirection(),
       });
@@ -226,10 +219,6 @@ export class List implements OnDestroy {
     if (distanceFromBottom < 200) {
       this.loadItems(false, this.debouncedSearchText(), this.orderBy(), this.orderDirection());
     }
-  }
-
-  protected onToggleAiSearch(): void {
-    this.toggleAiSearch.emit();
   }
 
   protected onToggleOrderBy(): void {

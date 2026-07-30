@@ -17,15 +17,16 @@ import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { map } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
-import { CollectionListDataSourceRequest } from '../collection-model';
+import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { List } from '../list/list';
+import { AiSearchService } from '../search/ai-search-service';
+import { setupCollectionAiSearch } from '../utils/collection-ai-search-util';
 import {
   buildCollectionRouteFilterKey,
   buildCollectionRouteFilters,
-  buildStandardSearchFilters,
   setupStandardCollectionSearch,
 } from '../utils/collection-search-filter-util';
 
@@ -43,10 +44,12 @@ import {
 export class MovieTracker {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
+  private readonly aiSearch = inject(AiSearchService);
   private readonly portal = inject(PortalService);
   private readonly api = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly floatActions = inject(FloatActionsService);
+  private readonly mainState = inject(mainStateToken);
   private readonly route = inject(ActivatedRoute);
   private readonly floatSearchTemplate = viewChild<TemplateRef<unknown>>('floatSearch');
 
@@ -63,27 +66,33 @@ export class MovieTracker {
     }
   );
   protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
+  protected readonly forceStandardSearch = computed(
+    () => !!this.querySearch() || !!this.queryFilterKey() || this.collectionState.state.forceStandardSearch()
+  );
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
-  protected readonly movieTrackerDataSource = ({
-    offset,
-    limit,
-    searchText,
-    orderBy,
-    orderDirection,
-  }: CollectionListDataSourceRequest) =>
-    this.api.searchItems(
-      { ...buildStandardSearchFilters(searchText, 'movie-tracker', this.queryFilters()), orderBy, orderDirection },
-      offset,
-      limit
-    );
   protected readonly translations = {
     messageEmptyMovieTracker: computed(() => this.ngxSignalTranslate.translate('Message.EmptyMovieTracker')),
     messageAddFirstMovieTracker: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstMovieTracker')),
     placeholderSearchInMovieTracker: computed(() =>
       this.ngxSignalTranslate.translate('Placeholder.SearchInMovieTracker')
     ),
+    placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
   };
+  private readonly aiSearchSetup = setupCollectionAiSearch({
+    collectionState: this.collectionState,
+    aiSearch: this.aiSearch,
+    api: this.api,
+    portal: this.portal,
+    floatActions: this.floatActions,
+    destroyRef: this.destroyRef,
+    listType: 'movie-tracker',
+    queryFilters: this.queryFilters,
+    forceStandardSearch: this.forceStandardSearch,
+    placeholder: this.translations.placeholderReply,
+    aiAvailable: this.mainState.state.aiAvailable,
+  });
+  protected readonly movieTrackerDataSource = this.aiSearchSetup.dataSource;
 
   constructor() {
     setupStandardCollectionSearch({
@@ -94,6 +103,10 @@ export class MovieTracker {
       destroyRef: this.destroyRef,
       initialSearchText: this.querySearch(),
     });
+  }
+
+  protected onSearchFromUser(): void {
+    this.aiSearchSetup.clearAiFilterOnStandardSearch();
   }
 
   protected onAddMovieTracker(event: Event): void {
