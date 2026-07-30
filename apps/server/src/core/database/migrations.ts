@@ -57,8 +57,7 @@ const recomputeCollectionItemHashes = (db: Database.Database): void => {
       const tags = (tagsByItem.all(row.id) as Array<{ tag: string }>).map((tagRow) => tagRow.tag);
       const externalIds = row.canonical_item_id
         ? (externalIdsByCanonicalItem?.all(row.username_hash, row.canonical_item_id) as
-            | ExternalItemIdentityModel[]
-            | undefined)
+            ExternalItemIdentityModel[] | undefined)
         : undefined;
       updateHash.run(
         getItemHash({
