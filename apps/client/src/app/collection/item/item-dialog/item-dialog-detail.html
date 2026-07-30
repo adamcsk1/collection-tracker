@@ -48,7 +48,7 @@
       <section>
         <h4>{{ translations().genre() }}</h4>
         <div class="chip-list">
-          @for (genre of collectionItem().genre; track genre) {
+          @for (genre of collectionItem().genre; track $index) {
             <span class="chip">{{ genre }}</span>
           }
         </div>
@@ -66,7 +66,7 @@
       <section data-test-id="item-dialog-tags-section">
         <h4>{{ translations().tags() }}</h4>
         <div class="chip-list">
-          @for (tag of detailTags(); track tag) {
+          @for (tag of detailTags(); track $index) {
             <span class="chip">{{ tag }}</span>
           }
         </div>

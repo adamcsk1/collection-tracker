@@ -1,21 +1,6 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
-
-const coverageExclude = [
-  '**/coverage/*',
-  '**/mocks/*',
-  '**/index.ts',
-  '**/*-model.ts',
-  '**/*-config.ts',
-  '**/bootstrap.ts',
-  '**/*-routes.ts',
-  '**/*-const.ts',
-  '**/*.config.ts',
-  '**/*.config.cjs',
-  '**/scripts/*',
-  '**/*.html',
-  '**/*.css',
-];
+import { coverageExclude } from '../../vitest.coverage-exclude';
 
 export default defineConfig({
   root: __dirname,

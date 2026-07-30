@@ -11,11 +11,30 @@ import { vi } from 'vitest';
 (globalThis as any).Uint8Array = Uint8Array;
 
 if (typeof window !== 'undefined' && window.location) {
-  try {
-    window.location.assign = vi.fn();
-  } catch {
-    //
-  }
+  const locationStub = {
+    ancestorOrigins: window.location.ancestorOrigins,
+    hash: window.location.hash,
+    host: window.location.host,
+    hostname: window.location.hostname,
+    href: window.location.href,
+    origin: window.location.origin,
+    pathname: window.location.pathname,
+    port: window.location.port,
+    protocol: window.location.protocol,
+    search: window.location.search,
+    assign: vi.fn(),
+    reload: vi.fn(),
+    replace: vi.fn(),
+    toString() {
+      return this.href;
+    },
+  };
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    enumerable: true,
+    value: locationStub,
+    writable: true,
+  });
 }
 
 if (typeof navigator !== 'undefined' && !navigator.clipboard) {

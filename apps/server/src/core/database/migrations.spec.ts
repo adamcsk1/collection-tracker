@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getItemHash } from '../utils/collection-item-util';
 import { hasSqlMigrations, runMigrations } from './migrations';
 
@@ -1706,6 +1706,7 @@ describe('runMigrations', () => {
       const db = new Database(':memory:');
       const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
       tempDirs.push(migrationsDir);
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       copyFileSync(join(MIGRATIONS_SRC_DIR, '001_initial_schema.sql'), join(migrationsDir, '001_initial_schema.sql'));
       await runMigrations(db, migrationsDir);
@@ -1713,10 +1714,12 @@ describe('runMigrations', () => {
       writeFileSync(join(migrationsDir, '002_bad_migration.sql'), 'INVALID SQL HERE;');
 
       await expect(runMigrations(db, migrationsDir)).rejects.toThrow();
+      expect(consoleErrorSpy).toHaveBeenCalled();
 
       const applied = db.prepare('SELECT id FROM schema_migrations ORDER BY id').all() as Array<{ id: string }>;
       expect(applied).toEqual([{ id: '001_initial_schema.sql' }]);
 
+      consoleErrorSpy.mockRestore();
       db.close();
     });
   });
