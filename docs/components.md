@@ -16,6 +16,7 @@ Source: [`libs/components`](../libs/components)
 - `reveal-label`: touch-hold behavior for icon buttons whose labels expand on fine pointers
 - `select`: typed select component
 - `spinner-loading`: global spinner and store
+- `tabs`: accessible two-option tabs with named content projection
 - `textarea`: textarea control with shared styling
 - `tooltip`: reusable presentation component for consumer-controlled tooltip triggers and positioning
 - `toast`: toast component and store
@@ -38,6 +39,16 @@ and `title`, and wrap their translated visual label in `button-reveal-label-text
 On fine pointers, labels expand on hover and keyboard focus. On touch input, actions remain icon-only: a normal tap
 executes immediately, while pressing and holding displays the translated label without executing the action. Moving the
 pointer cancels the hold so horizontally scrolling the action row remains available.
+
+### Tabs
+
+`libc-tabs` renders exactly two tab options supplied through the required `options` input and exposes selection through the
+`selected` model. Consumers provide a translated `ariaLabel`, a stable `idPrefix`, and content through the
+`tabs-first-content` and `tabs-second-content` projection slots.
+
+The component owns the tab list, tab panels, ARIA relationships, roving tab index, and Left/Right/Home/End keyboard
+navigation. Both projected panels remain instantiated so local form state survives selection changes; the inactive panel
+uses `hidden` to leave the accessibility tree and keyboard order.
 
 ## Important Paths
 

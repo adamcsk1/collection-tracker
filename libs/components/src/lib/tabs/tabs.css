@@ -1,0 +1,18 @@
+:host {
+  display: block;
+}
+
+.tabs-list {
+  display: flex;
+  gap: var(--size-xs);
+  margin-bottom: var(--size-md);
+
+  button {
+    flex: 1;
+
+    &[aria-selected='true'] {
+      background-color: var(--main-color);
+      color: var(--background-color);
+    }
+  }
+}
