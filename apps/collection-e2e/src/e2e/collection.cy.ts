@@ -19,6 +19,40 @@ const expectVisibleTitles = (titles: string[]) => {
   });
 };
 
+const saveManualItem = (
+  title: string,
+  imdbId: string,
+  contentType: 'movie' | 'series',
+  listType: 'library' | 'watch-later' | 'wishlist' | 'series-tracker' | 'movie-tracker'
+) => {
+  cy.intercept('POST', '/api/v1/create').as('createManualItem');
+  CollectionPage.getNewItemManualModeButton().click();
+  CollectionPage.getNewItemManualTitleInput().type(title);
+  CollectionPage.getNewItemManualImdbIdInput().type(imdbId);
+  CollectionPage.getNewItemSaveAndCloseButton().should('be.enabled').click();
+
+  cy.wait('@createManualItem').then(({ request, response }) => {
+    expect(request.body).to.deep.include({
+      title,
+      IMDbId: imdbId,
+      externalProvider: 'omdb',
+      externalItemId: imdbId,
+      contentType,
+      favorite: false,
+    });
+    if (listType !== 'library') expect(request.body.listType).to.equal(listType);
+    expect(request.body.externalIds).to.deep.equal([{ source: 'imdb', id: imdbId }]);
+    expect(response?.statusCode).to.equal(200);
+  });
+};
+
+const reloadAndExpectPersistedTitle = (title: string, expectedItemCount = 1) => {
+  cy.intercept('GET', '/api/v1/items*').as('reloadItems');
+  cy.reload();
+  cy.wait('@reloadItems');
+  CollectionPage.getListItems().should('have.length', expectedItemCount).and('contain.text', title);
+};
+
 const waitForItemsRequestIncluding = (expectedUrlParts: string[]): Cypress.Chainable<Interception> => {
   return cy.wait('@getItems').then((interception) => {
     const requestUrl = interception.request.url;
@@ -92,6 +126,14 @@ describe('Collection — add a new element', () => {
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAddNewButton().click();
     CollectionPage.getNewItemSearchInput().should('be.visible');
+    CollectionPage.getNewItemActionButtons()
+      .should('have.length', 3)
+      .each((button) => {
+        cy.wrap(button).should('have.class', 'button-icon').and('have.class', 'button-reveal-label');
+        cy.wrap(button).invoke('attr', 'aria-label').should('not.be.empty');
+        cy.wrap(button).invoke('attr', 'title').should('not.be.empty');
+        cy.wrap(button).parents('.dialog-footer').should('exist');
+      });
   });
 
   it('searches external metadata, saves the item, and it appears in the list', () => {
@@ -221,6 +263,113 @@ describe('Collection — add a new element', () => {
     CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
     CollectionPage.getNewItemUserRateInput().type('10.1');
     CollectionPage.getNewItemSaveAndCloseButton().should('be.disabled');
+  });
+
+  it('adds a new item manually and persists it after reload', () => {
+    const manualTitle = 'Manual Test Movie';
+    const manualImdbId = 'tt9990001';
+    cy.intercept('POST', '/api/v1/create').as('createItem');
+
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+
+    CollectionPage.getNewItemManualModeButton().click();
+    CollectionPage.getNewItemManualHint().should('be.visible');
+    CollectionPage.getNewItemManualTitleInput().type(manualTitle);
+    CollectionPage.getNewItemManualImdbIdInput().type(manualImdbId);
+    CollectionPage.getNewItemSaveAndCloseButton().should('be.enabled').click();
+
+    cy.wait('@createItem').then(({ request, response }) => {
+      expect(request.body).to.deep.include({
+        title: manualTitle,
+        IMDbId: manualImdbId,
+        externalProvider: 'omdb',
+        externalItemId: manualImdbId,
+        contentType: 'movie',
+        favorite: false,
+      });
+      expect(request.body.externalIds).to.deep.equal([{ source: 'imdb', id: manualImdbId }]);
+      expect(response?.statusCode).to.equal(200);
+      expect(response?.body.item).to.deep.include({
+        title: manualTitle,
+        IMDbId: manualImdbId,
+        externalProvider: 'omdb',
+        externalItemId: manualImdbId,
+        contentType: 'movie',
+      });
+    });
+
+    cy.intercept('GET', '/api/v1/items*').as('reloadItems');
+    cy.reload();
+    cy.wait('@reloadItems');
+    CollectionPage.getListItems().should((titleElements) => {
+      expect([...titleElements].map((titleElement) => titleElement.textContent?.trim())).to.deep.equal([manualTitle]);
+    });
+  });
+
+  it('keeps manual save disabled for invalid required fields', () => {
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+
+    CollectionPage.getNewItemManualModeButton().click();
+    CollectionPage.getNewItemManualTitleInput().type('Manual Title');
+
+    CollectionPage.getNewItemSaveAndCloseButton().should('be.disabled');
+
+    CollectionPage.getNewItemManualImdbIdInput().type('not-an-imdb-id');
+    CollectionPage.getNewItemSaveAndCloseButton().should('be.disabled');
+  });
+
+  it('keeps the manual image preview below the manual entry hint', () => {
+    const expectPreviewBelowHint = () => {
+      CollectionPage.getNewItemManualHintAndPreview().should((elements) => {
+        expect(elements).to.have.length(2);
+        const hintBottom = elements[0]!.getBoundingClientRect().bottom;
+        const previewTop = elements[1]!.getBoundingClientRect().top;
+        expect(previewTop).to.be.greaterThan(hintBottom);
+      });
+    };
+
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+    CollectionPage.getNewItemManualModeButton().click();
+    CollectionPage.getNewItemManualImageInput().type('data:image/gif;base64,R0lGODlhAQABAAAAACw=');
+
+    cy.viewport(375, 667);
+    expectPreviewBelowHint();
+    cy.viewport(1280, 800);
+    expectPreviewBelowHint();
+  });
+
+  it('switches back to search mode preserving the search input', () => {
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+
+    CollectionPage.getNewItemSearchInput().type(newTitle);
+    CollectionPage.getNewItemManualModeButton().click();
+    CollectionPage.getNewItemSearchModeButton().click();
+
+    CollectionPage.getNewItemSearchInput().should('have.value', newTitle);
+  });
+
+  it('switches entry modes with accessible keyboard tabs', () => {
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+
+    CollectionPage.getNewItemModeTabs().should('have.attr', 'aria-label', 'Item entry method');
+    CollectionPage.getNewItemSearchModeButton()
+      .should('have.attr', 'aria-selected', 'true')
+      .focus()
+      .type('{rightarrow}');
+
+    CollectionPage.getNewItemManualModeButton().should('have.focus').and('have.attr', 'aria-selected', 'true');
+    CollectionPage.getNewItemSearchPanel().should('not.be.visible');
+    CollectionPage.getNewItemManualPanel().should('be.visible');
+
+    CollectionPage.getNewItemManualModeButton().type('{leftarrow}');
+    CollectionPage.getNewItemSearchModeButton().should('have.focus').and('have.attr', 'aria-selected', 'true');
+    CollectionPage.getNewItemSearchPanel().should('be.visible');
+    CollectionPage.getNewItemManualPanel().should('not.be.visible');
   });
 });
 
@@ -610,6 +759,22 @@ describe('Collection — favorites', () => {
   });
 });
 
+describe('Collection — watch later', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+  });
+
+  it('adds a manual watch later item and persists it after reload', () => {
+    const manualTitle = 'Manual Watch Later Movie';
+    CommonPage.openMenu();
+    CommonPage.getNavWatchLaterLink().click();
+    CollectionPage.getAddFirstWatchLaterItemLink().click();
+
+    saveManualItem(manualTitle, 'tt8110001', 'movie', 'watch-later');
+    reloadAndExpectPersistedTitle(manualTitle);
+  });
+});
+
 describe('Collection — wishlist', () => {
   const wishlistTitle = 'Wishlist Test Movie';
 
@@ -642,6 +807,16 @@ describe('Collection — wishlist', () => {
 
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', wishlistTitle);
+  });
+
+  it('adds a manual wishlist item and persists it after reload', () => {
+    const manualTitle = 'Manual Wishlist Movie';
+    CommonPage.openMenu();
+    CommonPage.getNavWishlistLink().click();
+    CollectionPage.getAddFirstWishlistItemLink().click();
+
+    saveManualItem(manualTitle, 'tt8100002', 'movie', 'wishlist');
+    reloadAndExpectPersistedTitle(manualTitle);
   });
 });
 
@@ -709,6 +884,16 @@ describe('Collection — series tracker', () => {
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
   });
+
+  it('adds a manual series tracker item and persists it after reload', () => {
+    const manualTitle = 'Manual Series Tracker Show';
+    CommonPage.openMenu();
+    CommonPage.getNavSeriesTrackerLink().click();
+    CollectionPage.getAddFirstSeriesTrackerItemLink().click();
+
+    saveManualItem(manualTitle, 'tt8200002', 'series', 'series-tracker');
+    reloadAndExpectPersistedTitle(manualTitle);
+  });
 });
 
 describe('Collection — movie tracker', () => {
@@ -751,6 +936,25 @@ describe('Collection — movie tracker', () => {
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', movieTitle);
     CollectionPage.getMovieTrackerWatchedBadges().should('have.length', 1);
+  });
+
+  it('adds a manual item from a non-empty movie tracker and persists it after reload', () => {
+    const existingTitle = 'Existing Movie Tracker Item';
+    const manualTitle = 'Manual Movie Tracker Item';
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem(existingTitle, 'movie', 'tt8300002'),
+      listType: 'movie-tracker',
+    });
+    cy.intercept('GET', '/api/v1/items*').as('movieTrackerItems');
+    CollectionPage.visitMovieTracker();
+    cy.wait('@movieTrackerItems');
+    CollectionPage.getListItems().should('contain.text', existingTitle);
+
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+    saveManualItem(manualTitle, 'tt8300003', 'movie', 'movie-tracker');
+    reloadAndExpectPersistedTitle(manualTitle, 2);
+    CollectionPage.getListItems().should('contain.text', existingTitle);
   });
 
   it('opens the item dialog and shows watched status without episode controls', () => {

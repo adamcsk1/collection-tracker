@@ -222,9 +222,10 @@ describe('Collection sharing - item permissions', () => {
         statusCode: 200,
         body: buildOmdbSearchResult(title, imdbId),
       }).as('omdbSearch');
-      cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', { statusCode: 200, body: buildOmdbItem(title, imdbId) }).as(
-        'omdbItem'
-      );
+      cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
+        statusCode: 200,
+        body: buildOmdbItem(title, imdbId),
+      }).as('omdbItem');
 
       visitSharedCollection(sharedUser);
       CollectionPage.getShowFunctionsButton().click();
@@ -241,6 +242,41 @@ describe('Collection sharing - item permissions', () => {
     });
   });
 
+  it('adds a manual item to a shared library and persists it after reload', () => {
+    setupShare({ canRead: true, canCreate: true, canUpdate: false, canDelete: false }).then(({ owner, sharedUser }) => {
+      const title = 'Shared Manual Movie';
+      const imdbId = `tt${uniqueId().slice(0, 7)}`;
+      visitSharedCollection(sharedUser);
+      CollectionPage.getShowFunctionsButton().click();
+      CollectionPage.getAddNewButton().click();
+      CollectionPage.getNewItemManualModeButton().click();
+      CollectionPage.getNewItemLibrarySelect().select(owner.shareCode);
+      CollectionPage.getNewItemManualTitleInput().type(title);
+      CollectionPage.getNewItemManualImdbIdInput().type(imdbId);
+
+      cy.intercept('POST', '/api/v1/create').as('createManualItem');
+      CollectionPage.getNewItemSaveAndCloseButton().should('be.enabled').click();
+      cy.wait('@createManualItem').then(({ request, response }) => {
+        expect(request.body).to.deep.include({
+          title,
+          IMDbId: imdbId,
+          externalProvider: 'omdb',
+          externalItemId: imdbId,
+          externalIds: [{ source: 'imdb', id: imdbId }],
+          contentType: 'movie',
+          targetOwnerShareCode: owner.shareCode,
+        });
+        expect(response?.statusCode).to.equal(200);
+      });
+
+      cy.intercept('GET', '/api/v1/items*').as('manualItemsReload');
+      cy.reload();
+      cy.wait('@manualItemsReload');
+      CollectionPage.getListItems().should('have.length', 1).and('contain.text', title);
+      CollectionPage.getSharedBadges().should('have.length', 1);
+    });
+  });
+
   it('uses the configured default shared library when adding a new item', () => {
     setupShare({ canRead: true, canCreate: true, canUpdate: false, canDelete: false }).then(({ owner, sharedUser }) => {
       const title = 'Shared Default Movie';
@@ -249,9 +285,10 @@ describe('Collection sharing - item permissions', () => {
         statusCode: 200,
         body: buildOmdbSearchResult(title, imdbId),
       }).as('omdbSearch');
-      cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', { statusCode: 200, body: buildOmdbItem(title, imdbId) }).as(
-        'omdbItem'
-      );
+      cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
+        statusCode: 200,
+        body: buildOmdbItem(title, imdbId),
+      }).as('omdbItem');
 
       signInThroughUi(sharedUser);
       SettingsPage.visitShares();
@@ -340,28 +377,30 @@ describe('Collection sharing - image refresh', () => {
 
 describe('Collection sharing - movie tracker from shared library', () => {
   it('copies a shared library movie to the shared user own movie tracker when marked as watched', () => {
-    setupShare({ canRead: true, canCreate: false, canUpdate: false, canDelete: false }).then(({ owner, sharedUser }) => {
-      const title = 'Shared Tracker Movie';
-      const imdbId = `tt${uniqueId().slice(0, 7)}`;
-      seedOwnerItem(owner, title, imdbId);
-      visitSharedCollection(sharedUser);
+    setupShare({ canRead: true, canCreate: false, canUpdate: false, canDelete: false }).then(
+      ({ owner, sharedUser }) => {
+        const title = 'Shared Tracker Movie';
+        const imdbId = `tt${uniqueId().slice(0, 7)}`;
+        seedOwnerItem(owner, title, imdbId);
+        visitSharedCollection(sharedUser);
 
-      cy.intercept('POST', '/api/v1/movie-tracker/**').as('markWatched');
-      cy.on('window:confirm', () => true);
+        cy.intercept('POST', '/api/v1/movie-tracker/**').as('markWatched');
+        cy.on('window:confirm', () => true);
 
-      CollectionPage.getListItems().contains(title).click();
-      CollectionPage.expectItemDialogActionsVisible();
-      CollectionPage.getItemDialogMarkWatchedButton().click();
+        CollectionPage.getListItems().contains(title).click();
+        CollectionPage.expectItemDialogActionsVisible();
+        CollectionPage.getItemDialogMarkWatchedButton().click();
 
-      cy.wait('@markWatched').then((interception) => {
-        expect(interception.request.url).to.include(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
-        expect(interception.response?.statusCode).to.eq(200);
-      });
+        cy.wait('@markWatched').then((interception) => {
+          expect(interception.request.url).to.include(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
+          expect(interception.response?.statusCode).to.eq(200);
+        });
 
-      cy.intercept('GET', '/api/v1/items?*listType=movie-tracker*').as('getMovieTrackerItems');
-      CollectionPage.visitMovieTracker();
-      cy.wait('@getMovieTrackerItems');
-      CollectionPage.getListItems().should('contain.text', title);
-    });
+        cy.intercept('GET', '/api/v1/items?*listType=movie-tracker*').as('getMovieTrackerItems');
+        CollectionPage.visitMovieTracker();
+        cy.wait('@getMovieTrackerItems');
+        CollectionPage.getListItems().should('contain.text', title);
+      }
+    );
   });
 });

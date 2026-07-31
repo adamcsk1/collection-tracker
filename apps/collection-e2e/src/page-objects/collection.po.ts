@@ -86,6 +86,7 @@ export const CollectionPage = {
   getAllItems: () => cy.getByTestId('list-item-title'),
   getEmptyState: () => cy.getByTestId('list-empty'),
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
+  getAddFirstWatchLaterItemLink: () => cy.getByTestId('add-first-watch-later-item'),
   getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
   getAddFirstSeriesTrackerItemLink: () => cy.getByTestId('add-first-series-tracker-item'),
   getAddFirstMovieTrackerItemLink: () => cy.getByTestId('add-first-movie-tracker-item'),
@@ -120,6 +121,16 @@ export const CollectionPage = {
   // New item dialog
   getNewItemSearch: () => cy.get('[data-test-id="new-item-search"]'),
   getNewItemSearchInput: () => cy.getByTestId('new-item-search').find('input'),
+  getNewItemSearchModeButton: () => cy.getByTestId('new-item-search-mode'),
+  getNewItemManualModeButton: () => cy.getByTestId('new-item-manual-mode'),
+  getNewItemModeTabs: () => cy.getByTestId('new-item-mode-tabs'),
+  getNewItemSearchPanel: () => cy.getByTestId('new-item-mode-first-panel'),
+  getNewItemManualPanel: () => cy.getByTestId('new-item-mode-second-panel'),
+  getNewItemManualHint: () => cy.getByTestId('new-item-manual-hint'),
+  getNewItemManualHintAndPreview: () =>
+    getActiveDialogFrame().find(
+      '[data-test-id="new-item-manual-hint"], [data-test-id="new-item-manual-image-preview"]'
+    ),
   getNewItemLibrarySelect: () => cy.getByTestId('new-item-library').find('select'),
   getNewItemContentSelect: () => cy.getByTestId('new-item-content-select'),
   getNewItemContentOptions: () => cy.getByTestId('new-item-content-option'),
@@ -129,6 +140,26 @@ export const CollectionPage = {
   getNewItemSaveButton: () => cy.getByTestId('new-item-save'),
   getNewItemSaveAndNewButton: () => cy.getByTestId('new-item-save-and-new'),
   getNewItemSaveAndCloseButton: () => cy.getByTestId('new-item-save-and-close'),
+  getNewItemActionButtons: () =>
+    getActiveDialogFrame().find(
+      '[data-test-id="new-item-save"], [data-test-id="new-item-save-and-new"], [data-test-id="new-item-save-and-close"]'
+    ),
+
+  // Manual new item form
+  getNewItemManualTitleInput: () => cy.getByTestId('new-item-manual-title').find('input'),
+  getNewItemManualImdbIdInput: () => cy.getByTestId('new-item-manual-imdb-id').find('input'),
+  getNewItemManualYearInput: () => cy.getByTestId('new-item-manual-year').find('input'),
+  getNewItemManualContentTypeSelect: () => cy.getByTestId('new-item-manual-content-type').find('select'),
+  getNewItemManualRateInput: () => cy.getByTestId('new-item-manual-rate').find('input'),
+  getNewItemManualRottenTomatoesRateInput: () => cy.getByTestId('new-item-manual-rotten-tomatoes-rate').find('input'),
+  getNewItemManualMetacriticRateInput: () => cy.getByTestId('new-item-manual-metacritic-rate').find('input'),
+  getNewItemManualUserRateInput: () => cy.getByTestId('new-item-manual-user-rate').find('input'),
+  getNewItemManualImageInput: () => cy.getByTestId('new-item-manual-image').find('input'),
+  getNewItemManualImagePreview: () => cy.getByTestId('new-item-manual-image-preview'),
+  getNewItemManualGenreInput: () => cy.getByTestId('new-item-manual-genre').find('input'),
+  getNewItemManualTagsInput: () => cy.getByTestId('new-item-manual-tags').find('input'),
+  getNewItemManualActorsInput: () => cy.getByTestId('new-item-manual-actors').find('input'),
+  getNewItemManualPlotInput: () => cy.getByTestId('new-item-manual-plot').find('textarea'),
 
   // Item dialog
   getItemDialogShellHost: () => cy.getByTestId('item-dialog'),
