@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { RevealLabel } from '@components/reveal-label/reveal-label';
-import { ItemDialogTranslations } from './item-dialog-model';
+import { ItemDialogTranslations } from '../item-form/item-form-model';
 
 @Component({
   selector: 'ct-item-dialog-actions',

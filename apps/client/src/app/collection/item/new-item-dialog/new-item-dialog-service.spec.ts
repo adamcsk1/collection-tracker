@@ -37,6 +37,24 @@ const buildSelectedContent = (overrides: Partial<ExternalMetadataItemModel> = {}
   ...overrides,
 });
 
+const buildManualItem = () => ({
+  title: 'Manual Title',
+  IMDbId: 'tt1234567',
+  year: '2020',
+  rate: '8.5',
+  rottenTomatoesRate: '95%',
+  metacriticRate: '85/100',
+  userRate: 9,
+  image: 'image-url',
+  genreText: 'Drama, Action',
+  tagsText: '#tag1 tag2',
+  actors: 'Actor One, Actor Two',
+  plot: 'Plot text',
+  contentType: 'movie' as const,
+});
+
+const createResponse = (item: object) => of({ item });
+
 describe('NewItemDialogService', () => {
   let service: NewItemDialogService;
   let api: {
@@ -140,9 +158,9 @@ describe('NewItemDialogService', () => {
   });
 
   it('save persists selected content and closes when requested', async () => {
-    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent()) as any);
     api.create.mockReturnValue(
-      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+      createResponse({ title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' })
     );
 
     await firstValueFrom(service.save('tt123', 8.7, '#tag', 'close'));
@@ -179,11 +197,181 @@ describe('NewItemDialogService', () => {
     expect(spinnerStore.state.show()).toBe(false);
   });
 
+  it('saveManual persists manual item and closes when requested', async () => {
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Manual Title',
+        IMDbId: 'tt1234567',
+        externalProvider: 'omdb',
+        externalItemId: 'tt1234567',
+      })
+    );
+
+    await firstValueFrom(service.saveManual(buildManualItem(), 'close'));
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Manual Title',
+        IMDbId: 'tt1234567',
+        externalProvider: 'omdb',
+        externalItemId: 'tt1234567',
+        year: '2020',
+        rate: '8.5',
+        rottenTomatoesRate: '95%',
+        metacriticRate: '85/100',
+        userRate: 9,
+        image: 'image-url',
+        genre: ['Drama', 'Action'],
+        tags: ['#tag1', 'tag2'],
+        actors: 'Actor One, Actor Two',
+        plot: 'Plot text',
+        contentType: 'movie',
+        favorite: false,
+      }),
+      undefined
+    );
+    expect(collection.addCollectionItem).toHaveBeenCalledWith(
+      { title: 'Manual Title', IMDbId: 'tt1234567', externalProvider: 'omdb', externalItemId: 'tt1234567' },
+      true
+    );
+    expect(collection.triggerReload).toHaveBeenCalled();
+    expect(toastStore.state.message()).toBe('t:Toast.NewItem');
+    expect(portal.closeAll).toHaveBeenCalled();
+    expect(spinnerStore.state.show()).toBe(false);
+  });
+
+  it('saveManual does not call external metadata service', async () => {
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Manual Title',
+        IMDbId: 'tt1234567',
+        externalProvider: 'omdb',
+        externalItemId: 'tt1234567',
+      })
+    );
+
+    await firstValueFrom(service.saveManual(buildManualItem(), 'close'));
+
+    expect(externalMetadata.getSelectedContent).not.toHaveBeenCalled();
+  });
+
+  it('saveManual rejects non-series content for series tracker items', async () => {
+    await expect(
+      firstValueFrom(
+        service.saveManual({ ...buildManualItem(), contentType: 'movie' }, 'close', { listType: 'series-tracker' })
+      )
+    ).rejects.toEqual(new Error('Series tracker items must be series.'));
+
+    expect(api.create).not.toHaveBeenCalled();
+    expect(spinnerStore.state.show()).toBe(false);
+  });
+
+  it('saveManual rejects non-movie content for movie tracker items', async () => {
+    await expect(
+      firstValueFrom(
+        service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', { listType: 'movie-tracker' })
+      )
+    ).rejects.toEqual(new Error('Movie tracker items must be movies.'));
+
+    expect(api.create).not.toHaveBeenCalled();
+    expect(spinnerStore.state.show()).toBe(false);
+  });
+
+  it('saveManual creates a movie tracker copy for watched library movies', async () => {
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Manual Title',
+        IMDbId: 'tt1234567',
+        externalProvider: 'omdb',
+        externalItemId: 'tt1234567',
+      })
+    );
+
+    await firstValueFrom(service.saveManual(buildManualItem(), 'close', { watched: true }));
+
+    expect(api.addMovieTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined);
+  });
+
+  it('saveManual finalizes the created item when the movie tracker update fails', async () => {
+    const createdItem = {
+      title: 'Manual Title',
+      IMDbId: 'tt1234567',
+      externalProvider: 'omdb',
+      externalItemId: 'tt1234567',
+    };
+    api.create.mockReturnValue(createResponse(createdItem));
+    api.addMovieTrackerItemByExternalId.mockReturnValue(throwError(() => new Error('tracker failed')));
+
+    await expect(firstValueFrom(service.saveManual(buildManualItem(), 'close', { watched: true }))).resolves.toEqual(
+      createdItem
+    );
+
+    expect(collection.addCollectionItem).toHaveBeenCalledTimes(1);
+    expect(collection.addCollectionItem).toHaveBeenCalledWith(createdItem, true);
+    expect(collection.triggerReload).toHaveBeenCalled();
+    expect(toastStore.state.message()).toBe('t:Toast.NewItemTrackerUpdateError');
+    expect(portal.closeAll).toHaveBeenCalled();
+    expect(spinnerStore.state.show()).toBe(false);
+  });
+
+  it('saveManual creates a series tracker copy for watched library series', async () => {
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Manual Title',
+        IMDbId: 'tt1234567',
+        externalProvider: 'omdb',
+        externalItemId: 'tt1234567',
+      })
+    );
+
+    await firstValueFrom(
+      service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', {
+        copyToSeriesTrackerAsWatched: true,
+      })
+    );
+
+    expect(api.addSeriesTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, undefined);
+    expect(api.markAllSeriesTrackerWatchedByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
+  });
+
+  it('saveManual finalizes the created item when marking the tracker series watched fails', async () => {
+    const createdItem = {
+      title: 'Manual Title',
+      IMDbId: 'tt1234567',
+      externalProvider: 'omdb',
+      externalItemId: 'tt1234567',
+    };
+    api.create.mockReturnValue(createResponse(createdItem));
+    api.markAllSeriesTrackerWatchedByExternalId.mockReturnValue(throwError(() => new Error('tracker failed')));
+
+    await expect(
+      firstValueFrom(
+        service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', {
+          copyToSeriesTrackerAsWatched: true,
+        })
+      )
+    ).resolves.toEqual(createdItem);
+
+    expect(collection.addCollectionItem).toHaveBeenCalledTimes(1);
+    expect(collection.addCollectionItem).toHaveBeenCalledWith(createdItem, true);
+    expect(collection.triggerReload).toHaveBeenCalled();
+    expect(toastStore.state.message()).toBe('t:Toast.NewItemTrackerUpdateError');
+    expect(portal.closeAll).toHaveBeenCalled();
+    expect(spinnerStore.state.show()).toBe(false);
+  });
+
+  it('saveManual stops spinner and rethrows on API error', async () => {
+    api.create.mockReturnValue(throwError(() => new Error('fail')));
+
+    await expect(firstValueFrom(service.saveManual(buildManualItem(), null))).rejects.toEqual(new Error('fail'));
+    expect(spinnerStore.state.show()).toBe(false);
+  });
+
   it('normalizes selected IMDb ratings with /10 denominators before creating an item', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
-      of(null, buildSelectedContent({ ratings: [{ source: 'Internet Movie Database', value: '8.0/10' }] }) as any)
+      of(null, buildSelectedContent({ ratings: [{ source: 'Internet Movie Database', value: '8.0/10' }] })) as any
     );
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close'));
 
@@ -191,9 +379,9 @@ describe('NewItemDialogService', () => {
   });
 
   it('creates a movie tracker copy when saving a watched library movie', async () => {
-    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent()) as any);
     api.create.mockReturnValue(
-      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+      createResponse({ title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' })
     );
 
     await firstValueFrom(
@@ -213,9 +401,9 @@ describe('NewItemDialogService', () => {
 
   it('does not create a movie tracker copy when saving a watched library series', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
-      of(null, buildSelectedContent({ contentType: 'series' }) as any)
+      of(null, buildSelectedContent({ contentType: 'series' })) as any
     );
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123', tags: ['#series'] } }));
+    api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123', tags: ['#series'] }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close', { watched: true }));
 
@@ -223,7 +411,7 @@ describe('NewItemDialogService', () => {
   });
 
   it('save stops spinner and rethrows on API error', async () => {
-    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent()) as any);
     api.create.mockReturnValue(throwError(() => new Error('fail')));
 
     await expect(firstValueFrom(service.save('tt123', null, '#tag', null))).rejects.toEqual(new Error('fail'));
@@ -231,9 +419,9 @@ describe('NewItemDialogService', () => {
   });
 
   it('saves watch later items with the watch later list type', async () => {
-    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent()) as any);
     api.create.mockReturnValue(
-      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+      createResponse({ title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' })
     );
 
     await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'watch-later' }));
@@ -252,9 +440,9 @@ describe('NewItemDialogService', () => {
   });
 
   it('saves wishlist items with the wishlist list type', async () => {
-    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent()) as any);
     api.create.mockReturnValue(
-      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+      createResponse({ title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' })
     );
 
     await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'wishlist' }));
@@ -268,10 +456,10 @@ describe('NewItemDialogService', () => {
 
   it('saves series tracker items with the series tracker list type', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
-      of(null, buildSelectedContent({ contentType: 'series' }) as any)
+      of(null, buildSelectedContent({ contentType: 'series' })) as any
     );
     api.create.mockReturnValue(
-      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+      createResponse({ title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' })
     );
 
     await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'series-tracker' }));
@@ -283,9 +471,64 @@ describe('NewItemDialogService', () => {
     );
   });
 
+  it('saves manual items with the watch later list type', async () => {
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Manual Title',
+        IMDbId: 'tt1234567',
+        externalProvider: 'omdb',
+        externalItemId: 'tt1234567',
+      })
+    );
+
+    await firstValueFrom(service.saveManual(buildManualItem(), 'close', { listType: 'watch-later' }));
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({ contentType: 'movie' }),
+      undefined,
+      'watch-later'
+    );
+  });
+
+  it('saves manual items with the wishlist list type', async () => {
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Manual Title',
+        IMDbId: 'tt1234567',
+        externalProvider: 'omdb',
+        externalItemId: 'tt1234567',
+      })
+    );
+
+    await firstValueFrom(service.saveManual(buildManualItem(), 'close', { listType: 'wishlist' }));
+
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ contentType: 'movie' }), undefined, 'wishlist');
+  });
+
+  it('saves manual items with the series tracker list type', async () => {
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Manual Title',
+        IMDbId: 'tt1234567',
+        externalProvider: 'omdb',
+        externalItemId: 'tt1234567',
+      })
+    );
+
+    await firstValueFrom(
+      service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', { listType: 'series-tracker' })
+    );
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({ contentType: 'series' }),
+      undefined,
+      'series-tracker'
+    );
+  });
+
   it('keeps year intervals from selected content', async () => {
-    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ year: '2026-2028' }) as any));
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ year: '2026-2028' })) as any);
+    api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close'));
 
@@ -293,8 +536,8 @@ describe('NewItemDialogService', () => {
   });
 
   it('keeps open year intervals from selected content', async () => {
-    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ year: '2027–' }) as any));
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ year: '2027–' })) as any);
+    api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close'));
 
@@ -302,8 +545,8 @@ describe('NewItemDialogService', () => {
   });
 
   it('normalizes decimal year artifacts from selected content', async () => {
-    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ year: '2005.0' }) as any));
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent({ year: '2005.0' })) as any);
+    api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close'));
 
@@ -311,8 +554,8 @@ describe('NewItemDialogService', () => {
   });
 
   it('rejects non-series content for series tracker items', async () => {
-    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent() as any));
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent()) as any);
+    api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
 
     await expect(
       firstValueFrom(service.save('tt123', null, '', 'close', { listType: 'series-tracker' }))
@@ -322,12 +565,26 @@ describe('NewItemDialogService', () => {
     expect(spinnerStore.state.show()).toBe(false);
   });
 
+  it('rejects non-movie content for movie tracker items', async () => {
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(null, buildSelectedContent({ contentType: 'series' })) as any
+    );
+    api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
+
+    await expect(
+      firstValueFrom(service.save('tt123', null, '', 'close', { listType: 'movie-tracker' }))
+    ).rejects.toEqual(new Error('Movie tracker items must be movies.'));
+
+    expect(api.create).not.toHaveBeenCalled();
+    expect(spinnerStore.state.show()).toBe(false);
+  });
+
   it('creates a series tracker copy and marks all watched when saving a library series with copy flag', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
-      of(null, buildSelectedContent({ contentType: 'series' }) as any)
+      of(null, buildSelectedContent({ contentType: 'series' })) as any
     );
     api.create.mockReturnValue(
-      of({ item: { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' } })
+      createResponse({ title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' })
     );
 
     await firstValueFrom(
@@ -358,9 +615,9 @@ describe('NewItemDialogService', () => {
 
   it('does not create a series tracker copy when copy flag is false', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
-      of(null, buildSelectedContent({ contentType: 'series' }) as any)
+      of(null, buildSelectedContent({ contentType: 'series' })) as any
     );
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close', {}));
 
@@ -370,11 +627,27 @@ describe('NewItemDialogService', () => {
 
   it('ignores copy-to-series-tracker flag for movies', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
-      of(null, buildSelectedContent({ contentType: 'movie' }) as any)
+      of(null, buildSelectedContent({ contentType: 'movie' })) as any
     );
-    api.create.mockReturnValue(of({ item: { title: 'Title', IMDbId: 'tt123' } }));
+    api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
 
     await firstValueFrom(service.save('tt123', null, '', 'close', { copyToSeriesTrackerAsWatched: true }));
+
+    expect(api.addSeriesTrackerItemByExternalId).not.toHaveBeenCalled();
+    expect(api.markAllSeriesTrackerWatchedByExternalId).not.toHaveBeenCalled();
+  });
+
+  it('ignores copy-to-series-tracker flag for manual movies', async () => {
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Manual Title',
+        IMDbId: 'tt1234567',
+        externalProvider: 'omdb',
+        externalItemId: 'tt1234567',
+      })
+    );
+
+    await firstValueFrom(service.saveManual(buildManualItem(), 'close', { copyToSeriesTrackerAsWatched: true }));
 
     expect(api.addSeriesTrackerItemByExternalId).not.toHaveBeenCalled();
     expect(api.markAllSeriesTrackerWatchedByExternalId).not.toHaveBeenCalled();

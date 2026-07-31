@@ -6,140 +6,331 @@
     </h3>
   </ng-container>
   <ng-container dialog-shell-content>
-    <form role="form" [formRoot]="form">
-      <libc-input
-        data-test-id="new-item-search"
-        [label]="translations.search()"
-        [hint]="translations.messageNewCollectionItemSearch()"
-        [mandatory]="true"
-        [formField]="form.searchText"
-        [showReset]="true"
-        (keydown.enter)="onSearchEnter($event)"
-      />
-      <div aria-live="polite">
-        @if (showExternalSearchLinks()) {
-          <p class="external-search-help" data-test-id="new-item-external-search-help">
-            {{ translations.messageNewCollectionItemSearchHelpStart() }}
-            <a
-              data-test-id="new-item-imdb-search-link"
-              [href]="imdbSearchUrl()"
-              [attr.aria-label]="translations.ariaSearchIMDbForTitleNewTab()"
-              target="_blank"
-              rel="noopener noreferrer"
-              >{{ translations.imdb() }}</a
-            >
-            {{ translations.messageNewCollectionItemSearchHelpMiddle() }}
-            <a
-              data-test-id="new-item-duckduckgo-search-link"
-              [href]="webSearchUrl()"
-              [attr.aria-label]="translations.ariaSearchDuckDuckGoForTitleNewTab()"
-              target="_blank"
-              rel="noopener noreferrer"
-              >{{ translations.duckDuckGo() }}</a
-            >
-            {{ translations.messageNewCollectionItemSearchHelpEnd() }}
-          </p>
-        }
-      </div>
-      @if (matchedContent().length) {
-        @if (showLibrarySelect()) {
-          <libc-select
-            data-test-id="new-item-library"
-            [label]="translations.library()"
-            [formField]="form.targetOwnerShareCode"
-            [options]="libraryOptions()"
+    <libc-tabs
+      idPrefix="new-item-mode"
+      [ariaLabel]="translations.ariaNewItemEntryMethod()"
+      [options]="modeTabs()"
+      [selected]="mode()"
+      (selectedChange)="onModeChange($event)"
+    >
+      <ng-container tabs-first-content>
+        <form id="new-item-search-form" role="form" [formRoot]="searchForm">
+          <libc-input
+            data-test-id="new-item-search"
+            [label]="translations.search()"
+            [hint]="translations.messageNewCollectionItemSearch()"
+            [mandatory]="true"
+            [formField]="searchForm.searchText"
+            [showReset]="true"
+            (keydown.enter)="onSearchEnter($event)"
           />
-        }
-        <section
-          class="content-selector"
-          data-test-id="new-item-content-select"
-          [attr.aria-label]="translations.selectedContent()"
-        >
-          <span class="content-selector-label">
-            {{ translations.selectedContent() }}
-            <span>*</span>
-          </span>
-          <div class="content-options" data-test-id="new-item-content-options">
-            @for (content of matchedContent(); track content.value) {
-              <button
-                type="button"
-                class="content-option card card-interactive"
-                data-test-id="new-item-content-option"
-                [class.selected]="isMatchedContentSelected(content)"
-                [attr.aria-pressed]="isMatchedContentSelected(content)"
-                (click)="onSelectMatchedContent(content)"
-              >
-                <ct-list-item-card
-                  [imageUrl]="getMatchedContentImageUrl(content)"
-                  [title]="content.text"
-                  [meta]="getMatchedContentMeta(content)"
-                  [interactive]="false"
-                  imageTestId="new-item-content-option-image"
-                  titleTestId="new-item-content-option-title"
-                  metaTestId="new-item-content-option-meta"
-                />
-              </button>
+          <div aria-live="polite">
+            @if (showExternalSearchLinks()) {
+              <p class="external-search-help" data-test-id="new-item-external-search-help">
+                {{ translations.messageNewCollectionItemSearchHelpStart() }}
+                <a
+                  data-test-id="new-item-imdb-search-link"
+                  [href]="imdbSearchUrl()"
+                  [attr.aria-label]="translations.ariaSearchIMDbForTitleNewTab()"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ translations.imdb() }}</a
+                >
+                {{ translations.messageNewCollectionItemSearchHelpMiddle() }}
+                <a
+                  data-test-id="new-item-duckduckgo-search-link"
+                  [href]="webSearchUrl()"
+                  [attr.aria-label]="translations.ariaSearchDuckDuckGoForTitleNewTab()"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ translations.duckDuckGo() }}</a
+                >
+                {{ translations.messageNewCollectionItemSearchHelpEnd() }}
+              </p>
             }
           </div>
-          @if (formErrors.selectedExternalReference.knownIMDbId()) {
-            <small class="error">{{ translations.validationKnownIMDbId() }}</small>
-          }
-        </section>
-        @if (!internalListMode()) {
+        </form>
+      </ng-container>
+      <ng-container tabs-second-content>
+        <p class="external-search-help" data-test-id="new-item-manual-hint">{{ translations.manualModeHint() }}</p>
+        <form id="new-item-manual-form" class="manual-form" role="form" [formRoot]="manualForm">
+          <div class="full-width manual-image-url-field">
+            @if (manualForm.image().value()) {
+              <div class="manual-image-preview-card">
+                <img
+                  class="image-example"
+                  [src]="draftImageUrl()"
+                  [attr.alt]="translations.altImageExample()"
+                  data-test-id="new-item-manual-image-preview"
+                />
+              </div>
+            }
+            <div class="manual-image-url-input">
+              <libc-input
+                data-test-id="new-item-manual-image"
+                [label]="translations.labelImageUrl()"
+                [formField]="manualForm.image"
+              />
+            </div>
+          </div>
           <libc-input
-            data-test-id="new-item-user-rate"
-            type="number"
-            [label]="translations.labelUserRate()"
-            [formField]="form.userRate"
-            [step]="0.1"
+            data-test-id="new-item-manual-title"
+            [mandatory]="true"
+            [label]="translations.labelTitle()"
+            [formField]="manualForm.title"
           >
             <ng-container errors>
-              @if (formErrors.userRate.min() || formErrors.userRate.max()) {
-                {{ translations.validationUserRate() }}
+              @if (manualFormErrors.title.required()) {
+                {{ translations.validationRequired() }}
               }
             </ng-container>
           </libc-input>
-        }
-        <libc-autocomplete [label]="translations.tags()" [hint]="translations.messageTags()" [formField]="form.tags" />
-        @if (showWatchedCheckbox()) {
-          <libc-checkbox
-            data-test-id="new-item-watched"
-            [formField]="form.watched"
-            [label]="translations.collectionItemWatched()"
+          <libc-input
+            data-test-id="new-item-manual-imdb-id"
+            [mandatory]="true"
+            [label]="translations.labelIMDbId()"
+            [formField]="manualForm.IMDbId"
+          >
+            <ng-container errors>
+              @if (manualFormErrors.IMDbId.required()) {
+                {{ translations.validationRequired() }}
+              }
+              @if (manualFormErrors.IMDbId.imdbId()) {
+                {{ translations.validationIMDbId() }}
+              }
+              @if (manualFormErrors.IMDbId.knownIMDbId()) {
+                {{ translations.validationKnownIMDbId() }}
+              }
+            </ng-container>
+          </libc-input>
+          <libc-input
+            data-test-id="new-item-manual-year"
+            [label]="translations.labelYear()"
+            [formField]="manualForm.year"
           />
-        }
-        @if (showCopyToSeriesTrackerCheckbox()) {
-          <libc-checkbox
-            data-test-id="new-item-copy-to-series-tracker-as-watched"
-            [formField]="form.copyToSeriesTrackerAsWatched"
-            [label]="translations.copyToSeriesTrackerAsWatched()"
+          @if (showContentTypeSelect()) {
+            <libc-select
+              data-test-id="new-item-manual-content-type"
+              [label]="translations.type()"
+              [formField]="manualForm.contentType"
+              [options]="contentTypeOptions()"
+            />
+          }
+          <libc-input
+            data-test-id="new-item-manual-rate"
+            [label]="translations.labelIMDbRate()"
+            [formField]="manualForm.rate"
+          >
+            <ng-container errors>
+              @if (manualFormErrors.rate.rateFormat()) {
+                {{ translations.validationIMDbRate() }}
+              }
+            </ng-container>
+          </libc-input>
+          <libc-input
+            data-test-id="new-item-manual-rotten-tomatoes-rate"
+            [label]="translations.labelRottenTomatoesRate()"
+            [formField]="manualForm.rottenTomatoesRate"
+          >
+            <ng-container errors>
+              @if (manualFormErrors.rottenTomatoesRate.rateFormat()) {
+                {{ translations.validationRottenTomatoesRate() }}
+              }
+            </ng-container>
+          </libc-input>
+          <libc-input
+            data-test-id="new-item-manual-metacritic-rate"
+            [label]="translations.labelMetacriticRate()"
+            [formField]="manualForm.metacriticRate"
+          >
+            <ng-container errors>
+              @if (manualFormErrors.metacriticRate.rateFormat()) {
+                {{ translations.validationMetacriticRate() }}
+              }
+            </ng-container>
+          </libc-input>
+          @if (showManualUserRate()) {
+            <libc-input
+              data-test-id="new-item-manual-user-rate"
+              type="number"
+              [label]="translations.labelUserRate()"
+              [formField]="manualForm.userRate"
+              [step]="0.1"
+            >
+              <ng-container errors>
+                @if (
+                  manualFormErrors.userRate.min() ||
+                  manualFormErrors.userRate.max() ||
+                  manualFormErrors.userRate.userRate()
+                ) {
+                  {{ translations.validationUserRate() }}
+                }
+              </ng-container>
+            </libc-input>
+          }
+          <libc-autocomplete
+            data-test-id="new-item-manual-genre"
+            [label]="translations.genre()"
+            [hint]="translations.hintSeparateGenres()"
+            [formField]="manualForm.genreText"
+            ctGenreSuggestions
           />
+          <libc-autocomplete
+            data-test-id="new-item-manual-tags"
+            [label]="translations.tags()"
+            [hint]="translations.hintSeparateTags()"
+            [formField]="manualForm.tagsText"
+            ctTagSuggestions
+          />
+          <libc-input
+            data-test-id="new-item-manual-actors"
+            [label]="translations.actors()"
+            [formField]="manualForm.actors"
+          />
+          <libc-textarea
+            data-test-id="new-item-manual-plot"
+            class="full-width"
+            [label]="translations.plot()"
+            [formField]="manualForm.plot"
+            [rows]="4"
+          />
+        </form>
+      </ng-container>
+    </libc-tabs>
+    @if (showLibrarySelect()) {
+      <libc-select
+        data-test-id="new-item-library"
+        [label]="translations.library()"
+        [formField]="searchForm.targetOwnerShareCode"
+        [options]="libraryOptions()"
+      />
+    }
+    @if (mode() === 'search' && matchedContent().length) {
+      <section
+        class="content-selector"
+        data-test-id="new-item-content-select"
+        [attr.aria-label]="translations.selectedContent()"
+      >
+        <span class="content-selector-label">
+          {{ translations.selectedContent() }}
+          <span>*</span>
+        </span>
+        <div class="content-options" data-test-id="new-item-content-options">
+          @for (content of matchedContent(); track content.value) {
+            <button
+              type="button"
+              class="content-option card card-interactive"
+              data-test-id="new-item-content-option"
+              [class.selected]="isMatchedContentSelected(content)"
+              [attr.aria-pressed]="isMatchedContentSelected(content)"
+              (click)="onSelectMatchedContent(content)"
+            >
+              <ct-list-item-card
+                [imageUrl]="getMatchedContentImageUrl(content)"
+                [title]="content.text"
+                [meta]="getMatchedContentMeta(content)"
+                [interactive]="false"
+                imageTestId="new-item-content-option-image"
+                titleTestId="new-item-content-option-title"
+                metaTestId="new-item-content-option-meta"
+              />
+            </button>
+          }
+        </div>
+        @if (searchFormErrors.selectedExternalReference.knownIMDbId()) {
+          <small class="error" data-test-id="new-item-known-imdb-id-error">{{
+            translations.validationKnownIMDbId()
+          }}</small>
         }
-      }
-      <div class="form-buttons">
-        <button data-test-id="new-item-save" type="submit" [disabled]="form().invalid()" (click)="submitMode.set(null)">
-          <i class="material-icons" [title]="translations.save()"> save </i>
-          {{ translations.save() }}
-        </button>
-        <button
-          data-test-id="new-item-save-and-new"
-          type="submit"
-          [disabled]="form().invalid()"
-          (click)="submitMode.set('new')"
-        >
-          <i class="material-icons" [title]="translations.saveAndNew()"> add </i>
-          {{ translations.saveAndNew() }}
-        </button>
-        <button
-          data-test-id="new-item-save-and-close"
-          type="submit"
-          [disabled]="form().invalid()"
-          (click)="submitMode.set('close')"
-        >
-          <i class="material-icons" [title]="translations.saveAndClose()"> door_back </i>
-          {{ translations.saveAndClose() }}
-        </button>
-      </div>
-    </form>
+      </section>
+    }
+    @if (mode() === 'search' && matchedContent().length && !internalListMode()) {
+      <libc-input
+        data-test-id="new-item-user-rate"
+        type="number"
+        [label]="translations.labelUserRate()"
+        [formField]="searchForm.userRate"
+        [step]="0.1"
+      >
+        <ng-container errors>
+          @if (searchFormErrors.userRate.min() || searchFormErrors.userRate.max()) {
+            {{ translations.validationUserRate() }}
+          }
+        </ng-container>
+      </libc-input>
+    }
+    @if (mode() === 'search' && matchedContent().length) {
+      <libc-autocomplete
+        data-test-id="new-item-tags"
+        [label]="translations.tags()"
+        [hint]="translations.messageTags()"
+        [formField]="searchForm.tags"
+        ctTagSuggestions
+      />
+    }
+    @if (showWatchedCheckbox()) {
+      <libc-checkbox
+        data-test-id="new-item-watched"
+        [formField]="searchForm.watched"
+        [label]="translations.collectionItemWatched()"
+      />
+    }
+    @if (showCopyToSeriesTrackerCheckbox()) {
+      <libc-checkbox
+        data-test-id="new-item-copy-to-series-tracker-as-watched"
+        [formField]="searchForm.copyToSeriesTrackerAsWatched"
+        [label]="translations.copyToSeriesTrackerAsWatched()"
+      />
+    }
+  </ng-container>
+  <ng-container dialog-shell-bottom-content>
+    <button
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations.save()"
+      data-test-id="new-item-save"
+      type="submit"
+      [attr.aria-label]="translations.save()"
+      [title]="translations.save()"
+      [disabled]="form().invalid()"
+      [attr.form]="mode() === 'manual' ? 'new-item-manual-form' : 'new-item-search-form'"
+      (click)="submitMode.set(null)"
+    >
+      <i class="material-icons" aria-hidden="true"> save </i>
+      <span class="button-reveal-label-text"
+        ><span>{{ translations.save() }}</span></span
+      >
+    </button>
+    <button
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations.saveAndNew()"
+      data-test-id="new-item-save-and-new"
+      type="submit"
+      [attr.aria-label]="translations.saveAndNew()"
+      [title]="translations.saveAndNew()"
+      [disabled]="form().invalid()"
+      [attr.form]="mode() === 'manual' ? 'new-item-manual-form' : 'new-item-search-form'"
+      (click)="submitMode.set('new')"
+    >
+      <i class="material-icons" aria-hidden="true"> add </i>
+      <span class="button-reveal-label-text"
+        ><span>{{ translations.saveAndNew() }}</span></span
+      >
+    </button>
+    <button
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations.saveAndClose()"
+      data-test-id="new-item-save-and-close"
+      type="submit"
+      [attr.aria-label]="translations.saveAndClose()"
+      [title]="translations.saveAndClose()"
+      [disabled]="form().invalid()"
+      [attr.form]="mode() === 'manual' ? 'new-item-manual-form' : 'new-item-search-form'"
+      (click)="submitMode.set('close')"
+    >
+      <i class="material-icons" aria-hidden="true"> door_back </i>
+      <span class="button-reveal-label-text"
+        ><span>{{ translations.saveAndClose() }}</span></span
+      >
+    </button>
   </ng-container>
 </libc-dialog-shell>

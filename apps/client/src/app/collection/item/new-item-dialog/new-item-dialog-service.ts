@@ -4,15 +4,17 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ExternalMetadataService } from '@services/external-metadata/external-metadata-service';
 import { PortalService } from '@services/portal-service';
-import { CollectionItemChangeApiModel } from '@shared/models/api-model';
+import { CollectionItemApiModel, CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { ExternalMetadataReferenceModel } from '@shared/models/external-metadata-model';
 import { getImdbIdFromExternalMetadata } from '@shared/utils/external-metadata-identity-util';
 import { getExternalMetadataRating } from '@shared/utils/external-metadata-ratings-util';
 import { parseTagText } from '@shared/utils/collection-item-text-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, filter, map, mergeMap, of, skip, take, tap, throwError } from 'rxjs';
+import { catchError, filter, map, mergeMap, Observable, of, skip, take, tap, throwError } from 'rxjs';
 import { CollectionService } from '../../collection-service';
+import { ItemFormModel } from '../item-form/item-form-model';
+import { buildItemFromForm } from '../item-form/item-form-util';
 import { SaveMode, SaveOptions } from './new-item-dialog-model';
 
 @Injectable()
@@ -104,71 +106,183 @@ export class NewItemDialogService {
       ),
       tap(() => this.spinnerLoadingState.setState('show', true)),
       mergeMap(({ item, selectedContentIsMovie, selectedContentIsSeries }) =>
-        (listType === 'library'
-          ? this.api.create(item, targetOwnerShareCode)
-          : this.api.create(item, targetOwnerShareCode, listType)
-        ).pipe(map((response) => ({ collectionItem: response.item, selectedContentIsMovie, selectedContentIsSeries })))
+        this.createItem(item, targetOwnerShareCode, listType).pipe(
+          map((collectionItem) => ({ collectionItem, selectedContentIsMovie, selectedContentIsSeries }))
+        )
       ),
-      mergeMap(({ collectionItem, selectedContentIsMovie, selectedContentIsSeries }) => {
-        if (listType === 'library' && watched && selectedContentIsMovie) {
-          return this.api
-            .addMovieTrackerItemByExternalId(
-              collectionItem.externalProvider,
-              collectionItem.externalItemId,
-              targetOwnerShareCode
-            )
-            .pipe(
-              map((response) => ({
-                collectionItem: { ...collectionItem, watched: true },
-                movieTrackerItem: response.item,
-                seriesTrackerItem: null,
-              }))
-            );
-        }
-
-        if (listType === 'library' && copyToSeriesTrackerAsWatched && selectedContentIsSeries) {
-          return this.api
-            .addSeriesTrackerItemByExternalId(
-              collectionItem.externalProvider,
-              collectionItem.externalItemId,
-              undefined,
-              targetOwnerShareCode
-            )
-            .pipe(
-              mergeMap((response) =>
-                this.api
-                  .markAllSeriesTrackerWatchedByExternalId(
-                    collectionItem.externalProvider,
-                    collectionItem.externalItemId
-                  )
-                  .pipe(
-                    map((watchedResponse) => ({
-                      collectionItem,
-                      movieTrackerItem: null,
-                      seriesTrackerItem: watchedResponse.item ?? response.item,
-                    }))
-                  )
-              )
-            );
-        }
-
-        return of({ collectionItem, movieTrackerItem: null, seriesTrackerItem: null });
-      }),
-      catchError((error) => {
-        this.spinnerLoadingState.setState('show', false);
-        return throwError(() => error);
-      }),
-      tap(({ collectionItem, movieTrackerItem, seriesTrackerItem }) => {
-        this.spinnerLoadingState.setState('show', false);
-        this.collection.addCollectionItem(collectionItem, true);
-        if (movieTrackerItem) this.collection.addCollectionItem(movieTrackerItem, true);
-        if (seriesTrackerItem) this.collection.addCollectionItem(seriesTrackerItem, true);
-        this.collection.triggerReload();
-        this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.NewItem'));
-        if (mode === 'close') this.portal.closeAll();
-      }),
-      map(({ collectionItem }) => collectionItem)
+      mergeMap(({ collectionItem, selectedContentIsMovie, selectedContentIsSeries }) =>
+        this.applySideEffects({
+          collectionItem,
+          listType,
+          watched,
+          copyToSeriesTrackerAsWatched,
+          targetOwnerShareCode,
+          selectedContentIsMovie,
+          selectedContentIsSeries,
+        })
+      ),
+      this.finalizeSave(mode)
     );
+  }
+
+  public saveManual(item: ItemFormModel, mode: SaveMode, options: SaveOptions = {}) {
+    const {
+      targetOwnerShareCode,
+      listType = 'library',
+      watched = false,
+      copyToSeriesTrackerAsWatched = false,
+    } = options;
+
+    const collectionItemChange = buildItemFromForm(item);
+    const selectedContentIsMovie = collectionItemChange.contentType === 'movie';
+    const selectedContentIsSeries = collectionItemChange.contentType === 'series';
+
+    return of(collectionItemChange).pipe(
+      map((change) => {
+        if (listType === 'series-tracker' && change.contentType !== 'series') {
+          throw new Error('Series tracker items must be series.');
+        }
+        if (listType === 'movie-tracker' && change.contentType !== 'movie') {
+          throw new Error('Movie tracker items must be movies.');
+        }
+        return change;
+      }),
+      tap(() => this.spinnerLoadingState.setState('show', true)),
+      mergeMap((change) =>
+        this.createItem(change, targetOwnerShareCode, listType).pipe(
+          map((collectionItem) => ({ collectionItem, selectedContentIsMovie, selectedContentIsSeries }))
+        )
+      ),
+      mergeMap(({ collectionItem }) =>
+        this.applySideEffects({
+          collectionItem,
+          listType,
+          watched,
+          copyToSeriesTrackerAsWatched,
+          targetOwnerShareCode,
+          selectedContentIsMovie,
+          selectedContentIsSeries,
+        })
+      ),
+      this.finalizeSave(mode)
+    );
+  }
+
+  private createItem(
+    item: CollectionItemChangeApiModel,
+    targetOwnerShareCode: string | undefined,
+    listType: 'library' | 'watch-later' | 'wishlist' | 'series-tracker' | 'movie-tracker'
+  ) {
+    const response$ =
+      listType === 'library'
+        ? this.api.create(item, targetOwnerShareCode)
+        : this.api.create(item, targetOwnerShareCode, listType);
+    return response$.pipe(map((response) => response.item));
+  }
+
+  private applySideEffects(input: {
+    collectionItem: CollectionItemApiModel;
+    listType: 'library' | 'watch-later' | 'wishlist' | 'series-tracker' | 'movie-tracker';
+    watched: boolean;
+    copyToSeriesTrackerAsWatched: boolean;
+    targetOwnerShareCode: string | undefined;
+    selectedContentIsMovie: boolean;
+    selectedContentIsSeries: boolean;
+  }): Observable<{
+    collectionItem: CollectionItemApiModel;
+    movieTrackerItem: CollectionItemApiModel | null;
+    seriesTrackerItem: CollectionItemApiModel | null;
+    trackerUpdateFailed: boolean;
+  }> {
+    const {
+      collectionItem,
+      listType,
+      watched,
+      copyToSeriesTrackerAsWatched,
+      targetOwnerShareCode,
+      selectedContentIsMovie,
+      selectedContentIsSeries,
+    } = input;
+    const trackerUpdateFailure = {
+      collectionItem,
+      movieTrackerItem: null,
+      seriesTrackerItem: null,
+      trackerUpdateFailed: true,
+    };
+    if (listType === 'library' && watched && selectedContentIsMovie) {
+      return this.api
+        .addMovieTrackerItemByExternalId(
+          collectionItem.externalProvider,
+          collectionItem.externalItemId,
+          targetOwnerShareCode
+        )
+        .pipe(
+          map((response) => ({
+            collectionItem: { ...collectionItem, watched: true },
+            movieTrackerItem: response.item,
+            seriesTrackerItem: null,
+            trackerUpdateFailed: false,
+          })),
+          catchError(() => of(trackerUpdateFailure))
+        );
+    }
+
+    if (listType === 'library' && copyToSeriesTrackerAsWatched && selectedContentIsSeries) {
+      return this.api
+        .addSeriesTrackerItemByExternalId(
+          collectionItem.externalProvider,
+          collectionItem.externalItemId,
+          undefined,
+          targetOwnerShareCode
+        )
+        .pipe(
+          mergeMap((response) =>
+            this.api
+              .markAllSeriesTrackerWatchedByExternalId(collectionItem.externalProvider, collectionItem.externalItemId)
+              .pipe(
+                map((watchedResponse) => ({
+                  collectionItem,
+                  movieTrackerItem: null,
+                  seriesTrackerItem: watchedResponse.item ?? response.item,
+                  trackerUpdateFailed: false,
+                }))
+              )
+          ),
+          catchError(() => of(trackerUpdateFailure))
+        );
+    }
+
+    return of({ collectionItem, movieTrackerItem: null, seriesTrackerItem: null, trackerUpdateFailed: false });
+  }
+
+  private finalizeSave(mode: SaveMode) {
+    return (
+      source$: Observable<{
+        collectionItem: CollectionItemApiModel;
+        movieTrackerItem: CollectionItemApiModel | null;
+        seriesTrackerItem: CollectionItemApiModel | null;
+        trackerUpdateFailed: boolean;
+      }>
+    ) =>
+      source$.pipe(
+        catchError((error) => {
+          this.spinnerLoadingState.setState('show', false);
+          return throwError(() => error);
+        }),
+        tap(({ collectionItem, movieTrackerItem, seriesTrackerItem, trackerUpdateFailed }) => {
+          this.spinnerLoadingState.setState('show', false);
+          this.collection.addCollectionItem(collectionItem, true);
+          if (movieTrackerItem) this.collection.addCollectionItem(movieTrackerItem, true);
+          if (seriesTrackerItem) this.collection.addCollectionItem(seriesTrackerItem, true);
+          this.collection.triggerReload();
+          this.toastState.setState(
+            'message',
+            this.ngxSignalTranslate.translate(trackerUpdateFailed ? 'Toast.NewItemTrackerUpdateError' : 'Toast.NewItem')
+          );
+          if (mode === 'close') this.portal.closeAll();
+        }),
+        map(({ collectionItem }) => collectionItem)
+      );
   }
 
   private parseYear(year: string): CollectionItemYearModel {

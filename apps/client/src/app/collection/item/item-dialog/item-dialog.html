@@ -102,14 +102,14 @@
           [label]="translations.genre()"
           [hint]="translations.hintSeparateGenres()"
           [formField]="form.genreText"
-          [autocompleteService]="genreSuggestionService"
+          ctGenreSuggestions
         />
         <libc-autocomplete
           data-test-id="item-dialog-tags"
           [label]="translations.tags()"
           [hint]="translations.hintSeparateTags()"
           [formField]="form.tagsText"
-          [autocompleteService]="tagSuggestionService"
+          ctTagSuggestions
         />
         <libc-input data-test-id="item-dialog-actors" [label]="translations.actors()" [formField]="form.actors" />
         <libc-textarea

@@ -1,8 +1,8 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ItemDialogTranslations } from '../item-form/item-form-model';
 import { ItemDialogActions } from './item-dialog-actions';
-import { ItemDialogTranslations } from './item-dialog-model';
 
 const translations: ItemDialogTranslations = {
   actors: signal('Actors'),

@@ -1,6 +1,8 @@
 import { CollectionListTypeModel } from '@shared/models/api-model';
 
-export interface NewItemModel {
+export type NewItemMode = 'search' | 'manual';
+
+export interface NewItemSearchModel {
   searchText: string;
   selectedExternalReference: string | null;
   userRate: number | null;

@@ -204,6 +204,7 @@ export class List implements OnDestroy {
       watchLater: this.listType() === 'watch-later',
       wishlist: this.listType() === 'wishlist',
       seriesTracker: this.listType() === 'series-tracker',
+      movieTracker: this.listType() === 'movie-tracker',
     });
   }
 

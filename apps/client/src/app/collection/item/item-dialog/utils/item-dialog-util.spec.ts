@@ -1,14 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { buildIMDbSearchUrl, validateOptionalIMDbRateFormat } from './item-dialog-util';
+import { buildIMDbSearchUrl, buildIMDbUrl, buildTrailerUrl, buildWebSearchUrl } from './item-dialog-util';
 
 describe('item dialog util', () => {
+  it('builds an IMDb URL from an ID', () => {
+    expect(buildIMDbUrl('tt123')).toBe('https://www.imdb.com/title/tt123/');
+  });
+
   it('builds an IMDb search URL from trimmed and encoded text', () => {
     expect(buildIMDbSearchUrl(' The Matrix & Reloaded ')).toBe(
       'https://www.imdb.com/find/?q=The%20Matrix%20%26%20Reloaded'
     );
   });
 
-  it('accepts N/A as an unavailable IMDb rating', () => {
-    expect(validateOptionalIMDbRateFormat('N/A')).toBeUndefined();
+  it('builds a YouTube trailer URL', () => {
+    expect(buildTrailerUrl('The Matrix', 1999)).toBe(
+      'https://www.youtube.com/results?search_query=The%20Matrix%201999%20trailer'
+    );
+  });
+
+  it('builds a web search URL', () => {
+    expect(buildWebSearchUrl('The Matrix', 1999)).toBe('https://duckduckgo.com/?q=The%20Matrix%201999');
   });
 });

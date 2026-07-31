@@ -2,7 +2,7 @@ import { Signal } from '@angular/core';
 import { CollectionItemContentTypeModel } from '@shared/models/api-model';
 import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 
-export interface ItemDialogFormModel {
+export interface ItemFormModel {
   title: string;
   IMDbId: string;
   year: CollectionItemYearModel;

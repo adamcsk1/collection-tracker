@@ -2,8 +2,8 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectionItemModel } from '../../collection-model';
+import { ItemDialogTranslations } from '../item-form/item-form-model';
 import { ItemDialogDetail } from './item-dialog-detail';
-import { ItemDialogTranslations } from './item-dialog-model';
 
 const translations: ItemDialogTranslations = {
   delete: signal('Delete'),

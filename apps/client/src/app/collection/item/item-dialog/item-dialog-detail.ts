@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { LinkButton } from '@components/link-button/link-button';
 import { CollectionItemModel } from '../../collection-model';
-import { ItemDialogTranslations } from './item-dialog-model';
+import { ItemDialogTranslations } from '../item-form/item-form-model';
 
 @Component({
   selector: 'ct-item-dialog-detail',

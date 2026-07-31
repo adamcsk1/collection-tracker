@@ -27,24 +27,22 @@ import { finalize, firstValueFrom, map, mergeMap, of } from 'rxjs';
 import { sharesStateToken } from '../../../shares/shares-store';
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionService } from '../../collection-service';
-import { TagSuggestionService } from '../new-item-dialog/suggestion/tag-suggestion-service';
 import { SeriesSeasonMetadataDialog } from '../../series-tracker/series-season-metadata-dialog/series-season-metadata-dialog';
 import { WatchedEpisodesDialog } from '../../series-tracker/watched-episodes-dialog/watched-episodes-dialog';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
 import { formatSeriesTrackerEpisode } from '../../series-tracker/utils/series-tracker-progress-util';
-import { filterDisplayTags, filterEditableTags } from '../../validators/tag-validators';
-import { GenreSuggestionService } from './suggestion/genre-suggestion-service';
-import { ItemDialogActions } from './item-dialog-actions';
-import { ItemDialogDetail } from './item-dialog-detail';
-import { ItemDialogFormModel } from './item-dialog-model';
+import { filterDisplayTags } from '../../validators/tag-validators';
 import {
-  buildIMDbUrl,
-  buildTrailerUrl,
-  buildWebSearchUrl,
+  buildItemFormFromChange,
   validateOptionalIMDbRateFormat,
   validateOptionalMetacriticRateFormat,
   validateOptionalRottenTomatoesRateFormat,
-} from './utils/item-dialog-util';
+} from '../item-form/item-form-util';
+import { ItemFormModel } from '../item-form/item-form-model';
+import { GenreSuggestionsProvider, TagSuggestionsProvider } from '../item-form/suggestion/item-autocomplete-providers';
+import { ItemDialogActions } from './item-dialog-actions';
+import { ItemDialogDetail } from './item-dialog-detail';
+import { buildIMDbUrl, buildTrailerUrl, buildWebSearchUrl } from './utils/item-dialog-util';
 
 @Component({
   selector: 'ct-item-dialog',
@@ -59,10 +57,11 @@ import {
     Textarea,
     ItemDialogDetail,
     ItemDialogActions,
+    GenreSuggestionsProvider,
+    TagSuggestionsProvider,
   ],
   templateUrl: './item-dialog.html',
   styleUrl: './item-dialog.css',
-  providers: [TagSuggestionService, GenreSuggestionService],
   host: {
     class: 'dialog',
   },
@@ -159,9 +158,7 @@ export class ItemDialog implements OnInit {
     validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
     ratings: computed(() => this.ngxSignalTranslate.translate('Ratings')),
   };
-  protected readonly tagSuggestionService = inject(TagSuggestionService);
-  protected readonly genreSuggestionService = inject(GenreSuggestionService);
-  protected readonly formModel = signal<ItemDialogFormModel>({
+  protected readonly formModel = signal<ItemFormModel>({
     title: '',
     IMDbId: '',
     year: null,
@@ -448,21 +445,7 @@ export class ItemDialog implements OnInit {
 
   private resetFormFromItem(item: CollectionItemModel): void {
     const change = { ...toCollectionItemChange(item), rate: normalizeIMDbRating(item.rate) };
-    this.form().reset({
-      title: change.title,
-      IMDbId: change.IMDbId ?? change.externalItemId,
-      year: change.year,
-      rate: change.rate,
-      rottenTomatoesRate: change.rottenTomatoesRate,
-      metacriticRate: change.metacriticRate,
-      userRate: change.userRate,
-      image: change.image,
-      genreText: change.genre.join(', '),
-      tagsText: filterEditableTags(change.tags).join(' '),
-      actors: change.actors,
-      plot: change.plot,
-      contentType: change.contentType,
-    });
+    this.form().reset(buildItemFormFromChange(change));
     this.lastSavedItem.set(change);
   }
 
@@ -555,21 +538,7 @@ export class ItemDialog implements OnInit {
   protected onReadOnly(): void {
     const lastSavedItem = this.lastSavedItem();
     if (lastSavedItem) {
-      this.form().reset({
-        title: lastSavedItem.title,
-        IMDbId: lastSavedItem.IMDbId ?? lastSavedItem.externalItemId,
-        year: lastSavedItem.year,
-        rate: lastSavedItem.rate,
-        rottenTomatoesRate: lastSavedItem.rottenTomatoesRate,
-        metacriticRate: lastSavedItem.metacriticRate,
-        userRate: lastSavedItem.userRate,
-        image: lastSavedItem.image,
-        genreText: lastSavedItem.genre.join(', '),
-        tagsText: filterEditableTags(lastSavedItem.tags).join(' '),
-        actors: lastSavedItem.actors,
-        plot: lastSavedItem.plot,
-        contentType: lastSavedItem.contentType,
-      });
+      this.form().reset(buildItemFormFromChange(lastSavedItem));
     }
     this.editMode.set(false);
   }

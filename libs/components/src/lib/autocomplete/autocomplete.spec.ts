@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -27,25 +27,6 @@ class HostComponent {
 class NoHintHostComponent {
   public readonly model = signal('');
   public readonly field = form(this.model);
-}
-
-@Component({
-  imports: [FormField, Autocomplete],
-  template: `<libc-autocomplete
-    [formField]="field"
-    placeholder="Search"
-    [showReset]="true"
-    [autocompleteService]="autocompleteService()"
-  ></libc-autocomplete>`,
-})
-class InputServiceHostComponent {
-  public readonly model = signal('');
-  public readonly field = form(this.model);
-  public readonly autocompleteService = input<{
-    getSuggestion: ReturnType<typeof vi.fn>;
-    formatSuggestionText?: ReturnType<typeof vi.fn>;
-    formatSuggestionValue?: ReturnType<typeof vi.fn>;
-  } | null>(null);
 }
 
 @Component({
@@ -415,72 +396,18 @@ describe('Autocomplete component', () => {
     const suggestionsPane = topFixture.nativeElement.querySelector('.input-suggestions-pane') as HTMLDivElement;
     expect(suggestionsPane.classList.contains('input-suggestions-pane-above')).toBe(true);
   });
-});
 
-describe('Autocomplete component with input service', () => {
-  let inputFixture: ComponentFixture<InputServiceHostComponent>;
-  let inputComponent: Autocomplete<string>;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [InputServiceHostComponent],
-      providers: [
-        { provide: AutocompleteService, useValue: { getSuggestion: vi.fn(), formatSuggestionText: vi.fn() } },
-        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
-      ],
-    });
-  });
-
-  it('uses input autocompleteService over injected service', () => {
-    const inputServiceStub = {
-      getSuggestion: vi.fn().mockReturnValue(['gamma', 'delta']),
-      formatSuggestionValue: vi.fn((value: string) => `${value}-input`),
-    };
-
-    inputFixture = TestBed.createComponent(InputServiceHostComponent);
-    inputFixture.componentRef.setInput('autocompleteService', inputServiceStub);
-    inputFixture.detectChanges();
-
-    inputComponent = inputFixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
-
+  it('handles observable suggestions from the injected service', () => {
+    serviceStub.getSuggestion.mockReturnValue(of(['zeta', 'eta']));
     vi.useFakeTimers();
-    inputComponent['onKeyup']({
-      code: 'KeyG',
-      target: { value: 'g' },
-    } as unknown as KeyboardEvent);
-    vi.advanceTimersByTime(300);
-    inputFixture.detectChanges();
-
-    expect(inputComponent['suggestions']()).toEqual(['gamma', 'delta']);
-
-    inputComponent['onAcceptSuggestion'](0);
-    inputFixture.detectChanges();
-
-    expect(inputFixture.componentInstance.model()).toBe('gamma-input');
-    expect(inputServiceStub.getSuggestion).toHaveBeenCalled();
-    vi.useRealTimers();
-  });
-
-  it('handles observable suggestions from autocompleteService', () => {
-    const observableServiceStub = {
-      getSuggestion: vi.fn().mockReturnValue(of(['zeta', 'eta'])),
-    };
-
-    inputFixture = TestBed.createComponent(InputServiceHostComponent);
-    inputFixture.componentRef.setInput('autocompleteService', observableServiceStub);
-    inputFixture.detectChanges();
-
-    inputComponent = inputFixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
-
-    vi.useFakeTimers();
-    inputComponent['onKeyup']({
+    component['onKeyup']({
       code: 'KeyZ',
       target: { value: 'z' },
     } as unknown as KeyboardEvent);
     vi.advanceTimersByTime(300);
-    inputFixture.detectChanges();
+    fixture.detectChanges();
 
-    expect(inputComponent['suggestions']()).toEqual(['zeta', 'eta']);
+    expect(component['suggestions']()).toEqual(['zeta', 'eta']);
     vi.useRealTimers();
   });
 });

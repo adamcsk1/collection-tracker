@@ -40,7 +40,7 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
   private readonly _suggestions = signal<string[]>([]);
-  private readonly injectedAutocompleteService = inject(AutocompleteService, { optional: true });
+  private readonly autocompleteService = inject(AutocompleteService);
   private suggestionDebounce: Subscription | null = null;
   private suggestionRequest: Subscription | null = null;
   private lastKeycode = '';
@@ -71,7 +71,6 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
   public readonly hint = input<string>();
   public readonly mandatory = input<boolean>(false);
   public readonly suggestionDebounceMs = input(DEFAULT_SUGGESTION_DEBOUNCE_MS);
-  public readonly autocompleteService = input<AutocompleteServiceInterface | null>(null);
   public readonly userEvent = output<void>();
   public readonly userAcceptSuggestionEvent = output<void>();
   private readonly _a11y = createFormControlA11y(this.inputId, this.hint, this.touched, this.dirty, this.errors);
@@ -147,9 +146,8 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
     this.userAcceptSuggestionEvent.emit();
     this.lastEventWasAccept = true;
     this.selectedSuggestion.set(-1);
-    const autocompleteService = this.activeAutocompleteService;
-    if (autocompleteService.formatSuggestionValue) {
-      const formatted = autocompleteService.formatSuggestionValue(this.suggestions()[index]);
+    if (this.autocompleteService.formatSuggestionValue) {
+      const formatted = this.autocompleteService.formatSuggestionValue(this.suggestions()[index]);
       this.setInput(formatted as T);
     } else this.setInput(this.suggestions()[index] as T);
     this._suggestions.set([]);
@@ -178,8 +176,7 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
   }
 
   protected formatSuggestionText(text: string): string {
-    const autocompleteService = this.activeAutocompleteService;
-    if (autocompleteService.formatSuggestionText) return autocompleteService.formatSuggestionText(text);
+    if (this.autocompleteService.formatSuggestionText) return this.autocompleteService.formatSuggestionText(text);
     return text;
   }
 
@@ -195,7 +192,7 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
     }
 
     this.suggestionRequest?.unsubscribe();
-    const suggestions = this.activeAutocompleteService.getSuggestion(value);
+    const suggestions = this.autocompleteService.getSuggestion(value);
     if (isObservable(suggestions)) {
       this.suggestionRequest = suggestions.subscribe((result) => this.setSuggestions(result, value));
       return;
@@ -211,11 +208,5 @@ export class Autocomplete<T> implements FormValueControl<T | null>, OnDestroy {
 
   private setInput(value: T): void {
     this.value.set(value);
-  }
-
-  private get activeAutocompleteService(): AutocompleteServiceInterface {
-    const autocompleteService = this.autocompleteService() ?? this.injectedAutocompleteService;
-    if (!autocompleteService) throw new Error('AutocompleteService is required');
-    return autocompleteService;
   }
 }

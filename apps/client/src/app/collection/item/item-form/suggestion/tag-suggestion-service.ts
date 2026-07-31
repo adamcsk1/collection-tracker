@@ -1,9 +1,10 @@
 import { inject, Injectable } from '@angular/core';
+import { AutocompleteServiceInterface } from '@components/autocomplete/autocomplete-model';
 import { ApiService } from '@services/api/api-service';
 import { map, Observable, of } from 'rxjs';
 
 @Injectable()
-export class TagSuggestionService {
+export class TagSuggestionService implements AutocompleteServiceInterface {
   private readonly api = inject(ApiService);
 
   public getSuggestion(text: string, limit = 3): Observable<string[]> {

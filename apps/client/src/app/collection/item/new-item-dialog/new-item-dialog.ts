@@ -11,40 +11,86 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { form, FormField, FormRoot, max, min, required, validate } from '@angular/forms/signals';
-import { Autocomplete, AutocompleteService } from '@components/autocomplete/autocomplete';
+import { Autocomplete } from '@components/autocomplete/autocomplete';
 import { Checkbox } from '@components/checkbox/checkbox';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
+import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { Select } from '@components/select/select';
+import { TabOption, Tabs } from '@components/tabs/tabs';
+import { Textarea } from '@components/textarea/textarea';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ExternalMetadataService } from '@services/external-metadata/external-metadata-service';
 import { CollectionListTypeModel } from '@shared/models/api-model';
 import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadata-model';
+import { isImdbShapedExternalItemId } from '@shared/utils/external-metadata-identity-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap } from 'rxjs';
+import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap, tap, timer } from 'rxjs';
 import { mainStateToken } from '../../../main/main-store';
 import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { sharesStateToken } from '../../../shares/shares-store';
 import { ListItemCard } from '../../list/list-item-card/list-item-card';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
+import { ItemFormModel } from '../item-form/item-form-model';
+import {
+  isImdbIdValid,
+  validateOptionalIMDbRateFormat,
+  validateOptionalMetacriticRateFormat,
+  validateOptionalRottenTomatoesRateFormat,
+} from '../item-form/item-form-util';
+import { GenreSuggestionsProvider, TagSuggestionsProvider } from '../item-form/suggestion/item-autocomplete-providers';
 import { buildIMDbSearchUrl, buildWebSearchUrl } from '../item-dialog/utils/item-dialog-util';
-import { NewItemModel, SaveMode, SaveOptions } from './new-item-dialog-model';
 import { NewItemDialogService } from './new-item-dialog-service';
-import { TagSuggestionService } from './suggestion/tag-suggestion-service';
+import { NewItemMode, NewItemSearchModel, SaveMode, SaveOptions } from './new-item-dialog-model';
 import { knownIMDbIdValidationFactory } from './validators/known-imdb-id-validator';
+
+const defaultSearchModel = (): NewItemSearchModel => ({
+  searchText: '',
+  selectedExternalReference: null,
+  userRate: null,
+  tags: '',
+  watched: false,
+  copyToSeriesTrackerAsWatched: false,
+  targetOwnerShareCode: null,
+});
+
+const defaultManualModel = (): ItemFormModel => ({
+  title: '',
+  IMDbId: '',
+  year: null,
+  rate: '',
+  rottenTomatoesRate: '',
+  metacriticRate: '',
+  userRate: null,
+  image: '',
+  genreText: '',
+  tagsText: '',
+  actors: '',
+  plot: '',
+  contentType: 'movie',
+});
 
 @Component({
   selector: 'ct-new-item-dialog',
-  imports: [FormField, FormRoot, Input, Select, DialogShell, Autocomplete, Checkbox, ListItemCard],
+  imports: [
+    FormField,
+    FormRoot,
+    Input,
+    Select,
+    DialogShell,
+    Autocomplete,
+    Checkbox,
+    ListItemCard,
+    Textarea,
+    RevealLabel,
+    Tabs,
+    GenreSuggestionsProvider,
+    TagSuggestionsProvider,
+  ],
   templateUrl: './new-item-dialog.html',
   styleUrl: './new-item-dialog.css',
-  providers: [
-    ExternalMetadataService,
-    NewItemDialogService,
-    SharesLoaderService,
-    { provide: AutocompleteService, useClass: TagSuggestionService },
-  ],
+  providers: [ExternalMetadataService, NewItemDialogService, SharesLoaderService],
   host: {
     class: 'dialog',
   },
@@ -59,8 +105,12 @@ export class NewItemDialog {
   private readonly mainState = inject(mainStateToken);
   private readonly sharesState = inject(sharesStateToken);
   private readonly sharesLoader = inject(SharesLoaderService);
-  private readonly knownIMDbIdExists = signal(false);
-  private readonly knownIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownIMDbIdExists);
+  private readonly knownSearchIMDbIdExists = signal(false);
+  private readonly knownManualIMDbIdExists = signal(false);
+  private readonly searchIMDbIdLookupPending = signal(false);
+  private readonly manualIMDbIdLookupPending = signal(false);
+  private readonly knownSearchIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownSearchIMDbIdExists);
+  private readonly knownManualIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownManualIMDbIdExists);
   protected readonly translations = {
     titleNewCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.NewCollectionItem')),
     titleNewWatchLaterItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchLaterItem')),
@@ -68,6 +118,10 @@ export class NewItemDialog {
     titleNewSeriesTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.NewSeriesTrackerItem')),
     titleNewMovieTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.NewMovieTrackerItem')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
+    manual: computed(() => this.ngxSignalTranslate.translate('Manual')),
+    ariaNewItemEntryMethod: computed(() => this.ngxSignalTranslate.translate('Aria.NewItemEntryMethod')),
+    manualModeHint: computed(() => this.ngxSignalTranslate.translate('Message.NewCollectionItemManual')),
+    messageTags: computed(() => this.ngxSignalTranslate.translate('Message.Tags')),
     ariaSearchDuckDuckGoForTitleNewTab: computed(() =>
       this.ngxSignalTranslate.translate('Aria.SearchDuckDuckGoForTitleNewTab')
     ),
@@ -87,11 +141,31 @@ export class NewItemDialog {
       this.ngxSignalTranslate.translate('Message.NewCollectionItemSearchHelpStart')
     ),
     selectedContent: computed(() => this.ngxSignalTranslate.translate('SelectedContent')),
+    labelTitle: computed(() => this.ngxSignalTranslate.translate('Title')),
+    labelIMDbId: computed(() => this.ngxSignalTranslate.translate('IMDbId')),
+    labelYear: computed(() => this.ngxSignalTranslate.translate('Year')),
+    labelIMDbRate: computed(() => this.ngxSignalTranslate.translate('IMDbRate')),
+    labelMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Metacritic')),
+    labelRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('RottenTomatoes')),
     labelUserRate: computed(() => this.ngxSignalTranslate.translate('UserRate')),
-    validationKnownIMDbId: computed(() => this.ngxSignalTranslate.translate('Validation.KnownIMDbId')),
-    validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
+    labelImageUrl: computed(() => this.ngxSignalTranslate.translate('ImageUrl')),
+    altImageExample: computed(() => this.ngxSignalTranslate.translate('Alt.ImageExample')),
+    genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
+    hintSeparateGenres: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateGenres')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
-    messageTags: computed(() => this.ngxSignalTranslate.translate('Message.Tags')),
+    hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
+    actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
+    plot: computed(() => this.ngxSignalTranslate.translate('Plot')),
+    type: computed(() => this.ngxSignalTranslate.translate('Type')),
+    movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
+    seriesLabel: computed(() => this.ngxSignalTranslate.translate('Series')),
+    validationKnownIMDbId: computed(() => this.ngxSignalTranslate.translate('Validation.KnownIMDbId')),
+    validationIMDbId: computed(() => this.ngxSignalTranslate.translate('Validation.IMDbId')),
+    validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
+    validationIMDbRate: computed(() => this.ngxSignalTranslate.translate('Validation.IMDbRate')),
+    validationMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Validation.MetacriticRate')),
+    validationRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('Validation.RottenTomatoesRate')),
+    validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
     collectionItemWatched: computed(() => this.ngxSignalTranslate.translate('CollectionItemWatched')),
     copyToSeriesTrackerAsWatched: computed(() => this.ngxSignalTranslate.translate('CopyToSeriesTrackerAsWatched')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
@@ -101,22 +175,23 @@ export class NewItemDialog {
     myLibrary: computed(() => this.ngxSignalTranslate.translate('MyLibrary')),
     sharedLibrary: computed(() => this.ngxSignalTranslate.translate('SharedLibrary')),
   };
+  protected readonly modeTabs = computed<readonly [TabOption<NewItemMode>, TabOption<NewItemMode>]>(() => [
+    { value: 'search', label: this.translations.search(), dataTestId: 'new-item-search-mode' },
+    { value: 'manual', label: this.translations.manual(), dataTestId: 'new-item-manual-mode' },
+  ]);
   protected readonly submitMode = signal<SaveMode | null>(null);
-  protected readonly newItemModel = signal<NewItemModel>({
-    searchText: '',
-    selectedExternalReference: null,
-    userRate: null,
-    tags: '',
-    watched: false,
-    copyToSeriesTrackerAsWatched: false,
-    targetOwnerShareCode: null,
-  });
-  protected readonly form = form(
-    this.newItemModel,
+  protected readonly mode = signal<NewItemMode>('search');
+  protected readonly searchModel = signal<NewItemSearchModel>(defaultSearchModel());
+  protected readonly manualModel = signal<ItemFormModel>(defaultManualModel());
+  protected readonly searchForm = form(
+    this.searchModel,
     (newItem) => {
       required(newItem.searchText);
       required(newItem.selectedExternalReference);
-      validate(newItem.selectedExternalReference, ({ value }) => this.knownIMDbIdValidationError(value()));
+      validate(newItem.selectedExternalReference, ({ value }) => this.knownSearchIMDbIdValidationError(value()));
+      validate(newItem.selectedExternalReference, () =>
+        this.searchIMDbIdLookupPending() ? { kind: 'pending' } : undefined
+      );
       min(newItem.userRate, 0, { error: { kind: 'min' } });
       max(newItem.userRate, 10, { error: { kind: 'max' } });
       validate(newItem.userRate, ({ value }) => {
@@ -131,10 +206,38 @@ export class NewItemDialog {
       },
     }
   );
-  protected readonly formErrors = {
+  protected readonly manualForm = form(
+    this.manualModel,
+    (manualItem) => {
+      validate(manualItem.title, ({ value }) => (value()?.trim() ? undefined : { kind: 'required' }));
+      validate(manualItem.IMDbId, ({ value }) => {
+        const imdbId = value()?.trim() ?? '';
+        if (!imdbId) return { kind: 'required' };
+        return isImdbIdValid(imdbId) ? undefined : { kind: 'imdbId' };
+      });
+      validate(manualItem.IMDbId, ({ value }) => this.knownManualIMDbIdValidationError(value()));
+      validate(manualItem.IMDbId, () => (this.manualIMDbIdLookupPending() ? { kind: 'pending' } : undefined));
+      validate(manualItem.rate, ({ value }) => validateOptionalIMDbRateFormat(value()));
+      validate(manualItem.rottenTomatoesRate, ({ value }) => validateOptionalRottenTomatoesRateFormat(value()));
+      validate(manualItem.metacriticRate, ({ value }) => validateOptionalMetacriticRateFormat(value()));
+      min(manualItem.userRate, 0, { error: { kind: 'min' } });
+      max(manualItem.userRate, 10, { error: { kind: 'max' } });
+      validate(manualItem.userRate, ({ value }) => {
+        const userRate = value();
+        if (userRate === null) return undefined;
+        return Math.abs(userRate * 10 - Math.round(userRate * 10)) <= 1e-9 ? undefined : { kind: 'userRate' };
+      });
+    },
+    {
+      submission: {
+        action: async () => this.onSave(this.submitMode()),
+      },
+    }
+  );
+  protected readonly searchFormErrors = {
     selectedExternalReference: {
       knownIMDbId: computed(() =>
-        this.form
+        this.searchForm
           .selectedExternalReference()
           .errors()
           .some((error) => error.kind === 'knownIMDbId')
@@ -142,19 +245,94 @@ export class NewItemDialog {
     },
     userRate: {
       min: computed(() =>
-        this.form
+        this.searchForm
           .userRate()
           .errors()
           .some((error) => error.kind === 'min')
       ),
       max: computed(() =>
-        this.form
+        this.searchForm
           .userRate()
           .errors()
           .some((error) => error.kind === 'max')
       ),
     },
   };
+  protected readonly manualFormErrors = {
+    title: {
+      required: computed(() =>
+        this.manualForm
+          .title()
+          .errors()
+          .some((error) => error.kind === 'required')
+      ),
+    },
+    IMDbId: {
+      required: computed(() =>
+        this.manualForm
+          .IMDbId()
+          .errors()
+          .some((error) => error.kind === 'required')
+      ),
+      imdbId: computed(() =>
+        this.manualForm
+          .IMDbId()
+          .errors()
+          .some((error) => error.kind === 'imdbId')
+      ),
+      knownIMDbId: computed(() =>
+        this.manualForm
+          .IMDbId()
+          .errors()
+          .some((error) => error.kind === 'knownIMDbId')
+      ),
+    },
+    rate: {
+      rateFormat: computed(() =>
+        this.manualForm
+          .rate()
+          .errors()
+          .some((error) => error.kind === 'rateFormat')
+      ),
+    },
+    rottenTomatoesRate: {
+      rateFormat: computed(() =>
+        this.manualForm
+          .rottenTomatoesRate()
+          .errors()
+          .some((error) => error.kind === 'rateFormat')
+      ),
+    },
+    metacriticRate: {
+      rateFormat: computed(() =>
+        this.manualForm
+          .metacriticRate()
+          .errors()
+          .some((error) => error.kind === 'rateFormat')
+      ),
+    },
+    userRate: {
+      min: computed(() =>
+        this.manualForm
+          .userRate()
+          .errors()
+          .some((error) => error.kind === 'min')
+      ),
+      max: computed(() =>
+        this.manualForm
+          .userRate()
+          .errors()
+          .some((error) => error.kind === 'max')
+      ),
+      userRate: computed(() =>
+        this.manualForm
+          .userRate()
+          .errors()
+          .some((error) => error.kind === 'userRate')
+      ),
+    },
+  };
+  protected readonly form = computed(() => (this.mode() === 'manual' ? this.manualForm() : this.searchForm()));
   protected readonly matchedContent = computed(() => {
     const matchedContent = this.service.matchedContent();
     return this.seriesTracker() || this.movieTracker()
@@ -166,13 +344,14 @@ export class NewItemDialog {
   });
   protected readonly completedSearchText = this.service.completedSearchText;
   protected readonly showExternalSearchLinks = computed(() => {
+    if (this.mode() !== 'search') return false;
     const completedSearchText = this.completedSearchText();
-    return !!completedSearchText && this.form.searchText().value().trim() === completedSearchText;
+    return !!completedSearchText && this.searchForm.searchText().value().trim() === completedSearchText;
   });
   protected readonly imdbSearchUrl = computed(() => buildIMDbSearchUrl(this.completedSearchText()));
   protected readonly webSearchUrl = computed(() => buildWebSearchUrl(this.completedSearchText(), null));
   protected readonly selectedContentIsMovie = computed(() => {
-    const selectedExternalReference = this.form.selectedExternalReference().value();
+    const selectedExternalReference = this.searchForm.selectedExternalReference().value();
     if (!selectedExternalReference) return false;
 
     const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedExternalReference);
@@ -180,16 +359,22 @@ export class NewItemDialog {
     return selectedContent?.contentType === 'movie' || selectedContentText.startsWith('imdb id:');
   });
   protected readonly selectedContentIsSeries = computed(() => {
-    const selectedExternalReference = this.form.selectedExternalReference().value();
+    const selectedExternalReference = this.searchForm.selectedExternalReference().value();
     if (!selectedExternalReference) return false;
 
     const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedExternalReference);
     return selectedContent?.contentType === 'series';
   });
-  protected readonly showWatchedCheckbox = computed(() => !this.internalListMode() && this.selectedContentIsMovie());
-  protected readonly showCopyToSeriesTrackerCheckbox = computed(
-    () => !this.internalListMode() && this.selectedContentIsSeries()
-  );
+  protected readonly showWatchedCheckbox = computed(() => {
+    if (this.internalListMode()) return false;
+    return this.mode() === 'manual' ? this.manualForm.contentType().value() === 'movie' : this.selectedContentIsMovie();
+  });
+  protected readonly showCopyToSeriesTrackerCheckbox = computed(() => {
+    if (this.internalListMode()) return false;
+    return this.mode() === 'manual'
+      ? this.manualForm.contentType().value() === 'series'
+      : this.selectedContentIsSeries();
+  });
   protected readonly libraryOptions = computed(() => {
     const options = [{ text: this.translations.myLibrary(), value: '' }];
     for (const share of this.sharesState.state.incoming()) {
@@ -203,7 +388,7 @@ export class NewItemDialog {
     return options;
   });
   protected readonly showLibrarySelect = computed(() => !this.internalListMode() && this.libraryOptions().length > 1);
-  protected readonly selectedExternalReference = computed(() => this.form.selectedExternalReference().value());
+  protected readonly selectedExternalReference = computed(() => this.searchForm.selectedExternalReference().value());
   private readonly defaultTargetOwnerShareCode = computed(() => {
     if (this.internalListMode()) return null;
 
@@ -214,6 +399,15 @@ export class NewItemDialog {
       ? defaultLibraryOwnerShareCode
       : null;
   });
+  protected readonly draftImageUrl = computed(() =>
+    getProxyImageUrl(this.apiState.state.apiUrl(), this.manualForm.image().value())
+  );
+  protected readonly contentTypeOptions = computed(() => [
+    { text: this.translations.movies(), value: 'movie' },
+    { text: this.translations.seriesLabel(), value: 'series' },
+  ]);
+  protected readonly showContentTypeSelect = computed(() => !this.seriesTracker() && !this.movieTracker());
+  protected readonly showManualUserRate = computed(() => !this.internalListMode());
   public readonly watchLater = input(false);
   public readonly wishlist = input(false);
   public readonly seriesTracker = input(false);
@@ -239,7 +433,7 @@ export class NewItemDialog {
   constructor() {
     effect(() => {
       const matchedContent = this.matchedContent();
-      const selectedExternalReference = this.form.selectedExternalReference();
+      const selectedExternalReference = this.searchForm.selectedExternalReference();
 
       if (matchedContent.length) {
         selectedExternalReference.value.set(`${matchedContent[0].value}`);
@@ -251,52 +445,103 @@ export class NewItemDialog {
 
     effect(() => {
       const defaultTargetOwnerShareCode = this.defaultTargetOwnerShareCode();
-      const targetOwnerShareCode = untracked(() => this.form.targetOwnerShareCode().value());
+      const targetOwnerShareCode = untracked(() => this.searchForm.targetOwnerShareCode().value());
 
       if (targetOwnerShareCode === null || targetOwnerShareCode === '') {
-        this.form.targetOwnerShareCode().value.set(defaultTargetOwnerShareCode);
+        this.searchForm.targetOwnerShareCode().value.set(defaultTargetOwnerShareCode);
       }
     });
 
-    toObservable(this.form.searchText().value)
+    combineLatest([toObservable(this.searchForm.searchText().value), toObservable(this.mode)])
       .pipe(
         debounceTime(500),
-        filter((value) => !!value),
+        filter(([searchText]) => this.mode() === 'search' && !!searchText),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe((searchText) => this.service.search(searchText));
+      .subscribe(([searchText]) => this.service.search(searchText));
 
     combineLatest([
-      toObservable(this.form.selectedExternalReference().value),
-      toObservable(this.form.targetOwnerShareCode().value),
+      toObservable(this.mode),
+      toObservable(this.searchForm.selectedExternalReference().value),
+      toObservable(this.searchForm.targetOwnerShareCode().value),
+      toObservable(this.listType),
     ])
       .pipe(
-        debounceTime(150),
-        switchMap(([selectedExternalMetadataValue, targetOwnerShareCode]) => {
+        tap(([mode, selectedExternalMetadataValue]) => {
+          const providerReference = this.service.getProviderReference(selectedExternalMetadataValue);
+          this.searchIMDbIdLookupPending.set(mode === 'search' && !!providerReference);
+        }),
+        switchMap(([mode, selectedExternalMetadataValue, targetOwnerShareCode, listType]) => {
+          if (mode !== 'search') return of({ exists: false });
           const providerReference = this.service.getProviderReference(selectedExternalMetadataValue);
           if (!providerReference) return of({ exists: false });
           const ownerShareCode = targetOwnerShareCode || undefined;
-          const listType = this.listType();
-          return listType === 'library'
-            ? this.api.collectionItemExists(
-                providerReference.identitySource,
-                providerReference.identityId,
-                ownerShareCode,
-                undefined,
-                providerReference.externalIds
-              )
-            : this.api.collectionItemExists(
-                providerReference.identitySource,
-                providerReference.identityId,
-                ownerShareCode,
-                listType,
-                providerReference.externalIds
-              );
+          return timer(150).pipe(
+            switchMap(() => {
+              const exists$ =
+                listType === 'library'
+                  ? this.api.collectionItemExists(
+                      providerReference.identitySource,
+                      providerReference.identityId,
+                      ownerShareCode,
+                      undefined,
+                      providerReference.externalIds
+                    )
+                  : this.api.collectionItemExists(
+                      providerReference.identitySource,
+                      providerReference.identityId,
+                      ownerShareCode,
+                      listType,
+                      providerReference.externalIds
+                    );
+              return exists$.pipe(catchError(() => of({ exists: false })));
+            })
+          );
         }),
-        catchError(() => of({ exists: false })),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe((response) => this.knownIMDbIdExists.set(response.exists));
+      .subscribe((response) => {
+        this.searchIMDbIdLookupPending.set(false);
+        this.knownSearchIMDbIdExists.set(response.exists);
+      });
+
+    combineLatest([
+      toObservable(this.mode),
+      toObservable(this.manualForm.IMDbId().value),
+      toObservable(this.searchForm.targetOwnerShareCode().value),
+      toObservable(this.listType),
+    ])
+      .pipe(
+        tap(([mode, imdbId]) => {
+          this.manualIMDbIdLookupPending.set(mode === 'manual' && isImdbShapedExternalItemId(imdbId));
+        }),
+        switchMap(([mode, imdbId, targetOwnerShareCode, listType]) => {
+          if (mode !== 'manual' || !isImdbShapedExternalItemId(imdbId)) return of({ exists: false });
+          return timer(150).pipe(
+            switchMap(() =>
+              this.api
+                .collectionItemExists('omdb', imdbId.trim(), targetOwnerShareCode || undefined, listType, [
+                  { source: 'imdb', id: imdbId.trim() },
+                ])
+                .pipe(catchError(() => of({ exists: false })))
+            )
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((response) => {
+        this.manualIMDbIdLookupPending.set(false);
+        this.knownManualIMDbIdExists.set(response.exists);
+      });
+
+    effect(() => {
+      const listType = this.listType();
+      if (listType === 'series-tracker') {
+        this.manualForm.contentType().value.set('series');
+      } else if (listType === 'movie-tracker') {
+        this.manualForm.contentType().value.set('movie');
+      }
+    });
 
     this.sharesLoader.load(this.destroyRef, true);
   }
@@ -304,8 +549,20 @@ export class NewItemDialog {
   protected onSearchEnter(event: Event): void {
     event.preventDefault();
 
-    const searchText = this.form.searchText().value().trim();
+    const searchText = this.searchForm.searchText().value().trim();
     if (searchText) this.service.search(searchText);
+  }
+
+  protected onModeChange(newMode: NewItemMode): void {
+    if (this.mode() === newMode) return;
+    this.mode.set(newMode);
+    this.knownSearchIMDbIdExists.set(false);
+    this.knownManualIMDbIdExists.set(false);
+    const providerReference = this.service.getProviderReference(this.searchForm.selectedExternalReference().value());
+    this.searchIMDbIdLookupPending.set(newMode === 'search' && !!providerReference);
+    this.manualIMDbIdLookupPending.set(
+      newMode === 'manual' && isImdbShapedExternalItemId(this.manualForm.IMDbId().value())
+    );
   }
 
   protected getMatchedContentImageUrl(content: ExternalMetadataSelectDataModel): string {
@@ -323,28 +580,54 @@ export class NewItemDialog {
   }
 
   protected onSelectMatchedContent(content: ExternalMetadataSelectDataModel): void {
-    this.form.selectedExternalReference().value.set(`${content.value}`);
-    this.form.selectedExternalReference().markAsTouched();
+    this.searchForm.selectedExternalReference().value.set(`${content.value}`);
+    this.searchForm.selectedExternalReference().markAsTouched();
   }
 
   private async onSave(mode: SaveMode | null = null): Promise<void> {
-    const selectedExternalReference = this.form.selectedExternalReference().value();
-    if (!selectedExternalReference) return;
-
-    const tags = this.form.tags().value().trim();
-
+    const options: SaveOptions = {};
     const targetOwnerShareCode = this.internalListMode()
       ? undefined
-      : this.form.targetOwnerShareCode().value() || undefined;
-    const options: SaveOptions = {};
+      : this.searchForm.targetOwnerShareCode().value() || undefined;
     if (targetOwnerShareCode) options.targetOwnerShareCode = targetOwnerShareCode;
     if (this.listType() !== 'library') options.listType = this.listType();
-    if (this.showWatchedCheckbox()) options.watched = this.form.watched().value();
+    if (this.showWatchedCheckbox()) options.watched = this.searchForm.watched().value();
     if (this.showCopyToSeriesTrackerCheckbox())
-      options.copyToSeriesTrackerAsWatched = this.form.copyToSeriesTrackerAsWatched().value();
+      options.copyToSeriesTrackerAsWatched = this.searchForm.copyToSeriesTrackerAsWatched().value();
+
+    if (this.mode() === 'manual') {
+      const manualValues = this.manualForm().value();
+      const contentType = this.seriesTracker() ? 'series' : this.movieTracker() ? 'movie' : manualValues.contentType;
+      const saveRequest = this.service.saveManual(
+        {
+          ...manualValues,
+          contentType,
+          userRate: this.internalListMode() ? null : manualValues.userRate,
+        },
+        mode,
+        options
+      );
+      await firstValueFrom(saveRequest);
+
+      if (mode === 'new') {
+        this.manualForm().reset(defaultManualModel());
+        this.searchForm.watched().reset(false);
+        this.searchForm.copyToSeriesTrackerAsWatched().reset(false);
+      } else {
+        this.manualForm.IMDbId().reset('');
+      }
+      this.knownManualIMDbIdExists.set(false);
+      return;
+    }
+
+    const selectedExternalReference = this.searchForm.selectedExternalReference().value();
+    if (!selectedExternalReference) return;
+
+    const tags = this.searchForm.tags().value().trim();
+
     const saveRequest = this.service.save(
       selectedExternalReference,
-      this.internalListMode() ? null : this.form.userRate().value(),
+      this.internalListMode() ? null : this.searchForm.userRate().value(),
       tags,
       mode,
       options
@@ -352,17 +635,12 @@ export class NewItemDialog {
     await firstValueFrom(saveRequest);
 
     if (mode === 'new') {
-      this.form().reset({
-        searchText: '',
-        selectedExternalReference: null,
-        userRate: null,
-        tags: '',
-        watched: false,
-        copyToSeriesTrackerAsWatched: false,
+      this.searchForm().reset({
+        ...defaultSearchModel(),
         targetOwnerShareCode: this.defaultTargetOwnerShareCode(),
       });
     } else {
-      this.form.selectedExternalReference().reset(null);
+      this.searchForm.selectedExternalReference().reset(null);
     }
   }
 }

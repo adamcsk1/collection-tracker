@@ -20,6 +20,7 @@ import { initialTagManagementState, tagManagementStateToken } from '../../tag-ma
 import { initialSharesState, sharesStateToken } from '../../shares/shares-store';
 import { FloatActionButtons } from '../float-action-buttons/float-action-buttons';
 import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
+import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { List } from './list';
 import { FLOAT_ACTION_SCROLLING_IDLE_MS } from './list-const';
 
@@ -285,10 +286,11 @@ describe('List', () => {
 
     component['onAddNew']();
 
-    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), {
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
       watchLater: true,
       wishlist: false,
       seriesTracker: false,
+      movieTracker: false,
     });
   });
 
@@ -298,10 +300,11 @@ describe('List', () => {
 
     component['onAddNew']();
 
-    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), {
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
       watchLater: false,
       wishlist: true,
       seriesTracker: false,
+      movieTracker: false,
     });
   });
 
@@ -311,10 +314,11 @@ describe('List', () => {
 
     component['onAddNew']();
 
-    expect(portal.open).toHaveBeenCalledWith(expect.any(Function), {
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
       watchLater: false,
       wishlist: false,
       seriesTracker: true,
+      movieTracker: false,
     });
   });
 
@@ -436,6 +440,19 @@ describe('List', () => {
     actionButtons.addNew();
 
     expect(addNewSpy).toHaveBeenCalled();
+  });
+
+  it('opens the new item dialog in movie tracker mode', () => {
+    fixture.componentRef.setInput('listType', 'movie-tracker');
+
+    component['onAddNew']();
+
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
+      watchLater: false,
+      wishlist: false,
+      seriesTracker: false,
+      movieTracker: true,
+    });
   });
 
   it('navigates when a filter action is applied', () => {
