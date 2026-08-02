@@ -1,4 +1,5 @@
 import { ExternalMetadataProvider } from './external-metadata-provider';
+import { DEFAULT_OMDB_API_URL } from './providers/omdb-const';
 import { OmdbExternalMetadataProvider } from './providers/omdb-provider';
 
 export const getExternalMetadataProviderByName = (providerName: string): ExternalMetadataProvider | null => {
@@ -7,7 +8,8 @@ export const getExternalMetadataProviderByName = (providerName: string): Externa
 
 export const getExternalMetadataProviders = (): ExternalMetadataProvider[] => {
   const omdbApiKey = process.env.OMDB_API_KEY?.trim();
-  return omdbApiKey ? [new OmdbExternalMetadataProvider(omdbApiKey)] : [];
+  const omdbApiUrl = process.env.OMDB_API_URL?.trim() || DEFAULT_OMDB_API_URL;
+  return omdbApiKey ? [new OmdbExternalMetadataProvider(omdbApiKey, omdbApiUrl)] : [];
 };
 
 export const getDirectImdbExternalMetadataProvider = (): ExternalMetadataProvider | null =>

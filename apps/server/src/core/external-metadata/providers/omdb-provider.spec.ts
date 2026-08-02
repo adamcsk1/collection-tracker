@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_OMDB_API_URL } from './omdb-const';
 import { OmdbExternalMetadataProvider } from './omdb-provider';
 
 vi.mock('../../logger', () => ({
@@ -16,6 +17,31 @@ describe('OmdbExternalMetadataProvider', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.clearAllMocks();
+  });
+
+  it('uses the default OMDb URL with the search query and API key', async () => {
+    vi.mocked(fetch).mockResolvedValue({ ok: true, json: async () => ({ Search: [] }) } as Response);
+
+    await provider.search('The Matrix & Reloaded');
+
+    const requestUrl = new URL(vi.mocked(fetch).mock.calls[0][0] as string);
+    const defaultUrl = new URL(DEFAULT_OMDB_API_URL);
+    expect(requestUrl.origin).toBe(defaultUrl.origin);
+    expect(requestUrl.pathname).toBe(defaultUrl.pathname);
+    expect(requestUrl.searchParams.get('s')).toBe('The Matrix & Reloaded');
+    expect(requestUrl.searchParams.get('apikey')).toBe('test-key');
+  });
+
+  it('uses a custom OMDb URL', async () => {
+    provider = new OmdbExternalMetadataProvider('custom-key', 'https://metadata.example.com/omdb/');
+    vi.mocked(fetch).mockResolvedValue({ ok: true, json: async () => ({ Search: [] }) } as Response);
+
+    await provider.search('custom search');
+
+    const requestUrl = new URL(vi.mocked(fetch).mock.calls[0][0] as string);
+    expect(`${requestUrl.origin}${requestUrl.pathname}`).toBe('https://metadata.example.com/omdb/');
+    expect(requestUrl.searchParams.get('s')).toBe('custom search');
+    expect(requestUrl.searchParams.get('apikey')).toBe('custom-key');
   });
 
   it('returns an empty search result when OMDb reports no matches', async () => {

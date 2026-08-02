@@ -131,7 +131,7 @@ DISABLE_REGISTRATION=0
 OMDB_API_KEY="your_omdb_api_key"
 ```
 
-`OMDB_API_KEY` is optional for startup. Set it to enable the OMDb external metadata provider used by metadata search, IMDb ID import, image refresh, rating refresh, and season metadata refresh.
+`OMDB_API_KEY` is optional for startup. Set it to enable the OMDb external metadata provider used by metadata search, IMDb ID import, image refresh, rating refresh, and season metadata refresh. `OMDB_API_URL` can override the provider endpoint; when it is omitted or empty, the server uses `https://www.omdbapi.com/`.
 
 Ollama config example (`.data/ollama.config.json`):
 

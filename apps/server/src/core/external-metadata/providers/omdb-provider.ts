@@ -3,6 +3,7 @@ import { SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
 import { debugLog } from '../../logger';
 import { ExternalMetadataSeasonProvider } from '../external-metadata-provider';
+import { DEFAULT_OMDB_API_URL } from './omdb-const';
 import {
   OMDbResponseItemModel,
   OMDbResponseModel,
@@ -11,8 +12,6 @@ import {
   OmdbSeriesInfoResponse,
 } from './omdb-model';
 
-const OMDB_API = 'https://www.omdbapi.com/';
-
 const isOmdbErrorResponse = <T extends object>(response: T | OmdbErrorResponse): response is OmdbErrorResponse =>
   'error' in response;
 
@@ -20,7 +19,10 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
   public readonly name = 'omdb';
   public readonly supportsDirectImdbId = true;
 
-  constructor(private readonly apiKey: string) {}
+  constructor(
+    private readonly apiKey: string,
+    private readonly apiUrl = DEFAULT_OMDB_API_URL
+  ) {}
 
   public async search(searchText: string): Promise<ExternalMetadataSearchResponseModel> {
     const data = await this.fetchJson<OMDbResponseModel>({ s: searchText });
@@ -79,7 +81,7 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
   }
 
   private async fetchJson<T>(params: Record<string, string>): Promise<T | OmdbErrorResponse> {
-    const url = new URL(OMDB_API);
+    const url = new URL(this.apiUrl);
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.append(key, value);
     }
