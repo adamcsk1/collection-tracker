@@ -17,6 +17,7 @@ import {
 } from '@shared/models/collection-list-display-preferences-model';
 import { LANGUAGES } from '@shared/models/language-model';
 import { THEMES } from '@shared/models/theme-model';
+import { isCollectionFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import type { FastifyInstance } from 'fastify';
 import { API_PREFIX } from '@shared/constants/api-const';
@@ -61,6 +62,8 @@ const isUserSettings = (value: unknown): value is UserSettingsApiResponseModel =
         return setting === null || (typeof setting === 'string' && setting.trim().length > 0);
       case 'collectionListDisplayPreferences':
         return isCollectionListDisplayPreferences(setting);
+      case 'collectionFeaturePreferences':
+        return isCollectionFeaturePreferences(setting);
       default:
         return false;
     }

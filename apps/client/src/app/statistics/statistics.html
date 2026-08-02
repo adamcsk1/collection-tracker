@@ -53,42 +53,50 @@
           <span class="stat-value">{{ summary.favorites }}</span>
           <span class="stat-label">{{ translations.favorites() }}</span>
         </button>
-        <button
-          data-test-id="statistics-summary-watch-later"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToWatchLater()"
-          [attr.aria-label]="translations.watchLater() + ': ' + summary.watchLater"
-        >
-          <span class="stat-value">{{ summary.watchLater }}</span>
-          <span class="stat-label">{{ translations.watchLater() }}</span>
-        </button>
-        <button
-          data-test-id="statistics-summary-wishlist"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToWishlist()"
-          [attr.aria-label]="translations.wishlist() + ': ' + summary.wishlist"
-        >
-          <span class="stat-value">{{ summary.wishlist }}</span>
-          <span class="stat-label">{{ translations.wishlist() }}</span>
-        </button>
-        <button
-          data-test-id="statistics-summary-watched-movies"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToMovieTracker()"
-          [attr.aria-label]="translations.watchedMovies() + ': ' + summary.watchedMovies"
-        >
-          <span class="stat-value">{{ summary.watchedMovies }}</span>
-          <span class="stat-label">{{ translations.watchedMovies() }}</span>
-        </button>
-        <button
-          data-test-id="statistics-summary-watched-series"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToSeriesTracker()"
-          [attr.aria-label]="translations.watchedSeries() + ': ' + summary.watchedSeries"
-        >
-          <span class="stat-value">{{ summary.watchedSeries }}</span>
-          <span class="stat-label">{{ translations.watchedSeries() }}</span>
-        </button>
+        @if (featurePreferences().watchLater) {
+          <button
+            data-test-id="statistics-summary-watch-later"
+            class="card card-interactive stat-card"
+            (click)="onNavigateToWatchLater()"
+            [attr.aria-label]="translations.watchLater() + ': ' + summary.watchLater"
+          >
+            <span class="stat-value">{{ summary.watchLater }}</span>
+            <span class="stat-label">{{ translations.watchLater() }}</span>
+          </button>
+        }
+        @if (featurePreferences().wishlist) {
+          <button
+            data-test-id="statistics-summary-wishlist"
+            class="card card-interactive stat-card"
+            (click)="onNavigateToWishlist()"
+            [attr.aria-label]="translations.wishlist() + ': ' + summary.wishlist"
+          >
+            <span class="stat-value">{{ summary.wishlist }}</span>
+            <span class="stat-label">{{ translations.wishlist() }}</span>
+          </button>
+        }
+        @if (featurePreferences().movieTracker) {
+          <button
+            data-test-id="statistics-summary-watched-movies"
+            class="card card-interactive stat-card"
+            (click)="onNavigateToMovieTracker()"
+            [attr.aria-label]="translations.watchedMovies() + ': ' + summary.watchedMovies"
+          >
+            <span class="stat-value">{{ summary.watchedMovies }}</span>
+            <span class="stat-label">{{ translations.watchedMovies() }}</span>
+          </button>
+        }
+        @if (featurePreferences().seriesTracker) {
+          <button
+            data-test-id="statistics-summary-watched-series"
+            class="card card-interactive stat-card"
+            (click)="onNavigateToSeriesTracker()"
+            [attr.aria-label]="translations.watchedSeries() + ': ' + summary.watchedSeries"
+          >
+            <span class="stat-value">{{ summary.watchedSeries }}</span>
+            <span class="stat-label">{{ translations.watchedSeries() }}</span>
+          </button>
+        }
         <button
           data-test-id="statistics-summary-unwatched-movies"
           class="card card-interactive stat-card"
@@ -107,24 +115,26 @@
           <span class="stat-value">{{ summary.unwatchedLibrarySeries }}</span>
           <span class="stat-label">{{ translations.unwatchedLibrarySeries() }}</span>
         </button>
-        <button
-          data-test-id="statistics-summary-unwatched-tracker-series"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToUnwatchedTrackerSeries()"
-          [attr.aria-label]="translations.unwatchedTrackerSeries() + ': ' + summary.unwatchedTrackerSeries"
-        >
-          <span class="stat-value">{{ summary.unwatchedTrackerSeries }}</span>
-          <span class="stat-label">{{ translations.unwatchedTrackerSeries() }}</span>
-        </button>
-        <button
-          data-test-id="statistics-summary-completed-tracker-series"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToCompletedTrackerSeries()"
-          [attr.aria-label]="translations.completedTrackerSeries() + ': ' + summary.completedTrackerSeries"
-        >
-          <span class="stat-value">{{ summary.completedTrackerSeries }}</span>
-          <span class="stat-label">{{ translations.completedTrackerSeries() }}</span>
-        </button>
+        @if (featurePreferences().seriesTracker) {
+          <button
+            data-test-id="statistics-summary-unwatched-tracker-series"
+            class="card card-interactive stat-card"
+            (click)="onNavigateToUnwatchedTrackerSeries()"
+            [attr.aria-label]="translations.unwatchedTrackerSeries() + ': ' + summary.unwatchedTrackerSeries"
+          >
+            <span class="stat-value">{{ summary.unwatchedTrackerSeries }}</span>
+            <span class="stat-label">{{ translations.unwatchedTrackerSeries() }}</span>
+          </button>
+          <button
+            data-test-id="statistics-summary-completed-tracker-series"
+            class="card card-interactive stat-card"
+            (click)="onNavigateToCompletedTrackerSeries()"
+            [attr.aria-label]="translations.completedTrackerSeries() + ': ' + summary.completedTrackerSeries"
+          >
+            <span class="stat-value">{{ summary.completedTrackerSeries }}</span>
+            <span class="stat-label">{{ translations.completedTrackerSeries() }}</span>
+          </button>
+        }
       </div>
     }
 

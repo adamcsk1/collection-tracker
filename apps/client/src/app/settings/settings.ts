@@ -27,6 +27,7 @@ export class Settings {
     accessTokens: computed(() => this.ngxSignalTranslate.translate('AccessTokens')),
     tagManagement: computed(() => this.ngxSignalTranslate.translate('TagManagement')),
     collectionListDisplay: computed(() => this.ngxSignalTranslate.translate('CollectionListDisplay')),
+    features: computed(() => this.ngxSignalTranslate.translate('Features')),
     mediaRefresh: computed(() => this.ngxSignalTranslate.translate('MediaRefresh')),
     manageTrackerData: computed(() => this.ngxSignalTranslate.translate('ManageTrackerData')),
     shares: computed(() => this.ngxSignalTranslate.translate('Shares')),

@@ -22,6 +22,12 @@ const defaultUserSettings = {
     preferredRating: 'imdb',
     imdbRatingFallback: false,
   },
+  collectionFeaturePreferences: {
+    wishlist: true,
+    watchLater: true,
+    movieTracker: true,
+    seriesTracker: true,
+  },
 };
 
 const getSetCookieHeaders = (headers: Cypress.Response<unknown>['headers']): string[] => {
@@ -58,11 +64,13 @@ const resetPermissionStorage = (win: Window): void => {
   win.sessionStorage.removeItem('CT.SettingLock');
   win.sessionStorage.removeItem('CT.SensitiveDataStorage');
   win.sessionStorage.removeItem('CT.ClearLocalStorageAfterLogout');
+  win.sessionStorage.removeItem('CT.CollectionFeaturePreferences');
   win.localStorage.setItem('CT.AppMode', 'full');
   win.localStorage.removeItem('CT.SettingLock');
   win.localStorage.removeItem('CT.SensitiveDataStorage');
   win.localStorage.removeItem('CT.ClearLocalStorageAfterLogout');
   win.localStorage.removeItem('CT.CollectionListOrderPreferences');
+  win.localStorage.removeItem('CT.CollectionFeaturePreferences');
 };
 
 const signInThroughUi = (username: string, token: string): void => {
@@ -149,9 +157,11 @@ Cypress.Commands.add('autoLogin', () => {
   collectionListTypes.forEach((listType) => {
     const listItemsUrl = `/api/v1/items?limit=1000&offset=0&listType=${encodeURIComponent(listType)}`;
     cy.request('GET', listItemsUrl).then((response) => {
-      const items = (response.body as {
-        items: Array<{ externalProvider: string; externalItemId: string; hash: string }>;
-      }).items;
+      const items = (
+        response.body as {
+          items: Array<{ externalProvider: string; externalItemId: string; hash: string }>;
+        }
+      ).items;
       items.forEach((item) => {
         const deleteUrl = `/api/v1/items/${encodeURIComponent(item.externalProvider)}/${encodeURIComponent(
           item.externalItemId

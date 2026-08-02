@@ -22,7 +22,11 @@ import { ThemeService } from '@services/theme/theme-service';
 import { themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { STORAGE_API_URL, STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
+import {
+  STORAGE_API_URL,
+  STORAGE_COLLECTION_FEATURE_PREFERENCES,
+  STORAGE_LOGGED_IN,
+} from '@shared/constants/storage-const';
 import { getBasePath } from '@shared/utils/get-base-path-util';
 import { companionApp, resetCompanionAppConfig } from '@shared/utils/companion-app-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -151,6 +155,7 @@ export class SignIn implements OnInit {
     }
 
     await firstValueFrom(this.publicApi.signIn(formValue.username, formValue.token));
+    this.webStorage.removeItem(STORAGE_COLLECTION_FEATURE_PREFERENCES);
     this.webStorage.setItem(STORAGE_LOGGED_IN, 'true');
     await firstValueFrom(
       this.sharedApi

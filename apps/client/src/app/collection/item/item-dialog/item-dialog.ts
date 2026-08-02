@@ -25,6 +25,7 @@ import { normalizeIMDbRating } from '@shared/utils/external-metadata-ratings-uti
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { finalize, firstValueFrom, map, mergeMap, of } from 'rxjs';
 import { sharesStateToken } from '../../../shares/shares-store';
+import { mainStateToken } from '../../../main/main-store';
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionService } from '../../collection-service';
 import { SeriesSeasonMetadataDialog } from '../../series-tracker/series-season-metadata-dialog/series-season-metadata-dialog';
@@ -78,6 +79,7 @@ export class ItemDialog implements OnInit {
   private readonly api = inject(ApiService);
   private readonly apiState = inject(apiStateToken);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly mainState = inject(mainStateToken);
   private readonly lastSavedItem = signal<CollectionItemChangeApiModel | null>(null);
   protected readonly translations = {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
@@ -333,6 +335,7 @@ export class ItemDialog implements OnInit {
   protected readonly seriesTracker = computed(() => this.collectionItem().listType === 'series-tracker');
   protected readonly inSeriesTracker = computed(() => this.seriesTrackerExists());
   protected readonly inMovieTracker = computed(() => this.movieTrackerExists());
+  protected readonly featurePreferences = this.mainState.state.collectionFeaturePreferences;
   protected readonly movieTracker = computed(() => this.collectionItem().listType === 'movie-tracker');
   protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
   protected readonly series = computed(() => this.collectionItem().contentType === 'series');
@@ -619,7 +622,7 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMarkAsWatched(): Promise<void> {
-    if (!this.permissionWatch() || this.watched()) return;
+    if (!this.featurePreferences().movieTracker || !this.permissionWatch() || this.watched()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
@@ -646,7 +649,7 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMoveToMovieTracker(): Promise<void> {
-    if (!this.watchLater() || !this.movie()) return;
+    if (!this.featurePreferences().movieTracker || !this.watchLater() || !this.movie()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
@@ -674,7 +677,7 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMoveToSeriesTracker(): Promise<void> {
-    if (!this.watchLater() || !this.series()) return;
+    if (!this.featurePreferences().seriesTracker || !this.watchLater() || !this.series()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
@@ -701,7 +704,7 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onCopyToSeriesTracker(): Promise<void> {
-    if (!this.libraryItem() || !this.series()) return;
+    if (!this.featurePreferences().seriesTracker || !this.libraryItem() || !this.series()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
@@ -723,7 +726,8 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onRemoveFromSeriesTracker(): Promise<void> {
-    if (!this.libraryItem() || !this.series() || !this.inSeriesTracker()) return;
+    if (!this.featurePreferences().seriesTracker || !this.libraryItem() || !this.series() || !this.inSeriesTracker())
+      return;
     const item = this.collectionItem();
     const trackerHash = this.seriesTrackerHash();
     if (!trackerHash) return;
@@ -761,7 +765,7 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMarkAsUnwatched(): Promise<void> {
-    if (!this.permissionWatch() || !this.watched()) return;
+    if (!this.featurePreferences().movieTracker || !this.permissionWatch() || !this.watched()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       await firstValueFrom(

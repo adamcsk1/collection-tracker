@@ -9,6 +9,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
+import { initialMainState, mainStateToken } from '../../main/main-store';
 import { SharesService } from '../../shares/shares-service';
 import { initialSharesState, sharesStateToken } from '../../shares/shares-store';
 import { ManageTrackerDataService } from './manage-tracker-data-service';
@@ -44,6 +45,7 @@ describe('SettingsManageTrackerData component', () => {
         provideStore(initialBlockerLoadingState, blockerLoadingStateToken),
         provideStore(initialToastState, toastStateToken),
         provideStore(initialMainCollectionState, mainCollectionStateToken),
+        provideStore(initialMainState, mainStateToken),
         provideStore(initialApiState, apiStateToken),
         provideStore(initialSharesState, sharesStateToken),
         { provide: NgxSignalTranslateService, useValue: { translate: (key: string) => key } },
@@ -175,5 +177,19 @@ describe('SettingsManageTrackerData component', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-manage-tracker-data-library"]')).toBeNull();
+  });
+
+  it('hides movie and series actions when both tracker features are disabled', () => {
+    TestBed.inject(mainStateToken).setState('collectionFeaturePreferences', {
+      ...initialMainState.collectionFeaturePreferences,
+      movieTracker: false,
+      seriesTracker: false,
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-watched"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-series-watched"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-movie-data"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-series-data"]')).toBeNull();
   });
 });

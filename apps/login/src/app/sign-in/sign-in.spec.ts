@@ -8,7 +8,11 @@ import { ThemeService } from '@services/theme/theme-service';
 import { initialThemeState, ThemeState, themeStateToken } from '@services/theme/theme-store';
 import { TranslateService } from '@services/translate-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { STORAGE_API_URL, STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
+import {
+  STORAGE_API_URL,
+  STORAGE_COLLECTION_FEATURE_PREFERENCES,
+  STORAGE_LOGGED_IN,
+} from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
@@ -21,7 +25,7 @@ describe('SignIn component', () => {
   let themeState: NgxSimpleSignalStoreService<ThemeState>;
   let publicApiService: { signIn: Mock };
   let sharedApiService: { updateUserSettings: Mock };
-  let webStorage: { getItem: Mock; setItem: Mock };
+  let webStorage: { getItem: Mock; setItem: Mock; removeItem: Mock };
   let confirm: { ifConfirmed: Mock };
   let translateService: { languageOptions: Mock };
   let ngxTranslate: { translate: Mock; setLanguage: Mock };
@@ -41,6 +45,7 @@ describe('SignIn component', () => {
     webStorage = {
       getItem: vi.fn(() => null),
       setItem: vi.fn(),
+      removeItem: vi.fn(),
     };
     confirm = { ifConfirmed: vi.fn(() => of(true)) };
     translateService = { languageOptions: vi.fn(() => [{ text: 'English', value: 'en' }]) };
@@ -128,6 +133,7 @@ describe('SignIn component', () => {
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_API_URL, 'https://new-api');
     expect(publicApiService.signIn).toHaveBeenCalledWith('neo', 'matrix');
     expect(webStorage.setItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN, 'true');
+    expect(webStorage.removeItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES);
     expect(sharedApiService.updateUserSettings).toHaveBeenCalledWith({
       language: 'en',
       theme: 'light',

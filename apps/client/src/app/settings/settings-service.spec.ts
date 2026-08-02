@@ -10,11 +10,12 @@ import { initialThemeState, themeStateToken } from '@services/theme/theme-store'
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
+  STORAGE_COLLECTION_FEATURE_PREFERENCES,
   STORAGE_SENSITIVE_DATA_STORAGE,
 } from '@shared/constants/storage-const';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { SettingsService } from './settings-service';
 import { initialSharesState, sharesStateToken } from '../shares/shares-store';
@@ -82,6 +83,12 @@ describe('SettingsService', () => {
     service.storeFormData(formData);
 
     expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_SENSITIVE_DATA_STORAGE, 'session');
+    expect(webstorage.setItem).toHaveBeenCalledWith(
+      STORAGE_COLLECTION_FEATURE_PREFERENCES,
+      JSON.stringify(initialMainState.collectionFeaturePreferences),
+      'session'
+    );
+    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES, 'local');
     expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({
       theme: 'dark',
       animatedBackground: true,
@@ -104,6 +111,21 @@ describe('SettingsService', () => {
       animatedBackground: false,
       language: 'en',
     });
+  });
+
+  it('moves the feature cache from session storage to local storage when the mode changes', () => {
+    const preferences = { wishlist: false, watchLater: true, movieTracker: true, seriesTracker: false };
+    mainState.setState('sensitiveDataStorage', 'session');
+    mainState.setState('collectionFeaturePreferences', preferences);
+
+    service.storeFormData(buildFormData({ sensitiveDataStorage: 'local' }));
+
+    expect(webstorage.setItem).toHaveBeenCalledWith(
+      STORAGE_COLLECTION_FEATURE_PREFERENCES,
+      JSON.stringify(preferences),
+      'local'
+    );
+    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES, 'session');
   });
 
   it('preloads migrated settings from the API and leaves defaults for missing values', () => {
@@ -143,6 +165,40 @@ describe('SettingsService', () => {
     });
   });
 
+  it('overrides cached collection feature preferences with API preferences', () => {
+    const cachedPreferences = { wishlist: true, watchLater: true, movieTracker: true, seriesTracker: true };
+    const apiPreferences = { wishlist: false, watchLater: true, movieTracker: false, seriesTracker: true };
+    mainState.setState('collectionFeaturePreferences', cachedPreferences);
+    api.getUserSettings.mockReturnValue(of({ collectionFeaturePreferences: apiPreferences }));
+
+    service.preloadUserSettings().subscribe();
+
+    expect(mainState.state.collectionFeaturePreferences()).toEqual(apiPreferences);
+    expect(webstorage.setItem).toHaveBeenCalledWith(
+      STORAGE_COLLECTION_FEATURE_PREFERENCES,
+      JSON.stringify(apiPreferences),
+      'local'
+    );
+  });
+
+  it('uses and caches default collection feature preferences when the API field is missing', () => {
+    mainState.setState('collectionFeaturePreferences', {
+      wishlist: false,
+      watchLater: false,
+      movieTracker: false,
+      seriesTracker: false,
+    });
+
+    service.preloadUserSettings().subscribe();
+
+    expect(mainState.state.collectionFeaturePreferences()).toEqual(initialMainState.collectionFeaturePreferences);
+    expect(webstorage.setItem).toHaveBeenCalledWith(
+      STORAGE_COLLECTION_FEATURE_PREFERENCES,
+      JSON.stringify(initialMainState.collectionFeaturePreferences),
+      'local'
+    );
+  });
+
   it('stores collection list display preferences', () => {
     const preferences = {
       showYear: false,
@@ -155,6 +211,66 @@ describe('SettingsService', () => {
 
     expect(mainState.state.collectionListDisplayPreferences()).toEqual(preferences);
     expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({ collectionListDisplayPreferences: preferences });
+  });
+
+  it('stores, caches, and posts collection feature preferences', () => {
+    const preferences = { wishlist: false, watchLater: true, movieTracker: false, seriesTracker: true };
+
+    service.storeCollectionFeaturePreferences(preferences);
+
+    expect(mainState.state.collectionFeaturePreferences()).toEqual(preferences);
+    expect(webstorage.setItem).toHaveBeenCalledWith(
+      STORAGE_COLLECTION_FEATURE_PREFERENCES,
+      JSON.stringify(preferences),
+      'local'
+    );
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({ collectionFeaturePreferences: preferences });
+  });
+
+  it('caches collection feature preferences in configured session storage', () => {
+    const preferences = { wishlist: true, watchLater: false, movieTracker: true, seriesTracker: false };
+    mainState.setState('sensitiveDataStorage', 'session');
+
+    service.storeCollectionFeaturePreferences(preferences);
+
+    expect(webstorage.setItem).toHaveBeenCalledWith(
+      STORAGE_COLLECTION_FEATURE_PREFERENCES,
+      JSON.stringify(preferences),
+      'session'
+    );
+  });
+
+  it('serializes collection feature preference updates', () => {
+    const firstUpdate = new Subject<void>();
+    const firstPreferences = { wishlist: false, watchLater: true, movieTracker: true, seriesTracker: true };
+    const secondPreferences = { ...firstPreferences, watchLater: false };
+    sharedApi.updateUserSettings.mockReturnValueOnce(firstUpdate).mockReturnValueOnce(of(void 0));
+
+    service.storeCollectionFeaturePreferences(firstPreferences);
+    service.storeCollectionFeaturePreferences(secondPreferences);
+
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledTimes(1);
+    firstUpdate.complete();
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledTimes(2);
+    expect(sharedApi.updateUserSettings).toHaveBeenLastCalledWith({
+      collectionFeaturePreferences: secondPreferences,
+    });
+  });
+
+  it('continues serialized collection feature preference updates after an error', () => {
+    const firstPreferences = { wishlist: false, watchLater: true, movieTracker: true, seriesTracker: true };
+    const secondPreferences = { ...firstPreferences, watchLater: false };
+    sharedApi.updateUserSettings
+      .mockReturnValueOnce(throwError(() => new Error('network')))
+      .mockReturnValueOnce(of(void 0));
+
+    service.storeCollectionFeaturePreferences(firstPreferences);
+    service.storeCollectionFeaturePreferences(secondPreferences);
+
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledTimes(2);
+    expect(sharedApi.updateUserSettings).toHaveBeenLastCalledWith({
+      collectionFeaturePreferences: secondPreferences,
+    });
   });
 
   it('updates AI availability when preloaded AI availability reports unavailable', () => {

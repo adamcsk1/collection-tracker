@@ -1,0 +1,27 @@
+<form role="form" data-test-id="settings-features-form" [formRoot]="form">
+  <p>{{ translations.message() }}</p>
+  <libc-checkbox
+    data-test-id="settings-feature-wishlist"
+    [formField]="form.wishlist"
+    [label]="translations.wishlist()"
+    (valueChange)="onChange('wishlist', $event)"
+  />
+  <libc-checkbox
+    data-test-id="settings-feature-watch-later"
+    [formField]="form.watchLater"
+    [label]="translations.watchLater()"
+    (valueChange)="onChange('watchLater', $event)"
+  />
+  <libc-checkbox
+    data-test-id="settings-feature-watch-tracker"
+    [formField]="form.movieTracker"
+    [label]="translations.watchTracker()"
+    (valueChange)="onChange('movieTracker', $event)"
+  />
+  <libc-checkbox
+    data-test-id="settings-feature-series-tracker"
+    [formField]="form.seriesTracker"
+    [label]="translations.seriesTracker()"
+    (valueChange)="onChange('seriesTracker', $event)"
+  />
+</form>

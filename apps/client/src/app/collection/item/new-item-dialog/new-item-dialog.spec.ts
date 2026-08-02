@@ -262,6 +262,28 @@ describe('NewItemDialog component', () => {
     expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(true);
   });
 
+  it('hides watched checkbox when the movie tracker feature is disabled', () => {
+    mainState.setState('collectionFeaturePreferences', {
+      ...initialMainState.collectionFeaturePreferences,
+      movieTracker: false,
+    });
+    service.matchedContent.set([{ contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' }]);
+    component['searchForm'].selectedExternalReference().value.set('tt-movie');
+
+    expect(component['showWatchedCheckbox']()).toBe(false);
+  });
+
+  it('hides copy-to-series-tracker checkbox when the series tracker feature is disabled', () => {
+    mainState.setState('collectionFeaturePreferences', {
+      ...initialMainState.collectionFeaturePreferences,
+      seriesTracker: false,
+    });
+    service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
+    component['searchForm'].selectedExternalReference().value.set('tt-series');
+
+    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+  });
+
   it('hides copy-to-series-tracker checkbox for selected movie content', () => {
     service.matchedContent.set([{ contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-movie');

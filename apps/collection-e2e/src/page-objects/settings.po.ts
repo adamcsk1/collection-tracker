@@ -27,6 +27,10 @@ export const SettingsPage = {
     cy.visit('/client/#/settings/manage-tracker-data');
   },
 
+  visitFeatures: () => {
+    cy.visit('/client/#/settings/features');
+  },
+
   // Basic form fields (always visible when settingsLock is off)
   getBasicsForm: () => cy.getByTestId('settings-basics-form'),
   getLanguageSelect: () => cy.getByTestId('settings-language').find('select'),
@@ -46,6 +50,14 @@ export const SettingsPage = {
   getListPreferredRatingSelect: () => cy.getByTestId('settings-list-preferred-rating').find('select'),
   getListImdbRatingFallbackCheckbox: () =>
     cy.getByTestId('settings-list-imdb-rating-fallback').find('input[type="checkbox"]'),
+
+  // Features page
+  getFeaturesForm: () => cy.getByTestId('settings-features-form'),
+  getFeatureWishlistCheckbox: () => cy.getByTestId('settings-feature-wishlist').find('input[type="checkbox"]'),
+  getFeatureWatchLaterCheckbox: () => cy.getByTestId('settings-feature-watch-later').find('input[type="checkbox"]'),
+  getFeatureWatchTrackerCheckbox: () => cy.getByTestId('settings-feature-watch-tracker').find('input[type="checkbox"]'),
+  getFeatureSeriesTrackerCheckbox: () =>
+    cy.getByTestId('settings-feature-series-tracker').find('input[type="checkbox"]'),
 
   // Media refresh page
   getMediaRefreshLibrarySelect: () => cy.getByTestId('settings-media-refresh-library').find('select'),

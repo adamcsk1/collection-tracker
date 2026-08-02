@@ -6,6 +6,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { SharesService } from '../../shares/shares-service';
 import { sharesStateToken } from '../../shares/shares-store';
 import { ManageTrackerDataService } from './manage-tracker-data-service';
+import { mainStateToken } from '../../main/main-store';
 
 @Component({
   selector: 'ct-settings-manage-tracker-data',
@@ -23,6 +24,7 @@ export class SettingsManageTrackerData implements OnInit {
 
   protected readonly selectedOwnerShareCode = signal('');
   protected readonly apiLoadNetworkStatus = inject(apiStateToken).state.loadNetworkStatus;
+  protected readonly featurePreferences = inject(mainStateToken).state.collectionFeaturePreferences;
   protected readonly translations = {
     library: computed(() => this.ngxSignalTranslate.translate('Library')),
     messageManageTrackerData: computed(() => this.ngxSignalTranslate.translate('Message.ManageTrackerData')),

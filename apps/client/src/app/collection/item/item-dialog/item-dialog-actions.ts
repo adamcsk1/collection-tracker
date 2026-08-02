@@ -24,6 +24,8 @@ export class ItemDialogActions {
   public readonly favorite = input.required<boolean>();
   public readonly inSeriesTracker = input.required<boolean>();
   public readonly inMovieTracker = input.required<boolean>();
+  public readonly movieTrackerEnabled = input.required<boolean>();
+  public readonly seriesTrackerEnabled = input.required<boolean>();
 
   public readonly manageWatchedEpisodes = output<void>();
   public readonly manageSeriesMetadata = output<void>();

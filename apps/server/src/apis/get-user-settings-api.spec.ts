@@ -74,6 +74,43 @@ describe('get-user-settings-api', () => {
     expect(response.send).toHaveBeenCalledWith({ collectionListDisplayPreferences: preferences });
   });
 
+  it('returns collection feature preferences', async () => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    const db = getDatabase();
+    const preferences = { wishlist: false, watchLater: true, movieTracker: false, seriesTracker: true };
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO user_settings (username_hash, collection_feature_preferences) VALUES (?, ?)').run(
+      'user',
+      JSON.stringify(preferences)
+    );
+
+    const { register } = await import('./get-user-settings-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ collectionFeaturePreferences: preferences });
+  });
+
+  it('omits malformed stored collection feature preferences', async () => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO user_settings (username_hash, collection_feature_preferences) VALUES (?, ?)').run(
+      'user',
+      '{invalid'
+    );
+
+    const { register } = await import('./get-user-settings-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({});
+  });
+
   it('returns empty object when caller has no stored user settings', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };

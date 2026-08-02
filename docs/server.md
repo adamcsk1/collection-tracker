@@ -8,7 +8,7 @@ Source: [`apps/server`](../apps/server)
 
 - sign-up, sign-in, logout, and access-token lifecycle management
 - CRUD for per-user collection items stored in SQLite, including structured media type, favorite state, matched-item, existence, random-item, and search-suggestion APIs
-- tag management, user-settings, user-share, and collection-list display persistence
+- tag management, user-settings, user-share, collection-list display, and collection feature preference persistence
 - statistics summaries, media refresh, external rating refresh, and manage tracker data updates split across movie tracker rows and series progress
 - movie tracker items, series tracker season metadata, watched episodes, and watched-state bulk updates
 - SQLite database initialization and schema migrations
@@ -36,7 +36,7 @@ Source: [`apps/server`](../apps/server)
 - `logs/`
 - `cache/` — image proxy cache files and metadata
 
-Collection items, users, tokens, settings, shares, collection-list display preferences, series tracker data, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations). Collection item media type and favorite state are stored as item fields.
+Collection items, users, tokens, settings, shares, collection-list display preferences, collection feature preferences, series tracker data, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations). Collection item media type and favorite state are stored as item fields. Missing collection feature preferences preserve the existing behavior by enabling every feature.
 
 ## Import And Export
 

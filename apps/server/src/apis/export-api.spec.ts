@@ -16,9 +16,10 @@ describe('export-api', () => {
     const db = getDatabase();
 
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    const featurePreferences = { wishlist: false, watchLater: true, movieTracker: false, seriesTracker: true };
     db.prepare(
-      'INSERT INTO user_settings (username_hash, theme, animated_background, language) VALUES (?, ?, ?, ?)'
-    ).run('user', 'dark', 0, 'en');
+      'INSERT INTO user_settings (username_hash, theme, animated_background, language, collection_feature_preferences) VALUES (?, ?, ?, ?, ?)'
+    ).run('user', 'dark', 0, 'en', JSON.stringify(featurePreferences));
     db.prepare(
       'INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
@@ -92,6 +93,7 @@ describe('export-api', () => {
         theme: 'dark',
         animatedBackground: false,
         language: 'en',
+        collectionFeaturePreferences: featurePreferences,
       },
       collectionItems: [
         expect.objectContaining({

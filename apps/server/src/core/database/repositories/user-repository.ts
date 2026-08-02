@@ -9,6 +9,8 @@ import {
   CollectionListDisplayPreferencesModel,
   COLLECTION_LIST_DISPLAY_RATINGS,
 } from '@shared/models/collection-list-display-preferences-model';
+import { CollectionFeaturePreferencesModel } from '@shared/models/collection-feature-preferences-model';
+import { isCollectionFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
 import { hashText } from '../../crypto';
 import { UserRow } from './user-model';
 
@@ -140,6 +142,7 @@ export const findUserSettings = (
         language: string | null;
         default_library_owner_share_code: string | null;
         collection_list_display_preferences: string | null;
+        collection_feature_preferences: string | null;
       }
     | undefined;
 
@@ -155,8 +158,21 @@ export const findUserSettings = (
     row.collection_list_display_preferences
   );
   if (collectionListDisplayPreferences) settings.collectionListDisplayPreferences = collectionListDisplayPreferences;
+  const collectionFeaturePreferences = parseCollectionFeaturePreferences(row.collection_feature_preferences);
+  if (collectionFeaturePreferences) settings.collectionFeaturePreferences = collectionFeaturePreferences;
 
   return settings;
+};
+
+const parseCollectionFeaturePreferences = (value: string | null): CollectionFeaturePreferencesModel | undefined => {
+  if (!value) return undefined;
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return isCollectionFeaturePreferences(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
 };
 
 const parseCollectionListDisplayPreferences = (
@@ -195,21 +211,23 @@ export const upsertUserSettings = (
 ): void => {
   db.prepare(
     `INSERT INTO user_settings
-     (username_hash, theme, animated_background, language, default_library_owner_share_code, collection_list_display_preferences)
-     VALUES (?, ?, ?, ?, ?, ?)
+     (username_hash, theme, animated_background, language, default_library_owner_share_code, collection_list_display_preferences, collection_feature_preferences)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(username_hash) DO UPDATE SET
        theme = excluded.theme,
        animated_background = excluded.animated_background,
        language = excluded.language,
        default_library_owner_share_code = excluded.default_library_owner_share_code,
-       collection_list_display_preferences = excluded.collection_list_display_preferences`
+       collection_list_display_preferences = excluded.collection_list_display_preferences,
+       collection_feature_preferences = excluded.collection_feature_preferences`
   ).run(
     usernameHash,
     settings.theme ?? null,
     settings.animatedBackground === undefined ? null : settings.animatedBackground ? 1 : 0,
     settings.language ?? null,
     settings.defaultLibraryOwnerShareCode ?? null,
-    settings.collectionListDisplayPreferences ? JSON.stringify(settings.collectionListDisplayPreferences) : null
+    settings.collectionListDisplayPreferences ? JSON.stringify(settings.collectionListDisplayPreferences) : null,
+    settings.collectionFeaturePreferences ? JSON.stringify(settings.collectionFeaturePreferences) : null
   );
 };
 

@@ -15,6 +15,7 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY } from 'rxjs';
 import { StatisticsChartService } from './statistics-chart-service';
 import { StatisticsSummaryModel } from './statistics-model';
+import { mainStateToken } from '../main/main-store';
 
 @Component({
   selector: 'ct-statistics',
@@ -36,6 +37,7 @@ export class Statistics implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly portal = inject(PortalService);
   private readonly charts = inject(StatisticsChartService);
+  protected readonly featurePreferences = inject(mainStateToken).state.collectionFeaturePreferences;
   protected readonly translations = {
     statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
     messageLoadStatistics: computed(() => this.ngxSignalTranslate.translate('Message.LoadStatistics')),

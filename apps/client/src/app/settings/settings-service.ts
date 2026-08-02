@@ -8,18 +8,22 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
   STORAGE_SENSITIVE_DATA_STORAGE,
+  STORAGE_COLLECTION_FEATURE_PREFERENCES,
 } from '@shared/constants/storage-const';
 import {
   CollectionListDisplayPreferencesModel,
   COLLECTION_LIST_DISPLAY_RATINGS,
   DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES,
 } from '@shared/models/collection-list-display-preferences-model';
-import { UserSettingsApiRequestModel } from '@shared/models/api-model';
+import { UserSettingsApiRequestModel, UserSettingsApiResponseModel } from '@shared/models/api-model';
 import { LANGUAGES } from '@shared/models/language-model';
 import { THEMES } from '@shared/models/theme-model';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
+import { CollectionFeaturePreferencesModel } from '@shared/models/collection-feature-preferences-model';
+import { DEFAULT_COLLECTION_FEATURE_PREFERENCES } from '@shared/constants/collection-feature-preferences-const';
+import { isCollectionFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY, map, Observable, of, switchMap, tap } from 'rxjs';
+import { catchError, EMPTY, finalize, map, Observable, of, switchMap, tap } from 'rxjs';
 import { mainStateToken } from '../main/main-store';
 import { sharesStateToken } from '../shares/shares-store';
 import { SettingsModel } from './settings-model';
@@ -35,6 +39,8 @@ export class SettingsService {
   private readonly themeState = inject(themeStateToken);
   private readonly toastState = inject(toastStateToken);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly collectionFeaturePreferencesQueue: CollectionFeaturePreferencesModel[] = [];
+  private collectionFeaturePreferencesSaveInProgress = false;
 
   public preloadUserSettings(): Observable<void> {
     return this.api.getUserSettings().pipe(
@@ -66,13 +72,7 @@ export class SettingsService {
     );
   }
 
-  private applyUserSettings(settings: {
-    theme?: string;
-    animatedBackground?: boolean;
-    language?: string;
-    defaultLibraryOwnerShareCode?: string | null;
-    collectionListDisplayPreferences?: Partial<CollectionListDisplayPreferencesModel>;
-  }): void {
+  private applyUserSettings(settings: UserSettingsApiResponseModel): void {
     const theme = parseAllowedValue(settings.theme ?? null, THEMES);
     if (theme) this.themeState.setState('theme', theme);
 
@@ -96,6 +96,12 @@ export class SettingsService {
         this.normalizeCollectionListDisplayPreferences(settings.collectionListDisplayPreferences)
       );
     }
+
+    const collectionFeaturePreferences = isCollectionFeaturePreferences(settings.collectionFeaturePreferences)
+      ? settings.collectionFeaturePreferences
+      : DEFAULT_COLLECTION_FEATURE_PREFERENCES;
+    this.mainState.setState('collectionFeaturePreferences', collectionFeaturePreferences);
+    this.cacheCollectionFeaturePreferences(collectionFeaturePreferences);
   }
 
   private normalizeCollectionListDisplayPreferences(
@@ -124,6 +130,7 @@ export class SettingsService {
   }
 
   public storeFormData(formData: SettingsModel): void {
+    const previousSensitiveDataStorage = this.mainState.state.sensitiveDataStorage();
     this.mainState.setState('sensitiveDataStorage', formData.sensitiveDataStorage);
     this.mainState.setState('clearLocalStorageAfterLogout', formData.clearLocalStorageAfterLogout);
     this.mainState.setState('animatedBackground', formData.animatedBackground);
@@ -132,6 +139,14 @@ export class SettingsService {
 
     this.webstorage.setItem(STORAGE_SENSITIVE_DATA_STORAGE, formData.sensitiveDataStorage);
     this.webstorage.setItem(STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT, String(formData.clearLocalStorageAfterLogout));
+    if (previousSensitiveDataStorage !== formData.sensitiveDataStorage) {
+      this.webstorage.setItem(
+        STORAGE_COLLECTION_FEATURE_PREFERENCES,
+        JSON.stringify(this.mainState.state.collectionFeaturePreferences()),
+        formData.sensitiveDataStorage
+      );
+      this.webstorage.removeItem(STORAGE_COLLECTION_FEATURE_PREFERENCES, previousSensitiveDataStorage);
+    }
     this.ngxSignalTranslate.setLanguage(formData.language);
 
     const userSettings: UserSettingsApiRequestModel = {
@@ -177,5 +192,42 @@ export class SettingsService {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
+  }
+
+  public storeCollectionFeaturePreferences(preferences: CollectionFeaturePreferencesModel): void {
+    this.mainState.setState('collectionFeaturePreferences', preferences);
+    this.cacheCollectionFeaturePreferences(preferences);
+
+    this.collectionFeaturePreferencesQueue.push(preferences);
+    this.saveNextCollectionFeaturePreferences();
+  }
+
+  private saveNextCollectionFeaturePreferences(): void {
+    if (this.collectionFeaturePreferencesSaveInProgress) return;
+
+    const preferences = this.collectionFeaturePreferencesQueue.shift();
+    if (!preferences) return;
+
+    this.collectionFeaturePreferencesSaveInProgress = true;
+    this.sharedApi
+      .updateUserSettings({ collectionFeaturePreferences: preferences })
+      .pipe(
+        tap(() => this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'))),
+        catchError(() => EMPTY),
+        finalize(() => {
+          this.collectionFeaturePreferencesSaveInProgress = false;
+          this.saveNextCollectionFeaturePreferences();
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  private cacheCollectionFeaturePreferences(preferences: CollectionFeaturePreferencesModel): void {
+    this.webstorage.setItem(
+      STORAGE_COLLECTION_FEATURE_PREFERENCES,
+      JSON.stringify(preferences),
+      this.mainState.state.sensitiveDataStorage()
+    );
   }
 }

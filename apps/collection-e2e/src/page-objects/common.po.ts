@@ -11,6 +11,7 @@ export const CommonPage = {
   getNavWishlistLink: () => getNavLink('nav-wishlist'),
   getNavSeriesTrackerLink: () => getNavLink('nav-series-tracker'),
   getNavMovieTrackerLink: () => getNavLink('nav-movie-tracker'),
+  getMenuNavItem: (testId: string) => cy.get(`ct-menu-dialog [data-test-id="${testId}"]`),
   getNavSyncLink: () => getNavLink('nav-sync'),
   getNavSettingsLink: () => getNavLink('nav-settings'),
   getNavStatisticsLink: () => getNavLink('nav-statistics'),

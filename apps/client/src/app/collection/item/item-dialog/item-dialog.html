@@ -187,6 +187,8 @@
       [favorite]="favorite()"
       [inSeriesTracker]="inSeriesTracker()"
       [inMovieTracker]="inMovieTracker()"
+      [movieTrackerEnabled]="featurePreferences().movieTracker"
+      [seriesTrackerEnabled]="featurePreferences().seriesTracker"
       (manageWatchedEpisodes)="onManageWatchedEpisodes()"
       (manageSeriesMetadata)="onManageSeriesMetadata()"
       (markAsUnwatched)="onMarkAsUnwatched()"

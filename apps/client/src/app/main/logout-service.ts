@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
+import { STORAGE_COLLECTION_FEATURE_PREFERENCES, STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
 import { redirectToLogin } from '@shared/utils/redirect-to-login-util';
 import { mainStateToken } from './main-store';
 
@@ -11,7 +11,10 @@ export class LogoutService {
 
   public performLogout(): void {
     if (this.mainState.state.clearLocalStorageAfterLogout()) this.webstorage.clear();
-    else this.webstorage.removeItem(STORAGE_LOGGED_IN);
+    else {
+      this.webstorage.removeItem(STORAGE_LOGGED_IN);
+      this.webstorage.removeItem(STORAGE_COLLECTION_FEATURE_PREFERENCES);
+    }
     redirectToLogin();
   }
 }

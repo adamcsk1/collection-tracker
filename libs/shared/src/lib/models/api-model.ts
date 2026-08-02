@@ -1,6 +1,7 @@
 import { ExternalItemIdentityModel } from './external-metadata-provider-model';
 import { CollectionItemModel, CollectionListTypeModel } from './collection-item-model';
 import { CollectionListDisplayPreferencesModel } from './collection-list-display-preferences-model';
+import { CollectionFeaturePreferencesModel } from './collection-feature-preferences-model';
 import { LanguageModel } from './language-model';
 import { ThemeModel } from './theme-model';
 
@@ -168,6 +169,7 @@ export interface UserSettingsApiResponseModel {
   language?: LanguageModel;
   defaultLibraryOwnerShareCode?: string | null;
   collectionListDisplayPreferences?: CollectionListDisplayPreferencesModel;
+  collectionFeaturePreferences?: CollectionFeaturePreferencesModel;
 }
 
 export interface AiAvailableApiResponseModel {

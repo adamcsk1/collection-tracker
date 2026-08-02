@@ -4,6 +4,8 @@ import {
   DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES,
 } from '@shared/models/collection-list-display-preferences-model';
 import { createInjectionToken } from 'ngx-simple-signal-store';
+import { CollectionFeaturePreferencesModel } from '@shared/models/collection-feature-preferences-model';
+import { DEFAULT_COLLECTION_FEATURE_PREFERENCES } from '@shared/constants/collection-feature-preferences-const';
 
 export interface MainState {
   clearLocalStorageAfterLogout: boolean;
@@ -14,6 +16,7 @@ export interface MainState {
   backgroundImagesRefreshTrigger: number;
   defaultLibraryOwnerShareCode: string | null;
   collectionListDisplayPreferences: CollectionListDisplayPreferencesModel;
+  collectionFeaturePreferences: CollectionFeaturePreferencesModel;
 }
 
 export const initialMainState: MainState = {
@@ -25,6 +28,7 @@ export const initialMainState: MainState = {
   backgroundImagesRefreshTrigger: 0,
   defaultLibraryOwnerShareCode: null,
   collectionListDisplayPreferences: DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES,
+  collectionFeaturePreferences: DEFAULT_COLLECTION_FEATURE_PREFERENCES,
 };
 
 export const mainStateToken = createInjectionToken<MainState>('mainState');

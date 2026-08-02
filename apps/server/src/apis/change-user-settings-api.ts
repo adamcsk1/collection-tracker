@@ -9,6 +9,7 @@ import {
 import { LANGUAGES } from '@shared/models/language-model';
 import { THEMES } from '@shared/models/theme-model';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
+import { isCollectionFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
 import { getDatabase } from '../core/database/database';
 import { findUserSettings, upsertUserSettings } from '../core/database/repositories/user-repository';
 import type { FastifyInstance } from 'fastify';
@@ -55,6 +56,8 @@ const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel
         return isAllowedDefaultLibraryOwnerShareCode(value);
       case 'collectionListDisplayPreferences':
         return isAllowedCollectionListDisplayPreferences(value);
+      case 'collectionFeaturePreferences':
+        return isCollectionFeaturePreferences(value);
       case 'fromLogin':
         return typeof value === 'boolean';
       default:

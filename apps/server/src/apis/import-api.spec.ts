@@ -118,7 +118,17 @@ describe('import-api', () => {
       body: {
         type: 'collection-tracker-export',
         version: 5,
-        userSettings: { theme: 'dark', animatedBackground: false, language: 'en' },
+        userSettings: {
+          theme: 'dark',
+          animatedBackground: false,
+          language: 'en',
+          collectionFeaturePreferences: {
+            wishlist: false,
+            watchLater: true,
+            movieTracker: false,
+            seriesTracker: true,
+          },
+        },
         collectionItems: [
           item,
           { ...item, IMDbId: 'tt0000003', externalItemId: 'tt0000003', listType: 'watch-later' },
@@ -187,8 +197,22 @@ describe('import-api', () => {
       token_hash: 'access-token',
     });
     expect(
-      db.prepare('SELECT theme, animated_background, language FROM user_settings WHERE username_hash = ?').get('user')
-    ).toEqual({ theme: 'dark', animated_background: 0, language: 'en' });
+      db
+        .prepare(
+          'SELECT theme, animated_background, language, collection_feature_preferences FROM user_settings WHERE username_hash = ?'
+        )
+        .get('user')
+    ).toEqual({
+      theme: 'dark',
+      animated_background: 0,
+      language: 'en',
+      collection_feature_preferences: JSON.stringify({
+        wishlist: false,
+        watchLater: true,
+        movieTracker: false,
+        seriesTracker: true,
+      }),
+    });
     expect(
       db
         .prepare(
@@ -502,6 +526,35 @@ describe('import-api', () => {
         type: 'collection-tracker-export',
         version: 5,
         userSettings: { collectionListDisplayPreferences: { preferredRating: 'imdb' } },
+        collectionItems: [],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 for malformed imported collection feature preferences', async () => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 5,
+        userSettings: {
+          collectionFeaturePreferences: {
+            wishlist: true,
+            watchLater: true,
+            movieTracker: true,
+            seriesTracker: 'yes',
+          },
+        },
         collectionItems: [],
         tagManagement: [],
         seriesTrackerData: {},

@@ -9,6 +9,7 @@ import { catchError, EMPTY } from 'rxjs';
 import { CollectionService } from '../../collection/collection-service';
 import { SettingsService } from '../../settings/settings-service';
 import { LogoutService } from '../logout-service';
+import { mainStateToken } from '../main-store';
 
 @Component({
   selector: 'ct-menu-nav',
@@ -26,6 +27,7 @@ export class MenuNav {
   private readonly portal = inject(PortalService);
   private readonly theme = inject(ThemeService);
   private readonly settings = inject(SettingsService);
+  private readonly mainState = inject(mainStateToken);
   protected readonly translations = {
     title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
     menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
@@ -41,6 +43,7 @@ export class MenuNav {
     logout: computed(() => this.ngxSignalTranslate.translate('Logout')),
   };
   protected readonly themeLogo = this.theme.themeLogo;
+  protected readonly featurePreferences = this.mainState.state.collectionFeaturePreferences;
 
   protected onSync(): void {
     this.settings

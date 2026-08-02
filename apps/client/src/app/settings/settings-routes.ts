@@ -30,6 +30,10 @@ export const settingsRoutes: Routes = [
           ),
       },
       {
+        path: 'features',
+        loadComponent: () => import('./features/features').then((module) => module.SettingsFeatures),
+      },
+      {
         path: 'media-refresh',
         loadComponent: () => import('./media-refresh/media-refresh').then((module) => module.SettingsMediaRefresh),
       },

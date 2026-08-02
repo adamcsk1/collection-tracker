@@ -366,11 +366,11 @@ export class NewItemDialog {
     return selectedContent?.contentType === 'series';
   });
   protected readonly showWatchedCheckbox = computed(() => {
-    if (this.internalListMode()) return false;
+    if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().movieTracker) return false;
     return this.mode() === 'manual' ? this.manualForm.contentType().value() === 'movie' : this.selectedContentIsMovie();
   });
   protected readonly showCopyToSeriesTrackerCheckbox = computed(() => {
-    if (this.internalListMode()) return false;
+    if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().seriesTracker) return false;
     return this.mode() === 'manual'
       ? this.manualForm.contentType().value() === 'series'
       : this.selectedContentIsSeries();

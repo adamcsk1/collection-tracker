@@ -1034,6 +1034,29 @@ describe('ItemDialog', () => {
     expect(toastState.state.message()).toBe('Toast.EditItem');
   });
 
+  it('does not run movie tracker actions when the feature is disabled', async () => {
+    TestBed.inject(mainStateToken).setState('collectionFeaturePreferences', {
+      ...initialMainState.collectionFeaturePreferences,
+      movieTracker: false,
+    });
+
+    await component['onMarkAsWatched']();
+
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'watch-later', ownerShareCode: 'own-code', tags: [MOVIE_TAG] })
+    );
+    fixture.detectChanges();
+    await component['onMoveToMovieTracker']();
+
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG], watched: true }));
+    fixture.detectChanges();
+    await component['onMarkAsUnwatched']();
+
+    expect(api.addMovieTrackerItemByExternalId).not.toHaveBeenCalled();
+    expect(api.deleteMovieTrackerItemByExternalId).not.toHaveBeenCalled();
+  });
+
   it('moves watch later movie items to movie tracker', async () => {
     const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
     fixture.componentRef.setInput(
@@ -1112,6 +1135,33 @@ describe('ItemDialog', () => {
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
+  });
+
+  it('does not run series tracker actions when the feature is disabled', async () => {
+    TestBed.inject(mainStateToken).setState('collectionFeaturePreferences', {
+      ...initialMainState.collectionFeaturePreferences,
+      seriesTracker: false,
+    });
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'library', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+
+    await component['onCopyToSeriesTracker']();
+
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'watch-later', ownerShareCode: 'own-code', tags: [SERIES_TAG] })
+    );
+    fixture.detectChanges();
+    await component['onMoveToSeriesTracker']();
+
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'library', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component['seriesTrackerExists'].set(true);
+    component['seriesTrackerHash'].set('tracker-hash');
+    await component['onRemoveFromSeriesTracker']();
+
+    expect(api.addSeriesTrackerItemByExternalId).not.toHaveBeenCalled();
+    expect(api.deleteByExternalId).not.toHaveBeenCalled();
   });
 
   it('does not re-save when already watched', async () => {

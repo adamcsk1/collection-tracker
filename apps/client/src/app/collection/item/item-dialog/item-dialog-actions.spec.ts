@@ -53,6 +53,8 @@ describe('ItemDialogActions', () => {
     fixture.componentRef.setInput('favorite', overrides['favorite'] ?? false);
     fixture.componentRef.setInput('inSeriesTracker', overrides['inSeriesTracker'] ?? false);
     fixture.componentRef.setInput('inMovieTracker', overrides['inMovieTracker'] ?? false);
+    fixture.componentRef.setInput('movieTrackerEnabled', overrides['movieTrackerEnabled'] ?? true);
+    fixture.componentRef.setInput('seriesTrackerEnabled', overrides['seriesTrackerEnabled'] ?? true);
     fixture.detectChanges();
   };
 
@@ -159,6 +161,22 @@ describe('ItemDialogActions', () => {
 
   it('hides move to series tracker when series is already tracked', () => {
     createComponent({ libraryItem: false, watchLater: true, movie: false, series: true, inSeriesTracker: true });
+    expect(queryButton('item-dialog-move-series-tracker')).toBeNull();
+  });
+
+  it('hides movie tracker actions when the feature is disabled', () => {
+    createComponent({ movieTrackerEnabled: false, libraryItem: true, movie: true });
+    expect(queryButton('item-dialog-mark-watched')).toBeNull();
+
+    createComponent({ movieTrackerEnabled: false, libraryItem: false, watchLater: true, movie: true });
+    expect(queryButton('item-dialog-move-movie-tracker')).toBeNull();
+  });
+
+  it('hides series tracker actions when the feature is disabled', () => {
+    createComponent({ seriesTrackerEnabled: false, libraryItem: true, movie: false, series: true });
+    expect(queryButton('item-dialog-copy-series-tracker')).toBeNull();
+
+    createComponent({ seriesTrackerEnabled: false, libraryItem: false, watchLater: true, movie: false, series: true });
     expect(queryButton('item-dialog-move-series-tracker')).toBeNull();
   });
 

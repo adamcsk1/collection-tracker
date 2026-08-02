@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
@@ -45,14 +45,9 @@ describe('MenuNav', () => {
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         provideSignalTranslateConfig({ path: '' }),
         provideStore(initialMainState, mainStateToken),
-        {
-          provide: Router,
-          useValue: {},
-        },
+        provideRouter([]),
       ],
     });
-
-    TestBed.overrideComponent(MenuNav, { set: { template: '' } });
 
     fixture = TestBed.createComponent(MenuNav);
     component = fixture.componentInstance;
@@ -94,6 +89,37 @@ describe('MenuNav', () => {
     await component['onOpenAbout'](event);
 
     expect(event.preventDefault).toHaveBeenCalled();
+  });
+
+  it('shows only navigation links for enabled collection features', () => {
+    const mainState = TestBed.inject(mainStateToken);
+    const hasLink = (testId: string) => fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) !== null;
+
+    mainState.setState('collectionFeaturePreferences', {
+      watchLater: true,
+      wishlist: false,
+      movieTracker: true,
+      seriesTracker: false,
+    });
+    fixture.detectChanges();
+
+    expect(hasLink('nav-watch-later')).toBe(true);
+    expect(hasLink('nav-wishlist')).toBe(false);
+    expect(hasLink('nav-movie-tracker')).toBe(true);
+    expect(hasLink('nav-series-tracker')).toBe(false);
+
+    mainState.setState('collectionFeaturePreferences', {
+      watchLater: false,
+      wishlist: true,
+      movieTracker: false,
+      seriesTracker: true,
+    });
+    fixture.detectChanges();
+
+    expect(hasLink('nav-watch-later')).toBe(false);
+    expect(hasLink('nav-wishlist')).toBe(true);
+    expect(hasLink('nav-movie-tracker')).toBe(false);
+    expect(hasLink('nav-series-tracker')).toBe(true);
   });
 
   it('still syncs collection when refreshing settings fails', () => {

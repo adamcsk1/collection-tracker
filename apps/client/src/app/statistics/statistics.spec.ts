@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
@@ -10,8 +10,10 @@ import { provideStore } from 'ngx-simple-signal-store';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Statistics } from './statistics';
+import { initialMainState, mainStateToken } from '../main/main-store';
 
 describe('Statistics component', () => {
+  let fixture: ComponentFixture<Statistics>;
   let component: Statistics;
   let api: { getStatistics: ReturnType<typeof vi.fn> };
   let webstorage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
@@ -51,6 +53,7 @@ describe('Statistics component', () => {
       imports: [Statistics],
       providers: [
         provideStore(initialApiState, apiStateToken),
+        provideStore(initialMainState, mainStateToken),
         { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: WebstorageService, useValue: webstorage },
@@ -59,9 +62,8 @@ describe('Statistics component', () => {
       ],
     });
 
-    TestBed.overrideComponent(Statistics, { set: { template: '' } });
-
-    component = TestBed.createComponent(Statistics).componentInstance;
+    fixture = TestBed.createComponent(Statistics);
+    component = fixture.componentInstance;
     component['tagChart'].set(mockChart());
     component['watchedChart'].set(mockChart());
     component['typeChart'].set(mockChart());
@@ -89,6 +91,41 @@ describe('Statistics component', () => {
     expect(component['tags']()).toEqual(['#drama', '#action']);
   });
 
+  it('shows only summary cards for enabled collection features', () => {
+    const mainState = TestBed.inject(mainStateToken);
+    const hasCard = (testId: string) => fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) !== null;
+
+    mainState.setState('collectionFeaturePreferences', {
+      watchLater: true,
+      wishlist: false,
+      movieTracker: true,
+      seriesTracker: false,
+    });
+    fixture.detectChanges();
+
+    expect(hasCard('statistics-summary-watch-later')).toBe(true);
+    expect(hasCard('statistics-summary-wishlist')).toBe(false);
+    expect(hasCard('statistics-summary-watched-movies')).toBe(true);
+    expect(hasCard('statistics-summary-watched-series')).toBe(false);
+    expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(false);
+    expect(hasCard('statistics-summary-completed-tracker-series')).toBe(false);
+
+    mainState.setState('collectionFeaturePreferences', {
+      watchLater: false,
+      wishlist: true,
+      movieTracker: false,
+      seriesTracker: true,
+    });
+    fixture.detectChanges();
+
+    expect(hasCard('statistics-summary-watch-later')).toBe(false);
+    expect(hasCard('statistics-summary-wishlist')).toBe(true);
+    expect(hasCard('statistics-summary-watched-movies')).toBe(false);
+    expect(hasCard('statistics-summary-watched-series')).toBe(true);
+    expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(true);
+    expect(hasCard('statistics-summary-completed-tracker-series')).toBe(true);
+  });
+
   it('sets defaultOpenSelectedTags to true when no tags are stored', () => {
     expect(component['defaultOpenSelectedTags']).toBe(true);
   });
@@ -100,6 +137,7 @@ describe('Statistics component', () => {
       imports: [Statistics],
       providers: [
         provideStore(initialApiState, apiStateToken),
+        provideStore(initialMainState, mainStateToken),
         { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         { provide: WebstorageService, useValue: webstorage },

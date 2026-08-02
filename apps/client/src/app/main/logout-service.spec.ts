@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
-import { STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
+import { STORAGE_COLLECTION_FEATURE_PREFERENCES, STORAGE_LOGGED_IN } from '@shared/constants/storage-const';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as MainUtil from '@shared/utils/redirect-to-login-util';
@@ -54,5 +54,6 @@ describe('LogoutService', () => {
 
     expect(webstorage.clear).not.toHaveBeenCalled();
     expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN);
+    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES);
   });
 });

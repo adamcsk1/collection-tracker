@@ -27,7 +27,7 @@
       >
     </button>
   }
-  @if (permissionWatch() && libraryItem() && movie()) {
+  @if (movieTrackerEnabled() && permissionWatch() && libraryItem() && movie()) {
     @if (watched()) {
       <button
         class="button-icon button-reveal-label"
@@ -58,7 +58,7 @@
       </button>
     }
   }
-  @if (permissionWatch() && libraryItem() && series()) {
+  @if (seriesTrackerEnabled() && permissionWatch() && libraryItem() && series()) {
     @if (inSeriesTracker()) {
       <button
         class="button-icon button-reveal-label"
@@ -89,7 +89,7 @@
       </button>
     }
   }
-  @if (watchLater() && movie() && !inMovieTracker()) {
+  @if (movieTrackerEnabled() && watchLater() && movie() && !inMovieTracker()) {
     <button
       class="button-icon button-reveal-label"
       [libcRevealLabel]="translations().moveToMovieTracker()"
@@ -104,7 +104,7 @@
       >
     </button>
   }
-  @if (watchLater() && series() && !inSeriesTracker()) {
+  @if (seriesTrackerEnabled() && watchLater() && series() && !inSeriesTracker()) {
     <button
       class="button-icon button-reveal-label"
       [libcRevealLabel]="translations().moveToSeriesTracker()"

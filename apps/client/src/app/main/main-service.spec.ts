@@ -6,6 +6,7 @@ import { WebstorageService } from '@services/webstorage/webstorage-service';
 import {
   STORAGE_API_URL,
   STORAGE_CLEAR_LOCAL_STORAGE_AFTER_LOGOUT,
+  STORAGE_COLLECTION_FEATURE_PREFERENCES,
   STORAGE_LOGGED_IN,
   STORAGE_SENSITIVE_DATA_STORAGE,
 } from '@shared/constants/storage-const';
@@ -76,6 +77,53 @@ describe('MainService', () => {
     expect(mainState.state.sensitiveDataStorage()).toBe(initialMainState.sensitiveDataStorage);
   });
 
+  it('hydrates collection feature preferences from the local cache', () => {
+    const preferences = { wishlist: false, watchLater: true, movieTracker: false, seriesTracker: true };
+    webstorage.getItem.mockImplementation((key: string) =>
+      key === STORAGE_COLLECTION_FEATURE_PREFERENCES ? JSON.stringify(preferences) : null
+    );
+
+    service.loadStoredData();
+
+    expect(webstorage.getItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES, 'local');
+    expect(mainState.state.collectionFeaturePreferences()).toEqual(preferences);
+  });
+
+  it('hydrates collection feature preferences from the configured session cache', () => {
+    const preferences = { wishlist: true, watchLater: false, movieTracker: true, seriesTracker: false };
+    webstorage.getItem.mockImplementation((key: string, storage?: string) => {
+      if (key === STORAGE_SENSITIVE_DATA_STORAGE) return 'session';
+      if (key === STORAGE_COLLECTION_FEATURE_PREFERENCES && storage === 'session') {
+        return JSON.stringify(preferences);
+      }
+      return null;
+    });
+
+    service.loadStoredData();
+
+    expect(webstorage.getItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES, 'session');
+    expect(mainState.state.collectionFeaturePreferences()).toEqual(preferences);
+  });
+
+  it.each(['not-json', JSON.stringify({ wishlist: false })])(
+    'uses default collection feature preferences for malformed cached value %s',
+    (storedPreferences) => {
+      webstorage.getItem.mockImplementation((key: string) =>
+        key === STORAGE_COLLECTION_FEATURE_PREFERENCES ? storedPreferences : null
+      );
+
+      service.loadStoredData();
+
+      expect(mainState.state.collectionFeaturePreferences()).toEqual(initialMainState.collectionFeaturePreferences);
+    }
+  );
+
+  it('uses default collection feature preferences when the local cache is missing', () => {
+    service.loadStoredData();
+
+    expect(mainState.state.collectionFeaturePreferences()).toEqual(initialMainState.collectionFeaturePreferences);
+  });
+
   it('validates access token and marks it as valid', () => {
     service.validateSession();
     expect(service.tokenValid()).toBe(true);
@@ -88,6 +136,7 @@ describe('MainService', () => {
     expect(() => service.validateSession()).not.toThrow();
     expect(service.tokenValid()).toBe(false);
     expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_LOGGED_IN);
+    expect(webstorage.removeItem).toHaveBeenCalledWith(STORAGE_COLLECTION_FEATURE_PREFERENCES);
   });
 
   it('preserves the logged-in session when validation is rate limited', () => {

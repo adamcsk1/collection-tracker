@@ -119,6 +119,87 @@ describe('Settings - collection list display page', () => {
   });
 });
 
+describe('Settings - features page', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+  });
+
+  it('persists disabled features and hides their menu links', () => {
+    SettingsPage.visitFeatures();
+    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+
+    SettingsPage.getFeaturesForm().should('be.visible');
+    SettingsPage.getFeatureWishlistCheckbox().uncheck();
+    cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+    SettingsPage.getFeatureWatchLaterCheckbox().uncheck();
+    cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+    SettingsPage.getFeatureWatchTrackerCheckbox().uncheck();
+    cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+    SettingsPage.getFeatureSeriesTrackerCheckbox().uncheck();
+    cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+
+    cy.reload();
+    SettingsPage.getFeatureWishlistCheckbox().should('not.be.checked');
+    SettingsPage.getFeatureWatchLaterCheckbox().should('not.be.checked');
+    SettingsPage.getFeatureWatchTrackerCheckbox().should('not.be.checked');
+    SettingsPage.getFeatureSeriesTrackerCheckbox().should('not.be.checked');
+
+    CommonPage.openMenu();
+    CommonPage.getMenuNavItem('nav-wishlist').should('not.exist');
+    CommonPage.getMenuNavItem('nav-watch-later').should('not.exist');
+    CommonPage.getMenuNavItem('nav-movie-tracker').should('not.exist');
+    CommonPage.getMenuNavItem('nav-series-tracker').should('not.exist');
+
+    cy.visit('/client/#/collection/series-tracker');
+    cy.url().should('include', '/collection/series-tracker');
+
+    cy.request('POST', '/api/v1/create', buildCollectionItem('Feature Statistics Movie', 'movie', 'tt8100002'));
+    cy.visit('/client/#/statistics');
+    cy.getByTestId('statistics-summary-all').should('be.visible');
+    cy.getByTestId('statistics-summary-wishlist').should('not.exist');
+    cy.getByTestId('statistics-summary-watch-later').should('not.exist');
+    cy.getByTestId('statistics-summary-watched-movies').should('not.exist');
+    cy.getByTestId('statistics-summary-watched-series').should('not.exist');
+  });
+
+  it('hides the connected series tracker option when adding a series', () => {
+    SettingsPage.visitFeatures();
+    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+    SettingsPage.getFeatureSeriesTrackerCheckbox().uncheck();
+    cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.visit();
+    CollectionPage.getAddFirstItemLink().click();
+    CollectionPage.getNewItemManualModeButton().click();
+    CollectionPage.getNewItemManualContentTypeSelect().select('series');
+    cy.getByTestId('new-item-copy-to-series-tracker-as-watched').should('not.exist');
+  });
+
+  it('opens feature settings from the settings navigation', () => {
+    SettingsPage.visitBasics();
+
+    cy.getByTestId('settings-nav-features').scrollIntoView().click({ force: true });
+
+    cy.url().should('include', '/settings/features');
+    SettingsPage.getFeaturesForm().should('be.visible');
+  });
+
+  it('uses session storage for the feature cache when configured', () => {
+    SettingsPage.visitBasics();
+    SettingsPage.getSensitiveDataStorageSelect().select('session');
+    SettingsPage.visitFeatures();
+    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+
+    SettingsPage.getFeatureWishlistCheckbox().uncheck();
+    cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
+
+    cy.window().should((win) => {
+      expect(win.sessionStorage.getItem('CT.CollectionFeaturePreferences')).to.contain('"wishlist":false');
+      expect(win.localStorage.getItem('CT.CollectionFeaturePreferences')).to.eq(null);
+    });
+  });
+});
+
 describe('Settings - manage tracker data page', () => {
   beforeEach(() => {
     cy.autoLogin();

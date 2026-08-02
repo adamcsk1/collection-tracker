@@ -12,6 +12,7 @@ Source: [`apps/client`](../apps/client)
 - `settings/tag-management`: per-tag color, weight, and presentation rules
 - `settings/export-import`: export and import collection data, tag management settings, and series tracker progress using the current `collection-tracker-export` format
 - `settings/collection-list-display`: per-user collection list metadata and preferred rating display rules
+- `settings/features`: show or hide Wishlist, Watch Later, Movie Tracker, and Series Tracker navigation and connected actions without blocking direct routes or deleting data
 - `settings/media-refresh`: refresh stored images and external ratings from external metadata provider-backed APIs
 - `settings/manage-tracker-data`: mark all visible collection items watched or unwatched
 - `settings/shares`: manage outgoing and incoming collection shares by user share code
@@ -23,6 +24,7 @@ Source: [`apps/client`](../apps/client)
 - Uses standalone Angular components, zoneless change detection, and hash-based routing.
 - Copies static assets from both [`apps/client/public`](../apps/client/public) and [`libs/public/src`](../libs/public/src).
 - Loads translations from `./client/i18n`.
+- Hydrates feature preferences synchronously from the configured browser storage, then replaces the cache with the authenticated user's API settings when they load.
 - Keeps local build metadata placeholders in the About component; release packaging temporarily patches them before building and resets them afterwards.
 
 ## Important Paths

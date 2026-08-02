@@ -1521,6 +1521,35 @@ describe('runMigrations', () => {
     });
   });
 
+  describe('024_add_collection_feature_preferences', () => {
+    it('adds a nullable collection feature preferences column and preserves existing settings', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState(
+        '024_add_collection_feature_preferences.sql',
+        tempDirs
+      );
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO user_settings (username_hash, theme) VALUES ('user', 'dark');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '024_add_collection_feature_preferences.sql'),
+        join(migrationsDir, '024_add_collection_feature_preferences.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      const columns = db.prepare('PRAGMA table_info(user_settings)').all() as Array<{ name: string }>;
+      expect(columns.map((column) => column.name)).toContain('collection_feature_preferences');
+      expect(
+        db
+          .prepare('SELECT theme, collection_feature_preferences FROM user_settings WHERE username_hash = ?')
+          .get('user')
+      ).toEqual({ theme: 'dark', collection_feature_preferences: null });
+
+      db.close();
+    });
+  });
+
   describe('runner behavior', () => {
     it('runs the full migration chain 001 to 015 and produces the expected final schema', async () => {
       const db = new Database(':memory:');

@@ -176,6 +176,23 @@ components:
           description: Share code of the incoming library selected by default when creating collection items. Null selects the caller's own library.
         collectionListDisplayPreferences:
           $ref: '#/components/schemas/CollectionListDisplayPreferences'
+        collectionFeaturePreferences:
+          $ref: '#/components/schemas/CollectionFeaturePreferences'
+
+    CollectionFeaturePreferences:
+      type: object
+      description: Collection features shown in navigation and connected actions. All features are enabled when omitted.
+      required: [wishlist, watchLater, movieTracker, seriesTracker]
+      additionalProperties: false
+      properties:
+        wishlist:
+          type: boolean
+        watchLater:
+          type: boolean
+        movieTracker:
+          type: boolean
+        seriesTracker:
+          type: boolean
 
     CollectionListDisplayPreferences:
       type: object
@@ -217,6 +234,8 @@ components:
           description: Share code of the incoming library selected by default when creating collection items. Null selects the caller's own library.
         collectionListDisplayPreferences:
           $ref: '#/components/schemas/CollectionListDisplayPreferences'
+        collectionFeaturePreferences:
+          $ref: '#/components/schemas/CollectionFeaturePreferences'
         fromLogin:
           type: boolean
           description: When true, language and theme are only initialized if the user has not already stored those settings.
