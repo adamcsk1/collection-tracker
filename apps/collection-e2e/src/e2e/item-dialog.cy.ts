@@ -222,6 +222,26 @@ describe('Item dialog — edit flow', () => {
   });
 });
 
+describe('Item dialog — tag autocomplete', () => {
+  const tags = ['#bluary', '#english-cover', '#season01', '#season02', '#season03', '#season04', '#season05'];
+  const item = { ...buildCollectionItem('Tag Suggestion Movie', 'movie', 'tt7000002'), tags };
+
+  beforeEach(() => {
+    cy.autoLogin();
+    cy.request('POST', '/api/v1/create', item);
+    CollectionPage.visit();
+  });
+
+  it('shows three later suggestions when earlier matches are already selected', () => {
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogEditButton().click();
+
+    CollectionPage.getItemDialogTagsInput().clear().type('#bluary #english-cover #season01 #season02 #');
+
+    CollectionPage.getItemDialogTagSuggestions().should('have.length', 3).and('contain.text', '#season03');
+  });
+});
+
 describe('Item dialog — external links', () => {
   beforeEach(() => {
     cy.autoLogin();

@@ -14,7 +14,7 @@ export class TagSuggestionService implements AutocompleteServiceInterface {
     const lastTag = tags.at(-1) || '';
     if (!lastTag) return of([]);
     return this.api
-      .getTagSuggestions(lastTag, limit)
+      .getTagSuggestions(lastTag, limit + tags.length)
       .pipe(map((response) => this.formatResult(response.tags, tags, limit)));
   }
 

@@ -21,7 +21,7 @@ describe('TagSuggestionService', () => {
   it('requests server tag suggestions and replaces the last token', async () => {
     const suggestions = await firstValueFrom(service.getSuggestion('find #sc'));
 
-    expect(api.getTagSuggestions).toHaveBeenCalledWith('#sc', 3);
+    expect(api.getTagSuggestions).toHaveBeenCalledWith('#sc', 5);
     expect(suggestions).toEqual(['find #scifi', 'find #space', 'find #scary']);
   });
 
@@ -29,6 +29,22 @@ describe('TagSuggestionService', () => {
     const suggestions = await firstValueFrom(service.getSuggestion('#space #s'));
 
     expect(suggestions).not.toContain('#space #space');
+  });
+
+  it('requests enough matches to replace suggestions filtered as already entered', async () => {
+    const matchedTags = ['#bluary', '#english-cover', '#season01', '#season02', '#season03', '#season04', '#season05'];
+    api.getTagSuggestions.mockImplementation((_query: string, limit: number) =>
+      of({ tags: matchedTags.slice(0, limit) })
+    );
+
+    const suggestions = await firstValueFrom(service.getSuggestion('#bluary #english-cover #season01 #season02 #'));
+
+    expect(api.getTagSuggestions).toHaveBeenCalledWith('#', 8);
+    expect(suggestions).toEqual([
+      '#bluary #english-cover #season01 #season02 #season03',
+      '#bluary #english-cover #season01 #season02 #season04',
+      '#bluary #english-cover #season01 #season02 #season05',
+    ]);
   });
 
   it('returns empty list when no tags are provided', async () => {

@@ -21,7 +21,7 @@ describe('GenreSuggestionService', () => {
   it('requests server genre suggestions and replaces the last token', async () => {
     const suggestions = await firstValueFrom(service.getSuggestion('Drama, Act'));
 
-    expect(api.getGenreSuggestions).toHaveBeenCalledWith('Act', 3);
+    expect(api.getGenreSuggestions).toHaveBeenCalledWith('Act', 5);
     expect(suggestions).toEqual(['Drama, Action', 'Drama, Adventure', 'Drama, Animation']);
   });
 
@@ -32,17 +32,33 @@ describe('GenreSuggestionService', () => {
     expect(suggestions).not.toContain('Action, Action');
   });
 
+  it('requests enough matches to replace suggestions filtered as already entered', async () => {
+    const matchedGenres = ['Action', 'Adventure', 'Animation', 'Anime', 'Anthology'];
+    api.getGenreSuggestions.mockImplementation((_query: string, limit: number) =>
+      of({ genres: matchedGenres.slice(0, limit) })
+    );
+
+    const suggestions = await firstValueFrom(service.getSuggestion('Action, Adventure, A'));
+
+    expect(api.getGenreSuggestions).toHaveBeenCalledWith('A', 6);
+    expect(suggestions).toEqual([
+      'Action, Adventure, Animation',
+      'Action, Adventure, Anime',
+      'Action, Adventure, Anthology',
+    ]);
+  });
+
   it('calls API with empty string when input is empty', async () => {
     const suggestions = await firstValueFrom(service.getSuggestion(''));
 
-    expect(api.getGenreSuggestions).toHaveBeenCalledWith('', 3);
+    expect(api.getGenreSuggestions).toHaveBeenCalledWith('', 4);
     expect(suggestions).toEqual(['Action', 'Adventure', 'Animation']);
   });
 
   it('respects the limit parameter', async () => {
     const suggestions = await firstValueFrom(service.getSuggestion('Sci-Fi', 1));
 
-    expect(api.getGenreSuggestions).toHaveBeenCalledWith('Sci-Fi', 1);
+    expect(api.getGenreSuggestions).toHaveBeenCalledWith('Sci-Fi', 2);
     expect(suggestions).toHaveLength(1);
   });
 
@@ -55,6 +71,6 @@ describe('GenreSuggestionService', () => {
   it('handles trailing comma and whitespace', async () => {
     await firstValueFrom(service.getSuggestion('Drama, '));
 
-    expect(api.getGenreSuggestions).toHaveBeenCalledWith('', 3);
+    expect(api.getGenreSuggestions).toHaveBeenCalledWith('', 5);
   });
 });

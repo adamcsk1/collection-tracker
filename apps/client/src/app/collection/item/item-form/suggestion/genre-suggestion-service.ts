@@ -13,7 +13,7 @@ export class GenreSuggestionService implements AutocompleteServiceInterface {
 
     const lastGenre = genres.at(-1) || '';
     return this.api
-      .getGenreSuggestions(lastGenre, limit)
+      .getGenreSuggestions(lastGenre, limit + genres.length)
       .pipe(map((response) => this.formatResult(response.genres, genres, limit)));
   }
 

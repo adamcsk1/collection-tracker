@@ -237,6 +237,7 @@ export const CollectionPage = {
     getItemDialog().find('[data-test-id="item-dialog-manage-series-metadata"]'),
   getItemDialogGenreInput: () => getItemDialog().find('[data-test-id="item-dialog-genre"] input'),
   getItemDialogTagsInput: () => getItemDialog().find('[data-test-id="item-dialog-tags"] input'),
+  getItemDialogTagSuggestions: () => getItemDialog().find('[data-test-id="item-dialog-tags"] [role="option"]'),
   getItemDialogActorsInput: () => getItemDialog().find('[data-test-id="item-dialog-actors"] input'),
   getItemDialogPlotInput: () => getItemDialog().find('[data-test-id="item-dialog-plot"] textarea'),
   getItemDialogWatchedUpToSeasonSelect: () =>
