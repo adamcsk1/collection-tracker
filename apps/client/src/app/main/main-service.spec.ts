@@ -78,7 +78,13 @@ describe('MainService', () => {
   });
 
   it('hydrates collection feature preferences from the local cache', () => {
-    const preferences = { wishlist: false, watchLater: true, movieTracker: false, seriesTracker: true };
+    const preferences = {
+      bookTracker: true,
+      wishlist: false,
+      watchLater: true,
+      movieTracker: false,
+      seriesTracker: true,
+    };
     webstorage.getItem.mockImplementation((key: string) =>
       key === STORAGE_COLLECTION_FEATURE_PREFERENCES ? JSON.stringify(preferences) : null
     );
@@ -90,7 +96,13 @@ describe('MainService', () => {
   });
 
   it('hydrates collection feature preferences from the configured session cache', () => {
-    const preferences = { wishlist: true, watchLater: false, movieTracker: true, seriesTracker: false };
+    const preferences = {
+      bookTracker: false,
+      wishlist: true,
+      watchLater: false,
+      movieTracker: true,
+      seriesTracker: false,
+    };
     webstorage.getItem.mockImplementation((key: string, storage?: string) => {
       if (key === STORAGE_SENSITIVE_DATA_STORAGE) return 'session';
       if (key === STORAGE_COLLECTION_FEATURE_PREFERENCES && storage === 'session') {

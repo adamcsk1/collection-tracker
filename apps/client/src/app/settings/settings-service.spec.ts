@@ -114,7 +114,13 @@ describe('SettingsService', () => {
   });
 
   it('moves the feature cache from session storage to local storage when the mode changes', () => {
-    const preferences = { wishlist: false, watchLater: true, movieTracker: true, seriesTracker: false };
+    const preferences = {
+      bookTracker: true,
+      wishlist: false,
+      watchLater: true,
+      movieTracker: true,
+      seriesTracker: false,
+    };
     mainState.setState('sensitiveDataStorage', 'session');
     mainState.setState('collectionFeaturePreferences', preferences);
 
@@ -166,8 +172,20 @@ describe('SettingsService', () => {
   });
 
   it('overrides cached collection feature preferences with API preferences', () => {
-    const cachedPreferences = { wishlist: true, watchLater: true, movieTracker: true, seriesTracker: true };
-    const apiPreferences = { wishlist: false, watchLater: true, movieTracker: false, seriesTracker: true };
+    const cachedPreferences = {
+      bookTracker: true,
+      wishlist: true,
+      watchLater: true,
+      movieTracker: true,
+      seriesTracker: true,
+    };
+    const apiPreferences = {
+      bookTracker: false,
+      wishlist: false,
+      watchLater: true,
+      movieTracker: false,
+      seriesTracker: true,
+    };
     mainState.setState('collectionFeaturePreferences', cachedPreferences);
     api.getUserSettings.mockReturnValue(of({ collectionFeaturePreferences: apiPreferences }));
 
@@ -183,6 +201,7 @@ describe('SettingsService', () => {
 
   it('uses and caches default collection feature preferences when the API field is missing', () => {
     mainState.setState('collectionFeaturePreferences', {
+      bookTracker: false,
       wishlist: false,
       watchLater: false,
       movieTracker: false,
@@ -214,7 +233,13 @@ describe('SettingsService', () => {
   });
 
   it('stores, caches, and posts collection feature preferences', () => {
-    const preferences = { wishlist: false, watchLater: true, movieTracker: false, seriesTracker: true };
+    const preferences = {
+      bookTracker: true,
+      wishlist: false,
+      watchLater: true,
+      movieTracker: false,
+      seriesTracker: true,
+    };
 
     service.storeCollectionFeaturePreferences(preferences);
 
@@ -228,7 +253,13 @@ describe('SettingsService', () => {
   });
 
   it('caches collection feature preferences in configured session storage', () => {
-    const preferences = { wishlist: true, watchLater: false, movieTracker: true, seriesTracker: false };
+    const preferences = {
+      bookTracker: false,
+      wishlist: true,
+      watchLater: false,
+      movieTracker: true,
+      seriesTracker: false,
+    };
     mainState.setState('sensitiveDataStorage', 'session');
 
     service.storeCollectionFeaturePreferences(preferences);
@@ -242,7 +273,13 @@ describe('SettingsService', () => {
 
   it('serializes collection feature preference updates', () => {
     const firstUpdate = new Subject<void>();
-    const firstPreferences = { wishlist: false, watchLater: true, movieTracker: true, seriesTracker: true };
+    const firstPreferences = {
+      bookTracker: true,
+      wishlist: false,
+      watchLater: true,
+      movieTracker: true,
+      seriesTracker: true,
+    };
     const secondPreferences = { ...firstPreferences, watchLater: false };
     sharedApi.updateUserSettings.mockReturnValueOnce(firstUpdate).mockReturnValueOnce(of(void 0));
 
@@ -258,7 +295,13 @@ describe('SettingsService', () => {
   });
 
   it('continues serialized collection feature preference updates after an error', () => {
-    const firstPreferences = { wishlist: false, watchLater: true, movieTracker: true, seriesTracker: true };
+    const firstPreferences = {
+      bookTracker: true,
+      wishlist: false,
+      watchLater: true,
+      movieTracker: true,
+      seriesTracker: true,
+    };
     const secondPreferences = { ...firstPreferences, watchLater: false };
     sharedApi.updateUserSettings
       .mockReturnValueOnce(throwError(() => new Error('network')))

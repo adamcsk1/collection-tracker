@@ -10,6 +10,9 @@
       @if (collectionItem().IMDbId) {
         <a [href]="imdbUrl()" target="_blank" rel="noopener noreferrer">{{ collectionItem().IMDbId }}</a>
       }
+      @if (book() && isbn()) {
+        <span data-test-id="item-dialog-isbn">{{ translations().isbn() }} {{ isbn() }}</span>
+      }
       <h3>{{ collectionItem().title }}</h3>
       <div class="metadata-row">
         <div class="chip-list">
@@ -22,31 +25,35 @@
         </div>
       </div>
     </header>
-    <section>
-      <h4>{{ translations().ratings() }}</h4>
-      <div class="chip-list">
-        <span class="chip rating">IMDb {{ collectionItem().rate || translations().fallbackNotAvailable() }}</span>
-        @if (collectionItem().rottenTomatoesRate) {
-          <span class="chip rating"
-            >{{ translations().labelRottenTomatoesRate() }} {{ collectionItem().rottenTomatoesRate }}</span
-          >
-        }
-        @if (collectionItem().metacriticRate) {
-          <span class="chip rating"
-            >{{ translations().labelMetacriticRate() }} {{ collectionItem().metacriticRate }}</span
-          >
-        }
-        @if (collectionItem().userRate !== null) {
-          <span class="chip rating" data-test-id="item-dialog-user-rate-chip">
-            {{ translations().labelUserRate() }} {{ collectionItem().userRate }}
-          </span>
-        }
-      </div>
-    </section>
+    @if (!book() || collectionItem().userRate !== null) {
+      <section>
+        <h4>{{ translations().ratings() }}</h4>
+        <div class="chip-list">
+          @if (!book()) {
+            <span class="chip rating">IMDb {{ collectionItem().rate || translations().fallbackNotAvailable() }}</span>
+            @if (collectionItem().rottenTomatoesRate) {
+              <span class="chip rating"
+                >{{ translations().labelRottenTomatoesRate() }} {{ collectionItem().rottenTomatoesRate }}</span
+              >
+            }
+            @if (collectionItem().metacriticRate) {
+              <span class="chip rating"
+                >{{ translations().labelMetacriticRate() }} {{ collectionItem().metacriticRate }}</span
+              >
+            }
+          }
+          @if (collectionItem().userRate !== null) {
+            <span class="chip rating" data-test-id="item-dialog-user-rate-chip">
+              {{ translations().labelUserRate() }} {{ collectionItem().userRate }}
+            </span>
+          }
+        </div>
+      </section>
+    }
 
     @if (collectionItem().genre.length) {
       <section>
-        <h4>{{ translations().genre() }}</h4>
+        <h4>{{ book() ? translations().subjects() : translations().genre() }}</h4>
         <div class="chip-list">
           @for (genre of collectionItem().genre; track $index) {
             <span class="chip">{{ genre }}</span>
@@ -57,7 +64,7 @@
 
     @if (collectionItem().actors) {
       <section>
-        <h4>{{ translations().actors() }}</h4>
+        <h4>{{ book() ? translations().authors() : translations().actors() }}</h4>
         <p>{{ collectionItem().actors }}</p>
       </section>
     }
@@ -84,7 +91,7 @@
 
     @if (collectionItem().plot) {
       <section>
-        <h4>{{ translations().plot() }}</h4>
+        <h4>{{ book() ? translations().description() : translations().plot() }}</h4>
         <p>{{ collectionItem().plot }}</p>
       </section>
     }
@@ -92,13 +99,15 @@
     <section>
       <h4>{{ translations().links() }}</h4>
       <div class="external-links">
-        <libc-link-button
-          [href]="trailerUrl()"
-          icon="play_circle"
-          [label]="translations().linkYouTubeTrailer()"
-          [external]="true"
-          dataTestId="video"
-        ></libc-link-button>
+        @if (!book()) {
+          <libc-link-button
+            [href]="trailerUrl()"
+            icon="play_circle"
+            [label]="translations().linkYouTubeTrailer()"
+            [external]="true"
+            dataTestId="video"
+          ></libc-link-button>
+        }
         <libc-link-button
           [href]="webSearchUrl()"
           icon="search"

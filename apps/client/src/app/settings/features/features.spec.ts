@@ -26,6 +26,7 @@ describe('SettingsFeatures', () => {
 
     mainState = TestBed.inject(mainStateToken);
     mainState.setState('collectionFeaturePreferences', {
+      bookTracker: true,
       wishlist: false,
       watchLater: true,
       movieTracker: false,
@@ -38,6 +39,7 @@ describe('SettingsFeatures', () => {
 
   it('initializes the form from main state preferences without saving', () => {
     expect(component['formModel']()).toEqual({
+      bookTracker: true,
       wishlist: false,
       watchLater: true,
       movieTracker: false,
@@ -51,6 +53,7 @@ describe('SettingsFeatures', () => {
 
     expect(component['formModel']().movieTracker).toBe(true);
     expect(settings.storeCollectionFeaturePreferences).toHaveBeenCalledWith({
+      bookTracker: true,
       wishlist: false,
       watchLater: true,
       movieTracker: true,
@@ -60,6 +63,7 @@ describe('SettingsFeatures', () => {
 
   it('updates the form when API-backed main state replaces cached preferences', () => {
     mainState.setState('collectionFeaturePreferences', {
+      bookTracker: false,
       wishlist: true,
       watchLater: false,
       movieTracker: true,
@@ -68,6 +72,7 @@ describe('SettingsFeatures', () => {
     fixture.detectChanges();
 
     expect(component['formModel']()).toEqual({
+      bookTracker: false,
       wishlist: true,
       watchLater: false,
       movieTracker: true,

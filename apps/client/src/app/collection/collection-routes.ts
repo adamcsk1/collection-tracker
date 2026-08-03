@@ -27,6 +27,10 @@ export const collectionRoutes: Routes = [
         loadComponent: () => import('./movie-tracker/movie-tracker').then((module) => module.MovieTracker),
       },
       {
+        path: 'book-tracker',
+        loadComponent: () => import('./book-tracker/book-tracker').then((module) => module.BookTracker),
+      },
+      {
         path: '',
         pathMatch: 'full',
         redirectTo: 'library',

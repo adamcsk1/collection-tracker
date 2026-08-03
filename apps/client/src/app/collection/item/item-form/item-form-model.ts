@@ -20,12 +20,16 @@ export interface ItemFormModel {
 
 export interface ItemDialogTranslations {
   actors: Signal<string>;
+  authors: Signal<string>;
   altPoster: Signal<string>;
   delete: Signal<string>;
   edit: Signal<string>;
   fallbackNotAvailable: Signal<string>;
   fallbackUnknownYear: Signal<string>;
   genre: Signal<string>;
+  subjects: Signal<string>;
+  description: Signal<string>;
+  isbn: Signal<string>;
   labelMetacriticRate: Signal<string>;
   labelRottenTomatoesRate: Signal<string>;
   labelUserRate: Signal<string>;

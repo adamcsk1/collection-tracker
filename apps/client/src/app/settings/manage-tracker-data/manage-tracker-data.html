@@ -9,8 +9,23 @@
     (valueChange)="onLibraryChange($event)"
   />
 }
-@if (featurePreferences().movieTracker || featurePreferences().seriesTracker) {
+@if (featurePreferences().movieTracker || featurePreferences().seriesTracker || featurePreferences().bookTracker) {
   <p class="tracker-cleanup-message">{{ translations.messageTrackerCleanup() }}</p>
+}
+@if (featurePreferences().bookTracker) {
+  <h4>{{ translations.books() }}</h4>
+  <div class="actions">
+    <button
+      data-test-id="settings-remove-all-tracked-book-data"
+      type="button"
+      class="button-danger"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !!selectedOwnerShareCode()"
+      (click)="onRemoveAllTrackedBookData()"
+    >
+      <i class="material-icons" [title]="translations.removeAllTrackedBookData()"> delete_sweep </i>
+      {{ translations.removeAllTrackedBookData() }}
+    </button>
+  </div>
 }
 @if (featurePreferences().movieTracker) {
   <h4>{{ translations.movies() }}</h4>

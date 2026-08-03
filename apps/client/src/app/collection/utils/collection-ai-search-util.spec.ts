@@ -54,7 +54,7 @@ describe('setupCollectionAiSearch', () => {
     vi.clearAllMocks();
   });
 
-  const createSetup = () => {
+  const createSetup = (listType: 'watch-later' | 'book-tracker' = 'watch-later') => {
     const collectionState = TestBed.inject(collectionStateToken);
     const destroyRef = TestBed.inject(DestroyRef);
 
@@ -65,7 +65,7 @@ describe('setupCollectionAiSearch', () => {
       portal: portal as unknown as PortalService,
       floatActions,
       destroyRef,
-      listType: 'watch-later',
+      listType,
       queryFilters: signal({}),
       forceStandardSearch: signal(false),
       placeholder: signal('Ask AI'),
@@ -145,6 +145,34 @@ describe('setupCollectionAiSearch', () => {
       offset: 0,
       limit: 25,
       filters: { listType: 'watch-later' },
+    });
+  });
+
+  it('loads provider-native book matches with their encoded identity source', async () => {
+    aiSearch.getMatchedIds.mockReturnValue(of(['openlibrary:9780140328721']));
+    const setup = TestBed.runInInjectionContext(() => createSetup('book-tracker'));
+    const collectionState = TestBed.inject(collectionStateToken);
+    collectionState.setState('aiSearchPromptText', 'fantasy books');
+    collectionState.setState('aiSearchSendVersion', 1);
+    collectionState.setState('forceStandardSearch', false);
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(500);
+    TestBed.tick();
+
+    setup.dataSource({
+      reset: true,
+      offset: 0,
+      limit: 25,
+      searchText: '',
+      orderBy: 'createdAt',
+      orderDirection: 'desc',
+    });
+
+    expect(api.getMatchedItems).toHaveBeenCalledWith({
+      identities: [{ source: 'openlibrary', id: '9780140328721' }],
+      offset: 0,
+      limit: 25,
+      filters: { listType: 'book-tracker' },
     });
   });
 

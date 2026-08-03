@@ -205,6 +205,7 @@ export class List implements OnDestroy {
       wishlist: this.listType() === 'wishlist',
       seriesTracker: this.listType() === 'series-tracker',
       movieTracker: this.listType() === 'movie-tracker',
+      bookTracker: this.listType() === 'book-tracker',
     });
   }
 
@@ -334,6 +335,7 @@ export class List implements OnDestroy {
       case 'series-tracker':
         return ['completed', 'uncompleted'];
       case 'movie-tracker':
+      case 'book-tracker':
         return [];
     }
   }

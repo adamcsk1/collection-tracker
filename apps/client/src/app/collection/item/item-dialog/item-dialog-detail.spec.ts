@@ -17,6 +17,10 @@ const translations: ItemDialogTranslations = {
   labelUserRate: signal('User rate'),
   genre: signal('Genre'),
   actors: signal('Actors'),
+  authors: signal('Authors'),
+  subjects: signal('Subjects'),
+  description: signal('Description'),
+  isbn: signal('ISBN'),
   tags: signal('Tags'),
   watchedUpTo: signal('Watched up to'),
   plot: signal('Plot'),
@@ -75,6 +79,8 @@ describe('ItemDialogDetail', () => {
     fixture.componentRef.setInput('library', 'Shared Owner');
     fixture.componentRef.setInput('detailTags', ['#drama']);
     fixture.componentRef.setInput('seriesTracker', true);
+    fixture.componentRef.setInput('book', false);
+    fixture.componentRef.setInput('isbn', '');
     fixture.componentRef.setInput('episodeProgressText', 'S01E02');
     fixture.detectChanges();
   });
@@ -104,5 +110,28 @@ describe('ItemDialogDetail', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('img')).toBeNull();
+  });
+
+  it('shows book metadata without movie ratings or trailer actions', () => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...item,
+      IMDbId: undefined,
+      contentType: 'book',
+      listType: 'book-tracker',
+      externalProvider: 'openlibrary',
+      externalItemId: 'OL7353617M',
+      userRate: null,
+    });
+    fixture.componentRef.setInput('book', true);
+    fixture.componentRef.setInput('seriesTracker', false);
+    fixture.componentRef.setInput('isbn', '9780441172719');
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('[data-test-id="item-dialog-isbn"]')?.textContent).toContain('9780441172719');
+    expect(element.textContent).toContain('Authors');
+    expect(element.textContent).toContain('Description');
+    expect(element.textContent).not.toContain('IMDb');
+    expect(element.querySelector('[data-test-id="video"]')).toBeNull();
   });
 });

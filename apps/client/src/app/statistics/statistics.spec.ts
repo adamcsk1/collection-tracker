@@ -24,6 +24,7 @@ describe('Statistics component', () => {
     totalItems: 2,
     movieCount: 1,
     seriesCount: 1,
+    bookTrackerCount: 1,
     favoriteCount: 1,
     watchLaterCount: 1,
     wishlistCount: 1,
@@ -77,6 +78,7 @@ describe('Statistics component', () => {
     expect(component['summary']()).toEqual({
       movies: 1,
       series: 1,
+      bookTracker: 1,
       favorites: 1,
       watchLater: 1,
       wishlist: 1,
@@ -96,6 +98,7 @@ describe('Statistics component', () => {
     const hasCard = (testId: string) => fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) !== null;
 
     mainState.setState('collectionFeaturePreferences', {
+      bookTracker: true,
       watchLater: true,
       wishlist: false,
       movieTracker: true,
@@ -109,8 +112,11 @@ describe('Statistics component', () => {
     expect(hasCard('statistics-summary-watched-series')).toBe(false);
     expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(false);
     expect(hasCard('statistics-summary-completed-tracker-series')).toBe(false);
+    expect(hasCard('statistics-summary-book-tracker')).toBe(true);
+    expect(hasCard('statistics-summary-books')).toBe(false);
 
     mainState.setState('collectionFeaturePreferences', {
+      bookTracker: false,
       watchLater: false,
       wishlist: true,
       movieTracker: false,
@@ -124,6 +130,7 @@ describe('Statistics component', () => {
     expect(hasCard('statistics-summary-watched-series')).toBe(true);
     expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(true);
     expect(hasCard('statistics-summary-completed-tracker-series')).toBe(true);
+    expect(hasCard('statistics-summary-book-tracker')).toBe(false);
   });
 
   it('sets defaultOpenSelectedTags to true when no tags are stored', () => {
@@ -234,6 +241,12 @@ describe('Statistics component', () => {
     component['onNavigateToSeriesTracker']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'series-tracker']);
+  });
+
+  it('navigates to book tracker when clicking the tracked books stat card', () => {
+    component['onNavigateToBookTracker']();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'book-tracker']);
   });
 
   it('navigates to unwatched movies when clicking the unwatched movies stat card', () => {

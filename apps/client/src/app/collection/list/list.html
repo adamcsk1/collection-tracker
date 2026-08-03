@@ -22,7 +22,9 @@
       ':' +
       (collectionItem.listType ?? 'library') +
       ':' +
-      collectionItem.IMDbId
+      collectionItem.externalProvider +
+      ':' +
+      collectionItem.externalItemId
   ) {
     <ct-list-item [collectionItem]="collectionItem" />
   } @empty {

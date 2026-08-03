@@ -25,6 +25,7 @@ describe('SettingsManageTrackerData component', () => {
     markAllSeriesAsUnwatched: ReturnType<typeof vi.fn>;
     removeAllTrackedMovieData: ReturnType<typeof vi.fn>;
     removeAllTrackedSeriesData: ReturnType<typeof vi.fn>;
+    removeAllTrackedBookData: ReturnType<typeof vi.fn>;
   };
   let sharesService: { loadShares: ReturnType<typeof vi.fn> };
 
@@ -36,6 +37,7 @@ describe('SettingsManageTrackerData component', () => {
       markAllSeriesAsUnwatched: vi.fn(),
       removeAllTrackedMovieData: vi.fn(),
       removeAllTrackedSeriesData: vi.fn(),
+      removeAllTrackedBookData: vi.fn(),
     };
     sharesService = { loadShares: vi.fn() };
 
@@ -107,14 +109,22 @@ describe('SettingsManageTrackerData component', () => {
     expect(manageTrackerData.removeAllTrackedSeriesData).toHaveBeenCalledTimes(1);
   });
 
+  it('calls service to remove all tracked book data for My library', () => {
+    component['onRemoveAllTrackedBookData']();
+
+    expect(manageTrackerData.removeAllTrackedBookData).toHaveBeenCalledTimes(1);
+  });
+
   it('does not remove tracked data when a shared library is selected', () => {
     component['onLibraryChange']('owner-code');
 
     component['onRemoveAllTrackedMovieData']();
     component['onRemoveAllTrackedSeriesData']();
+    component['onRemoveAllTrackedBookData']();
 
     expect(manageTrackerData.removeAllTrackedMovieData).not.toHaveBeenCalled();
     expect(manageTrackerData.removeAllTrackedSeriesData).not.toHaveBeenCalled();
+    expect(manageTrackerData.removeAllTrackedBookData).not.toHaveBeenCalled();
   });
 
   it('passes selected shared library to all watch status actions', () => {
@@ -159,6 +169,9 @@ describe('SettingsManageTrackerData component', () => {
     expect(
       fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-series-data"]').disabled
     ).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-book-data"]').disabled).toBe(
+      true
+    );
   });
 
   it('hides the library selector when incoming shares are not readable', () => {
@@ -184,6 +197,7 @@ describe('SettingsManageTrackerData component', () => {
       ...initialMainState.collectionFeaturePreferences,
       movieTracker: false,
       seriesTracker: false,
+      bookTracker: false,
     });
     fixture.detectChanges();
 
@@ -191,5 +205,6 @@ describe('SettingsManageTrackerData component', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-series-watched"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-movie-data"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-series-data"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-book-data"]')).toBeNull();
   });
 });

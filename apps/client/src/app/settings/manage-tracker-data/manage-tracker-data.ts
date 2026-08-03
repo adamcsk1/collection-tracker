@@ -36,9 +36,11 @@ export class SettingsManageTrackerData implements OnInit {
     myLibrary: computed(() => this.ngxSignalTranslate.translate('MyLibrary')),
     removeAllTrackedMovieData: computed(() => this.ngxSignalTranslate.translate('RemoveAllTrackedMovieData')),
     removeAllTrackedSeriesData: computed(() => this.ngxSignalTranslate.translate('RemoveAllTrackedSeriesData')),
+    removeAllTrackedBookData: computed(() => this.ngxSignalTranslate.translate('RemoveAllTrackedBookData')),
     sharedLibrary: computed(() => this.ngxSignalTranslate.translate('SharedLibrary')),
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
+    books: computed(() => this.ngxSignalTranslate.translate('Books')),
   };
   protected readonly libraryOptions = computed(() => [
     { text: this.translations.myLibrary(), value: '' },
@@ -80,6 +82,11 @@ export class SettingsManageTrackerData implements OnInit {
   protected onRemoveAllTrackedSeriesData(): void {
     if (this.selectedOwnerShareCode()) return;
     this.manageTrackerData.removeAllTrackedSeriesData();
+  }
+
+  protected onRemoveAllTrackedBookData(): void {
+    if (this.selectedOwnerShareCode()) return;
+    this.manageTrackerData.removeAllTrackedBookData();
   }
 
   protected onLibraryChange(selectedValue: SelectDataModel['value']): void {

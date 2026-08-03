@@ -102,6 +102,21 @@ describe('NewItemDialog component', () => {
     expect(component['searchForm'].searchText().value()).toBe('matrix');
   });
 
+  it('disables manual mode and filters books in book tracker mode', () => {
+    fixture.componentRef.setInput('bookTracker', true);
+    service.matchedContent.set([
+      { contentType: 'movie', text: 'Dune', value: 'omdb/tt1160419' },
+      { contentType: 'book', text: 'Dune', value: 'openlibrary/isbn' },
+    ]);
+    fixture.detectChanges();
+
+    expect(component['modeTabs']()[1].disabled).toBe(true);
+    expect(component['matchedContent']()).toEqual([{ contentType: 'book', text: 'Dune', value: 'openlibrary/isbn' }]);
+    component['onModeChange']('manual');
+    expect(component['mode']()).toBe('search');
+    expect(component['listType']()).toBe('book-tracker');
+  });
+
   it('preselects the first matched content and marks control as touched', () => {
     const control = component['searchForm'].selectedExternalReference();
 
@@ -115,7 +130,7 @@ describe('NewItemDialog component', () => {
     control.value.set('matrix');
     vi.advanceTimersByTime(500);
 
-    expect(service.search).toHaveBeenCalledWith('matrix');
+    expect(service.search).toHaveBeenCalledWith('matrix', 'omdb');
   });
 
   it('cancels a pending search when switching to manual mode', () => {
@@ -135,7 +150,7 @@ describe('NewItemDialog component', () => {
     component['onSearchEnter']({ preventDefault } as unknown as Event);
 
     expect(preventDefault).toHaveBeenCalled();
-    expect(service.search).toHaveBeenCalledWith('matrix');
+    expect(service.search).toHaveBeenCalledWith('matrix', 'omdb');
     expect(component['searchForm'].searchText().value()).toBe('matrix');
   });
 

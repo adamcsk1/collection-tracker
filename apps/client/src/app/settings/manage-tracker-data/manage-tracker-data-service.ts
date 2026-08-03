@@ -217,4 +217,36 @@ export class ManageTrackerDataService {
           });
       });
   }
+
+  public removeAllTrackedBookData(): void {
+    this.confirm
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.RemoveAllTrackedBookData'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.blockerLoadingState.patchState('withoutDelay', true);
+        this.blockerLoadingState.patchState('show', true);
+        this.blockerLoadingState.patchState(
+          'message',
+          this.ngxSignalTranslate.translate('Message.RemovingTrackedBookData')
+        );
+
+        this.api
+          .deleteAllBookTrackerItems()
+          .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.RemovedTrackedBookData'));
+              this.collection.triggerReload();
+            },
+            error: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState(
+                'message',
+                this.ngxSignalTranslate.translate('Toast.RemovingTrackedBookDataWithErrors')
+              );
+            },
+          });
+      });
+  }
 }

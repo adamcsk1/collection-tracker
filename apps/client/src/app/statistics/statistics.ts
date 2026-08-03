@@ -47,6 +47,7 @@ export class Statistics implements AfterViewInit {
     itemsInCollection: computed(() => this.ngxSignalTranslate.translate('ItemsInCollection')),
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
+    bookTracker: computed(() => this.ngxSignalTranslate.translate('BookTracker')),
     favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     watchLater: computed(() => this.ngxSignalTranslate.translate('WatchLater')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
@@ -100,6 +101,7 @@ export class Statistics implements AfterViewInit {
     return {
       movies: statistics?.movieCount ?? 0,
       series: statistics?.seriesCount ?? 0,
+      bookTracker: statistics?.bookTrackerCount ?? 0,
       favorites: statistics?.favoriteCount ?? 0,
       watchLater: statistics?.watchLaterCount ?? 0,
       wishlist: statistics?.wishlistCount ?? 0,
@@ -187,6 +189,10 @@ export class Statistics implements AfterViewInit {
 
   protected onNavigateToSeriesTracker(): void {
     this.closeAfterNavigation(this.router.navigate(['/collection', 'series-tracker']));
+  }
+
+  protected onNavigateToBookTracker(): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'book-tracker']));
   }
 
   protected onNavigateToUnwatchedMovies(): void {

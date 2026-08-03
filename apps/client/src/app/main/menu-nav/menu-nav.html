@@ -64,6 +64,18 @@
       {{ translations.movieTracker() }}
     </a>
   }
+  @if (featurePreferences().bookTracker) {
+    <a
+      data-test-id="nav-book-tracker"
+      [routerLink]="['/', 'collection', 'book-tracker']"
+      routerLinkActive="active"
+      class="highlight"
+      (click)="onClose()"
+    >
+      <i class="material-icons" aria-hidden="true">menu_book</i>
+      {{ translations.bookTracker() }}
+    </a>
+  }
   <a
     data-test-id="nav-settings"
     [routerLink]="['/', 'settings']"

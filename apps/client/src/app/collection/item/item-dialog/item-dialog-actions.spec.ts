@@ -6,6 +6,7 @@ import { ItemDialogActions } from './item-dialog-actions';
 
 const translations: ItemDialogTranslations = {
   actors: signal('Actors'),
+  authors: signal('Authors'),
   altPoster: signal('Poster image'),
   manageWatchedEpisodes: signal('Manage watched episodes'),
   manageSeriesMetadata: signal('Manage series metadata'),
@@ -20,6 +21,9 @@ const translations: ItemDialogTranslations = {
   fallbackNotAvailable: signal('N/A'),
   fallbackUnknownYear: signal('Unknown year'),
   genre: signal('Genre'),
+  subjects: signal('Subjects'),
+  description: signal('Description'),
+  isbn: signal('ISBN'),
   labelMetacriticRate: signal('Metacritic'),
   labelRottenTomatoesRate: signal('Rotten Tomatoes'),
   labelUserRate: signal('User rate'),

@@ -291,6 +291,7 @@ describe('List', () => {
       wishlist: false,
       seriesTracker: false,
       movieTracker: false,
+      bookTracker: false,
     });
   });
 
@@ -305,6 +306,7 @@ describe('List', () => {
       wishlist: true,
       seriesTracker: false,
       movieTracker: false,
+      bookTracker: false,
     });
   });
 
@@ -319,6 +321,7 @@ describe('List', () => {
       wishlist: false,
       seriesTracker: true,
       movieTracker: false,
+      bookTracker: false,
     });
   });
 
@@ -452,6 +455,21 @@ describe('List', () => {
       wishlist: false,
       seriesTracker: false,
       movieTracker: true,
+      bookTracker: false,
+    });
+  });
+
+  it('opens the new item dialog in book tracker mode', () => {
+    fixture.componentRef.setInput('listType', 'book-tracker');
+
+    component['onAddNew']();
+
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
+      watchLater: false,
+      wishlist: false,
+      seriesTracker: false,
+      movieTracker: false,
+      bookTracker: true,
     });
   });
 

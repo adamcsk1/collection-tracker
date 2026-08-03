@@ -49,41 +49,45 @@
           </libc-input>
         }
         <libc-input data-test-id="item-dialog-year" [label]="translations.labelYear()" [formField]="form.year" />
-        <libc-select
-          data-test-id="item-dialog-content-type"
-          [label]="translations.type()"
-          [formField]="form.contentType"
-          [options]="contentTypeOptions()"
-        />
-        <libc-input data-test-id="item-dialog-rate" [label]="translations.labelIMDbRate()" [formField]="form.rate">
-          <ng-container errors>
-            @if (formErrors.rate.rateFormat()) {
-              {{ translations.validationIMDbRate() }}
-            }
-          </ng-container>
-        </libc-input>
-        <libc-input
-          data-test-id="item-dialog-rotten-tomatoes-rate"
-          [label]="translations.labelRottenTomatoesRate()"
-          [formField]="form.rottenTomatoesRate"
-        >
-          <ng-container errors>
-            @if (formErrors.rottenTomatoesRate.rateFormat()) {
-              {{ translations.validationRottenTomatoesRate() }}
-            }
-          </ng-container>
-        </libc-input>
-        <libc-input
-          data-test-id="item-dialog-metacritic-rate"
-          [label]="translations.labelMetacriticRate()"
-          [formField]="form.metacriticRate"
-        >
-          <ng-container errors>
-            @if (formErrors.metacriticRate.rateFormat()) {
-              {{ translations.validationMetacriticRate() }}
-            }
-          </ng-container>
-        </libc-input>
+        @if (!book()) {
+          <libc-select
+            data-test-id="item-dialog-content-type"
+            [label]="translations.type()"
+            [formField]="form.contentType"
+            [options]="contentTypeOptions()"
+          />
+        }
+        @if (!book()) {
+          <libc-input data-test-id="item-dialog-rate" [label]="translations.labelIMDbRate()" [formField]="form.rate">
+            <ng-container errors>
+              @if (formErrors.rate.rateFormat()) {
+                {{ translations.validationIMDbRate() }}
+              }
+            </ng-container>
+          </libc-input>
+          <libc-input
+            data-test-id="item-dialog-rotten-tomatoes-rate"
+            [label]="translations.labelRottenTomatoesRate()"
+            [formField]="form.rottenTomatoesRate"
+          >
+            <ng-container errors>
+              @if (formErrors.rottenTomatoesRate.rateFormat()) {
+                {{ translations.validationRottenTomatoesRate() }}
+              }
+            </ng-container>
+          </libc-input>
+          <libc-input
+            data-test-id="item-dialog-metacritic-rate"
+            [label]="translations.labelMetacriticRate()"
+            [formField]="form.metacriticRate"
+          >
+            <ng-container errors>
+              @if (formErrors.metacriticRate.rateFormat()) {
+                {{ translations.validationMetacriticRate() }}
+              }
+            </ng-container>
+          </libc-input>
+        }
         <libc-input
           data-test-id="item-dialog-user-rate"
           type="number"
@@ -99,7 +103,7 @@
         </libc-input>
         <libc-autocomplete
           data-test-id="item-dialog-genre"
-          [label]="translations.genre()"
+          [label]="book() ? translations.subjects() : translations.genre()"
           [hint]="translations.hintSeparateGenres()"
           [formField]="form.genreText"
           ctGenreSuggestions
@@ -111,11 +115,15 @@
           [formField]="form.tagsText"
           ctTagSuggestions
         />
-        <libc-input data-test-id="item-dialog-actors" [label]="translations.actors()" [formField]="form.actors" />
+        <libc-input
+          data-test-id="item-dialog-actors"
+          [label]="book() ? translations.authors() : translations.actors()"
+          [formField]="form.actors"
+        />
         <libc-textarea
           data-test-id="item-dialog-plot"
           class="full-width"
-          [label]="translations.plot()"
+          [label]="book() ? translations.description() : translations.plot()"
           [formField]="form.plot"
           [rows]="4"
         />
@@ -133,6 +141,8 @@
         [library]="library()"
         [detailTags]="detailTags()"
         [seriesTracker]="seriesTracker()"
+        [book]="book()"
+        [isbn]="isbn()"
         [episodeProgressText]="episodeProgressText()"
         (posterImageError)="onPosterImageError()"
       />

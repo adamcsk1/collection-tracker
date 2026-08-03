@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
-import { EXPORT_FILE_NAME, EXPORT_MIME_TYPE, EXPORT_TYPE, EXPORT_VERSION } from '@shared/constants/export-import-const';
+import { EXPORT_FILE_NAME, EXPORT_MIME_TYPE } from '@shared/constants/export-import-const';
 import { UserImportApiRequestModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY, forkJoin, of, switchMap, tap } from 'rxjs';
@@ -66,12 +66,7 @@ export class ExportImport {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((exportData) => {
-          const envelope = {
-            type: EXPORT_TYPE,
-            version: EXPORT_VERSION,
-            ...exportData,
-          };
-          const source = JSON.stringify(envelope, null, 2);
+          const source = JSON.stringify(exportData, null, 2);
           this.service.saveDownload(EXPORT_FILE_NAME, EXPORT_MIME_TYPE, source);
         }),
         catchError(() => {

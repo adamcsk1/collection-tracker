@@ -3,7 +3,9 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { FieldTree, form } from '@angular/forms/signals';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
+import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
 import { CollectionItemFiltersApiModel, CollectionListTypeModel } from '@shared/models/api-model';
+import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import { NgxSimpleSignalStoreService } from 'ngx-simple-signal-store';
 import { catchError, debounceTime, EMPTY, startWith, switchMap } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
@@ -36,6 +38,17 @@ export interface CollectionAiSearchSetup {
   openAiSearchDialog: () => void;
   checkAiAvailableOnOpen: () => void;
 }
+
+const toMatchedIdentity = (candidateId: string): ExternalItemIdentityModel => {
+  const separatorIndex = candidateId.indexOf(':');
+  if (separatorIndex > 0) {
+    const source = candidateId.slice(0, separatorIndex);
+    const id = candidateId.slice(separatorIndex + 1);
+    if (id && isExternalItemIdentitySourceName(source)) return { source, id };
+  }
+
+  return { source: 'imdb', id: candidateId };
+};
 
 export const setupCollectionAiSearch = ({
   collectionState,
@@ -156,7 +169,7 @@ export const setupCollectionAiSearch = ({
 
     if (useAiFilter) {
       return api.getMatchedItems({
-        identities: (aiIds as string[]).map((id) => ({ source: 'imdb', id })),
+        identities: (aiIds as string[]).map(toMatchedIdentity),
         offset,
         limit,
         filters: { listType },

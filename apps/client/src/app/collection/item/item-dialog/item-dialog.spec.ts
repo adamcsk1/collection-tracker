@@ -346,6 +346,24 @@ describe('ItemDialog', () => {
     expect(component['dialogTitle']()).toBe('Title.SeriesTrackerItem');
   });
 
+  it('returns book tracker title and ISBN for book tracker items', () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'book-tracker',
+        contentType: 'book',
+        externalProvider: 'openlibrary',
+        externalItemId: 'OL7353617M',
+        externalIds: [{ source: 'isbn', id: '9780441172719' }],
+      })
+    );
+    fixture.detectChanges();
+
+    expect(component['dialogTitle']()).toBe('Title.BookTrackerItem');
+    expect(component['isbn']()).toBe('9780441172719');
+    expect(component['permissionWatch']()).toBe(false);
+  });
+
   it('uses contextual edit and delete action labels', () => {
     expect(component['translations'].edit()).toBe('EditCollectionItem');
     expect(component['translations'].delete()).toBe('DeleteFromCollection');
@@ -369,6 +387,14 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     expect(component['translations'].edit()).toBe('EditMovieTrackerItem');
     expect(component['translations'].delete()).toBe('DeleteFromMovieTracker');
+
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'book-tracker', contentType: 'book', externalProvider: 'openlibrary' })
+    );
+    fixture.detectChanges();
+    expect(component['translations'].edit()).toBe('EditBookTrackerItem');
+    expect(component['translations'].delete()).toBe('DeleteFromBookTracker');
   });
 
   it('uses incoming share permissions for shared collection items', () => {
@@ -679,6 +705,28 @@ describe('ItemDialog', () => {
       'testhash',
       undefined,
       'movie-tracker'
+    );
+  });
+
+  it('saves book tracker item changes against the book tracker list', async () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'book-tracker', contentType: 'book', externalProvider: 'openlibrary' })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['form'].title().value.set('Updated Book');
+
+    await component['onSaveChanges']();
+
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'openlibrary',
+      'tt1234567',
+      expect.objectContaining({ title: 'Updated Book', contentType: 'book' }),
+      'testhash',
+      undefined,
+      'book-tracker'
     );
   });
 

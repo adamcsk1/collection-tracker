@@ -147,7 +147,40 @@ describe('NewItemDialogService', () => {
     service.search('matrix');
 
     expect(spinnerStore.state.show()).toBe(true);
-    expect(externalMetadata.getMatchedContents).toHaveBeenCalledWith('matrix');
+    expect(externalMetadata.getMatchedContents).toHaveBeenCalledWith('matrix', null);
+  });
+
+  it('limits book searches to OpenLibrary', () => {
+    service.search('dune', 'openlibrary');
+
+    expect(externalMetadata.getMatchedContents).toHaveBeenCalledWith('dune', 'openlibrary');
+  });
+
+  it('saves OpenLibrary books without coercing their content type', async () => {
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(
+        null,
+        buildSelectedContent({
+          provider: 'openlibrary',
+          providerItemId: 'isbn-9780441172719',
+          externalIds: [{ source: 'isbn', id: '9780441172719' }],
+          contentType: 'book',
+        })
+      ) as any
+    );
+    api.create.mockReturnValue(createResponse({ title: 'Title', listType: 'book-tracker' }));
+
+    await firstValueFrom(service.save('openlibrary/isbn', null, '', 'close', { listType: 'book-tracker' }));
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        externalProvider: 'openlibrary',
+        contentType: 'book',
+        externalIds: [{ source: 'isbn', id: '9780441172719' }],
+      }),
+      undefined,
+      'book-tracker'
+    );
   });
 
   it('returns typed provider references from external metadata', () => {

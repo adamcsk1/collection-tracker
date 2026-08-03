@@ -10,7 +10,8 @@
   } @else if (
     (statistics()?.totalItems ?? 0) === 0 &&
     (statistics()?.watchLaterCount ?? 0) === 0 &&
-    (statistics()?.wishlistCount ?? 0) === 0
+    (statistics()?.wishlistCount ?? 0) === 0 &&
+    (statistics()?.bookTrackerCount ?? 0) === 0
   ) {
     <span data-test-id="statistics-empty">{{ translations.messageEmptyStatistics() }}</span>
   } @else {
@@ -95,6 +96,17 @@
           >
             <span class="stat-value">{{ summary.watchedSeries }}</span>
             <span class="stat-label">{{ translations.watchedSeries() }}</span>
+          </button>
+        }
+        @if (featurePreferences().bookTracker) {
+          <button
+            data-test-id="statistics-summary-book-tracker"
+            class="card card-interactive stat-card"
+            (click)="onNavigateToBookTracker()"
+            [attr.aria-label]="translations.bookTracker() + ': ' + summary.bookTracker"
+          >
+            <span class="stat-value">{{ summary.bookTracker }}</span>
+            <span class="stat-label">{{ translations.bookTracker() }}</span>
           </button>
         }
         <button

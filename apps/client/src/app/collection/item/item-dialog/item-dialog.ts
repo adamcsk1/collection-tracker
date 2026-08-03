@@ -85,6 +85,7 @@ export class ItemDialog implements OnInit {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
     titleMovieTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.MovieTrackerItem')),
     titleSeriesTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.SeriesTrackerItem')),
+    titleBookTrackerItem: computed(() => this.ngxSignalTranslate.translate('Title.BookTrackerItem')),
     titleWatchLaterItem: computed(() => this.ngxSignalTranslate.translate('Title.WatchLaterItem')),
     titleWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.WishlistItem')),
     labelTitle: computed(() => this.ngxSignalTranslate.translate('Title')),
@@ -98,13 +99,17 @@ export class ItemDialog implements OnInit {
     altImageExample: computed(() => this.ngxSignalTranslate.translate('Alt.ImageExample')),
     altPoster: computed(() => this.ngxSignalTranslate.translate('Alt.Poster', { title: this.collectionItem().title })),
     genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
+    subjects: computed(() => this.ngxSignalTranslate.translate('Subjects')),
     hintSeparateGenres: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateGenres')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
     watchedUpTo: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo')),
     manageWatchedEpisodes: computed(() => this.ngxSignalTranslate.translate('ManageWatchedEpisodes')),
     hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
     actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
+    authors: computed(() => this.ngxSignalTranslate.translate('Authors')),
     plot: computed(() => this.ngxSignalTranslate.translate('Plot')),
+    description: computed(() => this.ngxSignalTranslate.translate('Description')),
+    isbn: computed(() => this.ngxSignalTranslate.translate('ISBN')),
     type: computed(() => this.ngxSignalTranslate.translate('Type')),
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     seriesLabel: computed(() => this.ngxSignalTranslate.translate('Series')),
@@ -121,6 +126,8 @@ export class ItemDialog implements OnInit {
           return this.ngxSignalTranslate.translate('EditMovieTrackerItem');
         case 'series-tracker':
           return this.ngxSignalTranslate.translate('EditSeriesTrackerItem');
+        case 'book-tracker':
+          return this.ngxSignalTranslate.translate('EditBookTrackerItem');
         case 'watch-later':
           return this.ngxSignalTranslate.translate('EditWatchLaterItem');
         case 'wishlist':
@@ -144,6 +151,8 @@ export class ItemDialog implements OnInit {
           return this.ngxSignalTranslate.translate('DeleteFromMovieTracker');
         case 'series-tracker':
           return this.ngxSignalTranslate.translate('DeleteFromSeriesTracker');
+        case 'book-tracker':
+          return this.ngxSignalTranslate.translate('DeleteFromBookTracker');
         case 'watch-later':
           return this.ngxSignalTranslate.translate('DeleteFromWatchLater');
         case 'wishlist':
@@ -325,6 +334,7 @@ export class ItemDialog implements OnInit {
       .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
     if (item.listType === 'series-tracker') return this.isOwnItem();
     if (item.listType === 'movie-tracker') return this.isOwnItem();
+    if (item.listType === 'book-tracker') return this.isOwnItem();
     if (item.listType === 'watch-later') return this.isOwnItem();
     if (item.listType === 'wishlist') return this.isOwnItem();
     if (item.listType !== 'library') return false;
@@ -337,8 +347,17 @@ export class ItemDialog implements OnInit {
   protected readonly inMovieTracker = computed(() => this.movieTrackerExists());
   protected readonly featurePreferences = this.mainState.state.collectionFeaturePreferences;
   protected readonly movieTracker = computed(() => this.collectionItem().listType === 'movie-tracker');
+  protected readonly bookTracker = computed(() => this.collectionItem().listType === 'book-tracker');
+  protected readonly book = computed(() => this.collectionItem().contentType === 'book');
   protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
   protected readonly series = computed(() => this.collectionItem().contentType === 'series');
+  protected readonly isbn = computed(() => {
+    const item = this.collectionItem();
+    return (
+      item.externalIds?.find((identity) => identity.source === 'isbn')?.id ??
+      (item.externalProvider === 'openlibrary' ? item.externalItemId : '')
+    );
+  });
   protected readonly canEditImdbIdentity = computed(() =>
     isImdbShapedExternalItemId(this.collectionItem().externalItemId)
   );
@@ -360,6 +379,7 @@ export class ItemDialog implements OnInit {
     if (this.wishlist()) return this.translations.titleWishlistItem();
     if (this.seriesTracker()) return this.translations.titleSeriesTrackerItem();
     if (this.movieTracker()) return this.translations.titleMovieTrackerItem();
+    if (this.bookTracker()) return this.translations.titleBookTrackerItem();
     return this.translations.titleCollectionItem();
   });
   protected readonly draftImageUrl = computed(() =>
@@ -555,6 +575,7 @@ export class ItemDialog implements OnInit {
       this.collectionItem().listType !== 'library' &&
       this.collectionItem().listType !== 'series-tracker' &&
       this.collectionItem().listType !== 'movie-tracker' &&
+      this.collectionItem().listType !== 'book-tracker' &&
       this.collectionItem().listType !== 'watch-later' &&
       this.collectionItem().listType !== 'wishlist'
     )
@@ -571,11 +592,14 @@ export class ItemDialog implements OnInit {
           mergeMap((confirmed) => {
             if (confirmed) {
               this.spinnerLoadingState.setState('show', true);
-              let updateListType: 'series-tracker' | 'movie-tracker' | 'watch-later' | 'wishlist' | undefined;
+              let updateListType:
+                'series-tracker' | 'movie-tracker' | 'book-tracker' | 'watch-later' | 'wishlist' | undefined;
               if (this.seriesTracker()) {
                 updateListType = 'series-tracker';
               } else if (this.movieTracker()) {
                 updateListType = 'movie-tracker';
+              } else if (this.bookTracker()) {
+                updateListType = 'book-tracker';
               } else if (this.watchLater()) {
                 updateListType = 'watch-later';
               } else if (this.wishlist()) {

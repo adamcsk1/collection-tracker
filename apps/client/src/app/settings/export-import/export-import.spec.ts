@@ -33,6 +33,8 @@ const buildTagManagement = (
 });
 
 const mockExportResponse: UserExportApiResponseModel = {
+  type: 'collection-tracker-export',
+  version: 6,
   userSettings: { theme: 'dark' },
   collectionItems: [
     {
@@ -161,11 +163,7 @@ describe('ExportImport component', () => {
     component['onExportCollectionData']();
 
     const blob = vi.mocked(URL.createObjectURL).mock.calls[0][0] as Blob;
-    await expect(blob.text().then((source) => JSON.parse(source))).resolves.toEqual({
-      type: 'collection-tracker-export',
-      version: 5,
-      ...mockExportResponse,
-    });
+    await expect(blob.text().then((source) => JSON.parse(source))).resolves.toEqual(mockExportResponse);
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:export');
     expect(toastState.state.message()).toBe('');
   });
@@ -194,16 +192,12 @@ describe('ExportImport component', () => {
   it('imports collection data after confirmation', () => {
     confirm.open.mockReturnValueOnce(of(true));
     createComponent();
-    const source = JSON.stringify({ type: 'collection-tracker-export', version: 5, ...mockExportResponse });
+    const source = JSON.stringify(mockExportResponse);
 
     component['importCollectionData'](source);
 
     expect(confirm.open).toHaveBeenCalledWith('Confirm.ImportCollectionData');
-    expect(api.importUserExport).toHaveBeenCalledWith({
-      type: 'collection-tracker-export',
-      version: 5,
-      ...mockExportResponse,
-    });
+    expect(api.importUserExport).toHaveBeenCalledWith(mockExportResponse);
     expect(settingsService.preloadUserSettings).toHaveBeenCalled();
     expect(tagManagementService.preloadUserTagManagement).toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.CollectionDataImported');
@@ -213,9 +207,7 @@ describe('ExportImport component', () => {
     confirm.open.mockReturnValueOnce(of(false));
     createComponent();
 
-    component['importCollectionData'](
-      JSON.stringify({ type: 'collection-tracker-export', version: 5, ...mockExportResponse })
-    );
+    component['importCollectionData'](JSON.stringify(mockExportResponse));
 
     expect(api.importUserExport).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('');
@@ -235,9 +227,7 @@ describe('ExportImport component', () => {
     api.importUserExport.mockReturnValueOnce(throwError(() => new Error('fail')));
     createComponent();
 
-    component['importCollectionData'](
-      JSON.stringify({ type: 'collection-tracker-export', version: 5, ...mockExportResponse })
-    );
+    component['importCollectionData'](JSON.stringify(mockExportResponse));
 
     expect(toastState.state.message()).toBe('Toast.CollectionDataImportError');
   });

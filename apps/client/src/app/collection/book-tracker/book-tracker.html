@@ -1,0 +1,25 @@
+<div class="collection-container">
+  <ng-template #floatSearch>
+    <libc-autocomplete
+      data-test-id="book-tracker-search"
+      [placeholder]="translations.placeholderSearchInBookTracker()"
+      [formField]="searchTextField"
+      [showReset]="true"
+      [suggestionListPlacement]="'top'"
+      (userEvent)="onSearchFromUser()"
+    />
+  </ng-template>
+  <ct-list
+    [listType]="'book-tracker'"
+    [dataSource]="bookTrackerDataSource"
+    [routeSearchText]="querySearch()"
+    [routeFilterKey]="queryFilterKey()"
+  >
+    <span list-empty>
+      {{ translations.messageEmptyBookTracker() }}<br />
+      <a data-test-id="add-first-book-tracker-item" href="#" role="button" (click)="onAddBookTracker($event)">{{
+        translations.messageAddFirstBookTracker()
+      }}</a>
+    </span>
+  </ct-list>
+</div>

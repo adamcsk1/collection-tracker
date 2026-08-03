@@ -96,6 +96,7 @@ describe('MenuNav', () => {
     const hasLink = (testId: string) => fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) !== null;
 
     mainState.setState('collectionFeaturePreferences', {
+      bookTracker: true,
       watchLater: true,
       wishlist: false,
       movieTracker: true,
@@ -107,8 +108,10 @@ describe('MenuNav', () => {
     expect(hasLink('nav-wishlist')).toBe(false);
     expect(hasLink('nav-movie-tracker')).toBe(true);
     expect(hasLink('nav-series-tracker')).toBe(false);
+    expect(hasLink('nav-book-tracker')).toBe(true);
 
     mainState.setState('collectionFeaturePreferences', {
+      bookTracker: false,
       watchLater: false,
       wishlist: true,
       movieTracker: false,
@@ -120,6 +123,7 @@ describe('MenuNav', () => {
     expect(hasLink('nav-wishlist')).toBe(true);
     expect(hasLink('nav-movie-tracker')).toBe(false);
     expect(hasLink('nav-series-tracker')).toBe(true);
+    expect(hasLink('nav-book-tracker')).toBe(false);
   });
 
   it('still syncs collection when refreshing settings fails', () => {

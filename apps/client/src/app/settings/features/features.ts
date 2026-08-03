@@ -24,6 +24,7 @@ export class SettingsFeatures {
     watchLater: computed(() => this.ngxSignalTranslate.translate('WatchLater')),
     watchTracker: computed(() => this.ngxSignalTranslate.translate('WatchTracker')),
     seriesTracker: computed(() => this.ngxSignalTranslate.translate('SeriesTracker')),
+    bookTracker: computed(() => this.ngxSignalTranslate.translate('BookTracker')),
   };
   protected readonly formModel = signal<CollectionFeaturePreferencesModel>(DEFAULT_COLLECTION_FEATURE_PREFERENCES);
   protected readonly form = form(this.formModel);

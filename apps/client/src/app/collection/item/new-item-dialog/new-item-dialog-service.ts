@@ -4,9 +4,14 @@ import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
 import { ExternalMetadataService } from '@services/external-metadata/external-metadata-service';
 import { PortalService } from '@services/portal-service';
-import { CollectionItemApiModel, CollectionItemChangeApiModel } from '@shared/models/api-model';
+import {
+  CollectionItemApiModel,
+  CollectionItemChangeApiModel,
+  CollectionListTypeModel,
+} from '@shared/models/api-model';
 import { CollectionItemYearModel } from '@shared/models/collection-item-model';
 import { ExternalMetadataReferenceModel } from '@shared/models/external-metadata-model';
+import { ExternalMetadataProviderNameModel } from '@shared/models/external-metadata-provider-model';
 import { getImdbIdFromExternalMetadata } from '@shared/utils/external-metadata-identity-util';
 import { getExternalMetadataRating } from '@shared/utils/external-metadata-ratings-util';
 import { parseTagText } from '@shared/utils/collection-item-text-util';
@@ -36,9 +41,9 @@ export class NewItemDialogService {
     });
   }
 
-  public search(searchText: string): void {
+  public search(searchText: string, provider: ExternalMetadataProviderNameModel | null = null): void {
     this.spinnerLoadingState.setState('show', true);
-    this.externalMetadata.getMatchedContents(searchText);
+    this.externalMetadata.getMatchedContents(searchText, provider);
   }
 
   public getProviderReference(selectedExternalMetadataValue: string | null): ExternalMetadataReferenceModel | null {
@@ -79,6 +84,9 @@ export class NewItemDialogService {
           if (listType === 'movie-tracker' && selectedContentType !== 'movie') {
             throw new Error('Movie tracker items must be movies.');
           }
+          if (listType === 'book-tracker' && selectedContentType !== 'book') {
+            throw new Error('Book tracker items must be books.');
+          }
           return {
             item: {
               image: selectedContent.poster,
@@ -96,7 +104,7 @@ export class NewItemDialogService {
               userRate,
               actors: selectedContent.actors,
               plot: selectedContent.plot,
-              contentType: selectedContentType === 'series' ? 'series' : 'movie',
+              contentType: selectedContentType,
               favorite: false,
             },
             selectedContentIsMovie: selectedContentType === 'movie',
@@ -145,6 +153,9 @@ export class NewItemDialogService {
         if (listType === 'movie-tracker' && change.contentType !== 'movie') {
           throw new Error('Movie tracker items must be movies.');
         }
+        if (listType === 'book-tracker' && change.contentType !== 'book') {
+          throw new Error('Book tracker items must be books.');
+        }
         return change;
       }),
       tap(() => this.spinnerLoadingState.setState('show', true)),
@@ -171,7 +182,7 @@ export class NewItemDialogService {
   private createItem(
     item: CollectionItemChangeApiModel,
     targetOwnerShareCode: string | undefined,
-    listType: 'library' | 'watch-later' | 'wishlist' | 'series-tracker' | 'movie-tracker'
+    listType: CollectionListTypeModel
   ) {
     const response$ =
       listType === 'library'
@@ -182,7 +193,7 @@ export class NewItemDialogService {
 
   private applySideEffects(input: {
     collectionItem: CollectionItemApiModel;
-    listType: 'library' | 'watch-later' | 'wishlist' | 'series-tracker' | 'movie-tracker';
+    listType: CollectionListTypeModel;
     watched: boolean;
     copyToSeriesTrackerAsWatched: boolean;
     targetOwnerShareCode: string | undefined;

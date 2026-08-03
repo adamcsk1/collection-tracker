@@ -24,4 +24,10 @@
     [label]="translations.seriesTracker()"
     (valueChange)="onChange('seriesTracker', $event)"
   />
+  <libc-checkbox
+    data-test-id="settings-feature-book-tracker"
+    [formField]="form.bookTracker"
+    [label]="translations.bookTracker()"
+    (valueChange)="onChange('bookTracker', $event)"
+  />
 </form>

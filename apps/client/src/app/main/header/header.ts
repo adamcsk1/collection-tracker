@@ -49,6 +49,9 @@ export class Header {
     if (currentPath.startsWith('/collection/movie-tracker')) {
       return 'MovieTracker';
     }
+    if (currentPath.startsWith('/collection/book-tracker')) {
+      return 'BookTracker';
+    }
     if (currentPath.startsWith('/settings')) {
       return 'Settings';
     }
