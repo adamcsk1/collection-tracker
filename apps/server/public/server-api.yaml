@@ -2552,7 +2552,10 @@ paths:
     get:
       operationId: proxyImage
       summary: Proxy and cache an external image
-      description: Fetches a public HTTP or HTTPS image URL, caches the bytes on the server, and returns the image with long-lived cache headers. Localhost, private-network targets, redirects, and oversized responses are rejected.
+      description: >-
+        Fetches a public HTTP or HTTPS image URL, caches the bytes on the server, and returns the image with long-lived
+        cache headers. Safe public redirects are followed (limited hop count) with SSRF checks on each hop. Localhost,
+        private-network targets, unsafe/unresolvable redirects, and oversized responses are rejected.
       tags: [Image Proxy]
       parameters:
         - name: url
@@ -2592,7 +2595,9 @@ paths:
                 type: string
                 format: binary
         '400':
-          description: URL is missing, invalid, uses an unsupported protocol, points at a private/local target, or redirects.
+          description: >-
+            URL is missing, invalid, uses an unsupported protocol, points at a private/local target, or the redirect
+            chain is unsafe, incomplete, or exceeds the hop limit.
         '413':
           description: The upstream image is too large to proxy.
         '415':

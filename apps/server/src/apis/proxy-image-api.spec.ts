@@ -6,11 +6,19 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../test/mocks/build-app-mock';
 
-let upstreamResponse = {
-  statusCode: 200,
-  headers: { 'content-type': 'image/png' } as Record<string, string>,
-  body: Buffer.from('image-bytes'),
+type UpstreamResponse = {
+  statusCode: number;
+  headers: Record<string, string>;
+  body: Buffer;
 };
+
+let upstreamResponses: UpstreamResponse[] = [
+  {
+    statusCode: 200,
+    headers: { 'content-type': 'image/png' },
+    body: Buffer.from('image-bytes'),
+  },
+];
 
 let upstreamRequest: ReturnType<typeof vi.fn>;
 
@@ -22,11 +30,15 @@ const createResponse = () => {
   return response;
 };
 
-const importApi = async (dataFolder: string) => {
+const importApi = async (dataFolder: string, lookupAddress = '203.0.113.10') => {
+  let responseIndex = 0;
   upstreamRequest = vi.fn((_options, callback) => {
+    const upstreamResponse = upstreamResponses[Math.min(responseIndex, upstreamResponses.length - 1)];
+    responseIndex += 1;
     const response = Readable.from(upstreamResponse.body ? [upstreamResponse.body] : []) as any;
     response.statusCode = upstreamResponse.statusCode;
     response.headers = upstreamResponse.headers;
+    response.resume = vi.fn();
     callback(response);
 
     return {
@@ -37,7 +49,14 @@ const importApi = async (dataFolder: string) => {
   });
 
   vi.doMock('../core/argv/argv', () => ({ getArgv: () => ({ dataFolder, debug: false }) }));
-  vi.doMock('dns/promises', () => ({ lookup: vi.fn(async () => [{ address: '203.0.113.10', family: 4 }]) }));
+  vi.doMock('dns/promises', () => ({
+    lookup: vi.fn(async (hostname: string) => {
+      if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
+        return [{ address: '127.0.0.1', family: 4 }];
+      }
+      return [{ address: lookupAddress, family: 4 }];
+    }),
+  }));
   vi.doMock('http', () => ({ request: upstreamRequest }));
   vi.doMock('https', () => ({ request: upstreamRequest }));
   return import('./proxy-image-api');
@@ -50,11 +69,13 @@ describe('proxy-image-api', () => {
     vi.resetModules();
     vi.clearAllMocks();
     vi.unstubAllGlobals();
-    upstreamResponse = {
-      statusCode: 200,
-      headers: { 'content-type': 'image/png' } as Record<string, string>,
-      body: Buffer.from('image-bytes'),
-    };
+    upstreamResponses = [
+      {
+        statusCode: 200,
+        headers: { 'content-type': 'image/png' },
+        body: Buffer.from('image-bytes'),
+      },
+    ];
     if (dataFolder) rmSync(dataFolder, { recursive: true, force: true });
     dataFolder = null;
   });
@@ -107,9 +128,91 @@ describe('proxy-image-api', () => {
     expect(readdirSync(join(dataFolder, 'cache')).sort()).toHaveLength(2);
   });
 
+  it('follows public redirects and caches under the original source url', async () => {
+    dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
+    const image = Buffer.from('redirected-image');
+    upstreamResponses = [
+      {
+        statusCode: 302,
+        headers: { location: 'https://cdn.example/cover.jpg' },
+        body: Buffer.from(''),
+      },
+      {
+        statusCode: 200,
+        headers: { 'content-type': 'image/jpeg' },
+        body: image,
+      },
+    ];
+    const response = createResponse();
+    const request: any = {
+      query: { url: 'https://covers.openlibrary.org/b/id/13430209-M.jpg?default=false' },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await importApi(dataFolder);
+    register(app);
+
+    await handlerPromise();
+    expect(upstreamRequest).toHaveBeenCalledTimes(2);
+    expect(upstreamRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        path: '/b/id/13430209-M.jpg?default=false',
+        servername: 'covers.openlibrary.org',
+      }),
+      expect.any(Function)
+    );
+    expect(upstreamRequest).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ path: '/cover.jpg', servername: 'cdn.example' }),
+      expect.any(Function)
+    );
+    expect(response.header).toHaveBeenCalledWith('Content-Type', 'image/jpeg');
+    expect(response.send).toHaveBeenCalledWith(image);
+  });
+
+  it('rejects redirects that target private hosts', async () => {
+    dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
+    upstreamResponses = [
+      {
+        statusCode: 302,
+        headers: { location: 'http://127.0.0.1/secret.png' },
+        body: Buffer.from(''),
+      },
+    ];
+    const response = createResponse();
+    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await importApi(dataFolder);
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('rejects redirect chains that exceed the hop limit', async () => {
+    dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
+    upstreamResponses = Array.from({ length: 6 }, (_, index) => ({
+      statusCode: 302,
+      headers: { location: `https://cdn.example/hop-${index + 1}.jpg` },
+      body: Buffer.from(''),
+    }));
+    const response = createResponse();
+    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await importApi(dataFolder);
+    register(app);
+
+    await handlerPromise();
+    expect(upstreamRequest).toHaveBeenCalledTimes(6);
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('rejects non-image responses', async () => {
     dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
-    upstreamResponse = { statusCode: 200, headers: { 'content-type': 'text/html' }, body: Buffer.from('html') };
+    upstreamResponses = [{ statusCode: 200, headers: { 'content-type': 'text/html' }, body: Buffer.from('html') }];
     const response = createResponse();
     const request: any = { query: { url: 'https://images.example/poster' } };
     const { app, handlerPromise } = buildApp(request, response);
@@ -142,11 +245,13 @@ describe('proxy-image-api', () => {
 
   it('rejects oversized image responses before caching', async () => {
     dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
-    upstreamResponse = {
-      statusCode: 200,
-      headers: { 'content-type': 'image/png', 'content-length': `${10 * 1024 * 1024 + 1}` },
-      body: Buffer.from(''),
-    };
+    upstreamResponses = [
+      {
+        statusCode: 200,
+        headers: { 'content-type': 'image/png', 'content-length': `${10 * 1024 * 1024 + 1}` },
+        body: Buffer.from(''),
+      },
+    ];
     const response = createResponse();
     const request: any = { query: { url: 'https://images.example/poster.png' } };
     const { app, handlerPromise } = buildApp(request, response);

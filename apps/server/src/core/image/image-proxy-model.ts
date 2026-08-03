@@ -13,6 +13,7 @@ export interface ProxiedImageResponse {
   statusCode: number;
   contentType: string;
   image: Buffer | null;
+  location?: string;
 }
 
 export type ImageProxyResult =

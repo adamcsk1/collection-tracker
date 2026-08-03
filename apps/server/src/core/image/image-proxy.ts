@@ -7,7 +7,7 @@ import { isIP } from 'net';
 import { extname, join } from 'path';
 import { getArgv } from '../argv/argv';
 import { FOLDERS } from '../main-const';
-import { CONTENT_TYPE_EXTENSIONS, FETCH_TIMEOUT_MS, MAX_IMAGE_BYTES } from './image-proxy-const';
+import { CONTENT_TYPE_EXTENSIONS, FETCH_TIMEOUT_MS, MAX_IMAGE_BYTES, MAX_REDIRECT_HOPS } from './image-proxy-const';
 import { ImageCacheMetadata, ImageProxyResult, ProxiedImageResponse, PublicTarget } from './image-proxy-model';
 
 const getImageCacheFolder = (): string => {
@@ -109,6 +109,19 @@ const fetchImage = (url: URL, target: PublicTarget): Promise<ProxiedImageRespons
           const statusCode = proxiedResponse.statusCode ?? 502;
           const contentType = String(proxiedResponse.headers['content-type'] ?? 'application/octet-stream');
           const contentLength = Number(proxiedResponse.headers['content-length'] ?? 0);
+          const locationHeader = proxiedResponse.headers.location;
+          const location = Array.isArray(locationHeader) ? locationHeader[0] : locationHeader;
+
+          if (statusCode >= 300 && statusCode < 400) {
+            proxiedResponse.resume();
+            resolve({
+              statusCode,
+              contentType,
+              image: null,
+              location: typeof location === 'string' ? location : undefined,
+            });
+            return;
+          }
 
           resolve({ statusCode, contentType, image: await readImageBytes(proxiedResponse, contentLength) });
         } catch (error) {
@@ -171,9 +184,33 @@ export const fetchAndCacheImageWithDetails = async (sourceUrl: string): Promise<
     }
   }
 
-  const proxiedResponse = await fetchImage(url, target);
-  if (proxiedResponse.statusCode >= 300 && proxiedResponse.statusCode < 400) {
-    return { kind: 'redirect' };
+  let currentUrl = url;
+  let currentTarget = target;
+  let proxiedResponse = await fetchImage(currentUrl, currentTarget);
+  for (let redirectHop = 0; proxiedResponse.statusCode >= 300 && proxiedResponse.statusCode < 400; redirectHop++) {
+    if (redirectHop >= MAX_REDIRECT_HOPS || !proxiedResponse.location) {
+      return { kind: 'redirect' };
+    }
+
+    let nextUrl: URL;
+    try {
+      nextUrl = new URL(proxiedResponse.location, currentUrl);
+    } catch {
+      return { kind: 'redirect' };
+    }
+
+    if (!['http:', 'https:'].includes(nextUrl.protocol)) {
+      return { kind: 'invalid-url' };
+    }
+
+    const nextTarget = await getPublicTarget(nextUrl);
+    if (!nextTarget) {
+      return { kind: 'blocked' };
+    }
+
+    currentUrl = nextUrl;
+    currentTarget = nextTarget;
+    proxiedResponse = await fetchImage(currentUrl, currentTarget);
   }
 
   if (proxiedResponse.statusCode < 200 || proxiedResponse.statusCode >= 300) {
