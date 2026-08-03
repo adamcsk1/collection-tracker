@@ -7,14 +7,14 @@ Source: [`apps/client`](../apps/client)
 ## Functional Areas
 
 - `collection/library`: search and browse stored collection items; includes AI natural-language list search via the floating AI button and `AiSearchService`; favorites are available through the library `favorite=true` filter
-- `collection/watch-later`, `collection/wishlist`, `collection/movie-tracker`, and `collection/series-tracker`: filtered collection subroutes for saved item lists, watched movies, and series progress tracking; each list supports the same floating AI search scoped to that list type
+- `collection/watch-later`, `collection/wishlist`, `collection/movie-tracker`, `collection/series-tracker`, and `collection/book-tracker`: filtered collection subroutes for saved item lists, watched movies, series progress, and books sourced from OpenLibrary; books are dedicated to Book Tracker in v1, with no library, read-later, or wishlist book lists; each list supports the same floating AI search scoped to that list type
 - statistics dialog: tag-driven summaries and Chart.js visualizations opened from the main menu
 - `settings/tag-management`: per-tag color, weight, and presentation rules
 - `settings/export-import`: export and import collection data, tag management settings, and series tracker progress using the current `collection-tracker-export` format
 - `settings/collection-list-display`: per-user collection list metadata and preferred rating display rules
-- `settings/features`: show or hide Wishlist, Watch Later, Movie Tracker, and Series Tracker navigation and connected actions without blocking direct routes or deleting data
+- `settings/features`: show or hide Wishlist, Watch Later, Movie Tracker, Series Tracker, and Book Tracker navigation and connected actions without blocking direct routes or deleting data
 - `settings/media-refresh`: refresh stored images and external ratings from external metadata provider-backed APIs
-- `settings/manage-tracker-data`: mark all visible collection items watched or unwatched
+- `settings/manage-tracker-data`: mark collection movies and series watched or unwatched, or clear owned movie, series, and book tracker data
 - `settings/shares`: manage outgoing and incoming collection shares by user share code
 - `settings`: theme, language, search, app-mode, settings-lock, account actions, access tokens, media refresh, sharing, and manage tracker data actions
 - about dialog: build metadata and settings-lock release flow opened from the main menu

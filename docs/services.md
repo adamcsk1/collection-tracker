@@ -6,7 +6,7 @@ Source: [`libs/services`](../libs/services)
 
 ## Modules
 
-- `api/`: HTTP client, auth/session integration, pagination, API store, collection CRUD, statistics, shares, media refresh, movie tracker, series tracker, and AI list search query (`getAiQueryData(prompt, listType)`)
+- `api/`: HTTP client, auth/session integration, pagination, API store, collection CRUD, statistics, shares, media refresh, movie tracker, series tracker, book tracker cleanup, and AI list search query (`getAiQueryData(prompt, listType)`)
 - `external-metadata/`: external metadata lookup logic (search and item fetch via server proxy)
 - `theme/`: theme state and DOM class management
 - `webstorage/`: local and session storage abstraction

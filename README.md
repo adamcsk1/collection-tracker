@@ -1,10 +1,10 @@
 # Collection Tracker
 
-Collection Tracker is a TypeScript workspace for a self-hosted movie and series catalog. Nx core is used for task orchestration, affected project selection, caching, and explicit project metadata; Angular, Cypress, Vitest, ESLint, and server builds run through their direct CLIs.
+Collection Tracker is a TypeScript workspace for a self-hosted movie, series, and book catalog. Nx core is used for task orchestration, affected project selection, caching, and explicit project metadata; Angular, Cypress, Vitest, ESLint, and server builds run through their direct CLIs.
 
 ## Project Goal
 
-Collection Tracker started as an experimental project for trying new ideas quickly while solving a practical need: keeping a family movie and series collection organized in one place. The goal is to provide a self-hosted tracker for physical and digital media that stays simple to run, flexible to extend, and easy to adapt to different collection workflows.
+Collection Tracker started as an experimental project for trying new ideas quickly while solving a practical need: keeping a family media collection organized in one place. The goal is to provide a self-hosted tracker for physical and digital media that stays simple to run, flexible to extend, and easy to adapt to different collection workflows.
 
 The project is open to contributions, feedback, and suggestions that improve usability, maintainability, and long-term value for people who want a practical way to manage their collections.
 
@@ -132,6 +132,8 @@ OMDB_API_KEY="your_omdb_api_key"
 ```
 
 `OMDB_API_KEY` is optional for startup. Set it to enable the OMDb external metadata provider used by metadata search, IMDb ID import, image refresh, rating refresh, and season metadata refresh. `OMDB_API_URL` can override the provider endpoint; when it is omitted or empty, the server uses `https://www.omdbapi.com/`.
+
+Book Tracker uses Open Library and requires no API key. `OPENLIBRARY_API_URL` can override its endpoint; when omitted or empty, the server uses `https://openlibrary.org/`.
 
 Ollama config example (`.data/ollama.config.json`):
 
