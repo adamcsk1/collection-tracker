@@ -145,6 +145,10 @@ export class ApiService extends BaseApiService {
     return this.request('DELETE', '/series-tracker');
   }
 
+  public deleteAllBookTrackerItems(): Observable<MarkAllUnwatchedApiResponseModel> {
+    return this.request('DELETE', '/book-tracker');
+  }
+
   public refreshImages(ownerShareCode?: string): Observable<RefreshImagesApiResponseModel> {
     return this.request('POST', `/items/refresh-images${this.buildQuery({ ownerShareCode })}`);
   }

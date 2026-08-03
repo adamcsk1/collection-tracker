@@ -208,6 +208,16 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ changedCount: 3 });
   });
 
+  it('deletes all book tracker items', async () => {
+    const promise = lastValueFrom(service.deleteAllBookTrackerItems());
+
+    const deleteRequest = httpMock.expectOne('https://api.test/book-tracker');
+    expect(deleteRequest.request.method).toBe('DELETE');
+    deleteRequest.flush({ changedCount: 4 });
+
+    await expect(promise).resolves.toEqual({ changedCount: 4 });
+  });
+
   it('copies a movie to the movie tracker by external identity', async () => {
     const promise = lastValueFrom(
       service.addMovieTrackerItemByExternalId('provider/id', 'item/id', 'share/code', 'watch-later')
@@ -403,7 +413,14 @@ describe('ApiService', () => {
   });
 
   it('retrieves user export data', async () => {
-    const exportData = { userSettings: {}, collectionItems: [], tagManagement: [], seriesTrackerData: {} };
+    const exportData = {
+      type: 'collection-tracker-export',
+      version: 6,
+      userSettings: {},
+      collectionItems: [],
+      tagManagement: [],
+      seriesTrackerData: {},
+    };
     const promise = lastValueFrom(service.getUserExport());
 
     const exportRequest = httpMock.expectOne('https://api.test/export');
@@ -416,7 +433,7 @@ describe('ApiService', () => {
   it('imports user export data', async () => {
     const importData = {
       type: 'collection-tracker-export',
-      version: 3,
+      version: 6,
       userSettings: {},
       collectionItems: [],
       tagManagement: [],

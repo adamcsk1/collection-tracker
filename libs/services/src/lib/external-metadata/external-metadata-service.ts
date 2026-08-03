@@ -5,6 +5,7 @@ import {
   ExternalMetadataReferenceModel,
   ExternalMetadataSelectDataModel,
 } from '@shared/models/external-metadata-model';
+import { ExternalMetadataProviderNameModel } from '@shared/models/external-metadata-provider-model';
 import { getIMDbId } from '@shared/utils/imdb-id-util';
 import { catchError, EMPTY, Observable } from 'rxjs';
 import { AlertService } from '../alert-service';
@@ -18,6 +19,7 @@ export class ExternalMetadataService {
   private searchText = '';
   private directImdbId: string | null = null;
   private searchRequestId = 0;
+  private provider: ExternalMetadataProviderNameModel | null = null;
   private readonly _matchedContent = signal<ExternalMetadataSelectDataModel[]>([]);
   private readonly _matchedReferences = signal<Record<string, ExternalMetadataReferenceModel>>({});
   private readonly _selectedContent = signal<ExternalMetadataItemModel | null>(null);
@@ -27,9 +29,10 @@ export class ExternalMetadataService {
   public readonly completedSearchText = this._completedSearchText.asReadonly();
   public readonly selectedContent$ = toObservable(this.selectedContent);
 
-  public getMatchedContents(searchText: string): void {
+  public getMatchedContents(searchText: string, provider: ExternalMetadataProviderNameModel | null = null): void {
     this.searchText = searchText;
-    this.directImdbId = getIMDbId(this.searchText) || null;
+    this.provider = provider;
+    this.directImdbId = provider ? null : getIMDbId(this.searchText) || null;
     this.searchRequestId++;
     this._completedSearchText.set('');
 
@@ -87,7 +90,7 @@ export class ExternalMetadataService {
       const searchText = this.searchText.trim();
       const searchRequestId = this.searchRequestId;
       this.api
-        .searchExternalMetadata({ s: searchText })
+        .searchExternalMetadata({ s: searchText, provider: this.provider })
         .pipe(
           catchError(() => {
             if (searchRequestId === this.searchRequestId) {

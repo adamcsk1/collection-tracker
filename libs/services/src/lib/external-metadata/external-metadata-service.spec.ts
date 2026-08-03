@@ -92,6 +92,17 @@ describe('ExternalMetadataService', () => {
     expect(service.completedSearchText()).toBe('Matrix');
   });
 
+  it('limits provider-specific searches and does not treat ISBN text as an IMDb lookup', () => {
+    service.getMatchedContents('tt0133093', 'openlibrary');
+
+    const searchRequest = httpMock.expectOne(
+      `${API_URL}/proxy/external-metadata/search?s=tt0133093&provider=openlibrary`
+    );
+    searchRequest.flush({ results: [] });
+
+    expect(service.matchedContent()).toEqual([]);
+  });
+
   it('uses encoded reference keys without parsing provider references from JSON', async () => {
     service.getMatchedContents('Provider punctuation');
 
