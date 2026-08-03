@@ -102,7 +102,7 @@ describe('NewItemDialog component', () => {
     expect(component['searchForm'].searchText().value()).toBe('matrix');
   });
 
-  it('disables manual mode and filters books in book tracker mode', () => {
+  it('allows manual mode and filters books in book tracker mode', () => {
     fixture.componentRef.setInput('bookTracker', true);
     service.matchedContent.set([
       { contentType: 'movie', text: 'Dune', value: 'omdb/tt1160419' },
@@ -110,11 +110,13 @@ describe('NewItemDialog component', () => {
     ]);
     fixture.detectChanges();
 
-    expect(component['modeTabs']()[1].disabled).toBe(true);
+    expect(component['modeTabs']()[1].disabled).toBeUndefined();
+    expect(component['dialogIcon']()).toBe('menu_book');
     expect(component['matchedContent']()).toEqual([{ contentType: 'book', text: 'Dune', value: 'openlibrary/isbn' }]);
     component['onModeChange']('manual');
-    expect(component['mode']()).toBe('search');
+    expect(component['mode']()).toBe('manual');
     expect(component['listType']()).toBe('book-tracker');
+    expect(component['manualForm'].contentType().value()).toBe('book');
   });
 
   it('preselects the first matched content and marks control as touched', () => {

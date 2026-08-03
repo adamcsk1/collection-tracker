@@ -35,10 +35,12 @@ import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
 import { ItemFormModel } from '../item-form/item-form-model';
 import {
   isImdbIdValid,
+  isIsbnValid,
   validateOptionalIMDbRateFormat,
   validateOptionalMetacriticRateFormat,
   validateOptionalRottenTomatoesRateFormat,
 } from '../item-form/item-form-util';
+import { normalizeIsbn13 } from '@shared/utils/isbn-util';
 import { GenreSuggestionsProvider, TagSuggestionsProvider } from '../item-form/suggestion/item-autocomplete-providers';
 import { buildIMDbSearchUrl, buildWebSearchUrl } from '../item-dialog/utils/item-dialog-util';
 import { NewItemDialogService } from './new-item-dialog-service';
@@ -147,6 +149,7 @@ export class NewItemDialog {
     selectedContent: computed(() => this.ngxSignalTranslate.translate('SelectedContent')),
     labelTitle: computed(() => this.ngxSignalTranslate.translate('Title')),
     labelIMDbId: computed(() => this.ngxSignalTranslate.translate('IMDbId')),
+    isbn: computed(() => this.ngxSignalTranslate.translate('ISBN')),
     labelYear: computed(() => this.ngxSignalTranslate.translate('Year')),
     labelIMDbRate: computed(() => this.ngxSignalTranslate.translate('IMDbRate')),
     labelMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Metacritic')),
@@ -155,16 +158,21 @@ export class NewItemDialog {
     labelImageUrl: computed(() => this.ngxSignalTranslate.translate('ImageUrl')),
     altImageExample: computed(() => this.ngxSignalTranslate.translate('Alt.ImageExample')),
     genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
+    subjects: computed(() => this.ngxSignalTranslate.translate('Subjects')),
     hintSeparateGenres: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateGenres')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
     hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
     actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
+    authors: computed(() => this.ngxSignalTranslate.translate('Authors')),
     plot: computed(() => this.ngxSignalTranslate.translate('Plot')),
+    description: computed(() => this.ngxSignalTranslate.translate('Description')),
     type: computed(() => this.ngxSignalTranslate.translate('Type')),
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     seriesLabel: computed(() => this.ngxSignalTranslate.translate('Series')),
     validationKnownIMDbId: computed(() => this.ngxSignalTranslate.translate('Validation.KnownIMDbId')),
+    validationKnownISBN: computed(() => this.ngxSignalTranslate.translate('Validation.KnownISBN')),
     validationIMDbId: computed(() => this.ngxSignalTranslate.translate('Validation.IMDbId')),
+    validationISBN: computed(() => this.ngxSignalTranslate.translate('Validation.ISBN')),
     validationRequired: computed(() => this.ngxSignalTranslate.translate('Validation.Required')),
     validationIMDbRate: computed(() => this.ngxSignalTranslate.translate('Validation.IMDbRate')),
     validationMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Validation.MetacriticRate')),
@@ -185,7 +193,6 @@ export class NewItemDialog {
       value: 'manual',
       label: this.translations.manual(),
       dataTestId: 'new-item-manual-mode',
-      disabled: this.bookTracker() || undefined,
     },
   ]);
   protected readonly submitMode = signal<SaveMode | null>(null);
@@ -220,15 +227,22 @@ export class NewItemDialog {
     (manualItem) => {
       validate(manualItem.title, ({ value }) => (value()?.trim() ? undefined : { kind: 'required' }));
       validate(manualItem.IMDbId, ({ value }) => {
-        const imdbId = value()?.trim() ?? '';
-        if (!imdbId) return { kind: 'required' };
-        return isImdbIdValid(imdbId) ? undefined : { kind: 'imdbId' };
+        const identity = value()?.trim() ?? '';
+        if (!identity) return { kind: 'required' };
+        if (this.bookTracker()) return isIsbnValid(identity) ? undefined : { kind: 'isbn' };
+        return isImdbIdValid(identity) ? undefined : { kind: 'imdbId' };
       });
       validate(manualItem.IMDbId, ({ value }) => this.knownManualIMDbIdValidationError(value()));
       validate(manualItem.IMDbId, () => (this.manualIMDbIdLookupPending() ? { kind: 'pending' } : undefined));
-      validate(manualItem.rate, ({ value }) => validateOptionalIMDbRateFormat(value()));
-      validate(manualItem.rottenTomatoesRate, ({ value }) => validateOptionalRottenTomatoesRateFormat(value()));
-      validate(manualItem.metacriticRate, ({ value }) => validateOptionalMetacriticRateFormat(value()));
+      validate(manualItem.rate, ({ value }) =>
+        this.bookTracker() ? undefined : validateOptionalIMDbRateFormat(value())
+      );
+      validate(manualItem.rottenTomatoesRate, ({ value }) =>
+        this.bookTracker() ? undefined : validateOptionalRottenTomatoesRateFormat(value())
+      );
+      validate(manualItem.metacriticRate, ({ value }) =>
+        this.bookTracker() ? undefined : validateOptionalMetacriticRateFormat(value())
+      );
       min(manualItem.userRate, 0, { error: { kind: 'min' } });
       max(manualItem.userRate, 10, { error: { kind: 'max' } });
       validate(manualItem.userRate, ({ value }) => {
@@ -288,6 +302,12 @@ export class NewItemDialog {
           .IMDbId()
           .errors()
           .some((error) => error.kind === 'imdbId')
+      ),
+      isbn: computed(() =>
+        this.manualForm
+          .IMDbId()
+          .errors()
+          .some((error) => error.kind === 'isbn')
       ),
       knownIMDbId: computed(() =>
         this.manualForm
@@ -442,6 +462,7 @@ export class NewItemDialog {
     if (this.bookTracker()) return this.translations.titleNewBookTrackerItem();
     return this.translations.titleNewCollectionItem();
   });
+  protected readonly dialogIcon = computed(() => (this.bookTracker() ? 'menu_book' : 'add_photo_alternate'));
   private readonly listType = computed<CollectionListTypeModel>(() => {
     if (this.watchLater()) return 'watch-later';
     if (this.wishlist()) return 'wishlist';
@@ -533,16 +554,32 @@ export class NewItemDialog {
       toObservable(this.listType),
     ])
       .pipe(
-        tap(([mode, imdbId]) => {
-          this.manualIMDbIdLookupPending.set(mode === 'manual' && isImdbShapedExternalItemId(imdbId));
+        tap(([mode, identity, , listType]) => {
+          const hasIdentity =
+            listType === 'book-tracker' ? isIsbnValid(identity) : isImdbShapedExternalItemId(identity);
+          this.manualIMDbIdLookupPending.set(mode === 'manual' && hasIdentity);
         }),
-        switchMap(([mode, imdbId, targetOwnerShareCode, listType]) => {
-          if (mode !== 'manual' || !isImdbShapedExternalItemId(imdbId)) return of({ exists: false });
+        switchMap(([mode, identity, targetOwnerShareCode, listType]) => {
+          if (mode !== 'manual') return of({ exists: false });
+          if (listType === 'book-tracker') {
+            const isbn = normalizeIsbn13(identity);
+            if (!isbn) return of({ exists: false });
+            return timer(150).pipe(
+              switchMap(() =>
+                this.api
+                  .collectionItemExists('openlibrary', isbn, targetOwnerShareCode || undefined, listType, [
+                    { source: 'isbn', id: isbn },
+                  ])
+                  .pipe(catchError(() => of({ exists: false })))
+              )
+            );
+          }
+          if (!isImdbShapedExternalItemId(identity)) return of({ exists: false });
           return timer(150).pipe(
             switchMap(() =>
               this.api
-                .collectionItemExists('omdb', imdbId.trim(), targetOwnerShareCode || undefined, listType, [
-                  { source: 'imdb', id: imdbId.trim() },
+                .collectionItemExists('omdb', identity.trim(), targetOwnerShareCode || undefined, listType, [
+                  { source: 'imdb', id: identity.trim() },
                 ])
                 .pipe(catchError(() => of({ exists: false })))
             )
@@ -562,7 +599,6 @@ export class NewItemDialog {
       } else if (listType === 'movie-tracker') {
         this.manualForm.contentType().value.set('movie');
       } else if (listType === 'book-tracker') {
-        this.mode.set('search');
         this.manualForm.contentType().value.set('book');
       }
     });
@@ -580,15 +616,16 @@ export class NewItemDialog {
   }
 
   protected onModeChange(newMode: NewItemMode): void {
-    if (this.bookTracker() && newMode === 'manual') return;
     if (this.mode() === newMode) return;
     this.mode.set(newMode);
     this.knownSearchIMDbIdExists.set(false);
     this.knownManualIMDbIdExists.set(false);
     const providerReference = this.service.getProviderReference(this.searchForm.selectedExternalReference().value());
     this.searchIMDbIdLookupPending.set(newMode === 'search' && !!providerReference);
+    const manualIdentity = this.manualForm.IMDbId().value();
     this.manualIMDbIdLookupPending.set(
-      newMode === 'manual' && isImdbShapedExternalItemId(this.manualForm.IMDbId().value())
+      newMode === 'manual' &&
+        (this.bookTracker() ? isIsbnValid(manualIdentity) : isImdbShapedExternalItemId(manualIdentity))
     );
   }
 

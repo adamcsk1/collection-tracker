@@ -382,6 +382,11 @@ export class ItemDialog implements OnInit {
     if (this.bookTracker()) return this.translations.titleBookTrackerItem();
     return this.translations.titleCollectionItem();
   });
+  protected readonly dialogIcon = computed(() => {
+    if (this.book() || this.bookTracker()) return 'menu_book';
+    if (this.series() || this.seriesTracker()) return 'live_tv';
+    return 'movie';
+  });
   protected readonly draftImageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.form.image().value())
   );

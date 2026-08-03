@@ -1,7 +1,7 @@
 <libc-dialog-shell>
   <ng-container dialog-shell-top-content>
     <h3 class="dialog-title">
-      <i class="material-icons" [title]="dialogTitle()"> add_photo_alternate </i>
+      <i class="material-icons" [title]="dialogTitle()" data-test-id="new-item-dialog-icon">{{ dialogIcon() }}</i>
       {{ dialogTitle() }}
     </h3>
   </ng-container>
@@ -88,7 +88,7 @@
           <libc-input
             data-test-id="new-item-manual-imdb-id"
             [mandatory]="true"
-            [label]="translations.labelIMDbId()"
+            [label]="bookTracker() ? translations.isbn() : translations.labelIMDbId()"
             [formField]="manualForm.IMDbId"
           >
             <ng-container errors>
@@ -98,8 +98,11 @@
               @if (manualFormErrors.IMDbId.imdbId()) {
                 {{ translations.validationIMDbId() }}
               }
+              @if (manualFormErrors.IMDbId.isbn()) {
+                {{ translations.validationISBN() }}
+              }
               @if (manualFormErrors.IMDbId.knownIMDbId()) {
-                {{ translations.validationKnownIMDbId() }}
+                {{ bookTracker() ? translations.validationKnownISBN() : translations.validationKnownIMDbId() }}
               }
             </ng-container>
           </libc-input>
@@ -116,39 +119,41 @@
               [options]="contentTypeOptions()"
             />
           }
-          <libc-input
-            data-test-id="new-item-manual-rate"
-            [label]="translations.labelIMDbRate()"
-            [formField]="manualForm.rate"
-          >
-            <ng-container errors>
-              @if (manualFormErrors.rate.rateFormat()) {
-                {{ translations.validationIMDbRate() }}
-              }
-            </ng-container>
-          </libc-input>
-          <libc-input
-            data-test-id="new-item-manual-rotten-tomatoes-rate"
-            [label]="translations.labelRottenTomatoesRate()"
-            [formField]="manualForm.rottenTomatoesRate"
-          >
-            <ng-container errors>
-              @if (manualFormErrors.rottenTomatoesRate.rateFormat()) {
-                {{ translations.validationRottenTomatoesRate() }}
-              }
-            </ng-container>
-          </libc-input>
-          <libc-input
-            data-test-id="new-item-manual-metacritic-rate"
-            [label]="translations.labelMetacriticRate()"
-            [formField]="manualForm.metacriticRate"
-          >
-            <ng-container errors>
-              @if (manualFormErrors.metacriticRate.rateFormat()) {
-                {{ translations.validationMetacriticRate() }}
-              }
-            </ng-container>
-          </libc-input>
+          @if (!bookTracker()) {
+            <libc-input
+              data-test-id="new-item-manual-rate"
+              [label]="translations.labelIMDbRate()"
+              [formField]="manualForm.rate"
+            >
+              <ng-container errors>
+                @if (manualFormErrors.rate.rateFormat()) {
+                  {{ translations.validationIMDbRate() }}
+                }
+              </ng-container>
+            </libc-input>
+            <libc-input
+              data-test-id="new-item-manual-rotten-tomatoes-rate"
+              [label]="translations.labelRottenTomatoesRate()"
+              [formField]="manualForm.rottenTomatoesRate"
+            >
+              <ng-container errors>
+                @if (manualFormErrors.rottenTomatoesRate.rateFormat()) {
+                  {{ translations.validationRottenTomatoesRate() }}
+                }
+              </ng-container>
+            </libc-input>
+            <libc-input
+              data-test-id="new-item-manual-metacritic-rate"
+              [label]="translations.labelMetacriticRate()"
+              [formField]="manualForm.metacriticRate"
+            >
+              <ng-container errors>
+                @if (manualFormErrors.metacriticRate.rateFormat()) {
+                  {{ translations.validationMetacriticRate() }}
+                }
+              </ng-container>
+            </libc-input>
+          }
           @if (showManualUserRate()) {
             <libc-input
               data-test-id="new-item-manual-user-rate"
@@ -170,7 +175,7 @@
           }
           <libc-autocomplete
             data-test-id="new-item-manual-genre"
-            [label]="translations.genre()"
+            [label]="bookTracker() ? translations.subjects() : translations.genre()"
             [hint]="translations.hintSeparateGenres()"
             [formField]="manualForm.genreText"
             ctGenreSuggestions
@@ -184,13 +189,13 @@
           />
           <libc-input
             data-test-id="new-item-manual-actors"
-            [label]="translations.actors()"
+            [label]="bookTracker() ? translations.authors() : translations.actors()"
             [formField]="manualForm.actors"
           />
           <libc-textarea
             data-test-id="new-item-manual-plot"
             class="full-width"
-            [label]="translations.plot()"
+            [label]="bookTracker() ? translations.description() : translations.plot()"
             [formField]="manualForm.plot"
             [rows]="4"
           />

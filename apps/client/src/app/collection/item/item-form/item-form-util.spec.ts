@@ -66,6 +66,39 @@ describe('item form util', () => {
     expect(item.contentType).toBe('movie');
   });
 
+  it('builds openlibrary book items from form values', () => {
+    const item = buildItemFromForm({
+      title: ' Dune ',
+      IMDbId: '0-306-40615-2',
+      year: '1965',
+      rate: '8.5',
+      rottenTomatoesRate: '95%',
+      metacriticRate: '85/100',
+      userRate: 9,
+      image: 'cover-url',
+      genreText: 'Sci-Fi',
+      tagsText: 'owned',
+      actors: 'Frank Herbert',
+      plot: 'Desert planet',
+      contentType: 'book',
+    });
+
+    expect(item).toEqual(
+      expect.objectContaining({
+        title: 'Dune',
+        IMDbId: undefined,
+        externalProvider: 'openlibrary',
+        externalItemId: '9780306406157',
+        externalIds: [{ source: 'isbn', id: '9780306406157' }],
+        rate: '',
+        rottenTomatoesRate: '',
+        metacriticRate: '',
+        contentType: 'book',
+        actors: 'Frank Herbert',
+      })
+    );
+  });
+
   it('builds form model from item change', () => {
     const change: CollectionItemChangeApiModel = {
       title: 'Title',

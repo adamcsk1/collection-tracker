@@ -86,6 +86,7 @@ export class List implements OnDestroy {
   public readonly routeSearchText = input('');
   public readonly routeFilterKey = input('');
   public readonly listType = input<CollectionListTypeModel>('library');
+  public readonly emptyIcon = input('movie');
   public readonly dataSource = input.required<CollectionListDataSource>();
   public readonly randomPick = output<void>();
   public readonly showFunctions = output<void>();

@@ -30,7 +30,7 @@
   } @empty {
     @if (apiLoadNetworkStatus() !== 'pending') {
       <div data-test-id="list-empty" class="list-empty">
-        <i class="material-icons">movie</i>
+        <i class="material-icons" data-test-id="list-empty-icon">{{ emptyIcon() }}</i>
         <ng-content select="[list-empty]">
           @if (!debouncedSearchText().trim() && !routeFilterKey() && collectionLength() === 0) {
             {{ translations.messageEmptyCollection() }}<br />
