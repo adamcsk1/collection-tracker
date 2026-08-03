@@ -5,7 +5,8 @@ export const isCollectionFeaturePreferences = (value: unknown): value is Collect
 
   const candidate = value as Record<string, unknown>;
   return (
-    Object.keys(candidate).length === 4 &&
+    Object.keys(candidate).length === 5 &&
+    typeof candidate['bookTracker'] === 'boolean' &&
     typeof candidate['wishlist'] === 'boolean' &&
     typeof candidate['watchLater'] === 'boolean' &&
     typeof candidate['movieTracker'] === 'boolean' &&

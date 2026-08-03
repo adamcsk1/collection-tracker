@@ -4,7 +4,13 @@ import { isCollectionFeaturePreferences } from './collection-feature-preferences
 describe('isCollectionFeaturePreferences', () => {
   it('accepts complete boolean preferences', () => {
     expect(
-      isCollectionFeaturePreferences({ wishlist: true, watchLater: false, movieTracker: true, seriesTracker: false })
+      isCollectionFeaturePreferences({
+        bookTracker: true,
+        wishlist: true,
+        watchLater: false,
+        movieTracker: true,
+        seriesTracker: false,
+      })
     ).toBe(true);
   });
 
@@ -13,8 +19,8 @@ describe('isCollectionFeaturePreferences', () => {
     [],
     {},
     { wishlist: true, watchLater: true, movieTracker: true },
-    { wishlist: true, watchLater: true, movieTracker: true, seriesTracker: 'yes' },
-    { wishlist: true, watchLater: true, movieTracker: true, seriesTracker: true, extra: true },
+    { bookTracker: true, wishlist: true, watchLater: true, movieTracker: true, seriesTracker: 'yes' },
+    { bookTracker: true, wishlist: true, watchLater: true, movieTracker: true, seriesTracker: true, extra: true },
   ])('rejects invalid preferences %#', (value) => {
     expect(isCollectionFeaturePreferences(value)).toBe(false);
   });

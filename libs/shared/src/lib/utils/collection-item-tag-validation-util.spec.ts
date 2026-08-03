@@ -46,6 +46,28 @@ describe('collection item tag validation util', () => {
         listType: 'series-tracker',
       })
     ).toBeUndefined();
+    expect(
+      createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'book', listType: 'book-tracker' })
+    ).toBeUndefined();
+    for (const listType of ['library', 'watch-later', 'wishlist'] as const) {
+      expect(createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'book', listType })).toEqual({
+        kind: 'invalidInternalCollectionTag',
+      });
+    }
+    expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'book-tracker' })).toEqual({
+      kind: 'invalidInternalCollectionTag',
+    });
+    expect(
+      createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'series', listType: 'book-tracker' })
+    ).toEqual({ kind: 'invalidInternalCollectionTag' });
+    expect(
+      createCollectionItemTagValidation({
+        ...baseCreateInput,
+        contentType: 'book',
+        favorite: true,
+        listType: 'book-tracker',
+      })
+    ).toEqual({ kind: 'invalidNonLibraryTag' });
   });
 
   it('validates change item list constraints', () => {
@@ -118,6 +140,48 @@ describe('collection item tag validation util', () => {
         requesterIsOwner: false,
       })
     ).toEqual({ kind: 'sharedInternalCollectionItemUpdate' });
+    expect(
+      changeCollectionItemTagValidation({
+        ...baseChangeInput,
+        contentType: 'book',
+        listType: 'book-tracker',
+        existingListType: 'book-tracker',
+      })
+    ).toBeUndefined();
+    for (const listType of ['library', 'watch-later', 'wishlist'] as const) {
+      expect(
+        changeCollectionItemTagValidation({
+          ...baseChangeInput,
+          contentType: 'book',
+          listType,
+          existingListType: listType,
+        })
+      ).toEqual({ kind: 'invalidInternalCollectionTag' });
+    }
+    expect(
+      changeCollectionItemTagValidation({
+        ...baseChangeInput,
+        listType: 'book-tracker',
+        existingListType: 'book-tracker',
+      })
+    ).toEqual({ kind: 'invalidInternalCollectionTag' });
+    expect(
+      changeCollectionItemTagValidation({
+        ...baseChangeInput,
+        contentType: 'series',
+        listType: 'book-tracker',
+        existingListType: 'book-tracker',
+      })
+    ).toEqual({ kind: 'invalidInternalCollectionTag' });
+    expect(
+      changeCollectionItemTagValidation({
+        ...baseChangeInput,
+        contentType: 'book',
+        favorite: true,
+        listType: 'book-tracker',
+        existingListType: 'book-tracker',
+      })
+    ).toEqual({ kind: 'invalidInternalCollectionTag' });
   });
 
   it('returns all editable and display tags', () => {

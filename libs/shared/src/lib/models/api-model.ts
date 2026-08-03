@@ -9,7 +9,7 @@ export type { CollectionItemContentTypeModel, CollectionListTypeModel } from './
 
 export type CollectionItemApiModel = CollectionItemModel;
 
-export type CollectionItemTypeFilter = 'movie' | 'series';
+export type CollectionItemTypeFilter = 'movie' | 'series' | 'book';
 export type CollectionItemTagMode = 'any' | 'all';
 export type CollectionItemOrderBy = 'createdAt' | 'alphabet';
 export type CollectionItemOrderDirection = 'asc' | 'desc';
@@ -75,6 +75,7 @@ export interface CollectionStatisticsApiResponseModel {
   totalItems: number;
   movieCount: number;
   seriesCount: number;
+  bookTrackerCount: number;
   favoriteCount: number;
   watchLaterCount: number;
   wishlistCount: number;
@@ -292,6 +293,8 @@ export interface UserSharesApiResponseModel {
 }
 
 export interface UserExportApiResponseModel {
+  type: string;
+  version: number;
   userSettings: UserSettingsApiResponseModel;
   collectionItems: CollectionItemApiModel[];
   tagManagement: TagManagementApiResponseModel;
@@ -304,10 +307,7 @@ export interface UserExportApiResponseModel {
   >;
 }
 
-export interface UserImportApiRequestModel extends UserExportApiResponseModel {
-  type: string;
-  version: number;
-}
+export type UserImportApiRequestModel = UserExportApiResponseModel;
 
 export interface UserImportApiResponseModel {
   importedCollectionItems: number;

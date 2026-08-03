@@ -22,6 +22,9 @@ export const createCollectionItemTagValidation = ({
   if (listType === 'movie-tracker' && contentType !== 'movie') {
     return { kind: 'invalidInternalCollectionTag' };
   }
+  if ((listType === 'book-tracker') !== (contentType === 'book')) {
+    return { kind: 'invalidInternalCollectionTag' };
+  }
   return undefined;
 };
 
@@ -39,6 +42,7 @@ export const changeCollectionItemTagValidation = ({
     existingListType !== 'library' &&
     listType !== 'series-tracker' &&
     listType !== 'movie-tracker' &&
+    listType !== 'book-tracker' &&
     listType !== 'watch-later' &&
     listType !== 'wishlist'
   ) {
@@ -48,6 +52,12 @@ export const changeCollectionItemTagValidation = ({
     return { kind: 'invalidSeriesTrackerTags' };
   }
   if (listType === 'movie-tracker' && (contentType !== 'movie' || favorite)) {
+    return { kind: 'invalidInternalCollectionTag' };
+  }
+  if ((listType === 'book-tracker') !== (contentType === 'book')) {
+    return { kind: 'invalidInternalCollectionTag' };
+  }
+  if (listType === 'book-tracker' && favorite) {
     return { kind: 'invalidInternalCollectionTag' };
   }
   if (listType === 'watch-later' && favorite) {

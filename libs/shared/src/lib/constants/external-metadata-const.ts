@@ -10,4 +10,4 @@ export const isExternalMetadataProviderName = (provider: string): provider is Ex
   (EXTERNAL_METADATA_PROVIDER_NAMES as readonly string[]).includes(provider);
 
 export const isExternalItemIdentitySourceName = (source: string): source is ExternalItemIdentitySourceNameModel =>
-  isExternalMetadataProviderName(source) || source === 'imdb';
+  isExternalMetadataProviderName(source) || source === 'imdb' || source === 'isbn';
