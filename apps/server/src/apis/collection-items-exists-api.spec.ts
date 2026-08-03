@@ -7,9 +7,10 @@ const insertUserAndItem = () => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt001', 'Item', 'item', '1999', '8.0', 'Plot', 'img.jpg', 'hash');
+    `INSERT INTO collection_items
+      (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'imdb', 'tt001', 'imdb:tt001', 'Item', 'item', '1999', 'Plot', 'img.jpg', 'hash');
 };
 
 const insertUser = (usernameHash: string) => {
@@ -21,10 +22,22 @@ const insertUser = (usernameHash: string) => {
 const insertItem = (usernameHash: string, imdbId: string) => {
   getDatabase()
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, 'Shared Item', 'shared item', '1999', '8.0', 'Plot', 'img.jpg', 'hash');
+    .run(
+      usernameHash,
+      'imdb',
+      imdbId,
+      `imdb:${imdbId}`,
+      'Shared Item',
+      'shared item',
+      '1999',
+      'Plot',
+      'img.jpg',
+      'hash'
+    );
 };
 
 const insertCanonicalItem = (
@@ -36,19 +49,17 @@ const insertCanonicalItem = (
   getDatabase()
     .prepare(
       `INSERT INTO collection_items
-        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       usernameHash,
-      externalItemId,
       'omdb',
       externalItemId,
       canonicalItemId,
       'Canonical Item',
       'canonical item',
       '1999',
-      '8.0',
       'Plot',
       'img.jpg',
       'hash'
@@ -64,10 +75,23 @@ const insertCanonicalItem = (
 const insertTypedItem = (usernameHash: string, imdbId: string, listType: 'watch-later' | 'wishlist') => {
   getDatabase()
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, listType, 'Saved Item', 'saved item', '1999', '8.0', 'Plot', 'img.jpg', 'hash');
+    .run(
+      usernameHash,
+      'imdb',
+      imdbId,
+      `imdb:${imdbId}`,
+      listType,
+      'Saved Item',
+      'saved item',
+      '1999',
+      'Plot',
+      'img.jpg',
+      'hash'
+    );
 };
 
 const insertShare = (ownerHash: string, sharedWithHash: string) => {

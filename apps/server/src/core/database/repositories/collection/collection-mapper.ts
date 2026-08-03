@@ -25,7 +25,7 @@ const isWatchedMovie = (db: Database.Database, row: CollectionItemRow, viewerUse
   if (row.list_type === 'movie-tracker') return true;
   if (row.list_type !== 'library') return false;
   const externalProvider = row.external_provider;
-  const externalItemId = row.external_item_id ?? row.imdb_id ?? '';
+  const externalItemId = row.external_item_id ?? '';
   return Boolean(
     db
       .prepare(
@@ -59,7 +59,7 @@ export const toApiItem = (
     genre: relations.genre,
     IMDbId: row.imdb_id ?? undefined,
     externalProvider,
-    externalItemId: row.external_item_id ?? row.imdb_id ?? '',
+    externalItemId: row.external_item_id ?? '',
     externalIds: row.canonical_item_id
       ? findExternalItemIdentitiesByCanonicalItemId(db, row.username_hash, row.canonical_item_id)
       : undefined,

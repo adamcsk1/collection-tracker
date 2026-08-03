@@ -44,8 +44,10 @@ describe('mark-all-series-tracker-watched-api', () => {
         item: expect.objectContaining({ IMDbId: 'tt-series' }),
       })
     );
-    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
-      watched_at: expect.any(String),
+    expect(
+      getDatabase().prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?').get(itemId)
+    ).toEqual({
+      completed_at: expect.any(String),
     });
   });
 
@@ -83,8 +85,10 @@ describe('mark-all-series-tracker-watched-api', () => {
     expect(
       getDatabase().prepare('SELECT season, episodes FROM series_tracker_seasons WHERE item_id = ?').all(itemId)
     ).toEqual([{ season: 1, episodes: 2 }]);
-    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
-      watched_at: expect.any(String),
+    expect(
+      getDatabase().prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?').get(itemId)
+    ).toEqual({
+      completed_at: expect.any(String),
     });
   });
 
@@ -97,16 +101,7 @@ describe('mark-all-series-tracker-watched-api', () => {
         .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
         .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
     );
-    const itemId = insertSeriesTrackerItem();
-    getDatabase()
-      .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE id = ?')
-      .run('canonical-series', itemId);
-    getDatabase()
-      .prepare(
-        `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id)
-         VALUES (?, ?, ?, ?)`
-      )
-      .run('user', 'canonical-series', 'imdb', 'tt-series');
+    insertSeriesTrackerItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'imdb', externalIdentityId: 'tt-series' },

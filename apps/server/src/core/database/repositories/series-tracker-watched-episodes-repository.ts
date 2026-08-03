@@ -8,9 +8,21 @@ const findSeriesTrackerItemId = (db: Database.Database, usernameHash: string, im
     .prepare(
       `SELECT id
        FROM collection_items
-       WHERE username_hash = ? AND imdb_id = ? AND list_type = ?`
+       WHERE username_hash = ?
+         AND list_type = ?
+         AND (
+           (external_provider = 'imdb' AND external_item_id = ?)
+           OR EXISTS (
+             SELECT 1
+             FROM external_item_identities imdb_identity
+             WHERE imdb_identity.username_hash = collection_items.username_hash
+               AND imdb_identity.canonical_item_id = collection_items.canonical_item_id
+               AND imdb_identity.external_provider = 'imdb'
+               AND imdb_identity.external_item_id = ?
+           )
+         )`
     )
-    .get(usernameHash, imdbId, 'series-tracker') as { id: number } | undefined;
+    .get(usernameHash, 'series-tracker', imdbId, imdbId) as { id: number } | undefined;
   return row?.id ?? null;
 };
 

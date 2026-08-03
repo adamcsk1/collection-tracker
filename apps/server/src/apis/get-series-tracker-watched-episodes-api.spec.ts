@@ -1,8 +1,35 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { insertSeriesTrackerItem } from '../../test/mocks/series-tracker-item-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const insertSeriesTrackerItem = (): number => {
+  const db = getDatabase();
+  db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+  const result = db
+    .prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      'user',
+      'omdb',
+      'tt-series',
+      'imdb:tt-series',
+      'series-tracker',
+      'Series',
+      'series',
+      '',
+      '',
+      '',
+      'hash',
+      'series'
+    );
+  const itemId = Number(result.lastInsertRowid);
+  db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(itemId, null);
+  return itemId;
+};
 
 describe('get-series-tracker-watched-episodes-api', () => {
   afterEach(() => {

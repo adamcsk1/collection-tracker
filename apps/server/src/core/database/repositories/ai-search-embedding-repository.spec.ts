@@ -8,10 +8,23 @@ describe('ai-search-embedding-repository', () => {
     db.prepare('INSERT OR IGNORE INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     const result = db
       .prepare(
-        `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, contributors, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .run('user', 'tt0133093', 'The Matrix', 'the matrix', '1999', 'R', 'A computer hacker.', '', 'hash');
+      .run(
+        'user',
+        'omdb',
+        'tt0133093',
+        'imdb:tt0133093',
+        'The Matrix',
+        'the matrix',
+        '1999',
+        '',
+        'A computer hacker.',
+        '',
+        'hash'
+      );
 
     return Number(result.lastInsertRowid);
   };

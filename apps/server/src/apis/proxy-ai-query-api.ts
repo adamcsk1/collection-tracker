@@ -5,8 +5,8 @@ import type { FastifyInstance } from 'fastify';
 import {
   applyStatusIntentFilter,
   detectAiSearchStatusIntent,
+  getAiSearchCandidateId,
   getEffectiveStatusIntent,
-  getStatusIntentMatchedIds,
   isPureStatusIntent,
 } from '../core/ai/ai-search-intent-util';
 import { getDatabase } from '../core/database/database';
@@ -24,21 +24,21 @@ import { withErrorHandler } from '../core/utils/api-error-handler';
 import { parseListType } from '../core/utils/query-parse-util';
 
 const SYSTEM_PROMPT = `
-You are a strict movie and series collection search filter.
+You are a strict media collection search filter.
 
 Goal:
-Given a user's natural-language search request and a list of candidate collection items, return only the IMDb IDs of candidates that clearly match the request.
+Given a user's natural-language search request and a list of candidate collection items, return only the CandidateIds of candidates that clearly match the request.
 Item separator is: -------------------------------------------
 
 Output contract:
-- Return ONLY valid JSON shaped exactly like {"matchedIds":["tt0111161","tt0068646"]}.
-- Include only IMDb IDs from matching candidates.
+- Return ONLY valid JSON shaped exactly like {"matchedIds":["tt0111161","openlibrary:9780140328721"]}.
+- Include only CandidateIds from matching candidates.
 - If no candidates match, return {"matchedIds":[]}.
 - Do not return scores, text, markdown, explanations, or any other keys.
 
 Filtering rules:
 - Evaluate every provided collection item independently against the user's request.
-- Use only fields present in the provided items: IMDbId, title, contentType, favorite, listType, watchedAt, completed, watchStatus, watchedEpisodes, totalEpisodes, progressPercent, year, genre, tags, rate, rottenTomatoesRate, metacriticRate, userRate, actors, and plot.
+- Use only fields present in the provided items: CandidateId, title, contentType, favorite, listType, watchedAt, completed, watchStatus, watchedEpisodes, totalEpisodes, progressPercent, year, genre, tags, rate, rottenTomatoesRate, metacriticRate, userRate, actors, and plot.
 - Match semantic intent, not only exact words. For example, "christmas movies" can match items whose title, tags, genres, or plot clearly indicate Christmas, holidays, Santa, festive events, or Christmas settings.
 - The user's request can ask for any actor, genre, title, year, decade, tag, rating, theme, mood, setting, franchise, plot idea, watch status, progress, or combination of conditions.
 - Domain status rules (prefer these over plot metaphors):
@@ -52,7 +52,7 @@ Filtering rules:
 - If the request is nonsense, impossible, unclear, or unsupported by the candidate fields, mark every candidate as match:false.
 - Prefer the supplied item fields. Use public film or series knowledge only to interpret well-known titles, actors, franchises, moods, or themes.
 - Do not invent facts that conflict with the supplied item fields.
-- Do not invent IMDb IDs or modify them.
+- Do not invent CandidateIds or modify them.
 - Preserve the same order as the provided collection items in matchedIds.
 `;
 
@@ -85,8 +85,8 @@ const toPromptItem = (item: AiSearchCollectionItem): string => {
   try {
     return `
 -------------------------------------------
-IMDbId:
-${stringifyPromptValue(item.IMDbId)}
+CandidateId:
+${stringifyPromptValue(getAiSearchCandidateId(item))}
 \n
 title:
 ${stringifyPromptValue(item.title)}
@@ -440,7 +440,7 @@ export const register = (app: FastifyInstance): void => {
         debugLog(
           `AI pure status intent "${statusIntent}" on ${listType}: returning ${items.length}/${allItems.length} items without LLM`
         );
-        response.send({ matchedIds: getStatusIntentMatchedIds(items) } as AiQueryResponseModel);
+        response.send({ matchedIds: items.map(getAiSearchCandidateId).filter(Boolean) } as AiQueryResponseModel);
         return;
       }
 
@@ -462,7 +462,7 @@ export const register = (app: FastifyInstance): void => {
 
       const queryBatch = async (batch: AiSearchCollectionItem[]): Promise<string[]> => {
         const userMessage = buildPrompt(prompt, listType, batch);
-        const validBatchImdbIds = new Set(batch.map((item) => item.IMDbId));
+        const validBatchCandidateIds = new Set(batch.map(getAiSearchCandidateId).filter(Boolean));
         const maxTokens = Math.max(64, batch.length * 12 + 32);
         const ollamaResponse = await client.generate({
           model,
@@ -491,8 +491,8 @@ export const register = (app: FastifyInstance): void => {
 
         const matchedIdSet = new Set(parsedMatchedIds);
         return batch
-          .map((item) => item.IMDbId ?? item.externalItemId)
-          .filter((imdbid) => validBatchImdbIds.has(imdbid) && matchedIdSet.has(imdbid));
+          .map(getAiSearchCandidateId)
+          .filter((candidateId) => validBatchCandidateIds.has(candidateId) && matchedIdSet.has(candidateId));
       };
 
       try {

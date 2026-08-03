@@ -3,6 +3,61 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const insertItem = (
+  imdbId: string,
+  listType: 'library' | 'movie-tracker' | 'series-tracker',
+  title: string,
+  year: string,
+  ratings: [string, string, string],
+  userRate: number,
+  image: string,
+  contentHash: string,
+  completedAt: string | null = null
+): number => {
+  const db = getDatabase();
+  const result = db
+    .prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, user_rate, contributors, description, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      'user',
+      'omdb',
+      imdbId,
+      `imdb:${imdbId}`,
+      listType,
+      title,
+      title.toLowerCase(),
+      year,
+      userRate,
+      'Actor',
+      'Plot',
+      image,
+      contentHash,
+      listType === 'series-tracker' ? 'series' : 'movie'
+    );
+  const itemId = Number(result.lastInsertRowid);
+  const insertRating = db.prepare(
+    'INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)'
+  );
+  insertRating.run(itemId, 'imdb', ratings[0]);
+  insertRating.run(itemId, 'rotten-tomatoes', ratings[1]);
+  insertRating.run(itemId, 'metacritic', ratings[2]);
+  db.prepare(
+    `INSERT INTO external_item_identities
+      (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+     VALUES (?, ?, ?, ?, ?)`
+  ).run('user', `imdb:${imdbId}`, 'imdb', imdbId, 'alias');
+  if (listType === 'movie-tracker' || listType === 'series-tracker') {
+    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
+      itemId,
+      completedAt
+    );
+  }
+  return itemId;
+};
+
 describe('export-api', () => {
   afterEach(() => {
     vi.resetModules();
@@ -16,79 +71,49 @@ describe('export-api', () => {
     const db = getDatabase();
 
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
-    const featurePreferences = { wishlist: false, watchLater: true, movieTracker: false, seriesTracker: true };
+    const featurePreferences = {
+      bookTracker: true,
+      wishlist: false,
+      watchLater: true,
+      movieTracker: false,
+      seriesTracker: true,
+    };
     db.prepare(
       'INSERT INTO user_settings (username_hash, theme, animated_background, language, collection_feature_preferences) VALUES (?, ?, ?, ?, ?)'
     ).run('user', 'dark', 0, 'en', JSON.stringify(featurePreferences));
-    db.prepare(
-      'INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(
-      'user',
-      'tt123',
-      'library',
-      'Movie',
-      'movie',
-      '2020',
-      '8.0',
-      '90',
-      '85',
-      9.0,
-      'Actor',
-      'Plot',
-      'img.jpg',
-      'hash1'
-    );
-    db.prepare(
-      'INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash, watched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(
-      'user',
+    const libraryItemId = insertItem('tt123', 'library', 'Movie', '2020', ['8.0', '90', '85'], 9, 'img.jpg', 'hash1');
+    const seriesItemId = insertItem(
       'tt456',
       'series-tracker',
       'Series',
-      'series',
       '2021',
-      '7.5',
-      '80',
-      '75',
-      8.0,
-      'Actor',
-      'Plot',
+      ['7.5', '80', '75'],
+      8,
       'img2.jpg',
       'hash2',
       '2026-04-05 00:00:00'
     );
-    db.prepare(
-      'INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(
-      'user',
-      'tt789',
-      'movie-tracker',
-      'Tracker Movie',
-      'tracker movie',
-      '2022',
-      '9.0',
-      '95',
-      '90',
-      10.0,
-      'Actor',
-      'Plot',
-      'img3.jpg',
-      'hash3'
-    );
-    db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(1, '#owned');
+    insertItem('tt789', 'movie-tracker', 'Tracker Movie', '2022', ['9.0', '95', '90'], 10, 'img3.jpg', 'hash3');
+    db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(libraryItemId, '#owned');
     db.prepare(
       'INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run('user', '#owned', '#111111', 1, 0, 0, 1);
     db.prepare(
       'INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles) VALUES (?, ?, ?, ?)'
-    ).run(2, 1, 10, JSON.stringify(['Episode 1']));
-    db.prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(2, 1, 1);
+    ).run(seriesItemId, 1, 10, JSON.stringify(['Episode 1']));
+    db.prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(
+      seriesItemId,
+      1,
+      1
+    );
 
     const { register } = await import('./export-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
+      type: 'collection-tracker-export',
+      version: 6,
       userSettings: {
         theme: 'dark',
         animatedBackground: false,
@@ -101,17 +126,24 @@ describe('export-api', () => {
           listType: 'library',
           title: 'Movie',
           tags: ['#owned'],
+          canonicalItemId: 'imdb:tt123',
+          externalIds: expect.arrayContaining([
+            { source: 'imdb', id: 'tt123' },
+            { source: 'omdb', id: 'tt123' },
+          ]),
         }),
         expect.objectContaining({
           IMDbId: 'tt789',
           listType: 'movie-tracker',
           title: 'Tracker Movie',
+          canonicalItemId: 'imdb:tt789',
         }),
         expect.objectContaining({
           IMDbId: 'tt456',
           listType: 'series-tracker',
           title: 'Series',
           watchedAt: '2026-04-05 00:00:00',
+          canonicalItemId: 'imdb:tt456',
         }),
       ],
       tagManagement: [
@@ -145,6 +177,8 @@ describe('export-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
+      type: 'collection-tracker-export',
+      version: 6,
       userSettings: {},
       collectionItems: [],
       tagManagement: [],

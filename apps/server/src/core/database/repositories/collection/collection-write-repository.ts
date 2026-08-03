@@ -3,6 +3,7 @@ import {
   CollectionItemChangeApiModel,
   CollectionListTypeModel,
 } from '@shared/models/api-model';
+import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import Database from 'better-sqlite3';
 import { getItemHash } from '../../../utils/collection-item-util';
@@ -34,6 +35,35 @@ const countCollectionItemsByCanonicalItemId = (
   return row.count;
 };
 
+const getExternalIdentities = (item: CollectionItemChangeApiModel): ExternalItemIdentityModel[] => {
+  const externalIdentities = [...(item.externalIds ?? [])];
+  if (item.IMDbId) externalIdentities.push({ source: 'imdb', id: item.IMDbId });
+  return externalIdentities;
+};
+
+const replaceExternalRatings = (db: Database.Database, itemId: number, item: CollectionItemChangeApiModel): void => {
+  db.prepare('DELETE FROM collection_item_external_ratings WHERE item_id = ?').run(itemId);
+  const insertRating = db.prepare(
+    'INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)'
+  );
+  for (const [source, value] of [
+    ['imdb', item.rate],
+    ['rotten-tomatoes', item.rottenTomatoesRate],
+    ['metacritic', item.metacriticRate],
+  ] as const) {
+    if (value.trim()) insertRating.run(itemId, source, value);
+  }
+};
+
+const replaceItemRelations = (db: Database.Database, itemId: number, item: CollectionItemChangeApiModel): void => {
+  db.prepare('DELETE FROM collection_item_genres WHERE item_id = ?').run(itemId);
+  db.prepare('DELETE FROM collection_item_tags WHERE item_id = ?').run(itemId);
+  const insertGenre = db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)');
+  const insertTag = db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)');
+  for (const genre of item.genre) insertGenre.run(itemId, genre);
+  for (const tag of item.tags) insertTag.run(itemId, tag);
+};
+
 export const insertCollectionItem = (
   db: Database.Database,
   usernameHash: string,
@@ -44,63 +74,58 @@ export const insertCollectionItem = (
   canonicalItemIdOverride?: string
 ): CollectionItemApiModel => {
   const normalizedListType = normalizeListType(listType);
-  const canonicalItemId =
-    canonicalItemIdOverride ??
-    resolveCanonicalItemId(db, usernameHash, item.externalProvider, item.externalItemId, item.externalIds);
-  const canStoreWatchedAt = normalizedListType === 'movie-tracker' || normalizedListType === 'series-tracker';
-  const useCurrentWatchedAt = !watchedAt && normalizedListType === 'movie-tracker';
-  const result = db
-    .prepare(
-      `INSERT INTO collection_items
-       (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, content_type, favorite, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, user_rate, actors, plot, image, content_hash, watched_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE ? END)`
-    )
-    .run(
+  return db.transaction(() => {
+    const externalIdentities = getExternalIdentities(item);
+    const canonicalItemId =
+      canonicalItemIdOverride ??
+      resolveCanonicalItemId(db, usernameHash, item.externalProvider, item.externalItemId, externalIdentities);
+    const result = db
+      .prepare(
+        `INSERT INTO collection_items
+         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, favorite, title, title_lower, year, user_rate, contributors, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        usernameHash,
+        item.externalProvider,
+        item.externalItemId,
+        canonicalItemId,
+        normalizedListType,
+        item.contentType,
+        item.favorite ? 1 : 0,
+        item.title,
+        item.title.toLowerCase(),
+        item.year ?? '',
+        item.userRate,
+        item.actors,
+        item.plot,
+        item.image,
+        hash
+      );
+
+    const itemId = Number(result.lastInsertRowid);
+    replaceExternalRatings(db, itemId, item);
+    if (normalizedListType === 'movie-tracker' || normalizedListType === 'series-tracker') {
+      db.prepare(
+        `INSERT INTO collection_item_tracker_state (item_id, completed_at)
+         VALUES (?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE ? END)`
+      ).run(itemId, normalizedListType === 'movie-tracker' && !watchedAt ? 1 : 0, watchedAt ?? null);
+    }
+    upsertExternalItemIdentities(
+      db,
       usernameHash,
-      item.IMDbId ?? null,
+      canonicalItemId,
       item.externalProvider,
       item.externalItemId,
-      canonicalItemId,
-      normalizedListType,
-      item.contentType,
-      item.favorite ? 1 : 0,
-      item.title,
-      item.title.toLowerCase(),
-      item.year ?? '',
-      item.rate,
-      item.rottenTomatoesRate,
-      item.metacriticRate,
-      item.userRate,
-      item.actors,
-      item.plot,
-      item.image,
-      hash,
-      useCurrentWatchedAt ? 1 : 0,
-      canStoreWatchedAt ? (watchedAt ?? null) : null
+      externalIdentities
     );
+    replaceItemRelations(db, itemId, item);
 
-  const itemId = Number(result.lastInsertRowid);
-  upsertExternalItemIdentities(
-    db,
-    usernameHash,
-    canonicalItemId,
-    item.externalProvider,
-    item.externalItemId,
-    item.externalIds
-  );
-
-  for (const genre of item.genre) {
-    db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(itemId, genre);
-  }
-
-  for (const tag of item.tags) {
-    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
-  }
-
-  return toApiItem(
-    db,
-    findCollectionItemByExternalId(db, usernameHash, item.externalProvider, item.externalItemId, normalizedListType)!
-  );
+    return toApiItem(
+      db,
+      findCollectionItemByExternalId(db, usernameHash, item.externalProvider, item.externalItemId, normalizedListType)!
+    );
+  })();
 };
 
 export const updateCollectionItem = (
@@ -127,79 +152,67 @@ export const updateCollectionItemByRow = (
   listType: CollectionListTypeModel = 'library'
 ): CollectionItemApiModel | undefined => {
   const normalizedListType = normalizeListType(listType);
-  const existingCanonicalItemUseCount = countCollectionItemsByCanonicalItemId(
-    db,
-    usernameHash,
-    existingItem.canonical_item_id
-  );
-  const canonicalItemId = resolveCanonicalItemId(
-    db,
-    usernameHash,
-    updatedItem.externalProvider,
-    updatedItem.externalItemId,
-    updatedItem.externalIds
-  );
-
-  db.prepare(
-    `UPDATE collection_items SET
-     imdb_id = ?, external_provider = ?, external_item_id = ?, canonical_item_id = ?, content_type = ?, favorite = ?, title = ?, title_lower = ?, year = ?, rate = ?, rotten_tomatoes_rate = ?, metacritic_rate = ?, user_rate = ?, actors = ?, plot = ?, image = ?, content_hash = ?, updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`
-  ).run(
-    updatedItem.IMDbId ?? null,
-    updatedItem.externalProvider,
-    updatedItem.externalItemId,
-    canonicalItemId,
-    updatedItem.contentType,
-    updatedItem.favorite ? 1 : 0,
-    updatedItem.title,
-    updatedItem.title.toLowerCase(),
-    updatedItem.year ?? '',
-    updatedItem.rate,
-    updatedItem.rottenTomatoesRate,
-    updatedItem.metacriticRate,
-    updatedItem.userRate,
-    updatedItem.actors,
-    updatedItem.plot,
-    updatedItem.image,
-    hash,
-    existingItem.id
-  );
-
-  db.prepare('DELETE FROM collection_item_genres WHERE item_id = ?').run(existingItem.id);
-  db.prepare('DELETE FROM collection_item_tags WHERE item_id = ?').run(existingItem.id);
-  if (existingCanonicalItemUseCount === 1) {
-    deleteExternalItemIdentitiesForCanonicalItemId(db, usernameHash, existingItem.canonical_item_id);
-  }
-  upsertExternalItemIdentities(
-    db,
-    usernameHash,
-    canonicalItemId,
-    updatedItem.externalProvider,
-    updatedItem.externalItemId,
-    updatedItem.externalIds
-  );
-
-  for (const genre of updatedItem.genre) {
-    db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(
-      existingItem.id,
-      genre
+  return db.transaction(() => {
+    const externalIdentities = getExternalIdentities(updatedItem);
+    const existingCanonicalItemUseCount = countCollectionItemsByCanonicalItemId(
+      db,
+      usernameHash,
+      existingItem.canonical_item_id
     );
-  }
-
-  for (const tag of updatedItem.tags) {
-    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(existingItem.id, tag);
-  }
-
-  return toApiItem(
-    db,
-    findCollectionItemByExternalId(
+    const canonicalItemId = resolveCanonicalItemId(
       db,
       usernameHash,
       updatedItem.externalProvider,
       updatedItem.externalItemId,
-      normalizedListType
-    )!
-  );
+      externalIdentities
+    );
+
+    db.prepare(
+      `UPDATE collection_items SET
+       external_provider = ?, external_item_id = ?, canonical_item_id = ?, content_type = ?, favorite = ?, title = ?, title_lower = ?, year = ?, user_rate = ?, contributors = ?, description = ?, image = ?, content_hash = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`
+    ).run(
+      updatedItem.externalProvider,
+      updatedItem.externalItemId,
+      canonicalItemId,
+      updatedItem.contentType,
+      updatedItem.favorite ? 1 : 0,
+      updatedItem.title,
+      updatedItem.title.toLowerCase(),
+      updatedItem.year ?? '',
+      updatedItem.userRate,
+      updatedItem.actors,
+      updatedItem.plot,
+      updatedItem.image,
+      hash,
+      existingItem.id
+    );
+
+    replaceExternalRatings(db, existingItem.id, updatedItem);
+    replaceItemRelations(db, existingItem.id, updatedItem);
+    if (existingCanonicalItemUseCount === 1) {
+      deleteExternalItemIdentitiesForCanonicalItemId(db, usernameHash, existingItem.canonical_item_id);
+    }
+    upsertExternalItemIdentities(
+      db,
+      usernameHash,
+      canonicalItemId,
+      updatedItem.externalProvider,
+      updatedItem.externalItemId,
+      externalIdentities
+    );
+
+    return toApiItem(
+      db,
+      findCollectionItemByExternalId(
+        db,
+        usernameHash,
+        updatedItem.externalProvider,
+        updatedItem.externalItemId,
+        normalizedListType
+      )!
+    );
+  })();
 };
 
 export const updateCollectionItemByExternalId = (
@@ -267,8 +280,23 @@ export const deleteCollectionItemsByUser = (db: Database.Database, usernameHash:
 export const collectionItemExistsByImdbId = (db: Database.Database, usernameHash: string, imdbId: string): boolean => {
   return Boolean(
     db
-      .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? LIMIT 1')
-      .get(usernameHash, imdbId)
+      .prepare(
+        `SELECT 1
+         FROM collection_items
+         WHERE username_hash = ?
+           AND (
+             (external_provider = 'imdb' AND external_item_id = ?)
+             OR EXISTS (
+               SELECT 1 FROM external_item_identities imdb_identity
+               WHERE imdb_identity.username_hash = collection_items.username_hash
+                 AND imdb_identity.canonical_item_id = collection_items.canonical_item_id
+                 AND imdb_identity.external_provider = 'imdb'
+                 AND imdb_identity.external_item_id = ?
+             )
+           )
+         LIMIT 1`
+      )
+      .get(usernameHash, imdbId, imdbId)
   );
 };
 
@@ -318,11 +346,13 @@ export const syncSeriesTrackerCompletedTag = (
   if ((completed && row.watched_at) || (!completed && !row.watched_at)) return item;
 
   if (completed) {
-    db.prepare('UPDATE collection_items SET watched_at = COALESCE(watched_at, CURRENT_TIMESTAMP) WHERE id = ?').run(
-      row.id
-    );
+    db.prepare(
+      `INSERT INTO collection_item_tracker_state (item_id, completed_at)
+       VALUES (?, CURRENT_TIMESTAMP)
+       ON CONFLICT(item_id) DO UPDATE SET completed_at = COALESCE(completed_at, excluded.completed_at)`
+    ).run(row.id);
   } else {
-    db.prepare('UPDATE collection_items SET watched_at = NULL WHERE id = ?').run(row.id);
+    db.prepare('UPDATE collection_item_tracker_state SET completed_at = NULL WHERE item_id = ?').run(row.id);
   }
 
   const refreshedRow = findCollectionItemByImdbId(db, usernameHash, imdbId, 'series-tracker')!;
@@ -366,11 +396,13 @@ export const syncSeriesTrackerCompletedTagByExternalId = (
   if ((completed && row.watched_at) || (!completed && !row.watched_at)) return item;
 
   if (completed) {
-    db.prepare('UPDATE collection_items SET watched_at = COALESCE(watched_at, CURRENT_TIMESTAMP) WHERE id = ?').run(
-      row.id
-    );
+    db.prepare(
+      `INSERT INTO collection_item_tracker_state (item_id, completed_at)
+       VALUES (?, CURRENT_TIMESTAMP)
+       ON CONFLICT(item_id) DO UPDATE SET completed_at = COALESCE(completed_at, excluded.completed_at)`
+    ).run(row.id);
   } else {
-    db.prepare('UPDATE collection_items SET watched_at = NULL WHERE id = ?').run(row.id);
+    db.prepare('UPDATE collection_item_tracker_state SET completed_at = NULL WHERE item_id = ?').run(row.id);
   }
 
   const refreshedRow = findCollectionItemByExternalIdOrCanonicalItemId(

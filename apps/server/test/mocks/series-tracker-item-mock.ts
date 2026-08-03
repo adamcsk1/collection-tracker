@@ -8,9 +8,17 @@ export const insertSeriesTrackerItem = (usernameHash = 'user', imdbId = 'tt-seri
   );
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
+       VALUES (?, 'omdb', ?, ?, 'series-tracker', 'Series', 'series', '2020', '', '', '', 'hash', 'series')`
     )
-    .run(usernameHash, imdbId, 'series-tracker', 'Series', 'series', '2020', '8.0', '', '', 'hash');
-  return Number(result.lastInsertRowid);
+    .run(usernameHash, imdbId, `imdb:${imdbId}`);
+  const itemId = Number(result.lastInsertRowid);
+  db.prepare(
+    `INSERT INTO external_item_identities
+      (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+     VALUES (?, ?, 'omdb', ?, 'primary'), (?, ?, 'imdb', ?, 'alias')`
+  ).run(usernameHash, `imdb:${imdbId}`, imdbId, usernameHash, `imdb:${imdbId}`, imdbId);
+  db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, NULL)').run(itemId);
+  return itemId;
 };

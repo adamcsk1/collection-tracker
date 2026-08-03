@@ -128,7 +128,13 @@ describe('change-user-settings-api', () => {
 
   it('updates collection feature preferences', async () => {
     const response = mockResponse();
-    const preferences = { wishlist: false, watchLater: true, movieTracker: false, seriesTracker: true };
+    const preferences = {
+      bookTracker: true,
+      wishlist: false,
+      watchLater: true,
+      movieTracker: false,
+      seriesTracker: true,
+    };
     const request: any = { body: { collectionFeaturePreferences: preferences }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
     const db = getDatabase();

@@ -93,8 +93,19 @@ describe('ai-search-intent-util', () => {
     expect(applyStatusIntentFilter(items, 'favorite').map((item) => item.IMDbId)).toEqual(['tt1']);
   });
 
-  it('maps filtered items to ids', () => {
-    const items = [buildItem({ IMDbId: 'tt9', watchStatus: 'unfinished', completed: false })];
-    expect(getStatusIntentMatchedIds(items)).toEqual(['tt9']);
+  it('maps filtered items to candidate ids', () => {
+    const items = [
+      buildItem({ IMDbId: 'tt9', watchStatus: 'unfinished', completed: false }),
+      buildItem({
+        IMDbId: undefined,
+        externalProvider: 'openlibrary',
+        externalItemId: '9780140328721',
+        watchStatus: 'not-applicable',
+        completed: null,
+        listType: 'book-tracker',
+        contentType: 'book',
+      }),
+    ];
+    expect(getStatusIntentMatchedIds(items)).toEqual(['tt9', 'openlibrary:9780140328721']);
   });
 });

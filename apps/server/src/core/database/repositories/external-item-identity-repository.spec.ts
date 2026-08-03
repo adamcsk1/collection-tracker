@@ -18,28 +18,21 @@ const insertItem = (usernameHash: string, canonicalItemId: string): void => {
   getDatabase()
     .prepare(
       `INSERT INTO collection_items
-        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, 'library', 'Title', 'title', '2024', '8.0', 'Plot', 'image', ?)`
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash)
+       VALUES (?, ?, ?, ?, 'library', 'Title', 'title', '2024', '', 'Plot', 'image', ?)`
     )
-    .run(
-      usernameHash,
-      canonicalItemId.replace(/^imdb:/, ''),
-      'omdb',
-      canonicalItemId.replace(/^imdb:/, ''),
-      canonicalItemId,
-      canonicalItemId
-    );
+    .run(usernameHash, 'omdb', canonicalItemId.replace(/^imdb:/, ''), canonicalItemId, canonicalItemId);
 };
 
 describe('external-item-identity-repository', () => {
-  it('normalizes providers, IMDb ids, and tt-shaped aliases without forcing non-tt provider ids onto imdb', () => {
+  it('normalizes providers, IMDb ids, and tt-shaped ids for every source without forcing non-tt provider ids onto imdb', () => {
     expect(
       normalizeExternalIdentities(' OMDB ', ' TT0133093 ', [
         { source: 'imdb', id: 'TT0133093' },
         { source: 'omdb', id: 'TT0133093' },
       ])
     ).toEqual([
-      { source: 'omdb', id: 'TT0133093' },
+      { source: 'omdb', id: 'tt0133093' },
       { source: 'imdb', id: 'tt0133093' },
     ]);
     expect(normalizeExternalIdentities('omdb', 'tt0133093')).toEqual([
@@ -65,7 +58,7 @@ describe('external-item-identity-repository', () => {
     expect(resolveCanonicalItemIds(db, 'user', 'tmdb', '603')).toEqual([]);
   });
 
-  it('resolves an existing user-scoped canonical mapping before inferred identities', () => {
+  it('resolves an existing user-scoped canonical mapping before equal-strength inferred identities', () => {
     const db = getDatabase();
     insertUser('user-a');
     insertUser('user-b');
@@ -77,6 +70,20 @@ describe('external-item-identity-repository', () => {
 
     expect(resolveCanonicalItemId(db, 'user-a', 'omdb', 'tt0133093')).toBe('imdb:tt9999999');
     expect(resolveCanonicalItemId(db, 'user-b', 'omdb', 'tt0133093')).toBe('imdb:tt0133093');
+  });
+
+  it('prefers stronger inferred imdb canonical over a weaker stored mapping', () => {
+    const db = getDatabase();
+    insertUser('user');
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'omdb:temporary', 'omdb', 'temporary', 'primary');
+
+    expect(resolveCanonicalItemId(db, 'user', 'omdb', 'temporary', [{ source: 'imdb', id: 'tt0133093' }])).toBe(
+      'imdb:tt0133093'
+    );
   });
 
   it('returns all mapped and inferred canonical candidates', () => {
@@ -110,6 +117,17 @@ describe('external-item-identity-repository', () => {
 
   it('falls back to provider-scoped canonical ids when no IMDb identity exists', () => {
     expect(resolveCanonicalItemId(getDatabase(), 'user', 'omdb', 'custom-id')).toBe('omdb:custom-id');
+  });
+
+  it('normalizes ISBN variants and infers ISBN canonical identities', () => {
+    expect(normalizeExternalIdentities('openlibrary', '0-306-40615-2')).toEqual([
+      { source: 'openlibrary', id: '9780306406157' },
+      { source: 'isbn', id: '9780306406157' },
+    ]);
+    expect(resolveCanonicalItemId(getDatabase(), 'user', 'isbn', '978-0-306-40615-7')).toBe('isbn:9780306406157');
+    expect(resolveCanonicalItemIds(getDatabase(), 'user', 'openlibrary', '0-306-40615-2')).toEqual([
+      'isbn:9780306406157',
+    ]);
   });
 
   it('infers imdb canonical ids from tt-shaped provider ids without externalIds', () => {
@@ -160,6 +178,101 @@ describe('external-item-identity-repository', () => {
     ).run('user', 'omdb:temporary', 'omdb', 'temporary', 'primary');
 
     upsertExternalItemIdentities(db, 'user', 'imdb:tt0133093', 'omdb', 'temporary', [
+      { source: 'imdb', id: 'tt0133093' },
+    ]);
+
+    expect(db.prepare('SELECT canonical_item_id FROM collection_items WHERE username_hash = ?').get('user')).toEqual({
+      canonical_item_id: 'imdb:tt0133093',
+    });
+    expect(resolveCanonicalItemId(db, 'user', 'omdb', 'temporary')).toBe('imdb:tt0133093');
+  });
+
+  it('rewrites all identities under a weaker canonical when a stronger imdb canonical arrives', () => {
+    const db = getDatabase();
+    insertUser('user');
+    insertItem('user', 'omdb:temporary');
+    const statement = db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    );
+    statement.run('user', 'omdb:temporary', 'omdb', 'temporary', 'primary');
+    statement.run('user', 'omdb:temporary', 'imdb', 'tt0000001', 'alias');
+
+    upsertExternalItemIdentities(db, 'user', 'imdb:tt0133093', 'omdb', 'temporary', [
+      { source: 'imdb', id: 'tt0133093' },
+    ]);
+
+    expect(
+      db
+        .prepare(
+          `SELECT canonical_item_id, external_provider, external_item_id, source_confidence
+           FROM external_item_identities
+           WHERE username_hash = ?
+           ORDER BY external_provider, external_item_id`
+        )
+        .all('user')
+    ).toEqual([
+      {
+        canonical_item_id: 'imdb:tt0133093',
+        external_provider: 'imdb',
+        external_item_id: 'tt0000001',
+        source_confidence: 'alias',
+      },
+      {
+        canonical_item_id: 'imdb:tt0133093',
+        external_provider: 'imdb',
+        external_item_id: 'tt0133093',
+        source_confidence: 'alias',
+      },
+      {
+        canonical_item_id: 'imdb:tt0133093',
+        external_provider: 'omdb',
+        external_item_id: 'temporary',
+        source_confidence: 'primary',
+      },
+    ]);
+  });
+
+  it('throws when merging canonicals would collide on the same list type', () => {
+    const db = getDatabase();
+    insertUser('user');
+    insertItem('user', 'omdb:temporary');
+    insertItem('user', 'imdb:tt0133093');
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'omdb:temporary', 'omdb', 'temporary', 'primary');
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'imdb:tt0133093', 'imdb', 'tt0133093', 'alias');
+
+    expect(() =>
+      upsertExternalItemIdentities(db, 'user', 'imdb:tt0133093', 'omdb', 'temporary', [
+        { source: 'imdb', id: 'tt0133093' },
+      ])
+    ).toThrow(/Canonical merge collision/);
+  });
+
+  it('keeps a stronger imdb canonical when a weaker provider-scoped canonical is written', () => {
+    const db = getDatabase();
+    insertUser('user');
+    insertItem('user', 'imdb:tt0133093');
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'imdb:tt0133093', 'omdb', 'temporary', 'primary');
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'imdb:tt0133093', 'imdb', 'tt0133093', 'alias');
+
+    upsertExternalItemIdentities(db, 'user', 'omdb:temporary', 'omdb', 'temporary', [
       { source: 'imdb', id: 'tt0133093' },
     ]);
 

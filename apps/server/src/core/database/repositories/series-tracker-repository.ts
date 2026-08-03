@@ -13,7 +13,7 @@ import {
   findCollectionItemByExternalId,
   findCollectionItemByImdbId,
 } from './collection/collection-read-repository';
-import { CollectionItemRow } from './collection/collection-model';
+import { collectionItemProjection, CollectionItemRow } from './collection/collection-model';
 import { deleteCollectionItemByExternalId, insertCollectionItem } from './collection/collection-write-repository';
 import { deleteUnreferencedExternalItemIdentities, resolveCanonicalItemId } from './external-item-identity-repository';
 
@@ -45,7 +45,7 @@ const copySeriesRowToSeriesTracker = (
       db,
       usernameHash,
       sourceRow.external_provider,
-      sourceRow.external_item_id ?? sourceRow.imdb_id ?? '',
+      sourceRow.external_item_id ?? '',
       'series-tracker'
     );
   if (trackerItem) {
@@ -54,7 +54,7 @@ const copySeriesRowToSeriesTracker = (
         db,
         sourceOwnerHash,
         sourceRow.external_provider,
-        sourceRow.external_item_id ?? sourceRow.imdb_id ?? '',
+        sourceRow.external_item_id ?? '',
         sourceListType
       );
     }
@@ -70,7 +70,7 @@ const copySeriesRowToSeriesTracker = (
         db,
         sourceOwnerHash,
         sourceRow.external_provider,
-        sourceRow.external_item_id ?? sourceRow.imdb_id ?? '',
+        sourceRow.external_item_id ?? '',
         sourceListType
       );
     }
@@ -116,7 +116,7 @@ export const markAllSeriesAsWatched = (
 ): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
-      `SELECT * FROM collection_items
+      `SELECT ${collectionItemProjection()} FROM collection_items
        WHERE username_hash = ?
          AND list_type = ?
            AND ${seriesContentCondition}
@@ -154,7 +154,7 @@ export const findSeriesTrackerItemsForLibrarySeries = (
 ): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
-      `SELECT series_tracker.* FROM collection_items series_tracker
+      `SELECT ${collectionItemProjection('series_tracker')} FROM collection_items series_tracker
        WHERE series_tracker.username_hash = ?
          AND series_tracker.list_type = ?
           AND EXISTS (
@@ -176,7 +176,7 @@ export const findSeriesTrackerItemsForLibrarySeries = (
 export const findOwnSeriesTrackerItems = (db: Database.Database, usernameHash: string): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
-      `SELECT * FROM collection_items
+      `SELECT ${collectionItemProjection()} FROM collection_items
        WHERE username_hash = ?
          AND list_type = ?`
     )

@@ -10,10 +10,21 @@ const insertUser = (usernameHash: string): void => {
 const insertItem = (usernameHash: string, imdbId: string): number => {
   const result = getDatabase()
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+       VALUES (?, 'omdb', ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, `Title ${imdbId}`, `title ${imdbId}`, '2024', '7', 'Plot', 'image.jpg', 'old-hash');
+    .run(
+      usernameHash,
+      imdbId,
+      `imdb:${imdbId}`,
+      `Title ${imdbId}`,
+      `title ${imdbId}`,
+      '2024',
+      'Plot',
+      'image.jpg',
+      'old-hash'
+    );
   return Number(result.lastInsertRowid);
 };
 

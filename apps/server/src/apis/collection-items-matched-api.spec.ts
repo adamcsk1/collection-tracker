@@ -7,13 +7,15 @@ const insertUserAndItems = () => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt001', 'Alpha', 'alpha', '1999', '8.0', 'Plot one', 'img1.jpg', 'hash1');
+    `INSERT INTO collection_items
+      (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'imdb', 'tt001', 'imdb:tt001', 'Alpha', 'alpha', '1999', 'Plot one', 'img1.jpg', 'hash1');
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt002', 'Beta', 'beta', '2000', '7.5', 'Plot two', 'img2.jpg', 'hash2');
+    `INSERT INTO collection_items
+      (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'imdb', 'tt002', 'imdb:tt002', 'Beta', 'beta', '2000', 'Plot two', 'img2.jpg', 'hash2');
 };
 
 describe('collection-items-matched-api', () => {
@@ -56,22 +58,9 @@ describe('collection-items-matched-api', () => {
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     db.prepare(
       `INSERT INTO collection_items
-        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      'user',
-      null,
-      'omdb',
-      'provider-item-id',
-      'imdb:tt001',
-      'Canonical Item',
-      'canonical item',
-      '2001',
-      '8.0',
-      '',
-      '',
-      'hash'
-    );
+        (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run('user', 'omdb', 'provider-item-id', 'imdb:tt001', 'Canonical Item', 'canonical item', '2001', '', '', 'hash');
     db.prepare(
       `INSERT INTO external_item_identities
         (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)

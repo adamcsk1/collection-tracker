@@ -158,5 +158,8 @@ export const applyStatusIntentFilter = (
   );
 };
 
+export const getAiSearchCandidateId = (item: AiSearchCollectionItem): string =>
+  item.IMDbId || (item.externalItemId ? `${item.externalProvider}:${item.externalItemId}` : '');
+
 export const getStatusIntentMatchedIds = (items: AiSearchCollectionItem[]): string[] =>
-  items.map((item) => item.IMDbId ?? item.externalItemId).filter((id): id is string => !!id);
+  items.map(getAiSearchCandidateId).filter((candidateId): candidateId is string => !!candidateId);

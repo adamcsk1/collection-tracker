@@ -18,16 +18,17 @@ const insertItem = (
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
+       VALUES (?, 'omdb', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       usernameHash,
       imdbId,
+      `imdb:${imdbId}`,
       listType,
       'Title',
       'title',
-      '',
       '',
       '',
       '',
@@ -35,6 +36,9 @@ const insertItem = (
       contentType
     );
   const itemId = Number(result.lastInsertRowid);
+  if (listType === 'series-tracker') {
+    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, NULL)').run(itemId);
+  }
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
@@ -85,16 +89,16 @@ describe('mark-all-series-watched-api', () => {
     expect(response.send).toHaveBeenCalledWith({ trackedCount: 1, progressChangedCount: 1 });
     expect(
       getDatabase()
-        .prepare('SELECT username_hash, imdb_id, list_type FROM collection_items WHERE list_type = ?')
+        .prepare('SELECT username_hash, external_item_id, list_type FROM collection_items WHERE list_type = ?')
         .all('series-tracker')
-    ).toEqual([{ username_hash: 'user', imdb_id: 'tt-shared', list_type: 'series-tracker' }]);
+    ).toEqual([{ username_hash: 'user', external_item_id: 'tt-shared', list_type: 'series-tracker' }]);
     expect(
       getDatabase()
         .prepare(
           `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
            FROM series_tracker_seasons
            INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
-           WHERE collection_items.imdb_id = ?`
+           WHERE collection_items.external_item_id = ?`
         )
         .all('tt-shared')
     ).toEqual([{ season: 1, episodes: 2 }]);
@@ -104,7 +108,7 @@ describe('mark-all-series-watched-api', () => {
           `SELECT watched_episodes.season, watched_episodes.episode
            FROM series_tracker_watched_episodes AS watched_episodes
            INNER JOIN collection_items ON collection_items.id = watched_episodes.item_id
-           WHERE collection_items.imdb_id = ?
+           WHERE collection_items.external_item_id = ?
            ORDER BY watched_episodes.season, watched_episodes.episode`
         )
         .all('tt-shared')
@@ -115,12 +119,13 @@ describe('mark-all-series-watched-api', () => {
     expect(
       getDatabase()
         .prepare(
-          `SELECT content_type, watched_at
+          `SELECT collection_items.content_type, tracker_state.completed_at
            FROM collection_items
-           WHERE imdb_id = ? AND list_type = ?`
+           INNER JOIN collection_item_tracker_state AS tracker_state ON tracker_state.item_id = collection_items.id
+           WHERE collection_items.external_item_id = ? AND collection_items.list_type = ?`
         )
         .get('tt-shared', 'series-tracker')
-    ).toEqual({ content_type: 'series', watched_at: expect.any(String) });
+    ).toEqual({ content_type: 'series', completed_at: expect.any(String) });
   });
 
   it('marks existing series tracker episodes watched without fetching metadata again', async () => {
@@ -157,8 +162,12 @@ describe('mark-all-series-watched-api', () => {
       { season: 1, episode: 1 },
       { season: 1, episode: 2 },
     ]);
-    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(trackerItemId)).toEqual({
-      watched_at: expect.any(String),
+    expect(
+      getDatabase()
+        .prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?')
+        .get(trackerItemId)
+    ).toEqual({
+      completed_at: expect.any(String),
     });
   });
 
@@ -186,8 +195,12 @@ describe('mark-all-series-watched-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({ trackedCount: 0, progressChangedCount: 1 });
     expect(fetch).not.toHaveBeenCalled();
-    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(trackerItemId)).toEqual({
-      watched_at: expect.any(String),
+    expect(
+      getDatabase()
+        .prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?')
+        .get(trackerItemId)
+    ).toEqual({
+      completed_at: expect.any(String),
     });
   });
 
@@ -224,8 +237,12 @@ describe('mark-all-series-watched-api', () => {
       { season: 1, episode: 1 },
       { season: 1, episode: 2 },
     ]);
-    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(trackerItemId)).toEqual({
-      watched_at: expect.any(String),
+    expect(
+      getDatabase()
+        .prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?')
+        .get(trackerItemId)
+    ).toEqual({
+      completed_at: expect.any(String),
     });
   });
 

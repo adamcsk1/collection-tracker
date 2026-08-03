@@ -32,7 +32,7 @@ const recomputeCollectionItemHashes = (db: Database.Database): void => {
     actors: string;
     plot: string;
     image: string;
-    content_type?: 'movie' | 'series';
+    content_type?: 'movie' | 'series' | 'book';
     favorite?: 0 | 1;
   }>;
 
@@ -113,6 +113,7 @@ export const runMigrations = async (db: Database.Database, migrationsDir: string
     const sql = readFileSync(filePath, 'utf-8');
 
     try {
+      // Self-transaction migrations insert their schema marker before COMMIT so schema and marker remain atomic.
       db.exec(sql);
       if (
         file === '015_add_movie_tracker_list_type.sql' ||
@@ -123,9 +124,13 @@ export const runMigrations = async (db: Database.Database, migrationsDir: string
       ) {
         recomputeCollectionItemHashes(db);
       }
-      db.prepare('INSERT INTO schema_migrations (id) VALUES (?)').run(file);
+      const migrationRecorded = db.prepare('SELECT 1 FROM schema_migrations WHERE id = ?').get(file);
+      if (!migrationRecorded) db.prepare('INSERT INTO schema_migrations (id) VALUES (?)').run(file);
       appliedIds.add(file);
     } catch (error: unknown) {
+      if (db.inTransaction) db.exec('ROLLBACK');
+      db.pragma('foreign_keys = ON');
+      db.pragma('legacy_alter_table = OFF');
       if (error instanceof Error) {
         console.error(`Migration failed: ${file} - ${error.message}`);
       }

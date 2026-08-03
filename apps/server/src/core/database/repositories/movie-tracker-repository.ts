@@ -18,7 +18,7 @@ import {
   insertCollectionItem,
 } from './collection/collection-write-repository';
 import { toApiItem } from './collection/collection-mapper';
-import { CollectionItemRow } from './collection/collection-model';
+import { collectionItemProjection, CollectionItemRow } from './collection/collection-model';
 import { deleteUnreferencedExternalItemIdentities, resolveCanonicalItemId } from './external-item-identity-repository';
 
 const movieContentCondition = `content_type = 'movie'`;
@@ -55,7 +55,7 @@ const copyMovieRowToMovieTracker = (
       db,
       usernameHash,
       sourceRow.external_provider,
-      sourceRow.external_item_id ?? sourceRow.imdb_id ?? '',
+      sourceRow.external_item_id ?? '',
       'movie-tracker'
     );
   if (trackerItem) {
@@ -64,7 +64,7 @@ const copyMovieRowToMovieTracker = (
         db,
         sourceOwnerHash,
         sourceRow.external_provider,
-        sourceRow.external_item_id ?? sourceRow.imdb_id ?? '',
+        sourceRow.external_item_id ?? '',
         sourceListType
       );
     }
@@ -80,7 +80,7 @@ const copyMovieRowToMovieTracker = (
         db,
         sourceOwnerHash,
         sourceRow.external_provider,
-        sourceRow.external_item_id ?? sourceRow.imdb_id ?? '',
+        sourceRow.external_item_id ?? '',
         sourceListType
       );
     }
@@ -166,7 +166,7 @@ export const markAllMoviesAsWatched = (
 ): number => {
   const rows = db
     .prepare(
-      `SELECT * FROM collection_items
+      `SELECT ${collectionItemProjection()} FROM collection_items
        WHERE username_hash = ?
          AND list_type = ?
            AND ${movieContentCondition}
@@ -202,7 +202,7 @@ export const markAllMoviesAsUnwatched = (
 ): number => {
   const rows = db
     .prepare(
-      `SELECT movie_tracker.* FROM collection_items movie_tracker
+      `SELECT ${collectionItemProjection('movie_tracker')} FROM collection_items movie_tracker
        WHERE movie_tracker.username_hash = ?
          AND movie_tracker.list_type = ?
            AND EXISTS (
@@ -227,7 +227,7 @@ export const markAllMoviesAsUnwatched = (
         db,
         usernameHash,
         row.external_provider,
-        row.external_item_id ?? row.imdb_id ?? '',
+        row.external_item_id ?? '',
         'movie-tracker'
       );
     }

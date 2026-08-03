@@ -17,18 +17,41 @@ const insertItem = (
   imdbId: string,
   hash = 'hash',
   usernameHash = 'user',
-  rate = '7.0',
+  imdbRate = '7.0',
   rottenTomatoesRate = '',
   metacriticRate = ''
 ) => {
-  getDatabase()
+  const db = getDatabase();
+  const result = db
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, imdb_id, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+       VALUES (?, 'omdb', ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, 'Title', 'title', '', rate, rottenTomatoesRate, metacriticRate, '', '', hash);
+    .run(usernameHash, imdbId, `imdb:${imdbId}`, 'Title', 'title', '', '', '', hash);
+  const itemId = Number(result.lastInsertRowid);
+  const insertRating = db.prepare(
+    'INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)'
+  );
+  for (const [source, value] of [
+    ['imdb', imdbRate],
+    ['rotten-tomatoes', rottenTomatoesRate],
+    ['metacritic', metacriticRate],
+  ]) {
+    if (value) insertRating.run(itemId, source, value);
+  }
 };
+
+const getRatings = (imdbId: string) =>
+  getDatabase()
+    .prepare(
+      `SELECT ratings.source, ratings.value
+       FROM collection_item_external_ratings AS ratings
+       INNER JOIN collection_items ON collection_items.id = ratings.item_id
+       WHERE collection_items.external_item_id = ?
+       ORDER BY ratings.source`
+    )
+    .all(imdbId);
 
 const insertShare = (ownerHash: string, sharedWithHash: string, canUpdate: boolean) => {
   getDatabase()
@@ -93,11 +116,11 @@ describe('refresh-external-ratings-api', () => {
     await handlerPromise();
 
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
-    expect(
-      getDatabase()
-        .prepare('SELECT rate, rotten_tomatoes_rate, metacritic_rate FROM collection_items WHERE imdb_id = ?')
-        .get('tt-1')
-    ).toEqual({ rate: '8.4', rotten_tomatoes_rate: '96%', metacritic_rate: '85/100' });
+    expect(getRatings('tt-1')).toEqual([
+      { source: 'imdb', value: '8.4' },
+      { source: 'metacritic', value: '85/100' },
+      { source: 'rotten-tomatoes', value: '96%' },
+    ]);
   });
 
   it('does not update unchanged ratings', async () => {
@@ -195,9 +218,7 @@ describe('refresh-external-ratings-api', () => {
     await handlerPromise();
 
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
-    expect(
-      getDatabase().prepare('SELECT rate, rotten_tomatoes_rate FROM collection_items WHERE imdb_id = ?').get('tt-1')
-    ).toEqual({ rate: '7.0', rotten_tomatoes_rate: '' });
+    expect(getRatings('tt-1')).toEqual([{ source: 'imdb', value: '7.0' }]);
   });
 
   it('refreshes a shared library when the user has update permission', async () => {
@@ -230,11 +251,17 @@ describe('refresh-external-ratings-api', () => {
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
     expect(
       getDatabase()
-        .prepare('SELECT username_hash, rate, rotten_tomatoes_rate FROM collection_items ORDER BY username_hash')
+        .prepare(
+          `SELECT collection_items.username_hash, ratings.source, ratings.value
+           FROM collection_items
+           INNER JOIN collection_item_external_ratings AS ratings ON ratings.item_id = collection_items.id
+           ORDER BY collection_items.username_hash, ratings.source`
+        )
         .all()
     ).toEqual([
-      { username_hash: 'owner', rate: '9.0', rotten_tomatoes_rate: '99%' },
-      { username_hash: 'user', rate: '7.0', rotten_tomatoes_rate: '' },
+      { username_hash: 'owner', source: 'imdb', value: '9.0' },
+      { username_hash: 'owner', source: 'rotten-tomatoes', value: '99%' },
+      { username_hash: 'user', source: 'imdb', value: '7.0' },
     ]);
   });
 

@@ -10,10 +10,23 @@ const insertUser = (usernameHash: string) => {
 const insertItem = (usernameHash: string, imdbId: string, listType = 'movie-tracker'): number => {
   const result = getDatabase()
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', `${usernameHash}-${listType}-${imdbId}`);
+    .run(
+      usernameHash,
+      'imdb',
+      imdbId,
+      `imdb:${imdbId}`,
+      listType,
+      'Title',
+      'title',
+      '',
+      '',
+      '',
+      `${usernameHash}-${listType}-${imdbId}`
+    );
   return Number(result.lastInsertRowid);
 };
 
@@ -40,11 +53,13 @@ describe('delete-movie-tracker-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({ changedCount: 1 });
     const rows = getDatabase()
-      .prepare('SELECT username_hash, imdb_id, list_type FROM collection_items ORDER BY username_hash, imdb_id')
+      .prepare(
+        'SELECT username_hash, external_item_id, list_type FROM collection_items ORDER BY username_hash, external_item_id'
+      )
       .all();
     expect(rows).toEqual([
-      { username_hash: 'other-user', imdb_id: 'tt-other', list_type: 'movie-tracker' },
-      { username_hash: 'user', imdb_id: 'tt-library', list_type: 'library' },
+      { username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'movie-tracker' },
+      { username_hash: 'user', external_item_id: 'tt-library', list_type: 'library' },
     ]);
     expect(getDatabase().prepare('SELECT 1 FROM collection_items WHERE id = ?').get(retainedItemId)).toBeTruthy();
   });

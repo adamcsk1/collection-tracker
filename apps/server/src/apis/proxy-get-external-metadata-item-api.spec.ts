@@ -158,5 +158,29 @@ describe('proxy-get-external-metadata-item-api', () => {
       expect(fetch).toHaveBeenCalledWith(expect.stringContaining('i=tt0133093'));
       expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ provider: 'omdb', title: 'The Matrix' }));
     });
+
+    it('uses Open Library lookup for ISBN identities', async () => {
+      const response = mockResponse();
+      const request: any = { query: { externalIdentitySource: 'isbn', externalIdentityId: '0-306-40615-2' } };
+      const { app, handlerPromise } = buildApp(request, response);
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ title: 'The Book', publish_date: '1965' }),
+      } as any);
+
+      const { register } = await import('./proxy-get-external-metadata-item-api');
+      register(app);
+
+      await handlerPromise();
+      expect(fetch).toHaveBeenCalledWith('https://openlibrary.org/isbn/9780306406157.json');
+      expect(response.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: 'openlibrary',
+          providerItemId: '9780306406157',
+          externalIds: [{ source: 'isbn', id: '9780306406157' }],
+        })
+      );
+    });
   });
 });

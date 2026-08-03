@@ -7,13 +7,15 @@ const insertUserAndItems = () => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt001', 'Alpha', 'alpha', '1999', '8.0', 'Plot one', 'img1.jpg', 'hash1');
+    `INSERT INTO collection_items
+      (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'imdb', 'tt001', 'imdb:tt001', 'Alpha', 'alpha', '1999', 'Plot one', 'img1.jpg', 'hash1');
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt002', 'Beta', 'beta', '2000', '7.5', 'Plot two', 'img2.jpg', 'hash2');
+    `INSERT INTO collection_items
+      (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'imdb', 'tt002', 'imdb:tt002', 'Beta', 'beta', '2000', 'Plot two', 'img2.jpg', 'hash2');
 };
 
 const insertUser = (usernameHash: string) => {
@@ -25,10 +27,11 @@ const insertUser = (usernameHash: string) => {
 const insertItem = (usernameHash: string, imdbId: string, title: string) => {
   getDatabase()
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, title, title.toLowerCase(), '2001', '7.0', '', '', `${imdbId}-hash`);
+    .run(usernameHash, 'imdb', imdbId, `imdb:${imdbId}`, title, title.toLowerCase(), '2001', '', '', `${imdbId}-hash`);
 };
 
 const insertTypedItem = (
@@ -37,20 +40,38 @@ const insertTypedItem = (
   title: string,
   listType: 'watch-later' | 'wishlist' | 'series-tracker'
 ) => {
-  getDatabase()
+  const result = getDatabase()
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, listType, title, title.toLowerCase(), '2001', '7.0', '', '', `${imdbId}-hash`);
+    .run(
+      usernameHash,
+      'imdb',
+      imdbId,
+      `imdb:${imdbId}`,
+      listType,
+      title,
+      title.toLowerCase(),
+      '2001',
+      '',
+      '',
+      `${imdbId}-hash`,
+      listType === 'series-tracker' ? 'series' : 'movie'
+    );
   if (listType === 'series-tracker') {
-    getDatabase().prepare('UPDATE collection_items SET content_type = ? WHERE imdb_id = ?').run('series', imdbId);
+    getDatabase()
+      .prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)')
+      .run(Number(result.lastInsertRowid), null);
   }
 };
 
 const insertTag = (imdbId: string, tag: string) => {
   const db = getDatabase();
-  const itemId = (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get(imdbId) as { id: number }).id;
+  const itemId = (
+    db.prepare('SELECT id FROM collection_items WHERE external_item_id = ?').get(imdbId) as { id: number }
+  ).id;
   db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
 };
 
@@ -96,13 +117,39 @@ describe('get-collection-items-api', () => {
     insertUser('user');
     const db = getDatabase();
     db.prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run('user', 'tt-old', 'Old Item', 'old item', '2001', '7.0', '', '', 'tt-old-hash', '2026-01-01 00:00:00');
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      'imdb',
+      'tt-old',
+      'imdb:tt-old',
+      'Old Item',
+      'old item',
+      '2001',
+      '',
+      '',
+      'tt-old-hash',
+      '2026-01-01 00:00:00'
+    );
     db.prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run('user', 'tt-new', 'New Item', 'new item', '2002', '8.0', '', '', 'tt-new-hash', '2026-01-02 00:00:00');
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      'imdb',
+      'tt-new',
+      'imdb:tt-new',
+      'New Item',
+      'new item',
+      '2002',
+      '',
+      '',
+      'tt-new-hash',
+      '2026-01-02 00:00:00'
+    );
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { orderBy: 'createdAt', orderDirection: 'desc' } };
     const { app, handlerPromise } = buildApp(request, response);
@@ -140,7 +187,7 @@ describe('get-collection-items-api', () => {
 
   it('filters favorites from query parameters', async () => {
     insertUserAndItems();
-    getDatabase().prepare('UPDATE collection_items SET favorite = 1 WHERE imdb_id = ?').run('tt002');
+    getDatabase().prepare('UPDATE collection_items SET favorite = 1 WHERE external_item_id = ?').run('tt002');
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { favorite: 'true' } };
     const { app, handlerPromise } = buildApp(request, response);
@@ -322,7 +369,11 @@ describe('get-collection-items-api', () => {
     insertTypedItem('user', 'tt-completed-series-tracker', 'Completed Tracked Series', 'series-tracker');
     insertTypedItem('user', 'tt-uncompleted-series-tracker', 'Uncompleted Tracked Series', 'series-tracker');
     getDatabase()
-      .prepare('UPDATE collection_items SET watched_at = ? WHERE imdb_id = ?')
+      .prepare(
+        `UPDATE collection_item_tracker_state
+         SET completed_at = ?
+         WHERE item_id = (SELECT id FROM collection_items WHERE external_item_id = ?)`
+      )
       .run('2026-01-01 00:00:00', 'tt-completed-series-tracker');
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { listType: 'series-tracker', completed: 'false' } };
@@ -344,16 +395,34 @@ describe('get-collection-items-api', () => {
     );
   });
 
+  it('treats items without tracker state as uncompleted', async () => {
+    insertUser('user');
+    insertTypedItem('user', 'tt-library', 'Library Movie', 'library');
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { listType: 'library', completed: 'false' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [expect.objectContaining({ title: 'Library Movie' })],
+        total: 1,
+      })
+    );
+  });
+
   it('filters watched library movies by canonical tracker identity', async () => {
     insertUser('user');
     const db = getDatabase();
     db.prepare(
       `INSERT INTO collection_items
-        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       'user',
-      'tt0133093',
       'omdb',
       'tt0133093',
       'imdb:tt0133093',
@@ -362,18 +431,16 @@ describe('get-collection-items-api', () => {
       'Canonical Library Movie',
       'canonical library movie',
       '1999',
-      '8.7',
       'Plot',
       'img.jpg',
       'library-hash'
     );
     db.prepare(
       `INSERT INTO collection_items
-        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       'user',
-      'tt0133093',
       'omdb',
       'tt0133093',
       'imdb:tt0133093',
@@ -382,7 +449,6 @@ describe('get-collection-items-api', () => {
       'Canonical Tracker Movie',
       'canonical tracker movie',
       '1999',
-      '8.7',
       'Plot',
       'img.jpg',
       'tracker-hash'

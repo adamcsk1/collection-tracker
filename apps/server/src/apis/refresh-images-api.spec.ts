@@ -18,9 +18,10 @@ const insertUser = (usernameHash = 'user') => {
 const insertItem = (imdbId: string, image: string, hash = 'hash', usernameHash = 'user') => {
   const db = getDatabase();
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(usernameHash, imdbId, 'Title', 'title', '', '', '', image, hash);
+    `INSERT INTO collection_items
+      (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+     VALUES (?, 'omdb', ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(usernameHash, imdbId, `imdb:${imdbId}`, 'Title', 'title', '', '', image, hash);
 };
 
 const insertShare = (ownerHash: string, sharedWithHash: string, canUpdate: boolean) => {
@@ -114,7 +115,9 @@ describe('refresh-images-api', () => {
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
 
     const db = getDatabase();
-    const row = db.prepare('SELECT image FROM collection_items WHERE imdb_id = ?').get('tt-1') as { image: string };
+    const row = db.prepare('SELECT image FROM collection_items WHERE external_item_id = ?').get('tt-1') as {
+      image: string;
+    };
     expect(row.image).toBe('https://images.example/new-poster.jpg');
   });
 
@@ -180,8 +183,11 @@ describe('refresh-images-api', () => {
 
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
     expect(
-      (getDatabase().prepare('SELECT image FROM collection_items WHERE imdb_id = ?').get('tt-1') as { image: string })
-        .image
+      (
+        getDatabase().prepare('SELECT image FROM collection_items WHERE external_item_id = ?').get('tt-1') as {
+          image: string;
+        }
+      ).image
     ).toBe('https://images.example/broken.jpg');
   });
 

@@ -34,6 +34,46 @@ export interface CollectionItemRow {
   watched_at: string | null;
 }
 
+export const collectionItemProjection = (alias = 'collection_items'): string => `${alias}.id,
+  ${alias}.username_hash,
+  COALESCE(
+    CASE
+      WHEN ${alias}.external_provider IN ('imdb', 'omdb')
+        AND LOWER(${alias}.external_item_id) GLOB 'tt[0-9]*'
+        AND LOWER(SUBSTR(${alias}.external_item_id, 3)) NOT GLOB '*[^0-9]*'
+      THEN LOWER(${alias}.external_item_id)
+    END,
+    (
+      SELECT imdb_identity.external_item_id
+      FROM external_item_identities imdb_identity
+      WHERE imdb_identity.username_hash = ${alias}.username_hash
+        AND imdb_identity.canonical_item_id = ${alias}.canonical_item_id
+        AND imdb_identity.external_provider = 'imdb'
+      ORDER BY imdb_identity.source_confidence = 'primary' DESC, imdb_identity.created_at, imdb_identity.external_item_id
+      LIMIT 1
+    )
+  ) AS imdb_id,
+  ${alias}.external_provider,
+  ${alias}.external_item_id,
+  ${alias}.canonical_item_id,
+  ${alias}.list_type,
+  ${alias}.content_type,
+  ${alias}.favorite,
+  ${alias}.title,
+  ${alias}.title_lower,
+  ${alias}.year,
+  COALESCE((SELECT value FROM collection_item_external_ratings WHERE item_id = ${alias}.id AND source = 'imdb'), '') AS rate,
+  COALESCE((SELECT value FROM collection_item_external_ratings WHERE item_id = ${alias}.id AND source = 'rotten-tomatoes'), '') AS rotten_tomatoes_rate,
+  COALESCE((SELECT value FROM collection_item_external_ratings WHERE item_id = ${alias}.id AND source = 'metacritic'), '') AS metacritic_rate,
+  ${alias}.user_rate,
+  ${alias}.contributors AS actors,
+  ${alias}.description AS plot,
+  ${alias}.image,
+  ${alias}.content_hash,
+  ${alias}.created_at,
+  ${alias}.updated_at,
+  (SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ${alias}.id) AS watched_at`;
+
 export type AiSearchWatchStatus = 'completed' | 'unfinished' | 'watched' | 'unwatched' | 'not-applicable';
 
 export interface AiSearchCollectionItem extends CollectionItemApiModel {

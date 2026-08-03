@@ -24,7 +24,7 @@ export const parseBoolean = (value: unknown): boolean | undefined => {
 };
 
 export const parseType = (value: unknown): CollectionItemTypeFilter | undefined => {
-  if (value === 'movie' || value === 'series') return value;
+  if (value === 'movie' || value === 'series' || value === 'book') return value;
   return;
 };
 
@@ -39,7 +39,8 @@ export const parseListType = (value: unknown): CollectionListTypeModel | undefin
     value === 'watch-later' ||
     value === 'wishlist' ||
     value === 'series-tracker' ||
-    value === 'movie-tracker'
+    value === 'movie-tracker' ||
+    value === 'book-tracker'
   ) {
     return value;
   }

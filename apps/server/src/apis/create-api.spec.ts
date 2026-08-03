@@ -86,7 +86,12 @@ describe('create-api', () => {
     expect(response.send).toHaveBeenCalledWith({ item: expect.objectContaining({ title: 'Custom File' }) });
     expect(
       getDatabase()
-        .prepare('SELECT title, rotten_tomatoes_rate, metacritic_rate FROM collection_items WHERE imdb_id = ?')
+        .prepare(
+          `SELECT collection_items.title,
+             (SELECT value FROM collection_item_external_ratings WHERE item_id = collection_items.id AND source = 'rotten-tomatoes') AS rotten_tomatoes_rate,
+             (SELECT value FROM collection_item_external_ratings WHERE item_id = collection_items.id AND source = 'metacritic') AS metacritic_rate
+           FROM collection_items WHERE external_item_id = ?`
+        )
         .get('tt0000001')
     ).toEqual({
       title: 'Custom File',
@@ -138,19 +143,17 @@ describe('create-api', () => {
     getDatabase()
       .prepare(
         `INSERT INTO collection_items
-          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         'user',
-        'tt0133093',
         'omdb',
         'tt0133093',
         'imdb:tt0133093',
         'The Matrix',
         'the matrix',
         '1999',
-        '8.7',
         'Plot',
         'img.jpg',
         'hash'
@@ -180,19 +183,17 @@ describe('create-api', () => {
     getDatabase()
       .prepare(
         `INSERT INTO collection_items
-          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         'user',
-        'tt0133093',
         'omdb',
         'tt0133093',
         'imdb:tt0133093',
         'The Matrix',
         'the matrix',
         '1999',
-        '8.7',
         'Plot',
         'img.jpg',
         'hash'
@@ -228,12 +229,11 @@ describe('create-api', () => {
     getDatabase()
       .prepare(
         `INSERT INTO collection_items
-          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         'fallback-user',
-        null,
         'omdb',
         '603',
         'omdb:603',
@@ -241,7 +241,6 @@ describe('create-api', () => {
         'Provider Movie',
         'provider movie',
         '1999',
-        '7.0',
         'Plot',
         'img.jpg',
         'old-hash'
@@ -292,19 +291,17 @@ describe('create-api', () => {
     getDatabase()
       .prepare(
         `INSERT INTO collection_items
-          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         'user',
-        null,
         'omdb',
         '603',
         'omdb:603',
         'Provider Movie',
         'provider movie',
         '1999',
-        '7.0',
         'Plot',
         'img.jpg',
         'old-hash'
@@ -352,9 +349,9 @@ describe('create-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({ title: 'Custom File', listType: 'watch-later', contentType: 'movie', tags: [] }),
     });
-    expect(getDatabase().prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt0000001')).toEqual({
-      list_type: 'watch-later',
-    });
+    expect(
+      getDatabase().prepare('SELECT list_type FROM collection_items WHERE external_item_id = ?').get('tt0000001')
+    ).toEqual({ list_type: 'watch-later' });
   });
 
   it('creates a wishlist item using listType', async () => {
@@ -419,7 +416,7 @@ describe('create-api', () => {
           `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
            FROM series_tracker_seasons
            INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
-           WHERE collection_items.imdb_id = ?`
+           WHERE collection_items.external_item_id = ?`
         )
         .all('tt0000001')
     ).toEqual([{ season: 1, episodes: 3 }]);
@@ -516,7 +513,7 @@ describe('create-api', () => {
     expect(response.send).toHaveBeenCalledWith({ item: expect.objectContaining({ title: 'Custom File' }) });
     expect(
       getDatabase()
-        .prepare('SELECT title FROM collection_items WHERE username_hash = ? AND imdb_id = ?')
+        .prepare('SELECT title FROM collection_items WHERE username_hash = ? AND external_item_id = ?')
         .get('owner', 'tt0000001')
     ).toEqual({ title: 'Custom File' });
   });
@@ -550,14 +547,15 @@ describe('create-api', () => {
     expect(response.code).toHaveBeenCalledWith(404);
   });
 
-  it('returns 409 when DB imdb_id already exists', async () => {
+  it('returns 409 when an IMDb identity already exists', async () => {
     insertUser();
     getDatabase()
       .prepare(
-        `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .run('user', 'tt0000001', 'Existing', '', '', '', '', '', 'hash');
+      .run('user', 'imdb', 'tt0000001', 'imdb:tt0000001', 'Existing', '', '', '', '', 'hash');
     const response = mockResponse();
     const request: any = { body: item, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);

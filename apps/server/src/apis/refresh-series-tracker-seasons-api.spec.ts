@@ -46,7 +46,7 @@ describe('refresh-series-tracker-seasons-api', () => {
   it('refreshes metadata through the stored provider when addressed by IMDb identity', async () => {
     insertSeriesTrackerItem();
     getDatabase()
-      .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE username_hash = ? AND imdb_id = ?')
+      .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE username_hash = ? AND external_item_id = ?')
       .run('imdb:tt-series', 'user', 'tt-series');
     process.env.OMDB_API_KEY = 'key';
     const fetchMock = vi
@@ -113,14 +113,18 @@ describe('refresh-series-tracker-seasons-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
-      watched_at: expect.any(String),
+    expect(
+      getDatabase().prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?').get(itemId)
+    ).toEqual({
+      completed_at: expect.any(String),
     });
   });
 
   it('clears watched timestamp when refreshed metadata adds unwatched episodes', async () => {
     const itemId = insertSeriesTrackerItem();
-    getDatabase().prepare('UPDATE collection_items SET watched_at = ? WHERE id = ?').run('2025-01-01 00:00:00', itemId);
+    getDatabase()
+      .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?')
+      .run('2025-01-01 00:00:00', itemId);
     getDatabase()
       .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 1, 1);
@@ -146,14 +150,18 @@ describe('refresh-series-tracker-seasons-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
-      watched_at: null,
+    expect(
+      getDatabase().prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?').get(itemId)
+    ).toEqual({
+      completed_at: null,
     });
   });
 
   it('prunes watched episodes outside refreshed metadata before syncing completion', async () => {
     const itemId = insertSeriesTrackerItem();
-    getDatabase().prepare('UPDATE collection_items SET watched_at = ? WHERE id = ?').run('2025-01-01 00:00:00', itemId);
+    getDatabase()
+      .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?')
+      .run('2025-01-01 00:00:00', itemId);
     getDatabase()
       .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?), (?, ?, ?)')
       .run(itemId, 1, 1, itemId, 1, 3);
@@ -183,8 +191,10 @@ describe('refresh-series-tracker-seasons-api', () => {
         )
         .all(itemId)
     ).toEqual([{ season: 1, episode: 1 }]);
-    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE id = ?').get(itemId)).toEqual({
-      watched_at: expect.any(String),
+    expect(
+      getDatabase().prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?').get(itemId)
+    ).toEqual({
+      completed_at: expect.any(String),
     });
   });
 });

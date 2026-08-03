@@ -26,11 +26,14 @@ describe('proxy-external-metadata-providers-api', () => {
 
       await handlerPromise();
       expect(response.send).toHaveBeenCalledWith({
-        providers: [{ name: 'omdb', supportsSeasonMetadata: true, supportsDirectImdbId: true }],
+        providers: [
+          { name: 'omdb', supportsSeasonMetadata: true, supportsDirectImdbId: true },
+          { name: 'openlibrary', supportsSeasonMetadata: false, supportsDirectImdbId: false },
+        ],
       });
     });
 
-    it('returns an empty list when no external metadata providers are configured', async () => {
+    it('returns Open Library when no credentialed provider is configured', async () => {
       delete process.env.OMDB_API_KEY;
       const response = mockResponse();
       const { app, handlerPromise } = buildApp({}, response);
@@ -39,7 +42,9 @@ describe('proxy-external-metadata-providers-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(response.send).toHaveBeenCalledWith({ providers: [] });
+      expect(response.send).toHaveBeenCalledWith({
+        providers: [{ name: 'openlibrary', supportsSeasonMetadata: false, supportsDirectImdbId: false }],
+      });
     });
   });
 });

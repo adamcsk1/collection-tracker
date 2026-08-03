@@ -47,12 +47,11 @@ describe('import-collection-items-api', () => {
     getDatabase()
       .prepare(
         `INSERT INTO collection_items
-          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         'user',
-        'tt0000001',
         'omdb',
         'tt0000001',
         'imdb:tt0000001',
@@ -60,7 +59,6 @@ describe('import-collection-items-api', () => {
         'Existing Movie',
         'existing movie',
         '2024',
-        '7.1',
         'Plot',
         'poster.jpg',
         'hash'
@@ -107,8 +105,8 @@ describe('import-collection-items-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({ totalCount: 1, importedCount: 1, skippedCount: 0, errorCount: 0 });
-    expect(getDatabase().prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt0000001')).toEqual({
-      title: 'Fetched Movie',
-    });
+    expect(
+      getDatabase().prepare('SELECT title FROM collection_items WHERE external_item_id = ?').get('tt0000001')
+    ).toEqual({ title: 'Fetched Movie' });
   });
 });

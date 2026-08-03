@@ -22,7 +22,10 @@ export const register = (app: FastifyInstance): void => {
       const limit = parseNumber(queryParams.limit, 10);
       const listType = parseListType(queryParams.listType) ?? 'library';
       const db = getDatabase();
-      const usernameHashes = [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
+      const usernameHashes =
+        listType === 'library'
+          ? [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)]
+          : [request.usernameHash];
       response.send({ suggestions: findCollectionItemSuggestions(db, usernameHashes, query, limit, listType) });
     })
   );

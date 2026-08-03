@@ -182,9 +182,11 @@ components:
     CollectionFeaturePreferences:
       type: object
       description: Collection features shown in navigation and connected actions. All features are enabled when omitted.
-      required: [wishlist, watchLater, movieTracker, seriesTracker]
+      required: [bookTracker, wishlist, watchLater, movieTracker, seriesTracker]
       additionalProperties: false
       properties:
+        bookTracker:
+          type: boolean
         wishlist:
           type: boolean
         watchLater:
@@ -318,7 +320,7 @@ components:
           description: Legacy IMDb-compatible identifier.
         externalProvider:
           type: string
-          enum: [omdb]
+          enum: [omdb, openlibrary]
           description: External metadata provider that owns `externalItemId`, such as `omdb`.
         externalItemId:
           type: string
@@ -358,12 +360,12 @@ components:
           type: string
         listType:
           type: string
-          enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
-          description: Logical list containing the item. `library` is the main collection.
+          enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+          description: 'Logical list containing the item. Books use only `book-tracker`; other content types cannot use `book-tracker`.'
         contentType:
           type: string
-          enum: [movie, series]
-          description: Item media type. This replaces the legacy `#movie` and `#series` system tags.
+          enum: [movie, series, book]
+          description: 'Item media type. Books must use `listType: book-tracker`; non-book content cannot use `book-tracker`.'
         favorite:
           type: boolean
           description: Whether the item is marked as a favorite. This replaces the legacy `#favorite` system tag.
@@ -411,7 +413,7 @@ components:
           description: Legacy IMDb-compatible identifier. For OMDb-backed items this matches `externalItemId`.
         externalProvider:
           type: string
-          enum: [omdb]
+          enum: [omdb, openlibrary]
         externalItemId:
           type: string
         externalIds:
@@ -443,7 +445,8 @@ components:
           type: string
         contentType:
           type: string
-          enum: [movie, series]
+          enum: [movie, series, book]
+          description: 'Books must use `listType: book-tracker`; non-book content cannot use `book-tracker`.'
         favorite:
           type: boolean
 
@@ -495,7 +498,7 @@ components:
               enum: [any, all]
             type:
               type: string
-              enum: [movie, series]
+              enum: [movie, series, book]
             watched:
               type: boolean
             completed:
@@ -504,7 +507,7 @@ components:
               type: boolean
             listType:
               type: string
-              enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+              enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
             orderBy:
               type: string
               enum: [createdAt, alphabet]
@@ -576,6 +579,7 @@ components:
           totalItems,
           movieCount,
           seriesCount,
+          bookTrackerCount,
           favoriteCount,
           watchLaterCount,
           wishlistCount,
@@ -595,6 +599,8 @@ components:
         movieCount:
           type: integer
         seriesCount:
+          type: integer
+        bookTrackerCount:
           type: integer
         favoriteCount:
           type: integer
@@ -659,9 +665,9 @@ components:
               description: Optional owner share code to create the item in a shared library. Defaults to the authenticated user.
             listType:
               type: string
-              enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+              enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
               default: library
-              description: Target list. Defaults to `library`.
+              description: 'Target list. Defaults to `library`. Books must use `book-tracker`, and non-books cannot use `book-tracker`.'
 
     CreateResponse:
       type: object
@@ -834,7 +840,7 @@ components:
       properties:
         provider:
           type: string
-          enum: [omdb]
+          enum: [omdb, openlibrary]
         providerItemId:
           type: string
         externalIds:
@@ -848,7 +854,7 @@ components:
           type: string
         contentType:
           type: string
-          enum: [movie, series]
+          enum: [movie, series, book]
         poster:
           type: string
         plot:
@@ -876,7 +882,7 @@ components:
       properties:
         source:
           type: string
-          enum: [omdb, imdb]
+          enum: [omdb, openlibrary, imdb, isbn]
         id:
           type: string
 
@@ -895,7 +901,7 @@ components:
       properties:
         name:
           type: string
-          enum: [omdb]
+          enum: [omdb, openlibrary]
           description: Configured external metadata provider identifier.
         supportsSeasonMetadata:
           type: boolean
@@ -924,7 +930,7 @@ components:
             - Which are sci-fi movies?
         listType:
           type: string
-          enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+          enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
           description: Collection list to search within.
 
     AiQueryResponse:
@@ -935,9 +941,13 @@ components:
           type: array
           items:
             type: string
-          description: IMDb IDs matched by AI search from the caller's selected collection list.
+          description: >-
+            Candidate identities matched by AI search from the caller's selected collection list. IMDb-backed items
+            use their raw IMDb ID; provider-native items use `source:id`, for example
+            `openlibrary:9780140328721`.
           examples:
             - - tt0133093
+              - openlibrary:9780140328721
 
     TagManagement:
       type: object
@@ -990,8 +1000,16 @@ components:
 
     ExportResponse:
       type: object
-      required: [userSettings, collectionItems, tagManagement, seriesTrackerData]
+      required: [type, version, userSettings, collectionItems, tagManagement, seriesTrackerData]
       properties:
+        type:
+          type: string
+          enum: [collection-tracker-export]
+          description: Export document type. Required for import round-trips.
+        version:
+          type: integer
+          enum: [6]
+          description: Export schema version. Import accepts only the current version.
         userSettings:
           $ref: '#/components/schemas/UserSettingsResponse'
         collectionItems:
@@ -1069,7 +1087,7 @@ components:
           type: string
         externalProvider:
           type: string
-          enum: [omdb]
+          enum: [omdb, openlibrary]
           description: External metadata provider that owns the canonical item identity.
         externalItemId:
           type: string
@@ -1084,7 +1102,7 @@ components:
           description: Optional local canonical identity preserved from exports.
         listType:
           type: string
-          enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+          enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
         watchedAt:
           type: ['string', 'null']
 
@@ -1096,7 +1114,8 @@ components:
           properties:
             contentType:
               type: string
-              enum: [movie, series]
+              enum: [movie, series, book]
+              description: 'Imported books must use `listType: book-tracker`; all other imported content must use another list.'
             favorite:
               type: boolean
 
@@ -1201,7 +1220,7 @@ tags:
   - name: Collection
     description: CRUD operations for structured collection items.
   - name: External Metadata Proxy
-    description: Proxy endpoints for the configured external metadata provider. OMDb is used when `OMDB_API_KEY` is configured.
+    description: Proxy endpoints for external metadata providers. OMDb is used when `OMDB_API_KEY` is configured; Open Library is always available for book metadata.
   - name: Image Proxy
     description: Cached proxy endpoint for external collection item images.
   - name: AI Proxy
@@ -1518,7 +1537,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [movie, series]
+            enum: [movie, series, book]
         - name: favorite
           in: query
           schema:
@@ -1535,7 +1554,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
             default: library
         - name: orderBy
           in: query
@@ -1599,7 +1618,8 @@ paths:
           required: false
           description: List to search suggestions within. Defaults to `library`.
           schema:
-            $ref: '#/components/schemas/CollectionListType'
+            type: string
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
       responses:
         '200':
           description: Search suggestions.
@@ -1627,7 +1647,7 @@ paths:
           description: External identity source name. Required with `externalIdentityId` unless `imdbId` is used.
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: query
           required: false
@@ -1652,7 +1672,7 @@ paths:
           description: List to check. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
             default: library
       responses:
         '200':
@@ -1920,12 +1940,12 @@ paths:
           in: query
           schema:
             type: string
-            enum: [movie, series]
+            enum: [movie, series, book]
         - name: listType
           in: query
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
             default: library
         - name: watched
           in: query
@@ -1951,9 +1971,11 @@ paths:
         Creates a structured item in the requested `listType`. External provider identity and locally resolved
         canonical identity must be unique within the target list.
         Custom tags must not use reserved system or virtual tags. Optionally pass `targetOwnerShareCode` to create
-        in a shared library where you have create permission. Watch-later, wishlist, series-tracker, and
-        movie-tracker items cannot be created in shared libraries and cannot be favorites. Series-tracker items must
-        use `contentType: series`; movie-tracker items must use `contentType: movie`.
+        in a shared library where you have create permission. Watch-later, wishlist, series-tracker, movie-tracker,
+        and book-tracker items cannot be created in shared libraries and cannot be favorites.
+        Series-tracker items must use `contentType: series`; movie-tracker items must use `contentType: movie`.
+        Books must use `listType: book-tracker`, and non-book content cannot use `book-tracker`; v1 does not support
+        books in library, watch-later, or wishlist.
       tags: [Collection]
       requestBody:
         required: true
@@ -1989,6 +2011,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/MarkAllUnwatchedResponse'
 
+  /book-tracker:
+    delete:
+      operationId: deleteAllBookTrackerItems
+      summary: Remove all book tracker data
+      description: Deletes every book tracker item owned by the authenticated user. This affects only the user's own tracker data and cannot remove or change shared library owner items.
+      tags: [Collection]
+      responses:
+        '200':
+          description: Number of book tracker items deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+
   /series-tracker:
     delete:
       operationId: deleteAllSeriesTrackerItems
@@ -2016,7 +2052,7 @@ paths:
           description: External identity source identifier.
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2035,7 +2071,7 @@ paths:
           description: List containing the item. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
             default: library
       requestBody:
         required: true
@@ -2071,7 +2107,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2093,7 +2129,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker]
+            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
             default: library
       responses:
         '204':
@@ -2119,7 +2155,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2161,7 +2197,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2187,7 +2223,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2230,7 +2266,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2257,7 +2293,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2290,7 +2326,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2319,7 +2355,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2348,7 +2384,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2377,7 +2413,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2404,7 +2440,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: path
           required: true
@@ -2445,14 +2481,14 @@ paths:
   /proxy/external-metadata/search:
     get:
       operationId: proxyExternalMetadataSearch
-      summary: Search external metadata by title
+      summary: Search external metadata by title or provider identity
       description: Searches the requested external metadata provider, or all configured providers when provider is omitted. Provider credentials are never exposed to the client.
       tags: [External Metadata Proxy]
       parameters:
         - name: s
           in: query
           required: true
-          description: Title search string.
+          description: Title or provider-supported identity search string, such as an ISBN for Open Library.
           schema:
             type: string
         - name: provider
@@ -2461,7 +2497,7 @@ paths:
           description: Known external metadata provider name to search. When omitted, the server aggregates all configured providers. Unknown names return 400; known but unconfigured providers return 503.
           schema:
             type: string
-            enum: [omdb]
+            enum: [omdb, openlibrary]
       responses:
         '200':
           description: External metadata search results.
@@ -2480,7 +2516,7 @@ paths:
     get:
       operationId: proxyExternalMetadataItem
       summary: Get an external metadata item by external identity
-      description: Proxies to the configured external metadata provider for `externalIdentitySource=omdb`; `externalIdentitySource=imdb` resolves the IMDb identity through a configured metadata provider that supports direct IMDb lookup. Provider credentials are never exposed to the client.
+      description: Proxies to OMDb or Open Library; `imdb` resolves through a provider supporting direct IMDb lookup, and `isbn` resolves through Open Library. Provider credentials are never exposed to the client.
       tags: [External Metadata Proxy]
       parameters:
         - name: externalIdentitySource
@@ -2489,11 +2525,11 @@ paths:
           description: External identity source returned by search results, or `imdb` for direct IMDb ID lookup.
           schema:
             type: string
-            enum: [omdb, imdb]
+            enum: [omdb, openlibrary, imdb, isbn]
         - name: externalIdentityId
           in: query
           required: true
-          description: External identity ID. For `omdb` and `imdb` this is the IMDb ID.
+          description: External identity ID. OMDb and IMDb use an IMDb ID; Open Library and ISBN use ISBN-10 or ISBN-13.
           schema:
             type: string
       responses:
@@ -2583,7 +2619,7 @@ paths:
               $ref: '#/components/schemas/AiQueryRequest'
       responses:
         '200':
-          description: IMDb IDs matched by AI search from the caller's selected collection list.
+          description: Candidate identities matched by AI search from the caller's selected collection list.
           content:
             application/json:
               schema:
@@ -2611,7 +2647,7 @@ paths:
     get:
       operationId: getUserExport
       summary: Export all user-owned data
-      description: Returns a JSON export of all user-owned data including settings, collection items (library, watch-later, wishlist, series-tracker, and movie-tracker), tag management, and series tracker metadata.
+      description: Returns a JSON export of all user-owned data including settings, collection items (library, watch-later, wishlist, series-tracker, movie-tracker, and book-tracker), tag management, and series tracker metadata.
       tags: [User]
       responses:
         '200':

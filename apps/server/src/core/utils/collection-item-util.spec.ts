@@ -95,6 +95,42 @@ describe('collection-item-util', () => {
       expect(normalizeItem({ ...validItem, externalItemId: '' })).toBeUndefined();
     });
 
+    it('canonicalizes book ISBN identities and does not store ISBN in IMDbId', () => {
+      expect(
+        normalizeItem({
+          ...validItem,
+          IMDbId: '0-306-40615-2',
+          externalProvider: 'openlibrary',
+          externalItemId: '0-306-40615-2',
+          externalIds: [{ source: 'isbn', id: '978-0-306-40615-7' }],
+          contentType: 'book',
+        })
+      ).toEqual({
+        ...validItem,
+        IMDbId: undefined,
+        externalProvider: 'openlibrary',
+        externalItemId: '9780306406157',
+        externalIds: [{ source: 'isbn', id: '9780306406157' }],
+        contentType: 'book',
+      });
+    });
+
+    it('rejects invalid Open Library ISBN IDs', () => {
+      expect(
+        normalizeItem({ ...validItem, externalProvider: 'openlibrary', externalItemId: 'invalid', contentType: 'book' })
+      ).toBeUndefined();
+    });
+
+    it('rejects books without Open Library identities', () => {
+      expect(normalizeItem({ ...validItem, contentType: 'book' })).toBeUndefined();
+    });
+
+    it('rejects Open Library identities for non-books', () => {
+      expect(
+        normalizeItem({ ...validItem, externalProvider: 'openlibrary', externalItemId: '9780306406157' })
+      ).toBeUndefined();
+    });
+
     it('returns undefined when a required string field has wrong type', () => {
       expect(normalizeItem({ ...validItem, title: 123 as any })).toBeUndefined();
     });

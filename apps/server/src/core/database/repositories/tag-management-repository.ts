@@ -7,7 +7,7 @@ import {
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { getItemHash } from '../../utils/collection-item-util';
 import { toApiItem } from './collection/collection-mapper';
-import { CollectionItemRow } from './collection/collection-model';
+import { collectionItemProjection, CollectionItemRow } from './collection/collection-model';
 
 export const findTagManagement = (db: Database.Database, usernameHash: string): TagManagementApiResponseModel => {
   const rows = db
@@ -77,7 +77,7 @@ export const renameTag = (
   const rename = db.transaction(() => {
     const affectedItems = db
       .prepare(
-        `SELECT collection_items.*
+        `SELECT ${collectionItemProjection()}
          FROM collection_items
          INNER JOIN collection_item_tags ON collection_item_tags.item_id = collection_items.id
          WHERE collection_items.username_hash = ?

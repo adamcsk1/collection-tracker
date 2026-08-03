@@ -12,6 +12,8 @@ await runMigrations(db, join(__dirname, '..', 'src', 'migrations'));
 const tables = [
   'user_shares',
   'ai_search_embeddings',
+  'collection_item_external_ratings',
+  'collection_item_tracker_state',
   'collection_item_tags',
   'collection_item_genres',
   'external_item_identities',

@@ -7,13 +7,15 @@ const insertUserAndItems = () => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt001', 'Alpha Movie', 'alpha movie', '1999', '8.0', 'Plot one', 'img1.jpg', 'hash1');
+    `INSERT INTO collection_items
+      (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'imdb', 'tt001', 'imdb:tt001', 'Alpha Movie', 'alpha movie', '1999', 'Plot one', 'img1.jpg', 'hash1');
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run('user', 'tt002', 'Beta Series', 'beta series', '2000', '7.5', 'Plot two', 'img2.jpg', 'hash2');
+    `INSERT INTO collection_items
+      (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run('user', 'imdb', 'tt002', 'imdb:tt002', 'Beta Series', 'beta series', '2000', 'Plot two', 'img2.jpg', 'hash2');
 };
 
 describe('collection-items-search-suggestions-api', () => {
@@ -64,5 +66,34 @@ describe('collection-items-search-suggestions-api', () => {
     await handlerPromise();
     const result = response.send.mock.calls[0][0];
     expect(result.suggestions.length).toBeLessThanOrEqual(1);
+  });
+
+  it('does not expose suggestions from shared private trackers', async () => {
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('owner', 'token');
+    db.prepare(
+      `INSERT INTO user_shares
+        (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
+       VALUES ('owner', 'user', 1, 0, 0, 0)`
+    ).run();
+    db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+       VALUES ('owner', 'openlibrary', '9780306406157', 'isbn:9780306406157', 'book-tracker', 'book',
+          'Private Shared Book', 'private shared book', '', '', '', 'private-book')`
+    ).run();
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      query: { query: 'private', listType: 'book-tracker' },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-search-suggestions-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ suggestions: [] });
   });
 });

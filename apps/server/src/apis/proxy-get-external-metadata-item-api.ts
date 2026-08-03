@@ -26,6 +26,13 @@ const getItemByExternalIdentity = async (identitySource: string, identityId: str
       : { item: null, providerFound: false };
   }
 
+  if (identitySource === 'isbn') {
+    const provider = getExternalMetadataProviderByName('openlibrary');
+    return provider
+      ? { item: await provider.getItem(identityId), providerFound: true }
+      : { item: null, providerFound: false };
+  }
+
   return { item: null, providerFound: false };
 };
 

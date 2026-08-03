@@ -106,8 +106,22 @@ describe('import-api', () => {
       'INSERT INTO access_tokens (username_hash, token_hash, created_at, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)'
     ).run('user', 'access-token', '2026-01-01T00:00:00.000Z', 'vitest', null);
     db.prepare(
-      'INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run('user', 'tt9999999', 'library', 'Old Movie', 'old movie', '1999', '1.0', 'Old', 'old.jpg', 'old-hash');
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      'imdb',
+      'tt9999999',
+      'imdb:tt9999999',
+      'library',
+      'Old Movie',
+      'old movie',
+      '1999',
+      'Old',
+      'old.jpg',
+      'old-hash'
+    );
     db.prepare(
       'INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run('user', '#old', '#000000', 0, 0, 0, 1);
@@ -117,7 +131,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {
           theme: 'dark',
           animatedBackground: false,
@@ -141,6 +155,16 @@ describe('import-api', () => {
           },
           seriesTrackerItem,
           movieTrackerItem,
+          {
+            ...item,
+            IMDbId: undefined,
+            externalProvider: 'openlibrary',
+            externalItemId: '0-306-40615-2',
+            externalIds: [{ source: 'isbn', id: '978-0-306-40615-7' }],
+            title: 'Imported Book',
+            listType: 'book-tracker',
+            contentType: 'book',
+          },
         ],
         tagManagement: [
           {
@@ -176,23 +200,37 @@ describe('import-api', () => {
     await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith({
-      importedCollectionItems: 5,
+      importedCollectionItems: 6,
       importedTagManagement: 2,
       importedSeriesTrackerSeasons: 1,
       importedSeriesTrackerWatchedEpisodes: 1,
     });
-    expect(db.prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt9999999')).toBeUndefined();
-    expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt0000003')).toEqual({
+    expect(
+      db.prepare('SELECT title FROM collection_items WHERE external_item_id = ?').get('tt9999999')
+    ).toBeUndefined();
+    expect(db.prepare('SELECT list_type FROM collection_items WHERE external_item_id = ?').get('tt0000003')).toEqual({
       list_type: 'watch-later',
     });
-    expect(db.prepare('SELECT list_type FROM collection_items WHERE imdb_id = ?').get('tt0000004')).toEqual({
+    expect(db.prepare('SELECT list_type FROM collection_items WHERE external_item_id = ?').get('tt0000004')).toEqual({
       list_type: 'movie-tracker',
     });
     expect(
       db
-        .prepare('SELECT imdb_id FROM collection_items WHERE external_provider = ? AND external_item_id = ?')
+        .prepare('SELECT external_item_id FROM collection_items WHERE external_provider = ? AND external_item_id = ?')
         .get('omdb', 'tt0000123')
-    ).toEqual({ imdb_id: null });
+    ).toEqual({ external_item_id: 'tt0000123' });
+    expect(
+      db
+        .prepare(
+          'SELECT external_item_id, canonical_item_id, list_type, content_type FROM collection_items WHERE external_provider = ?'
+        )
+        .get('openlibrary')
+    ).toEqual({
+      external_item_id: '9780306406157',
+      canonical_item_id: 'isbn:9780306406157',
+      list_type: 'book-tracker',
+      content_type: 'book',
+    });
     expect(db.prepare('SELECT token_hash FROM access_tokens WHERE username_hash = ?').get('user')).toEqual({
       token_hash: 'access-token',
     });
@@ -207,6 +245,7 @@ describe('import-api', () => {
       animated_background: 0,
       language: 'en',
       collection_feature_preferences: JSON.stringify({
+        bookTracker: true,
         wishlist: false,
         watchLater: true,
         movieTracker: false,
@@ -219,13 +258,20 @@ describe('import-api', () => {
           `SELECT series_tracker_watched_episodes.season, series_tracker_watched_episodes.episode
            FROM series_tracker_watched_episodes
            INNER JOIN collection_items ON collection_items.id = series_tracker_watched_episodes.item_id
-           WHERE collection_items.imdb_id = ?`
+            WHERE collection_items.external_item_id = ?`
         )
         .all('tt0000002')
     ).toEqual([{ season: 1, episode: 1 }]);
-    expect(db.prepare('SELECT watched_at FROM collection_items WHERE imdb_id = ?').get('tt0000002')).toEqual({
-      watched_at: '2026-05-06 00:00:00',
-    });
+    expect(
+      db
+        .prepare(
+          `SELECT tracker_state.completed_at
+           FROM collection_item_tracker_state tracker_state
+           INNER JOIN collection_items ON collection_items.id = tracker_state.item_id
+           WHERE collection_items.external_item_id = ?`
+        )
+        .get('tt0000002')
+    ).toEqual({ completed_at: '2026-05-06 00:00:00' });
   });
 
   it('returns 400 for unsupported full import versions', async () => {
@@ -251,6 +297,35 @@ describe('import-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
+  it.each([
+    ['book in library', { contentType: 'book', listType: 'library' }],
+    ['book in watch later', { contentType: 'book', listType: 'watch-later' }],
+    ['book in wishlist', { contentType: 'book', listType: 'wishlist' }],
+    ['movie in book tracker', { contentType: 'movie', listType: 'book-tracker' }],
+    ['favorite in a non-library list', { favorite: true, listType: 'watch-later' }],
+    ['movie in series tracker', { contentType: 'movie', listType: 'series-tracker' }],
+  ])('returns 400 for invalid imported %s', async (_caseName, itemChanges) => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 6,
+        userSettings: {},
+        collectionItems: [{ ...item, ...itemChanges }],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('returns 400 for duplicate canonical item identities in the same imported list', async () => {
     insertUser('user');
     const response = mockResponse();
@@ -258,7 +333,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {},
         collectionItems: [
           item,
@@ -291,7 +366,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {},
         collectionItems: [
           {
@@ -324,14 +399,61 @@ describe('import-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('preserves imported canonical item ids', async () => {
+  it('preserves imported canonical item ids when anchored to item identities', async () => {
     insertUser('user');
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
+        userSettings: {},
+        collectionItems: [
+          {
+            ...item,
+            IMDbId: undefined,
+            externalProvider: 'omdb',
+            externalItemId: 'provider-a',
+            canonicalItemId: 'omdb:provider-a',
+            externalIds: [{ source: 'omdb', id: 'provider-current' }],
+          },
+        ],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 1 }));
+    expect(
+      getDatabase().prepare('SELECT canonical_item_id FROM collection_items WHERE username_hash = ?').get('user')
+    ).toEqual({ canonical_item_id: 'omdb:provider-a' });
+    expect(
+      getDatabase()
+        .prepare(
+          'SELECT external_provider, external_item_id, canonical_item_id FROM external_item_identities WHERE username_hash = ? AND external_provider = ? AND external_item_id = ?'
+        )
+        .get('user', 'omdb', 'provider-current')
+    ).toEqual({
+      external_provider: 'omdb',
+      external_item_id: 'provider-current',
+      canonical_item_id: 'omdb:provider-a',
+    });
+  });
+
+  it('returns 400 for canonical item ids not anchored to item identities', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 6,
         userSettings: {},
         collectionItems: [
           {
@@ -353,21 +475,31 @@ describe('import-api', () => {
 
     await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
 
-    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 1 }));
-    expect(
-      getDatabase().prepare('SELECT canonical_item_id FROM collection_items WHERE username_hash = ?').get('user')
-    ).toEqual({ canonical_item_id: 'imdb:tt9999999' });
-    expect(
-      getDatabase()
-        .prepare(
-          'SELECT external_provider, external_item_id, canonical_item_id FROM external_item_identities WHERE username_hash = ? AND external_provider = ? AND external_item_id = ?'
-        )
-        .get('user', 'omdb', 'provider-current')
-    ).toEqual({
-      external_provider: 'omdb',
-      external_item_id: 'provider-current',
-      canonical_item_id: 'imdb:tt9999999',
-    });
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 for legacy export version 5', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 5,
+        userSettings: {},
+        collectionItems: [item],
+        tagManagement: [],
+        seriesTrackerData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 for external identity provider fields', async () => {
@@ -377,7 +509,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {},
         collectionItems: [
           {
@@ -399,14 +531,41 @@ describe('import-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('clears watched_at for imported incomplete series even when a timestamp is present', async () => {
+  it.each(['', '   ', 'not-a-canonical', 'omdb:', ':tt1', ' unknown:tt1'])(
+    'returns 400 for invalid imported canonical item id %j',
+    async (canonicalItemId) => {
+      insertUser('user');
+      const response = mockResponse();
+      const request: any = {
+        usernameHash: 'user',
+        body: {
+          type: 'collection-tracker-export',
+          version: 6,
+          userSettings: {},
+          collectionItems: [{ ...item, canonicalItemId }],
+          tagManagement: [],
+          seriesTrackerData: {},
+        },
+      };
+      const app = buildRouteApp();
+
+      const { register } = await import('./import-api');
+      register(app);
+
+      await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+      expect(response.code).toHaveBeenCalledWith(400);
+    }
+  );
+
+  it('clears completion state for imported incomplete series even when a timestamp is present', async () => {
     insertUser('user');
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {},
         collectionItems: [{ ...seriesTrackerItem, tags: ['#series'], watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
@@ -426,11 +585,16 @@ describe('import-api', () => {
     await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 1 }));
-    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE imdb_id = ?').get('tt0000002')).toEqual(
-      {
-        watched_at: null,
-      }
-    );
+    expect(
+      getDatabase()
+        .prepare(
+          `SELECT tracker_state.completed_at
+           FROM collection_item_tracker_state tracker_state
+           INNER JOIN collection_items ON collection_items.id = tracker_state.item_id
+           WHERE collection_items.external_item_id = ?`
+        )
+        .get('tt0000002')
+    ).toEqual({ completed_at: null });
   });
 
   it('returns 400 for invalid imported watchedAt timestamps', async () => {
@@ -439,7 +603,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {},
         collectionItems: [{ ...movieTrackerItem, watchedAt: 'not-a-date' }],
         tagManagement: [],
@@ -461,7 +625,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {},
         collectionItems: [{ ...movieTrackerItem, watchedAt: '2026-02-31 00:00:00' }],
         tagManagement: [],
@@ -477,14 +641,14 @@ describe('import-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('clears watched_at for completed series imports without tracker data', async () => {
+  it('clears completion state for completed series imports without tracker data', async () => {
     insertUser('user');
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {},
         collectionItems: [{ ...seriesTrackerItem, watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
@@ -499,11 +663,16 @@ describe('import-api', () => {
     await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 1 }));
-    expect(getDatabase().prepare('SELECT watched_at FROM collection_items WHERE imdb_id = ?').get('tt0000002')).toEqual(
-      {
-        watched_at: null,
-      }
-    );
+    expect(
+      getDatabase()
+        .prepare(
+          `SELECT tracker_state.completed_at
+           FROM collection_item_tracker_state tracker_state
+           INNER JOIN collection_items ON collection_items.id = tracker_state.item_id
+           WHERE collection_items.external_item_id = ?`
+        )
+        .get('tt0000002')
+    ).toEqual({ completed_at: null });
   });
 
   it('returns 400 for an invalid full import envelope', async () => {
@@ -524,7 +693,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: { collectionListDisplayPreferences: { preferredRating: 'imdb' } },
         collectionItems: [],
         tagManagement: [],
@@ -546,7 +715,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {
           collectionFeaturePreferences: {
             wishlist: true,
@@ -575,7 +744,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {},
         collectionItems: [],
         tagManagement: [
@@ -615,7 +784,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: { theme: 'dark', animatedBackground: false, language: 'en' },
         collectionItems: [],
         tagManagement: [
@@ -654,7 +823,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {},
         collectionItems: [seriesTrackerItem],
         tagManagement: [],
@@ -681,7 +850,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 5,
+        version: 6,
         userSettings: {},
         collectionItems: [seriesTrackerItem],
         tagManagement: [],
@@ -729,15 +898,18 @@ describe('import-api', () => {
     insertUser('user');
     const db = getDatabase();
     db.prepare(
-      'INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       'user',
+      'imdb',
       'tt0000001',
+      'imdb:tt0000001',
       'wishlist',
       'Existing Movie',
       'existing movie',
       '2020',
-      '8.0',
       'Plot',
       'poster.jpg',
       'hash'
@@ -752,11 +924,15 @@ describe('import-api', () => {
     await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith({ totalCount: 3, importedCount: 1, skippedCount: 1, errorCount: 1 });
-    expect(db.prepare('SELECT title, list_type FROM collection_items WHERE imdb_id = ?').get('tt0000002')).toEqual({
+    expect(
+      db.prepare('SELECT title, list_type FROM collection_items WHERE external_item_id = ?').get('tt0000002')
+    ).toEqual({
       title: 'Fetched Movie',
       list_type: 'library',
     });
-    expect(db.prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt0000003')).toBeUndefined();
+    expect(
+      db.prepare('SELECT title FROM collection_items WHERE external_item_id = ?').get('tt0000003')
+    ).toBeUndefined();
   });
 
   it('skips IMDb ID imports when a canonical equivalent already exists under another provider', async () => {
@@ -767,19 +943,17 @@ describe('import-api', () => {
     getDatabase()
       .prepare(
         `INSERT INTO collection_items
-          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         'user',
-        'tt0000002',
         'omdb',
         'tt0000002',
         'imdb:tt0000002',
         'Existing Movie',
         'existing movie',
         '2020',
-        '8.0',
         'Plot',
         'poster.jpg',
         'hash'
@@ -818,7 +992,7 @@ describe('import-api', () => {
 
     expect(response.send).toHaveBeenCalledWith({ totalCount: 1, importedCount: 0, skippedCount: 0, errorCount: 1 });
     expect(
-      getDatabase().prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt0000004')
+      getDatabase().prepare('SELECT title FROM collection_items WHERE external_item_id = ?').get('tt0000004')
     ).toBeUndefined();
   });
 
@@ -855,7 +1029,7 @@ describe('import-api', () => {
 
     expect(response.send).toHaveBeenCalledWith({ totalCount: 1, importedCount: 0, skippedCount: 0, errorCount: 1 });
     expect(
-      getDatabase().prepare('SELECT title FROM collection_items WHERE imdb_id = ?').get('tt0000006')
+      getDatabase().prepare('SELECT title FROM collection_items WHERE external_item_id = ?').get('tt0000006')
     ).toBeUndefined();
   });
 

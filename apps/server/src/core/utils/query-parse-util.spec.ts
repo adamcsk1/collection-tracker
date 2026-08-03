@@ -53,8 +53,12 @@ describe('query-parse-util', () => {
       expect(parseType('series')).toBe('series');
     });
 
+    it('returns book for "book"', () => {
+      expect(parseType('book')).toBe('book');
+    });
+
     it('returns undefined for other values', () => {
-      expect(parseType('book')).toBeUndefined();
+      expect(parseType('game')).toBeUndefined();
       expect(parseType(undefined)).toBeUndefined();
     });
   });

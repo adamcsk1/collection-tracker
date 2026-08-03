@@ -46,17 +46,23 @@ describe('proxy-external-metadata-search-api', () => {
       });
     });
 
-    it('returns 503 when no external metadata provider is configured', async () => {
+    it('uses public Open Library when no credentialed provider is configured', async () => {
       delete process.env.OMDB_API_KEY;
       const response = mockResponse();
       const request: any = { query: { s: 'Matrix' } };
       const { app, handlerPromise } = buildApp(request, response);
+      vi.mocked(fetch).mockResolvedValue({ ok: true, json: () => Promise.resolve({ docs: [] }) } as any);
 
       const { register } = await import('./proxy-external-metadata-search-api');
       register(app);
 
       await handlerPromise();
-      expect(response.code).toHaveBeenCalledWith(503);
+      const requestUrl = new URL(vi.mocked(fetch).mock.calls[0][0] as string);
+      expect(`${requestUrl.origin}${requestUrl.pathname}`).toBe('https://openlibrary.org/search.json');
+      expect(requestUrl.searchParams.get('q')).toBe('Matrix');
+      expect(requestUrl.searchParams.get('limit')).toBe('20');
+      expect(requestUrl.searchParams.get('fields')).toContain('editions.isbn');
+      expect(response.send).toHaveBeenCalledWith({ results: [] });
     });
 
     it('returns 400 when search text is missing', async () => {

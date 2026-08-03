@@ -18,6 +18,7 @@ import { register as registerMarkAllSeriesWatched } from './mark-all-series-watc
 import { register as registerCreateAccessToken } from './create-access-token-api';
 import { register as registerCreate } from './create-api';
 import { register as registerDeleteAccessToken } from './delete-access-token-api';
+import { register as registerDeleteBookTrackerItems } from './delete-book-tracker-items-api';
 import { register as registerDelete } from './delete-api';
 import { register as registerDeleteIncomingUserShare } from './delete-incoming-user-share-api';
 import { register as registerDeleteMovieTrackerItem } from './delete-movie-tracker-item-api';
@@ -82,6 +83,7 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerAddMovieTrackerItem(app);
   registerAddSeriesTrackerItem(app);
   registerDeleteMovieTrackerItems(app);
+  registerDeleteBookTrackerItems(app);
   registerDeleteMovieTrackerItem(app);
   registerDeleteSeriesTrackerItems(app);
   registerRefreshExternalRatings(app);

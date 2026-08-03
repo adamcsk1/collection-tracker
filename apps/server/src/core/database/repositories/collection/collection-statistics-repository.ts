@@ -55,6 +55,7 @@ export const getCollectionStatistics = (
 
   const watchLaterCount = countListType('watch-later');
   const wishlistCount = countListType('wishlist');
+  const bookTrackerCount = countListType('book-tracker');
 
   const watchedMovieCount = (
     db
@@ -139,9 +140,11 @@ export const getCollectionStatistics = (
         db
           .prepare(
             `SELECT COUNT(*) as count
-             FROM collection_items
-             WHERE ${trackerWhereSql}
-                AND collection_items.watched_at IS NULL`
+              FROM collection_items
+              INNER JOIN collection_item_tracker_state tracker_state
+                ON tracker_state.item_id = collection_items.id
+              WHERE ${trackerWhereSql}
+                 AND tracker_state.completed_at IS NULL`
           )
           .get(...trackerQueryParts.params) as { count: number }
       ).count
@@ -152,9 +155,11 @@ export const getCollectionStatistics = (
         db
           .prepare(
             `SELECT COUNT(*) as count
-             FROM collection_items
-             WHERE ${trackerWhereSql}
-                AND collection_items.watched_at IS NOT NULL`
+              FROM collection_items
+              INNER JOIN collection_item_tracker_state tracker_state
+                ON tracker_state.item_id = collection_items.id
+              WHERE ${trackerWhereSql}
+                 AND tracker_state.completed_at IS NOT NULL`
           )
           .get(...trackerQueryParts.params) as { count: number }
       ).count
@@ -182,13 +187,15 @@ export const getCollectionStatistics = (
 
   const watchedMovieYearCounts = db
     .prepare(
-      `SELECT strftime('%Y', movie_tracker.watched_at) as watched_year, COUNT(*) as count
+      `SELECT strftime('%Y', movie_tracker_state.completed_at) as watched_year, COUNT(*) as count
        FROM collection_items
        INNER JOIN collection_items movie_tracker
          ON movie_tracker.username_hash = ?
-        AND ${canonicalOrExactIdentityMatch('movie_tracker')}
-        AND movie_tracker.list_type = ?
-        AND movie_tracker.watched_at IS NOT NULL
+         AND ${canonicalOrExactIdentityMatch('movie_tracker')}
+         AND movie_tracker.list_type = ?
+       INNER JOIN collection_item_tracker_state movie_tracker_state
+         ON movie_tracker_state.item_id = movie_tracker.id
+        AND movie_tracker_state.completed_at IS NOT NULL
        WHERE ${whereSql}
            AND ${movieContentCondition}
           GROUP BY watched_year`
@@ -197,13 +204,15 @@ export const getCollectionStatistics = (
 
   const watchedSeriesYearCounts = db
     .prepare(
-      `SELECT strftime('%Y', series_tracker.watched_at) as watched_year, COUNT(*) as count
+      `SELECT strftime('%Y', series_tracker_state.completed_at) as watched_year, COUNT(*) as count
        FROM collection_items
        INNER JOIN collection_items series_tracker
          ON series_tracker.username_hash = ?
-        AND ${canonicalOrExactIdentityMatch('series_tracker')}
-        AND series_tracker.list_type = ?
-        AND series_tracker.watched_at IS NOT NULL
+         AND ${canonicalOrExactIdentityMatch('series_tracker')}
+         AND series_tracker.list_type = ?
+       INNER JOIN collection_item_tracker_state series_tracker_state
+         ON series_tracker_state.item_id = series_tracker.id
+        AND series_tracker_state.completed_at IS NOT NULL
        WHERE ${whereSql}
            AND ${seriesContentCondition}
           GROUP BY watched_year`
@@ -240,6 +249,7 @@ export const getCollectionStatistics = (
     totalItems,
     movieCount: countWhere(movieContentCondition),
     seriesCount: countWhere(seriesContentCondition),
+    bookTrackerCount,
     favoriteCount: countWhere(favoriteCondition),
     watchLaterCount,
     wishlistCount,

@@ -12,6 +12,7 @@ import {
   CollectionItemOrderOptions,
   CollectionItemQueryOptions,
   CollectionItemRow,
+  collectionItemProjection,
 } from './collection-model';
 
 const stringifySearchValue = (value: unknown): string => `${value ?? ''}`.replace(/\s+/g, ' ').trim();
@@ -147,7 +148,7 @@ export const findCollectionItems = (
   const normalizedListType = normalizeListType(listType);
   const rows = db
     .prepare(
-      `SELECT *
+      `SELECT ${collectionItemProjection()}
         FROM collection_items
         WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
          AND list_type = ?
@@ -193,7 +194,7 @@ export const searchCollectionItems = (
   if (options.matchedIdentities?.length) {
     const rows = db
       .prepare(
-        `SELECT *
+        `SELECT ${collectionItemProjection()}
          FROM collection_items
          WHERE ${whereSql}`
       )
@@ -228,7 +229,7 @@ export const searchCollectionItems = (
 
   const rows = db
     .prepare(
-      `SELECT *
+      `SELECT ${collectionItemProjection()}
        FROM collection_items
        WHERE ${whereSql}
        ORDER BY ${orderBySql}
@@ -247,9 +248,23 @@ export const collectionItemExistsInList = (
 ): boolean => {
   const row = db
     .prepare(
-      `SELECT 1 FROM collection_items WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND imdb_id = ? AND list_type = ? LIMIT 1`
+      `SELECT 1
+       FROM collection_items
+       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+         AND list_type = ?
+         AND (
+           (external_provider = 'imdb' AND external_item_id = ?)
+           OR EXISTS (
+             SELECT 1 FROM external_item_identities imdb_identity
+             WHERE imdb_identity.username_hash = collection_items.username_hash
+               AND imdb_identity.canonical_item_id = collection_items.canonical_item_id
+               AND imdb_identity.external_provider = 'imdb'
+               AND imdb_identity.external_item_id = ?
+           )
+         )
+       LIMIT 1`
     )
-    .get(...usernameHashes, imdbId, normalizeListType(listType));
+    .get(...usernameHashes, normalizeListType(listType), imdbId, imdbId);
   return !!row;
 };
 
@@ -301,7 +316,7 @@ export const findCollectionItemsForPrompt = (
 ): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
-      `SELECT *
+      `SELECT ${collectionItemProjection()}
         FROM collection_items
         WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
          AND list_type = ?
@@ -323,7 +338,7 @@ export const findCollectionItemsForAiSearch = (
 ): AiSearchCollectionItem[] => {
   const rows = db
     .prepare(
-      `SELECT *
+      `SELECT ${collectionItemProjection()}
         FROM collection_items
         WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
          AND list_type = ?
@@ -349,7 +364,7 @@ export const findRandomCollectionItem = (
 ): CollectionItemApiModel | undefined => {
   const row = db
     .prepare(
-      `SELECT * FROM collection_items
+      `SELECT ${collectionItemProjection()} FROM collection_items
         WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
          AND list_type = ?
         ORDER BY RANDOM() LIMIT 1`
@@ -361,17 +376,22 @@ export const findRandomCollectionItem = (
 
 export const findRandomCollectionImages = (
   db: Database.Database,
-  usernameHashes: string[],
+  usernameHash: string,
+  readableOwnerHashes: string[],
   count: number
 ): string[] => {
+  const readableHashes = [usernameHash, ...readableOwnerHashes];
   const rows = db
     .prepare(
       `SELECT image FROM collection_items
-       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND image != ?
-         AND list_type = ?
-        ORDER BY RANDOM() LIMIT ?`
+       WHERE image != ?
+         AND (
+           (username_hash IN (${readableHashes.map(() => '?').join(', ')}) AND list_type = 'library')
+           OR (username_hash = ? AND list_type = 'book-tracker')
+         )
+         ORDER BY RANDOM() LIMIT ?`
     )
-    .all(...usernameHashes, '', 'library', count) as Array<{ image: string }>;
+    .all('', ...readableHashes, usernameHash, count) as Array<{ image: string }>;
 
   return rows.map((row) => row.image);
 };
@@ -394,8 +414,23 @@ export const findCollectionItemByImdbId = (
   listType: CollectionListTypeModel = 'library'
 ): CollectionItemRow | undefined => {
   return db
-    .prepare('SELECT * FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
-    .get(usernameHash, imdbId, normalizeListType(listType)) as CollectionItemRow | undefined;
+    .prepare(
+      `SELECT ${collectionItemProjection()}
+       FROM collection_items
+       WHERE username_hash = ?
+         AND list_type = ?
+         AND (
+           (external_provider = 'imdb' AND external_item_id = ?)
+           OR EXISTS (
+             SELECT 1 FROM external_item_identities imdb_identity
+             WHERE imdb_identity.username_hash = collection_items.username_hash
+               AND imdb_identity.canonical_item_id = collection_items.canonical_item_id
+               AND imdb_identity.external_provider = 'imdb'
+               AND imdb_identity.external_item_id = ?
+           )
+         )`
+    )
+    .get(usernameHash, normalizeListType(listType), imdbId, imdbId) as CollectionItemRow | undefined;
 };
 
 export const findCollectionItemByExternalId = (
@@ -407,7 +442,9 @@ export const findCollectionItemByExternalId = (
 ): CollectionItemRow | undefined => {
   return db
     .prepare(
-      'SELECT * FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
+      `SELECT ${collectionItemProjection()}
+       FROM collection_items
+       WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?`
     )
     .get(usernameHash, externalProvider, externalItemId, normalizeListType(listType)) as CollectionItemRow | undefined;
 };
@@ -419,7 +456,11 @@ export const findCollectionItemByCanonicalItemId = (
   listType: CollectionListTypeModel = 'library'
 ): CollectionItemRow | undefined => {
   return db
-    .prepare('SELECT * FROM collection_items WHERE username_hash = ? AND canonical_item_id = ? AND list_type = ?')
+    .prepare(
+      `SELECT ${collectionItemProjection()}
+       FROM collection_items
+       WHERE username_hash = ? AND canonical_item_id = ? AND list_type = ?`
+    )
     .get(usernameHash, canonicalItemId, normalizeListType(listType)) as CollectionItemRow | undefined;
 };
 
@@ -440,7 +481,7 @@ export const findCollectionItemByExternalIdOrCanonicalItemId = (
 export const findAllCollectionItemsByUser = (db: Database.Database, usernameHash: string): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
-      `SELECT * FROM collection_items
+      `SELECT ${collectionItemProjection()} FROM collection_items
        WHERE username_hash = ?
        ORDER BY list_type, created_at DESC, id DESC`
     )

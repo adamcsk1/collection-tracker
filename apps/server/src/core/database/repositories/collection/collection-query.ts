@@ -18,7 +18,8 @@ export const normalizeListType = (listType: CollectionListTypeModel | undefined)
     listType === 'watch-later' ||
     listType === 'wishlist' ||
     listType === 'series-tracker' ||
-    listType === 'movie-tracker'
+    listType === 'movie-tracker' ||
+    listType === 'book-tracker'
   )
     return listType;
   return 'library';
@@ -82,7 +83,7 @@ export const canonicalOrExactIdentityMatch = (alias: string): string => `(
   (${alias}.canonical_item_id IS NOT NULL AND ${alias}.canonical_item_id = collection_items.canonical_item_id)
   OR (
     COALESCE(${alias}.external_provider, '${DEFAULT_EXTERNAL_METADATA_PROVIDER}') = COALESCE(collection_items.external_provider, '${DEFAULT_EXTERNAL_METADATA_PROVIDER}')
-    AND COALESCE(${alias}.external_item_id, ${alias}.imdb_id) = COALESCE(collection_items.external_item_id, collection_items.imdb_id)
+    AND ${alias}.external_item_id = collection_items.external_item_id
   )
 )`;
 
@@ -125,17 +126,19 @@ const addMatchedIdentityFilter = (
 
   for (const [source, sourceIds] of identitiesBySource) {
     const uniqueSourceIds = [...new Set(sourceIds)];
-    if (source === 'imdb') {
-      pushInClauseConditions(conditions, queryParts, 'collection_items.imdb_id', uniqueSourceIds);
-    }
-
     for (let valueIndex = 0; valueIndex < uniqueSourceIds.length; valueIndex += MATCHED_IDENTITY_IN_CHUNK_SIZE) {
       const chunk = uniqueSourceIds.slice(valueIndex, valueIndex + MATCHED_IDENTITY_IN_CHUNK_SIZE);
       conditions.push(`(
-        collection_items.external_provider = ?
-        AND COALESCE(collection_items.external_item_id, collection_items.imdb_id) IN (${chunk.map(() => '?').join(', ')})
+        (collection_items.external_provider = ? AND collection_items.external_item_id IN (${chunk.map(() => '?').join(', ')}))
+        OR EXISTS (
+          SELECT 1 FROM external_item_identities matched_identity
+          WHERE matched_identity.username_hash = collection_items.username_hash
+            AND matched_identity.canonical_item_id = collection_items.canonical_item_id
+            AND matched_identity.external_provider = ?
+            AND matched_identity.external_item_id IN (${chunk.map(() => '?').join(', ')})
+        )
       )`);
-      queryParts.params.push(source, ...chunk);
+      queryParts.params.push(source, ...chunk, source, ...chunk);
     }
   }
 
@@ -149,13 +152,21 @@ const addSearchFilter = (queryParts: QueryParts, search: string): void => {
   const likeSearch = `%${escapeLike(lowerSearch)}%`;
   queryParts.where.push(`(
     collection_items.title_lower LIKE ? ESCAPE '\\'
-    OR LOWER(collection_items.imdb_id) LIKE ? ESCAPE '\\'
+    OR LOWER(collection_items.external_item_id) LIKE ? ESCAPE '\\'
     OR LOWER(collection_items.year) LIKE ? ESCAPE '\\'
-    OR LOWER(collection_items.rate) LIKE ? ESCAPE '\\'
-    OR LOWER(collection_items.rotten_tomatoes_rate) LIKE ? ESCAPE '\\'
-    OR LOWER(collection_items.metacritic_rate) LIKE ? ESCAPE '\\'
-    OR LOWER(collection_items.actors) LIKE ? ESCAPE '\\'
-    OR LOWER(collection_items.plot) LIKE ? ESCAPE '\\'
+    OR LOWER(collection_items.contributors) LIKE ? ESCAPE '\\'
+    OR LOWER(collection_items.description) LIKE ? ESCAPE '\\'
+    OR EXISTS (
+      SELECT 1 FROM external_item_identities search_identities
+      WHERE search_identities.username_hash = collection_items.username_hash
+        AND search_identities.canonical_item_id = collection_items.canonical_item_id
+        AND LOWER(search_identities.external_item_id) LIKE ? ESCAPE '\\'
+    )
+    OR EXISTS (
+      SELECT 1 FROM collection_item_external_ratings search_ratings
+      WHERE search_ratings.item_id = collection_items.id
+        AND LOWER(search_ratings.value) LIKE ? ESCAPE '\\'
+    )
     OR EXISTS (
       SELECT 1 FROM collection_item_tags search_tags
       WHERE search_tags.item_id = collection_items.id AND LOWER(search_tags.tag) LIKE ? ESCAPE '\\'
@@ -174,7 +185,6 @@ const addSearchFilter = (queryParts: QueryParts, search: string): void => {
     likeSearch,
     likeSearch,
     likeSearch,
-    likeSearch,
     likeSearch
   );
 };
@@ -182,6 +192,8 @@ const addSearchFilter = (queryParts: QueryParts, search: string): void => {
 const movieContentCondition = `collection_items.content_type = 'movie'`;
 
 const seriesContentCondition = `collection_items.content_type = 'series'`;
+
+const bookContentCondition = `collection_items.content_type = 'book'`;
 
 const addFilters = (
   queryParts: QueryParts,
@@ -208,6 +220,9 @@ const addFilters = (
   if (filters.type === 'series') {
     queryParts.where.push(seriesContentCondition);
   }
+  if (filters.type === 'book') {
+    queryParts.where.push(bookContentCondition);
+  }
   if (
     filters.watched !== undefined &&
     viewerUsernameHash &&
@@ -219,8 +234,14 @@ const addFilters = (
     else if (filters.type === 'movie') addMovieTrackerExists(queryParts, viewerUsernameHash, exists);
     else addWatchedExists(queryParts, viewerUsernameHash, exists);
   }
-  if (filters.completed === true) queryParts.where.push('collection_items.watched_at IS NOT NULL');
-  if (filters.completed === false) queryParts.where.push('collection_items.watched_at IS NULL');
+  if (filters.completed === true)
+    queryParts.where.push(
+      'EXISTS (SELECT 1 FROM collection_item_tracker_state WHERE item_id = collection_items.id AND completed_at IS NOT NULL)'
+    );
+  if (filters.completed === false)
+    queryParts.where.push(
+      'NOT EXISTS (SELECT 1 FROM collection_item_tracker_state WHERE item_id = collection_items.id AND completed_at IS NOT NULL)'
+    );
   if (filters.favorite === true) queryParts.where.push('collection_items.favorite = 1');
   if (filters.favorite === false) queryParts.where.push('collection_items.favorite = 0');
 

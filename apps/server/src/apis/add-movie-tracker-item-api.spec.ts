@@ -18,11 +18,22 @@ const insertItem = (
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', 'hash', contentType);
+    .run(usernameHash, 'omdb', imdbId, `omdb:${imdbId}`, listType, 'Title', 'title', '', '', '', 'hash', contentType);
   const itemId = Number(result.lastInsertRowid);
+  db.prepare(
+    `INSERT OR IGNORE INTO external_item_identities
+      (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+     VALUES (?, ?, ?, ?, ?)`
+  ).run(usernameHash, `omdb:${imdbId}`, 'imdb', imdbId, 'alias');
+  if (listType === 'movie-tracker') {
+    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, CURRENT_TIMESTAMP)').run(
+      itemId
+    );
+  }
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
@@ -97,7 +108,7 @@ describe('add-movie-tracker-item-api', () => {
       item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'movie-tracker' }),
     });
     const viewerTracker = getDatabase()
-      .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+      .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
       .get('viewer', 'tt-1', 'movie-tracker');
     expect(viewerTracker).toBeTruthy();
   });
@@ -141,7 +152,7 @@ describe('add-movie-tracker-item-api', () => {
       item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'movie-tracker' }),
     });
     const source = getDatabase()
-      .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+      .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
       .get('user', 'tt-1', 'watch-later');
     expect(source).toBeUndefined();
   });
@@ -167,7 +178,7 @@ describe('add-movie-tracker-item-api', () => {
       item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'movie-tracker' }),
     });
     const source = getDatabase()
-      .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+      .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
       .get('user', 'tt-1', 'watch-later');
     expect(source).toBeUndefined();
   });

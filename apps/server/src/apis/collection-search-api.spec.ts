@@ -19,24 +19,29 @@ const insertItem = (item: {
   metacriticRate?: string;
   createdAt?: string;
   listType?: CollectionListTypeModel;
-  contentType?: 'movie' | 'series';
+  contentType?: 'movie' | 'series' | 'book';
+  externalProvider?: string;
+  externalItemId?: string;
   favorite?: boolean;
 }) => {
   const result = getDatabase()
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, imdb_id, title, title_lower, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash, list_type, content_type, favorite, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))`
+       (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, contributors, description, image, content_hash, list_type, content_type, favorite, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))`
     )
     .run(
       'user',
-      item.imdbId,
+      item.externalProvider ?? 'imdb',
+      item.externalItemId ?? item.imdbId,
+      item.externalProvider === 'openlibrary'
+        ? `isbn:${item.externalItemId}`
+        : item.imdbId
+          ? `imdb:${item.imdbId}`
+          : null,
       item.title,
       item.title.toLowerCase(),
       '2024',
-      '8.0',
-      item.rottenTomatoesRate ?? '',
-      item.metacriticRate ?? '',
       item.actors ?? '',
       item.plot ?? '',
       '',
@@ -47,6 +52,25 @@ const insertItem = (item: {
       item.createdAt ?? null
     );
   const itemId = Number(result.lastInsertRowid);
+
+  getDatabase()
+    .prepare('INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)')
+    .run(itemId, 'imdb', '8.0');
+  if (item.rottenTomatoesRate) {
+    getDatabase()
+      .prepare('INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)')
+      .run(itemId, 'rotten-tomatoes', item.rottenTomatoesRate);
+  }
+  if (item.metacriticRate) {
+    getDatabase()
+      .prepare('INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)')
+      .run(itemId, 'metacritic', item.metacriticRate);
+  }
+  if (item.listType === 'movie-tracker' || item.listType === 'series-tracker') {
+    getDatabase()
+      .prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)')
+      .run(itemId, null);
+  }
 
   for (const tag of item.tags ?? []) {
     getDatabase().prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
@@ -351,6 +375,36 @@ describe('collection search APIs', () => {
     });
     expect(tagResponse.send).toHaveBeenCalledWith({
       suggestions: [{ label: '#queued', value: '#queued', kind: 'tag' }],
+    });
+  });
+
+  it('searches and suggests book tracker items by ISBN', async () => {
+    insertUser();
+    insertItem({
+      imdbId: '',
+      externalProvider: 'openlibrary',
+      externalItemId: '9780140328721',
+      title: 'Matilda',
+      listType: 'book-tracker',
+      contentType: 'book',
+    });
+    const { register: registerSearch } = await import('./get-collection-items-api');
+    const { register: registerSuggestions } = await import('./collection-items-search-suggestions-api');
+
+    const searchResponse = await callRoute(registerSearch, 'get', '/api/v1/items', {
+      query: { search: '9780140328721', listType: 'book-tracker' },
+      usernameHash: 'user',
+    });
+    const suggestionsResponse = await callRoute(registerSuggestions, 'get', '/api/v1/items/search-suggestions', {
+      query: { query: '9780140328721', listType: 'book-tracker' },
+      usernameHash: 'user',
+    });
+
+    expect(searchResponse.send).toHaveBeenCalledWith(
+      expect.objectContaining({ total: 1, items: [expect.objectContaining({ externalItemId: '9780140328721' })] })
+    );
+    expect(suggestionsResponse.send).toHaveBeenCalledWith({
+      suggestions: [{ label: 'Matilda', value: '9780140328721', kind: 'title' }],
     });
   });
 

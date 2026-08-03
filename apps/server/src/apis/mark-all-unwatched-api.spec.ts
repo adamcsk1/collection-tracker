@@ -12,10 +12,22 @@ const insertItem = (imdbId: string, tags: string[] = [], listType = 'library', u
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+       VALUES (?, 'omdb', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', `${usernameHash}-${listType}-${imdbId}`);
+    .run(
+      usernameHash,
+      imdbId,
+      `imdb:${imdbId}`,
+      listType,
+      'Title',
+      'title',
+      '',
+      '',
+      '',
+      `${usernameHash}-${listType}-${imdbId}`
+    );
   const itemId = Number(result.lastInsertRowid);
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
@@ -54,7 +66,7 @@ describe('mark-all-unwatched-api', () => {
 
     const db = getDatabase();
     const trackerItem = db
-      .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+      .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
       .get('user', 'tt-1', 'movie-tracker');
     expect(trackerItem).toBeUndefined();
   });
@@ -108,9 +120,11 @@ describe('mark-all-unwatched-api', () => {
     expect(response.send).toHaveBeenCalledWith({ changedCount: 1 });
 
     const rows = getDatabase()
-      .prepare('SELECT username_hash, imdb_id, list_type FROM collection_items WHERE list_type = ? ORDER BY imdb_id')
+      .prepare(
+        'SELECT username_hash, external_item_id, list_type FROM collection_items WHERE list_type = ? ORDER BY external_item_id'
+      )
       .all('movie-tracker');
-    expect(rows).toEqual([{ username_hash: 'user', imdb_id: 'tt-own-only', list_type: 'movie-tracker' }]);
+    expect(rows).toEqual([{ username_hash: 'user', external_item_id: 'tt-own-only', list_type: 'movie-tracker' }]);
   });
 
   it('returns 404 when the shared library owner is missing', async () => {

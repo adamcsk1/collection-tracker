@@ -42,7 +42,9 @@ describe('proxy-ai-query-api', () => {
 
   const setupCollection = (
     files: {
-      imdbId: string;
+      imdbId?: string;
+      externalProvider?: string;
+      externalItemId?: string;
       title: string;
       plot: string;
       actors?: string;
@@ -62,30 +64,72 @@ describe('proxy-ai-query-api', () => {
     const db = getDatabase();
     db.prepare('INSERT OR IGNORE INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     for (const file of files) {
+      const usernameHash = file.usernameHash ?? 'user';
+      const externalProvider = file.externalProvider ?? 'omdb';
+      const externalItemId = file.externalItemId ?? file.imdbId ?? null;
+      const canonicalItemId = file.imdbId
+        ? `imdb:${file.imdbId}`
+        : externalItemId
+          ? `${externalProvider}:${externalItemId}`
+          : null;
       const result = db
         .prepare(
-          `INSERT INTO collection_items (username_hash, imdb_id, list_type, content_type, title, title_lower, favorite, year, rate, rotten_tomatoes_rate, metacritic_rate, actors, plot, image, content_hash, watched_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO collection_items
+            (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, favorite, year, contributors, description, image, content_hash)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
-          file.usernameHash ?? 'user',
-          file.imdbId,
+          usernameHash,
+          externalProvider,
+          externalItemId,
+          canonicalItemId,
           file.listType ?? 'library',
           file.contentType ?? 'movie',
           file.title,
           file.title.toLowerCase(),
           file.favorite ? 1 : 0,
           '',
-          '',
-          file.rottenTomatoesRate ?? '',
-          file.metacriticRate ?? '',
           file.actors ?? '',
           file.plot,
           '',
-          file.imdbId,
-          file.watchedAt === undefined ? null : file.watchedAt
+          file.imdbId ?? file.externalItemId ?? file.title
         );
       const itemId = Number(result.lastInsertRowid);
+
+      if (canonicalItemId && externalItemId) {
+        db.prepare(
+          `INSERT OR IGNORE INTO external_item_identities
+            (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+           VALUES (?, ?, ?, ?, 'primary')`
+        ).run(usernameHash, canonicalItemId, externalProvider, externalItemId);
+      }
+      if (canonicalItemId && file.imdbId) {
+        db.prepare(
+          `INSERT OR IGNORE INTO external_item_identities
+            (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+           VALUES (?, ?, 'imdb', ?, 'alias')`
+        ).run(usernameHash, canonicalItemId, file.imdbId);
+      }
+
+      for (const [source, value] of [
+        ['rotten-tomatoes', file.rottenTomatoesRate],
+        ['metacritic', file.metacriticRate],
+      ]) {
+        if (value) {
+          db.prepare('INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)').run(
+            itemId,
+            source,
+            value
+          );
+        }
+      }
+
+      if (file.listType === 'series-tracker' || file.listType === 'movie-tracker') {
+        db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
+          itemId,
+          file.watchedAt ?? null
+        );
+      }
 
       for (const genre of file.genre ?? []) {
         db.prepare('INSERT INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(itemId, genre);
@@ -166,9 +210,9 @@ describe('proxy-ai-query-api', () => {
 
       await handlerPromise();
       const payload = generate.mock.calls[0][0];
-      expect(payload.system).toContain('You are a strict movie and series collection search filter.');
+      expect(payload.system).toContain('You are a strict media collection search filter.');
       expect(payload.system).toContain(
-        'Return ONLY valid JSON shaped exactly like {"matchedIds":["tt0111161","tt0068646"]}.'
+        'Return ONLY valid JSON shaped exactly like {"matchedIds":["tt0111161","openlibrary:9780140328721"]}.'
       );
       expect(payload.system).toContain('If no candidates match, return {"matchedIds":[]}.');
       expect(payload.system).toContain('Default to excluding an item.');
@@ -181,7 +225,7 @@ describe('proxy-ai-query-api', () => {
       );
       expect(payload.prompt).toContain('Active list: library');
       expect(payload.prompt).toContain('User search request:\nWhich are family sci-fi movies?');
-      expect(payload.prompt).toContain('IMDbId:\ntt0133093');
+      expect(payload.prompt).toContain('CandidateId:\ntt0133093');
       expect(payload.prompt).toContain('genre:\nAction,Sci-Fi');
       expect(payload.prompt).toContain('tags:\n#family');
       expect(payload.prompt).toContain('favorite:\ntrue');
@@ -198,6 +242,29 @@ describe('proxy-ai-query-api', () => {
         additionalProperties: false,
       });
       expect(payload.options).toEqual({ num_predict: 64, temperature: 0, top_k: 10, num_thread: 4 });
+    });
+
+    it('returns a provider-native book candidate ID accepted by matched item lookup', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('fantasy books', 'book-tracker'), response);
+      setupCollection([
+        {
+          externalProvider: 'openlibrary',
+          externalItemId: '9780140328721',
+          title: 'Matilda',
+          plot: 'A gifted child discovers extraordinary powers.',
+          listType: 'book-tracker',
+          contentType: 'book',
+        },
+      ]);
+      const generate = await mockGenerate('{"matchedIds":["openlibrary:9780140328721"]}');
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(generate.mock.calls[0][0].prompt).toContain('CandidateId:\nopenlibrary:9780140328721');
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['openlibrary:9780140328721'] });
     });
 
     it('returns unfinished series-tracker items without calling the LLM for pure status intents', async () => {

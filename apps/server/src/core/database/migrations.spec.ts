@@ -1550,6 +1550,342 @@ describe('runMigrations', () => {
     });
   });
 
+  describe('025_add_book_tracker', () => {
+    it('adds book constraints, preserves relations, and upgrades non-null feature preferences', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('025_add_book_tracker.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token'), ('default-user', 'token');
+        INSERT INTO user_settings (username_hash, collection_feature_preferences)
+          VALUES ('user', '{"wishlist":false,"watchLater":true,"movieTracker":false,"seriesTracker":true}'),
+                 ('default-user', NULL);
+        INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, title, title_lower, year, rate, plot, image, content_hash)
+          VALUES ('user', 'tt001', 'omdb', 'tt001', 'imdb:tt001', 'Movie', 'movie', '2024', '8.0', 'Plot', 'image', 'hash');
+        INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES (1, 'owned');
+        INSERT INTO ai_search_embeddings (item_id, embedding_model, content_hash, embedding_json)
+          VALUES (1, 'model', 'hash', '[0.1]');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '025_add_book_tracker.sql'),
+        join(migrationsDir, '025_add_book_tracker.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      db.prepare(
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, rate, plot, image, content_hash)
+         VALUES ('user', 'openlibrary', '9780306406157', 'isbn:9780306406157', 'book-tracker', 'book', 'Book', 'book', '1965', '', '', '', 'book-hash')`
+      ).run();
+      const insertWithTypes = db.prepare(
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, list_type, content_type, title, title_lower, year, rate, plot, image, content_hash)
+         VALUES ('user', 'omdb', ?, ?, ?, 'Item', 'item', '', '', '', '', ?)`
+      );
+      expect(() => insertWithTypes.run('bad-list', 'reading-list', 'book', 'bad-list-hash')).toThrow();
+      expect(() => insertWithTypes.run('bad-content', 'library', 'podcast', 'bad-content-hash')).toThrow();
+      expect(() => insertWithTypes.run('book-library', 'library', 'book', 'book-library-hash')).toThrow();
+      expect(() => insertWithTypes.run('book-watch-later', 'watch-later', 'book', 'book-watch-later-hash')).toThrow();
+      expect(() => insertWithTypes.run('book-wishlist', 'wishlist', 'book', 'book-wishlist-hash')).toThrow();
+      expect(() => insertWithTypes.run('movie-book-tracker', 'book-tracker', 'movie', 'movie-book-hash')).toThrow();
+      expect(() => insertWithTypes.run('series-book-tracker', 'book-tracker', 'series', 'series-book-hash')).toThrow();
+      expect(db.prepare('SELECT genre FROM collection_item_genres').all()).toEqual([{ genre: 'Drama' }]);
+      expect(db.prepare('SELECT tag FROM collection_item_tags').all()).toEqual([{ tag: 'owned' }]);
+      expect(db.prepare('SELECT embedding_model FROM ai_search_embeddings').all()).toEqual([
+        { embedding_model: 'model' },
+      ]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      expect(
+        db.prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?').get('user')
+      ).toEqual({
+        collection_feature_preferences:
+          '{"wishlist":false,"watchLater":true,"movieTracker":false,"seriesTracker":true,"bookTracker":true}',
+      });
+      expect(
+        db
+          .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
+          .get('default-user')
+      ).toEqual({ collection_feature_preferences: null });
+
+      db.close();
+    });
+  });
+
+  describe('026_normalize_collection_items', () => {
+    it('normalizes ratings and tracker state while preserving items and every child relation', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('026_normalize_collection_items.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (id, username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title,
+           title_lower, year, rate, user_rate, actors, plot, image, content_hash, rotten_tomatoes_rate,
+           metacritic_rate, watched_at, content_type, favorite)
+        VALUES
+          (10, 'user', 'tt010', 'omdb', 'tt010', 'imdb:tt010', 'movie-tracker', 'Movie', 'movie', '2024',
+           '8.1', 9.5, 'Actor', 'Movie plot', 'movie.jpg', 'movie-hash', '91%', '74/100',
+           '2025-01-02 03:04:05', 'movie', 1),
+          (20, 'user', 'tt020', 'omdb', 'tt020', 'imdb:tt020', 'series-tracker', 'Series', 'series', '2023',
+           '', NULL, 'Cast', 'Series plot', 'series.jpg', 'series-hash', '', '', NULL, 'series', 0),
+          (30, 'user', NULL, 'custom', NULL, NULL, 'library', 'Library Series', 'library series', '2022',
+           '7', NULL, '', '', '', 'library-hash', '', '', '2024-01-01', 'series', 0),
+          (40, 'user', NULL, 'openlibrary', '9780306406157', 'isbn:9780306406157', 'book-tracker', 'Book',
+           'book', '1965', '', NULL, 'Author', 'Book description', 'book.jpg', 'book-hash', '', '', NULL, 'book', 0);
+        INSERT INTO collection_item_genres (item_id, genre) VALUES (10, 'Drama'), (20, 'Sci-Fi');
+        INSERT INTO collection_item_tags (item_id, tag) VALUES (10, 'favorite'), (40, 'owned');
+        INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles)
+          VALUES (20, 1, 2, '["Pilot","Finale"]');
+        INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (20, 1, 1);
+        INSERT INTO ai_search_embeddings
+          (item_id, embedding_model, content_hash, embedding_json, created_at, updated_at)
+          VALUES (10, 'model', 'movie-hash', '[0.1]', '2024-01-01', '2024-01-02');
+        INSERT INTO external_item_identities
+          (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence, created_at)
+          VALUES ('user', 'imdb:tt010', 'omdb', 'tt010', 'primary', '2024-01-01');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '026_normalize_collection_items.sql'),
+        join(migrationsDir, '026_normalize_collection_items.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      const columns = db.prepare('PRAGMA table_info(collection_items)').all() as Array<{
+        name: string;
+        notnull: number;
+      }>;
+      const columnNames = columns.map((column) => column.name);
+      expect(columnNames).toEqual(
+        expect.arrayContaining([
+          'external_provider',
+          'external_item_id',
+          'canonical_item_id',
+          'contributors',
+          'description',
+        ])
+      );
+      expect(columnNames).not.toEqual(
+        expect.arrayContaining([
+          'imdb_id',
+          'rate',
+          'rotten_tomatoes_rate',
+          'metacritic_rate',
+          'watched_at',
+          'actors',
+          'plot',
+        ])
+      );
+      expect(columns.find((column) => column.name === 'year')?.notnull).toBe(1);
+      expect(columns.find((column) => column.name === 'external_provider')?.notnull).toBe(1);
+      expect(columns.find((column) => column.name === 'external_item_id')?.notnull).toBe(0);
+      expect(columns.find((column) => column.name === 'canonical_item_id')?.notnull).toBe(0);
+
+      expect(
+        db
+          .prepare(
+            'SELECT id, external_item_id, canonical_item_id, contributors, description FROM collection_items ORDER BY id'
+          )
+          .all()
+      ).toEqual([
+        {
+          id: 10,
+          external_item_id: 'tt010',
+          canonical_item_id: 'imdb:tt010',
+          contributors: 'Actor',
+          description: 'Movie plot',
+        },
+        {
+          id: 20,
+          external_item_id: 'tt020',
+          canonical_item_id: 'imdb:tt020',
+          contributors: 'Cast',
+          description: 'Series plot',
+        },
+        { id: 30, external_item_id: null, canonical_item_id: null, contributors: '', description: '' },
+        {
+          id: 40,
+          external_item_id: '9780306406157',
+          canonical_item_id: 'isbn:9780306406157',
+          contributors: 'Author',
+          description: 'Book description',
+        },
+      ]);
+      expect(
+        db.prepare('SELECT item_id, source, value FROM collection_item_external_ratings ORDER BY item_id, source').all()
+      ).toEqual([
+        { item_id: 10, source: 'imdb', value: '8.1' },
+        { item_id: 10, source: 'metacritic', value: '74/100' },
+        { item_id: 10, source: 'rotten-tomatoes', value: '91%' },
+        { item_id: 30, source: 'imdb', value: '7' },
+      ]);
+      expect(
+        db.prepare('SELECT item_id, completed_at FROM collection_item_tracker_state ORDER BY item_id').all()
+      ).toEqual([
+        { item_id: 10, completed_at: '2025-01-02 03:04:05' },
+        { item_id: 20, completed_at: null },
+        { item_id: 30, completed_at: '2024-01-01' },
+      ]);
+      expect(db.prepare('SELECT * FROM collection_item_genres ORDER BY item_id').all()).toHaveLength(2);
+      expect(db.prepare('SELECT * FROM collection_item_tags ORDER BY item_id').all()).toHaveLength(2);
+      expect(db.prepare('SELECT * FROM series_tracker_seasons').all()).toEqual([
+        { item_id: 20, season: 1, episodes: 2, episode_titles: '["Pilot","Finale"]' },
+      ]);
+      expect(db.prepare('SELECT * FROM series_tracker_watched_episodes').all()).toEqual([
+        { item_id: 20, season: 1, episode: 1 },
+      ]);
+      expect(db.prepare('SELECT item_id, embedding_model FROM ai_search_embeddings').all()).toEqual([
+        { item_id: 10, embedding_model: 'model' },
+      ]);
+      expect(
+        db
+          .prepare(
+            `SELECT canonical_item_id, external_item_id
+             FROM external_item_identities
+             WHERE external_provider = 'imdb'
+             ORDER BY external_item_id`
+          )
+          .all()
+      ).toEqual([
+        { canonical_item_id: 'imdb:tt010', external_item_id: 'tt010' },
+        { canonical_item_id: 'imdb:tt020', external_item_id: 'tt020' },
+      ]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+
+      const insertItem = db.prepare(
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, list_type, content_type, title, title_lower, year,
+           contributors, description, image, content_hash)
+         VALUES ('user', 'custom', ?, ?, ?, 'Item', 'item', '2025', '', '', '', ?)`
+      );
+      expect(() => insertItem.run('bad-movie', 'movie-tracker', 'series', 'bad-movie')).toThrow();
+      expect(() => insertItem.run('bad-series', 'series-tracker', 'movie', 'bad-series')).toThrow();
+      expect(() => insertItem.run('bad-book-list', 'library', 'book', 'bad-book-list')).toThrow();
+      expect(() => insertItem.run('bad-book-type', 'book-tracker', 'movie', 'bad-book-type')).toThrow();
+      expect(() => insertItem.run('library-movie', 'library', 'movie', 'library-movie')).not.toThrow();
+      expect(() => insertItem.run('wishlist-series', 'wishlist', 'series', 'wishlist-series')).not.toThrow();
+      expect(() => db.prepare("INSERT INTO collection_item_external_ratings VALUES (10, '', '1')").run()).toThrow();
+      expect(() =>
+        db.prepare("INSERT INTO collection_item_external_ratings VALUES (10, 'unknown', '1')").run()
+      ).toThrow();
+      expect(() => db.prepare("INSERT INTO collection_item_external_ratings VALUES (10, 'imdb', '')").run()).toThrow();
+      expect(() => db.prepare('INSERT INTO collection_item_tracker_state (item_id) VALUES (9999)').run()).toThrow();
+
+      db.prepare('DELETE FROM collection_items WHERE id IN (10, 20)').run();
+      expect(db.prepare('SELECT * FROM collection_item_external_ratings').all()).toEqual([
+        { item_id: 30, source: 'imdb', value: '7' },
+      ]);
+      expect(db.prepare('SELECT * FROM collection_item_tracker_state').all()).toEqual([
+        { item_id: 30, completed_at: '2024-01-01' },
+      ]);
+      expect(db.prepare('SELECT * FROM collection_item_genres').all()).toEqual([]);
+      expect(db.prepare('SELECT * FROM series_tracker_seasons').all()).toEqual([]);
+      expect(db.prepare('SELECT * FROM series_tracker_watched_episodes').all()).toEqual([]);
+      expect(db.prepare('SELECT * FROM ai_search_embeddings').all()).toEqual([]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+
+      await runMigrations(db, migrationsDir);
+      expect(
+        db
+          .prepare("SELECT COUNT(*) AS count FROM schema_migrations WHERE id = '026_normalize_collection_items.sql'")
+          .get()
+      ).toEqual({ count: 1 });
+
+      db.close();
+    });
+
+    it('normalizes legacy tracker types and preserves unmapped IMDb identities', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('026_normalize_collection_items.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+           title, title_lower, year, rate, actors, plot, image, content_hash, watched_at)
+        VALUES
+          ('user', 'TT-BAD', 'omdb', NULL, NULL, 'movie-tracker', 'series', 'Bad Movie', 'bad movie', '2024',
+           '', '', '', '', 'movie-hash', '2025-01-01'),
+          ('user', 'tt-series', 'omdb', NULL, NULL, 'series-tracker', 'movie', 'Bad Series', 'bad series', '2024',
+           '', '', '', '', 'series-hash', NULL);
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '026_normalize_collection_items.sql'),
+        join(migrationsDir, '026_normalize_collection_items.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+      expect(
+        db
+          .prepare(
+            'SELECT external_item_id, canonical_item_id, list_type, content_type FROM collection_items ORDER BY id'
+          )
+          .all()
+      ).toEqual([
+        {
+          external_item_id: 'tt-bad',
+          canonical_item_id: 'imdb:tt-bad',
+          list_type: 'movie-tracker',
+          content_type: 'movie',
+        },
+        {
+          external_item_id: 'tt-series',
+          canonical_item_id: 'imdb:tt-series',
+          list_type: 'series-tracker',
+          content_type: 'series',
+        },
+      ]);
+      expect(
+        db
+          .prepare(
+            `SELECT canonical_item_id, external_item_id
+             FROM external_item_identities
+             WHERE external_provider = 'imdb'
+             ORDER BY external_item_id`
+          )
+          .all()
+      ).toEqual([
+        { canonical_item_id: 'imdb:tt-bad', external_item_id: 'tt-bad' },
+        { canonical_item_id: 'imdb:tt-series', external_item_id: 'tt-series' },
+      ]);
+      expect(
+        db.prepare('SELECT item_id, completed_at FROM collection_item_tracker_state ORDER BY item_id').all()
+      ).toEqual([
+        { item_id: 1, completed_at: '2025-01-01' },
+        { item_id: 2, completed_at: null },
+      ]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+
+      db.close();
+    });
+
+    it('lowercases tt-shaped external ids that differ from legacy imdb_id', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('026_normalize_collection_items.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+           title, title_lower, year, rate, actors, plot, image, content_hash)
+        VALUES
+          ('user', 'tt9999999', 'omdb', 'TT0133093', 'omdb:TT0133093', 'library', 'movie', 'Mixed', 'mixed', '2024',
+           '', '', '', '', 'mixed-hash');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '026_normalize_collection_items.sql'),
+        join(migrationsDir, '026_normalize_collection_items.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+      expect(
+        db
+          .prepare('SELECT external_item_id, canonical_item_id FROM collection_items WHERE username_hash = ?')
+          .get('user')
+      ).toEqual({
+        external_item_id: 'tt0133093',
+        canonical_item_id: 'omdb:TT0133093',
+      });
+
+      db.close();
+    });
+  });
+
   describe('runner behavior', () => {
     it('runs the full migration chain 001 to 015 and produces the expected final schema', async () => {
       const db = new Database(':memory:');
@@ -1572,8 +1908,12 @@ describe('runMigrations', () => {
           VALUES ('user1', 'hash1', '2024-01-01T00:00:00Z', 'Mozilla/5.0');
         INSERT INTO refresh_tokens (username_hash, token_hash, created_at, user_agent)
           VALUES ('user1', 'hash2', '2024-01-01T00:00:00Z', 'Mozilla/5.0');
-        INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, user_rate, plot, actors, image, content_hash, rotten_tomatoes_rate, metacritic_rate)
-          VALUES ('user1', 'tt001', 'library', 'Movie', 'movie', '2020', '8.0', 8.5, 'Plot', 'Actor', 'img', 'hash', '95%', '80/100');
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, list_type, title, title_lower, year, user_rate,
+           description, contributors, image, content_hash)
+          VALUES ('user1', 'omdb', 'tt001', 'library', 'Movie', 'movie', '2020', 8.5, 'Plot', 'Actor', 'img', 'hash');
+        INSERT INTO collection_item_external_ratings (item_id, source, value)
+          VALUES (1, 'imdb', '8.0'), (1, 'rotten-tomatoes', '95%'), (1, 'metacritic', '80/100');
         INSERT INTO collection_item_genres (item_id, genre) VALUES (1, 'Drama');
         INSERT INTO collection_item_tags (item_id, tag) VALUES (1, '#movie'), (1, 'custom');
         INSERT INTO user_settings (username_hash, theme, animated_background, language, default_library_owner_share_code, collection_list_display_preferences)
@@ -1600,8 +1940,10 @@ describe('runMigrations', () => {
         expect.arrayContaining([
           'access_tokens',
           'ai_search_embeddings',
+          'collection_item_external_ratings',
           'collection_item_genres',
           'collection_item_tags',
+          'collection_item_tracker_state',
           'collection_items',
           'refresh_tokens',
           'schema_migrations',
@@ -1622,16 +1964,18 @@ describe('runMigrations', () => {
       const itemColMap = new Map(itemCols.map((c) => [c.name, c]));
       expect(itemColMap.get('list_type')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 1 }));
       expect(itemColMap.get('user_rate')).toEqual(expect.objectContaining({ type: 'REAL', notnull: 0 }));
-      expect(itemColMap.get('rotten_tomatoes_rate')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 1 }));
-      expect(itemColMap.get('metacritic_rate')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 1 }));
-      expect(itemColMap.get('watched_at')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 0 }));
+      expect(itemColMap.get('contributors')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 1 }));
+      expect(itemColMap.get('description')).toEqual(expect.objectContaining({ type: 'TEXT', notnull: 1 }));
+      expect(itemColMap.has('watched_at')).toBe(false);
 
       expect(() =>
         db
           .prepare(
             `
-          INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, actors, image, content_hash)
-          VALUES ('user1', 'tt999', 'invalid', 'Bad', 'bad', '2020', '8.0', 'Plot', 'Actor', 'img', 'hash2')
+          INSERT INTO collection_items
+            (username_hash, external_provider, external_item_id, list_type, title, title_lower, year,
+             description, contributors, image, content_hash)
+          VALUES ('user1', 'omdb', 'tt999', 'invalid', 'Bad', 'bad', '2020', 'Plot', 'Actor', 'img', 'hash2')
         `
           )
           .run()
@@ -1660,7 +2004,7 @@ describe('runMigrations', () => {
           'idx_collection_items_favorite',
           'idx_collection_items_list_type',
           'idx_collection_items_username',
-          'idx_collection_items_watched_at',
+          'idx_collection_item_tracker_state_completed_at',
           'idx_refresh_tokens_username',
           'idx_series_tracker_seasons_item',
           'idx_series_tracker_watched_episodes_item',
@@ -1747,6 +2091,42 @@ describe('runMigrations', () => {
 
       const applied = db.prepare('SELECT id FROM schema_migrations ORDER BY id').all() as Array<{ id: string }>;
       expect(applied).toEqual([{ id: '001_initial_schema.sql' }]);
+
+      consoleErrorSpy.mockRestore();
+      db.close();
+    });
+
+    it('rolls back self-transaction DDL and schema marker and restores migration pragmas', async () => {
+      const db = new Database(':memory:');
+      const migrationsDir = mkdtempSync(join(tmpdir(), 'collection-tracker-migrations-'));
+      tempDirs.push(migrationsDir);
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      copyFileSync(join(MIGRATIONS_SRC_DIR, '001_initial_schema.sql'), join(migrationsDir, '001_initial_schema.sql'));
+      await runMigrations(db, migrationsDir);
+      writeFileSync(
+        join(migrationsDir, '002_bad_transaction.sql'),
+        `PRAGMA foreign_keys = OFF;
+         PRAGMA legacy_alter_table = ON;
+         BEGIN IMMEDIATE;
+         CREATE TABLE rollback_probe (id INTEGER PRIMARY KEY);
+         INSERT INTO schema_migrations (id) VALUES ('002_bad_transaction.sql');
+         INVALID SQL HERE;
+         COMMIT;
+         PRAGMA foreign_keys = ON;
+         PRAGMA legacy_alter_table = OFF;`
+      );
+
+      await expect(runMigrations(db, migrationsDir)).rejects.toThrow();
+
+      expect(
+        db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'rollback_probe'").get()
+      ).toBeUndefined();
+      expect(
+        db.prepare('SELECT id FROM schema_migrations WHERE id = ?').get('002_bad_transaction.sql')
+      ).toBeUndefined();
+      expect(db.pragma('foreign_keys', { simple: true })).toBe(1);
+      expect(db.pragma('legacy_alter_table', { simple: true })).toBe(0);
 
       consoleErrorSpy.mockRestore();
       db.close();

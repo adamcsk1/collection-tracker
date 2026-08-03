@@ -23,9 +23,10 @@ const insertItem = (hash = 'abc123', usernameHash = 'user') => {
   const db = getDatabase();
   insertUser(usernameHash);
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(usernameHash, 'tt-delete', '', '', '', '', '', '', hash);
+    `INSERT INTO collection_items
+      (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(usernameHash, 'omdb', 'tt-delete', 'omdb:tt-delete', '', '', '', '', '', hash);
 };
 
 const insertTypedItem = (
@@ -35,10 +36,32 @@ const insertTypedItem = (
 ) => {
   const db = getDatabase();
   insertUser(usernameHash);
-  db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(usernameHash, 'tt-delete', listType, '', '', '', '', '', '', hash);
+  const result = db
+    .prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      usernameHash,
+      'omdb',
+      'tt-delete',
+      'omdb:tt-delete',
+      listType,
+      '',
+      '',
+      '',
+      '',
+      '',
+      hash,
+      listType === 'series-tracker' ? 'series' : 'movie'
+    );
+  if (listType === 'series-tracker') {
+    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
+      Number(result.lastInsertRowid),
+      null
+    );
+  }
 };
 
 const buildRouteApp = () =>
@@ -105,7 +128,9 @@ describe('delete-api', () => {
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(204);
     expect(
-      getDatabase().prepare('SELECT COUNT(*) as count FROM collection_items WHERE imdb_id = ?').get('tt-delete')
+      getDatabase()
+        .prepare('SELECT COUNT(*) as count FROM collection_items WHERE external_item_id = ?')
+        .get('tt-delete')
     ).toEqual({ count: 0 });
   });
 
@@ -125,7 +150,9 @@ describe('delete-api', () => {
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(204);
     expect(
-      getDatabase().prepare('SELECT COUNT(*) as count FROM collection_items WHERE imdb_id = ?').get('tt-delete')
+      getDatabase()
+        .prepare('SELECT COUNT(*) as count FROM collection_items WHERE external_item_id = ?')
+        .get('tt-delete')
     ).toEqual({ count: 0 });
   });
 
@@ -168,11 +195,10 @@ describe('delete-api', () => {
     const db = getDatabase();
     db.prepare(
       `INSERT INTO collection_items
-        (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       'user',
-      'tt0133093',
       'omdb',
       'tt0133093',
       'imdb:tt0133093',
@@ -182,8 +208,8 @@ describe('delete-api', () => {
       '',
       '',
       '',
-      '',
-      'abc123'
+      'abc123',
+      'series'
     );
     db.prepare(
       `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
@@ -230,7 +256,7 @@ describe('delete-api', () => {
     expect(response.code).toHaveBeenCalledWith(204);
     expect(
       getDatabase()
-        .prepare('SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND imdb_id = ?')
+        .prepare('SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND external_item_id = ?')
         .get('owner', 'tt-delete')
     ).toEqual({ count: 0 });
   });

@@ -25,10 +25,37 @@ const insertShare = (ownerHash: string, sharedWithHash: string, canUpdate: boole
 const insertItem = (hash = 'abc123', usernameHash = 'user', listType = 'library') => {
   const db = getDatabase();
   insertUser(usernameHash);
+  const result = db
+    .prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      usernameHash,
+      'omdb',
+      'tt-change',
+      'imdb:tt-change',
+      listType,
+      'Old',
+      'old',
+      '',
+      '',
+      '',
+      hash,
+      listType === 'series-tracker' ? 'series' : 'movie'
+    );
   db.prepare(
-    `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(usernameHash, 'tt-change', listType, 'Old', 'old', '', '', '', '', hash);
+    `INSERT INTO external_item_identities
+      (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+     VALUES (?, ?, ?, ?, ?)`
+  ).run(usernameHash, 'imdb:tt-change', 'imdb', 'tt-change', 'alias');
+  if (listType === 'series-tracker') {
+    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
+      Number(result.lastInsertRowid),
+      null
+    );
+  }
 };
 
 const updatedItem: CollectionItemChangeApiModel = {
@@ -125,7 +152,12 @@ describe('change-api', () => {
     });
     expect(
       getDatabase()
-        .prepare('SELECT title, rotten_tomatoes_rate, metacritic_rate FROM collection_items WHERE imdb_id = ?')
+        .prepare(
+          `SELECT collection_items.title,
+             (SELECT value FROM collection_item_external_ratings WHERE item_id = collection_items.id AND source = 'rotten-tomatoes') AS rotten_tomatoes_rate,
+             (SELECT value FROM collection_item_external_ratings WHERE item_id = collection_items.id AND source = 'metacritic') AS metacritic_rate
+           FROM collection_items WHERE external_item_id = ?`
+        )
         .get('tt-change')
     ).toEqual({
       title: 'Updated',
@@ -137,7 +169,7 @@ describe('change-api', () => {
   it('updates an existing DB item when addressed by IMDb external identity', async () => {
     insertItem();
     getDatabase()
-      .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE username_hash = ? AND imdb_id = ?')
+      .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE username_hash = ? AND external_item_id = ?')
       .run('imdb:tt-change', 'user', 'tt-change');
     const response = mockResponse();
     const request: any = {
@@ -160,10 +192,11 @@ describe('change-api', () => {
     insertItem();
     getDatabase()
       .prepare(
-        `INSERT INTO collection_items (username_hash, imdb_id, external_provider, external_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .run('user', 'tt-other', 'omdb', 'tt-other', 'library', 'Other', 'other', '', '', '', '', 'other-hash');
+      .run('user', 'omdb', 'tt-other', 'imdb:tt-other', 'library', 'Other', 'other', '', '', '', 'other-hash');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
@@ -183,19 +216,18 @@ describe('change-api', () => {
     insertItem();
     getDatabase()
       .prepare(
-        `INSERT INTO collection_items (username_hash, imdb_id, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, rate, plot, image, content_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         'user',
-        'tt-conflict',
         'omdb',
         'tt-conflict',
         'imdb:tt-conflict',
         'library',
         'Conflict',
         'conflict',
-        '',
         '',
         '',
         '',
@@ -338,8 +370,9 @@ describe('change-api', () => {
   it('preserves completed tag when updating a completed series tracker item', async () => {
     insertItem('abc123', 'user', 'series-tracker');
     const db = getDatabase();
-    const itemId = (db.prepare('SELECT id FROM collection_items WHERE imdb_id = ?').get('tt-change') as { id: number })
-      .id;
+    const itemId = (
+      db.prepare('SELECT id FROM collection_items WHERE external_item_id = ?').get('tt-change') as { id: number }
+    ).id;
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, COMPLETED_TAG);
     db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(itemId, 1, 1);
     db.prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(
@@ -465,7 +498,7 @@ describe('change-api', () => {
     });
     expect(
       getDatabase()
-        .prepare('SELECT title FROM collection_items WHERE username_hash = ? AND imdb_id = ?')
+        .prepare('SELECT title FROM collection_items WHERE username_hash = ? AND external_item_id = ?')
         .get('owner', 'tt-change')
     ).toEqual({ title: 'Updated' });
   });
@@ -711,9 +744,10 @@ describe('change-api', () => {
     insertItem();
     const db = getDatabase();
     db.prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, title, title_lower, year, rate, plot, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run('user', 'tt-conflict', 'Conflict', 'conflict', '', '', '', '', 'hash');
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run('user', 'imdb', 'tt-conflict', 'imdb:tt-conflict', 'Conflict', 'conflict', '', '', '', 'hash');
 
     const response = mockResponse();
     const request: any = {

@@ -14,9 +14,9 @@ export const register = (app: FastifyInstance): void => {
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
-      const usernameHashes = [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
+      const readableOwnerHashes = findReadableOwnerHashes(db, request.usernameHash);
       const count = Math.min(Number((request.query as Record<string, unknown>).count) || 10, MAX_IMAGE_COUNT);
-      const images = findRandomCollectionImages(db, usernameHashes, count);
+      const images = findRandomCollectionImages(db, request.usernameHash, readableOwnerHashes, count);
 
       response.send({ images });
     })

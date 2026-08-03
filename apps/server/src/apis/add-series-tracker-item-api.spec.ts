@@ -18,11 +18,20 @@ const insertItem = (
   const db = getDatabase();
   const result = db
     .prepare(
-      `INSERT INTO collection_items (username_hash, imdb_id, list_type, title, title_lower, year, rate, plot, image, content_hash, content_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, listType, 'Title', 'title', '', '', '', '', 'hash', contentType);
+    .run(usernameHash, 'omdb', imdbId, `omdb:${imdbId}`, listType, 'Title', 'title', '', '', '', 'hash', contentType);
   const itemId = Number(result.lastInsertRowid);
+  db.prepare(
+    `INSERT OR IGNORE INTO external_item_identities
+      (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+     VALUES (?, ?, ?, ?, ?)`
+  ).run(usernameHash, `omdb:${imdbId}`, 'imdb', imdbId, 'alias');
+  if (listType === 'series-tracker') {
+    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(itemId, null);
+  }
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
@@ -79,7 +88,7 @@ describe('add-series-tracker-item-api', () => {
     });
     expect(
       getDatabase()
-        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
         .get('user', 'tt-1', 'watch-later')
     ).toBeUndefined();
     expect(
@@ -88,7 +97,7 @@ describe('add-series-tracker-item-api', () => {
           `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
            FROM series_tracker_seasons
            INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
-           WHERE collection_items.imdb_id = ?`
+            WHERE collection_items.external_item_id = ?`
         )
         .all('tt-1')
     ).toEqual([{ season: 1, episodes: 2 }]);
@@ -144,7 +153,7 @@ describe('add-series-tracker-item-api', () => {
     });
     expect(
       getDatabase()
-        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
         .get('user', 'tt-1', 'library')
     ).toEqual({ 1: 1 });
     expect(
@@ -153,7 +162,7 @@ describe('add-series-tracker-item-api', () => {
           `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
            FROM series_tracker_seasons
            INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
-           WHERE collection_items.imdb_id = ? AND collection_items.list_type = ?`
+            WHERE collection_items.external_item_id = ? AND collection_items.list_type = ?`
         )
         .all('tt-1', 'series-tracker')
     ).toEqual([{ season: 1, episodes: 2 }]);
@@ -189,7 +198,7 @@ describe('add-series-tracker-item-api', () => {
           `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
            FROM series_tracker_seasons
            INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
-           WHERE collection_items.imdb_id = ? AND collection_items.list_type = ?`
+            WHERE collection_items.external_item_id = ? AND collection_items.list_type = ?`
         )
         .all('tt-1', 'series-tracker')
     ).toEqual([{ season: 1, episodes: 2 }]);
@@ -218,7 +227,9 @@ describe('add-series-tracker-item-api', () => {
     });
     expect(
       getDatabase()
-        .prepare('SELECT username_hash, list_type FROM collection_items WHERE imdb_id = ? ORDER BY username_hash')
+        .prepare(
+          'SELECT username_hash, list_type FROM collection_items WHERE external_item_id = ? ORDER BY username_hash'
+        )
         .all('tt-1')
     ).toEqual([
       { username_hash: 'owner', list_type: 'library' },
@@ -289,7 +300,7 @@ describe('add-series-tracker-item-api', () => {
     });
     expect(
       getDatabase()
-        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND imdb_id = ? AND list_type = ?')
+        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
         .get('user', 'tt-1', 'watch-later')
     ).toBeUndefined();
   });

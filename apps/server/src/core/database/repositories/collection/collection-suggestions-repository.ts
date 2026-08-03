@@ -24,25 +24,70 @@ export const findCollectionItemSuggestions = (
   const likeQuery = `%${escapeLike(lowerQuery)}%`;
   const rows = db
     .prepare(
-      `SELECT imdb_id, title
+      `SELECT external_item_id, title,
+         COALESCE(
+            CASE
+              WHEN external_provider IN ('imdb', 'omdb')
+                AND LOWER(external_item_id) GLOB 'tt[0-9]*'
+                AND LOWER(SUBSTR(external_item_id, 3)) NOT GLOB '*[^0-9]*'
+              THEN LOWER(external_item_id)
+            END,
+            (
+             SELECT imdb_identity.external_item_id
+             FROM external_item_identities imdb_identity
+             WHERE imdb_identity.username_hash = collection_items.username_hash
+               AND imdb_identity.canonical_item_id = collection_items.canonical_item_id
+               AND imdb_identity.external_provider = 'imdb'
+              ORDER BY imdb_identity.source_confidence = 'primary' DESC,
+                imdb_identity.created_at,
+                imdb_identity.external_item_id
+              LIMIT 1
+            )
+          ) AS imdb_id
        FROM collection_items
        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
        AND list_type = ?
        AND (
-         title_lower LIKE ? ESCAPE '\\'
-         OR LOWER(imdb_id) LIKE ? ESCAPE '\\'
-         OR LOWER(actors) LIKE ? ESCAPE '\\'
-         OR LOWER(plot) LIKE ? ESCAPE '\\'
-        )
+          title_lower LIKE ? ESCAPE '\\'
+           OR LOWER(external_item_id) LIKE ? ESCAPE '\\'
+           OR LOWER(contributors) LIKE ? ESCAPE '\\'
+           OR LOWER(description) LIKE ? ESCAPE '\\'
+           OR EXISTS (
+             SELECT 1 FROM external_item_identities suggestion_identities
+             WHERE suggestion_identities.username_hash = collection_items.username_hash
+               AND suggestion_identities.canonical_item_id = collection_items.canonical_item_id
+               AND LOWER(suggestion_identities.external_item_id) LIKE ? ESCAPE '\\'
+           )
+           OR EXISTS (
+             SELECT 1 FROM collection_item_external_ratings suggestion_ratings
+             WHERE suggestion_ratings.item_id = collection_items.id
+               AND LOWER(suggestion_ratings.value) LIKE ? ESCAPE '\\'
+           )
+         )
        ORDER BY created_at DESC, id DESC
        LIMIT ?`
     )
-    .all(...usernameHashes, listType, likeQuery, likeQuery, likeQuery, likeQuery, normalizedLimit) as Array<{
-    imdb_id: string;
+    .all(
+      ...usernameHashes,
+      listType,
+      likeQuery,
+      likeQuery,
+      likeQuery,
+      likeQuery,
+      likeQuery,
+      likeQuery,
+      normalizedLimit
+    ) as Array<{
+    imdb_id: string | null;
+    external_item_id: string | null;
     title: string;
   }>;
 
-  return rows.map((row) => ({ label: row.title, value: row.imdb_id || row.title, kind: 'title' }));
+  return rows.map((row) => ({
+    label: row.title,
+    value: row.imdb_id || row.external_item_id || row.title,
+    kind: 'title',
+  }));
 };
 
 export const findTagSuggestions = (

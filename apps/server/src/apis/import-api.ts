@@ -11,6 +11,7 @@ import {
   UserSettingsApiResponseModel,
 } from '@shared/models/api-model';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
+import { CollectionFeaturePreferencesModel } from '@shared/models/collection-feature-preferences-model';
 import {
   CollectionListDisplayPreferencesModel,
   COLLECTION_LIST_DISPLAY_RATINGS,
@@ -18,6 +19,7 @@ import {
 import { LANGUAGES } from '@shared/models/language-model';
 import { THEMES } from '@shared/models/theme-model';
 import { isCollectionFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
+import { createCollectionItemTagValidation } from '@shared/utils/collection-item-tag-validation-util';
 import { isAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import type { FastifyInstance } from 'fastify';
 import { API_PREFIX } from '@shared/constants/api-const';
@@ -48,6 +50,16 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'string');
 
+type LegacyCollectionFeaturePreferences = Omit<CollectionFeaturePreferencesModel, 'bookTracker'>;
+
+const isLegacyCollectionFeaturePreferences = (value: unknown): value is LegacyCollectionFeaturePreferences =>
+  isPlainObject(value) &&
+  Object.keys(value).length === 4 &&
+  typeof value['wishlist'] === 'boolean' &&
+  typeof value['watchLater'] === 'boolean' &&
+  typeof value['movieTracker'] === 'boolean' &&
+  typeof value['seriesTracker'] === 'boolean';
+
 const isUserSettings = (value: unknown): value is UserSettingsApiResponseModel => {
   if (!isPlainObject(value)) return false;
   return Object.entries(value).every(([key, setting]) => {
@@ -63,7 +75,7 @@ const isUserSettings = (value: unknown): value is UserSettingsApiResponseModel =
       case 'collectionListDisplayPreferences':
         return isCollectionListDisplayPreferences(setting);
       case 'collectionFeaturePreferences':
-        return isCollectionFeaturePreferences(setting);
+        return isCollectionFeaturePreferences(setting) || isLegacyCollectionFeaturePreferences(setting);
       default:
         return false;
     }
@@ -99,6 +111,17 @@ const isTagManagement = (value: unknown): value is TagManagementApiModel => {
 const isImportedExternalIdentity = (value: unknown): value is ExternalItemIdentityModel => {
   if (!isPlainObject(value) || typeof value['id'] !== 'string') return false;
   return typeof value['source'] === 'string' && isExternalItemIdentitySourceName(value['source']);
+};
+
+const isImportedCanonicalItemId = (value: unknown): value is string => {
+  if (typeof value !== 'string') return false;
+  const canonicalItemId = value.trim();
+  if (!canonicalItemId || canonicalItemId !== value) return false;
+  const separatorIndex = canonicalItemId.indexOf(':');
+  if (separatorIndex <= 0 || separatorIndex === canonicalItemId.length - 1) return false;
+  const source = canonicalItemId.slice(0, separatorIndex);
+  const id = canonicalItemId.slice(separatorIndex + 1);
+  return isExternalItemIdentitySourceName(source) && id.trim().length > 0 && id === id.trim();
 };
 
 const isSeason = (value: unknown): value is SeriesTrackerSeasonMetadataModel => {
@@ -187,7 +210,7 @@ const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiMod
     typeof value['externalItemId'] === 'string' &&
     (value['externalIds'] === undefined ||
       (Array.isArray(value['externalIds']) && value['externalIds'].every(isImportedExternalIdentity))) &&
-    (typeof value['canonicalItemId'] === 'string' || value['canonicalItemId'] === undefined) &&
+    (value['canonicalItemId'] === undefined || isImportedCanonicalItemId(value['canonicalItemId'])) &&
     isStringArray(value['tags']) &&
     (typeof value['year'] === 'string' || value['year'] === null) &&
     typeof value['rate'] === 'string' &&
@@ -196,7 +219,7 @@ const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiMod
     (typeof value['userRate'] === 'number' || value['userRate'] === null) &&
     typeof value['actors'] === 'string' &&
     typeof value['plot'] === 'string' &&
-    (value['contentType'] === 'movie' || value['contentType'] === 'series') &&
+    (value['contentType'] === 'movie' || value['contentType'] === 'series' || value['contentType'] === 'book') &&
     typeof value['favorite'] === 'boolean' &&
     typeof value['listType'] === 'string' &&
     parseListType(value['listType']) !== undefined &&
@@ -341,13 +364,38 @@ export const register = (app: FastifyInstance): void => {
       const body = request.body as unknown;
       if (!isUserImport(body)) return response.code(400).send();
       const importData = body;
+      const importedFeaturePreferences = importData.userSettings.collectionFeaturePreferences;
+      const userSettings = isLegacyCollectionFeaturePreferences(importedFeaturePreferences)
+        ? {
+            ...importData.userSettings,
+            collectionFeaturePreferences: {
+              bookTracker: true,
+              wishlist: importedFeaturePreferences.wishlist,
+              watchLater: importedFeaturePreferences.watchLater,
+              movieTracker: importedFeaturePreferences.movieTracker,
+              seriesTracker: importedFeaturePreferences.seriesTracker,
+            },
+          }
+        : importData.userSettings;
 
       const normalizedItems = importData.collectionItems.map((item) => {
         const normalizedItem = normalizeItem(toCollectionItemChange(item));
         const listType = parseListType(item.listType);
         return { item: normalizedItem, listType, watchedAt: item.watchedAt, canonicalItemId: item.canonicalItemId };
       });
-      if (normalizedItems.some((entry) => !entry.item || !entry.listType)) return response.code(400).send();
+      if (
+        normalizedItems.some(
+          (entry) =>
+            !entry.item ||
+            !entry.listType ||
+            createCollectionItemTagValidation({
+              contentType: entry.item.contentType,
+              favorite: entry.item.favorite,
+              listType: entry.listType,
+            })
+        )
+      )
+        return response.code(400).send();
 
       const db = getDatabase();
       const usernameHash = request.usernameHash;
@@ -364,12 +412,22 @@ export const register = (app: FastifyInstance): void => {
           entry.item!.externalItemId,
           entry.item!.externalIds
         );
+        if (identities.length === 0) return response.code(400).send();
         for (const identity of identities) {
           const identityKey = `${identity.source}\u0000${identity.id}\u0000${entry.listType}`;
           if (uniqueExternalIdentities.has(identityKey)) return response.code(400).send();
           uniqueExternalIdentities.add(identityKey);
         }
-        const canonicalItemId = entry.canonicalItemId ?? inferCanonicalItemId(identities);
+        const inferredCanonicalItemId = inferCanonicalItemId(identities);
+        const allowedCanonicalItemIds = new Set([
+          inferredCanonicalItemId,
+          ...identities.map((identity) => `${identity.source}:${identity.id}`),
+        ]);
+        if (entry.canonicalItemId !== undefined && !allowedCanonicalItemIds.has(entry.canonicalItemId)) {
+          return response.code(400).send();
+        }
+        const canonicalItemId = entry.canonicalItemId ?? inferredCanonicalItemId;
+        entry.canonicalItemId = canonicalItemId;
         const canonicalKey = `${canonicalItemId}\u0000${entry.listType}`;
         if (uniqueCanonicalItems.has(canonicalKey)) return response.code(400).send();
         uniqueCanonicalItems.add(canonicalKey);
@@ -388,7 +446,7 @@ export const register = (app: FastifyInstance): void => {
         deleteTagManagement(db, usernameHash);
         deleteCollectionItemsByUser(db, usernameHash);
 
-        upsertUserSettings(db, usernameHash, importData.userSettings);
+        upsertUserSettings(db, usernameHash, userSettings);
         upsertTagManagement(db, usernameHash, importData.tagManagement);
 
         for (const entry of normalizedItems) {
