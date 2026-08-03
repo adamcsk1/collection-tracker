@@ -4,6 +4,7 @@ export interface TabOption<TValue extends string = string> {
   value: TValue;
   label: string;
   dataTestId: string;
+  disabled?: boolean;
 }
 
 @Component({
@@ -36,6 +37,7 @@ export class Tabs<TValue extends string> {
   }
 
   protected onSelect(index: number): void {
+    if (this.options()[index].disabled) return;
     this.selected.set(this.options()[index].value);
   }
 
@@ -55,7 +57,7 @@ export class Tabs<TValue extends string> {
         targetIndex = 1;
         break;
     }
-    if (targetIndex === null) return;
+    if (targetIndex === null || this.options()[targetIndex].disabled) return;
 
     event.preventDefault();
     this.onSelect(targetIndex);

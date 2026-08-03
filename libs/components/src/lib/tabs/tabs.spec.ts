@@ -86,6 +86,19 @@ describe('Tabs component', () => {
     );
   });
 
+  it('does not select a disabled tab', () => {
+    (host.options[1] as TabOption<TestTab>).disabled = true;
+    fixture.detectChanges();
+    const tabs = fixture.nativeElement.querySelectorAll('[role="tab"]') as NodeListOf<HTMLButtonElement>;
+
+    tabs[1].click();
+    tabs[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    expect(tabs[1].disabled).toBe(true);
+    expect(host.selected()).toBe('first');
+  });
+
   it('uses arrow keys to select, focus, and wrap between tabs', () => {
     const tabs = fixture.nativeElement.querySelectorAll('[role="tab"]') as NodeListOf<HTMLButtonElement>;
     const moveNext = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true });

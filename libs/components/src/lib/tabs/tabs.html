@@ -15,6 +15,7 @@
       [attr.aria-selected]="isSelected(index)"
       [attr.aria-controls]="panelId(index)"
       [attr.tabindex]="isSelected(index) ? 0 : -1"
+      [disabled]="option.disabled"
       (click)="onSelect(index)"
       (keydown)="onKeydown($event, index)"
     >
