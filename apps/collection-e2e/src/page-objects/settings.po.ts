@@ -58,6 +58,8 @@ export const SettingsPage = {
   getFeatureWatchTrackerCheckbox: () => cy.getByTestId('settings-feature-watch-tracker').find('input[type="checkbox"]'),
   getFeatureSeriesTrackerCheckbox: () =>
     cy.getByTestId('settings-feature-series-tracker').find('input[type="checkbox"]'),
+  getFeatureBookTrackerCheckbox: () =>
+    cy.getByTestId('settings-feature-book-tracker').find('input[type="checkbox"]'),
 
   // Media refresh page
   getMediaRefreshLibrarySelect: () => cy.getByTestId('settings-media-refresh-library').find('select'),
@@ -73,6 +75,7 @@ export const SettingsPage = {
   getMarkAllSeriesUnwatchedButton: () => cy.getByTestId('settings-mark-all-series-unwatched').scrollIntoView(),
   getRemoveAllTrackedMovieDataButton: () => cy.getByTestId('settings-remove-all-tracked-movie-data').scrollIntoView(),
   getRemoveAllTrackedSeriesDataButton: () => cy.getByTestId('settings-remove-all-tracked-series-data').scrollIntoView(),
+  getRemoveAllTrackedBookDataButton: () => cy.getByTestId('settings-remove-all-tracked-book-data').scrollIntoView(),
 
   // Account Actions page
   getAccountActionsSection: () => cy.getByTestId('settings-account-actions'),

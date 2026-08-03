@@ -129,7 +129,7 @@ describe('Export/Import — collection data export', () => {
     cy.readFile(exportPath, null, { timeout: 15000 }).should((source) => {
       const parsed = JSON.parse(source.toString('utf8'));
       expect(parsed.type).to.equal('collection-tracker-export');
-      expect(parsed.version).to.equal(5);
+      expect(parsed.version).to.equal(6);
       expect(parsed.collectionItems).to.be.an('array');
       expect(parsed.collectionItems.length).to.be.greaterThan(0);
       expect(parsed.tagManagement).to.be.an('array');
