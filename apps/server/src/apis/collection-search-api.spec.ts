@@ -52,6 +52,31 @@ const insertItem = (item: {
       item.createdAt ?? null
     );
   const itemId = Number(result.lastInsertRowid);
+  const externalItemId = item.externalItemId ?? item.imdbId;
+  const canonicalItemId =
+    item.externalProvider === 'openlibrary'
+      ? `isbn:${item.externalItemId}`
+      : item.imdbId
+        ? `imdb:${item.imdbId}`
+        : null;
+  if (canonicalItemId && item.imdbId) {
+    getDatabase()
+      .prepare(
+        `INSERT OR IGNORE INTO external_item_identities
+         (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+         VALUES (?, ?, 'imdb', ?, 'primary')`
+      )
+      .run('user', canonicalItemId, item.imdbId.toLowerCase());
+  }
+  if (canonicalItemId && externalItemId) {
+    getDatabase()
+      .prepare(
+        `INSERT OR IGNORE INTO external_item_identities
+         (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+         VALUES (?, ?, ?, ?, 'primary')`
+      )
+      .run('user', canonicalItemId, item.externalProvider ?? 'imdb', externalItemId);
+  }
 
   getDatabase()
     .prepare('INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)')
@@ -66,7 +91,7 @@ const insertItem = (item: {
       .prepare('INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)')
       .run(itemId, 'metacritic', item.metacriticRate);
   }
-  if (item.listType === 'movie-tracker' || item.listType === 'series-tracker') {
+  if (item.listType === 'watched' || item.listType === 'watching') {
     getDatabase()
       .prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)')
       .run(itemId, null);
@@ -122,7 +147,7 @@ describe('collection search APIs', () => {
       genres: ['Sci-Fi'],
       plot: 'space horror',
     });
-    insertItem({ imdbId: 'tt-alien', title: 'Alien Movie', tags: ['#movie'], listType: 'movie-tracker' });
+    insertItem({ imdbId: 'tt-alien', title: 'Alien Movie', tags: ['#movie'], listType: 'watched' });
     insertItem({
       imdbId: 'tt-drama',
       title: 'Quiet Drama',
@@ -151,13 +176,13 @@ describe('collection search APIs', () => {
     insertUser();
     insertItem({ imdbId: 'tt-unwatched-movie', title: 'Unwatched Movie', contentType: 'movie' });
     insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', contentType: 'movie' });
-    insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', listType: 'movie-tracker', contentType: 'movie' });
+    insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', listType: 'watched', contentType: 'movie' });
     insertItem({ imdbId: 'tt-unwatched-series', title: 'Unwatched Series', contentType: 'series' });
     insertItem({ imdbId: 'tt-watched-series', title: 'Watched Series', contentType: 'series' });
     insertItem({
       imdbId: 'tt-watched-series',
       title: 'Watched Series',
-      listType: 'series-tracker',
+      listType: 'watching',
       contentType: 'series',
     });
     const { register } = await import('./get-collection-items-api');
@@ -271,7 +296,7 @@ describe('collection search APIs', () => {
         insertItem({
           imdbId,
           title: `Title ${index}`,
-          listType: 'series-tracker',
+          listType: 'watching',
           contentType: 'series',
           createdAt: `2024-01-01T00:00:${String(index % 60).padStart(2, '0')}.000Z`,
         });
@@ -283,7 +308,7 @@ describe('collection search APIs', () => {
     const response = await callRoute(register, 'post', '/api/v1/items/matched', {
       body: {
         identities,
-        filters: { listType: 'series-tracker' },
+        filters: { listType: 'watching' },
         limit: 50,
         offset: 0,
       },
@@ -358,20 +383,20 @@ describe('collection search APIs', () => {
   it('returns search suggestions for the requested list type', async () => {
     insertUser();
     insertItem({ imdbId: 'tt-library', title: 'Shared Title' });
-    insertItem({ imdbId: 'tt-watch-later', title: 'Shared Title', listType: 'watch-later', tags: ['#queued'] });
+    insertItem({ imdbId: 'tt-watchlist', title: 'Shared Title', listType: 'watchlist', tags: ['#queued'] });
     const { register } = await import('./collection-items-search-suggestions-api');
 
     const titleResponse = await callRoute(register, 'get', '/api/v1/items/search-suggestions', {
-      query: { query: 'shared', limit: '5', listType: 'watch-later' },
+      query: { query: 'shared', limit: '5', listType: 'watchlist' },
       usernameHash: 'user',
     });
     const tagResponse = await callRoute(register, 'get', '/api/v1/items/search-suggestions', {
-      query: { query: '#que', limit: '5', listType: 'watch-later' },
+      query: { query: '#que', limit: '5', listType: 'watchlist' },
       usernameHash: 'user',
     });
 
     expect(titleResponse.send).toHaveBeenCalledWith({
-      suggestions: [{ label: 'Shared Title', value: 'tt-watch-later', kind: 'title' }],
+      suggestions: [{ label: 'Shared Title', value: 'tt-watchlist', kind: 'title' }],
     });
     expect(tagResponse.send).toHaveBeenCalledWith({
       suggestions: [{ label: '#queued', value: '#queued', kind: 'tag' }],
@@ -385,18 +410,18 @@ describe('collection search APIs', () => {
       externalProvider: 'openlibrary',
       externalItemId: '9780140328721',
       title: 'Matilda',
-      listType: 'book-tracker',
+      listType: 'books',
       contentType: 'book',
     });
     const { register: registerSearch } = await import('./get-collection-items-api');
     const { register: registerSuggestions } = await import('./collection-items-search-suggestions-api');
 
     const searchResponse = await callRoute(registerSearch, 'get', '/api/v1/items', {
-      query: { search: '9780140328721', listType: 'book-tracker' },
+      query: { search: '9780140328721', listType: 'books' },
       usernameHash: 'user',
     });
     const suggestionsResponse = await callRoute(registerSuggestions, 'get', '/api/v1/items/search-suggestions', {
-      query: { query: '9780140328721', listType: 'book-tracker' },
+      query: { query: '9780140328721', listType: 'books' },
       usernameHash: 'user',
     });
 
@@ -443,7 +468,7 @@ describe('collection search APIs', () => {
       genres: ['Sci-Fi'],
       favorite: true,
     });
-    insertItem({ imdbId: 'tt-movie', title: 'Movie', tags: ['#movie'], listType: 'movie-tracker' });
+    insertItem({ imdbId: 'tt-movie', title: 'Movie', tags: ['#movie'], listType: 'watched' });
     insertItem({
       imdbId: 'tt-series',
       title: 'Series',
@@ -464,7 +489,7 @@ describe('collection search APIs', () => {
         movieCount: 1,
         seriesCount: 1,
         favoriteCount: 1,
-        watchLaterCount: 0,
+        watchlistCount: 0,
         wishlistCount: 0,
         watchedMovieCount: 1,
         watchedSeriesCount: 0,

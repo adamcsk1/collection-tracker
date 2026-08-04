@@ -36,7 +36,7 @@ const insertItem = (
       contentType
     );
   const itemId = Number(result.lastInsertRowid);
-  if (listType === 'series-tracker') {
+  if (listType === 'watching') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, NULL)').run(itemId);
   }
   for (const tag of tags) {
@@ -65,9 +65,9 @@ describe('mark-all-series-unwatched-api', () => {
     insertUser('owner');
     insertShare('owner', 'user', true);
     insertItem('tt-shared', ['#series'], 'library', 'owner');
-    const trackerItemId = insertItem('tt-shared', ['#series', '#completed'], 'series-tracker', 'user');
+    const trackerItemId = insertItem('tt-shared', ['#series', '#completed'], 'watching', 'user');
     insertItem('tt-own-only', ['#series'], 'library', 'user');
-    const ownTrackerItemId = insertItem('tt-own-only', ['#series', '#completed'], 'series-tracker', 'user');
+    const ownTrackerItemId = insertItem('tt-own-only', ['#series', '#completed'], 'watching', 'user');
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
@@ -95,7 +95,7 @@ describe('mark-all-series-unwatched-api', () => {
         .prepare(
           'SELECT external_item_id FROM collection_items WHERE username_hash = ? AND list_type = ? ORDER BY external_item_id'
         )
-        .all('user', 'series-tracker')
+        .all('user', 'watching')
     ).toEqual([{ external_item_id: 'tt-own-only' }, { external_item_id: 'tt-shared' }]);
     expect(getDatabase().prepare('SELECT 1 FROM series_tracker_seasons WHERE item_id = ?').get(trackerItemId)).toEqual({
       1: 1,
@@ -114,7 +114,7 @@ describe('mark-all-series-unwatched-api', () => {
   it('returns 0 when matching series tracker items already have no watched state', async () => {
     insertUser('user');
     insertItem('tt-1', ['#series'], 'library', 'user');
-    const trackerItemId = insertItem('tt-1', ['#series'], 'series-tracker', 'user');
+    const trackerItemId = insertItem('tt-1', ['#series'], 'watching', 'user');
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
@@ -134,7 +134,7 @@ describe('mark-all-series-unwatched-api', () => {
   it('clears completed tracker state without watched episodes', async () => {
     insertUser('user');
     insertItem('tt-1', ['#series'], 'library', 'user');
-    const trackerItemId = insertItem('tt-1', ['#series'], 'series-tracker', 'user');
+    const trackerItemId = insertItem('tt-1', ['#series'], 'watching', 'user');
     getDatabase()
       .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?')
       .run('2026-01-01 00:00:00', trackerItemId);
@@ -159,7 +159,7 @@ describe('mark-all-series-unwatched-api', () => {
 
   it('clears tracker-only series progress when My Library is selected', async () => {
     insertUser('user');
-    const trackerItemId = insertItem('tt-tracker-only', ['#series', '#completed'], 'series-tracker', 'user');
+    const trackerItemId = insertItem('tt-tracker-only', ['#series', '#completed'], 'watching', 'user');
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
@@ -192,7 +192,7 @@ describe('mark-all-series-unwatched-api', () => {
     insertUser('owner');
     insertShare('owner', 'user', true);
     insertItem('tt-shared', ['#series'], 'library', 'owner');
-    const trackerOnlyItemId = insertItem('tt-tracker-only', ['#series', '#completed'], 'series-tracker', 'user');
+    const trackerOnlyItemId = insertItem('tt-tracker-only', ['#series', '#completed'], 'watching', 'user');
     getDatabase()
       .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(trackerOnlyItemId, 1, 1);

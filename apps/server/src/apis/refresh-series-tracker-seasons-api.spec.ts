@@ -1,10 +1,10 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { insertSeriesTrackerItem } from '../../test/mocks/series-tracker-item-mock';
+import { insertWatchingItem } from '../../test/mocks/series-tracker-item-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-describe('refresh-series-tracker-seasons-api', () => {
+describe('refresh-watching-seasons-api', () => {
   afterEach(() => {
     delete process.env.OMDB_API_KEY;
     vi.unstubAllGlobals();
@@ -13,7 +13,7 @@ describe('refresh-series-tracker-seasons-api', () => {
   });
 
   it('refreshes metadata from OMDb and keeps partial successes', async () => {
-    insertSeriesTrackerItem();
+    insertWatchingItem();
     process.env.OMDB_API_KEY = 'key';
     const fetchMock = vi
       .fn()
@@ -44,7 +44,7 @@ describe('refresh-series-tracker-seasons-api', () => {
   });
 
   it('refreshes metadata through the stored provider when addressed by IMDb identity', async () => {
-    insertSeriesTrackerItem();
+    insertWatchingItem();
     getDatabase()
       .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE username_hash = ? AND external_item_id = ?')
       .run('imdb:tt-series', 'user', 'tt-series');
@@ -90,7 +90,7 @@ describe('refresh-series-tracker-seasons-api', () => {
   });
 
   it('sets watched timestamp after refreshed metadata changes completion status', async () => {
-    const itemId = insertSeriesTrackerItem();
+    const itemId = insertWatchingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 1, 1);
@@ -121,7 +121,7 @@ describe('refresh-series-tracker-seasons-api', () => {
   });
 
   it('clears watched timestamp when refreshed metadata adds unwatched episodes', async () => {
-    const itemId = insertSeriesTrackerItem();
+    const itemId = insertWatchingItem();
     getDatabase()
       .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?')
       .run('2025-01-01 00:00:00', itemId);
@@ -158,7 +158,7 @@ describe('refresh-series-tracker-seasons-api', () => {
   });
 
   it('prunes watched episodes outside refreshed metadata before syncing completion', async () => {
-    const itemId = insertSeriesTrackerItem();
+    const itemId = insertWatchingItem();
     getDatabase()
       .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?')
       .run('2025-01-01 00:00:00', itemId);

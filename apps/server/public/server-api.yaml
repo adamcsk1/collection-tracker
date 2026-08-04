@@ -182,18 +182,18 @@ components:
     CollectionFeaturePreferences:
       type: object
       description: Collection features shown in navigation and connected actions. All features are enabled when omitted.
-      required: [bookTracker, wishlist, watchLater, movieTracker, seriesTracker]
+      required: [books, wishlist, watchlist, watched, watching]
       additionalProperties: false
       properties:
-        bookTracker:
+        books:
           type: boolean
         wishlist:
           type: boolean
-        watchLater:
+        watchlist:
           type: boolean
-        movieTracker:
+        watched:
           type: boolean
-        seriesTracker:
+        watching:
           type: boolean
 
     CollectionListDisplayPreferences:
@@ -360,12 +360,12 @@ components:
           type: string
         listType:
           type: string
-          enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
-          description: 'Logical list containing the item. Books use only `book-tracker`; other content types cannot use `book-tracker`.'
+          enum: [library, watchlist, wishlist, watching, watched, books]
+          description: 'Logical list containing the item. Books use only `books`; other content types cannot use `books`.'
         contentType:
           type: string
           enum: [movie, series, book]
-          description: 'Item media type. Books must use `listType: book-tracker`; non-book content cannot use `book-tracker`.'
+          description: 'Item media type. Books must use `listType: books`; non-book content cannot use `books`.'
         favorite:
           type: boolean
           description: Whether the item is marked as a favorite. This replaces the legacy `#favorite` system tag.
@@ -446,7 +446,7 @@ components:
         contentType:
           type: string
           enum: [movie, series, book]
-          description: 'Books must use `listType: book-tracker`; non-book content cannot use `book-tracker`.'
+          description: 'Books must use `listType: books`; non-book content cannot use `books`.'
         favorite:
           type: boolean
 
@@ -507,7 +507,7 @@ components:
               type: boolean
             listType:
               type: string
-              enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+              enum: [library, watchlist, wishlist, watching, watched, books]
             orderBy:
               type: string
               enum: [createdAt, alphabet]
@@ -579,9 +579,9 @@ components:
           totalItems,
           movieCount,
           seriesCount,
-          bookTrackerCount,
+          booksCount,
           favoriteCount,
-          watchLaterCount,
+          watchlistCount,
           wishlistCount,
           watchedMovieCount,
           watchedSeriesCount,
@@ -600,11 +600,11 @@ components:
           type: integer
         seriesCount:
           type: integer
-        bookTrackerCount:
+        booksCount:
           type: integer
         favoriteCount:
           type: integer
-        watchLaterCount:
+        watchlistCount:
           type: integer
         wishlistCount:
           type: integer
@@ -665,9 +665,9 @@ components:
               description: Optional owner share code to create the item in a shared library. Defaults to the authenticated user.
             listType:
               type: string
-              enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+              enum: [library, watchlist, wishlist, watching, watched, books]
               default: library
-              description: 'Target list. Defaults to `library`. Books must use `book-tracker`, and non-books cannot use `book-tracker`.'
+              description: 'Target list. Defaults to `library`. Books must use `books`, and non-books cannot use `books`.'
 
     CreateResponse:
       type: object
@@ -752,7 +752,7 @@ components:
           type: integer
           description: Number of items whose external ratings could not be refreshed.
 
-    SeriesTrackerSeason:
+    WatchingSeason:
       type: object
       required: [season, episodes]
       properties:
@@ -770,28 +770,28 @@ components:
             type: string
           description: Optional per-episode titles.
 
-    SeriesTrackerSeasonsRequest:
+    WatchingSeasonsRequest:
       type: object
       required: [seasons]
       properties:
         seasons:
           type: array
           items:
-            $ref: '#/components/schemas/SeriesTrackerSeason'
+            $ref: '#/components/schemas/WatchingSeason'
 
-    SeriesTrackerSeasonsResponse:
+    WatchingSeasonsResponse:
       type: object
       required: [seasons]
       properties:
         seasons:
           type: array
           items:
-            $ref: '#/components/schemas/SeriesTrackerSeason'
+            $ref: '#/components/schemas/WatchingSeason'
         item:
           $ref: '#/components/schemas/CollectionItem'
           description: Updated collection item when this response is returned from a mutating endpoint.
 
-    SeriesTrackerWatchedEpisode:
+    WatchingWatchedEpisode:
       type: object
       required: [season, episode]
       properties:
@@ -804,23 +804,23 @@ components:
           minimum: 1
           maximum: 100
 
-    SeriesTrackerWatchedEpisodesRequest:
+    WatchingWatchedEpisodesRequest:
       type: object
       required: [watchedEpisodes]
       properties:
         watchedEpisodes:
           type: array
           items:
-            $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
+            $ref: '#/components/schemas/WatchingWatchedEpisode'
 
-    SeriesTrackerWatchedEpisodesResponse:
+    WatchingWatchedEpisodesResponse:
       type: object
       required: [watchedEpisodes, lastWatchedEpisode]
       properties:
         watchedEpisodes:
           type: array
           items:
-            $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
+            $ref: '#/components/schemas/WatchingWatchedEpisode'
         lastWatchedEpisode:
           type: object
           nullable: true
@@ -930,7 +930,7 @@ components:
             - Which are sci-fi movies?
         listType:
           type: string
-          enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+          enum: [library, watchlist, wishlist, watching, watched, books]
           description: Collection list to search within.
 
     AiQueryResponse:
@@ -1000,7 +1000,7 @@ components:
 
     ExportResponse:
       type: object
-      required: [type, version, userSettings, collectionItems, tagManagement, seriesTrackerData]
+      required: [type, version, userSettings, collectionItems, tagManagement, watchingData]
       properties:
         type:
           type: string
@@ -1018,7 +1018,7 @@ components:
             $ref: '#/components/schemas/CollectionItem'
         tagManagement:
           $ref: '#/components/schemas/TagManagementResponse'
-        seriesTrackerData:
+        watchingData:
           type: object
           additionalProperties:
             type: object
@@ -1027,11 +1027,11 @@ components:
               seasons:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SeriesTrackerSeason'
+                  $ref: '#/components/schemas/WatchingSeason'
               watchedEpisodes:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
+                  $ref: '#/components/schemas/WatchingWatchedEpisode'
 
     ImportCollectionItemBase:
       type: object
@@ -1102,7 +1102,7 @@ components:
           description: Optional local canonical identity preserved from exports.
         listType:
           type: string
-          enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+          enum: [library, watchlist, wishlist, watching, watched, books]
         watchedAt:
           type: ['string', 'null']
 
@@ -1115,13 +1115,13 @@ components:
             contentType:
               type: string
               enum: [movie, series, book]
-              description: 'Imported books must use `listType: book-tracker`; all other imported content must use another list.'
+              description: 'Imported books must use `listType: books`; all other imported content must use another list.'
             favorite:
               type: boolean
 
     ImportDataV5:
       type: object
-      required: [userSettings, collectionItems, tagManagement, seriesTrackerData]
+      required: [userSettings, collectionItems, tagManagement, watchingData]
       properties:
         userSettings:
           $ref: '#/components/schemas/UserSettingsResponse'
@@ -1131,7 +1131,7 @@ components:
             $ref: '#/components/schemas/ImportCollectionItemV5'
         tagManagement:
           $ref: '#/components/schemas/TagManagementResponse'
-        seriesTrackerData:
+        watchingData:
           type: object
           description: Series tracker data keyed by encoded provider identity, formatted as provider/externalItemId.
           additionalProperties:
@@ -1141,11 +1141,11 @@ components:
               seasons:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SeriesTrackerSeason'
+                  $ref: '#/components/schemas/WatchingSeason'
               watchedEpisodes:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SeriesTrackerWatchedEpisode'
+                  $ref: '#/components/schemas/WatchingWatchedEpisode'
 
     ImportRequest:
       allOf:
@@ -1164,20 +1164,15 @@ components:
     ImportResponse:
       type: object
       required:
-        [
-          importedCollectionItems,
-          importedTagManagement,
-          importedSeriesTrackerSeasons,
-          importedSeriesTrackerWatchedEpisodes,
-        ]
+        [importedCollectionItems, importedTagManagement, importedWatchingSeasons, importedWatchingWatchedEpisodes]
       properties:
         importedCollectionItems:
           type: integer
         importedTagManagement:
           type: integer
-        importedSeriesTrackerSeasons:
+        importedWatchingSeasons:
           type: integer
-        importedSeriesTrackerWatchedEpisodes:
+        importedWatchingWatchedEpisodes:
           type: integer
 
     CollectionItemsImportRequest:
@@ -1554,7 +1549,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+            enum: [library, watchlist, wishlist, watching, watched, books]
             default: library
         - name: orderBy
           in: query
@@ -1619,7 +1614,7 @@ paths:
           description: List to search suggestions within. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+            enum: [library, watchlist, wishlist, watching, watched, books]
       responses:
         '200':
           description: Search suggestions.
@@ -1672,7 +1667,7 @@ paths:
           description: List to check. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+            enum: [library, watchlist, wishlist, watching, watched, books]
             default: library
       responses:
         '200':
@@ -1945,7 +1940,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+            enum: [library, watchlist, wishlist, watching, watched, books]
             default: library
         - name: watched
           in: query
@@ -1971,11 +1966,11 @@ paths:
         Creates a structured item in the requested `listType`. External provider identity and locally resolved
         canonical identity must be unique within the target list.
         Custom tags must not use reserved system or virtual tags. Optionally pass `targetOwnerShareCode` to create
-        in a shared library where you have create permission. Watch-later, wishlist, series-tracker, movie-tracker,
-        and book-tracker items cannot be created in shared libraries and cannot be favorites.
-        Series-tracker items must use `contentType: series`; movie-tracker items must use `contentType: movie`.
-        Books must use `listType: book-tracker`, and non-book content cannot use `book-tracker`; v1 does not support
-        books in library, watch-later, or wishlist.
+        in a shared library where you have create permission. Watchlist, wishlist, watching, watched,
+        and books items cannot be created in shared libraries and cannot be favorites.
+        Watching items must use `contentType: series`; watched items must use `contentType: movie`.
+        Books must use `listType: books`, and non-book content cannot use `books`; v1 does not support
+        books in library, watchlist, or wishlist.
       tags: [Collection]
       requestBody:
         required: true
@@ -1997,9 +1992,9 @@ paths:
         '409':
           description: An item with this external or canonical identity already exists in the target list.
 
-  /movie-tracker:
+  /watched:
     delete:
-      operationId: deleteAllMovieTrackerItems
+      operationId: deleteAllWatchedItems
       summary: Remove all movie tracker data
       description: Deletes every movie tracker item owned by the authenticated user. This affects only the user's own tracker data and cannot remove or change shared library owner items.
       tags: [Collection]
@@ -2011,9 +2006,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/MarkAllUnwatchedResponse'
 
-  /book-tracker:
+  /books:
     delete:
-      operationId: deleteAllBookTrackerItems
+      operationId: deleteAllBooksItems
       summary: Remove all book tracker data
       description: Deletes every book tracker item owned by the authenticated user. This affects only the user's own tracker data and cannot remove or change shared library owner items.
       tags: [Collection]
@@ -2025,9 +2020,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/MarkAllUnwatchedResponse'
 
-  /series-tracker:
+  /watching:
     delete:
-      operationId: deleteAllSeriesTrackerItems
+      operationId: deleteAllWatchingItems
       summary: Remove all series tracker data
       description: Deletes every series tracker item owned by the authenticated user. Related season metadata and watched episode progress are removed with the tracker items. This affects only the user's own tracker data and cannot remove or change shared library owner items.
       tags: [Collection]
@@ -2071,7 +2066,7 @@ paths:
           description: List containing the item. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+            enum: [library, watchlist, wishlist, watching, watched, books]
             default: library
       requestBody:
         required: true
@@ -2129,7 +2124,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [library, watch-later, wishlist, series-tracker, movie-tracker, book-tracker]
+            enum: [library, watchlist, wishlist, watching, watched, books]
             default: library
       responses:
         '204':
@@ -2143,9 +2138,9 @@ paths:
         '409':
           description: Hash mismatch.
 
-  /movie-tracker/{externalIdentitySource}/{externalIdentityId}:
+  /watched/{externalIdentitySource}/{externalIdentityId}:
     post:
-      operationId: addMovieTrackerItemByExternalId
+      operationId: addWatchedItemByExternalId
       summary: Add a movie to movie tracker by external identity
       description: Copies an accessible library movie into the authenticated user's movie tracker using canonical provider identity.
       tags: [Collection]
@@ -2171,7 +2166,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [library, watch-later]
+            enum: [library, watchlist]
             default: library
       responses:
         '200':
@@ -2187,7 +2182,7 @@ paths:
         '404':
           description: Source item was not found or is not a movie.
     delete:
-      operationId: deleteMovieTrackerItemByExternalId
+      operationId: deleteWatchedItemByExternalId
       summary: Delete a movie tracker item by external identity
       description: Removes the authenticated user's movie tracker row using canonical provider identity.
       tags: [Collection]
@@ -2211,9 +2206,9 @@ paths:
         '404':
           description: Movie tracker item was not found.
 
-  /series-tracker/{externalIdentitySource}/{externalIdentityId}:
+  /watching/{externalIdentitySource}/{externalIdentityId}:
     post:
-      operationId: addSeriesTrackerItemByExternalId
+      operationId: addWatchingItemByExternalId
       summary: Add a series to series tracker by external identity
       description: Copies a series into the authenticated user's series tracker using canonical provider identity.
       tags: [Collection]
@@ -2234,7 +2229,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [library, watch-later]
+            enum: [library, watchlist]
             default: library
         - name: ownerShareCode
           in: query
@@ -2255,9 +2250,9 @@ paths:
         '404':
           description: Source item or shared library owner was not found, or the source item is not a series.
 
-  /series-tracker/{externalIdentitySource}/{externalIdentityId}/seasons:
+  /watching/{externalIdentitySource}/{externalIdentityId}/seasons:
     get:
-      operationId: getSeriesTrackerSeasonsByExternalId
+      operationId: getWatchingSeasonsByExternalId
       summary: Get series tracker season metadata by external identity
       tags: [Collection]
       parameters:
@@ -2278,13 +2273,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+                $ref: '#/components/schemas/WatchingSeasonsResponse'
         '400':
           description: Invalid external metadata provider.
         '404':
           description: Series tracker item not found.
     put:
-      operationId: updateSeriesTrackerSeasonsByExternalId
+      operationId: updateWatchingSeasonsByExternalId
       summary: Replace series tracker season metadata by external identity
       tags: [Collection]
       parameters:
@@ -2304,20 +2299,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SeriesTrackerSeasonsRequest'
+              $ref: '#/components/schemas/WatchingSeasonsRequest'
       responses:
         '200':
           description: Stored season metadata.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+                $ref: '#/components/schemas/WatchingSeasonsResponse'
         '400':
           description: Invalid external metadata provider or season metadata.
         '404':
           description: Series tracker item not found.
     delete:
-      operationId: deleteSeriesTrackerSeasonsByExternalId
+      operationId: deleteWatchingSeasonsByExternalId
       summary: Delete series tracker season metadata by external identity
       tags: [Collection]
       parameters:
@@ -2338,15 +2333,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+                $ref: '#/components/schemas/WatchingSeasonsResponse'
         '400':
           description: Invalid external metadata provider.
         '404':
           description: Series tracker item not found.
 
-  /series-tracker/{externalIdentitySource}/{externalIdentityId}/seasons/refresh:
+  /watching/{externalIdentitySource}/{externalIdentityId}/seasons/refresh:
     post:
-      operationId: refreshSeriesTrackerSeasonsByExternalId
+      operationId: refreshWatchingSeasonsByExternalId
       summary: Refresh series tracker season metadata by external identity
       tags: [Collection]
       parameters:
@@ -2367,15 +2362,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SeriesTrackerSeasonsResponse'
+                $ref: '#/components/schemas/WatchingSeasonsResponse'
         '400':
           description: Invalid external metadata provider.
         '404':
           description: Series tracker item not found.
 
-  /series-tracker/{externalIdentitySource}/{externalIdentityId}/mark-all-watched:
+  /watching/{externalIdentitySource}/{externalIdentityId}/mark-all-watched:
     put:
-      operationId: markAllSeriesTrackerWatchedByExternalId
+      operationId: markAllWatchingWatchedByExternalId
       summary: Mark all episodes as watched by external identity
       tags: [Collection]
       parameters:
@@ -2396,15 +2391,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesResponse'
+                $ref: '#/components/schemas/WatchingWatchedEpisodesResponse'
         '400':
           description: Invalid external metadata provider or no season metadata exists for the item.
         '404':
           description: Series tracker item not found.
 
-  /series-tracker/{externalIdentitySource}/{externalIdentityId}/watched-episodes:
+  /watching/{externalIdentitySource}/{externalIdentityId}/watched-episodes:
     get:
-      operationId: getSeriesTrackerWatchedEpisodesByExternalId
+      operationId: getWatchingWatchedEpisodesByExternalId
       summary: Get watched episodes by external identity
       tags: [Collection]
       parameters:
@@ -2425,13 +2420,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesResponse'
+                $ref: '#/components/schemas/WatchingWatchedEpisodesResponse'
         '400':
           description: Invalid external metadata provider.
         '404':
           description: Series tracker item not found.
     put:
-      operationId: updateSeriesTrackerWatchedEpisodesByExternalId
+      operationId: updateWatchingWatchedEpisodesByExternalId
       summary: Replace watched episodes by external identity
       tags: [Collection]
       parameters:
@@ -2451,14 +2446,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesRequest'
+              $ref: '#/components/schemas/WatchingWatchedEpisodesRequest'
       responses:
         '200':
           description: Updated watched episodes.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SeriesTrackerWatchedEpisodesResponse'
+                $ref: '#/components/schemas/WatchingWatchedEpisodesResponse'
         '400':
           description: Invalid external metadata provider or watched episode data.
         '404':
@@ -2652,7 +2647,7 @@ paths:
     get:
       operationId: getUserExport
       summary: Export all user-owned data
-      description: Returns a JSON export of all user-owned data including settings, collection items (library, watch-later, wishlist, series-tracker, movie-tracker, and book-tracker), tag management, and series tracker metadata.
+      description: Returns a JSON export of all user-owned data including settings, collection items (library, watchlist, wishlist, watching, watched, and books), tag management, and series tracker metadata.
       tags: [User]
       responses:
         '200':

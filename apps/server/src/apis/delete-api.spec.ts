@@ -29,11 +29,7 @@ const insertItem = (hash = 'abc123', usernameHash = 'user') => {
   ).run(usernameHash, 'omdb', 'tt-delete', 'omdb:tt-delete', '', '', '', '', '', hash);
 };
 
-const insertTypedItem = (
-  listType: 'watch-later' | 'wishlist' | 'series-tracker',
-  hash = 'abc123',
-  usernameHash = 'user'
-) => {
+const insertTypedItem = (listType: 'watchlist' | 'wishlist' | 'watching', hash = 'abc123', usernameHash = 'user') => {
   const db = getDatabase();
   insertUser(usernameHash);
   const result = db
@@ -54,9 +50,9 @@ const insertTypedItem = (
       '',
       '',
       hash,
-      listType === 'series-tracker' ? 'series' : 'movie'
+      listType === 'watching' ? 'series' : 'movie'
     );
-  if (listType === 'series-tracker') {
+  if (listType === 'watching') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
       Number(result.lastInsertRowid),
       null
@@ -135,10 +131,10 @@ describe('delete-api', () => {
   });
 
   it('deletes a watch later item when listType is provided', async () => {
-    insertTypedItem('watch-later');
+    insertTypedItem('watchlist');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
-      query: { hash: 'abc123', listType: 'watch-later' },
+      query: { hash: 'abc123', listType: 'watchlist' },
       usernameHash: 'user',
     };
     const response = mockResponse();
@@ -174,10 +170,10 @@ describe('delete-api', () => {
   });
 
   it('deletes a series tracker item when listType is provided', async () => {
-    insertTypedItem('series-tracker');
+    insertTypedItem('watching');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
-      query: { hash: 'abc123', listType: 'series-tracker' },
+      query: { hash: 'abc123', listType: 'watching' },
       usernameHash: 'user',
     };
     const response = mockResponse();
@@ -197,27 +193,14 @@ describe('delete-api', () => {
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      'user',
-      'omdb',
-      'tt0133093',
-      'imdb:tt0133093',
-      'series-tracker',
-      'Title',
-      'title',
-      '',
-      '',
-      '',
-      'abc123',
-      'series'
-    );
+    ).run('user', 'omdb', 'tt0133093', 'imdb:tt0133093', 'watching', 'Title', 'title', '', '', '', 'abc123', 'series');
     db.prepare(
       `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
     ).run('user', 'imdb:tt0133093', 'imdb', 'tt0133093', 'alias');
     const request: any = {
       params: { externalIdentitySource: 'imdb', externalIdentityId: 'tt0133093' },
-      query: { hash: 'abc123', listType: 'series-tracker' },
+      query: { hash: 'abc123', listType: 'watching' },
       usernameHash: 'user',
     };
     const response = mockResponse();
@@ -230,9 +213,7 @@ describe('delete-api', () => {
 
     expect(response.code).toHaveBeenCalledWith(204);
     expect(
-      db
-        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?')
-        .get('user', 'series-tracker')
+      db.prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?').get('user', 'watching')
     ).toBeUndefined();
   });
 
@@ -282,13 +263,13 @@ describe('delete-api', () => {
   });
 
   it('returns 403 when deleting a shared watch later item', async () => {
-    insertTypedItem('watch-later', 'abc123', 'owner');
+    insertTypedItem('watchlist', 'abc123', 'owner');
     insertUser('user');
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
-      query: { hash: 'abc123', listType: 'watch-later', ownerShareCode: getUserShareCode('owner') },
+      query: { hash: 'abc123', listType: 'watchlist', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
     const response = mockResponse();
@@ -302,13 +283,13 @@ describe('delete-api', () => {
   });
 
   it('returns 403 when deleting a shared non-library item by listType', async () => {
-    insertTypedItem('watch-later', 'abc123', 'owner');
+    insertTypedItem('watchlist', 'abc123', 'owner');
     insertUser('user');
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
-      query: { hash: 'abc123', listType: 'watch-later', ownerShareCode: getUserShareCode('owner') },
+      query: { hash: 'abc123', listType: 'watchlist', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
     const response = mockResponse();

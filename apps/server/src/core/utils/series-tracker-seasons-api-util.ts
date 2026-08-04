@@ -1,15 +1,15 @@
-import { SeriesTrackerSeasonsApiRequestModel, SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
+import { WatchingSeasonsApiRequestModel, WatchingSeasonMetadataModel } from '@shared/models/api-model';
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
 import { getDatabase } from '../database/database';
 import { findCollectionItemByImdbId } from '../database/repositories/collection';
 
-export const normalizeSeriesTrackerSeasons = (
-  body: SeriesTrackerSeasonsApiRequestModel
-): SeriesTrackerSeasonMetadataModel[] | null => {
+export const normalizeWatchingSeasons = (
+  body: WatchingSeasonsApiRequestModel
+): WatchingSeasonMetadataModel[] | null => {
   if (!Array.isArray(body?.seasons)) return null;
 
   const seenSeasons = new Set<number>();
-  const seasons: SeriesTrackerSeasonMetadataModel[] = [];
+  const seasons: WatchingSeasonMetadataModel[] = [];
   for (const seasonMetadata of body.seasons) {
     const season = Number(seasonMetadata?.season);
     const episodes = Number(seasonMetadata?.episodes);
@@ -38,5 +38,5 @@ export const normalizeSeriesTrackerSeasons = (
   return seasons.sort((firstSeason, secondSeason) => firstSeason.season - secondSeason.season);
 };
 
-export const hasOwnSeriesTrackerItem = (usernameHash: string, imdbId: string): boolean =>
-  !!findCollectionItemByImdbId(getDatabase(), usernameHash, imdbId, 'series-tracker');
+export const hasOwnWatchingItem = (usernameHash: string, imdbId: string): boolean =>
+  !!findCollectionItemByImdbId(getDatabase(), usernameHash, imdbId, 'watching');

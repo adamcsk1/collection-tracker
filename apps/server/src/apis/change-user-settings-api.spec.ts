@@ -129,11 +129,11 @@ describe('change-user-settings-api', () => {
   it('updates collection feature preferences', async () => {
     const response = mockResponse();
     const preferences = {
-      bookTracker: true,
+      books: true,
       wishlist: false,
-      watchLater: true,
-      movieTracker: false,
-      seriesTracker: true,
+      watchlist: true,
+      watched: false,
+      watching: true,
     };
     const request: any = { body: { collectionFeaturePreferences: preferences }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
@@ -145,15 +145,16 @@ describe('change-user-settings-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({ collectionFeaturePreferences: preferences });
-    expect(
-      db.prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?').get('user')
-    ).toEqual({ collection_feature_preferences: JSON.stringify(preferences) });
+    const stored = db
+      .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
+      .get('user') as { collection_feature_preferences: string };
+    expect(JSON.parse(stored.collection_feature_preferences)).toEqual(preferences);
   });
 
   it('returns 400 for incomplete collection feature preferences', async () => {
     const response = mockResponse();
     const request: any = {
-      body: { collectionFeaturePreferences: { wishlist: true, watchLater: true, movieTracker: true } },
+      body: { collectionFeaturePreferences: { wishlist: true, watchlist: true, watched: true } },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);

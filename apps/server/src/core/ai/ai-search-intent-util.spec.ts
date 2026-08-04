@@ -25,7 +25,7 @@ const buildItem = (
     hash: 'hash',
     actors: '',
     plot: '',
-    listType: 'series-tracker',
+    listType: 'watching',
     contentType: 'series',
     favorite: false,
     watchedAt: null,
@@ -52,11 +52,11 @@ describe('ai-search-intent-util', () => {
   });
 
   it('gates unfinished and completed intents by list type', () => {
-    expect(getEffectiveStatusIntent('unfinished', 'series-tracker')).toBe('unfinished');
+    expect(getEffectiveStatusIntent('unfinished', 'watching')).toBe('unfinished');
     expect(getEffectiveStatusIntent('unfinished', 'library')).toBeNull();
-    expect(getEffectiveStatusIntent('unfinished', 'watch-later')).toBeNull();
-    expect(getEffectiveStatusIntent('completed', 'series-tracker')).toBe('completed');
-    expect(getEffectiveStatusIntent('completed', 'movie-tracker')).toBe('completed');
+    expect(getEffectiveStatusIntent('unfinished', 'watchlist')).toBeNull();
+    expect(getEffectiveStatusIntent('completed', 'watching')).toBe('completed');
+    expect(getEffectiveStatusIntent('completed', 'watched')).toBe('completed');
     expect(getEffectiveStatusIntent('completed', 'library')).toBeNull();
     expect(getEffectiveStatusIntent('favorite', 'library')).toBe('favorite');
   });
@@ -75,7 +75,7 @@ describe('ai-search-intent-util', () => {
         IMDbId: 'tt3',
         watchStatus: 'watched',
         completed: true,
-        listType: 'movie-tracker',
+        listType: 'watched',
         contentType: 'movie',
       }),
     ];
@@ -102,7 +102,7 @@ describe('ai-search-intent-util', () => {
         externalItemId: '9780140328721',
         watchStatus: 'not-applicable',
         completed: null,
-        listType: 'book-tracker',
+        listType: 'books',
         contentType: 'book',
       }),
     ];

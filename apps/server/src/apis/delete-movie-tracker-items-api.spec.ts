@@ -7,7 +7,7 @@ const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertItem = (usernameHash: string, imdbId: string, listType = 'movie-tracker'): number => {
+const insertItem = (usernameHash: string, imdbId: string, listType = 'watched'): number => {
   const result = getDatabase()
     .prepare(
       `INSERT INTO collection_items
@@ -30,7 +30,7 @@ const insertItem = (usernameHash: string, imdbId: string, listType = 'movie-trac
   return Number(result.lastInsertRowid);
 };
 
-describe('delete-movie-tracker-items-api', () => {
+describe('delete-watched-items-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -58,7 +58,7 @@ describe('delete-movie-tracker-items-api', () => {
       )
       .all();
     expect(rows).toEqual([
-      { username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'movie-tracker' },
+      { username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'watched' },
       { username_hash: 'user', external_item_id: 'tt-library', list_type: 'library' },
     ]);
     expect(getDatabase().prepare('SELECT 1 FROM collection_items WHERE id = ?').get(retainedItemId)).toBeTruthy();

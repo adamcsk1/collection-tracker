@@ -124,7 +124,7 @@ describe('proxy-ai-query-api', () => {
         }
       }
 
-      if (file.listType === 'series-tracker' || file.listType === 'movie-tracker') {
+      if (file.listType === 'watching' || file.listType === 'watched') {
         db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
           itemId,
           file.watchedAt ?? null
@@ -219,7 +219,7 @@ describe('proxy-ai-query-api', () => {
       expect(payload.system).toContain('rottenTomatoesRate');
       expect(payload.system).toContain('metacriticRate');
       expect(payload.system).toContain('watchStatus');
-      expect(payload.system).toContain('series-tracker: unfinished');
+      expect(payload.system).toContain('watching: unfinished');
       expect(payload.system).toContain(
         'Do not mark every candidate as match:true unless every single candidate clearly matches the request.'
       );
@@ -246,14 +246,14 @@ describe('proxy-ai-query-api', () => {
 
     it('returns a provider-native book candidate ID accepted by matched item lookup', async () => {
       const response = mockResponse();
-      const { app, handlerPromise } = buildApp(request('fantasy books', 'book-tracker'), response);
+      const { app, handlerPromise } = buildApp(request('fantasy books', 'books'), response);
       setupCollection([
         {
           externalProvider: 'openlibrary',
           externalItemId: '9780140328721',
           title: 'Matilda',
           plot: 'A gifted child discovers extraordinary powers.',
-          listType: 'book-tracker',
+          listType: 'books',
           contentType: 'book',
         },
       ]);
@@ -267,15 +267,15 @@ describe('proxy-ai-query-api', () => {
       expect(response.send).toHaveBeenCalledWith({ matchedIds: ['openlibrary:9780140328721'] });
     });
 
-    it('returns unfinished series-tracker items without calling the LLM for pure status intents', async () => {
+    it('returns unfinished watching items without calling the LLM for pure status intents', async () => {
       const response = mockResponse();
-      const { app, handlerPromise } = buildApp(request('unfinished series', 'series-tracker'), response);
+      const { app, handlerPromise } = buildApp(request('unfinished series', 'watching'), response);
       setupCollection([
         {
           imdbId: 'tt-unfinished',
           title: 'Ongoing Show',
           plot: 'A story about unfinished business.',
-          listType: 'series-tracker',
+          listType: 'watching',
           contentType: 'series',
           watchedAt: null,
           totalEpisodes: 10,
@@ -285,7 +285,7 @@ describe('proxy-ai-query-api', () => {
           imdbId: 'tt-finished',
           title: 'Finished Show',
           plot: 'A completed arc.',
-          listType: 'series-tracker',
+          listType: 'watching',
           contentType: 'series',
           watchedAt: '2024-01-01T00:00:00.000Z',
           totalEpisodes: 8,
@@ -357,13 +357,13 @@ describe('proxy-ai-query-api', () => {
 
     it('prefilters unfinished candidates before LLM for mixed status queries', async () => {
       const response = mockResponse();
-      const { app, handlerPromise } = buildApp(request('unfinished sci-fi series', 'series-tracker'), response);
+      const { app, handlerPromise } = buildApp(request('unfinished sci-fi series', 'watching'), response);
       setupCollection([
         {
           imdbId: 'tt-unfinished-scifi',
           title: 'Space Drift',
           plot: 'A sci-fi journey.',
-          listType: 'series-tracker',
+          listType: 'watching',
           contentType: 'series',
           genre: ['Sci-Fi'],
           watchedAt: null,
@@ -374,7 +374,7 @@ describe('proxy-ai-query-api', () => {
           imdbId: 'tt-finished-scifi',
           title: 'Space Done',
           plot: 'A finished sci-fi epic.',
-          listType: 'series-tracker',
+          listType: 'watching',
           contentType: 'series',
           genre: ['Sci-Fi'],
           watchedAt: '2024-02-01T00:00:00.000Z',
@@ -392,7 +392,7 @@ describe('proxy-ai-query-api', () => {
       expect(generate.mock.calls[0][0].prompt).toContain('tt-unfinished-scifi');
       expect(generate.mock.calls[0][0].prompt).not.toContain('tt-finished-scifi');
       expect(generate.mock.calls[0][0].prompt).toContain('watchStatus:\nunfinished');
-      expect(generate.mock.calls[0][0].prompt).toContain('Active list: series-tracker');
+      expect(generate.mock.calls[0][0].prompt).toContain('Active list: watching');
       expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt-unfinished-scifi'] });
     });
 
@@ -758,7 +758,7 @@ describe('proxy-ai-query-api', () => {
 
     it('searches only items from the requested list type', async () => {
       const response = mockResponse();
-      const { app, handlerPromise } = buildApp(request('sci-fi', 'watch-later'), response);
+      const { app, handlerPromise } = buildApp(request('sci-fi', 'watchlist'), response);
       setupCollection([
         {
           imdbId: 'tt0133093',
@@ -770,7 +770,7 @@ describe('proxy-ai-query-api', () => {
           imdbId: 'tt0372784',
           title: 'Batman Begins',
           plot: 'The origin story of Batman.',
-          listType: 'watch-later',
+          listType: 'watchlist',
         },
       ]);
       const generate = await mockGenerate('{"matchedIds":["tt0372784"]}');

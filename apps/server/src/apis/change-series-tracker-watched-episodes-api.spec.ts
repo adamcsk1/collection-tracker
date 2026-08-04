@@ -3,7 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const insertSeriesTrackerItem = (): number => {
+const insertWatchingItem = (): number => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   const result = db
@@ -12,20 +12,7 @@ const insertSeriesTrackerItem = (): number => {
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(
-      'user',
-      'omdb',
-      'tt-series',
-      'imdb:tt-series',
-      'series-tracker',
-      'Series',
-      'series',
-      '',
-      '',
-      '',
-      'hash',
-      'series'
-    );
+    .run('user', 'omdb', 'tt-series', 'imdb:tt-series', 'watching', 'Series', 'series', '', '', '', 'hash', 'series');
   const itemId = Number(result.lastInsertRowid);
   db.prepare(
     `INSERT INTO external_item_identities
@@ -36,14 +23,14 @@ const insertSeriesTrackerItem = (): number => {
   return itemId;
 };
 
-describe('change-series-tracker-watched-episodes-api', () => {
+describe('change-watching-watched-episodes-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
   });
 
   it('replaces watched episodes and returns sorted list', async () => {
-    const itemId = insertSeriesTrackerItem();
+    const itemId = insertWatchingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?), (?, ?, ?)')
       .run(itemId, 1, 5, itemId, 2, 3);
@@ -77,7 +64,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
   });
 
   it('clears all watched episodes when empty array is sent', async () => {
-    insertSeriesTrackerItem();
+    insertWatchingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -100,7 +87,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
   });
 
   it('sets watched timestamp when all episodes are watched', async () => {
-    const itemId = insertSeriesTrackerItem();
+    const itemId = insertWatchingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
@@ -129,7 +116,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
   });
 
   it('rejects watched episodes outside saved metadata', async () => {
-    const itemId = insertSeriesTrackerItem();
+    const itemId = insertWatchingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
@@ -157,7 +144,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
   });
 
   it('rejects watched episode numbers above saved season episode count', async () => {
-    const itemId = insertSeriesTrackerItem();
+    const itemId = insertWatchingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
@@ -180,7 +167,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
   });
 
   it('clears watched timestamp when not all episodes are watched', async () => {
-    const itemId = insertSeriesTrackerItem();
+    const itemId = insertWatchingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
@@ -207,7 +194,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
   });
 
   it('rejects invalid season numbers', async () => {
-    insertSeriesTrackerItem();
+    insertWatchingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -224,7 +211,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
   });
 
   it('rejects invalid episode numbers', async () => {
-    insertSeriesTrackerItem();
+    insertWatchingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -241,7 +228,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
   });
 
   it('rejects duplicate episodes', async () => {
-    insertSeriesTrackerItem();
+    insertWatchingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -263,7 +250,7 @@ describe('change-series-tracker-watched-episodes-api', () => {
   });
 
   it('rejects non-array body', async () => {
-    insertSeriesTrackerItem();
+    insertWatchingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },

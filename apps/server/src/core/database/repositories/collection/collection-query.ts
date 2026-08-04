@@ -15,11 +15,11 @@ export const normalizeOffset = (offset: number): number => Math.max(Math.floor(o
 
 export const normalizeListType = (listType: CollectionListTypeModel | undefined): CollectionListTypeModel => {
   if (
-    listType === 'watch-later' ||
+    listType === 'watchlist' ||
     listType === 'wishlist' ||
-    listType === 'series-tracker' ||
-    listType === 'movie-tracker' ||
-    listType === 'book-tracker'
+    listType === 'watching' ||
+    listType === 'watched' ||
+    listType === 'books'
   )
     return listType;
   return 'library';
@@ -41,42 +41,42 @@ const addGenreExists = (queryParts: QueryParts, genre: string): void => {
   queryParts.params.push(genre.toLowerCase());
 };
 
-const addMovieTrackerExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
+const addMovieWatchedExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
   queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
-    SELECT 1 FROM collection_items movie_tracker_filter
-    WHERE movie_tracker_filter.username_hash = ?
-      AND ${canonicalOrExactIdentityMatch('movie_tracker_filter')}
-      AND movie_tracker_filter.list_type = ?
+    SELECT 1 FROM collection_items movie_watched_filter
+    WHERE movie_watched_filter.username_hash = ?
+      AND ${canonicalOrExactIdentityMatch('movie_watched_filter')}
+      AND movie_watched_filter.list_type = ?
   )`);
-  queryParts.params.push(usernameHash, 'movie-tracker');
+  queryParts.params.push(usernameHash, 'watched');
 };
 
-const addSeriesTrackerExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
+const addWatchingExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
   queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
-    SELECT 1 FROM collection_items series_tracker_filter
-    WHERE series_tracker_filter.username_hash = ?
-      AND ${canonicalOrExactIdentityMatch('series_tracker_filter')}
-      AND series_tracker_filter.list_type = ?
+    SELECT 1 FROM collection_items series_watching_filter
+    WHERE series_watching_filter.username_hash = ?
+      AND ${canonicalOrExactIdentityMatch('series_watching_filter')}
+      AND series_watching_filter.list_type = ?
   )`);
-  queryParts.params.push(usernameHash, 'series-tracker');
+  queryParts.params.push(usernameHash, 'watching');
 };
 
 const addWatchedExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
   queryParts.where.push(`(
     (${movieContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
-      SELECT 1 FROM collection_items movie_tracker_filter
-      WHERE movie_tracker_filter.username_hash = ?
-        AND ${canonicalOrExactIdentityMatch('movie_tracker_filter')}
-        AND movie_tracker_filter.list_type = ?
+      SELECT 1 FROM collection_items movie_watched_filter
+      WHERE movie_watched_filter.username_hash = ?
+        AND ${canonicalOrExactIdentityMatch('movie_watched_filter')}
+        AND movie_watched_filter.list_type = ?
     ))
     OR (${seriesContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
-      SELECT 1 FROM collection_items series_tracker_filter
-      WHERE series_tracker_filter.username_hash = ?
-        AND ${canonicalOrExactIdentityMatch('series_tracker_filter')}
-        AND series_tracker_filter.list_type = ?
+      SELECT 1 FROM collection_items series_watching_filter
+      WHERE series_watching_filter.username_hash = ?
+        AND ${canonicalOrExactIdentityMatch('series_watching_filter')}
+        AND series_watching_filter.list_type = ?
     ))
   )`);
-  queryParts.params.push(usernameHash, 'movie-tracker', usernameHash, 'series-tracker');
+  queryParts.params.push(usernameHash, 'watched', usernameHash, 'watching');
 };
 
 export const canonicalOrExactIdentityMatch = (alias: string): string => `(
@@ -202,8 +202,28 @@ const addFilters = (
 ): void => {
   const listType = normalizeListType(filters?.listType);
   if (listType === 'library') {
-    queryParts.where.push('collection_items.list_type = ?');
-    queryParts.params.push(listType);
+    if (filters?.type === 'book') {
+      queryParts.where.push(`collection_items.list_type = ?`);
+      queryParts.params.push('books');
+      if (viewerUsernameHash) {
+        queryParts.where.push('collection_items.username_hash = ?');
+        queryParts.params.push(viewerUsernameHash);
+      }
+    } else {
+      // All / movie / series: owned library rows, plus own books when unfiltered (All).
+      if (filters?.type === 'movie' || filters?.type === 'series') {
+        queryParts.where.push('collection_items.list_type = ?');
+        queryParts.params.push('library');
+      } else if (viewerUsernameHash) {
+        queryParts.where.push(`(
+          collection_items.list_type = 'library'
+          OR (collection_items.list_type = 'books' AND collection_items.username_hash = ?)
+        )`);
+        queryParts.params.push(viewerUsernameHash);
+      } else {
+        queryParts.where.push(`collection_items.list_type IN ('library', 'books')`);
+      }
+    }
   } else {
     queryParts.where.push('collection_items.list_type = ?');
     queryParts.params.push(listType);
@@ -220,18 +240,14 @@ const addFilters = (
   if (filters.type === 'series') {
     queryParts.where.push(seriesContentCondition);
   }
-  if (filters.type === 'book') {
+  // type=book already scoped list_type above for library hub; still apply for other list types
+  if (filters.type === 'book' && listType !== 'library') {
     queryParts.where.push(bookContentCondition);
   }
-  if (
-    filters.watched !== undefined &&
-    viewerUsernameHash &&
-    listType !== 'movie-tracker' &&
-    listType !== 'series-tracker'
-  ) {
+  if (filters.watched !== undefined && viewerUsernameHash && listType !== 'watched' && listType !== 'watching') {
     const exists = filters.watched;
-    if (filters.type === 'series') addSeriesTrackerExists(queryParts, viewerUsernameHash, exists);
-    else if (filters.type === 'movie') addMovieTrackerExists(queryParts, viewerUsernameHash, exists);
+    if (filters.type === 'series') addWatchingExists(queryParts, viewerUsernameHash, exists);
+    else if (filters.type === 'movie') addMovieWatchedExists(queryParts, viewerUsernameHash, exists);
     else addWatchedExists(queryParts, viewerUsernameHash, exists);
   }
   if (filters.completed === true)

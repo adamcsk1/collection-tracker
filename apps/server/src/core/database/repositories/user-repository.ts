@@ -10,7 +10,7 @@ import {
   COLLECTION_LIST_DISPLAY_RATINGS,
 } from '@shared/models/collection-list-display-preferences-model';
 import { CollectionFeaturePreferencesModel } from '@shared/models/collection-feature-preferences-model';
-import { isCollectionFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
+import { parseCollectionFeaturePreferences as parseFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
 import { hashText } from '../../crypto';
 import { UserRow } from './user-model';
 
@@ -168,8 +168,7 @@ const parseCollectionFeaturePreferences = (value: string | null): CollectionFeat
   if (!value) return undefined;
 
   try {
-    const parsed = JSON.parse(value) as unknown;
-    return isCollectionFeaturePreferences(parsed) ? parsed : undefined;
+    return parseFeaturePreferences(JSON.parse(value) as unknown);
   } catch {
     return undefined;
   }

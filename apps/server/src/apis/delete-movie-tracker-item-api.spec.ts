@@ -8,7 +8,7 @@ const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertMovieTrackerItem = (usernameHash: string, imdbId: string) => {
+const insertWatchedItem = (usernameHash: string, imdbId: string) => {
   const db = getDatabase();
   const result = db
     .prepare(
@@ -16,20 +16,20 @@ const insertMovieTrackerItem = (usernameHash: string, imdbId: string) => {
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, 'omdb', imdbId, `omdb:${imdbId}`, 'movie-tracker', 'Title', 'title', '', '', '', 'hash');
+    .run(usernameHash, 'omdb', imdbId, `omdb:${imdbId}`, 'watched', 'Title', 'title', '', '', '', 'hash');
   db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(
     Number(result.lastInsertRowid),
     '#movie'
   );
 };
 
-const insertMovieTrackerItemByExternalId = (usernameHash: string, externalProvider: string, externalItemId: string) => {
+const insertWatchedItemByExternalId = (usernameHash: string, externalProvider: string, externalItemId: string) => {
   const db = getDatabase();
   db.prepare(
     `INSERT INTO collection_items
       (username_hash, external_provider, external_item_id, list_type, title, title_lower, year, description, image, content_hash)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(usernameHash, externalProvider, externalItemId, 'movie-tracker', 'Title', 'title', '', '', '', 'hash');
+  ).run(usernameHash, externalProvider, externalItemId, 'watched', 'Title', 'title', '', '', '', 'hash');
 };
 
 const buildRouteApp = () =>
@@ -42,7 +42,7 @@ const getDeleteHandler = (app: { delete: ReturnType<typeof vi.fn> }, path: strin
   return call?.[2] as ((request: any, response: any) => Promise<void> | void) | undefined;
 };
 
-describe('delete-movie-tracker-item-api', () => {
+describe('delete-watched-item-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -50,7 +50,7 @@ describe('delete-movie-tracker-item-api', () => {
 
   it('deletes an existing movie tracker item', async () => {
     insertUser('user');
-    insertMovieTrackerItem('user', 'tt-1');
+    insertWatchedItem('user', 'tt-1');
 
     const response = mockResponse();
     const request: any = {
@@ -66,7 +66,7 @@ describe('delete-movie-tracker-item-api', () => {
     expect(response.code).toHaveBeenCalledWith(204);
     const item = getDatabase()
       .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
-      .get('user', 'tt-1', 'movie-tracker');
+      .get('user', 'tt-1', 'watched');
     expect(item).toBeUndefined();
   });
 
@@ -88,9 +88,9 @@ describe('delete-movie-tracker-item-api', () => {
   it('deletes all current user movie tracker items only', async () => {
     insertUser('user');
     insertUser('other-user');
-    insertMovieTrackerItem('user', 'tt-1');
-    insertMovieTrackerItem('user', 'tt-2');
-    insertMovieTrackerItem('other-user', 'tt-other');
+    insertWatchedItem('user', 'tt-1');
+    insertWatchedItem('user', 'tt-2');
+    insertWatchedItem('other-user', 'tt-other');
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
@@ -104,7 +104,7 @@ describe('delete-movie-tracker-item-api', () => {
     const rows = getDatabase()
       .prepare('SELECT username_hash, external_item_id, list_type FROM collection_items ORDER BY external_item_id')
       .all();
-    expect(rows).toEqual([{ username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'movie-tracker' }]);
+    expect(rows).toEqual([{ username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'watched' }]);
   });
 
   it('returns not found when the movie tracker item does not exist', async () => {
@@ -126,7 +126,7 @@ describe('delete-movie-tracker-item-api', () => {
 
   it('deletes an existing movie tracker item by external identity', async () => {
     insertUser('user');
-    insertMovieTrackerItemByExternalId('user', 'omdb', 'tt-1');
+    insertWatchedItemByExternalId('user', 'omdb', 'tt-1');
 
     const response = mockResponse();
     const request: any = {
@@ -144,7 +144,7 @@ describe('delete-movie-tracker-item-api', () => {
       .prepare(
         'SELECT 1 FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('user', 'omdb', 'tt-1', 'movie-tracker');
+      .get('user', 'omdb', 'tt-1', 'watched');
     expect(item).toBeUndefined();
   });
 
@@ -155,20 +155,7 @@ describe('delete-movie-tracker-item-api', () => {
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      'user',
-      'omdb',
-      'tt0133093',
-      'imdb:tt0133093',
-      'movie-tracker',
-      'movie',
-      'Title',
-      'title',
-      '',
-      '',
-      '',
-      'hash'
-    );
+    ).run('user', 'omdb', 'tt0133093', 'imdb:tt0133093', 'watched', 'movie', 'Title', 'title', '', '', '', 'hash');
     db.prepare(
       `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
@@ -183,16 +170,14 @@ describe('delete-movie-tracker-item-api', () => {
     const { register } = await import('./delete-movie-tracker-item-api');
     register(app);
 
-    await getDeleteHandler(app, `${API_PREFIX}/movie-tracker/:externalIdentitySource/:externalIdentityId`)!(
+    await getDeleteHandler(app, `${API_PREFIX}/watched/:externalIdentitySource/:externalIdentityId`)!(
       request,
       response
     );
 
     expect(response.code).toHaveBeenCalledWith(204);
     expect(
-      db
-        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?')
-        .get('user', 'movie-tracker')
+      db.prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?').get('user', 'watched')
     ).toBeUndefined();
   });
 });

@@ -22,7 +22,7 @@ const getItemRelations = (db: Database.Database, itemId: number): { genre: strin
 });
 
 const isWatchedMovie = (db: Database.Database, row: CollectionItemRow, viewerUsernameHash: string): boolean => {
-  if (row.list_type === 'movie-tracker') return true;
+  if (row.list_type === 'watched') return true;
   if (row.list_type !== 'library') return false;
   const externalProvider = row.external_provider;
   const externalItemId = row.external_item_id ?? '';
@@ -40,7 +40,7 @@ const isWatchedMovie = (db: Database.Database, row: CollectionItemRow, viewerUse
              AND movie_tracker.content_type = ?
            LIMIT 1`
       )
-      .get(viewerUsernameHash, row.canonical_item_id, externalProvider, externalItemId, 'movie-tracker', 'movie')
+      .get(viewerUsernameHash, row.canonical_item_id, externalProvider, externalItemId, 'watched', 'movie')
   );
 };
 

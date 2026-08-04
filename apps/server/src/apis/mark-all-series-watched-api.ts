@@ -1,15 +1,15 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { MarkAllSeriesWatchedApiResponseModel, SeriesTrackerWatchedEpisodeModel } from '@shared/models/api-model';
+import { MarkAllSeriesWatchedApiResponseModel, WatchingWatchedEpisodeModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { syncSeriesTrackerCompletedTagByExternalId } from '../core/database/repositories/collection';
+import { syncWatchingCompletedTagByExternalId } from '../core/database/repositories/collection';
 import {
-  findSeriesTrackerSeasonsByExternalId,
-  replaceSeriesTrackerSeasonsByExternalId,
+  findWatchingSeasonsByExternalId,
+  replaceWatchingSeasonsByExternalId,
 } from '../core/database/repositories/series-tracker-season-repository';
 import {
-  findOwnSeriesTrackerItems,
-  findSeriesTrackerItemsForLibrarySeries,
+  findOwnWatchingItems,
+  findWatchingItemsForLibrarySeries,
   markAllSeriesAsWatched,
 } from '../core/database/repositories/series-tracker-repository';
 import {
@@ -24,8 +24,8 @@ import { fetchSeriesSeasonMetadata } from '../core/external-metadata/series-seas
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
 const watchedEpisodesEqual = (
-  firstEpisodes: SeriesTrackerWatchedEpisodeModel[],
-  secondEpisodes: SeriesTrackerWatchedEpisodeModel[]
+  firstEpisodes: WatchingWatchedEpisodeModel[],
+  secondEpisodes: WatchingWatchedEpisodeModel[]
 ): boolean =>
   firstEpisodes.length === secondEpisodes.length &&
   firstEpisodes.every(
@@ -62,7 +62,7 @@ export const register = (app: FastifyInstance): void => {
         const seasons = await fetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);
         if (!seasons.length) continue;
 
-        replaceSeriesTrackerSeasonsByExternalId(
+        replaceWatchingSeasonsByExternalId(
           db,
           request.usernameHash,
           item.externalProvider,
@@ -72,12 +72,12 @@ export const register = (app: FastifyInstance): void => {
       }
 
       const trackerItems = selectedOwnLibrary
-        ? findOwnSeriesTrackerItems(db, request.usernameHash)
-        : findSeriesTrackerItemsForLibrarySeries(db, request.usernameHash, ownerHash);
+        ? findOwnWatchingItems(db, request.usernameHash)
+        : findWatchingItemsForLibrarySeries(db, request.usernameHash, ownerHash);
       let progressChangedCount = 0;
 
       for (const item of trackerItems) {
-        const seasons = findSeriesTrackerSeasonsByExternalId(
+        const seasons = findWatchingSeasonsByExternalId(
           db,
           request.usernameHash,
           item.externalProvider,
@@ -99,7 +99,7 @@ export const register = (app: FastifyInstance): void => {
           item.externalItemId,
           seasons
         );
-        const syncedItem = syncSeriesTrackerCompletedTagByExternalId(
+        const syncedItem = syncWatchingCompletedTagByExternalId(
           db,
           request.usernameHash,
           item.externalProvider,

@@ -78,13 +78,13 @@ describe('random-images-api', () => {
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
        VALUES (?, 'openlibrary', ?, ?, ?, 'book', 'Book', 'book', '', '', ?, ?)`
     );
-    insert.run('user', '9780306406157', 'isbn:9780306406157', 'book-tracker', 'own-tracker.jpg', 'own-tracker');
+    insert.run('user', '9780306406157', 'isbn:9780306406157', 'books', 'own-tracker.jpg', 'own-tracker');
     db.prepare(
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
        VALUES ('owner', 'omdb', 'tt001', 'imdb:tt001', 'library', 'movie', 'Movie', 'movie', '', '', 'shared-library.jpg', 'shared-library')`
     ).run();
-    insert.run('owner', '9780140328721', 'isbn:9780140328721', 'book-tracker', 'shared-tracker.jpg', 'shared-tracker');
+    insert.run('owner', '9780140328721', 'isbn:9780140328721', 'books', 'shared-tracker.jpg', 'shared-tracker');
     const response = mockResponse();
     const { app, handlerPromise } = buildApp({ usernameHash: 'user', query: { count: '10' } }, response);
 

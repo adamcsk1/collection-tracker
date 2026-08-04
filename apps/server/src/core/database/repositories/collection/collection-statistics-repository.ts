@@ -53,9 +53,9 @@ export const getCollectionStatistics = (
         .get(internalCollectionUsernameHash ?? usernameHashes[0], listType) as { count: number }
     ).count;
 
-  const watchLaterCount = countListType('watch-later');
+  const watchlistCount = countListType('watchlist');
   const wishlistCount = countListType('wishlist');
-  const bookTrackerCount = countListType('book-tracker');
+  const booksCount = countListType('books');
 
   const watchedMovieCount = (
     db
@@ -71,7 +71,7 @@ export const getCollectionStatistics = (
                AND movie_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, viewerUsernameHash, 'movie-tracker') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'watched') as { count: number }
   ).count;
 
   const unwatchedMovieCount = (
@@ -88,7 +88,7 @@ export const getCollectionStatistics = (
                AND movie_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, viewerUsernameHash, 'movie-tracker') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'watched') as { count: number }
   ).count;
 
   const watchedSeriesCount = (
@@ -105,7 +105,7 @@ export const getCollectionStatistics = (
                AND series_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, viewerUsernameHash, 'series-tracker') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'watching') as { count: number }
   ).count;
 
   const unwatchedLibrarySeriesCount = (
@@ -122,13 +122,13 @@ export const getCollectionStatistics = (
                AND series_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, viewerUsernameHash, 'series-tracker') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'watching') as { count: number }
   ).count;
 
-  const shouldCountTrackerSeries = !filters?.listType || filters.listType === 'series-tracker';
+  const shouldCountTrackerSeries = !filters?.listType || filters.listType === 'watching';
   const trackerQueryParts = buildItemWhere(
     usernameHashes,
-    { ...filters, listType: 'series-tracker' },
+    { ...filters, listType: 'watching' },
     undefined,
     undefined,
     viewerUsernameHash
@@ -200,7 +200,7 @@ export const getCollectionStatistics = (
            AND ${movieContentCondition}
           GROUP BY watched_year`
     )
-    .all(viewerUsernameHash, 'movie-tracker', ...queryParts.params) as WatchedYearCountRow[];
+    .all(viewerUsernameHash, 'watched', ...queryParts.params) as WatchedYearCountRow[];
 
   const watchedSeriesYearCounts = db
     .prepare(
@@ -217,7 +217,7 @@ export const getCollectionStatistics = (
            AND ${seriesContentCondition}
           GROUP BY watched_year`
     )
-    .all(viewerUsernameHash, 'series-tracker', ...queryParts.params) as WatchedYearCountRow[];
+    .all(viewerUsernameHash, 'watching', ...queryParts.params) as WatchedYearCountRow[];
 
   const watchedYearCountMap = new Map<
     string,
@@ -249,9 +249,9 @@ export const getCollectionStatistics = (
     totalItems,
     movieCount: countWhere(movieContentCondition),
     seriesCount: countWhere(seriesContentCondition),
-    bookTrackerCount,
+    booksCount,
     favoriteCount: countWhere(favoriteCondition),
-    watchLaterCount,
+    watchlistCount,
     wishlistCount,
     watchedMovieCount,
     watchedSeriesCount,

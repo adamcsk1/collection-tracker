@@ -2132,4 +2132,78 @@ describe('runMigrations', () => {
       db.close();
     });
   });
+
+  describe('027_rename_list_types_and_feature_prefs', () => {
+    it('renames list_type values to intent-first names', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState(
+        '027_rename_list_types_and_feature_prefs.sql',
+        tempDirs
+      );
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+           title, title_lower, year, user_rate, contributors, description, image, content_hash)
+        VALUES
+          ('user', 'omdb', 'tt-wl', 'imdb:tt-wl', 'watch-later', 'movie', 'WL', 'wl', '2020', NULL, '', '', '', 'h1'),
+          ('user', 'omdb', 'tt-st', 'imdb:tt-st', 'series-tracker', 'series', 'ST', 'st', '2020', NULL, '', '', '', 'h2'),
+          ('user', 'omdb', 'tt-mt', 'imdb:tt-mt', 'movie-tracker', 'movie', 'MT', 'mt', '2020', NULL, '', '', '', 'h3'),
+          ('user', 'openlibrary', '9780140328721', 'isbn:9780140328721', 'book-tracker', 'book', 'BK', 'bk', '2020', NULL, '', '', '', 'h4');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '027_rename_list_types_and_feature_prefs.sql'),
+        join(migrationsDir, '027_rename_list_types_and_feature_prefs.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT list_type FROM collection_items ORDER BY external_item_id').all()).toEqual([
+        { list_type: 'books' },
+        { list_type: 'watched' },
+        { list_type: 'watching' },
+        { list_type: 'watchlist' },
+      ]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      expect(
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'collection_items' AND name = 'idx_collection_items_list_type'"
+          )
+          .get()
+      ).toEqual({ name: 'idx_collection_items_list_type' });
+      db.close();
+    });
+  });
+
+  describe('028_rewrite_feature_preference_keys', () => {
+    it('rewrites legacy feature preference JSON keys', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('028_rewrite_feature_preference_keys.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO user_settings (username_hash, collection_feature_preferences)
+        VALUES (
+          'user',
+          '{"wishlist":false,"watchLater":true,"movieTracker":false,"seriesTracker":true,"bookTracker":true}'
+        );
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '028_rewrite_feature_preference_keys.sql'),
+        join(migrationsDir, '028_rewrite_feature_preference_keys.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      const stored = db
+        .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
+        .get('user') as { collection_feature_preferences: string };
+      expect(JSON.parse(stored.collection_feature_preferences)).toEqual({
+        wishlist: false,
+        watchlist: true,
+        watched: false,
+        watching: true,
+        books: true,
+      });
+      db.close();
+    });
+  });
 });

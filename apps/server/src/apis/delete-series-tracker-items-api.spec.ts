@@ -7,7 +7,7 @@ const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertItem = (usernameHash: string, imdbId: string, listType = 'series-tracker'): number => {
+const insertItem = (usernameHash: string, imdbId: string, listType = 'watching'): number => {
   const result = getDatabase()
     .prepare(
       `INSERT INTO collection_items
@@ -26,12 +26,12 @@ const insertItem = (usernameHash: string, imdbId: string, listType = 'series-tra
       '',
       '',
       `${usernameHash}-${listType}-${imdbId}`,
-      listType === 'series-tracker' ? 'series' : 'movie'
+      listType === 'watching' ? 'series' : 'movie'
     );
   return Number(result.lastInsertRowid);
 };
 
-describe('delete-series-tracker-items-api', () => {
+describe('delete-watching-items-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -74,7 +74,7 @@ describe('delete-series-tracker-items-api', () => {
       .all();
     expect(rows).toEqual([
       { username_hash: 'user', external_item_id: 'tt-library', list_type: 'library' },
-      { username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'series-tracker' },
+      { username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'watching' },
     ]);
     expect(db.prepare('SELECT 1 FROM series_tracker_seasons WHERE item_id = ?').get(deletedItemId)).toBeUndefined();
     expect(

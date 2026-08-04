@@ -124,8 +124,8 @@ export const getEffectiveStatusIntent = (
 ): AiSearchStatusIntent | null => {
   if (!intent) return null;
   if (intent === 'favorite') return 'favorite';
-  if (intent === 'unfinished') return listType === 'series-tracker' ? 'unfinished' : null;
-  if (listType === 'series-tracker' || listType === 'movie-tracker') return 'completed';
+  if (intent === 'unfinished') return listType === 'watching' ? 'unfinished' : null;
+  if (listType === 'watching' || listType === 'watched') return 'completed';
   return null;
 };
 

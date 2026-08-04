@@ -23,7 +23,7 @@ import { deleteUnreferencedExternalItemIdentities, resolveCanonicalItemId } from
 
 const movieContentCondition = `content_type = 'movie'`;
 
-const toMovieTrackerChange = (db: Database.Database, row: CollectionItemRow): CollectionItemChangeApiModel | null => {
+const toWatchedChange = (db: Database.Database, row: CollectionItemRow): CollectionItemChangeApiModel | null => {
   const sourceItem = toApiItem(db, row, row.username_hash);
   if (sourceItem.contentType !== 'movie') return null;
   const item = toCollectionItemChange(sourceItem);
@@ -31,15 +31,14 @@ const toMovieTrackerChange = (db: Database.Database, row: CollectionItemRow): Co
   return item;
 };
 
-export const copyLibraryMovieToMovieTracker = (
+export const copyLibraryMovieToWatched = (
   db: Database.Database,
   usernameHash: string,
   sourceOwnerHash: string,
   imdbId: string
-): CollectionItemApiModel | null =>
-  copyMovieToMovieTracker(db, usernameHash, sourceOwnerHash, imdbId, 'library', false);
+): CollectionItemApiModel | null => copyMovieToWatched(db, usernameHash, sourceOwnerHash, imdbId, 'library', false);
 
-const copyMovieRowToMovieTracker = (
+const copyMovieRowToWatched = (
   db: Database.Database,
   usernameHash: string,
   sourceOwnerHash: string,
@@ -49,14 +48,14 @@ const copyMovieRowToMovieTracker = (
 ): CollectionItemApiModel | null => {
   const trackerItem =
     (sourceRow.canonical_item_id
-      ? findCollectionItemByCanonicalItemId(db, usernameHash, sourceRow.canonical_item_id, 'movie-tracker')
+      ? findCollectionItemByCanonicalItemId(db, usernameHash, sourceRow.canonical_item_id, 'watched')
       : undefined) ??
     findCollectionItemByExternalId(
       db,
       usernameHash,
       sourceRow.external_provider,
       sourceRow.external_item_id ?? '',
-      'movie-tracker'
+      'watched'
     );
   if (trackerItem) {
     if (deleteSource) {
@@ -71,10 +70,10 @@ const copyMovieRowToMovieTracker = (
     return toApiItem(db, trackerItem, usernameHash);
   }
 
-  const item = toMovieTrackerChange(db, sourceRow);
+  const item = toWatchedChange(db, sourceRow);
   if (!item) return null;
   const transaction = db.transaction(() => {
-    const insertedItem = insertCollectionItem(db, usernameHash, getItemHash(item), item, 'movie-tracker');
+    const insertedItem = insertCollectionItem(db, usernameHash, getItemHash(item), item, 'watched');
     if (deleteSource) {
       deleteCollectionItemByExternalId(
         db,
@@ -89,7 +88,7 @@ const copyMovieRowToMovieTracker = (
   return transaction();
 };
 
-export const copyMovieToMovieTracker = (
+export const copyMovieToWatched = (
   db: Database.Database,
   usernameHash: string,
   sourceOwnerHash: string,
@@ -99,10 +98,10 @@ export const copyMovieToMovieTracker = (
 ): CollectionItemApiModel | null => {
   const sourceRow = findCollectionItemByImdbId(db, sourceOwnerHash, imdbId, sourceListType);
   if (!sourceRow) return null;
-  return copyMovieRowToMovieTracker(db, usernameHash, sourceOwnerHash, sourceRow, sourceListType, deleteSource);
+  return copyMovieRowToWatched(db, usernameHash, sourceOwnerHash, sourceRow, sourceListType, deleteSource);
 };
 
-export const copyMovieToMovieTrackerByExternalId = (
+export const copyMovieToWatchedByExternalId = (
   db: Database.Database,
   usernameHash: string,
   sourceOwnerHash: string,
@@ -116,41 +115,35 @@ export const copyMovieToMovieTrackerByExternalId = (
     findCollectionItemByCanonicalItemId(db, sourceOwnerHash, canonicalItemId, sourceListType) ??
     findCollectionItemByExternalId(db, sourceOwnerHash, externalProvider, externalItemId, sourceListType);
   if (!sourceRow) return null;
-  return copyMovieRowToMovieTracker(db, usernameHash, sourceOwnerHash, sourceRow, sourceListType, deleteSource);
+  return copyMovieRowToWatched(db, usernameHash, sourceOwnerHash, sourceRow, sourceListType, deleteSource);
 };
 
-export const deleteMovieTrackerItem = (db: Database.Database, usernameHash: string, imdbId: string): boolean => {
-  const existingItem = findCollectionItemByImdbId(db, usernameHash, imdbId, 'movie-tracker');
+export const deleteWatchedItem = (db: Database.Database, usernameHash: string, imdbId: string): boolean => {
+  const existingItem = findCollectionItemByImdbId(db, usernameHash, imdbId, 'watched');
   if (!existingItem) return false;
-  deleteCollectionItem(db, usernameHash, imdbId, 'movie-tracker');
+  deleteCollectionItem(db, usernameHash, imdbId, 'watched');
   return true;
 };
 
-export const deleteMovieTrackerItemByExternalId = (
+export const deleteWatchedItemByExternalId = (
   db: Database.Database,
   usernameHash: string,
   externalProvider: string,
   externalItemId: string
 ): boolean => {
-  const existingItem = findCollectionItemByExternalId(
-    db,
-    usernameHash,
-    externalProvider,
-    externalItemId,
-    'movie-tracker'
-  );
+  const existingItem = findCollectionItemByExternalId(db, usernameHash, externalProvider, externalItemId, 'watched');
   if (!existingItem) return false;
-  deleteCollectionItemByExternalId(db, usernameHash, externalProvider, externalItemId, 'movie-tracker');
+  deleteCollectionItemByExternalId(db, usernameHash, externalProvider, externalItemId, 'watched');
   return true;
 };
 
-export const deleteAllMovieTrackerItems = (db: Database.Database, usernameHash: string): number => {
+export const deleteAllWatchedItems = (db: Database.Database, usernameHash: string): number => {
   const deletedCanonicalItemIds = db
     .prepare('SELECT canonical_item_id FROM collection_items WHERE username_hash = ? AND list_type = ?')
-    .all(usernameHash, 'movie-tracker') as Array<{ canonical_item_id: string | null }>;
+    .all(usernameHash, 'watched') as Array<{ canonical_item_id: string | null }>;
   const result = db
     .prepare('DELETE FROM collection_items WHERE username_hash = ? AND list_type = ?')
-    .run(usernameHash, 'movie-tracker');
+    .run(usernameHash, 'watched');
   deleteUnreferencedExternalItemIdentities(
     db,
     usernameHash,
@@ -180,7 +173,7 @@ export const markAllMoviesAsWatched = (
               AND movie_tracker.list_type = ?
            )`
     )
-    .all(sourceOwnerHash, 'library', usernameHash, 'movie-tracker') as CollectionItemRow[];
+    .all(sourceOwnerHash, 'library', usernameHash, 'watched') as CollectionItemRow[];
 
   void debugLog(
     `markAllMoviesAsWatched candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
@@ -188,7 +181,7 @@ export const markAllMoviesAsWatched = (
 
   const transaction = db.transaction(() => {
     for (const row of rows) {
-      copyMovieRowToMovieTracker(db, usernameHash, sourceOwnerHash, row, 'library', false);
+      copyMovieRowToWatched(db, usernameHash, sourceOwnerHash, row, 'library', false);
     }
   });
   transaction();
@@ -215,7 +208,7 @@ export const markAllMoviesAsUnwatched = (
               AND library_item.list_type = ?
            )`
     )
-    .all(usernameHash, 'movie-tracker', sourceOwnerHash, 'library') as CollectionItemRow[];
+    .all(usernameHash, 'watched', sourceOwnerHash, 'library') as CollectionItemRow[];
 
   void debugLog(
     `markAllMoviesAsUnwatched candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
@@ -223,13 +216,7 @@ export const markAllMoviesAsUnwatched = (
 
   const transaction = db.transaction(() => {
     for (const row of rows) {
-      deleteCollectionItemByExternalId(
-        db,
-        usernameHash,
-        row.external_provider,
-        row.external_item_id ?? '',
-        'movie-tracker'
-      );
+      deleteCollectionItemByExternalId(db, usernameHash, row.external_provider, row.external_item_id ?? '', 'watched');
     }
   });
   transaction();

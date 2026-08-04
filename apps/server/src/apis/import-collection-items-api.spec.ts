@@ -55,7 +55,7 @@ describe('import-collection-items-api', () => {
         'omdb',
         'tt0000001',
         'imdb:tt0000001',
-        'watch-later',
+        'watchlist',
         'Existing Movie',
         'existing movie',
         '2024',

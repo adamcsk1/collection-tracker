@@ -32,13 +32,13 @@ Source: [`apps/server`](../apps/server)
 ## Data Layout
 
 - `database/collection-tracker.sqlite`
-- `ollama.config.json` — Ollama host, model, embedding model, optional root-level `keep_alive`, generate options, optional `batchSize`, optional `parallelRequests`, and optional `semanticCandidateLimit` for AI search. Defaults favor a local GPU desktop (`batchSize: 16`, `parallelRequests: 2`, `semanticCandidateLimit: 120`, `num_ctx: 16384`). Pure status queries such as “unfinished series” on series-tracker (or favorites on any list) resolve from derived item fields without calling Ollama; unfinished/completed pre-filters apply only on tracker lists so thematic library prompts are not emptied.
+- `ollama.config.json` — Ollama host, model, embedding model, optional root-level `keep_alive`, generate options, optional `batchSize`, optional `parallelRequests`, and optional `semanticCandidateLimit` for AI search. Defaults favor a local GPU desktop (`batchSize: 16`, `parallelRequests: 2`, `semanticCandidateLimit: 120`, `num_ctx: 16384`). Pure status queries such as “unfinished series” on watching (or favorites on any list) resolve from derived item fields without calling Ollama; unfinished/completed pre-filters apply only on tracker lists so thematic library prompts are not emptied.
 - `logs/`
 - `cache/` — image proxy cache files and metadata
 
 Collection items, users, tokens, settings, shares, collection-list display preferences, collection feature preferences, series tracker data, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations). Core item fields live in `collection_items`; contributor and description data use `contributors` and `description`. Provider IDs remain on each item in `external_provider` and `external_item_id`, while cross-provider aliases and canonical identity mappings live in `external_item_identities`. External ratings use `collection_item_external_ratings`, and completion timestamps use `collection_item_tracker_state`. Genres, tags, series seasons, and watched episodes remain normalized child tables keyed by collection item ID. Public API fields such as `IMDbId`, `actors`, `plot`, and `watchedAt` are compatibility projections over this storage layout rather than physical `collection_items` columns.
 
-Books use `content_type = 'book'` exclusively with the dedicated `book-tracker` list in v1; library books and future read-later or wishlist book lists are not supported. ISBN-10 and ISBN-13 forms normalize to one ISBN-13 canonical identity. Missing collection feature preferences preserve the existing behavior by enabling every feature.
+Books use `content_type = 'book'` with `list_type = 'books'`. Collection **All** merges `library` + viewer’s own books; `type=book` is books-only. Canonical list types: `library`, `wishlist`, `watchlist`, `watching`, `watched`, `books`. Feature prefs: `wishlist`, `watchlist`, `watching`, `watched`, `books`. ISBN-10/13 normalize to ISBN-13.
 
 ## Import And Export
 

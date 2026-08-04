@@ -1,9 +1,9 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
-import { MovieTrackerApiResponseModel } from '@shared/models/api-model';
+import { WatchedApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { copyMovieToMovieTrackerByExternalId } from '../core/database/repositories/movie-tracker-repository';
+import { copyMovieToWatchedByExternalId } from '../core/database/repositories/movie-tracker-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
@@ -16,35 +16,33 @@ const findSourceOwnerHash = (query: Record<string, unknown>, requesterUsernameHa
 };
 
 export const register = (app: FastifyInstance): void => {
-  app.post(
-    `${API_PREFIX}/movie-tracker/:externalIdentitySource/:externalIdentityId`,
-    { preHandler: jwtGuard },
-    withErrorHandler(async (request, response) => {
-      const { externalIdentitySource, externalIdentityId } = request.params as Record<string, string>;
-      const query = (request.query ?? {}) as Record<string, unknown>;
-      if (!isExternalItemIdentitySourceName(externalIdentitySource)) return response.code(400).send();
-      const db = getDatabase();
-      const sourceOwnerHash = findSourceOwnerHash(query, request.usernameHash);
-      if (!sourceOwnerHash) return response.code(404).send();
-      if (!canAccessLibrary(db, request.usernameHash, sourceOwnerHash, 'read')) return response.code(403).send();
-      const sourceListType = parseListType(query.sourceListType) ?? 'library';
-      if (sourceListType !== 'library' && sourceListType !== 'watch-later') return response.code(400).send();
-      const moveFromWatchLater = sourceListType === 'watch-later';
-      if (moveFromWatchLater && sourceOwnerHash !== request.usernameHash) return response.code(403).send();
+  const handler = withErrorHandler(async (request, response) => {
+    const { externalIdentitySource, externalIdentityId } = request.params as Record<string, string>;
+    const query = (request.query ?? {}) as Record<string, unknown>;
+    if (!isExternalItemIdentitySourceName(externalIdentitySource)) return response.code(400).send();
+    const db = getDatabase();
+    const sourceOwnerHash = findSourceOwnerHash(query, request.usernameHash);
+    if (!sourceOwnerHash) return response.code(404).send();
+    if (!canAccessLibrary(db, request.usernameHash, sourceOwnerHash, 'read')) return response.code(403).send();
+    const sourceListType = parseListType(query.sourceListType) ?? 'library';
+    if (sourceListType !== 'library' && sourceListType !== 'watchlist') return response.code(400).send();
+    const moveFromWatchlist = sourceListType === 'watchlist';
+    if (moveFromWatchlist && sourceOwnerHash !== request.usernameHash) return response.code(403).send();
 
-      const item = copyMovieToMovieTrackerByExternalId(
-        db,
-        request.usernameHash,
-        sourceOwnerHash,
-        externalIdentitySource,
-        externalIdentityId,
-        sourceListType,
-        moveFromWatchLater
-      );
-      if (!item) return response.code(404).send();
+    const item = copyMovieToWatchedByExternalId(
+      db,
+      request.usernameHash,
+      sourceOwnerHash,
+      externalIdentitySource,
+      externalIdentityId,
+      sourceListType,
+      moveFromWatchlist
+    );
+    if (!item) return response.code(404).send();
 
-      const result: MovieTrackerApiResponseModel = { item };
-      response.send(result);
-    })
-  );
+    const result: WatchedApiResponseModel = { item };
+    response.send(result);
+  });
+
+  app.post(`${API_PREFIX}/watched/:externalIdentitySource/:externalIdentityId`, { preHandler: jwtGuard }, handler);
 };

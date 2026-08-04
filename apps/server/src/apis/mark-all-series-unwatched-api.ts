@@ -2,10 +2,10 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { MarkAllUnwatchedApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { syncSeriesTrackerCompletedTagByExternalId } from '../core/database/repositories/collection';
+import { syncWatchingCompletedTagByExternalId } from '../core/database/repositories/collection';
 import {
-  findOwnSeriesTrackerItems,
-  findSeriesTrackerItemsForLibrarySeries,
+  findOwnWatchingItems,
+  findWatchingItemsForLibrarySeries,
 } from '../core/database/repositories/series-tracker-repository';
 import {
   deleteWatchedEpisodesByExternalId,
@@ -42,8 +42,8 @@ export const register = (app: FastifyInstance): void => {
       let changedCount = 0;
       const selectedOwnLibrary = ownerHash === request.usernameHash && typeof query.ownerShareCode !== 'string';
       const trackerItems = selectedOwnLibrary
-        ? findOwnSeriesTrackerItems(db, request.usernameHash)
-        : findSeriesTrackerItemsForLibrarySeries(db, request.usernameHash, ownerHash);
+        ? findOwnWatchingItems(db, request.usernameHash)
+        : findWatchingItemsForLibrarySeries(db, request.usernameHash, ownerHash);
 
       for (const item of trackerItems) {
         const watchedEpisodes = findWatchedEpisodesByExternalId(
@@ -55,7 +55,7 @@ export const register = (app: FastifyInstance): void => {
         if (!watchedEpisodes.length && !item.watchedAt) continue;
 
         deleteWatchedEpisodesByExternalId(db, request.usernameHash, item.externalProvider, item.externalItemId);
-        syncSeriesTrackerCompletedTagByExternalId(db, request.usernameHash, item.externalProvider, item.externalItemId);
+        syncWatchingCompletedTagByExternalId(db, request.usernameHash, item.externalProvider, item.externalItemId);
         changedCount++;
       }
       await debugLog(`POST /items/mark-all-series-unwatched finished: changed=${changedCount}`);

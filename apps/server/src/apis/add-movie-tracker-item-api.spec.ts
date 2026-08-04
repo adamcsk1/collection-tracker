@@ -29,7 +29,7 @@ const insertItem = (
       (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
      VALUES (?, ?, ?, ?, ?)`
   ).run(usernameHash, `omdb:${imdbId}`, 'imdb', imdbId, 'alias');
-  if (listType === 'movie-tracker') {
+  if (listType === 'watched') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, CURRENT_TIMESTAMP)').run(
       itemId
     );
@@ -39,7 +39,7 @@ const insertItem = (
   }
 };
 
-describe('add-movie-tracker-item-api', () => {
+describe('add-watched-item-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -62,7 +62,7 @@ describe('add-movie-tracker-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'movie-tracker', watched: true }),
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'watched', watched: true }),
     });
   });
 
@@ -105,11 +105,11 @@ describe('add-movie-tracker-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'movie-tracker' }),
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'watched' }),
     });
     const viewerTracker = getDatabase()
       .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
-      .get('viewer', 'tt-1', 'movie-tracker');
+      .get('viewer', 'tt-1', 'watched');
     expect(viewerTracker).toBeTruthy();
   });
 
@@ -134,13 +134,13 @@ describe('add-movie-tracker-item-api', () => {
 
   it('moves an own watch later movie to the movie tracker', async () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#movie', '#watch-later'], 'watch-later');
+    insertItem('user', 'tt-1', ['#movie', '#watchlist'], 'watchlist');
 
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
-      query: { sourceListType: 'watch-later' },
+      query: { sourceListType: 'watchlist' },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -149,24 +149,24 @@ describe('add-movie-tracker-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'movie-tracker' }),
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'watched' }),
     });
     const source = getDatabase()
       .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
-      .get('user', 'tt-1', 'watch-later');
+      .get('user', 'tt-1', 'watchlist');
     expect(source).toBeUndefined();
   });
 
   it('removes watch later movie when it already exists in the movie tracker', async () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#movie', '#watch-later'], 'watch-later');
-    insertItem('user', 'tt-1', ['#movie'], 'movie-tracker');
+    insertItem('user', 'tt-1', ['#movie', '#watchlist'], 'watchlist');
+    insertItem('user', 'tt-1', ['#movie'], 'watched');
 
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
-      query: { sourceListType: 'watch-later' },
+      query: { sourceListType: 'watchlist' },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -175,11 +175,11 @@ describe('add-movie-tracker-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'movie-tracker' }),
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'watched' }),
     });
     const source = getDatabase()
       .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
-      .get('user', 'tt-1', 'watch-later');
+      .get('user', 'tt-1', 'watchlist');
     expect(source).toBeUndefined();
   });
 });

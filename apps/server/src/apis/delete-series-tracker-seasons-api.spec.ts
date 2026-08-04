@@ -3,7 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const insertSeriesTrackerItem = (): number => {
+const insertWatchingItem = (): number => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   const result = db
@@ -12,20 +12,7 @@ const insertSeriesTrackerItem = (): number => {
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(
-      'user',
-      'omdb',
-      'tt-series',
-      'imdb:tt-series',
-      'series-tracker',
-      'Series',
-      'series',
-      '',
-      '',
-      '',
-      'hash',
-      'series'
-    );
+    .run('user', 'omdb', 'tt-series', 'imdb:tt-series', 'watching', 'Series', 'series', '', '', '', 'hash', 'series');
   const itemId = Number(result.lastInsertRowid);
   db.prepare(
     `INSERT INTO external_item_identities
@@ -36,14 +23,14 @@ const insertSeriesTrackerItem = (): number => {
   return itemId;
 };
 
-describe('delete-series-tracker-seasons-api', () => {
+describe('delete-watching-seasons-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
   });
 
   it('deletes metadata', async () => {
-    const itemId = insertSeriesTrackerItem();
+    const itemId = insertWatchingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 10);

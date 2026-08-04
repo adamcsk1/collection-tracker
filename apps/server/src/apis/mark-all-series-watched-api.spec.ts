@@ -36,7 +36,7 @@ const insertItem = (
       contentType
     );
   const itemId = Number(result.lastInsertRowid);
-  if (listType === 'series-tracker') {
+  if (listType === 'watching') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, NULL)').run(itemId);
   }
   for (const tag of tags) {
@@ -90,8 +90,8 @@ describe('mark-all-series-watched-api', () => {
     expect(
       getDatabase()
         .prepare('SELECT username_hash, external_item_id, list_type FROM collection_items WHERE list_type = ?')
-        .all('series-tracker')
-    ).toEqual([{ username_hash: 'user', external_item_id: 'tt-shared', list_type: 'series-tracker' }]);
+        .all('watching')
+    ).toEqual([{ username_hash: 'user', external_item_id: 'tt-shared', list_type: 'watching' }]);
     expect(
       getDatabase()
         .prepare(
@@ -124,7 +124,7 @@ describe('mark-all-series-watched-api', () => {
            INNER JOIN collection_item_tracker_state AS tracker_state ON tracker_state.item_id = collection_items.id
            WHERE collection_items.external_item_id = ? AND collection_items.list_type = ?`
         )
-        .get('tt-shared', 'series-tracker')
+        .get('tt-shared', 'watching')
     ).toEqual({ content_type: 'series', completed_at: expect.any(String) });
   });
 
@@ -134,7 +134,7 @@ describe('mark-all-series-watched-api', () => {
     vi.stubGlobal('fetch', fetch);
     insertUser('user');
     insertItem('tt-1', ['#series'], 'library', 'user');
-    const trackerItemId = insertItem('tt-1', ['#series'], 'series-tracker', 'user');
+    const trackerItemId = insertItem('tt-1', ['#series'], 'watching', 'user');
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
@@ -177,7 +177,7 @@ describe('mark-all-series-watched-api', () => {
     vi.stubGlobal('fetch', fetch);
     insertUser('user');
     insertItem('tt-1', ['#series'], 'library', 'user');
-    const trackerItemId = insertItem('tt-1', ['#series'], 'series-tracker', 'user');
+    const trackerItemId = insertItem('tt-1', ['#series'], 'watching', 'user');
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
@@ -209,7 +209,7 @@ describe('mark-all-series-watched-api', () => {
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
     insertUser('user');
-    const trackerItemId = insertItem('tt-tracker-only', ['#series'], 'series-tracker', 'user');
+    const trackerItemId = insertItem('tt-tracker-only', ['#series'], 'watching', 'user');
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
@@ -254,7 +254,7 @@ describe('mark-all-series-watched-api', () => {
     insertUser('owner');
     insertShare('owner', 'user', true);
     insertItem('tt-shared', ['#series'], 'library', 'owner');
-    const trackerOnlyItemId = insertItem('tt-tracker-only', ['#series'], 'series-tracker', 'user');
+    const trackerOnlyItemId = insertItem('tt-tracker-only', ['#series'], 'watching', 'user');
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerOnlyItemId, 1, 1);

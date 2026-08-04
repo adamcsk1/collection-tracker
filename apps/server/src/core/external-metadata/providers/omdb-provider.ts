@@ -1,5 +1,5 @@
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
-import { SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
+import { WatchingSeasonMetadataModel } from '@shared/models/api-model';
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
 import { debugLog } from '../../logger';
 import { ExternalMetadataSeasonProvider } from '../external-metadata-provider';
@@ -49,14 +49,14 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
     return this.getItem(imdbId);
   }
 
-  public async getSeriesSeasons(providerItemId: string): Promise<SeriesTrackerSeasonMetadataModel[]> {
+  public async getSeriesSeasons(providerItemId: string): Promise<WatchingSeasonMetadataModel[]> {
     try {
       const seriesInfo = await this.fetchJson<OmdbSeriesInfoResponse>({ i: providerItemId, type: 'series' });
       if (isOmdbErrorResponse(seriesInfo)) return [];
       const totalSeasons = this.parsePositiveInteger(seriesInfo?.totalSeasons);
       if (!totalSeasons) return [];
 
-      const seasons: SeriesTrackerSeasonMetadataModel[] = [];
+      const seasons: WatchingSeasonMetadataModel[] = [];
       for (let season = 1; season <= Math.min(totalSeasons, MAX_SERIES_TRACKER_SEASONS); season++) {
         try {
           const seasonInfo = await this.fetchJson<OmdbSeasonResponse>({ i: providerItemId, Season: `${season}` });

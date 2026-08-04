@@ -80,11 +80,11 @@ describe('get-user-settings-api', () => {
     const { app, handlerPromise } = buildApp(request, response);
     const db = getDatabase();
     const preferences = {
-      bookTracker: true,
+      books: true,
       wishlist: false,
-      watchLater: true,
-      movieTracker: false,
-      seriesTracker: true,
+      watchlist: true,
+      watched: false,
+      watching: true,
     };
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     db.prepare('INSERT INTO user_settings (username_hash, collection_feature_preferences) VALUES (?, ?)').run(

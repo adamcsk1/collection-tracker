@@ -12,7 +12,7 @@ import {
   resolveCanonicalItemId,
   upsertExternalItemIdentities,
 } from '../external-item-identity-repository';
-import { findSeriesTrackerSeasons, findSeriesTrackerSeasonsByExternalId } from '../series-tracker-season-repository';
+import { findWatchingSeasons, findWatchingSeasonsByExternalId } from '../series-tracker-season-repository';
 import { findWatchedEpisodes, findWatchedEpisodesByExternalId } from '../series-tracker-watched-episodes-repository';
 import { toApiItem } from './collection-mapper';
 import { normalizeListType } from './collection-query';
@@ -105,11 +105,11 @@ export const insertCollectionItem = (
 
     const itemId = Number(result.lastInsertRowid);
     replaceExternalRatings(db, itemId, item);
-    if (normalizedListType === 'movie-tracker' || normalizedListType === 'series-tracker') {
+    if (normalizedListType === 'watched' || normalizedListType === 'watching') {
       db.prepare(
         `INSERT INTO collection_item_tracker_state (item_id, completed_at)
          VALUES (?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE ? END)`
-      ).run(itemId, normalizedListType === 'movie-tracker' && !watchedAt ? 1 : 0, watchedAt ?? null);
+      ).run(itemId, normalizedListType === 'watched' && !watchedAt ? 1 : 0, watchedAt ?? null);
     }
     upsertExternalItemIdentities(
       db,
@@ -322,15 +322,15 @@ export const collectionItemExistsByExternalId = (
   return Boolean(row);
 };
 
-export const syncSeriesTrackerCompletedTag = (
+export const syncWatchingCompletedTag = (
   db: Database.Database,
   usernameHash: string,
   imdbId: string
 ): CollectionItemApiModel | undefined => {
-  const row = findCollectionItemByImdbId(db, usernameHash, imdbId, 'series-tracker');
+  const row = findCollectionItemByImdbId(db, usernameHash, imdbId, 'watching');
   if (!row) return;
 
-  const seasons = findSeriesTrackerSeasons(db, usernameHash, imdbId);
+  const seasons = findWatchingSeasons(db, usernameHash, imdbId);
   const watchedEpisodes = findWatchedEpisodes(db, usernameHash, imdbId);
   const availableEpisodes = new Set<string>();
   for (const season of seasons) {
@@ -355,17 +355,17 @@ export const syncSeriesTrackerCompletedTag = (
     db.prepare('UPDATE collection_item_tracker_state SET completed_at = NULL WHERE item_id = ?').run(row.id);
   }
 
-  const refreshedRow = findCollectionItemByImdbId(db, usernameHash, imdbId, 'series-tracker')!;
+  const refreshedRow = findCollectionItemByImdbId(db, usernameHash, imdbId, 'watching')!;
   const syncedItem = toApiItem(db, refreshedRow);
   const hash = getItemHash(toCollectionItemChange(syncedItem));
   db.prepare('UPDATE collection_items SET content_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
     hash,
     row.id
   );
-  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, imdbId, 'series-tracker')!);
+  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, imdbId, 'watching')!);
 };
 
-export const syncSeriesTrackerCompletedTagByExternalId = (
+export const syncWatchingCompletedTagByExternalId = (
   db: Database.Database,
   usernameHash: string,
   externalProvider: string,
@@ -376,11 +376,11 @@ export const syncSeriesTrackerCompletedTagByExternalId = (
     usernameHash,
     externalProvider,
     externalItemId,
-    'series-tracker'
+    'watching'
   );
   if (!row) return;
 
-  const seasons = findSeriesTrackerSeasonsByExternalId(db, usernameHash, externalProvider, externalItemId);
+  const seasons = findWatchingSeasonsByExternalId(db, usernameHash, externalProvider, externalItemId);
   const watchedEpisodes = findWatchedEpisodesByExternalId(db, usernameHash, externalProvider, externalItemId);
   const availableEpisodes = new Set<string>();
   for (const season of seasons) {
@@ -410,7 +410,7 @@ export const syncSeriesTrackerCompletedTagByExternalId = (
     usernameHash,
     externalProvider,
     externalItemId,
-    'series-tracker'
+    'watching'
   )!;
   const syncedItem = toApiItem(db, refreshedRow);
   const hash = getItemHash(toCollectionItemChange(syncedItem));
@@ -420,12 +420,6 @@ export const syncSeriesTrackerCompletedTagByExternalId = (
   );
   return toApiItem(
     db,
-    findCollectionItemByExternalIdOrCanonicalItemId(
-      db,
-      usernameHash,
-      externalProvider,
-      externalItemId,
-      'series-tracker'
-    )!
+    findCollectionItemByExternalIdOrCanonicalItemId(db, usernameHash, externalProvider, externalItemId, 'watching')!
   );
 };

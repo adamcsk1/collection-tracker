@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const insertItem = (
   imdbId: string,
-  listType: 'library' | 'movie-tracker' | 'series-tracker',
+  listType: 'library' | 'watched' | 'watching',
   title: string,
   year: string,
   ratings: [string, string, string],
@@ -35,7 +35,7 @@ const insertItem = (
       'Plot',
       image,
       contentHash,
-      listType === 'series-tracker' ? 'series' : 'movie'
+      listType === 'watching' ? 'series' : 'movie'
     );
   const itemId = Number(result.lastInsertRowid);
   const insertRating = db.prepare(
@@ -49,7 +49,7 @@ const insertItem = (
       (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
      VALUES (?, ?, ?, ?, ?)`
   ).run('user', `imdb:${imdbId}`, 'imdb', imdbId, 'alias');
-  if (listType === 'movie-tracker' || listType === 'series-tracker') {
+  if (listType === 'watched' || listType === 'watching') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
       itemId,
       completedAt
@@ -72,11 +72,11 @@ describe('export-api', () => {
 
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     const featurePreferences = {
-      bookTracker: true,
+      books: true,
       wishlist: false,
-      watchLater: true,
-      movieTracker: false,
-      seriesTracker: true,
+      watchlist: true,
+      watched: false,
+      watching: true,
     };
     db.prepare(
       'INSERT INTO user_settings (username_hash, theme, animated_background, language, collection_feature_preferences) VALUES (?, ?, ?, ?, ?)'
@@ -84,7 +84,7 @@ describe('export-api', () => {
     const libraryItemId = insertItem('tt123', 'library', 'Movie', '2020', ['8.0', '90', '85'], 9, 'img.jpg', 'hash1');
     const seriesItemId = insertItem(
       'tt456',
-      'series-tracker',
+      'watching',
       'Series',
       '2021',
       ['7.5', '80', '75'],
@@ -93,7 +93,7 @@ describe('export-api', () => {
       'hash2',
       '2026-04-05 00:00:00'
     );
-    insertItem('tt789', 'movie-tracker', 'Tracker Movie', '2022', ['9.0', '95', '90'], 10, 'img3.jpg', 'hash3');
+    insertItem('tt789', 'watched', 'Tracker Movie', '2022', ['9.0', '95', '90'], 10, 'img3.jpg', 'hash3');
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(libraryItemId, '#owned');
     db.prepare(
       'INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -134,13 +134,13 @@ describe('export-api', () => {
         }),
         expect.objectContaining({
           IMDbId: 'tt789',
-          listType: 'movie-tracker',
+          listType: 'watched',
           title: 'Tracker Movie',
           canonicalItemId: 'imdb:tt789',
         }),
         expect.objectContaining({
           IMDbId: 'tt456',
-          listType: 'series-tracker',
+          listType: 'watching',
           title: 'Series',
           watchedAt: '2026-04-05 00:00:00',
           canonicalItemId: 'imdb:tt456',
@@ -156,7 +156,7 @@ describe('export-api', () => {
           weight: 1,
         },
       ],
-      seriesTrackerData: {
+      watchingData: {
         'omdb/tt456': {
           seasons: [{ season: 1, episodes: 10, titles: ['Episode 1'] }],
           watchedEpisodes: [{ season: 1, episode: 1 }],
@@ -182,7 +182,7 @@ describe('export-api', () => {
       userSettings: {},
       collectionItems: [],
       tagManagement: [],
-      seriesTrackerData: {},
+      watchingData: {},
     });
   });
 });

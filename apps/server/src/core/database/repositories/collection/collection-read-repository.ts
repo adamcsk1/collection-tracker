@@ -28,7 +28,7 @@ const buildCollectionOrderBy = ({
 
 const EPISODE_COUNT_IN_CHUNK_SIZE = 400;
 
-const loadSeriesTrackerEpisodeCounts = (
+const loadWatchingEpisodeCounts = (
   db: Database.Database,
   itemIds: number[]
 ): Map<number, { watchedEpisodes: number; totalEpisodes: number }> => {
@@ -89,7 +89,7 @@ const toAiSearchItem = (
   let totalEpisodes: number | null = null;
   let progressPercent: number | null = null;
 
-  if (apiItem.listType === 'series-tracker') {
+  if (apiItem.listType === 'watching') {
     completed = apiItem.watchedAt !== null;
     watchStatus = completed ? 'completed' : 'unfinished';
     const episodeCounts = episodeCountsByItemId?.get(row.id) ?? { watchedEpisodes: 0, totalEpisodes: 0 };
@@ -97,7 +97,7 @@ const toAiSearchItem = (
     totalEpisodes = episodeCounts.totalEpisodes;
     progressPercent =
       totalEpisodes > 0 ? Math.min(100, Math.round((watchedEpisodes / totalEpisodes) * 100)) : completed ? 100 : 0;
-  } else if (apiItem.listType === 'movie-tracker') {
+  } else if (apiItem.listType === 'watched') {
     completed = true;
     watchStatus = 'watched';
   }
@@ -336,21 +336,35 @@ export const findCollectionItemsForAiSearch = (
   usernameHashes: string[],
   listType: CollectionListTypeModel = 'library'
 ): AiSearchCollectionItem[] => {
-  const rows = db
-    .prepare(
-      `SELECT ${collectionItemProjection()}
-        FROM collection_items
-        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-         AND list_type = ?
-        ORDER BY created_at DESC, id DESC`
-    )
-    .all(...usernameHashes, listType) as CollectionItemRow[];
+  const viewerUsernameHash = usernameHashes[0];
+  const rows =
+    listType === 'library' && viewerUsernameHash
+      ? (db
+          .prepare(
+            `SELECT ${collectionItemProjection()}
+              FROM collection_items
+              WHERE (
+                (username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND list_type = 'library')
+                OR (username_hash = ? AND list_type = 'books')
+              )
+              ORDER BY created_at DESC, id DESC`
+          )
+          .all(...usernameHashes, viewerUsernameHash) as CollectionItemRow[])
+      : (db
+          .prepare(
+            `SELECT ${collectionItemProjection()}
+              FROM collection_items
+              WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
+               AND list_type = ?
+              ORDER BY created_at DESC, id DESC`
+          )
+          .all(...usernameHashes, listType) as CollectionItemRow[]);
 
-  const seriesTrackerItemIds =
-    listType === 'series-tracker'
+  const watchingItemIds =
+    listType === 'watching'
       ? rows.map((row) => row.id)
-      : rows.filter((row) => row.list_type === 'series-tracker').map((row) => row.id);
-  const episodeCountsByItemId = loadSeriesTrackerEpisodeCounts(db, seriesTrackerItemIds);
+      : rows.filter((row) => row.list_type === 'watching').map((row) => row.id);
+  const episodeCountsByItemId = loadWatchingEpisodeCounts(db, watchingItemIds);
 
   return rows.reduce<AiSearchCollectionItem[]>((items, row) => {
     items.push(toAiSearchItem(db, row, episodeCountsByItemId));
@@ -387,7 +401,7 @@ export const findRandomCollectionImages = (
        WHERE image != ?
          AND (
            (username_hash IN (${readableHashes.map(() => '?').join(', ')}) AND list_type = 'library')
-           OR (username_hash = ? AND list_type = 'book-tracker')
+           OR (username_hash = ? AND list_type = 'books')
          )
          ORDER BY RANDOM() LIMIT ?`
     )

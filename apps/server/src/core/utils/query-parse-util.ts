@@ -1,3 +1,4 @@
+import { parseCollectionListType } from '@shared/constants/collection-list-type-const';
 import {
   CollectionItemFiltersApiModel,
   CollectionItemOrderBy,
@@ -33,19 +34,7 @@ export const parseTagMode = (value: unknown): CollectionItemTagMode | undefined 
   return;
 };
 
-export const parseListType = (value: unknown): CollectionListTypeModel | undefined => {
-  if (
-    value === 'library' ||
-    value === 'watch-later' ||
-    value === 'wishlist' ||
-    value === 'series-tracker' ||
-    value === 'movie-tracker' ||
-    value === 'book-tracker'
-  ) {
-    return value;
-  }
-  return;
-};
+export const parseListType = (value: unknown): CollectionListTypeModel | undefined => parseCollectionListType(value);
 
 export const parseOrderBy = (value: unknown): CollectionItemOrderBy | undefined => {
   if (value === 'createdAt' || value === 'alphabet') return value;

@@ -80,13 +80,13 @@ describe('collection-items-search-suggestions-api', () => {
     db.prepare(
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
-       VALUES ('owner', 'openlibrary', '9780306406157', 'isbn:9780306406157', 'book-tracker', 'book',
+       VALUES ('owner', 'openlibrary', '9780306406157', 'isbn:9780306406157', 'books', 'book',
           'Private Shared Book', 'private shared book', '', '', '', 'private-book')`
     ).run();
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      query: { query: 'private', listType: 'book-tracker' },
+      query: { query: 'private', listType: 'books' },
     };
     const { app, handlerPromise } = buildApp(request, response);
 

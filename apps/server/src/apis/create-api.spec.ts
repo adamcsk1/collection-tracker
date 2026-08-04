@@ -237,7 +237,7 @@ describe('create-api', () => {
         'omdb',
         '603',
         'omdb:603',
-        'watch-later',
+        'watchlist',
         'Provider Movie',
         'provider movie',
         '1999',
@@ -275,7 +275,7 @@ describe('create-api', () => {
     expect(
       getDatabase()
         .prepare('SELECT canonical_item_id FROM collection_items WHERE username_hash = ? AND list_type = ?')
-        .get('fallback-user', 'watch-later')
+        .get('fallback-user', 'watchlist')
     ).toEqual({ canonical_item_id: 'omdb:603' });
     expect(
       getDatabase()
@@ -339,7 +339,7 @@ describe('create-api', () => {
   it('creates a watch later item using listType', async () => {
     insertUser();
     const response = mockResponse();
-    const request: any = { body: { ...item, listType: 'watch-later' }, usernameHash: 'user' };
+    const request: any = { body: { ...item, listType: 'watchlist' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');
@@ -347,11 +347,11 @@ describe('create-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ title: 'Custom File', listType: 'watch-later', contentType: 'movie', tags: [] }),
+      item: expect.objectContaining({ title: 'Custom File', listType: 'watchlist', contentType: 'movie', tags: [] }),
     });
     expect(
       getDatabase().prepare('SELECT list_type FROM collection_items WHERE external_item_id = ?').get('tt0000001')
-    ).toEqual({ list_type: 'watch-later' });
+    ).toEqual({ list_type: 'watchlist' });
   });
 
   it('creates a wishlist item using listType', async () => {
@@ -372,7 +372,7 @@ describe('create-api', () => {
   it('creates a series tracker item using listType', async () => {
     insertUser();
     const response = mockResponse();
-    const request: any = { body: { ...item, contentType: 'series', listType: 'series-tracker' }, usernameHash: 'user' };
+    const request: any = { body: { ...item, contentType: 'series', listType: 'watching' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');
@@ -382,7 +382,7 @@ describe('create-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({
         title: 'Custom File',
-        listType: 'series-tracker',
+        listType: 'watching',
         contentType: 'series',
         tags: [],
       }),
@@ -401,7 +401,7 @@ describe('create-api', () => {
     insertUser();
     const response = mockResponse();
     const request: any = {
-      body: { ...item, contentType: 'series', listType: 'series-tracker' },
+      body: { ...item, contentType: 'series', listType: 'watching' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -428,7 +428,7 @@ describe('create-api', () => {
     insertUser();
     const response = mockResponse();
     const request: any = {
-      body: { ...item, contentType: 'series', listType: 'series-tracker' },
+      body: { ...item, contentType: 'series', listType: 'watching' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -440,7 +440,7 @@ describe('create-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({
         title: 'Custom File',
-        listType: 'series-tracker',
+        listType: 'watching',
         contentType: 'series',
         tags: [],
       }),
@@ -449,7 +449,7 @@ describe('create-api', () => {
 
   it('returns 400 when creating a movie in the series tracker', async () => {
     const response = mockResponse();
-    const request: any = { body: { ...item, listType: 'series-tracker' }, usernameHash: 'user' };
+    const request: any = { body: { ...item, listType: 'watching' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');
@@ -581,7 +581,7 @@ describe('create-api', () => {
 
   it('returns 400 when watch later is combined with favorite', async () => {
     const response = mockResponse();
-    const request: any = { body: { ...item, listType: 'watch-later', favorite: true }, usernameHash: 'user' };
+    const request: any = { body: { ...item, listType: 'watchlist', favorite: true }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');
@@ -618,7 +618,7 @@ describe('create-api', () => {
   it('returns 400 when creating watch later in a shared library', async () => {
     const response = mockResponse();
     const request: any = {
-      body: { ...item, listType: 'watch-later', targetOwnerShareCode: 'shared-code' },
+      body: { ...item, listType: 'watchlist', targetOwnerShareCode: 'shared-code' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -633,7 +633,7 @@ describe('create-api', () => {
   it('returns 400 when creating non-library listType in a shared library', async () => {
     const response = mockResponse();
     const request: any = {
-      body: { ...item, listType: 'watch-later', targetOwnerShareCode: 'shared-code' },
+      body: { ...item, listType: 'watchlist', targetOwnerShareCode: 'shared-code' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);

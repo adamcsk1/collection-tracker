@@ -36,26 +36,26 @@ const item = {
   favorite: false,
 };
 
-const seriesTrackerItem = {
+const watchingItem = {
   ...item,
   title: 'Imported Series',
   titleLower: 'imported series',
   IMDbId: 'tt0000002',
   externalItemId: 'tt0000002',
   tags: ['#completed', '#series'],
-  listType: 'series-tracker',
+  listType: 'watching',
   watchedAt: '2026-05-06 00:00:00',
   contentType: 'series',
 };
 
-const movieTrackerItem = {
+const watchedItem = {
   ...item,
   title: 'Imported Tracker Movie',
   titleLower: 'imported tracker movie',
   IMDbId: 'tt0000004',
   externalItemId: 'tt0000004',
   tags: ['#movie'],
-  listType: 'movie-tracker',
+  listType: 'watched',
 };
 
 const insertUser = (usernameHash = 'user') => {
@@ -138,14 +138,15 @@ describe('import-api', () => {
           language: 'en',
           collectionFeaturePreferences: {
             wishlist: false,
-            watchLater: true,
-            movieTracker: false,
-            seriesTracker: true,
+            watchlist: true,
+            watched: false,
+            watching: true,
+            books: true,
           },
         },
         collectionItems: [
           item,
-          { ...item, IMDbId: 'tt0000003', externalItemId: 'tt0000003', listType: 'watch-later' },
+          { ...item, IMDbId: 'tt0000003', externalItemId: 'tt0000003', listType: 'watchlist' },
           {
             ...item,
             IMDbId: undefined,
@@ -153,8 +154,8 @@ describe('import-api', () => {
             externalItemId: 'tt0000123',
             title: 'Provider Movie',
           },
-          seriesTrackerItem,
-          movieTrackerItem,
+          watchingItem,
+          watchedItem,
           {
             ...item,
             IMDbId: undefined,
@@ -162,7 +163,7 @@ describe('import-api', () => {
             externalItemId: '0-306-40615-2',
             externalIds: [{ source: 'isbn', id: '978-0-306-40615-7' }],
             title: 'Imported Book',
-            listType: 'book-tracker',
+            listType: 'books',
             contentType: 'book',
           },
         ],
@@ -184,7 +185,7 @@ describe('import-api', () => {
             weight: 2,
           },
         ],
-        seriesTrackerData: {
+        watchingData: {
           'omdb/tt0000002': {
             seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }],
             watchedEpisodes: [{ season: 1, episode: 1 }],
@@ -202,17 +203,17 @@ describe('import-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       importedCollectionItems: 6,
       importedTagManagement: 2,
-      importedSeriesTrackerSeasons: 1,
-      importedSeriesTrackerWatchedEpisodes: 1,
+      importedWatchingSeasons: 1,
+      importedWatchingWatchedEpisodes: 1,
     });
     expect(
       db.prepare('SELECT title FROM collection_items WHERE external_item_id = ?').get('tt9999999')
     ).toBeUndefined();
     expect(db.prepare('SELECT list_type FROM collection_items WHERE external_item_id = ?').get('tt0000003')).toEqual({
-      list_type: 'watch-later',
+      list_type: 'watchlist',
     });
     expect(db.prepare('SELECT list_type FROM collection_items WHERE external_item_id = ?').get('tt0000004')).toEqual({
-      list_type: 'movie-tracker',
+      list_type: 'watched',
     });
     expect(
       db
@@ -228,7 +229,7 @@ describe('import-api', () => {
     ).toEqual({
       external_item_id: '9780306406157',
       canonical_item_id: 'isbn:9780306406157',
-      list_type: 'book-tracker',
+      list_type: 'books',
       content_type: 'book',
     });
     expect(db.prepare('SELECT token_hash FROM access_tokens WHERE username_hash = ?').get('user')).toEqual({
@@ -240,17 +241,22 @@ describe('import-api', () => {
           'SELECT theme, animated_background, language, collection_feature_preferences FROM user_settings WHERE username_hash = ?'
         )
         .get('user')
-    ).toEqual({
-      theme: 'dark',
-      animated_background: 0,
-      language: 'en',
-      collection_feature_preferences: JSON.stringify({
-        bookTracker: true,
-        wishlist: false,
-        watchLater: true,
-        movieTracker: false,
-        seriesTracker: true,
-      }),
+    ).toEqual(
+      expect.objectContaining({
+        theme: 'dark',
+        animated_background: 0,
+        language: 'en',
+      })
+    );
+    const importedSettings = db
+      .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
+      .get('user') as { collection_feature_preferences: string };
+    expect(JSON.parse(importedSettings.collection_feature_preferences)).toEqual({
+      books: true,
+      wishlist: false,
+      watchlist: true,
+      watched: false,
+      watching: true,
     });
     expect(
       db
@@ -284,7 +290,7 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [item],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -299,11 +305,11 @@ describe('import-api', () => {
 
   it.each([
     ['book in library', { contentType: 'book', listType: 'library' }],
-    ['book in watch later', { contentType: 'book', listType: 'watch-later' }],
+    ['book in watch later', { contentType: 'book', listType: 'watchlist' }],
     ['book in wishlist', { contentType: 'book', listType: 'wishlist' }],
-    ['movie in book tracker', { contentType: 'movie', listType: 'book-tracker' }],
-    ['favorite in a non-library list', { favorite: true, listType: 'watch-later' }],
-    ['movie in series tracker', { contentType: 'movie', listType: 'series-tracker' }],
+    ['movie in book tracker', { contentType: 'movie', listType: 'books' }],
+    ['favorite in a non-library list', { favorite: true, listType: 'watchlist' }],
+    ['movie in series tracker', { contentType: 'movie', listType: 'watching' }],
   ])('returns 400 for invalid imported %s', async (_caseName, itemChanges) => {
     const response = mockResponse();
     const request: any = {
@@ -314,7 +320,7 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [{ ...item, ...itemChanges }],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -346,7 +352,7 @@ describe('import-api', () => {
           },
         ],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -386,7 +392,7 @@ describe('import-api', () => {
           },
         ],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -419,7 +425,7 @@ describe('import-api', () => {
           },
         ],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -465,7 +471,7 @@ describe('import-api', () => {
           },
         ],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -489,7 +495,7 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [item],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -518,7 +524,7 @@ describe('import-api', () => {
           },
         ],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -544,7 +550,7 @@ describe('import-api', () => {
           userSettings: {},
           collectionItems: [{ ...item, canonicalItemId }],
           tagManagement: [],
-          seriesTrackerData: {},
+          watchingData: {},
         },
       };
       const app = buildRouteApp();
@@ -567,9 +573,9 @@ describe('import-api', () => {
         type: 'collection-tracker-export',
         version: 6,
         userSettings: {},
-        collectionItems: [{ ...seriesTrackerItem, tags: ['#series'], watchedAt: '2026-05-06 00:00:00' }],
+        collectionItems: [{ ...watchingItem, tags: ['#series'], watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
-        seriesTrackerData: {
+        watchingData: {
           'omdb/tt0000002': {
             seasons: [{ season: 1, episodes: 2 }],
             watchedEpisodes: [{ season: 1, episode: 1 }],
@@ -605,9 +611,9 @@ describe('import-api', () => {
         type: 'collection-tracker-export',
         version: 6,
         userSettings: {},
-        collectionItems: [{ ...movieTrackerItem, watchedAt: 'not-a-date' }],
+        collectionItems: [{ ...watchedItem, watchedAt: 'not-a-date' }],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -627,9 +633,9 @@ describe('import-api', () => {
         type: 'collection-tracker-export',
         version: 6,
         userSettings: {},
-        collectionItems: [{ ...movieTrackerItem, watchedAt: '2026-02-31 00:00:00' }],
+        collectionItems: [{ ...watchedItem, watchedAt: '2026-02-31 00:00:00' }],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -650,9 +656,9 @@ describe('import-api', () => {
         type: 'collection-tracker-export',
         version: 6,
         userSettings: {},
-        collectionItems: [{ ...seriesTrackerItem, watchedAt: '2026-05-06 00:00:00' }],
+        collectionItems: [{ ...watchingItem, watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -697,7 +703,7 @@ describe('import-api', () => {
         userSettings: { collectionListDisplayPreferences: { preferredRating: 'imdb' } },
         collectionItems: [],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -719,14 +725,14 @@ describe('import-api', () => {
         userSettings: {
           collectionFeaturePreferences: {
             wishlist: true,
-            watchLater: true,
-            movieTracker: true,
-            seriesTracker: 'yes',
+            watchlist: true,
+            watched: true,
+            watching: 'yes',
           },
         },
         collectionItems: [],
         tagManagement: [],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -765,7 +771,7 @@ describe('import-api', () => {
             weight: 1,
           },
         ],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -797,7 +803,7 @@ describe('import-api', () => {
             weight: 2,
           },
         ],
-        seriesTrackerData: {},
+        watchingData: {},
       },
     };
     const app = buildRouteApp();
@@ -809,8 +815,8 @@ describe('import-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       importedCollectionItems: 0,
       importedTagManagement: 1,
-      importedSeriesTrackerSeasons: 0,
-      importedSeriesTrackerWatchedEpisodes: 0,
+      importedWatchingSeasons: 0,
+      importedWatchingWatchedEpisodes: 0,
     });
     expect(getDatabase().prepare('SELECT tag FROM tag_configs WHERE username_hash = ?').all('user')).toEqual([
       { tag: '#favorite' },
@@ -825,9 +831,9 @@ describe('import-api', () => {
         type: 'collection-tracker-export',
         version: 6,
         userSettings: {},
-        collectionItems: [seriesTrackerItem],
+        collectionItems: [watchingItem],
         tagManagement: [],
-        seriesTrackerData: {
+        watchingData: {
           'omdb/tt0000002': {
             seasons: [{ season: 1, episodes: 1 }],
             watchedEpisodes: [{ season: 1, episode: 2 }],
@@ -852,9 +858,9 @@ describe('import-api', () => {
         type: 'collection-tracker-export',
         version: 6,
         userSettings: {},
-        collectionItems: [seriesTrackerItem],
+        collectionItems: [watchingItem],
         tagManagement: [],
-        seriesTrackerData: {
+        watchingData: {
           'omdb/%E0%A4%A': {
             seasons: [{ season: 1, episodes: 1 }],
             watchedEpisodes: [],
