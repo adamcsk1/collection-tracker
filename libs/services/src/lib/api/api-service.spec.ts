@@ -79,11 +79,11 @@ describe('ApiService', () => {
   it('checks collection item existence by external identity', async () => {
     const externalIds = [{ source: 'omdb' as const, id: 'item,with,comma' }];
     const promise = lastValueFrom(
-      service.collectionItemExists('provider/id', 'item/id', 'share/code', 'watch-later', externalIds)
+      service.collectionItemExists('provider/id', 'item/id', 'share/code', 'watchlist', externalIds)
     );
 
     const existsRequest = httpMock.expectOne(
-      `https://api.test/items/exists?externalIdentitySource=provider%2Fid&externalIdentityId=item%2Fid&ownerShareCode=share%2Fcode&listType=watch-later&externalIds=${encodeURIComponent(JSON.stringify(externalIds))}`
+      `https://api.test/items/exists?externalIdentitySource=provider%2Fid&externalIdentityId=item%2Fid&ownerShareCode=share%2Fcode&listType=watchlist&externalIds=${encodeURIComponent(JSON.stringify(externalIds))}`
     );
     expect(existsRequest.request.method).toBe('GET');
     existsRequest.flush({ exists: true });
@@ -111,11 +111,11 @@ describe('ApiService', () => {
       favorite: false,
     };
     const promise = lastValueFrom(
-      service.updateByExternalId('provider/id', 'item/id', item, 'old-hash', 'share/code', 'watch-later')
+      service.updateByExternalId('provider/id', 'item/id', item, 'old-hash', 'share/code', 'watchlist')
     );
 
     const updateRequest = httpMock.expectOne(
-      'https://api.test/items/provider%2Fid/item%2Fid/change?ownerShareCode=share%2Fcode&listType=watch-later'
+      'https://api.test/items/provider%2Fid/item%2Fid/change?ownerShareCode=share%2Fcode&listType=watchlist'
     );
     expect(updateRequest.request.method).toBe('PUT');
     expect(updateRequest.request.body).toEqual({ ...item, hash: 'old-hash' });
@@ -126,11 +126,11 @@ describe('ApiService', () => {
 
   it('deletes an item by external identity', async () => {
     const promise = lastValueFrom(
-      service.deleteByExternalId('provider/id', 'item/id', 'abc123', 'share/code', 'watch-later')
+      service.deleteByExternalId('provider/id', 'item/id', 'abc123', 'share/code', 'watchlist')
     );
 
     const deleteRequest = httpMock.expectOne(
-      'https://api.test/items/provider%2Fid/item%2Fid?hash=abc123&ownerShareCode=share%2Fcode&listType=watch-later'
+      'https://api.test/items/provider%2Fid/item%2Fid?hash=abc123&ownerShareCode=share%2Fcode&listType=watchlist'
     );
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush({});
@@ -189,9 +189,9 @@ describe('ApiService', () => {
   });
 
   it('deletes all movie tracker items', async () => {
-    const promise = lastValueFrom(service.deleteAllMovieTrackerItems());
+    const promise = lastValueFrom(service.deleteAllWatchedItems());
 
-    const deleteRequest = httpMock.expectOne('https://api.test/movie-tracker');
+    const deleteRequest = httpMock.expectOne('https://api.test/watched');
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush({ changedCount: 2 });
 
@@ -199,9 +199,9 @@ describe('ApiService', () => {
   });
 
   it('deletes all series tracker items', async () => {
-    const promise = lastValueFrom(service.deleteAllSeriesTrackerItems());
+    const promise = lastValueFrom(service.deleteAllWatchingItems());
 
-    const deleteRequest = httpMock.expectOne('https://api.test/series-tracker');
+    const deleteRequest = httpMock.expectOne('https://api.test/watching');
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush({ changedCount: 3 });
 
@@ -209,9 +209,9 @@ describe('ApiService', () => {
   });
 
   it('deletes all book tracker items', async () => {
-    const promise = lastValueFrom(service.deleteAllBookTrackerItems());
+    const promise = lastValueFrom(service.deleteAllBooksItems());
 
-    const deleteRequest = httpMock.expectOne('https://api.test/book-tracker');
+    const deleteRequest = httpMock.expectOne('https://api.test/books');
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush({ changedCount: 4 });
 
@@ -220,11 +220,11 @@ describe('ApiService', () => {
 
   it('copies a movie to the movie tracker by external identity', async () => {
     const promise = lastValueFrom(
-      service.addMovieTrackerItemByExternalId('provider/id', 'item/id', 'share/code', 'watch-later')
+      service.addWatchedItemByExternalId('provider/id', 'item/id', 'share/code', 'watchlist')
     );
 
     const addRequest = httpMock.expectOne(
-      'https://api.test/movie-tracker/provider%2Fid/item%2Fid?ownerShareCode=share%2Fcode&sourceListType=watch-later'
+      'https://api.test/watched/provider%2Fid/item%2Fid?ownerShareCode=share%2Fcode&sourceListType=watchlist'
     );
     expect(addRequest.request.method).toBe('POST');
     expect(addRequest.request.body).toEqual({});
@@ -234,9 +234,9 @@ describe('ApiService', () => {
   });
 
   it('deletes a movie tracker item by external identity', async () => {
-    const promise = lastValueFrom(service.deleteMovieTrackerItemByExternalId('provider/id', 'item/id'));
+    const promise = lastValueFrom(service.deleteWatchedItemByExternalId('provider/id', 'item/id'));
 
-    const deleteRequest = httpMock.expectOne('https://api.test/movie-tracker/provider%2Fid/item%2Fid');
+    const deleteRequest = httpMock.expectOne('https://api.test/watched/provider%2Fid/item%2Fid');
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush(null);
 
@@ -245,11 +245,11 @@ describe('ApiService', () => {
 
   it('copies a series to the series tracker by external identity', async () => {
     const promise = lastValueFrom(
-      service.addSeriesTrackerItemByExternalId('provider/id', 'item/id', 'watch-later', 'share/code')
+      service.addWatchingItemByExternalId('provider/id', 'item/id', 'watchlist', 'share/code')
     );
 
     const addRequest = httpMock.expectOne(
-      'https://api.test/series-tracker/provider%2Fid/item%2Fid?sourceListType=watch-later&ownerShareCode=share%2Fcode'
+      'https://api.test/watching/provider%2Fid/item%2Fid?sourceListType=watchlist&ownerShareCode=share%2Fcode'
     );
     expect(addRequest.request.method).toBe('POST');
     expect(addRequest.request.body).toEqual({});
@@ -419,7 +419,7 @@ describe('ApiService', () => {
       userSettings: {},
       collectionItems: [],
       tagManagement: [],
-      seriesTrackerData: {},
+      watchingData: {},
     };
     const promise = lastValueFrom(service.getUserExport());
 
@@ -437,13 +437,13 @@ describe('ApiService', () => {
       userSettings: {},
       collectionItems: [],
       tagManagement: [],
-      seriesTrackerData: {},
+      watchingData: {},
     };
     const importResult = {
       importedCollectionItems: 0,
       importedTagManagement: 0,
-      importedSeriesTrackerSeasons: 0,
-      importedSeriesTrackerWatchedEpisodes: 0,
+      importedWatchingSeasons: 0,
+      importedWatchingWatchedEpisodes: 0,
     };
     const promise = lastValueFrom(service.importUserExport(importData));
 
@@ -467,10 +467,10 @@ describe('ApiService', () => {
   });
 
   it('alerts and rethrows when AI query fails', async () => {
-    const promise = lastValueFrom(service.getAiQueryData('sci-fi movies', 'watch-later'));
+    const promise = lastValueFrom(service.getAiQueryData('sci-fi movies', 'watchlist'));
 
     const aiRequest = httpMock.expectOne('https://api.test/proxy/ai/query');
-    expect(aiRequest.request.body).toEqual({ prompt: 'sci-fi movies', listType: 'watch-later' });
+    expect(aiRequest.request.body).toEqual({ prompt: 'sci-fi movies', listType: 'watchlist' });
     aiRequest.flush('bad', { status: 502, statusText: 'Bad Gateway' });
 
     await expect(promise).rejects.toMatchObject({ status: 502 });
@@ -641,9 +641,9 @@ describe('ApiService', () => {
   });
 
   it('retrieves series tracker seasons by external identity', async () => {
-    const promise = lastValueFrom(service.getSeriesTrackerSeasonsByExternalId('provider/id', 'item/id'));
+    const promise = lastValueFrom(service.getWatchingSeasonsByExternalId('provider/id', 'item/id'));
 
-    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/seasons');
+    const request = httpMock.expectOne('https://api.test/watching/provider%2Fid/item%2Fid/seasons');
     expect(request.request.method).toBe('GET');
     request.flush({ seasons: [] });
 
@@ -651,9 +651,9 @@ describe('ApiService', () => {
   });
 
   it('refreshes series tracker seasons by external identity', async () => {
-    const promise = lastValueFrom(service.refreshSeriesTrackerSeasonsByExternalId('provider/id', 'item/id'));
+    const promise = lastValueFrom(service.refreshWatchingSeasonsByExternalId('provider/id', 'item/id'));
 
-    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/seasons/refresh');
+    const request = httpMock.expectOne('https://api.test/watching/provider%2Fid/item%2Fid/seasons/refresh');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({});
     request.flush({ seasons: [] });
@@ -663,9 +663,9 @@ describe('ApiService', () => {
 
   it('updates series tracker seasons by external identity', async () => {
     const payload = { seasons: [{ season: 1, episodes: 2 }] };
-    const promise = lastValueFrom(service.updateSeriesTrackerSeasonsByExternalId('provider/id', 'item/id', payload));
+    const promise = lastValueFrom(service.updateWatchingSeasonsByExternalId('provider/id', 'item/id', payload));
 
-    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/seasons');
+    const request = httpMock.expectOne('https://api.test/watching/provider%2Fid/item%2Fid/seasons');
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual(payload);
     request.flush(payload);
@@ -674,9 +674,9 @@ describe('ApiService', () => {
   });
 
   it('deletes series tracker seasons by external identity', async () => {
-    const promise = lastValueFrom(service.deleteSeriesTrackerSeasonsByExternalId('provider/id', 'item/id'));
+    const promise = lastValueFrom(service.deleteWatchingSeasonsByExternalId('provider/id', 'item/id'));
 
-    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/seasons');
+    const request = httpMock.expectOne('https://api.test/watching/provider%2Fid/item%2Fid/seasons');
     expect(request.request.method).toBe('DELETE');
     request.flush({ seasons: [] });
 
@@ -684,9 +684,9 @@ describe('ApiService', () => {
   });
 
   it('retrieves watched episodes by external identity', async () => {
-    const promise = lastValueFrom(service.getSeriesTrackerWatchedEpisodesByExternalId('provider/id', 'item/id'));
+    const promise = lastValueFrom(service.getWatchingWatchedEpisodesByExternalId('provider/id', 'item/id'));
 
-    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/watched-episodes');
+    const request = httpMock.expectOne('https://api.test/watching/provider%2Fid/item%2Fid/watched-episodes');
     expect(request.request.method).toBe('GET');
     request.flush({ watchedEpisodes: [] });
 
@@ -695,11 +695,9 @@ describe('ApiService', () => {
 
   it('updates watched episodes by external identity', async () => {
     const payload = { watchedEpisodes: [{ season: 1, episode: 2 }] };
-    const promise = lastValueFrom(
-      service.updateSeriesTrackerWatchedEpisodesByExternalId('provider/id', 'item/id', payload)
-    );
+    const promise = lastValueFrom(service.updateWatchingWatchedEpisodesByExternalId('provider/id', 'item/id', payload));
 
-    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/watched-episodes');
+    const request = httpMock.expectOne('https://api.test/watching/provider%2Fid/item%2Fid/watched-episodes');
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual(payload);
     request.flush(payload);
@@ -708,9 +706,9 @@ describe('ApiService', () => {
   });
 
   it('marks all series tracker episodes watched by external identity', async () => {
-    const promise = lastValueFrom(service.markAllSeriesTrackerWatchedByExternalId('provider/id', 'item/id'));
+    const promise = lastValueFrom(service.markAllWatchingWatchedByExternalId('provider/id', 'item/id'));
 
-    const request = httpMock.expectOne('https://api.test/series-tracker/provider%2Fid/item%2Fid/mark-all-watched');
+    const request = httpMock.expectOne('https://api.test/watching/provider%2Fid/item%2Fid/mark-all-watched');
     expect(request.request.method).toBe('PUT');
     request.flush({ watchedEpisodes: [] });
 
