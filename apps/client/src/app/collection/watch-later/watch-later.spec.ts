@@ -13,10 +13,10 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
-import { WatchLater } from './watch-later';
+import { Watchlist } from './watchlist';
 
-describe('WatchLater', () => {
-  let fixture: ComponentFixture<WatchLater>;
+describe('Watchlist', () => {
+  let fixture: ComponentFixture<Watchlist>;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let floatActions: FloatActionsService;
   const portal = { open: vi.fn() };
@@ -34,7 +34,7 @@ describe('WatchLater', () => {
 
   const createFixture = (searchText = '') => {
     TestBed.configureTestingModule({
-      imports: [WatchLater],
+      imports: [Watchlist],
       providers: [
         provideStore({ ...initialCollectionState, searchText }, collectionStateToken),
         provideStore(initialMainCollectionState, mainCollectionStateToken),
@@ -57,13 +57,13 @@ describe('WatchLater', () => {
       ],
     });
 
-    TestBed.overrideComponent(WatchLater, {
+    TestBed.overrideComponent(Watchlist, {
       set: {
         template: '<ng-template #floatSearch></ng-template>',
       },
     });
 
-    fixture = TestBed.createComponent(WatchLater);
+    fixture = TestBed.createComponent(Watchlist);
     collectionState = fixture.debugElement.injector.get(collectionStateToken);
     floatActions = TestBed.inject(FloatActionsService);
     fixture.detectChanges();
@@ -98,10 +98,10 @@ describe('WatchLater', () => {
   });
 
   it('searches watch later items by standard text', () => {
-    fixture.componentInstance['watchLaterDataSource'](dataSourceRequest(' alien ', 10, 25));
+    fixture.componentInstance['watchlistDataSource'](dataSourceRequest(' alien ', 10, 25));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { search: 'alien', listType: 'watch-later', orderBy: 'createdAt', orderDirection: 'desc' },
+      { search: 'alien', listType: 'watchlist', orderBy: 'createdAt', orderDirection: 'desc' },
       10,
       25
     );
@@ -110,7 +110,7 @@ describe('WatchLater', () => {
   it('merges type query filters into watch later searches', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      imports: [WatchLater],
+      imports: [Watchlist],
       providers: [
         provideStore(initialCollectionState, collectionStateToken),
         provideStore(initialMainCollectionState, mainCollectionStateToken),
@@ -132,14 +132,14 @@ describe('WatchLater', () => {
         },
       ],
     });
-    TestBed.overrideComponent(WatchLater, { set: { template: '<ng-template #floatSearch></ng-template>' } });
-    fixture = TestBed.createComponent(WatchLater);
+    TestBed.overrideComponent(Watchlist, { set: { template: '<ng-template #floatSearch></ng-template>' } });
+    fixture = TestBed.createComponent(Watchlist);
     fixture.detectChanges();
 
-    fixture.componentInstance['watchLaterDataSource'](dataSourceRequest(''));
+    fixture.componentInstance['watchlistDataSource'](dataSourceRequest(''));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { type: 'movie', listType: 'watch-later', orderBy: 'createdAt', orderDirection: 'desc' },
+      { type: 'movie', listType: 'watchlist', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
@@ -157,9 +157,9 @@ describe('WatchLater', () => {
     const event = new Event('click');
     const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
-    fixture.componentInstance['onAddWatchLater'](event);
+    fixture.componentInstance['onAddWatchlist'](event);
 
     expect(preventDefaultSpy).toHaveBeenCalled();
-    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { watchLater: true });
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { watchlist: true });
   });
 });

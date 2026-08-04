@@ -29,6 +29,7 @@ import { Router } from '@angular/router';
 import { asyncScheduler, catchError, debounceTime, EMPTY, fromEvent, Observable, Subscription } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
+import { mainStateToken } from '../../main/main-store';
 import { SharesLoaderService } from '../../shares/shares-loader-service';
 import { CollectionItemModel, CollectionListDataSource, CollectionListOrderPreference } from '../collection-model';
 import { collectionStateToken } from '../collection-store';
@@ -60,6 +61,7 @@ export class List implements OnDestroy {
   private readonly actionButtons = inject(FloatActionButtonsService);
   private readonly webstorage = inject(WebstorageService);
   private readonly router = inject(Router);
+  private readonly mainState = inject(mainStateToken);
   protected readonly debouncedSearchText = signal('');
   private readonly routeSearchVersion = signal(0);
   private lastRouteSearchText: string | null = null;
@@ -201,12 +203,13 @@ export class List implements OnDestroy {
   }
 
   protected onAddNew(): void {
+    const booksMode = this.listType() === 'books' || this.getActiveFilterActions().includes('book');
     this.portal.open(NewItemDialog, {
-      watchLater: this.listType() === 'watch-later',
+      watchlist: this.listType() === 'watchlist',
       wishlist: this.listType() === 'wishlist',
-      seriesTracker: this.listType() === 'series-tracker',
-      movieTracker: this.listType() === 'movie-tracker',
-      bookTracker: this.listType() === 'book-tracker',
+      watching: this.listType() === 'watching',
+      watched: this.listType() === 'watched',
+      books: booksMode,
     });
   }
 
@@ -234,8 +237,9 @@ export class List implements OnDestroy {
 
   protected onApplyFilter(filter: FloatActionFilter): void {
     const active = this.getActiveFilterActions().includes(filter);
+
     const queryParams: Record<string, string | null> =
-      filter === 'movie' || filter === 'series'
+      filter === 'movie' || filter === 'series' || filter === 'book'
         ? { type: active ? null : filter }
         : filter === 'unwatched'
           ? { watched: active ? null : 'false' }
@@ -328,20 +332,28 @@ export class List implements OnDestroy {
     if (this.hideFloatActions()) return [];
 
     switch (this.listType()) {
-      case 'library':
-        return ['movie', 'series', 'unwatched', 'favorite'];
-      case 'watch-later':
+      case 'library': {
+        // Media scope is the always-visible chips; float keeps status filters only.
+        const active = this.getActiveFilterActions();
+        if (active.includes('book')) return [];
+        return ['unwatched', 'favorite'];
+      }
+      case 'watchlist':
       case 'wishlist':
         return ['movie', 'series'];
-      case 'series-tracker':
+      case 'watching':
         return ['completed', 'uncompleted'];
-      case 'movie-tracker':
-      case 'book-tracker':
+      case 'watched':
+      case 'books':
         return [];
     }
   }
 
   private getActiveFilterActions(): FloatActionFilter[] {
+    if (this.listType() === 'books') {
+      return ['book'];
+    }
+
     const routeFilterKey = this.routeFilterKey();
     if (!routeFilterKey) return [];
 
@@ -355,6 +367,7 @@ export class List implements OnDestroy {
       return [
         ...(filters.type === 'movie' ? (['movie'] as const) : []),
         ...(filters.type === 'series' ? (['series'] as const) : []),
+        ...(filters.type === 'book' ? (['book'] as const) : []),
         ...(filters.watched === false ? (['unwatched'] as const) : []),
         ...(filters.favorite === true ? (['favorite'] as const) : []),
         ...(filters.completed === true ? (['completed'] as const) : []),

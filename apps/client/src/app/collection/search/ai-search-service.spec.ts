@@ -55,9 +55,9 @@ describe('AiSearchService', () => {
     getAiQueryDataSpy.mockReturnValue(of({ matchedIds: ['tt0133093', 'tt0372784'] }));
 
     let result: string[] | null | undefined;
-    service.getMatchedIds('sci-fi movies', 'watch-later').subscribe((value) => (result = value));
+    service.getMatchedIds('sci-fi movies', 'watchlist').subscribe((value) => (result = value));
 
-    expect(getAiQueryDataSpy).toHaveBeenCalledWith('sci-fi movies', 'watch-later');
+    expect(getAiQueryDataSpy).toHaveBeenCalledWith('sci-fi movies', 'watchlist');
     expect(result).toEqual(['tt0133093', 'tt0372784']);
   });
 

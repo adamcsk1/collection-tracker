@@ -8,7 +8,7 @@ export interface NewItemSearchModel {
   userRate: number | null;
   tags: string;
   watched: boolean;
-  copyToSeriesTrackerAsWatched: boolean;
+  copyToWatchingAsWatched: boolean;
   targetOwnerShareCode: string | null;
 }
 
@@ -18,5 +18,5 @@ export interface SaveOptions {
   targetOwnerShareCode?: string;
   listType?: CollectionListTypeModel;
   watched?: boolean;
-  copyToSeriesTrackerAsWatched?: boolean;
+  copyToWatchingAsWatched?: boolean;
 }

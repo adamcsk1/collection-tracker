@@ -11,9 +11,9 @@ import { PortalService } from '@services/portal-service';
 import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
 import {
   CollectionItemApiModel,
-  SeriesTrackerSeasonMetadataModel,
-  SeriesTrackerWatchedEpisodesApiResponseModel,
-  SeriesTrackerWatchedEpisodeModel,
+  WatchingSeasonMetadataModel,
+  WatchingWatchedEpisodesApiResponseModel,
+  WatchingWatchedEpisodeModel,
 } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { firstValueFrom } from 'rxjs';
@@ -46,7 +46,7 @@ export class WatchedEpisodesDialog implements OnInit {
   public readonly externalProvider = input(DEFAULT_EXTERNAL_METADATA_PROVIDER);
   public readonly externalItemId = input<string | undefined>();
   public readonly saved = input<
-    (watchedEpisodes: SeriesTrackerWatchedEpisodeModel[], item?: CollectionItemApiModel) => void
+    (watchedEpisodes: WatchingWatchedEpisodeModel[], item?: CollectionItemApiModel) => void
   >(() => undefined);
   public readonly closed = input<() => void>(() => this.portal.closeTop());
   protected readonly translations = {
@@ -58,8 +58,8 @@ export class WatchedEpisodesDialog implements OnInit {
     markAllEpisodesUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesUnwatched')),
     episode: computed(() => this.ngxSignalTranslate.translate('Episode')),
   };
-  protected readonly seasonsMetadata = signal<SeriesTrackerSeasonMetadataModel[]>([]);
-  protected readonly watchedEpisodes = signal<SeriesTrackerWatchedEpisodeModel[]>([]);
+  protected readonly seasonsMetadata = signal<WatchingSeasonMetadataModel[]>([]);
+  protected readonly watchedEpisodes = signal<WatchingWatchedEpisodeModel[]>([]);
   protected readonly watchedSet = computed(() => {
     const set = new Set<string>();
     for (const episode of this.watchedEpisodes()) {
@@ -95,13 +95,13 @@ export class WatchedEpisodesDialog implements OnInit {
 
   private loadData(): void {
     this.api
-      .getSeriesTrackerSeasonsByExternalId(this.externalProvider(), this.providerItemId())
+      .getWatchingSeasonsByExternalId(this.externalProvider(), this.providerItemId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((seasonsResponse) => {
         this.seasonsMetadata.set(seasonsResponse.seasons);
       });
     this.api
-      .getSeriesTrackerWatchedEpisodesByExternalId(this.externalProvider(), this.providerItemId())
+      .getWatchingWatchedEpisodesByExternalId(this.externalProvider(), this.providerItemId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((watchedResponse) => {
         if (!this.hasLocalWatchedEpisodeChanges) this.watchedEpisodes.set(watchedResponse.watchedEpisodes);
@@ -150,7 +150,7 @@ export class WatchedEpisodesDialog implements OnInit {
   protected async onToggleSeason(season: number, episodesCount: number): Promise<void> {
     this.hasLocalWatchedEpisodeChanges = true;
     const currentWatched = this.watchedEpisodes();
-    const seasonEpisodes: SeriesTrackerWatchedEpisodeModel[] = [];
+    const seasonEpisodes: WatchingWatchedEpisodeModel[] = [];
     for (let episode = 1; episode <= episodesCount; episode++) {
       seasonEpisodes.push({ season, episode });
     }
@@ -187,7 +187,7 @@ export class WatchedEpisodesDialog implements OnInit {
       .catch(() => undefined)
       .then(async () => {
         const result = await firstValueFrom(
-          this.api.updateSeriesTrackerWatchedEpisodesByExternalId(this.externalProvider(), this.providerItemId(), {
+          this.api.updateWatchingWatchedEpisodesByExternalId(this.externalProvider(), this.providerItemId(), {
             watchedEpisodes: episodes,
           })
         );
@@ -199,8 +199,8 @@ export class WatchedEpisodesDialog implements OnInit {
   }
 
   private async queueWatchedEpisodesMutation(
-    action: () => Promise<SeriesTrackerWatchedEpisodesApiResponseModel>
-  ): Promise<SeriesTrackerWatchedEpisodesApiResponseModel> {
+    action: () => Promise<WatchingWatchedEpisodesApiResponseModel>
+  ): Promise<WatchingWatchedEpisodesApiResponseModel> {
     const version = ++this.saveWatchedEpisodesVersion;
     const save = this.saveWatchedEpisodesQueue
       .catch(() => undefined)
@@ -213,7 +213,7 @@ export class WatchedEpisodesDialog implements OnInit {
     return save;
   }
 
-  private applySavedWatchedEpisodes(result: SeriesTrackerWatchedEpisodesApiResponseModel): void {
+  private applySavedWatchedEpisodes(result: WatchingWatchedEpisodesApiResponseModel): void {
     this.watchedEpisodes.set(result.watchedEpisodes);
     this.saved()(result.watchedEpisodes, result.item);
   }
@@ -229,7 +229,7 @@ export class WatchedEpisodesDialog implements OnInit {
       externalProvider: this.externalProvider(),
       externalItemId: this.providerItemId(),
       initialSeasons: this.seasonsMetadata(),
-      saved: (seasons: SeriesTrackerSeasonMetadataModel[], item?: CollectionItemApiModel) => {
+      saved: (seasons: WatchingSeasonMetadataModel[], item?: CollectionItemApiModel) => {
         this.seasonsMetadata.set(seasons);
         if (item) this.saved()(this.watchedEpisodes(), item);
       },
@@ -250,7 +250,7 @@ export class WatchedEpisodesDialog implements OnInit {
     this.spinnerLoadingState.setState('show', true);
     try {
       await this.queueWatchedEpisodesMutation(() =>
-        firstValueFrom(this.api.markAllSeriesTrackerWatchedByExternalId(this.externalProvider(), this.providerItemId()))
+        firstValueFrom(this.api.markAllWatchingWatchedByExternalId(this.externalProvider(), this.providerItemId()))
       );
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedWatched'));
     } finally {
@@ -269,7 +269,7 @@ export class WatchedEpisodesDialog implements OnInit {
     try {
       await this.queueWatchedEpisodesMutation(() =>
         firstValueFrom(
-          this.api.updateSeriesTrackerWatchedEpisodesByExternalId(this.externalProvider(), this.providerItemId(), {
+          this.api.updateWatchingWatchedEpisodesByExternalId(this.externalProvider(), this.providerItemId(), {
             watchedEpisodes: [],
           })
         )

@@ -23,6 +23,7 @@ import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
 import { ItemDialog } from '../item/item-dialog/item-dialog';
 import { List } from '../list/list';
+import { CollectionMediaChip, CollectionMediaChips } from '../media-chips/media-chips';
 import { AiSearchService } from '../search/ai-search-service';
 import { setupCollectionAiSearch } from '../utils/collection-ai-search-util';
 import {
@@ -34,7 +35,7 @@ import { SearchSuggestionService } from './search/search-suggestion-service';
 
 @Component({
   selector: 'ct-collection-library',
-  imports: [List, FormField, Autocomplete],
+  imports: [List, FormField, Autocomplete, CollectionMediaChips],
   templateUrl: './library.html',
   styleUrl: '../collection.css',
   providers: [{ provide: AutocompleteService, useClass: SearchSuggestionService }],
@@ -64,6 +65,12 @@ export class CollectionLibrary {
     }
   );
   protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
+  protected readonly booksEnabled = computed(() => this.mainState.state.collectionFeaturePreferences().books);
+  protected readonly activeMediaChip = computed((): CollectionMediaChip => {
+    const type = this.queryFilters().type;
+    if (type === 'movie' || type === 'series' || type === 'book') return type;
+    return 'all';
+  });
   protected readonly forceStandardSearch = computed(
     () => !!this.querySearch() || !!this.queryFilterKey() || this.collectionState.state.forceStandardSearch()
   );

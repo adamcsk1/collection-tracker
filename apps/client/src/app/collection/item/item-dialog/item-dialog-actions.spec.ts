@@ -12,11 +12,12 @@ const translations: ItemDialogTranslations = {
   manageSeriesMetadata: signal('Manage series metadata'),
   markAsUnwatched: signal('Mark as unwatched'),
   markAsWatched: signal('Mark as watched'),
-  copyToSeriesTracker: signal('Copy to series tracker'),
-  moveToMovieTracker: signal('Move to movie tracker'),
-  moveToSeriesTracker: signal('Move to series tracker'),
+  copyToWatching: signal('Add to Watching'),
+  moveToWatched: signal('Move to Watched'),
+  moveToWatching: signal('Move to Watching'),
+  openInWatching: signal('Open in Watching'),
   removeFavorite: signal('Remove favorite'),
-  removeFromSeriesTracker: signal('Remove from series tracker'),
+  removeFromWatching: signal('Remove from Watching'),
   markAsFavorite: signal('Mark as favorite'),
   fallbackNotAvailable: signal('N/A'),
   fallbackUnknownYear: signal('Unknown year'),
@@ -48,17 +49,17 @@ describe('ItemDialogActions', () => {
     fixture.componentRef.setInput('permissionUpdate', overrides['permissionUpdate'] ?? true);
     fixture.componentRef.setInput('permissionWatch', overrides['permissionWatch'] ?? true);
     fixture.componentRef.setInput('permissionDelete', overrides['permissionDelete'] ?? true);
-    fixture.componentRef.setInput('seriesTracker', overrides['seriesTracker'] ?? false);
+    fixture.componentRef.setInput('watching', overrides['watching'] ?? false);
     fixture.componentRef.setInput('libraryItem', overrides['libraryItem'] ?? true);
-    fixture.componentRef.setInput('watchLater', overrides['watchLater'] ?? false);
+    fixture.componentRef.setInput('watchlist', overrides['watchlist'] ?? false);
     fixture.componentRef.setInput('movie', overrides['movie'] ?? true);
     fixture.componentRef.setInput('series', overrides['series'] ?? false);
     fixture.componentRef.setInput('watched', overrides['watched'] ?? false);
     fixture.componentRef.setInput('favorite', overrides['favorite'] ?? false);
-    fixture.componentRef.setInput('inSeriesTracker', overrides['inSeriesTracker'] ?? false);
-    fixture.componentRef.setInput('inMovieTracker', overrides['inMovieTracker'] ?? false);
-    fixture.componentRef.setInput('movieTrackerEnabled', overrides['movieTrackerEnabled'] ?? true);
-    fixture.componentRef.setInput('seriesTrackerEnabled', overrides['seriesTrackerEnabled'] ?? true);
+    fixture.componentRef.setInput('inWatching', overrides['inWatching'] ?? false);
+    fixture.componentRef.setInput('inWatched', overrides['inWatched'] ?? false);
+    fixture.componentRef.setInput('watchedEnabled', overrides['watchedEnabled'] ?? true);
+    fixture.componentRef.setInput('watchingEnabled', overrides['watchingEnabled'] ?? true);
     fixture.detectChanges();
   };
 
@@ -99,7 +100,7 @@ describe('ItemDialogActions', () => {
   });
 
   it('renders series tracker actions when update permission is available', () => {
-    createComponent({ seriesTracker: true, libraryItem: false });
+    createComponent({ watching: true, libraryItem: false });
     const manageWatchedEpisodes = vi.fn();
     fixture.componentInstance.manageWatchedEpisodes.subscribe(manageWatchedEpisodes);
 
@@ -121,67 +122,71 @@ describe('ItemDialogActions', () => {
 
   it('renders copy to series tracker for permitted library series items', () => {
     createComponent({ libraryItem: true, permissionWatch: true, movie: false, series: true });
-    const copyToSeriesTracker = vi.fn();
-    fixture.componentInstance.copyToSeriesTracker.subscribe(copyToSeriesTracker);
+    const copyToWatching = vi.fn();
+    fixture.componentInstance.copyToWatching.subscribe(copyToWatching);
 
-    getButton('item-dialog-copy-series-tracker').click();
+    getButton('item-dialog-copy-watching').click();
 
-    expect(copyToSeriesTracker).toHaveBeenCalled();
+    expect(copyToWatching).toHaveBeenCalled();
     expect(queryButton('item-dialog-mark-watched')).toBeNull();
   });
 
-  it('renders remove from series tracker when series is already tracked', () => {
-    createComponent({ libraryItem: true, permissionWatch: true, movie: false, series: true, inSeriesTracker: true });
-    const removeFromSeriesTracker = vi.fn();
-    fixture.componentInstance.removeFromSeriesTracker.subscribe(removeFromSeriesTracker);
+  it('renders open in watching and remove when series is already tracked', () => {
+    createComponent({ libraryItem: true, permissionWatch: true, movie: false, series: true, inWatching: true });
+    const openInWatching = vi.fn();
+    const removeFromWatching = vi.fn();
+    fixture.componentInstance.openInWatching.subscribe(openInWatching);
+    fixture.componentInstance.removeFromWatching.subscribe(removeFromWatching);
 
-    getButton('item-dialog-remove-series-tracker').click();
+    getButton('item-dialog-open-in-watching').click();
+    getButton('item-dialog-remove-watching').click();
 
-    expect(removeFromSeriesTracker).toHaveBeenCalled();
-    expect(queryButton('item-dialog-copy-series-tracker')).toBeNull();
+    expect(openInWatching).toHaveBeenCalled();
+    expect(removeFromWatching).toHaveBeenCalled();
+    expect(queryButton('item-dialog-copy-watching')).toBeNull();
   });
 
   it('renders move actions for watch later movie and series items', () => {
-    createComponent({ libraryItem: false, watchLater: true, movie: true });
-    const moveToMovieTracker = vi.fn();
-    fixture.componentInstance.moveToMovieTracker.subscribe(moveToMovieTracker);
-    getButton('item-dialog-move-movie-tracker').click();
+    createComponent({ libraryItem: false, watchlist: true, movie: true });
+    const moveToWatched = vi.fn();
+    fixture.componentInstance.moveToWatched.subscribe(moveToWatched);
+    getButton('item-dialog-move-watched').click();
     expect(queryButton('item-dialog-mark-watched')).toBeNull();
-    expect(moveToMovieTracker).toHaveBeenCalled();
+    expect(moveToWatched).toHaveBeenCalled();
 
-    createComponent({ libraryItem: false, watchLater: true, movie: false, series: true });
-    const moveToSeriesTracker = vi.fn();
-    fixture.componentInstance.moveToSeriesTracker.subscribe(moveToSeriesTracker);
-    getButton('item-dialog-move-series-tracker').click();
+    createComponent({ libraryItem: false, watchlist: true, movie: false, series: true });
+    const moveToWatching = vi.fn();
+    fixture.componentInstance.moveToWatching.subscribe(moveToWatching);
+    getButton('item-dialog-move-watching').click();
     expect(queryButton('item-dialog-mark-watched')).toBeNull();
-    expect(queryButton('item-dialog-copy-series-tracker')).toBeNull();
-    expect(moveToSeriesTracker).toHaveBeenCalled();
+    expect(queryButton('item-dialog-copy-watching')).toBeNull();
+    expect(moveToWatching).toHaveBeenCalled();
   });
 
   it('hides move to movie tracker when movie is already tracked', () => {
-    createComponent({ libraryItem: false, watchLater: true, movie: true, inMovieTracker: true });
-    expect(queryButton('item-dialog-move-movie-tracker')).toBeNull();
+    createComponent({ libraryItem: false, watchlist: true, movie: true, inWatched: true });
+    expect(queryButton('item-dialog-move-watched')).toBeNull();
   });
 
   it('hides move to series tracker when series is already tracked', () => {
-    createComponent({ libraryItem: false, watchLater: true, movie: false, series: true, inSeriesTracker: true });
-    expect(queryButton('item-dialog-move-series-tracker')).toBeNull();
+    createComponent({ libraryItem: false, watchlist: true, movie: false, series: true, inWatching: true });
+    expect(queryButton('item-dialog-move-watching')).toBeNull();
   });
 
   it('hides movie tracker actions when the feature is disabled', () => {
-    createComponent({ movieTrackerEnabled: false, libraryItem: true, movie: true });
+    createComponent({ watchedEnabled: false, libraryItem: true, movie: true });
     expect(queryButton('item-dialog-mark-watched')).toBeNull();
 
-    createComponent({ movieTrackerEnabled: false, libraryItem: false, watchLater: true, movie: true });
-    expect(queryButton('item-dialog-move-movie-tracker')).toBeNull();
+    createComponent({ watchedEnabled: false, libraryItem: false, watchlist: true, movie: true });
+    expect(queryButton('item-dialog-move-watched')).toBeNull();
   });
 
   it('hides series tracker actions when the feature is disabled', () => {
-    createComponent({ seriesTrackerEnabled: false, libraryItem: true, movie: false, series: true });
-    expect(queryButton('item-dialog-copy-series-tracker')).toBeNull();
+    createComponent({ watchingEnabled: false, libraryItem: true, movie: false, series: true });
+    expect(queryButton('item-dialog-copy-watching')).toBeNull();
 
-    createComponent({ seriesTrackerEnabled: false, libraryItem: false, watchLater: true, movie: false, series: true });
-    expect(queryButton('item-dialog-move-series-tracker')).toBeNull();
+    createComponent({ watchingEnabled: false, libraryItem: false, watchlist: true, movie: false, series: true });
+    expect(queryButton('item-dialog-move-watching')).toBeNull();
   });
 
   it('hides actions while editing', () => {

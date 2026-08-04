@@ -37,20 +37,20 @@ export class Header {
   private currentNavTitleKey(): string {
     const currentPath = this.currentUrl().split('?')[0].split('#')[0];
 
-    if (currentPath.startsWith('/collection/watch-later')) {
-      return 'WatchLater';
+    if (currentPath.startsWith('/collection/watchlist')) {
+      return 'Watchlist';
     }
     if (currentPath.startsWith('/collection/wishlist')) {
       return 'Wishlist';
     }
-    if (currentPath.startsWith('/collection/series-tracker')) {
-      return 'SeriesTracker';
+    if (currentPath.startsWith('/collection/watching')) {
+      return 'Watching';
     }
-    if (currentPath.startsWith('/collection/movie-tracker')) {
-      return 'MovieTracker';
+    if (currentPath.startsWith('/collection/watched')) {
+      return 'Watched';
     }
-    if (currentPath.startsWith('/collection/book-tracker')) {
-      return 'BookTracker';
+    if (currentPath.startsWith('/collection/books')) {
+      return 'Books';
     }
     if (currentPath.startsWith('/settings')) {
       return 'Settings';

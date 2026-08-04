@@ -21,7 +21,7 @@ import { THEMES } from '@shared/models/theme-model';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { CollectionFeaturePreferencesModel } from '@shared/models/collection-feature-preferences-model';
 import { DEFAULT_COLLECTION_FEATURE_PREFERENCES } from '@shared/constants/collection-feature-preferences-const';
-import { isCollectionFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
+import { parseCollectionFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY, finalize, map, Observable, of, switchMap, tap } from 'rxjs';
 import { mainStateToken } from '../main/main-store';
@@ -97,9 +97,9 @@ export class SettingsService {
       );
     }
 
-    const collectionFeaturePreferences = isCollectionFeaturePreferences(settings.collectionFeaturePreferences)
-      ? settings.collectionFeaturePreferences
-      : DEFAULT_COLLECTION_FEATURE_PREFERENCES;
+    const collectionFeaturePreferences =
+      parseCollectionFeaturePreferences(settings.collectionFeaturePreferences) ??
+      DEFAULT_COLLECTION_FEATURE_PREFERENCES;
     this.mainState.setState('collectionFeaturePreferences', collectionFeaturePreferences);
     this.cacheCollectionFeaturePreferences(collectionFeaturePreferences);
   }
@@ -195,10 +195,11 @@ export class SettingsService {
   }
 
   public storeCollectionFeaturePreferences(preferences: CollectionFeaturePreferencesModel): void {
-    this.mainState.setState('collectionFeaturePreferences', preferences);
-    this.cacheCollectionFeaturePreferences(preferences);
+    const normalized = parseCollectionFeaturePreferences(preferences) ?? DEFAULT_COLLECTION_FEATURE_PREFERENCES;
+    this.mainState.setState('collectionFeaturePreferences', normalized);
+    this.cacheCollectionFeaturePreferences(normalized);
 
-    this.collectionFeaturePreferencesQueue.push(preferences);
+    this.collectionFeaturePreferencesQueue.push(normalized);
     this.saveNextCollectionFeaturePreferences();
   }
 

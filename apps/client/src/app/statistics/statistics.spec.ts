@@ -24,9 +24,9 @@ describe('Statistics component', () => {
     totalItems: 2,
     movieCount: 1,
     seriesCount: 1,
-    bookTrackerCount: 1,
+    booksCount: 1,
     favoriteCount: 1,
-    watchLaterCount: 1,
+    watchlistCount: 1,
     wishlistCount: 1,
     watchedMovieCount: 1,
     watchedSeriesCount: 0,
@@ -78,9 +78,9 @@ describe('Statistics component', () => {
     expect(component['summary']()).toEqual({
       movies: 1,
       series: 1,
-      bookTracker: 1,
+      books: 1,
       favorites: 1,
-      watchLater: 1,
+      watchlist: 1,
       wishlist: 1,
       all: 2,
       watchedMovies: 1,
@@ -98,39 +98,39 @@ describe('Statistics component', () => {
     const hasCard = (testId: string) => fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) !== null;
 
     mainState.setState('collectionFeaturePreferences', {
-      bookTracker: true,
-      watchLater: true,
+      books: true,
+      watchlist: true,
       wishlist: false,
-      movieTracker: true,
-      seriesTracker: false,
+      watched: true,
+      watching: false,
     });
     fixture.detectChanges();
 
-    expect(hasCard('statistics-summary-watch-later')).toBe(true);
+    expect(hasCard('statistics-summary-watchlist')).toBe(true);
     expect(hasCard('statistics-summary-wishlist')).toBe(false);
     expect(hasCard('statistics-summary-watched-movies')).toBe(true);
     expect(hasCard('statistics-summary-watched-series')).toBe(false);
     expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(false);
     expect(hasCard('statistics-summary-completed-tracker-series')).toBe(false);
-    expect(hasCard('statistics-summary-book-tracker')).toBe(true);
+    expect(hasCard('statistics-summary-books')).toBe(true);
     expect(hasCard('statistics-summary-books')).toBe(false);
 
     mainState.setState('collectionFeaturePreferences', {
-      bookTracker: false,
-      watchLater: false,
+      books: false,
+      watchlist: false,
       wishlist: true,
-      movieTracker: false,
-      seriesTracker: true,
+      watched: false,
+      watching: true,
     });
     fixture.detectChanges();
 
-    expect(hasCard('statistics-summary-watch-later')).toBe(false);
+    expect(hasCard('statistics-summary-watchlist')).toBe(false);
     expect(hasCard('statistics-summary-wishlist')).toBe(true);
     expect(hasCard('statistics-summary-watched-movies')).toBe(false);
     expect(hasCard('statistics-summary-watched-series')).toBe(true);
     expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(true);
     expect(hasCard('statistics-summary-completed-tracker-series')).toBe(true);
-    expect(hasCard('statistics-summary-book-tracker')).toBe(false);
+    expect(hasCard('statistics-summary-books')).toBe(false);
   });
 
   it('sets defaultOpenSelectedTags to true when no tags are stored', () => {
@@ -220,9 +220,9 @@ describe('Statistics component', () => {
   });
 
   it('navigates to watch later when clicking the watch later stat card', () => {
-    component['onNavigateToWatchLater']();
+    component['onNavigateToWatchlist']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watch-later']);
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watchlist']);
   });
 
   it('navigates to wishlist when clicking the wishlist stat card', () => {
@@ -232,21 +232,21 @@ describe('Statistics component', () => {
   });
 
   it('navigates to movie tracker when clicking the watched movies stat card', () => {
-    component['onNavigateToMovieTracker']();
+    component['onNavigateToWatched']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'movie-tracker']);
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watched']);
   });
 
   it('navigates to series tracker when clicking the watched series stat card', () => {
-    component['onNavigateToSeriesTracker']();
+    component['onNavigateToWatching']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'series-tracker']);
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watching']);
   });
 
   it('navigates to book tracker when clicking the tracked books stat card', () => {
-    component['onNavigateToBookTracker']();
+    component['onNavigateToBooks']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'book-tracker']);
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'books']);
   });
 
   it('navigates to unwatched movies when clicking the unwatched movies stat card', () => {
@@ -268,7 +268,7 @@ describe('Statistics component', () => {
   it('navigates to unwatched tracker series when clicking the unwatched tracker series stat card', () => {
     component['onNavigateToUnwatchedTrackerSeries']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'series-tracker'], {
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watching'], {
       queryParams: { completed: false },
     });
   });
@@ -276,7 +276,7 @@ describe('Statistics component', () => {
   it('navigates to completed tracker series when clicking the completed tracker series stat card', () => {
     component['onNavigateToCompletedTrackerSeries']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'series-tracker'], {
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watching'], {
       queryParams: { completed: true },
     });
   });

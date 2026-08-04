@@ -42,16 +42,16 @@ describe('Header component', () => {
     expect(component['currentNavTitle']()).toBe('Collection');
   });
 
-  it('uses movie tracker as the title for movie tracker page', () => {
-    routerEvents.next(new NavigationEnd(1, '/collection/movie-tracker', '/collection/movie-tracker'));
+  it('uses watched as the title for watched page', () => {
+    routerEvents.next(new NavigationEnd(1, '/collection/watched', '/collection/watched'));
 
-    expect(component['currentNavTitle']()).toBe('MovieTracker');
+    expect(component['currentNavTitle']()).toBe('Watched');
   });
 
-  it('uses book tracker as the title for book tracker page', () => {
-    routerEvents.next(new NavigationEnd(1, '/collection/book-tracker', '/collection/book-tracker'));
+  it('uses books as the title for books page', () => {
+    routerEvents.next(new NavigationEnd(1, '/collection/books', '/collection/books'));
 
-    expect(component['currentNavTitle']()).toBe('BookTracker');
+    expect(component['currentNavTitle']()).toBe('Books');
   });
 
   it('uses settings as the title for settings child pages', () => {

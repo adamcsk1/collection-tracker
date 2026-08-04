@@ -76,14 +76,14 @@ const mockExportResponse: UserExportApiResponseModel = {
       hash: 'hash2',
       actors: 'Actor',
       plot: 'Plot',
-      listType: 'movie-tracker',
+      listType: 'watched',
       contentType: 'movie',
       favorite: false,
       watchedAt: null,
     },
   ],
   tagManagement: [buildTagManagement('#movie', { color: '#111111' })],
-  seriesTrackerData: {},
+  watchingData: {},
 };
 
 describe('ExportImport component', () => {
@@ -131,8 +131,8 @@ describe('ExportImport component', () => {
         of({
           importedCollectionItems: 2,
           importedTagManagement: 1,
-          importedSeriesTrackerSeasons: 0,
-          importedSeriesTrackerWatchedEpisodes: 0,
+          importedWatchingSeasons: 0,
+          importedWatchingWatchedEpisodes: 0,
         })
       ),
       importCollectionItems: vi.fn(() => of({ totalCount: 2, importedCount: 1, skippedCount: 1, errorCount: 0 })),

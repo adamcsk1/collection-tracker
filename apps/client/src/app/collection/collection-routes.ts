@@ -11,24 +11,24 @@ export const collectionRoutes: Routes = [
         loadComponent: () => import('./library/library').then((module) => module.CollectionLibrary),
       },
       {
-        path: 'watch-later',
-        loadComponent: () => import('./watch-later/watch-later').then((module) => module.WatchLater),
+        path: 'watchlist',
+        loadComponent: () => import('./watch-later/watch-later').then((module) => module.Watchlist),
       },
       {
         path: 'wishlist',
         loadComponent: () => import('./wishlist/wishlist').then((module) => module.Wishlist),
       },
       {
-        path: 'series-tracker',
-        loadComponent: () => import('./series-tracker/series-tracker').then((module) => module.SeriesTracker),
+        path: 'watching',
+        loadComponent: () => import('./series-tracker/series-tracker').then((module) => module.Watching),
       },
       {
-        path: 'movie-tracker',
-        loadComponent: () => import('./movie-tracker/movie-tracker').then((module) => module.MovieTracker),
+        path: 'watched',
+        loadComponent: () => import('./movie-tracker/movie-tracker').then((module) => module.Watched),
       },
       {
-        path: 'book-tracker',
-        loadComponent: () => import('./book-tracker/book-tracker').then((module) => module.BookTracker),
+        path: 'books',
+        loadComponent: () => import('./book-tracker/book-tracker').then((module) => module.Books),
       },
       {
         path: '',

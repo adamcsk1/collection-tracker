@@ -1,0 +1,20 @@
+<div class="media-chips" role="tablist" [attr.aria-label]="translations.all()">
+  @for (chip of chips(); track chip.id) {
+    <button
+      type="button"
+      role="tab"
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="chip.label"
+      [attr.data-test-id]="chip.testId"
+      [attr.aria-label]="chip.label"
+      [attr.aria-selected]="active() === chip.id"
+      [title]="chip.label"
+      (click)="onSelect(chip.id)"
+    >
+      <i class="material-icons" aria-hidden="true">{{ chip.icon }}</i>
+      <span class="button-reveal-label-text"
+        ><span>{{ chip.label }}</span></span
+      >
+    </button>
+  }
+</div>

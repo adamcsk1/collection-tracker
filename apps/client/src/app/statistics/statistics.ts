@@ -47,9 +47,9 @@ export class Statistics implements AfterViewInit {
     itemsInCollection: computed(() => this.ngxSignalTranslate.translate('ItemsInCollection')),
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
-    bookTracker: computed(() => this.ngxSignalTranslate.translate('BookTracker')),
+    books: computed(() => this.ngxSignalTranslate.translate('Books')),
     favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
-    watchLater: computed(() => this.ngxSignalTranslate.translate('WatchLater')),
+    watchlist: computed(() => this.ngxSignalTranslate.translate('Watchlist')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
     watchedMovies: computed(() => this.ngxSignalTranslate.translate('WatchedMovies')),
     watchedSeries: computed(() => this.ngxSignalTranslate.translate('WatchedSeries')),
@@ -101,9 +101,9 @@ export class Statistics implements AfterViewInit {
     return {
       movies: statistics?.movieCount ?? 0,
       series: statistics?.seriesCount ?? 0,
-      bookTracker: statistics?.bookTrackerCount ?? 0,
+      books: statistics?.booksCount ?? 0,
       favorites: statistics?.favoriteCount ?? 0,
-      watchLater: statistics?.watchLaterCount ?? 0,
+      watchlist: statistics?.watchlistCount ?? 0,
       wishlist: statistics?.wishlistCount ?? 0,
       all: statistics?.totalItems ?? 0,
       watchedMovies: statistics?.watchedMovieCount ?? 0,
@@ -171,8 +171,8 @@ export class Statistics implements AfterViewInit {
     this.closeAfterNavigation(this.router.navigate(['/collection', 'library'], { queryParams: { type } }));
   }
 
-  protected onNavigateToWatchLater(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'watch-later']));
+  protected onNavigateToWatchlist(): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'watchlist']));
   }
 
   protected onNavigateToWishlist(): void {
@@ -183,16 +183,16 @@ export class Statistics implements AfterViewInit {
     this.closeAfterNavigation(this.router.navigate(['/collection', 'library'], { queryParams: { favorite: 'true' } }));
   }
 
-  protected onNavigateToMovieTracker(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'movie-tracker']));
+  protected onNavigateToWatched(): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'watched']));
   }
 
-  protected onNavigateToSeriesTracker(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'series-tracker']));
+  protected onNavigateToWatching(): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'watching']));
   }
 
-  protected onNavigateToBookTracker(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'book-tracker']));
+  protected onNavigateToBooks(): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'books']));
   }
 
   protected onNavigateToUnwatchedMovies(): void {
@@ -208,15 +208,11 @@ export class Statistics implements AfterViewInit {
   }
 
   protected onNavigateToUnwatchedTrackerSeries(): void {
-    this.closeAfterNavigation(
-      this.router.navigate(['/collection', 'series-tracker'], { queryParams: { completed: false } })
-    );
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'watching'], { queryParams: { completed: false } }));
   }
 
   protected onNavigateToCompletedTrackerSeries(): void {
-    this.closeAfterNavigation(
-      this.router.navigate(['/collection', 'series-tracker'], { queryParams: { completed: true } })
-    );
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'watching'], { queryParams: { completed: true } }));
   }
 
   private closeAfterNavigation(navigation: Promise<boolean>): void {

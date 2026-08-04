@@ -1,5 +1,5 @@
 @if (!editMode()) {
-  @if (permissionUpdate() && seriesTracker()) {
+  @if (permissionUpdate() && watching()) {
     <button
       class="button-icon button-reveal-label"
       [libcRevealLabel]="translations().manageWatchedEpisodes()"
@@ -27,7 +27,7 @@
       >
     </button>
   }
-  @if (movieTrackerEnabled() && permissionWatch() && libraryItem() && movie()) {
+  @if (watchedEnabled() && permissionWatch() && libraryItem() && movie()) {
     @if (watched()) {
       <button
         class="button-icon button-reveal-label"
@@ -58,64 +58,77 @@
       </button>
     }
   }
-  @if (seriesTrackerEnabled() && permissionWatch() && libraryItem() && series()) {
-    @if (inSeriesTracker()) {
+  @if (watchingEnabled() && permissionWatch() && libraryItem() && series()) {
+    @if (inWatching()) {
       <button
         class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations().removeFromSeriesTracker()"
-        data-test-id="item-dialog-remove-series-tracker"
-        [attr.aria-label]="translations().removeFromSeriesTracker()"
-        [title]="translations().removeFromSeriesTracker()"
-        (click)="removeFromSeriesTracker.emit()"
+        [libcRevealLabel]="translations().openInWatching()"
+        data-test-id="item-dialog-open-in-watching"
+        [attr.aria-label]="translations().openInWatching()"
+        [title]="translations().openInWatching()"
+        (click)="openInWatching.emit()"
+      >
+        <i class="material-icons" aria-hidden="true"> open_in_new </i>
+        <span class="button-reveal-label-text"
+          ><span>{{ translations().openInWatching() }}</span></span
+        >
+      </button>
+      <button
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations().removeFromWatching()"
+        data-test-id="item-dialog-remove-watching"
+        [attr.aria-label]="translations().removeFromWatching()"
+        [title]="translations().removeFromWatching()"
+        (click)="removeFromWatching.emit()"
       >
         <i class="material-icons" aria-hidden="true"> live_tv </i>
         <span class="button-reveal-label-text"
-          ><span>{{ translations().removeFromSeriesTracker() }}</span></span
+          ><span>{{ translations().removeFromWatching() }}</span></span
         >
       </button>
     } @else {
       <button
         class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations().copyToSeriesTracker()"
-        data-test-id="item-dialog-copy-series-tracker"
-        [attr.aria-label]="translations().copyToSeriesTracker()"
-        [title]="translations().copyToSeriesTracker()"
-        (click)="copyToSeriesTracker.emit()"
+        [libcRevealLabel]="translations().copyToWatching()"
+        data-test-id="item-dialog-copy-watching"
+        [attr.aria-label]="translations().copyToWatching()"
+        [title]="translations().copyToWatching()"
+        (click)="copyToWatching.emit()"
       >
         <i class="material-icons" aria-hidden="true"> live_tv </i>
         <span class="button-reveal-label-text"
-          ><span>{{ translations().copyToSeriesTracker() }}</span></span
+          ><span>{{ translations().copyToWatching() }}</span></span
         >
       </button>
     }
   }
-  @if (movieTrackerEnabled() && watchLater() && movie() && !inMovieTracker()) {
+  @if (watchedEnabled() && watchlist() && movie() && !inWatched()) {
     <button
       class="button-icon button-reveal-label"
-      [libcRevealLabel]="translations().moveToMovieTracker()"
-      data-test-id="item-dialog-move-movie-tracker"
-      [attr.aria-label]="translations().moveToMovieTracker()"
-      [title]="translations().moveToMovieTracker()"
-      (click)="moveToMovieTracker.emit()"
+      [libcRevealLabel]="translations().moveToWatched()"
+      data-test-id="item-dialog-move-watched"
+      [attr.aria-label]="translations().moveToWatched()"
+      [title]="translations().moveToWatched()"
+      (click)="moveToWatched.emit()"
     >
       <i class="material-icons" aria-hidden="true"> movie </i>
       <span class="button-reveal-label-text"
-        ><span>{{ translations().moveToMovieTracker() }}</span></span
+        ><span>{{ translations().moveToWatched() }}</span></span
       >
     </button>
   }
-  @if (seriesTrackerEnabled() && watchLater() && series() && !inSeriesTracker()) {
+  @if (watchingEnabled() && watchlist() && series() && !inWatching()) {
     <button
       class="button-icon button-reveal-label"
-      [libcRevealLabel]="translations().moveToSeriesTracker()"
-      data-test-id="item-dialog-move-series-tracker"
-      [attr.aria-label]="translations().moveToSeriesTracker()"
-      [title]="translations().moveToSeriesTracker()"
-      (click)="moveToSeriesTracker.emit()"
+      [libcRevealLabel]="translations().moveToWatching()"
+      data-test-id="item-dialog-move-watching"
+      [attr.aria-label]="translations().moveToWatching()"
+      [title]="translations().moveToWatching()"
+      (click)="moveToWatching.emit()"
     >
       <i class="material-icons" aria-hidden="true"> live_tv </i>
       <span class="button-reveal-label-text"
-        ><span>{{ translations().moveToSeriesTracker() }}</span></span
+        ><span>{{ translations().moveToWatching() }}</span></span
       >
     </button>
   }

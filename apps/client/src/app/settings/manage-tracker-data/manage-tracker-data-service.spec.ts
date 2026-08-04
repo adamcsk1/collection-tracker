@@ -21,9 +21,9 @@ describe('ManageTrackerDataService', () => {
     markAllMoviesAsUnwatched: ReturnType<typeof vi.fn>;
     markAllSeriesAsWatched: ReturnType<typeof vi.fn>;
     markAllSeriesAsUnwatched: ReturnType<typeof vi.fn>;
-    deleteAllMovieTrackerItems: ReturnType<typeof vi.fn>;
-    deleteAllSeriesTrackerItems: ReturnType<typeof vi.fn>;
-    deleteAllBookTrackerItems: ReturnType<typeof vi.fn>;
+    deleteAllWatchedItems: ReturnType<typeof vi.fn>;
+    deleteAllWatchingItems: ReturnType<typeof vi.fn>;
+    deleteAllBooksItems: ReturnType<typeof vi.fn>;
   };
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
 
@@ -34,9 +34,9 @@ describe('ManageTrackerDataService', () => {
       markAllMoviesAsUnwatched: vi.fn(() => of({ changedCount: 1 })),
       markAllSeriesAsWatched: vi.fn(() => of({ trackedCount: 1, progressChangedCount: 3 })),
       markAllSeriesAsUnwatched: vi.fn(() => of({ changedCount: 2 })),
-      deleteAllMovieTrackerItems: vi.fn(() => of({ changedCount: 2 })),
-      deleteAllSeriesTrackerItems: vi.fn(() => of({ changedCount: 3 })),
-      deleteAllBookTrackerItems: vi.fn(() => of({ changedCount: 4 })),
+      deleteAllWatchedItems: vi.fn(() => of({ changedCount: 2 })),
+      deleteAllWatchingItems: vi.fn(() => of({ changedCount: 3 })),
+      deleteAllBooksItems: vi.fn(() => of({ changedCount: 4 })),
     };
     confirm = { ifConfirmed: vi.fn(() => of(true)) };
 
@@ -140,7 +140,7 @@ describe('ManageTrackerDataService', () => {
     service.removeAllTrackedMovieData();
 
     expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedMovieData');
-    expect(api.deleteAllMovieTrackerItems).toHaveBeenCalledTimes(1);
+    expect(api.deleteAllWatchedItems).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.RemovedTrackedMovieData');
@@ -150,7 +150,7 @@ describe('ManageTrackerDataService', () => {
     service.removeAllTrackedSeriesData();
 
     expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedSeriesData');
-    expect(api.deleteAllSeriesTrackerItems).toHaveBeenCalledTimes(1);
+    expect(api.deleteAllWatchingItems).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.RemovedTrackedSeriesData');
@@ -160,27 +160,27 @@ describe('ManageTrackerDataService', () => {
     service.removeAllTrackedBookData();
 
     expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedBookData');
-    expect(api.deleteAllBookTrackerItems).toHaveBeenCalledTimes(1);
+    expect(api.deleteAllBooksItems).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.RemovedTrackedBookData');
   });
 
   it('shows error toast when removing tracked movie data fails', () => {
-    api.deleteAllMovieTrackerItems = vi.fn(() => throwError(() => new Error('fail')));
+    api.deleteAllWatchedItems = vi.fn(() => throwError(() => new Error('fail')));
     service.removeAllTrackedMovieData();
 
-    expect(api.deleteAllMovieTrackerItems).toHaveBeenCalledTimes(1);
+    expect(api.deleteAllWatchedItems).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.RemovingTrackedMovieDataWithErrors');
     expect(collectionService.triggerReload).not.toHaveBeenCalled();
   });
 
   it('shows error toast when removing tracked series data fails', () => {
-    api.deleteAllSeriesTrackerItems = vi.fn(() => throwError(() => new Error('fail')));
+    api.deleteAllWatchingItems = vi.fn(() => throwError(() => new Error('fail')));
     service.removeAllTrackedSeriesData();
 
-    expect(api.deleteAllSeriesTrackerItems).toHaveBeenCalledTimes(1);
+    expect(api.deleteAllWatchingItems).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.RemovingTrackedSeriesDataWithErrors');
     expect(collectionService.triggerReload).not.toHaveBeenCalled();

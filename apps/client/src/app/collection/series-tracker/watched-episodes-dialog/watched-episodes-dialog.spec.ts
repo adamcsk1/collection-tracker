@@ -19,10 +19,10 @@ describe('WatchedEpisodesDialog', () => {
   let fixture: ComponentFixture<WatchedEpisodesDialog>;
   let component: WatchedEpisodesDialog;
   let api: {
-    getSeriesTrackerSeasonsByExternalId: ReturnType<typeof vi.fn>;
-    getSeriesTrackerWatchedEpisodesByExternalId: ReturnType<typeof vi.fn>;
-    updateSeriesTrackerWatchedEpisodesByExternalId: ReturnType<typeof vi.fn>;
-    markAllSeriesTrackerWatchedByExternalId: ReturnType<typeof vi.fn>;
+    getWatchingSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    getWatchingWatchedEpisodesByExternalId: ReturnType<typeof vi.fn>;
+    updateWatchingWatchedEpisodesByExternalId: ReturnType<typeof vi.fn>;
+    markAllWatchingWatchedByExternalId: ReturnType<typeof vi.fn>;
   };
   let portal: {
     closeTop: ReturnType<typeof vi.fn>;
@@ -34,14 +34,14 @@ describe('WatchedEpisodesDialog', () => {
 
   beforeEach(() => {
     api = {
-      getSeriesTrackerSeasonsByExternalId: vi.fn(() => of({ seasons: [{ season: 1, episodes: 3, titles: [] }] })),
-      getSeriesTrackerWatchedEpisodesByExternalId: vi.fn(() =>
+      getWatchingSeasonsByExternalId: vi.fn(() => of({ seasons: [{ season: 1, episodes: 3, titles: [] }] })),
+      getWatchingWatchedEpisodesByExternalId: vi.fn(() =>
         of({ watchedEpisodes: [{ season: 1, episode: 2 }], lastWatchedEpisode: { season: 1, episode: 2 } })
       ),
-      updateSeriesTrackerWatchedEpisodesByExternalId: vi.fn(() =>
+      updateWatchingWatchedEpisodesByExternalId: vi.fn(() =>
         of({ watchedEpisodes: [{ season: 1, episode: 2 }], lastWatchedEpisode: { season: 1, episode: 2 } })
       ),
-      markAllSeriesTrackerWatchedByExternalId: vi.fn(() =>
+      markAllWatchingWatchedByExternalId: vi.fn(() =>
         of({
           watchedEpisodes: [
             { season: 1, episode: 1 },
@@ -78,8 +78,8 @@ describe('WatchedEpisodesDialog', () => {
   });
 
   it('loads seasons metadata and watched episodes on init', () => {
-    expect(api.getSeriesTrackerSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
-    expect(api.getSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
+    expect(api.getWatchingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
+    expect(api.getWatchingWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['seasonsMetadata']()).toEqual([{ season: 1, episodes: 3, titles: [] }]);
     expect(component['watchedEpisodes']()).toEqual([{ season: 1, episode: 2 }]);
   });
@@ -138,7 +138,7 @@ describe('WatchedEpisodesDialog', () => {
   });
 
   it('toggles an episode watched state and saves automatically', async () => {
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(
+    api.updateWatchingWatchedEpisodesByExternalId.mockReturnValue(
       of({
         watchedEpisodes: [
           { season: 1, episode: 1 },
@@ -156,7 +156,7 @@ describe('WatchedEpisodesDialog', () => {
       { season: 1, episode: 1 },
       { season: 1, episode: 2 },
     ]);
-    expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
+    expect(api.updateWatchingWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
       watchedEpisodes: [
         { season: 1, episode: 1 },
         { season: 1, episode: 2 },
@@ -172,21 +172,21 @@ describe('WatchedEpisodesDialog', () => {
     expect(toastState.state.message()).toBe('Toast.WatchedEpisodesSaved');
     expect(portal.closeTop).not.toHaveBeenCalled();
 
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockClear();
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(
+    api.updateWatchingWatchedEpisodesByExternalId.mockClear();
+    api.updateWatchingWatchedEpisodesByExternalId.mockReturnValue(
       of({ watchedEpisodes: [{ season: 1, episode: 1 }], lastWatchedEpisode: { season: 1, episode: 1 } })
     );
 
     await component['onToggleEpisode'](1, 2);
 
     expect(component['watchedEpisodes']()).toEqual([{ season: 1, episode: 1 }]);
-    expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
+    expect(api.updateWatchingWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
       watchedEpisodes: [{ season: 1, episode: 1 }],
     });
   });
 
   it('toggles all episodes in a season and saves automatically', async () => {
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(
+    api.updateWatchingWatchedEpisodesByExternalId.mockReturnValue(
       of({
         watchedEpisodes: [
           { season: 1, episode: 1 },
@@ -204,7 +204,7 @@ describe('WatchedEpisodesDialog', () => {
       { season: 1, episode: 2 },
       { season: 1, episode: 3 },
     ]);
-    expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
+    expect(api.updateWatchingWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
       watchedEpisodes: [
         { season: 1, episode: 1 },
         { season: 1, episode: 2 },
@@ -212,21 +212,21 @@ describe('WatchedEpisodesDialog', () => {
       ],
     });
 
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockClear();
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(
+    api.updateWatchingWatchedEpisodesByExternalId.mockClear();
+    api.updateWatchingWatchedEpisodesByExternalId.mockReturnValue(
       of({ watchedEpisodes: [], lastWatchedEpisode: null })
     );
 
     await component['onToggleSeason'](1, 3);
 
     expect(component['watchedEpisodes']()).toEqual([]);
-    expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
+    expect(api.updateWatchingWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
       watchedEpisodes: [],
     });
   });
 
   it('saves watched episodes in episode order', async () => {
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(
+    api.updateWatchingWatchedEpisodesByExternalId.mockReturnValue(
       of({
         watchedEpisodes: [
           { season: 1, episode: 1 },
@@ -241,7 +241,7 @@ describe('WatchedEpisodesDialog', () => {
 
     await component['onToggleEpisode'](1, 1);
 
-    expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
+    expect(api.updateWatchingWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
       watchedEpisodes: [
         { season: 1, episode: 1 },
         { season: 1, episode: 2 },
@@ -263,14 +263,14 @@ describe('WatchedEpisodesDialog', () => {
       watchedEpisodes: { season: number; episode: number }[];
       lastWatchedEpisode: { season: number; episode: number } | null;
     }>();
-    api.updateSeriesTrackerWatchedEpisodesByExternalId
+    api.updateWatchingWatchedEpisodesByExternalId
       .mockReturnValueOnce(pendingEpisodeSave.asObservable())
       .mockReturnValueOnce(
         of({ watchedEpisodes: [{ season: 1, episode: 1 }], lastWatchedEpisode: { season: 1, episode: 1 } })
       );
 
     const firstSave = component['onToggleEpisode'](1, 1);
-    await vi.waitFor(() => expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(api.updateWatchingWatchedEpisodesByExternalId).toHaveBeenCalledTimes(1));
     const secondSave = component['onToggleEpisode'](1, 2);
 
     expect(component['watchedEpisodes']()).toEqual([{ season: 1, episode: 1 }]);
@@ -290,7 +290,7 @@ describe('WatchedEpisodesDialog', () => {
 
     await secondSave;
 
-    expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenNthCalledWith(2, 'omdb', 'tt-series', {
+    expect(api.updateWatchingWatchedEpisodesByExternalId).toHaveBeenNthCalledWith(2, 'omdb', 'tt-series', {
       watchedEpisodes: [{ season: 1, episode: 1 }],
     });
     expect(component['watchedEpisodes']()).toEqual([{ season: 1, episode: 1 }]);
@@ -307,10 +307,10 @@ describe('WatchedEpisodesDialog', () => {
       watchedEpisodes: { season: number; episode: number }[];
       lastWatchedEpisode: { season: number; episode: number } | null;
     }>();
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(pendingEpisodeSave.asObservable());
+    api.updateWatchingWatchedEpisodesByExternalId.mockReturnValue(pendingEpisodeSave.asObservable());
 
     const episodeSave = component['onToggleEpisode'](1, 1);
-    await vi.waitFor(() => expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalled());
+    await vi.waitFor(() => expect(api.updateWatchingWatchedEpisodesByExternalId).toHaveBeenCalled());
 
     const close = component['onClose']();
     await Promise.resolve();
@@ -337,8 +337,8 @@ describe('WatchedEpisodesDialog', () => {
       watchedEpisodes: { season: number; episode: number }[];
       lastWatchedEpisode: { season: number; episode: number } | null;
     }>();
-    api.getSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(watchedEpisodesLoad.asObservable());
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(
+    api.getWatchingWatchedEpisodesByExternalId.mockReturnValue(watchedEpisodesLoad.asObservable());
+    api.updateWatchingWatchedEpisodesByExternalId.mockReturnValue(
       of({ watchedEpisodes: [{ season: 1, episode: 1 }], lastWatchedEpisode: { season: 1, episode: 1 } })
     );
     const lateLoadFixture = TestBed.createComponent(WatchedEpisodesDialog);
@@ -358,7 +358,7 @@ describe('WatchedEpisodesDialog', () => {
   });
 
   it('shows no metadata message when seasons are empty', () => {
-    api.getSeriesTrackerSeasonsByExternalId.mockReturnValue(of({ seasons: [] }));
+    api.getWatchingSeasonsByExternalId.mockReturnValue(of({ seasons: [] }));
     component['seasonsMetadata'].set([]);
 
     expect(component['hasSeasonMetadata']()).toBe(false);
@@ -415,7 +415,7 @@ describe('WatchedEpisodesDialog', () => {
 
     await component['onMarkAllEpisodesWatched']();
 
-    expect(api.markAllSeriesTrackerWatchedByExternalId).not.toHaveBeenCalled();
+    expect(api.markAllWatchingWatchedByExternalId).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.SetSeasonMetadataFirst');
   });
 
@@ -425,7 +425,7 @@ describe('WatchedEpisodesDialog', () => {
 
     await component['onMarkAllEpisodesWatched']();
 
-    expect(api.markAllSeriesTrackerWatchedByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
+    expect(api.markAllWatchingWatchedByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['watchedEpisodes']()).toEqual([
       { season: 1, episode: 1 },
       { season: 1, episode: 2 },
@@ -447,13 +447,13 @@ describe('WatchedEpisodesDialog', () => {
       watchedEpisodes: { season: number; episode: number }[];
       lastWatchedEpisode: { season: number; episode: number } | null;
     }>();
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(pendingEpisodeSave.asObservable());
+    api.updateWatchingWatchedEpisodesByExternalId.mockReturnValue(pendingEpisodeSave.asObservable());
 
     const episodeSave = component['onToggleEpisode'](1, 1);
-    await vi.waitFor(() => expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalled());
+    await vi.waitFor(() => expect(api.updateWatchingWatchedEpisodesByExternalId).toHaveBeenCalled());
     const markAllSave = component['onMarkAllEpisodesWatched']();
 
-    expect(api.markAllSeriesTrackerWatchedByExternalId).not.toHaveBeenCalled();
+    expect(api.markAllWatchingWatchedByExternalId).not.toHaveBeenCalled();
 
     pendingEpisodeSave.next({
       watchedEpisodes: [
@@ -467,7 +467,7 @@ describe('WatchedEpisodesDialog', () => {
     await episodeSave;
     await markAllSave;
 
-    expect(api.markAllSeriesTrackerWatchedByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
+    expect(api.markAllWatchingWatchedByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['watchedEpisodes']()).toEqual([
       { season: 1, episode: 1 },
       { season: 1, episode: 2 },
@@ -481,19 +481,19 @@ describe('WatchedEpisodesDialog', () => {
 
     await component['onMarkAllEpisodesWatched']();
 
-    expect(api.markAllSeriesTrackerWatchedByExternalId).not.toHaveBeenCalled();
+    expect(api.markAllWatchingWatchedByExternalId).not.toHaveBeenCalled();
   });
 
   it('clears watched episodes after confirmation', async () => {
     const saved = vi.fn();
     fixture.componentRef.setInput('saved', saved);
-    api.updateSeriesTrackerWatchedEpisodesByExternalId.mockReturnValue(
+    api.updateWatchingWatchedEpisodesByExternalId.mockReturnValue(
       of({ watchedEpisodes: [], lastWatchedEpisode: null, item: { hash: 'unwatched-hash' } })
     );
 
     await component['onMarkAllEpisodesUnwatched']();
 
-    expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
+    expect(api.updateWatchingWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
       watchedEpisodes: [],
     });
     expect(component['watchedEpisodes']()).toEqual([]);
@@ -506,6 +506,6 @@ describe('WatchedEpisodesDialog', () => {
 
     await component['onMarkAllEpisodesUnwatched']();
 
-    expect(api.updateSeriesTrackerWatchedEpisodesByExternalId).not.toHaveBeenCalled();
+    expect(api.updateWatchingWatchedEpisodesByExternalId).not.toHaveBeenCalled();
   });
 });

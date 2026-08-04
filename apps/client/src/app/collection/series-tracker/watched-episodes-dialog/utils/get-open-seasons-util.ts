@@ -1,6 +1,6 @@
-import { SeriesTrackerSeasonMetadataModel } from '@shared/models/api-model';
+import { WatchingSeasonMetadataModel } from '@shared/models/api-model';
 
-export const getOpenSeasons = (seasons: SeriesTrackerSeasonMetadataModel[], watchedSet: Set<string>): Set<number> => {
+export const getOpenSeasons = (seasons: WatchingSeasonMetadataModel[], watchedSet: Set<string>): Set<number> => {
   if (seasons.length === 0) {
     return new Set<number>();
   }

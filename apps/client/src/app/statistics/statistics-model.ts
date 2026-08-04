@@ -1,9 +1,9 @@
 export interface StatisticsSummaryModel {
   movies: number;
   series: number;
-  bookTracker: number;
+  books: number;
   favorites: number;
-  watchLater: number;
+  watchlist: number;
   wishlist: number;
   all: number;
   watchedMovies: number;

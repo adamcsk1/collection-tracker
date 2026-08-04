@@ -153,12 +153,12 @@ describe('ListItem', () => {
   it('renders completed status for completed series tracker items', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [SERIES_TAG, COMPLETED_TAG]),
-      listType: 'series-tracker',
+      listType: 'watching',
     });
     fixture.detectChanges();
 
     const completed = (fixture.nativeElement as HTMLElement).querySelector(
-      '[data-test-id="list-item-series-tracker-completed"]'
+      '[data-test-id="list-item-watching-completed"]'
     );
     expect(completed).not.toBeNull();
     expect(completed?.textContent?.trim()).toBe('check_circle');
@@ -172,7 +172,7 @@ describe('ListItem', () => {
   it('renders watched status for movie tracker items', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [MOVIE_TAG]),
-      listType: 'movie-tracker',
+      listType: 'watched',
     });
     fixture.detectChanges();
 
@@ -189,16 +189,16 @@ describe('ListItem', () => {
   it('does not render completed status for partial series tracker items', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [SERIES_TAG]),
-      listType: 'series-tracker',
+      listType: 'watching',
     });
     fixture.detectChanges();
 
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-series-tracker-completed"]')
+      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-watching-completed"]')
     ).toBeNull();
   });
 
-  it('does not render completed status for non-series-tracker items with completed tag', () => {
+  it('does not render completed status for non-watching items with completed tag', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [SERIES_TAG, COMPLETED_TAG]),
       listType: 'library',
@@ -206,7 +206,7 @@ describe('ListItem', () => {
     fixture.detectChanges();
 
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-series-tracker-completed"]')
+      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-watching-completed"]')
     ).toBeNull();
   });
 

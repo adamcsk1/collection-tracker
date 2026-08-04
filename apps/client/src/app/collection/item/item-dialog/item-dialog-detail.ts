@@ -21,7 +21,7 @@ export class ItemDialogDetail {
   public readonly isShared = input.required<boolean>();
   public readonly library = input.required<string>();
   public readonly detailTags = input.required<string[]>();
-  public readonly seriesTracker = input.required<boolean>();
+  public readonly watching = input.required<boolean>();
   public readonly book = input.required<boolean>();
   public readonly isbn = input.required<string>();
   public readonly episodeProgressText = input.required<string>();

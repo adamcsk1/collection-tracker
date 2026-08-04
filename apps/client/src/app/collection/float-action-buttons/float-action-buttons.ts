@@ -36,6 +36,7 @@ export class FloatActionButtons implements OnDestroy {
     showFunctions: computed(() => this.ngxSignalTranslate.translate('ShowFunctions')),
     filterMovie: computed(() => this.ngxSignalTranslate.translate('Movies')),
     filterSeries: computed(() => this.ngxSignalTranslate.translate('Series')),
+    filterBook: computed(() => this.ngxSignalTranslate.translate('Books')),
     filterUnwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
     filterFavorite: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     filterCompleted: computed(() => this.ngxSignalTranslate.translate('Completed')),
@@ -46,10 +47,10 @@ export class FloatActionButtons implements OnDestroy {
   protected readonly showFloatButtons = signal(false);
   protected readonly actionButtonsVisible = computed(() => this.config().showActions && this.showFloatButtons());
   protected readonly rowFilterActions = computed(() =>
-    this.config().filterActions.filter((filter) => filter === 'movie' || filter === 'series')
+    this.config().filterActions.filter((filter) => filter === 'movie' || filter === 'series' || filter === 'book')
   );
   protected readonly stackedFilterActions = computed(() =>
-    this.config().filterActions.filter((filter) => filter !== 'movie' && filter !== 'series')
+    this.config().filterActions.filter((filter) => filter !== 'movie' && filter !== 'series' && filter !== 'book')
   );
   protected readonly showActionSection = computed(
     () => this.config().showAddButton || this.config().showRandomPickButton
@@ -141,6 +142,7 @@ export class FloatActionButtons implements OnDestroy {
     const labels: Record<FloatActionFilter, string> = {
       movie: this.translations.filterMovie(),
       series: this.translations.filterSeries(),
+      book: this.translations.filterBook(),
       unwatched: this.translations.filterUnwatched(),
       favorite: this.translations.filterFavorite(),
       completed: this.translations.filterCompleted(),
@@ -154,6 +156,7 @@ export class FloatActionButtons implements OnDestroy {
     const icons: Record<FloatActionFilter, string> = {
       movie: 'movie',
       series: 'live_tv',
+      book: 'menu_book',
       unwatched: 'visibility_off',
       favorite: 'star',
       completed: 'check_circle',

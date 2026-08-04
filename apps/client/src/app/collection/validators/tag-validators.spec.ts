@@ -3,7 +3,7 @@ import { filterDisplayTags, filterEditableTags } from './tag-validators';
 const formerSystemTags = [
   '#completed',
   '#favorite',
-  '#watch-later',
+  '#watchlist',
   '#wishlist',
   '#movie',
   '#series',

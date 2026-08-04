@@ -42,14 +42,14 @@ describe('SearchSuggestionService', () => {
       providers: [
         SearchSuggestionService,
         { provide: ApiService, useValue: api },
-        { provide: searchSuggestionListTypeToken, useValue: 'watch-later' },
+        { provide: searchSuggestionListTypeToken, useValue: 'watchlist' },
       ],
     });
     service = TestBed.inject(SearchSuggestionService);
 
     await firstValueFrom(service.getSuggestion('mat'));
 
-    expect(api.getItemSearchSuggestions).toHaveBeenCalledWith('mat', 3, 'watch-later');
+    expect(api.getItemSearchSuggestions).toHaveBeenCalledWith('mat', 3, 'watchlist');
   });
 
   it('keeps raw suggestion values when no separator is present', () => {

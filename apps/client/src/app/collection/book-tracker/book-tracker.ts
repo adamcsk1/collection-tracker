@@ -37,11 +37,11 @@ import {
   styleUrl: '../collection.css',
   providers: [
     { provide: AutocompleteService, useClass: SearchSuggestionService },
-    { provide: searchSuggestionListTypeToken, useValue: 'book-tracker' },
+    { provide: searchSuggestionListTypeToken, useValue: 'books' },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BookTracker {
+export class Books {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
   private readonly aiSearch = inject(AiSearchService);
@@ -72,11 +72,9 @@ export class BookTracker {
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
   protected readonly translations = {
-    messageEmptyBookTracker: computed(() => this.ngxSignalTranslate.translate('Message.EmptyBookTracker')),
-    messageAddFirstBookTracker: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstBookTracker')),
-    placeholderSearchInBookTracker: computed(() =>
-      this.ngxSignalTranslate.translate('Placeholder.SearchInBookTracker')
-    ),
+    messageEmptyBooks: computed(() => this.ngxSignalTranslate.translate('Message.EmptyBooks')),
+    messageAddFirstBooks: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstBooks')),
+    placeholderSearchInBooks: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInBooks')),
     placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
   };
   private readonly aiSearchSetup = setupCollectionAiSearch({
@@ -86,13 +84,13 @@ export class BookTracker {
     portal: this.portal,
     floatActions: this.floatActions,
     destroyRef: this.destroyRef,
-    listType: 'book-tracker',
+    listType: 'books',
     queryFilters: this.queryFilters,
     forceStandardSearch: this.forceStandardSearch,
     placeholder: this.translations.placeholderReply,
     aiAvailable: this.mainState.state.aiAvailable,
   });
-  protected readonly bookTrackerDataSource = this.aiSearchSetup.dataSource;
+  protected readonly booksDataSource = this.aiSearchSetup.dataSource;
 
   constructor() {
     setupStandardCollectionSearch({
@@ -109,8 +107,8 @@ export class BookTracker {
     this.aiSearchSetup.clearAiFilterOnStandardSearch();
   }
 
-  protected onAddBookTracker(event: Event): void {
+  protected onAddBooks(event: Event): void {
     event.preventDefault();
-    this.portal.open(NewItemDialog, { bookTracker: true });
+    this.portal.open(NewItemDialog, { books: true });
   }
 }

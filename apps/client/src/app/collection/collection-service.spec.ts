@@ -90,10 +90,10 @@ describe('CollectionService', () => {
   it('adds an item with the same provider identity but a different list type', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('same')]);
 
-    service.addCollectionItem({ ...buildCollectionItem('same'), listType: 'watch-later' }, true);
+    service.addCollectionItem({ ...buildCollectionItem('same'), listType: 'watchlist' }, true);
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
-      { ...buildCollectionItem('same'), listType: 'watch-later' },
+      { ...buildCollectionItem('same'), listType: 'watchlist' },
       buildCollectionItem('same'),
     ]);
   });
@@ -131,10 +131,10 @@ describe('CollectionService', () => {
   it('deletes only the matching list item when provider identities overlap', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('same'),
-      { ...buildCollectionItem('same'), listType: 'watch-later' },
+      { ...buildCollectionItem('same'), listType: 'watchlist' },
     ]);
 
-    service.deleteCollectionItem(buildCollectionItem('same'), undefined, 'watch-later');
+    service.deleteCollectionItem(buildCollectionItem('same'), undefined, 'watchlist');
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('same')]);
   });
@@ -168,40 +168,40 @@ describe('CollectionService', () => {
   it('updates only the matching list item when provider identities overlap', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('target'),
-      { ...buildCollectionItem('target'), listType: 'watch-later' },
+      { ...buildCollectionItem('target'), listType: 'watchlist' },
     ]);
 
     service.updateCollectionItem(
-      { ...buildCollectionItem('target'), listType: 'watch-later' },
+      { ...buildCollectionItem('target'), listType: 'watchlist' },
       {
         ...buildCollectionItem('updated'),
         externalItemId: 'tt-target',
-        listType: 'watch-later',
+        listType: 'watchlist',
       }
     );
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('target'),
-      { ...buildCollectionItem('updated'), externalItemId: 'tt-target', listType: 'watch-later' },
+      { ...buildCollectionItem('updated'), externalItemId: 'tt-target', listType: 'watchlist' },
     ]);
   });
 
   it('replaces the old keyed item with the backend-returned item when legacy IMDb ID changes', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('target'),
-      { ...buildCollectionItem('target'), listType: 'series-tracker' },
+      { ...buildCollectionItem('target'), listType: 'watching' },
     ]);
 
     service.updateCollectionItem(
-      { ...buildCollectionItem('target'), listType: 'series-tracker' },
-      { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'series-tracker' },
+      { ...buildCollectionItem('target'), listType: 'watching' },
+      { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'watching' },
       undefined,
-      'series-tracker'
+      'watching'
     );
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('target'),
-      { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'series-tracker' },
+      { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'watching' },
     ]);
   });
 });

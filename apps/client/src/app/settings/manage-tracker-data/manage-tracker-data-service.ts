@@ -167,7 +167,7 @@ export class ManageTrackerDataService {
         );
 
         this.api
-          .deleteAllMovieTrackerItems()
+          .deleteAllWatchedItems()
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {
@@ -199,7 +199,7 @@ export class ManageTrackerDataService {
         );
 
         this.api
-          .deleteAllSeriesTrackerItems()
+          .deleteAllWatchingItems()
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {
@@ -231,7 +231,7 @@ export class ManageTrackerDataService {
         );
 
         this.api
-          .deleteAllBookTrackerItems()
+          .deleteAllBooksItems()
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {

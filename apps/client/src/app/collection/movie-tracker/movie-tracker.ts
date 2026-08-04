@@ -37,11 +37,11 @@ import {
   styleUrl: '../collection.css',
   providers: [
     { provide: AutocompleteService, useClass: SearchSuggestionService },
-    { provide: searchSuggestionListTypeToken, useValue: 'movie-tracker' },
+    { provide: searchSuggestionListTypeToken, useValue: 'watched' },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MovieTracker {
+export class Watched {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
   private readonly aiSearch = inject(AiSearchService);
@@ -72,11 +72,9 @@ export class MovieTracker {
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
   protected readonly translations = {
-    messageEmptyMovieTracker: computed(() => this.ngxSignalTranslate.translate('Message.EmptyMovieTracker')),
-    messageAddFirstMovieTracker: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstMovieTracker')),
-    placeholderSearchInMovieTracker: computed(() =>
-      this.ngxSignalTranslate.translate('Placeholder.SearchInMovieTracker')
-    ),
+    messageEmptyWatched: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWatched')),
+    messageAddFirstWatched: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWatched')),
+    placeholderSearchInWatched: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInWatched')),
     placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
   };
   private readonly aiSearchSetup = setupCollectionAiSearch({
@@ -86,13 +84,13 @@ export class MovieTracker {
     portal: this.portal,
     floatActions: this.floatActions,
     destroyRef: this.destroyRef,
-    listType: 'movie-tracker',
+    listType: 'watched',
     queryFilters: this.queryFilters,
     forceStandardSearch: this.forceStandardSearch,
     placeholder: this.translations.placeholderReply,
     aiAvailable: this.mainState.state.aiAvailable,
   });
-  protected readonly movieTrackerDataSource = this.aiSearchSetup.dataSource;
+  protected readonly watchedDataSource = this.aiSearchSetup.dataSource;
 
   constructor() {
     setupStandardCollectionSearch({
@@ -109,8 +107,8 @@ export class MovieTracker {
     this.aiSearchSetup.clearAiFilterOnStandardSearch();
   }
 
-  protected onAddMovieTracker(event: Event): void {
+  protected onAddWatched(event: Event): void {
     event.preventDefault();
-    this.portal.open(NewItemDialog, { movieTracker: true });
+    this.portal.open(NewItemDialog, { watched: true });
   }
 }

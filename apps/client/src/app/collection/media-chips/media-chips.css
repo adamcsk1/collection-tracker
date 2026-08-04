@@ -1,0 +1,20 @@
+:host {
+  display: block;
+}
+
+.media-chips {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  justify-content: center;
+  gap: var(--size-xs);
+  margin-bottom: var(--size-md);
+  padding: var(--size-md) var(--size-md) 0;
+
+  button {
+    &[aria-selected='true'] {
+      background-color: var(--main-color);
+      color: var(--background-color);
+    }
+  }
+}

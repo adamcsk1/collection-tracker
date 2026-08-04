@@ -11,25 +11,25 @@ describe('buildStandardSearchFilters', () => {
   });
 
   it('builds text search filters', () => {
-    expect(buildStandardSearchFilters(' dark ', 'series-tracker')).toEqual({
+    expect(buildStandardSearchFilters(' dark ', 'watching')).toEqual({
       search: 'dark',
-      listType: 'series-tracker',
+      listType: 'watching',
     });
   });
 
   it('builds tag search filters', () => {
-    expect(buildStandardSearchFilters('#drama', 'watch-later')).toEqual({
+    expect(buildStandardSearchFilters('#drama', 'watchlist')).toEqual({
       tags: ['#drama'],
       tagMode: 'all',
-      listType: 'watch-later',
+      listType: 'watchlist',
     });
   });
 
   it('treats old system tag names as custom tag searches', () => {
-    expect(buildStandardSearchFilters('#completed', 'series-tracker')).toEqual({
+    expect(buildStandardSearchFilters('#completed', 'watching')).toEqual({
       tags: ['#completed'],
       tagMode: 'all',
-      listType: 'series-tracker',
+      listType: 'watching',
     });
   });
 

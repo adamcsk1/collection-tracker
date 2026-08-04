@@ -88,7 +88,7 @@
           <libc-input
             data-test-id="new-item-manual-imdb-id"
             [mandatory]="true"
-            [label]="bookTracker() ? translations.isbn() : translations.labelIMDbId()"
+            [label]="books() ? translations.isbn() : translations.labelIMDbId()"
             [formField]="manualForm.IMDbId"
           >
             <ng-container errors>
@@ -102,7 +102,7 @@
                 {{ translations.validationISBN() }}
               }
               @if (manualFormErrors.IMDbId.knownIMDbId()) {
-                {{ bookTracker() ? translations.validationKnownISBN() : translations.validationKnownIMDbId() }}
+                {{ books() ? translations.validationKnownISBN() : translations.validationKnownIMDbId() }}
               }
             </ng-container>
           </libc-input>
@@ -119,7 +119,7 @@
               [options]="contentTypeOptions()"
             />
           }
-          @if (!bookTracker()) {
+          @if (!books()) {
             <libc-input
               data-test-id="new-item-manual-rate"
               [label]="translations.labelIMDbRate()"
@@ -175,7 +175,7 @@
           }
           <libc-autocomplete
             data-test-id="new-item-manual-genre"
-            [label]="bookTracker() ? translations.subjects() : translations.genre()"
+            [label]="books() ? translations.subjects() : translations.genre()"
             [hint]="translations.hintSeparateGenres()"
             [formField]="manualForm.genreText"
             ctGenreSuggestions
@@ -189,13 +189,13 @@
           />
           <libc-input
             data-test-id="new-item-manual-actors"
-            [label]="bookTracker() ? translations.authors() : translations.actors()"
+            [label]="books() ? translations.authors() : translations.actors()"
             [formField]="manualForm.actors"
           />
           <libc-textarea
             data-test-id="new-item-manual-plot"
             class="full-width"
-            [label]="bookTracker() ? translations.description() : translations.plot()"
+            [label]="books() ? translations.description() : translations.plot()"
             [formField]="manualForm.plot"
             [rows]="4"
           />
@@ -280,11 +280,11 @@
         [label]="translations.collectionItemWatched()"
       />
     }
-    @if (showCopyToSeriesTrackerCheckbox()) {
+    @if (showCopyToWatchingCheckbox()) {
       <libc-checkbox
-        data-test-id="new-item-copy-to-series-tracker-as-watched"
-        [formField]="searchForm.copyToSeriesTrackerAsWatched"
-        [label]="translations.copyToSeriesTrackerAsWatched()"
+        data-test-id="new-item-copy-to-watching-as-watched"
+        [formField]="searchForm.copyToWatchingAsWatched"
+        [label]="translations.copyToWatchingAsWatched()"
       />
     }
   </ng-container>

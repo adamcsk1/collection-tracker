@@ -16,4 +16,27 @@
     display: block;
     padding: var(--size-xs);
   }
+
+  &.collection-container--with-chips {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: calc(100vh - var(--header-height) - 2 * var(--size-md));
+    height: calc(100svh - var(--header-height) - 2 * var(--size-md));
+    height: calc(100dvh - var(--header-height) - 2 * var(--size-md));
+
+    ct-list {
+      display: block;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+  }
+}
+
+@media (width > 1250px) {
+  .collection-container.collection-container--with-chips {
+    height: calc(100vh - 2 * var(--size-md));
+    height: calc(100svh - 2 * var(--size-md));
+    height: calc(100dvh - 2 * var(--size-md));
+  }
 }

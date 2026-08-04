@@ -195,9 +195,9 @@ describe('SettingsManageTrackerData component', () => {
   it('hides movie and series actions when both tracker features are disabled', () => {
     TestBed.inject(mainStateToken).setState('collectionFeaturePreferences', {
       ...initialMainState.collectionFeaturePreferences,
-      movieTracker: false,
-      seriesTracker: false,
-      bookTracker: false,
+      watched: false,
+      watching: false,
+      books: false,
     });
     fixture.detectChanges();
 

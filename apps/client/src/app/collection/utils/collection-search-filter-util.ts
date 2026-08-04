@@ -20,7 +20,7 @@ export const buildCollectionRouteFilters = (queryParams: QueryParamReader): Part
   const completed = queryParams.get('completed');
 
   return {
-    ...(type === 'movie' || type === 'series' ? { type } : {}),
+    ...(type === 'movie' || type === 'series' || type === 'book' ? { type } : {}),
     ...(favorite === 'true' ? { favorite: true } : {}),
     ...(watched === 'false' ? { watched: false } : watched === 'true' ? { watched: true } : {}),
     ...(completed === 'false' ? { completed: false } : completed === 'true' ? { completed: true } : {}),

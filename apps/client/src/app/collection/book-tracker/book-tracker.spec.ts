@@ -13,17 +13,17 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { collectionStateToken, initialCollectionState } from '../collection-store';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
-import { BookTracker } from './book-tracker';
+import { Books } from './book-tracker';
 
-describe('BookTracker', () => {
-  let fixture: ComponentFixture<BookTracker>;
+describe('Books', () => {
+  let fixture: ComponentFixture<Books>;
   const portal = { open: vi.fn() };
   const api = { searchItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })) };
 
   beforeEach(() => {
     vi.clearAllMocks();
     TestBed.configureTestingModule({
-      imports: [BookTracker],
+      imports: [Books],
       providers: [
         provideStore(initialCollectionState, collectionStateToken),
         provideStore(initialMainCollectionState, mainCollectionStateToken),
@@ -48,13 +48,13 @@ describe('BookTracker', () => {
         },
       ],
     });
-    TestBed.overrideComponent(BookTracker, { set: { template: '<ng-template #floatSearch></ng-template>' } });
-    fixture = TestBed.createComponent(BookTracker);
+    TestBed.overrideComponent(Books, { set: { template: '<ng-template #floatSearch></ng-template>' } });
+    fixture = TestBed.createComponent(Books);
     fixture.detectChanges();
   });
 
   it('searches only book tracker items', () => {
-    fixture.componentInstance['bookTrackerDataSource']({
+    fixture.componentInstance['booksDataSource']({
       reset: true,
       offset: 0,
       limit: 50,
@@ -64,7 +64,7 @@ describe('BookTracker', () => {
     });
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { search: 'dune', listType: 'book-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      { search: 'dune', listType: 'books', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
@@ -74,10 +74,10 @@ describe('BookTracker', () => {
     const event = new Event('click');
     const preventDefault = vi.spyOn(event, 'preventDefault');
 
-    fixture.componentInstance['onAddBookTracker'](event);
+    fixture.componentInstance['onAddBooks'](event);
 
     expect(preventDefault).toHaveBeenCalled();
-    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { bookTracker: true });
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { books: true });
   });
 
   it('clears float search on destroy', () => {

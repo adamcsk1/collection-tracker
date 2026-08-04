@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY } from 'rxjs';
+import { catchError, EMPTY, filter, map, startWith } from 'rxjs';
 import { CollectionService } from '../../collection/collection-service';
 import { SettingsService } from '../../settings/settings-service';
 import { LogoutService } from '../logout-service';
@@ -28,15 +28,32 @@ export class MenuNav {
   private readonly theme = inject(ThemeService);
   private readonly settings = inject(SettingsService);
   private readonly mainState = inject(mainStateToken);
+  private readonly router = inject(Router);
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects),
+      startWith(this.router.url)
+    ),
+    { initialValue: this.router.url }
+  );
+  protected readonly collectionNavActive = computed(() => {
+    const path = this.currentUrl().split('?')[0].split('#')[0];
+    return (
+      path.startsWith('/collection/library') ||
+      path.startsWith('/collection/books') ||
+      path === '/collection' ||
+      path === '/collection/'
+    );
+  });
   protected readonly translations = {
     title: computed(() => this.ngxSignalTranslate.translate('AppTitle')),
     menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
     collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
-    watchLater: computed(() => this.ngxSignalTranslate.translate('WatchLater')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
-    seriesTracker: computed(() => this.ngxSignalTranslate.translate('SeriesTracker')),
-    movieTracker: computed(() => this.ngxSignalTranslate.translate('MovieTracker')),
-    bookTracker: computed(() => this.ngxSignalTranslate.translate('BookTracker')),
+    watchlist: computed(() => this.ngxSignalTranslate.translate('Watchlist')),
+    watching: computed(() => this.ngxSignalTranslate.translate('Watching')),
+    watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
     settings: computed(() => this.ngxSignalTranslate.translate('Settings')),
     statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
     sync: computed(() => this.ngxSignalTranslate.translate('Sync')),

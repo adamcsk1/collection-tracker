@@ -9,25 +9,13 @@
   <a
     data-test-id="nav-collection"
     [routerLink]="['/', 'collection', 'library']"
-    routerLinkActive="active"
     class="highlight"
+    [class.active]="collectionNavActive()"
     (click)="onClose()"
   >
-    <i class="material-icons">movie</i>
+    <i class="material-icons" aria-hidden="true">local_library</i>
     {{ translations.collection() }}
   </a>
-  @if (featurePreferences().watchLater) {
-    <a
-      data-test-id="nav-watch-later"
-      [routerLink]="['/', 'collection', 'watch-later']"
-      routerLinkActive="active"
-      class="highlight"
-      (click)="onClose()"
-    >
-      <i class="material-icons">watch_later</i>
-      {{ translations.watchLater() }}
-    </a>
-  }
   @if (featurePreferences().wishlist) {
     <a
       data-test-id="nav-wishlist"
@@ -40,40 +28,40 @@
       {{ translations.wishlist() }}
     </a>
   }
-  @if (featurePreferences().seriesTracker) {
+  @if (featurePreferences().watchlist) {
     <a
-      data-test-id="nav-series-tracker"
-      [routerLink]="['/', 'collection', 'series-tracker']"
+      data-test-id="nav-watchlist"
+      [routerLink]="['/', 'collection', 'watchlist']"
+      routerLinkActive="active"
+      class="highlight"
+      (click)="onClose()"
+    >
+      <i class="material-icons">watch_later</i>
+      {{ translations.watchlist() }}
+    </a>
+  }
+  @if (featurePreferences().watching) {
+    <a
+      data-test-id="nav-watching"
+      [routerLink]="['/', 'collection', 'watching']"
       routerLinkActive="active"
       class="highlight"
       (click)="onClose()"
     >
       <i class="material-icons">format_list_numbered</i>
-      {{ translations.seriesTracker() }}
+      {{ translations.watching() }}
     </a>
   }
-  @if (featurePreferences().movieTracker) {
+  @if (featurePreferences().watched) {
     <a
-      data-test-id="nav-movie-tracker"
-      [routerLink]="['/', 'collection', 'movie-tracker']"
+      data-test-id="nav-watched"
+      [routerLink]="['/', 'collection', 'watched']"
       routerLinkActive="active"
       class="highlight"
       (click)="onClose()"
     >
       <i class="material-icons">check_circle</i>
-      {{ translations.movieTracker() }}
-    </a>
-  }
-  @if (featurePreferences().bookTracker) {
-    <a
-      data-test-id="nav-book-tracker"
-      [routerLink]="['/', 'collection', 'book-tracker']"
-      routerLinkActive="active"
-      class="highlight"
-      (click)="onClose()"
-    >
-      <i class="material-icons" aria-hidden="true">menu_book</i>
-      {{ translations.bookTracker() }}
+      {{ translations.watched() }}
     </a>
   }
   <a

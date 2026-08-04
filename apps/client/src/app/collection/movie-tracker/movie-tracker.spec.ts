@@ -13,10 +13,10 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
-import { MovieTracker } from './movie-tracker';
+import { Watched } from './movie-tracker';
 
-describe('MovieTracker', () => {
-  let fixture: ComponentFixture<MovieTracker>;
+describe('Watched', () => {
+  let fixture: ComponentFixture<Watched>;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let floatActions: FloatActionsService;
   const portal = { open: vi.fn() };
@@ -34,7 +34,7 @@ describe('MovieTracker', () => {
 
   const createFixture = (searchText = '', queryParams: Record<string, string> = {}) => {
     TestBed.configureTestingModule({
-      imports: [MovieTracker],
+      imports: [Watched],
       providers: [
         provideStore({ ...initialCollectionState, searchText }, collectionStateToken),
         provideStore(initialMainCollectionState, mainCollectionStateToken),
@@ -60,13 +60,13 @@ describe('MovieTracker', () => {
       ],
     });
 
-    TestBed.overrideComponent(MovieTracker, {
+    TestBed.overrideComponent(Watched, {
       set: {
         template: '<ng-template #floatSearch></ng-template>',
       },
     });
 
-    fixture = TestBed.createComponent(MovieTracker);
+    fixture = TestBed.createComponent(Watched);
     collectionState = fixture.debugElement.injector.get(collectionStateToken);
     floatActions = TestBed.inject(FloatActionsService);
     fixture.detectChanges();
@@ -110,30 +110,30 @@ describe('MovieTracker', () => {
   });
 
   it('searches movie tracker items by standard text', () => {
-    fixture.componentInstance['movieTrackerDataSource'](dataSourceRequest(' dark ', 10, 25));
+    fixture.componentInstance['watchedDataSource'](dataSourceRequest(' dark ', 10, 25));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { search: 'dark', listType: 'movie-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      { search: 'dark', listType: 'watched', orderBy: 'createdAt', orderDirection: 'desc' },
       10,
       25
     );
   });
 
   it('searches movie tracker items by tag', () => {
-    fixture.componentInstance['movieTrackerDataSource'](dataSourceRequest('#action'));
+    fixture.componentInstance['watchedDataSource'](dataSourceRequest('#action'));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { tags: ['#action'], tagMode: 'all', listType: 'movie-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      { tags: ['#action'], tagMode: 'all', listType: 'watched', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
   });
 
   it('searches movie tracker items without a text filter by default', () => {
-    fixture.componentInstance['movieTrackerDataSource'](dataSourceRequest(''));
+    fixture.componentInstance['watchedDataSource'](dataSourceRequest(''));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { listType: 'movie-tracker', orderBy: 'createdAt', orderDirection: 'desc' },
+      { listType: 'watched', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
@@ -151,9 +151,9 @@ describe('MovieTracker', () => {
     const event = new Event('click');
     const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
-    fixture.componentInstance['onAddMovieTracker'](event);
+    fixture.componentInstance['onAddWatched'](event);
 
     expect(preventDefaultSpy).toHaveBeenCalled();
-    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { movieTracker: true });
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { watched: true });
   });
 });

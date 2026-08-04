@@ -54,7 +54,7 @@ describe('setupCollectionAiSearch', () => {
     vi.clearAllMocks();
   });
 
-  const createSetup = (listType: 'watch-later' | 'book-tracker' = 'watch-later') => {
+  const createSetup = (listType: 'watchlist' | 'books' = 'watchlist') => {
     const collectionState = TestBed.inject(collectionStateToken);
     const destroyRef = TestBed.inject(DestroyRef);
 
@@ -86,7 +86,7 @@ describe('setupCollectionAiSearch', () => {
     });
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { search: 'matrix', listType: 'watch-later', orderBy: 'createdAt', orderDirection: 'desc' },
+      { search: 'matrix', listType: 'watchlist', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
@@ -136,7 +136,7 @@ describe('setupCollectionAiSearch', () => {
       orderDirection: 'desc',
     });
 
-    expect(aiSearch.getMatchedIds).toHaveBeenCalledWith('sci-fi', 'watch-later');
+    expect(aiSearch.getMatchedIds).toHaveBeenCalledWith('sci-fi', 'watchlist');
     expect(api.getMatchedItems).toHaveBeenCalledWith({
       identities: [
         { source: 'imdb', id: 'tt1' },
@@ -144,13 +144,13 @@ describe('setupCollectionAiSearch', () => {
       ],
       offset: 0,
       limit: 25,
-      filters: { listType: 'watch-later' },
+      filters: { listType: 'watchlist' },
     });
   });
 
   it('loads provider-native book matches with their encoded identity source', async () => {
     aiSearch.getMatchedIds.mockReturnValue(of(['openlibrary:9780140328721']));
-    const setup = TestBed.runInInjectionContext(() => createSetup('book-tracker'));
+    const setup = TestBed.runInInjectionContext(() => createSetup('books'));
     const collectionState = TestBed.inject(collectionStateToken);
     collectionState.setState('aiSearchPromptText', 'fantasy books');
     collectionState.setState('aiSearchSendVersion', 1);
@@ -172,7 +172,7 @@ describe('setupCollectionAiSearch', () => {
       identities: [{ source: 'openlibrary', id: '9780140328721' }],
       offset: 0,
       limit: 25,
-      filters: { listType: 'book-tracker' },
+      filters: { listType: 'books' },
     });
   });
 

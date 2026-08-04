@@ -96,34 +96,34 @@ describe('MenuNav', () => {
     const hasLink = (testId: string) => fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) !== null;
 
     mainState.setState('collectionFeaturePreferences', {
-      bookTracker: true,
-      watchLater: true,
+      books: true,
+      watchlist: true,
       wishlist: false,
-      movieTracker: true,
-      seriesTracker: false,
+      watched: true,
+      watching: false,
     });
     fixture.detectChanges();
 
-    expect(hasLink('nav-watch-later')).toBe(true);
+    expect(hasLink('nav-watchlist')).toBe(true);
     expect(hasLink('nav-wishlist')).toBe(false);
-    expect(hasLink('nav-movie-tracker')).toBe(true);
-    expect(hasLink('nav-series-tracker')).toBe(false);
-    expect(hasLink('nav-book-tracker')).toBe(true);
+    expect(hasLink('nav-watched')).toBe(true);
+    expect(hasLink('nav-watching')).toBe(false);
+    expect(hasLink('nav-books')).toBe(false);
 
     mainState.setState('collectionFeaturePreferences', {
-      bookTracker: false,
-      watchLater: false,
+      books: false,
+      watchlist: false,
       wishlist: true,
-      movieTracker: false,
-      seriesTracker: true,
+      watched: false,
+      watching: true,
     });
     fixture.detectChanges();
 
-    expect(hasLink('nav-watch-later')).toBe(false);
+    expect(hasLink('nav-watchlist')).toBe(false);
     expect(hasLink('nav-wishlist')).toBe(true);
-    expect(hasLink('nav-movie-tracker')).toBe(false);
-    expect(hasLink('nav-series-tracker')).toBe(true);
-    expect(hasLink('nav-book-tracker')).toBe(false);
+    expect(hasLink('nav-watched')).toBe(false);
+    expect(hasLink('nav-watching')).toBe(true);
+    expect(hasLink('nav-books')).toBe(false);
   });
 
   it('still syncs collection when refreshing settings fails', () => {

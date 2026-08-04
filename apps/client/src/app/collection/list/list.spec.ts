@@ -281,17 +281,17 @@ describe('List', () => {
   });
 
   it('opens the new item dialog in watch later mode on the watch later page', () => {
-    fixture.componentRef.setInput('listType', 'watch-later');
+    fixture.componentRef.setInput('listType', 'watchlist');
     fixture.detectChanges();
 
     component['onAddNew']();
 
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
-      watchLater: true,
+      watchlist: true,
       wishlist: false,
-      seriesTracker: false,
-      movieTracker: false,
-      bookTracker: false,
+      watching: false,
+      watched: false,
+      books: false,
     });
   });
 
@@ -302,26 +302,26 @@ describe('List', () => {
     component['onAddNew']();
 
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
-      watchLater: false,
+      watchlist: false,
       wishlist: true,
-      seriesTracker: false,
-      movieTracker: false,
-      bookTracker: false,
+      watching: false,
+      watched: false,
+      books: false,
     });
   });
 
   it('opens the new item dialog in series tracker mode on the series tracker page', () => {
-    fixture.componentRef.setInput('listType', 'series-tracker');
+    fixture.componentRef.setInput('listType', 'watching');
     fixture.detectChanges();
 
     component['onAddNew']();
 
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
-      watchLater: false,
+      watchlist: false,
       wishlist: false,
-      seriesTracker: true,
-      movieTracker: false,
-      bookTracker: false,
+      watching: true,
+      watched: false,
+      books: false,
     });
   });
 
@@ -349,7 +349,7 @@ describe('List', () => {
   it('loads more route-filtered items when scrolled on a prefiltered page', async () => {
     vi.useFakeTimers();
     try {
-      fixture.componentRef.setInput('routeSearchText', '#watch-later');
+      fixture.componentRef.setInput('routeSearchText', '#watchlist');
       fixture.detectChanges();
       await fixture.whenStable();
       await vi.runAllTimersAsync();
@@ -363,7 +363,7 @@ describe('List', () => {
 
       component['onScroll']();
 
-      expect(api.searchItems).toHaveBeenCalledWith({ tags: ['#watch-later'], tagMode: 'all' }, 1, 50);
+      expect(api.searchItems).toHaveBeenCalledWith({ tags: ['#watchlist'], tagMode: 'all' }, 1, 50);
     } finally {
       vi.useRealTimers();
     }
@@ -423,7 +423,7 @@ describe('List', () => {
     expect(floatActions.config().actionsAvailable).toBe(true);
     expect(actionButtons.config().showActions).toBe(true);
     expect(actionButtons.config().showOrderButtons).toBe(true);
-    expect(actionButtons.config().filterActions).toEqual(['movie', 'series', 'unwatched', 'favorite']);
+    expect(actionButtons.config().filterActions).toEqual(['unwatched', 'favorite']);
     expect(actionButtons.config().activeFilterActions).toEqual([]);
     expect(actionButtons.config().orderBy).toBe('createdAt');
     expect(actionButtons.config().orderDirection).toBe('desc');
@@ -446,30 +446,30 @@ describe('List', () => {
   });
 
   it('opens the new item dialog in movie tracker mode', () => {
-    fixture.componentRef.setInput('listType', 'movie-tracker');
+    fixture.componentRef.setInput('listType', 'watched');
 
     component['onAddNew']();
 
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
-      watchLater: false,
+      watchlist: false,
       wishlist: false,
-      seriesTracker: false,
-      movieTracker: true,
-      bookTracker: false,
+      watching: false,
+      watched: true,
+      books: false,
     });
   });
 
   it('opens the new item dialog in book tracker mode', () => {
-    fixture.componentRef.setInput('listType', 'book-tracker');
+    fixture.componentRef.setInput('listType', 'books');
 
     component['onAddNew']();
 
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
-      watchLater: false,
+      watchlist: false,
       wishlist: false,
-      seriesTracker: false,
-      movieTracker: false,
-      bookTracker: true,
+      watching: false,
+      watched: false,
+      books: true,
     });
   });
 
@@ -567,7 +567,7 @@ describe('List', () => {
   });
 
   it('publishes contextual filter actions for series tracker', () => {
-    fixture.componentRef.setInput('listType', 'series-tracker');
+    fixture.componentRef.setInput('listType', 'watching');
     fixture.detectChanges();
 
     expect(actionButtons.config().filterActions).toEqual(['completed', 'uncompleted']);

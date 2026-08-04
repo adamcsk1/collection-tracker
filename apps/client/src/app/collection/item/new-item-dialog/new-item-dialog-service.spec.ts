@@ -59,9 +59,9 @@ describe('NewItemDialogService', () => {
   let service: NewItemDialogService;
   let api: {
     create: ReturnType<typeof vi.fn>;
-    addMovieTrackerItemByExternalId: ReturnType<typeof vi.fn>;
-    addSeriesTrackerItemByExternalId: ReturnType<typeof vi.fn>;
-    markAllSeriesTrackerWatchedByExternalId: ReturnType<typeof vi.fn>;
+    addWatchedItemByExternalId: ReturnType<typeof vi.fn>;
+    addWatchingItemByExternalId: ReturnType<typeof vi.fn>;
+    markAllWatchingWatchedByExternalId: ReturnType<typeof vi.fn>;
   };
   let externalMetadata: {
     matchedContent: ReturnType<typeof signal<SelectInputModel>>;
@@ -79,36 +79,36 @@ describe('NewItemDialogService', () => {
   beforeEach(() => {
     api = {
       create: vi.fn(),
-      addMovieTrackerItemByExternalId: vi.fn(() =>
+      addWatchedItemByExternalId: vi.fn(() =>
         of({
           item: {
             title: 'Title',
             IMDbId: 'tt123',
             externalProvider: 'omdb',
             externalItemId: 'tt123',
-            listType: 'movie-tracker',
+            listType: 'watched',
           },
         })
       ),
-      addSeriesTrackerItemByExternalId: vi.fn(() =>
+      addWatchingItemByExternalId: vi.fn(() =>
         of({
           item: {
             title: 'Title',
             IMDbId: 'tt123',
             externalProvider: 'omdb',
             externalItemId: 'tt123',
-            listType: 'series-tracker',
+            listType: 'watching',
           },
         })
       ),
-      markAllSeriesTrackerWatchedByExternalId: vi.fn(() =>
+      markAllWatchingWatchedByExternalId: vi.fn(() =>
         of({
           item: {
             title: 'Title',
             IMDbId: 'tt123',
             externalProvider: 'omdb',
             externalItemId: 'tt123',
-            listType: 'series-tracker',
+            listType: 'watching',
             tags: ['#series', '#completed'],
           },
         })
@@ -168,9 +168,9 @@ describe('NewItemDialogService', () => {
         })
       ) as any
     );
-    api.create.mockReturnValue(createResponse({ title: 'Title', listType: 'book-tracker' }));
+    api.create.mockReturnValue(createResponse({ title: 'Title', listType: 'books' }));
 
-    await firstValueFrom(service.save('openlibrary/isbn', null, '', 'close', { listType: 'book-tracker' }));
+    await firstValueFrom(service.save('openlibrary/isbn', null, '', 'close', { listType: 'books' }));
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -179,7 +179,7 @@ describe('NewItemDialogService', () => {
         externalIds: [{ source: 'isbn', id: '9780441172719' }],
       }),
       undefined,
-      'book-tracker'
+      'books'
     );
   });
 
@@ -291,7 +291,7 @@ describe('NewItemDialogService', () => {
   it('saveManual rejects non-series content for series tracker items', async () => {
     await expect(
       firstValueFrom(
-        service.saveManual({ ...buildManualItem(), contentType: 'movie' }, 'close', { listType: 'series-tracker' })
+        service.saveManual({ ...buildManualItem(), contentType: 'movie' }, 'close', { listType: 'watching' })
       )
     ).rejects.toEqual(new Error('Series tracker items must be series.'));
 
@@ -302,7 +302,7 @@ describe('NewItemDialogService', () => {
   it('saveManual rejects non-movie content for movie tracker items', async () => {
     await expect(
       firstValueFrom(
-        service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', { listType: 'movie-tracker' })
+        service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', { listType: 'watched' })
       )
     ).rejects.toEqual(new Error('Movie tracker items must be movies.'));
 
@@ -322,7 +322,7 @@ describe('NewItemDialogService', () => {
 
     await firstValueFrom(service.saveManual(buildManualItem(), 'close', { watched: true }));
 
-    expect(api.addMovieTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined);
+    expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined);
   });
 
   it('saveManual finalizes the created item when the movie tracker update fails', async () => {
@@ -333,7 +333,7 @@ describe('NewItemDialogService', () => {
       externalItemId: 'tt1234567',
     };
     api.create.mockReturnValue(createResponse(createdItem));
-    api.addMovieTrackerItemByExternalId.mockReturnValue(throwError(() => new Error('tracker failed')));
+    api.addWatchedItemByExternalId.mockReturnValue(throwError(() => new Error('tracker failed')));
 
     await expect(firstValueFrom(service.saveManual(buildManualItem(), 'close', { watched: true }))).resolves.toEqual(
       createdItem
@@ -359,12 +359,12 @@ describe('NewItemDialogService', () => {
 
     await firstValueFrom(
       service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', {
-        copyToSeriesTrackerAsWatched: true,
+        copyToWatchingAsWatched: true,
       })
     );
 
-    expect(api.addSeriesTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, undefined);
-    expect(api.markAllSeriesTrackerWatchedByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
+    expect(api.addWatchingItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, undefined);
+    expect(api.markAllWatchingWatchedByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
   });
 
   it('saveManual finalizes the created item when marking the tracker series watched fails', async () => {
@@ -375,12 +375,12 @@ describe('NewItemDialogService', () => {
       externalItemId: 'tt1234567',
     };
     api.create.mockReturnValue(createResponse(createdItem));
-    api.markAllSeriesTrackerWatchedByExternalId.mockReturnValue(throwError(() => new Error('tracker failed')));
+    api.markAllWatchingWatchedByExternalId.mockReturnValue(throwError(() => new Error('tracker failed')));
 
     await expect(
       firstValueFrom(
         service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', {
-          copyToSeriesTrackerAsWatched: true,
+          copyToWatchingAsWatched: true,
         })
       )
     ).resolves.toEqual(createdItem);
@@ -421,13 +421,13 @@ describe('NewItemDialogService', () => {
       service.save('tt123', null, '', 'close', { targetOwnerShareCode: 'owner-code', watched: true })
     );
 
-    expect(api.addMovieTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt123', 'owner-code');
+    expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt123', 'owner-code');
     expect(collection.addCollectionItem).toHaveBeenCalledWith(
       { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123', watched: true },
       true
     );
     expect(collection.addCollectionItem).toHaveBeenCalledWith(
-      { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123', listType: 'movie-tracker' },
+      { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123', listType: 'watched' },
       true
     );
   });
@@ -440,7 +440,7 @@ describe('NewItemDialogService', () => {
 
     await firstValueFrom(service.save('tt123', null, '', 'close', { watched: true }));
 
-    expect(api.addMovieTrackerItemByExternalId).not.toHaveBeenCalled();
+    expect(api.addWatchedItemByExternalId).not.toHaveBeenCalled();
   });
 
   it('save stops spinner and rethrows on API error', async () => {
@@ -457,12 +457,12 @@ describe('NewItemDialogService', () => {
       createResponse({ title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' })
     );
 
-    await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'watch-later' }));
+    await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'watchlist' }));
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#tag'], contentType: 'movie' }),
       undefined,
-      'watch-later'
+      'watchlist'
     );
     expect(collection.addCollectionItem).toHaveBeenCalledWith(
       { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' },
@@ -495,12 +495,12 @@ describe('NewItemDialogService', () => {
       createResponse({ title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' })
     );
 
-    await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'series-tracker' }));
+    await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'watching' }));
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#tag'], contentType: 'series' }),
       undefined,
-      'series-tracker'
+      'watching'
     );
   });
 
@@ -514,13 +514,9 @@ describe('NewItemDialogService', () => {
       })
     );
 
-    await firstValueFrom(service.saveManual(buildManualItem(), 'close', { listType: 'watch-later' }));
+    await firstValueFrom(service.saveManual(buildManualItem(), 'close', { listType: 'watchlist' }));
 
-    expect(api.create).toHaveBeenCalledWith(
-      expect.objectContaining({ contentType: 'movie' }),
-      undefined,
-      'watch-later'
-    );
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ contentType: 'movie' }), undefined, 'watchlist');
   });
 
   it('saves manual items with the wishlist list type', async () => {
@@ -549,14 +545,10 @@ describe('NewItemDialogService', () => {
     );
 
     await firstValueFrom(
-      service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', { listType: 'series-tracker' })
+      service.saveManual({ ...buildManualItem(), contentType: 'series' }, 'close', { listType: 'watching' })
     );
 
-    expect(api.create).toHaveBeenCalledWith(
-      expect.objectContaining({ contentType: 'series' }),
-      undefined,
-      'series-tracker'
-    );
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ contentType: 'series' }), undefined, 'watching');
   });
 
   it('keeps year intervals from selected content', async () => {
@@ -590,9 +582,9 @@ describe('NewItemDialogService', () => {
     externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent()) as any);
     api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
 
-    await expect(
-      firstValueFrom(service.save('tt123', null, '', 'close', { listType: 'series-tracker' }))
-    ).rejects.toEqual(new Error('Series tracker items must be series.'));
+    await expect(firstValueFrom(service.save('tt123', null, '', 'close', { listType: 'watching' }))).rejects.toEqual(
+      new Error('Series tracker items must be series.')
+    );
 
     expect(api.create).not.toHaveBeenCalled();
     expect(spinnerStore.state.show()).toBe(false);
@@ -604,9 +596,9 @@ describe('NewItemDialogService', () => {
     );
     api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
 
-    await expect(
-      firstValueFrom(service.save('tt123', null, '', 'close', { listType: 'movie-tracker' }))
-    ).rejects.toEqual(new Error('Movie tracker items must be movies.'));
+    await expect(firstValueFrom(service.save('tt123', null, '', 'close', { listType: 'watched' }))).rejects.toEqual(
+      new Error('Movie tracker items must be movies.')
+    );
 
     expect(api.create).not.toHaveBeenCalled();
     expect(spinnerStore.state.show()).toBe(false);
@@ -623,12 +615,12 @@ describe('NewItemDialogService', () => {
     await firstValueFrom(
       service.save('tt123', null, '', 'close', {
         targetOwnerShareCode: 'owner-code',
-        copyToSeriesTrackerAsWatched: true,
+        copyToWatchingAsWatched: true,
       })
     );
 
-    expect(api.addSeriesTrackerItemByExternalId).toHaveBeenCalledWith('omdb', 'tt123', undefined, 'owner-code');
-    expect(api.markAllSeriesTrackerWatchedByExternalId).toHaveBeenCalledWith('omdb', 'tt123');
+    expect(api.addWatchingItemByExternalId).toHaveBeenCalledWith('omdb', 'tt123', undefined, 'owner-code');
+    expect(api.markAllWatchingWatchedByExternalId).toHaveBeenCalledWith('omdb', 'tt123');
     expect(collection.addCollectionItem).toHaveBeenCalledWith(
       { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' },
       true
@@ -639,7 +631,7 @@ describe('NewItemDialogService', () => {
         IMDbId: 'tt123',
         externalProvider: 'omdb',
         externalItemId: 'tt123',
-        listType: 'series-tracker',
+        listType: 'watching',
         tags: ['#series', '#completed'],
       },
       true
@@ -654,23 +646,23 @@ describe('NewItemDialogService', () => {
 
     await firstValueFrom(service.save('tt123', null, '', 'close', {}));
 
-    expect(api.addSeriesTrackerItemByExternalId).not.toHaveBeenCalled();
-    expect(api.markAllSeriesTrackerWatchedByExternalId).not.toHaveBeenCalled();
+    expect(api.addWatchingItemByExternalId).not.toHaveBeenCalled();
+    expect(api.markAllWatchingWatchedByExternalId).not.toHaveBeenCalled();
   });
 
-  it('ignores copy-to-series-tracker flag for movies', async () => {
+  it('ignores copy-to-watching flag for movies', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
       of(null, buildSelectedContent({ contentType: 'movie' })) as any
     );
     api.create.mockReturnValue(createResponse({ title: 'Title', IMDbId: 'tt123' }));
 
-    await firstValueFrom(service.save('tt123', null, '', 'close', { copyToSeriesTrackerAsWatched: true }));
+    await firstValueFrom(service.save('tt123', null, '', 'close', { copyToWatchingAsWatched: true }));
 
-    expect(api.addSeriesTrackerItemByExternalId).not.toHaveBeenCalled();
-    expect(api.markAllSeriesTrackerWatchedByExternalId).not.toHaveBeenCalled();
+    expect(api.addWatchingItemByExternalId).not.toHaveBeenCalled();
+    expect(api.markAllWatchingWatchedByExternalId).not.toHaveBeenCalled();
   });
 
-  it('ignores copy-to-series-tracker flag for manual movies', async () => {
+  it('ignores copy-to-watching flag for manual movies', async () => {
     api.create.mockReturnValue(
       createResponse({
         title: 'Manual Title',
@@ -680,9 +672,9 @@ describe('NewItemDialogService', () => {
       })
     );
 
-    await firstValueFrom(service.saveManual(buildManualItem(), 'close', { copyToSeriesTrackerAsWatched: true }));
+    await firstValueFrom(service.saveManual(buildManualItem(), 'close', { copyToWatchingAsWatched: true }));
 
-    expect(api.addSeriesTrackerItemByExternalId).not.toHaveBeenCalled();
-    expect(api.markAllSeriesTrackerWatchedByExternalId).not.toHaveBeenCalled();
+    expect(api.addWatchingItemByExternalId).not.toHaveBeenCalled();
+    expect(api.markAllWatchingWatchedByExternalId).not.toHaveBeenCalled();
   });
 });

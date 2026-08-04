@@ -1,8 +1,8 @@
 <div class="collection-container">
   <ng-template #floatSearch>
     <libc-autocomplete
-      data-test-id="book-tracker-search"
-      [placeholder]="translations.placeholderSearchInBookTracker()"
+      data-test-id="books-search"
+      [placeholder]="translations.placeholderSearchInBooks()"
       [formField]="searchTextField"
       [showReset]="true"
       [suggestionListPlacement]="'top'"
@@ -10,16 +10,16 @@
     />
   </ng-template>
   <ct-list
-    [listType]="'book-tracker'"
+    [listType]="'books'"
     [emptyIcon]="'menu_book'"
-    [dataSource]="bookTrackerDataSource"
+    [dataSource]="booksDataSource"
     [routeSearchText]="querySearch()"
     [routeFilterKey]="queryFilterKey()"
   >
     <span list-empty>
-      {{ translations.messageEmptyBookTracker() }}<br />
-      <a data-test-id="add-first-book-tracker-item" href="#" role="button" (click)="onAddBookTracker($event)">{{
-        translations.messageAddFirstBookTracker()
+      {{ translations.messageEmptyBooks() }}<br />
+      <a data-test-id="add-first-books-item" href="#" role="button" (click)="onAddBooks($event)">{{
+        translations.messageAddFirstBooks()
       }}</a>
     </span>
   </ct-list>

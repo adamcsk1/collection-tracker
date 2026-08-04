@@ -103,7 +103,7 @@ describe('NewItemDialog component', () => {
   });
 
   it('allows manual mode and filters books in book tracker mode', () => {
-    fixture.componentRef.setInput('bookTracker', true);
+    fixture.componentRef.setInput('books', true);
     service.matchedContent.set([
       { contentType: 'movie', text: 'Dune', value: 'omdb/tt1160419' },
       { contentType: 'book', text: 'Dune', value: 'openlibrary/isbn' },
@@ -115,7 +115,7 @@ describe('NewItemDialog component', () => {
     expect(component['matchedContent']()).toEqual([{ contentType: 'book', text: 'Dune', value: 'openlibrary/isbn' }]);
     component['onModeChange']('manual');
     expect(component['mode']()).toBe('manual');
-    expect(component['listType']()).toBe('book-tracker');
+    expect(component['listType']()).toBe('books');
     expect(component['manualForm'].contentType().value()).toBe('book');
   });
 
@@ -269,20 +269,20 @@ describe('NewItemDialog component', () => {
     await component['onSave']('close');
 
     expect(component['showWatchedCheckbox']()).toBe(false);
-    expect(service.save).toHaveBeenCalledWith('tt-series', null, '', 'close', { copyToSeriesTrackerAsWatched: false });
+    expect(service.save).toHaveBeenCalledWith('tt-series', null, '', 'close', { copyToWatchingAsWatched: false });
   });
 
-  it('shows copy-to-series-tracker checkbox for selected series content in library mode', () => {
+  it('shows copy-to-watching checkbox for selected series content in library mode', () => {
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-series');
 
-    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(true);
+    expect(component['showCopyToWatchingCheckbox']()).toBe(true);
   });
 
   it('hides watched checkbox when the movie tracker feature is disabled', () => {
     mainState.setState('collectionFeaturePreferences', {
       ...initialMainState.collectionFeaturePreferences,
-      movieTracker: false,
+      watched: false,
     });
     service.matchedContent.set([{ contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-movie');
@@ -290,56 +290,56 @@ describe('NewItemDialog component', () => {
     expect(component['showWatchedCheckbox']()).toBe(false);
   });
 
-  it('hides copy-to-series-tracker checkbox when the series tracker feature is disabled', () => {
+  it('hides copy-to-watching checkbox when the series tracker feature is disabled', () => {
     mainState.setState('collectionFeaturePreferences', {
       ...initialMainState.collectionFeaturePreferences,
-      seriesTracker: false,
+      watching: false,
     });
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-series');
 
-    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+    expect(component['showCopyToWatchingCheckbox']()).toBe(false);
   });
 
-  it('hides copy-to-series-tracker checkbox for selected movie content', () => {
+  it('hides copy-to-watching checkbox for selected movie content', () => {
     service.matchedContent.set([{ contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-movie');
 
-    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+    expect(component['showCopyToWatchingCheckbox']()).toBe(false);
   });
 
-  it('hides copy-to-series-tracker checkbox for manual imdb id selection', () => {
+  it('hides copy-to-watching checkbox for manual imdb id selection', () => {
     service.matchedContent.set([{ text: 'IMDb id: tt123', value: 'tt123' }]);
     component['searchForm'].selectedExternalReference().value.set('tt123');
 
     expect(component['showWatchedCheckbox']()).toBe(true);
-    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+    expect(component['showCopyToWatchingCheckbox']()).toBe(false);
   });
 
-  it('hides copy-to-series-tracker checkbox in internal list modes', () => {
+  it('hides copy-to-watching checkbox in internal list modes', () => {
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-series');
 
-    fixture.componentRef.setInput('watchLater', true);
-    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+    fixture.componentRef.setInput('watchlist', true);
+    expect(component['showCopyToWatchingCheckbox']()).toBe(false);
 
-    fixture.componentRef.setInput('watchLater', false);
+    fixture.componentRef.setInput('watchlist', false);
     fixture.componentRef.setInput('wishlist', true);
-    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+    expect(component['showCopyToWatchingCheckbox']()).toBe(false);
 
     fixture.componentRef.setInput('wishlist', false);
-    fixture.componentRef.setInput('seriesTracker', true);
-    expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+    fixture.componentRef.setInput('watching', true);
+    expect(component['showCopyToWatchingCheckbox']()).toBe(false);
   });
 
-  it('passes copy-to-series-tracker-as-watched flag when checked', async () => {
+  it('passes copy-to-watching-as-watched flag when checked', async () => {
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-series');
-    component['searchForm'].copyToSeriesTrackerAsWatched().value.set(true);
+    component['searchForm'].copyToWatchingAsWatched().value.set(true);
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt-series', null, '', 'close', { copyToSeriesTrackerAsWatched: true });
+    expect(service.save).toHaveBeenCalledWith('tt-series', null, '', 'close', { copyToWatchingAsWatched: true });
   });
 
   it('resets only the IMDb ID field when mode is not new', async () => {
@@ -419,7 +419,7 @@ describe('NewItemDialog component', () => {
   });
 
   it('saves series tracker items without watched, user rate, or shared library values', async () => {
-    fixture.componentRef.setInput('seriesTracker', true);
+    fixture.componentRef.setInput('watching', true);
     component['searchForm'].selectedExternalReference().value.set('tt123');
     component['searchForm'].tags().value.set('#tag');
     component['searchForm'].watched().value.set(true);
@@ -428,11 +428,11 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', { listType: 'series-tracker' });
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', { listType: 'watching' });
   });
 
   it('filters matched content to series in series tracker mode', () => {
-    fixture.componentRef.setInput('seriesTracker', true);
+    fixture.componentRef.setInput('watching', true);
     service.matchedContent.set([
       { text: 'IMDb id: tt-id', value: 'tt-id' },
       { contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' },
@@ -588,21 +588,21 @@ describe('NewItemDialog component', () => {
     });
 
     it('forces series content type in series tracker mode', async () => {
-      fixture.componentRef.setInput('seriesTracker', true);
+      fixture.componentRef.setInput('watching', true);
       await vi.advanceTimersByTimeAsync(0);
       expect(component['manualForm'].contentType().value()).toBe('series');
-      expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(false);
+      expect(component['showCopyToWatchingCheckbox']()).toBe(false);
       expect(component['showContentTypeSelect']()).toBe(false);
     });
 
     it('forces movie content type in movie tracker mode', () => {
-      fixture.componentRef.setInput('movieTracker', true);
+      fixture.componentRef.setInput('watched', true);
       expect(component['manualForm'].contentType().value()).toBe('movie');
       expect(component['showContentTypeSelect']()).toBe(false);
     });
 
     it('uses the fixed series content type when saving a series tracker item', async () => {
-      fixture.componentRef.setInput('seriesTracker', true);
+      fixture.componentRef.setInput('watching', true);
       await vi.advanceTimersByTimeAsync(0);
       component['manualForm'].title().value.set('Manual Series');
       component['manualForm'].IMDbId().value.set('tt1234567');
@@ -613,7 +613,7 @@ describe('NewItemDialog component', () => {
       expect(service.saveManual).toHaveBeenCalledWith(
         expect.objectContaining({ contentType: 'series', userRate: null }),
         'close',
-        { listType: 'series-tracker' }
+        { listType: 'watching' }
       );
     });
 
@@ -622,9 +622,9 @@ describe('NewItemDialog component', () => {
       expect(component['showWatchedCheckbox']()).toBe(true);
     });
 
-    it('shows copy-to-series-tracker checkbox for manual library series', () => {
+    it('shows copy-to-watching checkbox for manual library series', () => {
       component['manualForm'].contentType().value.set('series');
-      expect(component['showCopyToSeriesTrackerCheckbox']()).toBe(true);
+      expect(component['showCopyToWatchingCheckbox']()).toBe(true);
     });
 
     it('hides manual user rate in internal list modes', () => {
@@ -703,14 +703,14 @@ describe('NewItemDialog component', () => {
       component['manualForm'].title().value.set('Manual Title');
       component['manualForm'].IMDbId().value.set('tt1234567');
       component['searchForm'].watched().value.set(true);
-      component['searchForm'].copyToSeriesTrackerAsWatched().value.set(true);
+      component['searchForm'].copyToWatchingAsWatched().value.set(true);
 
       await component['onSave']('new');
 
       expect(service.saveManual).toHaveBeenCalled();
       expect(formRoot.reset).toHaveBeenCalled();
       expect(component['searchForm'].watched().value()).toBe(false);
-      expect(component['searchForm'].copyToSeriesTrackerAsWatched().value()).toBe(false);
+      expect(component['searchForm'].copyToWatchingAsWatched().value()).toBe(false);
     });
 
     it('clears the manual IMDb ID after save', async () => {

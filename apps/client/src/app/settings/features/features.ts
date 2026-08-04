@@ -21,10 +21,10 @@ export class SettingsFeatures {
   protected readonly translations = {
     message: computed(() => this.ngxSignalTranslate.translate('Message.Features')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
-    watchLater: computed(() => this.ngxSignalTranslate.translate('WatchLater')),
-    watchTracker: computed(() => this.ngxSignalTranslate.translate('WatchTracker')),
-    seriesTracker: computed(() => this.ngxSignalTranslate.translate('SeriesTracker')),
-    bookTracker: computed(() => this.ngxSignalTranslate.translate('BookTracker')),
+    watchlist: computed(() => this.ngxSignalTranslate.translate('Watchlist')),
+    watching: computed(() => this.ngxSignalTranslate.translate('Watching')),
+    watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
+    books: computed(() => this.ngxSignalTranslate.translate('Books')),
   };
   protected readonly formModel = signal<CollectionFeaturePreferencesModel>(DEFAULT_COLLECTION_FEATURE_PREFERENCES);
   protected readonly form = form(this.formModel);

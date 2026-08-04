@@ -115,11 +115,11 @@ describe('SettingsService', () => {
 
   it('moves the feature cache from session storage to local storage when the mode changes', () => {
     const preferences = {
-      bookTracker: true,
+      books: true,
       wishlist: false,
-      watchLater: true,
-      movieTracker: true,
-      seriesTracker: false,
+      watchlist: true,
+      watched: true,
+      watching: false,
     };
     mainState.setState('sensitiveDataStorage', 'session');
     mainState.setState('collectionFeaturePreferences', preferences);
@@ -173,18 +173,18 @@ describe('SettingsService', () => {
 
   it('overrides cached collection feature preferences with API preferences', () => {
     const cachedPreferences = {
-      bookTracker: true,
+      books: true,
       wishlist: true,
-      watchLater: true,
-      movieTracker: true,
-      seriesTracker: true,
+      watchlist: true,
+      watched: true,
+      watching: true,
     };
     const apiPreferences = {
-      bookTracker: false,
+      books: false,
       wishlist: false,
-      watchLater: true,
-      movieTracker: false,
-      seriesTracker: true,
+      watchlist: true,
+      watched: false,
+      watching: true,
     };
     mainState.setState('collectionFeaturePreferences', cachedPreferences);
     api.getUserSettings.mockReturnValue(of({ collectionFeaturePreferences: apiPreferences }));
@@ -192,20 +192,20 @@ describe('SettingsService', () => {
     service.preloadUserSettings().subscribe();
 
     expect(mainState.state.collectionFeaturePreferences()).toEqual(apiPreferences);
-    expect(webstorage.setItem).toHaveBeenCalledWith(
-      STORAGE_COLLECTION_FEATURE_PREFERENCES,
-      JSON.stringify(apiPreferences),
-      'local'
-    );
+    expect(
+      JSON.parse(
+        webstorage.setItem.mock.calls.find((call) => call[0] === STORAGE_COLLECTION_FEATURE_PREFERENCES)?.[1] as string
+      )
+    ).toEqual(apiPreferences);
   });
 
   it('uses and caches default collection feature preferences when the API field is missing', () => {
     mainState.setState('collectionFeaturePreferences', {
-      bookTracker: false,
+      books: false,
       wishlist: false,
-      watchLater: false,
-      movieTracker: false,
-      seriesTracker: false,
+      watchlist: false,
+      watched: false,
+      watching: false,
     });
 
     service.preloadUserSettings().subscribe();
@@ -234,39 +234,44 @@ describe('SettingsService', () => {
 
   it('stores, caches, and posts collection feature preferences', () => {
     const preferences = {
-      bookTracker: true,
+      books: true,
       wishlist: false,
-      watchLater: true,
-      movieTracker: false,
-      seriesTracker: true,
+      watchlist: true,
+      watched: false,
+      watching: true,
     };
 
     service.storeCollectionFeaturePreferences(preferences);
 
     expect(mainState.state.collectionFeaturePreferences()).toEqual(preferences);
-    expect(webstorage.setItem).toHaveBeenCalledWith(
-      STORAGE_COLLECTION_FEATURE_PREFERENCES,
-      JSON.stringify(preferences),
-      'local'
-    );
+    expect(
+      JSON.parse(
+        webstorage.setItem.mock.calls.find((call) => call[0] === STORAGE_COLLECTION_FEATURE_PREFERENCES)?.[1] as string
+      )
+    ).toEqual(preferences);
     expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({ collectionFeaturePreferences: preferences });
   });
 
   it('caches collection feature preferences in configured session storage', () => {
     const preferences = {
-      bookTracker: false,
+      books: false,
       wishlist: true,
-      watchLater: false,
-      movieTracker: true,
-      seriesTracker: false,
+      watchlist: false,
+      watched: true,
+      watching: false,
     };
     mainState.setState('sensitiveDataStorage', 'session');
 
     service.storeCollectionFeaturePreferences(preferences);
 
+    expect(
+      JSON.parse(
+        webstorage.setItem.mock.calls.find((call) => call[0] === STORAGE_COLLECTION_FEATURE_PREFERENCES)?.[1] as string
+      )
+    ).toEqual(preferences);
     expect(webstorage.setItem).toHaveBeenCalledWith(
       STORAGE_COLLECTION_FEATURE_PREFERENCES,
-      JSON.stringify(preferences),
+      expect.any(String),
       'session'
     );
   });
@@ -274,13 +279,13 @@ describe('SettingsService', () => {
   it('serializes collection feature preference updates', () => {
     const firstUpdate = new Subject<void>();
     const firstPreferences = {
-      bookTracker: true,
+      books: true,
       wishlist: false,
-      watchLater: true,
-      movieTracker: true,
-      seriesTracker: true,
+      watchlist: true,
+      watched: true,
+      watching: true,
     };
-    const secondPreferences = { ...firstPreferences, watchLater: false };
+    const secondPreferences = { ...firstPreferences, watchlist: false };
     sharedApi.updateUserSettings.mockReturnValueOnce(firstUpdate).mockReturnValueOnce(of(void 0));
 
     service.storeCollectionFeaturePreferences(firstPreferences);
@@ -296,13 +301,13 @@ describe('SettingsService', () => {
 
   it('continues serialized collection feature preference updates after an error', () => {
     const firstPreferences = {
-      bookTracker: true,
+      books: true,
       wishlist: false,
-      watchLater: true,
-      movieTracker: true,
-      seriesTracker: true,
+      watchlist: true,
+      watched: true,
+      watching: true,
     };
-    const secondPreferences = { ...firstPreferences, watchLater: false };
+    const secondPreferences = { ...firstPreferences, watchlist: false };
     sharedApi.updateUserSettings
       .mockReturnValueOnce(throwError(() => new Error('network')))
       .mockReturnValueOnce(of(void 0));

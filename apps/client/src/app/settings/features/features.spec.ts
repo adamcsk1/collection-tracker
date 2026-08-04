@@ -26,11 +26,11 @@ describe('SettingsFeatures', () => {
 
     mainState = TestBed.inject(mainStateToken);
     mainState.setState('collectionFeaturePreferences', {
-      bookTracker: true,
+      books: true,
       wishlist: false,
-      watchLater: true,
-      movieTracker: false,
-      seriesTracker: true,
+      watchlist: true,
+      watched: false,
+      watching: true,
     });
     fixture = TestBed.createComponent(SettingsFeatures);
     component = fixture.componentInstance;
@@ -39,44 +39,44 @@ describe('SettingsFeatures', () => {
 
   it('initializes the form from main state preferences without saving', () => {
     expect(component['formModel']()).toEqual({
-      bookTracker: true,
+      books: true,
       wishlist: false,
-      watchLater: true,
-      movieTracker: false,
-      seriesTracker: true,
+      watchlist: true,
+      watched: false,
+      watching: true,
     });
     expect(settings.storeCollectionFeaturePreferences).not.toHaveBeenCalled();
   });
 
   it('updates and stores a changed feature preference', () => {
-    component['onChange']('movieTracker', true);
+    component['onChange']('watched', true);
 
-    expect(component['formModel']().movieTracker).toBe(true);
+    expect(component['formModel']().watched).toBe(true);
     expect(settings.storeCollectionFeaturePreferences).toHaveBeenCalledWith({
-      bookTracker: true,
+      books: true,
       wishlist: false,
-      watchLater: true,
-      movieTracker: true,
-      seriesTracker: true,
+      watchlist: true,
+      watched: true,
+      watching: true,
     });
   });
 
   it('updates the form when API-backed main state replaces cached preferences', () => {
     mainState.setState('collectionFeaturePreferences', {
-      bookTracker: false,
+      books: false,
       wishlist: true,
-      watchLater: false,
-      movieTracker: true,
-      seriesTracker: false,
+      watchlist: false,
+      watched: true,
+      watching: false,
     });
     fixture.detectChanges();
 
     expect(component['formModel']()).toEqual({
-      bookTracker: false,
+      books: false,
       wishlist: true,
-      watchLater: false,
-      movieTracker: true,
-      seriesTracker: false,
+      watchlist: false,
+      watched: true,
+      watching: false,
     });
   });
 

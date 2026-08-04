@@ -57,12 +57,7 @@ export class NewItemDialogService {
     mode: SaveMode,
     options: SaveOptions = {}
   ) {
-    const {
-      targetOwnerShareCode,
-      listType = 'library',
-      watched = false,
-      copyToSeriesTrackerAsWatched = false,
-    } = options;
+    const { targetOwnerShareCode, listType = 'library', watched = false, copyToWatchingAsWatched = false } = options;
 
     return this.externalMetadata.getSelectedContent(selectedExternalMetadataValue).pipe(
       skip(1),
@@ -78,13 +73,13 @@ export class NewItemDialogService {
           selectedContentIsSeries: boolean;
         } => {
           const selectedContentType = selectedContent.contentType;
-          if (listType === 'series-tracker' && selectedContentType !== 'series') {
+          if (listType === 'watching' && selectedContentType !== 'series') {
             throw new Error('Series tracker items must be series.');
           }
-          if (listType === 'movie-tracker' && selectedContentType !== 'movie') {
+          if (listType === 'watched' && selectedContentType !== 'movie') {
             throw new Error('Movie tracker items must be movies.');
           }
-          if (listType === 'book-tracker' && selectedContentType !== 'book') {
+          if (listType === 'books' && selectedContentType !== 'book') {
             throw new Error('Book tracker items must be books.');
           }
           return {
@@ -123,7 +118,7 @@ export class NewItemDialogService {
           collectionItem,
           listType,
           watched,
-          copyToSeriesTrackerAsWatched,
+          copyToWatchingAsWatched,
           targetOwnerShareCode,
           selectedContentIsMovie,
           selectedContentIsSeries,
@@ -134,12 +129,7 @@ export class NewItemDialogService {
   }
 
   public saveManual(item: ItemFormModel, mode: SaveMode, options: SaveOptions = {}) {
-    const {
-      targetOwnerShareCode,
-      listType = 'library',
-      watched = false,
-      copyToSeriesTrackerAsWatched = false,
-    } = options;
+    const { targetOwnerShareCode, listType = 'library', watched = false, copyToWatchingAsWatched = false } = options;
 
     const collectionItemChange = buildItemFromForm(item);
     const selectedContentIsMovie = collectionItemChange.contentType === 'movie';
@@ -147,13 +137,13 @@ export class NewItemDialogService {
 
     return of(collectionItemChange).pipe(
       map((change) => {
-        if (listType === 'series-tracker' && change.contentType !== 'series') {
+        if (listType === 'watching' && change.contentType !== 'series') {
           throw new Error('Series tracker items must be series.');
         }
-        if (listType === 'movie-tracker' && change.contentType !== 'movie') {
+        if (listType === 'watched' && change.contentType !== 'movie') {
           throw new Error('Movie tracker items must be movies.');
         }
-        if (listType === 'book-tracker' && change.contentType !== 'book') {
+        if (listType === 'books' && change.contentType !== 'book') {
           throw new Error('Book tracker items must be books.');
         }
         return change;
@@ -169,7 +159,7 @@ export class NewItemDialogService {
           collectionItem,
           listType,
           watched,
-          copyToSeriesTrackerAsWatched,
+          copyToWatchingAsWatched,
           targetOwnerShareCode,
           selectedContentIsMovie,
           selectedContentIsSeries,
@@ -195,34 +185,34 @@ export class NewItemDialogService {
     collectionItem: CollectionItemApiModel;
     listType: CollectionListTypeModel;
     watched: boolean;
-    copyToSeriesTrackerAsWatched: boolean;
+    copyToWatchingAsWatched: boolean;
     targetOwnerShareCode: string | undefined;
     selectedContentIsMovie: boolean;
     selectedContentIsSeries: boolean;
   }): Observable<{
     collectionItem: CollectionItemApiModel;
-    movieTrackerItem: CollectionItemApiModel | null;
-    seriesTrackerItem: CollectionItemApiModel | null;
+    watchedItem: CollectionItemApiModel | null;
+    watchingItem: CollectionItemApiModel | null;
     trackerUpdateFailed: boolean;
   }> {
     const {
       collectionItem,
       listType,
       watched,
-      copyToSeriesTrackerAsWatched,
+      copyToWatchingAsWatched,
       targetOwnerShareCode,
       selectedContentIsMovie,
       selectedContentIsSeries,
     } = input;
     const trackerUpdateFailure = {
       collectionItem,
-      movieTrackerItem: null,
-      seriesTrackerItem: null,
+      watchedItem: null,
+      watchingItem: null,
       trackerUpdateFailed: true,
     };
     if (listType === 'library' && watched && selectedContentIsMovie) {
       return this.api
-        .addMovieTrackerItemByExternalId(
+        .addWatchedItemByExternalId(
           collectionItem.externalProvider,
           collectionItem.externalItemId,
           targetOwnerShareCode
@@ -230,17 +220,17 @@ export class NewItemDialogService {
         .pipe(
           map((response) => ({
             collectionItem: { ...collectionItem, watched: true },
-            movieTrackerItem: response.item,
-            seriesTrackerItem: null,
+            watchedItem: response.item,
+            watchingItem: null,
             trackerUpdateFailed: false,
           })),
           catchError(() => of(trackerUpdateFailure))
         );
     }
 
-    if (listType === 'library' && copyToSeriesTrackerAsWatched && selectedContentIsSeries) {
+    if (listType === 'library' && copyToWatchingAsWatched && selectedContentIsSeries) {
       return this.api
-        .addSeriesTrackerItemByExternalId(
+        .addWatchingItemByExternalId(
           collectionItem.externalProvider,
           collectionItem.externalItemId,
           undefined,
@@ -249,12 +239,12 @@ export class NewItemDialogService {
         .pipe(
           mergeMap((response) =>
             this.api
-              .markAllSeriesTrackerWatchedByExternalId(collectionItem.externalProvider, collectionItem.externalItemId)
+              .markAllWatchingWatchedByExternalId(collectionItem.externalProvider, collectionItem.externalItemId)
               .pipe(
                 map((watchedResponse) => ({
                   collectionItem,
-                  movieTrackerItem: null,
-                  seriesTrackerItem: watchedResponse.item ?? response.item,
+                  watchedItem: null,
+                  watchingItem: watchedResponse.item ?? response.item,
                   trackerUpdateFailed: false,
                 }))
               )
@@ -263,15 +253,15 @@ export class NewItemDialogService {
         );
     }
 
-    return of({ collectionItem, movieTrackerItem: null, seriesTrackerItem: null, trackerUpdateFailed: false });
+    return of({ collectionItem, watchedItem: null, watchingItem: null, trackerUpdateFailed: false });
   }
 
   private finalizeSave(mode: SaveMode) {
     return (
       source$: Observable<{
         collectionItem: CollectionItemApiModel;
-        movieTrackerItem: CollectionItemApiModel | null;
-        seriesTrackerItem: CollectionItemApiModel | null;
+        watchedItem: CollectionItemApiModel | null;
+        watchingItem: CollectionItemApiModel | null;
         trackerUpdateFailed: boolean;
       }>
     ) =>
@@ -280,11 +270,11 @@ export class NewItemDialogService {
           this.spinnerLoadingState.setState('show', false);
           return throwError(() => error);
         }),
-        tap(({ collectionItem, movieTrackerItem, seriesTrackerItem, trackerUpdateFailed }) => {
+        tap(({ collectionItem, watchedItem, watchingItem, trackerUpdateFailed }) => {
           this.spinnerLoadingState.setState('show', false);
           this.collection.addCollectionItem(collectionItem, true);
-          if (movieTrackerItem) this.collection.addCollectionItem(movieTrackerItem, true);
-          if (seriesTrackerItem) this.collection.addCollectionItem(seriesTrackerItem, true);
+          if (watchedItem) this.collection.addCollectionItem(watchedItem, true);
+          if (watchingItem) this.collection.addCollectionItem(watchingItem, true);
           this.collection.triggerReload();
           this.toastState.setState(
             'message',

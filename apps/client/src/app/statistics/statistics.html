@@ -9,9 +9,9 @@
     {{ translations.messageLoadStatistics() }}
   } @else if (
     (statistics()?.totalItems ?? 0) === 0 &&
-    (statistics()?.watchLaterCount ?? 0) === 0 &&
+    (statistics()?.watchlistCount ?? 0) === 0 &&
     (statistics()?.wishlistCount ?? 0) === 0 &&
-    (statistics()?.bookTrackerCount ?? 0) === 0
+    (statistics()?.booksCount ?? 0) === 0
   ) {
     <span data-test-id="statistics-empty">{{ translations.messageEmptyStatistics() }}</span>
   } @else {
@@ -54,15 +54,15 @@
           <span class="stat-value">{{ summary.favorites }}</span>
           <span class="stat-label">{{ translations.favorites() }}</span>
         </button>
-        @if (featurePreferences().watchLater) {
+        @if (featurePreferences().watchlist) {
           <button
-            data-test-id="statistics-summary-watch-later"
+            data-test-id="statistics-summary-watchlist"
             class="card card-interactive stat-card"
-            (click)="onNavigateToWatchLater()"
-            [attr.aria-label]="translations.watchLater() + ': ' + summary.watchLater"
+            (click)="onNavigateToWatchlist()"
+            [attr.aria-label]="translations.watchlist() + ': ' + summary.watchlist"
           >
-            <span class="stat-value">{{ summary.watchLater }}</span>
-            <span class="stat-label">{{ translations.watchLater() }}</span>
+            <span class="stat-value">{{ summary.watchlist }}</span>
+            <span class="stat-label">{{ translations.watchlist() }}</span>
           </button>
         }
         @if (featurePreferences().wishlist) {
@@ -76,37 +76,37 @@
             <span class="stat-label">{{ translations.wishlist() }}</span>
           </button>
         }
-        @if (featurePreferences().movieTracker) {
+        @if (featurePreferences().watched) {
           <button
             data-test-id="statistics-summary-watched-movies"
             class="card card-interactive stat-card"
-            (click)="onNavigateToMovieTracker()"
+            (click)="onNavigateToWatched()"
             [attr.aria-label]="translations.watchedMovies() + ': ' + summary.watchedMovies"
           >
             <span class="stat-value">{{ summary.watchedMovies }}</span>
             <span class="stat-label">{{ translations.watchedMovies() }}</span>
           </button>
         }
-        @if (featurePreferences().seriesTracker) {
+        @if (featurePreferences().watching) {
           <button
             data-test-id="statistics-summary-watched-series"
             class="card card-interactive stat-card"
-            (click)="onNavigateToSeriesTracker()"
+            (click)="onNavigateToWatching()"
             [attr.aria-label]="translations.watchedSeries() + ': ' + summary.watchedSeries"
           >
             <span class="stat-value">{{ summary.watchedSeries }}</span>
             <span class="stat-label">{{ translations.watchedSeries() }}</span>
           </button>
         }
-        @if (featurePreferences().bookTracker) {
+        @if (featurePreferences().books) {
           <button
-            data-test-id="statistics-summary-book-tracker"
+            data-test-id="statistics-summary-books"
             class="card card-interactive stat-card"
-            (click)="onNavigateToBookTracker()"
-            [attr.aria-label]="translations.bookTracker() + ': ' + summary.bookTracker"
+            (click)="onNavigateToBooks()"
+            [attr.aria-label]="translations.books() + ': ' + summary.books"
           >
-            <span class="stat-value">{{ summary.bookTracker }}</span>
-            <span class="stat-label">{{ translations.bookTracker() }}</span>
+            <span class="stat-value">{{ summary.books }}</span>
+            <span class="stat-label">{{ translations.books() }}</span>
           </button>
         }
         <button
@@ -127,7 +127,7 @@
           <span class="stat-value">{{ summary.unwatchedLibrarySeries }}</span>
           <span class="stat-label">{{ translations.unwatchedLibrarySeries() }}</span>
         </button>
-        @if (featurePreferences().seriesTracker) {
+        @if (featurePreferences().watching) {
           <button
             data-test-id="statistics-summary-unwatched-tracker-series"
             class="card card-interactive stat-card"

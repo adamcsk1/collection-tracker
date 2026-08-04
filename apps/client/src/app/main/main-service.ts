@@ -15,7 +15,7 @@ import {
 } from '@shared/constants/storage-const';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
 import { DEFAULT_COLLECTION_FEATURE_PREFERENCES } from '@shared/constants/collection-feature-preferences-const';
-import { isCollectionFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
+import { parseCollectionFeaturePreferences } from '@shared/utils/collection-feature-preferences-util';
 import { catchError, EMPTY } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
@@ -53,7 +53,7 @@ export class MainService {
 
     try {
       const parsed = JSON.parse(storedPreferences) as unknown;
-      return isCollectionFeaturePreferences(parsed) ? parsed : DEFAULT_COLLECTION_FEATURE_PREFERENCES;
+      return parseCollectionFeaturePreferences(parsed) ?? DEFAULT_COLLECTION_FEATURE_PREFERENCES;
     } catch {
       return DEFAULT_COLLECTION_FEATURE_PREFERENCES;
     }

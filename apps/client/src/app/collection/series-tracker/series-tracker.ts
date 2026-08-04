@@ -37,11 +37,11 @@ import {
   styleUrl: '../collection.css',
   providers: [
     { provide: AutocompleteService, useClass: SearchSuggestionService },
-    { provide: searchSuggestionListTypeToken, useValue: 'series-tracker' },
+    { provide: searchSuggestionListTypeToken, useValue: 'watching' },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SeriesTracker {
+export class Watching {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
   private readonly aiSearch = inject(AiSearchService);
@@ -72,11 +72,9 @@ export class SeriesTracker {
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
   protected readonly translations = {
-    messageEmptySeriesTracker: computed(() => this.ngxSignalTranslate.translate('Message.EmptySeriesTracker')),
-    messageAddFirstSeriesTracker: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstSeriesTracker')),
-    placeholderSearchInSeriesTracker: computed(() =>
-      this.ngxSignalTranslate.translate('Placeholder.SearchInSeriesTracker')
-    ),
+    messageEmptyWatching: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWatching')),
+    messageAddFirstWatching: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWatching')),
+    placeholderSearchInWatching: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInWatching')),
     placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
   };
   private readonly aiSearchSetup = setupCollectionAiSearch({
@@ -86,13 +84,13 @@ export class SeriesTracker {
     portal: this.portal,
     floatActions: this.floatActions,
     destroyRef: this.destroyRef,
-    listType: 'series-tracker',
+    listType: 'watching',
     queryFilters: this.queryFilters,
     forceStandardSearch: this.forceStandardSearch,
     placeholder: this.translations.placeholderReply,
     aiAvailable: this.mainState.state.aiAvailable,
   });
-  protected readonly seriesTrackerDataSource = this.aiSearchSetup.dataSource;
+  protected readonly watchingDataSource = this.aiSearchSetup.dataSource;
 
   constructor() {
     setupStandardCollectionSearch({
@@ -109,8 +107,8 @@ export class SeriesTracker {
     this.aiSearchSetup.clearAiFilterOnStandardSearch();
   }
 
-  protected onAddSeriesTracker(event: Event): void {
+  protected onAddWatching(event: Event): void {
     event.preventDefault();
-    this.portal.open(NewItemDialog, { seriesTracker: true });
+    this.portal.open(NewItemDialog, { watching: true });
   }
 }

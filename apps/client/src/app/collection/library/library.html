@@ -1,4 +1,4 @@
-<div class="collection-container">
+<div class="collection-container collection-container--with-chips">
   <ng-template #floatSearch>
     <libc-autocomplete
       data-test-id="collection-search"
@@ -10,10 +10,13 @@
       (userAcceptSuggestionEvent)="onSearchAccepted()"
     />
   </ng-template>
+  <ct-collection-media-chips [active]="activeMediaChip()" [booksEnabled]="booksEnabled()" />
   <ct-list
     [routeSearchText]="querySearch()"
     [routeFilterKey]="queryFilterKey()"
     [dataSource]="collectionDataSource"
+    [listType]="'library'"
+    [showAddButton]="activeMediaChip() !== 'book' || booksEnabled()"
     (randomPick)="onRandomPick()"
     (showFunctions)="onShowFunctions()"
   />

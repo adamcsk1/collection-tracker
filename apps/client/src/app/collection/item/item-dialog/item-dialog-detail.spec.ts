@@ -32,11 +32,12 @@ const translations: ItemDialogTranslations = {
   markAsFavorite: signal('Mark as favorite'),
   markAsUnwatched: signal('Mark as unwatched'),
   markAsWatched: signal('Mark as watched'),
-  copyToSeriesTracker: signal('Copy to series tracker'),
-  moveToMovieTracker: signal('Move to movie tracker'),
-  moveToSeriesTracker: signal('Move to series tracker'),
+  copyToWatching: signal('Add to Watching'),
+  moveToWatched: signal('Move to Watched'),
+  moveToWatching: signal('Move to Watching'),
+  openInWatching: signal('Open in Watching'),
   removeFavorite: signal('Remove favorite'),
-  removeFromSeriesTracker: signal('Remove from series tracker'),
+  removeFromWatching: signal('Remove from Watching'),
 };
 
 const item: CollectionItemModel = {
@@ -78,7 +79,7 @@ describe('ItemDialogDetail', () => {
     fixture.componentRef.setInput('isShared', true);
     fixture.componentRef.setInput('library', 'Shared Owner');
     fixture.componentRef.setInput('detailTags', ['#drama']);
-    fixture.componentRef.setInput('seriesTracker', true);
+    fixture.componentRef.setInput('watching', true);
     fixture.componentRef.setInput('book', false);
     fixture.componentRef.setInput('isbn', '');
     fixture.componentRef.setInput('episodeProgressText', 'S01E02');
@@ -117,13 +118,13 @@ describe('ItemDialogDetail', () => {
       ...item,
       IMDbId: undefined,
       contentType: 'book',
-      listType: 'book-tracker',
+      listType: 'books',
       externalProvider: 'openlibrary',
       externalItemId: 'OL7353617M',
       userRate: null,
     });
     fixture.componentRef.setInput('book', true);
-    fixture.componentRef.setInput('seriesTracker', false);
+    fixture.componentRef.setInput('watching', false);
     fixture.componentRef.setInput('isbn', '9780441172719');
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
