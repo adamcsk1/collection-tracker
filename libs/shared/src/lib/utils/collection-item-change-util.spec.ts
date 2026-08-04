@@ -44,6 +44,8 @@ describe('toCollectionItemChange', () => {
       plot: 'Plot',
       contentType: 'movie',
       favorite: false,
+      progressCurrent: undefined,
+      progressTotal: undefined,
     });
   });
 });

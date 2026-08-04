@@ -1,6 +1,6 @@
 import { ExternalItemIdentityModel, ExternalMetadataProviderNameModel } from './external-metadata-provider-model';
 
-export type CollectionListTypeModel = 'library' | 'watchlist' | 'wishlist' | 'watching' | 'watched' | 'books';
+export type CollectionListTypeModel = 'library' | 'watchlist' | 'wishlist' | 'tracking' | 'finished' | 'books';
 export type CollectionItemContentTypeModel = 'movie' | 'series' | 'book';
 export type CollectionItemYearModel = string | null;
 
@@ -28,6 +28,8 @@ export interface CollectionItemModel {
   favorite: boolean;
   watched?: boolean;
   watchedAt: string | null;
+  progressCurrent?: number | null;
+  progressTotal?: number | null;
   ownerShareCode?: string;
 }
 

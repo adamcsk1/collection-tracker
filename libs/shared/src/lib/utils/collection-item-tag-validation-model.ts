@@ -3,7 +3,7 @@ import type { CollectionItemContentTypeModel, CollectionListTypeModel } from '..
 export type CollectionItemTagValidationError =
   | { kind: 'invalidInternalCollectionTag' }
   | { kind: 'invalidNonLibraryTag' }
-  | { kind: 'invalidWatchingTags' }
+  | { kind: 'invalidTrackingTags' }
   | { kind: 'invalidSharedListCreate' }
   | { kind: 'invalidInternalCollectionItemUpdate' }
   | { kind: 'sharedInternalCollectionItemUpdate' };

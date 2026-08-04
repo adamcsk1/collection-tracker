@@ -4,6 +4,19 @@ import type {
   CollectionItemTagValidationError,
 } from './collection-item-tag-validation-model';
 
+const isOwnershipList = (listType: string): boolean => listType === 'library' || listType === 'books';
+
+const contentTypeAllowedOnList = (listType: string, contentType: string): boolean => {
+  if (listType === 'library') return contentType === 'movie' || contentType === 'series';
+  if (listType === 'books') return contentType === 'book';
+  if (listType === 'tracking') return contentType === 'series' || contentType === 'book';
+  if (listType === 'finished') return contentType === 'movie' || contentType === 'book';
+  if (listType === 'wishlist' || listType === 'watchlist') {
+    return contentType === 'movie' || contentType === 'series' || contentType === 'book';
+  }
+  return false;
+};
+
 export const createCollectionItemTagValidation = ({
   contentType,
   favorite,
@@ -13,16 +26,11 @@ export const createCollectionItemTagValidation = ({
   if (listType !== 'library' && typeof targetOwnerShareCode === 'string') {
     return { kind: 'invalidSharedListCreate' };
   }
-  if (listType !== 'library' && favorite) {
+  if (!isOwnershipList(listType) && favorite) {
     return { kind: 'invalidNonLibraryTag' };
   }
-  if (listType === 'watching' && contentType !== 'series') {
-    return { kind: 'invalidWatchingTags' };
-  }
-  if (listType === 'watched' && contentType !== 'movie') {
-    return { kind: 'invalidInternalCollectionTag' };
-  }
-  if ((listType === 'books') !== (contentType === 'book')) {
+  if (!contentTypeAllowedOnList(listType, contentType)) {
+    if (listType === 'tracking') return { kind: 'invalidTrackingTags' };
     return { kind: 'invalidInternalCollectionTag' };
   }
   return undefined;
@@ -40,30 +48,20 @@ export const changeCollectionItemTagValidation = ({
   }
   if (
     existingListType !== 'library' &&
-    listType !== 'watching' &&
-    listType !== 'watched' &&
+    listType !== 'tracking' &&
+    listType !== 'finished' &&
     listType !== 'books' &&
     listType !== 'watchlist' &&
     listType !== 'wishlist'
   ) {
     return { kind: 'invalidInternalCollectionItemUpdate' };
   }
-  if (listType === 'watching' && (contentType !== 'series' || favorite)) {
-    return { kind: 'invalidWatchingTags' };
-  }
-  if (listType === 'watched' && (contentType !== 'movie' || favorite)) {
+  if (!contentTypeAllowedOnList(listType, contentType)) {
+    if (listType === 'tracking') return { kind: 'invalidTrackingTags' };
     return { kind: 'invalidInternalCollectionTag' };
   }
-  if ((listType === 'books') !== (contentType === 'book')) {
-    return { kind: 'invalidInternalCollectionTag' };
-  }
-  if (listType === 'books' && favorite) {
-    return { kind: 'invalidInternalCollectionTag' };
-  }
-  if (listType === 'watchlist' && favorite) {
-    return { kind: 'invalidNonLibraryTag' };
-  }
-  if (listType === 'wishlist' && favorite) {
+  if (!isOwnershipList(listType) && favorite) {
+    if (listType === 'tracking') return { kind: 'invalidTrackingTags' };
     return { kind: 'invalidNonLibraryTag' };
   }
   return undefined;

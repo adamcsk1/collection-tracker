@@ -36,24 +36,52 @@ describe('collection item tag validation util', () => {
         targetOwnerShareCode: 'shared-code',
       })
     ).toEqual({ kind: 'invalidSharedListCreate' });
-    expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'watching' })).toEqual({
-      kind: 'invalidWatchingTags',
+    expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'tracking' })).toEqual({
+      kind: 'invalidTrackingTags',
     });
     expect(
       createCollectionItemTagValidation({
         ...baseCreateInput,
         contentType: 'series',
-        listType: 'watching',
+        listType: 'tracking',
+      })
+    ).toBeUndefined();
+    expect(
+      createCollectionItemTagValidation({
+        ...baseCreateInput,
+        contentType: 'book',
+        listType: 'tracking',
+      })
+    ).toBeUndefined();
+    expect(
+      createCollectionItemTagValidation({
+        ...baseCreateInput,
+        contentType: 'book',
+        listType: 'finished',
+      })
+    ).toBeUndefined();
+    expect(
+      createCollectionItemTagValidation({
+        ...baseCreateInput,
+        contentType: 'book',
+        listType: 'wishlist',
+      })
+    ).toBeUndefined();
+    expect(
+      createCollectionItemTagValidation({
+        ...baseCreateInput,
+        contentType: 'book',
+        listType: 'watchlist',
       })
     ).toBeUndefined();
     expect(
       createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'book', listType: 'books' })
     ).toBeUndefined();
-    for (const listType of ['library', 'watchlist', 'wishlist'] as const) {
-      expect(createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'book', listType })).toEqual({
+    expect(createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'book', listType: 'library' })).toEqual(
+      {
         kind: 'invalidInternalCollectionTag',
-      });
-    }
+      }
+    );
     expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'books' })).toEqual({
       kind: 'invalidInternalCollectionTag',
     });
@@ -66,6 +94,14 @@ describe('collection item tag validation util', () => {
         contentType: 'book',
         favorite: true,
         listType: 'books',
+      })
+    ).toBeUndefined();
+    expect(
+      createCollectionItemTagValidation({
+        ...baseCreateInput,
+        contentType: 'book',
+        favorite: true,
+        listType: 'tracking',
       })
     ).toEqual({ kind: 'invalidNonLibraryTag' });
   });
@@ -82,8 +118,8 @@ describe('collection item tag validation util', () => {
       changeCollectionItemTagValidation({
         ...baseChangeInput,
         contentType: 'series',
-        listType: 'watching',
-        existingListType: 'watching',
+        listType: 'tracking',
+        existingListType: 'tracking',
       })
     ).toBeUndefined();
     expect(
@@ -91,10 +127,10 @@ describe('collection item tag validation util', () => {
         ...baseChangeInput,
         contentType: 'series',
         favorite: true,
-        listType: 'watching',
-        existingListType: 'watching',
+        listType: 'tracking',
+        existingListType: 'tracking',
       })
-    ).toEqual({ kind: 'invalidWatchingTags' });
+    ).toEqual({ kind: 'invalidTrackingTags' });
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,
@@ -148,16 +184,14 @@ describe('collection item tag validation util', () => {
         existingListType: 'books',
       })
     ).toBeUndefined();
-    for (const listType of ['library', 'watchlist', 'wishlist'] as const) {
-      expect(
-        changeCollectionItemTagValidation({
-          ...baseChangeInput,
-          contentType: 'book',
-          listType,
-          existingListType: listType,
-        })
-      ).toEqual({ kind: 'invalidInternalCollectionTag' });
-    }
+    expect(
+      changeCollectionItemTagValidation({
+        ...baseChangeInput,
+        contentType: 'book',
+        listType: 'wishlist',
+        existingListType: 'wishlist',
+      })
+    ).toBeUndefined();
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,
@@ -181,7 +215,7 @@ describe('collection item tag validation util', () => {
         listType: 'books',
         existingListType: 'books',
       })
-    ).toEqual({ kind: 'invalidInternalCollectionTag' });
+    ).toBeUndefined();
   });
 
   it('returns all editable and display tags', () => {

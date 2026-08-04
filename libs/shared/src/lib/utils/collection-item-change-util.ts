@@ -19,4 +19,6 @@ export const toCollectionItemChange = (item: CollectionItemModel): CollectionIte
   plot: item.plot,
   contentType: item.contentType,
   favorite: item.favorite,
+  progressCurrent: item.progressCurrent,
+  progressTotal: item.progressTotal,
 });

@@ -109,6 +109,8 @@ export type CollectionItemChangeApiModel = Pick<
   | 'plot'
   | 'contentType'
   | 'favorite'
+  | 'progressCurrent'
+  | 'progressTotal'
 >;
 
 export interface CreateApiRequestModel extends CollectionItemChangeApiModel {
@@ -220,7 +222,9 @@ export interface WatchedApiResponseModel {
   item: CollectionItemApiModel;
 }
 
-export interface WatchingApiResponseModel {
+export type FinishedApiResponseModel = WatchedApiResponseModel;
+
+export interface TrackingApiResponseModel {
   item: CollectionItemApiModel;
 }
 
@@ -238,34 +242,34 @@ export interface RefreshExternalRatingsApiResponseModel {
   errors: number;
 }
 
-export interface WatchingSeasonMetadataModel {
+export interface TrackingSeasonMetadataModel {
   season: number;
   episodes: number;
   titles?: string[];
 }
 
-export interface WatchingSeasonsApiResponseModel {
-  seasons: WatchingSeasonMetadataModel[];
+export interface TrackingSeasonsApiResponseModel {
+  seasons: TrackingSeasonMetadataModel[];
   item?: CollectionItemApiModel;
 }
 
-export interface WatchingSeasonsApiRequestModel {
-  seasons: WatchingSeasonMetadataModel[];
+export interface TrackingSeasonsApiRequestModel {
+  seasons: TrackingSeasonMetadataModel[];
 }
 
-export interface WatchingWatchedEpisodeModel {
+export interface TrackingCompletedEpisodeModel {
   season: number;
   episode: number;
 }
 
-export interface WatchingWatchedEpisodesApiResponseModel {
-  watchedEpisodes: WatchingWatchedEpisodeModel[];
-  lastWatchedEpisode: { season: number; episode: number } | null;
+export interface TrackingCompletedEpisodesApiResponseModel {
+  completedEpisodes: TrackingCompletedEpisodeModel[];
+  lastCompletedEpisode: { season: number; episode: number } | null;
   item?: CollectionItemApiModel;
 }
 
-export interface WatchingWatchedEpisodesApiRequestModel {
-  watchedEpisodes: WatchingWatchedEpisodeModel[];
+export interface TrackingCompletedEpisodesApiRequestModel {
+  completedEpisodes: TrackingCompletedEpisodeModel[];
 }
 
 export interface UserShareOutgoingApiModel {
@@ -298,11 +302,11 @@ export interface UserExportApiResponseModel {
   userSettings: UserSettingsApiResponseModel;
   collectionItems: CollectionItemApiModel[];
   tagManagement: TagManagementApiResponseModel;
-  watchingData: Record<
+  trackingData: Record<
     string,
     {
-      seasons: WatchingSeasonMetadataModel[];
-      watchedEpisodes: WatchingWatchedEpisodeModel[];
+      seasons: TrackingSeasonMetadataModel[];
+      completedEpisodes: TrackingCompletedEpisodeModel[];
     }
   >;
 }
@@ -312,8 +316,8 @@ export type UserImportApiRequestModel = UserExportApiResponseModel;
 export interface UserImportApiResponseModel {
   importedCollectionItems: number;
   importedTagManagement: number;
-  importedWatchingSeasons: number;
-  importedWatchingWatchedEpisodes: number;
+  importedTrackingSeasons: number;
+  importedTrackingCompletedEpisodes: number;
 }
 
 export interface CollectionItemsImportApiRequestModel {
