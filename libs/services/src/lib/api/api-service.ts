@@ -25,11 +25,11 @@ import {
   RefreshExternalRatingsApiResponseModel,
   RefreshImagesApiResponseModel,
   RenameTagApiResponseModel,
-  WatchingApiResponseModel,
-  WatchingSeasonsApiRequestModel,
-  WatchingSeasonsApiResponseModel,
-  WatchingWatchedEpisodesApiRequestModel,
-  WatchingWatchedEpisodesApiResponseModel,
+  TrackingApiResponseModel,
+  TrackingSeasonsApiRequestModel,
+  TrackingSeasonsApiResponseModel,
+  TrackingCompletedEpisodesApiRequestModel,
+  TrackingCompletedEpisodesApiResponseModel,
   TagManagementApiRequestModel,
   TagManagementApiResponseModel,
   TagSuggestionsApiResponseModel,
@@ -112,20 +112,20 @@ export class ApiService extends BaseApiService {
   ): Observable<WatchedApiResponseModel> {
     return this.request(
       'POST',
-      `/watched/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ ownerShareCode, sourceListType })}`,
+      `/finished/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ ownerShareCode, sourceListType })}`,
       {}
     );
   }
 
-  public addWatchingItemByExternalId(
+  public addTrackingItemByExternalId(
     externalProvider: string,
     externalItemId: string,
     sourceListType?: CollectionListTypeModel,
     ownerShareCode?: string
-  ): Observable<WatchingApiResponseModel> {
+  ): Observable<TrackingApiResponseModel> {
     return this.request(
       'POST',
-      `/watching/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ sourceListType, ownerShareCode })}`,
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ sourceListType, ownerShareCode })}`,
       {}
     );
   }
@@ -133,16 +133,16 @@ export class ApiService extends BaseApiService {
   public deleteWatchedItemByExternalId(externalProvider: string, externalItemId: string): Observable<void> {
     return this.request(
       'DELETE',
-      `/watched/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}`
+      `/finished/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}`
     );
   }
 
   public deleteAllWatchedItems(): Observable<MarkAllUnwatchedApiResponseModel> {
-    return this.request('DELETE', '/watched');
+    return this.request('DELETE', '/finished');
   }
 
-  public deleteAllWatchingItems(): Observable<MarkAllUnwatchedApiResponseModel> {
-    return this.request('DELETE', '/watching');
+  public deleteAllTrackingItems(): Observable<MarkAllUnwatchedApiResponseModel> {
+    return this.request('DELETE', '/tracking');
   }
 
   public deleteAllBooksItems(): Observable<MarkAllUnwatchedApiResponseModel> {
@@ -310,78 +310,78 @@ export class ApiService extends BaseApiService {
     );
   }
 
-  public getWatchingSeasonsByExternalId(
+  public getTrackingSeasonsByExternalId(
     externalProvider: string,
     externalItemId: string
-  ): Observable<WatchingSeasonsApiResponseModel> {
+  ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'GET',
-      `/watching/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`
     );
   }
 
-  public refreshWatchingSeasonsByExternalId(
+  public refreshTrackingSeasonsByExternalId(
     externalProvider: string,
     externalItemId: string
-  ): Observable<WatchingSeasonsApiResponseModel> {
+  ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'POST',
-      `/watching/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons/refresh`,
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons/refresh`,
       {}
     );
   }
 
-  public updateWatchingSeasonsByExternalId(
+  public updateTrackingSeasonsByExternalId(
     externalProvider: string,
     externalItemId: string,
-    request: WatchingSeasonsApiRequestModel
-  ): Observable<WatchingSeasonsApiResponseModel> {
+    request: TrackingSeasonsApiRequestModel
+  ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'PUT',
-      `/watching/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`,
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`,
       request
     );
   }
 
-  public deleteWatchingSeasonsByExternalId(
+  public deleteTrackingSeasonsByExternalId(
     externalProvider: string,
     externalItemId: string
-  ): Observable<WatchingSeasonsApiResponseModel> {
+  ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'DELETE',
-      `/watching/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`
     );
   }
 
-  public getWatchingWatchedEpisodesByExternalId(
+  public getTrackingCompletedEpisodesByExternalId(
     externalProvider: string,
     externalItemId: string
-  ): Observable<WatchingWatchedEpisodesApiResponseModel> {
+  ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'GET',
-      `/watching/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/watched-episodes`
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed-episodes`
     );
   }
 
-  public updateWatchingWatchedEpisodesByExternalId(
+  public updateTrackingCompletedEpisodesByExternalId(
     externalProvider: string,
     externalItemId: string,
-    request: WatchingWatchedEpisodesApiRequestModel
-  ): Observable<WatchingWatchedEpisodesApiResponseModel> {
+    request: TrackingCompletedEpisodesApiRequestModel
+  ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'PUT',
-      `/watching/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/watched-episodes`,
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed-episodes`,
       request
     );
   }
 
-  public markAllWatchingWatchedByExternalId(
+  public markAllTrackingCompletedByExternalId(
     externalProvider: string,
     externalItemId: string
-  ): Observable<WatchingWatchedEpisodesApiResponseModel> {
+  ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'PUT',
-      `/watching/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/mark-all-watched`
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/mark-all-completed`
     );
   }
 
