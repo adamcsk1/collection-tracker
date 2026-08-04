@@ -1,8 +1,8 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { CollectionPage } from '../page-objects/collection.po';
 
-const waitForSeriesTrackerItem = (imdbId: string) => {
-  cy.wait('@getSeriesTrackerItems')
+const waitForWatchingItem = (imdbId: string) => {
+  cy.wait('@getWatchingItems')
     .its('response.body.items')
     .should((items: Array<{ IMDbId: string }>) => {
       expect(items.some((item) => item.IMDbId === imdbId)).to.eq(true);
@@ -17,11 +17,11 @@ describe('Watched episodes dialog', () => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(seriesTitle, 'series', imdbId),
-      listType: 'series-tracker',
+      listType: 'watching',
     });
-    cy.intercept('GET', '/api/v1/items?*listType=series-tracker*').as('getSeriesTrackerItems');
-    CollectionPage.visitSeriesTracker();
-    waitForSeriesTrackerItem(imdbId);
+    cy.intercept('GET', '/api/v1/items?*listType=watching*').as('getWatchingItems');
+    CollectionPage.visitWatching();
+    waitForWatchingItem(imdbId);
   });
 
   it('opens dialog and shows no-metadata message when no metadata exists', () => {
@@ -34,7 +34,7 @@ describe('Watched episodes dialog', () => {
   });
 
   it('opens dialog and shows episodes when metadata exists', () => {
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/seasons`, {
       seasons: [
         { season: 1, episodes: 3 },
         { season: 2, episodes: 2 },
@@ -51,10 +51,10 @@ describe('Watched episodes dialog', () => {
   });
 
   it('checks individual episodes and saves', () => {
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes').as('saveWatchedEpisodes');
+    cy.intercept('PUT', '/api/v1/watching/**/watched-episodes').as('saveWatchedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
@@ -71,10 +71,10 @@ describe('Watched episodes dialog', () => {
   });
 
   it('uses season toggle to mark all episodes watched', () => {
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes').as('saveWatchedEpisodes');
+    cy.intercept('PUT', '/api/v1/watching/**/watched-episodes').as('saveWatchedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
@@ -93,17 +93,17 @@ describe('Watched episodes dialog', () => {
   });
 
   it('unchecks episodes and saves', () => {
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/watched-episodes`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/watched-episodes`, {
       watchedEpisodes: [
         { season: 1, episode: 1 },
         { season: 1, episode: 2 },
         { season: 1, episode: 3 },
       ],
     });
-    cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes').as('saveWatchedEpisodes');
+    cy.intercept('PUT', '/api/v1/watching/**/watched-episodes').as('saveWatchedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
@@ -119,10 +119,10 @@ describe('Watched episodes dialog', () => {
   });
 
   it('persists watched episodes across dialog re-opens', () => {
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes').as('saveWatchedEpisodes');
+    cy.intercept('PUT', '/api/v1/watching/**/watched-episodes').as('saveWatchedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
@@ -140,10 +140,10 @@ describe('Watched episodes dialog', () => {
   });
 
   it('updates the item dialog after closing while auto-save is pending', () => {
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes', (request) => {
+    cy.intercept('PUT', '/api/v1/watching/**/watched-episodes', (request) => {
       request.continue((response) => {
         response.setDelay(250);
       });
@@ -169,22 +169,22 @@ describe('Watched episodes dialog', () => {
     const incompleteSeriesTitle = 'Incomplete Episodes Test Show';
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(incompleteSeriesTitle, 'series', incompleteImdbId),
-      listType: 'series-tracker',
+      listType: 'watching',
     });
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 2 }],
     });
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${incompleteImdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${incompleteImdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 2 }],
     });
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${incompleteImdbId}/watched-episodes`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${incompleteImdbId}/watched-episodes`, {
       watchedEpisodes: [{ season: 1, episode: 1 }],
     });
-    cy.intercept('PUT', '/api/v1/series-tracker/**/mark-all-watched').as('markAllWatched');
-    cy.intercept('PUT', '/api/v1/series-tracker/**/watched-episodes').as('markAllUnwatched');
+    cy.intercept('PUT', '/api/v1/watching/**/mark-all-watched').as('markAllWatched');
+    cy.intercept('PUT', '/api/v1/watching/**/watched-episodes').as('markAllUnwatched');
 
     cy.reload();
-    waitForSeriesTrackerItem(imdbId);
+    waitForWatchingItem(imdbId);
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -198,8 +198,8 @@ describe('Watched episodes dialog', () => {
     cy.getByTestId('item-dialog').should('not.exist');
     cy.get('.dialog').should('not.exist');
 
-    CollectionPage.visitSeriesTracker();
-    waitForSeriesTrackerItem(imdbId);
+    CollectionPage.visitWatching();
+    waitForWatchingItem(imdbId);
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getCollectionFilterButton('completed').click();
     CollectionPage.getListItems().should('have.length', 1).and('contain.text', seriesTitle);
@@ -207,7 +207,7 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getCollectionFilterButton('uncompleted').click();
     CollectionPage.getListItems().should('have.length', 1).and('contain.text', incompleteSeriesTitle);
 
-    CollectionPage.visitSeriesTracker();
+    CollectionPage.visitWatching();
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
@@ -225,35 +225,35 @@ describe('Watched episodes dialog', () => {
     cy.getByTestId('item-dialog').should('not.exist');
     cy.get('.dialog').should('not.exist');
 
-    CollectionPage.visitSeriesTracker();
-    waitForSeriesTrackerItem(imdbId);
+    CollectionPage.visitWatching();
+    waitForWatchingItem(imdbId);
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getCollectionFilterButton('uncompleted').click();
     CollectionPage.getListItems().should('have.length', 2);
   });
 
   it('removes stale watched episodes when season metadata is reduced', () => {
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/watched-episodes`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/watched-episodes`, {
       watchedEpisodes: [
         { season: 1, episode: 1 },
         { season: 1, episode: 3 },
       ],
     });
 
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 1 }],
     });
 
     cy.reload();
-    waitForSeriesTrackerItem(imdbId);
-    CollectionPage.getSeriesTrackerCompletedBadges().should('have.length', 1);
+    waitForWatchingItem(imdbId);
+    CollectionPage.getWatchingCompletedBadges().should('have.length', 1);
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E01');
 
-    cy.request('GET', `/api/v1/series-tracker/omdb/${imdbId}/watched-episodes`)
+    cy.request('GET', `/api/v1/watching/omdb/${imdbId}/watched-episodes`)
       .its('body.watchedEpisodes')
       .should('deep.equal', [{ season: 1, episode: 1 }]);
   });

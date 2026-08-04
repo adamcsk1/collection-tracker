@@ -46,9 +46,9 @@ describe('Dialog gesture close', () => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(title, 'series', imdbId),
-      listType: 'series-tracker',
+      listType: 'watching',
     });
-    CollectionPage.visitSeriesTracker();
+    CollectionPage.visitWatching();
     CollectionPage.getListItems().contains(title).click();
     CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.expectItemDialogActionsVisible();

@@ -18,7 +18,7 @@ export const buildOpenLibrarySearchResult = (title: string, itemIsbn = isbn) => 
   results: [buildOpenLibraryItem(title, itemIsbn)],
 });
 
-export const buildBookTrackerItem = (title: string, itemIsbn = isbn) => ({
+export const buildBooksItem = (title: string, itemIsbn = isbn) => ({
   image: '',
   title,
   genre: ['Science fiction'],
@@ -36,5 +36,5 @@ export const buildBookTrackerItem = (title: string, itemIsbn = isbn) => ({
   plot: 'A test book description for e2e testing.',
   contentType: 'book',
   favorite: false,
-  listType: 'book-tracker',
+  listType: 'books',
 });

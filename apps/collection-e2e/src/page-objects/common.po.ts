@@ -11,11 +11,12 @@ export const CommonPage = {
     cy.get('ct-menu-dialog').should('not.exist');
   },
   getNavCollectionLink: () => getNavLink('nav-collection'),
-  getNavWatchLaterLink: () => getNavLink('nav-watch-later'),
+  getNavWatchlistLink: () => getNavLink('nav-watchlist'),
   getNavWishlistLink: () => getNavLink('nav-wishlist'),
-  getNavSeriesTrackerLink: () => getNavLink('nav-series-tracker'),
-  getNavMovieTrackerLink: () => getNavLink('nav-movie-tracker'),
-  getNavBookTrackerLink: () => getNavLink('nav-book-tracker'),
+  getNavWatchingLink: () => getNavLink('nav-watching'),
+  getNavWatchedLink: () => getNavLink('nav-watched'),
+  /** Books live under Collection filter; no top-level nav item. */
+  getNavBooksLink: () => getNavLink('nav-collection'),
   getMenuNavItem: (testId: string) => cy.get(`ct-menu-dialog [data-test-id="${testId}"]`),
   getNavSyncLink: () => getNavLink('nav-sync'),
   getNavSettingsLink: () => getNavLink('nav-settings'),

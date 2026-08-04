@@ -98,7 +98,7 @@ describe('Export/Import — tag management export and import', () => {
 describe('Export/Import — collection data export', () => {
   const exportPath = 'cypress/downloads/collection-tracker-export.json';
   const seriesImdbId = 'tt8400001';
-  const movieTrackerImdbId = 'tt8400002';
+  const watchedImdbId = 'tt8400002';
 
   beforeEach(() => {
     cy.autoLogin();
@@ -107,16 +107,16 @@ describe('Export/Import — collection data export', () => {
     cy.request('POST', '/api/v1/create', buildCollectionItem('Export Movie', 'movie'));
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Export Series', 'series', seriesImdbId),
-      listType: 'series-tracker',
+      listType: 'watching',
     });
     cy.request('POST', '/api/v1/create', {
-      ...buildCollectionItem('Export Tracker Movie', 'movie', movieTrackerImdbId),
-      listType: 'movie-tracker',
+      ...buildCollectionItem('Export Tracker Movie', 'movie', watchedImdbId),
+      listType: 'watched',
     });
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${seriesImdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${seriesImdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Second'] }],
     });
-    cy.request('PUT', `/api/v1/series-tracker/omdb/${seriesImdbId}/watched-episodes`, {
+    cy.request('PUT', `/api/v1/watching/omdb/${seriesImdbId}/watched-episodes`, {
       watchedEpisodes: [{ season: 1, episode: 1 }],
     });
     cy.intercept('GET', '/api/v1/export').as('getExport');
@@ -133,13 +133,13 @@ describe('Export/Import — collection data export', () => {
       expect(parsed.collectionItems).to.be.an('array');
       expect(parsed.collectionItems.length).to.be.greaterThan(0);
       expect(parsed.tagManagement).to.be.an('array');
-      expect(parsed.seriesTrackerData[`omdb/${seriesImdbId}`]).to.deep.equal({
+      expect(parsed.watchingData[`omdb/${seriesImdbId}`]).to.deep.equal({
         seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Second'] }],
         watchedEpisodes: [{ season: 1, episode: 1 }],
       });
       const trackerItem = parsed.collectionItems.find(
         (item: { IMDbId: string; listType: string }) =>
-          item.IMDbId === movieTrackerImdbId && item.listType === 'movie-tracker'
+          item.IMDbId === watchedImdbId && item.listType === 'watched'
       );
       expect(trackerItem).to.not.be.undefined;
       expect(trackerItem.title).to.equal('Export Tracker Movie');
@@ -172,10 +172,10 @@ describe('Export/Import — collection data export', () => {
         expect(titles).to.include('Export Movie');
         expect(titles).not.to.include('Imported State Should Remove This');
       });
-    cy.request('GET', `/api/v1/series-tracker/omdb/${seriesImdbId}/watched-episodes`)
+    cy.request('GET', `/api/v1/watching/omdb/${seriesImdbId}/watched-episodes`)
       .its('body.watchedEpisodes')
       .should('deep.equal', [{ season: 1, episode: 1 }]);
-    cy.request('GET', '/api/v1/items?limit=1000&offset=0&listType=movie-tracker')
+    cy.request('GET', '/api/v1/items?limit=1000&offset=0&listType=watched')
       .its('body.items')
       .should((items) => {
         const titles = items.map((item: { title: string }) => item.title);

@@ -51,22 +51,22 @@ export const CollectionPage = {
     cy.reload();
   },
 
-  visitSeriesTracker: () => {
-    cy.visit('/client/#/collection/series-tracker');
+  visitWatching: () => {
+    cy.visit('/client/#/collection/watching');
   },
-  visitMovieTracker: () => {
-    cy.visit('/client/#/collection/movie-tracker');
+  visitWatched: () => {
+    cy.visit('/client/#/collection/watched');
   },
-  visitWatchLater: () => {
-    cy.visit('/client/#/collection/watch-later');
+  visitWatchlist: () => {
+    cy.visit('/client/#/collection/watchlist');
   },
 
   // Search
   getSearchInput: () => getFloatSearchInput('collection-search'),
   getSearchHost: () => cy.getByTestId('collection-search'),
-  getSeriesTrackerSearchInput: () => getFloatSearchInput('series-tracker-search'),
-  getMovieTrackerSearchInput: () => getFloatSearchInput('movie-tracker-search'),
-  getWatchLaterSearchInput: () => getFloatSearchInput('watch-later-search'),
+  getWatchingSearchInput: () => getFloatSearchInput('watching-search'),
+  getWatchedSearchInput: () => getFloatSearchInput('watched-search'),
+  getWatchlistSearchInput: () => getFloatSearchInput('watchlist-search'),
   getWishlistSearchInput: () => getFloatSearchInput('wishlist-search'),
 
   // List
@@ -74,8 +74,8 @@ export const CollectionPage = {
   getListItems: (options: Partial<Cypress.Timeoutable> = { timeout: 10000 }) =>
     cy.getByTestId('list-item-title', options),
   getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
-  getSeriesTrackerCompletedBadges: () => cy.getByTestId('list-item-series-tracker-completed'),
-  getMovieTrackerWatchedBadges: () => cy.getByTestId('list-item-watched'),
+  getWatchingCompletedBadges: () => cy.getByTestId('list-item-watching-completed'),
+  getWatchedWatchedBadges: () => cy.getByTestId('list-item-watched'),
   getSharedBadges: () => cy.getByTestId('list-item-shared'),
   getListItemYears: () => cy.getByTestId('list-item-year'),
   getListItemImdbRatings: () => cy.getByTestId('list-item-rating-imdb'),
@@ -86,10 +86,10 @@ export const CollectionPage = {
   getAllItems: () => cy.getByTestId('list-item-title'),
   getEmptyState: () => cy.getByTestId('list-empty'),
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
-  getAddFirstWatchLaterItemLink: () => cy.getByTestId('add-first-watch-later-item'),
+  getAddFirstWatchlistItemLink: () => cy.getByTestId('add-first-watchlist-item'),
   getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
-  getAddFirstSeriesTrackerItemLink: () => cy.getByTestId('add-first-series-tracker-item'),
-  getAddFirstMovieTrackerItemLink: () => cy.getByTestId('add-first-movie-tracker-item'),
+  getAddFirstWatchingItemLink: () => cy.getByTestId('add-first-watching-item'),
+  getAddFirstWatchedItemLink: () => cy.getByTestId('add-first-watched-item'),
   setListPreferredRatingToUser: () =>
     cy.request('POST', '/api/v1/user/settings', {
       collectionListDisplayPreferences: {
@@ -135,8 +135,8 @@ export const CollectionPage = {
   getNewItemContentSelect: () => cy.getByTestId('new-item-content-select'),
   getNewItemContentOptions: () => cy.getByTestId('new-item-content-option'),
   getNewItemUserRateInput: () => cy.getByTestId('new-item-user-rate').find('input'),
-  getNewItemCopyToSeriesTrackerAsWatchedCheckbox: () =>
-    cy.getByTestId('new-item-copy-to-series-tracker-as-watched').find('input[type="checkbox"]'),
+  getNewItemCopyToWatchingAsWatchedCheckbox: () =>
+    cy.getByTestId('new-item-copy-to-watching-as-watched').find('input[type="checkbox"]'),
   getNewItemSaveButton: () => cy.getByTestId('new-item-save'),
   getNewItemSaveAndNewButton: () => cy.getByTestId('new-item-save-and-new'),
   getNewItemSaveAndCloseButton: () => cy.getByTestId('new-item-save-and-close'),
@@ -219,7 +219,7 @@ export const CollectionPage = {
   getItemDialogRemoveFavoriteButton: () => getItemDialog().find('[data-test-id="item-dialog-remove-favorite"]'),
   getItemDialogMarkWatchedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-watched"]'),
   getItemDialogMarkUnwatchedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-unwatched"]'),
-  getItemDialogMoveMovieTrackerButton: () => getItemDialog().find('[data-test-id="item-dialog-move-movie-tracker"]'),
+  getItemDialogMoveWatchedButton: () => getItemDialog().find('[data-test-id="item-dialog-move-watched"]'),
   getItemDialogSharedLibraryBadge: () => getItemDialog().find('[data-test-id="item-dialog-shared-library"]'),
   getItemDialogUserRateChip: () => getItemDialog().find('[data-test-id="item-dialog-user-rate-chip"]'),
   getItemDialogTitleInput: () => getItemDialog().find('[data-test-id="item-dialog-title"] input'),

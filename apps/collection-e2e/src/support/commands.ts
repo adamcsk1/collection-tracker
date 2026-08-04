@@ -12,11 +12,11 @@ type AuthCookie = {
 
 const collectionListTypes = [
   'library',
-  'watch-later',
+  'watchlist',
   'wishlist',
-  'series-tracker',
-  'movie-tracker',
-  'book-tracker',
+  'watching',
+  'watched',
+  'books',
 ] as const;
 const defaultUserSettings = {
   theme: 'system',
@@ -30,11 +30,11 @@ const defaultUserSettings = {
     imdbRatingFallback: false,
   },
   collectionFeaturePreferences: {
-    bookTracker: true,
+    books: true,
     wishlist: true,
-    watchLater: true,
-    movieTracker: true,
-    seriesTracker: true,
+    watchlist: true,
+    watched: true,
+    watching: true,
   },
 };
 

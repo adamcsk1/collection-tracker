@@ -121,7 +121,7 @@ describe('AI search - filtering', () => {
   });
 });
 
-describe('AI search - watch-later list', () => {
+describe('AI search - watchlist list', () => {
   const movieA = buildCollectionItem('Sci-Fi Alpha', 'movie', 'tt2000001');
 
   beforeEach(() => {
@@ -129,11 +129,11 @@ describe('AI search - watch-later list', () => {
     cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
       'aiAvailable'
     );
-    cy.request('POST', '/api/v1/create?listType=watch-later', movieA);
-    CollectionPage.visitWatchLater();
+    cy.request('POST', '/api/v1/create?listType=watchlist', movieA);
+    CollectionPage.visitWatchlist();
   });
 
-  it('shows the AI button and sends watch-later listType', () => {
+  it('shows the AI button and sends watchlist listType', () => {
     cy.intercept('POST', '/api/v1/proxy/ai/query', {
       statusCode: 200,
       body: { matchedIds: ['tt2000001'] },
@@ -146,6 +146,6 @@ describe('AI search - watch-later list', () => {
 
     cy.wait('@aiQuery')
       .its('request.body')
-      .should('deep.equal', { prompt: 'sci-fi', listType: 'watch-later' });
+      .should('deep.equal', { prompt: 'sci-fi', listType: 'watchlist' });
   });
 });

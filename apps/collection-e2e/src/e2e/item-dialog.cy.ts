@@ -276,7 +276,7 @@ describe('Item dialog — mark watched / unwatched', () => {
   });
 
   it('marks an unwatched item as watched', () => {
-    cy.intercept('POST', '/api/v1/movie-tracker/**').as('markWatched');
+    cy.intercept('POST', '/api/v1/watched/**').as('markWatched');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
@@ -291,8 +291,8 @@ describe('Item dialog — mark watched / unwatched', () => {
   });
 
   it('marks a watched item as unwatched', () => {
-    cy.intercept('POST', '/api/v1/movie-tracker/**').as('markWatched');
-    cy.intercept('DELETE', '/api/v1/movie-tracker/**').as('markUnwatched');
+    cy.intercept('POST', '/api/v1/watched/**').as('markWatched');
+    cy.intercept('DELETE', '/api/v1/watched/**').as('markUnwatched');
     cy.on('window:confirm', () => true);
 
     // First mark as watched

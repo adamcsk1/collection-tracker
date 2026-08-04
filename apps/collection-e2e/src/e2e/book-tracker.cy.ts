@@ -1,5 +1,6 @@
-import { buildBookTrackerItem, buildOpenLibraryItem, buildOpenLibrarySearchResult } from '../fixtures/openlibrary';
-import { BookTrackerPage } from '../page-objects/book-tracker.po';
+import { buildBooksItem, buildOpenLibraryItem, buildOpenLibrarySearchResult } from '../fixtures/openlibrary';
+import { BooksPage } from '../page-objects/book-tracker.po';
+import { CollectionPage } from '../page-objects/collection.po';
 import { CommonPage } from '../page-objects/common.po';
 import { SettingsPage } from '../page-objects/settings.po';
 
@@ -8,29 +9,33 @@ describe('Book tracker', () => {
     cy.autoLogin();
   });
 
-  it('toggles book tracker navigation while keeping the direct route accessible', () => {
-    CommonPage.openMenu();
-    CommonPage.getNavBookTrackerLink().should('be.visible');
-    CommonPage.closeMenu();
+  it('toggles books filter while keeping the direct route accessible', () => {
+    CollectionPage.visit();
+    cy.getByTestId('show-functions').click();
+    cy.getByTestId('collection-filter-book').should('be.visible');
 
     SettingsPage.visitFeatures();
     cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
-    SettingsPage.getFeatureBookTrackerCheckbox().uncheck();
+    SettingsPage.getFeatureBooksCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
 
+    CollectionPage.visit();
+    cy.getByTestId('show-functions').click();
+    cy.getByTestId('collection-filter-book').should('not.exist');
     CommonPage.openMenu();
-    CommonPage.getMenuNavItem('nav-book-tracker').should('not.exist');
+    CommonPage.getMenuNavItem('nav-books').should('not.exist');
     CommonPage.closeMenu();
 
-    BookTrackerPage.visit();
-    cy.url().should('include', '#/collection/book-tracker');
-    BookTrackerPage.getEmptyState().should('be.visible');
+    BooksPage.visit();
+    cy.url().should('include', '#/collection/books');
+    BooksPage.getEmptyState().should('be.visible');
 
     SettingsPage.visitFeatures();
-    SettingsPage.getFeatureBookTrackerCheckbox().check();
+    SettingsPage.getFeatureBooksCheckbox().check();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
-    CommonPage.openMenu();
-    CommonPage.getNavBookTrackerLink().should('be.visible');
+    CollectionPage.visit();
+    cy.getByTestId('show-functions').click();
+    cy.getByTestId('collection-filter-book').should('be.visible');
   });
 
   it('searches Open Library, creates a book, shows its details, and deletes it', () => {
@@ -47,13 +52,12 @@ describe('Book tracker', () => {
     cy.intercept('POST', '/api/v1/create').as('createBook');
     cy.intercept('DELETE', '/api/v1/items/**').as('deleteBook');
 
-    CommonPage.openMenu();
-    CommonPage.getNavBookTrackerLink().click();
-    BookTrackerPage.getAddFirstItemLink().click();
-    BookTrackerPage.getNewItemSearchInput().type(title);
+    BooksPage.visit();
+    BooksPage.getAddFirstItemLink().click();
+    BooksPage.getNewItemSearchInput().type(title);
     cy.wait('@openLibrarySearch');
-    BookTrackerPage.getNewItemContentOptions().should('have.length', 1).and('contain.text', title);
-    BookTrackerPage.getNewItemSaveAndCloseButton().click();
+    BooksPage.getNewItemContentOptions().should('have.length', 1).and('contain.text', title);
+    BooksPage.getNewItemSaveAndCloseButton().click();
     cy.wait('@openLibraryItem');
     cy.wait('@createBook').then(({ request, response }) => {
       expect(request.body).to.deep.include({
@@ -61,34 +65,91 @@ describe('Book tracker', () => {
         contentType: 'book',
         externalProvider: 'openlibrary',
         externalItemId: isbn,
-        listType: 'book-tracker',
+        listType: 'books',
         actors: 'Author One, Author Two',
       });
       expect(request.body.externalIds).to.deep.equal([{ source: 'isbn', id: isbn }]);
       expect(response?.statusCode).to.equal(200);
     });
 
-    BookTrackerPage.getListItemTitles().should('have.length', 1).and('contain.text', title);
-    BookTrackerPage.getListItemImages().first().click();
-    BookTrackerPage.getItemDialog().should('contain.text', title).and('contain.text', 'Author One, Author Two');
-    BookTrackerPage.getItemDialogIsbn().should('contain.text', isbn);
+    BooksPage.getListItemTitles().should('have.length', 1).and('contain.text', title);
+    BooksPage.getListItemImages().first().click();
+    BooksPage.getItemDialog().should('contain.text', title).and('contain.text', 'Author One, Author Two');
+    BooksPage.getItemDialogIsbn().should('contain.text', isbn);
 
     cy.on('window:confirm', () => true);
-    BookTrackerPage.getItemDialogDeleteButton().click();
+    BooksPage.getItemDialogDeleteButton().click();
     cy.wait('@deleteBook').its('response.statusCode').should('eq', 204);
-    BookTrackerPage.getEmptyState().should('be.visible');
+    BooksPage.getEmptyState().should('be.visible');
+  });
+
+  it('adds a book tracker item manually by ISBN and persists it after reload', () => {
+    const title = 'Manual E2E Book';
+    const isbn = '9780140328721';
+    const authors = 'Manual Author';
+    cy.intercept('POST', '/api/v1/create').as('createManualBook');
+
+    BooksPage.visit();
+    BooksPage.getShowFunctionsButton().click();
+    BooksPage.getAddNewButton().click();
+
+    BooksPage.getNewItemManualModeButton().click();
+    BooksPage.getNewItemManualTitleInput().type(title);
+    BooksPage.getNewItemManualIsbnInput().type(isbn);
+    BooksPage.getNewItemManualAuthorsInput().type(authors);
+    BooksPage.getNewItemSaveAndCloseButton().should('be.enabled').click();
+
+    cy.wait('@createManualBook').then(({ request, response }) => {
+      expect(request.body).to.deep.include({
+        title,
+        contentType: 'book',
+        externalProvider: 'openlibrary',
+        externalItemId: isbn,
+        listType: 'books',
+        actors: authors,
+        favorite: false,
+      });
+      expect(request.body.externalIds).to.deep.equal([{ source: 'isbn', id: isbn }]);
+      expect(response?.statusCode).to.equal(200);
+    });
+
+    BooksPage.getListItemTitles().should('have.length', 1).and('contain.text', title);
+    BooksPage.getListItemImages().first().click();
+    BooksPage.getItemDialog().should('contain.text', title).and('contain.text', authors);
+    BooksPage.getItemDialogIsbn().should('contain.text', isbn);
+
+    cy.intercept('GET', '/api/v1/items*').as('reloadBooks');
+    cy.reload();
+    cy.wait('@reloadBooks');
+    BooksPage.getListItemTitles().should('have.length', 1).and('contain.text', title);
+  });
+
+  it('keeps manual book save disabled for invalid ISBN or missing required fields', () => {
+    BooksPage.visit();
+    BooksPage.getShowFunctionsButton().click();
+    BooksPage.getAddNewButton().click();
+
+    BooksPage.getNewItemManualModeButton().click();
+    BooksPage.getNewItemManualTitleInput().type('Manual Book Title');
+    BooksPage.getNewItemSaveAndCloseButton().should('be.disabled');
+
+    BooksPage.getNewItemManualIsbnInput().type('not-an-isbn');
+    BooksPage.getNewItemSaveAndCloseButton().should('be.disabled');
+
+    BooksPage.getNewItemManualIsbnInput().clear().type('9780140328721');
+    BooksPage.getNewItemSaveAndCloseButton().should('be.enabled');
   });
 
   it('clears all book tracker data from manage tracker data settings', () => {
-    cy.request('POST', '/api/v1/create', buildBookTrackerItem('Book To Clear'));
-    cy.intercept('DELETE', '/api/v1/book-tracker').as('clearBookTracker');
+    cy.request('POST', '/api/v1/create', buildBooksItem('Book To Clear'));
+    cy.intercept('DELETE', '/api/v1/books').as('clearBooks');
     cy.on('window:confirm', () => true);
 
     SettingsPage.visitManageTrackerData();
     SettingsPage.getRemoveAllTrackedBookDataButton().click();
-    cy.wait('@clearBookTracker').its('response.statusCode').should('eq', 200);
+    cy.wait('@clearBooks').its('response.statusCode').should('eq', 200);
 
-    BookTrackerPage.visit();
-    BookTrackerPage.getEmptyState().should('be.visible');
+    BooksPage.visit();
+    BooksPage.getEmptyState().should('be.visible');
   });
 });

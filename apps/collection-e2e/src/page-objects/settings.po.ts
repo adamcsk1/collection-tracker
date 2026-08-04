@@ -54,12 +54,10 @@ export const SettingsPage = {
   // Features page
   getFeaturesForm: () => cy.getByTestId('settings-features-form'),
   getFeatureWishlistCheckbox: () => cy.getByTestId('settings-feature-wishlist').find('input[type="checkbox"]'),
-  getFeatureWatchLaterCheckbox: () => cy.getByTestId('settings-feature-watch-later').find('input[type="checkbox"]'),
-  getFeatureWatchTrackerCheckbox: () => cy.getByTestId('settings-feature-watch-tracker').find('input[type="checkbox"]'),
-  getFeatureSeriesTrackerCheckbox: () =>
-    cy.getByTestId('settings-feature-series-tracker').find('input[type="checkbox"]'),
-  getFeatureBookTrackerCheckbox: () =>
-    cy.getByTestId('settings-feature-book-tracker').find('input[type="checkbox"]'),
+  getFeatureWatchlistCheckbox: () => cy.getByTestId('settings-feature-watchlist').find('input[type="checkbox"]'),
+  getFeatureWatchTrackerCheckbox: () => cy.getByTestId('settings-feature-watched').find('input[type="checkbox"]'),
+  getFeatureWatchingCheckbox: () => cy.getByTestId('settings-feature-watching').find('input[type="checkbox"]'),
+  getFeatureBooksCheckbox: () => cy.getByTestId('settings-feature-books').find('input[type="checkbox"]'),
 
   // Media refresh page
   getMediaRefreshLibrarySelect: () => cy.getByTestId('settings-media-refresh-library').find('select'),

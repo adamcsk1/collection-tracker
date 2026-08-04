@@ -1,8 +1,8 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { CollectionPage } from '../page-objects/collection.po';
 
-const waitForSeriesTrackerItem = (imdbId: string) => {
-  cy.wait('@getSeriesTrackerItems')
+const waitForWatchingItem = (imdbId: string) => {
+  cy.wait('@getWatchingItems')
     .its('response.body.items')
     .should((items: Array<{ IMDbId: string }>) => {
       expect(items.some((item) => item.IMDbId === imdbId)).to.eq(true);
@@ -50,11 +50,11 @@ describe('Stacked dialogs', () => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(seriesTitle, 'series', imdbId),
-      listType: 'series-tracker',
+      listType: 'watching',
     });
-    cy.intercept('GET', '/api/v1/items?*listType=series-tracker*').as('getSeriesTrackerItems');
-    CollectionPage.visitSeriesTracker();
-    waitForSeriesTrackerItem(imdbId);
+    cy.intercept('GET', '/api/v1/items?*listType=watching*').as('getWatchingItems');
+    CollectionPage.visitWatching();
+    waitForWatchingItem(imdbId);
   });
 
   it('keeps only the top dialog interactive across every app-supported stack depth', () => {
