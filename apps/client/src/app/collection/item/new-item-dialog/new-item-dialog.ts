@@ -22,7 +22,7 @@ import { Textarea } from '@components/textarea/textarea';
 import { ApiService } from '@services/api/api-service';
 import { apiStateToken } from '@services/api/api-store';
 import { ExternalMetadataService } from '@services/external-metadata/external-metadata-service';
-import { CollectionListTypeModel } from '@shared/models/api-model';
+import { CollectionItemContentTypeModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadata-model';
 import { isImdbShapedExternalItemId } from '@shared/utils/external-metadata-identity-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -53,7 +53,7 @@ const defaultSearchModel = (): NewItemSearchModel => ({
   userRate: null,
   tags: '',
   watched: false,
-  copyToWatchingAsWatched: false,
+  copyToTrackingAsWatched: false,
   targetOwnerShareCode: null,
 });
 
@@ -71,6 +71,8 @@ const defaultManualModel = (): ItemFormModel => ({
   actors: '',
   plot: '',
   contentType: 'movie',
+  progressCurrent: null,
+  progressTotal: null,
 });
 
 @Component({
@@ -117,9 +119,10 @@ export class NewItemDialog {
     titleNewCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.NewCollectionItem')),
     titleNewWatchlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchlistItem')),
     titleNewWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWishlistItem')),
-    titleNewWatchingItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchingItem')),
+    titleNewTrackingItem: computed(() => this.ngxSignalTranslate.translate('Title.NewTrackingItem')),
     titleNewWatchedItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchedItem')),
     titleNewBooksItem: computed(() => this.ngxSignalTranslate.translate('Title.NewBooksItem')),
+    books: computed(() => this.ngxSignalTranslate.translate('Books')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
     manual: computed(() => this.ngxSignalTranslate.translate('Manual')),
     ariaNewItemEntryMethod: computed(() => this.ngxSignalTranslate.translate('Aria.NewItemEntryMethod')),
@@ -176,8 +179,8 @@ export class NewItemDialog {
     validationMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Validation.MetacriticRate')),
     validationRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('Validation.RottenTomatoesRate')),
     validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
-    collectionItemWatched: computed(() => this.ngxSignalTranslate.translate('CollectionItemWatched')),
-    copyToWatchingAsWatched: computed(() => this.ngxSignalTranslate.translate('CopyToWatchingAsWatched')),
+    collectionItemWatched: computed(() => this.ngxSignalTranslate.translate('CollectionItemFinished')),
+    copyToTrackingAsWatched: computed(() => this.ngxSignalTranslate.translate('CopyToTrackingAsWatched')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     saveAndNew: computed(() => this.ngxSignalTranslate.translate('SaveAndNew')),
     saveAndClose: computed(() => this.ngxSignalTranslate.translate('SaveAndClose')),
@@ -227,17 +230,19 @@ export class NewItemDialog {
       validate(manualItem.IMDbId, ({ value }) => {
         const identity = value()?.trim() ?? '';
         if (!identity) return { kind: 'required' };
-        if (this.books()) return isIsbnValid(identity) ? undefined : { kind: 'isbn' };
+        if (this.isBookAdd()) return isIsbnValid(identity) ? undefined : { kind: 'isbn' };
         return isImdbIdValid(identity) ? undefined : { kind: 'imdbId' };
       });
       validate(manualItem.IMDbId, ({ value }) => this.knownManualIMDbIdValidationError(value()));
       validate(manualItem.IMDbId, () => (this.manualIMDbIdLookupPending() ? { kind: 'pending' } : undefined));
-      validate(manualItem.rate, ({ value }) => (this.books() ? undefined : validateOptionalIMDbRateFormat(value())));
+      validate(manualItem.rate, ({ value }) =>
+        this.isBookAdd() ? undefined : validateOptionalIMDbRateFormat(value())
+      );
       validate(manualItem.rottenTomatoesRate, ({ value }) =>
-        this.books() ? undefined : validateOptionalRottenTomatoesRateFormat(value())
+        this.isBookAdd() ? undefined : validateOptionalRottenTomatoesRateFormat(value())
       );
       validate(manualItem.metacriticRate, ({ value }) =>
-        this.books() ? undefined : validateOptionalMetacriticRateFormat(value())
+        this.isBookAdd() ? undefined : validateOptionalMetacriticRateFormat(value())
       );
       min(manualItem.userRate, 0, { error: { kind: 'min' } });
       max(manualItem.userRate, 10, { error: { kind: 'max' } });
@@ -358,20 +363,46 @@ export class NewItemDialog {
     },
   };
   protected readonly form = computed(() => (this.mode() === 'manual' ? this.manualForm() : this.searchForm()));
+  public readonly watchlist = input(false);
+  public readonly wishlist = input(false);
+  public readonly tracking = input(false);
+  public readonly finished = input(false);
+  public readonly books = input(false);
+  public readonly allowedContentTypes = input<readonly CollectionItemContentTypeModel[]>([]);
+  protected readonly selectedAddContentType = signal<CollectionItemContentTypeModel>('movie');
+  protected readonly resolvedAllowedContentTypes = computed(() => {
+    const allowed = this.allowedContentTypes();
+    if (allowed.length) return allowed;
+    if (this.books()) return ['book'] as const;
+    if (this.tracking()) {
+      return this.mainState.state.collectionFeaturePreferences().books
+        ? (['series', 'book'] as const)
+        : (['series'] as const);
+    }
+    if (this.finished()) {
+      return this.mainState.state.collectionFeaturePreferences().books
+        ? (['movie', 'book'] as const)
+        : (['movie'] as const);
+    }
+    const types: CollectionItemContentTypeModel[] = ['movie', 'series'];
+    if (this.mainState.state.collectionFeaturePreferences().books) types.push('book');
+    return types;
+  });
+  protected readonly isBookAdd = computed(
+    () => this.books() || this.selectedAddContentType() === 'book' || this.manualForm.contentType().value() === 'book'
+  );
   protected readonly matchedContent = computed(() => {
     const matchedContent = this.service.matchedContent();
-    return this.watching() || this.watched() || this.books()
-      ? matchedContent.filter((content) => {
-          if (`${content.text}`.toLowerCase().startsWith('imdb id:')) return true;
-          if (this.watching()) return content.contentType === 'series';
-          if (this.watched()) return content.contentType === 'movie';
-          return content.contentType === 'book';
-        })
-      : matchedContent;
+    const selectedType = this.selectedAddContentType();
+    return matchedContent.filter((content) => {
+      if (`${content.text}`.toLowerCase().startsWith('imdb id:')) return selectedType !== 'book';
+      if (!content.contentType) return true;
+      return content.contentType === selectedType;
+    });
   });
   protected readonly completedSearchText = this.service.completedSearchText;
   protected readonly showExternalSearchLinks = computed(() => {
-    if (this.mode() !== 'search' || this.books()) return false;
+    if (this.mode() !== 'search' || this.isBookAdd()) return false;
     const completedSearchText = this.completedSearchText();
     return !!completedSearchText && this.searchForm.searchText().value().trim() === completedSearchText;
   });
@@ -386,7 +417,9 @@ export class NewItemDialog {
     return selectedContent?.contentType === 'movie' || selectedContentText.startsWith('imdb id:');
   });
   protected readonly searchHint = computed(() =>
-    this.books() ? this.translations.messageNewBooksItemSearch() : this.translations.messageNewCollectionItemSearch()
+    this.isBookAdd()
+      ? this.translations.messageNewBooksItemSearch()
+      : this.translations.messageNewCollectionItemSearch()
   );
   protected readonly selectedContentIsSeries = computed(() => {
     const selectedExternalReference = this.searchForm.selectedExternalReference().value();
@@ -395,15 +428,18 @@ export class NewItemDialog {
     const selectedContent = this.matchedContent().find((content) => `${content.value}` === selectedExternalReference);
     return selectedContent?.contentType === 'series';
   });
+  protected readonly activeAddContentType = computed(() =>
+    this.mode() === 'manual' ? this.manualForm.contentType().value() : this.selectedAddContentType()
+  );
   protected readonly showWatchedCheckbox = computed(() => {
-    if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().watched) return false;
-    return this.mode() === 'manual' ? this.manualForm.contentType().value() === 'movie' : this.selectedContentIsMovie();
+    if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().finished) return false;
+    if (this.activeAddContentType() !== 'movie') return false;
+    return this.mode() === 'manual' || !!this.searchForm.selectedExternalReference().value();
   });
-  protected readonly showCopyToWatchingCheckbox = computed(() => {
-    if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().watching) return false;
-    return this.mode() === 'manual'
-      ? this.manualForm.contentType().value() === 'series'
-      : this.selectedContentIsSeries();
+  protected readonly showCopyToTrackingCheckbox = computed(() => {
+    if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().tracking) return false;
+    if (this.activeAddContentType() !== 'series') return false;
+    return this.mode() === 'manual' || !!this.searchForm.selectedExternalReference().value();
   });
   protected readonly libraryOptions = computed(() => {
     const options = [{ text: this.translations.myLibrary(), value: '' }];
@@ -417,7 +453,9 @@ export class NewItemDialog {
     }
     return options;
   });
-  protected readonly showLibrarySelect = computed(() => !this.internalListMode() && this.libraryOptions().length > 1);
+  protected readonly showLibrarySelect = computed(
+    () => !this.internalListMode() && !this.isBookAdd() && this.libraryOptions().length > 1
+  );
   protected readonly selectedExternalReference = computed(() => this.searchForm.selectedExternalReference().value());
   private readonly defaultTargetOwnerShareCode = computed(() => {
     if (this.internalListMode()) return null;
@@ -432,35 +470,43 @@ export class NewItemDialog {
   protected readonly draftImageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.manualForm.image().value())
   );
-  protected readonly contentTypeOptions = computed(() => [
-    { text: this.translations.movies(), value: 'movie' },
-    { text: this.translations.seriesLabel(), value: 'series' },
-  ]);
-  protected readonly showContentTypeSelect = computed(() => !this.watching() && !this.watched() && !this.books());
+  protected readonly contentTypeOptions = computed(() =>
+    this.resolvedAllowedContentTypes().map((contentType) => ({
+      text:
+        contentType === 'movie'
+          ? this.translations.movies()
+          : contentType === 'series'
+            ? this.translations.seriesLabel()
+            : this.translations.books(),
+      value: contentType,
+    }))
+  );
+  protected readonly showContentTypeSelect = computed(() => this.resolvedAllowedContentTypes().length > 1);
   protected readonly showManualUserRate = computed(() => !this.internalListMode());
-  public readonly watchlist = input(false);
-  public readonly wishlist = input(false);
-  public readonly watching = input(false);
-  public readonly watched = input(false);
-  public readonly books = input(false);
   protected readonly internalListMode = computed(
-    () => this.watchlist() || this.wishlist() || this.watching() || this.watched() || this.books()
+    () => this.watchlist() || this.wishlist() || this.tracking() || this.finished() || this.books()
   );
   protected readonly dialogTitle = computed(() => {
     if (this.watchlist()) return this.translations.titleNewWatchlistItem();
     if (this.wishlist()) return this.translations.titleNewWishlistItem();
-    if (this.watching()) return this.translations.titleNewWatchingItem();
-    if (this.watched()) return this.translations.titleNewWatchedItem();
-    if (this.books()) return this.translations.titleNewBooksItem();
+    if (this.tracking()) return this.translations.titleNewTrackingItem();
+    if (this.finished()) return this.translations.titleNewWatchedItem();
+    if (this.books() || this.selectedAddContentType() === 'book') return this.translations.titleNewBooksItem();
     return this.translations.titleNewCollectionItem();
   });
-  protected readonly dialogIcon = computed(() => (this.books() ? 'menu_book' : 'add_photo_alternate'));
+  protected readonly dialogIcon = computed(() => {
+    const contentType = this.selectedAddContentType();
+    if (contentType === 'book') return 'menu_book';
+    if (contentType === 'series') return 'live_tv';
+    if (contentType === 'movie') return 'movie';
+    return 'add_photo_alternate';
+  });
   private readonly listType = computed<CollectionListTypeModel>(() => {
     if (this.watchlist()) return 'watchlist';
     if (this.wishlist()) return 'wishlist';
-    if (this.watching()) return 'watching';
-    if (this.watched()) return 'watched';
-    if (this.books()) return 'books';
+    if (this.tracking()) return 'tracking';
+    if (this.finished()) return 'finished';
+    if (this.books() || this.selectedAddContentType() === 'book') return 'books';
     return 'library';
   });
 
@@ -486,13 +532,45 @@ export class NewItemDialog {
       }
     });
 
-    combineLatest([toObservable(this.searchForm.searchText().value), toObservable(this.mode)])
+    effect(() => {
+      const allowed = this.resolvedAllowedContentTypes();
+      const current = untracked(() => this.selectedAddContentType());
+      if (!allowed.includes(current)) {
+        this.selectedAddContentType.set(allowed[0] ?? 'movie');
+      }
+    });
+
+    effect(() => {
+      const contentType = this.selectedAddContentType();
+      untracked(() => {
+        if (this.manualForm.contentType().value() !== contentType) {
+          this.manualForm.contentType().value.set(contentType);
+        }
+      });
+    });
+
+    effect(() => {
+      const manualType = this.manualForm.contentType().value();
+      if (manualType !== 'movie' && manualType !== 'series' && manualType !== 'book') return;
+      if (!this.resolvedAllowedContentTypes().includes(manualType)) return;
+      if (this.selectedAddContentType() === manualType) return;
+      this.selectedAddContentType.set(manualType);
+    });
+
+    combineLatest([
+      toObservable(this.searchForm.searchText().value),
+      toObservable(this.mode),
+      toObservable(this.selectedAddContentType),
+    ])
       .pipe(
         debounceTime(500),
-        filter(([searchText]) => this.mode() === 'search' && !!searchText),
+        filter(([searchText, mode]) => mode === 'search' && !!searchText),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(([searchText]) => this.service.search(searchText, this.books() ? 'openlibrary' : 'omdb'));
+      .subscribe(([searchText, mode, contentType]) => {
+        if (mode !== 'search' || this.mode() !== 'search' || !searchText) return;
+        this.service.search(searchText, contentType === 'book' ? 'openlibrary' : 'omdb');
+      });
 
     combineLatest([
       toObservable(this.mode),
@@ -583,17 +661,6 @@ export class NewItemDialog {
         this.knownManualIMDbIdExists.set(response.exists);
       });
 
-    effect(() => {
-      const listType = this.listType();
-      if (listType === 'watching') {
-        this.manualForm.contentType().value.set('series');
-      } else if (listType === 'watched') {
-        this.manualForm.contentType().value.set('movie');
-      } else if (listType === 'books') {
-        this.manualForm.contentType().value.set('book');
-      }
-    });
-
     this.sharesLoader.load(this.destroyRef, true);
   }
 
@@ -602,7 +669,18 @@ export class NewItemDialog {
 
     const searchText = this.searchForm.searchText().value().trim();
     if (searchText) {
-      this.service.search(searchText, this.books() ? 'openlibrary' : 'omdb');
+      this.service.search(searchText, this.selectedAddContentType() === 'book' ? 'openlibrary' : 'omdb');
+    }
+  }
+
+  protected onAddContentTypeChange(contentType: string | number | boolean | null): void {
+    if (contentType !== 'movie' && contentType !== 'series' && contentType !== 'book') return;
+    if (contentType === this.selectedAddContentType()) return;
+    this.selectedAddContentType.set(contentType);
+    this.searchForm.selectedExternalReference().reset(null);
+    const searchText = this.searchForm.searchText().value().trim();
+    if (this.mode() === 'search' && searchText) {
+      this.service.search(searchText, contentType === 'book' ? 'openlibrary' : 'omdb');
     }
   }
 
@@ -615,7 +693,8 @@ export class NewItemDialog {
     this.searchIMDbIdLookupPending.set(newMode === 'search' && !!providerReference);
     const manualIdentity = this.manualForm.IMDbId().value();
     this.manualIMDbIdLookupPending.set(
-      newMode === 'manual' && (this.books() ? isIsbnValid(manualIdentity) : isImdbShapedExternalItemId(manualIdentity))
+      newMode === 'manual' &&
+        (this.isBookAdd() ? isIsbnValid(manualIdentity) : isImdbShapedExternalItemId(manualIdentity))
     );
   }
 
@@ -640,24 +719,20 @@ export class NewItemDialog {
 
   private async onSave(mode: SaveMode | null = null): Promise<void> {
     const options: SaveOptions = {};
-    const targetOwnerShareCode = this.internalListMode()
-      ? undefined
-      : this.searchForm.targetOwnerShareCode().value() || undefined;
+    const targetOwnerShareCode =
+      this.internalListMode() || this.isBookAdd()
+        ? undefined
+        : this.searchForm.targetOwnerShareCode().value() || undefined;
     if (targetOwnerShareCode) options.targetOwnerShareCode = targetOwnerShareCode;
     if (this.listType() !== 'library') options.listType = this.listType();
-    if (this.showWatchedCheckbox()) options.watched = this.searchForm.watched().value();
-    if (this.showCopyToWatchingCheckbox())
-      options.copyToWatchingAsWatched = this.searchForm.copyToWatchingAsWatched().value();
+    if (this.showWatchedCheckbox() && this.searchForm.watched().value()) options.watched = true;
+    if (this.showCopyToTrackingCheckbox()) {
+      options.copyToTrackingAsWatched = this.searchForm.copyToTrackingAsWatched().value();
+    }
 
     if (this.mode() === 'manual') {
       const manualValues = this.manualForm().value();
-      const contentType = this.watching()
-        ? 'series'
-        : this.watched()
-          ? 'movie'
-          : this.books()
-            ? 'book'
-            : manualValues.contentType;
+      const contentType = this.selectedAddContentType();
       const saveRequest = this.service.saveManual(
         {
           ...manualValues,
@@ -672,7 +747,7 @@ export class NewItemDialog {
       if (mode === 'new') {
         this.manualForm().reset(defaultManualModel());
         this.searchForm.watched().reset(false);
-        this.searchForm.copyToWatchingAsWatched().reset(false);
+        this.searchForm.copyToTrackingAsWatched().reset(false);
       } else {
         this.manualForm.IMDbId().reset('');
       }

@@ -37,7 +37,12 @@ import { FloatActionButtons } from '../float-action-buttons/float-action-buttons
 import { FloatActionFilter } from '../float-action-buttons/float-action-buttons-model';
 import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
-import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS, FLOAT_ACTION_SCROLLING_IDLE_MS } from './list-const';
+import {
+  COLLECTION_LIST_PAGE_SIZE,
+  COLLECTION_SEARCH_DEBOUNCE_MS,
+  FLOAT_ACTION_SCROLLING_IDLE_MS,
+  getAllowedAddContentTypes,
+} from './list-const';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
 import { ListItem } from './list-item/list-item';
 
@@ -88,7 +93,7 @@ export class List implements OnDestroy {
   public readonly routeSearchText = input('');
   public readonly routeFilterKey = input('');
   public readonly listType = input<CollectionListTypeModel>('library');
-  public readonly emptyIcon = input('movie');
+  public readonly emptyIcon = input('local_library');
   public readonly dataSource = input.required<CollectionListDataSource>();
   public readonly randomPick = output<void>();
   public readonly showFunctions = output<void>();
@@ -203,13 +208,24 @@ export class List implements OnDestroy {
   }
 
   protected onAddNew(): void {
-    const booksMode = this.listType() === 'books' || this.getActiveFilterActions().includes('book');
+    const listType = this.listType();
+    const activeFilters = this.getActiveFilterActions();
+    const lockedType =
+      activeFilters.includes('book') || listType === 'books'
+        ? ('book' as const)
+        : activeFilters.includes('movie')
+          ? ('movie' as const)
+          : activeFilters.includes('series')
+            ? ('series' as const)
+            : undefined;
+    const booksEnabled = this.mainState.state.collectionFeaturePreferences().books;
     this.portal.open(NewItemDialog, {
-      watchlist: this.listType() === 'watchlist',
-      wishlist: this.listType() === 'wishlist',
-      watching: this.listType() === 'watching',
-      watched: this.listType() === 'watched',
-      books: booksMode,
+      watchlist: listType === 'watchlist',
+      wishlist: listType === 'wishlist',
+      watching: listType === 'tracking',
+      watched: listType === 'finished',
+      books: lockedType === 'book',
+      allowedContentTypes: getAllowedAddContentTypes(listType, lockedType, booksEnabled),
     });
   }
 
@@ -335,17 +351,19 @@ export class List implements OnDestroy {
       case 'library': {
         // Media scope is the always-visible chips; float keeps status filters only.
         const active = this.getActiveFilterActions();
-        if (active.includes('book')) return [];
+        if (active.includes('book')) return ['favorite'];
         return ['unwatched', 'favorite'];
       }
       case 'watchlist':
       case 'wishlist':
-        return ['movie', 'series'];
-      case 'watching':
-        return ['completed', 'uncompleted'];
-      case 'watched':
-      case 'books':
+        // Media scope uses chips on these hubs.
         return [];
+      case 'tracking':
+        return ['completed', 'uncompleted'];
+      case 'finished':
+        return [];
+      case 'books':
+        return ['favorite'];
     }
   }
 

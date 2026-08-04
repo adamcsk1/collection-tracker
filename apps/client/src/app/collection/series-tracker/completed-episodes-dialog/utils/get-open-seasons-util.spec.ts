@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { getOpenSeasons } from './get-open-seasons-util';
 
-function buildWatchedSet(watchedEpisodes: { season: number; episode: number }[]): Set<string> {
+function buildWatchedSet(completedEpisodes: { season: number; episode: number }[]): Set<string> {
   const set = new Set<string>();
-  for (const episode of watchedEpisodes) {
+  for (const episode of completedEpisodes) {
     set.add(`${episode.season}-${episode.episode}`);
   }
   return set;

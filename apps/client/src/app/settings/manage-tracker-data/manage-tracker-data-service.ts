@@ -199,7 +199,7 @@ export class ManageTrackerDataService {
         );
 
         this.api
-          .deleteAllWatchingItems()
+          .deleteAllTrackingItems()
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {

@@ -19,12 +19,12 @@ export const collectionRoutes: Routes = [
         loadComponent: () => import('./wishlist/wishlist').then((module) => module.Wishlist),
       },
       {
-        path: 'watching',
-        loadComponent: () => import('./series-tracker/series-tracker').then((module) => module.Watching),
+        path: 'tracking',
+        loadComponent: () => import('./series-tracker/series-tracker').then((module) => module.Tracking),
       },
       {
-        path: 'watched',
-        loadComponent: () => import('./movie-tracker/movie-tracker').then((module) => module.Watched),
+        path: 'finished',
+        loadComponent: () => import('./movie-tracker/movie-tracker').then((module) => module.Finished),
       },
       {
         path: 'books',

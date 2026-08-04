@@ -28,16 +28,19 @@ const translations: ItemDialogTranslations = {
   linkYouTubeTrailer: signal('Trailer'),
   linkWebSearch: signal('Web search'),
   manageSeriesMetadata: signal('Manage series metadata'),
-  manageWatchedEpisodes: signal('Manage watched episodes'),
+  manageCompletedEpisodes: signal('Manage watched episodes'),
   markAsFavorite: signal('Mark as favorite'),
   markAsUnwatched: signal('Mark as unwatched'),
   markAsWatched: signal('Mark as watched'),
-  copyToWatching: signal('Add to Watching'),
+  copyToTracking: signal('Add to Tracking'),
   moveToWatched: signal('Move to Watched'),
-  moveToWatching: signal('Move to Watching'),
-  openInWatching: signal('Open in Watching'),
+  moveToTracking: signal('Move to Tracking'),
+  openInTracking: signal('Open in Tracking'),
   removeFavorite: signal('Remove favorite'),
-  removeFromWatching: signal('Remove from Watching'),
+  removeFromTracking: signal('Remove from Tracking'),
+  readingProgress: signal('Reading progress'),
+  pagesRead: signal('Pages read'),
+  totalPages: signal('Total pages'),
 };
 
 const item: CollectionItemModel = {
@@ -79,7 +82,7 @@ describe('ItemDialogDetail', () => {
     fixture.componentRef.setInput('isShared', true);
     fixture.componentRef.setInput('library', 'Shared Owner');
     fixture.componentRef.setInput('detailTags', ['#drama']);
-    fixture.componentRef.setInput('watching', true);
+    fixture.componentRef.setInput('tracking', true);
     fixture.componentRef.setInput('book', false);
     fixture.componentRef.setInput('isbn', '');
     fixture.componentRef.setInput('episodeProgressText', 'S01E02');
@@ -124,7 +127,7 @@ describe('ItemDialogDetail', () => {
       userRate: null,
     });
     fixture.componentRef.setInput('book', true);
-    fixture.componentRef.setInput('watching', false);
+    fixture.componentRef.setInput('tracking', false);
     fixture.componentRef.setInput('isbn', '9780441172719');
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;

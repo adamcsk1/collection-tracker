@@ -1,3 +1,37 @@
+import { CollectionItemContentTypeModel, CollectionListTypeModel } from '@shared/models/api-model';
+import type { CollectionMediaChip } from '../media-chips/media-chips';
+
 export const COLLECTION_SEARCH_DEBOUNCE_MS = 800;
 export const COLLECTION_LIST_PAGE_SIZE = 50;
 export const FLOAT_ACTION_SCROLLING_IDLE_MS = 200;
+
+export const getMediaChipEmptyIcon = (chip: CollectionMediaChip): string => {
+  switch (chip) {
+    case 'movie':
+      return 'movie';
+    case 'series':
+      return 'live_tv';
+    case 'book':
+      return 'menu_book';
+    default:
+      return 'local_library';
+  }
+};
+
+export const getAllowedAddContentTypes = (
+  listType: CollectionListTypeModel,
+  lockedType: CollectionItemContentTypeModel | undefined,
+  booksEnabled: boolean
+): readonly CollectionItemContentTypeModel[] => {
+  if (lockedType) return [lockedType];
+
+  if (listType === 'books') return ['book'];
+  if (listType === 'tracking') return booksEnabled ? ['series', 'book'] : ['series'];
+  if (listType === 'finished') return booksEnabled ? ['movie', 'book'] : ['movie'];
+
+  const types: CollectionItemContentTypeModel[] = ['movie', 'series'];
+  if (booksEnabled && (listType === 'library' || listType === 'wishlist' || listType === 'watchlist')) {
+    types.push('book');
+  }
+  return types;
+};

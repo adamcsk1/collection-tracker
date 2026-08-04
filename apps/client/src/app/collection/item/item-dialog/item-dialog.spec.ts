@@ -85,14 +85,14 @@ describe('ItemDialog', () => {
   let api: {
     deleteByExternalId: ReturnType<typeof vi.fn>;
     updateByExternalId: ReturnType<typeof vi.fn>;
-    getWatchingSeasonsByExternalId: ReturnType<typeof vi.fn>;
-    getWatchingWatchedEpisodesByExternalId: ReturnType<typeof vi.fn>;
-    updateWatchingWatchedEpisodesByExternalId: ReturnType<typeof vi.fn>;
-    refreshWatchingSeasonsByExternalId: ReturnType<typeof vi.fn>;
-    deleteWatchingSeasonsByExternalId: ReturnType<typeof vi.fn>;
-    markAllWatchingWatchedByExternalId: ReturnType<typeof vi.fn>;
+    getTrackingSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    getTrackingCompletedEpisodesByExternalId: ReturnType<typeof vi.fn>;
+    updateTrackingCompletedEpisodesByExternalId: ReturnType<typeof vi.fn>;
+    refreshTrackingSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    deleteTrackingSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    markAllTrackingCompletedByExternalId: ReturnType<typeof vi.fn>;
     addWatchedItemByExternalId: ReturnType<typeof vi.fn>;
-    addWatchingItemByExternalId: ReturnType<typeof vi.fn>;
+    addTrackingItemByExternalId: ReturnType<typeof vi.fn>;
     deleteWatchedItemByExternalId: ReturnType<typeof vi.fn>;
     collectionItemExists: ReturnType<typeof vi.fn>;
     getMatchedItems: ReturnType<typeof vi.fn>;
@@ -114,40 +114,40 @@ describe('ItemDialog', () => {
     api = {
       deleteByExternalId: vi.fn(() => of(undefined)),
       updateByExternalId: vi.fn(() => of({ item: buildApiItem() })),
-      getWatchingSeasonsByExternalId: vi.fn(() => of({ seasons: [] })),
-      getWatchingWatchedEpisodesByExternalId: vi.fn(() => of({ watchedEpisodes: [], lastWatchedEpisode: null })),
-      updateWatchingWatchedEpisodesByExternalId: vi.fn(() =>
+      getTrackingSeasonsByExternalId: vi.fn(() => of({ seasons: [] })),
+      getTrackingCompletedEpisodesByExternalId: vi.fn(() => of({ completedEpisodes: [], lastCompletedEpisode: null })),
+      updateTrackingCompletedEpisodesByExternalId: vi.fn(() =>
         of({
-          watchedEpisodes: [],
-          lastWatchedEpisode: null,
-          item: buildApiItem({ listType: 'watching', tags: [SERIES_TAG], hash: 'unwatched-hash' }),
+          completedEpisodes: [],
+          lastCompletedEpisode: null,
+          item: buildApiItem({ listType: 'tracking', tags: [SERIES_TAG], hash: 'unwatched-hash' }),
         })
       ),
-      refreshWatchingSeasonsByExternalId: vi.fn(() =>
+      refreshTrackingSeasonsByExternalId: vi.fn(() =>
         of({
           seasons: [{ season: 1, episodes: 2 }],
-          item: buildApiItem({ listType: 'watching', tags: [SERIES_TAG], hash: 'refreshed-hash' }),
+          item: buildApiItem({ listType: 'tracking', tags: [SERIES_TAG], hash: 'refreshed-hash' }),
         })
       ),
-      deleteWatchingSeasonsByExternalId: vi.fn(() =>
+      deleteTrackingSeasonsByExternalId: vi.fn(() =>
         of({
           seasons: [],
-          item: buildApiItem({ listType: 'watching', tags: [SERIES_TAG], hash: 'metadata-deleted-hash' }),
+          item: buildApiItem({ listType: 'tracking', tags: [SERIES_TAG], hash: 'metadata-deleted-hash' }),
         })
       ),
-      markAllWatchingWatchedByExternalId: vi.fn(() =>
+      markAllTrackingCompletedByExternalId: vi.fn(() =>
         of({
-          watchedEpisodes: [
+          completedEpisodes: [
             { season: 1, episode: 1 },
             { season: 1, episode: 2 },
           ],
-          lastWatchedEpisode: { season: 1, episode: 2 },
-          item: buildApiItem({ listType: 'watching', tags: [SERIES_TAG, COMPLETED_TAG], hash: 'completed-hash' }),
+          lastCompletedEpisode: { season: 1, episode: 2 },
+          item: buildApiItem({ listType: 'tracking', tags: [SERIES_TAG, COMPLETED_TAG], hash: 'completed-hash' }),
         })
       ),
-      addWatchedItemByExternalId: vi.fn(() => of({ item: buildApiItem({ listType: 'watched', watched: true }) })),
-      addWatchingItemByExternalId: vi.fn(() =>
-        of({ item: buildApiItem({ listType: 'watching', tags: [SERIES_TAG] }) })
+      addWatchedItemByExternalId: vi.fn(() => of({ item: buildApiItem({ listType: 'finished', watched: true }) })),
+      addTrackingItemByExternalId: vi.fn(() =>
+        of({ item: buildApiItem({ listType: 'tracking', tags: [SERIES_TAG] }) })
       ),
       deleteWatchedItemByExternalId: vi.fn(() => of(undefined)),
       collectionItemExists: vi.fn(() => of({ exists: false })),
@@ -246,12 +246,12 @@ describe('ItemDialog', () => {
   });
 
   it('computes watched status from the watched field', () => {
-    expect(component['watched']()).toBe(false);
+    expect(component['finished']()).toBe(false);
 
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG], watched: true }));
     fixture.detectChanges();
 
-    expect(component['watched']()).toBe(true);
+    expect(component['finished']()).toBe(true);
   });
 
   it('computes favorite status from the favorite field', () => {
@@ -340,10 +340,10 @@ describe('ItemDialog', () => {
   });
 
   it('returns series tracker item title for series tracker items', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watching', tags: [SERIES_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
 
-    expect(component['dialogTitle']()).toBe('Title.WatchingItem');
+    expect(component['dialogTitle']()).toBe('Title.TrackingItem');
   });
 
   it('returns book tracker title and ISBN for book tracker items', () => {
@@ -361,7 +361,7 @@ describe('ItemDialog', () => {
 
     expect(component['dialogTitle']()).toBe('Title.BooksItem');
     expect(component['isbn']()).toBe('9780441172719');
-    expect(component['permissionWatch']()).toBe(false);
+    expect(component['permissionWatch']()).toBe(true);
   });
 
   it('uses contextual edit and delete action labels', () => {
@@ -378,15 +378,15 @@ describe('ItemDialog', () => {
     expect(component['translations'].edit()).toBe('EditWishlistItem');
     expect(component['translations'].delete()).toBe('DeleteFromWishlist');
 
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watching', tags: [SERIES_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
-    expect(component['translations'].edit()).toBe('EditWatchingItem');
-    expect(component['translations'].delete()).toBe('DeleteFromWatching');
+    expect(component['translations'].edit()).toBe('EditTrackingItem');
+    expect(component['translations'].delete()).toBe('DeleteFromTracking');
 
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watched' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'finished' }));
     fixture.detectChanges();
-    expect(component['translations'].edit()).toBe('EditWatchedItem');
-    expect(component['translations'].delete()).toBe('DeleteFromWatched');
+    expect(component['translations'].edit()).toBe('EditFinishedItem');
+    expect(component['translations'].delete()).toBe('DeleteFromFinished');
 
     fixture.componentRef.setInput(
       'collectionItem',
@@ -543,31 +543,31 @@ describe('ItemDialog', () => {
   });
 
   it('uses N/A when series tracker episode progress is not set', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watching', tags: [SERIES_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
 
     expect(component['episodeProgressText']()).toBe('Fallback.NotAvailable');
   });
 
   it('loads watched episodes on init for series tracker items', () => {
-    api.getWatchingWatchedEpisodesByExternalId.mockReturnValue(
-      of({ watchedEpisodes: [{ season: 1, episode: 2 }], lastWatchedEpisode: { season: 1, episode: 2 } })
+    api.getTrackingCompletedEpisodesByExternalId.mockReturnValue(
+      of({ completedEpisodes: [{ season: 1, episode: 2 }], lastCompletedEpisode: { season: 1, episode: 2 } })
     );
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watching', tags: [SERIES_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.getWatchingWatchedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
-    expect(component['watchedEpisodes']()).toEqual([{ season: 1, episode: 2 }]);
+    expect(api.getTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
+    expect(component['completedEpisodes']()).toEqual([{ season: 1, episode: 2 }]);
     expect(component['episodeProgressText']()).toBe('S01E02');
   });
 
   it('opens watched episodes dialog on manage watched episodes', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watching', tags: [SERIES_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
-    component['watchedEpisodes'].set([{ season: 1, episode: 2 }]);
+    component['completedEpisodes'].set([{ season: 1, episode: 2 }]);
 
-    component['onManageWatchedEpisodes']();
+    component['onManageCompletedEpisodes']();
 
     expect(portal.openStacked).toHaveBeenCalledWith(
       expect.any(Function),
@@ -579,16 +579,16 @@ describe('ItemDialog', () => {
   });
 
   it('reports all episodes watched only when every available episode is watched', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watching', tags: [SERIES_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
     component['seriesSeasonsLoaded'].set(true);
-    component['watchedEpisodes'].set([{ season: 1, episode: 1 }]);
-    component['watchedEpisodesLoaded'].set(true);
+    component['completedEpisodes'].set([{ season: 1, episode: 1 }]);
+    component['completedEpisodesLoaded'].set(true);
 
     expect(component['allEpisodesWatched']()).toBe(false);
 
-    component['watchedEpisodes'].set([
+    component['completedEpisodes'].set([
       { season: 1, episode: 1 },
       { season: 1, episode: 2 },
     ]);
@@ -597,12 +597,12 @@ describe('ItemDialog', () => {
   });
 
   it('does not report all episodes watched without season metadata', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watching', tags: [SERIES_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component['seriesSeasons'].set([]);
     component['seriesSeasonsLoaded'].set(true);
-    component['watchedEpisodes'].set([{ season: 1, episode: 1 }]);
-    component['watchedEpisodesLoaded'].set(true);
+    component['completedEpisodes'].set([{ season: 1, episode: 1 }]);
+    component['completedEpisodesLoaded'].set(true);
 
     expect(component['allEpisodesWatched']()).toBe(false);
   });
@@ -610,7 +610,7 @@ describe('ItemDialog', () => {
   it('uses completed tag while watched episode data is loading', () => {
     fixture.componentRef.setInput(
       'collectionItem',
-      buildItem({ listType: 'watching', tags: [SERIES_TAG, COMPLETED_TAG] })
+      buildItem({ listType: 'tracking', tags: [SERIES_TAG, COMPLETED_TAG] })
     );
     fixture.detectChanges();
 
@@ -618,7 +618,7 @@ describe('ItemDialog', () => {
   });
 
   it('opens the manual series metadata dialog', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watching', tags: [SERIES_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
 
@@ -691,7 +691,7 @@ describe('ItemDialog', () => {
 
   it('saves movie tracker item changes against the movie tracker list', async () => {
     confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watched', watched: true }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'finished', watched: true }));
     fixture.detectChanges();
     component.ngOnInit();
     component['form'].title().value.set('Updated Title');
@@ -704,7 +704,7 @@ describe('ItemDialog', () => {
       expect.objectContaining({ title: 'Updated Title' }),
       'testhash',
       undefined,
-      'watched'
+      'finished'
     );
   });
 
@@ -1072,9 +1072,9 @@ describe('ItemDialog', () => {
 
     await component['onMarkAsWatched']();
 
-    expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined);
+    expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, undefined);
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
-      expect.objectContaining({ listType: 'watched' }),
+      expect.objectContaining({ listType: 'finished' }),
       true
     );
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
@@ -1085,7 +1085,7 @@ describe('ItemDialog', () => {
   it('does not run movie tracker actions when the feature is disabled', async () => {
     TestBed.inject(mainStateToken).setState('collectionFeaturePreferences', {
       ...initialMainState.collectionFeaturePreferences,
-      watched: false,
+      finished: false,
     });
 
     await component['onMarkAsWatched']();
@@ -1118,7 +1118,7 @@ describe('ItemDialog', () => {
 
     expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'watchlist');
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
-      expect.objectContaining({ listType: 'watched' }),
+      expect.objectContaining({ listType: 'finished' }),
       true
     );
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
@@ -1126,8 +1126,8 @@ describe('ItemDialog', () => {
       'own-code',
       'watchlist'
     );
-    expect(component['watchedExists']()).toBe(true);
-    expect(component['watchedHash']()).toBe('newhash');
+    expect(component['finishedExists']()).toBe(true);
+    expect(component['finishedHash']()).toBe('newhash');
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(portal.closeAll).toHaveBeenCalled();
@@ -1142,11 +1142,11 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    await component['onMoveToWatching']();
+    await component['onMoveToTracking']();
 
-    expect(api.addWatchingItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'watchlist');
+    expect(api.addTrackingItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'watchlist');
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
-      expect.objectContaining({ listType: 'watching' }),
+      expect.objectContaining({ listType: 'tracking' }),
       true
     );
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
@@ -1154,8 +1154,8 @@ describe('ItemDialog', () => {
       'own-code',
       'watchlist'
     );
-    expect(component['watchingExists']()).toBe(true);
-    expect(component['watchingHash']()).toBe('newhash');
+    expect(component['trackingExists']()).toBe(true);
+    expect(component['trackingHash']()).toBe('newhash');
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(portal.closeAll).toHaveBeenCalled();
@@ -1170,16 +1170,16 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    await component['onCopyToWatching']();
+    await component['onCopyToTracking']();
 
-    expect(api.addWatchingItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'owner-code');
+    expect(api.addTrackingItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'owner-code');
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
-      expect.objectContaining({ listType: 'watching' }),
+      expect.objectContaining({ listType: 'tracking' }),
       true
     );
     expect(collectionService.deleteCollectionItem).not.toHaveBeenCalled();
-    expect(component['watchingExists']()).toBe(true);
-    expect(component['watchingHash']()).toBe('newhash');
+    expect(component['trackingExists']()).toBe(true);
+    expect(component['trackingHash']()).toBe('newhash');
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
@@ -1188,27 +1188,27 @@ describe('ItemDialog', () => {
   it('does not run series tracker actions when the feature is disabled', async () => {
     TestBed.inject(mainStateToken).setState('collectionFeaturePreferences', {
       ...initialMainState.collectionFeaturePreferences,
-      watching: false,
+      tracking: false,
     });
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'library', tags: [SERIES_TAG] }));
     fixture.detectChanges();
 
-    await component['onCopyToWatching']();
+    await component['onCopyToTracking']();
 
     fixture.componentRef.setInput(
       'collectionItem',
       buildItem({ listType: 'watchlist', ownerShareCode: 'own-code', tags: [SERIES_TAG] })
     );
     fixture.detectChanges();
-    await component['onMoveToWatching']();
+    await component['onMoveToTracking']();
 
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'library', tags: [SERIES_TAG] }));
     fixture.detectChanges();
-    component['watchingExists'].set(true);
-    component['watchingHash'].set('tracker-hash');
-    await component['onRemoveFromWatching']();
+    component['trackingExists'].set(true);
+    component['trackingHash'].set('tracker-hash');
+    await component['onRemoveFromTracking']();
 
-    expect(api.addWatchingItemByExternalId).not.toHaveBeenCalled();
+    expect(api.addTrackingItemByExternalId).not.toHaveBeenCalled();
     expect(api.deleteByExternalId).not.toHaveBeenCalled();
   });
 
@@ -1248,7 +1248,7 @@ describe('ItemDialog', () => {
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
       undefined,
-      'watched'
+      'finished'
     );
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
@@ -1356,7 +1356,7 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'watching', externalIds);
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'tracking', externalIds);
   });
 
   it('loads movie tracker state for watchlist movie on init', () => {
@@ -1364,7 +1364,7 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'watched', undefined);
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'finished', undefined);
   });
 
   it('loads series tracker state for watchlist series on init', () => {
@@ -1372,43 +1372,43 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'watching', undefined);
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'tracking', undefined);
   });
 
-  it('does not load tracker state for library movies on init', () => {
+  it('loads finished twin state for library movies on init', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.collectionItemExists).not.toHaveBeenCalled();
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'finished', undefined);
   });
 
-  it('computes inWatching true when API says series tracker exists', () => {
+  it('computes inTracking true when API says series tracker exists', () => {
     api.collectionItemExists.mockReturnValue(of({ exists: true, hash: 'tracker-hash' }));
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(component['inWatching']()).toBe(true);
-    expect(component['watchingHash']()).toBe('tracker-hash');
+    expect(component['inTracking']()).toBe(true);
+    expect(component['trackingHash']()).toBe('tracker-hash');
   });
 
-  it('computes inWatching false when API says series tracker does not exist', () => {
+  it('computes inTracking false when API says series tracker does not exist', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(component['inWatching']()).toBe(false);
+    expect(component['inTracking']()).toBe(false);
   });
 
-  it('computes inWatched true when API says movie tracker exists', () => {
+  it('computes inFinished true when API says movie tracker exists', () => {
     api.collectionItemExists.mockReturnValue(of({ exists: true, hash: 'movie-hash' }));
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist', tags: [MOVIE_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(component['inWatched']()).toBe(true);
-    expect(component['watchedHash']()).toBe('movie-hash');
+    expect(component['inFinished']()).toBe(true);
+    expect(component['finishedHash']()).toBe('movie-hash');
   });
 
   it('removes from series tracker after confirmation', () => {
@@ -1419,21 +1419,21 @@ describe('ItemDialog', () => {
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
 
-    component['onRemoveFromWatching']();
+    component['onRemoveFromTracking']();
 
     expect(confirm.open).toHaveBeenCalled();
-    expect(api.deleteByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'tracker-hash', undefined, 'watching');
+    expect(api.deleteByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'tracker-hash', undefined, 'tracking');
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
       undefined,
-      'watching'
+      'tracking'
     );
     expect(collectionService.triggerReload).toHaveBeenCalled();
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
     expect(toastState.state.message()).toBe('Toast.DeleteItem');
-    expect(component['watchingExists']()).toBe(false);
-    expect(component['watchingHash']()).toBeUndefined();
+    expect(component['trackingExists']()).toBe(false);
+    expect(component['trackingHash']()).toBeUndefined();
   });
 
   it('does not remove from series tracker when confirmation is declined', () => {
@@ -1443,7 +1443,7 @@ describe('ItemDialog', () => {
     component.ngOnInit();
     confirm.open.mockReturnValue(of(false));
 
-    component['onRemoveFromWatching']();
+    component['onRemoveFromTracking']();
 
     expect(api.deleteByExternalId).not.toHaveBeenCalled();
     expect(collectionService.deleteCollectionItem).not.toHaveBeenCalled();
@@ -1451,19 +1451,19 @@ describe('ItemDialog', () => {
   });
 
   it('opens the watching item dialog from a library series already in watching', async () => {
-    const watchingItem = buildApiItem({ listType: 'watching', tags: [SERIES_TAG], hash: 'watching-hash' });
+    const watchingItem = buildApiItem({ listType: 'tracking', tags: [SERIES_TAG], hash: 'watching-hash' });
     api.collectionItemExists.mockReturnValue(of({ exists: true, hash: 'watching-hash' }));
     api.getMatchedItems.mockReturnValue(of({ items: [watchingItem], total: 1, offset: 0, limit: 1 }));
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
-    await component['onOpenInWatching']();
+    await component['onOpenInTracking']();
 
     expect(api.getMatchedItems).toHaveBeenCalledWith({
       identities: [{ source: 'omdb', id: 'tt1234567' }],
       limit: 1,
-      filters: { listType: 'watching' },
+      filters: { listType: 'tracking' },
     });
     expect(portal.closeAll).toHaveBeenCalled();
     expect(portal.open).toHaveBeenCalledWith(ItemDialog, { collectionItem: watchingItem });

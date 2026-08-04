@@ -136,7 +136,7 @@ describe('ListItem', () => {
     });
     fixture.detectChanges();
 
-    expect(component['watched']()).toBe(true);
+    expect(component['finished']()).toBe(true);
     expect(component['favorite']()).toBe(true);
     expect(component['movie']()).toBe(true);
     expect(component['series']()).toBe(false);
@@ -153,7 +153,7 @@ describe('ListItem', () => {
   it('renders completed status for completed series tracker items', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [SERIES_TAG, COMPLETED_TAG]),
-      listType: 'watching',
+      listType: 'tracking',
     });
     fixture.detectChanges();
 
@@ -172,7 +172,7 @@ describe('ListItem', () => {
   it('renders watched status for movie tracker items', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [MOVIE_TAG]),
-      listType: 'watched',
+      listType: 'finished',
     });
     fixture.detectChanges();
 
@@ -189,7 +189,7 @@ describe('ListItem', () => {
   it('does not render completed status for partial series tracker items', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [SERIES_TAG]),
-      listType: 'watching',
+      listType: 'tracking',
     });
     fixture.detectChanges();
 

@@ -1,4 +1,4 @@
-<div class="collection-container">
+<div class="collection-container collection-container--with-chips">
   <ng-template #floatSearch>
     <libc-autocomplete
       data-test-id="wishlist-search"
@@ -9,7 +9,18 @@
       (userEvent)="onSearchFromUser()"
     />
   </ng-template>
-  <ct-list [listType]="'wishlist'" [dataSource]="wishlistDataSource" [routeFilterKey]="queryFilterKey()">
+  <ct-collection-media-chips
+    [active]="activeMediaChip()"
+    [listRoute]="'wishlist'"
+    [allowedChips]="mediaChips"
+    [booksEnabled]="booksEnabled()"
+  />
+  <ct-list
+    [listType]="'wishlist'"
+    [dataSource]="wishlistDataSource"
+    [routeFilterKey]="queryFilterKey()"
+    [emptyIcon]="emptyIcon()"
+  >
     <span list-empty>
       {{ translations.messageEmptyWishlist() }}<br />
       <a data-test-id="add-first-wishlist-item" href="#" role="button" (click)="onAddWishlist($event)">{{

@@ -53,6 +53,8 @@ export const buildItemFromForm = (
       plot: formValues.plot,
       contentType: 'book',
       favorite: options.favorite ?? false,
+      progressCurrent: formValues.progressCurrent,
+      progressTotal: formValues.progressTotal,
     };
   }
 
@@ -79,6 +81,8 @@ export const buildItemFromForm = (
     plot: formValues.plot,
     contentType: formValues.contentType,
     favorite: options.favorite ?? false,
+    progressCurrent: formValues.progressCurrent,
+    progressTotal: formValues.progressTotal,
   };
 };
 
@@ -96,6 +100,8 @@ export const buildItemFormFromChange = (item: CollectionItemChangeApiModel): Ite
   actors: item.actors,
   plot: item.plot,
   contentType: item.contentType,
+  progressCurrent: item.progressCurrent ?? null,
+  progressTotal: item.progressTotal ?? null,
 });
 
 export const isImdbIdValid = (imdbId: string): boolean => isImdbShapedExternalItemId(imdbId);

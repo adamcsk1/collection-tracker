@@ -57,7 +57,7 @@ export class NewItemDialogService {
     mode: SaveMode,
     options: SaveOptions = {}
   ) {
-    const { targetOwnerShareCode, listType = 'library', watched = false, copyToWatchingAsWatched = false } = options;
+    const { targetOwnerShareCode, listType = 'library', watched = false, copyToTrackingAsWatched = false } = options;
 
     return this.externalMetadata.getSelectedContent(selectedExternalMetadataValue).pipe(
       skip(1),
@@ -73,11 +73,11 @@ export class NewItemDialogService {
           selectedContentIsSeries: boolean;
         } => {
           const selectedContentType = selectedContent.contentType;
-          if (listType === 'watching' && selectedContentType !== 'series') {
-            throw new Error('Series tracker items must be series.');
+          if (listType === 'tracking' && selectedContentType !== 'series' && selectedContentType !== 'book') {
+            throw new Error('Tracking items must be series or books.');
           }
-          if (listType === 'watched' && selectedContentType !== 'movie') {
-            throw new Error('Movie tracker items must be movies.');
+          if (listType === 'finished' && selectedContentType !== 'movie' && selectedContentType !== 'book') {
+            throw new Error('Finished items must be movies or books.');
           }
           if (listType === 'books' && selectedContentType !== 'book') {
             throw new Error('Book tracker items must be books.');
@@ -118,7 +118,7 @@ export class NewItemDialogService {
           collectionItem,
           listType,
           watched,
-          copyToWatchingAsWatched,
+          copyToTrackingAsWatched,
           targetOwnerShareCode,
           selectedContentIsMovie,
           selectedContentIsSeries,
@@ -129,7 +129,7 @@ export class NewItemDialogService {
   }
 
   public saveManual(item: ItemFormModel, mode: SaveMode, options: SaveOptions = {}) {
-    const { targetOwnerShareCode, listType = 'library', watched = false, copyToWatchingAsWatched = false } = options;
+    const { targetOwnerShareCode, listType = 'library', watched = false, copyToTrackingAsWatched = false } = options;
 
     const collectionItemChange = buildItemFromForm(item);
     const selectedContentIsMovie = collectionItemChange.contentType === 'movie';
@@ -137,11 +137,11 @@ export class NewItemDialogService {
 
     return of(collectionItemChange).pipe(
       map((change) => {
-        if (listType === 'watching' && change.contentType !== 'series') {
-          throw new Error('Series tracker items must be series.');
+        if (listType === 'tracking' && change.contentType !== 'series' && change.contentType !== 'book') {
+          throw new Error('Tracking items must be series or books.');
         }
-        if (listType === 'watched' && change.contentType !== 'movie') {
-          throw new Error('Movie tracker items must be movies.');
+        if (listType === 'finished' && change.contentType !== 'movie' && change.contentType !== 'book') {
+          throw new Error('Finished items must be movies or books.');
         }
         if (listType === 'books' && change.contentType !== 'book') {
           throw new Error('Book tracker items must be books.');
@@ -159,7 +159,7 @@ export class NewItemDialogService {
           collectionItem,
           listType,
           watched,
-          copyToWatchingAsWatched,
+          copyToTrackingAsWatched,
           targetOwnerShareCode,
           selectedContentIsMovie,
           selectedContentIsSeries,
@@ -185,7 +185,7 @@ export class NewItemDialogService {
     collectionItem: CollectionItemApiModel;
     listType: CollectionListTypeModel;
     watched: boolean;
-    copyToWatchingAsWatched: boolean;
+    copyToTrackingAsWatched: boolean;
     targetOwnerShareCode: string | undefined;
     selectedContentIsMovie: boolean;
     selectedContentIsSeries: boolean;
@@ -199,7 +199,7 @@ export class NewItemDialogService {
       collectionItem,
       listType,
       watched,
-      copyToWatchingAsWatched,
+      copyToTrackingAsWatched,
       targetOwnerShareCode,
       selectedContentIsMovie,
       selectedContentIsSeries,
@@ -228,9 +228,9 @@ export class NewItemDialogService {
         );
     }
 
-    if (listType === 'library' && copyToWatchingAsWatched && selectedContentIsSeries) {
+    if (listType === 'library' && copyToTrackingAsWatched && selectedContentIsSeries) {
       return this.api
-        .addWatchingItemByExternalId(
+        .addTrackingItemByExternalId(
           collectionItem.externalProvider,
           collectionItem.externalItemId,
           undefined,
@@ -239,7 +239,7 @@ export class NewItemDialogService {
         .pipe(
           mergeMap((response) =>
             this.api
-              .markAllWatchingWatchedByExternalId(collectionItem.externalProvider, collectionItem.externalItemId)
+              .markAllTrackingCompletedByExternalId(collectionItem.externalProvider, collectionItem.externalItemId)
               .pipe(
                 map((watchedResponse) => ({
                   collectionItem,

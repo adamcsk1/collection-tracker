@@ -18,9 +18,9 @@ describe('SeriesSeasonMetadataDialog', () => {
   let fixture: ComponentFixture<SeriesSeasonMetadataDialog>;
   let component: SeriesSeasonMetadataDialog;
   let api: {
-    updateWatchingSeasonsByExternalId: ReturnType<typeof vi.fn>;
-    refreshWatchingSeasonsByExternalId: ReturnType<typeof vi.fn>;
-    deleteWatchingSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    updateTrackingSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    refreshTrackingSeasonsByExternalId: ReturnType<typeof vi.fn>;
+    deleteTrackingSeasonsByExternalId: ReturnType<typeof vi.fn>;
   };
   let portal: { closeTop: ReturnType<typeof vi.fn> };
   let confirm: { open: ReturnType<typeof vi.fn> };
@@ -28,11 +28,11 @@ describe('SeriesSeasonMetadataDialog', () => {
 
   beforeEach(() => {
     api = {
-      updateWatchingSeasonsByExternalId: vi.fn(() => of({ seasons: [{ season: 1, episodes: 2 }] })),
-      refreshWatchingSeasonsByExternalId: vi.fn(() =>
+      updateTrackingSeasonsByExternalId: vi.fn(() => of({ seasons: [{ season: 1, episodes: 2 }] })),
+      refreshTrackingSeasonsByExternalId: vi.fn(() =>
         of({ seasons: [{ season: 1, episodes: 3, titles: ['Pilot'] }], item: { hash: 'refreshed-hash' } })
       ),
-      deleteWatchingSeasonsByExternalId: vi.fn(() => of({ seasons: [], item: { hash: 'metadata-deleted-hash' } })),
+      deleteTrackingSeasonsByExternalId: vi.fn(() => of({ seasons: [], item: { hash: 'metadata-deleted-hash' } })),
     };
     portal = { closeTop: vi.fn() };
     confirm = { open: vi.fn(() => of(true)) };
@@ -100,7 +100,7 @@ describe('SeriesSeasonMetadataDialog', () => {
   });
 
   it('saves sorted metadata with titles and closes', async () => {
-    api.updateWatchingSeasonsByExternalId.mockReturnValue(
+    api.updateTrackingSeasonsByExternalId.mockReturnValue(
       of({ seasons: [{ season: 1, episodes: 2, titles: ['Pilot'] }] })
     );
     const saved = vi.fn();
@@ -114,7 +114,7 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onSave']();
 
-    expect(api.updateWatchingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
+    expect(api.updateTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
       seasons: [
         { season: 1, episodes: 3, titles: ['Pilot'] },
         { season: 2, episodes: 4, titles: [] },
@@ -155,7 +155,7 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRefreshSeriesMetadata']();
 
-    expect(api.refreshWatchingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
+    expect(api.refreshTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['seasons']()).toEqual([{ season: 1, episodes: 3 }]);
     expect(component['getEpisodeTitle'](0, 0)).toBe('Pilot');
     expect(saved).toHaveBeenCalledWith([{ season: 1, episodes: 3, titles: ['Pilot'] }], { hash: 'refreshed-hash' });
@@ -167,7 +167,7 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRefreshSeriesMetadata']();
 
-    expect(api.refreshWatchingSeasonsByExternalId).not.toHaveBeenCalled();
+    expect(api.refreshTrackingSeasonsByExternalId).not.toHaveBeenCalled();
   });
 
   it('removes series metadata after confirmation', async () => {
@@ -176,7 +176,7 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRemoveSeriesMetadata']();
 
-    expect(api.deleteWatchingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
+    expect(api.deleteTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['formModel']().seasons).toEqual([]);
     expect(saved).toHaveBeenCalledWith([], { hash: 'metadata-deleted-hash' });
     expect(toastState.state.message()).toBe('Toast.SeriesMetadataDeleted');
@@ -187,6 +187,6 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRemoveSeriesMetadata']();
 
-    expect(api.deleteWatchingSeasonsByExternalId).not.toHaveBeenCalled();
+    expect(api.deleteTrackingSeasonsByExternalId).not.toHaveBeenCalled();
   });
 });

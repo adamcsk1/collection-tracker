@@ -13,10 +13,10 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
-import { Watched } from './movie-tracker';
+import { Finished } from './movie-tracker';
 
-describe('Watched', () => {
-  let fixture: ComponentFixture<Watched>;
+describe('Finished', () => {
+  let fixture: ComponentFixture<Finished>;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let floatActions: FloatActionsService;
   const portal = { open: vi.fn() };
@@ -34,7 +34,7 @@ describe('Watched', () => {
 
   const createFixture = (searchText = '', queryParams: Record<string, string> = {}) => {
     TestBed.configureTestingModule({
-      imports: [Watched],
+      imports: [Finished],
       providers: [
         provideStore({ ...initialCollectionState, searchText }, collectionStateToken),
         provideStore(initialMainCollectionState, mainCollectionStateToken),
@@ -60,13 +60,13 @@ describe('Watched', () => {
       ],
     });
 
-    TestBed.overrideComponent(Watched, {
+    TestBed.overrideComponent(Finished, {
       set: {
         template: '<ng-template #floatSearch></ng-template>',
       },
     });
 
-    fixture = TestBed.createComponent(Watched);
+    fixture = TestBed.createComponent(Finished);
     collectionState = fixture.debugElement.injector.get(collectionStateToken);
     floatActions = TestBed.inject(FloatActionsService);
     fixture.detectChanges();
@@ -113,7 +113,7 @@ describe('Watched', () => {
     fixture.componentInstance['watchedDataSource'](dataSourceRequest(' dark ', 10, 25));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { search: 'dark', listType: 'watched', orderBy: 'createdAt', orderDirection: 'desc' },
+      { search: 'dark', listType: 'finished', orderBy: 'createdAt', orderDirection: 'desc' },
       10,
       25
     );
@@ -123,7 +123,7 @@ describe('Watched', () => {
     fixture.componentInstance['watchedDataSource'](dataSourceRequest('#action'));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { tags: ['#action'], tagMode: 'all', listType: 'watched', orderBy: 'createdAt', orderDirection: 'desc' },
+      { tags: ['#action'], tagMode: 'all', listType: 'finished', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
@@ -133,7 +133,7 @@ describe('Watched', () => {
     fixture.componentInstance['watchedDataSource'](dataSourceRequest(''));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { listType: 'watched', orderBy: 'createdAt', orderDirection: 'desc' },
+      { listType: 'finished', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
@@ -154,6 +154,6 @@ describe('Watched', () => {
     fixture.componentInstance['onAddWatched'](event);
 
     expect(preventDefaultSpy).toHaveBeenCalled();
-    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { watched: true });
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { finished: true });
   });
 });

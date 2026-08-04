@@ -101,8 +101,8 @@ describe('Statistics component', () => {
       books: true,
       watchlist: true,
       wishlist: false,
-      watched: true,
-      watching: false,
+      finished: true,
+      tracking: false,
     });
     fixture.detectChanges();
 
@@ -113,14 +113,13 @@ describe('Statistics component', () => {
     expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(false);
     expect(hasCard('statistics-summary-completed-tracker-series')).toBe(false);
     expect(hasCard('statistics-summary-books')).toBe(true);
-    expect(hasCard('statistics-summary-books')).toBe(false);
 
     mainState.setState('collectionFeaturePreferences', {
       books: false,
       watchlist: false,
       wishlist: true,
-      watched: false,
-      watching: true,
+      finished: false,
+      tracking: true,
     });
     fixture.detectChanges();
 
@@ -234,13 +233,13 @@ describe('Statistics component', () => {
   it('navigates to movie tracker when clicking the watched movies stat card', () => {
     component['onNavigateToWatched']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watched']);
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'finished']);
   });
 
   it('navigates to series tracker when clicking the watched series stat card', () => {
-    component['onNavigateToWatching']();
+    component['onNavigateToTracking']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watching']);
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'tracking']);
   });
 
   it('navigates to book tracker when clicking the tracked books stat card', () => {
@@ -268,7 +267,7 @@ describe('Statistics component', () => {
   it('navigates to unwatched tracker series when clicking the unwatched tracker series stat card', () => {
     component['onNavigateToUnwatchedTrackerSeries']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watching'], {
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'tracking'], {
       queryParams: { completed: false },
     });
   });
@@ -276,7 +275,7 @@ describe('Statistics component', () => {
   it('navigates to completed tracker series when clicking the completed tracker series stat card', () => {
     component['onNavigateToCompletedTrackerSeries']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watching'], {
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'tracking'], {
       queryParams: { completed: true },
     });
   });

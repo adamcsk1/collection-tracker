@@ -17,6 +17,8 @@ export class CollectionMediaChips {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
 
   public readonly active = input.required<CollectionMediaChip>();
+  public readonly listRoute = input('library');
+  public readonly allowedChips = input<readonly CollectionMediaChip[]>(['all', 'movie', 'series', 'book']);
   public readonly booksEnabled = input(true);
 
   protected readonly translations = {
@@ -27,25 +29,23 @@ export class CollectionMediaChips {
   };
 
   protected readonly chips = computed(() => {
-    const items: { id: CollectionMediaChip; label: string; icon: string; testId: string }[] = [
+    const allowed = new Set(this.allowedChips());
+    const definitions: { id: CollectionMediaChip; label: string; icon: string; testId: string }[] = [
       { id: 'all', label: this.translations.all(), icon: 'local_library', testId: 'collection-media-chip-all' },
       { id: 'movie', label: this.translations.movies(), icon: 'movie', testId: 'collection-media-chip-movie' },
       { id: 'series', label: this.translations.series(), icon: 'live_tv', testId: 'collection-media-chip-series' },
+      { id: 'book', label: this.translations.books(), icon: 'menu_book', testId: 'collection-media-chip-book' },
     ];
-    if (this.booksEnabled()) {
-      items.push({
-        id: 'book',
-        label: this.translations.books(),
-        icon: 'menu_book',
-        testId: 'collection-media-chip-book',
-      });
-    }
-    return items;
+    return definitions.filter((chip) => {
+      if (!allowed.has(chip.id)) return false;
+      if (chip.id === 'book' && !this.booksEnabled()) return false;
+      return true;
+    });
   });
 
   protected onSelect(chip: CollectionMediaChip): void {
     if (chip === this.active()) return;
-    void this.router.navigate(['/collection', 'library'], {
+    void this.router.navigate(['/collection', this.listRoute()], {
       queryParams: { type: chip === 'all' ? null : chip },
       queryParamsHandling: 'merge',
     });

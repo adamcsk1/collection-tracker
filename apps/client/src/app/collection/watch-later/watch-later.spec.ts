@@ -13,7 +13,7 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
-import { Watchlist } from './watchlist';
+import { Watchlist } from './watch-later';
 
 describe('Watchlist', () => {
   let fixture: ComponentFixture<Watchlist>;

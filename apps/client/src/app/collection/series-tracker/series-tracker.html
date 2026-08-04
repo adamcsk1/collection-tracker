@@ -1,24 +1,31 @@
-<div class="collection-container">
+<div class="collection-container collection-container--with-chips">
   <ng-template #floatSearch>
     <libc-autocomplete
-      data-test-id="watching-search"
-      [placeholder]="translations.placeholderSearchInWatching()"
+      data-test-id="tracking-search"
+      [placeholder]="translations.placeholderSearchInTracking()"
       [formField]="searchTextField"
       [showReset]="true"
       [suggestionListPlacement]="'top'"
       (userEvent)="onSearchFromUser()"
     />
   </ng-template>
+  <ct-collection-media-chips
+    [active]="activeMediaChip()"
+    [listRoute]="'tracking'"
+    [allowedChips]="mediaChips"
+    [booksEnabled]="booksEnabled()"
+  />
   <ct-list
-    [listType]="'watching'"
-    [dataSource]="watchingDataSource"
+    [listType]="'tracking'"
+    [dataSource]="trackingDataSource"
     [routeSearchText]="querySearch()"
     [routeFilterKey]="queryFilterKey()"
+    [emptyIcon]="emptyIcon()"
   >
     <span list-empty>
-      {{ translations.messageEmptyWatching() }}<br />
-      <a data-test-id="add-first-watching-item" href="#" role="button" (click)="onAddWatching($event)">{{
-        translations.messageAddFirstWatching()
+      {{ translations.messageEmptyTracking() }}<br />
+      <a data-test-id="add-first-tracking-item" href="#" role="button" (click)="onAddTracking($event)">{{
+        translations.messageAddFirstTracking()
       }}</a>
     </span>
   </ct-list>

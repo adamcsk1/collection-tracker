@@ -82,8 +82,8 @@ describe('MainService', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      watched: false,
-      watching: true,
+      finished: false,
+      tracking: true,
     };
     webstorage.getItem.mockImplementation((key: string) =>
       key === STORAGE_COLLECTION_FEATURE_PREFERENCES ? JSON.stringify(preferences) : null
@@ -100,8 +100,8 @@ describe('MainService', () => {
       books: false,
       wishlist: true,
       watchlist: false,
-      watched: true,
-      watching: false,
+      finished: true,
+      tracking: false,
     };
     webstorage.getItem.mockImplementation((key: string, storage?: string) => {
       if (key === STORAGE_SENSITIVE_DATA_STORAGE) return 'session';

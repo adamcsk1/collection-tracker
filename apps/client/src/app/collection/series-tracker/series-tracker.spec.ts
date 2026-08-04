@@ -13,10 +13,10 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
-import { Watching } from './series-tracker';
+import { Tracking } from './series-tracker';
 
-describe('Watching', () => {
-  let fixture: ComponentFixture<Watching>;
+describe('Tracking', () => {
+  let fixture: ComponentFixture<Tracking>;
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
   let floatActions: FloatActionsService;
   const portal = { open: vi.fn() };
@@ -34,7 +34,7 @@ describe('Watching', () => {
 
   const createFixture = (searchText = '', queryParams: Record<string, string> = {}) => {
     TestBed.configureTestingModule({
-      imports: [Watching],
+      imports: [Tracking],
       providers: [
         provideStore({ ...initialCollectionState, searchText }, collectionStateToken),
         provideStore(initialMainCollectionState, mainCollectionStateToken),
@@ -60,13 +60,13 @@ describe('Watching', () => {
       ],
     });
 
-    TestBed.overrideComponent(Watching, {
+    TestBed.overrideComponent(Tracking, {
       set: {
         template: '<ng-template #floatSearch></ng-template>',
       },
     });
 
-    fixture = TestBed.createComponent(Watching);
+    fixture = TestBed.createComponent(Tracking);
     collectionState = fixture.debugElement.injector.get(collectionStateToken);
     floatActions = TestBed.inject(FloatActionsService);
     fixture.detectChanges();
@@ -110,33 +110,33 @@ describe('Watching', () => {
   });
 
   it('searches series tracker items by standard text', () => {
-    fixture.componentInstance['watchingDataSource'](dataSourceRequest(' dark ', 10, 25));
+    fixture.componentInstance['trackingDataSource'](dataSourceRequest(' dark ', 10, 25));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { search: 'dark', listType: 'watching', orderBy: 'createdAt', orderDirection: 'desc' },
+      { search: 'dark', listType: 'tracking', orderBy: 'createdAt', orderDirection: 'desc' },
       10,
       25
     );
   });
 
   it('searches series tracker items by tag', () => {
-    fixture.componentInstance['watchingDataSource'](dataSourceRequest('#drama'));
+    fixture.componentInstance['trackingDataSource'](dataSourceRequest('#drama'));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { tags: ['#drama'], tagMode: 'all', listType: 'watching', orderBy: 'createdAt', orderDirection: 'desc' },
+      { tags: ['#drama'], tagMode: 'all', listType: 'tracking', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
   });
 
   it('treats old virtual unwatched search as a custom tag filter', () => {
-    fixture.componentInstance['watchingDataSource'](dataSourceRequest('#unwatched'));
+    fixture.componentInstance['trackingDataSource'](dataSourceRequest('#unwatched'));
 
     expect(api.searchItems).toHaveBeenCalledWith(
       {
         tags: ['#unwatched'],
         tagMode: 'all',
-        listType: 'watching',
+        listType: 'tracking',
         orderBy: 'createdAt',
         orderDirection: 'desc',
       },
@@ -149,20 +149,20 @@ describe('Watching', () => {
     TestBed.resetTestingModule();
     createFixture('', { completed: 'false' });
 
-    fixture.componentInstance['watchingDataSource'](dataSourceRequest(''));
+    fixture.componentInstance['trackingDataSource'](dataSourceRequest(''));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { completed: false, listType: 'watching', orderBy: 'createdAt', orderDirection: 'desc' },
+      { completed: false, listType: 'tracking', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
   });
 
   it('searches series tracker items without a text filter by default', () => {
-    fixture.componentInstance['watchingDataSource'](dataSourceRequest(''));
+    fixture.componentInstance['trackingDataSource'](dataSourceRequest(''));
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { listType: 'watching', orderBy: 'createdAt', orderDirection: 'desc' },
+      { listType: 'tracking', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
@@ -180,9 +180,9 @@ describe('Watching', () => {
     const event = new Event('click');
     const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
-    fixture.componentInstance['onAddWatching'](event);
+    fixture.componentInstance['onAddTracking'](event);
 
     expect(preventDefaultSpy).toHaveBeenCalled();
-    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { watching: true });
+    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, { tracking: true });
   });
 });

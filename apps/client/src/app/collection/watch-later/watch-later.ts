@@ -19,7 +19,9 @@ import { FloatActionsService } from '../../main/float-actions/float-actions-serv
 import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
+import { getMediaChipEmptyIcon } from '../list/list-const';
 import { List } from '../list/list';
+import { CollectionMediaChip, CollectionMediaChips } from '../media-chips/media-chips';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
 import { setupCollectionAiSearch } from '../utils/collection-ai-search-util';
@@ -32,7 +34,7 @@ import { map } from 'rxjs';
 
 @Component({
   selector: 'ct-watchlist',
-  imports: [List, FormField, Autocomplete],
+  imports: [List, FormField, Autocomplete, CollectionMediaChips],
   templateUrl: './watch-later.html',
   styleUrl: '../collection.css',
   providers: [
@@ -63,6 +65,14 @@ export class Watchlist {
     }
   );
   protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
+  protected readonly booksEnabled = computed(() => this.mainState.state.collectionFeaturePreferences().books);
+  protected readonly mediaChips: readonly CollectionMediaChip[] = ['all', 'movie', 'series', 'book'];
+  protected readonly activeMediaChip = computed((): CollectionMediaChip => {
+    const type = this.queryFilters().type;
+    if (type === 'movie' || type === 'series' || type === 'book') return type;
+    return 'all';
+  });
+  protected readonly emptyIcon = computed(() => getMediaChipEmptyIcon(this.activeMediaChip()));
   protected readonly forceStandardSearch = computed(
     () => !!this.queryFilterKey() || this.collectionState.state.forceStandardSearch()
   );

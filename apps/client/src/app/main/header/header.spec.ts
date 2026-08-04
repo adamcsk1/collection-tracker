@@ -43,7 +43,7 @@ describe('Header component', () => {
   });
 
   it('uses watched as the title for watched page', () => {
-    routerEvents.next(new NavigationEnd(1, '/collection/watched', '/collection/watched'));
+    routerEvents.next(new NavigationEnd(1, '/collection/finished', '/collection/finished'));
 
     expect(component['currentNavTitle']()).toBe('Watched');
   });

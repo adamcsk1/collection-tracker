@@ -118,8 +118,8 @@ describe('SettingsService', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      watched: true,
-      watching: false,
+      finished: true,
+      tracking: false,
     };
     mainState.setState('sensitiveDataStorage', 'session');
     mainState.setState('collectionFeaturePreferences', preferences);
@@ -176,15 +176,15 @@ describe('SettingsService', () => {
       books: true,
       wishlist: true,
       watchlist: true,
-      watched: true,
-      watching: true,
+      finished: true,
+      tracking: true,
     };
     const apiPreferences = {
       books: false,
       wishlist: false,
       watchlist: true,
-      watched: false,
-      watching: true,
+      finished: false,
+      tracking: true,
     };
     mainState.setState('collectionFeaturePreferences', cachedPreferences);
     api.getUserSettings.mockReturnValue(of({ collectionFeaturePreferences: apiPreferences }));
@@ -204,8 +204,8 @@ describe('SettingsService', () => {
       books: false,
       wishlist: false,
       watchlist: false,
-      watched: false,
-      watching: false,
+      finished: false,
+      tracking: false,
     });
 
     service.preloadUserSettings().subscribe();
@@ -237,8 +237,8 @@ describe('SettingsService', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      watched: false,
-      watching: true,
+      finished: false,
+      tracking: true,
     };
 
     service.storeCollectionFeaturePreferences(preferences);
@@ -257,8 +257,8 @@ describe('SettingsService', () => {
       books: false,
       wishlist: true,
       watchlist: false,
-      watched: true,
-      watching: false,
+      finished: true,
+      tracking: false,
     };
     mainState.setState('sensitiveDataStorage', 'session');
 
@@ -282,8 +282,8 @@ describe('SettingsService', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      watched: true,
-      watching: true,
+      finished: true,
+      tracking: true,
     };
     const secondPreferences = { ...firstPreferences, watchlist: false };
     sharedApi.updateUserSettings.mockReturnValueOnce(firstUpdate).mockReturnValueOnce(of(void 0));
@@ -304,8 +304,8 @@ describe('SettingsService', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      watched: true,
-      watching: true,
+      finished: true,
+      tracking: true,
     };
     const secondPreferences = { ...firstPreferences, watchlist: false };
     sharedApi.updateUserSettings

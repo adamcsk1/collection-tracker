@@ -16,7 +16,7 @@ export const buildStandardSearchFilters = (
 export const buildCollectionRouteFilters = (queryParams: QueryParamReader): Partial<CollectionItemFiltersApiModel> => {
   const type = queryParams.get('type');
   const favorite = queryParams.get('favorite');
-  const watched = queryParams.get('watched');
+  const watched = queryParams.get('finished');
   const completed = queryParams.get('completed');
 
   return {

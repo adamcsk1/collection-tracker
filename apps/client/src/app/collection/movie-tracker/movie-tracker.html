@@ -1,7 +1,7 @@
-<div class="collection-container">
+<div class="collection-container collection-container--with-chips">
   <ng-template #floatSearch>
     <libc-autocomplete
-      data-test-id="watched-search"
+      data-test-id="finished-search"
       [placeholder]="translations.placeholderSearchInWatched()"
       [formField]="searchTextField"
       [showReset]="true"
@@ -9,15 +9,22 @@
       (userEvent)="onSearchFromUser()"
     />
   </ng-template>
+  <ct-collection-media-chips
+    [active]="activeMediaChip()"
+    [listRoute]="'finished'"
+    [allowedChips]="mediaChips"
+    [booksEnabled]="booksEnabled()"
+  />
   <ct-list
-    [listType]="'watched'"
+    [listType]="'finished'"
     [dataSource]="watchedDataSource"
     [routeSearchText]="querySearch()"
     [routeFilterKey]="queryFilterKey()"
+    [emptyIcon]="emptyIcon()"
   >
     <span list-empty>
       {{ translations.messageEmptyWatched() }}<br />
-      <a data-test-id="add-first-watched-item" href="#" role="button" (click)="onAddWatched($event)">{{
+      <a data-test-id="add-first-finished-item" href="#" role="button" (click)="onAddWatched($event)">{{
         translations.messageAddFirstWatched()
       }}</a>
     </span>

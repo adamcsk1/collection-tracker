@@ -184,11 +184,11 @@ export class Statistics implements AfterViewInit {
   }
 
   protected onNavigateToWatched(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'watched']));
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'finished']));
   }
 
-  protected onNavigateToWatching(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'watching']));
+  protected onNavigateToTracking(): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'tracking']));
   }
 
   protected onNavigateToBooks(): void {
@@ -208,11 +208,11 @@ export class Statistics implements AfterViewInit {
   }
 
   protected onNavigateToUnwatchedTrackerSeries(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'watching'], { queryParams: { completed: false } }));
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'tracking'], { queryParams: { completed: false } }));
   }
 
   protected onNavigateToCompletedTrackerSeries(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'watching'], { queryParams: { completed: true } }));
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'tracking'], { queryParams: { completed: true } }));
   }
 
   private closeAfterNavigation(navigation: Promise<boolean>): void {

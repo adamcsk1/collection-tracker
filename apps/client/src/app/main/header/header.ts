@@ -43,10 +43,10 @@ export class Header {
     if (currentPath.startsWith('/collection/wishlist')) {
       return 'Wishlist';
     }
-    if (currentPath.startsWith('/collection/watching')) {
-      return 'Watching';
+    if (currentPath.startsWith('/collection/tracking')) {
+      return 'Tracking';
     }
-    if (currentPath.startsWith('/collection/watched')) {
+    if (currentPath.startsWith('/collection/finished')) {
       return 'Watched';
     }
     if (currentPath.startsWith('/collection/books')) {

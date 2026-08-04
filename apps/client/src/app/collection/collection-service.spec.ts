@@ -189,19 +189,19 @@ describe('CollectionService', () => {
   it('replaces the old keyed item with the backend-returned item when legacy IMDb ID changes', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('target'),
-      { ...buildCollectionItem('target'), listType: 'watching' },
+      { ...buildCollectionItem('target'), listType: 'tracking' },
     ]);
 
     service.updateCollectionItem(
-      { ...buildCollectionItem('target'), listType: 'watching' },
-      { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'watching' },
+      { ...buildCollectionItem('target'), listType: 'tracking' },
+      { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'tracking' },
       undefined,
-      'watching'
+      'tracking'
     );
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('target'),
-      { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'watching' },
+      { ...buildCollectionItem('updated'), IMDbId: 'tt-updated', listType: 'tracking' },
     ]);
   });
 });

@@ -23,6 +23,7 @@ import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
 import { ItemDialog } from '../item/item-dialog/item-dialog';
 import { List } from '../list/list';
+import { getMediaChipEmptyIcon } from '../list/list-const';
 import { CollectionMediaChip, CollectionMediaChips } from '../media-chips/media-chips';
 import { AiSearchService } from '../search/ai-search-service';
 import { setupCollectionAiSearch } from '../utils/collection-ai-search-util';
@@ -71,6 +72,7 @@ export class CollectionLibrary {
     if (type === 'movie' || type === 'series' || type === 'book') return type;
     return 'all';
   });
+  protected readonly emptyIcon = computed(() => getMediaChipEmptyIcon(this.activeMediaChip()));
   protected readonly forceStandardSearch = computed(
     () => !!this.querySearch() || !!this.queryFilterKey() || this.collectionState.state.forceStandardSearch()
   );

@@ -40,28 +40,28 @@
       {{ translations.watchlist() }}
     </a>
   }
-  @if (featurePreferences().watching) {
+  @if (featurePreferences().tracking) {
     <a
-      data-test-id="nav-watching"
-      [routerLink]="['/', 'collection', 'watching']"
+      data-test-id="nav-tracking"
+      [routerLink]="['/', 'collection', 'tracking']"
       routerLinkActive="active"
       class="highlight"
       (click)="onClose()"
     >
       <i class="material-icons">format_list_numbered</i>
-      {{ translations.watching() }}
+      {{ translations.tracking() }}
     </a>
   }
-  @if (featurePreferences().watched) {
+  @if (featurePreferences().finished) {
     <a
-      data-test-id="nav-watched"
-      [routerLink]="['/', 'collection', 'watched']"
+      data-test-id="nav-finished"
+      [routerLink]="['/', 'collection', 'finished']"
       routerLinkActive="active"
       class="highlight"
       (click)="onClose()"
     >
       <i class="material-icons">check_circle</i>
-      {{ translations.watched() }}
+      {{ translations.finished() }}
     </a>
   }
   <a

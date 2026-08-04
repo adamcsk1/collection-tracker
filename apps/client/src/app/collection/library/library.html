@@ -16,6 +16,7 @@
     [routeFilterKey]="queryFilterKey()"
     [dataSource]="collectionDataSource"
     [listType]="'library'"
+    [emptyIcon]="emptyIcon()"
     [showAddButton]="activeMediaChip() !== 'book' || booksEnabled()"
     (randomPick)="onRandomPick()"
     (showFunctions)="onShowFunctions()"

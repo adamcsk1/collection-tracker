@@ -15,6 +15,15 @@
     >
       <ng-container tabs-first-content>
         <form id="new-item-search-form" role="form" [formRoot]="searchForm">
+          @if (showContentTypeSelect()) {
+            <libc-select
+              data-test-id="new-item-search-content-type"
+              [label]="translations.type()"
+              [options]="contentTypeOptions()"
+              [value]="selectedAddContentType()"
+              (valueChange)="onAddContentTypeChange($event)"
+            />
+          }
           <libc-input
             data-test-id="new-item-search"
             [label]="translations.search()"
@@ -88,7 +97,7 @@
           <libc-input
             data-test-id="new-item-manual-imdb-id"
             [mandatory]="true"
-            [label]="books() ? translations.isbn() : translations.labelIMDbId()"
+            [label]="isBookAdd() ? translations.isbn() : translations.labelIMDbId()"
             [formField]="manualForm.IMDbId"
           >
             <ng-container errors>
@@ -102,7 +111,7 @@
                 {{ translations.validationISBN() }}
               }
               @if (manualFormErrors.IMDbId.knownIMDbId()) {
-                {{ books() ? translations.validationKnownISBN() : translations.validationKnownIMDbId() }}
+                {{ isBookAdd() ? translations.validationKnownISBN() : translations.validationKnownIMDbId() }}
               }
             </ng-container>
           </libc-input>
@@ -117,9 +126,10 @@
               [label]="translations.type()"
               [formField]="manualForm.contentType"
               [options]="contentTypeOptions()"
+              (valueChange)="onAddContentTypeChange($event)"
             />
           }
-          @if (!books()) {
+          @if (!isBookAdd()) {
             <libc-input
               data-test-id="new-item-manual-rate"
               [label]="translations.labelIMDbRate()"
@@ -175,7 +185,7 @@
           }
           <libc-autocomplete
             data-test-id="new-item-manual-genre"
-            [label]="books() ? translations.subjects() : translations.genre()"
+            [label]="isBookAdd() ? translations.subjects() : translations.genre()"
             [hint]="translations.hintSeparateGenres()"
             [formField]="manualForm.genreText"
             ctGenreSuggestions
@@ -189,13 +199,13 @@
           />
           <libc-input
             data-test-id="new-item-manual-actors"
-            [label]="books() ? translations.authors() : translations.actors()"
+            [label]="isBookAdd() ? translations.authors() : translations.actors()"
             [formField]="manualForm.actors"
           />
           <libc-textarea
             data-test-id="new-item-manual-plot"
             class="full-width"
-            [label]="books() ? translations.description() : translations.plot()"
+            [label]="isBookAdd() ? translations.description() : translations.plot()"
             [formField]="manualForm.plot"
             [rows]="4"
           />
@@ -280,11 +290,11 @@
         [label]="translations.collectionItemWatched()"
       />
     }
-    @if (showCopyToWatchingCheckbox()) {
+    @if (showCopyToTrackingCheckbox()) {
       <libc-checkbox
         data-test-id="new-item-copy-to-watching-as-watched"
-        [formField]="searchForm.copyToWatchingAsWatched"
-        [label]="translations.copyToWatchingAsWatched()"
+        [formField]="searchForm.copyToTrackingAsWatched"
+        [label]="translations.copyToTrackingAsWatched()"
       />
     }
   </ng-container>

@@ -11,7 +11,7 @@ import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
-import { CollectionItemApiModel, WatchingSeasonMetadataModel } from '@shared/models/api-model';
+import { CollectionItemApiModel, TrackingSeasonMetadataModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { firstValueFrom } from 'rxjs';
 
@@ -35,8 +35,8 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   public readonly imdbId = input<string | undefined>();
   public readonly externalProvider = input(DEFAULT_EXTERNAL_METADATA_PROVIDER);
   public readonly externalItemId = input<string | undefined>();
-  public readonly initialSeasons = input<WatchingSeasonMetadataModel[]>([]);
-  public readonly saved = input<(seasons: WatchingSeasonMetadataModel[], item?: CollectionItemApiModel) => void>(
+  public readonly initialSeasons = input<TrackingSeasonMetadataModel[]>([]);
+  public readonly saved = input<(seasons: TrackingSeasonMetadataModel[], item?: CollectionItemApiModel) => void>(
     () => undefined
   );
   public readonly closed = input<() => void>(() => this.portal.closeTop());
@@ -55,7 +55,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     validation: computed(() => this.ngxSignalTranslate.translate('Validation.SeriesMetadata')),
     noMetadata: computed(() => this.ngxSignalTranslate.translate('Message.SetSeasonMetadata')),
   };
-  protected readonly formModel = signal<{ seasons: WatchingSeasonMetadataModel[] }>({ seasons: [] });
+  protected readonly formModel = signal<{ seasons: TrackingSeasonMetadataModel[] }>({ seasons: [] });
   protected readonly form = form(this.formModel, (metadata) => {
     applyEach(metadata.seasons, (season) => {
       min(season.season, 1, { error: { kind: 'min' } });
@@ -72,7 +72,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   );
   protected readonly valid = computed(() => !this.form().invalid());
 
-  private hasValidUniqueSeasons(seasons: WatchingSeasonMetadataModel[]): boolean {
+  private hasValidUniqueSeasons(seasons: TrackingSeasonMetadataModel[]): boolean {
     const seasonNumbers = new Set<number>();
     for (const season of seasons) {
       if (!Number.isInteger(season.season) || season.season < 1 || season.season > MAX_SERIES_TRACKER_SEASONS)
@@ -93,7 +93,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     return this.externalItemId() ?? this.imdbId() ?? '';
   }
 
-  private resetForm(seasons: WatchingSeasonMetadataModel[]): void {
+  private resetForm(seasons: TrackingSeasonMetadataModel[]): void {
     this.form().reset({
       seasons: seasons.map((season) => ({
         season: season.season,
@@ -142,7 +142,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
       .seasons.map((season) => ({ season: season.season, episodes: season.episodes, titles: season.titles }))
       .sort((firstSeason, secondSeason) => firstSeason.season - secondSeason.season);
     const result = await firstValueFrom(
-      this.api.updateWatchingSeasonsByExternalId(this.externalProvider(), this.providerItemId(), { seasons })
+      this.api.updateTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId(), { seasons })
     );
     this.saved()(result.seasons, result.item);
     this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataSaved'));
@@ -162,7 +162,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     this.spinnerLoadingState.setState('show', true);
     try {
       const result = await firstValueFrom(
-        this.api.refreshWatchingSeasonsByExternalId(this.externalProvider(), this.providerItemId())
+        this.api.refreshTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId())
       );
       this.resetForm(result.seasons);
       this.saved()(result.seasons, result.item);
@@ -179,7 +179,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     if (!confirmed) return;
 
     const result = await firstValueFrom(
-      this.api.deleteWatchingSeasonsByExternalId(this.externalProvider(), this.providerItemId())
+      this.api.deleteTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId())
     );
     this.resetForm(result.seasons);
     this.saved()(result.seasons, result.item);

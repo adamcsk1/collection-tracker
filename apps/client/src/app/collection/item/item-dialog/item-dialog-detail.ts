@@ -21,9 +21,11 @@ export class ItemDialogDetail {
   public readonly isShared = input.required<boolean>();
   public readonly library = input.required<string>();
   public readonly detailTags = input.required<string[]>();
-  public readonly watching = input.required<boolean>();
+  public readonly tracking = input.required<boolean>();
   public readonly book = input.required<boolean>();
   public readonly isbn = input.required<string>();
   public readonly episodeProgressText = input.required<string>();
+  public readonly showBookProgress = input(false);
+  public readonly bookProgressText = input('');
   public readonly posterImageError = output<void>();
 }

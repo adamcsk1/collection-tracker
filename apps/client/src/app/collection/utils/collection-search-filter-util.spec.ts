@@ -11,9 +11,9 @@ describe('buildStandardSearchFilters', () => {
   });
 
   it('builds text search filters', () => {
-    expect(buildStandardSearchFilters(' dark ', 'watching')).toEqual({
+    expect(buildStandardSearchFilters(' dark ', 'tracking')).toEqual({
       search: 'dark',
-      listType: 'watching',
+      listType: 'tracking',
     });
   });
 
@@ -26,10 +26,10 @@ describe('buildStandardSearchFilters', () => {
   });
 
   it('treats old system tag names as custom tag searches', () => {
-    expect(buildStandardSearchFilters('#completed', 'watching')).toEqual({
+    expect(buildStandardSearchFilters('#completed', 'tracking')).toEqual({
       tags: ['#completed'],
       tagMode: 'all',
-      listType: 'watching',
+      listType: 'tracking',
     });
   });
 
@@ -48,7 +48,7 @@ describe('buildCollectionRouteFilters', () => {
     const queryParams = new Map([
       ['type', 'series'],
       ['favorite', 'true'],
-      ['watched', 'false'],
+      ['finished', 'false'],
       ['completed', 'true'],
     ]);
 

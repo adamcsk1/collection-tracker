@@ -22,8 +22,8 @@ export class SettingsFeatures {
     message: computed(() => this.ngxSignalTranslate.translate('Message.Features')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
     watchlist: computed(() => this.ngxSignalTranslate.translate('Watchlist')),
-    watching: computed(() => this.ngxSignalTranslate.translate('Watching')),
-    watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
+    tracking: computed(() => this.ngxSignalTranslate.translate('Tracking')),
+    finished: computed(() => this.ngxSignalTranslate.translate('Finished')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
   };
   protected readonly formModel = signal<CollectionFeaturePreferencesModel>(DEFAULT_COLLECTION_FEATURE_PREFERENCES);

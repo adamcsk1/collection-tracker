@@ -76,7 +76,7 @@
             <span class="stat-label">{{ translations.wishlist() }}</span>
           </button>
         }
-        @if (featurePreferences().watched) {
+        @if (featurePreferences().finished) {
           <button
             data-test-id="statistics-summary-watched-movies"
             class="card card-interactive stat-card"
@@ -87,11 +87,11 @@
             <span class="stat-label">{{ translations.watchedMovies() }}</span>
           </button>
         }
-        @if (featurePreferences().watching) {
+        @if (featurePreferences().tracking) {
           <button
             data-test-id="statistics-summary-watched-series"
             class="card card-interactive stat-card"
-            (click)="onNavigateToWatching()"
+            (click)="onNavigateToTracking()"
             [attr.aria-label]="translations.watchedSeries() + ': ' + summary.watchedSeries"
           >
             <span class="stat-value">{{ summary.watchedSeries }}</span>
@@ -127,7 +127,7 @@
           <span class="stat-value">{{ summary.unwatchedLibrarySeries }}</span>
           <span class="stat-label">{{ translations.unwatchedLibrarySeries() }}</span>
         </button>
-        @if (featurePreferences().watching) {
+        @if (featurePreferences().tracking) {
           <button
             data-test-id="statistics-summary-unwatched-tracker-series"
             class="card card-interactive stat-card"

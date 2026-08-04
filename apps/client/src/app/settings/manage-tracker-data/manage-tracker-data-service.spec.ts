@@ -22,7 +22,7 @@ describe('ManageTrackerDataService', () => {
     markAllSeriesAsWatched: ReturnType<typeof vi.fn>;
     markAllSeriesAsUnwatched: ReturnType<typeof vi.fn>;
     deleteAllWatchedItems: ReturnType<typeof vi.fn>;
-    deleteAllWatchingItems: ReturnType<typeof vi.fn>;
+    deleteAllTrackingItems: ReturnType<typeof vi.fn>;
     deleteAllBooksItems: ReturnType<typeof vi.fn>;
   };
   let confirm: { ifConfirmed: ReturnType<typeof vi.fn> };
@@ -35,7 +35,7 @@ describe('ManageTrackerDataService', () => {
       markAllSeriesAsWatched: vi.fn(() => of({ trackedCount: 1, progressChangedCount: 3 })),
       markAllSeriesAsUnwatched: vi.fn(() => of({ changedCount: 2 })),
       deleteAllWatchedItems: vi.fn(() => of({ changedCount: 2 })),
-      deleteAllWatchingItems: vi.fn(() => of({ changedCount: 3 })),
+      deleteAllTrackingItems: vi.fn(() => of({ changedCount: 3 })),
       deleteAllBooksItems: vi.fn(() => of({ changedCount: 4 })),
     };
     confirm = { ifConfirmed: vi.fn(() => of(true)) };
@@ -150,7 +150,7 @@ describe('ManageTrackerDataService', () => {
     service.removeAllTrackedSeriesData();
 
     expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedSeriesData');
-    expect(api.deleteAllWatchingItems).toHaveBeenCalledTimes(1);
+    expect(api.deleteAllTrackingItems).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.RemovedTrackedSeriesData');
@@ -177,10 +177,10 @@ describe('ManageTrackerDataService', () => {
   });
 
   it('shows error toast when removing tracked series data fails', () => {
-    api.deleteAllWatchingItems = vi.fn(() => throwError(() => new Error('fail')));
+    api.deleteAllTrackingItems = vi.fn(() => throwError(() => new Error('fail')));
     service.removeAllTrackedSeriesData();
 
-    expect(api.deleteAllWatchingItems).toHaveBeenCalledTimes(1);
+    expect(api.deleteAllTrackingItems).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.RemovingTrackedSeriesDataWithErrors');
     expect(collectionService.triggerReload).not.toHaveBeenCalled();

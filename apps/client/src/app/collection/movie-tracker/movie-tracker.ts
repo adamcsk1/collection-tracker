@@ -21,7 +21,9 @@ import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
+import { getMediaChipEmptyIcon } from '../list/list-const';
 import { List } from '../list/list';
+import { CollectionMediaChip, CollectionMediaChips } from '../media-chips/media-chips';
 import { AiSearchService } from '../search/ai-search-service';
 import { setupCollectionAiSearch } from '../utils/collection-ai-search-util';
 import {
@@ -32,16 +34,16 @@ import {
 
 @Component({
   selector: 'ct-movie-tracker',
-  imports: [List, FormField, Autocomplete],
+  imports: [List, FormField, Autocomplete, CollectionMediaChips],
   templateUrl: './movie-tracker.html',
   styleUrl: '../collection.css',
   providers: [
     { provide: AutocompleteService, useClass: SearchSuggestionService },
-    { provide: searchSuggestionListTypeToken, useValue: 'watched' },
+    { provide: searchSuggestionListTypeToken, useValue: 'finished' },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Watched {
+export class Finished {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
   private readonly aiSearch = inject(AiSearchService);
@@ -66,15 +68,23 @@ export class Watched {
     }
   );
   protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
+  protected readonly booksEnabled = computed(() => this.mainState.state.collectionFeaturePreferences().books);
+  protected readonly mediaChips: readonly CollectionMediaChip[] = ['all', 'movie', 'book'];
+  protected readonly activeMediaChip = computed((): CollectionMediaChip => {
+    const type = this.queryFilters().type;
+    if (type === 'movie' || type === 'book') return type;
+    return 'all';
+  });
+  protected readonly emptyIcon = computed(() => getMediaChipEmptyIcon(this.activeMediaChip()));
   protected readonly forceStandardSearch = computed(
     () => !!this.querySearch() || !!this.queryFilterKey() || this.collectionState.state.forceStandardSearch()
   );
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
   protected readonly translations = {
-    messageEmptyWatched: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWatched')),
-    messageAddFirstWatched: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWatched')),
-    placeholderSearchInWatched: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInWatched')),
+    messageEmptyWatched: computed(() => this.ngxSignalTranslate.translate('Message.EmptyFinished')),
+    messageAddFirstWatched: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstFinished')),
+    placeholderSearchInWatched: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInFinished')),
     placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
   };
   private readonly aiSearchSetup = setupCollectionAiSearch({
@@ -84,7 +94,7 @@ export class Watched {
     portal: this.portal,
     floatActions: this.floatActions,
     destroyRef: this.destroyRef,
-    listType: 'watched',
+    listType: 'finished',
     queryFilters: this.queryFilters,
     forceStandardSearch: this.forceStandardSearch,
     placeholder: this.translations.placeholderReply,
@@ -109,6 +119,6 @@ export class Watched {
 
   protected onAddWatched(event: Event): void {
     event.preventDefault();
-    this.portal.open(NewItemDialog, { watched: true });
+    this.portal.open(NewItemDialog, { finished: true });
   }
 }

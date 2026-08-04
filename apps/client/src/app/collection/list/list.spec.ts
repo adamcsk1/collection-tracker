@@ -292,6 +292,7 @@ describe('List', () => {
       watching: false,
       watched: false,
       books: false,
+      allowedContentTypes: ['movie', 'series', 'book'],
     });
   });
 
@@ -307,11 +308,12 @@ describe('List', () => {
       watching: false,
       watched: false,
       books: false,
+      allowedContentTypes: ['movie', 'series', 'book'],
     });
   });
 
   it('opens the new item dialog in series tracker mode on the series tracker page', () => {
-    fixture.componentRef.setInput('listType', 'watching');
+    fixture.componentRef.setInput('listType', 'tracking');
     fixture.detectChanges();
 
     component['onAddNew']();
@@ -322,6 +324,7 @@ describe('List', () => {
       watching: true,
       watched: false,
       books: false,
+      allowedContentTypes: ['series', 'book'],
     });
   });
 
@@ -446,7 +449,7 @@ describe('List', () => {
   });
 
   it('opens the new item dialog in movie tracker mode', () => {
-    fixture.componentRef.setInput('listType', 'watched');
+    fixture.componentRef.setInput('listType', 'finished');
 
     component['onAddNew']();
 
@@ -456,6 +459,7 @@ describe('List', () => {
       watching: false,
       watched: true,
       books: false,
+      allowedContentTypes: ['movie', 'book'],
     });
   });
 
@@ -470,6 +474,7 @@ describe('List', () => {
       watching: false,
       watched: false,
       books: true,
+      allowedContentTypes: ['book'],
     });
   });
 
@@ -567,7 +572,7 @@ describe('List', () => {
   });
 
   it('publishes contextual filter actions for series tracker', () => {
-    fixture.componentRef.setInput('listType', 'watching');
+    fixture.componentRef.setInput('listType', 'tracking');
     fixture.detectChanges();
 
     expect(actionButtons.config().filterActions).toEqual(['completed', 'uncompleted']);

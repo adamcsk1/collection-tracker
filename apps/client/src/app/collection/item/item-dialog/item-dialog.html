@@ -127,6 +127,22 @@
           [formField]="form.plot"
           [rows]="4"
         />
+        @if (showBookProgress()) {
+          <libc-input
+            data-test-id="item-dialog-progress-current"
+            type="number"
+            [label]="translations.pagesRead()"
+            [formField]="form.progressCurrent"
+            [step]="1"
+          />
+          <libc-input
+            data-test-id="item-dialog-progress-total"
+            type="number"
+            [label]="translations.totalPages()"
+            [formField]="form.progressTotal"
+            [step]="1"
+          />
+        }
       </form>
     } @else {
       <ct-item-dialog-detail
@@ -140,10 +156,12 @@
         [isShared]="isShared()"
         [library]="library()"
         [detailTags]="detailTags()"
-        [watching]="watching()"
+        [tracking]="tracking()"
         [book]="book()"
         [isbn]="isbn()"
         [episodeProgressText]="episodeProgressText()"
+        [showBookProgress]="showBookProgress()"
+        [bookProgressText]="bookProgressText()"
         (posterImageError)="onPosterImageError()"
       />
     }
@@ -188,26 +206,28 @@
       [permissionUpdate]="permissionUpdate()"
       [permissionWatch]="permissionWatch()"
       [permissionDelete]="permissionDelete()"
-      [watching]="watching()"
+      [tracking]="tracking()"
       [libraryItem]="libraryItem()"
+      [ownershipItem]="ownershipItem()"
       [watchlist]="watchlist()"
       [movie]="movie()"
       [series]="series()"
-      [watched]="watched()"
+      [book]="book()"
+      [finished]="finished()"
       [favorite]="favorite()"
-      [inWatching]="inWatching()"
-      [inWatched]="inWatched()"
-      [watchedEnabled]="featurePreferences().watched"
-      [watchingEnabled]="featurePreferences().watching"
-      (manageWatchedEpisodes)="onManageWatchedEpisodes()"
+      [inTracking]="inTracking()"
+      [inFinished]="inFinished()"
+      [finishedEnabled]="featurePreferences().finished"
+      [trackingEnabled]="featurePreferences().tracking"
+      (manageCompletedEpisodes)="onManageCompletedEpisodes()"
       (manageSeriesMetadata)="onManageSeriesMetadata()"
       (markAsUnwatched)="onMarkAsUnwatched()"
       (markAsWatched)="onMarkAsWatched()"
-      (copyToWatching)="onCopyToWatching()"
-      (removeFromWatching)="onRemoveFromWatching()"
+      (copyToTracking)="onCopyToTracking()"
+      (removeFromTracking)="onRemoveFromTracking()"
       (moveToWatched)="onMoveToWatched()"
-      (moveToWatching)="onMoveToWatching()"
-      (openInWatching)="onOpenInWatching()"
+      (moveToTracking)="onMoveToTracking()"
+      (openInTracking)="onOpenInTracking()"
       (removeFavorite)="onRemoveFavorite()"
       (markAsFavorite)="onMarkAsFavorite()"
       (edit)="onEdit()"

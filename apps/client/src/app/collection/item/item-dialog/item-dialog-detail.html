@@ -80,11 +80,19 @@
       </section>
     }
 
-    @if (watching()) {
+    @if (tracking() && !book()) {
       <section data-test-id="item-dialog-episode-progress-section">
         <h4>{{ translations().watchedUpTo() }}</h4>
         <div class="chip-list">
           <span class="chip" data-test-id="item-dialog-episode-progress-chip">{{ episodeProgressText() }}</span>
+        </div>
+      </section>
+    }
+    @if (showBookProgress()) {
+      <section data-test-id="item-dialog-book-progress-section">
+        <h4>{{ translations().readingProgress() }}</h4>
+        <div class="chip-list">
+          <span class="chip" data-test-id="item-dialog-book-progress-chip">{{ bookProgressText() }}</span>
         </div>
       </section>
     }

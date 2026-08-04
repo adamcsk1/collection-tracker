@@ -15,8 +15,8 @@ import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import {
   CollectionItemChangeApiModel,
-  WatchingSeasonMetadataModel,
-  WatchingWatchedEpisodeModel,
+  TrackingSeasonMetadataModel,
+  TrackingCompletedEpisodeModel,
 } from '@shared/models/api-model';
 import { toCollectionItemChange } from '@shared/utils/collection-item-change-util';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
@@ -29,9 +29,9 @@ import { mainStateToken } from '../../../main/main-store';
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionService } from '../../collection-service';
 import { SeriesSeasonMetadataDialog } from '../../series-tracker/series-season-metadata-dialog/series-season-metadata-dialog';
-import { WatchedEpisodesDialog } from '../../series-tracker/watched-episodes-dialog/watched-episodes-dialog';
+import { CompletedEpisodesDialog } from '../../series-tracker/completed-episodes-dialog/completed-episodes-dialog';
 import { getProxyImageUrl } from '../../utils/proxy-image-url-util';
-import { formatWatchingEpisode } from '../../series-tracker/utils/series-tracker-progress-util';
+import { formatTrackingEpisode } from '../../series-tracker/utils/series-tracker-progress-util';
 import { filterDisplayTags } from '../../validators/tag-validators';
 import {
   buildItemFormFromChange,
@@ -84,7 +84,7 @@ export class ItemDialog implements OnInit {
   protected readonly translations = {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
     titleWatchedItem: computed(() => this.ngxSignalTranslate.translate('Title.WatchedItem')),
-    titleWatchingItem: computed(() => this.ngxSignalTranslate.translate('Title.WatchingItem')),
+    titleTrackingItem: computed(() => this.ngxSignalTranslate.translate('Title.TrackingItem')),
     titleBooksItem: computed(() => this.ngxSignalTranslate.translate('Title.BooksItem')),
     titleWatchlistItem: computed(() => this.ngxSignalTranslate.translate('Title.WatchlistItem')),
     titleWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.WishlistItem')),
@@ -103,7 +103,10 @@ export class ItemDialog implements OnInit {
     hintSeparateGenres: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateGenres')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
     watchedUpTo: computed(() => this.ngxSignalTranslate.translate('WatchedUpTo')),
-    manageWatchedEpisodes: computed(() => this.ngxSignalTranslate.translate('ManageWatchedEpisodes')),
+    readingProgress: computed(() => this.ngxSignalTranslate.translate('ReadingProgress')),
+    pagesRead: computed(() => this.ngxSignalTranslate.translate('PagesRead')),
+    totalPages: computed(() => this.ngxSignalTranslate.translate('TotalPages')),
+    manageCompletedEpisodes: computed(() => this.ngxSignalTranslate.translate('ManageCompletedEpisodes')),
     hintSeparateTags: computed(() => this.ngxSignalTranslate.translate('Hint.SeparateTags')),
     actors: computed(() => this.ngxSignalTranslate.translate('Actors')),
     authors: computed(() => this.ngxSignalTranslate.translate('Authors')),
@@ -122,10 +125,10 @@ export class ItemDialog implements OnInit {
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     edit: computed(() => {
       switch (this.collectionItem().listType) {
-        case 'watched':
-          return this.ngxSignalTranslate.translate('EditWatchedItem');
-        case 'watching':
-          return this.ngxSignalTranslate.translate('EditWatchingItem');
+        case 'finished':
+          return this.ngxSignalTranslate.translate('EditFinishedItem');
+        case 'tracking':
+          return this.ngxSignalTranslate.translate('EditTrackingItem');
         case 'books':
           return this.ngxSignalTranslate.translate('EditBooksItem');
         case 'watchlist':
@@ -137,21 +140,21 @@ export class ItemDialog implements OnInit {
       }
     }),
     markAsFavorite: computed(() => this.ngxSignalTranslate.translate('MarkAsFavorite')),
-    markAsUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAsUnwatched')),
-    markAsWatched: computed(() => this.ngxSignalTranslate.translate('MarkAsWatched')),
-    copyToWatching: computed(() => this.ngxSignalTranslate.translate('CopyToWatching')),
-    moveToWatched: computed(() => this.ngxSignalTranslate.translate('MoveToWatched')),
-    moveToWatching: computed(() => this.ngxSignalTranslate.translate('MoveToWatching')),
-    openInWatching: computed(() => this.ngxSignalTranslate.translate('OpenInWatching')),
+    markAsUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAsUnfinished')),
+    markAsWatched: computed(() => this.ngxSignalTranslate.translate('MarkAsFinished')),
+    copyToTracking: computed(() => this.ngxSignalTranslate.translate('CopyToTracking')),
+    moveToWatched: computed(() => this.ngxSignalTranslate.translate('MoveToFinished')),
+    moveToTracking: computed(() => this.ngxSignalTranslate.translate('MoveToTracking')),
+    openInTracking: computed(() => this.ngxSignalTranslate.translate('OpenInTracking')),
     manageSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('ManageSeriesMetadata')),
     removeFavorite: computed(() => this.ngxSignalTranslate.translate('RemoveFavorite')),
-    removeFromWatching: computed(() => this.ngxSignalTranslate.translate('RemoveFromWatching')),
+    removeFromTracking: computed(() => this.ngxSignalTranslate.translate('RemoveFromTracking')),
     delete: computed(() => {
       switch (this.collectionItem().listType) {
-        case 'watched':
-          return this.ngxSignalTranslate.translate('DeleteFromWatched');
-        case 'watching':
-          return this.ngxSignalTranslate.translate('DeleteFromWatching');
+        case 'finished':
+          return this.ngxSignalTranslate.translate('DeleteFromFinished');
+        case 'tracking':
+          return this.ngxSignalTranslate.translate('DeleteFromTracking');
         case 'books':
           return this.ngxSignalTranslate.translate('DeleteFromBooks');
         case 'watchlist':
@@ -184,6 +187,8 @@ export class ItemDialog implements OnInit {
     actors: '',
     plot: '',
     contentType: 'movie',
+    progressCurrent: null,
+    progressTotal: null,
   });
   protected readonly form = form(
     this.formModel,
@@ -201,6 +206,14 @@ export class ItemDialog implements OnInit {
         const userRate = value();
         if (userRate === null) return undefined;
         return Math.abs(userRate * 10 - Math.round(userRate * 10)) <= 1e-9 ? undefined : { kind: 'userRate' };
+      });
+      min(item.progressCurrent, 0, { error: { kind: 'min' } });
+      min(item.progressTotal, 1, { error: { kind: 'min' } });
+      validate(item.progressCurrent, ({ value }) => {
+        const progressCurrent = value();
+        const progressTotal = this.formModel().progressTotal;
+        if (progressCurrent === null || progressTotal === null) return undefined;
+        return progressCurrent <= progressTotal ? undefined : { kind: 'progressRange' };
       });
     },
     {
@@ -277,21 +290,21 @@ export class ItemDialog implements OnInit {
     { text: this.translations.movies(), value: 'movie' },
     { text: this.translations.seriesLabel(), value: 'series' },
   ]);
-  protected readonly seriesSeasons = signal<WatchingSeasonMetadataModel[]>([]);
-  protected readonly watchedEpisodes = signal<WatchingWatchedEpisodeModel[]>([]);
+  protected readonly seriesSeasons = signal<TrackingSeasonMetadataModel[]>([]);
+  protected readonly completedEpisodes = signal<TrackingCompletedEpisodeModel[]>([]);
   protected readonly seriesSeasonsLoaded = signal(false);
-  protected readonly watchedEpisodesLoaded = signal(false);
-  protected readonly watchingExists = signal(false);
-  protected readonly watchedExists = signal(false);
-  protected readonly watchingHash = signal<string | undefined>(undefined);
-  protected readonly watchedHash = signal<string | undefined>(undefined);
+  protected readonly completedEpisodesLoaded = signal(false);
+  protected readonly trackingExists = signal(false);
+  protected readonly finishedExists = signal(false);
+  protected readonly trackingHash = signal<string | undefined>(undefined);
+  protected readonly finishedHash = signal<string | undefined>(undefined);
   protected readonly allEpisodesWatched = computed(() => {
-    if (!this.seriesSeasonsLoaded() || !this.watchedEpisodesLoaded()) return this.collectionItem().watchedAt !== null;
+    if (!this.seriesSeasonsLoaded() || !this.completedEpisodesLoaded()) return this.collectionItem().watchedAt !== null;
 
     const seasons = this.seriesSeasons();
     if (!seasons.length) return false;
 
-    const watchedSet = new Set(this.watchedEpisodes().map((episode) => `${episode.season}-${episode.episode}`));
+    const watchedSet = new Set(this.completedEpisodes().map((episode) => `${episode.season}-${episode.episode}`));
     for (const season of seasons) {
       for (let episode = 1; episode <= season.episodes; episode++) {
         if (!watchedSet.has(`${season.season}-${episode}`)) return false;
@@ -299,15 +312,15 @@ export class ItemDialog implements OnInit {
     }
     return true;
   });
-  protected readonly lastWatchedEpisode = computed(() => {
-    const episodes = this.watchedEpisodes();
+  protected readonly lastCompletedEpisode = computed(() => {
+    const episodes = this.completedEpisodes();
     if (!episodes.length) return null;
     const last = episodes[episodes.length - 1];
     return { season: last.season, episode: last.episode };
   });
   protected readonly detailTags = computed(() => filterDisplayTags(this.collectionItem().tags));
   protected readonly episodeProgressText = computed(() => {
-    return formatWatchingEpisode(this.lastWatchedEpisode()) ?? this.translations.fallbackNotAvailable();
+    return formatTrackingEpisode(this.lastCompletedEpisode()) ?? this.translations.fallbackNotAvailable();
   });
   protected readonly editMode = signal(false);
   protected readonly posterImageFailed = signal(false);
@@ -333,8 +346,8 @@ export class ItemDialog implements OnInit {
     const share = this.sharesState.state
       .incoming()
       .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
-    if (item.listType === 'watching') return this.isOwnItem();
-    if (item.listType === 'watched') return this.isOwnItem();
+    if (item.listType === 'tracking') return this.isOwnItem();
+    if (item.listType === 'finished') return this.isOwnItem();
     if (item.listType === 'books') return this.isOwnItem();
     if (item.listType === 'watchlist') return this.isOwnItem();
     if (item.listType === 'wishlist') return this.isOwnItem();
@@ -343,11 +356,14 @@ export class ItemDialog implements OnInit {
     return share?.canUpdate === true;
   });
   protected readonly libraryItem = computed(() => this.collectionItem().listType === 'library');
-  protected readonly watching = computed(() => this.collectionItem().listType === 'watching');
-  protected readonly inWatching = computed(() => this.watchingExists());
-  protected readonly inWatched = computed(() => this.watchedExists());
+  protected readonly ownershipItem = computed(
+    () => this.collectionItem().listType === 'library' || this.collectionItem().listType === 'books'
+  );
+  protected readonly tracking = computed(() => this.collectionItem().listType === 'tracking');
+  protected readonly inTracking = computed(() => this.trackingExists());
+  protected readonly inFinished = computed(() => this.finishedExists());
   protected readonly featurePreferences = this.mainState.state.collectionFeaturePreferences;
-  protected readonly watchedList = computed(() => this.collectionItem().listType === 'watched');
+  protected readonly finishedList = computed(() => this.collectionItem().listType === 'finished');
   protected readonly books = computed(() => this.collectionItem().listType === 'books');
   protected readonly book = computed(() => this.collectionItem().contentType === 'book');
   protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
@@ -362,7 +378,11 @@ export class ItemDialog implements OnInit {
   protected readonly canEditImdbIdentity = computed(() =>
     isImdbShapedExternalItemId(this.collectionItem().externalItemId)
   );
-  protected readonly permissionWatch = computed(() => this.libraryItem() && (this.movie() || this.series()));
+  protected readonly permissionWatch = computed(
+    () =>
+      (this.libraryItem() && (this.movie() || this.series())) ||
+      (this.books() && this.book() && (this.featurePreferences().tracking || this.featurePreferences().finished))
+  );
   protected readonly permissionDelete = computed(() => {
     const item = this.collectionItem();
     const share = this.sharesState.state
@@ -371,21 +391,31 @@ export class ItemDialog implements OnInit {
     if (this.isOwnItem()) return true;
     return share?.canDelete === true;
   });
-  protected readonly watched = computed(() => this.collectionItem().watched === true || this.watchedList());
+  protected readonly finished = computed(() => this.collectionItem().watched === true || this.finishedList());
   protected readonly favorite = computed(() => this.collectionItem().favorite);
   protected readonly watchlist = computed(() => this.collectionItem().listType === 'watchlist');
   protected readonly wishlist = computed(() => this.collectionItem().listType === 'wishlist');
   protected readonly dialogTitle = computed(() => {
     if (this.watchlist()) return this.translations.titleWatchlistItem();
     if (this.wishlist()) return this.translations.titleWishlistItem();
-    if (this.watching()) return this.translations.titleWatchingItem();
-    if (this.watchedList()) return this.translations.titleWatchedItem();
+    if (this.tracking()) return this.translations.titleTrackingItem();
+    if (this.finishedList()) return this.translations.titleWatchedItem();
     if (this.books()) return this.translations.titleBooksItem();
     return this.translations.titleCollectionItem();
   });
+  protected readonly showBookProgress = computed(() => this.book() && (this.tracking() || this.finishedList()));
+  protected readonly bookProgressText = computed(() => {
+    const item = this.collectionItem();
+    const current = item.progressCurrent;
+    const total = item.progressTotal;
+    if (current == null && total == null) return this.translations.fallbackNotAvailable();
+    if (current != null && total != null) return `${current} / ${total}`;
+    if (current != null) return `${current}`;
+    return `${total}`;
+  });
   protected readonly dialogIcon = computed(() => {
     if (this.book() || this.books()) return 'menu_book';
-    if (this.series() || this.watching()) return 'live_tv';
+    if (this.series() || this.tracking()) return 'live_tv';
     return 'movie';
   });
   protected readonly draftImageUrl = computed(() =>
@@ -411,46 +441,46 @@ export class ItemDialog implements OnInit {
     this.resetFormFromItem(this.collectionItem());
     this.loadTrackerStates();
     this.loadSeriesSeasons();
-    this.loadWatchedEpisodes();
+    this.loadCompletedEpisodes();
   }
 
   private loadTrackerStates(): void {
     const item = this.collectionItem();
     const externalProvider = item.externalProvider;
     const externalItemId = item.externalItemId;
-    if (this.libraryItem() && this.series()) {
+    const loadTracking =
+      (this.libraryItem() && this.series()) ||
+      (this.books() && this.book()) ||
+      (this.watchlist() && (this.series() || this.book()));
+    const loadFinished =
+      (this.libraryItem() && this.movie()) ||
+      (this.books() && this.book()) ||
+      (this.watchlist() && (this.movie() || this.book()));
+
+    if (loadTracking) {
       this.api
-        .collectionItemExists(externalProvider, externalItemId, undefined, 'watching', item.externalIds)
+        .collectionItemExists(externalProvider, externalItemId, undefined, 'tracking', item.externalIds)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((response) => {
-          this.watchingExists.set(response.exists);
-          this.watchingHash.set(response.hash);
+          this.trackingExists.set(response.exists);
+          this.trackingHash.set(response.hash);
         });
     }
-    if (this.watchlist() && this.movie()) {
+    if (loadFinished) {
       this.api
-        .collectionItemExists(externalProvider, externalItemId, undefined, 'watched', item.externalIds)
+        .collectionItemExists(externalProvider, externalItemId, undefined, 'finished', item.externalIds)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((response) => {
-          this.watchedExists.set(response.exists);
-          this.watchedHash.set(response.hash);
-        });
-    }
-    if (this.watchlist() && this.series()) {
-      this.api
-        .collectionItemExists(externalProvider, externalItemId, undefined, 'watching', item.externalIds)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((response) => {
-          this.watchingExists.set(response.exists);
-          this.watchingHash.set(response.hash);
+          this.finishedExists.set(response.exists);
+          this.finishedHash.set(response.hash);
         });
     }
   }
 
   private loadSeriesSeasons(): void {
-    if (!this.watching() || !this.isOwnItem()) return;
+    if (!this.tracking() || !this.isOwnItem()) return;
     this.api
-      .getWatchingSeasonsByExternalId(this.collectionItem().externalProvider, this.collectionItem().externalItemId)
+      .getTrackingSeasonsByExternalId(this.collectionItem().externalProvider, this.collectionItem().externalItemId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
         this.seriesSeasons.set(response.seasons);
@@ -458,17 +488,17 @@ export class ItemDialog implements OnInit {
       });
   }
 
-  private loadWatchedEpisodes(): void {
-    if (!this.watching() || !this.isOwnItem()) return;
+  private loadCompletedEpisodes(): void {
+    if (!this.tracking() || !this.isOwnItem()) return;
     this.api
-      .getWatchingWatchedEpisodesByExternalId(
+      .getTrackingCompletedEpisodesByExternalId(
         this.collectionItem().externalProvider,
         this.collectionItem().externalItemId
       )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
-        this.watchedEpisodes.set(response.watchedEpisodes);
-        this.watchedEpisodesLoaded.set(true);
+        this.completedEpisodes.set(response.completedEpisodes);
+        this.completedEpisodesLoaded.set(true);
       });
   }
 
@@ -515,6 +545,8 @@ export class ItemDialog implements OnInit {
       plot: formValues.plot,
       contentType: formValues.contentType,
       favorite: this.collectionItem().favorite,
+      progressCurrent: this.showBookProgress() ? formValues.progressCurrent : undefined,
+      progressTotal: this.showBookProgress() ? formValues.progressTotal : undefined,
     };
   }
 
@@ -579,8 +611,8 @@ export class ItemDialog implements OnInit {
   protected async onSaveChanges(): Promise<void> {
     if (
       this.collectionItem().listType !== 'library' &&
-      this.collectionItem().listType !== 'watching' &&
-      this.collectionItem().listType !== 'watched' &&
+      this.collectionItem().listType !== 'tracking' &&
+      this.collectionItem().listType !== 'finished' &&
       this.collectionItem().listType !== 'books' &&
       this.collectionItem().listType !== 'watchlist' &&
       this.collectionItem().listType !== 'wishlist'
@@ -598,11 +630,11 @@ export class ItemDialog implements OnInit {
           mergeMap((confirmed) => {
             if (confirmed) {
               this.spinnerLoadingState.setState('show', true);
-              let updateListType: 'watching' | 'watched' | 'books' | 'watchlist' | 'wishlist' | undefined;
-              if (this.watching()) {
-                updateListType = 'watching';
-              } else if (this.watchedList()) {
-                updateListType = 'watched';
+              let updateListType: 'tracking' | 'finished' | 'books' | 'watchlist' | 'wishlist' | undefined;
+              if (this.tracking()) {
+                updateListType = 'tracking';
+              } else if (this.finishedList()) {
+                updateListType = 'finished';
               } else if (this.books()) {
                 updateListType = 'books';
               } else if (this.watchlist()) {
@@ -651,14 +683,16 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMarkAsWatched(): Promise<void> {
-    if (!this.featurePreferences().watched || !this.permissionWatch() || this.watched()) return;
+    if (!this.featurePreferences().finished || !this.permissionWatch() || this.finished()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
+      const sourceListType = this.books() ? 'books' : undefined;
       const item = await firstValueFrom(
         this.api.addWatchedItemByExternalId(
           this.collectionItem().externalProvider,
           this.collectionItem().externalItemId,
-          this.collectionItem().ownerShareCode
+          this.collectionItem().ownerShareCode,
+          sourceListType
         )
       );
       this.collectionService.addCollectionItem(item.item, true);
@@ -678,7 +712,7 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMoveToWatched(): Promise<void> {
-    if (!this.featurePreferences().watched || !this.watchlist() || !this.movie()) return;
+    if (!this.featurePreferences().finished || !this.watchlist() || !(this.movie() || this.book())) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
@@ -690,8 +724,8 @@ export class ItemDialog implements OnInit {
         )
       );
       this.collectionService.addCollectionItem(item.item, true);
-      this.watchedExists.set(true);
-      this.watchedHash.set(item.item.hash);
+      this.finishedExists.set(true);
+      this.finishedHash.set(item.item.hash);
       this.collectionService.deleteCollectionItem(
         this.collectionItem(),
         this.collectionItem().ownerShareCode,
@@ -705,20 +739,20 @@ export class ItemDialog implements OnInit {
     }
   }
 
-  protected async onMoveToWatching(): Promise<void> {
-    if (!this.featurePreferences().watching || !this.watchlist() || !this.series()) return;
+  protected async onMoveToTracking(): Promise<void> {
+    if (!this.featurePreferences().tracking || !this.watchlist() || !(this.series() || this.book())) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
-        this.api.addWatchingItemByExternalId(
+        this.api.addTrackingItemByExternalId(
           this.collectionItem().externalProvider,
           this.collectionItem().externalItemId,
           'watchlist'
         )
       );
       this.collectionService.addCollectionItem(item.item, true);
-      this.watchingExists.set(true);
-      this.watchingHash.set(item.item.hash);
+      this.trackingExists.set(true);
+      this.trackingHash.set(item.item.hash);
       this.collectionService.deleteCollectionItem(
         this.collectionItem(),
         this.collectionItem().ownerShareCode,
@@ -732,21 +766,24 @@ export class ItemDialog implements OnInit {
     }
   }
 
-  protected async onCopyToWatching(): Promise<void> {
-    if (!this.featurePreferences().watching || !this.libraryItem() || !this.series()) return;
+  protected async onCopyToTracking(): Promise<void> {
+    if (!this.featurePreferences().tracking || !this.ownershipItem() || !(this.series() || this.book())) {
+      return;
+    }
     this.spinnerLoadingState.setState('show', true);
     try {
+      const sourceListType = this.books() ? 'books' : undefined;
       const item = await firstValueFrom(
-        this.api.addWatchingItemByExternalId(
+        this.api.addTrackingItemByExternalId(
           this.collectionItem().externalProvider,
           this.collectionItem().externalItemId,
-          undefined,
+          sourceListType,
           this.collectionItem().ownerShareCode
         )
       );
       this.collectionService.addCollectionItem(item.item, true);
-      this.watchingExists.set(true);
-      this.watchingHash.set(item.item.hash);
+      this.trackingExists.set(true);
+      this.trackingHash.set(item.item.hash);
       this.collectionService.triggerReload();
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.EditItem'));
     } finally {
@@ -754,8 +791,13 @@ export class ItemDialog implements OnInit {
     }
   }
 
-  protected async onOpenInWatching(): Promise<void> {
-    if (!this.featurePreferences().watching || !this.libraryItem() || !this.series() || !this.inWatching()) {
+  protected async onOpenInTracking(): Promise<void> {
+    if (
+      !this.featurePreferences().tracking ||
+      !this.ownershipItem() ||
+      !(this.series() || this.book()) ||
+      !this.inTracking()
+    ) {
       return;
     }
 
@@ -771,22 +813,29 @@ export class ItemDialog implements OnInit {
         this.api.getMatchedItems({
           identities,
           limit: 1,
-          filters: { listType: 'watching' },
+          filters: { listType: 'tracking' },
         })
       );
-      const watchingItem = response.items[0];
-      if (!watchingItem) return;
+      const trackingItem = response.items[0];
+      if (!trackingItem) return;
       this.portal.closeAll();
-      this.portal.open(ItemDialog, { collectionItem: watchingItem });
+      this.portal.open(ItemDialog, { collectionItem: trackingItem });
     } finally {
       this.spinnerLoadingState.setState('show', false);
     }
   }
 
-  protected async onRemoveFromWatching(): Promise<void> {
-    if (!this.featurePreferences().watching || !this.libraryItem() || !this.series() || !this.inWatching()) return;
+  protected async onRemoveFromTracking(): Promise<void> {
+    if (
+      !this.featurePreferences().tracking ||
+      !this.ownershipItem() ||
+      !(this.series() || this.book()) ||
+      !this.inTracking()
+    ) {
+      return;
+    }
     const item = this.collectionItem();
-    const trackerHash = this.watchingHash();
+    const trackerHash = this.trackingHash();
     if (!trackerHash) return;
 
     this.confirm
@@ -796,7 +845,7 @@ export class ItemDialog implements OnInit {
           if (confirmed) {
             this.spinnerLoadingState.setState('show', true);
             return this.api
-              .deleteByExternalId(item.externalProvider, item.externalItemId, trackerHash, undefined, 'watching')
+              .deleteByExternalId(item.externalProvider, item.externalItemId, trackerHash, undefined, 'tracking')
               .pipe(
                 map(() => confirmed),
                 finalize(() => this.spinnerLoadingState.setState('show', false))
@@ -809,16 +858,16 @@ export class ItemDialog implements OnInit {
       .subscribe((confirmed) => {
         if (confirmed) {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.DeleteItem'));
-          this.collectionService.deleteCollectionItem({ ...item, listType: 'watching' }, undefined, 'watching');
-          this.watchingExists.set(false);
-          this.watchingHash.set(undefined);
+          this.collectionService.deleteCollectionItem({ ...item, listType: 'tracking' }, undefined, 'tracking');
+          this.trackingExists.set(false);
+          this.trackingHash.set(undefined);
           this.collectionService.triggerReload();
         }
       });
   }
 
   protected async onMarkAsUnwatched(): Promise<void> {
-    if (!this.featurePreferences().watched || !this.permissionWatch() || !this.watched()) return;
+    if (!this.featurePreferences().finished || !this.permissionWatch() || !this.finished()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       await firstValueFrom(
@@ -829,9 +878,9 @@ export class ItemDialog implements OnInit {
       );
       const updatedSource = { ...this.collectionItem(), watched: false };
       this.collectionService.deleteCollectionItem(
-        { ...this.collectionItem(), listType: 'watched' },
+        { ...this.collectionItem(), listType: 'finished' },
         undefined,
-        'watched'
+        'finished'
       );
       this.collectionService.updateCollectionItem(
         this.collectionItem(),
@@ -848,17 +897,17 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMarkAsFavorite(): Promise<void> {
-    if (!this.libraryItem() || this.collectionItem().favorite) return;
+    if (!this.ownershipItem() || this.collectionItem().favorite) return;
     await this.doSave({ ...this.buildItemFromForm(), favorite: true });
   }
 
   protected async onRemoveFavorite(): Promise<void> {
-    if (!this.libraryItem()) return;
+    if (!this.ownershipItem()) return;
     await this.doSave({ ...this.buildItemFromForm(), favorite: false });
   }
 
   protected onManageSeriesMetadata(): void {
-    if (!this.watching() || !this.permissionUpdate()) return;
+    if (!this.tracking() || !this.permissionUpdate()) return;
     let collectionItem = this.collectionItem();
     const providerInputs =
       collectionItem.externalProvider === 'omdb'
@@ -868,7 +917,7 @@ export class ItemDialog implements OnInit {
       imdbId: collectionItem.IMDbId,
       ...providerInputs,
       initialSeasons: this.seriesSeasons(),
-      saved: (seasons: WatchingSeasonMetadataModel[], item?: CollectionItemModel) => {
+      saved: (seasons: TrackingSeasonMetadataModel[], item?: CollectionItemModel) => {
         this.seriesSeasons.set(seasons);
         if (item) {
           collectionItem = item;
@@ -879,18 +928,18 @@ export class ItemDialog implements OnInit {
     });
   }
 
-  protected onManageWatchedEpisodes(): void {
-    if (!this.watching() || !this.permissionUpdate()) return;
+  protected onManageCompletedEpisodes(): void {
+    if (!this.tracking() || !this.permissionUpdate()) return;
     let collectionItem = this.collectionItem();
     const providerInputs =
       collectionItem.externalProvider === 'omdb'
         ? {}
         : { externalProvider: collectionItem.externalProvider, externalItemId: collectionItem.externalItemId };
-    this.portal.openStacked(WatchedEpisodesDialog, {
+    this.portal.openStacked(CompletedEpisodesDialog, {
       imdbId: collectionItem.IMDbId,
       ...providerInputs,
-      saved: (watchedEpisodes: WatchingWatchedEpisodeModel[], item?: CollectionItemModel) => {
-        this.watchedEpisodes.set(watchedEpisodes);
+      saved: (completedEpisodes: TrackingCompletedEpisodeModel[], item?: CollectionItemModel) => {
+        this.completedEpisodes.set(completedEpisodes);
         if (item) {
           collectionItem = item;
           this.applySyncedCollectionItem(item);

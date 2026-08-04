@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { formatWatchingEpisode, isWatchingCompleted } from './series-tracker-progress-util';
+import { formatTrackingEpisode, isTrackingCompleted } from './series-tracker-progress-util';
 
 describe('series tracker progress util', () => {
   it('formats a watched episode', () => {
-    expect(formatWatchingEpisode({ season: 1, episode: 2 })).toBe('S01E02');
+    expect(formatTrackingEpisode({ season: 1, episode: 2 })).toBe('S01E02');
   });
 
   it('returns null when no watched episode exists', () => {
-    expect(formatWatchingEpisode(null)).toBeNull();
+    expect(formatTrackingEpisode(null)).toBeNull();
   });
 
   it('detects completed series tracker progress', () => {
     expect(
-      isWatchingCompleted(
-        'watching',
+      isTrackingCompleted(
+        'tracking',
         [
           { season: 1, episodes: 2 },
           { season: 2, episodes: 1 },
@@ -28,14 +28,14 @@ describe('series tracker progress util', () => {
   });
 
   it('does not complete when the item is not a series tracker item', () => {
-    expect(isWatchingCompleted('library', [{ season: 1, episodes: 1 }], [{ season: 1, episode: 1 }])).toBe(false);
+    expect(isTrackingCompleted('library', [{ season: 1, episodes: 1 }], [{ season: 1, episode: 1 }])).toBe(false);
   });
 
   it('does not complete when metadata is missing', () => {
-    expect(isWatchingCompleted('watching', [], [{ season: 1, episode: 1 }])).toBe(false);
+    expect(isTrackingCompleted('tracking', [], [{ season: 1, episode: 1 }])).toBe(false);
   });
 
   it('does not complete when only some episodes are watched', () => {
-    expect(isWatchingCompleted('watching', [{ season: 1, episodes: 2 }], [{ season: 1, episode: 1 }])).toBe(false);
+    expect(isTrackingCompleted('tracking', [{ season: 1, episodes: 2 }], [{ season: 1, episode: 1 }])).toBe(false);
   });
 });

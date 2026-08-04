@@ -1,4 +1,4 @@
-<libc-dialog-shell data-test-id="watched-episodes-dialog" [closeWithPortal]="false" (closed)="onClose()">
+<libc-dialog-shell data-test-id="completed-episodes-dialog" [closeWithPortal]="false" (closed)="onClose()">
   <ng-container dialog-shell-top-content>
     <h3 class="dialog-title">
       <i class="material-icons" aria-hidden="true"> check_circle </i>
@@ -7,11 +7,11 @@
   </ng-container>
   <ng-container dialog-shell-content>
     @if (!hasSeasonMetadata()) {
-      <div class="no-metadata-message" data-test-id="watched-episodes-no-metadata-message">
+      <div class="no-metadata-message" data-test-id="completed-episodes-no-metadata-message">
         <p>{{ translations.setSeasonMetadata() }}</p>
         <button
           class="button-borderless"
-          data-test-id="watched-episodes-manage-season-metadata"
+          data-test-id="completed-episodes-manage-season-metadata"
           (click)="onManageSeasonMetadata()"
         >
           <i class="material-icons" aria-hidden="true"> list </i>
@@ -30,12 +30,12 @@
               <label class="checkbox-label">
                 <input
                   type="checkbox"
-                  data-test-id="watched-episodes-season-toggle"
+                  data-test-id="completed-episodes-season-toggle"
                   [checked]="isSeasonFullyWatched(season.season, season.episodes)"
                   [indeterminate]="isSeasonPartiallyWatched(season.season, season.episodes)"
                   (change)="onToggleSeason(season.season, season.episodes)"
                 />
-                {{ translations.markAllEpisodesWatched() }}
+                {{ translations.markAllEpisodesCompleted() }}
               </label>
             </div>
             <div class="episodes-list">
@@ -44,7 +44,7 @@
                   <label class="card-title">
                     <input
                       type="checkbox"
-                      data-test-id="watched-episodes-episode-checkbox"
+                      data-test-id="completed-episodes-episode-checkbox"
                       [checked]="isEpisodeWatched(season.season, episodeIndex + 1)"
                       (change)="onToggleEpisode(season.season, episodeIndex + 1)"
                     />
@@ -72,7 +72,7 @@
       <button
         class="button-icon button-reveal-label"
         [libcRevealLabel]="translations.markAllEpisodesUnwatched()"
-        data-test-id="watched-episodes-mark-all-unwatched"
+        data-test-id="completed-episodes-mark-all-incomplete"
         type="button"
         [attr.aria-label]="translations.markAllEpisodesUnwatched()"
         [title]="translations.markAllEpisodesUnwatched()"
@@ -86,16 +86,16 @@
     } @else {
       <button
         class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.markAllEpisodesWatched()"
-        data-test-id="watched-episodes-mark-all-watched"
+        [libcRevealLabel]="translations.markAllEpisodesCompleted()"
+        data-test-id="completed-episodes-mark-all-completed"
         type="button"
-        [attr.aria-label]="translations.markAllEpisodesWatched()"
-        [title]="translations.markAllEpisodesWatched()"
+        [attr.aria-label]="translations.markAllEpisodesCompleted()"
+        [title]="translations.markAllEpisodesCompleted()"
         (click)="onMarkAllEpisodesWatched()"
       >
         <i class="material-icons" aria-hidden="true"> check_circle_outline </i>
         <span class="button-reveal-label-text"
-          ><span>{{ translations.markAllEpisodesWatched() }}</span></span
+          ><span>{{ translations.markAllEpisodesCompleted() }}</span></span
         >
       </button>
     }

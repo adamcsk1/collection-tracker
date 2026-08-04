@@ -11,10 +11,10 @@
   </ng-template>
   <ct-list
     [listType]="'books'"
-    [emptyIcon]="'menu_book'"
     [dataSource]="booksDataSource"
     [routeSearchText]="querySearch()"
     [routeFilterKey]="queryFilterKey()"
+    [emptyIcon]="'menu_book'"
   >
     <span list-empty>
       {{ translations.messageEmptyBooks() }}<br />

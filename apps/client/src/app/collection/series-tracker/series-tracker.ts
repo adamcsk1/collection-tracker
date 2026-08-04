@@ -20,7 +20,9 @@ import { FloatActionsService } from '../../main/float-actions/float-actions-serv
 import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
+import { getMediaChipEmptyIcon } from '../list/list-const';
 import { List } from '../list/list';
+import { CollectionMediaChip, CollectionMediaChips } from '../media-chips/media-chips';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
 import { setupCollectionAiSearch } from '../utils/collection-ai-search-util';
@@ -32,16 +34,16 @@ import {
 
 @Component({
   selector: 'ct-series-tracker',
-  imports: [List, FormField, Autocomplete],
+  imports: [List, FormField, Autocomplete, CollectionMediaChips],
   templateUrl: './series-tracker.html',
   styleUrl: '../collection.css',
   providers: [
     { provide: AutocompleteService, useClass: SearchSuggestionService },
-    { provide: searchSuggestionListTypeToken, useValue: 'watching' },
+    { provide: searchSuggestionListTypeToken, useValue: 'tracking' },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Watching {
+export class Tracking {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
   private readonly aiSearch = inject(AiSearchService);
@@ -66,15 +68,23 @@ export class Watching {
     }
   );
   protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
+  protected readonly booksEnabled = computed(() => this.mainState.state.collectionFeaturePreferences().books);
+  protected readonly mediaChips: readonly CollectionMediaChip[] = ['all', 'series', 'book'];
+  protected readonly activeMediaChip = computed((): CollectionMediaChip => {
+    const type = this.queryFilters().type;
+    if (type === 'series' || type === 'book') return type;
+    return 'all';
+  });
+  protected readonly emptyIcon = computed(() => getMediaChipEmptyIcon(this.activeMediaChip()));
   protected readonly forceStandardSearch = computed(
     () => !!this.querySearch() || !!this.queryFilterKey() || this.collectionState.state.forceStandardSearch()
   );
   protected readonly searchTextModel = signal('');
   protected readonly searchTextField = form(this.searchTextModel);
   protected readonly translations = {
-    messageEmptyWatching: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWatching')),
-    messageAddFirstWatching: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWatching')),
-    placeholderSearchInWatching: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInWatching')),
+    messageEmptyTracking: computed(() => this.ngxSignalTranslate.translate('Message.EmptyTracking')),
+    messageAddFirstTracking: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstTracking')),
+    placeholderSearchInTracking: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInTracking')),
     placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
   };
   private readonly aiSearchSetup = setupCollectionAiSearch({
@@ -84,13 +94,13 @@ export class Watching {
     portal: this.portal,
     floatActions: this.floatActions,
     destroyRef: this.destroyRef,
-    listType: 'watching',
+    listType: 'tracking',
     queryFilters: this.queryFilters,
     forceStandardSearch: this.forceStandardSearch,
     placeholder: this.translations.placeholderReply,
     aiAvailable: this.mainState.state.aiAvailable,
   });
-  protected readonly watchingDataSource = this.aiSearchSetup.dataSource;
+  protected readonly trackingDataSource = this.aiSearchSetup.dataSource;
 
   constructor() {
     setupStandardCollectionSearch({
@@ -107,8 +117,8 @@ export class Watching {
     this.aiSearchSetup.clearAiFilterOnStandardSearch();
   }
 
-  protected onAddWatching(event: Event): void {
+  protected onAddTracking(event: Event): void {
     event.preventDefault();
-    this.portal.open(NewItemDialog, { watching: true });
+    this.portal.open(NewItemDialog, { tracking: true });
   }
 }

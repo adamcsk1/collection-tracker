@@ -16,6 +16,8 @@ export interface ItemFormModel {
   actors: string;
   plot: string;
   contentType: CollectionItemContentTypeModel;
+  progressCurrent: number | null;
+  progressTotal: number | null;
 }
 
 export interface ItemDialogTranslations {
@@ -37,18 +39,21 @@ export interface ItemDialogTranslations {
   linkYouTubeTrailer: Signal<string>;
   links: Signal<string>;
   manageSeriesMetadata: Signal<string>;
-  manageWatchedEpisodes: Signal<string>;
+  manageCompletedEpisodes: Signal<string>;
   markAsFavorite: Signal<string>;
   markAsUnwatched: Signal<string>;
   markAsWatched: Signal<string>;
-  copyToWatching: Signal<string>;
+  copyToTracking: Signal<string>;
   moveToWatched: Signal<string>;
-  moveToWatching: Signal<string>;
-  openInWatching: Signal<string>;
+  moveToTracking: Signal<string>;
+  openInTracking: Signal<string>;
   plot: Signal<string>;
   ratings: Signal<string>;
   removeFavorite: Signal<string>;
-  removeFromWatching: Signal<string>;
+  removeFromTracking: Signal<string>;
   tags: Signal<string>;
   watchedUpTo: Signal<string>;
+  readingProgress: Signal<string>;
+  pagesRead: Signal<string>;
+  totalPages: Signal<string>;
 }
