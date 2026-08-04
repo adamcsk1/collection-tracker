@@ -3,7 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const insertWatchingItem = (): number => {
+const insertTrackingItem = (): number => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   const result = db
@@ -12,7 +12,7 @@ const insertWatchingItem = (): number => {
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run('user', 'omdb', 'tt-series', 'imdb:tt-series', 'watching', 'Series', 'series', '', '', '', 'hash', 'series');
+    .run('user', 'omdb', 'tt-series', 'imdb:tt-series', 'tracking', 'Series', 'series', '', '', '', 'hash', 'series');
   const itemId = Number(result.lastInsertRowid);
   db.prepare(
     `INSERT INTO external_item_identities
@@ -30,7 +30,7 @@ describe('change-watching-seasons-api', () => {
   });
 
   it('replaces metadata with validated manual values', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -52,7 +52,7 @@ describe('change-watching-seasons-api', () => {
   });
 
   it('rejects zero episode counts', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -69,7 +69,7 @@ describe('change-watching-seasons-api', () => {
   });
 
   it('rejects episode counts above the supported range', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -86,7 +86,7 @@ describe('change-watching-seasons-api', () => {
   });
 
   it('saves and returns episode titles', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -108,12 +108,12 @@ describe('change-watching-seasons-api', () => {
   });
 
   it('clears watched timestamp when new season metadata is no longer fully watched', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?')
       .run('2025-01-01 00:00:00', itemId);
     getDatabase()
-      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 1, 1);
     const response = mockResponse();
     const request: any = {
@@ -135,12 +135,12 @@ describe('change-watching-seasons-api', () => {
   });
 
   it('prunes watched episodes outside replaced season metadata before syncing completion', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 3);
     getDatabase()
-      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?), (?, ?, ?)')
+      .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?), (?, ?, ?)')
       .run(itemId, 1, 1, itemId, 1, 3);
     const response = mockResponse();
     const request: any = {
@@ -156,9 +156,7 @@ describe('change-watching-seasons-api', () => {
     await handlerPromise();
     expect(
       getDatabase()
-        .prepare(
-          'SELECT season, episode FROM series_tracker_watched_episodes WHERE item_id = ? ORDER BY season, episode'
-        )
+        .prepare('SELECT season, episode FROM series_completed_episodes WHERE item_id = ? ORDER BY season, episode')
         .all(itemId)
     ).toEqual([{ season: 1, episode: 1 }]);
     expect(

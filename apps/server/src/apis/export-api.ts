@@ -10,14 +10,14 @@ import {
   inferCanonicalItemId,
   pickStrongerCanonicalItemId,
 } from '../core/database/repositories/external-item-identity-repository';
-import { findWatchingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
-import { findWatchedEpisodesByExternalId } from '../core/database/repositories/series-tracker-watched-episodes-repository';
+import { findTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { findCompletedEpisodesByExternalId } from '../core/database/repositories/series-completed-episodes-repository';
 import { CollectionItemApiModel, UserExportApiResponseModel } from '@shared/models/api-model';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
 import type { FastifyInstance } from 'fastify';
 
-const getWatchingDataKey = (externalProvider: string, externalItemId: string): string =>
+const getTrackingDataKey = (externalProvider: string, externalItemId: string): string =>
   `${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}`;
 
 const toExportCollectionItem = (item: CollectionItemApiModel): CollectionItemApiModel => {
@@ -61,13 +61,13 @@ export const register = (app: FastifyInstance): void => {
       const tagManagement = findTagManagement(db, usernameHash);
       const collectionItems = findAllCollectionItemsByUser(db, usernameHash).map(toExportCollectionItem);
 
-      const watchingData: UserExportApiResponseModel['watchingData'] = {};
+      const trackingData: UserExportApiResponseModel['trackingData'] = {};
       for (const item of collectionItems) {
-        if (item.listType === 'watching') {
-          const watchingDataKey = getWatchingDataKey(item.externalProvider, item.externalItemId);
-          watchingData[watchingDataKey] = {
-            seasons: findWatchingSeasonsByExternalId(db, usernameHash, item.externalProvider, item.externalItemId),
-            watchedEpisodes: findWatchedEpisodesByExternalId(
+        if (item.listType === 'tracking') {
+          const trackingDataKey = getTrackingDataKey(item.externalProvider, item.externalItemId);
+          trackingData[trackingDataKey] = {
+            seasons: findTrackingSeasonsByExternalId(db, usernameHash, item.externalProvider, item.externalItemId),
+            completedEpisodes: findCompletedEpisodesByExternalId(
               db,
               usernameHash,
               item.externalProvider,
@@ -83,7 +83,7 @@ export const register = (app: FastifyInstance): void => {
         userSettings,
         collectionItems,
         tagManagement,
-        watchingData,
+        trackingData,
       };
 
       response.send(result);

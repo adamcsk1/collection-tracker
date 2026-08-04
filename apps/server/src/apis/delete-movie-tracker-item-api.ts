@@ -23,8 +23,8 @@ export const register = (app: FastifyInstance): void => {
       externalIdentityId
     );
     const existingItem =
-      findCollectionItemByCanonicalItemId(db, request.usernameHash, canonicalItemId, 'watched') ??
-      findCollectionItemByExternalId(db, request.usernameHash, externalIdentitySource, externalIdentityId, 'watched');
+      findCollectionItemByCanonicalItemId(db, request.usernameHash, canonicalItemId, 'finished') ??
+      findCollectionItemByExternalId(db, request.usernameHash, externalIdentitySource, externalIdentityId, 'finished');
     if (!existingItem) return response.code(404).send();
 
     deleteWatchedItemByExternalId(
@@ -36,5 +36,5 @@ export const register = (app: FastifyInstance): void => {
     response.code(204).send();
   });
 
-  app.delete(`${API_PREFIX}/watched/:externalIdentitySource/:externalIdentityId`, { preHandler: jwtGuard }, handler);
+  app.delete(`${API_PREFIX}/finished/:externalIdentitySource/:externalIdentityId`, { preHandler: jwtGuard }, handler);
 };

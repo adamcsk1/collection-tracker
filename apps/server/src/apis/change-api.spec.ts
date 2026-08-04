@@ -43,14 +43,14 @@ const insertItem = (hash = 'abc123', usernameHash = 'user', listType = 'library'
       '',
       '',
       hash,
-      listType === 'watching' ? 'series' : 'movie'
+      listType === 'tracking' ? 'series' : 'movie'
     );
   db.prepare(
     `INSERT INTO external_item_identities
       (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
      VALUES (?, ?, ?, ?, ?)`
   ).run(usernameHash, 'imdb:tt-change', 'imdb', 'tt-change', 'alias');
-  if (listType === 'watching') {
+  if (listType === 'tracking') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
       Number(result.lastInsertRowid),
       null
@@ -259,11 +259,11 @@ describe('change-api', () => {
   });
 
   it('updates a series tracker item when listType is provided', async () => {
-    insertItem('abc123', 'user', 'watching');
+    insertItem('abc123', 'user', 'tracking');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
-      query: { listType: 'watching' },
+      query: { listType: 'tracking' },
       body: { ...updatedItem, contentType: 'series', hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -276,7 +276,7 @@ describe('change-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({
         title: 'Updated',
-        listType: 'watching',
+        listType: 'tracking',
         contentType: 'series',
         tags: [],
       }),
@@ -368,22 +368,18 @@ describe('change-api', () => {
   });
 
   it('preserves completed tag when updating a completed series tracker item', async () => {
-    insertItem('abc123', 'user', 'watching');
+    insertItem('abc123', 'user', 'tracking');
     const db = getDatabase();
     const itemId = (
       db.prepare('SELECT id FROM collection_items WHERE external_item_id = ?').get('tt-change') as { id: number }
     ).id;
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, COMPLETED_TAG);
     db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(itemId, 1, 1);
-    db.prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(
-      itemId,
-      1,
-      1
-    );
+    db.prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(itemId, 1, 1);
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
-      query: { listType: 'watching' },
+      query: { listType: 'tracking' },
       body: { ...updatedItem, contentType: 'series', hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -403,11 +399,11 @@ describe('change-api', () => {
   });
 
   it('returns 400 when updating a series tracker item with a movie type', async () => {
-    insertItem('abc123', 'user', 'watching');
+    insertItem('abc123', 'user', 'tracking');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
-      query: { listType: 'watching' },
+      query: { listType: 'tracking' },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
     };

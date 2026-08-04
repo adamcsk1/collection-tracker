@@ -1,6 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { insertWatchingItem } from '../../test/mocks/series-tracker-item-mock';
+import { insertTrackingItem } from '../../test/mocks/series-tracker-item-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,7 +13,7 @@ describe('refresh-watching-seasons-api', () => {
   });
 
   it('refreshes metadata from OMDb and keeps partial successes', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     process.env.OMDB_API_KEY = 'key';
     const fetchMock = vi
       .fn()
@@ -44,7 +44,7 @@ describe('refresh-watching-seasons-api', () => {
   });
 
   it('refreshes metadata through the stored provider when addressed by IMDb identity', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     getDatabase()
       .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE username_hash = ? AND external_item_id = ?')
       .run('imdb:tt-series', 'user', 'tt-series');
@@ -90,9 +90,9 @@ describe('refresh-watching-seasons-api', () => {
   });
 
   it('sets watched timestamp after refreshed metadata changes completion status', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 1, 1);
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
@@ -121,12 +121,12 @@ describe('refresh-watching-seasons-api', () => {
   });
 
   it('clears watched timestamp when refreshed metadata adds unwatched episodes', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?')
       .run('2025-01-01 00:00:00', itemId);
     getDatabase()
-      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 1, 1);
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
@@ -158,12 +158,12 @@ describe('refresh-watching-seasons-api', () => {
   });
 
   it('prunes watched episodes outside refreshed metadata before syncing completion', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?')
       .run('2025-01-01 00:00:00', itemId);
     getDatabase()
-      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?), (?, ?, ?)')
+      .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?), (?, ?, ?)')
       .run(itemId, 1, 1, itemId, 1, 3);
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal(
@@ -186,9 +186,7 @@ describe('refresh-watching-seasons-api', () => {
     await handlerPromise();
     expect(
       getDatabase()
-        .prepare(
-          'SELECT season, episode FROM series_tracker_watched_episodes WHERE item_id = ? ORDER BY season, episode'
-        )
+        .prepare('SELECT season, episode FROM series_completed_episodes WHERE item_id = ? ORDER BY season, episode')
         .all(itemId)
     ).toEqual([{ season: 1, episode: 1 }]);
     expect(

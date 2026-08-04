@@ -3,7 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const insertWatchingItem = (): number => {
+const insertTrackingItem = (): number => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   const result = db
@@ -12,7 +12,7 @@ const insertWatchingItem = (): number => {
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run('user', 'omdb', 'tt-series', 'imdb:tt-series', 'watching', 'Series', 'series', '', '', '', 'hash', 'series');
+    .run('user', 'omdb', 'tt-series', 'imdb:tt-series', 'tracking', 'Series', 'series', '', '', '', 'hash', 'series');
   const itemId = Number(result.lastInsertRowid);
   db.prepare(
     `INSERT INTO external_item_identities
@@ -30,12 +30,12 @@ describe('delete-watching-seasons-api', () => {
   });
 
   it('deletes metadata', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 10);
     getDatabase()
-      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 1, 1);
     getDatabase()
       .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?')
@@ -60,7 +60,7 @@ describe('delete-watching-seasons-api', () => {
       completed_at: null,
     });
     expect(
-      getDatabase().prepare('SELECT 1 FROM series_tracker_watched_episodes WHERE item_id = ?').get(itemId)
+      getDatabase().prepare('SELECT 1 FROM series_completed_episodes WHERE item_id = ?').get(itemId)
     ).toBeUndefined();
   });
 });

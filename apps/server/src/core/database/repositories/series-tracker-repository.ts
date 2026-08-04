@@ -21,15 +21,15 @@ const seriesContentCondition = `collection_items.content_type = 'series'`;
 
 const librarySeriesContentCondition = `library_item.content_type = 'series'`;
 
-const toWatchingChange = (db: Database.Database, row: CollectionItemRow): CollectionItemChangeApiModel | null => {
+const toTrackingChange = (db: Database.Database, row: CollectionItemRow): CollectionItemChangeApiModel | null => {
   const sourceItem = toApiItem(db, row, row.username_hash);
-  if (sourceItem.contentType !== 'series') return null;
+  if (sourceItem.contentType !== 'series' && sourceItem.contentType !== 'book') return null;
   const item = toCollectionItemChange(sourceItem);
   item.favorite = false;
   return item;
 };
 
-const copySeriesRowToWatching = (
+const copySeriesRowToTracking = (
   db: Database.Database,
   usernameHash: string,
   sourceOwnerHash: string,
@@ -39,14 +39,14 @@ const copySeriesRowToWatching = (
 ): CollectionItemApiModel | null => {
   const trackerItem =
     (sourceRow.canonical_item_id
-      ? findCollectionItemByCanonicalItemId(db, usernameHash, sourceRow.canonical_item_id, 'watching')
+      ? findCollectionItemByCanonicalItemId(db, usernameHash, sourceRow.canonical_item_id, 'tracking')
       : undefined) ??
     findCollectionItemByExternalId(
       db,
       usernameHash,
       sourceRow.external_provider,
       sourceRow.external_item_id ?? '',
-      'watching'
+      'tracking'
     );
   if (trackerItem) {
     if (deleteSource) {
@@ -61,10 +61,10 @@ const copySeriesRowToWatching = (
     return toApiItem(db, trackerItem, usernameHash);
   }
 
-  const item = toWatchingChange(db, sourceRow);
+  const item = toTrackingChange(db, sourceRow);
   if (!item) return null;
   const transaction = db.transaction(() => {
-    const insertedItem = insertCollectionItem(db, usernameHash, getItemHash(item), item, 'watching');
+    const insertedItem = insertCollectionItem(db, usernameHash, getItemHash(item), item, 'tracking');
     if (deleteSource) {
       deleteCollectionItemByExternalId(
         db,
@@ -79,7 +79,7 @@ const copySeriesRowToWatching = (
   return transaction();
 };
 
-export const copySeriesToWatching = (
+export const copySeriesToTracking = (
   db: Database.Database,
   usernameHash: string,
   sourceOwnerHash: string,
@@ -89,10 +89,10 @@ export const copySeriesToWatching = (
 ): CollectionItemApiModel | null => {
   const sourceRow = findCollectionItemByImdbId(db, sourceOwnerHash, imdbId, sourceListType);
   if (!sourceRow) return null;
-  return copySeriesRowToWatching(db, usernameHash, sourceOwnerHash, sourceRow, sourceListType, deleteSource);
+  return copySeriesRowToTracking(db, usernameHash, sourceOwnerHash, sourceRow, sourceListType, deleteSource);
 };
 
-export const copySeriesToWatchingByExternalId = (
+export const copySeriesToTrackingByExternalId = (
   db: Database.Database,
   usernameHash: string,
   sourceOwnerHash: string,
@@ -106,7 +106,7 @@ export const copySeriesToWatchingByExternalId = (
     findCollectionItemByCanonicalItemId(db, sourceOwnerHash, canonicalItemId, sourceListType) ??
     findCollectionItemByExternalId(db, sourceOwnerHash, externalProvider, externalItemId, sourceListType);
   if (!sourceRow) return null;
-  return copySeriesRowToWatching(db, usernameHash, sourceOwnerHash, sourceRow, sourceListType, deleteSource);
+  return copySeriesRowToTracking(db, usernameHash, sourceOwnerHash, sourceRow, sourceListType, deleteSource);
 };
 
 export const markAllSeriesAsWatched = (
@@ -130,7 +130,7 @@ export const markAllSeriesAsWatched = (
                AND series_tracker.list_type = ?
           )`
     )
-    .all(sourceOwnerHash, 'library', usernameHash, 'watching') as CollectionItemRow[];
+    .all(sourceOwnerHash, 'library', usernameHash, 'tracking') as CollectionItemRow[];
 
   void debugLog(
     `markAllSeriesAsWatched candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
@@ -139,7 +139,7 @@ export const markAllSeriesAsWatched = (
   const transaction = db.transaction(() => {
     const insertedItems: CollectionItemApiModel[] = [];
     for (const row of rows) {
-      const item = copySeriesRowToWatching(db, usernameHash, sourceOwnerHash, row, 'library', false);
+      const item = copySeriesRowToTracking(db, usernameHash, sourceOwnerHash, row, 'library', false);
       if (item) insertedItems.push(item);
     }
     return insertedItems;
@@ -147,7 +147,7 @@ export const markAllSeriesAsWatched = (
   return transaction();
 };
 
-export const findWatchingItemsForLibrarySeries = (
+export const findTrackingItemsForLibrarySeries = (
   db: Database.Database,
   usernameHash: string,
   sourceOwnerHash = usernameHash
@@ -168,30 +168,30 @@ export const findWatchingItemsForLibrarySeries = (
                 AND ${librarySeriesContentCondition}
             )`
     )
-    .all(usernameHash, 'watching', sourceOwnerHash, 'library') as CollectionItemRow[];
+    .all(usernameHash, 'tracking', sourceOwnerHash, 'library') as CollectionItemRow[];
 
   return rows.map((row) => toApiItem(db, row, usernameHash));
 };
 
-export const findOwnWatchingItems = (db: Database.Database, usernameHash: string): CollectionItemApiModel[] => {
+export const findOwnTrackingItems = (db: Database.Database, usernameHash: string): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
       `SELECT ${collectionItemProjection()} FROM collection_items
        WHERE username_hash = ?
          AND list_type = ?`
     )
-    .all(usernameHash, 'watching') as CollectionItemRow[];
+    .all(usernameHash, 'tracking') as CollectionItemRow[];
 
   return rows.map((row) => toApiItem(db, row, usernameHash));
 };
 
-export const deleteAllWatchingItems = (db: Database.Database, usernameHash: string): number => {
+export const deleteAllTrackingItems = (db: Database.Database, usernameHash: string): number => {
   const deletedCanonicalItemIds = db
     .prepare('SELECT canonical_item_id FROM collection_items WHERE username_hash = ? AND list_type = ?')
-    .all(usernameHash, 'watching') as Array<{ canonical_item_id: string | null }>;
+    .all(usernameHash, 'tracking') as Array<{ canonical_item_id: string | null }>;
   const result = db
     .prepare('DELETE FROM collection_items WHERE username_hash = ? AND list_type = ?')
-    .run(usernameHash, 'watching');
+    .run(usernameHash, 'tracking');
   deleteUnreferencedExternalItemIdentities(
     db,
     usernameHash,

@@ -23,7 +23,7 @@ const tables = [
   'tag_configs',
   'user_settings',
   'series_tracker_seasons',
-  'series_tracker_watched_episodes',
+  'series_completed_episodes',
   'users',
 ];
 

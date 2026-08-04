@@ -1,4 +1,4 @@
-export interface WatchedEpisodeRow {
+export interface CompletedEpisodeRow {
   season: number;
   episode: number;
 }

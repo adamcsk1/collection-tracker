@@ -43,7 +43,7 @@ const watchingItem = {
   IMDbId: 'tt0000002',
   externalItemId: 'tt0000002',
   tags: ['#completed', '#series'],
-  listType: 'watching',
+  listType: 'tracking',
   watchedAt: '2026-05-06 00:00:00',
   contentType: 'series',
 };
@@ -55,7 +55,7 @@ const watchedItem = {
   IMDbId: 'tt0000004',
   externalItemId: 'tt0000004',
   tags: ['#movie'],
-  listType: 'watched',
+  listType: 'finished',
 };
 
 const insertUser = (usernameHash = 'user') => {
@@ -131,7 +131,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 8,
         userSettings: {
           theme: 'dark',
           animatedBackground: false,
@@ -139,8 +139,8 @@ describe('import-api', () => {
           collectionFeaturePreferences: {
             wishlist: false,
             watchlist: true,
-            watched: false,
-            watching: true,
+            finished: false,
+            tracking: true,
             books: true,
           },
         },
@@ -185,10 +185,10 @@ describe('import-api', () => {
             weight: 2,
           },
         ],
-        watchingData: {
+        trackingData: {
           'omdb/tt0000002': {
             seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }],
-            watchedEpisodes: [{ season: 1, episode: 1 }],
+            completedEpisodes: [{ season: 1, episode: 1 }],
           },
         },
       },
@@ -203,8 +203,8 @@ describe('import-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       importedCollectionItems: 6,
       importedTagManagement: 2,
-      importedWatchingSeasons: 1,
-      importedWatchingWatchedEpisodes: 1,
+      importedTrackingSeasons: 1,
+      importedTrackingCompletedEpisodes: 1,
     });
     expect(
       db.prepare('SELECT title FROM collection_items WHERE external_item_id = ?').get('tt9999999')
@@ -213,7 +213,7 @@ describe('import-api', () => {
       list_type: 'watchlist',
     });
     expect(db.prepare('SELECT list_type FROM collection_items WHERE external_item_id = ?').get('tt0000004')).toEqual({
-      list_type: 'watched',
+      list_type: 'finished',
     });
     expect(
       db
@@ -255,15 +255,15 @@ describe('import-api', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      watched: false,
-      watching: true,
+      finished: false,
+      tracking: true,
     });
     expect(
       db
         .prepare(
-          `SELECT series_tracker_watched_episodes.season, series_tracker_watched_episodes.episode
-           FROM series_tracker_watched_episodes
-           INNER JOIN collection_items ON collection_items.id = series_tracker_watched_episodes.item_id
+          `SELECT series_completed_episodes.season, series_completed_episodes.episode
+           FROM series_completed_episodes
+           INNER JOIN collection_items ON collection_items.id = series_completed_episodes.item_id
             WHERE collection_items.external_item_id = ?`
         )
         .all('tt0000002')
@@ -280,6 +280,100 @@ describe('import-api', () => {
     ).toEqual({ completed_at: '2026-05-06 00:00:00' });
   });
 
+  it('imports legacy v6 payloads with watchingData and watching/watched list types', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 6,
+        userSettings: {
+          theme: 'dark',
+          animatedBackground: false,
+          language: 'en',
+          collectionFeaturePreferences: {
+            wishlist: true,
+            watchlist: true,
+            watched: true,
+            watching: true,
+            books: true,
+          },
+        },
+        collectionItems: [
+          {
+            ...watchingItem,
+            listType: 'watching',
+          },
+          {
+            ...watchedItem,
+            listType: 'watched',
+          },
+          {
+            ...item,
+            IMDbId: undefined,
+            externalProvider: 'openlibrary',
+            externalItemId: '9780140328721',
+            externalIds: [{ source: 'isbn', id: '9780140328721' }],
+            title: 'Wish Book',
+            listType: 'wishlist',
+            contentType: 'book',
+            tags: [],
+          },
+          {
+            ...item,
+            IMDbId: undefined,
+            externalProvider: 'openlibrary',
+            externalItemId: '9780306406157',
+            externalIds: [{ source: 'isbn', id: '9780306406157' }],
+            title: 'Reading Book',
+            listType: 'watching',
+            contentType: 'book',
+            tags: [],
+            watchedAt: null,
+          },
+        ],
+        tagManagement: [],
+        watchingData: {
+          'omdb/tt0000002': {
+            seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }],
+            completedEpisodes: [{ season: 1, episode: 1 }],
+          },
+        },
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+
+    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+
+    expect(response.send).toHaveBeenCalledWith({
+      importedCollectionItems: 4,
+      importedTagManagement: 0,
+      importedTrackingSeasons: 1,
+      importedTrackingCompletedEpisodes: 1,
+    });
+    const db = getDatabase();
+    expect(db.prepare('SELECT list_type, content_type FROM collection_items ORDER BY title').all()).toEqual([
+      { list_type: 'tracking', content_type: 'series' },
+      { list_type: 'finished', content_type: 'movie' },
+      { list_type: 'tracking', content_type: 'book' },
+      { list_type: 'wishlist', content_type: 'book' },
+    ]);
+    const prefs = db
+      .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
+      .get('user') as { collection_feature_preferences: string };
+    expect(JSON.parse(prefs.collection_feature_preferences)).toEqual({
+      wishlist: true,
+      watchlist: true,
+      finished: true,
+      tracking: true,
+      books: true,
+    });
+  });
+
   it('returns 400 for unsupported full import versions', async () => {
     const response = mockResponse();
     const request: any = {
@@ -290,7 +384,7 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [item],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -305,11 +399,10 @@ describe('import-api', () => {
 
   it.each([
     ['book in library', { contentType: 'book', listType: 'library' }],
-    ['book in watch later', { contentType: 'book', listType: 'watchlist' }],
-    ['book in wishlist', { contentType: 'book', listType: 'wishlist' }],
     ['movie in book tracker', { contentType: 'movie', listType: 'books' }],
     ['favorite in a non-library list', { favorite: true, listType: 'watchlist' }],
-    ['movie in series tracker', { contentType: 'movie', listType: 'watching' }],
+    ['movie in tracking hub', { contentType: 'movie', listType: 'tracking' }],
+    ['series in finished hub', { contentType: 'series', listType: 'finished' }],
   ])('returns 400 for invalid imported %s', async (_caseName, itemChanges) => {
     const response = mockResponse();
     const request: any = {
@@ -320,7 +413,7 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [{ ...item, ...itemChanges }],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -352,7 +445,7 @@ describe('import-api', () => {
           },
         ],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -392,7 +485,7 @@ describe('import-api', () => {
           },
         ],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -425,7 +518,7 @@ describe('import-api', () => {
           },
         ],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -471,7 +564,7 @@ describe('import-api', () => {
           },
         ],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -495,7 +588,7 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [item],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -524,7 +617,7 @@ describe('import-api', () => {
           },
         ],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -550,7 +643,7 @@ describe('import-api', () => {
           userSettings: {},
           collectionItems: [{ ...item, canonicalItemId }],
           tagManagement: [],
-          watchingData: {},
+          trackingData: {},
         },
       };
       const app = buildRouteApp();
@@ -575,10 +668,10 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [{ ...watchingItem, tags: ['#series'], watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
-        watchingData: {
+        trackingData: {
           'omdb/tt0000002': {
             seasons: [{ season: 1, episodes: 2 }],
-            watchedEpisodes: [{ season: 1, episode: 1 }],
+            completedEpisodes: [{ season: 1, episode: 1 }],
           },
         },
       },
@@ -613,7 +706,7 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [{ ...watchedItem, watchedAt: 'not-a-date' }],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -635,7 +728,7 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [{ ...watchedItem, watchedAt: '2026-02-31 00:00:00' }],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -658,7 +751,7 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [{ ...watchingItem, watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -703,7 +796,7 @@ describe('import-api', () => {
         userSettings: { collectionListDisplayPreferences: { preferredRating: 'imdb' } },
         collectionItems: [],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -726,13 +819,13 @@ describe('import-api', () => {
           collectionFeaturePreferences: {
             wishlist: true,
             watchlist: true,
-            watched: true,
-            watching: 'yes',
+            finished: true,
+            tracking: 'yes',
           },
         },
         collectionItems: [],
         tagManagement: [],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -771,7 +864,7 @@ describe('import-api', () => {
             weight: 1,
           },
         ],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -803,7 +896,7 @@ describe('import-api', () => {
             weight: 2,
           },
         ],
-        watchingData: {},
+        trackingData: {},
       },
     };
     const app = buildRouteApp();
@@ -815,8 +908,8 @@ describe('import-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       importedCollectionItems: 0,
       importedTagManagement: 1,
-      importedWatchingSeasons: 0,
-      importedWatchingWatchedEpisodes: 0,
+      importedTrackingSeasons: 0,
+      importedTrackingCompletedEpisodes: 0,
     });
     expect(getDatabase().prepare('SELECT tag FROM tag_configs WHERE username_hash = ?').all('user')).toEqual([
       { tag: '#favorite' },
@@ -833,10 +926,10 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [watchingItem],
         tagManagement: [],
-        watchingData: {
+        trackingData: {
           'omdb/tt0000002': {
             seasons: [{ season: 1, episodes: 1 }],
-            watchedEpisodes: [{ season: 1, episode: 2 }],
+            completedEpisodes: [{ season: 1, episode: 2 }],
           },
         },
       },
@@ -860,10 +953,10 @@ describe('import-api', () => {
         userSettings: {},
         collectionItems: [watchingItem],
         tagManagement: [],
-        watchingData: {
+        trackingData: {
           'omdb/%E0%A4%A': {
             seasons: [{ season: 1, episodes: 1 }],
-            watchedEpisodes: [],
+            completedEpisodes: [],
           },
         },
       },

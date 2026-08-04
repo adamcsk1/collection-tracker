@@ -1,6 +1,6 @@
 import { getDatabase } from '../../src/core/database/database';
 
-export const insertWatchingItem = (usernameHash = 'user', imdbId = 'tt-series'): number => {
+export const insertTrackingItem = (usernameHash = 'user', imdbId = 'tt-series'): number => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(
     usernameHash,
@@ -10,7 +10,7 @@ export const insertWatchingItem = (usernameHash = 'user', imdbId = 'tt-series'):
     .prepare(
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
-       VALUES (?, 'omdb', ?, ?, 'watching', 'Series', 'series', '2020', '', '', '', 'hash', 'series')`
+       VALUES (?, 'omdb', ?, ?, 'tracking', 'Series', 'series', '2020', '', '', '', 'hash', 'series')`
     )
     .run(usernameHash, imdbId, `imdb:${imdbId}`);
   const itemId = Number(result.lastInsertRowid);

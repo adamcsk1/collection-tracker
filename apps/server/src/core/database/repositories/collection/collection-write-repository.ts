@@ -12,8 +12,8 @@ import {
   resolveCanonicalItemId,
   upsertExternalItemIdentities,
 } from '../external-item-identity-repository';
-import { findWatchingSeasons, findWatchingSeasonsByExternalId } from '../series-tracker-season-repository';
-import { findWatchedEpisodes, findWatchedEpisodesByExternalId } from '../series-tracker-watched-episodes-repository';
+import { findTrackingSeasons, findTrackingSeasonsByExternalId } from '../series-tracker-season-repository';
+import { findCompletedEpisodes, findCompletedEpisodesByExternalId } from '../series-completed-episodes-repository';
 import { toApiItem } from './collection-mapper';
 import { normalizeListType } from './collection-query';
 import {
@@ -71,7 +71,9 @@ export const insertCollectionItem = (
   item: CollectionItemChangeApiModel,
   listType: CollectionListTypeModel = 'library',
   watchedAt?: string | null,
-  canonicalItemIdOverride?: string
+  canonicalItemIdOverride?: string,
+  progressCurrent?: number | null,
+  progressTotal?: number | null
 ): CollectionItemApiModel => {
   const normalizedListType = normalizeListType(listType);
   return db.transaction(() => {
@@ -105,11 +107,17 @@ export const insertCollectionItem = (
 
     const itemId = Number(result.lastInsertRowid);
     replaceExternalRatings(db, itemId, item);
-    if (normalizedListType === 'watched' || normalizedListType === 'watching') {
+    if (normalizedListType === 'finished' || normalizedListType === 'tracking') {
       db.prepare(
-        `INSERT INTO collection_item_tracker_state (item_id, completed_at)
-         VALUES (?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE ? END)`
-      ).run(itemId, normalizedListType === 'watched' && !watchedAt ? 1 : 0, watchedAt ?? null);
+        `INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total)
+         VALUES (?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE ? END, ?, ?)`
+      ).run(
+        itemId,
+        normalizedListType === 'finished' && !watchedAt ? 1 : 0,
+        watchedAt ?? null,
+        progressCurrent ?? null,
+        progressTotal ?? null
+      );
     }
     upsertExternalItemIdentities(
       db,
@@ -190,6 +198,18 @@ export const updateCollectionItemByRow = (
 
     replaceExternalRatings(db, existingItem.id, updatedItem);
     replaceItemRelations(db, existingItem.id, updatedItem);
+    if (
+      (normalizedListType === 'tracking' || normalizedListType === 'finished') &&
+      (updatedItem.progressCurrent !== undefined || updatedItem.progressTotal !== undefined)
+    ) {
+      db.prepare(
+        `INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total)
+         VALUES (?, NULL, ?, ?)
+         ON CONFLICT(item_id) DO UPDATE SET
+           progress_current = excluded.progress_current,
+           progress_total = excluded.progress_total`
+      ).run(existingItem.id, updatedItem.progressCurrent ?? null, updatedItem.progressTotal ?? null);
+    }
     if (existingCanonicalItemUseCount === 1) {
       deleteExternalItemIdentitiesForCanonicalItemId(db, usernameHash, existingItem.canonical_item_id);
     }
@@ -322,16 +342,16 @@ export const collectionItemExistsByExternalId = (
   return Boolean(row);
 };
 
-export const syncWatchingCompletedTag = (
+export const syncTrackingCompletedTag = (
   db: Database.Database,
   usernameHash: string,
   imdbId: string
 ): CollectionItemApiModel | undefined => {
-  const row = findCollectionItemByImdbId(db, usernameHash, imdbId, 'watching');
+  const row = findCollectionItemByImdbId(db, usernameHash, imdbId, 'tracking');
   if (!row) return;
 
-  const seasons = findWatchingSeasons(db, usernameHash, imdbId);
-  const watchedEpisodes = findWatchedEpisodes(db, usernameHash, imdbId);
+  const seasons = findTrackingSeasons(db, usernameHash, imdbId);
+  const completedEpisodes = findCompletedEpisodes(db, usernameHash, imdbId);
   const availableEpisodes = new Set<string>();
   for (const season of seasons) {
     for (let episode = 1; episode <= season.episodes; episode++) {
@@ -340,8 +360,8 @@ export const syncWatchingCompletedTag = (
   }
   const completed =
     availableEpisodes.size > 0 &&
-    watchedEpisodes.length === availableEpisodes.size &&
-    watchedEpisodes.every((episode) => availableEpisodes.has(`${episode.season}-${episode.episode}`));
+    completedEpisodes.length === availableEpisodes.size &&
+    completedEpisodes.every((episode) => availableEpisodes.has(`${episode.season}-${episode.episode}`));
   const item = toApiItem(db, row);
   if ((completed && row.watched_at) || (!completed && !row.watched_at)) return item;
 
@@ -355,17 +375,17 @@ export const syncWatchingCompletedTag = (
     db.prepare('UPDATE collection_item_tracker_state SET completed_at = NULL WHERE item_id = ?').run(row.id);
   }
 
-  const refreshedRow = findCollectionItemByImdbId(db, usernameHash, imdbId, 'watching')!;
+  const refreshedRow = findCollectionItemByImdbId(db, usernameHash, imdbId, 'tracking')!;
   const syncedItem = toApiItem(db, refreshedRow);
   const hash = getItemHash(toCollectionItemChange(syncedItem));
   db.prepare('UPDATE collection_items SET content_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
     hash,
     row.id
   );
-  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, imdbId, 'watching')!);
+  return toApiItem(db, findCollectionItemByImdbId(db, usernameHash, imdbId, 'tracking')!);
 };
 
-export const syncWatchingCompletedTagByExternalId = (
+export const syncTrackingCompletedTagByExternalId = (
   db: Database.Database,
   usernameHash: string,
   externalProvider: string,
@@ -376,12 +396,12 @@ export const syncWatchingCompletedTagByExternalId = (
     usernameHash,
     externalProvider,
     externalItemId,
-    'watching'
+    'tracking'
   );
   if (!row) return;
 
-  const seasons = findWatchingSeasonsByExternalId(db, usernameHash, externalProvider, externalItemId);
-  const watchedEpisodes = findWatchedEpisodesByExternalId(db, usernameHash, externalProvider, externalItemId);
+  const seasons = findTrackingSeasonsByExternalId(db, usernameHash, externalProvider, externalItemId);
+  const completedEpisodes = findCompletedEpisodesByExternalId(db, usernameHash, externalProvider, externalItemId);
   const availableEpisodes = new Set<string>();
   for (const season of seasons) {
     for (let episode = 1; episode <= season.episodes; episode++) {
@@ -390,8 +410,8 @@ export const syncWatchingCompletedTagByExternalId = (
   }
   const completed =
     availableEpisodes.size > 0 &&
-    watchedEpisodes.length === availableEpisodes.size &&
-    watchedEpisodes.every((episode) => availableEpisodes.has(`${episode.season}-${episode.episode}`));
+    completedEpisodes.length === availableEpisodes.size &&
+    completedEpisodes.every((episode) => availableEpisodes.has(`${episode.season}-${episode.episode}`));
   const item = toApiItem(db, row);
   if ((completed && row.watched_at) || (!completed && !row.watched_at)) return item;
 
@@ -410,7 +430,7 @@ export const syncWatchingCompletedTagByExternalId = (
     usernameHash,
     externalProvider,
     externalItemId,
-    'watching'
+    'tracking'
   )!;
   const syncedItem = toApiItem(db, refreshedRow);
   const hash = getItemHash(toCollectionItemChange(syncedItem));
@@ -420,6 +440,6 @@ export const syncWatchingCompletedTagByExternalId = (
   );
   return toApiItem(
     db,
-    findCollectionItemByExternalIdOrCanonicalItemId(db, usernameHash, externalProvider, externalItemId, 'watching')!
+    findCollectionItemByExternalIdOrCanonicalItemId(db, usernameHash, externalProvider, externalItemId, 'tracking')!
   );
 };

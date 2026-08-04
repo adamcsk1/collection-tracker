@@ -1,4 +1,4 @@
-import { WatchingSeasonMetadataModel } from '@shared/models/api-model';
+import { TrackingSeasonMetadataModel } from '@shared/models/api-model';
 import { ExternalMetadataProvider, ExternalMetadataSeasonProvider } from './external-metadata-provider';
 import { getExternalMetadataProviderByName } from './external-metadata-provider-factory';
 
@@ -9,7 +9,7 @@ const hasSeasonMetadata = (provider: ExternalMetadataProvider): provider is Exte
 export const fetchSeriesSeasonMetadata = async (
   externalProvider: string,
   externalItemId: string
-): Promise<WatchingSeasonMetadataModel[]> => {
+): Promise<TrackingSeasonMetadataModel[]> => {
   const provider = getExternalMetadataProviderByName(externalProvider);
   return provider && hasSeasonMetadata(provider) ? provider.getSeriesSeasons(externalItemId) : [];
 };

@@ -7,7 +7,7 @@ const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertItem = (usernameHash: string, imdbId: string, listType = 'watching'): number => {
+const insertItem = (usernameHash: string, imdbId: string, listType = 'tracking'): number => {
   const result = getDatabase()
     .prepare(
       `INSERT INTO collection_items
@@ -26,7 +26,7 @@ const insertItem = (usernameHash: string, imdbId: string, listType = 'watching')
       '',
       '',
       `${usernameHash}-${listType}-${imdbId}`,
-      listType === 'watching' ? 'series' : 'movie'
+      listType === 'tracking' ? 'series' : 'movie'
     );
   return Number(result.lastInsertRowid);
 };
@@ -49,7 +49,7 @@ describe('delete-watching-items-api', () => {
       1,
       2
     );
-    db.prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(
+    db.prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(
       deletedItemId,
       1,
       1
@@ -74,12 +74,10 @@ describe('delete-watching-items-api', () => {
       .all();
     expect(rows).toEqual([
       { username_hash: 'user', external_item_id: 'tt-library', list_type: 'library' },
-      { username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'watching' },
+      { username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'tracking' },
     ]);
     expect(db.prepare('SELECT 1 FROM series_tracker_seasons WHERE item_id = ?').get(deletedItemId)).toBeUndefined();
-    expect(
-      db.prepare('SELECT 1 FROM series_tracker_watched_episodes WHERE item_id = ?').get(deletedItemId)
-    ).toBeUndefined();
+    expect(db.prepare('SELECT 1 FROM series_completed_episodes WHERE item_id = ?').get(deletedItemId)).toBeUndefined();
     expect(db.prepare('SELECT 1 FROM series_tracker_seasons WHERE item_id = ?').get(retainedItemId)).toEqual({ 1: 1 });
   });
 

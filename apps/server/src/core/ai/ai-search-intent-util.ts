@@ -15,10 +15,12 @@ const UNFINISHED_PATTERNS = [
   /\bincomplete\b/,
   /\bin progress\b/,
   /\bstill watching\b/,
-  /\bnot (?:yet )?(?:finished|completed|done)\b/,
+  /\bstill reading\b/,
+  /\bcurrently reading\b/,
+  /\bnot (?:yet )?(?:finished|completed|done|read)\b/,
   /\buncompleted\b/,
   /\bongoing\b/,
-  /\bpartial(?:ly)? watched\b/,
+  /\bpartial(?:ly)? (?:watched|read)\b/,
   /\bhalfway\b/,
   /\bbarely started\b/,
 ];
@@ -27,9 +29,13 @@ const COMPLETED_PATTERNS = [
   /\bcompleted\b/,
   /\bfinished\b/,
   /\bdone watching\b/,
+  /\bdone reading\b/,
   /\bfully watched\b/,
+  /\bfully read\b/,
   /\bwatched all\b/,
   /\ball episodes watched\b/,
+  /\balready read\b/,
+  /\bread books?\b/,
 ];
 
 const FAVORITE_PATTERNS = [/\bfavo(?:u)?rites?\b/, /\bstarred\b/];
@@ -60,6 +66,10 @@ const STATUS_STOP_WORDS = new Set([
   'series',
   'movie',
   'movies',
+  'book',
+  'books',
+  'reading',
+  'read',
   'tv',
   'item',
   'items',
@@ -83,7 +93,8 @@ const STATUS_STOP_WORDS = new Set([
   'incomplete',
   'progress',
   'still',
-  'watching',
+  'tracking',
+  'currently',
   'not',
   'yet',
   'finished',
@@ -93,13 +104,15 @@ const STATUS_STOP_WORDS = new Set([
   'ongoing',
   'partial',
   'partially',
-  'watched',
   'halfway',
   'barely',
   'started',
   'fully',
+  'already',
   'episodes',
   'episode',
+  'pages',
+  'page',
   'favorite',
   'favorites',
   'favourite',
@@ -124,8 +137,8 @@ export const getEffectiveStatusIntent = (
 ): AiSearchStatusIntent | null => {
   if (!intent) return null;
   if (intent === 'favorite') return 'favorite';
-  if (intent === 'unfinished') return listType === 'watching' ? 'unfinished' : null;
-  if (listType === 'watching' || listType === 'watched') return 'completed';
+  if (intent === 'unfinished') return listType === 'tracking' ? 'unfinished' : null;
+  if (listType === 'tracking' || listType === 'finished') return 'completed';
   return null;
 };
 

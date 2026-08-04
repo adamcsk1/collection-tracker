@@ -91,7 +91,7 @@ const insertItem = (item: {
       .prepare('INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)')
       .run(itemId, 'metacritic', item.metacriticRate);
   }
-  if (item.listType === 'watched' || item.listType === 'watching') {
+  if (item.listType === 'finished' || item.listType === 'tracking') {
     getDatabase()
       .prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)')
       .run(itemId, null);
@@ -147,7 +147,7 @@ describe('collection search APIs', () => {
       genres: ['Sci-Fi'],
       plot: 'space horror',
     });
-    insertItem({ imdbId: 'tt-alien', title: 'Alien Movie', tags: ['#movie'], listType: 'watched' });
+    insertItem({ imdbId: 'tt-alien', title: 'Alien Movie', tags: ['#movie'], listType: 'finished' });
     insertItem({
       imdbId: 'tt-drama',
       title: 'Quiet Drama',
@@ -176,13 +176,13 @@ describe('collection search APIs', () => {
     insertUser();
     insertItem({ imdbId: 'tt-unwatched-movie', title: 'Unwatched Movie', contentType: 'movie' });
     insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', contentType: 'movie' });
-    insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', listType: 'watched', contentType: 'movie' });
+    insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', listType: 'finished', contentType: 'movie' });
     insertItem({ imdbId: 'tt-unwatched-series', title: 'Unwatched Series', contentType: 'series' });
     insertItem({ imdbId: 'tt-watched-series', title: 'Watched Series', contentType: 'series' });
     insertItem({
       imdbId: 'tt-watched-series',
       title: 'Watched Series',
-      listType: 'watching',
+      listType: 'tracking',
       contentType: 'series',
     });
     const { register } = await import('./get-collection-items-api');
@@ -296,7 +296,7 @@ describe('collection search APIs', () => {
         insertItem({
           imdbId,
           title: `Title ${index}`,
-          listType: 'watching',
+          listType: 'tracking',
           contentType: 'series',
           createdAt: `2024-01-01T00:00:${String(index % 60).padStart(2, '0')}.000Z`,
         });
@@ -308,7 +308,7 @@ describe('collection search APIs', () => {
     const response = await callRoute(register, 'post', '/api/v1/items/matched', {
       body: {
         identities,
-        filters: { listType: 'watching' },
+        filters: { listType: 'tracking' },
         limit: 50,
         offset: 0,
       },
@@ -468,7 +468,7 @@ describe('collection search APIs', () => {
       genres: ['Sci-Fi'],
       favorite: true,
     });
-    insertItem({ imdbId: 'tt-movie', title: 'Movie', tags: ['#movie'], listType: 'watched' });
+    insertItem({ imdbId: 'tt-movie', title: 'Movie', tags: ['#movie'], listType: 'finished' });
     insertItem({
       imdbId: 'tt-series',
       title: 'Series',

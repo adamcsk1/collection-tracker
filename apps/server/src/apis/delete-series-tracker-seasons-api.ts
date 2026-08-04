@@ -1,14 +1,14 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
-import { WatchingSeasonsApiResponseModel } from '@shared/models/api-model';
+import { TrackingSeasonsApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
   findCollectionItemByExternalIdOrCanonicalItemId,
-  syncWatchingCompletedTagByExternalId,
+  syncTrackingCompletedTagByExternalId,
 } from '../core/database/repositories/collection';
-import { deleteWatchingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
-import { deleteWatchedEpisodesByExternalId } from '../core/database/repositories/series-tracker-watched-episodes-repository';
+import { deleteTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { deleteCompletedEpisodesByExternalId } from '../core/database/repositories/series-completed-episodes-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
@@ -23,26 +23,26 @@ export const register = (app: FastifyInstance): void => {
         request.usernameHash,
         externalIdentitySource,
         externalIdentityId,
-        'watching'
+        'tracking'
       )
     ) {
       return response.code(404).send();
     }
 
-    deleteWatchingSeasonsByExternalId(db, request.usernameHash, externalIdentitySource, externalIdentityId);
-    deleteWatchedEpisodesByExternalId(db, request.usernameHash, externalIdentitySource, externalIdentityId);
-    const item = syncWatchingCompletedTagByExternalId(
+    deleteTrackingSeasonsByExternalId(db, request.usernameHash, externalIdentitySource, externalIdentityId);
+    deleteCompletedEpisodesByExternalId(db, request.usernameHash, externalIdentitySource, externalIdentityId);
+    const item = syncTrackingCompletedTagByExternalId(
       db,
       request.usernameHash,
       externalIdentitySource,
       externalIdentityId
     );
-    const result: WatchingSeasonsApiResponseModel = { seasons: [], item };
+    const result: TrackingSeasonsApiResponseModel = { seasons: [], item };
     response.send(result);
   });
 
   app.delete(
-    `${API_PREFIX}/watching/:externalIdentitySource/:externalIdentityId/seasons`,
+    `${API_PREFIX}/tracking/:externalIdentitySource/:externalIdentityId/seasons`,
     { preHandler: jwtGuard },
     handler
   );

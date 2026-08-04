@@ -1,10 +1,10 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
-import { WatchingSeasonsApiResponseModel } from '@shared/models/api-model';
+import { TrackingSeasonsApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { findCollectionItemByExternalIdOrCanonicalItemId } from '../core/database/repositories/collection';
-import { findWatchingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { findTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
@@ -19,24 +19,24 @@ export const register = (app: FastifyInstance): void => {
         request.usernameHash,
         externalIdentitySource,
         externalIdentityId,
-        'watching'
+        'tracking'
       )
     ) {
       return response.code(404).send();
     }
 
-    const seasons = findWatchingSeasonsByExternalId(
+    const seasons = findTrackingSeasonsByExternalId(
       db,
       request.usernameHash,
       externalIdentitySource,
       externalIdentityId
     );
-    const result: WatchingSeasonsApiResponseModel = { seasons };
+    const result: TrackingSeasonsApiResponseModel = { seasons };
     response.send(result);
   });
 
   app.get(
-    `${API_PREFIX}/watching/:externalIdentitySource/:externalIdentityId/seasons`,
+    `${API_PREFIX}/tracking/:externalIdentitySource/:externalIdentityId/seasons`,
     { preHandler: jwtGuard },
     handler
   );

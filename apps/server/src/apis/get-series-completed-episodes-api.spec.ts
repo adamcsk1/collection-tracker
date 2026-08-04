@@ -3,7 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const insertWatchingItem = (): number => {
+const insertTrackingItem = (): number => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   const result = db
@@ -12,20 +12,20 @@ const insertWatchingItem = (): number => {
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run('user', 'omdb', 'tt-series', 'imdb:tt-series', 'watching', 'Series', 'series', '', '', '', 'hash', 'series');
+    .run('user', 'omdb', 'tt-series', 'imdb:tt-series', 'tracking', 'Series', 'series', '', '', '', 'hash', 'series');
   const itemId = Number(result.lastInsertRowid);
   db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(itemId, null);
   return itemId;
 };
 
-describe('get-watching-watched-episodes-api', () => {
+describe('get-watching-completed-episodes-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
   });
 
   it('returns empty watched episodes when none exist', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -33,20 +33,20 @@ describe('get-watching-watched-episodes-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./get-series-tracker-watched-episodes-api');
+    const { register } = await import('./get-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ watchedEpisodes: [], lastWatchedEpisode: null });
+    expect(response.send).toHaveBeenCalledWith({ completedEpisodes: [], lastCompletedEpisode: null });
   });
 
   it('returns watched episodes and last watched episode', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
     getDatabase()
-      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 2, 5);
     const response = mockResponse();
     const request: any = {
@@ -55,21 +55,21 @@ describe('get-watching-watched-episodes-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./get-series-tracker-watched-episodes-api');
+    const { register } = await import('./get-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      watchedEpisodes: [
+      completedEpisodes: [
         { season: 1, episode: 2 },
         { season: 2, episode: 5 },
       ],
-      lastWatchedEpisode: { season: 2, episode: 5 },
+      lastCompletedEpisode: { season: 2, episode: 5 },
     });
   });
 
   it('returns watched episodes by canonical alias', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('UPDATE collection_items SET canonical_item_id = ? WHERE id = ?')
       .run('imdb:tt-series', itemId);
@@ -81,7 +81,7 @@ describe('get-watching-watched-episodes-api', () => {
       )
       .run('user', 'imdb:tt-series', 'imdb', 'tt-series', 'alias');
     getDatabase()
-      .prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
     const response = mockResponse();
     const request: any = {
@@ -90,13 +90,13 @@ describe('get-watching-watched-episodes-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./get-series-tracker-watched-episodes-api');
+    const { register } = await import('./get-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      watchedEpisodes: [{ season: 1, episode: 2 }],
-      lastWatchedEpisode: { season: 1, episode: 2 },
+      completedEpisodes: [{ season: 1, episode: 2 }],
+      lastCompletedEpisode: { season: 1, episode: 2 },
     });
   });
 
@@ -108,7 +108,7 @@ describe('get-watching-watched-episodes-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./get-series-tracker-watched-episodes-api');
+    const { register } = await import('./get-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();

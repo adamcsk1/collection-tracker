@@ -28,15 +28,15 @@ const buildCollectionOrderBy = ({
 
 const EPISODE_COUNT_IN_CHUNK_SIZE = 400;
 
-const loadWatchingEpisodeCounts = (
+const loadTrackingEpisodeCounts = (
   db: Database.Database,
   itemIds: number[]
-): Map<number, { watchedEpisodes: number; totalEpisodes: number }> => {
-  const countsByItemId = new Map<number, { watchedEpisodes: number; totalEpisodes: number }>();
+): Map<number, { completedEpisodes: number; totalEpisodes: number }> => {
+  const countsByItemId = new Map<number, { completedEpisodes: number; totalEpisodes: number }>();
   if (!itemIds.length) return countsByItemId;
 
   for (const itemId of itemIds) {
-    countsByItemId.set(itemId, { watchedEpisodes: 0, totalEpisodes: 0 });
+    countsByItemId.set(itemId, { completedEpisodes: 0, totalEpisodes: 0 });
   }
 
   for (let itemIndex = 0; itemIndex < itemIds.length; itemIndex += EPISODE_COUNT_IN_CHUNK_SIZE) {
@@ -53,7 +53,7 @@ const loadWatchingEpisodeCounts = (
       .all(...chunk) as Array<{ itemId: number; total: number }>;
 
     for (const row of totalRows) {
-      const current = countsByItemId.get(row.itemId) ?? { watchedEpisodes: 0, totalEpisodes: 0 };
+      const current = countsByItemId.get(row.itemId) ?? { completedEpisodes: 0, totalEpisodes: 0 };
       current.totalEpisodes = Number(row.total) || 0;
       countsByItemId.set(row.itemId, current);
     }
@@ -61,15 +61,15 @@ const loadWatchingEpisodeCounts = (
     const watchedRows = db
       .prepare(
         `SELECT item_id AS itemId, COUNT(*) AS count
-         FROM series_tracker_watched_episodes
+         FROM series_completed_episodes
          WHERE item_id IN (${placeholders})
          GROUP BY item_id`
       )
       .all(...chunk) as Array<{ itemId: number; count: number }>;
 
     for (const row of watchedRows) {
-      const current = countsByItemId.get(row.itemId) ?? { watchedEpisodes: 0, totalEpisodes: 0 };
-      current.watchedEpisodes = Number(row.count) || 0;
+      const current = countsByItemId.get(row.itemId) ?? { completedEpisodes: 0, totalEpisodes: 0 };
+      current.completedEpisodes = Number(row.count) || 0;
       countsByItemId.set(row.itemId, current);
     }
   }
@@ -80,24 +80,24 @@ const loadWatchingEpisodeCounts = (
 const toAiSearchItem = (
   db: Database.Database,
   row: CollectionItemRow,
-  episodeCountsByItemId?: Map<number, { watchedEpisodes: number; totalEpisodes: number }>
+  episodeCountsByItemId?: Map<number, { completedEpisodes: number; totalEpisodes: number }>
 ): AiSearchCollectionItem => {
   const apiItem = toApiItem(db, row);
   let completed: boolean | null = null;
   let watchStatus: AiSearchCollectionItem['watchStatus'] = 'not-applicable';
-  let watchedEpisodes: number | null = null;
+  let completedEpisodes: number | null = null;
   let totalEpisodes: number | null = null;
   let progressPercent: number | null = null;
 
-  if (apiItem.listType === 'watching') {
+  if (apiItem.listType === 'tracking') {
     completed = apiItem.watchedAt !== null;
     watchStatus = completed ? 'completed' : 'unfinished';
-    const episodeCounts = episodeCountsByItemId?.get(row.id) ?? { watchedEpisodes: 0, totalEpisodes: 0 };
-    watchedEpisodes = episodeCounts.watchedEpisodes;
+    const episodeCounts = episodeCountsByItemId?.get(row.id) ?? { completedEpisodes: 0, totalEpisodes: 0 };
+    completedEpisodes = episodeCounts.completedEpisodes;
     totalEpisodes = episodeCounts.totalEpisodes;
     progressPercent =
-      totalEpisodes > 0 ? Math.min(100, Math.round((watchedEpisodes / totalEpisodes) * 100)) : completed ? 100 : 0;
-  } else if (apiItem.listType === 'watched') {
+      totalEpisodes > 0 ? Math.min(100, Math.round((completedEpisodes / totalEpisodes) * 100)) : completed ? 100 : 0;
+  } else if (apiItem.listType === 'finished') {
     completed = true;
     watchStatus = 'watched';
   }
@@ -110,7 +110,7 @@ const toAiSearchItem = (
     apiItem.watchedAt,
     completed,
     watchStatus,
-    watchedEpisodes,
+    completedEpisodes,
     totalEpisodes,
     progressPercent,
     apiItem.year,
@@ -129,7 +129,7 @@ const toAiSearchItem = (
     itemId: row.id,
     completed,
     watchStatus,
-    watchedEpisodes,
+    completedEpisodes,
     totalEpisodes,
     progressPercent,
     aiSearchContentHash: JSON.stringify(fields),
@@ -361,10 +361,10 @@ export const findCollectionItemsForAiSearch = (
           .all(...usernameHashes, listType) as CollectionItemRow[]);
 
   const watchingItemIds =
-    listType === 'watching'
+    listType === 'tracking'
       ? rows.map((row) => row.id)
-      : rows.filter((row) => row.list_type === 'watching').map((row) => row.id);
-  const episodeCountsByItemId = loadWatchingEpisodeCounts(db, watchingItemIds);
+      : rows.filter((row) => row.list_type === 'tracking').map((row) => row.id);
+  const episodeCountsByItemId = loadTrackingEpisodeCounts(db, watchingItemIds);
 
   return rows.reduce<AiSearchCollectionItem[]>((items, row) => {
     items.push(toAiSearchItem(db, row, episodeCountsByItemId));

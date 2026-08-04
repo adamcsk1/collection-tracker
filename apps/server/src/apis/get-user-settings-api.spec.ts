@@ -83,8 +83,8 @@ describe('get-user-settings-api', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      watched: false,
-      watching: true,
+      finished: false,
+      tracking: true,
     };
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     db.prepare('INSERT INTO user_settings (username_hash, collection_feature_preferences) VALUES (?, ?)').run(

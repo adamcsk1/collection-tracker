@@ -1,21 +1,21 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { MarkAllSeriesWatchedApiResponseModel, WatchingWatchedEpisodeModel } from '@shared/models/api-model';
+import { MarkAllSeriesWatchedApiResponseModel, TrackingCompletedEpisodeModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { syncWatchingCompletedTagByExternalId } from '../core/database/repositories/collection';
+import { syncTrackingCompletedTagByExternalId } from '../core/database/repositories/collection';
 import {
-  findWatchingSeasonsByExternalId,
-  replaceWatchingSeasonsByExternalId,
+  findTrackingSeasonsByExternalId,
+  replaceTrackingSeasonsByExternalId,
 } from '../core/database/repositories/series-tracker-season-repository';
 import {
-  findOwnWatchingItems,
-  findWatchingItemsForLibrarySeries,
+  findOwnTrackingItems,
+  findTrackingItemsForLibrarySeries,
   markAllSeriesAsWatched,
 } from '../core/database/repositories/series-tracker-repository';
 import {
-  findWatchedEpisodesByExternalId,
-  markAllEpisodesWatchedByExternalId,
-} from '../core/database/repositories/series-tracker-watched-episodes-repository';
+  findCompletedEpisodesByExternalId,
+  markAllEpisodesCompletedByExternalId,
+} from '../core/database/repositories/series-completed-episodes-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
@@ -23,9 +23,9 @@ import { debugLog } from '../core/logger';
 import { fetchSeriesSeasonMetadata } from '../core/external-metadata/series-season-metadata';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
-const watchedEpisodesEqual = (
-  firstEpisodes: WatchingWatchedEpisodeModel[],
-  secondEpisodes: WatchingWatchedEpisodeModel[]
+const completedEpisodesEqual = (
+  firstEpisodes: TrackingCompletedEpisodeModel[],
+  secondEpisodes: TrackingCompletedEpisodeModel[]
 ): boolean =>
   firstEpisodes.length === secondEpisodes.length &&
   firstEpisodes.every(
@@ -62,7 +62,7 @@ export const register = (app: FastifyInstance): void => {
         const seasons = await fetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);
         if (!seasons.length) continue;
 
-        replaceWatchingSeasonsByExternalId(
+        replaceTrackingSeasonsByExternalId(
           db,
           request.usernameHash,
           item.externalProvider,
@@ -72,12 +72,12 @@ export const register = (app: FastifyInstance): void => {
       }
 
       const trackerItems = selectedOwnLibrary
-        ? findOwnWatchingItems(db, request.usernameHash)
-        : findWatchingItemsForLibrarySeries(db, request.usernameHash, ownerHash);
+        ? findOwnTrackingItems(db, request.usernameHash)
+        : findTrackingItemsForLibrarySeries(db, request.usernameHash, ownerHash);
       let progressChangedCount = 0;
 
       for (const item of trackerItems) {
-        const seasons = findWatchingSeasonsByExternalId(
+        const seasons = findTrackingSeasonsByExternalId(
           db,
           request.usernameHash,
           item.externalProvider,
@@ -85,28 +85,28 @@ export const register = (app: FastifyInstance): void => {
         );
         if (!seasons.length) continue;
 
-        const existingWatchedEpisodes = findWatchedEpisodesByExternalId(
+        const existingCompletedEpisodes = findCompletedEpisodesByExternalId(
           db,
           request.usernameHash,
           item.externalProvider,
           item.externalItemId
         );
         const wasCompleted = Boolean(item.watchedAt);
-        const watchedEpisodes = markAllEpisodesWatchedByExternalId(
+        const completedEpisodes = markAllEpisodesCompletedByExternalId(
           db,
           request.usernameHash,
           item.externalProvider,
           item.externalItemId,
           seasons
         );
-        const syncedItem = syncWatchingCompletedTagByExternalId(
+        const syncedItem = syncTrackingCompletedTagByExternalId(
           db,
           request.usernameHash,
           item.externalProvider,
           item.externalItemId
         );
         const isCompleted = Boolean(syncedItem?.watchedAt);
-        if (!watchedEpisodesEqual(existingWatchedEpisodes, watchedEpisodes) || wasCompleted !== isCompleted) {
+        if (!completedEpisodesEqual(existingCompletedEpisodes, completedEpisodes) || wasCompleted !== isCompleted) {
           progressChangedCount++;
         }
       }

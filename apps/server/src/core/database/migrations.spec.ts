@@ -1924,7 +1924,7 @@ describe('runMigrations', () => {
           VALUES ('user1', 'user2', 1, 0, 0, 0);
         INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles)
           VALUES (1, 1, 3, '["E1","E2","E3"]');
-        INSERT INTO series_tracker_watched_episodes (item_id, season, episode)
+        INSERT INTO series_completed_episodes (item_id, season, episode)
           VALUES (1, 1, 1), (1, 1, 2);
         INSERT INTO ai_search_embeddings (item_id, embedding_model, content_hash, embedding_json)
           VALUES (1, 'mxbai-embed-large', 'hash', '[0.1]');
@@ -1948,7 +1948,7 @@ describe('runMigrations', () => {
           'refresh_tokens',
           'schema_migrations',
           'series_tracker_seasons',
-          'series_tracker_watched_episodes',
+          'series_completed_episodes',
           'tag_configs',
           'user_settings',
           'user_shares',
@@ -1986,7 +1986,7 @@ describe('runMigrations', () => {
       ).toThrow();
 
       expect(() =>
-        db.prepare(`INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (1, 1, 101)`).run()
+        db.prepare(`INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (1, 1, 101)`).run()
       ).toThrow();
 
       const indexes = db
@@ -2007,7 +2007,7 @@ describe('runMigrations', () => {
           'idx_collection_item_tracker_state_completed_at',
           'idx_refresh_tokens_username',
           'idx_series_tracker_seasons_item',
-          'idx_series_tracker_watched_episodes_item',
+          'idx_series_completed_episodes_item',
           'idx_tag_configs_username',
           'idx_user_shares_owner',
           'idx_user_shares_shared_with',
@@ -2203,6 +2203,131 @@ describe('runMigrations', () => {
         watching: true,
         books: true,
       });
+      db.close();
+    });
+  });
+
+  describe('029_tracking_finished_book_progress', () => {
+    it('renames tracking hubs, rewrites prefs, adds progress columns, and allows books on want-lists', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('029_tracking_finished_book_progress.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO user_settings (username_hash, collection_feature_preferences)
+        VALUES (
+          'user',
+          '{"wishlist":true,"watchlist":true,"watched":false,"watching":true,"books":true}'
+        );
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+           title, title_lower, year, user_rate, contributors, description, image, content_hash)
+        VALUES
+          ('user', 'omdb', 'tt-st', 'imdb:tt-st', 'watching', 'series', 'ST', 'st', '2020', NULL, '', '', '', 'h1'),
+          ('user', 'omdb', 'tt-mt', 'imdb:tt-mt', 'watched', 'movie', 'MT', 'mt', '2020', NULL, '', '', '', 'h2'),
+          ('user', 'openlibrary', '9780140328721', 'isbn:9780140328721', 'books', 'book', 'BK', 'bk', '2020', NULL, '', '', '', 'h3');
+        INSERT INTO collection_item_tracker_state (item_id, completed_at)
+        SELECT id, NULL FROM collection_items WHERE list_type IN ('watching', 'watched');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '029_tracking_finished_book_progress.sql'),
+        join(migrationsDir, '029_tracking_finished_book_progress.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT list_type FROM collection_items ORDER BY external_item_id').all()).toEqual([
+        { list_type: 'books' },
+        { list_type: 'finished' },
+        { list_type: 'tracking' },
+      ]);
+      const stored = db
+        .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
+        .get('user') as { collection_feature_preferences: string };
+      expect(JSON.parse(stored.collection_feature_preferences)).toEqual({
+        wishlist: true,
+        watchlist: true,
+        finished: false,
+        tracking: true,
+        books: true,
+      });
+      const trackerColumns = db.prepare('PRAGMA table_info(collection_item_tracker_state)').all() as Array<{
+        name: string;
+      }>;
+      expect(trackerColumns.map((column) => column.name).sort()).toEqual([
+        'completed_at',
+        'item_id',
+        'progress_current',
+        'progress_total',
+      ]);
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO collection_items
+              (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+               title, title_lower, year, user_rate, contributors, description, image, content_hash)
+             VALUES ('user', 'openlibrary', '9780000000002', 'isbn:9780000000002', 'wishlist', 'book',
+                     'Wish Book', 'wish book', '2021', NULL, '', '', '', 'h4')`
+          )
+          .run()
+      ).not.toThrow();
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO collection_items
+              (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+               title, title_lower, year, user_rate, contributors, description, image, content_hash)
+             VALUES ('user', 'openlibrary', '9780000000003', 'isbn:9780000000003', 'tracking', 'book',
+                     'Reading', 'reading', '2021', NULL, '', '', '', 'h5')`
+          )
+          .run()
+      ).not.toThrow();
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+  });
+
+  describe('030_rename_series_completed_episodes', () => {
+    it('renames watched episodes table to completed episodes', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState(
+        '030_rename_series_completed_episodes.sql',
+        tempDirs
+      );
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+           title, title_lower, year, user_rate, contributors, description, image, content_hash)
+        VALUES ('user', 'omdb', 'tt-st', 'imdb:tt-st', 'tracking', 'series', 'ST', 'st', '2020', NULL, '', '', '', 'h1');
+        INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (1, 1, 1), (1, 1, 2);
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '030_rename_series_completed_episodes.sql'),
+        join(migrationsDir, '030_rename_series_completed_episodes.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(
+        db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'series_completed_episodes'").get()
+      ).toEqual({ name: 'series_completed_episodes' });
+      expect(
+        db
+          .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'series_tracker_watched_episodes'")
+          .get()
+      ).toBeUndefined();
+      expect(
+        db.prepare('SELECT season, episode FROM series_completed_episodes ORDER BY season, episode').all()
+      ).toEqual([
+        { season: 1, episode: 1 },
+        { season: 1, episode: 2 },
+      ]);
+      expect(
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_series_completed_episodes_item'"
+          )
+          .get()
+      ).toEqual({ name: 'idx_series_completed_episodes_item' });
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
       db.close();
     });
   });

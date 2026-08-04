@@ -21,26 +21,27 @@ const getItemRelations = (db: Database.Database, itemId: number): { genre: strin
   ).map((row) => row.tag),
 });
 
-const isWatchedMovie = (db: Database.Database, row: CollectionItemRow, viewerUsernameHash: string): boolean => {
-  if (row.list_type === 'watched') return true;
-  if (row.list_type !== 'library') return false;
+const hasFinishedTwin = (db: Database.Database, row: CollectionItemRow, viewerUsernameHash: string): boolean => {
+  if (row.list_type === 'finished') return true;
+  if (row.list_type !== 'library' && row.list_type !== 'books') return false;
+  if (row.content_type !== 'movie' && row.content_type !== 'book') return false;
   const externalProvider = row.external_provider;
   const externalItemId = row.external_item_id ?? '';
   return Boolean(
     db
       .prepare(
         `SELECT 1
-         FROM collection_items movie_tracker
-           WHERE movie_tracker.username_hash = ?
+         FROM collection_items finished_tracker
+           WHERE finished_tracker.username_hash = ?
              AND (
-               (movie_tracker.canonical_item_id IS NOT NULL AND movie_tracker.canonical_item_id = ?)
-               OR (movie_tracker.external_provider = ? AND movie_tracker.external_item_id = ?)
+               (finished_tracker.canonical_item_id IS NOT NULL AND finished_tracker.canonical_item_id = ?)
+               OR (finished_tracker.external_provider = ? AND finished_tracker.external_item_id = ?)
              )
-             AND movie_tracker.list_type = ?
-             AND movie_tracker.content_type = ?
+             AND finished_tracker.list_type = ?
+             AND finished_tracker.content_type = ?
            LIMIT 1`
       )
-      .get(viewerUsernameHash, row.canonical_item_id, externalProvider, externalItemId, 'watched', 'movie')
+      .get(viewerUsernameHash, row.canonical_item_id, externalProvider, externalItemId, 'finished', row.content_type)
   );
 };
 
@@ -77,8 +78,10 @@ export const toApiItem = (
     titleLower: row.title_lower,
     hash: row.content_hash,
     listType: row.list_type,
-    watched: isWatchedMovie(db, row, viewerUsernameHash),
+    watched: hasFinishedTwin(db, row, viewerUsernameHash),
     watchedAt: row.watched_at,
+    progressCurrent: row.progress_current,
+    progressTotal: row.progress_total,
     ownerShareCode: getUserShareCode(row.username_hash),
   };
 

@@ -1,4 +1,4 @@
-import { WatchingSeasonMetadataModel } from '@shared/models/api-model';
+import { TrackingSeasonMetadataModel } from '@shared/models/api-model';
 import { ExternalMetadataProviderNameModel } from '@shared/models/external-metadata-provider-model';
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
 
@@ -11,5 +11,5 @@ export interface ExternalMetadataProvider {
 }
 
 export interface ExternalMetadataSeasonProvider extends ExternalMetadataProvider {
-  getSeriesSeasons(providerItemId: string): Promise<WatchingSeasonMetadataModel[]>;
+  getSeriesSeasons(providerItemId: string): Promise<TrackingSeasonMetadataModel[]>;
 }

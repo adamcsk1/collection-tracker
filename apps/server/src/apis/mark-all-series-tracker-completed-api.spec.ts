@@ -1,6 +1,6 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
-import { insertWatchingItem } from '../../test/mocks/series-tracker-item-mock';
+import { insertTrackingItem } from '../../test/mocks/series-tracker-item-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,7 +13,7 @@ describe('mark-all-watching-watched-api', () => {
   });
 
   it('marks all episodes as watched when seasons exist', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 3);
@@ -27,20 +27,20 @@ describe('mark-all-watching-watched-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./mark-all-series-tracker-watched-api');
+    const { register } = await import('./mark-all-series-tracker-completed-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        watchedEpisodes: [
+        completedEpisodes: [
           { season: 1, episode: 1 },
           { season: 1, episode: 2 },
           { season: 1, episode: 3 },
           { season: 2, episode: 1 },
           { season: 2, episode: 2 },
         ],
-        lastWatchedEpisode: { season: 2, episode: 2 },
+        lastCompletedEpisode: { season: 2, episode: 2 },
         item: expect.objectContaining({ IMDbId: 'tt-series' }),
       })
     );
@@ -60,7 +60,7 @@ describe('mark-all-watching-watched-api', () => {
         .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
         .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
     );
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -68,17 +68,17 @@ describe('mark-all-watching-watched-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./mark-all-series-tracker-watched-api');
+    const { register } = await import('./mark-all-series-tracker-completed-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        watchedEpisodes: [
+        completedEpisodes: [
           { season: 1, episode: 1 },
           { season: 1, episode: 2 },
         ],
-        lastWatchedEpisode: { season: 1, episode: 2 },
+        lastCompletedEpisode: { season: 1, episode: 2 },
         item: expect.objectContaining({ IMDbId: 'tt-series', watchedAt: expect.any(String) }),
       })
     );
@@ -101,7 +101,7 @@ describe('mark-all-watching-watched-api', () => {
         .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
         .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{}, {}] }) })
     );
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'imdb', externalIdentityId: 'tt-series' },
@@ -109,17 +109,17 @@ describe('mark-all-watching-watched-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./mark-all-series-tracker-watched-api');
+    const { register } = await import('./mark-all-series-tracker-completed-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        watchedEpisodes: [
+        completedEpisodes: [
           { season: 1, episode: 1 },
           { season: 1, episode: 2 },
         ],
-        lastWatchedEpisode: { season: 1, episode: 2 },
+        lastCompletedEpisode: { season: 1, episode: 2 },
         item: expect.objectContaining({ IMDbId: 'tt-series', watchedAt: expect.any(String) }),
       })
     );
@@ -127,7 +127,7 @@ describe('mark-all-watching-watched-api', () => {
 
   it('returns 400 when no season metadata exists', async () => {
     vi.stubEnv('OMDB_API_KEY', '');
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
@@ -135,7 +135,7 @@ describe('mark-all-watching-watched-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./mark-all-series-tracker-watched-api');
+    const { register } = await import('./mark-all-series-tracker-completed-api');
     register(app);
 
     await handlerPromise();
@@ -150,7 +150,7 @@ describe('mark-all-watching-watched-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./mark-all-series-tracker-watched-api');
+    const { register } = await import('./mark-all-series-tracker-completed-api');
     register(app);
 
     await handlerPromise();

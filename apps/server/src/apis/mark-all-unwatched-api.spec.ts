@@ -52,7 +52,7 @@ describe('mark-all-unwatched-api', () => {
   it('deletes movie tracker copies for own library movies', async () => {
     insertUser();
     insertItem('tt-1', ['#movie']);
-    insertItem('tt-1', ['#movie'], 'watched');
+    insertItem('tt-1', ['#movie'], 'finished');
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
@@ -67,7 +67,7 @@ describe('mark-all-unwatched-api', () => {
     const db = getDatabase();
     const trackerItem = db
       .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
-      .get('user', 'tt-1', 'watched');
+      .get('user', 'tt-1', 'finished');
     expect(trackerItem).toBeUndefined();
   });
 
@@ -105,9 +105,9 @@ describe('mark-all-unwatched-api', () => {
     insertUser('owner');
     insertShare('owner', 'user', true);
     insertItem('tt-shared', ['#movie'], 'library', 'owner');
-    insertItem('tt-shared', ['#movie'], 'watched', 'user');
+    insertItem('tt-shared', ['#movie'], 'finished', 'user');
     insertItem('tt-own-only', ['#movie'], 'library', 'user');
-    insertItem('tt-own-only', ['#movie'], 'watched', 'user');
+    insertItem('tt-own-only', ['#movie'], 'finished', 'user');
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };
@@ -123,8 +123,8 @@ describe('mark-all-unwatched-api', () => {
       .prepare(
         'SELECT username_hash, external_item_id, list_type FROM collection_items WHERE list_type = ? ORDER BY external_item_id'
       )
-      .all('watched');
-    expect(rows).toEqual([{ username_hash: 'user', external_item_id: 'tt-own-only', list_type: 'watched' }]);
+      .all('finished');
+    expect(rows).toEqual([{ username_hash: 'user', external_item_id: 'tt-own-only', list_type: 'finished' }]);
   });
 
   it('returns 404 when the shared library owner is missing', async () => {

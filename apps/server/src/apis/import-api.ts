@@ -3,8 +3,8 @@ import { isExternalItemIdentitySourceName } from '@shared/constants/external-met
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
 import {
   CollectionItemChangeApiModel,
-  WatchingSeasonMetadataModel,
-  WatchingWatchedEpisodeModel,
+  TrackingSeasonMetadataModel,
+  TrackingCompletedEpisodeModel,
   TagManagementApiModel,
   UserImportApiRequestModel,
   UserImportApiResponseModel,
@@ -30,21 +30,21 @@ import { getDatabase } from '../core/database/database';
 import {
   deleteCollectionItemsByUser,
   insertCollectionItem,
-  syncWatchingCompletedTagByExternalId,
+  syncTrackingCompletedTagByExternalId,
 } from '../core/database/repositories/collection';
 import {
   inferCanonicalItemId,
   normalizeExternalIdentities,
 } from '../core/database/repositories/external-item-identity-repository';
-import { replaceWatchingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
-import { replaceWatchedEpisodesByExternalId } from '../core/database/repositories/series-tracker-watched-episodes-repository';
+import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { replaceCompletedEpisodesByExternalId } from '../core/database/repositories/series-completed-episodes-repository';
 import { deleteTagManagement, upsertTagManagement } from '../core/database/repositories/tag-management-repository';
 import { deleteUserSettings, upsertUserSettings } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
 import { parseListType } from '../core/utils/query-parse-util';
-import { normalizeWatchingSeasons } from '../core/utils/series-tracker-seasons-api-util';
+import { normalizeTrackingSeasons } from '../core/utils/series-tracker-seasons-api-util';
 import { ImportedCollectionItemApiModel, ImportedUserRequestModel } from './import-api-model';
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
@@ -117,7 +117,7 @@ const isImportedCanonicalItemId = (value: unknown): value is string => {
   return isExternalItemIdentitySourceName(source) && id.trim().length > 0 && id === id.trim();
 };
 
-const isSeason = (value: unknown): value is WatchingSeasonMetadataModel => {
+const isSeason = (value: unknown): value is TrackingSeasonMetadataModel => {
   if (!isPlainObject(value)) return false;
   return (
     typeof value['season'] === 'number' &&
@@ -130,7 +130,7 @@ const isSeason = (value: unknown): value is WatchingSeasonMetadataModel => {
   );
 };
 
-const isWatchedEpisode = (value: unknown): value is WatchingWatchedEpisodeModel => {
+const isCompletedEpisode = (value: unknown): value is TrackingCompletedEpisodeModel => {
   if (!isPlainObject(value)) return false;
   return (
     typeof value['season'] === 'number' &&
@@ -192,6 +192,16 @@ const isWatchedAt = (value: unknown): value is string | null => {
   );
 };
 
+const isOptionalNonNegativeInteger = (value: unknown): value is number | null | undefined => {
+  if (value === undefined || value === null) return true;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+};
+
+const isOptionalPositiveInteger = (value: unknown): value is number | null | undefined => {
+  if (value === undefined || value === null) return true;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1;
+};
+
 const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiModel => {
   if (!isPlainObject(value)) return false;
   return (
@@ -217,32 +227,35 @@ const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiMod
     typeof value['listType'] === 'string' &&
     parseListType(value['listType']) !== undefined &&
     value['watchedAt'] !== undefined &&
-    isWatchedAt(value['watchedAt'])
+    isWatchedAt(value['watchedAt']) &&
+    isOptionalNonNegativeInteger(value['progressCurrent']) &&
+    isOptionalPositiveInteger(value['progressTotal'])
   );
 };
 
 const isUserImport = (value: unknown): value is ImportedUserRequestModel => {
   if (!isPlainObject(value)) return false;
   const importVersion = value['version'];
-  if (value['type'] !== EXPORT_TYPE || importVersion !== EXPORT_VERSION) return false;
+  if (value['type'] !== EXPORT_TYPE || (importVersion !== EXPORT_VERSION && importVersion !== 8 && importVersion !== 6))
+    return false;
   if (!isUserSettings(value['userSettings'])) return false;
   if (!Array.isArray(value['collectionItems']) || !value['collectionItems'].every(isCollectionItem)) {
     return false;
   }
   if (!Array.isArray(value['tagManagement']) || !value['tagManagement'].every(isTagManagement)) return false;
-  const watchingData = value['watchingData'];
-  if (!isPlainObject(watchingData)) return false;
+  const trackingData = value['trackingData'] ?? value['watchingData'];
+  if (!isPlainObject(trackingData)) return false;
 
   const tagManagementTags = value['tagManagement'].map((config) => config.tag);
   if (new Set(tagManagementTags).size !== tagManagementTags.length) return false;
 
-  return Object.values(watchingData).every(
+  return Object.values(trackingData).every(
     (entry) =>
       isPlainObject(entry) &&
       Array.isArray(entry['seasons']) &&
       entry['seasons'].every(isSeason) &&
-      Array.isArray(entry['watchedEpisodes']) &&
-      entry['watchedEpisodes'].every(isWatchedEpisode)
+      Array.isArray(entry['completedEpisodes']) &&
+      entry['completedEpisodes'].every(isCompletedEpisode)
   );
 };
 
@@ -266,29 +279,29 @@ const toCollectionItemChange = (item: ImportedCollectionItemApiModel): Collectio
   favorite: item.favorite,
 });
 
-const getWatchingDataKey = (externalProvider: string, externalItemId: string): string =>
+const getTrackingDataKey = (externalProvider: string, externalItemId: string): string =>
   `${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}`;
 
-const parseWatchingDataKey = (watchingDataKey: string): { externalProvider: string; externalItemId: string } | null => {
-  const separatorIndex = watchingDataKey.indexOf('/');
-  if (separatorIndex <= 0 || separatorIndex === watchingDataKey.length - 1) return null;
+const parseTrackingDataKey = (trackingDataKey: string): { externalProvider: string; externalItemId: string } | null => {
+  const separatorIndex = trackingDataKey.indexOf('/');
+  if (separatorIndex <= 0 || separatorIndex === trackingDataKey.length - 1) return null;
   try {
     return {
-      externalProvider: decodeURIComponent(watchingDataKey.slice(0, separatorIndex)),
-      externalItemId: decodeURIComponent(watchingDataKey.slice(separatorIndex + 1)),
+      externalProvider: decodeURIComponent(trackingDataKey.slice(0, separatorIndex)),
+      externalItemId: decodeURIComponent(trackingDataKey.slice(separatorIndex + 1)),
     };
   } catch {
     return null;
   }
 };
 
-const normalizeWatchedEpisodes = (
-  watchedEpisodes: WatchingWatchedEpisodeModel[]
-): WatchingWatchedEpisodeModel[] | null => {
+const normalizeCompletedEpisodes = (
+  completedEpisodes: TrackingCompletedEpisodeModel[]
+): TrackingCompletedEpisodeModel[] | null => {
   const seenEpisodes = new Set<string>();
-  const normalizedEpisodes: WatchingWatchedEpisodeModel[] = [];
+  const normalizedEpisodes: TrackingCompletedEpisodeModel[] = [];
 
-  for (const watchedEpisode of watchedEpisodes) {
+  for (const watchedEpisode of completedEpisodes) {
     const season = Number(watchedEpisode.season);
     const episode = Number(watchedEpisode.episode);
     if (
@@ -314,9 +327,9 @@ const normalizeWatchedEpisodes = (
   });
 };
 
-const watchedEpisodesExistInSeasons = (
-  watchedEpisodes: WatchingWatchedEpisodeModel[],
-  seasons: WatchingSeasonMetadataModel[]
+const completedEpisodesExistInSeasons = (
+  completedEpisodes: TrackingCompletedEpisodeModel[],
+  seasons: TrackingSeasonMetadataModel[]
 ): boolean => {
   const availableEpisodes = new Set<string>();
   for (const season of seasons) {
@@ -325,26 +338,31 @@ const watchedEpisodesExistInSeasons = (
     }
   }
 
-  return watchedEpisodes.every((episode) => availableEpisodes.has(`${episode.season}-${episode.episode}`));
+  return completedEpisodes.every((episode) => availableEpisodes.has(`${episode.season}-${episode.episode}`));
 };
 
-const normalizeWatchingImportData = (
+const normalizeTrackingImportData = (
   importData: ImportedUserRequestModel,
-  watchingDataKeys: Set<string>
-): UserImportApiRequestModel['watchingData'] | null => {
-  const normalizedWatchingData: UserImportApiRequestModel['watchingData'] = {};
+  trackingDataKeys: Set<string>
+): UserImportApiRequestModel['trackingData'] | null => {
+  const normalizedTrackingData: UserImportApiRequestModel['trackingData'] = {};
 
-  for (const [watchingDataKey, watchingData] of Object.entries(importData.watchingData ?? {})) {
-    if (!watchingDataKeys.has(watchingDataKey) || !parseWatchingDataKey(watchingDataKey)) return null;
+  const sourceTrackingData =
+    importData.trackingData ??
+    (importData as ImportedUserRequestModel & { watchingData?: UserImportApiRequestModel['trackingData'] })
+      .watchingData ??
+    {};
+  for (const [trackingDataKey, trackingData] of Object.entries(sourceTrackingData)) {
+    if (!trackingDataKeys.has(trackingDataKey) || !parseTrackingDataKey(trackingDataKey)) return null;
 
-    const seasons = normalizeWatchingSeasons({ seasons: watchingData.seasons });
-    const watchedEpisodes = normalizeWatchedEpisodes(watchingData.watchedEpisodes);
-    if (!seasons || !watchedEpisodes || !watchedEpisodesExistInSeasons(watchedEpisodes, seasons)) return null;
+    const seasons = normalizeTrackingSeasons({ seasons: trackingData.seasons });
+    const completedEpisodes = normalizeCompletedEpisodes(trackingData.completedEpisodes);
+    if (!seasons || !completedEpisodes || !completedEpisodesExistInSeasons(completedEpisodes, seasons)) return null;
 
-    normalizedWatchingData[watchingDataKey] = { seasons, watchedEpisodes };
+    normalizedTrackingData[trackingDataKey] = { seasons, completedEpisodes };
   }
 
-  return normalizedWatchingData;
+  return normalizedTrackingData;
 };
 
 export const register = (app: FastifyInstance): void => {
@@ -368,7 +386,14 @@ export const register = (app: FastifyInstance): void => {
       const normalizedItems = importData.collectionItems.map((item) => {
         const normalizedItem = normalizeItem(toCollectionItemChange(item));
         const listType = parseListType(item.listType);
-        return { item: normalizedItem, listType, watchedAt: item.watchedAt, canonicalItemId: item.canonicalItemId };
+        return {
+          item: normalizedItem,
+          listType,
+          watchedAt: item.watchedAt,
+          canonicalItemId: item.canonicalItemId,
+          progressCurrent: item.progressCurrent ?? null,
+          progressTotal: item.progressTotal ?? null,
+        };
       });
       if (
         normalizedItems.some(
@@ -389,7 +414,7 @@ export const register = (app: FastifyInstance): void => {
       const uniqueItems = new Set<string>();
       const uniqueCanonicalItems = new Set<string>();
       const uniqueExternalIdentities = new Set<string>();
-      const watchingDataKeys = new Set<string>();
+      const trackingDataKeys = new Set<string>();
       for (const entry of normalizedItems) {
         const key = `${entry.item!.externalProvider}\u0000${entry.item!.externalItemId}\u0000${entry.listType}`;
         if (uniqueItems.has(key)) return response.code(400).send();
@@ -418,15 +443,15 @@ export const register = (app: FastifyInstance): void => {
         const canonicalKey = `${canonicalItemId}\u0000${entry.listType}`;
         if (uniqueCanonicalItems.has(canonicalKey)) return response.code(400).send();
         uniqueCanonicalItems.add(canonicalKey);
-        if (entry.listType === 'watching') {
-          watchingDataKeys.add(getWatchingDataKey(entry.item!.externalProvider, entry.item!.externalItemId));
+        if (entry.listType === 'tracking') {
+          trackingDataKeys.add(getTrackingDataKey(entry.item!.externalProvider, entry.item!.externalItemId));
         }
       }
-      const normalizedWatchingData = normalizeWatchingImportData(importData, watchingDataKeys);
-      if (!normalizedWatchingData) return response.code(400).send();
+      const normalizedTrackingData = normalizeTrackingImportData(importData, trackingDataKeys);
+      if (!normalizedTrackingData) return response.code(400).send();
 
-      let importedWatchingSeasons = 0;
-      let importedWatchingWatchedEpisodes = 0;
+      let importedTrackingSeasons = 0;
+      let importedTrackingCompletedEpisodes = 0;
 
       db.transaction(() => {
         deleteUserSettings(db, usernameHash);
@@ -445,33 +470,35 @@ export const register = (app: FastifyInstance): void => {
             item,
             entry.listType,
             entry.watchedAt,
-            entry.canonicalItemId
+            entry.canonicalItemId,
+            entry.progressCurrent,
+            entry.progressTotal
           );
         }
 
-        for (const [watchingDataKey, watchingData] of Object.entries(normalizedWatchingData)) {
-          const externalIdentity = parseWatchingDataKey(watchingDataKey)!;
-          const seasons = replaceWatchingSeasonsByExternalId(
+        for (const [trackingDataKey, trackingData] of Object.entries(normalizedTrackingData)) {
+          const externalIdentity = parseTrackingDataKey(trackingDataKey)!;
+          const seasons = replaceTrackingSeasonsByExternalId(
             db,
             usernameHash,
             externalIdentity.externalProvider,
             externalIdentity.externalItemId,
-            watchingData.seasons
+            trackingData.seasons
           );
-          const watchedEpisodes = replaceWatchedEpisodesByExternalId(
+          const completedEpisodes = replaceCompletedEpisodesByExternalId(
             db,
             usernameHash,
             externalIdentity.externalProvider,
             externalIdentity.externalItemId,
-            watchingData.watchedEpisodes
+            trackingData.completedEpisodes
           );
-          importedWatchingSeasons += seasons.length;
-          importedWatchingWatchedEpisodes += watchedEpisodes.length;
+          importedTrackingSeasons += seasons.length;
+          importedTrackingCompletedEpisodes += completedEpisodes.length;
         }
 
-        for (const watchingDataKey of watchingDataKeys) {
-          const externalIdentity = parseWatchingDataKey(watchingDataKey)!;
-          syncWatchingCompletedTagByExternalId(
+        for (const trackingDataKey of trackingDataKeys) {
+          const externalIdentity = parseTrackingDataKey(trackingDataKey)!;
+          syncTrackingCompletedTagByExternalId(
             db,
             usernameHash,
             externalIdentity.externalProvider,
@@ -483,8 +510,8 @@ export const register = (app: FastifyInstance): void => {
       const result: UserImportApiResponseModel = {
         importedCollectionItems: body.collectionItems.length,
         importedTagManagement: importData.tagManagement.length,
-        importedWatchingSeasons,
-        importedWatchingWatchedEpisodes,
+        importedTrackingSeasons,
+        importedTrackingCompletedEpisodes,
       };
       response.send(result);
     })

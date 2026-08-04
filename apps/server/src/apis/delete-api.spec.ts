@@ -29,7 +29,7 @@ const insertItem = (hash = 'abc123', usernameHash = 'user') => {
   ).run(usernameHash, 'omdb', 'tt-delete', 'omdb:tt-delete', '', '', '', '', '', hash);
 };
 
-const insertTypedItem = (listType: 'watchlist' | 'wishlist' | 'watching', hash = 'abc123', usernameHash = 'user') => {
+const insertTypedItem = (listType: 'watchlist' | 'wishlist' | 'tracking', hash = 'abc123', usernameHash = 'user') => {
   const db = getDatabase();
   insertUser(usernameHash);
   const result = db
@@ -50,9 +50,9 @@ const insertTypedItem = (listType: 'watchlist' | 'wishlist' | 'watching', hash =
       '',
       '',
       hash,
-      listType === 'watching' ? 'series' : 'movie'
+      listType === 'tracking' ? 'series' : 'movie'
     );
-  if (listType === 'watching') {
+  if (listType === 'tracking') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
       Number(result.lastInsertRowid),
       null
@@ -170,10 +170,10 @@ describe('delete-api', () => {
   });
 
   it('deletes a series tracker item when listType is provided', async () => {
-    insertTypedItem('watching');
+    insertTypedItem('tracking');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
-      query: { hash: 'abc123', listType: 'watching' },
+      query: { hash: 'abc123', listType: 'tracking' },
       usernameHash: 'user',
     };
     const response = mockResponse();
@@ -193,14 +193,14 @@ describe('delete-api', () => {
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run('user', 'omdb', 'tt0133093', 'imdb:tt0133093', 'watching', 'Title', 'title', '', '', '', 'abc123', 'series');
+    ).run('user', 'omdb', 'tt0133093', 'imdb:tt0133093', 'tracking', 'Title', 'title', '', '', '', 'abc123', 'series');
     db.prepare(
       `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
     ).run('user', 'imdb:tt0133093', 'imdb', 'tt0133093', 'alias');
     const request: any = {
       params: { externalIdentitySource: 'imdb', externalIdentityId: 'tt0133093' },
-      query: { hash: 'abc123', listType: 'watching' },
+      query: { hash: 'abc123', listType: 'tracking' },
       usernameHash: 'user',
     };
     const response = mockResponse();
@@ -213,7 +213,7 @@ describe('delete-api', () => {
 
     expect(response.code).toHaveBeenCalledWith(204);
     expect(
-      db.prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?').get('user', 'watching')
+      db.prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?').get('user', 'tracking')
     ).toBeUndefined();
   });
 

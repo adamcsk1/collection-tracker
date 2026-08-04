@@ -3,7 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const insertWatchingItem = (): number => {
+const insertTrackingItem = (): number => {
   const db = getDatabase();
   db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
   const result = db
@@ -12,7 +12,7 @@ const insertWatchingItem = (): number => {
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash, content_type)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run('user', 'omdb', 'tt-series', 'imdb:tt-series', 'watching', 'Series', 'series', '', '', '', 'hash', 'series');
+    .run('user', 'omdb', 'tt-series', 'imdb:tt-series', 'tracking', 'Series', 'series', '', '', '', 'hash', 'series');
   const itemId = Number(result.lastInsertRowid);
   db.prepare(
     `INSERT INTO external_item_identities
@@ -23,14 +23,14 @@ const insertWatchingItem = (): number => {
   return itemId;
 };
 
-describe('change-watching-watched-episodes-api', () => {
+describe('change-watching-completed-episodes-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
   });
 
   it('replaces watched episodes and returns sorted list', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?), (?, ?, ?)')
       .run(itemId, 1, 5, itemId, 2, 3);
@@ -38,7 +38,7 @@ describe('change-watching-watched-episodes-api', () => {
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: {
-        watchedEpisodes: [
+        completedEpisodes: [
           { season: 2, episode: 3 },
           { season: 1, episode: 5 },
         ],
@@ -47,47 +47,47 @@ describe('change-watching-watched-episodes-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        watchedEpisodes: [
+        completedEpisodes: [
           { season: 1, episode: 5 },
           { season: 2, episode: 3 },
         ],
-        lastWatchedEpisode: { season: 2, episode: 3 },
+        lastCompletedEpisode: { season: 2, episode: 3 },
         item: expect.objectContaining({ IMDbId: 'tt-series' }),
       })
     );
   });
 
   it('clears all watched episodes when empty array is sent', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
-      body: { watchedEpisodes: [] },
+      body: { completedEpisodes: [] },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        watchedEpisodes: [],
-        lastWatchedEpisode: null,
+        completedEpisodes: [],
+        lastCompletedEpisode: null,
         item: expect.objectContaining({ IMDbId: 'tt-series' }),
       })
     );
   });
 
   it('sets watched timestamp when all episodes are watched', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
@@ -95,7 +95,7 @@ describe('change-watching-watched-episodes-api', () => {
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: {
-        watchedEpisodes: [
+        completedEpisodes: [
           { season: 1, episode: 1 },
           { season: 1, episode: 2 },
         ],
@@ -104,7 +104,7 @@ describe('change-watching-watched-episodes-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
@@ -116,7 +116,7 @@ describe('change-watching-watched-episodes-api', () => {
   });
 
   it('rejects watched episodes outside saved metadata', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
@@ -124,7 +124,7 @@ describe('change-watching-watched-episodes-api', () => {
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: {
-        watchedEpisodes: [
+        completedEpisodes: [
           { season: 1, episode: 1 },
           { season: 2, episode: 1 },
         ],
@@ -133,41 +133,41 @@ describe('change-watching-watched-episodes-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(400);
     expect(
-      getDatabase().prepare('SELECT 1 FROM series_tracker_watched_episodes WHERE item_id = ?').get(itemId)
+      getDatabase().prepare('SELECT 1 FROM series_completed_episodes WHERE item_id = ?').get(itemId)
     ).toBeUndefined();
   });
 
   it('rejects watched episode numbers above saved season episode count', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
-      body: { watchedEpisodes: [{ season: 1, episode: 3 }] },
+      body: { completedEpisodes: [{ season: 1, episode: 3 }] },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(400);
     expect(
-      getDatabase().prepare('SELECT 1 FROM series_tracker_watched_episodes WHERE item_id = ?').get(itemId)
+      getDatabase().prepare('SELECT 1 FROM series_completed_episodes WHERE item_id = ?').get(itemId)
     ).toBeUndefined();
   });
 
   it('clears watched timestamp when not all episodes are watched', async () => {
-    const itemId = insertWatchingItem();
+    const itemId = insertTrackingItem();
     getDatabase()
       .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
@@ -177,12 +177,12 @@ describe('change-watching-watched-episodes-api', () => {
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
-      body: { watchedEpisodes: [{ season: 1, episode: 1 }] },
+      body: { completedEpisodes: [{ season: 1, episode: 1 }] },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
@@ -194,16 +194,16 @@ describe('change-watching-watched-episodes-api', () => {
   });
 
   it('rejects invalid season numbers', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
-      body: { watchedEpisodes: [{ season: 0, episode: 1 }] },
+      body: { completedEpisodes: [{ season: 0, episode: 1 }] },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
@@ -211,16 +211,16 @@ describe('change-watching-watched-episodes-api', () => {
   });
 
   it('rejects invalid episode numbers', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
-      body: { watchedEpisodes: [{ season: 1, episode: 0 }] },
+      body: { completedEpisodes: [{ season: 1, episode: 0 }] },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
@@ -228,12 +228,12 @@ describe('change-watching-watched-episodes-api', () => {
   });
 
   it('rejects duplicate episodes', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
       body: {
-        watchedEpisodes: [
+        completedEpisodes: [
           { season: 1, episode: 1 },
           { season: 1, episode: 1 },
         ],
@@ -242,7 +242,7 @@ describe('change-watching-watched-episodes-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
@@ -250,16 +250,16 @@ describe('change-watching-watched-episodes-api', () => {
   });
 
   it('rejects non-array body', async () => {
-    insertWatchingItem();
+    insertTrackingItem();
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
-      body: { watchedEpisodes: null },
+      body: { completedEpisodes: null },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();
@@ -270,12 +270,12 @@ describe('change-watching-watched-episodes-api', () => {
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-unknown' },
-      body: { watchedEpisodes: [{ season: 1, episode: 1 }] },
+      body: { completedEpisodes: [{ season: 1, episode: 1 }] },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
 
-    const { register } = await import('./change-series-tracker-watched-episodes-api');
+    const { register } = await import('./change-series-completed-episodes-api');
     register(app);
 
     await handlerPromise();

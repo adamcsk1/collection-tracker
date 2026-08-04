@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { getDatabase } from '../database';
 import {
-  copySeriesToWatching,
-  deleteAllWatchingItems,
-  findOwnWatchingItems,
-  findWatchingItemsForLibrarySeries,
+  copySeriesToTracking,
+  deleteAllTrackingItems,
+  findOwnTrackingItems,
+  findTrackingItemsForLibrarySeries,
   markAllSeriesAsWatched,
 } from './series-tracker-repository';
 
@@ -60,7 +60,7 @@ const insertItem = (
        VALUES (?, ?, 'imdb', ?, 'primary')`
     ).run(usernameHash, overrides.canonicalItemId ?? `imdb:${imdbId}`, imdbId);
   }
-  if (listType === 'watching') {
+  if (listType === 'tracking') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, NULL)').run(itemId);
   }
   for (const tag of tags) {
@@ -84,12 +84,12 @@ describe('watching-repository', () => {
     insertItem('user', 'tt-1', ['#series', '#action']);
     const db = getDatabase();
 
-    const result = copySeriesToWatching(db, 'user', 'user', 'tt-1', 'library');
+    const result = copySeriesToTracking(db, 'user', 'user', 'tt-1', 'library');
 
     expect(result).toEqual(
       expect.objectContaining({
         IMDbId: 'tt-1',
-        listType: 'watching',
+        listType: 'tracking',
         contentType: 'series',
         tags: ['#action', '#series'],
       })
@@ -102,42 +102,42 @@ describe('watching-repository', () => {
          WHERE collection_items.username_hash = ? AND collection_items.external_provider = ?
            AND collection_items.external_item_id = ? AND collection_items.list_type = ?`
       )
-      .get('user', 'omdb', 'tt-1', 'watching') as { list_type: string; completed_at: string | null } | undefined;
-    expect(trackerRow?.list_type).toBe('watching');
+      .get('user', 'omdb', 'tt-1', 'tracking') as { list_type: string; completed_at: string | null } | undefined;
+    expect(trackerRow?.list_type).toBe('tracking');
     expect(trackerRow?.completed_at).toBeNull();
   });
 
   it('returns existing tracker item when already present (idempotent)', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#series']);
-    insertItem('user', 'tt-1', ['#series'], 'watching');
+    insertItem('user', 'tt-1', ['#series'], 'tracking');
     const db = getDatabase();
 
-    const result = copySeriesToWatching(db, 'user', 'user', 'tt-1', 'library');
+    const result = copySeriesToTracking(db, 'user', 'user', 'tt-1', 'library');
 
-    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-1', listType: 'watching' }));
+    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-1', listType: 'tracking' }));
     const count = db
       .prepare(
         'SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('user', 'omdb', 'tt-1', 'watching') as { count: number };
+      .get('user', 'omdb', 'tt-1', 'tracking') as { count: number };
     expect(count.count).toBe(1);
   });
 
   it('returns existing tracker item by provider identity when legacy IMDb IDs differ', () => {
     insertUser('user');
     insertItem('user', 'tt-library', ['#series'], 'library', { externalItemId: 'provider-series-1' });
-    insertItem('user', 'tt-tracker', ['#series'], 'watching', { externalItemId: 'provider-series-1' });
+    insertItem('user', 'tt-tracker', ['#series'], 'tracking', { externalItemId: 'provider-series-1' });
     const db = getDatabase();
 
-    const result = copySeriesToWatching(db, 'user', 'user', 'tt-library', 'library');
+    const result = copySeriesToTracking(db, 'user', 'user', 'tt-library', 'library');
 
-    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-tracker', listType: 'watching' }));
+    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-tracker', listType: 'tracking' }));
     const count = db
       .prepare(
         'SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('user', 'omdb', 'provider-series-1', 'watching') as { count: number };
+      .get('user', 'omdb', 'provider-series-1', 'tracking') as { count: number };
     expect(count.count).toBe(1);
   });
 
@@ -148,19 +148,19 @@ describe('watching-repository', () => {
       externalItemId: 'series-1',
       canonicalItemId: 'imdb:tt-same',
     });
-    insertItem('user', 'tt-tracker', ['#series'], 'watching', {
+    insertItem('user', 'tt-tracker', ['#series'], 'tracking', {
       externalProvider: 'omdb',
       externalItemId: 'tt-same',
       canonicalItemId: 'imdb:tt-same',
     });
     const db = getDatabase();
 
-    const result = copySeriesToWatching(db, 'user', 'user', 'tt-library', 'library');
+    const result = copySeriesToTracking(db, 'user', 'user', 'tt-library', 'library');
 
-    expect(result).toEqual(expect.objectContaining({ canonicalItemId: 'imdb:tt-same', listType: 'watching' }));
+    expect(result).toEqual(expect.objectContaining({ canonicalItemId: 'imdb:tt-same', listType: 'tracking' }));
     const count = db
       .prepare('SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND list_type = ?')
-      .get('user', 'watching') as { count: number };
+      .get('user', 'tracking') as { count: number };
     expect(count.count).toBe(1);
   });
 
@@ -169,7 +169,7 @@ describe('watching-repository', () => {
     insertItem('user', 'tt-1', ['#series', '#completed', '#favorite', '#watchlist', '#wishlist', '#action']);
     const db = getDatabase();
 
-    const result = copySeriesToWatching(db, 'user', 'user', 'tt-1', 'library');
+    const result = copySeriesToTracking(db, 'user', 'user', 'tt-1', 'library');
 
     expect(result).toBeTruthy();
     expect(result!.contentType).toBe('series');
@@ -185,7 +185,7 @@ describe('watching-repository', () => {
     insertItem('user', 'tt-1', ['#series'], 'watchlist');
     const db = getDatabase();
 
-    copySeriesToWatching(db, 'user', 'user', 'tt-1', 'watchlist', true);
+    copySeriesToTracking(db, 'user', 'user', 'tt-1', 'watchlist', true);
 
     const source = db
       .prepare(
@@ -199,7 +199,7 @@ describe('watching-repository', () => {
     insertUser('user');
     const db = getDatabase();
 
-    const result = copySeriesToWatching(db, 'user', 'user', 'tt-missing', 'library');
+    const result = copySeriesToTracking(db, 'user', 'user', 'tt-missing', 'library');
 
     expect(result).toBeNull();
   });
@@ -209,7 +209,7 @@ describe('watching-repository', () => {
     insertItem('user', 'tt-1', ['#movie'], 'library', { contentType: 'movie' });
     const db = getDatabase();
 
-    const result = copySeriesToWatching(db, 'user', 'user', 'tt-1', 'library');
+    const result = copySeriesToTracking(db, 'user', 'user', 'tt-1', 'library');
 
     expect(result).toBeNull();
   });
@@ -221,14 +221,14 @@ describe('watching-repository', () => {
     insertItem('owner', 'tt-1', ['#series']);
     const db = getDatabase();
 
-    const result = copySeriesToWatching(db, 'viewer', 'owner', 'tt-1', 'library');
+    const result = copySeriesToTracking(db, 'viewer', 'owner', 'tt-1', 'library');
 
-    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-1', listType: 'watching' }));
+    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-1', listType: 'tracking' }));
     const viewerTracker = db
       .prepare(
         'SELECT 1 FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('viewer', 'omdb', 'tt-1', 'watching');
+      .get('viewer', 'omdb', 'tt-1', 'tracking');
     expect(viewerTracker).toBeTruthy();
   });
 
@@ -241,13 +241,13 @@ describe('watching-repository', () => {
     const result = markAllSeriesAsWatched(db, 'user', 'user');
 
     expect(result).toHaveLength(1);
-    expect(result[0]).toEqual(expect.objectContaining({ IMDbId: 'tt-1', listType: 'watching' }));
+    expect(result[0]).toEqual(expect.objectContaining({ IMDbId: 'tt-1', listType: 'tracking' }));
   });
 
   it('markAllSeriesAsWatched skips items already in tracker', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#series']);
-    insertItem('user', 'tt-1', ['#series'], 'watching');
+    insertItem('user', 'tt-1', ['#series'], 'tracking');
     const db = getDatabase();
 
     const result = markAllSeriesAsWatched(db, 'user', 'user');
@@ -262,7 +262,7 @@ describe('watching-repository', () => {
       externalItemId: 'series-1',
       canonicalItemId: 'imdb:tt-same',
     });
-    insertItem('user', 'tt-tracker', ['#series'], 'watching', {
+    insertItem('user', 'tt-tracker', ['#series'], 'tracking', {
       externalProvider: 'omdb',
       externalItemId: 'tt-same',
       canonicalItemId: 'imdb:tt-same',
@@ -284,7 +284,7 @@ describe('watching-repository', () => {
     const result = markAllSeriesAsWatched(db, 'user', 'owner');
 
     expect(result).toHaveLength(1);
-    expect(result[0]).toEqual(expect.objectContaining({ IMDbId: 'tt-shared', listType: 'watching' }));
+    expect(result[0]).toEqual(expect.objectContaining({ IMDbId: 'tt-shared', listType: 'tracking' }));
   });
 
   it('markAllSeriesAsWatched copies provider-only library series', () => {
@@ -307,8 +307,8 @@ describe('watching-repository', () => {
         .prepare(
           'SELECT external_item_id, list_type FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
         )
-        .get('user', 'omdb', 'series-1', 'watching')
-    ).toEqual({ external_item_id: 'series-1', list_type: 'watching' });
+        .get('user', 'omdb', 'series-1', 'tracking')
+    ).toEqual({ external_item_id: 'series-1', list_type: 'tracking' });
   });
 
   it('markAllSeriesAsWatched returns empty array when no candidates exist', () => {
@@ -320,65 +320,65 @@ describe('watching-repository', () => {
     expect(result).toEqual([]);
   });
 
-  it('findWatchingItemsForLibrarySeries returns tracker items with corresponding library series', () => {
+  it('findTrackingItemsForLibrarySeries returns tracker items with corresponding library series', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#series'], 'library');
-    insertItem('user', 'tt-1', ['#series'], 'watching');
-    insertItem('user', 'tt-2', ['#series'], 'watching');
+    insertItem('user', 'tt-1', ['#series'], 'tracking');
+    insertItem('user', 'tt-2', ['#series'], 'tracking');
     const db = getDatabase();
 
-    const result = findWatchingItemsForLibrarySeries(db, 'user', 'user');
+    const result = findTrackingItemsForLibrarySeries(db, 'user', 'user');
 
     expect(result).toHaveLength(1);
     expect(result[0].IMDbId).toBe('tt-1');
   });
 
-  it('findWatchingItemsForLibrarySeries matches corresponding library series by canonical identity', () => {
+  it('findTrackingItemsForLibrarySeries matches corresponding library series by canonical identity', () => {
     insertUser('user');
     insertItem('user', 'tt-library', ['#series'], 'library', {
       externalProvider: 'omdb',
       externalItemId: 'series-1',
       canonicalItemId: 'imdb:tt-same',
     });
-    insertItem('user', 'tt-tracker', ['#series'], 'watching', {
+    insertItem('user', 'tt-tracker', ['#series'], 'tracking', {
       externalProvider: 'omdb',
       externalItemId: 'tt-same',
       canonicalItemId: 'imdb:tt-same',
     });
     const db = getDatabase();
 
-    const result = findWatchingItemsForLibrarySeries(db, 'user', 'user');
+    const result = findTrackingItemsForLibrarySeries(db, 'user', 'user');
 
     expect(result).toHaveLength(1);
     expect(result[0].canonicalItemId).toBe('imdb:tt-same');
   });
 
-  it('findOwnWatchingItems returns only own tracker items', () => {
+  it('findOwnTrackingItems returns only own tracker items', () => {
     insertUser('user');
     insertUser('other');
-    insertItem('user', 'tt-1', ['#series'], 'watching');
-    insertItem('other', 'tt-2', ['#series'], 'watching');
+    insertItem('user', 'tt-1', ['#series'], 'tracking');
+    insertItem('other', 'tt-2', ['#series'], 'tracking');
     const db = getDatabase();
 
-    const result = findOwnWatchingItems(db, 'user');
+    const result = findOwnTrackingItems(db, 'user');
 
     expect(result).toHaveLength(1);
     expect(result[0].IMDbId).toBe('tt-1');
   });
 
-  it('deleteAllWatchingItems removes all current user tracker items', () => {
+  it('deleteAllTrackingItems removes all current user tracker items', () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#series'], 'watching');
-    insertItem('user', 'tt-2', ['#series'], 'watching');
+    insertItem('user', 'tt-1', ['#series'], 'tracking');
+    insertItem('user', 'tt-2', ['#series'], 'tracking');
     insertItem('user', 'tt-3', ['#series'], 'library');
     const db = getDatabase();
 
-    const changedCount = deleteAllWatchingItems(db, 'user');
+    const changedCount = deleteAllTrackingItems(db, 'user');
 
     expect(changedCount).toBe(2);
     const rows = db
       .prepare('SELECT external_item_id FROM collection_items WHERE username_hash = ? AND list_type = ?')
-      .all('user', 'watching') as { external_item_id: string }[];
+      .all('user', 'tracking') as { external_item_id: string }[];
     expect(rows).toEqual([]);
     expect(db.prepare('SELECT COUNT(*) AS count FROM collection_item_tracker_state').get()).toEqual({ count: 0 });
     expect(

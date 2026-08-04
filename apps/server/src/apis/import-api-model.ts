@@ -6,7 +6,12 @@ export type ImportedCollectionItemApiModel = Omit<CollectionItemApiModel, 'exter
   externalIds?: ExternalItemIdentityModel[];
 };
 
-export type ImportedUserRequestModel = Omit<UserImportApiRequestModel, 'version' | 'collectionItems'> & {
-  version: typeof EXPORT_VERSION;
+export type ImportedUserRequestModel = Omit<
+  UserImportApiRequestModel,
+  'version' | 'collectionItems' | 'trackingData'
+> & {
+  version: typeof EXPORT_VERSION | 6;
   collectionItems: ImportedCollectionItemApiModel[];
+  trackingData?: UserImportApiRequestModel['trackingData'];
+  watchingData?: UserImportApiRequestModel['trackingData'];
 };

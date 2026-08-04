@@ -132,8 +132,8 @@ describe('change-user-settings-api', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      watched: false,
-      watching: true,
+      finished: false,
+      tracking: true,
     };
     const request: any = { body: { collectionFeaturePreferences: preferences }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
@@ -154,7 +154,7 @@ describe('change-user-settings-api', () => {
   it('returns 400 for incomplete collection feature preferences', async () => {
     const response = mockResponse();
     const request: any = {
-      body: { collectionFeaturePreferences: { wishlist: true, watchlist: true, watched: true } },
+      body: { collectionFeaturePreferences: { wishlist: true, watchlist: true, finished: true } },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);

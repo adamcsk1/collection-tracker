@@ -9,7 +9,7 @@ import {
   findCollectionItemByExternalIdOrCanonicalItemId,
   findCollectionItemByImdbId,
   findCollectionItemByCanonicalItemId,
-  syncWatchingCompletedTagByExternalId,
+  syncTrackingCompletedTagByExternalId,
   updateCollectionItemByRow,
 } from '../core/database/repositories/collection';
 import { resolveCanonicalItemIds } from '../core/database/repositories/external-item-identity-repository';
@@ -109,9 +109,9 @@ export const register = (app: FastifyInstance): void => {
 
       const newHash = getItemHash(item);
       let updatedItem = updateCollectionItemByRow(db, ownerHash, existingItem, newHash, item, listType);
-      if (listType === 'watching') {
+      if (listType === 'tracking') {
         updatedItem =
-          syncWatchingCompletedTagByExternalId(db, ownerHash, item.externalProvider, item.externalItemId) ??
+          syncTrackingCompletedTagByExternalId(db, ownerHash, item.externalProvider, item.externalItemId) ??
           updatedItem;
       }
 

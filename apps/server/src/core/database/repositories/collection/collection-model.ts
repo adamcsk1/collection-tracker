@@ -32,6 +32,8 @@ export interface CollectionItemRow {
   created_at: string;
   updated_at: string;
   watched_at: string | null;
+  progress_current: number | null;
+  progress_total: number | null;
 }
 
 export const collectionItemProjection = (alias = 'collection_items'): string => `${alias}.id,
@@ -72,7 +74,9 @@ export const collectionItemProjection = (alias = 'collection_items'): string => 
   ${alias}.content_hash,
   ${alias}.created_at,
   ${alias}.updated_at,
-  (SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ${alias}.id) AS watched_at`;
+  (SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ${alias}.id) AS watched_at,
+  (SELECT progress_current FROM collection_item_tracker_state WHERE item_id = ${alias}.id) AS progress_current,
+  (SELECT progress_total FROM collection_item_tracker_state WHERE item_id = ${alias}.id) AS progress_total`;
 
 export type AiSearchWatchStatus = 'completed' | 'unfinished' | 'watched' | 'unwatched' | 'not-applicable';
 
@@ -82,7 +86,7 @@ export interface AiSearchCollectionItem extends CollectionItemApiModel {
   aiSearchText: string;
   completed: boolean | null;
   watchStatus: AiSearchWatchStatus;
-  watchedEpisodes: number | null;
+  completedEpisodes: number | null;
   totalEpisodes: number | null;
   progressPercent: number | null;
 }

@@ -58,7 +58,7 @@ describe('proxy-ai-query-api', () => {
       contentType?: string;
       watchedAt?: string | null;
       totalEpisodes?: number;
-      watchedEpisodes?: number;
+      completedEpisodes?: number;
     }[]
   ) => {
     const db = getDatabase();
@@ -124,7 +124,7 @@ describe('proxy-ai-query-api', () => {
         }
       }
 
-      if (file.listType === 'watching' || file.listType === 'watched') {
+      if (file.listType === 'tracking' || file.listType === 'finished') {
         db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
           itemId,
           file.watchedAt ?? null
@@ -145,9 +145,9 @@ describe('proxy-ai-query-api', () => {
         ).run(itemId, 1, file.totalEpisodes, '[]');
       }
 
-      if (file.watchedEpisodes) {
-        for (let episode = 1; episode <= file.watchedEpisodes; episode += 1) {
-          db.prepare('INSERT INTO series_tracker_watched_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(
+      if (file.completedEpisodes) {
+        for (let episode = 1; episode <= file.completedEpisodes; episode += 1) {
+          db.prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(
             itemId,
             1,
             episode
@@ -269,27 +269,27 @@ describe('proxy-ai-query-api', () => {
 
     it('returns unfinished watching items without calling the LLM for pure status intents', async () => {
       const response = mockResponse();
-      const { app, handlerPromise } = buildApp(request('unfinished series', 'watching'), response);
+      const { app, handlerPromise } = buildApp(request('unfinished series', 'tracking'), response);
       setupCollection([
         {
           imdbId: 'tt-unfinished',
           title: 'Ongoing Show',
           plot: 'A story about unfinished business.',
-          listType: 'watching',
+          listType: 'tracking',
           contentType: 'series',
           watchedAt: null,
           totalEpisodes: 10,
-          watchedEpisodes: 3,
+          completedEpisodes: 3,
         },
         {
           imdbId: 'tt-finished',
           title: 'Finished Show',
           plot: 'A completed arc.',
-          listType: 'watching',
+          listType: 'tracking',
           contentType: 'series',
           watchedAt: '2024-01-01T00:00:00.000Z',
           totalEpisodes: 8,
-          watchedEpisodes: 8,
+          completedEpisodes: 8,
         },
       ]);
       const generate = await mockGenerate('{"matchedIds":["tt-finished"]}');
@@ -357,29 +357,29 @@ describe('proxy-ai-query-api', () => {
 
     it('prefilters unfinished candidates before LLM for mixed status queries', async () => {
       const response = mockResponse();
-      const { app, handlerPromise } = buildApp(request('unfinished sci-fi series', 'watching'), response);
+      const { app, handlerPromise } = buildApp(request('unfinished sci-fi series', 'tracking'), response);
       setupCollection([
         {
           imdbId: 'tt-unfinished-scifi',
           title: 'Space Drift',
           plot: 'A sci-fi journey.',
-          listType: 'watching',
+          listType: 'tracking',
           contentType: 'series',
           genre: ['Sci-Fi'],
           watchedAt: null,
           totalEpisodes: 10,
-          watchedEpisodes: 2,
+          completedEpisodes: 2,
         },
         {
           imdbId: 'tt-finished-scifi',
           title: 'Space Done',
           plot: 'A finished sci-fi epic.',
-          listType: 'watching',
+          listType: 'tracking',
           contentType: 'series',
           genre: ['Sci-Fi'],
           watchedAt: '2024-02-01T00:00:00.000Z',
           totalEpisodes: 10,
-          watchedEpisodes: 10,
+          completedEpisodes: 10,
         },
       ]);
       const generate = await mockGenerate('{"matchedIds":["tt-unfinished-scifi"]}');
@@ -392,7 +392,7 @@ describe('proxy-ai-query-api', () => {
       expect(generate.mock.calls[0][0].prompt).toContain('tt-unfinished-scifi');
       expect(generate.mock.calls[0][0].prompt).not.toContain('tt-finished-scifi');
       expect(generate.mock.calls[0][0].prompt).toContain('watchStatus:\nunfinished');
-      expect(generate.mock.calls[0][0].prompt).toContain('Active list: watching');
+      expect(generate.mock.calls[0][0].prompt).toContain('Active list: tracking');
       expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt-unfinished-scifi'] });
     });
 

@@ -16,7 +16,7 @@ const insertWatchedItem = (usernameHash: string, imdbId: string) => {
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, 'omdb', imdbId, `omdb:${imdbId}`, 'watched', 'Title', 'title', '', '', '', 'hash');
+    .run(usernameHash, 'omdb', imdbId, `omdb:${imdbId}`, 'finished', 'Title', 'title', '', '', '', 'hash');
   db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(
     Number(result.lastInsertRowid),
     '#movie'
@@ -29,7 +29,7 @@ const insertWatchedItemByExternalId = (usernameHash: string, externalProvider: s
     `INSERT INTO collection_items
       (username_hash, external_provider, external_item_id, list_type, title, title_lower, year, description, image, content_hash)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(usernameHash, externalProvider, externalItemId, 'watched', 'Title', 'title', '', '', '', 'hash');
+  ).run(usernameHash, externalProvider, externalItemId, 'finished', 'Title', 'title', '', '', '', 'hash');
 };
 
 const buildRouteApp = () =>
@@ -66,7 +66,7 @@ describe('delete-watched-item-api', () => {
     expect(response.code).toHaveBeenCalledWith(204);
     const item = getDatabase()
       .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
-      .get('user', 'tt-1', 'watched');
+      .get('user', 'tt-1', 'finished');
     expect(item).toBeUndefined();
   });
 
@@ -104,7 +104,7 @@ describe('delete-watched-item-api', () => {
     const rows = getDatabase()
       .prepare('SELECT username_hash, external_item_id, list_type FROM collection_items ORDER BY external_item_id')
       .all();
-    expect(rows).toEqual([{ username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'watched' }]);
+    expect(rows).toEqual([{ username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'finished' }]);
   });
 
   it('returns not found when the movie tracker item does not exist', async () => {
@@ -144,7 +144,7 @@ describe('delete-watched-item-api', () => {
       .prepare(
         'SELECT 1 FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('user', 'omdb', 'tt-1', 'watched');
+      .get('user', 'omdb', 'tt-1', 'finished');
     expect(item).toBeUndefined();
   });
 
@@ -155,7 +155,7 @@ describe('delete-watched-item-api', () => {
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run('user', 'omdb', 'tt0133093', 'imdb:tt0133093', 'watched', 'movie', 'Title', 'title', '', '', '', 'hash');
+    ).run('user', 'omdb', 'tt0133093', 'imdb:tt0133093', 'finished', 'movie', 'Title', 'title', '', '', '', 'hash');
     db.prepare(
       `INSERT INTO external_item_identities (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
        VALUES (?, ?, ?, ?, ?)`
@@ -170,14 +170,14 @@ describe('delete-watched-item-api', () => {
     const { register } = await import('./delete-movie-tracker-item-api');
     register(app);
 
-    await getDeleteHandler(app, `${API_PREFIX}/watched/:externalIdentitySource/:externalIdentityId`)!(
+    await getDeleteHandler(app, `${API_PREFIX}/finished/:externalIdentitySource/:externalIdentityId`)!(
       request,
       response
     );
 
     expect(response.code).toHaveBeenCalledWith(204);
     expect(
-      db.prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?').get('user', 'watched')
+      db.prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?').get('user', 'finished')
     ).toBeUndefined();
   });
 });

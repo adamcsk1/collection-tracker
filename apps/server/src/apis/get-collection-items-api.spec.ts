@@ -38,7 +38,7 @@ const insertTypedItem = (
   usernameHash: string,
   imdbId: string,
   title: string,
-  listType: 'watchlist' | 'wishlist' | 'watching'
+  listType: 'watchlist' | 'wishlist' | 'tracking'
 ) => {
   const result = getDatabase()
     .prepare(
@@ -58,9 +58,9 @@ const insertTypedItem = (
       '',
       '',
       `${imdbId}-hash`,
-      listType === 'watching' ? 'series' : 'movie'
+      listType === 'tracking' ? 'series' : 'movie'
     );
-  if (listType === 'watching') {
+  if (listType === 'tracking') {
     getDatabase()
       .prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)')
       .run(Number(result.lastInsertRowid), null);
@@ -303,7 +303,7 @@ describe('get-collection-items-api', () => {
   it('excludes series tracker items from the default collection list', async () => {
     insertUser('user');
     insertItem('user', 'tt-normal', 'Normal Item');
-    insertTypedItem('user', 'tt-watching', 'Tracked Series', 'watching');
+    insertTypedItem('user', 'tt-watching', 'Tracked Series', 'tracking');
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: {} };
     const { app, handlerPromise } = buildApp(request, response);
@@ -345,11 +345,11 @@ describe('get-collection-items-api', () => {
   it('returns own series tracker items when explicitly requested', async () => {
     insertUser('user');
     insertUser('owner');
-    insertTypedItem('user', 'tt-own-watching', 'Own Tracked Series', 'watching');
-    insertTypedItem('owner', 'tt-shared-watching', 'Shared Tracked Series', 'watching');
+    insertTypedItem('user', 'tt-own-watching', 'Own Tracked Series', 'tracking');
+    insertTypedItem('owner', 'tt-shared-watching', 'Shared Tracked Series', 'tracking');
     insertShare('owner', 'user', true);
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { listType: 'watching' } };
+    const request: any = { usernameHash: 'user', query: { listType: 'tracking' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-collection-items-api');
@@ -366,8 +366,8 @@ describe('get-collection-items-api', () => {
 
   it('filters series tracker items by completed status', async () => {
     insertUser('user');
-    insertTypedItem('user', 'tt-completed-watching', 'Completed Tracked Series', 'watching');
-    insertTypedItem('user', 'tt-uncompleted-watching', 'Uncompleted Tracked Series', 'watching');
+    insertTypedItem('user', 'tt-completed-watching', 'Completed Tracked Series', 'tracking');
+    insertTypedItem('user', 'tt-uncompleted-watching', 'Uncompleted Tracked Series', 'tracking');
     getDatabase()
       .prepare(
         `UPDATE collection_item_tracker_state
@@ -376,7 +376,7 @@ describe('get-collection-items-api', () => {
       )
       .run('2026-01-01 00:00:00', 'tt-completed-watching');
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { listType: 'watching', completed: 'false' } };
+    const request: any = { usernameHash: 'user', query: { listType: 'tracking', completed: 'false' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-collection-items-api');
@@ -444,7 +444,7 @@ describe('get-collection-items-api', () => {
       'omdb',
       'tt0133093',
       'imdb:tt0133093',
-      'watched',
+      'finished',
       'movie',
       'Canonical Tracker Movie',
       'canonical tracker movie',

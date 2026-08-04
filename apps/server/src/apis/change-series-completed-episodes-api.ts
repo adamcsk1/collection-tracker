@@ -1,30 +1,30 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
 import {
-  WatchingWatchedEpisodesApiRequestModel,
-  WatchingWatchedEpisodesApiResponseModel,
-  WatchingWatchedEpisodeModel,
+  TrackingCompletedEpisodesApiRequestModel,
+  TrackingCompletedEpisodesApiResponseModel,
+  TrackingCompletedEpisodeModel,
 } from '@shared/models/api-model';
 import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
   findCollectionItemByExternalIdOrCanonicalItemId,
-  syncWatchingCompletedTagByExternalId,
+  syncTrackingCompletedTagByExternalId,
 } from '../core/database/repositories/collection';
-import { findWatchingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
-import { replaceWatchedEpisodesByExternalId } from '../core/database/repositories/series-tracker-watched-episodes-repository';
+import { findTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { replaceCompletedEpisodesByExternalId } from '../core/database/repositories/series-completed-episodes-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
-const normalizeWatchedEpisodes = (
-  body: WatchingWatchedEpisodesApiRequestModel
-): WatchingWatchedEpisodeModel[] | null => {
-  if (!Array.isArray(body?.watchedEpisodes)) return null;
+const normalizeCompletedEpisodes = (
+  body: TrackingCompletedEpisodesApiRequestModel
+): TrackingCompletedEpisodeModel[] | null => {
+  if (!Array.isArray(body?.completedEpisodes)) return null;
 
   const seenEpisodes = new Set<string>();
-  const episodes: WatchingWatchedEpisodeModel[] = [];
-  for (const episodeData of body.watchedEpisodes) {
+  const episodes: TrackingCompletedEpisodeModel[] = [];
+  for (const episodeData of body.completedEpisodes) {
     const season = Number(episodeData?.season);
     const episode = Number(episodeData?.episode);
     if (
@@ -52,8 +52,8 @@ const normalizeWatchedEpisodes = (
 };
 
 const episodesExistInSeasons = (
-  episodes: WatchingWatchedEpisodeModel[],
-  seasons: ReturnType<typeof findWatchingSeasonsByExternalId>
+  episodes: TrackingCompletedEpisodeModel[],
+  seasons: ReturnType<typeof findTrackingSeasonsByExternalId>
 ): boolean => {
   if (!episodes.length) return true;
 
@@ -78,16 +78,16 @@ export const register = (app: FastifyInstance): void => {
         request.usernameHash,
         externalIdentitySource,
         externalIdentityId,
-        'watching'
+        'tracking'
       )
     ) {
       return response.code(404).send();
     }
 
-    const episodes = normalizeWatchedEpisodes(request.body as WatchingWatchedEpisodesApiRequestModel);
+    const episodes = normalizeCompletedEpisodes(request.body as TrackingCompletedEpisodesApiRequestModel);
     if (!episodes) return response.code(400).send();
 
-    const seasons = findWatchingSeasonsByExternalId(
+    const seasons = findTrackingSeasonsByExternalId(
       db,
       request.usernameHash,
       externalIdentitySource,
@@ -95,22 +95,22 @@ export const register = (app: FastifyInstance): void => {
     );
     if (!episodesExistInSeasons(episodes, seasons)) return response.code(400).send();
 
-    const savedEpisodes = replaceWatchedEpisodesByExternalId(
+    const savedEpisodes = replaceCompletedEpisodesByExternalId(
       db,
       request.usernameHash,
       externalIdentitySource,
       externalIdentityId,
       episodes
     );
-    const item = syncWatchingCompletedTagByExternalId(
+    const item = syncTrackingCompletedTagByExternalId(
       db,
       request.usernameHash,
       externalIdentitySource,
       externalIdentityId
     );
-    const result: WatchingWatchedEpisodesApiResponseModel = {
-      watchedEpisodes: savedEpisodes,
-      lastWatchedEpisode: savedEpisodes.length
+    const result: TrackingCompletedEpisodesApiResponseModel = {
+      completedEpisodes: savedEpisodes,
+      lastCompletedEpisode: savedEpisodes.length
         ? {
             season: savedEpisodes[savedEpisodes.length - 1].season,
             episode: savedEpisodes[savedEpisodes.length - 1].episode,
@@ -122,7 +122,7 @@ export const register = (app: FastifyInstance): void => {
   });
 
   app.put(
-    `${API_PREFIX}/watching/:externalIdentitySource/:externalIdentityId/watched-episodes`,
+    `${API_PREFIX}/tracking/:externalIdentitySource/:externalIdentityId/completed-episodes`,
     { preHandler: jwtGuard },
     handler
   );

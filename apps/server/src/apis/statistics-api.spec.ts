@@ -40,7 +40,7 @@ const insertUserAndItems = () => {
     'user',
     'tt001',
     'imdb:tt001',
-    'watched',
+    'finished',
     'Movie One',
     'movie one',
     '1999',
@@ -54,7 +54,7 @@ const insertUserAndItems = () => {
     (
       db
         .prepare('SELECT id FROM collection_items WHERE external_item_id = ? AND list_type = ?')
-        .get('tt001', 'watched')! as { id: number }
+        .get('tt001', 'finished')! as { id: number }
     ).id
   );
   db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
@@ -146,7 +146,7 @@ const insertShare = (ownerHash: string, sharedWithHash: string) => {
     .run(ownerHash, sharedWithHash, 1, 0, 0, 0);
 };
 
-const insertWatchingItem = (usernameHash: string, imdbId: string, title: string) => {
+const insertTrackingItem = (usernameHash: string, imdbId: string, title: string) => {
   const db = getDatabase();
   db.prepare(
     `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
@@ -155,7 +155,7 @@ const insertWatchingItem = (usernameHash: string, imdbId: string, title: string)
     usernameHash,
     imdbId,
     `imdb:${imdbId}`,
-    'watching',
+    'tracking',
     title,
     title.toLowerCase(),
     '2001',
@@ -285,14 +285,14 @@ describe('statistics-api', () => {
 
   it('counts tracker series correctly without listType filter', async () => {
     insertUser('user');
-    insertWatchingItem('user', 'tt-series-1', 'Incomplete Series');
-    insertWatchingItem('user', 'tt-series-2', 'Completed Series');
+    insertTrackingItem('user', 'tt-series-1', 'Incomplete Series');
+    insertTrackingItem('user', 'tt-series-2', 'Completed Series');
     const db = getDatabase();
     const completedItemId = Number(
       (
         db
           .prepare('SELECT id FROM collection_items WHERE external_item_id = ? AND list_type = ?')
-          .get('tt-series-2', 'watching')! as { id: number }
+          .get('tt-series-2', 'tracking')! as { id: number }
       ).id
     );
     db.prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?').run(
@@ -350,7 +350,7 @@ describe('statistics-api', () => {
       'user',
       'tt-series',
       'imdb:tt-series',
-      'watching',
+      'tracking',
       'Series',
       'series',
       '2024',
@@ -364,7 +364,7 @@ describe('statistics-api', () => {
       (
         db
           .prepare('SELECT id FROM collection_items WHERE external_item_id = ? AND list_type = ?')
-          .get('tt-series', 'watching')! as { id: number }
+          .get('tt-series', 'tracking')! as { id: number }
       ).id
     );
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
@@ -422,7 +422,7 @@ describe('statistics-api', () => {
       'omdb',
       'provider-tracker-id',
       'imdb:tt-canonical',
-      'watched',
+      'finished',
       'Canonical Movie',
       'canonical movie',
       '2024',
@@ -465,9 +465,9 @@ describe('statistics-api', () => {
     insertUser('user');
     insertUser('owner');
     insertShare('owner', 'user');
-    insertWatchingItem('owner', 'tt-shared-series', 'Shared Series');
+    insertTrackingItem('owner', 'tt-shared-series', 'Shared Series');
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { listType: 'watching' } };
+    const request: any = { usernameHash: 'user', query: { listType: 'tracking' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./statistics-api');

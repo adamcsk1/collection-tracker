@@ -61,7 +61,7 @@ const insertItem = (
        VALUES (?, ?, 'imdb', ?, 'primary')`
     ).run(usernameHash, overrides.canonicalItemId ?? `imdb:${imdbId}`, imdbId);
   }
-  if (listType === 'watched') {
+  if (listType === 'finished') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, CURRENT_TIMESTAMP)').run(
       itemId
     );
@@ -92,7 +92,7 @@ describe('watched-repository', () => {
     expect(result).toEqual(
       expect.objectContaining({
         IMDbId: 'tt-1',
-        listType: 'watched',
+        listType: 'finished',
         contentType: 'movie',
         tags: ['#action', '#movie'],
       })
@@ -105,42 +105,42 @@ describe('watched-repository', () => {
          WHERE collection_items.username_hash = ? AND collection_items.external_provider = ?
            AND collection_items.external_item_id = ? AND collection_items.list_type = ?`
       )
-      .get('user', 'omdb', 'tt-1', 'watched') as { list_type: string; completed_at: string | null } | undefined;
-    expect(trackerRow?.list_type).toBe('watched');
+      .get('user', 'omdb', 'tt-1', 'finished') as { list_type: string; completed_at: string | null } | undefined;
+    expect(trackerRow?.list_type).toBe('finished');
     expect(trackerRow?.completed_at).toEqual(expect.any(String));
   });
 
   it('returns existing tracker item when already present (idempotent)', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#movie']);
-    insertItem('user', 'tt-1', ['#movie'], 'watched');
+    insertItem('user', 'tt-1', ['#movie'], 'finished');
     const db = getDatabase();
 
     const result = copyLibraryMovieToWatched(db, 'user', 'user', 'tt-1');
 
-    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-1', listType: 'watched' }));
+    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-1', listType: 'finished' }));
     const count = db
       .prepare(
         'SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('user', 'omdb', 'tt-1', 'watched') as { count: number };
+      .get('user', 'omdb', 'tt-1', 'finished') as { count: number };
     expect(count.count).toBe(1);
   });
 
   it('returns existing tracker item by provider identity when legacy IMDb IDs differ', () => {
     insertUser('user');
     insertItem('user', 'tt-library', ['#movie'], 'library', { externalItemId: 'provider-movie-1' });
-    insertItem('user', 'tt-tracker', ['#movie'], 'watched', { externalItemId: 'provider-movie-1' });
+    insertItem('user', 'tt-tracker', ['#movie'], 'finished', { externalItemId: 'provider-movie-1' });
     const db = getDatabase();
 
     const result = copyLibraryMovieToWatched(db, 'user', 'user', 'tt-library');
 
-    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-tracker', listType: 'watched' }));
+    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-tracker', listType: 'finished' }));
     const count = db
       .prepare(
         'SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('user', 'omdb', 'provider-movie-1', 'watched') as { count: number };
+      .get('user', 'omdb', 'provider-movie-1', 'finished') as { count: number };
     expect(count.count).toBe(1);
   });
 
@@ -151,7 +151,7 @@ describe('watched-repository', () => {
       externalItemId: 'movie-1',
       canonicalItemId: 'imdb:tt-same',
     });
-    insertItem('user', 'tt-tracker', ['#movie'], 'watched', {
+    insertItem('user', 'tt-tracker', ['#movie'], 'finished', {
       externalProvider: 'omdb',
       externalItemId: 'tt-same',
       canonicalItemId: 'imdb:tt-same',
@@ -160,10 +160,10 @@ describe('watched-repository', () => {
 
     const result = copyLibraryMovieToWatched(db, 'user', 'user', 'tt-library');
 
-    expect(result).toEqual(expect.objectContaining({ canonicalItemId: 'imdb:tt-same', listType: 'watched' }));
+    expect(result).toEqual(expect.objectContaining({ canonicalItemId: 'imdb:tt-same', listType: 'finished' }));
     const count = db
       .prepare('SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND list_type = ?')
-      .get('user', 'watched') as { count: number };
+      .get('user', 'finished') as { count: number };
     expect(count.count).toBe(1);
   });
 
@@ -226,18 +226,18 @@ describe('watched-repository', () => {
 
     const result = copyLibraryMovieToWatched(db, 'viewer', 'owner', 'tt-1');
 
-    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-1', listType: 'watched' }));
+    expect(result).toEqual(expect.objectContaining({ IMDbId: 'tt-1', listType: 'finished' }));
     const viewerTracker = db
       .prepare(
         'SELECT 1 FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('viewer', 'omdb', 'tt-1', 'watched');
+      .get('viewer', 'omdb', 'tt-1', 'finished');
     expect(viewerTracker).toBeTruthy();
   });
 
   it('deleteWatchedItem deletes existing item', () => {
     insertUser('user');
-    const trackerItemId = insertItem('user', 'tt-1', ['#movie'], 'watched');
+    const trackerItemId = insertItem('user', 'tt-1', ['#movie'], 'finished');
     const db = getDatabase();
 
     const result = deleteWatchedItem(db, 'user', 'tt-1');
@@ -247,7 +247,7 @@ describe('watched-repository', () => {
       .prepare(
         'SELECT 1 FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('user', 'omdb', 'tt-1', 'watched');
+      .get('user', 'omdb', 'tt-1', 'finished');
     expect(row).toBeUndefined();
     expect(
       db.prepare('SELECT 1 FROM collection_item_tracker_state WHERE item_id = ?').get(trackerItemId)
@@ -265,8 +265,8 @@ describe('watched-repository', () => {
 
   it('deleteAllWatchedItems removes all current user tracker items', () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#movie'], 'watched');
-    insertItem('user', 'tt-2', ['#movie'], 'watched');
+    insertItem('user', 'tt-1', ['#movie'], 'finished');
+    insertItem('user', 'tt-2', ['#movie'], 'finished');
     insertItem('user', 'tt-3', ['#movie'], 'library');
     const db = getDatabase();
 
@@ -275,7 +275,7 @@ describe('watched-repository', () => {
     expect(changedCount).toBe(2);
     const rows = db
       .prepare('SELECT external_item_id FROM collection_items WHERE username_hash = ? AND list_type = ?')
-      .all('user', 'watched') as { external_item_id: string }[];
+      .all('user', 'finished') as { external_item_id: string }[];
     expect(rows).toEqual([]);
     expect(db.prepare('SELECT COUNT(*) AS count FROM collection_item_tracker_state').get()).toEqual({ count: 0 });
     expect(
@@ -304,15 +304,15 @@ describe('watched-repository', () => {
          WHERE collection_items.username_hash = ? AND collection_items.external_provider = ?
            AND collection_items.external_item_id = ? AND collection_items.list_type = ?`
       )
-      .get('user', 'omdb', 'tt-1', 'watched') as { list_type: string; completed_at: string | null } | undefined;
-    expect(tracker?.list_type).toBe('watched');
+      .get('user', 'omdb', 'tt-1', 'finished') as { list_type: string; completed_at: string | null } | undefined;
+    expect(tracker?.list_type).toBe('finished');
     expect(tracker?.completed_at).toEqual(expect.any(String));
   });
 
   it('markAllMoviesAsWatched skips items already in tracker', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#movie']);
-    insertItem('user', 'tt-1', ['#movie'], 'watched');
+    insertItem('user', 'tt-1', ['#movie'], 'finished');
     const db = getDatabase();
 
     const changedCount = markAllMoviesAsWatched(db, 'user', 'user');
@@ -327,7 +327,7 @@ describe('watched-repository', () => {
       externalItemId: 'movie-1',
       canonicalItemId: 'imdb:tt-same',
     });
-    insertItem('user', 'tt-tracker', ['#movie'], 'watched', {
+    insertItem('user', 'tt-tracker', ['#movie'], 'finished', {
       externalProvider: 'omdb',
       externalItemId: 'tt-same',
       canonicalItemId: 'imdb:tt-same',
@@ -351,8 +351,8 @@ describe('watched-repository', () => {
     expect(changedCount).toBe(1);
     const tracker = db
       .prepare('SELECT username_hash, external_item_id, list_type FROM collection_items WHERE list_type = ?')
-      .all('watched') as { username_hash: string; external_item_id: string; list_type: string }[];
-    expect(tracker).toEqual([{ username_hash: 'user', external_item_id: 'tt-shared', list_type: 'watched' }]);
+      .all('finished') as { username_hash: string; external_item_id: string; list_type: string }[];
+    expect(tracker).toEqual([{ username_hash: 'user', external_item_id: 'tt-shared', list_type: 'finished' }]);
   });
 
   it('markAllMoviesAsWatched copies provider-only library movies', () => {
@@ -372,8 +372,8 @@ describe('watched-repository', () => {
         .prepare(
           'SELECT external_item_id, list_type FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
         )
-        .get('user', 'omdb', 'movie-1', 'watched')
-    ).toEqual({ external_item_id: 'movie-1', list_type: 'watched' });
+        .get('user', 'omdb', 'movie-1', 'finished')
+    ).toEqual({ external_item_id: 'movie-1', list_type: 'finished' });
   });
 
   it('markAllMoviesAsWatched returns 0 when no candidates exist', () => {
@@ -388,7 +388,7 @@ describe('watched-repository', () => {
   it('markAllMoviesAsUnwatched deletes tracker copies matching own library', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#movie']);
-    insertItem('user', 'tt-1', ['#movie'], 'watched');
+    insertItem('user', 'tt-1', ['#movie'], 'finished');
     const db = getDatabase();
 
     const changedCount = markAllMoviesAsUnwatched(db, 'user', 'user');
@@ -398,13 +398,13 @@ describe('watched-repository', () => {
       .prepare(
         'SELECT 1 FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('user', 'omdb', 'tt-1', 'watched');
+      .get('user', 'omdb', 'tt-1', 'finished');
     expect(row).toBeUndefined();
   });
 
   it('markAllMoviesAsUnwatched leaves tracker-only items untouched', () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#movie'], 'watched');
+    insertItem('user', 'tt-1', ['#movie'], 'finished');
     const db = getDatabase();
 
     const changedCount = markAllMoviesAsUnwatched(db, 'user', 'user');
@@ -414,7 +414,7 @@ describe('watched-repository', () => {
       .prepare(
         'SELECT 1 FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('user', 'omdb', 'tt-1', 'watched');
+      .get('user', 'omdb', 'tt-1', 'finished');
     expect(row).toBeTruthy();
   });
 
@@ -423,8 +423,8 @@ describe('watched-repository', () => {
     insertUser('owner');
     insertShare('owner', 'user', true);
     insertItem('owner', 'tt-shared', ['#movie']);
-    insertItem('user', 'tt-shared', ['#movie'], 'watched');
-    insertItem('user', 'tt-own', ['#movie'], 'watched');
+    insertItem('user', 'tt-shared', ['#movie'], 'finished');
+    insertItem('user', 'tt-own', ['#movie'], 'finished');
     const db = getDatabase();
 
     const changedCount = markAllMoviesAsUnwatched(db, 'user', 'owner');
@@ -434,7 +434,7 @@ describe('watched-repository', () => {
       .prepare(
         'SELECT external_item_id FROM collection_items WHERE username_hash = ? AND list_type = ? ORDER BY external_item_id'
       )
-      .all('user', 'watched') as { external_item_id: string }[];
+      .all('user', 'finished') as { external_item_id: string }[];
     expect(rows).toEqual([{ external_item_id: 'tt-own' }]);
   });
 
@@ -445,7 +445,7 @@ describe('watched-repository', () => {
       externalItemId: 'movie-1',
       contentHash: 'provider-movie-library',
     });
-    insertItem('user', null, ['#movie'], 'watched', {
+    insertItem('user', null, ['#movie'], 'finished', {
       externalProvider: 'omdb',
       externalItemId: 'movie-1',
       contentHash: 'provider-watched',
@@ -460,7 +460,7 @@ describe('watched-repository', () => {
         .prepare(
           'SELECT 1 FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
         )
-        .get('user', 'omdb', 'movie-1', 'watched')
+        .get('user', 'omdb', 'movie-1', 'finished')
     ).toBeUndefined();
   });
 
@@ -471,7 +471,7 @@ describe('watched-repository', () => {
       externalItemId: 'movie-1',
       canonicalItemId: 'imdb:tt-same',
     });
-    insertItem('user', 'tt-tracker', ['#movie'], 'watched', {
+    insertItem('user', 'tt-tracker', ['#movie'], 'finished', {
       externalProvider: 'omdb',
       externalItemId: 'tt-same',
       canonicalItemId: 'imdb:tt-same',
@@ -482,7 +482,7 @@ describe('watched-repository', () => {
 
     expect(changedCount).toBe(1);
     expect(
-      db.prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?').get('user', 'watched')
+      db.prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND list_type = ?').get('user', 'finished')
     ).toBeUndefined();
   });
 

@@ -25,9 +25,12 @@ export const register = (app: FastifyInstance): void => {
     if (!sourceOwnerHash) return response.code(404).send();
     if (!canAccessLibrary(db, request.usernameHash, sourceOwnerHash, 'read')) return response.code(403).send();
     const sourceListType = parseListType(query.sourceListType) ?? 'library';
-    if (sourceListType !== 'library' && sourceListType !== 'watchlist') return response.code(400).send();
+    if (sourceListType !== 'library' && sourceListType !== 'watchlist' && sourceListType !== 'books') {
+      return response.code(400).send();
+    }
     const moveFromWatchlist = sourceListType === 'watchlist';
     if (moveFromWatchlist && sourceOwnerHash !== request.usernameHash) return response.code(403).send();
+    if (sourceListType === 'books' && sourceOwnerHash !== request.usernameHash) return response.code(403).send();
 
     const item = copyMovieToWatchedByExternalId(
       db,
@@ -44,5 +47,5 @@ export const register = (app: FastifyInstance): void => {
     response.send(result);
   });
 
-  app.post(`${API_PREFIX}/watched/:externalIdentitySource/:externalIdentityId`, { preHandler: jwtGuard }, handler);
+  app.post(`${API_PREFIX}/finished/:externalIdentitySource/:externalIdentityId`, { preHandler: jwtGuard }, handler);
 };

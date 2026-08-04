@@ -29,7 +29,7 @@ const insertItem = (
       (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
      VALUES (?, ?, ?, ?, ?)`
   ).run(usernameHash, `omdb:${imdbId}`, 'imdb', imdbId, 'alias');
-  if (listType === 'watched') {
+  if (listType === 'finished') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, CURRENT_TIMESTAMP)').run(
       itemId
     );
@@ -62,7 +62,7 @@ describe('add-watched-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'watched', watched: true }),
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'finished', watched: true }),
     });
   });
 
@@ -105,11 +105,11 @@ describe('add-watched-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'watched' }),
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'finished' }),
     });
     const viewerTracker = getDatabase()
       .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
-      .get('viewer', 'tt-1', 'watched');
+      .get('viewer', 'tt-1', 'finished');
     expect(viewerTracker).toBeTruthy();
   });
 
@@ -149,7 +149,7 @@ describe('add-watched-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'watched' }),
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'finished' }),
     });
     const source = getDatabase()
       .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
@@ -160,7 +160,7 @@ describe('add-watched-item-api', () => {
   it('removes watch later movie when it already exists in the movie tracker', async () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#movie', '#watchlist'], 'watchlist');
-    insertItem('user', 'tt-1', ['#movie'], 'watched');
+    insertItem('user', 'tt-1', ['#movie'], 'finished');
 
     const response = mockResponse();
     const request: any = {
@@ -175,7 +175,7 @@ describe('add-watched-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'watched' }),
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'finished' }),
     });
     const source = getDatabase()
       .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')

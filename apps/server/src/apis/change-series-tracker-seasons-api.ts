@@ -1,17 +1,17 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
-import { WatchingSeasonsApiRequestModel, WatchingSeasonsApiResponseModel } from '@shared/models/api-model';
+import { TrackingSeasonsApiRequestModel, TrackingSeasonsApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
   findCollectionItemByExternalIdOrCanonicalItemId,
-  syncWatchingCompletedTagByExternalId,
+  syncTrackingCompletedTagByExternalId,
 } from '../core/database/repositories/collection';
-import { replaceWatchingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
-import { deleteWatchedEpisodesOutsideSeasonsByExternalId } from '../core/database/repositories/series-tracker-watched-episodes-repository';
+import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { deleteCompletedEpisodesOutsideSeasonsByExternalId } from '../core/database/repositories/series-completed-episodes-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
-import { normalizeWatchingSeasons } from '../core/utils/series-tracker-seasons-api-util';
+import { normalizeTrackingSeasons } from '../core/utils/series-tracker-seasons-api-util';
 
 export const register = (app: FastifyInstance): void => {
   const handler = withErrorHandler(async (request, response) => {
@@ -24,41 +24,41 @@ export const register = (app: FastifyInstance): void => {
         request.usernameHash,
         externalIdentitySource,
         externalIdentityId,
-        'watching'
+        'tracking'
       )
     ) {
       return response.code(404).send();
     }
 
-    const seasons = normalizeWatchingSeasons(request.body as WatchingSeasonsApiRequestModel);
+    const seasons = normalizeTrackingSeasons(request.body as TrackingSeasonsApiRequestModel);
     if (!seasons) return response.code(400).send();
 
-    const savedSeasons = replaceWatchingSeasonsByExternalId(
+    const savedSeasons = replaceTrackingSeasonsByExternalId(
       db,
       request.usernameHash,
       externalIdentitySource,
       externalIdentityId,
       seasons
     );
-    deleteWatchedEpisodesOutsideSeasonsByExternalId(
+    deleteCompletedEpisodesOutsideSeasonsByExternalId(
       db,
       request.usernameHash,
       externalIdentitySource,
       externalIdentityId,
       savedSeasons
     );
-    const item = syncWatchingCompletedTagByExternalId(
+    const item = syncTrackingCompletedTagByExternalId(
       db,
       request.usernameHash,
       externalIdentitySource,
       externalIdentityId
     );
-    const result: WatchingSeasonsApiResponseModel = { seasons: savedSeasons, item };
+    const result: TrackingSeasonsApiResponseModel = { seasons: savedSeasons, item };
     response.send(result);
   });
 
   app.put(
-    `${API_PREFIX}/watching/:externalIdentitySource/:externalIdentityId/seasons`,
+    `${API_PREFIX}/tracking/:externalIdentitySource/:externalIdentityId/seasons`,
     { preHandler: jwtGuard },
     handler
   );

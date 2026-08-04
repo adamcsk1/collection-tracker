@@ -29,7 +29,7 @@ const insertItem = (
       (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
      VALUES (?, ?, ?, ?, ?)`
   ).run(usernameHash, `omdb:${imdbId}`, 'imdb', imdbId, 'alias');
-  if (listType === 'watching') {
+  if (listType === 'tracking') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(itemId, null);
   }
   for (const tag of tags) {
@@ -81,7 +81,7 @@ describe('add-watching-item-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({
         IMDbId: 'tt-1',
-        listType: 'watching',
+        listType: 'tracking',
         contentType: 'series',
         tags: ['#series', '#watchlist'],
       }),
@@ -146,7 +146,7 @@ describe('add-watching-item-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({
         IMDbId: 'tt-1',
-        listType: 'watching',
+        listType: 'tracking',
         contentType: 'series',
         tags: ['#series'],
       }),
@@ -164,7 +164,7 @@ describe('add-watching-item-api', () => {
            INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
             WHERE collection_items.external_item_id = ? AND collection_items.list_type = ?`
         )
-        .all('tt-1', 'watching')
+        .all('tt-1', 'tracking')
     ).toEqual([{ season: 1, episodes: 2 }]);
   });
 
@@ -200,7 +200,7 @@ describe('add-watching-item-api', () => {
            INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
             WHERE collection_items.external_item_id = ? AND collection_items.list_type = ?`
         )
-        .all('tt-1', 'watching')
+        .all('tt-1', 'tracking')
     ).toEqual([{ season: 1, episodes: 2 }]);
   });
 
@@ -223,7 +223,7 @@ describe('add-watching-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'watching' }),
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'tracking' }),
     });
     expect(
       getDatabase()
@@ -233,7 +233,7 @@ describe('add-watching-item-api', () => {
         .all('tt-1')
     ).toEqual([
       { username_hash: 'owner', list_type: 'library' },
-      { username_hash: 'user', list_type: 'watching' },
+      { username_hash: 'user', list_type: 'tracking' },
     ]);
   });
 
@@ -281,7 +281,7 @@ describe('add-watching-item-api', () => {
   it('removes watch later series when it already exists in the series tracker', async () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#series', '#watchlist']);
-    insertItem('user', 'tt-1', ['#series'], 'watching');
+    insertItem('user', 'tt-1', ['#series'], 'tracking');
 
     const response = mockResponse();
     const request: any = {
@@ -296,7 +296,7 @@ describe('add-watching-item-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'watching' }),
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'tracking' }),
     });
     expect(
       getDatabase()

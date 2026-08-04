@@ -17,8 +17,8 @@ export const normalizeListType = (listType: CollectionListTypeModel | undefined)
   if (
     listType === 'watchlist' ||
     listType === 'wishlist' ||
-    listType === 'watching' ||
-    listType === 'watched' ||
+    listType === 'tracking' ||
+    listType === 'finished' ||
     listType === 'books'
   )
     return listType;
@@ -48,17 +48,17 @@ const addMovieWatchedExists = (queryParts: QueryParts, usernameHash: string, exi
       AND ${canonicalOrExactIdentityMatch('movie_watched_filter')}
       AND movie_watched_filter.list_type = ?
   )`);
-  queryParts.params.push(usernameHash, 'watched');
+  queryParts.params.push(usernameHash, 'finished');
 };
 
-const addWatchingExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
+const addTrackingExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
   queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
     SELECT 1 FROM collection_items series_watching_filter
     WHERE series_watching_filter.username_hash = ?
       AND ${canonicalOrExactIdentityMatch('series_watching_filter')}
       AND series_watching_filter.list_type = ?
   )`);
-  queryParts.params.push(usernameHash, 'watching');
+  queryParts.params.push(usernameHash, 'tracking');
 };
 
 const addWatchedExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
@@ -75,8 +75,14 @@ const addWatchedExists = (queryParts: QueryParts, usernameHash: string, exists =
         AND ${canonicalOrExactIdentityMatch('series_watching_filter')}
         AND series_watching_filter.list_type = ?
     ))
+    OR (${bookContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
+      SELECT 1 FROM collection_items book_finished_filter
+      WHERE book_finished_filter.username_hash = ?
+        AND ${canonicalOrExactIdentityMatch('book_finished_filter')}
+        AND book_finished_filter.list_type = ?
+    ))
   )`);
-  queryParts.params.push(usernameHash, 'watched', usernameHash, 'watching');
+  queryParts.params.push(usernameHash, 'finished', usernameHash, 'tracking', usernameHash, 'finished');
 };
 
 export const canonicalOrExactIdentityMatch = (alias: string): string => `(
@@ -244,9 +250,9 @@ const addFilters = (
   if (filters.type === 'book' && listType !== 'library') {
     queryParts.where.push(bookContentCondition);
   }
-  if (filters.watched !== undefined && viewerUsernameHash && listType !== 'watched' && listType !== 'watching') {
+  if (filters.watched !== undefined && viewerUsernameHash && listType !== 'finished' && listType !== 'tracking') {
     const exists = filters.watched;
-    if (filters.type === 'series') addWatchingExists(queryParts, viewerUsernameHash, exists);
+    if (filters.type === 'series') addTrackingExists(queryParts, viewerUsernameHash, exists);
     else if (filters.type === 'movie') addMovieWatchedExists(queryParts, viewerUsernameHash, exists);
     else addWatchedExists(queryParts, viewerUsernameHash, exists);
   }

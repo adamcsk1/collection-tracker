@@ -38,13 +38,13 @@ Output contract:
 
 Filtering rules:
 - Evaluate every provided collection item independently against the user's request.
-- Use only fields present in the provided items: CandidateId, title, contentType, favorite, listType, watchedAt, completed, watchStatus, watchedEpisodes, totalEpisodes, progressPercent, year, genre, tags, rate, rottenTomatoesRate, metacriticRate, userRate, actors, and plot.
+- Use only fields present in the provided items: CandidateId, title, contentType, favorite, listType, watchedAt, completed, watchStatus, completedEpisodes, totalEpisodes, progressPercent, year, genre, tags, rate, rottenTomatoesRate, metacriticRate, userRate, actors, and plot.
 - Match semantic intent, not only exact words. For example, "christmas movies" can match items whose title, tags, genres, or plot clearly indicate Christmas, holidays, Santa, festive events, or Christmas settings.
 - The user's request can ask for any actor, genre, title, year, decade, tag, rating, theme, mood, setting, franchise, plot idea, watch status, progress, or combination of conditions.
 - Domain status rules (prefer these over plot metaphors):
   - watching: unfinished / incomplete / in progress / still watching / not finished = watchStatus "unfinished" or completed false.
   - watching: finished / completed / done watching = watchStatus "completed" or completed true.
-  - watched items are watched (watchStatus "watched").
+  - watched items are watched (watchStatus "finished").
   - When status fields are present, never use plot phrases like "unfinished business" to decide completion.
   - favorite / favourites / starred = favorite true.
 - Default to excluding an item. Include it only when the provided fields clearly support the match.
@@ -109,8 +109,8 @@ ${stringifyPromptValue(item.completed)}
 watchStatus:
 ${stringifyPromptValue(item.watchStatus)}
 \n
-watchedEpisodes:
-${stringifyPromptValue(item.watchedEpisodes)}
+completedEpisodes:
+${stringifyPromptValue(item.completedEpisodes)}
 \n
 totalEpisodes:
 ${stringifyPromptValue(item.totalEpisodes)}

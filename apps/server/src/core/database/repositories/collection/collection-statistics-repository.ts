@@ -71,7 +71,7 @@ export const getCollectionStatistics = (
                AND movie_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, viewerUsernameHash, 'watched') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'finished') as { count: number }
   ).count;
 
   const unwatchedMovieCount = (
@@ -88,7 +88,7 @@ export const getCollectionStatistics = (
                AND movie_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, viewerUsernameHash, 'watched') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'finished') as { count: number }
   ).count;
 
   const watchedSeriesCount = (
@@ -105,7 +105,7 @@ export const getCollectionStatistics = (
                AND series_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, viewerUsernameHash, 'watching') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'tracking') as { count: number }
   ).count;
 
   const unwatchedLibrarySeriesCount = (
@@ -122,13 +122,13 @@ export const getCollectionStatistics = (
                AND series_tracker.list_type = ?
            )`
       )
-      .get(...queryParts.params, viewerUsernameHash, 'watching') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash, 'tracking') as { count: number }
   ).count;
 
-  const shouldCountTrackerSeries = !filters?.listType || filters.listType === 'watching';
+  const shouldCountTrackerSeries = !filters?.listType || filters.listType === 'tracking';
   const trackerQueryParts = buildItemWhere(
     usernameHashes,
-    { ...filters, listType: 'watching' },
+    { ...filters, listType: 'tracking' },
     undefined,
     undefined,
     viewerUsernameHash
@@ -200,7 +200,7 @@ export const getCollectionStatistics = (
            AND ${movieContentCondition}
           GROUP BY watched_year`
     )
-    .all(viewerUsernameHash, 'watched', ...queryParts.params) as WatchedYearCountRow[];
+    .all(viewerUsernameHash, 'finished', ...queryParts.params) as WatchedYearCountRow[];
 
   const watchedSeriesYearCounts = db
     .prepare(
@@ -217,7 +217,7 @@ export const getCollectionStatistics = (
            AND ${seriesContentCondition}
           GROUP BY watched_year`
     )
-    .all(viewerUsernameHash, 'watching', ...queryParts.params) as WatchedYearCountRow[];
+    .all(viewerUsernameHash, 'tracking', ...queryParts.params) as WatchedYearCountRow[];
 
   const watchedYearCountMap = new Map<
     string,

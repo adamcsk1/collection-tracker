@@ -14,6 +14,8 @@ const normalizeYear = (year: number | string | null): string | null => {
 export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionItemChangeApiModel | undefined => {
   const userRate = item?.userRate;
   const year = item?.year;
+  const progressCurrent = item?.progressCurrent;
+  const progressTotal = item?.progressTotal;
   const rawTags = Array.isArray(item?.tags) ? item.tags.map((tag) => `${tag}`.trim()).filter(Boolean) : [];
   const contentType = item?.contentType;
   const favorite = item?.favorite;
@@ -43,7 +45,14 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
       (!Number.isFinite(userRate) ||
         userRate < 0 ||
         userRate > 10 ||
-        Math.abs(userRate * 10 - Math.round(userRate * 10)) > 1e-9))
+        Math.abs(userRate * 10 - Math.round(userRate * 10)) > 1e-9)) ||
+    (progressCurrent !== undefined &&
+      progressCurrent !== null &&
+      (!Number.isInteger(progressCurrent) || progressCurrent < 0)) ||
+    (progressTotal !== undefined &&
+      progressTotal !== null &&
+      (!Number.isInteger(progressTotal) || progressTotal < 1)) ||
+    (typeof progressCurrent === 'number' && typeof progressTotal === 'number' && progressCurrent > progressTotal)
   ) {
     return;
   }
@@ -91,6 +100,8 @@ export const normalizeItem = (item: CollectionItemChangeApiModel): CollectionIte
     plot: item.plot.trim(),
     contentType,
     favorite,
+    progressCurrent: progressCurrent === undefined ? undefined : progressCurrent,
+    progressTotal: progressTotal === undefined ? undefined : progressTotal,
   };
 
   if (!normalized.title || !normalized.externalProvider || !normalized.externalItemId) return;

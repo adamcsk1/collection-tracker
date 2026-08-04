@@ -25,7 +25,7 @@ const buildItem = (
     hash: 'hash',
     actors: '',
     plot: '',
-    listType: 'watching',
+    listType: 'tracking',
     contentType: 'series',
     favorite: false,
     watchedAt: null,
@@ -33,7 +33,7 @@ const buildItem = (
     externalItemId: overrides.IMDbId ?? 'tt1',
     aiSearchContentHash: 'hash',
     aiSearchText: 'text',
-    watchedEpisodes: null,
+    completedEpisodes: null,
     totalEpisodes: null,
     progressPercent: null,
     ...overrides,
@@ -52,11 +52,11 @@ describe('ai-search-intent-util', () => {
   });
 
   it('gates unfinished and completed intents by list type', () => {
-    expect(getEffectiveStatusIntent('unfinished', 'watching')).toBe('unfinished');
+    expect(getEffectiveStatusIntent('unfinished', 'tracking')).toBe('unfinished');
     expect(getEffectiveStatusIntent('unfinished', 'library')).toBeNull();
     expect(getEffectiveStatusIntent('unfinished', 'watchlist')).toBeNull();
-    expect(getEffectiveStatusIntent('completed', 'watching')).toBe('completed');
-    expect(getEffectiveStatusIntent('completed', 'watched')).toBe('completed');
+    expect(getEffectiveStatusIntent('completed', 'tracking')).toBe('completed');
+    expect(getEffectiveStatusIntent('completed', 'finished')).toBe('completed');
     expect(getEffectiveStatusIntent('completed', 'library')).toBeNull();
     expect(getEffectiveStatusIntent('favorite', 'library')).toBe('favorite');
   });
@@ -73,9 +73,9 @@ describe('ai-search-intent-util', () => {
       buildItem({ IMDbId: 'tt2', watchStatus: 'completed', completed: true, watchedAt: '2024-01-01' }),
       buildItem({
         IMDbId: 'tt3',
-        watchStatus: 'watched',
+        watchStatus: 'finished',
         completed: true,
-        listType: 'watched',
+        listType: 'finished',
         contentType: 'movie',
       }),
     ];

@@ -1,9 +1,9 @@
-import { WatchingSeasonMetadataModel } from '@shared/models/api-model';
+import { TrackingSeasonMetadataModel } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
 import { resolveCanonicalItemId } from './external-item-identity-repository';
-import { WatchingSeasonRow } from './series-tracker-season-model';
+import { TrackingSeasonRow } from './series-tracker-season-model';
 
-const findWatchingItemId = (db: Database.Database, usernameHash: string, imdbId: string): number | null => {
+const findTrackingItemId = (db: Database.Database, usernameHash: string, imdbId: string): number | null => {
   const row = db
     .prepare(
       `SELECT id
@@ -22,11 +22,11 @@ const findWatchingItemId = (db: Database.Database, usernameHash: string, imdbId:
            )
          )`
     )
-    .get(usernameHash, 'watching', imdbId, imdbId) as { id: number } | undefined;
+    .get(usernameHash, 'tracking', imdbId, imdbId) as { id: number } | undefined;
   return row?.id ?? null;
 };
 
-const findWatchingItemIdByExternalId = (
+const findTrackingItemIdByExternalId = (
   db: Database.Database,
   usernameHash: string,
   externalProvider: string,
@@ -38,7 +38,7 @@ const findWatchingItemIdByExternalId = (
        FROM collection_items
        WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?`
     )
-    .get(usernameHash, externalProvider, externalItemId, 'watching') as { id: number } | undefined;
+    .get(usernameHash, externalProvider, externalItemId, 'tracking') as { id: number } | undefined;
   if (exactRow) return exactRow.id;
 
   const canonicalItemId = resolveCanonicalItemId(db, usernameHash, externalProvider, externalItemId);
@@ -48,11 +48,11 @@ const findWatchingItemIdByExternalId = (
        FROM collection_items
        WHERE username_hash = ? AND canonical_item_id = ? AND list_type = ?`
     )
-    .get(usernameHash, canonicalItemId, 'watching') as { id: number } | undefined;
+    .get(usernameHash, canonicalItemId, 'tracking') as { id: number } | undefined;
   return canonicalRow?.id ?? null;
 };
 
-const findWatchingSeasonsByItemId = (db: Database.Database, itemId: number | null): WatchingSeasonMetadataModel[] => {
+const findTrackingSeasonsByItemId = (db: Database.Database, itemId: number | null): TrackingSeasonMetadataModel[] => {
   if (!itemId) return [];
   return (
     db
@@ -62,39 +62,39 @@ const findWatchingSeasonsByItemId = (db: Database.Database, itemId: number | nul
             WHERE item_id = ?
             ORDER BY season`
       )
-      .all(itemId) as WatchingSeasonRow[]
+      .all(itemId) as TrackingSeasonRow[]
   ).map((row) => {
     const titles = row.episode_titles ? (JSON.parse(row.episode_titles) as string[]) : [];
     return { season: row.season, episodes: row.episodes, titles };
   });
 };
 
-export const findWatchingSeasons = (
+export const findTrackingSeasons = (
   db: Database.Database,
   usernameHash: string,
   imdbId: string
-): WatchingSeasonMetadataModel[] => {
-  const itemId = findWatchingItemId(db, usernameHash, imdbId);
-  return findWatchingSeasonsByItemId(db, itemId);
+): TrackingSeasonMetadataModel[] => {
+  const itemId = findTrackingItemId(db, usernameHash, imdbId);
+  return findTrackingSeasonsByItemId(db, itemId);
 };
 
-export const findWatchingSeasonsByExternalId = (
+export const findTrackingSeasonsByExternalId = (
   db: Database.Database,
   usernameHash: string,
   externalProvider: string,
   externalItemId: string
-): WatchingSeasonMetadataModel[] => {
-  const itemId = findWatchingItemIdByExternalId(db, usernameHash, externalProvider, externalItemId);
-  return findWatchingSeasonsByItemId(db, itemId);
+): TrackingSeasonMetadataModel[] => {
+  const itemId = findTrackingItemIdByExternalId(db, usernameHash, externalProvider, externalItemId);
+  return findTrackingSeasonsByItemId(db, itemId);
 };
 
-export const replaceWatchingSeasons = (
+export const replaceTrackingSeasons = (
   db: Database.Database,
   usernameHash: string,
   imdbId: string,
-  seasons: WatchingSeasonMetadataModel[]
-): WatchingSeasonMetadataModel[] => {
-  const itemId = findWatchingItemId(db, usernameHash, imdbId);
+  seasons: TrackingSeasonMetadataModel[]
+): TrackingSeasonMetadataModel[] => {
+  const itemId = findTrackingItemId(db, usernameHash, imdbId);
   if (!itemId) return [];
 
   const transaction = db.transaction(() => {
@@ -111,17 +111,17 @@ export const replaceWatchingSeasons = (
   });
 
   transaction();
-  return findWatchingSeasons(db, usernameHash, imdbId);
+  return findTrackingSeasons(db, usernameHash, imdbId);
 };
 
-export const replaceWatchingSeasonsByExternalId = (
+export const replaceTrackingSeasonsByExternalId = (
   db: Database.Database,
   usernameHash: string,
   externalProvider: string,
   externalItemId: string,
-  seasons: WatchingSeasonMetadataModel[]
-): WatchingSeasonMetadataModel[] => {
-  const itemId = findWatchingItemIdByExternalId(db, usernameHash, externalProvider, externalItemId);
+  seasons: TrackingSeasonMetadataModel[]
+): TrackingSeasonMetadataModel[] => {
+  const itemId = findTrackingItemIdByExternalId(db, usernameHash, externalProvider, externalItemId);
   if (!itemId) return [];
 
   const transaction = db.transaction(() => {
@@ -138,22 +138,22 @@ export const replaceWatchingSeasonsByExternalId = (
   });
 
   transaction();
-  return findWatchingSeasonsByExternalId(db, usernameHash, externalProvider, externalItemId);
+  return findTrackingSeasonsByExternalId(db, usernameHash, externalProvider, externalItemId);
 };
 
-export const deleteWatchingSeasons = (db: Database.Database, usernameHash: string, imdbId: string): void => {
-  const itemId = findWatchingItemId(db, usernameHash, imdbId);
+export const deleteTrackingSeasons = (db: Database.Database, usernameHash: string, imdbId: string): void => {
+  const itemId = findTrackingItemId(db, usernameHash, imdbId);
   if (!itemId) return;
   db.prepare('DELETE FROM series_tracker_seasons WHERE item_id = ?').run(itemId);
 };
 
-export const deleteWatchingSeasonsByExternalId = (
+export const deleteTrackingSeasonsByExternalId = (
   db: Database.Database,
   usernameHash: string,
   externalProvider: string,
   externalItemId: string
 ): void => {
-  const itemId = findWatchingItemIdByExternalId(db, usernameHash, externalProvider, externalItemId);
+  const itemId = findTrackingItemIdByExternalId(db, usernameHash, externalProvider, externalItemId);
   if (!itemId) return;
   db.prepare('DELETE FROM series_tracker_seasons WHERE item_id = ?').run(itemId);
 };

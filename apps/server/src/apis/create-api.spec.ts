@@ -372,7 +372,7 @@ describe('create-api', () => {
   it('creates a series tracker item using listType', async () => {
     insertUser();
     const response = mockResponse();
-    const request: any = { body: { ...item, contentType: 'series', listType: 'watching' }, usernameHash: 'user' };
+    const request: any = { body: { ...item, contentType: 'series', listType: 'tracking' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');
@@ -382,7 +382,7 @@ describe('create-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({
         title: 'Custom File',
-        listType: 'watching',
+        listType: 'tracking',
         contentType: 'series',
         tags: [],
       }),
@@ -401,7 +401,7 @@ describe('create-api', () => {
     insertUser();
     const response = mockResponse();
     const request: any = {
-      body: { ...item, contentType: 'series', listType: 'watching' },
+      body: { ...item, contentType: 'series', listType: 'tracking' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -428,7 +428,7 @@ describe('create-api', () => {
     insertUser();
     const response = mockResponse();
     const request: any = {
-      body: { ...item, contentType: 'series', listType: 'watching' },
+      body: { ...item, contentType: 'series', listType: 'tracking' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -440,7 +440,7 @@ describe('create-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({
         title: 'Custom File',
-        listType: 'watching',
+        listType: 'tracking',
         contentType: 'series',
         tags: [],
       }),
@@ -449,7 +449,7 @@ describe('create-api', () => {
 
   it('returns 400 when creating a movie in the series tracker', async () => {
     const response = mockResponse();
-    const request: any = { body: { ...item, listType: 'watching' }, usernameHash: 'user' };
+    const request: any = { body: { ...item, listType: 'tracking' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');
