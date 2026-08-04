@@ -10,7 +10,7 @@ const baseChangeInput = { contentType: 'movie' as const, favorite: false, reques
 const formerSystemTags = [
   '#completed',
   '#favorite',
-  '#watch-later',
+  '#watchlist',
   '#wishlist',
   '#movie',
   '#series',
@@ -26,46 +26,46 @@ describe('collection item tag validation util', () => {
       createCollectionItemTagValidation({
         ...baseCreateInput,
         favorite: true,
-        listType: 'watch-later',
+        listType: 'watchlist',
       })
     ).toEqual({ kind: 'invalidNonLibraryTag' });
     expect(
       createCollectionItemTagValidation({
         ...baseCreateInput,
-        listType: 'watch-later',
+        listType: 'watchlist',
         targetOwnerShareCode: 'shared-code',
       })
     ).toEqual({ kind: 'invalidSharedListCreate' });
-    expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'series-tracker' })).toEqual({
-      kind: 'invalidSeriesTrackerTags',
+    expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'watching' })).toEqual({
+      kind: 'invalidWatchingTags',
     });
     expect(
       createCollectionItemTagValidation({
         ...baseCreateInput,
         contentType: 'series',
-        listType: 'series-tracker',
+        listType: 'watching',
       })
     ).toBeUndefined();
     expect(
-      createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'book', listType: 'book-tracker' })
+      createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'book', listType: 'books' })
     ).toBeUndefined();
-    for (const listType of ['library', 'watch-later', 'wishlist'] as const) {
+    for (const listType of ['library', 'watchlist', 'wishlist'] as const) {
       expect(createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'book', listType })).toEqual({
         kind: 'invalidInternalCollectionTag',
       });
     }
-    expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'book-tracker' })).toEqual({
+    expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'books' })).toEqual({
       kind: 'invalidInternalCollectionTag',
     });
-    expect(
-      createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'series', listType: 'book-tracker' })
-    ).toEqual({ kind: 'invalidInternalCollectionTag' });
+    expect(createCollectionItemTagValidation({ ...baseCreateInput, contentType: 'series', listType: 'books' })).toEqual(
+      { kind: 'invalidInternalCollectionTag' }
+    );
     expect(
       createCollectionItemTagValidation({
         ...baseCreateInput,
         contentType: 'book',
         favorite: true,
-        listType: 'book-tracker',
+        listType: 'books',
       })
     ).toEqual({ kind: 'invalidNonLibraryTag' });
   });
@@ -82,8 +82,8 @@ describe('collection item tag validation util', () => {
       changeCollectionItemTagValidation({
         ...baseChangeInput,
         contentType: 'series',
-        listType: 'series-tracker',
-        existingListType: 'series-tracker',
+        listType: 'watching',
+        existingListType: 'watching',
       })
     ).toBeUndefined();
     expect(
@@ -91,23 +91,23 @@ describe('collection item tag validation util', () => {
         ...baseChangeInput,
         contentType: 'series',
         favorite: true,
-        listType: 'series-tracker',
-        existingListType: 'series-tracker',
+        listType: 'watching',
+        existingListType: 'watching',
       })
-    ).toEqual({ kind: 'invalidSeriesTrackerTags' });
+    ).toEqual({ kind: 'invalidWatchingTags' });
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,
-        listType: 'watch-later',
-        existingListType: 'watch-later',
+        listType: 'watchlist',
+        existingListType: 'watchlist',
       })
     ).toBeUndefined();
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,
         favorite: true,
-        listType: 'watch-later',
-        existingListType: 'watch-later',
+        listType: 'watchlist',
+        existingListType: 'watchlist',
       })
     ).toEqual({ kind: 'invalidNonLibraryTag' });
     expect(
@@ -129,14 +129,14 @@ describe('collection item tag validation util', () => {
       changeCollectionItemTagValidation({
         ...baseChangeInput,
         listType: 'library',
-        existingListType: 'watch-later',
+        existingListType: 'watchlist',
       })
     ).toEqual({ kind: 'invalidInternalCollectionItemUpdate' });
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,
-        listType: 'watch-later',
-        existingListType: 'watch-later',
+        listType: 'watchlist',
+        existingListType: 'watchlist',
         requesterIsOwner: false,
       })
     ).toEqual({ kind: 'sharedInternalCollectionItemUpdate' });
@@ -144,11 +144,11 @@ describe('collection item tag validation util', () => {
       changeCollectionItemTagValidation({
         ...baseChangeInput,
         contentType: 'book',
-        listType: 'book-tracker',
-        existingListType: 'book-tracker',
+        listType: 'books',
+        existingListType: 'books',
       })
     ).toBeUndefined();
-    for (const listType of ['library', 'watch-later', 'wishlist'] as const) {
+    for (const listType of ['library', 'watchlist', 'wishlist'] as const) {
       expect(
         changeCollectionItemTagValidation({
           ...baseChangeInput,
@@ -161,16 +161,16 @@ describe('collection item tag validation util', () => {
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,
-        listType: 'book-tracker',
-        existingListType: 'book-tracker',
+        listType: 'books',
+        existingListType: 'books',
       })
     ).toEqual({ kind: 'invalidInternalCollectionTag' });
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,
         contentType: 'series',
-        listType: 'book-tracker',
-        existingListType: 'book-tracker',
+        listType: 'books',
+        existingListType: 'books',
       })
     ).toEqual({ kind: 'invalidInternalCollectionTag' });
     expect(
@@ -178,8 +178,8 @@ describe('collection item tag validation util', () => {
         ...baseChangeInput,
         contentType: 'book',
         favorite: true,
-        listType: 'book-tracker',
-        existingListType: 'book-tracker',
+        listType: 'books',
+        existingListType: 'books',
       })
     ).toEqual({ kind: 'invalidInternalCollectionTag' });
   });

@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { isCollectionFeaturePreferences } from './collection-feature-preferences-util';
+import {
+  isCollectionFeaturePreferences,
+  parseCollectionFeaturePreferences,
+} from './collection-feature-preferences-util';
 
 describe('isCollectionFeaturePreferences', () => {
-  it('accepts complete boolean preferences', () => {
+  it('accepts complete modern boolean preferences', () => {
     expect(
       isCollectionFeaturePreferences({
-        bookTracker: true,
+        books: true,
         wishlist: true,
-        watchLater: false,
-        movieTracker: true,
-        seriesTracker: false,
+        watchlist: false,
+        watched: true,
+        watching: false,
       })
     ).toBe(true);
   });
@@ -18,10 +21,43 @@ describe('isCollectionFeaturePreferences', () => {
     null,
     [],
     {},
-    { wishlist: true, watchLater: true, movieTracker: true },
-    { bookTracker: true, wishlist: true, watchLater: true, movieTracker: true, seriesTracker: 'yes' },
-    { bookTracker: true, wishlist: true, watchLater: true, movieTracker: true, seriesTracker: true, extra: true },
+    { wishlist: true, watchlist: true, watched: true, watching: true },
+    {
+      bookTracker: true,
+      wishlist: true,
+      watchLater: false,
+      movieTracker: true,
+      seriesTracker: false,
+    },
+    {
+      books: true,
+      wishlist: true,
+      watchlist: true,
+      watched: true,
+      watching: true,
+      extra: true,
+    },
   ])('rejects invalid preferences %#', (value) => {
     expect(isCollectionFeaturePreferences(value)).toBe(false);
+  });
+});
+
+describe('parseCollectionFeaturePreferences', () => {
+  it('returns modern preferences', () => {
+    expect(
+      parseCollectionFeaturePreferences({
+        wishlist: true,
+        watchlist: false,
+        watched: true,
+        watching: false,
+        books: true,
+      })
+    ).toEqual({
+      wishlist: true,
+      watchlist: false,
+      watched: true,
+      watching: false,
+      books: true,
+    });
   });
 });

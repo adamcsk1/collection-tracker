@@ -1,9 +1,9 @@
 import { CollectionFeaturePreferencesModel } from '../models/collection-feature-preferences-model';
 
 export const DEFAULT_COLLECTION_FEATURE_PREFERENCES: CollectionFeaturePreferencesModel = {
-  bookTracker: true,
+  books: true,
   wishlist: true,
-  watchLater: true,
-  movieTracker: true,
-  seriesTracker: true,
+  watchlist: true,
+  watched: true,
+  watching: true,
 };

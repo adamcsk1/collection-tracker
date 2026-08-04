@@ -16,13 +16,13 @@ export const createCollectionItemTagValidation = ({
   if (listType !== 'library' && favorite) {
     return { kind: 'invalidNonLibraryTag' };
   }
-  if (listType === 'series-tracker' && contentType !== 'series') {
-    return { kind: 'invalidSeriesTrackerTags' };
+  if (listType === 'watching' && contentType !== 'series') {
+    return { kind: 'invalidWatchingTags' };
   }
-  if (listType === 'movie-tracker' && contentType !== 'movie') {
+  if (listType === 'watched' && contentType !== 'movie') {
     return { kind: 'invalidInternalCollectionTag' };
   }
-  if ((listType === 'book-tracker') !== (contentType === 'book')) {
+  if ((listType === 'books') !== (contentType === 'book')) {
     return { kind: 'invalidInternalCollectionTag' };
   }
   return undefined;
@@ -40,27 +40,27 @@ export const changeCollectionItemTagValidation = ({
   }
   if (
     existingListType !== 'library' &&
-    listType !== 'series-tracker' &&
-    listType !== 'movie-tracker' &&
-    listType !== 'book-tracker' &&
-    listType !== 'watch-later' &&
+    listType !== 'watching' &&
+    listType !== 'watched' &&
+    listType !== 'books' &&
+    listType !== 'watchlist' &&
     listType !== 'wishlist'
   ) {
     return { kind: 'invalidInternalCollectionItemUpdate' };
   }
-  if (listType === 'series-tracker' && (contentType !== 'series' || favorite)) {
-    return { kind: 'invalidSeriesTrackerTags' };
+  if (listType === 'watching' && (contentType !== 'series' || favorite)) {
+    return { kind: 'invalidWatchingTags' };
   }
-  if (listType === 'movie-tracker' && (contentType !== 'movie' || favorite)) {
+  if (listType === 'watched' && (contentType !== 'movie' || favorite)) {
     return { kind: 'invalidInternalCollectionTag' };
   }
-  if ((listType === 'book-tracker') !== (contentType === 'book')) {
+  if ((listType === 'books') !== (contentType === 'book')) {
     return { kind: 'invalidInternalCollectionTag' };
   }
-  if (listType === 'book-tracker' && favorite) {
+  if (listType === 'books' && favorite) {
     return { kind: 'invalidInternalCollectionTag' };
   }
-  if (listType === 'watch-later' && favorite) {
+  if (listType === 'watchlist' && favorite) {
     return { kind: 'invalidNonLibraryTag' };
   }
   if (listType === 'wishlist' && favorite) {

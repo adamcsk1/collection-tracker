@@ -1,7 +1,7 @@
 export interface CollectionFeaturePreferencesModel {
-  bookTracker: boolean;
+  books: boolean;
   wishlist: boolean;
-  watchLater: boolean;
-  movieTracker: boolean;
-  seriesTracker: boolean;
+  watchlist: boolean;
+  watched: boolean;
+  watching: boolean;
 }
