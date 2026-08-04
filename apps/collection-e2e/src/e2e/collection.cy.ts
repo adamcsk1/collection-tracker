@@ -23,7 +23,7 @@ const saveManualItem = (
   title: string,
   imdbId: string,
   contentType: 'movie' | 'series',
-  listType: 'library' | 'watchlist' | 'wishlist' | 'watching' | 'watched'
+  listType: 'library' | 'watchlist' | 'wishlist' | 'tracking' | 'finished'
 ) => {
   cy.intercept('POST', '/api/v1/create').as('createManualItem');
   CollectionPage.getNewItemManualModeButton().click();
@@ -528,19 +528,19 @@ describe('Collection — standard search in secondary lists', () => {
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Series Tracker Search Alpha', 'series', 'tt8300005'),
-      listType: 'watching',
+      listType: 'tracking',
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Series Tracker Search Beta', 'series', 'tt8300006'),
-      listType: 'watching',
+      listType: 'tracking',
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Movie Tracker Search Alpha', 'movie', 'tt8300007'),
-      listType: 'watched',
+      listType: 'finished',
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Movie Tracker Search Beta', 'movie', 'tt8300008'),
-      listType: 'watched',
+      listType: 'finished',
     });
   });
 
@@ -569,9 +569,9 @@ describe('Collection — standard search in secondary lists', () => {
 
   it('filters series tracker items', () => {
     CommonPage.openMenu();
-    CommonPage.getNavWatchingLink().click();
+    CommonPage.getNavTrackingLink().click();
 
-    CollectionPage.getWatchingSearchInput().should('be.visible').type('Alpha');
+    CollectionPage.getTrackingSearchInput().should('be.visible').type('Alpha');
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Series Tracker Search Alpha');
     CollectionPage.getListItems().should('not.contain.text', 'Series Tracker Search Beta');
@@ -680,11 +680,11 @@ describe('Collection — order controls', () => {
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Series Tracker Order', 'series', 'tt8400023'),
-      listType: 'watching',
+      listType: 'tracking',
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Movie Tracker Order', 'movie', 'tt8400025'),
-      listType: 'watched',
+      listType: 'finished',
     });
     CommonPage.openMenu();
     CommonPage.getNavWatchlistLink().click();
@@ -699,14 +699,14 @@ describe('Collection — order controls', () => {
     showOrderControls();
 
     CommonPage.openMenu();
-    CommonPage.getNavWatchingLink().click();
-    cy.url().should('include', '#/collection/watching');
+    CommonPage.getNavTrackingLink().click();
+    cy.url().should('include', '#/collection/tracking');
     cy.wait('@getItems');
     showOrderControls();
 
     CommonPage.openMenu();
     CommonPage.getNavWatchedLink().click();
-    cy.url().should('include', '#/collection/watched');
+    cy.url().should('include', '#/collection/finished');
     cy.wait('@getItems');
     showOrderControls();
   });
@@ -842,15 +842,15 @@ describe('Collection — series tracker', () => {
   });
 
   it('adds a series and persists watched-up-to progress', () => {
-    cy.intercept('PUT', '/api/v1/watching/**/watched-episodes').as('saveWatchedEpisodes');
+    cy.intercept('PUT', '/api/v1/tracking/**/completed-episodes').as('saveCompletedEpisodes');
     cy.on('window:confirm', () => true);
 
     CommonPage.openMenu();
-    CommonPage.getNavWatchingLink().click();
+    CommonPage.getNavTrackingLink().click();
 
-    cy.url().should('include', '#/collection/watching');
+    cy.url().should('include', '#/collection/tracking');
     cy.getByTestId('collection-search').should('not.exist');
-    CollectionPage.getAddFirstWatchingItemLink().click();
+    CollectionPage.getAddFirstTrackingItemLink().click();
 
     CollectionPage.getNewItemSearchInput().type(seriesTitle);
     cy.wait('@watchingOmdbSearch');
@@ -863,20 +863,20 @@ describe('Collection — series tracker', () => {
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', seriesTitle);
 
-    cy.request('PUT', '/api/v1/watching/omdb/tt8200001/seasons', {
+    cy.request('PUT', '/api/v1/tracking/omdb/tt8200001/seasons', {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    CollectionPage.visitWatching();
+    CollectionPage.visitTracking();
 
     CollectionPage.getListItemImages().first().click();
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
-    CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(0).check();
-    cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
-    CollectionPage.getWatchedEpisodesEpisodeCheckbox().eq(1).check();
-    cy.wait('@saveWatchedEpisodes').its('response.statusCode').should('eq', 200);
+    CollectionPage.getItemDialogManageCompletedEpisodesButton().click();
+    CollectionPage.getCompletedEpisodesEpisodeCheckbox().eq(0).check();
+    cy.wait('@saveCompletedEpisodes').its('response.statusCode').should('eq', 200);
+    CollectionPage.getCompletedEpisodesEpisodeCheckbox().eq(1).check();
+    cy.wait('@saveCompletedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.closeDialogByOverlay();
-    CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
+    CollectionPage.getCompletedEpisodesDialogHost().should('not.exist');
     CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
 
@@ -888,10 +888,10 @@ describe('Collection — series tracker', () => {
   it('adds a manual series tracker item and persists it after reload', () => {
     const manualTitle = 'Manual Series Tracker Show';
     CommonPage.openMenu();
-    CommonPage.getNavWatchingLink().click();
-    CollectionPage.getAddFirstWatchingItemLink().click();
+    CommonPage.getNavTrackingLink().click();
+    CollectionPage.getAddFirstTrackingItemLink().click();
 
-    saveManualItem(manualTitle, 'tt8200002', 'series', 'watching');
+    saveManualItem(manualTitle, 'tt8200002', 'series', 'tracking');
     reloadAndExpectPersistedTitle(manualTitle);
   });
 });
@@ -921,7 +921,7 @@ describe('Collection — movie tracker', () => {
     CommonPage.openMenu();
     CommonPage.getNavWatchedLink().click();
 
-    cy.url().should('include', '#/collection/watched');
+    cy.url().should('include', '#/collection/finished');
     cy.getByTestId('collection-search').should('not.exist');
     CollectionPage.getAddFirstWatchedItemLink().click();
 
@@ -943,7 +943,7 @@ describe('Collection — movie tracker', () => {
     const manualTitle = 'Manual Movie Tracker Item';
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(existingTitle, 'movie', 'tt8300002'),
-      listType: 'watched',
+      listType: 'finished',
     });
     cy.intercept('GET', '/api/v1/items*').as('watchedItems');
     CollectionPage.visitWatched();
@@ -952,7 +952,7 @@ describe('Collection — movie tracker', () => {
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAddNewButton().click();
-    saveManualItem(manualTitle, 'tt8300003', 'movie', 'watched');
+    saveManualItem(manualTitle, 'tt8300003', 'movie', 'finished');
     reloadAndExpectPersistedTitle(manualTitle, 2);
     CollectionPage.getListItems().should('contain.text', existingTitle);
   });
@@ -960,20 +960,20 @@ describe('Collection — movie tracker', () => {
   it('opens the item dialog and shows watched status without episode controls', () => {
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(movieTitle, 'movie', 'tt8300001'),
-      listType: 'watched',
+      listType: 'finished',
     });
     CollectionPage.visitWatched();
 
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogCompletedChip().should('not.exist');
-    CollectionPage.getItemDialogManageWatchedEpisodesButton().should('not.exist');
+    CollectionPage.getItemDialogManageCompletedEpisodesButton().should('not.exist');
     CollectionPage.getItemDialogManageSeriesMetadataButton().should('not.exist');
 
     CollectionPage.closeActiveDialogByOverlay();
   });
 
   it('moves a movie from watchlist to movie tracker', () => {
-    cy.intercept('POST', '/api/v1/watched/**').as('moveToWatched');
+    cy.intercept('POST', '/api/v1/finished/**').as('moveToWatched');
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Later Move Movie', 'movie', 'tt8300002'),
       listType: 'watchlist',
@@ -999,7 +999,7 @@ describe('Collection — movie tracker', () => {
 
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Delete Tracker Movie', 'movie', 'tt8300003'),
-      listType: 'watched',
+      listType: 'finished',
     });
     CollectionPage.visitWatched();
 
@@ -1015,11 +1015,11 @@ describe('Collection — movie tracker', () => {
   it('filters movie tracker items via search', () => {
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Alpha Movie', 'movie', 'tt8300004'),
-      listType: 'watched',
+      listType: 'finished',
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Beta Movie', 'movie', 'tt8300005'),
-      listType: 'watched',
+      listType: 'finished',
     });
     CollectionPage.visitWatched();
 

@@ -75,12 +75,12 @@ describe('Statistics — with movies and series', () => {
 
   it('navigates to the movie tracker when the watched movies summary card is clicked', () => {
     StatisticsPage.getSummaryWatchedMovies().click();
-    cy.url().should('include', '#/collection/watched');
+    cy.url().should('include', '#/collection/finished');
   });
 
   it('navigates to the series tracker when the watched series summary card is clicked', () => {
     StatisticsPage.getSummaryWatchedSeries().click();
-    cy.url().should('include', '#/collection/watching');
+    cy.url().should('include', '#/collection/tracking');
   });
 
   it('navigates to the collection filtered by unwatched movies when the unwatched movies summary card is clicked', () => {
@@ -99,7 +99,7 @@ describe('Statistics — with movies and series', () => {
 
   it('navigates to the series tracker filtered by uncompleted when the unwatched tracker series summary card is clicked', () => {
     StatisticsPage.getSummaryUnwatchedTrackerSeries().click();
-    cy.url().should('include', '#/collection/watching');
+    cy.url().should('include', '#/collection/tracking');
     cy.url().should('include', 'completed=false');
   });
 
@@ -173,7 +173,7 @@ describe('Statistics — with series tracker items', () => {
   beforeEach(() => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', librarySeries);
-    cy.request('POST', '/api/v1/watching/omdb/tt9000004');
+    cy.request('POST', '/api/v1/tracking/omdb/tt9000004');
     StatisticsPage.visit();
   });
 
@@ -191,13 +191,13 @@ describe('Statistics — with series tracker items', () => {
 
   it('navigates to the series tracker filtered by uncompleted when the unwatched tracker series card is clicked', () => {
     StatisticsPage.getSummaryUnwatchedTrackerSeries().click();
-    cy.url().should('include', '#/collection/watching');
+    cy.url().should('include', '#/collection/tracking');
     cy.url().should('include', 'completed=false');
   });
 
   it('navigates to the series tracker filtered by completed when the completed tracker series card is clicked', () => {
     StatisticsPage.getSummaryCompletedTrackerSeries().click();
-    cy.url().should('include', '#/collection/watching');
+    cy.url().should('include', '#/collection/tracking');
     cy.url().should('include', 'completed=true');
   });
 });

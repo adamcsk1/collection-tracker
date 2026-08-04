@@ -1,8 +1,8 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { CollectionPage } from '../page-objects/collection.po';
 
-const waitForWatchingItem = (imdbId: string) => {
-  cy.wait('@getWatchingItems')
+const waitForTrackingItem = (imdbId: string) => {
+  cy.wait('@getTrackingItems')
     .its('response.body.items')
     .should((items: Array<{ IMDbId: string }>) => {
       expect(items.some((item) => item.IMDbId === imdbId)).to.eq(true);
@@ -17,15 +17,15 @@ describe('Series metadata dialog', () => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(seriesTitle, 'series', imdbId),
-      listType: 'watching',
+      listType: 'tracking',
     });
-    cy.intercept('GET', '/api/v1/items?*listType=watching*').as('getWatchingItems');
-    CollectionPage.visitWatching();
-    waitForWatchingItem(imdbId);
+    cy.intercept('GET', '/api/v1/items?*listType=tracking*').as('getTrackingItems');
+    CollectionPage.visitTracking();
+    waitForTrackingItem(imdbId);
   });
 
   it('saves manual season metadata', () => {
-    cy.intercept('PUT', '/api/v1/watching/**/seasons').as('saveSeriesMetadata');
+    cy.intercept('PUT', '/api/v1/tracking/**/seasons').as('saveSeriesMetadata');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().contains(seriesTitle).click();
@@ -69,24 +69,24 @@ describe('Series metadata dialog', () => {
   });
 
   it('removes stored season metadata', () => {
-    cy.request('PUT', `/api/v1/watching/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/tracking/omdb/${imdbId}/seasons`, {
       seasons: [
         { season: 1, episodes: 3 },
         { season: 2, episodes: 2 },
       ],
     });
-    cy.intercept('DELETE', '/api/v1/watching/**/seasons').as('deleteSeriesMetadata');
+    cy.intercept('DELETE', '/api/v1/tracking/**/seasons').as('deleteSeriesMetadata');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
+    CollectionPage.getItemDialogManageCompletedEpisodesButton().click();
 
-    CollectionPage.getWatchedEpisodesDialog().should('be.visible');
-    CollectionPage.getWatchedEpisodesNoMetadataMessage().should('not.exist');
+    CollectionPage.getCompletedEpisodesDialog().should('be.visible');
+    CollectionPage.getCompletedEpisodesNoMetadataMessage().should('not.exist');
     CollectionPage.closeActiveDialogByOverlay();
 
-    cy.getByTestId('watched-episodes-dialog').should('not.exist');
+    cy.getByTestId('completed-episodes-dialog').should('not.exist');
     CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageSeriesMetadataButton().click();
@@ -98,12 +98,12 @@ describe('Series metadata dialog', () => {
     CollectionPage.getSeriesMetadataDialogHost().should('not.exist');
     CollectionPage.getItemDialogHost().should('be.visible');
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
-    CollectionPage.getWatchedEpisodesNoMetadataMessage().should('be.visible');
+    CollectionPage.getItemDialogManageCompletedEpisodesButton().click();
+    CollectionPage.getCompletedEpisodesNoMetadataMessage().should('be.visible');
   });
 
   it('saves and restores episode titles in the metadata dialog', () => {
-    cy.intercept('PUT', '/api/v1/watching/**/seasons').as('saveSeriesMetadata');
+    cy.intercept('PUT', '/api/v1/tracking/**/seasons').as('saveSeriesMetadata');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();

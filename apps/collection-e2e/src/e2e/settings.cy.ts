@@ -135,23 +135,23 @@ describe('Settings - features page', () => {
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
     SettingsPage.getFeatureWatchTrackerCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
-    SettingsPage.getFeatureWatchingCheckbox().uncheck();
+    SettingsPage.getFeatureTrackingCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
 
     cy.reload();
     SettingsPage.getFeatureWishlistCheckbox().should('not.be.checked');
     SettingsPage.getFeatureWatchlistCheckbox().should('not.be.checked');
     SettingsPage.getFeatureWatchTrackerCheckbox().should('not.be.checked');
-    SettingsPage.getFeatureWatchingCheckbox().should('not.be.checked');
+    SettingsPage.getFeatureTrackingCheckbox().should('not.be.checked');
 
     CommonPage.openMenu();
     CommonPage.getMenuNavItem('nav-wishlist').should('not.exist');
     CommonPage.getMenuNavItem('nav-watchlist').should('not.exist');
-    CommonPage.getMenuNavItem('nav-watched').should('not.exist');
-    CommonPage.getMenuNavItem('nav-watching').should('not.exist');
+    CommonPage.getMenuNavItem('nav-finished').should('not.exist');
+    CommonPage.getMenuNavItem('nav-tracking').should('not.exist');
 
-    cy.visit('/client/#/collection/watching');
-    cy.url().should('include', '/collection/watching');
+    cy.visit('/client/#/collection/tracking');
+    cy.url().should('include', '/collection/tracking');
 
     cy.request('POST', '/api/v1/create', buildCollectionItem('Feature Statistics Movie', 'movie', 'tt8100002'));
     cy.visit('/client/#/statistics');
@@ -165,7 +165,7 @@ describe('Settings - features page', () => {
   it('hides the connected series tracker option when adding a series', () => {
     SettingsPage.visitFeatures();
     cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
-    SettingsPage.getFeatureWatchingCheckbox().uncheck();
+    SettingsPage.getFeatureTrackingCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
 
     CollectionPage.visit();
@@ -306,13 +306,13 @@ describe('Settings - mark all watched / unwatched', () => {
   });
 
   it('remove all tracked movie data calls the delete API and empties the tracker', () => {
-    cy.intercept('DELETE', '/api/v1/watched').as('deleteWatched');
+    cy.intercept('DELETE', '/api/v1/finished').as('deleteWatched');
     cy.on('window:confirm', () => true);
 
     // Seed a movie tracker item
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Tracked Movie', 'movie', 'tt8000004'),
-      listType: 'watched',
+      listType: 'finished',
     });
 
     SettingsPage.getRemoveAllTrackedMovieDataButton().click();
@@ -324,24 +324,24 @@ describe('Settings - mark all watched / unwatched', () => {
   });
 
   it('removes all tracked series data and persists an empty series tracker', () => {
-    cy.intercept('DELETE', '/api/v1/watching').as('deleteWatching');
+    cy.intercept('DELETE', '/api/v1/tracking').as('deleteTracking');
     cy.on('window:confirm', () => true);
 
     // Seed a series tracker item
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Tracked Series', 'series', 'tt8000005'),
-      listType: 'watching',
+      listType: 'tracking',
     });
-    CollectionPage.visitWatching();
+    CollectionPage.visitTracking();
     CollectionPage.getListItems().should('have.length', 1).and('contain.text', 'Tracked Series');
 
     SettingsPage.visitManageTrackerData();
 
     SettingsPage.getRemoveAllTrackedSeriesDataButton().click();
 
-    cy.wait('@deleteWatching').its('response.statusCode').should('eq', 200);
+    cy.wait('@deleteTracking').its('response.statusCode').should('eq', 200);
 
-    CollectionPage.visitWatching();
+    CollectionPage.visitTracking();
     CollectionPage.getEmptyState().should('be.visible');
   });
 });

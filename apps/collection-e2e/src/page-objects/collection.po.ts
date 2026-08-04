@@ -4,8 +4,8 @@ const getDialogFrame = (subject: Cypress.Chainable<JQuery<HTMLElement>>) =>
 const getActiveDialogFrame = () => cy.getByTestId('dialog-frame').last();
 const getItemDialog = () => getDialogFrame(cy.getByTestId('item-dialog').last());
 const getSeriesMetadataDialog = () => getDialogFrame(cy.getByTestId('series-metadata-dialog').last());
-const getWatchedEpisodesDialogHost = () => cy.getByTestId('watched-episodes-dialog');
-const getWatchedEpisodesDialog = () => getWatchedEpisodesDialogHost().last();
+const getCompletedEpisodesDialogHost = () => cy.getByTestId('completed-episodes-dialog');
+const getCompletedEpisodesDialog = () => getCompletedEpisodesDialogHost().last();
 const getDialogComponentHost = (testId: string) => cy.getByTestId(testId).last().parents('.dialog').first();
 const dialogActionHoldDuration = 500;
 const expandFloatSearch = (testId: string) => {
@@ -51,11 +51,11 @@ export const CollectionPage = {
     cy.reload();
   },
 
-  visitWatching: () => {
-    cy.visit('/client/#/collection/watching');
+  visitTracking: () => {
+    cy.visit('/client/#/collection/tracking');
   },
   visitWatched: () => {
-    cy.visit('/client/#/collection/watched');
+    cy.visit('/client/#/collection/finished');
   },
   visitWatchlist: () => {
     cy.visit('/client/#/collection/watchlist');
@@ -64,7 +64,7 @@ export const CollectionPage = {
   // Search
   getSearchInput: () => getFloatSearchInput('collection-search'),
   getSearchHost: () => cy.getByTestId('collection-search'),
-  getWatchingSearchInput: () => getFloatSearchInput('watching-search'),
+  getTrackingSearchInput: () => getFloatSearchInput('watching-search'),
   getWatchedSearchInput: () => getFloatSearchInput('watched-search'),
   getWatchlistSearchInput: () => getFloatSearchInput('watchlist-search'),
   getWishlistSearchInput: () => getFloatSearchInput('wishlist-search'),
@@ -74,7 +74,7 @@ export const CollectionPage = {
   getListItems: (options: Partial<Cypress.Timeoutable> = { timeout: 10000 }) =>
     cy.getByTestId('list-item-title', options),
   getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
-  getWatchingCompletedBadges: () => cy.getByTestId('list-item-watching-completed'),
+  getTrackingCompletedBadges: () => cy.getByTestId('list-item-watching-completed'),
   getWatchedWatchedBadges: () => cy.getByTestId('list-item-watched'),
   getSharedBadges: () => cy.getByTestId('list-item-shared'),
   getListItemYears: () => cy.getByTestId('list-item-year'),
@@ -88,7 +88,7 @@ export const CollectionPage = {
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
   getAddFirstWatchlistItemLink: () => cy.getByTestId('add-first-watchlist-item'),
   getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
-  getAddFirstWatchingItemLink: () => cy.getByTestId('add-first-watching-item'),
+  getAddFirstTrackingItemLink: () => cy.getByTestId('add-first-watching-item'),
   getAddFirstWatchedItemLink: () => cy.getByTestId('add-first-watched-item'),
   setListPreferredRatingToUser: () =>
     cy.request('POST', '/api/v1/user/settings', {
@@ -135,7 +135,7 @@ export const CollectionPage = {
   getNewItemContentSelect: () => cy.getByTestId('new-item-content-select'),
   getNewItemContentOptions: () => cy.getByTestId('new-item-content-option'),
   getNewItemUserRateInput: () => cy.getByTestId('new-item-user-rate').find('input'),
-  getNewItemCopyToWatchingAsWatchedCheckbox: () =>
+  getNewItemCopyToTrackingAsWatchedCheckbox: () =>
     cy.getByTestId('new-item-copy-to-watching-as-watched').find('input[type="checkbox"]'),
   getNewItemSaveButton: () => cy.getByTestId('new-item-save'),
   getNewItemSaveAndNewButton: () => cy.getByTestId('new-item-save-and-new'),
@@ -231,8 +231,8 @@ export const CollectionPage = {
   getItemDialogUserRateInput: () => getItemDialog().find('[data-test-id="item-dialog-user-rate"] input'),
   getItemDialogEpisodeProgressChip: () => getItemDialog().find('[data-test-id="item-dialog-episode-progress-chip"]'),
   getItemDialogCompletedChip: () => getItemDialog().find('[data-test-id="item-dialog-completed-chip"]'),
-  getItemDialogManageWatchedEpisodesButton: () =>
-    getItemDialog().find('[data-test-id="item-dialog-manage-watched-episodes"]'),
+  getItemDialogManageCompletedEpisodesButton: () =>
+    getItemDialog().find('[data-test-id="item-dialog-manage-completed-episodes"]'),
   getItemDialogManageSeriesMetadataButton: () =>
     getItemDialog().find('[data-test-id="item-dialog-manage-series-metadata"]'),
   getItemDialogGenreInput: () => getItemDialog().find('[data-test-id="item-dialog-genre"] input'),
@@ -267,19 +267,19 @@ export const CollectionPage = {
     getSeriesMetadataDialog().find('[data-test-id="series-metadata-episode-title"] input'),
 
   // Watched episodes dialog
-  getWatchedEpisodesDialogHost,
-  getWatchedEpisodesDialogComponentHost: () => getDialogComponentHost('watched-episodes-dialog'),
-  getWatchedEpisodesDialog: () => getDialogFrame(getWatchedEpisodesDialog()),
-  getWatchedEpisodesSeasonToggle: () =>
-    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-season-toggle"]'),
-  getWatchedEpisodesEpisodeCheckbox: () =>
-    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-episode-checkbox"]'),
-  getWatchedEpisodesMarkAllWatchedButton: () =>
-    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-mark-all-watched"]'),
-  getWatchedEpisodesMarkAllUnwatchedButton: () =>
-    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-mark-all-unwatched"]'),
-  getWatchedEpisodesNoMetadataMessage: () =>
-    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-no-metadata-message"]'),
-  getWatchedEpisodesManageSeasonMetadataButton: () =>
-    getWatchedEpisodesDialog().find('[data-test-id="watched-episodes-manage-season-metadata"]'),
+  getCompletedEpisodesDialogHost,
+  getCompletedEpisodesDialogComponentHost: () => getDialogComponentHost('completed-episodes-dialog'),
+  getCompletedEpisodesDialog: () => getDialogFrame(getCompletedEpisodesDialog()),
+  getCompletedEpisodesSeasonToggle: () =>
+    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-season-toggle"]'),
+  getCompletedEpisodesEpisodeCheckbox: () =>
+    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-episode-checkbox"]'),
+  getCompletedEpisodesMarkAllWatchedButton: () =>
+    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-mark-all-completed"]'),
+  getCompletedEpisodesMarkAllUnwatchedButton: () =>
+    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-mark-all-incomplete"]'),
+  getCompletedEpisodesNoMetadataMessage: () =>
+    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-no-metadata-message"]'),
+  getCompletedEpisodesManageSeasonMetadataButton: () =>
+    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-manage-season-metadata"]'),
 };

@@ -14,8 +14,8 @@ const collectionListTypes = [
   'library',
   'watchlist',
   'wishlist',
-  'watching',
-  'watched',
+  'tracking',
+  'finished',
   'books',
 ] as const;
 const defaultUserSettings = {
@@ -33,8 +33,8 @@ const defaultUserSettings = {
     books: true,
     wishlist: true,
     watchlist: true,
-    watched: true,
-    watching: true,
+    finished: true,
+    tracking: true,
   },
 };
 

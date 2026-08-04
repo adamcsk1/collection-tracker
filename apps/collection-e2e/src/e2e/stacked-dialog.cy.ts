@@ -1,8 +1,8 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { CollectionPage } from '../page-objects/collection.po';
 
-const waitForWatchingItem = (imdbId: string) => {
-  cy.wait('@getWatchingItems')
+const waitForTrackingItem = (imdbId: string) => {
+  cy.wait('@getTrackingItems')
     .its('response.body.items')
     .should((items: Array<{ IMDbId: string }>) => {
       expect(items.some((item) => item.IMDbId === imdbId)).to.eq(true);
@@ -50,11 +50,11 @@ describe('Stacked dialogs', () => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(seriesTitle, 'series', imdbId),
-      listType: 'watching',
+      listType: 'tracking',
     });
-    cy.intercept('GET', '/api/v1/items?*listType=watching*').as('getWatchingItems');
-    CollectionPage.visitWatching();
-    waitForWatchingItem(imdbId);
+    cy.intercept('GET', '/api/v1/items?*listType=tracking*').as('getTrackingItems');
+    CollectionPage.visitTracking();
+    waitForTrackingItem(imdbId);
   });
 
   it('keeps only the top dialog interactive across every app-supported stack depth', () => {
@@ -76,27 +76,27 @@ describe('Stacked dialogs', () => {
     expectActiveDialogFocused();
 
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogManageWatchedEpisodesButton().click();
-    CollectionPage.getWatchedEpisodesDialog().should('be.visible');
+    CollectionPage.getItemDialogManageCompletedEpisodesButton().click();
+    CollectionPage.getCompletedEpisodesDialog().should('be.visible');
     expectDialogHostStacked(CollectionPage.getItemDialogComponentHost());
-    expectDialogHostStackTop(CollectionPage.getWatchedEpisodesDialogComponentHost());
+    expectDialogHostStackTop(CollectionPage.getCompletedEpisodesDialogComponentHost());
     expectActiveDialogFocused();
 
-    CollectionPage.getWatchedEpisodesManageSeasonMetadataButton().click();
+    CollectionPage.getCompletedEpisodesManageSeasonMetadataButton().click();
     CollectionPage.getSeriesMetadataDialog().should('be.visible');
     expectDialogHostStacked(CollectionPage.getItemDialogComponentHost());
-    expectDialogHostStacked(CollectionPage.getWatchedEpisodesDialogComponentHost());
+    expectDialogHostStacked(CollectionPage.getCompletedEpisodesDialogComponentHost());
     expectDialogHostStackTop(CollectionPage.getSeriesMetadataDialogComponentHost());
     expectActiveDialogFocused();
 
     CollectionPage.closeActiveDialogByOverlay();
     CollectionPage.getSeriesMetadataDialogHost().should('not.exist');
     expectDialogHostStacked(CollectionPage.getItemDialogComponentHost());
-    expectDialogHostStackTop(CollectionPage.getWatchedEpisodesDialogComponentHost());
+    expectDialogHostStackTop(CollectionPage.getCompletedEpisodesDialogComponentHost());
     expectActiveDialogFocused();
 
     CollectionPage.closeActiveDialogByOverlay();
-    CollectionPage.getWatchedEpisodesDialogHost().should('not.exist');
+    CollectionPage.getCompletedEpisodesDialogHost().should('not.exist');
     expectDialogHostActive(CollectionPage.getItemDialogComponentHost());
     expectActiveDialogFocused();
   });

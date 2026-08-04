@@ -384,7 +384,7 @@ describe('Collection sharing - movie tracker from shared library', () => {
         seedOwnerItem(owner, title, imdbId);
         visitSharedCollection(sharedUser);
 
-        cy.intercept('POST', '/api/v1/watched/**').as('markWatched');
+        cy.intercept('POST', '/api/v1/finished/**').as('markWatched');
         cy.on('window:confirm', () => true);
 
         CollectionPage.getListItems().contains(title).click();
@@ -396,7 +396,7 @@ describe('Collection sharing - movie tracker from shared library', () => {
           expect(interception.response?.statusCode).to.eq(200);
         });
 
-        cy.intercept('GET', '/api/v1/items?*listType=watched*').as('getWatchedItems');
+        cy.intercept('GET', '/api/v1/items?*listType=finished*').as('getWatchedItems');
         CollectionPage.visitWatched();
         cy.wait('@getWatchedItems');
         CollectionPage.getListItems().should('contain.text', title);
