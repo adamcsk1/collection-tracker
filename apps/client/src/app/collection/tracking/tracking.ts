@@ -33,9 +33,9 @@ import {
 } from '../utils/collection-search-filter-util';
 
 @Component({
-  selector: 'ct-series-tracker',
+  selector: 'ct-tracking',
   imports: [List, FormField, Autocomplete, CollectionMediaChips],
-  templateUrl: './series-tracker.html',
+  templateUrl: './tracking.html',
   styleUrl: '../collection.css',
   providers: [
     { provide: AutocompleteService, useClass: SearchSuggestionService },
@@ -69,10 +69,10 @@ export class Tracking {
   );
   protected readonly queryFilterKey = computed(() => buildCollectionRouteFilterKey(this.queryFilters()));
   protected readonly booksEnabled = computed(() => this.mainState.state.collectionFeaturePreferences().books);
-  protected readonly mediaChips: readonly CollectionMediaChip[] = ['all', 'series', 'book'];
+  protected readonly mediaChips: readonly CollectionMediaChip[] = ['all', 'movie', 'series', 'book'];
   protected readonly activeMediaChip = computed((): CollectionMediaChip => {
     const type = this.queryFilters().type;
-    if (type === 'series' || type === 'book') return type;
+    if (type === 'movie' || type === 'series' || type === 'book') return type;
     return 'all';
   });
   protected readonly emptyIcon = computed(() => getMediaChipEmptyIcon(this.activeMediaChip()));

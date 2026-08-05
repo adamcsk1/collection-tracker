@@ -10,10 +10,10 @@ const translations: ItemDialogTranslations = {
   altPoster: signal('Poster image'),
   manageCompletedEpisodes: signal('Manage watched episodes'),
   manageSeriesMetadata: signal('Manage series metadata'),
-  markAsUnwatched: signal('Mark as unwatched'),
-  markAsWatched: signal('Mark as watched'),
+  markAsUnfinished: signal('Mark as unwatched'),
+  markAsFinished: signal('Mark as watched'),
   copyToTracking: signal('Add to Tracking'),
-  moveToWatched: signal('Move to Watched'),
+  moveToFinished: signal('Move to Watched'),
   moveToTracking: signal('Move to Tracking'),
   openInTracking: signal('Open in Tracking'),
   removeFavorite: signal('Remove favorite'),
@@ -116,12 +116,12 @@ describe('ItemDialogActions', () => {
 
   it('renders watch actions for permitted library movie items', () => {
     createComponent({ libraryItem: true, permissionWatch: true, movie: true });
-    const markAsWatched = vi.fn();
-    fixture.componentInstance.markAsWatched.subscribe(markAsWatched);
+    const markAsFinished = vi.fn();
+    fixture.componentInstance.markAsFinished.subscribe(markAsFinished);
 
-    getButton('item-dialog-mark-watched').click();
+    getButton('item-dialog-mark-finished').click();
 
-    expect(markAsWatched).toHaveBeenCalled();
+    expect(markAsFinished).toHaveBeenCalled();
   });
 
   it('renders copy to tracking for permitted library series items', () => {
@@ -129,10 +129,10 @@ describe('ItemDialogActions', () => {
     const copyToTracking = vi.fn();
     fixture.componentInstance.copyToTracking.subscribe(copyToTracking);
 
-    getButton('item-dialog-copy-watching').click();
+    getButton('item-dialog-copy-tracking').click();
 
     expect(copyToTracking).toHaveBeenCalled();
-    expect(queryButton('item-dialog-mark-watched')).toBeNull();
+    expect(queryButton('item-dialog-mark-finished')).toBeNull();
   });
 
   it('renders open in tracking and remove when series is already tracked', () => {
@@ -142,55 +142,55 @@ describe('ItemDialogActions', () => {
     fixture.componentInstance.openInTracking.subscribe(openInTracking);
     fixture.componentInstance.removeFromTracking.subscribe(removeFromTracking);
 
-    getButton('item-dialog-open-in-watching').click();
-    getButton('item-dialog-remove-watching').click();
+    getButton('item-dialog-open-in-tracking').click();
+    getButton('item-dialog-remove-tracking').click();
 
     expect(openInTracking).toHaveBeenCalled();
     expect(removeFromTracking).toHaveBeenCalled();
-    expect(queryButton('item-dialog-copy-watching')).toBeNull();
+    expect(queryButton('item-dialog-copy-tracking')).toBeNull();
   });
 
   it('renders move actions for Up Next movie and series items', () => {
     createComponent({ libraryItem: false, watchlist: true, movie: true });
-    const moveToWatched = vi.fn();
-    fixture.componentInstance.moveToWatched.subscribe(moveToWatched);
-    getButton('item-dialog-move-watched').click();
-    expect(queryButton('item-dialog-mark-watched')).toBeNull();
-    expect(moveToWatched).toHaveBeenCalled();
+    const moveToFinished = vi.fn();
+    fixture.componentInstance.moveToFinished.subscribe(moveToFinished);
+    getButton('item-dialog-move-finished').click();
+    expect(queryButton('item-dialog-mark-finished')).toBeNull();
+    expect(moveToFinished).toHaveBeenCalled();
 
     createComponent({ libraryItem: false, watchlist: true, movie: false, series: true });
     const moveToTracking = vi.fn();
     fixture.componentInstance.moveToTracking.subscribe(moveToTracking);
-    getButton('item-dialog-move-watching').click();
-    expect(queryButton('item-dialog-mark-watched')).toBeNull();
-    expect(queryButton('item-dialog-copy-watching')).toBeNull();
+    getButton('item-dialog-move-tracking').click();
+    expect(queryButton('item-dialog-mark-finished')).toBeNull();
+    expect(queryButton('item-dialog-copy-tracking')).toBeNull();
     expect(moveToTracking).toHaveBeenCalled();
   });
 
   it('hides move to finished when movie is already tracked', () => {
     createComponent({ libraryItem: false, watchlist: true, movie: true, inFinished: true });
-    expect(queryButton('item-dialog-move-watched')).toBeNull();
+    expect(queryButton('item-dialog-move-finished')).toBeNull();
   });
 
   it('hides move to tracking when series is already tracked', () => {
     createComponent({ libraryItem: false, watchlist: true, movie: false, series: true, inTracking: true });
-    expect(queryButton('item-dialog-move-watching')).toBeNull();
+    expect(queryButton('item-dialog-move-tracking')).toBeNull();
   });
 
   it('hides finished actions when the feature is disabled', () => {
     createComponent({ finishedEnabled: false, libraryItem: true, movie: true });
-    expect(queryButton('item-dialog-mark-watched')).toBeNull();
+    expect(queryButton('item-dialog-mark-finished')).toBeNull();
 
     createComponent({ finishedEnabled: false, libraryItem: false, watchlist: true, movie: true });
-    expect(queryButton('item-dialog-move-watched')).toBeNull();
+    expect(queryButton('item-dialog-move-finished')).toBeNull();
   });
 
   it('hides tracking actions when the feature is disabled', () => {
     createComponent({ trackingEnabled: false, libraryItem: true, movie: false, series: true });
-    expect(queryButton('item-dialog-copy-watching')).toBeNull();
+    expect(queryButton('item-dialog-copy-tracking')).toBeNull();
 
     createComponent({ trackingEnabled: false, libraryItem: false, watchlist: true, movie: false, series: true });
-    expect(queryButton('item-dialog-move-watching')).toBeNull();
+    expect(queryButton('item-dialog-move-tracking')).toBeNull();
   });
 
   it('hides actions while editing', () => {

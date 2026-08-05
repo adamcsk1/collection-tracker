@@ -76,7 +76,7 @@ const mockExportResponse: UserExportApiResponseModel = {
       hash: 'hash2',
       actors: 'Actor',
       plot: 'Plot',
-      listType: 'finished',
+      listType: 'tracking',
       contentType: 'movie',
       favorite: false,
       watchedAt: null,

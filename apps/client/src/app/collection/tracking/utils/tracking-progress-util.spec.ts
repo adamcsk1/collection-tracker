@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTrackingEpisode, isTrackingCompleted } from './series-tracker-progress-util';
+import { formatTrackingEpisode, isTrackingCompleted } from './tracking-progress-util';
 
 describe('series tracker progress util', () => {
   it('formats a watched episode', () => {

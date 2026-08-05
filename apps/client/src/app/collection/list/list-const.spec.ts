@@ -10,8 +10,8 @@ describe('getAllowedAddContentTypes', () => {
   it('returns hub defaults for All', () => {
     expect(getAllowedAddContentTypes('library', undefined, true)).toEqual(['movie', 'series', 'book']);
     expect(getAllowedAddContentTypes('library', undefined, false)).toEqual(['movie', 'series']);
-    expect(getAllowedAddContentTypes('tracking', undefined, true)).toEqual(['series', 'book']);
-    expect(getAllowedAddContentTypes('finished', undefined, true)).toEqual(['movie', 'book']);
+    expect(getAllowedAddContentTypes('tracking', undefined, true)).toEqual(['movie', 'series', 'book']);
+    expect(getAllowedAddContentTypes('tracking', undefined, false)).toEqual(['movie', 'series']);
     expect(getAllowedAddContentTypes('wishlist', undefined, true)).toEqual(['movie', 'series', 'book']);
     expect(getAllowedAddContentTypes('books', undefined, true)).toEqual(['book']);
   });

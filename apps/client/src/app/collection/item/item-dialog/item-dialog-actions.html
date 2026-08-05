@@ -31,29 +31,29 @@
     @if (finished()) {
       <button
         class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations().markAsUnwatched()"
-        data-test-id="item-dialog-mark-unwatched"
-        [attr.aria-label]="translations().markAsUnwatched()"
-        [title]="translations().markAsUnwatched()"
-        (click)="markAsUnwatched.emit()"
+        [libcRevealLabel]="translations().markAsUnfinished()"
+        data-test-id="item-dialog-mark-unfinished"
+        [attr.aria-label]="translations().markAsUnfinished()"
+        [title]="translations().markAsUnfinished()"
+        (click)="markAsUnfinished.emit()"
       >
         <i class="material-icons" aria-hidden="true"> radio_button_unchecked </i>
         <span class="button-reveal-label-text"
-          ><span>{{ translations().markAsUnwatched() }}</span></span
+          ><span>{{ translations().markAsUnfinished() }}</span></span
         >
       </button>
     } @else {
       <button
         class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations().markAsWatched()"
-        data-test-id="item-dialog-mark-watched"
-        [attr.aria-label]="translations().markAsWatched()"
-        [title]="translations().markAsWatched()"
-        (click)="markAsWatched.emit()"
+        [libcRevealLabel]="translations().markAsFinished()"
+        data-test-id="item-dialog-mark-finished"
+        [attr.aria-label]="translations().markAsFinished()"
+        [title]="translations().markAsFinished()"
+        (click)="markAsFinished.emit()"
       >
         <i class="material-icons" aria-hidden="true"> check_circle </i>
         <span class="button-reveal-label-text"
-          ><span>{{ translations().markAsWatched() }}</span></span
+          ><span>{{ translations().markAsFinished() }}</span></span
         >
       </button>
     }
@@ -63,7 +63,7 @@
       <button
         class="button-icon button-reveal-label"
         [libcRevealLabel]="translations().openInTracking()"
-        data-test-id="item-dialog-open-in-watching"
+        data-test-id="item-dialog-open-in-tracking"
         [attr.aria-label]="translations().openInTracking()"
         [title]="translations().openInTracking()"
         (click)="openInTracking.emit()"
@@ -76,7 +76,7 @@
       <button
         class="button-icon button-reveal-label"
         [libcRevealLabel]="translations().removeFromTracking()"
-        data-test-id="item-dialog-remove-watching"
+        data-test-id="item-dialog-remove-tracking"
         [attr.aria-label]="translations().removeFromTracking()"
         [title]="translations().removeFromTracking()"
         (click)="removeFromTracking.emit()"
@@ -90,7 +90,7 @@
       <button
         class="button-icon button-reveal-label"
         [libcRevealLabel]="translations().copyToTracking()"
-        data-test-id="item-dialog-copy-watching"
+        data-test-id="item-dialog-copy-tracking"
         [attr.aria-label]="translations().copyToTracking()"
         [title]="translations().copyToTracking()"
         (click)="copyToTracking.emit()"
@@ -105,15 +105,15 @@
   @if (finishedEnabled() && watchlist() && (movie() || book()) && !inFinished()) {
     <button
       class="button-icon button-reveal-label"
-      [libcRevealLabel]="translations().moveToWatched()"
-      data-test-id="item-dialog-move-watched"
-      [attr.aria-label]="translations().moveToWatched()"
-      [title]="translations().moveToWatched()"
-      (click)="moveToWatched.emit()"
+      [libcRevealLabel]="translations().moveToFinished()"
+      data-test-id="item-dialog-move-finished"
+      [attr.aria-label]="translations().moveToFinished()"
+      [title]="translations().moveToFinished()"
+      (click)="moveToFinished.emit()"
     >
       <i class="material-icons" aria-hidden="true"> check_circle </i>
       <span class="button-reveal-label-text"
-        ><span>{{ translations().moveToWatched() }}</span></span
+        ><span>{{ translations().moveToFinished() }}</span></span
       >
     </button>
   }
@@ -121,7 +121,7 @@
     <button
       class="button-icon button-reveal-label"
       [libcRevealLabel]="translations().moveToTracking()"
-      data-test-id="item-dialog-move-watching"
+      data-test-id="item-dialog-move-tracking"
       [attr.aria-label]="translations().moveToTracking()"
       [title]="translations().moveToTracking()"
       (click)="moveToTracking.emit()"

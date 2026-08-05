@@ -101,34 +101,32 @@ describe('Statistics component', () => {
       books: true,
       watchlist: true,
       wishlist: false,
-      finished: true,
-      tracking: false,
+      tracking: true,
     });
     fixture.detectChanges();
 
     expect(hasCard('statistics-summary-watchlist')).toBe(true);
     expect(hasCard('statistics-summary-wishlist')).toBe(false);
     expect(hasCard('statistics-summary-watched-movies')).toBe(true);
-    expect(hasCard('statistics-summary-watched-series')).toBe(false);
-    expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(false);
-    expect(hasCard('statistics-summary-completed-tracker-series')).toBe(false);
+    expect(hasCard('statistics-summary-watched-series')).toBe(true);
+    expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(true);
+    expect(hasCard('statistics-summary-completed-tracker-series')).toBe(true);
     expect(hasCard('statistics-summary-books')).toBe(true);
 
     mainState.setState('collectionFeaturePreferences', {
       books: false,
       watchlist: false,
       wishlist: true,
-      finished: false,
-      tracking: true,
+      tracking: false,
     });
     fixture.detectChanges();
 
     expect(hasCard('statistics-summary-watchlist')).toBe(false);
     expect(hasCard('statistics-summary-wishlist')).toBe(true);
     expect(hasCard('statistics-summary-watched-movies')).toBe(false);
-    expect(hasCard('statistics-summary-watched-series')).toBe(true);
-    expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(true);
-    expect(hasCard('statistics-summary-completed-tracker-series')).toBe(true);
+    expect(hasCard('statistics-summary-watched-series')).toBe(false);
+    expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(false);
+    expect(hasCard('statistics-summary-completed-tracker-series')).toBe(false);
     expect(hasCard('statistics-summary-books')).toBe(false);
   });
 
@@ -233,7 +231,7 @@ describe('Statistics component', () => {
   it('navigates to movie tracker when clicking the watched movies stat card', () => {
     component['onNavigateToWatched']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'finished']);
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'tracking'], { queryParams: { type: 'movie' } });
   });
 
   it('navigates to series tracker when clicking the watched series stat card', () => {

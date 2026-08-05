@@ -26,8 +26,11 @@ export const getAllowedAddContentTypes = (
   if (lockedType) return [lockedType];
 
   if (listType === 'books') return ['book'];
-  if (listType === 'tracking') return booksEnabled ? ['series', 'book'] : ['series'];
-  if (listType === 'finished') return booksEnabled ? ['movie', 'book'] : ['movie'];
+  if (listType === 'tracking') {
+    const types: CollectionItemContentTypeModel[] = ['movie', 'series'];
+    if (booksEnabled) types.push('book');
+    return types;
+  }
 
   const types: CollectionItemContentTypeModel[] = ['movie', 'series'];
   if (booksEnabled && (listType === 'library' || listType === 'wishlist' || listType === 'watchlist')) {

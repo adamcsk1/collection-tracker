@@ -35,15 +35,22 @@ export class ListItem {
   private readonly sharesState = inject(sharesStateToken);
   private readonly tagManagementColorPipe = inject(TagManagementColorPipe);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  protected readonly finished = computed(
-    () => this.collectionItem().watched === true || this.collectionItem().listType === 'finished'
-  );
+  protected readonly trackingCompleted = computed(() => {
+    const item = this.collectionItem();
+    return item.listType === 'tracking' && item.watchedAt !== null;
+  });
+  protected readonly finished = computed(() => this.collectionItem().watched === true || this.trackingCompleted());
   protected readonly favorite = computed(() => this.collectionItem().favorite);
   protected readonly imageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
   );
   protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
   protected readonly series = computed(() => this.collectionItem().contentType === 'series');
+  protected readonly watchedStyle = computed(
+    () =>
+      this.trackingCompleted() ||
+      (this.collectionItem().listType !== 'tracking' && this.collectionItem().watched === true)
+  );
   protected readonly imageBorderColor = computed(() => {
     if (this.watchedStyle()) return;
     return this.tagManagementColorPipe.transform(this.collectionItem().tags, { checkUseForImageBorder: true });
@@ -92,18 +99,11 @@ export class ListItem {
     const item = this.collectionItem();
     return this.sharesState.state.incoming().some((share) => share.ownerUserShareCode === item.ownerShareCode);
   });
-  protected readonly trackingCompleted = computed(() => {
-    const item = this.collectionItem();
-    return item.listType === 'tracking' && item.watchedAt !== null;
-  });
-  protected readonly watchedStyle = computed(
-    () => (this.finished() && this.collectionItem().listType === 'finished') || this.trackingCompleted()
-  );
   protected readonly watchedStyleLabel = computed(() =>
     this.trackingCompleted() ? this.translations.completed() : this.translations.watched()
   );
   protected readonly watchedStyleTestId = computed(() =>
-    this.trackingCompleted() ? 'list-item-watching-completed' : 'list-item-watched'
+    this.trackingCompleted() ? 'list-item-tracking-completed' : 'list-item-finished'
   );
   protected readonly translations = {
     completed: computed(() => this.ngxSignalTranslate.translate('Completed')),

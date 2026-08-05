@@ -31,11 +31,11 @@ export class ItemDialogActions {
 
   public readonly manageCompletedEpisodes = output<void>();
   public readonly manageSeriesMetadata = output<void>();
-  public readonly markAsUnwatched = output<void>();
-  public readonly markAsWatched = output<void>();
+  public readonly markAsUnfinished = output<void>();
+  public readonly markAsFinished = output<void>();
   public readonly copyToTracking = output<void>();
   public readonly removeFromTracking = output<void>();
-  public readonly moveToWatched = output<void>();
+  public readonly moveToFinished = output<void>();
   public readonly moveToTracking = output<void>();
   public readonly openInTracking = output<void>();
   public readonly removeFavorite = output<void>();

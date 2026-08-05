@@ -7,8 +7,8 @@ export interface NewItemSearchModel {
   selectedExternalReference: string | null;
   userRate: number | null;
   tags: string;
-  watched: boolean;
-  copyToTrackingAsWatched: boolean;
+  finished: boolean;
+  copyToTrackingAsCompleted: boolean;
   targetOwnerShareCode: string | null;
 }
 
@@ -17,6 +17,6 @@ export type SaveMode = 'new' | 'close' | null;
 export interface SaveOptions {
   targetOwnerShareCode?: string;
   listType?: CollectionListTypeModel;
-  watched?: boolean;
-  copyToTrackingAsWatched?: boolean;
+  finished?: boolean;
+  copyToTrackingAsCompleted?: boolean;
 }

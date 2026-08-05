@@ -23,7 +23,6 @@ export class SettingsFeatures {
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
     watchlist: computed(() => this.ngxSignalTranslate.translate('Watchlist')),
     tracking: computed(() => this.ngxSignalTranslate.translate('Tracking')),
-    finished: computed(() => this.ngxSignalTranslate.translate('Finished')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
   };
   protected readonly formModel = signal<CollectionFeaturePreferencesModel>(DEFAULT_COLLECTION_FEATURE_PREFERENCES);

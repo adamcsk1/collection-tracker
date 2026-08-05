@@ -222,8 +222,7 @@ export class List implements OnDestroy {
     this.portal.open(NewItemDialog, {
       watchlist: listType === 'watchlist',
       wishlist: listType === 'wishlist',
-      watching: listType === 'tracking',
-      watched: listType === 'finished',
+      tracking: listType === 'tracking',
       books: lockedType === 'book',
       allowedContentTypes: getAllowedAddContentTypes(listType, lockedType, booksEnabled),
     });
@@ -360,8 +359,6 @@ export class List implements OnDestroy {
         return [];
       case 'tracking':
         return ['completed', 'uncompleted'];
-      case 'finished':
-        return [];
       case 'books':
         return ['favorite'];
     }

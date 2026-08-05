@@ -43,9 +43,9 @@ describe('Header component', () => {
   });
 
   it('uses watched as the title for watched page', () => {
-    routerEvents.next(new NavigationEnd(1, '/collection/finished', '/collection/finished'));
+    routerEvents.next(new NavigationEnd(1, '/collection/tracking', '/collection/tracking'));
 
-    expect(component['currentNavTitle']()).toBe('Watched');
+    expect(component['currentNavTitle']()).toBe('Tracking');
   });
 
   it('uses books as the title for books page', () => {

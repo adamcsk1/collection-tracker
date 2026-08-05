@@ -48,7 +48,7 @@ describe('buildCollectionRouteFilters', () => {
     const queryParams = new Map([
       ['type', 'series'],
       ['favorite', 'true'],
-      ['finished', 'false'],
+      ['watched', 'false'],
       ['completed', 'true'],
     ]);
 

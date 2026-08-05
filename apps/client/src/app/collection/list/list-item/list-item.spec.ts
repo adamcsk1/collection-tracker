@@ -158,7 +158,7 @@ describe('ListItem', () => {
     fixture.detectChanges();
 
     const completed = (fixture.nativeElement as HTMLElement).querySelector(
-      '[data-test-id="list-item-watching-completed"]'
+      '[data-test-id="list-item-tracking-completed"]'
     );
     expect(completed).not.toBeNull();
     expect(completed?.textContent?.trim()).toBe('check_circle');
@@ -169,18 +169,21 @@ describe('ListItem', () => {
     );
   });
 
-  it('renders watched status for movie tracker items', () => {
+  it('renders completed status for completed movie tracker items', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [MOVIE_TAG]),
-      listType: 'finished',
+      listType: 'tracking',
+      watchedAt: '2025-01-01 00:00:00',
     });
     fixture.detectChanges();
 
-    const watched = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-watched"]');
-    expect(watched).not.toBeNull();
-    expect(watched?.textContent?.trim()).toBe('check_circle');
-    expect(watched?.getAttribute('aria-label')).toBe('Watched');
-    expect(watched?.getAttribute('title')).toBe('Watched');
+    const completed = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-test-id="list-item-tracking-completed"]'
+    );
+    expect(completed).not.toBeNull();
+    expect(completed?.textContent?.trim()).toBe('check_circle');
+    expect(completed?.getAttribute('aria-label')).toBe('Completed');
+    expect(completed?.getAttribute('title')).toBe('Completed');
     expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).toContain(
       'completed-image'
     );
@@ -190,12 +193,14 @@ describe('ListItem', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [SERIES_TAG]),
       listType: 'tracking',
+      watchedAt: null,
     });
     fixture.detectChanges();
 
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-watching-completed"]')
+      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-tracking-completed"]')
     ).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-finished"]')).toBeNull();
   });
 
   it('does not render completed status for non-watching items with completed tag', () => {
@@ -206,7 +211,7 @@ describe('ListItem', () => {
     fixture.detectChanges();
 
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-watching-completed"]')
+      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-tracking-completed"]')
     ).toBeNull();
   });
 

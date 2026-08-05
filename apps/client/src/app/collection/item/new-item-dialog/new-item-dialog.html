@@ -283,18 +283,18 @@
         ctTagSuggestions
       />
     }
-    @if (showWatchedCheckbox()) {
+    @if (showFinishedCheckbox()) {
       <libc-checkbox
-        data-test-id="new-item-watched"
-        [formField]="searchForm.watched"
-        [label]="translations.collectionItemWatched()"
+        data-test-id="new-item-finished"
+        [formField]="searchForm.finished"
+        [label]="translations.collectionItemFinished()"
       />
     }
     @if (showCopyToTrackingCheckbox()) {
       <libc-checkbox
-        data-test-id="new-item-copy-to-watching-as-watched"
-        [formField]="searchForm.copyToTrackingAsWatched"
-        [label]="translations.copyToTrackingAsWatched()"
+        data-test-id="new-item-copy-to-tracking-as-completed"
+        [formField]="searchForm.copyToTrackingAsCompleted"
+        [label]="translations.copyToTrackingAsCompleted()"
       />
     }
   </ng-container>

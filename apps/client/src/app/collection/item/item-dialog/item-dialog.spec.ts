@@ -18,7 +18,7 @@ import { initialSharesState, SharesState, sharesStateToken } from '../../../shar
 import { CollectionItemModel } from '../../collection-model';
 import { CollectionService } from '../../collection-service';
 import { ItemDialog } from './item-dialog';
-import { SeriesSeasonMetadataDialog } from '../../series-tracker/series-season-metadata-dialog/series-season-metadata-dialog';
+import { SeriesSeasonMetadataDialog } from '../../tracking/series-season-metadata-dialog/series-season-metadata-dialog';
 
 const CUSTOM_WATCHED_TAG = '#watched';
 const COMPLETED_TAG = '#completed';
@@ -145,7 +145,7 @@ describe('ItemDialog', () => {
           item: buildApiItem({ listType: 'tracking', tags: [SERIES_TAG, COMPLETED_TAG], hash: 'completed-hash' }),
         })
       ),
-      addWatchedItemByExternalId: vi.fn(() => of({ item: buildApiItem({ listType: 'finished', watched: true }) })),
+      addWatchedItemByExternalId: vi.fn(() => of({ item: buildApiItem({ listType: 'tracking', watched: true }) })),
       addTrackingItemByExternalId: vi.fn(() =>
         of({ item: buildApiItem({ listType: 'tracking', tags: [SERIES_TAG] }) })
       ),
@@ -383,10 +383,10 @@ describe('ItemDialog', () => {
     expect(component['translations'].edit()).toBe('EditTrackingItem');
     expect(component['translations'].delete()).toBe('DeleteFromTracking');
 
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'finished' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking' }));
     fixture.detectChanges();
-    expect(component['translations'].edit()).toBe('EditFinishedItem');
-    expect(component['translations'].delete()).toBe('DeleteFromFinished');
+    expect(component['translations'].edit()).toBe('EditTrackingItem');
+    expect(component['translations'].delete()).toBe('DeleteFromTracking');
 
     fixture.componentRef.setInput(
       'collectionItem',
@@ -691,7 +691,7 @@ describe('ItemDialog', () => {
 
   it('saves movie tracker item changes against the movie tracker list', async () => {
     confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'finished', watched: true }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', watched: true }));
     fixture.detectChanges();
     component.ngOnInit();
     component['form'].title().value.set('Updated Title');
@@ -704,7 +704,7 @@ describe('ItemDialog', () => {
       expect.objectContaining({ title: 'Updated Title' }),
       'testhash',
       undefined,
-      'finished'
+      'tracking'
     );
   });
 
@@ -1070,11 +1070,11 @@ describe('ItemDialog', () => {
   it('marks item as watched by copying it to movie tracker', async () => {
     const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
 
-    await component['onMarkAsWatched']();
+    await component['onMarkAsFinished']();
 
     expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, undefined);
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
-      expect.objectContaining({ listType: 'finished' }),
+      expect.objectContaining({ listType: 'tracking' }),
       true
     );
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
@@ -1085,21 +1085,21 @@ describe('ItemDialog', () => {
   it('does not run movie tracker actions when the feature is disabled', async () => {
     TestBed.inject(mainStateToken).setState('collectionFeaturePreferences', {
       ...initialMainState.collectionFeaturePreferences,
-      finished: false,
+      tracking: false,
     });
 
-    await component['onMarkAsWatched']();
+    await component['onMarkAsFinished']();
 
     fixture.componentRef.setInput(
       'collectionItem',
       buildItem({ listType: 'watchlist', ownerShareCode: 'own-code', tags: [MOVIE_TAG] })
     );
     fixture.detectChanges();
-    await component['onMoveToWatched']();
+    await component['onMoveToFinished']();
 
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [MOVIE_TAG], watched: true }));
     fixture.detectChanges();
-    await component['onMarkAsUnwatched']();
+    await component['onMarkAsUnfinished']();
 
     expect(api.addWatchedItemByExternalId).not.toHaveBeenCalled();
     expect(api.deleteWatchedItemByExternalId).not.toHaveBeenCalled();
@@ -1114,11 +1114,11 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    await component['onMoveToWatched']();
+    await component['onMoveToFinished']();
 
     expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'watchlist');
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
-      expect.objectContaining({ listType: 'finished' }),
+      expect.objectContaining({ listType: 'tracking' }),
       true
     );
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
@@ -1218,7 +1218,7 @@ describe('ItemDialog', () => {
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
 
-    await component['onMarkAsWatched']();
+    await component['onMarkAsFinished']();
 
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.addWatchedItemByExternalId).not.toHaveBeenCalled();
@@ -1230,7 +1230,7 @@ describe('ItemDialog', () => {
     component.ngOnInit();
     confirm.open.mockReturnValue(of(true));
 
-    await component['onMarkAsWatched']();
+    await component['onMarkAsFinished']();
 
     expect(confirm.open).not.toHaveBeenCalled();
     expect(api.addWatchedItemByExternalId).not.toHaveBeenCalled();
@@ -1242,13 +1242,13 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    await component['onMarkAsUnwatched']();
+    await component['onMarkAsUnfinished']();
 
     expect(api.deleteWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
       undefined,
-      'finished'
+      'tracking'
     );
     expect(spinnerSetState).toHaveBeenCalledWith('show', true);
     expect(spinnerSetState).toHaveBeenCalledWith('show', false);
@@ -1364,7 +1364,7 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'finished', undefined);
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'tracking', undefined);
   });
 
   it('loads series tracker state for watchlist series on init', () => {
@@ -1380,7 +1380,7 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     component.ngOnInit();
 
-    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'finished', undefined);
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'tracking', undefined);
   });
 
   it('computes inTracking true when API says series tracker exists', () => {

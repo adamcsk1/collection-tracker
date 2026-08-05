@@ -6,7 +6,6 @@ export const COLLECTION_LIST_ROUTE_BY_TYPE: Record<CollectionListTypeModel, stri
   wishlist: 'wishlist',
   watchlist: 'watchlist',
   tracking: 'tracking',
-  finished: 'finished',
   books: 'books',
 };
 
@@ -15,7 +14,7 @@ export const COLLECTION_LIST_TYPE_BY_ROUTE: Record<string, CollectionListTypeMod
   wishlist: 'wishlist',
   watchlist: 'watchlist',
   tracking: 'tracking',
-  finished: 'finished',
+  finished: 'tracking',
   books: 'books',
 };
 
@@ -25,6 +24,5 @@ export const COLLECTION_LIST_TITLE_KEY_BY_TYPE: Record<CollectionListTypeModel, 
   wishlist: 'Wishlist',
   watchlist: 'Watchlist',
   tracking: 'Tracking',
-  finished: 'Finished',
   books: 'Books',
 };

@@ -46,9 +46,6 @@ export class Header {
     if (currentPath.startsWith('/collection/tracking')) {
       return 'Tracking';
     }
-    if (currentPath.startsWith('/collection/finished')) {
-      return 'Watched';
-    }
     if (currentPath.startsWith('/collection/books')) {
       return 'Books';
     }

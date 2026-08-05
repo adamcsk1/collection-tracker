@@ -289,8 +289,7 @@ describe('List', () => {
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
       watchlist: true,
       wishlist: false,
-      watching: false,
-      watched: false,
+      tracking: false,
       books: false,
       allowedContentTypes: ['movie', 'series', 'book'],
     });
@@ -305,14 +304,13 @@ describe('List', () => {
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
       watchlist: false,
       wishlist: true,
-      watching: false,
-      watched: false,
+      tracking: false,
       books: false,
       allowedContentTypes: ['movie', 'series', 'book'],
     });
   });
 
-  it('opens the new item dialog in series tracker mode on the series tracker page', () => {
+  it('opens the new item dialog in tracking mode on the tracking page', () => {
     fixture.componentRef.setInput('listType', 'tracking');
     fixture.detectChanges();
 
@@ -321,10 +319,9 @@ describe('List', () => {
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
       watchlist: false,
       wishlist: false,
-      watching: true,
-      watched: false,
+      tracking: true,
       books: false,
-      allowedContentTypes: ['series', 'book'],
+      allowedContentTypes: ['movie', 'series', 'book'],
     });
   });
 
@@ -448,21 +445,6 @@ describe('List', () => {
     expect(addNewSpy).toHaveBeenCalled();
   });
 
-  it('opens the new item dialog in movie tracker mode', () => {
-    fixture.componentRef.setInput('listType', 'finished');
-
-    component['onAddNew']();
-
-    expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
-      watchlist: false,
-      wishlist: false,
-      watching: false,
-      watched: true,
-      books: false,
-      allowedContentTypes: ['movie', 'book'],
-    });
-  });
-
   it('opens the new item dialog in book tracker mode', () => {
     fixture.componentRef.setInput('listType', 'books');
 
@@ -471,8 +453,7 @@ describe('List', () => {
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
       watchlist: false,
       wishlist: false,
-      watching: false,
-      watched: false,
+      tracking: false,
       books: true,
       allowedContentTypes: ['book'],
     });

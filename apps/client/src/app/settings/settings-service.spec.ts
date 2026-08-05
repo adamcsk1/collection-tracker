@@ -118,8 +118,7 @@ describe('SettingsService', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      finished: true,
-      tracking: false,
+      tracking: true,
     };
     mainState.setState('sensitiveDataStorage', 'session');
     mainState.setState('collectionFeaturePreferences', preferences);
@@ -176,14 +175,12 @@ describe('SettingsService', () => {
       books: true,
       wishlist: true,
       watchlist: true,
-      finished: true,
       tracking: true,
     };
     const apiPreferences = {
       books: false,
       wishlist: false,
       watchlist: true,
-      finished: false,
       tracking: true,
     };
     mainState.setState('collectionFeaturePreferences', cachedPreferences);
@@ -204,7 +201,6 @@ describe('SettingsService', () => {
       books: false,
       wishlist: false,
       watchlist: false,
-      finished: false,
       tracking: false,
     });
 
@@ -237,7 +233,6 @@ describe('SettingsService', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      finished: false,
       tracking: true,
     };
 
@@ -257,8 +252,7 @@ describe('SettingsService', () => {
       books: false,
       wishlist: true,
       watchlist: false,
-      finished: true,
-      tracking: false,
+      tracking: true,
     };
     mainState.setState('sensitiveDataStorage', 'session');
 
@@ -282,7 +276,6 @@ describe('SettingsService', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      finished: true,
       tracking: true,
     };
     const secondPreferences = { ...firstPreferences, watchlist: false };
@@ -304,7 +297,6 @@ describe('SettingsService', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      finished: true,
       tracking: true,
     };
     const secondPreferences = { ...firstPreferences, watchlist: false };

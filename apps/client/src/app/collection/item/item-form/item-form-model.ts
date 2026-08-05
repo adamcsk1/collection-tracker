@@ -41,10 +41,10 @@ export interface ItemDialogTranslations {
   manageSeriesMetadata: Signal<string>;
   manageCompletedEpisodes: Signal<string>;
   markAsFavorite: Signal<string>;
-  markAsUnwatched: Signal<string>;
-  markAsWatched: Signal<string>;
+  markAsUnfinished: Signal<string>;
+  markAsFinished: Signal<string>;
   copyToTracking: Signal<string>;
-  moveToWatched: Signal<string>;
+  moveToFinished: Signal<string>;
   moveToTracking: Signal<string>;
   openInTracking: Signal<string>;
   plot: Signal<string>;

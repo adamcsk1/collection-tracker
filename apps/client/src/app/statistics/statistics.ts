@@ -184,7 +184,7 @@ export class Statistics implements AfterViewInit {
   }
 
   protected onNavigateToWatched(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'finished']));
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'tracking'], { queryParams: { type: 'movie' } }));
   }
 
   protected onNavigateToTracking(): void {

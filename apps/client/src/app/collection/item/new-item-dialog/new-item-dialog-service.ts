@@ -57,7 +57,7 @@ export class NewItemDialogService {
     mode: SaveMode,
     options: SaveOptions = {}
   ) {
-    const { targetOwnerShareCode, listType = 'library', watched = false, copyToTrackingAsWatched = false } = options;
+    const { targetOwnerShareCode, listType = 'library', finished = false, copyToTrackingAsCompleted = false } = options;
 
     return this.externalMetadata.getSelectedContent(selectedExternalMetadataValue).pipe(
       skip(1),
@@ -73,11 +73,13 @@ export class NewItemDialogService {
           selectedContentIsSeries: boolean;
         } => {
           const selectedContentType = selectedContent.contentType;
-          if (listType === 'tracking' && selectedContentType !== 'series' && selectedContentType !== 'book') {
-            throw new Error('Tracking items must be series or books.');
-          }
-          if (listType === 'finished' && selectedContentType !== 'movie' && selectedContentType !== 'book') {
-            throw new Error('Finished items must be movies or books.');
+          if (
+            listType === 'tracking' &&
+            selectedContentType !== 'movie' &&
+            selectedContentType !== 'series' &&
+            selectedContentType !== 'book'
+          ) {
+            throw new Error('Tracking items must be movies, series, or books.');
           }
           if (listType === 'books' && selectedContentType !== 'book') {
             throw new Error('Book tracker items must be books.');
@@ -117,8 +119,8 @@ export class NewItemDialogService {
         this.applySideEffects({
           collectionItem,
           listType,
-          watched,
-          copyToTrackingAsWatched,
+          finished,
+          copyToTrackingAsCompleted,
           targetOwnerShareCode,
           selectedContentIsMovie,
           selectedContentIsSeries,
@@ -129,7 +131,7 @@ export class NewItemDialogService {
   }
 
   public saveManual(item: ItemFormModel, mode: SaveMode, options: SaveOptions = {}) {
-    const { targetOwnerShareCode, listType = 'library', watched = false, copyToTrackingAsWatched = false } = options;
+    const { targetOwnerShareCode, listType = 'library', finished = false, copyToTrackingAsCompleted = false } = options;
 
     const collectionItemChange = buildItemFromForm(item);
     const selectedContentIsMovie = collectionItemChange.contentType === 'movie';
@@ -137,11 +139,13 @@ export class NewItemDialogService {
 
     return of(collectionItemChange).pipe(
       map((change) => {
-        if (listType === 'tracking' && change.contentType !== 'series' && change.contentType !== 'book') {
-          throw new Error('Tracking items must be series or books.');
-        }
-        if (listType === 'finished' && change.contentType !== 'movie' && change.contentType !== 'book') {
-          throw new Error('Finished items must be movies or books.');
+        if (
+          listType === 'tracking' &&
+          change.contentType !== 'movie' &&
+          change.contentType !== 'series' &&
+          change.contentType !== 'book'
+        ) {
+          throw new Error('Tracking items must be movies, series, or books.');
         }
         if (listType === 'books' && change.contentType !== 'book') {
           throw new Error('Book tracker items must be books.');
@@ -158,8 +162,8 @@ export class NewItemDialogService {
         this.applySideEffects({
           collectionItem,
           listType,
-          watched,
-          copyToTrackingAsWatched,
+          finished,
+          copyToTrackingAsCompleted,
           targetOwnerShareCode,
           selectedContentIsMovie,
           selectedContentIsSeries,
@@ -184,33 +188,33 @@ export class NewItemDialogService {
   private applySideEffects(input: {
     collectionItem: CollectionItemApiModel;
     listType: CollectionListTypeModel;
-    watched: boolean;
-    copyToTrackingAsWatched: boolean;
+    finished: boolean;
+    copyToTrackingAsCompleted: boolean;
     targetOwnerShareCode: string | undefined;
     selectedContentIsMovie: boolean;
     selectedContentIsSeries: boolean;
   }): Observable<{
     collectionItem: CollectionItemApiModel;
-    watchedItem: CollectionItemApiModel | null;
-    watchingItem: CollectionItemApiModel | null;
+    finishedItem: CollectionItemApiModel | null;
+    trackingItem: CollectionItemApiModel | null;
     trackerUpdateFailed: boolean;
   }> {
     const {
       collectionItem,
       listType,
-      watched,
-      copyToTrackingAsWatched,
+      finished,
+      copyToTrackingAsCompleted,
       targetOwnerShareCode,
       selectedContentIsMovie,
       selectedContentIsSeries,
     } = input;
     const trackerUpdateFailure = {
       collectionItem,
-      watchedItem: null,
-      watchingItem: null,
+      finishedItem: null,
+      trackingItem: null,
       trackerUpdateFailed: true,
     };
-    if (listType === 'library' && watched && selectedContentIsMovie) {
+    if (listType === 'library' && finished && selectedContentIsMovie) {
       return this.api
         .addWatchedItemByExternalId(
           collectionItem.externalProvider,
@@ -220,15 +224,15 @@ export class NewItemDialogService {
         .pipe(
           map((response) => ({
             collectionItem: { ...collectionItem, watched: true },
-            watchedItem: response.item,
-            watchingItem: null,
+            finishedItem: response.item,
+            trackingItem: null,
             trackerUpdateFailed: false,
           })),
           catchError(() => of(trackerUpdateFailure))
         );
     }
 
-    if (listType === 'library' && copyToTrackingAsWatched && selectedContentIsSeries) {
+    if (listType === 'library' && copyToTrackingAsCompleted && selectedContentIsSeries) {
       return this.api
         .addTrackingItemByExternalId(
           collectionItem.externalProvider,
@@ -243,8 +247,8 @@ export class NewItemDialogService {
               .pipe(
                 map((watchedResponse) => ({
                   collectionItem,
-                  watchedItem: null,
-                  watchingItem: watchedResponse.item ?? response.item,
+                  finishedItem: null,
+                  trackingItem: watchedResponse.item ?? response.item,
                   trackerUpdateFailed: false,
                 }))
               )
@@ -253,15 +257,15 @@ export class NewItemDialogService {
         );
     }
 
-    return of({ collectionItem, watchedItem: null, watchingItem: null, trackerUpdateFailed: false });
+    return of({ collectionItem, finishedItem: null, trackingItem: null, trackerUpdateFailed: false });
   }
 
   private finalizeSave(mode: SaveMode) {
     return (
       source$: Observable<{
         collectionItem: CollectionItemApiModel;
-        watchedItem: CollectionItemApiModel | null;
-        watchingItem: CollectionItemApiModel | null;
+        finishedItem: CollectionItemApiModel | null;
+        trackingItem: CollectionItemApiModel | null;
         trackerUpdateFailed: boolean;
       }>
     ) =>
@@ -270,11 +274,11 @@ export class NewItemDialogService {
           this.spinnerLoadingState.setState('show', false);
           return throwError(() => error);
         }),
-        tap(({ collectionItem, watchedItem, watchingItem, trackerUpdateFailed }) => {
+        tap(({ collectionItem, finishedItem, trackingItem, trackerUpdateFailed }) => {
           this.spinnerLoadingState.setState('show', false);
           this.collection.addCollectionItem(collectionItem, true);
-          if (watchedItem) this.collection.addCollectionItem(watchedItem, true);
-          if (watchingItem) this.collection.addCollectionItem(watchingItem, true);
+          if (finishedItem) this.collection.addCollectionItem(finishedItem, true);
+          if (trackingItem) this.collection.addCollectionItem(trackingItem, true);
           this.collection.triggerReload();
           this.toastState.setState(
             'message',

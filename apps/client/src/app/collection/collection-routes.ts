@@ -20,11 +20,12 @@ export const collectionRoutes: Routes = [
       },
       {
         path: 'tracking',
-        loadComponent: () => import('./series-tracker/series-tracker').then((module) => module.Tracking),
+        loadComponent: () => import('./tracking/tracking').then((module) => module.Tracking),
       },
       {
         path: 'finished',
-        loadComponent: () => import('./movie-tracker/movie-tracker').then((module) => module.Finished),
+        redirectTo: 'tracking',
+        pathMatch: 'full',
       },
       {
         path: 'books',

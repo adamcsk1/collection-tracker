@@ -9,7 +9,7 @@
     (valueChange)="onLibraryChange($event)"
   />
 }
-@if (featurePreferences().finished || featurePreferences().tracking || featurePreferences().books) {
+@if (featurePreferences().tracking || featurePreferences().books) {
   <p class="tracker-cleanup-message">{{ translations.messageTrackerCleanup() }}</p>
 }
 @if (featurePreferences().books) {
@@ -27,7 +27,7 @@
     </button>
   </div>
 }
-@if (featurePreferences().finished) {
+@if (featurePreferences().tracking) {
   <h4>{{ translations.movies() }}</h4>
   <div class="actions">
     <button

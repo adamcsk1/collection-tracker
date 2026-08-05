@@ -228,13 +228,13 @@ describe('NewItemDialog component', () => {
 
     component['searchForm'].selectedExternalReference().value.set('tt123');
     component['searchForm'].tags().value.set('#tag');
-    component['searchForm'].watched().value.set(true);
+    component['searchForm'].finished().value.set(true);
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'new', { watched: true });
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'new', { finished: true });
     expect(formRoot.reset).toHaveBeenCalled();
-    expect(component['searchForm'].watched().value()).toBe(false);
+    expect(component['searchForm'].finished().value()).toBe(false);
   });
 
   it('saves empty tags when only watched is selected in new mode', async () => {
@@ -242,36 +242,36 @@ describe('NewItemDialog component', () => {
     vi.spyOn(formRoot, 'reset');
 
     component['searchForm'].selectedExternalReference().value.set('tt123');
-    component['searchForm'].watched().value.set(true);
+    component['searchForm'].finished().value.set(true);
 
     await component['onSave']('new');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'new', { watched: true });
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '', 'new', { finished: true });
     expect(formRoot.reset).toHaveBeenCalled();
   });
 
   it('passes watched only for selected library movie content', async () => {
     service.matchedContent.set([{ contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-movie');
-    component['searchForm'].watched().value.set(true);
+    component['searchForm'].finished().value.set(true);
 
-    expect(component['showWatchedCheckbox']()).toBe(true);
+    expect(component['showFinishedCheckbox']()).toBe(true);
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt-movie', null, '', 'close', { watched: true });
+    expect(service.save).toHaveBeenCalledWith('tt-movie', null, '', 'close', { finished: true });
   });
 
   it('hides watched for selected series content', async () => {
     component['selectedAddContentType'].set('series');
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-series');
-    component['searchForm'].watched().value.set(true);
+    component['searchForm'].finished().value.set(true);
 
     await component['onSave']('close');
 
-    expect(component['showWatchedCheckbox']()).toBe(false);
-    expect(service.save).toHaveBeenCalledWith('tt-series', null, '', 'close', { copyToTrackingAsWatched: false });
+    expect(component['showFinishedCheckbox']()).toBe(false);
+    expect(service.save).toHaveBeenCalledWith('tt-series', null, '', 'close', { copyToTrackingAsCompleted: false });
   });
 
   it('shows copy-to-watching checkbox for selected series content in library mode', () => {
@@ -285,13 +285,13 @@ describe('NewItemDialog component', () => {
   it('hides watched checkbox when the movie tracker feature is disabled', () => {
     mainState.setState('collectionFeaturePreferences', {
       ...initialMainState.collectionFeaturePreferences,
-      finished: false,
+      tracking: false,
     });
     component['selectedAddContentType'].set('movie');
     service.matchedContent.set([{ contentType: 'movie', text: 'Test Movie', value: 'tt-movie', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-movie');
 
-    expect(component['showWatchedCheckbox']()).toBe(false);
+    expect(component['showFinishedCheckbox']()).toBe(false);
   });
 
   it('hides copy-to-watching checkbox when the series tracker feature is disabled', () => {
@@ -319,7 +319,7 @@ describe('NewItemDialog component', () => {
     service.matchedContent.set([{ text: 'IMDb id: tt123', value: 'tt123' }]);
     component['searchForm'].selectedExternalReference().value.set('tt123');
 
-    expect(component['showWatchedCheckbox']()).toBe(true);
+    expect(component['showFinishedCheckbox']()).toBe(true);
     expect(component['showCopyToTrackingCheckbox']()).toBe(false);
   });
 
@@ -344,11 +344,11 @@ describe('NewItemDialog component', () => {
     component['selectedAddContentType'].set('series');
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-series');
-    component['searchForm'].copyToTrackingAsWatched().value.set(true);
+    component['searchForm'].copyToTrackingAsCompleted().value.set(true);
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt-series', null, '', 'close', { copyToTrackingAsWatched: true });
+    expect(service.save).toHaveBeenCalledWith('tt-series', null, '', 'close', { copyToTrackingAsCompleted: true });
   });
 
   it('resets only the IMDb ID field when mode is not new', async () => {
@@ -419,7 +419,7 @@ describe('NewItemDialog component', () => {
     fixture.componentRef.setInput('wishlist', true);
     component['searchForm'].selectedExternalReference().value.set('tt123');
     component['searchForm'].tags().value.set('#tag');
-    component['searchForm'].watched().value.set(true);
+    component['searchForm'].finished().value.set(true);
     component['searchForm'].targetOwnerShareCode().value.set('owner-code');
 
     await component['onSave']('close');
@@ -433,7 +433,7 @@ describe('NewItemDialog component', () => {
     component['selectedAddContentType'].set('series');
     component['searchForm'].selectedExternalReference().value.set('tt123');
     component['searchForm'].tags().value.set('#tag');
-    component['searchForm'].watched().value.set(true);
+    component['searchForm'].finished().value.set(true);
     component['searchForm'].userRate().value.set(8.2);
     component['searchForm'].targetOwnerShareCode().value.set('owner-code');
 
@@ -611,8 +611,8 @@ describe('NewItemDialog component', () => {
       expect(component['showContentTypeSelect']()).toBe(true);
     });
 
-    it('defaults to movie content type in finished mode and allows type choice', async () => {
-      fixture.componentRef.setInput('finished', true);
+    it('defaults to movie content type in tracking mode when selecting movies', async () => {
+      fixture.componentRef.setInput('tracking', true);
       fixture.componentRef.setInput('allowedContentTypes', ['movie', 'book']);
       fixture.detectChanges();
       await vi.advanceTimersByTimeAsync(0);
@@ -641,7 +641,7 @@ describe('NewItemDialog component', () => {
 
     it('shows watched checkbox for manual library movies', () => {
       component['manualForm'].contentType().value.set('movie');
-      expect(component['showWatchedCheckbox']()).toBe(true);
+      expect(component['showFinishedCheckbox']()).toBe(true);
     });
 
     it('shows copy-to-watching checkbox for manual library series', () => {
@@ -724,15 +724,15 @@ describe('NewItemDialog component', () => {
       vi.spyOn(formRoot, 'reset');
       component['manualForm'].title().value.set('Manual Title');
       component['manualForm'].IMDbId().value.set('tt1234567');
-      component['searchForm'].watched().value.set(true);
-      component['searchForm'].copyToTrackingAsWatched().value.set(true);
+      component['searchForm'].finished().value.set(true);
+      component['searchForm'].copyToTrackingAsCompleted().value.set(true);
 
       await component['onSave']('new');
 
       expect(service.saveManual).toHaveBeenCalled();
       expect(formRoot.reset).toHaveBeenCalled();
-      expect(component['searchForm'].watched().value()).toBe(false);
-      expect(component['searchForm'].copyToTrackingAsWatched().value()).toBe(false);
+      expect(component['searchForm'].finished().value()).toBe(false);
+      expect(component['searchForm'].copyToTrackingAsCompleted().value()).toBe(false);
     });
 
     it('clears the manual IMDb ID after save', async () => {

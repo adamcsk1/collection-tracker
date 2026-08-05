@@ -52,8 +52,8 @@ const defaultSearchModel = (): NewItemSearchModel => ({
   selectedExternalReference: null,
   userRate: null,
   tags: '',
-  watched: false,
-  copyToTrackingAsWatched: false,
+  finished: false,
+  copyToTrackingAsCompleted: false,
   targetOwnerShareCode: null,
 });
 
@@ -120,7 +120,6 @@ export class NewItemDialog {
     titleNewWatchlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchlistItem')),
     titleNewWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWishlistItem')),
     titleNewTrackingItem: computed(() => this.ngxSignalTranslate.translate('Title.NewTrackingItem')),
-    titleNewWatchedItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchedItem')),
     titleNewBooksItem: computed(() => this.ngxSignalTranslate.translate('Title.NewBooksItem')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
     search: computed(() => this.ngxSignalTranslate.translate('Search')),
@@ -179,8 +178,8 @@ export class NewItemDialog {
     validationMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Validation.MetacriticRate')),
     validationRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('Validation.RottenTomatoesRate')),
     validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
-    collectionItemWatched: computed(() => this.ngxSignalTranslate.translate('CollectionItemFinished')),
-    copyToTrackingAsWatched: computed(() => this.ngxSignalTranslate.translate('CopyToTrackingAsWatched')),
+    collectionItemFinished: computed(() => this.ngxSignalTranslate.translate('CollectionItemFinished')),
+    copyToTrackingAsCompleted: computed(() => this.ngxSignalTranslate.translate('CopyToTrackingAsWatched')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     saveAndNew: computed(() => this.ngxSignalTranslate.translate('SaveAndNew')),
     saveAndClose: computed(() => this.ngxSignalTranslate.translate('SaveAndClose')),
@@ -366,7 +365,6 @@ export class NewItemDialog {
   public readonly watchlist = input(false);
   public readonly wishlist = input(false);
   public readonly tracking = input(false);
-  public readonly finished = input(false);
   public readonly books = input(false);
   public readonly allowedContentTypes = input<readonly CollectionItemContentTypeModel[]>([]);
   protected readonly selectedAddContentType = signal<CollectionItemContentTypeModel>('movie');
@@ -376,13 +374,8 @@ export class NewItemDialog {
     if (this.books()) return ['book'] as const;
     if (this.tracking()) {
       return this.mainState.state.collectionFeaturePreferences().books
-        ? (['series', 'book'] as const)
-        : (['series'] as const);
-    }
-    if (this.finished()) {
-      return this.mainState.state.collectionFeaturePreferences().books
-        ? (['movie', 'book'] as const)
-        : (['movie'] as const);
+        ? (['movie', 'series', 'book'] as const)
+        : (['movie', 'series'] as const);
     }
     const types: CollectionItemContentTypeModel[] = ['movie', 'series'];
     if (this.mainState.state.collectionFeaturePreferences().books) types.push('book');
@@ -431,8 +424,8 @@ export class NewItemDialog {
   protected readonly activeAddContentType = computed(() =>
     this.mode() === 'manual' ? this.manualForm.contentType().value() : this.selectedAddContentType()
   );
-  protected readonly showWatchedCheckbox = computed(() => {
-    if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().finished) return false;
+  protected readonly showFinishedCheckbox = computed(() => {
+    if (this.internalListMode() || !this.mainState.state.collectionFeaturePreferences().tracking) return false;
     if (this.activeAddContentType() !== 'movie') return false;
     return this.mode() === 'manual' || !!this.searchForm.selectedExternalReference().value();
   });
@@ -484,13 +477,12 @@ export class NewItemDialog {
   protected readonly showContentTypeSelect = computed(() => this.resolvedAllowedContentTypes().length > 1);
   protected readonly showManualUserRate = computed(() => !this.internalListMode());
   protected readonly internalListMode = computed(
-    () => this.watchlist() || this.wishlist() || this.tracking() || this.finished() || this.books()
+    () => this.watchlist() || this.wishlist() || this.tracking() || this.books()
   );
   protected readonly dialogTitle = computed(() => {
     if (this.watchlist()) return this.translations.titleNewWatchlistItem();
     if (this.wishlist()) return this.translations.titleNewWishlistItem();
     if (this.tracking()) return this.translations.titleNewTrackingItem();
-    if (this.finished()) return this.translations.titleNewWatchedItem();
     if (this.books() || this.selectedAddContentType() === 'book') return this.translations.titleNewBooksItem();
     return this.translations.titleNewCollectionItem();
   });
@@ -505,7 +497,6 @@ export class NewItemDialog {
     if (this.watchlist()) return 'watchlist';
     if (this.wishlist()) return 'wishlist';
     if (this.tracking()) return 'tracking';
-    if (this.finished()) return 'finished';
     if (this.books() || this.selectedAddContentType() === 'book') return 'books';
     return 'library';
   });
@@ -725,9 +716,9 @@ export class NewItemDialog {
         : this.searchForm.targetOwnerShareCode().value() || undefined;
     if (targetOwnerShareCode) options.targetOwnerShareCode = targetOwnerShareCode;
     if (this.listType() !== 'library') options.listType = this.listType();
-    if (this.showWatchedCheckbox() && this.searchForm.watched().value()) options.watched = true;
+    if (this.showFinishedCheckbox() && this.searchForm.finished().value()) options.finished = true;
     if (this.showCopyToTrackingCheckbox()) {
-      options.copyToTrackingAsWatched = this.searchForm.copyToTrackingAsWatched().value();
+      options.copyToTrackingAsCompleted = this.searchForm.copyToTrackingAsCompleted().value();
     }
 
     if (this.mode() === 'manual') {
@@ -746,8 +737,8 @@ export class NewItemDialog {
 
       if (mode === 'new') {
         this.manualForm().reset(defaultManualModel());
-        this.searchForm.watched().reset(false);
-        this.searchForm.copyToTrackingAsWatched().reset(false);
+        this.searchForm.finished().reset(false);
+        this.searchForm.copyToTrackingAsCompleted().reset(false);
       } else {
         this.manualForm.IMDbId().reset('');
       }

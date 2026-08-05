@@ -52,18 +52,6 @@
       {{ translations.tracking() }}
     </a>
   }
-  @if (featurePreferences().finished) {
-    <a
-      data-test-id="nav-finished"
-      [routerLink]="['/', 'collection', 'finished']"
-      routerLinkActive="active"
-      class="highlight"
-      (click)="onClose()"
-    >
-      <i class="material-icons">check_circle</i>
-      {{ translations.finished() }}
-    </a>
-  }
   <a
     data-test-id="nav-settings"
     [routerLink]="['/', 'settings']"
