@@ -137,7 +137,7 @@ const assertDialogPermissions = (permissions: { update: boolean; delete: boolean
   }
 
   // Mark watched is available for all library movies regardless of share permissions
-  CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');
+  CollectionPage.getItemDialogMarkFinishedButton().should('be.visible');
 
   if (permissions.delete) {
     CollectionPage.getItemDialogDeleteButton().should('be.visible');
@@ -384,21 +384,21 @@ describe('Collection sharing - movie tracker from shared library', () => {
         seedOwnerItem(owner, title, imdbId);
         visitSharedCollection(sharedUser);
 
-        cy.intercept('POST', '/api/v1/finished/**').as('markWatched');
+        cy.intercept('POST', '/api/v1/tracking/**').as('markWatched');
         cy.on('window:confirm', () => true);
 
         CollectionPage.getListItems().contains(title).click();
         CollectionPage.expectItemDialogActionsVisible();
-        CollectionPage.getItemDialogMarkWatchedButton().click();
+        CollectionPage.getItemDialogMarkFinishedButton().click();
 
         cy.wait('@markWatched').then((interception) => {
           expect(interception.request.url).to.include(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
           expect(interception.response?.statusCode).to.eq(200);
         });
 
-        cy.intercept('GET', '/api/v1/items?*listType=finished*').as('getWatchedItems');
-        CollectionPage.visitWatched();
-        cy.wait('@getWatchedItems');
+        cy.intercept('GET', '/api/v1/items?*listType=tracking*').as('getTrackingItems');
+        CollectionPage.visitTracking();
+        cy.wait('@getTrackingItems');
         CollectionPage.getListItems().should('contain.text', title);
       }
     );

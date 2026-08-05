@@ -23,10 +23,11 @@ const saveManualItem = (
   title: string,
   imdbId: string,
   contentType: 'movie' | 'series',
-  listType: 'library' | 'watchlist' | 'wishlist' | 'tracking' | 'finished'
+  listType: 'library' | 'watchlist' | 'wishlist' | 'tracking'
 ) => {
   cy.intercept('POST', '/api/v1/create').as('createManualItem');
   CollectionPage.getNewItemManualModeButton().click();
+  CollectionPage.getNewItemManualContentTypeSelect().select(contentType);
   CollectionPage.getNewItemManualTitleInput().type(title);
   CollectionPage.getNewItemManualImdbIdInput().type(imdbId);
   CollectionPage.getNewItemSaveAndCloseButton().should('be.enabled').click();
@@ -226,13 +227,13 @@ describe('Collection — add a new element', () => {
     cy.wait('@omdbSearch');
 
     CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
-    cy.getByTestId('new-item-watched').find('input[type="checkbox"]').check();
+    cy.getByTestId('new-item-finished').find('input[type="checkbox"]').check();
     CollectionPage.getNewItemSaveAndCloseButton().click();
 
     // Open the item and verify it shows the mark-unwatched button (watched state)
     CollectionPage.getListItems().contains(newTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogMarkUnwatchedButton().should('be.visible');
+    CollectionPage.getItemDialogMarkUnfinishedButton().should('be.visible');
   });
 
   it('saves a new item with a user rate', () => {
@@ -536,11 +537,11 @@ describe('Collection — standard search in secondary lists', () => {
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Movie Tracker Search Alpha', 'movie', 'tt8300007'),
-      listType: 'finished',
+      listType: 'tracking',
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Movie Tracker Search Beta', 'movie', 'tt8300008'),
-      listType: 'finished',
+      listType: 'tracking',
     });
   });
 
@@ -567,24 +568,15 @@ describe('Collection — standard search in secondary lists', () => {
     CollectionPage.getListItems().should('not.contain.text', 'Watch Later Search Beta');
   });
 
-  it('filters series tracker items', () => {
+  it('filters tracking items', () => {
     CommonPage.openMenu();
     CommonPage.getNavTrackingLink().click();
 
-    CollectionPage.getTrackingSearchInput().should('be.visible').type('Alpha');
+    CollectionPage.getTrackingSearchInput().should('be.visible').type('Series Tracker Search Alpha');
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Series Tracker Search Alpha');
     CollectionPage.getListItems().should('not.contain.text', 'Series Tracker Search Beta');
-  });
-
-  it('filters movie tracker items', () => {
-    CommonPage.openMenu();
-    CommonPage.getNavWatchedLink().click();
-
-    CollectionPage.getWatchedSearchInput().should('be.visible').type('Alpha');
-    CollectionPage.getListItems().should('have.length', 1);
-    CollectionPage.getListItems().first().should('contain.text', 'Movie Tracker Search Alpha');
-    CollectionPage.getListItems().should('not.contain.text', 'Movie Tracker Search Beta');
+    CollectionPage.getListItems().should('not.contain.text', 'Movie Tracker Search Alpha');
   });
 });
 
@@ -684,7 +676,7 @@ describe('Collection — order controls', () => {
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Movie Tracker Order', 'movie', 'tt8400025'),
-      listType: 'finished',
+      listType: 'tracking',
     });
     CommonPage.openMenu();
     CommonPage.getNavWatchlistLink().click();
@@ -701,12 +693,6 @@ describe('Collection — order controls', () => {
     CommonPage.openMenu();
     CommonPage.getNavTrackingLink().click();
     cy.url().should('include', '#/collection/tracking');
-    cy.wait('@getItems');
-    showOrderControls();
-
-    CommonPage.openMenu();
-    CommonPage.getNavWatchedLink().click();
-    cy.url().should('include', '#/collection/finished');
     cy.wait('@getItems');
     showOrderControls();
   });
@@ -852,11 +838,12 @@ describe('Collection — series tracker', () => {
     cy.getByTestId('collection-search').should('not.exist');
     CollectionPage.getAddFirstTrackingItemLink().click();
 
+    CollectionPage.getNewItemContentSelect().select('series');
     CollectionPage.getNewItemSearchInput().type(seriesTitle);
     cy.wait('@watchingOmdbSearch');
     CollectionPage.getNewItemContentOptions().should('have.length', 1).and('contain.text', seriesTitle);
     cy.getByTestId('new-item-user-rate').should('not.exist');
-    cy.getByTestId('new-item-watched').should('not.exist');
+    cy.getByTestId('new-item-finished').should('not.exist');
     CollectionPage.getNewItemSaveAndCloseButton().click();
     cy.wait('@watchingOmdbItem');
 
@@ -919,23 +906,24 @@ describe('Collection — movie tracker', () => {
 
   it('navigates via the menu and adds a movie tracker item from the empty state', () => {
     CommonPage.openMenu();
-    CommonPage.getNavWatchedLink().click();
+    CommonPage.getNavTrackingLink().click();
 
-    cy.url().should('include', '#/collection/finished');
+    cy.url().should('include', '#/collection/tracking');
     cy.getByTestId('collection-search').should('not.exist');
-    CollectionPage.getAddFirstWatchedItemLink().click();
+    CollectionPage.getAddFirstTrackingItemLink().click();
 
+    CollectionPage.getNewItemContentSelect().select('movie');
     CollectionPage.getNewItemSearchInput().type(movieTitle);
     cy.wait('@watchedOmdbSearch');
     CollectionPage.getNewItemContentOptions().should('have.length', 1).and('contain.text', movieTitle);
     cy.getByTestId('new-item-user-rate').should('not.exist');
-    cy.getByTestId('new-item-watched').should('not.exist');
+    cy.getByTestId('new-item-finished').should('not.exist');
     CollectionPage.getNewItemSaveAndCloseButton().click();
     cy.wait('@watchedOmdbItem');
 
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', movieTitle);
-    CollectionPage.getWatchedWatchedBadges().should('have.length', 1);
+    CollectionPage.getTrackingCompletedBadges().should('have.length', 1);
   });
 
   it('adds a manual item from a non-empty movie tracker and persists it after reload', () => {
@@ -943,16 +931,16 @@ describe('Collection — movie tracker', () => {
     const manualTitle = 'Manual Movie Tracker Item';
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(existingTitle, 'movie', 'tt8300002'),
-      listType: 'finished',
+      listType: 'tracking',
     });
     cy.intercept('GET', '/api/v1/items*').as('watchedItems');
-    CollectionPage.visitWatched();
+    CollectionPage.visitTracking();
     cy.wait('@watchedItems');
     CollectionPage.getListItems().should('contain.text', existingTitle);
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAddNewButton().click();
-    saveManualItem(manualTitle, 'tt8300003', 'movie', 'finished');
+    saveManualItem(manualTitle, 'tt8300003', 'movie', 'tracking');
     reloadAndExpectPersistedTitle(manualTitle, 2);
     CollectionPage.getListItems().should('contain.text', existingTitle);
   });
@@ -960,9 +948,9 @@ describe('Collection — movie tracker', () => {
   it('opens the item dialog and shows watched status without episode controls', () => {
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(movieTitle, 'movie', 'tt8300001'),
-      listType: 'finished',
+      listType: 'tracking',
     });
-    CollectionPage.visitWatched();
+    CollectionPage.visitTracking();
 
     CollectionPage.getListItemImages().first().click();
     CollectionPage.getItemDialogCompletedChip().should('not.exist');
@@ -973,7 +961,7 @@ describe('Collection — movie tracker', () => {
   });
 
   it('moves a movie from watchlist to movie tracker', () => {
-    cy.intercept('POST', '/api/v1/finished/**').as('moveToWatched');
+    cy.intercept('POST', '/api/v1/tracking/**').as('moveToFinished');
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Later Move Movie', 'movie', 'tt8300002'),
       listType: 'watchlist',
@@ -983,12 +971,12 @@ describe('Collection — movie tracker', () => {
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItemImages().first().click();
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogMoveWatchedButton().click();
-    cy.wait('@moveToWatched').its('response.statusCode').should('eq', 200);
+    CollectionPage.getItemDialogMoveFinishedButton().click();
+    cy.wait('@moveToFinished').its('response.statusCode').should('eq', 200);
 
     CollectionPage.getEmptyState().should('be.visible');
 
-    CollectionPage.visitWatched();
+    CollectionPage.visitTracking();
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Watch Later Move Movie');
   });
@@ -999,9 +987,9 @@ describe('Collection — movie tracker', () => {
 
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Delete Tracker Movie', 'movie', 'tt8300003'),
-      listType: 'finished',
+      listType: 'tracking',
     });
-    CollectionPage.visitWatched();
+    CollectionPage.visitTracking();
 
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItemImages().first().click();
@@ -1015,16 +1003,16 @@ describe('Collection — movie tracker', () => {
   it('filters movie tracker items via search', () => {
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Alpha Movie', 'movie', 'tt8300004'),
-      listType: 'finished',
+      listType: 'tracking',
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Beta Movie', 'movie', 'tt8300005'),
-      listType: 'finished',
+      listType: 'tracking',
     });
-    CollectionPage.visitWatched();
+    CollectionPage.visitTracking();
 
     CollectionPage.getListItems().should('have.length', 2);
-    CollectionPage.getWatchedSearchInput().type('Alpha');
+    CollectionPage.getTrackingSearchInput().type('Alpha');
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Alpha Movie');
   });

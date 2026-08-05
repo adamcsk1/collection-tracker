@@ -55,8 +55,7 @@ export const SettingsPage = {
   getFeaturesForm: () => cy.getByTestId('settings-features-form'),
   getFeatureWishlistCheckbox: () => cy.getByTestId('settings-feature-wishlist').find('input[type="checkbox"]'),
   getFeatureWatchlistCheckbox: () => cy.getByTestId('settings-feature-watchlist').find('input[type="checkbox"]'),
-  getFeatureWatchTrackerCheckbox: () => cy.getByTestId('settings-feature-watched').find('input[type="checkbox"]'),
-  getFeatureTrackingCheckbox: () => cy.getByTestId('settings-feature-watching').find('input[type="checkbox"]'),
+  getFeatureTrackingCheckbox: () => cy.getByTestId('settings-feature-tracking').find('input[type="checkbox"]'),
   getFeatureBooksCheckbox: () => cy.getByTestId('settings-feature-books').find('input[type="checkbox"]'),
 
   // Media refresh page

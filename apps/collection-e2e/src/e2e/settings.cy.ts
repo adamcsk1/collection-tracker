@@ -133,21 +133,17 @@ describe('Settings - features page', () => {
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
     SettingsPage.getFeatureWatchlistCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
-    SettingsPage.getFeatureWatchTrackerCheckbox().uncheck();
-    cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
     SettingsPage.getFeatureTrackingCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
 
     cy.reload();
     SettingsPage.getFeatureWishlistCheckbox().should('not.be.checked');
     SettingsPage.getFeatureWatchlistCheckbox().should('not.be.checked');
-    SettingsPage.getFeatureWatchTrackerCheckbox().should('not.be.checked');
     SettingsPage.getFeatureTrackingCheckbox().should('not.be.checked');
 
     CommonPage.openMenu();
     CommonPage.getMenuNavItem('nav-wishlist').should('not.exist');
     CommonPage.getMenuNavItem('nav-watchlist').should('not.exist');
-    CommonPage.getMenuNavItem('nav-finished').should('not.exist');
     CommonPage.getMenuNavItem('nav-tracking').should('not.exist');
 
     cy.visit('/client/#/collection/tracking');
@@ -172,7 +168,7 @@ describe('Settings - features page', () => {
     CollectionPage.getAddFirstItemLink().click();
     CollectionPage.getNewItemManualModeButton().click();
     CollectionPage.getNewItemManualContentTypeSelect().select('series');
-    cy.getByTestId('new-item-copy-to-watching-as-watched').should('not.exist');
+    cy.getByTestId('new-item-copy-to-tracking-as-completed').should('not.exist');
   });
 
   it('opens feature settings from the settings navigation', () => {
@@ -260,12 +256,12 @@ describe('Settings - mark all watched / unwatched', () => {
 
     cy.wait('@markAllWatched').its('response.statusCode').should('eq', 200);
 
-    CollectionPage.visitWatched();
+    CollectionPage.visitTracking();
     CollectionPage.getListItems().should('have.length', 2);
     CollectionPage.getListItems()
       .should('contain.text', 'Watch Test Movie A')
       .and('contain.text', 'Watch Test Movie B');
-    CollectionPage.getWatchedWatchedBadges().should('have.length', 2);
+    CollectionPage.getTrackingCompletedBadges().should('have.length', 2);
   });
 
   it('marks all movies as unwatched and removes them from the movie tracker', () => {
@@ -280,7 +276,7 @@ describe('Settings - mark all watched / unwatched', () => {
     SettingsPage.getMarkAllUnwatchedButton().click();
     cy.wait('@markAllUnwatched').its('response.statusCode').should('eq', 200);
 
-    CollectionPage.visitWatched();
+    CollectionPage.visitTracking();
     CollectionPage.getEmptyState().should('be.visible');
   });
 
@@ -306,20 +302,20 @@ describe('Settings - mark all watched / unwatched', () => {
   });
 
   it('remove all tracked movie data calls the delete API and empties the tracker', () => {
-    cy.intercept('DELETE', '/api/v1/finished').as('deleteWatched');
+    cy.intercept('DELETE', '/api/v1/tracking/completed-movies').as('deleteCompletedMovies');
     cy.on('window:confirm', () => true);
 
     // Seed a movie tracker item
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Tracked Movie', 'movie', 'tt8000004'),
-      listType: 'finished',
+      listType: 'tracking',
     });
 
     SettingsPage.getRemoveAllTrackedMovieDataButton().click();
 
-    cy.wait('@deleteWatched').its('response.statusCode').should('eq', 200);
+    cy.wait('@deleteCompletedMovies').its('response.statusCode').should('eq', 200);
 
-    CollectionPage.visitWatched();
+    CollectionPage.visitTracking();
     CollectionPage.getEmptyState().should('be.visible');
   });
 
@@ -501,6 +497,6 @@ describe('Settings - appMode: full (all permissions)', () => {
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogEditButton().should('be.visible');
     CollectionPage.getItemDialogDeleteButton().should('be.visible');
-    CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');
+    CollectionPage.getItemDialogMarkFinishedButton().should('be.visible');
   });
 });

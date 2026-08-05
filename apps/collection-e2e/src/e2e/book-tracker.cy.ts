@@ -12,7 +12,7 @@ describe('Book tracker', () => {
   it('toggles books filter while keeping the direct route accessible', () => {
     CollectionPage.visit();
     cy.getByTestId('show-functions').click();
-    cy.getByTestId('collection-filter-book').should('be.visible');
+    cy.getByTestId('collection-media-chip-book').should('be.visible');
 
     SettingsPage.visitFeatures();
     cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
@@ -20,8 +20,7 @@ describe('Book tracker', () => {
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
 
     CollectionPage.visit();
-    cy.getByTestId('show-functions').click();
-    cy.getByTestId('collection-filter-book').should('not.exist');
+    cy.getByTestId('collection-media-chip-book').should('not.exist');
     CommonPage.openMenu();
     CommonPage.getMenuNavItem('nav-books').should('not.exist');
     CommonPage.closeMenu();
@@ -34,8 +33,7 @@ describe('Book tracker', () => {
     SettingsPage.getFeatureBooksCheckbox().check();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
     CollectionPage.visit();
-    cy.getByTestId('show-functions').click();
-    cy.getByTestId('collection-filter-book').should('be.visible');
+    cy.getByTestId('collection-media-chip-book').should('be.visible');
   });
 
   it('searches Open Library, creates a book, shows its details, and deletes it', () => {

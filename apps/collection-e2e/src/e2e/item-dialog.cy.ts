@@ -276,38 +276,38 @@ describe('Item dialog — mark watched / unwatched', () => {
   });
 
   it('marks an unwatched item as watched', () => {
-    cy.intercept('POST', '/api/v1/finished/**').as('markWatched');
+    cy.intercept('POST', '/api/v1/tracking/**').as('markWatched');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
 
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogMarkWatchedButton().click();
+    CollectionPage.getItemDialogMarkFinishedButton().click();
     cy.wait('@markWatched').its('response.statusCode').should('eq', 200);
 
     // After marking watched, the button should switch to mark-unwatched
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogMarkUnwatchedButton().should('be.visible');
+    CollectionPage.getItemDialogMarkUnfinishedButton().should('be.visible');
   });
 
   it('marks a watched item as unwatched', () => {
-    cy.intercept('POST', '/api/v1/finished/**').as('markWatched');
-    cy.intercept('DELETE', '/api/v1/finished/**').as('markUnwatched');
+    cy.intercept('POST', '/api/v1/tracking/**').as('markWatched');
+    cy.intercept('DELETE', '/api/v1/tracking/**').as('markUnwatched');
     cy.on('window:confirm', () => true);
 
     // First mark as watched
     CollectionPage.getListItemImages().first().click();
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogMarkWatchedButton().click();
+    CollectionPage.getItemDialogMarkFinishedButton().click();
     cy.wait('@markWatched');
 
     // Now mark as unwatched
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogMarkUnwatchedButton().click();
+    CollectionPage.getItemDialogMarkUnfinishedButton().click();
     cy.wait('@markUnwatched').its('response.statusCode').should('eq', 204);
 
     // Button should switch back to mark-watched
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getItemDialogMarkWatchedButton().should('be.visible');
+    CollectionPage.getItemDialogMarkFinishedButton().should('be.visible');
   });
 });

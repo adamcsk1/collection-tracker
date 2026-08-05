@@ -111,7 +111,7 @@ describe('Export/Import — collection data export', () => {
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Export Tracker Movie', 'movie', watchedImdbId),
-      listType: 'finished',
+      listType: 'tracking',
     });
     cy.request('PUT', `/api/v1/tracking/omdb/${seriesImdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Second'] }],
@@ -129,7 +129,7 @@ describe('Export/Import — collection data export', () => {
     cy.readFile(exportPath, null, { timeout: 15000 }).should((source) => {
       const parsed = JSON.parse(source.toString('utf8'));
       expect(parsed.type).to.equal('collection-tracker-export');
-      expect(parsed.version).to.equal(6);
+      expect(parsed.version).to.equal(9);
       expect(parsed.collectionItems).to.be.an('array');
       expect(parsed.collectionItems.length).to.be.greaterThan(0);
       expect(parsed.tagManagement).to.be.an('array');
@@ -139,7 +139,7 @@ describe('Export/Import — collection data export', () => {
       });
       const trackerItem = parsed.collectionItems.find(
         (item: { IMDbId: string; listType: string }) =>
-          item.IMDbId === watchedImdbId && item.listType === 'finished'
+          item.IMDbId === watchedImdbId && item.listType === 'tracking'
       );
       expect(trackerItem).to.not.be.undefined;
       expect(trackerItem.title).to.equal('Export Tracker Movie');
@@ -175,7 +175,7 @@ describe('Export/Import — collection data export', () => {
     cy.request('GET', `/api/v1/tracking/omdb/${seriesImdbId}/completed-episodes`)
       .its('body.completedEpisodes')
       .should('deep.equal', [{ season: 1, episode: 1 }]);
-    cy.request('GET', '/api/v1/items?limit=1000&offset=0&listType=finished')
+    cy.request('GET', '/api/v1/items?limit=1000&offset=0&listType=tracking')
       .its('body.items')
       .should((items) => {
         const titles = items.map((item: { title: string }) => item.title);

@@ -15,7 +15,6 @@ const collectionListTypes = [
   'watchlist',
   'wishlist',
   'tracking',
-  'finished',
   'books',
 ] as const;
 const defaultUserSettings = {
@@ -33,7 +32,6 @@ const defaultUserSettings = {
     books: true,
     wishlist: true,
     watchlist: true,
-    finished: true,
     tracking: true,
   },
 };
@@ -167,14 +165,21 @@ Cypress.Commands.add('autoLogin', () => {
     cy.request('GET', listItemsUrl).then((response) => {
       const items = (
         response.body as {
-          items: Array<{ externalProvider: string; externalItemId: string; hash: string }>;
+          items: Array<{
+            externalProvider: string;
+            externalItemId: string;
+            hash: string;
+            listType?: string;
+          }>;
         }
       ).items;
       items.forEach((item) => {
+        // Library All merges owned books; delete must use the item's real list type.
+        const itemListType = item.listType || listType;
         const deleteUrl = `/api/v1/items/${encodeURIComponent(item.externalProvider)}/${encodeURIComponent(
           item.externalItemId
-        )}?hash=${encodeURIComponent(item.hash)}&listType=${encodeURIComponent(listType)}`;
-        cy.request('DELETE', deleteUrl);
+        )}?hash=${encodeURIComponent(item.hash)}&listType=${encodeURIComponent(itemListType)}`;
+        cy.request({ method: 'DELETE', url: deleteUrl, failOnStatusCode: false });
       });
     });
   });

@@ -75,7 +75,7 @@ describe('Statistics — with movies and series', () => {
 
   it('navigates to the movie tracker when the watched movies summary card is clicked', () => {
     StatisticsPage.getSummaryWatchedMovies().click();
-    cy.url().should('include', '#/collection/finished');
+    cy.url().should('include', '#/collection/tracking');
   });
 
   it('navigates to the series tracker when the watched series summary card is clicked', () => {

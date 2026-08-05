@@ -54,9 +54,6 @@ export const CollectionPage = {
   visitTracking: () => {
     cy.visit('/client/#/collection/tracking');
   },
-  visitWatched: () => {
-    cy.visit('/client/#/collection/finished');
-  },
   visitWatchlist: () => {
     cy.visit('/client/#/collection/watchlist');
   },
@@ -64,8 +61,7 @@ export const CollectionPage = {
   // Search
   getSearchInput: () => getFloatSearchInput('collection-search'),
   getSearchHost: () => cy.getByTestId('collection-search'),
-  getTrackingSearchInput: () => getFloatSearchInput('watching-search'),
-  getWatchedSearchInput: () => getFloatSearchInput('watched-search'),
+  getTrackingSearchInput: () => getFloatSearchInput('tracking-search'),
   getWatchlistSearchInput: () => getFloatSearchInput('watchlist-search'),
   getWishlistSearchInput: () => getFloatSearchInput('wishlist-search'),
 
@@ -74,8 +70,8 @@ export const CollectionPage = {
   getListItems: (options: Partial<Cypress.Timeoutable> = { timeout: 10000 }) =>
     cy.getByTestId('list-item-title', options),
   getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
-  getTrackingCompletedBadges: () => cy.getByTestId('list-item-watching-completed'),
-  getWatchedWatchedBadges: () => cy.getByTestId('list-item-watched'),
+  getTrackingCompletedBadges: () => cy.getByTestId('list-item-tracking-completed'),
+  getFinishedBadges: () => cy.getByTestId('list-item-finished'),
   getSharedBadges: () => cy.getByTestId('list-item-shared'),
   getListItemYears: () => cy.getByTestId('list-item-year'),
   getListItemImdbRatings: () => cy.getByTestId('list-item-rating-imdb'),
@@ -88,8 +84,7 @@ export const CollectionPage = {
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
   getAddFirstWatchlistItemLink: () => cy.getByTestId('add-first-watchlist-item'),
   getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
-  getAddFirstTrackingItemLink: () => cy.getByTestId('add-first-watching-item'),
-  getAddFirstWatchedItemLink: () => cy.getByTestId('add-first-watched-item'),
+  getAddFirstTrackingItemLink: () => cy.getByTestId('add-first-tracking-item'),
   setListPreferredRatingToUser: () =>
     cy.request('POST', '/api/v1/user/settings', {
       collectionListDisplayPreferences: {
@@ -132,11 +127,11 @@ export const CollectionPage = {
       '[data-test-id="new-item-manual-hint"], [data-test-id="new-item-manual-image-preview"]'
     ),
   getNewItemLibrarySelect: () => cy.getByTestId('new-item-library').find('select'),
-  getNewItemContentSelect: () => cy.getByTestId('new-item-content-select'),
+  getNewItemContentSelect: () => cy.getByTestId('new-item-search-content-type').find('select'),
   getNewItemContentOptions: () => cy.getByTestId('new-item-content-option'),
   getNewItemUserRateInput: () => cy.getByTestId('new-item-user-rate').find('input'),
-  getNewItemCopyToTrackingAsWatchedCheckbox: () =>
-    cy.getByTestId('new-item-copy-to-watching-as-watched').find('input[type="checkbox"]'),
+  getNewItemCopyToTrackingAsCompletedCheckbox: () =>
+    cy.getByTestId('new-item-copy-to-tracking-as-completed').find('input[type="checkbox"]'),
   getNewItemSaveButton: () => cy.getByTestId('new-item-save'),
   getNewItemSaveAndNewButton: () => cy.getByTestId('new-item-save-and-new'),
   getNewItemSaveAndCloseButton: () => cy.getByTestId('new-item-save-and-close'),
@@ -217,9 +212,9 @@ export const CollectionPage = {
   },
   getItemDialogMarkFavoriteButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-favorite"]'),
   getItemDialogRemoveFavoriteButton: () => getItemDialog().find('[data-test-id="item-dialog-remove-favorite"]'),
-  getItemDialogMarkWatchedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-watched"]'),
-  getItemDialogMarkUnwatchedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-unwatched"]'),
-  getItemDialogMoveWatchedButton: () => getItemDialog().find('[data-test-id="item-dialog-move-watched"]'),
+  getItemDialogMarkFinishedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-finished"]'),
+  getItemDialogMarkUnfinishedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-unfinished"]'),
+  getItemDialogMoveFinishedButton: () => getItemDialog().find('[data-test-id="item-dialog-move-finished"]'),
   getItemDialogSharedLibraryBadge: () => getItemDialog().find('[data-test-id="item-dialog-shared-library"]'),
   getItemDialogUserRateChip: () => getItemDialog().find('[data-test-id="item-dialog-user-rate-chip"]'),
   getItemDialogTitleInput: () => getItemDialog().find('[data-test-id="item-dialog-title"] input'),
