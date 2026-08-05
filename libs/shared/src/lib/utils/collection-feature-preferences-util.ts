@@ -2,26 +2,26 @@ import { CollectionFeaturePreferencesModel } from '../models/collection-feature-
 
 const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 
-const REQUIRED_KEYS = ['wishlist', 'watchlist', 'finished', 'tracking', 'books'] as const;
+const REQUIRED_KEYS = ['wishlist', 'watchlist', 'tracking', 'books'] as const;
 
 const normalizeFeaturePreferenceRecord = (record: Record<string, unknown>): Record<string, unknown> => {
   const normalized: Record<string, unknown> = { ...record };
-  if (!('finished' in normalized) && 'watched' in normalized) {
-    normalized['finished'] = normalized['watched'];
-    delete normalized['watched'];
+
+  const finishedEnabled =
+    normalized['finished'] === true || normalized['watched'] === true || normalized['movieTracker'] === true;
+  const trackingEnabled =
+    normalized['tracking'] === true || normalized['watching'] === true || normalized['seriesTracker'] === true;
+
+  if ('tracking' in normalized || 'watching' in normalized || 'seriesTracker' in normalized || finishedEnabled) {
+    normalized['tracking'] = trackingEnabled || finishedEnabled;
   }
-  if (!('tracking' in normalized) && 'watching' in normalized) {
-    normalized['tracking'] = normalized['watching'];
-    delete normalized['watching'];
-  }
-  if (!('finished' in normalized) && 'movieTracker' in normalized) {
-    normalized['finished'] = normalized['movieTracker'];
-    delete normalized['movieTracker'];
-  }
-  if (!('tracking' in normalized) && 'seriesTracker' in normalized) {
-    normalized['tracking'] = normalized['seriesTracker'];
-    delete normalized['seriesTracker'];
-  }
+
+  delete normalized['finished'];
+  delete normalized['watched'];
+  delete normalized['movieTracker'];
+  delete normalized['watching'];
+  delete normalized['seriesTracker'];
+
   if (!('watchlist' in normalized) && 'watchLater' in normalized) {
     normalized['watchlist'] = normalized['watchLater'];
     delete normalized['watchLater'];
@@ -43,7 +43,6 @@ export const parseCollectionFeaturePreferences = (value: unknown): CollectionFea
   return {
     wishlist: record['wishlist'] as boolean,
     watchlist: record['watchlist'] as boolean,
-    finished: record['finished'] as boolean,
     tracking: record['tracking'] as boolean,
     books: record['books'] as boolean,
   };

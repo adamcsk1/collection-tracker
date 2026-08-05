@@ -4,6 +4,5 @@ export const DEFAULT_COLLECTION_FEATURE_PREFERENCES: CollectionFeaturePreference
   books: true,
   wishlist: true,
   watchlist: true,
-  finished: true,
   tracking: true,
 };

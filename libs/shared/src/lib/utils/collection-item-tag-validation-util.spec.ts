@@ -36,9 +36,7 @@ describe('collection item tag validation util', () => {
         targetOwnerShareCode: 'shared-code',
       })
     ).toEqual({ kind: 'invalidSharedListCreate' });
-    expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'tracking' })).toEqual({
-      kind: 'invalidTrackingTags',
-    });
+    expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'tracking' })).toBeUndefined();
     expect(
       createCollectionItemTagValidation({
         ...baseCreateInput,
@@ -51,13 +49,6 @@ describe('collection item tag validation util', () => {
         ...baseCreateInput,
         contentType: 'book',
         listType: 'tracking',
-      })
-    ).toBeUndefined();
-    expect(
-      createCollectionItemTagValidation({
-        ...baseCreateInput,
-        contentType: 'book',
-        listType: 'finished',
       })
     ).toBeUndefined();
     expect(

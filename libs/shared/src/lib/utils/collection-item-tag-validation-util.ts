@@ -6,11 +6,13 @@ import type {
 
 const isOwnershipList = (listType: string): boolean => listType === 'library' || listType === 'books';
 
+const isBookAllowedOnList = (listType: string): boolean =>
+  listType === 'books' || listType === 'wishlist' || listType === 'watchlist' || listType === 'tracking';
+
 const contentTypeAllowedOnList = (listType: string, contentType: string): boolean => {
   if (listType === 'library') return contentType === 'movie' || contentType === 'series';
   if (listType === 'books') return contentType === 'book';
-  if (listType === 'tracking') return contentType === 'series' || contentType === 'book';
-  if (listType === 'finished') return contentType === 'movie' || contentType === 'book';
+  if (listType === 'tracking') return contentType === 'movie' || contentType === 'series' || contentType === 'book';
   if (listType === 'wishlist' || listType === 'watchlist') {
     return contentType === 'movie' || contentType === 'series' || contentType === 'book';
   }
@@ -33,6 +35,9 @@ export const createCollectionItemTagValidation = ({
     if (listType === 'tracking') return { kind: 'invalidTrackingTags' };
     return { kind: 'invalidInternalCollectionTag' };
   }
+  if (contentType === 'book' && !isBookAllowedOnList(listType)) {
+    return { kind: 'invalidInternalCollectionTag' };
+  }
   return undefined;
 };
 
@@ -49,7 +54,6 @@ export const changeCollectionItemTagValidation = ({
   if (
     existingListType !== 'library' &&
     listType !== 'tracking' &&
-    listType !== 'finished' &&
     listType !== 'books' &&
     listType !== 'watchlist' &&
     listType !== 'wishlist'

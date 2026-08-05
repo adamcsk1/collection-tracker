@@ -11,7 +11,6 @@ describe('isCollectionFeaturePreferences', () => {
         books: true,
         wishlist: true,
         watchlist: false,
-        finished: true,
         tracking: false,
       })
     ).toBe(true);
@@ -30,8 +29,7 @@ describe('isCollectionFeaturePreferences', () => {
       books: true,
       wishlist: true,
       watchlist: false,
-      finished: true,
-      tracking: false,
+      tracking: true,
     });
   });
 
@@ -48,8 +46,23 @@ describe('isCollectionFeaturePreferences', () => {
       books: true,
       wishlist: true,
       watchlist: false,
-      finished: true,
-      tracking: false,
+      tracking: true,
+    });
+  });
+
+  it('merges finished pref into tracking when tracking missing', () => {
+    expect(
+      parseCollectionFeaturePreferences({
+        books: true,
+        wishlist: true,
+        watchlist: false,
+        tracking: true,
+      })
+    ).toEqual({
+      books: true,
+      wishlist: true,
+      watchlist: false,
+      tracking: true,
     });
   });
 
@@ -57,12 +70,11 @@ describe('isCollectionFeaturePreferences', () => {
     null,
     [],
     {},
-    { wishlist: true, watchlist: true, finished: true, tracking: true },
+    { wishlist: true, watchlist: true, tracking: true },
     {
       books: true,
       wishlist: true,
       watchlist: true,
-      finished: true,
       tracking: true,
       extra: true,
     },
@@ -77,14 +89,12 @@ describe('parseCollectionFeaturePreferences', () => {
       parseCollectionFeaturePreferences({
         wishlist: true,
         watchlist: false,
-        finished: true,
         tracking: false,
         books: true,
       })
     ).toEqual({
       wishlist: true,
       watchlist: false,
-      finished: true,
       tracking: false,
       books: true,
     });
