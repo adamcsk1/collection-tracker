@@ -54,9 +54,13 @@ export const CollectionPage = {
   visitTracking: () => {
     cy.visit('/client/#/collection/tracking');
   },
+  visitFinishedRedirect: () => {
+    cy.visit('/client/#/collection/finished');
+  },
   visitWatchlist: () => {
     cy.visit('/client/#/collection/watchlist');
   },
+  getMediaChip: (chip: 'all' | 'movie' | 'series' | 'book') => cy.getByTestId(`collection-media-chip-${chip}`),
 
   // Search
   getSearchInput: () => getFloatSearchInput('collection-search'),
@@ -215,6 +219,10 @@ export const CollectionPage = {
   getItemDialogMarkFinishedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-finished"]'),
   getItemDialogMarkUnfinishedButton: () => getItemDialog().find('[data-test-id="item-dialog-mark-unfinished"]'),
   getItemDialogMoveFinishedButton: () => getItemDialog().find('[data-test-id="item-dialog-move-finished"]'),
+  getItemDialogMoveTrackingButton: () => getItemDialog().find('[data-test-id="item-dialog-move-tracking"]'),
+  getItemDialogCopyTrackingButton: () => getItemDialog().find('[data-test-id="item-dialog-copy-tracking"]'),
+  getItemDialogOpenInTrackingButton: () => getItemDialog().find('[data-test-id="item-dialog-open-in-tracking"]'),
+  getItemDialogRemoveTrackingButton: () => getItemDialog().find('[data-test-id="item-dialog-remove-tracking"]'),
   getItemDialogSharedLibraryBadge: () => getItemDialog().find('[data-test-id="item-dialog-shared-library"]'),
   getItemDialogUserRateChip: () => getItemDialog().find('[data-test-id="item-dialog-user-rate-chip"]'),
   getItemDialogTitleInput: () => getItemDialog().find('[data-test-id="item-dialog-title"] input'),

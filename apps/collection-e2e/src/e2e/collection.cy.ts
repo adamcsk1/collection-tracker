@@ -1018,6 +1018,130 @@ describe('Collection — movie tracker', () => {
   });
 });
 
+describe('Collection — unified tracking gaps', () => {
+  beforeEach(() => {
+    cy.autoLogin();
+  });
+
+  it('redirects the legacy finished route to tracking', () => {
+    CollectionPage.visitFinishedRedirect();
+    cy.url().should('include', '#/collection/tracking');
+    cy.url().should('not.include', '#/collection/finished');
+  });
+
+  it('filters tracking items with media chips', () => {
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Chip Movie', 'movie', 'tt8500001'),
+      listType: 'tracking',
+    });
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Chip Series', 'series', 'tt8500002'),
+      listType: 'tracking',
+    });
+    cy.intercept('GET', '/api/v1/items*').as('getItems');
+    CollectionPage.visitTracking();
+    waitForItemsRequestIncluding(['listType=tracking']);
+
+    CollectionPage.getListItems().should('have.length', 2);
+    CollectionPage.getMediaChip('movie').click();
+    waitForItemsRequestIncluding(['listType=tracking', 'type=movie']);
+    cy.url().should('include', 'type=movie');
+    CollectionPage.getListItems().should('have.length', 1).and('contain.text', 'Chip Movie');
+    CollectionPage.getListItems().should('not.contain.text', 'Chip Series');
+
+    CollectionPage.getMediaChip('series').click();
+    waitForItemsRequestIncluding(['listType=tracking', 'type=series']);
+    cy.url().should('include', 'type=series');
+    CollectionPage.getListItems().should('have.length', 1).and('contain.text', 'Chip Series');
+    CollectionPage.getListItems().should('not.contain.text', 'Chip Movie');
+
+    CollectionPage.getMediaChip('all').click();
+    waitForItemsRequestIncluding(['listType=tracking']);
+    cy.url().should('not.include', 'type=movie').and('not.include', 'type=series');
+    CollectionPage.getListItems().should('have.length', 2);
+  });
+
+  it('moves a series from watchlist to tracking', () => {
+    cy.intercept('POST', '/api/v1/tracking/**').as('moveToTracking');
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Watchlist Move Series', 'series', 'tt8500003'),
+      listType: 'watchlist',
+    });
+    CollectionPage.visitWatchlist();
+
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.expectItemDialogActionsVisible();
+    CollectionPage.getItemDialogMoveTrackingButton().click();
+    cy.wait('@moveToTracking').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.getEmptyState().should('be.visible');
+
+    CollectionPage.visitTracking();
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', 'Watchlist Move Series');
+  });
+
+  it('copies a library series to tracking and can open the twin', () => {
+    cy.intercept('POST', '/api/v1/tracking/**').as('copyToTracking');
+    cy.request('POST', '/api/v1/create', {
+      ...buildCollectionItem('Library Copy Series', 'series', 'tt8500004'),
+    });
+    CollectionPage.visit();
+
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.expectItemDialogActionsVisible();
+    CollectionPage.getItemDialogCopyTrackingButton().click();
+    cy.wait('@copyToTracking').its('response.statusCode').should('eq', 200);
+    CollectionPage.getItemDialogOpenInTrackingButton().should('be.visible');
+    CollectionPage.getItemDialogRemoveTrackingButton().should('be.visible');
+
+    CollectionPage.closeActiveDialogByOverlay();
+    CollectionPage.visitTracking();
+    CollectionPage.getListItems().should('have.length', 1);
+    CollectionPage.getListItems().first().should('contain.text', 'Library Copy Series');
+  });
+
+  it('saves a library series with copy-to-tracking-as-completed checked', () => {
+    const seriesTitle = 'Copy Completed Series';
+    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
+      statusCode: 200,
+      body: buildOmdbSearchResult(seriesTitle, 'tt8500005', 'series'),
+    }).as('seriesSearch');
+    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
+      statusCode: 200,
+      body: buildOmdbItem(seriesTitle, 'tt8500005', 'series'),
+    }).as('seriesItem');
+    cy.intercept('POST', '/api/v1/create').as('createSeries');
+    cy.intercept('POST', '/api/v1/tracking/**').as('addTracking');
+    cy.intercept('PUT', '/api/v1/tracking/**/mark-all-completed', {
+      statusCode: 200,
+      body: {
+        completedEpisodes: [{ season: 1, episode: 1 }],
+        lastCompletedEpisode: { season: 1, episode: 1 },
+        item: null,
+      },
+    }).as('markAllCompleted');
+
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+    CollectionPage.getNewItemContentSelect().select('series');
+    CollectionPage.getNewItemSearchInput().type(seriesTitle);
+    cy.wait('@seriesSearch');
+    CollectionPage.getNewItemContentOptions().should('have.length.at.least', 1);
+    CollectionPage.getNewItemCopyToTrackingAsCompletedCheckbox().check();
+    CollectionPage.getNewItemSaveAndCloseButton().click();
+    cy.wait('@seriesItem');
+    cy.wait('@createSeries').its('response.statusCode').should('eq', 200);
+    cy.wait('@addTracking').its('response.statusCode').should('eq', 200);
+    cy.wait('@markAllCompleted').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.getListItems().should('contain.text', seriesTitle);
+    CollectionPage.visitTracking();
+    CollectionPage.getListItems().should('contain.text', seriesTitle);
+  });
+});
+
 describe('Collection - sync', () => {
   beforeEach(() => {
     cy.autoLogin();
