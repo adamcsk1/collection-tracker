@@ -112,7 +112,7 @@ export class ApiService extends BaseApiService {
   ): Observable<WatchedApiResponseModel> {
     return this.request(
       'POST',
-      `/finished/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ ownerShareCode, sourceListType })}`,
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ ownerShareCode, sourceListType, markCompleted: true })}`,
       {}
     );
   }
@@ -133,12 +133,12 @@ export class ApiService extends BaseApiService {
   public deleteWatchedItemByExternalId(externalProvider: string, externalItemId: string): Observable<void> {
     return this.request(
       'DELETE',
-      `/finished/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}`
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed`
     );
   }
 
   public deleteAllWatchedItems(): Observable<MarkAllUnwatchedApiResponseModel> {
-    return this.request('DELETE', '/finished');
+    return this.request('DELETE', '/tracking/completed-movies');
   }
 
   public deleteAllTrackingItems(): Observable<MarkAllUnwatchedApiResponseModel> {
