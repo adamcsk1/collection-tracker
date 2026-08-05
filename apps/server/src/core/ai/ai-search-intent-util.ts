@@ -138,7 +138,7 @@ export const getEffectiveStatusIntent = (
   if (!intent) return null;
   if (intent === 'favorite') return 'favorite';
   if (intent === 'unfinished') return listType === 'tracking' ? 'unfinished' : null;
-  if (listType === 'tracking' || listType === 'finished') return 'completed';
+  if (listType === 'tracking') return 'completed';
   return null;
 };
 

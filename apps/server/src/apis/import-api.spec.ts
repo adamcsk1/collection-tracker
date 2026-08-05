@@ -55,7 +55,7 @@ const watchedItem = {
   IMDbId: 'tt0000004',
   externalItemId: 'tt0000004',
   tags: ['#movie'],
-  listType: 'finished',
+  listType: 'tracking',
 };
 
 const insertUser = (usernameHash = 'user') => {
@@ -131,7 +131,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 8,
+        version: 9,
         userSettings: {
           theme: 'dark',
           animatedBackground: false,
@@ -139,7 +139,6 @@ describe('import-api', () => {
           collectionFeaturePreferences: {
             wishlist: false,
             watchlist: true,
-            finished: false,
             tracking: true,
             books: true,
           },
@@ -213,7 +212,7 @@ describe('import-api', () => {
       list_type: 'watchlist',
     });
     expect(db.prepare('SELECT list_type FROM collection_items WHERE external_item_id = ?').get('tt0000004')).toEqual({
-      list_type: 'finished',
+      list_type: 'tracking',
     });
     expect(
       db
@@ -255,7 +254,6 @@ describe('import-api', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      finished: false,
       tracking: true,
     });
     expect(
@@ -278,100 +276,6 @@ describe('import-api', () => {
         )
         .get('tt0000002')
     ).toEqual({ completed_at: '2026-05-06 00:00:00' });
-  });
-
-  it('imports legacy v6 payloads with watchingData and watching/watched list types', async () => {
-    insertUser('user');
-    const response = mockResponse();
-    const request: any = {
-      usernameHash: 'user',
-      body: {
-        type: 'collection-tracker-export',
-        version: 6,
-        userSettings: {
-          theme: 'dark',
-          animatedBackground: false,
-          language: 'en',
-          collectionFeaturePreferences: {
-            wishlist: true,
-            watchlist: true,
-            watched: true,
-            watching: true,
-            books: true,
-          },
-        },
-        collectionItems: [
-          {
-            ...watchingItem,
-            listType: 'watching',
-          },
-          {
-            ...watchedItem,
-            listType: 'watched',
-          },
-          {
-            ...item,
-            IMDbId: undefined,
-            externalProvider: 'openlibrary',
-            externalItemId: '9780140328721',
-            externalIds: [{ source: 'isbn', id: '9780140328721' }],
-            title: 'Wish Book',
-            listType: 'wishlist',
-            contentType: 'book',
-            tags: [],
-          },
-          {
-            ...item,
-            IMDbId: undefined,
-            externalProvider: 'openlibrary',
-            externalItemId: '9780306406157',
-            externalIds: [{ source: 'isbn', id: '9780306406157' }],
-            title: 'Reading Book',
-            listType: 'watching',
-            contentType: 'book',
-            tags: [],
-            watchedAt: null,
-          },
-        ],
-        tagManagement: [],
-        watchingData: {
-          'omdb/tt0000002': {
-            seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }],
-            completedEpisodes: [{ season: 1, episode: 1 }],
-          },
-        },
-      },
-    };
-    const app = buildRouteApp();
-
-    const { register } = await import('./import-api');
-    register(app);
-
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
-
-    expect(response.send).toHaveBeenCalledWith({
-      importedCollectionItems: 4,
-      importedTagManagement: 0,
-      importedTrackingSeasons: 1,
-      importedTrackingCompletedEpisodes: 1,
-    });
-    const db = getDatabase();
-    expect(db.prepare('SELECT list_type, content_type FROM collection_items ORDER BY title').all()).toEqual([
-      { list_type: 'tracking', content_type: 'series' },
-      { list_type: 'finished', content_type: 'movie' },
-      { list_type: 'tracking', content_type: 'book' },
-      { list_type: 'wishlist', content_type: 'book' },
-    ]);
-    const prefs = db
-      .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
-      .get('user') as { collection_feature_preferences: string };
-    expect(JSON.parse(prefs.collection_feature_preferences)).toEqual({
-      wishlist: true,
-      watchlist: true,
-      finished: true,
-      tracking: true,
-      books: true,
-    });
   });
 
   it('returns 400 for unsupported full import versions', async () => {
@@ -401,15 +305,13 @@ describe('import-api', () => {
     ['book in library', { contentType: 'book', listType: 'library' }],
     ['movie in book tracker', { contentType: 'movie', listType: 'books' }],
     ['favorite in a non-library list', { favorite: true, listType: 'watchlist' }],
-    ['movie in tracking hub', { contentType: 'movie', listType: 'tracking' }],
-    ['series in finished hub', { contentType: 'series', listType: 'finished' }],
   ])('returns 400 for invalid imported %s', async (_caseName, itemChanges) => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [{ ...item, ...itemChanges }],
         tagManagement: [],
@@ -432,7 +334,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [
           item,
@@ -465,7 +367,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [
           {
@@ -505,7 +407,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [
           {
@@ -552,7 +454,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [
           {
@@ -608,7 +510,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [
           {
@@ -639,7 +541,7 @@ describe('import-api', () => {
         usernameHash: 'user',
         body: {
           type: 'collection-tracker-export',
-          version: 6,
+          version: 9,
           userSettings: {},
           collectionItems: [{ ...item, canonicalItemId }],
           tagManagement: [],
@@ -664,7 +566,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [{ ...watchingItem, tags: ['#series'], watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
@@ -702,7 +604,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [{ ...watchedItem, watchedAt: 'not-a-date' }],
         tagManagement: [],
@@ -724,7 +626,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [{ ...watchedItem, watchedAt: '2026-02-31 00:00:00' }],
         tagManagement: [],
@@ -747,7 +649,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [{ ...watchingItem, watchedAt: '2026-05-06 00:00:00' }],
         tagManagement: [],
@@ -792,7 +694,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: { collectionListDisplayPreferences: { preferredRating: 'imdb' } },
         collectionItems: [],
         tagManagement: [],
@@ -814,12 +716,12 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {
           collectionFeaturePreferences: {
             wishlist: true,
             watchlist: true,
-            finished: true,
+            tracking: true,
             tracking: 'yes',
           },
         },
@@ -843,7 +745,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [],
         tagManagement: [
@@ -883,7 +785,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: { theme: 'dark', animatedBackground: false, language: 'en' },
         collectionItems: [],
         tagManagement: [
@@ -922,7 +824,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [watchingItem],
         tagManagement: [],
@@ -949,7 +851,7 @@ describe('import-api', () => {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 6,
+        version: 9,
         userSettings: {},
         collectionItems: [watchingItem],
         tagManagement: [],

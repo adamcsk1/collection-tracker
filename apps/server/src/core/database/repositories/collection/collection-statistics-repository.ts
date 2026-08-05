@@ -68,10 +68,11 @@ export const getCollectionStatistics = (
              SELECT 1 FROM collection_items movie_tracker
              WHERE movie_tracker.username_hash = ?
                AND ${canonicalOrExactIdentityMatch('movie_tracker')}
-               AND movie_tracker.list_type = ?
-           )`
+                AND movie_tracker.list_type = 'tracking'
+               AND movie_tracker.content_type = 'movie'
+            )`
       )
-      .get(...queryParts.params, viewerUsernameHash, 'finished') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash) as { count: number }
   ).count;
 
   const unwatchedMovieCount = (
@@ -85,10 +86,11 @@ export const getCollectionStatistics = (
              SELECT 1 FROM collection_items movie_tracker
              WHERE movie_tracker.username_hash = ?
                 AND ${canonicalOrExactIdentityMatch('movie_tracker')}
-               AND movie_tracker.list_type = ?
+               AND movie_tracker.list_type = 'tracking'
+               AND movie_tracker.content_type = 'movie'
            )`
       )
-      .get(...queryParts.params, viewerUsernameHash, 'finished') as { count: number }
+      .get(...queryParts.params, viewerUsernameHash) as { count: number }
   ).count;
 
   const watchedSeriesCount = (
@@ -192,15 +194,16 @@ export const getCollectionStatistics = (
        INNER JOIN collection_items movie_tracker
          ON movie_tracker.username_hash = ?
          AND ${canonicalOrExactIdentityMatch('movie_tracker')}
-         AND movie_tracker.list_type = ?
-       INNER JOIN collection_item_tracker_state movie_tracker_state
-         ON movie_tracker_state.item_id = movie_tracker.id
-        AND movie_tracker_state.completed_at IS NOT NULL
-       WHERE ${whereSql}
-           AND ${movieContentCondition}
-          GROUP BY watched_year`
+          AND movie_tracker.list_type = 'tracking'
+          AND movie_tracker.content_type = 'movie'
+        INNER JOIN collection_item_tracker_state movie_tracker_state
+          ON movie_tracker_state.item_id = movie_tracker.id
+         AND movie_tracker_state.completed_at IS NOT NULL
+        WHERE ${whereSql}
+            AND ${movieContentCondition}
+           GROUP BY watched_year`
     )
-    .all(viewerUsernameHash, 'finished', ...queryParts.params) as WatchedYearCountRow[];
+    .all(viewerUsernameHash, ...queryParts.params) as WatchedYearCountRow[];
 
   const watchedSeriesYearCounts = db
     .prepare(

@@ -124,7 +124,7 @@ describe('proxy-ai-query-api', () => {
         }
       }
 
-      if (file.listType === 'tracking' || file.listType === 'finished') {
+      if (file.listType === 'tracking' || file.listType === 'tracking') {
         db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
           itemId,
           file.watchedAt ?? null
@@ -219,7 +219,7 @@ describe('proxy-ai-query-api', () => {
       expect(payload.system).toContain('rottenTomatoesRate');
       expect(payload.system).toContain('metacriticRate');
       expect(payload.system).toContain('watchStatus');
-      expect(payload.system).toContain('watching: unfinished');
+      expect(payload.system).toContain('tracking: unfinished');
       expect(payload.system).toContain(
         'Do not mark every candidate as match:true unless every single candidate clearly matches the request.'
       );

@@ -91,7 +91,7 @@ const insertItem = (item: {
       .prepare('INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)')
       .run(itemId, 'metacritic', item.metacriticRate);
   }
-  if (item.listType === 'finished' || item.listType === 'tracking') {
+  if (item.listType === 'tracking' || item.listType === 'tracking') {
     getDatabase()
       .prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)')
       .run(itemId, null);
@@ -147,7 +147,7 @@ describe('collection search APIs', () => {
       genres: ['Sci-Fi'],
       plot: 'space horror',
     });
-    insertItem({ imdbId: 'tt-alien', title: 'Alien Movie', tags: ['#movie'], listType: 'finished' });
+    insertItem({ imdbId: 'tt-alien', title: 'Alien Movie', tags: ['#movie'], listType: 'tracking' });
     insertItem({
       imdbId: 'tt-drama',
       title: 'Quiet Drama',
@@ -176,7 +176,7 @@ describe('collection search APIs', () => {
     insertUser();
     insertItem({ imdbId: 'tt-unwatched-movie', title: 'Unwatched Movie', contentType: 'movie' });
     insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', contentType: 'movie' });
-    insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', listType: 'finished', contentType: 'movie' });
+    insertItem({ imdbId: 'tt-watched-movie', title: 'Watched Movie', listType: 'tracking', contentType: 'movie' });
     insertItem({ imdbId: 'tt-unwatched-series', title: 'Unwatched Series', contentType: 'series' });
     insertItem({ imdbId: 'tt-watched-series', title: 'Watched Series', contentType: 'series' });
     insertItem({
@@ -468,7 +468,7 @@ describe('collection search APIs', () => {
       genres: ['Sci-Fi'],
       favorite: true,
     });
-    insertItem({ imdbId: 'tt-movie', title: 'Movie', tags: ['#movie'], listType: 'finished' });
+    insertItem({ imdbId: 'tt-movie', title: 'Movie', tags: ['#movie'], listType: 'tracking' });
     insertItem({
       imdbId: 'tt-series',
       title: 'Series',

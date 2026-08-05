@@ -42,9 +42,8 @@ Filtering rules:
 - Match semantic intent, not only exact words. For example, "christmas movies" can match items whose title, tags, genres, or plot clearly indicate Christmas, holidays, Santa, festive events, or Christmas settings.
 - The user's request can ask for any actor, genre, title, year, decade, tag, rating, theme, mood, setting, franchise, plot idea, watch status, progress, or combination of conditions.
 - Domain status rules (prefer these over plot metaphors):
-  - watching: unfinished / incomplete / in progress / still watching / not finished = watchStatus "unfinished" or completed false.
-  - watching: finished / completed / done watching = watchStatus "completed" or completed true.
-  - watched items are watched (watchStatus "finished").
+  - tracking: unfinished / incomplete / in progress / still watching / still reading / not finished = watchStatus "unfinished" or completed false.
+  - tracking: finished / completed / done watching / done reading = watchStatus "completed" or completed true.
   - When status fields are present, never use plot phrases like "unfinished business" to decide completion.
   - favorite / favourites / starred = favorite true.
 - Default to excluding an item. Include it only when the provided fields clearly support the match.

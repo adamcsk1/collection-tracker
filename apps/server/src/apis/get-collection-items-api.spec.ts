@@ -444,7 +444,7 @@ describe('get-collection-items-api', () => {
       'omdb',
       'tt0133093',
       'imdb:tt0133093',
-      'finished',
+      'tracking',
       'movie',
       'Canonical Tracker Movie',
       'canonical tracker movie',
@@ -452,6 +452,17 @@ describe('get-collection-items-api', () => {
       'Plot',
       'img.jpg',
       'tracker-hash'
+    );
+    const trackerItemId = Number(
+      (
+        db
+          .prepare('SELECT id FROM collection_items WHERE list_type = ? AND external_item_id = ?')
+          .get('tracking', 'tt0133093')! as { id: number }
+      ).id
+    );
+    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
+      trackerItemId,
+      '2026-03-04 00:00:00'
     );
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { watched: 'true' } };

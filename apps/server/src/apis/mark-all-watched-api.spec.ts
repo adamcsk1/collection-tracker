@@ -77,14 +77,14 @@ describe('mark-all-watched-api', () => {
         `SELECT list_type FROM collection_items
          WHERE username_hash = ? AND external_item_id = ? AND list_type = ?`
       )
-      .get('user', 'tt-1', 'finished') as { list_type: string } | undefined;
-    expect(trackerItem?.list_type).toBe('finished');
+      .get('user', 'tt-1', 'tracking') as { list_type: string } | undefined;
+    expect(trackerItem?.list_type).toBe('tracking');
   });
 
   it('returns 0 when all items are already watched', async () => {
     insertUser();
     insertItem('tt-1', ['#movie']);
-    insertItem('tt-1', ['#movie'], 'finished');
+    insertItem('tt-1', ['#movie'], 'tracking');
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
@@ -133,8 +133,8 @@ describe('mark-all-watched-api', () => {
       .prepare(
         'SELECT username_hash, external_item_id, list_type FROM collection_items WHERE list_type = ? ORDER BY username_hash'
       )
-      .all('finished');
-    expect(rows).toEqual([{ username_hash: 'user', external_item_id: 'tt-shared', list_type: 'finished' }]);
+      .all('tracking');
+    expect(rows).toEqual([{ username_hash: 'user', external_item_id: 'tt-shared', list_type: 'tracking' }]);
   });
 
   it('returns 404 when the shared library owner is missing', async () => {

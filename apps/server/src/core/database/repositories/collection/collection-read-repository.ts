@@ -91,15 +91,17 @@ const toAiSearchItem = (
 
   if (apiItem.listType === 'tracking') {
     completed = apiItem.watchedAt !== null;
-    watchStatus = completed ? 'completed' : 'unfinished';
-    const episodeCounts = episodeCountsByItemId?.get(row.id) ?? { completedEpisodes: 0, totalEpisodes: 0 };
-    completedEpisodes = episodeCounts.completedEpisodes;
-    totalEpisodes = episodeCounts.totalEpisodes;
-    progressPercent =
-      totalEpisodes > 0 ? Math.min(100, Math.round((completedEpisodes / totalEpisodes) * 100)) : completed ? 100 : 0;
-  } else if (apiItem.listType === 'finished') {
-    completed = true;
-    watchStatus = 'watched';
+    if (apiItem.contentType === 'movie') {
+      watchStatus = completed ? 'watched' : 'unwatched';
+      progressPercent = completed ? 100 : 0;
+    } else {
+      watchStatus = completed ? 'completed' : 'unfinished';
+      const episodeCounts = episodeCountsByItemId?.get(row.id) ?? { completedEpisodes: 0, totalEpisodes: 0 };
+      completedEpisodes = episodeCounts.completedEpisodes;
+      totalEpisodes = episodeCounts.totalEpisodes;
+      progressPercent =
+        totalEpisodes > 0 ? Math.min(100, Math.round((completedEpisodes / totalEpisodes) * 100)) : completed ? 100 : 0;
+    }
   }
 
   const fields = [

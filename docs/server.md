@@ -32,18 +32,18 @@ Source: [`apps/server`](../apps/server)
 ## Data Layout
 
 - `database/collection-tracker.sqlite`
-- `ollama.config.json` — Ollama host, model, embedding model, optional root-level `keep_alive`, generate options, optional `batchSize`, optional `parallelRequests`, and optional `semanticCandidateLimit` for AI search. Defaults favor a local GPU desktop (`batchSize: 16`, `parallelRequests: 2`, `semanticCandidateLimit: 120`, `num_ctx: 16384`). Pure status queries such as “unfinished series” on watching (or favorites on any list) resolve from derived item fields without calling Ollama; unfinished/completed pre-filters apply only on tracker lists so thematic library prompts are not emptied.
+- `ollama.config.json` — Ollama host, model, embedding model, optional root-level `keep_alive`, generate options, optional `batchSize`, optional `parallelRequests`, and optional `semanticCandidateLimit` for AI search. Defaults favor a local GPU desktop (`batchSize: 16`, `parallelRequests: 2`, `semanticCandidateLimit: 120`, `num_ctx: 16384`). Pure status queries such as “unfinished series” on tracking (or favorites on any list) resolve from derived item fields without calling Ollama; unfinished/completed pre-filters apply only on the tracking list so thematic library prompts are not emptied.
 - `logs/`
 - `cache/` — image proxy cache files and metadata
 
 Collection items, users, tokens, settings, shares, collection-list display preferences, collection feature preferences, series tracker data, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations). Core item fields live in `collection_items`; contributor and description data use `contributors` and `description`. Provider IDs remain on each item in `external_provider` and `external_item_id`, while cross-provider aliases and canonical identity mappings live in `external_item_identities`. External ratings use `collection_item_external_ratings`, and completion timestamps use `collection_item_tracker_state`. Genres, tags, series seasons, and watched episodes remain normalized child tables keyed by collection item ID. Public API fields such as `IMDbId`, `actors`, `plot`, and `watchedAt` are compatibility projections over this storage layout rather than physical `collection_items` columns.
 
-Books use `content_type = 'book'`. Owned catalog uses `list_type = 'books'` (favorites allowed). Books also allowed on `wishlist`, `watchlist`, `tracking` (reading), and `finished` (read). Collection **All** merges `library` + viewer’s own books; `type=book` is books-only. Canonical list types: `library`, `wishlist`, `watchlist`, `tracking`, `finished`, `books`. Feature prefs: `wishlist`, `watchlist`, `tracking`, `finished`, `books`. Tracker state may store `progress_current` / `progress_total` for book reading progress. ISBN-10/13 normalize to ISBN-13.
+Books use `content_type = 'book'`. Owned catalog uses `list_type = 'books'` (favorites allowed). Books also allowed on `wishlist`, `watchlist`, and `tracking` (in-progress or completed via tracker state). Collection **All** merges `library` + viewer’s own books; `type=book` is books-only. Canonical list types: `library`, `wishlist`, `watchlist`, `tracking`, `books`. Feature prefs: `wishlist`, `watchlist`, `tracking`, `books`. Tracker state may store `progress_current` / `progress_total` for book reading progress and `completed_at` for finished items. ISBN-10/13 normalize to ISBN-13.
 
 ## Import And Export
 
-- Current collection data exports use `collection-tracker-export` version 8 (`trackingData` with `completedEpisodes`).
-- Version 8 exports are complete import documents: server `/export` includes `type`, `version`, settings, items, tag management, and series tracker data.
+- Current collection data exports use `collection-tracker-export` version 9 (`trackingData` with `completedEpisodes`). Only version 9 is accepted on import.
+- Version 9 exports are complete import documents: server `/export` includes `type`, `version`, settings, items, tag management, and series tracker data.
 - Series episode progress is stored in `series_completed_episodes` (API `/tracking/.../completed-episodes`).
 - Exported items always include `externalProvider`, `externalItemId`, `externalIds` (primary + aliases), and an identity-anchored `canonicalItemId`.
 - Imported `canonicalItemId` values must match an identity derived from the item (`infer` or `source:id`); unanchored overrides are rejected.

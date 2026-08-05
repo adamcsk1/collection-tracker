@@ -63,7 +63,7 @@ export const register = (app: FastifyInstance): void => {
 
       const trackingData: UserExportApiResponseModel['trackingData'] = {};
       for (const item of collectionItems) {
-        if (item.listType === 'tracking') {
+        if (item.listType === 'tracking' && item.contentType === 'series') {
           const trackingDataKey = getTrackingDataKey(item.externalProvider, item.externalItemId);
           trackingData[trackingDataKey] = {
             seasons: findTrackingSeasonsByExternalId(db, usernameHash, item.externalProvider, item.externalItemId),

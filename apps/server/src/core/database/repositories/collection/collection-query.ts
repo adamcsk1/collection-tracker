@@ -14,13 +14,7 @@ export const normalizeLimit = (limit: number): number => Math.min(Math.max(Math.
 export const normalizeOffset = (offset: number): number => Math.max(Math.floor(offset) || 0, 0);
 
 export const normalizeListType = (listType: CollectionListTypeModel | undefined): CollectionListTypeModel => {
-  if (
-    listType === 'watchlist' ||
-    listType === 'wishlist' ||
-    listType === 'tracking' ||
-    listType === 'finished' ||
-    listType === 'books'
-  )
+  if (listType === 'watchlist' || listType === 'wishlist' || listType === 'tracking' || listType === 'books')
     return listType;
   return 'library';
 };
@@ -44,11 +38,14 @@ const addGenreExists = (queryParts: QueryParts, genre: string): void => {
 const addMovieWatchedExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
   queryParts.where.push(`${exists ? '' : 'NOT '}EXISTS (
     SELECT 1 FROM collection_items movie_watched_filter
+    LEFT JOIN collection_item_tracker_state movie_tracker_state ON movie_tracker_state.item_id = movie_watched_filter.id
     WHERE movie_watched_filter.username_hash = ?
       AND ${canonicalOrExactIdentityMatch('movie_watched_filter')}
-      AND movie_watched_filter.list_type = ?
+      AND movie_watched_filter.list_type = 'tracking'
+      AND movie_watched_filter.content_type = 'movie'
+      AND movie_tracker_state.completed_at IS NOT NULL
   )`);
-  queryParts.params.push(usernameHash, 'finished');
+  queryParts.params.push(usernameHash);
 };
 
 const addTrackingExists = (queryParts: QueryParts, usernameHash: string, exists = true): void => {
@@ -65,24 +62,30 @@ const addWatchedExists = (queryParts: QueryParts, usernameHash: string, exists =
   queryParts.where.push(`(
     (${movieContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
       SELECT 1 FROM collection_items movie_watched_filter
+      LEFT JOIN collection_item_tracker_state movie_tracker_state ON movie_tracker_state.item_id = movie_watched_filter.id
       WHERE movie_watched_filter.username_hash = ?
         AND ${canonicalOrExactIdentityMatch('movie_watched_filter')}
-        AND movie_watched_filter.list_type = ?
+        AND movie_watched_filter.list_type = 'tracking'
+        AND movie_watched_filter.content_type = 'movie'
+        AND movie_tracker_state.completed_at IS NOT NULL
     ))
     OR (${seriesContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
       SELECT 1 FROM collection_items series_watching_filter
       WHERE series_watching_filter.username_hash = ?
         AND ${canonicalOrExactIdentityMatch('series_watching_filter')}
-        AND series_watching_filter.list_type = ?
+        AND series_watching_filter.list_type = 'tracking'
     ))
     OR (${bookContentCondition} AND ${exists ? '' : 'NOT '}EXISTS (
       SELECT 1 FROM collection_items book_finished_filter
+      LEFT JOIN collection_item_tracker_state book_tracker_state ON book_tracker_state.item_id = book_finished_filter.id
       WHERE book_finished_filter.username_hash = ?
         AND ${canonicalOrExactIdentityMatch('book_finished_filter')}
-        AND book_finished_filter.list_type = ?
+        AND book_finished_filter.list_type = 'tracking'
+        AND book_finished_filter.content_type = 'book'
+        AND book_tracker_state.completed_at IS NOT NULL
     ))
   )`);
-  queryParts.params.push(usernameHash, 'finished', usernameHash, 'tracking', usernameHash, 'finished');
+  queryParts.params.push(usernameHash, usernameHash, usernameHash);
 };
 
 export const canonicalOrExactIdentityMatch = (alias: string): string => `(
@@ -250,7 +253,7 @@ const addFilters = (
   if (filters.type === 'book' && listType !== 'library') {
     queryParts.where.push(bookContentCondition);
   }
-  if (filters.watched !== undefined && viewerUsernameHash && listType !== 'finished' && listType !== 'tracking') {
+  if (filters.watched !== undefined && viewerUsernameHash && listType !== 'tracking') {
     const exists = filters.watched;
     if (filters.type === 'series') addTrackingExists(queryParts, viewerUsernameHash, exists);
     else if (filters.type === 'movie') addMovieWatchedExists(queryParts, viewerUsernameHash, exists);

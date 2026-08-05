@@ -10,8 +10,7 @@ export type ImportedUserRequestModel = Omit<
   UserImportApiRequestModel,
   'version' | 'collectionItems' | 'trackingData'
 > & {
-  version: typeof EXPORT_VERSION | 6;
+  version: typeof EXPORT_VERSION;
   collectionItems: ImportedCollectionItemApiModel[];
   trackingData?: UserImportApiRequestModel['trackingData'];
-  watchingData?: UserImportApiRequestModel['trackingData'];
 };

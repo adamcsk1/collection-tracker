@@ -23,8 +23,8 @@ export const register = (app: FastifyInstance): void => {
       externalIdentityId
     );
     const existingItem =
-      findCollectionItemByCanonicalItemId(db, request.usernameHash, canonicalItemId, 'finished') ??
-      findCollectionItemByExternalId(db, request.usernameHash, externalIdentitySource, externalIdentityId, 'finished');
+      findCollectionItemByCanonicalItemId(db, request.usernameHash, canonicalItemId, 'tracking') ??
+      findCollectionItemByExternalId(db, request.usernameHash, externalIdentitySource, externalIdentityId, 'tracking');
     if (!existingItem) return response.code(404).send();
 
     deleteWatchedItemByExternalId(
@@ -36,5 +36,10 @@ export const register = (app: FastifyInstance): void => {
     response.code(204).send();
   });
 
-  app.delete(`${API_PREFIX}/finished/:externalIdentitySource/:externalIdentityId`, { preHandler: jwtGuard }, handler);
+  // Removes a completed movie/book tracking twin (mark unfinished).
+  app.delete(
+    `${API_PREFIX}/tracking/:externalIdentitySource/:externalIdentityId/completed`,
+    { preHandler: jwtGuard },
+    handler
+  );
 };

@@ -1,6 +1,5 @@
 import type { FastifyInstance } from 'fastify';
 import { register as registerAccessTokens } from './access-tokens-api';
-import { register as registerAddFinishedItem } from './add-movie-tracker-item-api';
 import { register as registerAddTrackingItem } from './add-series-tracker-item-api';
 import { register as registerModify } from './change-api';
 import { register as registerUpdateTagManagement } from './update-tag-management-api';
@@ -80,7 +79,6 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerMarkAllUnfinished(app);
   registerMarkAllSeriesFinished(app);
   registerMarkAllSeriesUnfinished(app);
-  registerAddFinishedItem(app);
   registerAddTrackingItem(app);
   registerDeleteFinishedItems(app);
   registerDeleteBooksItems(app);

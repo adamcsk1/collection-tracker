@@ -236,14 +236,13 @@ const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiMod
 const isUserImport = (value: unknown): value is ImportedUserRequestModel => {
   if (!isPlainObject(value)) return false;
   const importVersion = value['version'];
-  if (value['type'] !== EXPORT_TYPE || (importVersion !== EXPORT_VERSION && importVersion !== 8 && importVersion !== 6))
-    return false;
+  if (value['type'] !== EXPORT_TYPE || importVersion !== EXPORT_VERSION) return false;
   if (!isUserSettings(value['userSettings'])) return false;
   if (!Array.isArray(value['collectionItems']) || !value['collectionItems'].every(isCollectionItem)) {
     return false;
   }
   if (!Array.isArray(value['tagManagement']) || !value['tagManagement'].every(isTagManagement)) return false;
-  const trackingData = value['trackingData'] ?? value['watchingData'];
+  const trackingData = value['trackingData'];
   if (!isPlainObject(trackingData)) return false;
 
   const tagManagementTags = value['tagManagement'].map((config) => config.tag);
@@ -347,11 +346,7 @@ const normalizeTrackingImportData = (
 ): UserImportApiRequestModel['trackingData'] | null => {
   const normalizedTrackingData: UserImportApiRequestModel['trackingData'] = {};
 
-  const sourceTrackingData =
-    importData.trackingData ??
-    (importData as ImportedUserRequestModel & { watchingData?: UserImportApiRequestModel['trackingData'] })
-      .watchingData ??
-    {};
+  const sourceTrackingData = importData.trackingData ?? {};
   for (const [trackingDataKey, trackingData] of Object.entries(sourceTrackingData)) {
     if (!trackingDataKeys.has(trackingDataKey) || !parseTrackingDataKey(trackingDataKey)) return null;
 

@@ -5,14 +5,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const insertItem = (
   imdbId: string,
-  listType: 'library' | 'finished' | 'tracking',
+  listType: 'library' | 'tracking',
   title: string,
   year: string,
   ratings: [string, string, string],
   userRate: number,
   image: string,
   contentHash: string,
-  completedAt: string | null = null
+  completedAt: string | null = null,
+  contentType: 'movie' | 'series' = listType === 'library' ? 'movie' : 'series'
 ): number => {
   const db = getDatabase();
   const result = db
@@ -35,7 +36,7 @@ const insertItem = (
       'Plot',
       image,
       contentHash,
-      listType === 'tracking' ? 'series' : 'movie'
+      contentType
     );
   const itemId = Number(result.lastInsertRowid);
   const insertRating = db.prepare(
@@ -49,7 +50,7 @@ const insertItem = (
       (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
      VALUES (?, ?, ?, ?, ?)`
   ).run('user', `imdb:${imdbId}`, 'imdb', imdbId, 'alias');
-  if (listType === 'finished' || listType === 'tracking') {
+  if (listType === 'tracking') {
     db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
       itemId,
       completedAt
@@ -75,7 +76,6 @@ describe('export-api', () => {
       books: true,
       wishlist: false,
       watchlist: true,
-      finished: false,
       tracking: true,
     };
     db.prepare(
@@ -93,7 +93,18 @@ describe('export-api', () => {
       'hash2',
       '2026-04-05 00:00:00'
     );
-    insertItem('tt789', 'finished', 'Tracker Movie', '2022', ['9.0', '95', '90'], 10, 'img3.jpg', 'hash3');
+    insertItem(
+      'tt789',
+      'tracking',
+      'Tracker Movie',
+      '2022',
+      ['9.0', '95', '90'],
+      10,
+      'img3.jpg',
+      'hash3',
+      '2026-01-01 00:00:00',
+      'movie'
+    );
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(libraryItemId, '#owned');
     db.prepare(
       'INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -113,7 +124,7 @@ describe('export-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
       type: 'collection-tracker-export',
-      version: 8,
+      version: 9,
       userSettings: {
         theme: 'dark',
         animatedBackground: false,
@@ -136,7 +147,7 @@ describe('export-api', () => {
         }),
         expect.objectContaining({
           IMDbId: 'tt789',
-          listType: 'finished',
+          listType: 'tracking',
           title: 'Tracker Movie',
           canonicalItemId: 'imdb:tt789',
           progressCurrent: null,
@@ -184,7 +195,7 @@ describe('export-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
       type: 'collection-tracker-export',
-      version: 8,
+      version: 9,
       userSettings: {},
       collectionItems: [],
       tagManagement: [],

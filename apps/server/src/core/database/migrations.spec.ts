@@ -2285,6 +2285,73 @@ describe('runMigrations', () => {
     });
   });
 
+  describe('031_merge_finished_into_tracking', () => {
+    it('merges finished into tracking and drops finished feature pref', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('031_merge_finished_into_tracking.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO user_settings (username_hash, collection_feature_preferences)
+        VALUES (
+          'user',
+          '{"wishlist":true,"watchlist":true,"finished":true,"tracking":false,"books":true}'
+        );
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+           title, title_lower, year, user_rate, contributors, description, image, content_hash)
+        VALUES
+          ('user', 'omdb', 'tt-movie', 'imdb:tt-movie', 'finished', 'movie', 'M', 'm', '2020', NULL, '', '', '', 'h1'),
+          ('user', 'omdb', 'tt-series', 'imdb:tt-series', 'tracking', 'series', 'S', 's', '2020', NULL, '', '', '', 'h2'),
+          ('user', 'openlibrary', '9780140328721', 'isbn:9780140328721', 'finished', 'book', 'BF', 'bf', '2020', NULL, '', '', '', 'h3'),
+          ('user', 'openlibrary', '9780140328721', 'isbn:9780140328721', 'tracking', 'book', 'BT', 'bt', '2020', NULL, '', '', '', 'h4');
+        INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total)
+        SELECT id, CASE WHEN list_type = 'finished' THEN CURRENT_TIMESTAMP ELSE NULL END, NULL, NULL
+        FROM collection_items;
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '031_merge_finished_into_tracking.sql'),
+        join(migrationsDir, '031_merge_finished_into_tracking.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT list_type, content_type, title FROM collection_items ORDER BY title').all()).toEqual([
+        { list_type: 'tracking', content_type: 'book', title: 'BF' },
+        { list_type: 'tracking', content_type: 'movie', title: 'M' },
+        { list_type: 'tracking', content_type: 'series', title: 'S' },
+      ]);
+      const stored = db
+        .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
+        .get('user') as { collection_feature_preferences: string };
+      expect(JSON.parse(stored.collection_feature_preferences)).toEqual({
+        books: true,
+        wishlist: true,
+        watchlist: true,
+        tracking: true,
+      });
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      const movieState = db
+        .prepare(
+          `SELECT completed_at IS NOT NULL AS completed
+           FROM collection_item_tracker_state
+           WHERE item_id = (SELECT id FROM collection_items WHERE title = 'M')`
+        )
+        .get() as { completed: 0 | 1 };
+      expect(movieState.completed).toBe(1);
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO collection_items
+              (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+               title, title_lower, year, user_rate, contributors, description, image, content_hash)
+             VALUES ('user', 'omdb', 'tt-new-movie', 'imdb:tt-new-movie', 'tracking', 'movie',
+                     'NM', 'nm', '2022', NULL, '', '', '', 'h5')`
+          )
+          .run()
+      ).not.toThrow();
+      db.close();
+    });
+  });
+
   describe('030_rename_series_completed_episodes', () => {
     it('renames watched episodes table to completed episodes', async () => {
       const { db, migrationsDir } = await preparePreMigrationState(

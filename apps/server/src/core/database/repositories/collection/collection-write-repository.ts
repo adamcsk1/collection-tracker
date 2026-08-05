@@ -73,7 +73,8 @@ export const insertCollectionItem = (
   watchedAt?: string | null,
   canonicalItemIdOverride?: string,
   progressCurrent?: number | null,
-  progressTotal?: number | null
+  progressTotal?: number | null,
+  markCompleted = false
 ): CollectionItemApiModel => {
   const normalizedListType = normalizeListType(listType);
   return db.transaction(() => {
@@ -107,17 +108,12 @@ export const insertCollectionItem = (
 
     const itemId = Number(result.lastInsertRowid);
     replaceExternalRatings(db, itemId, item);
-    if (normalizedListType === 'finished' || normalizedListType === 'tracking') {
+    if (normalizedListType === 'tracking') {
+      const autoComplete = (markCompleted || item.contentType === 'movie') && !watchedAt;
       db.prepare(
         `INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total)
          VALUES (?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE ? END, ?, ?)`
-      ).run(
-        itemId,
-        normalizedListType === 'finished' && !watchedAt ? 1 : 0,
-        watchedAt ?? null,
-        progressCurrent ?? null,
-        progressTotal ?? null
-      );
+      ).run(itemId, autoComplete ? 1 : 0, watchedAt ?? null, progressCurrent ?? null, progressTotal ?? null);
     }
     upsertExternalItemIdentities(
       db,
@@ -199,7 +195,7 @@ export const updateCollectionItemByRow = (
     replaceExternalRatings(db, existingItem.id, updatedItem);
     replaceItemRelations(db, existingItem.id, updatedItem);
     if (
-      (normalizedListType === 'tracking' || normalizedListType === 'finished') &&
+      normalizedListType === 'tracking' &&
       (updatedItem.progressCurrent !== undefined || updatedItem.progressTotal !== undefined)
     ) {
       db.prepare(

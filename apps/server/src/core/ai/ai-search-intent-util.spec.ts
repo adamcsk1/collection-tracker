@@ -56,7 +56,7 @@ describe('ai-search-intent-util', () => {
     expect(getEffectiveStatusIntent('unfinished', 'library')).toBeNull();
     expect(getEffectiveStatusIntent('unfinished', 'watchlist')).toBeNull();
     expect(getEffectiveStatusIntent('completed', 'tracking')).toBe('completed');
-    expect(getEffectiveStatusIntent('completed', 'finished')).toBe('completed');
+    expect(getEffectiveStatusIntent('completed', 'tracking')).toBe('completed');
     expect(getEffectiveStatusIntent('completed', 'library')).toBeNull();
     expect(getEffectiveStatusIntent('favorite', 'library')).toBe('favorite');
   });
@@ -75,7 +75,7 @@ describe('ai-search-intent-util', () => {
         IMDbId: 'tt3',
         watchStatus: 'finished',
         completed: true,
-        listType: 'finished',
+        listType: 'tracking',
         contentType: 'movie',
       }),
     ];

@@ -40,7 +40,7 @@ const insertUserAndItems = () => {
     'user',
     'tt001',
     'imdb:tt001',
-    'finished',
+    'tracking',
     'Movie One',
     'movie one',
     '1999',
@@ -54,7 +54,7 @@ const insertUserAndItems = () => {
     (
       db
         .prepare('SELECT id FROM collection_items WHERE external_item_id = ? AND list_type = ?')
-        .get('tt001', 'finished')! as { id: number }
+        .get('tt001', 'tracking')! as { id: number }
     ).id
   );
   db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
@@ -422,7 +422,7 @@ describe('statistics-api', () => {
       'omdb',
       'provider-tracker-id',
       'imdb:tt-canonical',
-      'finished',
+      'tracking',
       'Canonical Movie',
       'canonical movie',
       '2024',

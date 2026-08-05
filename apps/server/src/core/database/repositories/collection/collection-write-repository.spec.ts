@@ -33,7 +33,7 @@ describe('collection-write-repository', () => {
   it('persists normalized item data and hydrates the flat API model', () => {
     const db = getDatabase();
 
-    const insertedItem = insertCollectionItem(db, 'user', 'hash-1', item, 'finished');
+    const insertedItem = insertCollectionItem(db, 'user', 'hash-1', item, 'tracking');
 
     expect(insertedItem).toEqual(
       expect.objectContaining({
@@ -65,17 +65,17 @@ describe('collection-write-repository', () => {
       searchCollectionItems(db, ['user'], {
         offset: 0,
         limit: 10,
-        filters: { listType: 'finished', search: '91%' },
+        filters: { listType: 'tracking', search: '91%' },
       }).items
     ).toHaveLength(1);
     expect(
       searchCollectionItems(db, ['user'], {
         offset: 0,
         limit: 10,
-        filters: { listType: 'finished', search: 'tt1234567' },
+        filters: { listType: 'tracking', search: 'tt1234567' },
       }).items
     ).toHaveLength(1);
-    expect(findCollectionItemSuggestions(db, ['user'], 'Contributor', 10, 'finished')).toEqual([
+    expect(findCollectionItemSuggestions(db, ['user'], 'Contributor', 10, 'tracking')).toEqual([
       { label: 'Original title', value: 'tt1234567', kind: 'title' },
     ]);
   });

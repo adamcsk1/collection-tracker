@@ -182,7 +182,7 @@ components:
     CollectionFeaturePreferences:
       type: object
       description: Collection features shown in navigation and connected actions. All features are enabled when omitted.
-      required: [books, wishlist, watchlist, finished, tracking]
+      required: [books, wishlist, watchlist, tracking]
       additionalProperties: false
       properties:
         books:
@@ -190,8 +190,6 @@ components:
         wishlist:
           type: boolean
         watchlist:
-          type: boolean
-        finished:
           type: boolean
         tracking:
           type: boolean
@@ -360,23 +358,23 @@ components:
           type: string
         listType:
           type: string
-          enum: [library, watchlist, wishlist, tracking, finished, books]
+          enum: [library, watchlist, wishlist, tracking, books]
           description: >-
             Logical list containing the item. Owned books use `books`. Books are also allowed on
-            `wishlist`, `watchlist`, `tracking`, and `finished`. `library` is movie/series only.
+            `wishlist`, `watchlist`, and `tracking`. `library` is movie/series only.
         contentType:
           type: string
           enum: [movie, series, book]
           description: >-
-            Item media type. `library` is movie/series only. `tracking` is series/book.
-            `finished` is movie/book. `books` is book only. Wishlist/watchlist accept all three.
+            Item media type. `library` is movie/series only. `tracking` accepts movie, series, and book.
+            `books` is book only. Wishlist/watchlist accept all three.
         favorite:
           type: boolean
           description: Whether the item is marked as a favorite. Allowed on ownership lists (`library`, `books`) only.
         watched:
           type: boolean
           description: >-
-            Whether the authenticated viewer has a finished-list twin for this ownership item
+            Whether the authenticated viewer has a completed tracking twin for this ownership item
             (movies and books).
         watchedAt:
           type: ['string', 'null']
@@ -384,11 +382,11 @@ components:
         progressCurrent:
           type: ['integer', 'null']
           minimum: 0
-          description: Optional book reading progress (pages read) on tracking/finished items.
+          description: Optional book reading progress (pages read) on tracking items.
         progressTotal:
           type: ['integer', 'null']
           minimum: 1
-          description: Optional book total pages on tracking/finished items.
+          description: Optional book total pages on tracking items.
         ownerShareCode:
           type: string
           description: Share code of the item owner. Present when the item belongs to a shared library.
@@ -466,11 +464,11 @@ components:
         progressCurrent:
           type: ['integer', 'null']
           minimum: 0
-          description: Optional book reading progress (pages read) on tracking/finished items.
+          description: Optional book reading progress (pages read) on tracking items.
         progressTotal:
           type: ['integer', 'null']
           minimum: 1
-          description: Optional book total pages on tracking/finished items.
+          description: Optional book total pages on tracking items.
 
     CollectionItemsResponse:
       type: object
@@ -529,7 +527,7 @@ components:
               type: boolean
             listType:
               type: string
-              enum: [library, watchlist, wishlist, tracking, finished, books]
+              enum: [library, watchlist, wishlist, tracking, books]
             orderBy:
               type: string
               enum: [createdAt, alphabet]
@@ -687,7 +685,7 @@ components:
               description: Optional owner share code to create the item in a shared library. Defaults to the authenticated user.
             listType:
               type: string
-              enum: [library, watchlist, wishlist, tracking, finished, books]
+              enum: [library, watchlist, wishlist, tracking, books]
               default: library
               description: 'Target list. Defaults to `library`. Books must use `books`, and non-books cannot use `books`.'
 
@@ -952,7 +950,7 @@ components:
             - Which are sci-fi movies?
         listType:
           type: string
-          enum: [library, watchlist, wishlist, tracking, finished, books]
+          enum: [library, watchlist, wishlist, tracking, books]
           description: Collection list to search within.
 
     AiQueryResponse:
@@ -1124,7 +1122,7 @@ components:
           description: Optional local canonical identity preserved from exports.
         listType:
           type: string
-          enum: [library, watchlist, wishlist, tracking, finished, books]
+          enum: [library, watchlist, wishlist, tracking, books]
         watchedAt:
           type: ['string', 'null']
 
@@ -1571,7 +1569,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, finished, books]
+            enum: [library, watchlist, wishlist, tracking, books]
             default: library
         - name: orderBy
           in: query
@@ -1636,7 +1634,7 @@ paths:
           description: List to search suggestions within. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, finished, books]
+            enum: [library, watchlist, wishlist, tracking, books]
       responses:
         '200':
           description: Search suggestions.
@@ -1689,7 +1687,7 @@ paths:
           description: List to check. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, finished, books]
+            enum: [library, watchlist, wishlist, tracking, books]
             default: library
       responses:
         '200':
@@ -1962,7 +1960,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, finished, books]
+            enum: [library, watchlist, wishlist, tracking, books]
             default: library
         - name: watched
           in: query
@@ -1988,11 +1986,11 @@ paths:
         Creates a structured item in the requested `listType`. External provider identity and locally resolved
         canonical identity must be unique within the target list.
         Custom tags must not use reserved system or virtual tags. Optionally pass `targetOwnerShareCode` to create
-        in a shared library where you have create permission. Watchlist, wishlist, tracking, finished,
+        in a shared library where you have create permission. Watchlist, wishlist, tracking,
         and books items cannot be created in shared libraries. Favorites are allowed only on ownership lists
-        (`library`, `books`). Tracking items must use `contentType: series` or `book`; finished items must use
-        `contentType: movie` or `book`. Books may use `listType` of `books`, `wishlist`, `watchlist`,
-        `tracking`, or `finished`. Non-book content cannot use `books`.
+        (`library`, `books`). Tracking items may use movie, series, or book; ownership books must use
+        `listType: books`. Books may use `listType` of `books`, `wishlist`, `watchlist`,
+        or `tracking`. Non-book content cannot use `books`.
       tags: [Collection]
       requestBody:
         required: true
@@ -2014,15 +2012,15 @@ paths:
         '409':
           description: An item with this external or canonical identity already exists in the target list.
 
-  /finished:
+  /tracking/completed-movies:
     delete:
-      operationId: deleteAllWatchedItems
-      summary: Remove all movie tracker data
-      description: Deletes every movie tracker item owned by the authenticated user. This affects only the user's own tracker data and cannot remove or change shared library owner items.
+      operationId: deleteAllCompletedMovies
+      summary: Remove all completed movie tracking items
+      description: Deletes every completed movie on the tracking list for the authenticated user.
       tags: [Collection]
       responses:
         '200':
-          description: Number of movie tracker items deleted.
+          description: Number of movie tracking items deleted.
           content:
             application/json:
               schema:
@@ -2088,7 +2086,7 @@ paths:
           description: List containing the item. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, finished, books]
+            enum: [library, watchlist, wishlist, tracking, books]
             default: library
       requestBody:
         required: true
@@ -2146,7 +2144,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, finished, books]
+            enum: [library, watchlist, wishlist, tracking, books]
             default: library
       responses:
         '204':
@@ -2160,11 +2158,14 @@ paths:
         '409':
           description: Hash mismatch.
 
-  /finished/{externalIdentitySource}/{externalIdentityId}:
+  /tracking/{externalIdentitySource}/{externalIdentityId}:
     post:
-      operationId: addWatchedItemByExternalId
-      summary: Add a movie to movie tracker by external identity
-      description: Copies an accessible library movie into the authenticated user's movie tracker using canonical provider identity.
+      operationId: addTrackingItemByExternalId
+      summary: Add an item to tracking by external identity
+      description: >-
+        Copies a movie, series, or book into the authenticated user's tracking list using canonical provider identity.
+        Movies are always completed. Series are added in progress (season metadata fetched when available).
+        Books are in progress unless `markCompleted=true`.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2178,35 +2179,46 @@ paths:
           required: true
           schema:
             type: string
-        - name: ownerShareCode
-          in: query
-          required: false
-          schema:
-            type: string
         - name: sourceListType
           in: query
           required: false
           schema:
             type: string
-            enum: [library, watchlist]
+            enum: [library, watchlist, books]
             default: library
+        - name: markCompleted
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: When true, mark the tracking item completed (required for completed books; movies always complete).
+        - name: ownerShareCode
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         '200':
-          description: Movie tracker item created or already present.
+          description: Tracking item created or already present.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateResponse'
         '400':
-          description: Invalid external metadata provider or source list type.
+          description: Invalid external metadata provider or unsupported source list type.
         '403':
-          description: The authenticated user cannot read the source library.
+          description: The authenticated user cannot read the requested shared library.
         '404':
-          description: Source item was not found or is not a movie.
+          description: Source item or shared library owner was not found, or content type is unsupported for tracking.
+
+  /tracking/{externalIdentitySource}/{externalIdentityId}/completed:
     delete:
-      operationId: deleteWatchedItemByExternalId
-      summary: Delete a movie tracker item by external identity
-      description: Removes the authenticated user's movie tracker row using canonical provider identity.
+      operationId: deleteCompletedTrackingItemByExternalId
+      summary: Delete a completed tracking twin by external identity
+      description: >-
+        Deletes the authenticated user's completed movie or book tracking twin for the given external identity
+        (mark unfinished). Series tracking rows are not removed by this endpoint.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2222,55 +2234,9 @@ paths:
             type: string
       responses:
         '204':
-          description: Movie tracker item deleted.
-        '400':
-          description: Invalid external metadata provider.
+          description: Completed tracking twin deleted.
         '404':
-          description: Movie tracker item was not found.
-
-  /tracking/{externalIdentitySource}/{externalIdentityId}:
-    post:
-      operationId: addTrackingItemByExternalId
-      summary: Add a series to series tracker by external identity
-      description: Copies a series into the authenticated user's series tracker using canonical provider identity.
-      tags: [Collection]
-      parameters:
-        - name: externalIdentitySource
-          in: path
-          required: true
-          schema:
-            type: string
-            enum: [omdb, openlibrary, imdb, isbn]
-        - name: externalIdentityId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: sourceListType
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [library, watchlist]
-            default: library
-        - name: ownerShareCode
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Series tracker item created or already present.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateResponse'
-        '400':
-          description: Invalid external metadata provider or unsupported source list type.
-        '403':
-          description: The authenticated user cannot read the requested shared library.
-        '404':
-          description: Source item or shared library owner was not found, or the source item is not a series.
+          description: Completed tracking twin not found.
 
   /tracking/{externalIdentitySource}/{externalIdentityId}/seasons:
     get:
@@ -2669,7 +2635,7 @@ paths:
     get:
       operationId: getUserExport
       summary: Export all user-owned data
-      description: Returns a JSON export of all user-owned data including settings, collection items (library, watchlist, wishlist, tracking, finished, and books), tag management, and series tracker metadata.
+      description: Returns a JSON export of all user-owned data including settings, collection items (library, watchlist, wishlist, tracking, and books), tag management, and series tracker metadata.
       tags: [User]
       responses:
         '200':

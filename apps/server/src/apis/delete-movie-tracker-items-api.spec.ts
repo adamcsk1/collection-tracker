@@ -7,7 +7,7 @@ const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertItem = (usernameHash: string, imdbId: string, listType = 'finished'): number => {
+const insertItem = (usernameHash: string, imdbId: string, listType = 'tracking'): number => {
   const result = getDatabase()
     .prepare(
       `INSERT INTO collection_items
@@ -58,7 +58,7 @@ describe('delete-watched-items-api', () => {
       )
       .all();
     expect(rows).toEqual([
-      { username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'finished' },
+      { username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'tracking' },
       { username_hash: 'user', external_item_id: 'tt-library', list_type: 'library' },
     ]);
     expect(getDatabase().prepare('SELECT 1 FROM collection_items WHERE id = ?').get(retainedItemId)).toBeTruthy();

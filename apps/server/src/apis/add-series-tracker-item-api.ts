@@ -3,12 +3,18 @@ import { isExternalItemIdentitySourceName } from '@shared/constants/external-met
 import { TrackingApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
+import {
+  findCollectionItemByCanonicalItemId,
+  findCollectionItemByExternalId,
+} from '../core/database/repositories/collection';
+import { resolveCanonicalItemId } from '../core/database/repositories/external-item-identity-repository';
+import { copyMovieToWatchedByExternalId } from '../core/database/repositories/movie-tracker-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { copySeriesToTrackingByExternalId } from '../core/database/repositories/series-tracker-repository';
 import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
-import { jwtGuard } from '../core/jwt';
 import { fetchSeriesSeasonMetadata } from '../core/external-metadata/series-season-metadata';
+import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { parseListType } from '../core/utils/query-parse-util';
 
@@ -34,15 +40,37 @@ export const register = (app: FastifyInstance): void => {
     }
     if (sourceListType === 'books' && ownerHash !== request.usernameHash) return response.code(403).send();
 
-    const item = copySeriesToTrackingByExternalId(
-      db,
-      request.usernameHash,
-      ownerHash,
-      externalIdentitySource,
-      externalIdentityId,
-      sourceListType,
-      sourceListType === 'watchlist'
-    );
+    const moveFromWatchlist = sourceListType === 'watchlist';
+    if (moveFromWatchlist && ownerHash !== request.usernameHash) return response.code(403).send();
+
+    const canonicalItemId = resolveCanonicalItemId(db, ownerHash, externalIdentitySource, externalIdentityId);
+    const sourceRow =
+      findCollectionItemByCanonicalItemId(db, ownerHash, canonicalItemId, sourceListType) ??
+      findCollectionItemByExternalId(db, ownerHash, externalIdentitySource, externalIdentityId, sourceListType);
+    if (!sourceRow) return response.code(404).send();
+
+    const markCompleted = query.markCompleted === true || query.markCompleted === 'true';
+    const useCompletedCopy = sourceRow.content_type === 'movie' || (sourceRow.content_type === 'book' && markCompleted);
+
+    const item = useCompletedCopy
+      ? copyMovieToWatchedByExternalId(
+          db,
+          request.usernameHash,
+          ownerHash,
+          externalIdentitySource,
+          externalIdentityId,
+          sourceListType,
+          moveFromWatchlist
+        )
+      : copySeriesToTrackingByExternalId(
+          db,
+          request.usernameHash,
+          ownerHash,
+          externalIdentitySource,
+          externalIdentityId,
+          sourceListType,
+          moveFromWatchlist
+        );
     if (!item) return response.code(404).send();
 
     if (item.contentType === 'series') {

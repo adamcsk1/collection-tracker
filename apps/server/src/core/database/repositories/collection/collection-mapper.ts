@@ -21,8 +21,13 @@ const getItemRelations = (db: Database.Database, itemId: number): { genre: strin
   ).map((row) => row.tag),
 });
 
-const hasFinishedTwin = (db: Database.Database, row: CollectionItemRow, viewerUsernameHash: string): boolean => {
-  if (row.list_type === 'finished') return true;
+const hasCompletedTrackingTwin = (
+  db: Database.Database,
+  row: CollectionItemRow,
+  viewerUsernameHash: string
+): boolean => {
+  if (row.list_type === 'tracking' && row.content_type === 'movie') return row.watched_at !== null;
+  if (row.list_type === 'tracking' && row.content_type === 'book') return row.watched_at !== null;
   if (row.list_type !== 'library' && row.list_type !== 'books') return false;
   if (row.content_type !== 'movie' && row.content_type !== 'book') return false;
   const externalProvider = row.external_provider;
@@ -31,17 +36,19 @@ const hasFinishedTwin = (db: Database.Database, row: CollectionItemRow, viewerUs
     db
       .prepare(
         `SELECT 1
-         FROM collection_items finished_tracker
-           WHERE finished_tracker.username_hash = ?
+         FROM collection_items tracking_item
+         LEFT JOIN collection_item_tracker_state tracker_state ON tracker_state.item_id = tracking_item.id
+           WHERE tracking_item.username_hash = ?
              AND (
-               (finished_tracker.canonical_item_id IS NOT NULL AND finished_tracker.canonical_item_id = ?)
-               OR (finished_tracker.external_provider = ? AND finished_tracker.external_item_id = ?)
+               (tracking_item.canonical_item_id IS NOT NULL AND tracking_item.canonical_item_id = ?)
+               OR (tracking_item.external_provider = ? AND tracking_item.external_item_id = ?)
              )
-             AND finished_tracker.list_type = ?
-             AND finished_tracker.content_type = ?
+             AND tracking_item.list_type = 'tracking'
+             AND tracking_item.content_type = ?
+             AND tracker_state.completed_at IS NOT NULL
            LIMIT 1`
       )
-      .get(viewerUsernameHash, row.canonical_item_id, externalProvider, externalItemId, 'finished', row.content_type)
+      .get(viewerUsernameHash, row.canonical_item_id, externalProvider, externalItemId, row.content_type)
   );
 };
 
@@ -78,7 +85,7 @@ export const toApiItem = (
     titleLower: row.title_lower,
     hash: row.content_hash,
     listType: row.list_type,
-    watched: hasFinishedTwin(db, row, viewerUsernameHash),
+    watched: hasCompletedTrackingTwin(db, row, viewerUsernameHash),
     watchedAt: row.watched_at,
     progressCurrent: row.progress_current,
     progressTotal: row.progress_total,
