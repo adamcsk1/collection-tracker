@@ -191,7 +191,7 @@ describe('ApiService', () => {
   it('deletes all movie tracker items', async () => {
     const promise = lastValueFrom(service.deleteAllWatchedItems());
 
-    const deleteRequest = httpMock.expectOne('https://api.test/tracking');
+    const deleteRequest = httpMock.expectOne('https://api.test/tracking/completed-movies');
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush({ changedCount: 2 });
 
@@ -224,7 +224,7 @@ describe('ApiService', () => {
     );
 
     const addRequest = httpMock.expectOne(
-      'https://api.test/tracking/provider%2Fid/item%2Fid?ownerShareCode=share%2Fcode&sourceListType=watchlist'
+      'https://api.test/tracking/provider%2Fid/item%2Fid?ownerShareCode=share%2Fcode&sourceListType=watchlist&markCompleted=true'
     );
     expect(addRequest.request.method).toBe('POST');
     expect(addRequest.request.body).toEqual({});
@@ -236,7 +236,7 @@ describe('ApiService', () => {
   it('deletes a movie tracker item by external identity', async () => {
     const promise = lastValueFrom(service.deleteWatchedItemByExternalId('provider/id', 'item/id'));
 
-    const deleteRequest = httpMock.expectOne('https://api.test/tracking/provider%2Fid/item%2Fid');
+    const deleteRequest = httpMock.expectOne('https://api.test/tracking/provider%2Fid/item%2Fid/completed');
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush(null);
 
