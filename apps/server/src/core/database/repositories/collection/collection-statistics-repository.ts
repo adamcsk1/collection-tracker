@@ -146,6 +146,7 @@ export const getCollectionStatistics = (
               INNER JOIN collection_item_tracker_state tracker_state
                 ON tracker_state.item_id = collection_items.id
               WHERE ${trackerWhereSql}
+                 AND collection_items.content_type = 'series'
                  AND tracker_state.completed_at IS NULL`
           )
           .get(...trackerQueryParts.params) as { count: number }
@@ -161,6 +162,7 @@ export const getCollectionStatistics = (
               INNER JOIN collection_item_tracker_state tracker_state
                 ON tracker_state.item_id = collection_items.id
               WHERE ${trackerWhereSql}
+                 AND collection_items.content_type = 'series'
                  AND tracker_state.completed_at IS NOT NULL`
           )
           .get(...trackerQueryParts.params) as { count: number }

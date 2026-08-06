@@ -259,7 +259,7 @@ describe('add-watching-item-api', () => {
     expect(response.send).toHaveBeenCalledWith();
   });
 
-  it('rejects watch later movie items', async () => {
+  it('moves a watchlist movie to tracking', async () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#movie', '#watchlist'], 'watchlist', 'movie');
 
@@ -275,7 +275,14 @@ describe('add-watching-item-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(404);
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ IMDbId: 'tt-1', listType: 'tracking', contentType: 'movie' }),
+    });
+    expect(
+      getDatabase()
+        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
+        .get('user', 'tt-1', 'watchlist')
+    ).toBeUndefined();
   });
 
   it('removes watch later series when it already exists in the series tracker', async () => {

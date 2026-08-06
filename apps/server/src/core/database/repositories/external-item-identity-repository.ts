@@ -58,11 +58,6 @@ export const inferCanonicalItemId = (identities: ExternalItemIdentityModel[]): s
   return `${primaryIdentity.source}:${primaryIdentity.id}`;
 };
 
-const findImdbCanonicalItemId = (identities: ExternalItemIdentityModel[]): string | null => {
-  const imdbIdentity = identities.find((identity) => identity.source === 'imdb' && IMDB_SHAPED_ID.test(identity.id));
-  return imdbIdentity ? `imdb:${imdbIdentity.id.toLowerCase()}` : null;
-};
-
 /** Higher = stronger. imdb:tt… > isbn:… > provider-scoped. */
 export const getCanonicalItemIdStrength = (canonicalItemId: string): number => {
   if (/^imdb:tt\d+$/i.test(canonicalItemId)) return 3;

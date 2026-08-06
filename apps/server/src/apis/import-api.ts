@@ -11,7 +11,6 @@ import {
   UserSettingsApiResponseModel,
 } from '@shared/models/api-model';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
-import { CollectionFeaturePreferencesModel } from '@shared/models/collection-feature-preferences-model';
 import {
   CollectionListDisplayPreferencesModel,
   COLLECTION_LIST_DISPLAY_RATINGS,

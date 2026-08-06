@@ -398,13 +398,13 @@ describe('change-api', () => {
     });
   });
 
-  it('returns 400 when updating a series tracker item with a movie type', async () => {
+  it('updates a tracking item with a movie type', async () => {
     insertItem('abc123', 'user', 'tracking');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
       query: { listType: 'tracking' },
-      body: { ...updatedItem, hash: 'abc123' },
+      body: { ...updatedItem, contentType: 'movie', hash: 'abc123' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -413,7 +413,11 @@ describe('change-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        contentType: 'movie',
+      }),
+    });
   });
 
   it('returns 400 when updating an item without a type tag', async () => {

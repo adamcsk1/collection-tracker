@@ -224,7 +224,7 @@ describe('create-api', () => {
     expect(response.code).toHaveBeenCalledWith(409);
   });
 
-  it('keeps existing primary canonical rows when adding provider identity evidence', async () => {
+  it('upgrades existing canonical rows when adding stronger provider identity evidence', async () => {
     insertUser('fallback-user');
     getDatabase()
       .prepare(
@@ -270,20 +270,20 @@ describe('create-api', () => {
     await handlerPromise();
 
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ canonicalItemId: 'omdb:603' }),
+      item: expect.objectContaining({ canonicalItemId: 'imdb:tt0133093' }),
     });
     expect(
       getDatabase()
         .prepare('SELECT canonical_item_id FROM collection_items WHERE username_hash = ? AND list_type = ?')
         .get('fallback-user', 'watchlist')
-    ).toEqual({ canonical_item_id: 'omdb:603' });
+    ).toEqual({ canonical_item_id: 'imdb:tt0133093' });
     expect(
       getDatabase()
         .prepare(
           'SELECT canonical_item_id FROM external_item_identities WHERE username_hash = ? AND external_provider = ? AND external_item_id = ?'
         )
         .get('fallback-user', 'imdb', 'tt0133093')
-    ).toEqual({ canonical_item_id: 'omdb:603' });
+    ).toEqual({ canonical_item_id: 'imdb:tt0133093' });
   });
 
   it('returns 409 instead of inserting when provider evidence resolves to a same-list primary item', async () => {
@@ -447,7 +447,8 @@ describe('create-api', () => {
     });
   });
 
-  it('returns 400 when creating a movie in the series tracker', async () => {
+  it('creates a tracking item with a movie type', async () => {
+    insertUser();
     const response = mockResponse();
     const request: any = { body: { ...item, listType: 'tracking' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
@@ -456,7 +457,11 @@ describe('create-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        listType: 'tracking',
+      }),
+    });
   });
 
   it('returns 400 when creating an item without a type tag', async () => {

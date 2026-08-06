@@ -23,6 +23,7 @@ const insertItem = (item: {
   externalProvider?: string;
   externalItemId?: string;
   favorite?: boolean;
+  completed?: boolean;
 }) => {
   const result = getDatabase()
     .prepare(
@@ -91,10 +92,11 @@ const insertItem = (item: {
       .prepare('INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)')
       .run(itemId, 'metacritic', item.metacriticRate);
   }
-  if (item.listType === 'tracking' || item.listType === 'tracking') {
+  if (item.listType === 'tracking') {
+    const completedAt = item.completed === false ? null : '2024-01-01 00:00:00';
     getDatabase()
       .prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)')
-      .run(itemId, null);
+      .run(itemId, completedAt);
   }
 
   for (const tag of item.tags ?? []) {
@@ -497,7 +499,7 @@ describe('collection search APIs', () => {
         unwatchedLibrarySeriesCount: 1,
         unwatchedTrackerSeriesCount: 0,
         completedTrackerSeriesCount: 0,
-        watchedYearCounts: [],
+        watchedYearCounts: [{ year: '2024', count: 1, movieCount: 1, seriesCount: 0 }],
         tagCounts: [
           { tag: '#drama', count: 1 },
           { tag: '#favorite', count: 1 },
