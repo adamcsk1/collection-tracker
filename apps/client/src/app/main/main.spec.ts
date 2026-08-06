@@ -74,7 +74,7 @@ describe('Main component (client)', () => {
     spinnerState.setState('show', true);
     expect(spinnerState.state.show()).toBe(true);
 
-    apiState.setState('loadNetworkStatus', 'tracking');
+    apiState.setState('loadNetworkStatus', 'finished');
     spinnerState.setState('show', false);
     expect(spinnerState.state.show()).toBe(false);
 

@@ -51,6 +51,8 @@ const buildManualItem = () => ({
   actors: 'Actor One, Actor Two',
   plot: 'Plot text',
   contentType: 'movie' as const,
+  progressCurrent: null,
+  progressTotal: null,
 });
 
 const createResponse = (item: object) => of({ item });

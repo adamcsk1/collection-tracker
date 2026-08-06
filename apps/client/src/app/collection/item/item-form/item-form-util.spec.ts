@@ -54,6 +54,8 @@ describe('item form util', () => {
       actors: 'Actor One, Actor Two',
       plot: 'Plot text',
       contentType: 'movie',
+      progressCurrent: null,
+      progressTotal: null,
     });
 
     expect(item.title).toBe('Test Title');
@@ -81,6 +83,8 @@ describe('item form util', () => {
       actors: 'Frank Herbert',
       plot: 'Desert planet',
       contentType: 'book',
+      progressCurrent: null,
+      progressTotal: null,
     });
 
     expect(item).toEqual(

@@ -722,7 +722,6 @@ describe('import-api', () => {
             wishlist: true,
             watchlist: true,
             tracking: true,
-            tracking: 'yes',
           },
         },
         collectionItems: [],

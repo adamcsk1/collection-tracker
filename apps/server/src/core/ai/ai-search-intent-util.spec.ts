@@ -73,7 +73,7 @@ describe('ai-search-intent-util', () => {
       buildItem({ IMDbId: 'tt2', watchStatus: 'completed', completed: true, watchedAt: '2024-01-01' }),
       buildItem({
         IMDbId: 'tt3',
-        watchStatus: 'finished',
+        watchStatus: 'completed',
         completed: true,
         listType: 'tracking',
         contentType: 'movie',

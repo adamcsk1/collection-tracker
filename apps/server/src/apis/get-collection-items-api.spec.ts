@@ -38,7 +38,7 @@ const insertTypedItem = (
   usernameHash: string,
   imdbId: string,
   title: string,
-  listType: 'watchlist' | 'wishlist' | 'tracking'
+  listType: 'watchlist' | 'wishlist' | 'tracking' | 'library'
 ) => {
   const result = getDatabase()
     .prepare(
