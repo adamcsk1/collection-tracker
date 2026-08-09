@@ -128,7 +128,7 @@ describe('ListItem', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-shared"]')).not.toBeNull();
   });
 
-  it('derives watched, favorite, movie, series, and display tags', () => {
+  it('derives favorite, movie, series, and display tags', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2']),
       tags: [FAVORITE_TAG, MOVIE_TAG, SERIES_TAG, '#tag1', '#tag2'],
@@ -136,7 +136,6 @@ describe('ListItem', () => {
     });
     fixture.detectChanges();
 
-    expect(component['finished']()).toBe(true);
     expect(component['favorite']()).toBe(true);
     expect(component['movie']()).toBe(true);
     expect(component['series']()).toBe(false);
@@ -203,7 +202,7 @@ describe('ListItem', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-finished"]')).toBeNull();
   });
 
-  it('does not render completed status for non-watching items with completed tag', () => {
+  it('does not render completed status for non-tracking items with completed tag', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [SERIES_TAG, COMPLETED_TAG]),
       listType: 'library',
@@ -213,6 +212,27 @@ describe('ListItem', () => {
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-tracking-completed"]')
     ).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).not.toContain(
+      'completed-image'
+    );
+  });
+
+  it('does not render completed status for library items with twin-derived watched flag', () => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Sample', [MOVIE_TAG]),
+      listType: 'library',
+      watched: true,
+      watchedAt: null,
+    });
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-tracking-completed"]')
+    ).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-finished"]')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.poster-image')?.classList).not.toContain(
+      'completed-image'
+    );
   });
 
   it('renders external ratings when present', () => {

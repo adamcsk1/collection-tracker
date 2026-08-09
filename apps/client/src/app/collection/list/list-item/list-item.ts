@@ -39,18 +39,13 @@ export class ListItem {
     const item = this.collectionItem();
     return item.listType === 'tracking' && item.watchedAt !== null;
   });
-  protected readonly finished = computed(() => this.collectionItem().watched === true || this.trackingCompleted());
   protected readonly favorite = computed(() => this.collectionItem().favorite);
   protected readonly imageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.collectionItem().image)
   );
   protected readonly movie = computed(() => this.collectionItem().contentType === 'movie');
   protected readonly series = computed(() => this.collectionItem().contentType === 'series');
-  protected readonly watchedStyle = computed(
-    () =>
-      this.trackingCompleted() ||
-      (this.collectionItem().listType !== 'tracking' && this.collectionItem().watched === true)
-  );
+  protected readonly watchedStyle = computed(() => this.trackingCompleted());
   protected readonly imageBorderColor = computed(() => {
     if (this.watchedStyle()) return;
     return this.tagManagementColorPipe.transform(this.collectionItem().tags, { checkUseForImageBorder: true });
@@ -99,19 +94,12 @@ export class ListItem {
     const item = this.collectionItem();
     return this.sharesState.state.incoming().some((share) => share.ownerUserShareCode === item.ownerShareCode);
   });
-  protected readonly watchedStyleLabel = computed(() =>
-    this.trackingCompleted() ? this.translations.completed() : this.translations.watched()
-  );
-  protected readonly watchedStyleTestId = computed(() =>
-    this.trackingCompleted() ? 'list-item-tracking-completed' : 'list-item-finished'
-  );
   protected readonly translations = {
     completed: computed(() => this.ngxSignalTranslate.translate('Completed')),
     favorite: computed(() => this.ngxSignalTranslate.translate('Favorite')),
     metacriticShort: computed(() => this.ngxSignalTranslate.translate('MetacriticShort')),
     rottenTomatoesShort: computed(() => this.ngxSignalTranslate.translate('RottenTomatoesShort')),
     shared: computed(() => this.ngxSignalTranslate.translate('Shared')),
-    watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
   };
   public readonly collectionItem = input.required<CollectionItemModel>();
 
