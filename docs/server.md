@@ -9,8 +9,8 @@ Source: [`apps/server`](../apps/server)
 - sign-up, sign-in, logout, and access-token lifecycle management
 - CRUD for per-user collection items stored in SQLite, including structured media type, favorite state, matched-item, existence, random-item, and search-suggestion APIs
 - tag management, user-settings, user-share, collection-list display, and collection feature preference persistence
-- statistics summaries, media refresh, external rating refresh, and manage tracker data updates split across movie, series, and book tracker rows
-- movie tracker items, book tracker items, series tracker season metadata, watched episodes, and watched-state bulk updates
+- statistics summaries, media refresh, external rating refresh, and manage tracking data updates for movies, series, and books
+- tracking list items (movies, series, books), series season metadata, completed episodes, and bulk completion updates
 - SQLite database initialization and schema migrations
 - external metadata proxying — forwards search and item lookups to OMDb and Open Library providers
 - AI search proxying — embeds collection metadata for a requested `listType` (including derived watch status and series progress), applies deterministic status pre-filters for intents like unfinished/completed/favorite, retrieves semantic candidates, and forwards filtered CandidateId queries to Ollama using `ollama.config.json` in the active data folder (IMDb-backed items use raw IMDb IDs; provider-native items use `source:id`, e.g. `openlibrary:9780140328721`)
@@ -36,14 +36,14 @@ Source: [`apps/server`](../apps/server)
 - `logs/`
 - `cache/` — image proxy cache files and metadata
 
-Collection items, users, tokens, settings, shares, collection-list display preferences, collection feature preferences, series tracker data, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations). Core item fields live in `collection_items`; contributor and description data use `contributors` and `description`. Provider IDs remain on each item in `external_provider` and `external_item_id`, while cross-provider aliases and canonical identity mappings live in `external_item_identities`. External ratings use `collection_item_external_ratings`, and completion timestamps use `collection_item_tracker_state`. Genres, tags, series seasons, and watched episodes remain normalized child tables keyed by collection item ID. Public API fields such as `IMDbId`, `actors`, `plot`, and `watchedAt` are compatibility projections over this storage layout rather than physical `collection_items` columns.
+Collection items, users, tokens, settings, shares, collection-list display preferences, collection feature preferences, tracking season and completed-episode data, tags, and genres are stored in SQLite tables managed by migrations in [`apps/server/src/migrations`](../apps/server/src/migrations). Core item fields live in `collection_items`; contributor and description data use `contributors` and `description`. Provider IDs remain on each item in `external_provider` and `external_item_id`, while cross-provider aliases and canonical identity mappings live in `external_item_identities`. External ratings use `collection_item_external_ratings`, and completion timestamps use `collection_item_tracker_state`. Genres, tags, series seasons, and watched episodes remain normalized child tables keyed by collection item ID. Public API fields such as `IMDbId`, `actors`, `plot`, and `watchedAt` are compatibility projections over this storage layout rather than physical `collection_items` columns.
 
 Books use `content_type = 'book'`. Owned catalog uses `list_type = 'books'` (favorites allowed). Books also allowed on `wishlist`, `watchlist`, and `tracking` (in-progress or completed via tracker state). Collection **All** merges `library` + viewer’s own books; `type=book` is books-only. Canonical list types: `library`, `wishlist`, `watchlist`, `tracking`, `books`. Feature prefs: `wishlist`, `watchlist`, `tracking`, `books`. Tracker state may store `progress_current` / `progress_total` for book reading progress and `completed_at` for finished items. ISBN-10/13 normalize to ISBN-13.
 
 ## Import And Export
 
 - Current collection data exports use `collection-tracker-export` version 9 (`trackingData` with `completedEpisodes`). Only version 9 is accepted on import.
-- Version 9 exports are complete import documents: server `/export` includes `type`, `version`, settings, items, tag management, and series tracker data.
+- Version 9 exports are complete import documents: server `/export` includes `type`, `version`, settings, items, tag management, and tracking season / completed-episode data.
 - Series episode progress is stored in `series_completed_episodes` (API `/tracking/.../completed-episodes`).
 - Exported items always include `externalProvider`, `externalItemId`, `externalIds` (primary + aliases), and an identity-anchored `canonicalItemId`.
 - Imported `canonicalItemId` values must match an identity derived from the item (`infer` or `source:id`); unanchored overrides are rejected.
