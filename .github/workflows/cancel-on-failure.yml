@@ -1,0 +1,67 @@
+name: Cancel on Failure
+
+on:
+  workflow_run:
+    workflows:
+      - Android
+      - Cypress
+      - Format
+      - i18n
+      - Lint
+      - Test
+      - Typecheck
+    types:
+      - completed
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cancel-running-workflows:
+    name: Cancel sibling workflows on failure
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'failure'
+    steps:
+      - name: Terminate in-progress runs for commit
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const headSha = context.payload.workflow_run.head_sha;
+            const failedWorkflowName = context.payload.workflow_run.name;
+
+            core.notice(`Workflow "${failedWorkflowName}" failed for SHA ${headSha}. Canceling sibling in-progress runs...`);
+
+            const { data } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              per_page: 100,
+            });
+
+            const runsToCancel = data.workflow_runs.filter(
+              (run) =>
+                run.head_sha === headSha &&
+                (run.status === 'in_progress' || run.status === 'queued' || run.status === 'waiting' || run.status === 'pending') &&
+                run.id !== context.payload.workflow_run.id &&
+                run.name !== 'Cancel on Failure'
+            );
+
+            if (runsToCancel.length === 0) {
+              core.info('No running sibling workflows found to cancel.');
+              return;
+            }
+
+            for (const run of runsToCancel) {
+              core.info(`Canceling workflow "${run.name}" (run_id: ${run.id}, status: ${run.status})...`);
+              try {
+                await github.rest.actions.cancelWorkflowRun({
+                  owner,
+                  repo,
+                  run_id: run.id,
+                });
+                core.info(`Successfully canceled run ${run.id}`);
+              } catch (error) {
+                core.warning(`Failed to cancel run ${run.id}: ${error.message}`);
+              }
+            }

@@ -15,7 +15,7 @@ jobs:
     name: Cypress (${{ matrix.browser }})
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         browser: [chrome, firefox]
     steps:
