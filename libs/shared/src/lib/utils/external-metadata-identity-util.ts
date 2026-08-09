@@ -15,8 +15,13 @@ export const mergeImdbExternalId = (
   externalIds: ExternalItemIdentityModel[] | undefined,
   imdbId: string | undefined | null
 ): ExternalItemIdentityModel[] | undefined => {
-  const preserved = (externalIds ?? []).filter((externalId) => externalId.source !== 'imdb');
   const normalizedImdbId = imdbId?.trim();
+  const preserved = (externalIds ?? [])
+    .filter((externalId) => externalId.source !== 'imdb')
+    .map((externalId) => {
+      if (!normalizedImdbId || !isImdbShapedExternalItemId(externalId.id)) return externalId;
+      return { ...externalId, id: normalizedImdbId };
+    });
   if (normalizedImdbId) {
     return [...preserved, { source: 'imdb', id: normalizedImdbId }];
   }

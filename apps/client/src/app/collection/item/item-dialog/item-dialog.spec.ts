@@ -264,10 +264,10 @@ describe('ItemDialog', () => {
   });
 
   it('computes watch later status from list type', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'up-next' }));
     fixture.detectChanges();
 
-    expect(component['watchlist']()).toBe(true);
+    expect(component['upNext']()).toBe(true);
   });
 
   it('computes wishlist status from list type', () => {
@@ -285,14 +285,14 @@ describe('ItemDialog', () => {
   });
 
   it('allows own watch later item changes', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'up-next' }));
     fixture.detectChanges();
 
     expect(component['permissionUpdate']()).toBe(true);
   });
 
   it('keeps watch later items with unavailable IMDb ratings valid in edit mode', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist', rate: 'N/A' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'up-next', rate: 'N/A' }));
     fixture.detectChanges();
     component.ngOnInit();
     component['onEdit']();
@@ -302,7 +302,7 @@ describe('ItemDialog', () => {
   });
 
   it('normalizes IMDb ratings with /10 denominators before validating edit mode', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist', rate: '8.0/10' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'up-next', rate: '8.0/10' }));
     fixture.detectChanges();
     component.ngOnInit();
     component['onEdit']();
@@ -326,10 +326,10 @@ describe('ItemDialog', () => {
   });
 
   it('returns watch later item title for watch later items', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'up-next' }));
     fixture.detectChanges();
 
-    expect(component['dialogTitle']()).toBe('Title.WatchlistItem');
+    expect(component['dialogTitle']()).toBe('Title.UpNextItem');
   });
 
   it('returns wishlist item title for wishlist items', () => {
@@ -368,10 +368,10 @@ describe('ItemDialog', () => {
     expect(component['translations'].edit()).toBe('EditCollectionItem');
     expect(component['translations'].delete()).toBe('DeleteFromCollection');
 
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'up-next' }));
     fixture.detectChanges();
-    expect(component['translations'].edit()).toBe('EditWatchlistItem');
-    expect(component['translations'].delete()).toBe('DeleteFromWatchlist');
+    expect(component['translations'].edit()).toBe('EditUpNextItem');
+    expect(component['translations'].delete()).toBe('DeleteFromUpNext');
 
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'wishlist' }));
     fixture.detectChanges();
@@ -909,7 +909,7 @@ describe('ItemDialog', () => {
         rottenTomatoesRate: '',
         metacriticRate: '',
         externalIds: [
-          { source: 'omdb', id: 'tt1234567' },
+          { source: 'omdb', id: 'tt7654321' },
           { source: 'imdb', id: 'tt7654321' },
         ],
       }),
@@ -942,7 +942,7 @@ describe('ItemDialog', () => {
         IMDbId: 'tt7654321',
         externalItemId: 'tt7654321',
         externalIds: [
-          { source: 'omdb', id: 'tt1234567' },
+          { source: 'omdb', id: 'tt7654321' },
           { source: 'imdb', id: 'tt7654321' },
         ],
       }),
@@ -1059,7 +1059,7 @@ describe('ItemDialog', () => {
 
   it('updates watch later items against the watch later list', async () => {
     confirm.open.mockReturnValue(of(true));
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist' }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'up-next' }));
     fixture.detectChanges();
     component.ngOnInit();
     component['form'].tagsText().value.set('#later');
@@ -1072,7 +1072,7 @@ describe('ItemDialog', () => {
       expect.objectContaining({ tags: ['#later'] }),
       'testhash',
       undefined,
-      'watchlist'
+      'up-next'
     );
   });
 
@@ -1158,7 +1158,7 @@ describe('ItemDialog', () => {
 
     fixture.componentRef.setInput(
       'collectionItem',
-      buildItem({ listType: 'watchlist', ownerShareCode: 'own-code', tags: [MOVIE_TAG] })
+      buildItem({ listType: 'up-next', ownerShareCode: 'own-code', tags: [MOVIE_TAG] })
     );
     fixture.detectChanges();
     await component['onMoveToFinished']();
@@ -1175,14 +1175,14 @@ describe('ItemDialog', () => {
     const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
     fixture.componentRef.setInput(
       'collectionItem',
-      buildItem({ listType: 'watchlist', ownerShareCode: 'own-code', tags: [MOVIE_TAG] })
+      buildItem({ listType: 'up-next', ownerShareCode: 'own-code', tags: [MOVIE_TAG] })
     );
     fixture.detectChanges();
     component.ngOnInit();
 
     await component['onMoveToFinished']();
 
-    expect(api.addCompletedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'watchlist');
+    expect(api.addCompletedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'up-next');
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ listType: 'tracking' }),
       true
@@ -1190,7 +1190,7 @@ describe('ItemDialog', () => {
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
       'own-code',
-      'watchlist'
+      'up-next'
     );
     expect(component['finishedExists']()).toBe(true);
     expect(component['finishedHash']()).toBe('newhash');
@@ -1203,14 +1203,14 @@ describe('ItemDialog', () => {
     const spinnerSetState = vi.spyOn(spinnerLoadingState, 'setState');
     fixture.componentRef.setInput(
       'collectionItem',
-      buildItem({ listType: 'watchlist', ownerShareCode: 'own-code', tags: [SERIES_TAG] })
+      buildItem({ listType: 'up-next', ownerShareCode: 'own-code', tags: [SERIES_TAG] })
     );
     fixture.detectChanges();
     component.ngOnInit();
 
     await component['onMoveToTracking']();
 
-    expect(api.addTrackingItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'watchlist');
+    expect(api.addTrackingItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'up-next');
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ listType: 'tracking' }),
       true
@@ -1218,7 +1218,7 @@ describe('ItemDialog', () => {
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
       'own-code',
-      'watchlist'
+      'up-next'
     );
     expect(component['trackingExists']()).toBe(true);
     expect(component['trackingHash']()).toBe('newhash');
@@ -1263,7 +1263,7 @@ describe('ItemDialog', () => {
 
     fixture.componentRef.setInput(
       'collectionItem',
-      buildItem({ listType: 'watchlist', ownerShareCode: 'own-code', tags: [SERIES_TAG] })
+      buildItem({ listType: 'up-next', ownerShareCode: 'own-code', tags: [SERIES_TAG] })
     );
     fixture.detectChanges();
     await component['onMoveToTracking']();
@@ -1460,16 +1460,16 @@ describe('ItemDialog', () => {
     expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'tracking', externalIds);
   });
 
-  it('loads tracking state for watchlist movie on init', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist', tags: [MOVIE_TAG] }));
+  it('loads tracking state for upNext movie on init', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'up-next', tags: [MOVIE_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
     expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'tracking', undefined);
   });
 
-  it('loads tracking state for watchlist series on init', () => {
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist', tags: [SERIES_TAG] }));
+  it('loads tracking state for upNext series on init', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'up-next', tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 
@@ -1504,7 +1504,7 @@ describe('ItemDialog', () => {
 
   it('computes inFinished true when API says tracking exists', () => {
     api.collectionItemExists.mockReturnValue(of({ exists: true, hash: 'movie-hash' }));
-    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'watchlist', tags: [MOVIE_TAG] }));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'up-next', tags: [MOVIE_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();
 

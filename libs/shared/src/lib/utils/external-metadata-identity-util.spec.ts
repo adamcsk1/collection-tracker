@@ -45,20 +45,24 @@ describe('external-metadata-identity-util', () => {
     expect(isImdbShapedExternalItemId(null)).toBe(false);
   });
 
-  it('merges imdb external ids while preserving other aliases', () => {
+  it('merges imdb external ids and rewrites imdb-shaped provider aliases', () => {
     expect(
       mergeImdbExternalId(
         [
-          { source: 'omdb', id: 'tt-old' },
-          { source: 'imdb', id: 'tt-old' },
+          { source: 'omdb', id: 'tt0000001' },
+          { source: 'imdb', id: 'tt0000001' },
         ],
-        'tt-new'
+        'tt0000002'
       )
     ).toEqual([
-      { source: 'omdb', id: 'tt-old' },
-      { source: 'imdb', id: 'tt-new' },
+      { source: 'omdb', id: 'tt0000002' },
+      { source: 'imdb', id: 'tt0000002' },
+    ]);
+    expect(mergeImdbExternalId([{ source: 'omdb', id: '603' }], 'tt0000002')).toEqual([
+      { source: 'omdb', id: '603' },
+      { source: 'imdb', id: 'tt0000002' },
     ]);
     expect(mergeImdbExternalId([{ source: 'omdb', id: '603' }], '  ')).toEqual([{ source: 'omdb', id: '603' }]);
-    expect(mergeImdbExternalId([{ source: 'imdb', id: 'tt-old' }], null)).toBeUndefined();
+    expect(mergeImdbExternalId([{ source: 'imdb', id: 'tt0000001' }], null)).toBeUndefined();
   });
 });
