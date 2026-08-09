@@ -24,7 +24,7 @@ const saveManualItem = (
   title: string,
   imdbId: string,
   contentType: 'movie' | 'series',
-  listType: 'library' | 'watchlist' | 'wishlist' | 'tracking'
+  listType: 'library' | 'up-next' | 'wishlist' | 'tracking'
 ) => {
   cy.intercept('POST', '/api/v1/create').as('createManualItem');
   CollectionPage.getNewItemManualModeButton().click();
@@ -522,11 +522,11 @@ describe('Collection — standard search in secondary lists', () => {
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Later Search Alpha', 'movie', 'tt8300003'),
-      listType: 'watchlist',
+      listType: 'up-next',
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Later Search Beta', 'movie', 'tt8300004'),
-      listType: 'watchlist',
+      listType: 'up-next',
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Series Tracker Search Alpha', 'series', 'tt8300005'),
@@ -561,9 +561,9 @@ describe('Collection — standard search in secondary lists', () => {
 
   it('filters watch later items', () => {
     CommonPage.openMenu();
-    CommonPage.getNavWatchlistLink().click();
+    CommonPage.getNavUpNextLink().click();
 
-    CollectionPage.getWatchlistSearchInput().should('be.visible').type('Alpha');
+    CollectionPage.getUpNextSearchInput().should('be.visible').type('Alpha');
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Watch Later Search Alpha');
     CollectionPage.getListItems().should('not.contain.text', 'Watch Later Search Beta');
@@ -665,7 +665,7 @@ describe('Collection — order controls', () => {
     cy.intercept('GET', '/api/v1/items*').as('getItems');
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Later Order', 'movie', 'tt8400021'),
-      listType: 'watchlist',
+      listType: 'up-next',
     });
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Wishlist Order', 'movie', 'tt8400022'),
@@ -680,8 +680,8 @@ describe('Collection — order controls', () => {
       listType: 'tracking',
     });
     CommonPage.openMenu();
-    CommonPage.getNavWatchlistLink().click();
-    cy.url().should('include', '#/collection/watchlist');
+    CommonPage.getNavUpNextLink().click();
+    cy.url().should('include', '#/collection/up-next');
     cy.wait('@getItems');
     showOrderControls();
 
@@ -754,10 +754,10 @@ describe('Collection — watch later', () => {
   it('adds a manual watch later item and persists it after reload', () => {
     const manualTitle = 'Manual Watch Later Movie';
     CommonPage.openMenu();
-    CommonPage.getNavWatchlistLink().click();
-    CollectionPage.getAddFirstWatchlistItemLink().click();
+    CommonPage.getNavUpNextLink().click();
+    CollectionPage.getAddFirstUpNextItemLink().click();
 
-    saveManualItem(manualTitle, 'tt8110001', 'movie', 'watchlist');
+    saveManualItem(manualTitle, 'tt8110001', 'movie', 'up-next');
     reloadAndExpectPersistedTitle(manualTitle);
   });
 });
@@ -965,9 +965,9 @@ describe('Collection — tracking movies', () => {
     cy.intercept('POST', '/api/v1/tracking/**').as('moveToFinished');
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Later Move Movie', 'movie', 'tt8300002'),
-      listType: 'watchlist',
+      listType: 'up-next',
     });
-    CollectionPage.visitWatchlist();
+    CollectionPage.visitUpNext();
 
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItemImages().first().click();
@@ -1066,9 +1066,9 @@ describe('Collection — unified tracking gaps', () => {
     cy.intercept('POST', '/api/v1/tracking/**').as('moveToTracking');
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watchlist Move Series', 'series', 'tt8500003'),
-      listType: 'watchlist',
+      listType: 'up-next',
     });
-    CollectionPage.visitWatchlist();
+    CollectionPage.visitUpNext();
 
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItemImages().first().click();

@@ -57,8 +57,8 @@ export const CollectionPage = {
   visitFinishedRedirect: () => {
     cy.visit('/client/#/collection/finished');
   },
-  visitWatchlist: () => {
-    cy.visit('/client/#/collection/watchlist');
+  visitUpNext: () => {
+    cy.visit('/client/#/collection/up-next');
   },
   getMediaChip: (chip: 'all' | 'movie' | 'series' | 'book') => cy.getByTestId(`collection-media-chip-${chip}`),
 
@@ -66,7 +66,7 @@ export const CollectionPage = {
   getSearchInput: () => getFloatSearchInput('collection-search'),
   getSearchHost: () => cy.getByTestId('collection-search'),
   getTrackingSearchInput: () => getFloatSearchInput('tracking-search'),
-  getWatchlistSearchInput: () => getFloatSearchInput('watchlist-search'),
+  getUpNextSearchInput: () => getFloatSearchInput('up-next-search'),
   getWishlistSearchInput: () => getFloatSearchInput('wishlist-search'),
 
   // List
@@ -85,7 +85,7 @@ export const CollectionPage = {
   getAllItems: () => cy.getByTestId('list-item-title'),
   getEmptyState: () => cy.getByTestId('list-empty'),
   getAddFirstItemLink: () => cy.getByTestId('add-first-item'),
-  getAddFirstWatchlistItemLink: () => cy.getByTestId('add-first-watchlist-item'),
+  getAddFirstUpNextItemLink: () => cy.getByTestId('add-first-up-next-item'),
   getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
   getAddFirstTrackingItemLink: () => cy.getByTestId('add-first-tracking-item'),
   setListPreferredRatingToUser: () =>

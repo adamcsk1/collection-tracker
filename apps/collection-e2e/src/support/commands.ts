@@ -12,7 +12,7 @@ type AuthCookie = {
 
 const collectionListTypes = [
   'library',
-  'watchlist',
+  'up-next',
   'wishlist',
   'tracking',
   'books',
@@ -31,7 +31,7 @@ const defaultUserSettings = {
   collectionFeaturePreferences: {
     books: true,
     wishlist: true,
-    watchlist: true,
+    upNext: true,
     tracking: true,
   },
 };

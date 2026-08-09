@@ -11,7 +11,7 @@ export const CommonPage = {
     cy.get('ct-menu-dialog').should('not.exist');
   },
   getNavCollectionLink: () => getNavLink('nav-collection'),
-  getNavWatchlistLink: () => getNavLink('nav-watchlist'),
+  getNavUpNextLink: () => getNavLink('nav-up-next'),
   getNavWishlistLink: () => getNavLink('nav-wishlist'),
   getNavTrackingLink: () => getNavLink('nav-tracking'),
   /** Books live under Collection filter; no top-level nav item. */

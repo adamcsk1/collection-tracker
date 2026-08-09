@@ -54,7 +54,7 @@ export const SettingsPage = {
   // Features page
   getFeaturesForm: () => cy.getByTestId('settings-features-form'),
   getFeatureWishlistCheckbox: () => cy.getByTestId('settings-feature-wishlist').find('input[type="checkbox"]'),
-  getFeatureWatchlistCheckbox: () => cy.getByTestId('settings-feature-watchlist').find('input[type="checkbox"]'),
+  getFeatureUpNextCheckbox: () => cy.getByTestId('settings-feature-up-next').find('input[type="checkbox"]'),
   getFeatureTrackingCheckbox: () => cy.getByTestId('settings-feature-tracking').find('input[type="checkbox"]'),
   getFeatureBooksCheckbox: () => cy.getByTestId('settings-feature-books').find('input[type="checkbox"]'),
 

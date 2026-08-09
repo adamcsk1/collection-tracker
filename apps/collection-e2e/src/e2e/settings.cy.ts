@@ -132,19 +132,19 @@ describe('Settings - features page', () => {
     SettingsPage.getFeaturesForm().should('be.visible');
     SettingsPage.getFeatureWishlistCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
-    SettingsPage.getFeatureWatchlistCheckbox().uncheck();
+    SettingsPage.getFeatureUpNextCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
     SettingsPage.getFeatureTrackingCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
 
     cy.reload();
     SettingsPage.getFeatureWishlistCheckbox().should('not.be.checked');
-    SettingsPage.getFeatureWatchlistCheckbox().should('not.be.checked');
+    SettingsPage.getFeatureUpNextCheckbox().should('not.be.checked');
     SettingsPage.getFeatureTrackingCheckbox().should('not.be.checked');
 
     CommonPage.openMenu();
     CommonPage.getMenuNavItem('nav-wishlist').should('not.exist');
-    CommonPage.getMenuNavItem('nav-watchlist').should('not.exist');
+    CommonPage.getMenuNavItem('nav-up-next').should('not.exist');
     CommonPage.getMenuNavItem('nav-tracking').should('not.exist');
 
     cy.visit('/client/#/collection/tracking');
@@ -154,7 +154,7 @@ describe('Settings - features page', () => {
     cy.visit('/client/#/statistics');
     cy.getByTestId('statistics-summary-all').should('be.visible');
     cy.getByTestId('statistics-summary-wishlist').should('not.exist');
-    cy.getByTestId('statistics-summary-watchlist').should('not.exist');
+    cy.getByTestId('statistics-summary-up-next').should('not.exist');
     cy.getByTestId('statistics-summary-watched-movies').should('not.exist');
     cy.getByTestId('statistics-summary-watched-series').should('not.exist');
   });

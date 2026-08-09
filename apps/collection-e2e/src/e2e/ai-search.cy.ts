@@ -129,8 +129,8 @@ describe('AI search - watchlist list', () => {
     cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
       'aiAvailable'
     );
-    cy.request('POST', '/api/v1/create?listType=watchlist', movieA);
-    CollectionPage.visitWatchlist();
+    cy.request('POST', '/api/v1/create?listType=up-next', movieA);
+    CollectionPage.visitUpNext();
   });
 
   it('shows the AI button and sends watchlist listType', () => {
@@ -146,6 +146,6 @@ describe('AI search - watchlist list', () => {
 
     cy.wait('@aiQuery')
       .its('request.body')
-      .should('deep.equal', { prompt: 'sci-fi', listType: 'watchlist' });
+      .should('deep.equal', { prompt: 'sci-fi', listType: 'up-next' });
   });
 });
