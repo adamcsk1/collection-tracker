@@ -5,6 +5,7 @@
 @import url('./styles/variables.css');
 @import url('../../../libs/shared/src/lib/styles/main.css');
 @import url('../../../libs/shared/src/lib/styles/components/button.css');
+@import url('../../../libs/shared/src/lib/styles/components/fieldset.css');
 @import url('../../../libs/shared/src/lib/styles/components/form.css');
 @import url('../../../libs/shared/src/lib/styles/components/dialog.css');
 @import url('../../../libs/shared/src/lib/styles/components/chip.css');

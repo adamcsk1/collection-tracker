@@ -91,6 +91,9 @@ export const SettingsPage = {
   getShareCode: () => cy.getByTestId('share-code-card').find('.user-hash'),
   getAddShareOpenButton: () => cy.getByTestId('add-share-open'),
   getShareDialog: () => cy.getByTestId('share-dialog').find('[data-test-id="dialog-frame"]'),
+  getShareDialogTitle: () => cy.getByTestId('share-dialog-title'),
+  getShareDialogMessage: () => cy.getByTestId('share-dialog-message'),
+  getShareDialogDependency: () => cy.getByTestId('share-dialog-dependency'),
   getShareDialogUserHashInput: () => cy.getByTestId('share-dialog-user-hash').find('input'),
   getShareDialogGrants: () => cy.getByTestId('share-dialog-grants'),
   getAddShareGrantCheckbox: (

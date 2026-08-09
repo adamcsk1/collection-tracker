@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+aside {
+  display: flex;
+  align-items: center;
+  gap: var(--size-sm);
+  padding: var(--size-sm) var(--size-md);
+  border-inline-start: 4px solid var(--main-color);
+  background: var(--background-color-alt);
+
+  .material-icons {
+    color: var(--main-color);
+  }
+}

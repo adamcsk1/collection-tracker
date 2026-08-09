@@ -8,6 +8,7 @@ Source: [`libs/components`](../libs/components)
 
 - `autocomplete`: suggestion-driven text input
 - `blocker-loading`: full-screen blocking overlay and store
+- `callout`: emphasized contextual message with a decorative icon and projected content
 - `checkbox`: reusable boolean form control
 - `details`: wrapper around native expandable panels
 - `dialog-shell`: shared dialog layout for portal-driven overlays
@@ -27,6 +28,7 @@ Source: [`libs/components`](../libs/components)
 - Import through the `@components/*` path alias.
 - The applications provide the blocker, spinner, and toast stores from their application configuration.
 - `dialog-shell` works with `PortalService` from the services library.
+- `callout` owns the visual treatment and note semantics. Consumers provide the icon and translated projected content.
 - `tooltip` owns presentation, accessibility semantics, animation, and horizontal collision handling. Consumers provide
   translated text, visibility, a stable ID, the desired horizontal anchor position, and trigger behavior.
 

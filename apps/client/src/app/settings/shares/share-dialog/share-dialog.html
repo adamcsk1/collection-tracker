@@ -1,66 +1,130 @@
-<libc-dialog-shell data-test-id="share-dialog">
+<libc-dialog-shell data-test-id="share-dialog" ariaLabelledBy="share-dialog-title">
   <ng-container dialog-shell-top-content>
-    <h3 class="dialog-title">
+    <h2 id="share-dialog-title" class="dialog-title" data-test-id="share-dialog-title">
       <i class="material-icons" aria-hidden="true">{{ editing() ? (readOnly() ? 'visibility' : 'edit') : 'add' }}</i>
-      @if (readOnly()) {
-        {{ translations.detailsTitle() }}: {{ incomingShareName() }}
-      } @else if (editing()) {
-        {{ translations.editTitle() }}: {{ outgoingShareName() }}
-      } @else {
-        {{ translations.addTitle() }}
-      }
-    </h3>
+      {{ dialogTitle() }}
+    </h2>
   </ng-container>
   <ng-container dialog-shell-content>
     @if (!editing()) {
       <libc-input
         data-test-id="share-dialog-user-hash"
-        [label]="translations.sharedWith()"
+        [label]="translations.recipientShareCode()"
         [mandatory]="true"
         [formField]="form.sharedWithUserShareCode"
       />
     }
-    <p class="share-grants-message">{{ translations.message() }}</p>
-    <div class="grant-matrix" data-test-id="share-dialog-grants">
+    <p id="share-dialog-message" class="share-grants-message" data-test-id="share-dialog-message">
+      {{ grantsMessage() }}
+    </p>
+    @if (!readOnly()) {
+      <libc-callout class="permission-dependency" data-test-id="share-dialog-dependency" icon="account_tree">
+        {{ translations.dependency() }}
+      </libc-callout>
+      <p class="permission-status" role="status" aria-live="polite">{{ permissionChangeAnnouncement() }}</p>
+    }
+    <section class="permission-legend" aria-labelledby="permission-legend-title">
+      <h3 id="permission-legend-title" data-test-id="share-dialog-permission-legend">
+        {{ translations.permissions() }}
+      </h3>
+      <div class="permission-definitions">
+        <div class="permission-definition">
+          <strong>{{ translations.canRead() }}</strong>
+          <span>{{ translations.canReadDescription() }}</span>
+        </div>
+        <div class="permission-definition">
+          <strong>{{ translations.canCreate() }}</strong>
+          <span>{{ translations.canCreateDescription() }}</span>
+        </div>
+        <div class="permission-definition">
+          <strong>{{ translations.canUpdate() }}</strong>
+          <span>{{ translations.canUpdateDescription() }}</span>
+        </div>
+        <div class="permission-definition">
+          <strong>{{ translations.canDelete() }}</strong>
+          <span>{{ translations.canDeleteDescription() }}</span>
+        </div>
+      </div>
+    </section>
+    <div class="grant-matrix" data-test-id="share-dialog-grants" aria-describedby="share-dialog-message">
       @for (listType of listTypes; track listType) {
-        <section class="grant-list-group">
-          <h4 class="grant-list-title">{{ listTypeLabel(listType) }}</h4>
+        <libc-details
+          class="grant-list-group"
+          [attr.data-test-id]="'share-dialog-list-' + listType"
+          [summary]="listTypeLabel(listType)"
+          [open]="true"
+          [storeOpenedState]="false"
+        >
           @for (scope of scopesForList(listType); track scope.contentType) {
-            <div class="grant-scope-row">
-              <span class="grant-content-label">{{ contentTypeLabel(scope.contentType) }}</span>
+            <fieldset class="grant-scope-row">
+              <legend>
+                {{ contentTypeLabel(scope.contentType) }}
+              </legend>
               <div class="permission-checkboxes">
-                <libc-checkbox
-                  [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-read'"
-                  [label]="translations.canRead()"
-                  [value]="grantChecked(listType, scope.contentType, 'canRead')"
-                  [disabled]="readOnly()"
-                  (valueChange)="onGrantToggle(listType, scope.contentType, 'canRead', $event === true)"
-                />
-                <libc-checkbox
-                  [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-create'"
-                  [label]="translations.canCreate()"
-                  [value]="grantChecked(listType, scope.contentType, 'canCreate')"
-                  [disabled]="readOnly()"
-                  (valueChange)="onGrantToggle(listType, scope.contentType, 'canCreate', $event === true)"
-                />
-                <libc-checkbox
-                  [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-update'"
-                  [label]="translations.canUpdate()"
-                  [value]="grantChecked(listType, scope.contentType, 'canUpdate')"
-                  [disabled]="readOnly()"
-                  (valueChange)="onGrantToggle(listType, scope.contentType, 'canUpdate', $event === true)"
-                />
-                <libc-checkbox
-                  [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-delete'"
-                  [label]="translations.canDelete()"
-                  [value]="grantChecked(listType, scope.contentType, 'canDelete')"
-                  [disabled]="readOnly()"
-                  (valueChange)="onGrantToggle(listType, scope.contentType, 'canDelete', $event === true)"
-                />
+                <div
+                  class="permission-choice"
+                  [class.permission-changed]="permissionChanged(listType, scope.contentType, 'canRead')"
+                >
+                  <libc-checkbox
+                    [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-read'"
+                    [label]="translations.canRead()"
+                    [hint]="
+                      permissionChanged(listType, scope.contentType, 'canRead') ? translations.changed() : undefined
+                    "
+                    [value]="grantChecked(listType, scope.contentType, 'canRead')"
+                    [disabled]="readOnly()"
+                    (valueChange)="onGrantToggle(listType, scope.contentType, 'canRead', $event === true)"
+                  />
+                </div>
+                <div
+                  class="permission-choice"
+                  [class.permission-changed]="permissionChanged(listType, scope.contentType, 'canCreate')"
+                >
+                  <libc-checkbox
+                    [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-create'"
+                    [label]="translations.canCreate()"
+                    [hint]="
+                      permissionChanged(listType, scope.contentType, 'canCreate') ? translations.changed() : undefined
+                    "
+                    [value]="grantChecked(listType, scope.contentType, 'canCreate')"
+                    [disabled]="readOnly()"
+                    (valueChange)="onGrantToggle(listType, scope.contentType, 'canCreate', $event === true)"
+                  />
+                </div>
+                <div
+                  class="permission-choice"
+                  [class.permission-changed]="permissionChanged(listType, scope.contentType, 'canUpdate')"
+                >
+                  <libc-checkbox
+                    [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-update'"
+                    [label]="translations.canUpdate()"
+                    [hint]="
+                      permissionChanged(listType, scope.contentType, 'canUpdate') ? translations.changed() : undefined
+                    "
+                    [value]="grantChecked(listType, scope.contentType, 'canUpdate')"
+                    [disabled]="readOnly()"
+                    (valueChange)="onGrantToggle(listType, scope.contentType, 'canUpdate', $event === true)"
+                  />
+                </div>
+                <div
+                  class="permission-choice"
+                  [class.permission-changed]="permissionChanged(listType, scope.contentType, 'canDelete')"
+                >
+                  <libc-checkbox
+                    [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-delete'"
+                    [label]="translations.canDelete()"
+                    [hint]="
+                      permissionChanged(listType, scope.contentType, 'canDelete') ? translations.changed() : undefined
+                    "
+                    [value]="grantChecked(listType, scope.contentType, 'canDelete')"
+                    [disabled]="readOnly()"
+                    (valueChange)="onGrantToggle(listType, scope.contentType, 'canDelete', $event === true)"
+                  />
+                </div>
               </div>
-            </div>
+            </fieldset>
           }
-        </section>
+        </libc-details>
       }
     </div>
   </ng-container>

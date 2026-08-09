@@ -76,11 +76,13 @@ describe('Collection sharing - settings management', () => {
         SettingsPage.getShareCode().should('contain.text', owner.shareCode);
         SettingsPage.getAddShareOpenButton().click();
         SettingsPage.getShareDialog().should('be.visible');
+        SettingsPage.getShareDialogDependency().should('exist');
         SettingsPage.getShareDialogUserHashInput().type(sharedUser.shareCode);
 
-        // Default library movie/series read is on; enable create on library movie and wishlist movie read.
+        // Default library movie/series View is on. A child permission enables View for an unread scope.
         SettingsPage.getAddShareGrantCheckbox('library', 'movie', 'can-create').check();
-        SettingsPage.getAddShareGrantCheckbox('wishlist', 'movie', 'can-read').check();
+        SettingsPage.getAddShareGrantCheckbox('wishlist', 'movie', 'can-delete').check();
+        SettingsPage.getAddShareGrantCheckbox('wishlist', 'movie', 'can-read').should('be.checked');
 
         cy.intercept('POST', '/api/v1/users/me/shares').as('saveShare');
         SettingsPage.getShareDialogSaveButton().click();
@@ -90,18 +92,23 @@ describe('Collection sharing - settings management', () => {
           expect(grants).to.be.an('array');
           expectGrant(grants, 'library', 'movie', { canRead: true, canCreate: true });
           expectGrant(grants, 'library', 'series', { canRead: true, canCreate: false });
-          expectGrant(grants, 'wishlist', 'movie', { canRead: true, canCreate: false });
+          expectGrant(grants, 'wishlist', 'movie', { canRead: true, canDelete: true });
           expectNoGrant(grants, 'wishlist', 'series');
         });
 
         SettingsPage.getEditShareButton(sharedUser.shareCode).click();
         SettingsPage.getShareDialog().should('be.visible');
+        SettingsPage.getShareDialogTitle().should('contain.text', sharedUser.username);
         SettingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-create').should('be.checked');
         SettingsPage.getOutgoingShareGrantCheckbox('wishlist', 'movie', 'can-read').should('be.checked');
+        SettingsPage.getOutgoingShareGrantCheckbox('wishlist', 'movie', 'can-delete').should('be.checked');
         SettingsPage.getOutgoingShareGrantCheckbox('library', 'series', 'can-create').should('not.be.checked');
 
-        // Edit one scope in a draft, then save the changed grant set.
+        // Turning off parent View clears children. Enabling a child restores View.
+        SettingsPage.getOutgoingShareGrantCheckbox('wishlist', 'movie', 'can-read').uncheck();
+        SettingsPage.getOutgoingShareGrantCheckbox('wishlist', 'movie', 'can-delete').should('not.be.checked');
         SettingsPage.getOutgoingShareGrantCheckbox('wishlist', 'movie', 'can-update').check();
+        SettingsPage.getOutgoingShareGrantCheckbox('wishlist', 'movie', 'can-read').should('be.checked');
         SettingsPage.getShareDialogSaveButton().click();
         cy.wait('@saveShare').then(({ request, response }) => {
           expect(response?.statusCode).to.eq(204);
@@ -135,6 +142,9 @@ describe('Collection sharing - settings management', () => {
         cy.contains(owner.username).should('exist');
         SettingsPage.getViewIncomingShareButton(owner.shareCode).click();
         SettingsPage.getShareDialog().should('be.visible');
+        SettingsPage.getShareDialogTitle().should('contain.text', owner.username);
+        SettingsPage.getShareDialogMessage().should('contain.text', 'Permissions are read only');
+        SettingsPage.getShareDialogDependency().should('not.exist');
         SettingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-read').should('be.checked');
         SettingsPage.getOutgoingShareGrantCheckbox('wishlist', 'series', 'can-create').should('be.checked');
         SettingsPage.getShareDialogSaveButton().should('not.exist');
