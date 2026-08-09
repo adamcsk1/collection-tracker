@@ -375,8 +375,8 @@ describe('Collection sharing - image refresh', () => {
   });
 });
 
-describe('Collection sharing - movie tracker from shared library', () => {
-  it('copies a shared library movie to the shared user own movie tracker when marked as watched', () => {
+describe('Collection sharing - tracking from shared library', () => {
+  it('copies a shared library movie to the shared user own tracking when marked as watched', () => {
     setupShare({ canRead: true, canCreate: false, canUpdate: false, canDelete: false }).then(
       ({ owner, sharedUser }) => {
         const title = 'Shared Tracker Movie';

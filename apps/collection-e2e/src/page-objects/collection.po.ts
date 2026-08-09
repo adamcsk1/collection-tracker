@@ -159,6 +159,11 @@ export const CollectionPage = {
   getNewItemManualTagsInput: () => cy.getByTestId('new-item-manual-tags').find('input'),
   getNewItemManualActorsInput: () => cy.getByTestId('new-item-manual-actors').find('input'),
   getNewItemManualPlotInput: () => cy.getByTestId('new-item-manual-plot').find('textarea'),
+  getNewItemManualProgressCurrentInput: () => cy.getByTestId('new-item-manual-progress-current').find('input'),
+  getNewItemManualProgressTotalInput: () => cy.getByTestId('new-item-manual-progress-total').find('input'),
+  getNewItemProgressCurrentInput: () => cy.getByTestId('new-item-progress-current').find('input'),
+  getNewItemProgressTotalInput: () => cy.getByTestId('new-item-progress-total').find('input'),
+  getListItemProgress: () => cy.getByTestId('list-item-progress'),
 
   // Item dialog
   getItemDialogShellHost: () => cy.getByTestId('item-dialog'),
@@ -233,6 +238,9 @@ export const CollectionPage = {
   getItemDialogMetacriticRateInput: () => getItemDialog().find('[data-test-id="item-dialog-metacritic-rate"] input'),
   getItemDialogUserRateInput: () => getItemDialog().find('[data-test-id="item-dialog-user-rate"] input'),
   getItemDialogEpisodeProgressChip: () => getItemDialog().find('[data-test-id="item-dialog-episode-progress-chip"]'),
+  getItemDialogBookProgressChip: () => getItemDialog().find('[data-test-id="item-dialog-book-progress-chip"]'),
+  getItemDialogProgressCurrentInput: () => getItemDialog().find('[data-test-id="item-dialog-progress-current"] input'),
+  getItemDialogProgressTotalInput: () => getItemDialog().find('[data-test-id="item-dialog-progress-total"] input'),
   getItemDialogCompletedChip: () => getItemDialog().find('[data-test-id="item-dialog-completed-chip"]'),
   getItemDialogManageCompletedEpisodesButton: () =>
     getItemDialog().find('[data-test-id="item-dialog-manage-completed-episodes"]'),

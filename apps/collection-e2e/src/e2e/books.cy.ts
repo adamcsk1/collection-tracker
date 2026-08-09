@@ -1,10 +1,10 @@
 import { buildBooksItem, buildOpenLibraryItem, buildOpenLibrarySearchResult } from '../fixtures/openlibrary';
-import { BooksPage } from '../page-objects/book-tracker.po';
+import { BooksPage } from '../page-objects/books.po';
 import { CollectionPage } from '../page-objects/collection.po';
 import { CommonPage } from '../page-objects/common.po';
 import { SettingsPage } from '../page-objects/settings.po';
 
-describe('Book tracker', () => {
+describe('Books', () => {
   beforeEach(() => {
     cy.autoLogin();
   });
@@ -81,7 +81,7 @@ describe('Book tracker', () => {
     BooksPage.getEmptyState().should('be.visible');
   });
 
-  it('adds a book tracker item manually by ISBN and persists it after reload', () => {
+  it('adds a books list item manually by ISBN and persists it after reload', () => {
     const title = 'Manual E2E Book';
     const isbn = '9780140328721';
     const authors = 'Manual Author';
@@ -138,7 +138,7 @@ describe('Book tracker', () => {
     BooksPage.getNewItemSaveAndCloseButton().should('be.enabled');
   });
 
-  it('clears all book tracker data from manage tracker data settings', () => {
+  it('clears all books list data from manage tracker data settings', () => {
     cy.request('POST', '/api/v1/create', buildBooksItem('Book To Clear'));
     cy.intercept('DELETE', '/api/v1/books').as('clearBooks');
     cy.on('window:confirm', () => true);

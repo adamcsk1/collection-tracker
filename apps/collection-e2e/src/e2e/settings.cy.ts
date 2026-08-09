@@ -158,7 +158,7 @@ describe('Settings - features page', () => {
     cy.getByTestId('statistics-summary-watched-series').should('not.exist');
   });
 
-  it('hides the connected series tracker option when adding a series', () => {
+  it('hides the connected tracking option when adding a series', () => {
     SettingsPage.visitFeatures();
     cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
     SettingsPage.getFeatureTrackingCheckbox().uncheck();
@@ -248,7 +248,7 @@ describe('Settings - mark all watched / unwatched', () => {
     SettingsPage.visitManageTrackerData();
   });
 
-  it('marks all movies as watched and persists them in the movie tracker', () => {
+  it('marks all movies as watched and persists them in tracking', () => {
     cy.intercept('POST', '/api/v1/items/mark-all-watched').as('markAllWatched');
     cy.on('window:confirm', () => true);
 
@@ -264,7 +264,7 @@ describe('Settings - mark all watched / unwatched', () => {
     CollectionPage.getTrackingCompletedBadges().should('have.length', 2);
   });
 
-  it('marks all movies as unwatched and removes them from the movie tracker', () => {
+  it('marks all movies as unwatched and removes them from the tracking', () => {
     cy.on('window:confirm', () => true);
     cy.intercept('POST', '/api/v1/items/mark-all-watched').as('markAllWatched');
     cy.intercept('POST', '/api/v1/items/mark-all-unwatched').as('markAllUnwatched');
@@ -305,7 +305,7 @@ describe('Settings - mark all watched / unwatched', () => {
     cy.intercept('DELETE', '/api/v1/tracking/completed-movies').as('deleteCompletedMovies');
     cy.on('window:confirm', () => true);
 
-    // Seed a movie tracker item
+    // Seed a tracking item
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Tracked Movie', 'movie', 'tt8000004'),
       listType: 'tracking',
@@ -319,11 +319,11 @@ describe('Settings - mark all watched / unwatched', () => {
     CollectionPage.getEmptyState().should('be.visible');
   });
 
-  it('removes all tracked series data and persists an empty series tracker', () => {
+  it('removes all tracked series data and persists an empty tracking', () => {
     cy.intercept('DELETE', '/api/v1/tracking').as('deleteTracking');
     cy.on('window:confirm', () => true);
 
-    // Seed a series tracker item
+    // Seed a tracking item
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Tracked Series', 'series', 'tt8000005'),
       listType: 'tracking',

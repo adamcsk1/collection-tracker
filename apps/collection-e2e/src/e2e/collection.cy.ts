@@ -1,6 +1,7 @@
 import type { Interception } from 'cypress/types/net-stubbing';
 import { generate } from 'random-words';
 import { buildCollectionItem, buildCollectionItems } from '../fixtures/collection-item';
+import { buildBooksItem } from '../fixtures/openlibrary';
 import { buildOmdbItem, buildOmdbSearchResult } from '../fixtures/omdb';
 import { CollectionPage } from '../page-objects/collection.po';
 import { CommonPage } from '../page-objects/common.po';
@@ -806,7 +807,7 @@ describe('Collection — wishlist', () => {
   });
 });
 
-describe('Collection — series tracker', () => {
+describe('Collection — tracking series', () => {
   const seriesTitle = 'Series Tracker Test Show';
 
   beforeEach(() => {
@@ -818,11 +819,11 @@ describe('Collection — series tracker', () => {
           buildOmdbItem(seriesTitle, 'tt8200001', 'series'),
         ],
       },
-    }).as('watchingOmdbSearch');
+    }).as('trackingOmdbSearch');
     cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
       statusCode: 200,
       body: buildOmdbItem(seriesTitle, 'tt8200001', 'series'),
-    }).as('watchingOmdbItem');
+    }).as('trackingOmdbItem');
 
     cy.autoLogin();
   });
@@ -840,12 +841,12 @@ describe('Collection — series tracker', () => {
 
     CollectionPage.getNewItemContentSelect().select('series');
     CollectionPage.getNewItemSearchInput().type(seriesTitle);
-    cy.wait('@watchingOmdbSearch');
+    cy.wait('@trackingOmdbSearch');
     CollectionPage.getNewItemContentOptions().should('have.length', 1).and('contain.text', seriesTitle);
     cy.getByTestId('new-item-user-rate').should('not.exist');
     cy.getByTestId('new-item-finished').should('not.exist');
     CollectionPage.getNewItemSaveAndCloseButton().click();
-    cy.wait('@watchingOmdbItem');
+    cy.wait('@trackingOmdbItem');
 
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', seriesTitle);
@@ -872,7 +873,7 @@ describe('Collection — series tracker', () => {
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
   });
 
-  it('adds a manual series tracker item and persists it after reload', () => {
+  it('adds a manual tracking item and persists it after reload', () => {
     const manualTitle = 'Manual Series Tracker Show';
     CommonPage.openMenu();
     CommonPage.getNavTrackingLink().click();
@@ -883,7 +884,7 @@ describe('Collection — series tracker', () => {
   });
 });
 
-describe('Collection — movie tracker', () => {
+describe('Collection — tracking movies', () => {
   const movieTitle = 'Movie Tracker Test Movie';
 
   beforeEach(() => {
@@ -895,16 +896,16 @@ describe('Collection — movie tracker', () => {
           buildOmdbItem(movieTitle, 'tt8300001', 'movie'),
         ],
       },
-    }).as('watchedOmdbSearch');
+    }).as('trackingMovieOmdbSearch');
     cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
       statusCode: 200,
       body: buildOmdbItem(movieTitle, 'tt8300001', 'movie'),
-    }).as('watchedOmdbItem');
+    }).as('trackingMovieOmdbItem');
 
     cy.autoLogin();
   });
 
-  it('navigates via the menu and adds a movie tracker item from the empty state', () => {
+  it('navigates via the menu and adds a tracking item from the empty state', () => {
     CommonPage.openMenu();
     CommonPage.getNavTrackingLink().click();
 
@@ -914,28 +915,28 @@ describe('Collection — movie tracker', () => {
 
     CollectionPage.getNewItemContentSelect().select('movie');
     CollectionPage.getNewItemSearchInput().type(movieTitle);
-    cy.wait('@watchedOmdbSearch');
+    cy.wait('@trackingMovieOmdbSearch');
     CollectionPage.getNewItemContentOptions().should('have.length', 1).and('contain.text', movieTitle);
     cy.getByTestId('new-item-user-rate').should('not.exist');
     cy.getByTestId('new-item-finished').should('not.exist');
     CollectionPage.getNewItemSaveAndCloseButton().click();
-    cy.wait('@watchedOmdbItem');
+    cy.wait('@trackingMovieOmdbItem');
 
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', movieTitle);
     CollectionPage.getTrackingCompletedBadges().should('have.length', 1);
   });
 
-  it('adds a manual item from a non-empty movie tracker and persists it after reload', () => {
+  it('adds a manual item from a non-empty tracking and persists it after reload', () => {
     const existingTitle = 'Existing Movie Tracker Item';
     const manualTitle = 'Manual Movie Tracker Item';
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem(existingTitle, 'movie', 'tt8300002'),
       listType: 'tracking',
     });
-    cy.intercept('GET', '/api/v1/items*').as('watchedItems');
+    cy.intercept('GET', '/api/v1/items*').as('trackingItems');
     CollectionPage.visitTracking();
-    cy.wait('@watchedItems');
+    cy.wait('@trackingItems');
     CollectionPage.getListItems().should('contain.text', existingTitle);
 
     CollectionPage.getShowFunctionsButton().click();
@@ -960,7 +961,7 @@ describe('Collection — movie tracker', () => {
     CollectionPage.closeActiveDialogByOverlay();
   });
 
-  it('moves a movie from watchlist to movie tracker', () => {
+  it('moves a movie from watchlist to tracking', () => {
     cy.intercept('POST', '/api/v1/tracking/**').as('moveToFinished');
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Later Move Movie', 'movie', 'tt8300002'),
@@ -981,8 +982,8 @@ describe('Collection — movie tracker', () => {
     CollectionPage.getListItems().first().should('contain.text', 'Watch Later Move Movie');
   });
 
-  it('deletes a movie tracker item and shows empty state', () => {
-    cy.intercept('DELETE', '/api/v1/items/**').as('deleteWatchedItem');
+  it('deletes a tracking item and shows empty state', () => {
+    cy.intercept('DELETE', '/api/v1/items/**').as('deleteTrackingItem');
     cy.on('window:confirm', () => true);
 
     cy.request('POST', '/api/v1/create', {
@@ -995,12 +996,12 @@ describe('Collection — movie tracker', () => {
     CollectionPage.getListItemImages().first().click();
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogDeleteButton().click();
-    cy.wait('@deleteWatchedItem').its('response.statusCode').should('eq', 204);
+    cy.wait('@deleteTrackingItem').its('response.statusCode').should('eq', 204);
 
     CollectionPage.getEmptyState().should('be.visible');
   });
 
-  it('filters movie tracker items via search', () => {
+  it('filters tracking items via search', () => {
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Alpha Movie', 'movie', 'tt8300004'),
       listType: 'tracking',
@@ -1100,6 +1101,172 @@ describe('Collection — unified tracking gaps', () => {
     CollectionPage.visitTracking();
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', 'Library Copy Series');
+  });
+
+  it('edits tracking book page progress and shows it on the list card', () => {
+    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateBookProgress');
+    cy.request('POST', '/api/v1/create', {
+      ...buildBooksItem('Progress Tracking Book', '9780306406157'),
+      listType: 'tracking',
+      progressCurrent: 10,
+      progressTotal: 100,
+    });
+    CollectionPage.visitTracking();
+    CollectionPage.getListItems().should('contain.text', 'Progress Tracking Book');
+    cy.getByTestId('list-item-progress').should('contain.text', '10 / 100');
+
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.getItemDialogBookProgressChip().should('contain.text', '10 / 100');
+    CollectionPage.expectItemDialogActionsVisible();
+    CollectionPage.getItemDialogEditButton().click();
+    CollectionPage.getItemDialogProgressCurrentInput().clear().type('55');
+    CollectionPage.getItemDialogProgressTotalInput().clear().type('200');
+    CollectionPage.getItemDialogSaveButton().click();
+    cy.wait('@updateBookProgress').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.getItemDialogBookProgressChip().should('contain.text', '55 / 200');
+    CollectionPage.closeActiveDialogByOverlay();
+    cy.getByTestId('list-item-progress').should('contain.text', '55 / 200');
+  });
+
+  it('marks a tracking book completed when page progress becomes equal', () => {
+    cy.intercept('PUT', '/api/v1/items/**/change*').as('completeBookProgress');
+    cy.on('window:confirm', () => true);
+    cy.request('POST', '/api/v1/create', {
+      ...buildBooksItem('Complete Progress Book', '9780140328721'),
+      listType: 'tracking',
+      progressCurrent: 10,
+      progressTotal: 100,
+    });
+    CollectionPage.visitTracking();
+    CollectionPage.getListItems().should('contain.text', 'Complete Progress Book');
+    CollectionPage.getTrackingCompletedBadges().should('have.length', 0);
+
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.expectItemDialogActionsVisible();
+    CollectionPage.getItemDialogEditButton().click();
+    CollectionPage.getItemDialogProgressCurrentInput().clear().type('100');
+    CollectionPage.getItemDialogProgressTotalInput().clear().type('100');
+    CollectionPage.getItemDialogSaveButton().click();
+    cy.wait('@completeBookProgress').then(({ response }) => {
+      expect(response?.statusCode).to.equal(200);
+      expect(response?.body?.item?.progressCurrent).to.equal(100);
+      expect(response?.body?.item?.progressTotal).to.equal(100);
+      expect(response?.body?.item?.watchedAt).to.be.a('string').and.not.be.empty;
+    });
+
+    CollectionPage.getItemDialogBookProgressChip().should('contain.text', '100 / 100');
+    CollectionPage.closeActiveDialogByOverlay();
+    CollectionPage.getListItemProgress().should('contain.text', '100 / 100');
+    CollectionPage.getTrackingCompletedBadges().should('have.length', 1);
+  });
+
+  it('uncompletes a tracking book when total pages is raised above pages read', () => {
+    cy.intercept('PUT', '/api/v1/items/**/change*').as('uncompleteBookProgress');
+    cy.on('window:confirm', () => true);
+    cy.request('POST', '/api/v1/create', {
+      ...buildBooksItem('Uncomplete Progress Book', '9780306406157'),
+      listType: 'tracking',
+      progressCurrent: 100,
+      progressTotal: 100,
+    });
+    CollectionPage.visitTracking();
+    CollectionPage.getListItems().should('contain.text', 'Uncomplete Progress Book');
+    CollectionPage.getTrackingCompletedBadges().should('have.length', 1);
+
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.expectItemDialogActionsVisible();
+    CollectionPage.getItemDialogEditButton().click();
+    CollectionPage.getItemDialogProgressTotalInput().clear().type('200');
+    CollectionPage.getItemDialogSaveButton().click();
+    cy.wait('@uncompleteBookProgress').then(({ response }) => {
+      expect(response?.statusCode).to.equal(200);
+      expect(response?.body?.item?.progressCurrent).to.equal(100);
+      expect(response?.body?.item?.progressTotal).to.equal(200);
+      expect(response?.body?.item?.watchedAt).to.equal(null);
+    });
+
+    CollectionPage.getItemDialogBookProgressChip().should('contain.text', '100 / 200');
+    CollectionPage.closeActiveDialogByOverlay();
+    CollectionPage.getListItemProgress().should('contain.text', '100 / 200');
+    CollectionPage.getTrackingCompletedBadges().should('have.length', 0);
+  });
+
+  it('keeps save disabled when total pages is lower than pages read', () => {
+    cy.on('window:confirm', () => true);
+    cy.request('POST', '/api/v1/create', {
+      ...buildBooksItem('Invalid Progress Book', '9780140328721'),
+      listType: 'tracking',
+      progressCurrent: 50,
+      progressTotal: 100,
+    });
+    CollectionPage.visitTracking();
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.expectItemDialogActionsVisible();
+    CollectionPage.getItemDialogEditButton().click();
+    CollectionPage.getItemDialogProgressCurrentInput().clear().type('120');
+    CollectionPage.getItemDialogProgressTotalInput().clear().type('100');
+    CollectionPage.getItemDialogSaveButton().should('be.disabled');
+    cy.contains('Total pages must be greater than or equal to pages read.').should('be.visible');
+  });
+
+  it('recovers save after fixing pages read above total pages', () => {
+    cy.intercept('PUT', '/api/v1/items/**/change*').as('recoverBookProgress');
+    cy.on('window:confirm', () => true);
+    cy.request('POST', '/api/v1/create', {
+      ...buildBooksItem('Recover Progress Book', '9780306406157'),
+      listType: 'tracking',
+      progressCurrent: 50,
+      progressTotal: 100,
+    });
+    CollectionPage.visitTracking();
+    CollectionPage.getListItemImages().first().click();
+    CollectionPage.expectItemDialogActionsVisible();
+    CollectionPage.getItemDialogEditButton().click();
+    CollectionPage.getItemDialogProgressCurrentInput().clear().type('150');
+    CollectionPage.getItemDialogSaveButton().should('be.disabled');
+    cy.contains('Total pages must be greater than or equal to pages read.').should('be.visible');
+
+    CollectionPage.getItemDialogProgressTotalInput().clear().type('200');
+    CollectionPage.getItemDialogSaveButton().should('be.enabled').click();
+    cy.wait('@recoverBookProgress').then(({ response }) => {
+      expect(response?.statusCode).to.equal(200);
+      expect(response?.body?.item?.progressCurrent).to.equal(150);
+      expect(response?.body?.item?.progressTotal).to.equal(200);
+    });
+
+    CollectionPage.getItemDialogBookProgressChip().should('contain.text', '150 / 200');
+    CollectionPage.closeActiveDialogByOverlay();
+    cy.getByTestId('list-item-progress').should('contain.text', '150 / 200');
+  });
+
+  it('creates a tracking book with page progress from the new-item dialog', () => {
+    cy.intercept('POST', '/api/v1/create').as('createTrackingBook');
+    CollectionPage.visitTracking();
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getAddNewButton().click();
+
+    CollectionPage.getNewItemManualModeButton().click();
+    CollectionPage.getNewItemManualContentTypeSelect().select('book');
+    CollectionPage.getNewItemManualTitleInput().type('Manual Progress Book');
+    CollectionPage.getNewItemManualImdbIdInput().type('9780140328721');
+    CollectionPage.getNewItemManualProgressCurrentInput().type('12');
+    CollectionPage.getNewItemManualProgressTotalInput().type('240');
+    CollectionPage.getNewItemSaveAndCloseButton().should('be.enabled').click();
+
+    cy.wait('@createTrackingBook').then(({ request, response }) => {
+      expect(request.body).to.deep.include({
+        title: 'Manual Progress Book',
+        contentType: 'book',
+        listType: 'tracking',
+        progressCurrent: 12,
+        progressTotal: 240,
+      });
+      expect(response?.statusCode).to.equal(200);
+    });
+
+    CollectionPage.getListItems().should('contain.text', 'Manual Progress Book');
+    cy.getByTestId('list-item-progress').should('contain.text', '12 / 240');
   });
 
   it('saves a library series with copy-to-tracking-as-completed checked', () => {
