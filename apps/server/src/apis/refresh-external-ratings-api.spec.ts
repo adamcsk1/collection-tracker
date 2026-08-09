@@ -342,7 +342,7 @@ describe('refresh-external-ratings-api', () => {
     insertUser();
     insertBookItem('9780140328721');
     insertItem('tt-movie', 'movie-hash');
-    const fetchMock = vi.fn(async () => ({
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL) => ({
       ok: true,
       json: async () => ({
         imdbID: 'tt-movie',
