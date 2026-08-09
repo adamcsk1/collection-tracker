@@ -138,4 +138,59 @@ describe('collection-read-repository scoped reads', () => {
     expect(result.items[0]).toEqual(expect.objectContaining({ title: 'Shared 1000' }));
     expect(result.items[24]).toEqual(expect.objectContaining({ title: 'Shared 1024' }));
   });
+
+  it('matches and ranks aliases across large identity and owner batches', () => {
+    const db = getDatabase();
+    insertUser('viewer');
+    const insertUserStatement = db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)');
+    const insertItemStatement = db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+         title, title_lower, year, contributors, description, image, content_hash)
+       VALUES (?, 'imdb', ?, ?, 'library', 'movie', ?, ?, '', '', '', '', ?)`
+    );
+    const insertGrantStatement = db.prepare(
+      `INSERT INTO user_share_grants
+        (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)
+       VALUES (?, 'viewer', 'library', 'movie', 1)`
+    );
+    const insertAliasStatement = db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, 'omdb', ?, 'alias')`
+    );
+    db.transaction(() => {
+      for (let ownerIndex = 0; ownerIndex < 401; ownerIndex += 1) {
+        const ownerHash = `owner-${ownerIndex}`;
+        const externalItemId = `primary-${ownerIndex}`;
+        const canonicalItemId = `movie:${externalItemId}`;
+        const title = `Owner ${ownerIndex}`;
+        insertUserStatement.run(ownerHash, `${ownerHash}-token`);
+        insertItemStatement.run(
+          ownerHash,
+          externalItemId,
+          canonicalItemId,
+          title,
+          title.toLowerCase(),
+          `${externalItemId}-hash`
+        );
+        insertGrantStatement.run(ownerHash);
+        insertAliasStatement.run(ownerHash, canonicalItemId, `alias-${ownerIndex}`);
+      }
+    })();
+    const matchedIdentities = Array.from({ length: 401 }, (_, index) => ({
+      source: 'omdb' as const,
+      id: `alias-${400 - index}`,
+    }));
+
+    const result = searchCollectionItems(db, 'viewer', {
+      filters: { shared: 'shared' },
+      matchedIdentities,
+      offset: 0,
+      limit: 20,
+    });
+
+    expect(result).toEqual(expect.objectContaining({ total: 401 }));
+    expect(result.items.slice(0, 2).map(({ title }) => title)).toEqual(['Owner 400', 'Owner 399']);
+  });
 });

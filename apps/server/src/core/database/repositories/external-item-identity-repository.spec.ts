@@ -115,6 +115,24 @@ describe('external-item-identity-repository', () => {
     ).toEqual(['imdb:tt9999999', 'omdb:custom-id', 'imdb:tt0133093']);
   });
 
+  it('resolves mapped candidates from identity batches larger than the former bind chunk', () => {
+    const db = getDatabase();
+    insertUser('user');
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'imdb:tt9999999', 'omdb', 'custom-449', 'alias');
+
+    const canonicalItemIds = resolveCanonicalItemIdsForIdentities(
+      db,
+      'user',
+      Array.from({ length: 450 }, (_, index) => ({ source: 'omdb' as const, id: `custom-${index}` }))
+    );
+
+    expect(canonicalItemIds).toContain('imdb:tt9999999');
+  });
+
   it('falls back to provider-scoped canonical ids when no IMDb identity exists', () => {
     expect(resolveCanonicalItemId(getDatabase(), 'user', 'omdb', 'custom-id')).toBe('omdb:custom-id');
   });

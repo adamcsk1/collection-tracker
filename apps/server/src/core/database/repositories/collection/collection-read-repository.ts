@@ -4,10 +4,6 @@ import {
   CollectionListTypeModel,
   CollectionItemsApiResponseModel,
 } from '@shared/models/api-model';
-import {
-  COLLECTION_MATCHED_ALIAS_OWNER_IN_CHUNK_SIZE,
-  COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE,
-} from '@shared/constants/collection-matched-items-const';
 import Database from 'better-sqlite3';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import { resolveCanonicalItemId } from '../external-item-identity-repository';
@@ -67,44 +63,26 @@ const loadMatchedAliasRanks = (
     identityIdsBySource.set(identity.source, identityIds);
   }
 
-  for (
-    let ownerIndex = 0;
-    ownerIndex < ownerUsernameHashes.length;
-    ownerIndex += COLLECTION_MATCHED_ALIAS_OWNER_IN_CHUNK_SIZE
-  ) {
-    const ownerChunk = ownerUsernameHashes.slice(ownerIndex, ownerIndex + COLLECTION_MATCHED_ALIAS_OWNER_IN_CHUNK_SIZE);
-    for (const [source, identityIdSet] of identityIdsBySource) {
-      const identityIds = [...identityIdSet];
-      for (
-        let identityIndex = 0;
-        identityIndex < identityIds.length;
-        identityIndex += COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE
-      ) {
-        const identityChunk = identityIds.slice(
-          identityIndex,
-          identityIndex + COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE
-        );
-        const aliasRows = db
-          .prepare(
-            `SELECT username_hash, canonical_item_id, external_provider, external_item_id, source_confidence
-             FROM external_item_identities
-             WHERE username_hash IN (${ownerChunk.map(() => '?').join(', ')})
-               AND external_provider = ?
-               AND external_item_id IN (${identityChunk.map(() => '?').join(', ')})`
-          )
-          .all(...ownerChunk, source, ...identityChunk) as ExternalIdentityRow[];
+  if (!ownerUsernameHashes.length) return rankByAliasAssociation;
 
-        for (const aliasRow of aliasRows) {
-          const associationKey = getAliasAssociationKey(aliasRow.username_hash, aliasRow.canonical_item_id);
-          if (!readableAssociations.has(associationKey)) continue;
-          const rank = rankByIdentity.get(getIdentityKey(aliasRow.external_provider, aliasRow.external_item_id));
-          if (rank === undefined) continue;
-          rankByAliasAssociation.set(
-            associationKey,
-            Math.min(rankByAliasAssociation.get(associationKey) ?? rank, rank)
-          );
-        }
-      }
+  const ownerUsernameHashesJson = JSON.stringify(ownerUsernameHashes);
+  for (const [source, identityIdSet] of identityIdsBySource) {
+    const aliasRows = db
+      .prepare(
+        `SELECT username_hash, canonical_item_id, external_provider, external_item_id, source_confidence
+         FROM external_item_identities
+         WHERE username_hash IN (SELECT value FROM json_each(?))
+           AND external_provider = ?
+           AND external_item_id IN (SELECT value FROM json_each(?))`
+      )
+      .all(ownerUsernameHashesJson, source, JSON.stringify([...identityIdSet])) as ExternalIdentityRow[];
+
+    for (const aliasRow of aliasRows) {
+      const associationKey = getAliasAssociationKey(aliasRow.username_hash, aliasRow.canonical_item_id);
+      if (!readableAssociations.has(associationKey)) continue;
+      const rank = rankByIdentity.get(getIdentityKey(aliasRow.external_provider, aliasRow.external_item_id));
+      if (rank === undefined) continue;
+      rankByAliasAssociation.set(associationKey, Math.min(rankByAliasAssociation.get(associationKey) ?? rank, rank));
     }
   }
 

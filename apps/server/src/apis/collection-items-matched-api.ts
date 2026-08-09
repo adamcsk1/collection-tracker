@@ -1,11 +1,9 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import {
-  COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE,
-  COLLECTION_MATCHED_SQLITE_BIND_BUDGET,
   MAX_COLLECTION_MATCHED_FILTER_GENRES,
   MAX_COLLECTION_MATCHED_FILTER_TAGS,
   MAX_COLLECTION_MATCHED_ITEM_IDENTITIES,
-} from '@shared/constants/collection-matched-items-const';
+} from '@shared/constants/collection-matched-items-api-const';
 import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
 import { CollectionItemFiltersApiModel, CollectionMatchedItemsApiRequestModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
@@ -62,24 +60,6 @@ const isCollectionItemFilters = (value: unknown): value is CollectionItemFilters
   );
 };
 
-const isWithinSqliteBindBudget = (
-  identityCount: number,
-  filters: CollectionItemFiltersApiModel | undefined
-): boolean => {
-  const identityValueBinds = identityCount * 5;
-  const identitySourceBinds = identityCount
-    ? 2 * (Math.ceil(identityCount / COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE) + 3)
-    : 0;
-  const fixedFilterBinds = 7;
-  const searchBinds = filters?.search?.trim() ? 9 : 0;
-  const filterValueBinds = (filters?.tags?.length ?? 0) + (filters?.genres?.length ?? 0);
-
-  return (
-    identityValueBinds + identitySourceBinds + fixedFilterBinds + searchBinds + filterValueBinds <=
-    COLLECTION_MATCHED_SQLITE_BIND_BUDGET
-  );
-};
-
 export const register = (app: FastifyInstance): void => {
   app.post(
     `${API_PREFIX}/items/matched`,
@@ -97,8 +77,7 @@ export const register = (app: FastifyInstance): void => {
             typeof identity?.id !== 'string' ||
             !identity.id.trim()
         ) ||
-        !filtersValid ||
-        !isWithinSqliteBindBudget(body.identities.length, filtersValid ? body.filters : undefined)
+        !filtersValid
       ) {
         response.code(400).send();
         return;

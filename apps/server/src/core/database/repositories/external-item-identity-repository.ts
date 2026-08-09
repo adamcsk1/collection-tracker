@@ -7,7 +7,6 @@ import Database from 'better-sqlite3';
 import { normalizeIsbn13 } from '../../utils/isbn-util';
 import { ExternalIdentityRow } from './external-item-identity-model';
 
-const IDENTITY_LOOKUP_CHUNK_SIZE = 400;
 const IMDB_SHAPED_ID = /^tt\d+$/i;
 
 const normalizeIdentitySource = (source: string): ExternalItemIdentitySourceNameModel | null => {
@@ -202,20 +201,17 @@ export const resolveCanonicalItemIdsForIdentities = (
   const mappedCanonicalItemIds = new Map<string, string>();
   for (const [source, identityIdSet] of identityIdsBySource) {
     const identityIds = [...identityIdSet];
-    for (let identityIndex = 0; identityIndex < identityIds.length; identityIndex += IDENTITY_LOOKUP_CHUNK_SIZE) {
-      const identityIdChunk = identityIds.slice(identityIndex, identityIndex + IDENTITY_LOOKUP_CHUNK_SIZE);
-      const rows = db
-        .prepare(
-          `SELECT canonical_item_id, external_provider, external_item_id
-           FROM external_item_identities
-           WHERE username_hash = ?
-             AND external_provider = ?
-             AND external_item_id IN (${identityIdChunk.map(() => '?').join(', ')})`
-        )
-        .all(usernameHash, source, ...identityIdChunk) as ExternalIdentityRow[];
-      for (const row of rows) {
-        mappedCanonicalItemIds.set(`${row.external_provider}\u0000${row.external_item_id}`, row.canonical_item_id);
-      }
+    const rows = db
+      .prepare(
+        `SELECT canonical_item_id, external_provider, external_item_id
+         FROM external_item_identities
+         WHERE username_hash = ?
+           AND external_provider = ?
+           AND external_item_id IN (SELECT value FROM json_each(?))`
+      )
+      .all(usernameHash, source, JSON.stringify(identityIds)) as ExternalIdentityRow[];
+    for (const row of rows) {
+      mappedCanonicalItemIds.set(`${row.external_provider}\u0000${row.external_item_id}`, row.canonical_item_id);
     }
   }
 

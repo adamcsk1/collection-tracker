@@ -2,7 +2,7 @@ import {
   MAX_COLLECTION_MATCHED_FILTER_GENRES,
   MAX_COLLECTION_MATCHED_FILTER_TAGS,
   MAX_COLLECTION_MATCHED_ITEM_IDENTITIES,
-} from '@shared/constants/collection-matched-items-const';
+} from '@shared/constants/collection-matched-items-api-const';
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
@@ -170,7 +170,7 @@ describe('collection-items-matched-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('returns 400 when identities exceed the SQLite-safe request limit', async () => {
+  it('returns 400 when identities exceed the request limit', async () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
@@ -231,7 +231,7 @@ describe('collection-items-matched-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('returns 400 when identities and filters exceed the aggregate SQLite bind budget', async () => {
+  it('accepts maximum identities and filters without exceeding SQLite bind limits', async () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
@@ -252,8 +252,8 @@ describe('collection-items-matched-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(400);
-    expect(response.send).toHaveBeenCalledWith();
+    expect(response.code).not.toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ items: [], total: 0 }));
   });
 
   it('returns empty when no identities match', async () => {

@@ -1,5 +1,4 @@
 import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
-import { COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE } from '@shared/constants/collection-matched-items-const';
 import {
   CollectionItemFiltersApiModel,
   CollectionItemTagMode,
@@ -97,23 +96,15 @@ export const canonicalOrExactIdentityMatch = (alias: string): string => `(
   )
 )`;
 
-/** Keep IN-lists well under SQLite expression-tree and bind-variable limits. */
-const pushInClauseConditions = (
+const pushJsonArrayInCondition = (
   conditions: string[],
   queryParts: QueryParts,
   columnExpression: string,
   values: string[]
 ): void => {
   if (!values.length) return;
-
-  const chunkConditions: string[] = [];
-  for (let valueIndex = 0; valueIndex < values.length; valueIndex += COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE) {
-    const chunk = values.slice(valueIndex, valueIndex + COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE);
-    chunkConditions.push(`${columnExpression} IN (${chunk.map(() => '?').join(', ')})`);
-    queryParts.params.push(...chunk);
-  }
-
-  conditions.push(chunkConditions.length === 1 ? chunkConditions[0] : `(${chunkConditions.join(' OR ')})`);
+  conditions.push(`${columnExpression} IN (SELECT value FROM json_each(?))`);
+  queryParts.params.push(JSON.stringify(values));
 };
 
 const addMatchedIdentityFilter = (
@@ -123,7 +114,7 @@ const addMatchedIdentityFilter = (
 ): void => {
   const conditions: string[] = [];
   const uniqueCanonicalItemIds = [...new Set(matchedCanonicalItemIds ?? [])];
-  pushInClauseConditions(conditions, queryParts, 'collection_items.canonical_item_id', uniqueCanonicalItemIds);
+  pushJsonArrayInCondition(conditions, queryParts, 'collection_items.canonical_item_id', uniqueCanonicalItemIds);
 
   const identitiesBySource = new Map<string, string[]>();
   for (const identity of matchedIdentities ?? []) {
@@ -134,24 +125,19 @@ const addMatchedIdentityFilter = (
 
   for (const [source, sourceIds] of identitiesBySource) {
     const uniqueSourceIds = [...new Set(sourceIds)];
-    for (
-      let valueIndex = 0;
-      valueIndex < uniqueSourceIds.length;
-      valueIndex += COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE
-    ) {
-      const chunk = uniqueSourceIds.slice(valueIndex, valueIndex + COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE);
-      conditions.push(`(
-        (collection_items.external_provider = ? AND collection_items.external_item_id IN (${chunk.map(() => '?').join(', ')}))
-        OR EXISTS (
-          SELECT 1 FROM external_item_identities matched_identity
-          WHERE matched_identity.username_hash = collection_items.username_hash
-            AND matched_identity.canonical_item_id = collection_items.canonical_item_id
-            AND matched_identity.external_provider = ?
-            AND matched_identity.external_item_id IN (${chunk.map(() => '?').join(', ')})
-        )
-      )`);
-      queryParts.params.push(source, ...chunk, source, ...chunk);
-    }
+    const sourceIdsJson = JSON.stringify(uniqueSourceIds);
+    conditions.push(`(
+      (collection_items.external_provider = ?
+        AND collection_items.external_item_id IN (SELECT value FROM json_each(?)))
+      OR EXISTS (
+        SELECT 1 FROM external_item_identities matched_identity
+        WHERE matched_identity.username_hash = collection_items.username_hash
+          AND matched_identity.canonical_item_id = collection_items.canonical_item_id
+          AND matched_identity.external_provider = ?
+          AND matched_identity.external_item_id IN (SELECT value FROM json_each(?))
+      )
+    )`);
+    queryParts.params.push(source, sourceIdsJson, source, sourceIdsJson);
   }
 
   if (conditions.length) queryParts.where.push(`(${conditions.join(' OR ')})`);
