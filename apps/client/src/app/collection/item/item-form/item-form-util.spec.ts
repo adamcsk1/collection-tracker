@@ -35,6 +35,7 @@ describe('item form util', () => {
   it('checks IMDb ID shape', () => {
     expect(isImdbIdValid('tt1234567')).toBe(true);
     expect(isImdbIdValid('TT123')).toBe(true);
+    expect(isImdbIdValid('https://www.imdb.com/title/tt0116213')).toBe(true);
     expect(isImdbIdValid('nm123')).toBe(false);
     expect(isImdbIdValid('')).toBe(false);
   });
@@ -66,6 +67,30 @@ describe('item form util', () => {
     expect(item.genre).toEqual(['Drama', 'Action']);
     expect(item.tags).toEqual(['#tag1', 'tag2']);
     expect(item.contentType).toBe('movie');
+  });
+
+  it('extracts IMDb id from URL when building movie form item', () => {
+    const item = buildItemFromForm({
+      title: 'Test Title',
+      IMDbId: 'https://www.imdb.com/title/tt0116213/',
+      year: '1996',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      image: '',
+      genreText: '',
+      tagsText: '',
+      actors: '',
+      plot: '',
+      contentType: 'movie',
+      progressCurrent: null,
+      progressTotal: null,
+    });
+
+    expect(item.IMDbId).toBe('tt0116213');
+    expect(item.externalItemId).toBe('tt0116213');
+    expect(item.externalIds).toEqual([{ source: 'imdb', id: 'tt0116213' }]);
   });
 
   it('builds openlibrary book items from form values', () => {
@@ -101,6 +126,29 @@ describe('item form util', () => {
         actors: 'Frank Herbert',
       })
     );
+  });
+
+  it('extracts ISBN from Open Library URL when building book form item', () => {
+    const item = buildItemFromForm({
+      title: 'Dune',
+      IMDbId: 'https://openlibrary.org/isbn/9780306406157',
+      year: '1965',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      image: '',
+      genreText: '',
+      tagsText: '',
+      actors: '',
+      plot: '',
+      contentType: 'book',
+      progressCurrent: null,
+      progressTotal: null,
+    });
+
+    expect(item.externalItemId).toBe('9780306406157');
+    expect(item.externalIds).toEqual([{ source: 'isbn', id: '9780306406157' }]);
   });
 
   it('builds form model from item change', () => {

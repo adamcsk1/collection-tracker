@@ -57,6 +57,25 @@ describe('ExternalMetadataService', () => {
     httpMock.expectNone(() => true);
   });
 
+  it('extracts an IMDb id from a URL when searching with the omdb provider', () => {
+    service.getMatchedContents('https://www.imdb.com/title/tt0116213', 'omdb');
+
+    expect(service.matchedContent()).toEqual([{ text: 'IMDb id: tt0116213', value: 'imdb/tt0116213' }]);
+    expect(service.getProviderReference('imdb/tt0116213')).toEqual({
+      identitySource: 'imdb',
+      identityId: 'tt0116213',
+      externalIds: [{ source: 'imdb', id: 'tt0116213' }],
+    });
+    httpMock.expectNone(() => true);
+  });
+
+  it('extracts a bare IMDb id when searching with the omdb provider', () => {
+    service.getMatchedContents('tt0133093', 'omdb');
+
+    expect(service.matchedContent()).toEqual([{ text: 'IMDb id: tt0133093', value: directMatrixReference }]);
+    httpMock.expectNone(() => true);
+  });
+
   it('requests search results and maps them to select options', async () => {
     service.getMatchedContents('Matrix');
 

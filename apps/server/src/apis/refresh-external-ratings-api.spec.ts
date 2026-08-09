@@ -342,10 +342,10 @@ describe('refresh-external-ratings-api', () => {
     insertUser();
     insertBookItem('9780140328721');
     insertItem('tt-movie', 'movie-hash');
-    const fetchMock = vi.fn(async (_input: RequestInfo | URL) => ({
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => ({
       ok: true,
       json: async () => ({
-        imdbID: 'tt-movie',
+        imdbID: String(input).includes('tt-movie') ? 'tt-movie' : 'unknown',
         imdbRating: '8.0',
         Ratings: [],
       }),

@@ -7,3 +7,10 @@ export const getIMDbId = (content: string): string =>
 export const getIMDbIds = (content: string): string[] => [
   ...new Set([...`${content}`.matchAll(IMDbIdsRegexp)].map((match) => match.groups?.['id']?.toLowerCase() ?? '')),
 ];
+
+export const resolveImdbId = (content: string): string => {
+  const extracted = getIMDbId(content);
+  if (extracted) return extracted;
+  const trimmed = `${content}`.trim();
+  return /^tt\d+$/i.test(trimmed) ? trimmed.toLowerCase() : '';
+};

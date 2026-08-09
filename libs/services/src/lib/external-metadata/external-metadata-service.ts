@@ -32,7 +32,7 @@ export class ExternalMetadataService {
   public getMatchedContents(searchText: string, provider: ExternalMetadataProviderNameModel | null = null): void {
     this.searchText = searchText;
     this.provider = provider;
-    this.directImdbId = provider ? null : getIMDbId(this.searchText) || null;
+    this.directImdbId = provider === 'openlibrary' ? null : getIMDbId(this.searchText) || null;
     this.searchRequestId++;
     this._completedSearchText.set('');
 

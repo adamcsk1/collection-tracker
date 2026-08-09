@@ -34,3 +34,17 @@ export const normalizeIsbn13 = (value: string): string | null => {
   if (isbn.length === 10 && isValidIsbn10(isbn)) return convertIsbn10To13(isbn);
   return isbn.length === 13 && isValidIsbn13(isbn) ? isbn : null;
 };
+
+const ISBN_CANDIDATE_REGEXP =
+  /(?<![\dA-Za-z])(?:ISBN(?:-1[03])?:?\s*)?((?:\d[-\s]*){12}\d|(?:\d[-\s]*){9}[\dXx])(?![\dA-Za-z])/gi;
+
+export const extractIsbn13 = (content: string): string | null => {
+  const direct = normalizeIsbn13(content);
+  if (direct) return direct;
+
+  for (const match of `${content}`.matchAll(ISBN_CANDIDATE_REGEXP)) {
+    const normalized = normalizeIsbn13(match[1] ?? '');
+    if (normalized) return normalized;
+  }
+  return null;
+};

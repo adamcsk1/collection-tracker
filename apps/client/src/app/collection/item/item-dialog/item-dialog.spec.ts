@@ -918,6 +918,39 @@ describe('ItemDialog', () => {
     );
   });
 
+  it('extracts IMDb id from URL when saving edited identity', async () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        externalIds: [
+          { source: 'omdb', id: 'tt1234567' },
+          { source: 'imdb', id: 'tt1234567' },
+        ],
+      })
+    );
+    fixture.detectChanges();
+    component.ngOnInit();
+    component['form'].IMDbId().value.set('https://www.imdb.com/title/tt7654321/');
+
+    await component['onSaveChanges']();
+
+    expect(api.updateByExternalId).toHaveBeenCalledWith(
+      'omdb',
+      'tt1234567',
+      expect.objectContaining({
+        IMDbId: 'tt7654321',
+        externalItemId: 'tt7654321',
+        externalIds: [
+          { source: 'omdb', id: 'tt1234567' },
+          { source: 'imdb', id: 'tt7654321' },
+        ],
+      }),
+      'testhash',
+      undefined
+    );
+  });
+
   it('does not save when confirmation is declined', async () => {
     confirm.open.mockReturnValue(of(false));
     component['form'].title().value.set('Updated Title');

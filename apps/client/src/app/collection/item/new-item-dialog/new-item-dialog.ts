@@ -24,7 +24,8 @@ import { apiStateToken } from '@services/api/api-store';
 import { ExternalMetadataService } from '@services/external-metadata/external-metadata-service';
 import { CollectionItemContentTypeModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadata-model';
-import { isImdbShapedExternalItemId } from '@shared/utils/external-metadata-identity-util';
+import { resolveImdbId } from '@shared/utils/imdb-id-util';
+import { extractIsbn13 } from '@shared/utils/isbn-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, combineLatest, debounceTime, filter, firstValueFrom, of, switchMap, tap, timer } from 'rxjs';
 import { mainStateToken } from '../../../main/main-store';
@@ -40,7 +41,6 @@ import {
   validateOptionalMetacriticRateFormat,
   validateOptionalRottenTomatoesRateFormat,
 } from '../item-form/item-form-util';
-import { normalizeIsbn13 } from '@shared/utils/isbn-util';
 import { GenreSuggestionsProvider, TagSuggestionsProvider } from '../item-form/suggestion/item-autocomplete-providers';
 import { buildIMDbSearchUrl, buildWebSearchUrl } from '../item-dialog/utils/item-dialog-util';
 import { NewItemDialogService } from './new-item-dialog-service';
@@ -682,13 +682,13 @@ export class NewItemDialog {
     ])
       .pipe(
         tap(([mode, identity, , listType]) => {
-          const hasIdentity = listType === 'books' ? isIsbnValid(identity) : isImdbShapedExternalItemId(identity);
+          const hasIdentity = listType === 'books' ? isIsbnValid(identity) : isImdbIdValid(identity);
           this.manualIMDbIdLookupPending.set(mode === 'manual' && hasIdentity);
         }),
         switchMap(([mode, identity, targetOwnerShareCode, listType]) => {
           if (mode !== 'manual') return of({ exists: false });
           if (listType === 'books') {
-            const isbn = normalizeIsbn13(identity);
+            const isbn = extractIsbn13(identity);
             if (!isbn) return of({ exists: false });
             return timer(150).pipe(
               switchMap(() =>
@@ -700,12 +700,13 @@ export class NewItemDialog {
               )
             );
           }
-          if (!isImdbShapedExternalItemId(identity)) return of({ exists: false });
+          const imdbId = resolveImdbId(identity);
+          if (!imdbId) return of({ exists: false });
           return timer(150).pipe(
             switchMap(() =>
               this.api
-                .collectionItemExists('omdb', identity.trim(), targetOwnerShareCode || undefined, listType, [
-                  { source: 'imdb', id: identity.trim() },
+                .collectionItemExists('omdb', imdbId, targetOwnerShareCode || undefined, listType, [
+                  { source: 'imdb', id: imdbId },
                 ])
                 .pipe(catchError(() => of({ exists: false })))
             )
@@ -750,8 +751,7 @@ export class NewItemDialog {
     this.searchIMDbIdLookupPending.set(newMode === 'search' && !!providerReference);
     const manualIdentity = this.manualForm.IMDbId().value();
     this.manualIMDbIdLookupPending.set(
-      newMode === 'manual' &&
-        (this.isBookAdd() ? isIsbnValid(manualIdentity) : isImdbShapedExternalItemId(manualIdentity))
+      newMode === 'manual' && (this.isBookAdd() ? isIsbnValid(manualIdentity) : isImdbIdValid(manualIdentity))
     );
   }
 

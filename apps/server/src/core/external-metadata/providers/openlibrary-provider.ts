@@ -1,5 +1,5 @@
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
-import { normalizeIsbn13 } from '../../utils/isbn-util';
+import { extractIsbn13, normalizeIsbn13 } from '../../utils/isbn-util';
 import { ExternalMetadataProvider } from '../external-metadata-provider';
 import { DEFAULT_OPENLIBRARY_API_URL, DEFAULT_OPENLIBRARY_COVER_URL } from './openlibrary-const';
 import {
@@ -39,7 +39,7 @@ export class OpenLibraryExternalMetadataProvider implements ExternalMetadataProv
   }
 
   public async search(searchText: string): Promise<ExternalMetadataSearchResponseModel> {
-    const searchedIsbn = normalizeIsbn13(searchText);
+    const searchedIsbn = extractIsbn13(searchText);
     if (searchedIsbn) {
       const item = await this.getItemByIsbn(searchedIsbn, 'M');
       return { results: item ? [item] : [] };

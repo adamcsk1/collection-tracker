@@ -22,6 +22,7 @@ import { toCollectionItemChange } from '@shared/utils/collection-item-change-uti
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
 import { isImdbShapedExternalItemId, mergeImdbExternalId } from '@shared/utils/external-metadata-identity-util';
 import { normalizeIMDbRating } from '@shared/utils/external-metadata-ratings-util';
+import { resolveImdbId } from '@shared/utils/imdb-id-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { finalize, firstValueFrom, map, mergeMap, of } from 'rxjs';
 import { sharesStateToken } from '../../../shares/shares-store';
@@ -532,16 +533,17 @@ export class ItemDialog implements OnInit {
     const tags = parseTagText(formValues.tagsText);
     const currentItem = this.collectionItem();
     const canEditImdbIdentity = this.canEditImdbIdentity();
-    const imdbIdChanged = canEditImdbIdentity && formValues.IMDbId !== currentItem.IMDbId;
-    const nextImdbId = canEditImdbIdentity ? formValues.IMDbId : currentItem.IMDbId;
+    const resolvedImdbId = canEditImdbIdentity ? resolveImdbId(formValues.IMDbId) || formValues.IMDbId.trim() : '';
+    const nextImdbId = canEditImdbIdentity ? resolvedImdbId : currentItem.IMDbId;
+    const imdbIdChanged = canEditImdbIdentity && resolvedImdbId !== currentItem.IMDbId;
     const nextExternalIds = imdbIdChanged
-      ? mergeImdbExternalId(currentItem.externalIds, nextImdbId)
+      ? mergeImdbExternalId(currentItem.externalIds, resolvedImdbId)
       : currentItem.externalIds;
     return {
       title: formValues.title,
       IMDbId: nextImdbId,
       externalProvider: currentItem.externalProvider,
-      externalItemId: imdbIdChanged ? formValues.IMDbId : currentItem.externalItemId,
+      externalItemId: imdbIdChanged ? resolvedImdbId : currentItem.externalItemId,
       externalIds: nextExternalIds,
       year: formValues.year,
       rate: formValues.rate,

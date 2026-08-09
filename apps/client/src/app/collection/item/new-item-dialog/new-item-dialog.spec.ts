@@ -694,6 +694,29 @@ describe('NewItemDialog component', () => {
       ]);
     });
 
+    it('extracts IMDb id from URL for manual duplicate checks', async () => {
+      component['manualForm'].title().value.set('Manual Title');
+      component['manualForm'].IMDbId().value.set('https://www.imdb.com/title/tt0116213');
+      await vi.advanceTimersByTimeAsync(150);
+
+      expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt0116213', undefined, 'library', [
+        { source: 'imdb', id: 'tt0116213' },
+      ]);
+    });
+
+    it('extracts ISBN from Open Library URL for manual book duplicate checks', async () => {
+      fixture.componentRef.setInput('books', true);
+      fixture.detectChanges();
+      component['onModeChange']('manual');
+      component['manualForm'].title().value.set('Manual Book');
+      component['manualForm'].IMDbId().value.set('https://openlibrary.org/isbn/9780306406157');
+      await vi.advanceTimersByTimeAsync(150);
+
+      expect(api.collectionItemExists).toHaveBeenCalledWith('openlibrary', '9780306406157', undefined, 'books', [
+        { source: 'isbn', id: '9780306406157' },
+      ]);
+    });
+
     it('keeps the manual form invalid while duplicate lookup is pending', async () => {
       component['manualForm'].title().value.set('Manual Title');
       component['manualForm'].IMDbId().value.set('tt1234567');

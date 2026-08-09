@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getIMDbId, getIMDbIds } from './imdb-id-util';
+import { getIMDbId, getIMDbIds, resolveImdbId } from './imdb-id-util';
 
 describe('getIMDbId', () => {
   it('extracts the IMDb id when present', () => {
@@ -34,5 +34,19 @@ describe('getIMDbIds', () => {
 
   it('returns an empty array when no ids are present', () => {
     expect(getIMDbIds('No ids here')).toEqual([]);
+  });
+});
+
+describe('resolveImdbId', () => {
+  it('extracts an IMDb id from a title URL', () => {
+    expect(resolveImdbId('https://www.imdb.com/title/tt0116213')).toBe('tt0116213');
+  });
+
+  it('accepts short bare IMDb ids', () => {
+    expect(resolveImdbId('TT123')).toBe('tt123');
+  });
+
+  it('returns empty string when no id is present', () => {
+    expect(resolveImdbId('The Matrix')).toBe('');
   });
 });

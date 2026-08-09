@@ -136,6 +136,26 @@ describe('OpenLibraryExternalMetadataProvider', () => {
     expect(result.results[0]?.poster).toBe('https://covers.openlibrary.org/b/id/123-M.jpg?default=false');
   });
 
+  it('extracts ISBN from an Open Library URL during search', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          title: 'URL Edition Title',
+          publish_date: '1965',
+          covers: [123],
+          authors: [{ name: 'URL Author' }],
+        })
+      )
+    );
+
+    const result = await new OpenLibraryExternalMetadataProvider().search('https://openlibrary.org/isbn/9780306406157');
+
+    expect(new URL(vi.mocked(fetch).mock.calls[0][0] as string).pathname).toBe('/isbn/9780306406157.json');
+    expect(result.results[0]?.providerItemId).toBe('9780306406157');
+    expect(result.results[0]?.title).toBe('URL Edition Title');
+  });
+
   it('uses the cover edition ISBN for title searches and deduplicates canonical ISBNs', async () => {
     vi.stubGlobal(
       'fetch',

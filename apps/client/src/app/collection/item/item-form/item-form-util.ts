@@ -1,9 +1,10 @@
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { ExternalMetadataProviderNameModel } from '@shared/models/external-metadata-provider-model';
 import { parseGenreText, parseTagText } from '@shared/utils/collection-item-text-util';
-import { isImdbShapedExternalItemId, mergeImdbExternalId } from '@shared/utils/external-metadata-identity-util';
+import { mergeImdbExternalId } from '@shared/utils/external-metadata-identity-util';
 import { normalizeIMDbRating } from '@shared/utils/external-metadata-ratings-util';
-import { normalizeIsbn13 } from '@shared/utils/isbn-util';
+import { resolveImdbId } from '@shared/utils/imdb-id-util';
+import { extractIsbn13 } from '@shared/utils/isbn-util';
 import { ItemFormModel } from './item-form-model';
 export type { ItemFormModel } from './item-form-model';
 
@@ -34,7 +35,7 @@ export const buildItemFromForm = (
   } = {}
 ): CollectionItemChangeApiModel => {
   if (formValues.contentType === 'book') {
-    const isbn = normalizeIsbn13(options.externalItemId ?? formValues.IMDbId) ?? '';
+    const isbn = extractIsbn13(options.externalItemId ?? formValues.IMDbId) ?? '';
     return {
       title: formValues.title.trim(),
       IMDbId: undefined,
@@ -58,7 +59,7 @@ export const buildItemFromForm = (
     };
   }
 
-  const imdbId = formValues.IMDbId.trim();
+  const imdbId = resolveImdbId(formValues.IMDbId);
   const externalProvider: ExternalMetadataProviderNameModel = options.externalProvider ?? 'omdb';
   const externalItemId = options.externalItemId ?? imdbId;
   const externalIds =
@@ -104,6 +105,6 @@ export const buildItemFormFromChange = (item: CollectionItemChangeApiModel): Ite
   progressTotal: item.progressTotal ?? null,
 });
 
-export const isImdbIdValid = (imdbId: string): boolean => isImdbShapedExternalItemId(imdbId);
+export const isImdbIdValid = (imdbId: string): boolean => resolveImdbId(imdbId) !== '';
 
-export const isIsbnValid = (isbn: string): boolean => normalizeIsbn13(isbn) !== null;
+export const isIsbnValid = (isbn: string): boolean => extractIsbn13(isbn) !== null;
