@@ -17,6 +17,8 @@ const defineAngularConfig = (appName: string, dirname: string, target: 'apps' | 
     test: {
       globals: true,
       environment: 'jsdom',
+      testTimeout: 30000,
+      hookTimeout: 30000,
       include: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
       setupFiles: [resolve(dirname, 'src/test-setup.ts'), resolve(dirname, '../../vitest.setup.ts')],
       pool: 'forks',

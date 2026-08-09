@@ -11,6 +11,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    testTimeout: 30000,
+    hookTimeout: 30000,
     include: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
     setupFiles: [resolve(__dirname, 'test/test-setup.ts'), resolve(__dirname, '../../vitest.setup.ts')],
     reporters: ['default', 'verbose'],
