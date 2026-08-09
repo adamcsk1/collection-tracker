@@ -26,13 +26,13 @@ describe('collection item tag validation util', () => {
       createCollectionItemTagValidation({
         ...baseCreateInput,
         favorite: true,
-        listType: 'watchlist',
+        listType: 'up-next',
       })
     ).toEqual({ kind: 'invalidNonLibraryTag' });
     expect(
       createCollectionItemTagValidation({
         ...baseCreateInput,
-        listType: 'watchlist',
+        listType: 'up-next',
         targetOwnerShareCode: 'shared-code',
       })
     ).toEqual({ kind: 'invalidSharedListCreate' });
@@ -62,7 +62,7 @@ describe('collection item tag validation util', () => {
       createCollectionItemTagValidation({
         ...baseCreateInput,
         contentType: 'book',
-        listType: 'watchlist',
+        listType: 'up-next',
       })
     ).toBeUndefined();
     expect(
@@ -125,16 +125,16 @@ describe('collection item tag validation util', () => {
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,
-        listType: 'watchlist',
-        existingListType: 'watchlist',
+        listType: 'up-next',
+        existingListType: 'up-next',
       })
     ).toBeUndefined();
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,
         favorite: true,
-        listType: 'watchlist',
-        existingListType: 'watchlist',
+        listType: 'up-next',
+        existingListType: 'up-next',
       })
     ).toEqual({ kind: 'invalidNonLibraryTag' });
     expect(
@@ -156,14 +156,14 @@ describe('collection item tag validation util', () => {
       changeCollectionItemTagValidation({
         ...baseChangeInput,
         listType: 'library',
-        existingListType: 'watchlist',
+        existingListType: 'up-next',
       })
     ).toEqual({ kind: 'invalidInternalCollectionItemUpdate' });
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,
-        listType: 'watchlist',
-        existingListType: 'watchlist',
+        listType: 'up-next',
+        existingListType: 'up-next',
         requesterIsOwner: false,
       })
     ).toEqual({ kind: 'sharedInternalCollectionItemUpdate' });

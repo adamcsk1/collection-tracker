@@ -2,7 +2,7 @@ import { CollectionFeaturePreferencesModel } from '../models/collection-feature-
 
 const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 
-const REQUIRED_KEYS = ['wishlist', 'watchlist', 'tracking', 'books'] as const;
+const REQUIRED_KEYS = ['wishlist', 'upNext', 'tracking', 'books'] as const;
 
 const normalizeFeaturePreferenceRecord = (record: Record<string, unknown>): Record<string, unknown> => {
   const normalized: Record<string, unknown> = { ...record };
@@ -22,14 +22,24 @@ const normalizeFeaturePreferenceRecord = (record: Record<string, unknown>): Reco
   delete normalized['watching'];
   delete normalized['seriesTracker'];
 
-  if (!('watchlist' in normalized) && 'watchLater' in normalized) {
-    normalized['watchlist'] = normalized['watchLater'];
-    delete normalized['watchLater'];
+  if (!('upNext' in normalized)) {
+    if ('up-next' in normalized) {
+      normalized['upNext'] = normalized['up-next'];
+    } else if ('watchlist' in normalized) {
+      normalized['upNext'] = normalized['watchlist'];
+    } else if ('watchLater' in normalized) {
+      normalized['upNext'] = normalized['watchLater'];
+    }
   }
+  delete normalized['up-next'];
+  delete normalized['watchlist'];
+  delete normalized['watchLater'];
+
   if (!('books' in normalized) && 'bookTracker' in normalized) {
     normalized['books'] = normalized['bookTracker'];
-    delete normalized['bookTracker'];
   }
+  delete normalized['bookTracker'];
+
   return normalized;
 };
 
@@ -42,7 +52,7 @@ export const parseCollectionFeaturePreferences = (value: unknown): CollectionFea
 
   return {
     wishlist: record['wishlist'] as boolean,
-    watchlist: record['watchlist'] as boolean,
+    upNext: record['upNext'] as boolean,
     tracking: record['tracking'] as boolean,
     books: record['books'] as boolean,
   };

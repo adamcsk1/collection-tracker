@@ -77,7 +77,7 @@ export interface CollectionStatisticsApiResponseModel {
   seriesCount: number;
   booksCount: number;
   favoriteCount: number;
-  watchlistCount: number;
+  upNextCount: number;
   wishlistCount: number;
   watchedMovieCount: number;
   watchedSeriesCount: number;
