@@ -61,7 +61,7 @@ describe('NewItemDialogService', () => {
   let service: NewItemDialogService;
   let api: {
     create: ReturnType<typeof vi.fn>;
-    addWatchedItemByExternalId: ReturnType<typeof vi.fn>;
+    addCompletedItemByExternalId: ReturnType<typeof vi.fn>;
     addTrackingItemByExternalId: ReturnType<typeof vi.fn>;
     markAllTrackingCompletedByExternalId: ReturnType<typeof vi.fn>;
   };
@@ -81,7 +81,7 @@ describe('NewItemDialogService', () => {
   beforeEach(() => {
     api = {
       create: vi.fn(),
-      addWatchedItemByExternalId: vi.fn(() =>
+      addCompletedItemByExternalId: vi.fn(() =>
         of({
           item: {
             title: 'Title',
@@ -302,7 +302,7 @@ describe('NewItemDialogService', () => {
 
     await firstValueFrom(service.saveManual(buildManualItem(), 'close', { finished: true }));
 
-    expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined);
+    expect(api.addCompletedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined);
   });
 
   it('saveManual finalizes the created item when the tracking update fails', async () => {
@@ -313,7 +313,7 @@ describe('NewItemDialogService', () => {
       externalItemId: 'tt1234567',
     };
     api.create.mockReturnValue(createResponse(createdItem));
-    api.addWatchedItemByExternalId.mockReturnValue(throwError(() => new Error('tracker failed')));
+    api.addCompletedItemByExternalId.mockReturnValue(throwError(() => new Error('tracker failed')));
 
     await expect(firstValueFrom(service.saveManual(buildManualItem(), 'close', { finished: true }))).resolves.toEqual(
       createdItem
@@ -401,7 +401,7 @@ describe('NewItemDialogService', () => {
       service.save('tt123', null, '', 'close', { targetOwnerShareCode: 'owner-code', finished: true })
     );
 
-    expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt123', 'owner-code');
+    expect(api.addCompletedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt123', 'owner-code');
     expect(collection.addCollectionItem).toHaveBeenCalledWith(
       { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123', watched: true },
       true
@@ -412,7 +412,7 @@ describe('NewItemDialogService', () => {
     );
   });
 
-  it('does not create a tracking copy when saving a watched library series', async () => {
+  it('does not create a tracking copy when saving a completed library series', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
       of(null, buildSelectedContent({ contentType: 'series' })) as any
     );
@@ -420,7 +420,7 @@ describe('NewItemDialogService', () => {
 
     await firstValueFrom(service.save('tt123', null, '', 'close', { finished: true }));
 
-    expect(api.addWatchedItemByExternalId).not.toHaveBeenCalled();
+    expect(api.addCompletedItemByExternalId).not.toHaveBeenCalled();
   });
 
   it('save stops spinner and rethrows on API error', async () => {

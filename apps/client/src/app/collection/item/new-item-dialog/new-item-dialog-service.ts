@@ -227,7 +227,7 @@ export class NewItemDialogService {
     };
     if (listType === 'library' && finished && selectedContentIsMovie) {
       return this.api
-        .addWatchedItemByExternalId(
+        .addCompletedItemByExternalId(
           collectionItem.externalProvider,
           collectionItem.externalItemId,
           targetOwnerShareCode

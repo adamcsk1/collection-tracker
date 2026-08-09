@@ -54,13 +54,13 @@ export class CompletedEpisodesDialog implements OnInit {
     setSeasonMetadata: computed(() => this.ngxSignalTranslate.translate('Message.SetSeasonMetadata')),
     manageSeasonMetadata: computed(() => this.ngxSignalTranslate.translate('ManageSeriesMetadata')),
     season: computed(() => this.ngxSignalTranslate.translate('Season')),
-    markAllEpisodesCompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesWatched')),
-    markAllEpisodesUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesUnwatched')),
+    markAllEpisodesCompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesCompleted')),
+    markAllEpisodesUncompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllEpisodesUncompleted')),
     episode: computed(() => this.ngxSignalTranslate.translate('Episode')),
   };
   protected readonly seasonsMetadata = signal<TrackingSeasonMetadataModel[]>([]);
   protected readonly completedEpisodes = signal<TrackingCompletedEpisodeModel[]>([]);
-  protected readonly watchedSet = computed(() => {
+  protected readonly completedSet = computed(() => {
     const set = new Set<string>();
     for (const episode of this.completedEpisodes()) {
       set.add(`${episode.season}-${episode.episode}`);
@@ -68,21 +68,21 @@ export class CompletedEpisodesDialog implements OnInit {
     return set;
   });
   protected readonly hasSeasonMetadata = computed(() => this.seasonsMetadata().length > 0);
-  protected readonly allEpisodesWatched = computed(() => {
+  protected readonly allEpisodesCompleted = computed(() => {
     const seasons = this.seasonsMetadata();
     if (!seasons.length) return false;
 
-    const watchedSet = this.watchedSet();
+    const completedSet = this.completedSet();
     for (const season of seasons) {
       for (let episode = 1; episode <= season.episodes; episode++) {
-        if (!watchedSet.has(`${season.season}-${episode}`)) return false;
+        if (!completedSet.has(`${season.season}-${episode}`)) return false;
       }
     }
     return true;
   });
 
   protected readonly openSeasons = computed<Set<number>>(() =>
-    getOpenSeasons(this.seasonsMetadata(), this.watchedSet())
+    getOpenSeasons(this.seasonsMetadata(), this.completedSet())
   );
 
   public ngOnInit(): void {
@@ -103,63 +103,63 @@ export class CompletedEpisodesDialog implements OnInit {
     this.api
       .getTrackingCompletedEpisodesByExternalId(this.externalProvider(), this.providerItemId())
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((watchedResponse) => {
-        if (!this.hasLocalCompletedEpisodeChanges) this.completedEpisodes.set(watchedResponse.completedEpisodes);
+      .subscribe((completedResponse) => {
+        if (!this.hasLocalCompletedEpisodeChanges) this.completedEpisodes.set(completedResponse.completedEpisodes);
       });
   }
 
-  protected isEpisodeWatched(season: number, episode: number): boolean {
-    return this.watchedSet().has(`${season}-${episode}`);
+  protected isEpisodeCompleted(season: number, episode: number): boolean {
+    return this.completedSet().has(`${season}-${episode}`);
   }
 
-  protected isSeasonFullyWatched(season: number, episodesCount: number): boolean {
+  protected isSeasonFullyCompleted(season: number, episodesCount: number): boolean {
     for (let episode = 1; episode <= episodesCount; episode++) {
-      if (!this.watchedSet().has(`${season}-${episode}`)) {
+      if (!this.completedSet().has(`${season}-${episode}`)) {
         return false;
       }
     }
     return true;
   }
 
-  protected isSeasonPartiallyWatched(season: number, episodesCount: number): boolean {
-    let watchedCount = 0;
+  protected isSeasonPartiallyCompleted(season: number, episodesCount: number): boolean {
+    let completedCount = 0;
     for (let episode = 1; episode <= episodesCount; episode++) {
-      if (this.watchedSet().has(`${season}-${episode}`)) {
-        watchedCount++;
+      if (this.completedSet().has(`${season}-${episode}`)) {
+        completedCount++;
       }
     }
-    return watchedCount > 0 && watchedCount < episodesCount;
+    return completedCount > 0 && completedCount < episodesCount;
   }
 
   protected async onToggleEpisode(season: number, episode: number): Promise<void> {
     this.hasLocalCompletedEpisodeChanges = true;
     const key = `${season}-${episode}`;
-    const currentWatched = this.completedEpisodes();
-    if (this.watchedSet().has(key)) {
+    const currentCompleted = this.completedEpisodes();
+    if (this.completedSet().has(key)) {
       this.completedEpisodes.set(
-        currentWatched.filter(
-          (watchedEpisode) => watchedEpisode.season !== season || watchedEpisode.episode !== episode
+        currentCompleted.filter(
+          (completedEpisode) => completedEpisode.season !== season || completedEpisode.episode !== episode
         )
       );
     } else {
-      this.completedEpisodes.set([...currentWatched, { season, episode }]);
+      this.completedEpisodes.set([...currentCompleted, { season, episode }]);
     }
     await this.saveCompletedEpisodes();
   }
 
   protected async onToggleSeason(season: number, episodesCount: number): Promise<void> {
     this.hasLocalCompletedEpisodeChanges = true;
-    const currentWatched = this.completedEpisodes();
+    const currentCompleted = this.completedEpisodes();
     const seasonEpisodes: TrackingCompletedEpisodeModel[] = [];
     for (let episode = 1; episode <= episodesCount; episode++) {
       seasonEpisodes.push({ season, episode });
     }
 
-    const isFullyWatched = this.isSeasonFullyWatched(season, episodesCount);
-    if (isFullyWatched) {
-      this.completedEpisodes.set(currentWatched.filter((watchedEpisode) => watchedEpisode.season !== season));
+    const isFullyCompleted = this.isSeasonFullyCompleted(season, episodesCount);
+    if (isFullyCompleted) {
+      this.completedEpisodes.set(currentCompleted.filter((completedEpisode) => completedEpisode.season !== season));
     } else {
-      const withoutSeason = currentWatched.filter((watchedEpisode) => watchedEpisode.season !== season);
+      const withoutSeason = currentCompleted.filter((completedEpisode) => completedEpisode.season !== season);
       this.completedEpisodes.set([...withoutSeason, ...seasonEpisodes]);
     }
     await this.saveCompletedEpisodes();
@@ -236,13 +236,13 @@ export class CompletedEpisodesDialog implements OnInit {
     });
   }
 
-  protected async onMarkAllEpisodesWatched(): Promise<void> {
+  protected async onMarkAllEpisodesCompleted(): Promise<void> {
     if (!this.hasSeasonMetadata()) {
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SetSeasonMetadataFirst'));
       return;
     }
     const confirmed = await firstValueFrom(
-      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesWatched'))
+      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesCompleted'))
     );
     if (!confirmed) return;
 
@@ -252,15 +252,15 @@ export class CompletedEpisodesDialog implements OnInit {
       await this.queueCompletedEpisodesMutation(() =>
         firstValueFrom(this.api.markAllTrackingCompletedByExternalId(this.externalProvider(), this.providerItemId()))
       );
-      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedWatched'));
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedCompleted'));
     } finally {
       this.spinnerLoadingState.setState('show', false);
     }
   }
 
-  protected async onMarkAllEpisodesUnwatched(): Promise<void> {
+  protected async onMarkAllEpisodesUncompleted(): Promise<void> {
     const confirmed = await firstValueFrom(
-      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesUnwatched'))
+      this.confirm.open(this.ngxSignalTranslate.translate('Confirm.MarkAllEpisodesUncompleted'))
     );
     if (!confirmed) return;
 
@@ -274,7 +274,7 @@ export class CompletedEpisodesDialog implements OnInit {
           })
         )
       );
-      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedUnwatched'));
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedUncompleted'));
     } finally {
       this.spinnerLoadingState.setState('show', false);
     }

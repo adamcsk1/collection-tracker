@@ -9,9 +9,9 @@ const waitForTrackingItem = (imdbId: string) => {
     });
 };
 
-describe('Watched episodes dialog', () => {
+describe('Completed episodes dialog', () => {
   const imdbId = 'tt8300002';
-  const seriesTitle = 'Watched Episodes Test Show';
+  const seriesTitle = 'Completed Episodes Test Show';
 
   beforeEach(() => {
     cy.autoLogin();
@@ -70,7 +70,7 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
   });
 
-  it('uses season toggle to mark all episodes watched', () => {
+  it('uses season toggle to mark all episodes completed', () => {
     cy.request('PUT', `/api/v1/tracking/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
@@ -118,7 +118,7 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
   });
 
-  it('persists watched episodes across dialog re-opens', () => {
+  it('persists completed episodes across dialog re-opens', () => {
     cy.request('PUT', `/api/v1/tracking/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
@@ -164,7 +164,7 @@ describe('Watched episodes dialog', () => {
     cy.get('.dialog').should('not.exist');
   });
 
-  it('marks all episodes watched from the manage episodes dialog and updates completed filters', () => {
+  it('marks all episodes completed from the manage episodes dialog and updates completed filters', () => {
     const incompleteImdbId = 'tt8300003';
     const incompleteSeriesTitle = 'Incomplete Episodes Test Show';
     cy.request('POST', '/api/v1/create', {
@@ -181,7 +181,7 @@ describe('Watched episodes dialog', () => {
       completedEpisodes: [{ season: 1, episode: 1 }],
     });
     cy.intercept('PUT', '/api/v1/tracking/**/mark-all-completed').as('markAllCompleted');
-    cy.intercept('PUT', '/api/v1/tracking/**/completed-episodes').as('markAllUnwatched');
+    cy.intercept('PUT', '/api/v1/tracking/**/completed-episodes').as('markAllUncompleted');
 
     cy.reload();
     waitForTrackingItem(imdbId);
@@ -189,7 +189,7 @@ describe('Watched episodes dialog', () => {
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageCompletedEpisodesButton().click();
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getCompletedEpisodesMarkAllWatchedButton().click();
+    CollectionPage.getCompletedEpisodesMarkAllCompletedButton().click();
     cy.wait('@markAllCompleted').its('response.statusCode').should('eq', 200);
     CollectionPage.closeDialogByOverlay();
     CollectionPage.getCompletedEpisodesDialogHost().should('not.exist');
@@ -212,9 +212,9 @@ describe('Watched episodes dialog', () => {
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getItemDialogManageCompletedEpisodesButton().click();
     CollectionPage.expectItemDialogActionsVisible();
-    CollectionPage.getCompletedEpisodesMarkAllWatchedButton().should('not.exist');
-    CollectionPage.getCompletedEpisodesMarkAllUnwatchedButton().click();
-    cy.wait('@markAllUnwatched').then((interception) => {
+    CollectionPage.getCompletedEpisodesMarkAllCompletedButton().should('not.exist');
+    CollectionPage.getCompletedEpisodesMarkAllUncompletedButton().click();
+    cy.wait('@markAllUncompleted').then((interception) => {
       expect(interception.request.body).to.deep.equal({ completedEpisodes: [] });
       expect(interception.response?.statusCode).to.eq(200);
     });
@@ -232,7 +232,7 @@ describe('Watched episodes dialog', () => {
     CollectionPage.getListItems().should('have.length', 2);
   });
 
-  it('removes stale watched episodes when season metadata is reduced', () => {
+  it('removes stale completed episodes when season metadata is reduced', () => {
     cy.request('PUT', `/api/v1/tracking/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });

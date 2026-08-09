@@ -31,8 +31,8 @@
                 <input
                   type="checkbox"
                   data-test-id="completed-episodes-season-toggle"
-                  [checked]="isSeasonFullyWatched(season.season, season.episodes)"
-                  [indeterminate]="isSeasonPartiallyWatched(season.season, season.episodes)"
+                  [checked]="isSeasonFullyCompleted(season.season, season.episodes)"
+                  [indeterminate]="isSeasonPartiallyCompleted(season.season, season.episodes)"
                   (change)="onToggleSeason(season.season, season.episodes)"
                 />
                 {{ translations.markAllEpisodesCompleted() }}
@@ -45,7 +45,7 @@
                     <input
                       type="checkbox"
                       data-test-id="completed-episodes-episode-checkbox"
-                      [checked]="isEpisodeWatched(season.season, episodeIndex + 1)"
+                      [checked]="isEpisodeCompleted(season.season, episodeIndex + 1)"
                       (change)="onToggleEpisode(season.season, episodeIndex + 1)"
                     />
                     <span class="episode-label">
@@ -68,19 +68,19 @@
     }
   </ng-container>
   <ng-container dialog-shell-menu-content>
-    @if (allEpisodesWatched()) {
+    @if (allEpisodesCompleted()) {
       <button
         class="button-icon button-reveal-label"
-        [libcRevealLabel]="translations.markAllEpisodesUnwatched()"
-        data-test-id="completed-episodes-mark-all-incomplete"
+        [libcRevealLabel]="translations.markAllEpisodesUncompleted()"
+        data-test-id="completed-episodes-mark-all-uncompleted"
         type="button"
-        [attr.aria-label]="translations.markAllEpisodesUnwatched()"
-        [title]="translations.markAllEpisodesUnwatched()"
-        (click)="onMarkAllEpisodesUnwatched()"
+        [attr.aria-label]="translations.markAllEpisodesUncompleted()"
+        [title]="translations.markAllEpisodesUncompleted()"
+        (click)="onMarkAllEpisodesUncompleted()"
       >
         <i class="material-icons" aria-hidden="true"> remove_circle_outline </i>
         <span class="button-reveal-label-text"
-          ><span>{{ translations.markAllEpisodesUnwatched() }}</span></span
+          ><span>{{ translations.markAllEpisodesUncompleted() }}</span></span
         >
       </button>
     } @else {
@@ -91,7 +91,7 @@
         type="button"
         [attr.aria-label]="translations.markAllEpisodesCompleted()"
         [title]="translations.markAllEpisodesCompleted()"
-        (click)="onMarkAllEpisodesWatched()"
+        (click)="onMarkAllEpisodesCompleted()"
       >
         <i class="material-icons" aria-hidden="true"> check_circle_outline </i>
         <span class="button-reveal-label-text"

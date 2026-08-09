@@ -77,22 +77,22 @@ describe('CompletedEpisodesDialog', () => {
     fixture.detectChanges();
   });
 
-  it('loads seasons metadata and watched episodes on init', () => {
+  it('loads seasons metadata and completed episodes on init', () => {
     expect(api.getTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(api.getTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['seasonsMetadata']()).toEqual([{ season: 1, episodes: 3, titles: [] }]);
     expect(component['completedEpisodes']()).toEqual([{ season: 1, episode: 2 }]);
   });
 
-  it('renders the translated mark-all action for both watched states', () => {
-    const markWatchedButton = fixture.nativeElement.querySelector(
+  it('renders the translated mark-all action for both completed states', () => {
+    const markCompletedButton = fixture.nativeElement.querySelector(
       '[data-test-id="completed-episodes-mark-all-completed"]'
     ) as HTMLButtonElement;
 
-    expect(markWatchedButton.type).toBe('button');
-    expect(markWatchedButton.classList.contains('button-icon')).toBe(true);
-    expect(markWatchedButton.getAttribute('aria-label')).toBe('MarkAllEpisodesWatched');
-    expect(markWatchedButton.title).toBe('MarkAllEpisodesWatched');
+    expect(markCompletedButton.type).toBe('button');
+    expect(markCompletedButton.classList.contains('button-icon')).toBe(true);
+    expect(markCompletedButton.getAttribute('aria-label')).toBe('MarkAllEpisodesCompleted');
+    expect(markCompletedButton.title).toBe('MarkAllEpisodesCompleted');
 
     component['completedEpisodes'].set([
       { season: 1, episode: 1 },
@@ -101,43 +101,43 @@ describe('CompletedEpisodesDialog', () => {
     ]);
     fixture.detectChanges();
 
-    const markUnwatchedButton = fixture.nativeElement.querySelector(
-      '[data-test-id="completed-episodes-mark-all-incomplete"]'
+    const markUncompletedButton = fixture.nativeElement.querySelector(
+      '[data-test-id="completed-episodes-mark-all-uncompleted"]'
     ) as HTMLButtonElement;
-    expect(markUnwatchedButton.classList.contains('button-icon')).toBe(true);
-    expect(markUnwatchedButton.getAttribute('aria-label')).toBe('MarkAllEpisodesUnwatched');
-    expect(markUnwatchedButton.title).toBe('MarkAllEpisodesUnwatched');
+    expect(markUncompletedButton.classList.contains('button-icon')).toBe(true);
+    expect(markUncompletedButton.getAttribute('aria-label')).toBe('MarkAllEpisodesUncompleted');
+    expect(markUncompletedButton.title).toBe('MarkAllEpisodesUncompleted');
   });
 
-  it('computes watched set from episodes', () => {
-    expect(component['watchedSet']().has('1-2')).toBe(true);
-    expect(component['watchedSet']().has('1-1')).toBe(false);
+  it('computes completed set from episodes', () => {
+    expect(component['completedSet']().has('1-2')).toBe(true);
+    expect(component['completedSet']().has('1-1')).toBe(false);
   });
 
-  it('detects fully watched season', () => {
+  it('detects fully completed season', () => {
     component['completedEpisodes'].set([
       { season: 1, episode: 1 },
       { season: 1, episode: 2 },
       { season: 1, episode: 3 },
     ]);
 
-    expect(component['isSeasonFullyWatched'](1, 3)).toBe(true);
-    expect(component['isSeasonPartiallyWatched'](1, 3)).toBe(false);
+    expect(component['isSeasonFullyCompleted'](1, 3)).toBe(true);
+    expect(component['isSeasonPartiallyCompleted'](1, 3)).toBe(false);
   });
 
-  it('detects partially watched season', () => {
-    expect(component['isSeasonFullyWatched'](1, 3)).toBe(false);
-    expect(component['isSeasonPartiallyWatched'](1, 3)).toBe(true);
+  it('detects partially completed season', () => {
+    expect(component['isSeasonFullyCompleted'](1, 3)).toBe(false);
+    expect(component['isSeasonPartiallyCompleted'](1, 3)).toBe(true);
   });
 
-  it('detects unwatched season', () => {
+  it('detects uncompleted season', () => {
     component['completedEpisodes'].set([]);
 
-    expect(component['isSeasonFullyWatched'](1, 3)).toBe(false);
-    expect(component['isSeasonPartiallyWatched'](1, 3)).toBe(false);
+    expect(component['isSeasonFullyCompleted'](1, 3)).toBe(false);
+    expect(component['isSeasonPartiallyCompleted'](1, 3)).toBe(false);
   });
 
-  it('toggles an episode watched state and saves automatically', async () => {
+  it('toggles an episode completed state and saves automatically', async () => {
     api.updateTrackingCompletedEpisodesByExternalId.mockReturnValue(
       of({
         completedEpisodes: [
@@ -225,7 +225,7 @@ describe('CompletedEpisodesDialog', () => {
     });
   });
 
-  it('saves watched episodes in episode order', async () => {
+  it('saves completed episodes in episode order', async () => {
     api.updateTrackingCompletedEpisodesByExternalId.mockReturnValue(
       of({
         completedEpisodes: [
@@ -332,7 +332,7 @@ describe('CompletedEpisodesDialog', () => {
     expect(portal.closeTop).toHaveBeenCalled();
   });
 
-  it('ignores a late initial watched episodes response after local edits', async () => {
+  it('ignores a late initial completed episodes response after local edits', async () => {
     const completedEpisodesLoad = new Subject<{
       completedEpisodes: { season: number; episode: number }[];
       lastCompletedEpisode: { season: number; episode: number } | null;
@@ -410,20 +410,20 @@ describe('CompletedEpisodesDialog', () => {
     expect(saved).toHaveBeenCalledWith([{ season: 1, episode: 2 }], { hash: 'metadata-hash' });
   });
 
-  it('shows toast when no season metadata exists on mark all watched', async () => {
+  it('shows toast when no season metadata exists on mark all completed', async () => {
     component['seasonsMetadata'].set([]);
 
-    await component['onMarkAllEpisodesWatched']();
+    await component['onMarkAllEpisodesCompleted']();
 
     expect(api.markAllTrackingCompletedByExternalId).not.toHaveBeenCalled();
     expect(toastState.state.message()).toBe('Toast.SetSeasonMetadataFirst');
   });
 
-  it('marks all episodes watched after confirmation', async () => {
+  it('marks all episodes completed after confirmation', async () => {
     const saved = vi.fn();
     fixture.componentRef.setInput('saved', saved);
 
-    await component['onMarkAllEpisodesWatched']();
+    await component['onMarkAllEpisodesCompleted']();
 
     expect(api.markAllTrackingCompletedByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
     expect(component['completedEpisodes']()).toEqual([
@@ -439,10 +439,10 @@ describe('CompletedEpisodesDialog', () => {
       ],
       { hash: 'completed-hash' }
     );
-    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedWatched');
+    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedCompleted');
   });
 
-  it('queues mark all watched behind a pending episode auto-save', async () => {
+  it('queues mark all completed behind a pending episode auto-save', async () => {
     const pendingEpisodeSave = new Subject<{
       completedEpisodes: { season: number; episode: number }[];
       lastCompletedEpisode: { season: number; episode: number } | null;
@@ -451,7 +451,7 @@ describe('CompletedEpisodesDialog', () => {
 
     const episodeSave = component['onToggleEpisode'](1, 1);
     await vi.waitFor(() => expect(api.updateTrackingCompletedEpisodesByExternalId).toHaveBeenCalled());
-    const markAllSave = component['onMarkAllEpisodesWatched']();
+    const markAllSave = component['onMarkAllEpisodesCompleted']();
 
     expect(api.markAllTrackingCompletedByExternalId).not.toHaveBeenCalled();
 
@@ -473,38 +473,38 @@ describe('CompletedEpisodesDialog', () => {
       { season: 1, episode: 2 },
       { season: 1, episode: 3 },
     ]);
-    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedWatched');
+    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedCompleted');
   });
 
-  it('does not mark all episodes watched when confirmation is declined', async () => {
+  it('does not mark all episodes completed when confirmation is declined', async () => {
     confirm.open.mockReturnValue(of(false));
 
-    await component['onMarkAllEpisodesWatched']();
+    await component['onMarkAllEpisodesCompleted']();
 
     expect(api.markAllTrackingCompletedByExternalId).not.toHaveBeenCalled();
   });
 
-  it('clears watched episodes after confirmation', async () => {
+  it('clears completed episodes after confirmation', async () => {
     const saved = vi.fn();
     fixture.componentRef.setInput('saved', saved);
     api.updateTrackingCompletedEpisodesByExternalId.mockReturnValue(
-      of({ completedEpisodes: [], lastCompletedEpisode: null, item: { hash: 'unwatched-hash' } })
+      of({ completedEpisodes: [], lastCompletedEpisode: null, item: { hash: 'uncompleted-hash' } })
     );
 
-    await component['onMarkAllEpisodesUnwatched']();
+    await component['onMarkAllEpisodesUncompleted']();
 
     expect(api.updateTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
       completedEpisodes: [],
     });
     expect(component['completedEpisodes']()).toEqual([]);
-    expect(saved).toHaveBeenCalledWith([], { hash: 'unwatched-hash' });
-    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedUnwatched');
+    expect(saved).toHaveBeenCalledWith([], { hash: 'uncompleted-hash' });
+    expect(toastState.state.message()).toBe('Toast.AllEpisodesMarkedUncompleted');
   });
 
-  it('does not clear watched episodes when confirmation is declined', async () => {
+  it('does not clear completed episodes when confirmation is declined', async () => {
     confirm.open.mockReturnValue(of(false));
 
-    await component['onMarkAllEpisodesUnwatched']();
+    await component['onMarkAllEpisodesUncompleted']();
 
     expect(api.updateTrackingCompletedEpisodesByExternalId).not.toHaveBeenCalled();
   });

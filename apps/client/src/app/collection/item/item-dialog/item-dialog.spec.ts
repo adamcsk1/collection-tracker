@@ -91,9 +91,9 @@ describe('ItemDialog', () => {
     refreshTrackingSeasonsByExternalId: ReturnType<typeof vi.fn>;
     deleteTrackingSeasonsByExternalId: ReturnType<typeof vi.fn>;
     markAllTrackingCompletedByExternalId: ReturnType<typeof vi.fn>;
-    addWatchedItemByExternalId: ReturnType<typeof vi.fn>;
+    addCompletedItemByExternalId: ReturnType<typeof vi.fn>;
     addTrackingItemByExternalId: ReturnType<typeof vi.fn>;
-    deleteWatchedItemByExternalId: ReturnType<typeof vi.fn>;
+    deleteCompletedItemByExternalId: ReturnType<typeof vi.fn>;
     collectionItemExists: ReturnType<typeof vi.fn>;
     getMatchedItems: ReturnType<typeof vi.fn>;
   };
@@ -145,11 +145,11 @@ describe('ItemDialog', () => {
           item: buildApiItem({ listType: 'tracking', tags: [SERIES_TAG, COMPLETED_TAG], hash: 'completed-hash' }),
         })
       ),
-      addWatchedItemByExternalId: vi.fn(() => of({ item: buildApiItem({ listType: 'tracking', watched: true }) })),
+      addCompletedItemByExternalId: vi.fn(() => of({ item: buildApiItem({ listType: 'tracking', watched: true }) })),
       addTrackingItemByExternalId: vi.fn(() =>
         of({ item: buildApiItem({ listType: 'tracking', tags: [SERIES_TAG] }) })
       ),
-      deleteWatchedItemByExternalId: vi.fn(() => of(undefined)),
+      deleteCompletedItemByExternalId: vi.fn(() => of(undefined)),
       collectionItemExists: vi.fn(() => of({ exists: false })),
       getMatchedItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 0 })),
     };
@@ -578,7 +578,7 @@ describe('ItemDialog', () => {
     );
   });
 
-  it('reports all episodes watched only when every available episode is watched', () => {
+  it('reports all episodes completed only when every available episode is completed', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component['seriesSeasons'].set([{ season: 1, episodes: 2 }]);
@@ -586,17 +586,17 @@ describe('ItemDialog', () => {
     component['completedEpisodes'].set([{ season: 1, episode: 1 }]);
     component['completedEpisodesLoaded'].set(true);
 
-    expect(component['allEpisodesWatched']()).toBe(false);
+    expect(component['allEpisodesCompleted']()).toBe(false);
 
     component['completedEpisodes'].set([
       { season: 1, episode: 1 },
       { season: 1, episode: 2 },
     ]);
 
-    expect(component['allEpisodesWatched']()).toBe(true);
+    expect(component['allEpisodesCompleted']()).toBe(true);
   });
 
-  it('does not report all episodes watched without season metadata', () => {
+  it('does not report all episodes completed without season metadata', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component['seriesSeasons'].set([]);
@@ -604,17 +604,17 @@ describe('ItemDialog', () => {
     component['completedEpisodes'].set([{ season: 1, episode: 1 }]);
     component['completedEpisodesLoaded'].set(true);
 
-    expect(component['allEpisodesWatched']()).toBe(false);
+    expect(component['allEpisodesCompleted']()).toBe(false);
   });
 
-  it('uses completed tag while watched episode data is loading', () => {
+  it('uses completed tag while completed episode data is loading', () => {
     fixture.componentRef.setInput(
       'collectionItem',
       buildItem({ listType: 'tracking', tags: [SERIES_TAG, COMPLETED_TAG] })
     );
     fixture.detectChanges();
 
-    expect(component['allEpisodesWatched']()).toBe(true);
+    expect(component['allEpisodesCompleted']()).toBe(true);
   });
 
   it('opens the manual series metadata dialog', () => {
@@ -1138,7 +1138,7 @@ describe('ItemDialog', () => {
 
     await component['onMarkAsFinished']();
 
-    expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, undefined);
+    expect(api.addCompletedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, undefined);
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ listType: 'tracking' }),
       true
@@ -1167,8 +1167,8 @@ describe('ItemDialog', () => {
     fixture.detectChanges();
     await component['onMarkAsUnfinished']();
 
-    expect(api.addWatchedItemByExternalId).not.toHaveBeenCalled();
-    expect(api.deleteWatchedItemByExternalId).not.toHaveBeenCalled();
+    expect(api.addCompletedItemByExternalId).not.toHaveBeenCalled();
+    expect(api.deleteCompletedItemByExternalId).not.toHaveBeenCalled();
   });
 
   it('moves watch later movie items to tracking', async () => {
@@ -1182,7 +1182,7 @@ describe('ItemDialog', () => {
 
     await component['onMoveToFinished']();
 
-    expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'watchlist');
+    expect(api.addCompletedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined, 'watchlist');
     expect(collectionService.addCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ listType: 'tracking' }),
       true
@@ -1287,7 +1287,7 @@ describe('ItemDialog', () => {
     await component['onMarkAsFinished']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.addWatchedItemByExternalId).not.toHaveBeenCalled();
+    expect(api.addCompletedItemByExternalId).not.toHaveBeenCalled();
   });
 
   it('does not mark wishlist items as watched', async () => {
@@ -1299,7 +1299,7 @@ describe('ItemDialog', () => {
     await component['onMarkAsFinished']();
 
     expect(confirm.open).not.toHaveBeenCalled();
-    expect(api.addWatchedItemByExternalId).not.toHaveBeenCalled();
+    expect(api.addCompletedItemByExternalId).not.toHaveBeenCalled();
   });
 
   it('marks item as unwatched by removing the tracking item', async () => {
@@ -1310,7 +1310,7 @@ describe('ItemDialog', () => {
 
     await component['onMarkAsUnfinished']();
 
-    expect(api.deleteWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
+    expect(api.deleteCompletedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567');
     expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
       expect.objectContaining({ externalProvider: 'omdb', externalItemId: 'tt1234567' }),
       undefined,
@@ -1338,7 +1338,7 @@ describe('ItemDialog', () => {
 
     await component['onMarkAsUnfinished']();
 
-    expect(api.deleteWatchedItemByExternalId).toHaveBeenCalledWith('openlibrary', '9780306406157');
+    expect(api.deleteCompletedItemByExternalId).toHaveBeenCalledWith('openlibrary', '9780306406157');
     expect(collectionService.deleteCollectionItem).not.toHaveBeenCalled();
     expect(collectionService.updateCollectionItem).toHaveBeenNthCalledWith(
       1,

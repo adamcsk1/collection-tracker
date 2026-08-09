@@ -276,7 +276,7 @@ export const CollectionPage = {
   getSeriesMetadataEpisodeTitleInputs: () =>
     getSeriesMetadataDialog().find('[data-test-id="series-metadata-episode-title"] input'),
 
-  // Watched episodes dialog
+  // Completed episodes dialog
   getCompletedEpisodesDialogHost,
   getCompletedEpisodesDialogComponentHost: () => getDialogComponentHost('completed-episodes-dialog'),
   getCompletedEpisodesDialog: () => getDialogFrame(getCompletedEpisodesDialog()),
@@ -284,10 +284,10 @@ export const CollectionPage = {
     getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-season-toggle"]'),
   getCompletedEpisodesEpisodeCheckbox: () =>
     getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-episode-checkbox"]'),
-  getCompletedEpisodesMarkAllWatchedButton: () =>
+  getCompletedEpisodesMarkAllCompletedButton: () =>
     getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-mark-all-completed"]'),
-  getCompletedEpisodesMarkAllUnwatchedButton: () =>
-    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-mark-all-incomplete"]'),
+  getCompletedEpisodesMarkAllUncompletedButton: () =>
+    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-mark-all-uncompleted"]'),
   getCompletedEpisodesNoMetadataMessage: () =>
     getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-no-metadata-message"]'),
   getCompletedEpisodesManageSeasonMetadataButton: () =>

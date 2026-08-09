@@ -317,16 +317,16 @@ export class ItemDialog implements OnInit {
   protected readonly finishedExists = signal(false);
   protected readonly trackingHash = signal<string | undefined>(undefined);
   protected readonly finishedHash = signal<string | undefined>(undefined);
-  protected readonly allEpisodesWatched = computed(() => {
+  protected readonly allEpisodesCompleted = computed(() => {
     if (!this.seriesSeasonsLoaded() || !this.completedEpisodesLoaded()) return this.collectionItem().watchedAt !== null;
 
     const seasons = this.seriesSeasons();
     if (!seasons.length) return false;
 
-    const watchedSet = new Set(this.completedEpisodes().map((episode) => `${episode.season}-${episode.episode}`));
+    const completedSet = new Set(this.completedEpisodes().map((episode) => `${episode.season}-${episode.episode}`));
     for (const season of seasons) {
       for (let episode = 1; episode <= season.episodes; episode++) {
-        if (!watchedSet.has(`${season.season}-${episode}`)) return false;
+        if (!completedSet.has(`${season.season}-${episode}`)) return false;
       }
     }
     return true;
@@ -697,7 +697,7 @@ export class ItemDialog implements OnInit {
     try {
       const sourceListType = this.books() ? 'books' : undefined;
       const item = await firstValueFrom(
-        this.api.addWatchedItemByExternalId(
+        this.api.addCompletedItemByExternalId(
           this.collectionItem().externalProvider,
           this.collectionItem().externalItemId,
           this.collectionItem().ownerShareCode,
@@ -725,7 +725,7 @@ export class ItemDialog implements OnInit {
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
-        this.api.addWatchedItemByExternalId(
+        this.api.addCompletedItemByExternalId(
           this.collectionItem().externalProvider,
           this.collectionItem().externalItemId,
           undefined,
@@ -881,7 +881,7 @@ export class ItemDialog implements OnInit {
     try {
       const sourceItem = this.collectionItem();
       await firstValueFrom(
-        this.api.deleteWatchedItemByExternalId(sourceItem.externalProvider, sourceItem.externalItemId)
+        this.api.deleteCompletedItemByExternalId(sourceItem.externalProvider, sourceItem.externalItemId)
       );
       const updatedSource = { ...sourceItem, watched: false };
       if (sourceItem.contentType === 'movie') {

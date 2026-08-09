@@ -1,24 +1,24 @@
 import { TrackingSeasonMetadataModel } from '@shared/models/api-model';
 
-export const getOpenSeasons = (seasons: TrackingSeasonMetadataModel[], watchedSet: Set<string>): Set<number> => {
+export const getOpenSeasons = (seasons: TrackingSeasonMetadataModel[], completedSet: Set<string>): Set<number> => {
   if (seasons.length === 0) {
     return new Set<number>();
   }
 
   const sortedSeasons = [...seasons].sort((firstSeason, secondSeason) => firstSeason.season - secondSeason.season);
   const inProgress = new Set<number>();
-  const fullyWatched = new Set<number>();
+  const fullyCompleted = new Set<number>();
   for (const season of sortedSeasons) {
-    let watchedCount = 0;
+    let completedCount = 0;
     for (let episode = 1; episode <= season.episodes; episode++) {
-      if (watchedSet.has(`${season.season}-${episode}`)) {
-        watchedCount++;
+      if (completedSet.has(`${season.season}-${episode}`)) {
+        completedCount++;
       }
     }
-    if (watchedCount > 0 && watchedCount < season.episodes) {
+    if (completedCount > 0 && completedCount < season.episodes) {
       inProgress.add(season.season);
-    } else if (watchedCount === season.episodes) {
-      fullyWatched.add(season.season);
+    } else if (completedCount === season.episodes) {
+      fullyCompleted.add(season.season);
     }
   }
 
@@ -26,15 +26,15 @@ export const getOpenSeasons = (seasons: TrackingSeasonMetadataModel[], watchedSe
     return inProgress;
   }
 
-  if (fullyWatched.size === seasons.length) {
+  if (fullyCompleted.size === seasons.length) {
     return new Set<number>();
   }
 
-  if (fullyWatched.size === 0) {
+  if (fullyCompleted.size === 0) {
     return new Set([sortedSeasons[0].season]);
   }
 
-  const firstIncompleteSeason = sortedSeasons.find((season) => !fullyWatched.has(season.season));
+  const firstIncompleteSeason = sortedSeasons.find((season) => !fullyCompleted.has(season.season));
   if (firstIncompleteSeason) {
     return new Set([firstIncompleteSeason.season]);
   }

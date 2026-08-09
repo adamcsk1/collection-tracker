@@ -184,7 +184,7 @@ export class NewItemDialog {
     pagesRead: computed(() => this.ngxSignalTranslate.translate('PagesRead')),
     totalPages: computed(() => this.ngxSignalTranslate.translate('TotalPages')),
     collectionItemFinished: computed(() => this.ngxSignalTranslate.translate('CollectionItemFinished')),
-    copyToTrackingAsCompleted: computed(() => this.ngxSignalTranslate.translate('CopyToTrackingAsWatched')),
+    copyToTrackingAsCompleted: computed(() => this.ngxSignalTranslate.translate('CopyToTrackingAsCompleted')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     saveAndNew: computed(() => this.ngxSignalTranslate.translate('SaveAndNew')),
     saveAndClose: computed(() => this.ngxSignalTranslate.translate('SaveAndClose')),
