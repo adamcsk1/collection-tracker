@@ -81,26 +81,26 @@ describe('MenuNav', () => {
 
     mainState.setState('collectionFeaturePreferences', {
       books: true,
-      watchlist: true,
+      upNext: true,
       wishlist: false,
       tracking: true,
     });
     fixture.detectChanges();
 
-    expect(hasLink('nav-watchlist')).toBe(true);
+    expect(hasLink('nav-up-next')).toBe(true);
     expect(hasLink('nav-wishlist')).toBe(false);
     expect(hasLink('nav-tracking')).toBe(true);
     expect(hasLink('nav-books')).toBe(false);
 
     mainState.setState('collectionFeaturePreferences', {
       books: false,
-      watchlist: false,
+      upNext: false,
       wishlist: true,
       tracking: false,
     });
     fixture.detectChanges();
 
-    expect(hasLink('nav-watchlist')).toBe(false);
+    expect(hasLink('nav-up-next')).toBe(false);
     expect(hasLink('nav-wishlist')).toBe(true);
     expect(hasLink('nav-tracking')).toBe(false);
     expect(hasLink('nav-books')).toBe(false);

@@ -36,7 +36,7 @@ const mockStatistics = (tags: string[]) =>
     movieCount: 0,
     seriesCount: 0,
     favoriteCount: 0,
-    watchlistCount: 0,
+    upNextCount: 0,
     wishlistCount: 0,
     watchedMovieCount: 0,
     watchedSeriesCount: 0,

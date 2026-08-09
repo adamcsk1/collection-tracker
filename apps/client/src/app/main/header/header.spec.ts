@@ -42,10 +42,16 @@ describe('Header component', () => {
     expect(component['currentNavTitle']()).toBe('Collection');
   });
 
-  it('uses watched as the title for watched page', () => {
+  it('uses tracking as the title for the tracking page', () => {
     routerEvents.next(new NavigationEnd(1, '/collection/tracking', '/collection/tracking'));
 
     expect(component['currentNavTitle']()).toBe('Tracking');
+  });
+
+  it('uses Up Next as the title for the up-next page', () => {
+    routerEvents.next(new NavigationEnd(1, '/collection/up-next', '/collection/up-next'));
+
+    expect(component['currentNavTitle']()).toBe('UpNext');
   });
 
   it('uses books as the title for books page', () => {

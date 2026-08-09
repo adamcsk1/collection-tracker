@@ -28,16 +28,16 @@
       {{ translations.wishlist() }}
     </a>
   }
-  @if (featurePreferences().watchlist) {
+  @if (featurePreferences().upNext) {
     <a
-      data-test-id="nav-watchlist"
-      [routerLink]="['/', 'collection', 'watchlist']"
+      data-test-id="nav-up-next"
+      [routerLink]="['/', 'collection', 'up-next']"
       routerLinkActive="active"
       class="highlight"
       (click)="onClose()"
     >
       <i class="material-icons">watch_later</i>
-      {{ translations.watchlist() }}
+      {{ translations.upNext() }}
     </a>
   }
   @if (featurePreferences().tracking) {

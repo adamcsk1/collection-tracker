@@ -34,7 +34,7 @@ const buildTagManagement = (
 
 const mockExportResponse: UserExportApiResponseModel = {
   type: 'collection-tracker-export',
-  version: 6,
+  version: 10,
   userSettings: { theme: 'dark' },
   collectionItems: [
     {

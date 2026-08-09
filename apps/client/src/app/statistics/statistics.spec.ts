@@ -26,7 +26,7 @@ describe('Statistics component', () => {
     seriesCount: 1,
     booksCount: 1,
     favoriteCount: 1,
-    watchlistCount: 1,
+    upNextCount: 1,
     wishlistCount: 1,
     watchedMovieCount: 1,
     watchedSeriesCount: 0,
@@ -80,7 +80,7 @@ describe('Statistics component', () => {
       series: 1,
       books: 1,
       favorites: 1,
-      watchlist: 1,
+      upNext: 1,
       wishlist: 1,
       all: 2,
       watchedMovies: 1,
@@ -99,13 +99,13 @@ describe('Statistics component', () => {
 
     mainState.setState('collectionFeaturePreferences', {
       books: true,
-      watchlist: true,
+      upNext: true,
       wishlist: false,
       tracking: true,
     });
     fixture.detectChanges();
 
-    expect(hasCard('statistics-summary-watchlist')).toBe(true);
+    expect(hasCard('statistics-summary-up-next')).toBe(true);
     expect(hasCard('statistics-summary-wishlist')).toBe(false);
     expect(hasCard('statistics-summary-watched-movies')).toBe(true);
     expect(hasCard('statistics-summary-watched-series')).toBe(true);
@@ -115,13 +115,13 @@ describe('Statistics component', () => {
 
     mainState.setState('collectionFeaturePreferences', {
       books: false,
-      watchlist: false,
+      upNext: false,
       wishlist: true,
       tracking: false,
     });
     fixture.detectChanges();
 
-    expect(hasCard('statistics-summary-watchlist')).toBe(false);
+    expect(hasCard('statistics-summary-up-next')).toBe(false);
     expect(hasCard('statistics-summary-wishlist')).toBe(true);
     expect(hasCard('statistics-summary-watched-movies')).toBe(false);
     expect(hasCard('statistics-summary-watched-series')).toBe(false);
@@ -217,9 +217,9 @@ describe('Statistics component', () => {
   });
 
   it('navigates to watch later when clicking the watch later stat card', () => {
-    component['onNavigateToWatchlist']();
+    component['onNavigateToUpNext']();
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'watchlist']);
+    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'up-next']);
   });
 
   it('navigates to wishlist when clicking the wishlist stat card', () => {

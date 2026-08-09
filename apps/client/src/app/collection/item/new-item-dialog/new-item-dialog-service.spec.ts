@@ -437,12 +437,12 @@ describe('NewItemDialogService', () => {
       createResponse({ title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' })
     );
 
-    await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'watchlist' }));
+    await firstValueFrom(service.save('tt123', null, '#tag', 'close', { listType: 'up-next' }));
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#tag'], contentType: 'movie' }),
       undefined,
-      'watchlist'
+      'up-next'
     );
     expect(collection.addCollectionItem).toHaveBeenCalledWith(
       { title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' },
@@ -569,9 +569,9 @@ describe('NewItemDialogService', () => {
       })
     );
 
-    await firstValueFrom(service.saveManual(buildManualItem(), 'close', { listType: 'watchlist' }));
+    await firstValueFrom(service.saveManual(buildManualItem(), 'close', { listType: 'up-next' }));
 
-    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ contentType: 'movie' }), undefined, 'watchlist');
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ contentType: 'movie' }), undefined, 'up-next');
   });
 
   it('saves manual items with the wishlist list type', async () => {

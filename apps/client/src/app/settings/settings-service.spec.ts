@@ -117,7 +117,7 @@ describe('SettingsService', () => {
     const preferences = {
       books: true,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     };
     mainState.setState('sensitiveDataStorage', 'session');
@@ -174,13 +174,13 @@ describe('SettingsService', () => {
     const cachedPreferences = {
       books: true,
       wishlist: true,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     };
     const apiPreferences = {
       books: false,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     };
     mainState.setState('collectionFeaturePreferences', cachedPreferences);
@@ -200,7 +200,7 @@ describe('SettingsService', () => {
     mainState.setState('collectionFeaturePreferences', {
       books: false,
       wishlist: false,
-      watchlist: false,
+      upNext: false,
       tracking: false,
     });
 
@@ -232,7 +232,7 @@ describe('SettingsService', () => {
     const preferences = {
       books: true,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     };
 
@@ -251,7 +251,7 @@ describe('SettingsService', () => {
     const preferences = {
       books: false,
       wishlist: true,
-      watchlist: false,
+      upNext: false,
       tracking: true,
     };
     mainState.setState('sensitiveDataStorage', 'session');
@@ -275,10 +275,10 @@ describe('SettingsService', () => {
     const firstPreferences = {
       books: true,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     };
-    const secondPreferences = { ...firstPreferences, watchlist: false };
+    const secondPreferences = { ...firstPreferences, upNext: false };
     sharedApi.updateUserSettings.mockReturnValueOnce(firstUpdate).mockReturnValueOnce(of(void 0));
 
     service.storeCollectionFeaturePreferences(firstPreferences);
@@ -296,10 +296,10 @@ describe('SettingsService', () => {
     const firstPreferences = {
       books: true,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     };
-    const secondPreferences = { ...firstPreferences, watchlist: false };
+    const secondPreferences = { ...firstPreferences, upNext: false };
     sharedApi.updateUserSettings
       .mockReturnValueOnce(throwError(() => new Error('network')))
       .mockReturnValueOnce(of(void 0));

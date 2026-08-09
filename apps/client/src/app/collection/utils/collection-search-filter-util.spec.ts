@@ -18,10 +18,10 @@ describe('buildStandardSearchFilters', () => {
   });
 
   it('builds tag search filters', () => {
-    expect(buildStandardSearchFilters('#drama', 'watchlist')).toEqual({
+    expect(buildStandardSearchFilters('#drama', 'up-next')).toEqual({
       tags: ['#drama'],
       tagMode: 'all',
-      listType: 'watchlist',
+      listType: 'up-next',
     });
   });
 

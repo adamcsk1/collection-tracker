@@ -216,7 +216,7 @@ export class List implements OnDestroy {
             : undefined;
     const booksEnabled = this.mainState.state.collectionFeaturePreferences().books;
     this.portal.open(NewItemDialog, {
-      watchlist: listType === 'watchlist',
+      upNext: listType === 'up-next',
       wishlist: listType === 'wishlist',
       tracking: listType === 'tracking',
       books: lockedType === 'book',
@@ -349,7 +349,7 @@ export class List implements OnDestroy {
         if (active.includes('book')) return ['favorite'];
         return ['unwatched', 'favorite'];
       }
-      case 'watchlist':
+      case 'up-next':
       case 'wishlist':
         // Media scope uses chips on these hubs.
         return [];

@@ -28,7 +28,7 @@ describe('SettingsFeatures', () => {
     mainState.setState('collectionFeaturePreferences', {
       books: true,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     });
     fixture = TestBed.createComponent(SettingsFeatures);
@@ -40,7 +40,7 @@ describe('SettingsFeatures', () => {
     expect(component['formModel']()).toEqual({
       books: true,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     });
     expect(settings.storeCollectionFeaturePreferences).not.toHaveBeenCalled();
@@ -53,7 +53,7 @@ describe('SettingsFeatures', () => {
     expect(settings.storeCollectionFeaturePreferences).toHaveBeenCalledWith({
       books: true,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     });
   });
@@ -62,7 +62,7 @@ describe('SettingsFeatures', () => {
     mainState.setState('collectionFeaturePreferences', {
       books: false,
       wishlist: true,
-      watchlist: false,
+      upNext: false,
       tracking: true,
     });
     fixture.detectChanges();
@@ -70,7 +70,7 @@ describe('SettingsFeatures', () => {
     expect(component['formModel']()).toEqual({
       books: false,
       wishlist: true,
-      watchlist: false,
+      upNext: false,
       tracking: true,
     });
   });

@@ -86,7 +86,7 @@ export class ItemDialog implements OnInit {
     titleCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.CollectionItem')),
     titleTrackingItem: computed(() => this.ngxSignalTranslate.translate('Title.TrackingItem')),
     titleBooksItem: computed(() => this.ngxSignalTranslate.translate('Title.BooksItem')),
-    titleWatchlistItem: computed(() => this.ngxSignalTranslate.translate('Title.WatchlistItem')),
+    titleUpNextItem: computed(() => this.ngxSignalTranslate.translate('Title.UpNextItem')),
     titleWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.WishlistItem')),
     labelTitle: computed(() => this.ngxSignalTranslate.translate('Title')),
     labelIMDbId: computed(() => this.ngxSignalTranslate.translate('IMDbId')),
@@ -129,8 +129,8 @@ export class ItemDialog implements OnInit {
           return this.ngxSignalTranslate.translate('EditTrackingItem');
         case 'books':
           return this.ngxSignalTranslate.translate('EditBooksItem');
-        case 'watchlist':
-          return this.ngxSignalTranslate.translate('EditWatchlistItem');
+        case 'up-next':
+          return this.ngxSignalTranslate.translate('EditUpNextItem');
         case 'wishlist':
           return this.ngxSignalTranslate.translate('EditWishlistItem');
         default:
@@ -153,8 +153,8 @@ export class ItemDialog implements OnInit {
           return this.ngxSignalTranslate.translate('DeleteFromTracking');
         case 'books':
           return this.ngxSignalTranslate.translate('DeleteFromBooks');
-        case 'watchlist':
-          return this.ngxSignalTranslate.translate('DeleteFromWatchlist');
+        case 'up-next':
+          return this.ngxSignalTranslate.translate('DeleteFromUpNext');
         case 'wishlist':
           return this.ngxSignalTranslate.translate('DeleteFromWishlist');
         default:
@@ -367,7 +367,7 @@ export class ItemDialog implements OnInit {
       .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
     if (item.listType === 'tracking') return this.isOwnItem();
     if (item.listType === 'books') return this.isOwnItem();
-    if (item.listType === 'watchlist') return this.isOwnItem();
+    if (item.listType === 'up-next') return this.isOwnItem();
     if (item.listType === 'wishlist') return this.isOwnItem();
     if (item.listType !== 'library') return false;
     if (this.isOwnItem()) return true;
@@ -414,10 +414,10 @@ export class ItemDialog implements OnInit {
       (this.tracking() && (this.movie() || this.book()) && this.collectionItem().watchedAt !== null)
   );
   protected readonly favorite = computed(() => this.collectionItem().favorite);
-  protected readonly watchlist = computed(() => this.collectionItem().listType === 'watchlist');
+  protected readonly upNext = computed(() => this.collectionItem().listType === 'up-next');
   protected readonly wishlist = computed(() => this.collectionItem().listType === 'wishlist');
   protected readonly dialogTitle = computed(() => {
-    if (this.watchlist()) return this.translations.titleWatchlistItem();
+    if (this.upNext()) return this.translations.titleUpNextItem();
     if (this.wishlist()) return this.translations.titleWishlistItem();
     if (this.tracking()) return this.translations.titleTrackingItem();
     if (this.books()) return this.translations.titleBooksItem();
@@ -471,7 +471,7 @@ export class ItemDialog implements OnInit {
     const loadTracking =
       (this.libraryItem() && (this.series() || this.movie())) ||
       (this.books() && this.book()) ||
-      (this.watchlist() && (this.series() || this.book() || this.movie()));
+      (this.upNext() && (this.series() || this.book() || this.movie()));
 
     if (loadTracking) {
       this.api
@@ -625,7 +625,7 @@ export class ItemDialog implements OnInit {
       this.collectionItem().listType !== 'library' &&
       this.collectionItem().listType !== 'tracking' &&
       this.collectionItem().listType !== 'books' &&
-      this.collectionItem().listType !== 'watchlist' &&
+      this.collectionItem().listType !== 'up-next' &&
       this.collectionItem().listType !== 'wishlist'
     )
       return;
@@ -641,13 +641,13 @@ export class ItemDialog implements OnInit {
           mergeMap((confirmed) => {
             if (confirmed) {
               this.spinnerLoadingState.setState('show', true);
-              let updateListType: 'tracking' | 'books' | 'watchlist' | 'wishlist' | undefined;
+              let updateListType: 'tracking' | 'books' | 'up-next' | 'wishlist' | undefined;
               if (this.tracking()) {
                 updateListType = 'tracking';
               } else if (this.books()) {
                 updateListType = 'books';
-              } else if (this.watchlist()) {
-                updateListType = 'watchlist';
+              } else if (this.upNext()) {
+                updateListType = 'up-next';
               } else if (this.wishlist()) {
                 updateListType = 'wishlist';
               }
@@ -721,7 +721,7 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMoveToFinished(): Promise<void> {
-    if (!this.featurePreferences().tracking || !this.watchlist() || !(this.movie() || this.book())) return;
+    if (!this.featurePreferences().tracking || !this.upNext() || !(this.movie() || this.book())) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
@@ -729,7 +729,7 @@ export class ItemDialog implements OnInit {
           this.collectionItem().externalProvider,
           this.collectionItem().externalItemId,
           undefined,
-          'watchlist'
+          'up-next'
         )
       );
       this.collectionService.addCollectionItem(item.item, true);
@@ -738,7 +738,7 @@ export class ItemDialog implements OnInit {
       this.collectionService.deleteCollectionItem(
         this.collectionItem(),
         this.collectionItem().ownerShareCode,
-        'watchlist'
+        'up-next'
       );
       this.collectionService.triggerReload();
       this.portal.closeAll();
@@ -749,14 +749,14 @@ export class ItemDialog implements OnInit {
   }
 
   protected async onMoveToTracking(): Promise<void> {
-    if (!this.featurePreferences().tracking || !this.watchlist() || !(this.series() || this.book())) return;
+    if (!this.featurePreferences().tracking || !this.upNext() || !(this.series() || this.book())) return;
     this.spinnerLoadingState.setState('show', true);
     try {
       const item = await firstValueFrom(
         this.api.addTrackingItemByExternalId(
           this.collectionItem().externalProvider,
           this.collectionItem().externalItemId,
-          'watchlist'
+          'up-next'
         )
       );
       this.collectionService.addCollectionItem(item.item, true);
@@ -765,7 +765,7 @@ export class ItemDialog implements OnInit {
       this.collectionService.deleteCollectionItem(
         this.collectionItem(),
         this.collectionItem().ownerShareCode,
-        'watchlist'
+        'up-next'
       );
       this.collectionService.triggerReload();
       this.portal.closeAll();

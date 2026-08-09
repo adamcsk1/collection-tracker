@@ -328,10 +328,10 @@ describe('NewItemDialog component', () => {
     service.matchedContent.set([{ contentType: 'series', text: 'Test Series', value: 'tt-series', year: '2020' }]);
     component['searchForm'].selectedExternalReference().value.set('tt-series');
 
-    fixture.componentRef.setInput('watchlist', true);
+    fixture.componentRef.setInput('upNext', true);
     expect(component['showCopyToTrackingCheckbox']()).toBe(false);
 
-    fixture.componentRef.setInput('watchlist', false);
+    fixture.componentRef.setInput('upNext', false);
     fixture.componentRef.setInput('wishlist', true);
     expect(component['showCopyToTrackingCheckbox']()).toBe(false);
 

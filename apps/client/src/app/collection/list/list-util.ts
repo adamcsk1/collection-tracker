@@ -29,7 +29,7 @@ export const getAllowedAddContentTypes = (
   }
 
   const types: CollectionItemContentTypeModel[] = ['movie', 'series'];
-  if (booksEnabled && (listType === 'library' || listType === 'wishlist' || listType === 'watchlist')) {
+  if (booksEnabled && (listType === 'library' || listType === 'wishlist' || listType === 'up-next')) {
     types.push('book');
   }
   return types;

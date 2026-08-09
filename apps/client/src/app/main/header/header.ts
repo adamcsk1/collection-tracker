@@ -37,8 +37,8 @@ export class Header {
   private currentNavTitleKey(): string {
     const currentPath = this.currentUrl().split('?')[0].split('#')[0];
 
-    if (currentPath.startsWith('/collection/watchlist')) {
-      return 'Watchlist';
+    if (currentPath.startsWith('/collection/up-next')) {
+      return 'UpNext';
     }
     if (currentPath.startsWith('/collection/wishlist')) {
       return 'Wishlist';

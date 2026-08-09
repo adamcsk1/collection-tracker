@@ -51,7 +51,7 @@ export class MenuNav {
     menu: computed(() => this.ngxSignalTranslate.translate('Menu')),
     collection: computed(() => this.ngxSignalTranslate.translate('Collection')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
-    watchlist: computed(() => this.ngxSignalTranslate.translate('Watchlist')),
+    upNext: computed(() => this.ngxSignalTranslate.translate('UpNext')),
     tracking: computed(() => this.ngxSignalTranslate.translate('Tracking')),
     settings: computed(() => this.ngxSignalTranslate.translate('Settings')),
     statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),

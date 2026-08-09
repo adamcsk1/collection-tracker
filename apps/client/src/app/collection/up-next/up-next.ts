@@ -33,17 +33,17 @@ import {
 import { map } from 'rxjs';
 
 @Component({
-  selector: 'ct-watchlist',
+  selector: 'ct-up-next',
   imports: [List, FormField, Autocomplete, CollectionMediaChips],
-  templateUrl: './watch-later.html',
+  templateUrl: './up-next.html',
   styleUrl: '../collection.css',
   providers: [
     { provide: AutocompleteService, useClass: SearchSuggestionService },
-    { provide: searchSuggestionListTypeToken, useValue: 'watchlist' },
+    { provide: searchSuggestionListTypeToken, useValue: 'up-next' },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Watchlist {
+export class UpNext {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly collectionState = inject(collectionStateToken);
   private readonly aiSearch = inject(AiSearchService);
@@ -78,9 +78,9 @@ export class Watchlist {
   );
   protected readonly searchTextField = form(this.searchTextModel);
   protected readonly translations = {
-    messageEmptyWatchlist: computed(() => this.ngxSignalTranslate.translate('Message.EmptyWatchlist')),
-    messageAddFirstWatchlist: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstWatchlist')),
-    placeholderSearchInWatchlist: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInWatchlist')),
+    messageEmptyUpNext: computed(() => this.ngxSignalTranslate.translate('Message.EmptyUpNext')),
+    messageAddFirstUpNext: computed(() => this.ngxSignalTranslate.translate('Message.AddFirstUpNext')),
+    placeholderSearchInUpNext: computed(() => this.ngxSignalTranslate.translate('Placeholder.SearchInUpNext')),
     placeholderReply: computed(() => this.ngxSignalTranslate.translate('Placeholder.Reply')),
   };
   private readonly aiSearchSetup = setupCollectionAiSearch({
@@ -90,13 +90,13 @@ export class Watchlist {
     portal: this.portal,
     floatActions: this.floatActions,
     destroyRef: this.destroyRef,
-    listType: 'watchlist',
+    listType: 'up-next',
     queryFilters: this.queryFilters,
     forceStandardSearch: this.forceStandardSearch,
     placeholder: this.translations.placeholderReply,
     aiAvailable: this.mainState.state.aiAvailable,
   });
-  protected readonly watchlistDataSource = this.aiSearchSetup.dataSource;
+  protected readonly upNextDataSource = this.aiSearchSetup.dataSource;
 
   constructor() {
     setupStandardCollectionSearch({
@@ -112,8 +112,8 @@ export class Watchlist {
     this.aiSearchSetup.clearAiFilterOnStandardSearch();
   }
 
-  protected onAddWatchlist(event: Event): void {
+  protected onAddUpNext(event: Event): void {
     event.preventDefault();
-    this.portal.open(NewItemDialog, { watchlist: true });
+    this.portal.open(NewItemDialog, { upNext: true });
   }
 }

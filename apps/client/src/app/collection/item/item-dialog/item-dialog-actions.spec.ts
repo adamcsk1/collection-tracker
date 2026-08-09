@@ -55,7 +55,7 @@ describe('ItemDialogActions', () => {
     fixture.componentRef.setInput('tracking', overrides['tracking'] ?? false);
     fixture.componentRef.setInput('libraryItem', overrides['libraryItem'] ?? true);
     fixture.componentRef.setInput('ownershipItem', overrides['ownershipItem'] ?? overrides['libraryItem'] ?? true);
-    fixture.componentRef.setInput('watchlist', overrides['watchlist'] ?? false);
+    fixture.componentRef.setInput('upNext', overrides['upNext'] ?? false);
     fixture.componentRef.setInput('movie', overrides['movie'] ?? true);
     fixture.componentRef.setInput('series', overrides['series'] ?? false);
     fixture.componentRef.setInput('finished', overrides['finished'] ?? false);
@@ -151,14 +151,14 @@ describe('ItemDialogActions', () => {
   });
 
   it('renders move actions for Up Next movie and series items', () => {
-    createComponent({ libraryItem: false, watchlist: true, movie: true });
+    createComponent({ libraryItem: false, upNext: true, movie: true });
     const moveToFinished = vi.fn();
     fixture.componentInstance.moveToFinished.subscribe(moveToFinished);
     getButton('item-dialog-move-finished').click();
     expect(queryButton('item-dialog-mark-finished')).toBeNull();
     expect(moveToFinished).toHaveBeenCalled();
 
-    createComponent({ libraryItem: false, watchlist: true, movie: false, series: true });
+    createComponent({ libraryItem: false, upNext: true, movie: false, series: true });
     const moveToTracking = vi.fn();
     fixture.componentInstance.moveToTracking.subscribe(moveToTracking);
     getButton('item-dialog-move-tracking').click();
@@ -168,12 +168,12 @@ describe('ItemDialogActions', () => {
   });
 
   it('hides move to finished when movie is already tracked', () => {
-    createComponent({ libraryItem: false, watchlist: true, movie: true, inFinished: true });
+    createComponent({ libraryItem: false, upNext: true, movie: true, inFinished: true });
     expect(queryButton('item-dialog-move-finished')).toBeNull();
   });
 
   it('hides move to tracking when series is already tracked', () => {
-    createComponent({ libraryItem: false, watchlist: true, movie: false, series: true, inTracking: true });
+    createComponent({ libraryItem: false, upNext: true, movie: false, series: true, inTracking: true });
     expect(queryButton('item-dialog-move-tracking')).toBeNull();
   });
 
@@ -181,7 +181,7 @@ describe('ItemDialogActions', () => {
     createComponent({ finishedEnabled: false, libraryItem: true, movie: true });
     expect(queryButton('item-dialog-mark-finished')).toBeNull();
 
-    createComponent({ finishedEnabled: false, libraryItem: false, watchlist: true, movie: true });
+    createComponent({ finishedEnabled: false, libraryItem: false, upNext: true, movie: true });
     expect(queryButton('item-dialog-move-finished')).toBeNull();
   });
 
@@ -189,7 +189,7 @@ describe('ItemDialogActions', () => {
     createComponent({ trackingEnabled: false, libraryItem: true, movie: false, series: true });
     expect(queryButton('item-dialog-copy-tracking')).toBeNull();
 
-    createComponent({ trackingEnabled: false, libraryItem: false, watchlist: true, movie: false, series: true });
+    createComponent({ trackingEnabled: false, libraryItem: false, upNext: true, movie: false, series: true });
     expect(queryButton('item-dialog-move-tracking')).toBeNull();
   });
 

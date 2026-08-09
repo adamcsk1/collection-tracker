@@ -18,7 +18,7 @@ export class ItemDialogActions {
   public readonly tracking = input.required<boolean>();
   public readonly libraryItem = input.required<boolean>();
   public readonly ownershipItem = input.required<boolean>();
-  public readonly watchlist = input.required<boolean>();
+  public readonly upNext = input.required<boolean>();
   public readonly movie = input.required<boolean>();
   public readonly series = input.required<boolean>();
   public readonly book = input(false);

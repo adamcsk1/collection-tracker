@@ -281,13 +281,13 @@ describe('List', () => {
   });
 
   it('opens the new item dialog in watch later mode on the watch later page', () => {
-    fixture.componentRef.setInput('listType', 'watchlist');
+    fixture.componentRef.setInput('listType', 'up-next');
     fixture.detectChanges();
 
     component['onAddNew']();
 
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
-      watchlist: true,
+      upNext: true,
       wishlist: false,
       tracking: false,
       books: false,
@@ -302,7 +302,7 @@ describe('List', () => {
     component['onAddNew']();
 
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
-      watchlist: false,
+      upNext: false,
       wishlist: true,
       tracking: false,
       books: false,
@@ -317,7 +317,7 @@ describe('List', () => {
     component['onAddNew']();
 
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
-      watchlist: false,
+      upNext: false,
       wishlist: false,
       tracking: true,
       books: false,
@@ -451,7 +451,7 @@ describe('List', () => {
     component['onAddNew']();
 
     expect(portal.open).toHaveBeenCalledWith(NewItemDialog, {
-      watchlist: false,
+      upNext: false,
       wishlist: false,
       tracking: false,
       books: true,

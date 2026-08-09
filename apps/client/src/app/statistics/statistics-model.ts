@@ -3,7 +3,7 @@ export interface StatisticsSummaryModel {
   series: number;
   books: number;
   favorites: number;
-  watchlist: number;
+  upNext: number;
   wishlist: number;
   all: number;
   watchedMovies: number;

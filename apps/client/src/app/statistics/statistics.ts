@@ -49,7 +49,7 @@ export class Statistics implements AfterViewInit {
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
     favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
-    watchlist: computed(() => this.ngxSignalTranslate.translate('Watchlist')),
+    upNext: computed(() => this.ngxSignalTranslate.translate('UpNext')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
     watchedMovies: computed(() => this.ngxSignalTranslate.translate('WatchedMovies')),
     watchedSeries: computed(() => this.ngxSignalTranslate.translate('WatchedSeries')),
@@ -103,7 +103,7 @@ export class Statistics implements AfterViewInit {
       series: statistics?.seriesCount ?? 0,
       books: statistics?.booksCount ?? 0,
       favorites: statistics?.favoriteCount ?? 0,
-      watchlist: statistics?.watchlistCount ?? 0,
+      upNext: statistics?.upNextCount ?? 0,
       wishlist: statistics?.wishlistCount ?? 0,
       all: statistics?.totalItems ?? 0,
       watchedMovies: statistics?.watchedMovieCount ?? 0,
@@ -171,8 +171,8 @@ export class Statistics implements AfterViewInit {
     this.closeAfterNavigation(this.router.navigate(['/collection', 'library'], { queryParams: { type } }));
   }
 
-  protected onNavigateToWatchlist(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'watchlist']));
+  protected onNavigateToUpNext(): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'up-next']));
   }
 
   protected onNavigateToWishlist(): void {

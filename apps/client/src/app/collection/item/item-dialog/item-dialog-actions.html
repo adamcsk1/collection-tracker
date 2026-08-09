@@ -102,7 +102,7 @@
       </button>
     }
   }
-  @if (finishedEnabled() && watchlist() && (movie() || book()) && !inFinished()) {
+  @if (finishedEnabled() && upNext() && (movie() || book()) && !inFinished()) {
     <button
       class="button-icon button-reveal-label"
       [libcRevealLabel]="translations().moveToFinished()"
@@ -117,7 +117,7 @@
       >
     </button>
   }
-  @if (trackingEnabled() && watchlist() && (series() || book()) && !inTracking()) {
+  @if (trackingEnabled() && upNext() && (series() || book()) && !inTracking()) {
     <button
       class="button-icon button-reveal-label"
       [libcRevealLabel]="translations().moveToTracking()"

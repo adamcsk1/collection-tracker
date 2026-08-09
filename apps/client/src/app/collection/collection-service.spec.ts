@@ -90,10 +90,10 @@ describe('CollectionService', () => {
   it('adds an item with the same provider identity but a different list type', () => {
     mainCollectionState.setState('collection', [buildCollectionItem('same')]);
 
-    service.addCollectionItem({ ...buildCollectionItem('same'), listType: 'watchlist' }, true);
+    service.addCollectionItem({ ...buildCollectionItem('same'), listType: 'up-next' }, true);
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
-      { ...buildCollectionItem('same'), listType: 'watchlist' },
+      { ...buildCollectionItem('same'), listType: 'up-next' },
       buildCollectionItem('same'),
     ]);
   });
@@ -131,10 +131,10 @@ describe('CollectionService', () => {
   it('deletes only the matching list item when provider identities overlap', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('same'),
-      { ...buildCollectionItem('same'), listType: 'watchlist' },
+      { ...buildCollectionItem('same'), listType: 'up-next' },
     ]);
 
-    service.deleteCollectionItem(buildCollectionItem('same'), undefined, 'watchlist');
+    service.deleteCollectionItem(buildCollectionItem('same'), undefined, 'up-next');
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('same')]);
   });
@@ -168,21 +168,21 @@ describe('CollectionService', () => {
   it('updates only the matching list item when provider identities overlap', () => {
     mainCollectionState.setState('collection', [
       buildCollectionItem('target'),
-      { ...buildCollectionItem('target'), listType: 'watchlist' },
+      { ...buildCollectionItem('target'), listType: 'up-next' },
     ]);
 
     service.updateCollectionItem(
-      { ...buildCollectionItem('target'), listType: 'watchlist' },
+      { ...buildCollectionItem('target'), listType: 'up-next' },
       {
         ...buildCollectionItem('updated'),
         externalItemId: 'tt-target',
-        listType: 'watchlist',
+        listType: 'up-next',
       }
     );
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
       buildCollectionItem('target'),
-      { ...buildCollectionItem('updated'), externalItemId: 'tt-target', listType: 'watchlist' },
+      { ...buildCollectionItem('updated'), externalItemId: 'tt-target', listType: 'up-next' },
     ]);
   });
 

@@ -21,7 +21,7 @@ export class SettingsFeatures {
   protected readonly translations = {
     message: computed(() => this.ngxSignalTranslate.translate('Message.Features')),
     wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
-    watchlist: computed(() => this.ngxSignalTranslate.translate('Watchlist')),
+    upNext: computed(() => this.ngxSignalTranslate.translate('UpNext')),
     tracking: computed(() => this.ngxSignalTranslate.translate('Tracking')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
   };

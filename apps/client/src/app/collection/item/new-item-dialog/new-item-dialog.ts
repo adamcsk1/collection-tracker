@@ -119,7 +119,7 @@ export class NewItemDialog {
   private readonly knownManualIMDbIdValidationError = knownIMDbIdValidationFactory(this.knownManualIMDbIdExists);
   protected readonly translations = {
     titleNewCollectionItem: computed(() => this.ngxSignalTranslate.translate('Title.NewCollectionItem')),
-    titleNewWatchlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWatchlistItem')),
+    titleNewUpNextItem: computed(() => this.ngxSignalTranslate.translate('Title.NewUpNextItem')),
     titleNewWishlistItem: computed(() => this.ngxSignalTranslate.translate('Title.NewWishlistItem')),
     titleNewTrackingItem: computed(() => this.ngxSignalTranslate.translate('Title.NewTrackingItem')),
     titleNewBooksItem: computed(() => this.ngxSignalTranslate.translate('Title.NewBooksItem')),
@@ -427,7 +427,7 @@ export class NewItemDialog {
     },
   };
   protected readonly form = computed(() => (this.mode() === 'manual' ? this.manualForm() : this.searchForm()));
-  public readonly watchlist = input(false);
+  public readonly upNext = input(false);
   public readonly wishlist = input(false);
   public readonly tracking = input(false);
   public readonly books = input(false);
@@ -543,10 +543,10 @@ export class NewItemDialog {
   protected readonly showManualUserRate = computed(() => !this.internalListMode());
   protected readonly showBookProgress = computed(() => this.tracking() && this.isBookAdd());
   protected readonly internalListMode = computed(
-    () => this.watchlist() || this.wishlist() || this.tracking() || this.books()
+    () => this.upNext() || this.wishlist() || this.tracking() || this.books()
   );
   protected readonly dialogTitle = computed(() => {
-    if (this.watchlist()) return this.translations.titleNewWatchlistItem();
+    if (this.upNext()) return this.translations.titleNewUpNextItem();
     if (this.wishlist()) return this.translations.titleNewWishlistItem();
     if (this.tracking()) return this.translations.titleNewTrackingItem();
     if (this.books() || this.selectedAddContentType() === 'book') return this.translations.titleNewBooksItem();
@@ -560,7 +560,7 @@ export class NewItemDialog {
     return 'add_photo_alternate';
   });
   private readonly listType = computed<CollectionListTypeModel>(() => {
-    if (this.watchlist()) return 'watchlist';
+    if (this.upNext()) return 'up-next';
     if (this.wishlist()) return 'wishlist';
     if (this.tracking()) return 'tracking';
     if (this.books() || this.selectedAddContentType() === 'book') return 'books';

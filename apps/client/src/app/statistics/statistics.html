@@ -9,7 +9,7 @@
     {{ translations.messageLoadStatistics() }}
   } @else if (
     (statistics()?.totalItems ?? 0) === 0 &&
-    (statistics()?.watchlistCount ?? 0) === 0 &&
+    (statistics()?.upNextCount ?? 0) === 0 &&
     (statistics()?.wishlistCount ?? 0) === 0 &&
     (statistics()?.booksCount ?? 0) === 0
   ) {
@@ -54,15 +54,15 @@
           <span class="stat-value">{{ summary.favorites }}</span>
           <span class="stat-label">{{ translations.favorites() }}</span>
         </button>
-        @if (featurePreferences().watchlist) {
+        @if (featurePreferences().upNext) {
           <button
-            data-test-id="statistics-summary-watchlist"
+            data-test-id="statistics-summary-up-next"
             class="card card-interactive stat-card"
-            (click)="onNavigateToWatchlist()"
-            [attr.aria-label]="translations.watchlist() + ': ' + summary.watchlist"
+            (click)="onNavigateToUpNext()"
+            [attr.aria-label]="translations.upNext() + ': ' + summary.upNext"
           >
-            <span class="stat-value">{{ summary.watchlist }}</span>
-            <span class="stat-label">{{ translations.watchlist() }}</span>
+            <span class="stat-value">{{ summary.upNext }}</span>
+            <span class="stat-label">{{ translations.upNext() }}</span>
           </button>
         }
         @if (featurePreferences().wishlist) {

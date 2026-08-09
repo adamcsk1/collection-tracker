@@ -81,7 +81,7 @@ describe('MainService', () => {
     const preferences = {
       books: true,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     };
     webstorage.getItem.mockImplementation((key: string) =>
@@ -98,7 +98,7 @@ describe('MainService', () => {
     const preferences = {
       books: false,
       wishlist: true,
-      watchlist: false,
+      upNext: false,
       tracking: true,
     };
     webstorage.getItem.mockImplementation((key: string, storage?: string) => {

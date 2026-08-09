@@ -54,7 +54,7 @@ describe('setupCollectionAiSearch', () => {
     vi.clearAllMocks();
   });
 
-  const createSetup = (listType: 'watchlist' | 'books' = 'watchlist') => {
+  const createSetup = (listType: 'up-next' | 'books' = 'up-next') => {
     const collectionState = TestBed.inject(collectionStateToken);
     const destroyRef = TestBed.inject(DestroyRef);
 
@@ -86,7 +86,7 @@ describe('setupCollectionAiSearch', () => {
     });
 
     expect(api.searchItems).toHaveBeenCalledWith(
-      { search: 'matrix', listType: 'watchlist', orderBy: 'createdAt', orderDirection: 'desc' },
+      { search: 'matrix', listType: 'up-next', orderBy: 'createdAt', orderDirection: 'desc' },
       0,
       50
     );
@@ -136,7 +136,7 @@ describe('setupCollectionAiSearch', () => {
       orderDirection: 'desc',
     });
 
-    expect(aiSearch.getMatchedIds).toHaveBeenCalledWith('sci-fi', 'watchlist');
+    expect(aiSearch.getMatchedIds).toHaveBeenCalledWith('sci-fi', 'up-next');
     expect(api.getMatchedItems).toHaveBeenCalledWith({
       identities: [
         { source: 'imdb', id: 'tt1' },
@@ -144,7 +144,7 @@ describe('setupCollectionAiSearch', () => {
       ],
       offset: 0,
       limit: 25,
-      filters: { listType: 'watchlist' },
+      filters: { listType: 'up-next' },
     });
   });
 

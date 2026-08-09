@@ -4,7 +4,7 @@ import { CollectionListTypeModel } from '@shared/models/api-model';
 export const COLLECTION_LIST_ROUTE_BY_TYPE: Record<CollectionListTypeModel, string> = {
   library: 'library',
   wishlist: 'wishlist',
-  watchlist: 'watchlist',
+  'up-next': 'up-next',
   tracking: 'tracking',
   books: 'books',
 };
@@ -12,7 +12,9 @@ export const COLLECTION_LIST_ROUTE_BY_TYPE: Record<CollectionListTypeModel, stri
 export const COLLECTION_LIST_TYPE_BY_ROUTE: Record<string, CollectionListTypeModel> = {
   library: 'library',
   wishlist: 'wishlist',
-  watchlist: 'watchlist',
+  'up-next': 'up-next',
+  watchlist: 'up-next',
+  'watch-later': 'up-next',
   tracking: 'tracking',
   finished: 'tracking',
   books: 'books',
@@ -22,7 +24,7 @@ export const COLLECTION_LIST_TYPE_BY_ROUTE: Record<string, CollectionListTypeMod
 export const COLLECTION_LIST_TITLE_KEY_BY_TYPE: Record<CollectionListTypeModel, string> = {
   library: 'Collection',
   wishlist: 'Wishlist',
-  watchlist: 'Watchlist',
+  'up-next': 'UpNext',
   tracking: 'Tracking',
   books: 'Books',
 };
