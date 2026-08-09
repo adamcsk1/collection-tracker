@@ -22,7 +22,8 @@ export const register = (app: FastifyInstance): void => {
       const result = await fetchAndCacheImageWithDetails(sourceUrl);
 
       switch (result.kind) {
-        case 'fetched': {
+        case 'fetched':
+        case 'cached': {
           const refreshed = getCachedImage(sourceUrl);
           if (refreshed) {
             response.header('Content-Type', refreshed.contentType);

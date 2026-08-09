@@ -30,6 +30,7 @@ const isBlockedIp = (address: string): boolean => {
       first === 0 ||
       first === 10 ||
       first === 127 ||
+      (first === 100 && second >= 64 && second <= 127) ||
       (first === 169 && second === 254) ||
       (first === 172 && second >= 16 && second <= 31) ||
       (first === 192 && second === 168) ||
@@ -41,14 +42,14 @@ const isBlockedIp = (address: string): boolean => {
     const normalized = address.toLowerCase();
     if (normalized.startsWith('::ffff:')) return isBlockedIp(normalized.slice(7));
 
-    return (
-      normalized === '::' ||
-      normalized === '::1' ||
-      normalized.startsWith('fc') ||
-      normalized.startsWith('fd') ||
-      normalized.startsWith('fe80:') ||
-      normalized.startsWith('ff')
-    );
+    const hextets = normalized.split(':').filter(Boolean);
+    const firstHextet = hextets[0] ?? '';
+    const firstValue = Number.parseInt(firstHextet || '0', 16);
+    const isUniqueLocal = (firstValue & 0xfe00) === 0xfc00;
+    const isLinkLocal = (firstValue & 0xffc0) === 0xfe80;
+    const isMulticast = (firstValue & 0xff00) === 0xff00;
+
+    return normalized === '::' || normalized === '::1' || isUniqueLocal || isLinkLocal || isMulticast;
   }
 
   return true;
