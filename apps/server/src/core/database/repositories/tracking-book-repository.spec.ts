@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getDatabase } from '../database';
+import { insertLibraryShare } from '../../../../test/mocks/share-mock';
 import {
   copyBookToCompletedByExternalId,
   deleteCompletedBookByExternalId,
@@ -9,15 +10,6 @@ import {
 
 const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canRead: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, canRead ? 1 : 0, 0, 0, 0);
 };
 
 const insertBookItem = (
@@ -141,7 +133,7 @@ describe('tracking-book-repository', () => {
   it('markAllBooksAsCompleted only uses the requester books list', () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     insertBookItem('user', '9780134685991', ['#book'], 'books');
     insertBookItem('owner', '9780201633610', ['#book'], 'books');
     const db = getDatabase();
@@ -190,7 +182,7 @@ describe('tracking-book-repository', () => {
   it('markAllBooksAsUncompleted only clears tracking copies of own books list items', () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     insertBookItem('owner', '9780201633610', ['#book'], 'books');
     const sharedTrackerId = insertBookItem('user', '9780201633610', ['#book'], 'tracking');
     insertBookItem('user', '9780134685991', ['#book'], 'books');

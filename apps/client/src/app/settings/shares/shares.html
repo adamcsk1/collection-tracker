@@ -1,6 +1,5 @@
 <div class="shares-page">
   <p>{{ translations.messageShareSettings() }}</p>
-
   <div class="shares-grid">
     <section class="card share-code-card" data-test-id="share-code-card">
       <h3 class="card-title">{{ translations.yourUserHash() }}</h3>
@@ -15,45 +14,15 @@
       </div>
     </section>
 
-    <form role="form" [formRoot]="form" class="card add-share-form" data-test-id="add-share-card">
+    <section class="card add-share-card" data-test-id="add-share-card">
       <h3 class="card-title">{{ translations.addShare() }}</h3>
       <div class="card-body">
-        <libc-input
-          data-test-id="add-share-user-hash"
-          [label]="translations.sharedWith()"
-          [mandatory]="true"
-          [formField]="form.sharedWithUserShareCode"
-        />
-        <div class="permission-checkboxes">
-          <libc-checkbox
-            data-test-id="add-share-can-read"
-            [formField]="form.canRead"
-            [label]="translations.canRead()"
-          />
-          <libc-checkbox
-            data-test-id="add-share-can-create"
-            [formField]="form.canCreate"
-            [label]="translations.canCreate()"
-          />
-          <libc-checkbox
-            data-test-id="add-share-can-update"
-            [formField]="form.canUpdate"
-            [label]="translations.canUpdate()"
-          />
-          <libc-checkbox
-            data-test-id="add-share-can-delete"
-            [formField]="form.canDelete"
-            [label]="translations.canDelete()"
-          />
-        </div>
-        <div class="share-actions">
-          <button data-test-id="add-share-submit" type="submit" [disabled]="form().invalid()">
-            <i class="material-icons">add</i>
-            {{ translations.addShare() }}
-          </button>
-        </div>
+        <button class="share-action" data-test-id="add-share-open" type="button" (click)="onAddShare()">
+          <i class="material-icons" aria-hidden="true">add</i>
+          {{ translations.addShare() }}
+        </button>
       </div>
-    </form>
+    </section>
   </div>
 
   <section class="shares-section" data-test-id="default-library-section">
@@ -83,7 +52,7 @@
                   <div class="share-code">{{ share.sharedWithUserShareCode }}</div>
                 </div>
                 <button
-                  data-test-id="remove-share"
+                  [attr.data-test-id]="'remove-share-' + share.sharedWithUserShareCode"
                   class="button-danger"
                   (click)="onRemoveShare(share.sharedWithUserShareCode)"
                 >
@@ -92,32 +61,15 @@
                 </button>
               </div>
 
-              <div class="share-permissions">
-                <libc-checkbox
-                  data-test-id="share-can-read"
-                  [label]="translations.canRead()"
-                  [value]="share.canRead"
-                  (valueChange)="onUpdateShare(share, { canRead: $event === true })"
-                />
-                <libc-checkbox
-                  data-test-id="share-can-create"
-                  [label]="translations.canCreate()"
-                  [value]="share.canCreate"
-                  (valueChange)="onUpdateShare(share, { canCreate: $event === true })"
-                />
-                <libc-checkbox
-                  data-test-id="share-can-update"
-                  [label]="translations.canUpdate()"
-                  [value]="share.canUpdate"
-                  (valueChange)="onUpdateShare(share, { canUpdate: $event === true })"
-                />
-                <libc-checkbox
-                  data-test-id="share-can-delete"
-                  [label]="translations.canDelete()"
-                  [value]="share.canDelete"
-                  (valueChange)="onUpdateShare(share, { canDelete: $event === true })"
-                />
-              </div>
+              <button
+                [attr.data-test-id]="'edit-share-' + share.sharedWithUserShareCode"
+                class="share-action"
+                type="button"
+                (click)="onEditShare(share)"
+              >
+                <i class="material-icons" aria-hidden="true">edit</i>
+                {{ translations.editShare() }}
+              </button>
             </div>
           </article>
         }
@@ -142,7 +94,7 @@
                   <div class="share-code">{{ share.ownerUserShareCode }}</div>
                 </div>
                 <button
-                  data-test-id="revoke-incoming-share"
+                  [attr.data-test-id]="'revoke-incoming-share-' + share.ownerUserShareCode"
                   class="button-danger"
                   (click)="onRevokeIncomingShare(share.ownerUserShareCode)"
                 >
@@ -151,12 +103,15 @@
                 </button>
               </div>
 
-              <div class="share-permissions readonly">
-                <span [class.enabled]="share.canRead">{{ translations.canRead() }}</span>
-                <span [class.enabled]="share.canCreate">{{ translations.canCreate() }}</span>
-                <span [class.enabled]="share.canUpdate">{{ translations.canUpdate() }}</span>
-                <span [class.enabled]="share.canDelete">{{ translations.canDelete() }}</span>
-              </div>
+              <button
+                [attr.data-test-id]="'view-incoming-share-' + share.ownerUserShareCode"
+                class="share-action"
+                type="button"
+                (click)="onViewIncomingShare(share)"
+              >
+                <i class="material-icons" aria-hidden="true">visibility</i>
+                {{ translations.viewShare() }}
+              </button>
             </div>
           </article>
         }

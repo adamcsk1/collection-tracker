@@ -2,6 +2,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const insertUserAndItems = () => {
   const db = getDatabase();
@@ -73,15 +74,6 @@ const insertTag = (imdbId: string, tag: string) => {
     db.prepare('SELECT id FROM collection_items WHERE external_item_id = ?').get(imdbId) as { id: number }
   ).id;
   db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canRead: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, canRead ? 1 : 0, 0, 0, 0);
 };
 
 describe('get-collection-items-api', () => {
@@ -223,7 +215,7 @@ describe('get-collection-items-api', () => {
     insertUser('owner');
     insertItem('user', 'tt-own', 'Own Item');
     insertItem('owner', 'tt-shared', 'Shared Item');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: {} };
@@ -248,7 +240,7 @@ describe('get-collection-items-api', () => {
     insertUser('user');
     insertUser('owner');
     insertItem('owner', 'tt-shared', 'Shared Item');
-    insertShare('owner', 'user', false);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: false });
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: {} };
     const { app, handlerPromise } = buildApp(request, response);
@@ -325,7 +317,7 @@ describe('get-collection-items-api', () => {
     insertUser('owner');
     insertTypedItem('user', 'tt-own-watchlist', 'Own Watch Later Item', 'up-next');
     insertTypedItem('owner', 'tt-shared-watchlist', 'Shared Watch Later Item', 'up-next');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { listType: 'up-next' } };
     const { app, handlerPromise } = buildApp(request, response);
@@ -347,7 +339,7 @@ describe('get-collection-items-api', () => {
     insertUser('owner');
     insertTypedItem('user', 'tt-own-watching', 'Own Tracked Series', 'tracking');
     insertTypedItem('owner', 'tt-shared-watching', 'Shared Tracked Series', 'tracking');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { listType: 'tracking' } };
     const { app, handlerPromise } = buildApp(request, response);
@@ -487,7 +479,7 @@ describe('get-collection-items-api', () => {
     insertItem('user', 'tt-library', 'Library Item');
     insertTypedItem('user', 'tt-watchlist', 'Watch Later Item', 'up-next');
     insertTypedItem('owner', 'tt-shared-watchlist', 'Shared Watch Later Item', 'up-next');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { listType: 'up-next' } };
     const { app, handlerPromise } = buildApp(request, response);
@@ -509,7 +501,7 @@ describe('get-collection-items-api', () => {
     insertUser('owner');
     insertTypedItem('user', 'tt-own-wishlist', 'Own Wishlist Item', 'wishlist');
     insertTypedItem('owner', 'tt-shared-wishlist', 'Shared Wishlist Item', 'wishlist');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { listType: 'wishlist' } };
     const { app, handlerPromise } = buildApp(request, response);

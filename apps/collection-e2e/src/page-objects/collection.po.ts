@@ -60,6 +60,16 @@ export const CollectionPage = {
   visitUpNext: () => {
     cy.visit('/client/#/collection/up-next');
   },
+  visitWishlist: () => {
+    cy.visit('/client/#/collection/wishlist');
+  },
+  visitBooks: () => {
+    cy.visit('/client/#/collection/books');
+  },
+  visitLibraryWithSharedFilter: (shared: 'mine' | 'shared') => {
+    cy.visit(`/client/#/collection/library?shared=${shared}`);
+    cy.reload();
+  },
   getMediaChip: (chip: 'all' | 'movie' | 'series' | 'book') => cy.getByTestId(`collection-media-chip-${chip}`),
 
   // Search

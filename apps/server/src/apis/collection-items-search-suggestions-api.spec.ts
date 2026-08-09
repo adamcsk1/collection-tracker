@@ -2,6 +2,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare, insertShare } from '../../test/mocks/share-mock';
 
 const insertUserAndItems = () => {
   const db = getDatabase();
@@ -72,11 +73,7 @@ describe('collection-items-search-suggestions-api', () => {
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('owner', 'token');
-    db.prepare(
-      `INSERT INTO user_shares
-        (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES ('owner', 'user', 1, 0, 0, 0)`
-    ).run();
+    insertLibraryShare(db, 'owner', 'user', { canRead: true });
     db.prepare(
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
@@ -95,5 +92,38 @@ describe('collection-items-search-suggestions-api', () => {
     await handlerPromise();
 
     expect(response.send).toHaveBeenCalledWith({ suggestions: [] });
+  });
+
+  it('isolates shared suggestions by content type', async () => {
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('owner', 'token');
+    insertShare(db, 'owner', 'user', [
+      {
+        listType: 'library',
+        contentType: 'movie',
+        canRead: true,
+        canCreate: false,
+        canUpdate: false,
+        canDelete: false,
+      },
+    ]);
+    const insert = db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, content_type, title, title_lower, year, description, image, content_hash)
+       VALUES ('owner', 'omdb', ?, ?, ?, ?, ?, '', '', '', ?)`
+    );
+    insert.run('tt-movie', 'imdb:tt-movie', 'movie', 'Shared Match Movie', 'shared match movie', 'movie-hash');
+    insert.run('tt-series', 'imdb:tt-series', 'series', 'Shared Match Series', 'shared match series', 'series-hash');
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp({ usernameHash: 'user', query: { query: 'shared match' } }, response);
+
+    const { register } = await import('./collection-items-search-suggestions-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({
+      suggestions: [expect.objectContaining({ label: 'Shared Match Movie' })],
+    });
   });
 });

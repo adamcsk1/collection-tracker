@@ -60,6 +60,7 @@ export const SettingsPage = {
 
   // Media refresh page
   getMediaRefreshLibrarySelect: () => cy.getByTestId('settings-media-refresh-library').find('select'),
+  findMediaRefreshLibrarySelect: () => cy.get('body').find('[data-test-id="settings-media-refresh-library"] select'),
   getImageRefreshStartButton: () => cy.getByTestId('settings-images-refresh-start').scrollIntoView(),
   getExternalRatingsRefreshStartButton: () =>
     cy.getByTestId('settings-external-ratings-refresh-start').scrollIntoView(),
@@ -88,19 +89,27 @@ export const SettingsPage = {
 
   // Shares page
   getShareCode: () => cy.getByTestId('share-code-card').find('.user-hash'),
-  getAddShareUserHashInput: () => cy.getByTestId('add-share-user-hash').find('input'),
-  getAddShareCanReadCheckbox: () => cy.getByTestId('add-share-can-read').find('input[type="checkbox"]'),
-  getAddShareCanCreateCheckbox: () => cy.getByTestId('add-share-can-create').find('input[type="checkbox"]'),
-  getAddShareCanUpdateCheckbox: () => cy.getByTestId('add-share-can-update').find('input[type="checkbox"]'),
-  getAddShareCanDeleteCheckbox: () => cy.getByTestId('add-share-can-delete').find('input[type="checkbox"]'),
-  getAddShareSubmitButton: () => cy.getByTestId('add-share-submit'),
-  getOutgoingShareCanReadCheckbox: () => cy.getByTestId('share-can-read').find('input[type="checkbox"]'),
-  getOutgoingShareCanCreateCheckbox: () => cy.getByTestId('share-can-create').find('input[type="checkbox"]'),
-  getOutgoingShareCanUpdateCheckbox: () => cy.getByTestId('share-can-update').find('input[type="checkbox"]'),
-  getOutgoingShareCanDeleteCheckbox: () => cy.getByTestId('share-can-delete').find('input[type="checkbox"]'),
-  getRemoveShareButton: () => cy.getByTestId('remove-share'),
-  getRevokeIncomingShareButton: () => cy.getByTestId('revoke-incoming-share'),
+  getAddShareOpenButton: () => cy.getByTestId('add-share-open'),
+  getShareDialog: () => cy.getByTestId('share-dialog').find('[data-test-id="dialog-frame"]'),
+  getShareDialogUserHashInput: () => cy.getByTestId('share-dialog-user-hash').find('input'),
+  getShareDialogGrants: () => cy.getByTestId('share-dialog-grants'),
+  getAddShareGrantCheckbox: (
+    listType: string,
+    contentType: string,
+    permission: 'can-read' | 'can-create' | 'can-update' | 'can-delete'
+  ) => cy.getByTestId(`share-dialog-grant-${listType}-${contentType}-${permission}`).find('input[type="checkbox"]'),
+  getShareDialogSaveButton: () => cy.getByTestId('share-dialog-save'),
+  getEditShareButton: (shareCode: string) => cy.getByTestId(`edit-share-${shareCode}`),
+  getOutgoingShareGrantCheckbox: (
+    listType: string,
+    contentType: string,
+    permission: 'can-read' | 'can-create' | 'can-update' | 'can-delete'
+  ) => cy.getByTestId(`share-dialog-grant-${listType}-${contentType}-${permission}`).find('input[type="checkbox"]'),
+  getRemoveShareButton: (shareCode: string) => cy.getByTestId(`remove-share-${shareCode}`),
+  getRevokeIncomingShareButton: (shareCode: string) => cy.getByTestId(`revoke-incoming-share-${shareCode}`),
+  getViewIncomingShareButton: (shareCode: string) => cy.getByTestId(`view-incoming-share-${shareCode}`),
   getDefaultLibrarySelect: () => cy.getByTestId('settings-default-library').find('select'),
+  getManageTrackerLibrarySelect: () => cy.getByTestId('settings-manage-tracker-data-library').find('select'),
 
   // Token dialog (shown after creating a new user token or access token)
   getTokenDialogValue: () => cy.getByTestId('token-dialog-value'),

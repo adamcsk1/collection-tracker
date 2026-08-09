@@ -3,6 +3,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -45,15 +46,6 @@ const insertItem = (
   return itemId;
 };
 
-const insertShare = (ownerHash: string, sharedWithHash: string, canRead: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, canRead ? 1 : 0, 0, 0, 0);
-};
-
 describe('mark-all-series-completed-api', () => {
   afterEach(() => {
     vi.resetModules();
@@ -73,7 +65,7 @@ describe('mark-all-series-completed-api', () => {
     );
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     insertItem('tt-own', ['#series'], 'library', 'user');
     insertItem('tt-shared', ['#series'], 'library', 'owner');
     insertItem('tt-movie', ['#movie'], 'library', 'owner', 'movie');
@@ -252,7 +244,7 @@ describe('mark-all-series-completed-api', () => {
     vi.stubGlobal('fetch', fetch);
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     insertItem('tt-shared', ['#series'], 'library', 'owner');
     const trackerOnlyItemId = insertItem('tt-tracker-only', ['#series'], 'tracking', 'user');
     getDatabase()
@@ -290,7 +282,7 @@ describe('mark-all-series-completed-api', () => {
   it('returns 403 when the user cannot read the shared library', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', false);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: false });
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };

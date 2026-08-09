@@ -344,8 +344,7 @@ describe('Settings - mark all completed / uncompleted', () => {
       .and('contain.text', 'Watch Test Book B');
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getCollectionFilterButton('completed').click();
-    CollectionPage.getListItems().should('not.contain.text', 'Watch Test Book A');
-    CollectionPage.getListItems().should('not.contain.text', 'Watch Test Book B');
+    CollectionPage.getEmptyState().should('be.visible');
   });
 
   it('remove all tracked movie data calls the delete API and empties the tracker', () => {

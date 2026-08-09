@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { CollectionItemApiModel, CollectionListTypeModel } from '@shared/models/api-model';
+import { CollectionListTypeModel } from '@shared/models/api-model';
+import { CollectionItemModel } from '@shared/models/collection-item-model';
 import { mainCollectionStateToken } from '../main/main-collection-store';
 
 @Injectable({ providedIn: 'root' })
@@ -15,7 +16,7 @@ export class CollectionService {
     return JSON.stringify([ownerShareCode ?? '', listType, externalProvider, externalItemId]);
   }
 
-  private getItemKey(item: CollectionItemApiModel, listType: CollectionListTypeModel = item.listType): string {
+  private getItemKey(item: CollectionItemModel, listType: CollectionListTypeModel = item.listType): string {
     return this.getCollectionItemKey(item.externalProvider, item.externalItemId, item.ownerShareCode, listType);
   }
 
@@ -23,7 +24,7 @@ export class CollectionService {
     this.mainCollectionState.patchState('reloadTrigger', (trigger) => trigger + 1);
   }
 
-  public addCollectionItem(item: CollectionItemApiModel, first = false): void {
+  public addCollectionItem(item: CollectionItemModel, first = false): void {
     const itemKey = this.getItemKey(item);
     this.mainCollectionState.patchState('collection', (state) => {
       const index = state.findIndex((stateItem) => this.getItemKey(stateItem) === itemKey);
@@ -36,7 +37,7 @@ export class CollectionService {
   }
 
   public deleteCollectionItem(
-    item: CollectionItemApiModel,
+    item: CollectionItemModel,
     ownerShareCode?: string,
     listType?: CollectionListTypeModel
   ): void {
@@ -52,8 +53,8 @@ export class CollectionService {
   }
 
   public updateCollectionItem(
-    previousItem: CollectionItemApiModel,
-    item: CollectionItemApiModel,
+    previousItem: CollectionItemModel,
+    item: CollectionItemModel,
     ownerShareCode?: string,
     listType: CollectionListTypeModel = item.listType
   ): void {

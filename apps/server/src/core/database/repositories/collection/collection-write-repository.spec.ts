@@ -62,20 +62,20 @@ describe('collection-write-repository', () => {
     ]);
 
     expect(
-      searchCollectionItems(db, ['user'], {
+      searchCollectionItems(db, 'user', {
         offset: 0,
         limit: 10,
         filters: { listType: 'tracking', search: '91%' },
       }).items
     ).toHaveLength(1);
     expect(
-      searchCollectionItems(db, ['user'], {
+      searchCollectionItems(db, 'user', {
         offset: 0,
         limit: 10,
         filters: { listType: 'tracking', search: 'tt1234567' },
       }).items
     ).toHaveLength(1);
-    expect(findCollectionItemSuggestions(db, ['user'], 'Contributor', 10, 'tracking')).toEqual([
+    expect(findCollectionItemSuggestions(db, 'user', 'Contributor', 10, 'tracking')).toEqual([
       { label: 'Original title', value: 'tt1234567', kind: 'title' },
     ]);
   });

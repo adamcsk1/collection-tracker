@@ -3,6 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare, insertShare } from '../../test/mocks/share-mock';
 
 vi.mock('../core/logger', () => ({
   debugLog: vi.fn(),
@@ -31,15 +32,6 @@ const insertBookItem = (isbn: string, image: string, hash = 'hash', usernameHash
       (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
      VALUES (?, 'openlibrary', ?, ?, 'books', 'book', ?, ?, ?, ?, ?, ?)`
   ).run(usernameHash, isbn, `openlibrary:${isbn}`, 'Book Title', 'book title', '2021', '', image, hash);
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canUpdate: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, 1, 0, canUpdate ? 1 : 0, 0);
 };
 
 describe('refresh-images-api', () => {
@@ -225,7 +217,7 @@ describe('refresh-images-api', () => {
   it('refreshes a shared library when the user has update permission and ignores non-library items', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canUpdate: true });
     insertItem('tt-own', 'https://images.example/own.jpg', 'own-hash', 'user');
     insertItem('tt-shared', 'https://images.example/shared-broken.jpg', 'shared-hash', 'owner');
     insertItem(
@@ -299,7 +291,7 @@ describe('refresh-images-api', () => {
   it('rejects shared image refresh without update permission', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', false);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: false });
 
     vi.doMock('../core/image/image-proxy', () => ({
       fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
@@ -314,6 +306,38 @@ describe('refresh-images-api', () => {
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(403);
+  });
+
+  it('refreshes only shared content types with update permission', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertItem('tt-movie', 'movie.jpg', 'movie-hash', 'owner');
+    insertItem('tt-series', 'series.jpg', 'series-hash', 'owner');
+    getDatabase()
+      .prepare("UPDATE collection_items SET content_type = 'series' WHERE external_item_id = ?")
+      .run('tt-series');
+    insertShare(getDatabase(), 'owner', 'user', [
+      {
+        listType: 'library',
+        contentType: 'movie',
+        canRead: true,
+        canCreate: false,
+        canUpdate: true,
+        canDelete: false,
+      },
+    ]);
+    const imageMock = vi.fn(async () => true);
+    vi.doMock('../core/image/image-proxy', () => ({ fetchAndCacheImage: imageMock }));
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-images-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 0 });
+    expect(imageMock).toHaveBeenCalledOnce();
   });
 
   it('refreshes books and items across all lists for a personal library', async () => {

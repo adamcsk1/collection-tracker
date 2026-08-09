@@ -97,7 +97,6 @@ export interface CollectionItemQueryOptions {
   limit: number;
   matchedIdentities?: ExternalItemIdentityModel[];
   matchedCanonicalItemIds?: string[];
-  viewerUsernameHash?: string;
 }
 
 export interface CollectionItemOrderOptions {

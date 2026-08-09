@@ -3,6 +3,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -35,15 +36,6 @@ const insertItem = (
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canRead: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, canRead ? 1 : 0, 0, 0, 0);
 };
 
 describe('add-tracking-item-api', () => {
@@ -207,7 +199,7 @@ describe('add-tracking-item-api', () => {
   it('copies a readable shared library series and keeps the shared source item', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     insertItem('owner', 'tt-1', ['#series'], 'library');
 
     const response = mockResponse();
@@ -240,7 +232,7 @@ describe('add-tracking-item-api', () => {
   it('returns 403 when copying from a shared library without read permission', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', false);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: false });
     insertItem('owner', 'tt-1', ['#series'], 'library');
 
     const response = mockResponse();

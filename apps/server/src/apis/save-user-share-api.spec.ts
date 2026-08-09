@@ -2,6 +2,7 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 
@@ -17,7 +18,7 @@ describe('save-user-share-api', () => {
     vi.clearAllMocks();
   });
 
-  it('creates a share from a short share code and implies read permission', async () => {
+  it('creates a share from grants and implies read permission', async () => {
     insertUser('owner-hash', 'Owner');
     insertUser('friend-hash', 'Friend');
 
@@ -26,10 +27,24 @@ describe('save-user-share-api', () => {
       usernameHash: 'owner-hash',
       body: {
         sharedWithUserShareCode: getUserShareCode('friend-hash'),
-        canRead: false,
-        canCreate: true,
-        canUpdate: false,
-        canDelete: false,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: false,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'wishlist',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
       },
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -45,31 +60,52 @@ describe('save-user-share-api', () => {
     expect(
       getDatabase()
         .prepare(
-          'SELECT can_read, can_create, can_update, can_delete FROM user_shares WHERE owner_username_hash = ? AND shared_with_username_hash = ?'
+          `SELECT list_type, content_type, can_read, can_create, can_update, can_delete
+           FROM user_share_grants
+           WHERE owner_username_hash = ? AND shared_with_username_hash = ?
+           ORDER BY list_type, content_type`
         )
-        .get('owner-hash', 'friend-hash')
-    ).toEqual({ can_read: 1, can_create: 1, can_update: 0, can_delete: 0 });
+        .all('owner-hash', 'friend-hash')
+    ).toEqual([
+      {
+        list_type: 'library',
+        content_type: 'movie',
+        can_read: 1,
+        can_create: 1,
+        can_update: 0,
+        can_delete: 0,
+      },
+      {
+        list_type: 'wishlist',
+        content_type: 'series',
+        can_read: 1,
+        can_create: 0,
+        can_update: 0,
+        can_delete: 0,
+      },
+    ]);
   });
 
-  it('updates an existing outgoing share permissions', async () => {
+  it('updates an existing outgoing share grants', async () => {
     insertUser('owner-hash', 'Owner');
     insertUser('friend-hash', 'Friend');
-    getDatabase()
-      .prepare(
-        `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-      .run('owner-hash', 'friend-hash', 1, 0, 0, 0);
+    insertLibraryShare(getDatabase(), 'owner-hash', 'friend-hash', { canRead: true });
 
     const response = mockResponse();
     const request: any = {
       usernameHash: 'owner-hash',
       body: {
         sharedWithUserShareCode: getUserShareCode('friend-hash'),
-        canRead: true,
-        canCreate: true,
-        canUpdate: true,
-        canDelete: true,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: true,
+            canDelete: true,
+          },
+        ],
       },
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -80,46 +116,37 @@ describe('save-user-share-api', () => {
     await handlerPromise();
 
     expect(response.code).toHaveBeenCalledWith(204);
-    expect(getDatabase().prepare('SELECT COUNT(*) AS count FROM user_shares').get()).toEqual({ count: 1 });
     expect(
       getDatabase()
-        .prepare('SELECT can_read, can_create, can_update, can_delete FROM user_shares WHERE owner_username_hash = ?')
-        .get('owner-hash')
-    ).toEqual({ can_read: 1, can_create: 1, can_update: 1, can_delete: 1 });
+        .prepare(
+          `SELECT list_type, content_type, can_read, can_create, can_update, can_delete
+           FROM user_share_grants
+           WHERE owner_username_hash = ? AND shared_with_username_hash = ?`
+        )
+        .all('owner-hash', 'friend-hash')
+    ).toEqual([
+      {
+        list_type: 'library',
+        content_type: 'movie',
+        can_read: 1,
+        can_create: 1,
+        can_update: 1,
+        can_delete: 1,
+      },
+    ]);
   });
 
-  it('rejects missing and unknown target share codes', async () => {
+  it('rejects missing grants', async () => {
     insertUser('owner-hash', 'Owner');
-    const missingResponse = mockResponse();
-    const missingRequest: any = { usernameHash: 'owner-hash', body: { sharedWithUserShareCode: ' ' } };
-    const { app: missingApp, handlerPromise: missingHandlerPromise } = buildApp(missingRequest, missingResponse);
-
-    const { register } = await import('./save-user-share-api');
-    register(missingApp);
-
-    await missingHandlerPromise();
-    expect(missingResponse.code).toHaveBeenCalledWith(400);
-
-    const unknownResponse = mockResponse();
-    const unknownRequest: any = {
-      usernameHash: 'owner-hash',
-      body: { sharedWithUserShareCode: 'unknown-share-code' },
-    };
-    const { app: unknownApp, handlerPromise: unknownHandlerPromise } = buildApp(unknownRequest, unknownResponse);
-
-    register(unknownApp);
-
-    await unknownHandlerPromise();
-    expect(unknownResponse.code).toHaveBeenCalledWith(404);
-  });
-
-  it('does not allow sharing with the current user', async () => {
-    insertUser('owner-hash', 'Owner');
+    insertUser('friend-hash', 'Friend');
 
     const response = mockResponse();
     const request: any = {
       usernameHash: 'owner-hash',
-      body: { sharedWithUserShareCode: getUserShareCode('owner-hash') },
+      body: {
+        sharedWithUserShareCode: getUserShareCode('friend-hash'),
+        canRead: true,
+      },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -128,7 +155,86 @@ describe('save-user-share-api', () => {
 
     await handlerPromise();
 
-    expect(response.code).toHaveBeenCalledWith(404);
-    expect(getDatabase().prepare('SELECT COUNT(*) AS count FROM user_shares').get()).toEqual({ count: 0 });
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('rejects invalid scopes instead of dropping them', async () => {
+    insertUser('owner-hash', 'Owner');
+    insertUser('friend-hash', 'Friend');
+
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'owner-hash',
+      body: {
+        sharedWithUserShareCode: getUserShareCode('friend-hash'),
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'books',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./save-user-share-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(getDatabase().prepare('SELECT * FROM user_shares').all()).toEqual([]);
+  });
+
+  it('rejects duplicate scopes instead of keeping the last grant', async () => {
+    insertUser('owner-hash', 'Owner');
+    insertUser('friend-hash', 'Friend');
+
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'owner-hash',
+      body: {
+        sharedWithUserShareCode: getUserShareCode('friend-hash'),
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: true,
+            canDelete: true,
+          },
+        ],
+      },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./save-user-share-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(getDatabase().prepare('SELECT * FROM user_shares').all()).toEqual([]);
   });
 });

@@ -4,7 +4,7 @@ import {
   CollectionStatisticsApiResponseModel,
 } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
-import { buildItemWhere, canonicalOrExactIdentityMatch } from './collection-query';
+import { buildItemWhere, buildReadableItemScope, canonicalOrExactIdentityMatch } from './collection-query';
 import { WatchedYearCountRow } from './collection-model';
 
 const movieContentCondition = `collection_items.content_type = 'movie'`;
@@ -15,12 +15,10 @@ const favoriteCondition = `collection_items.favorite = 1`;
 
 export const getCollectionStatistics = (
   db: Database.Database,
-  usernameHashes: string[],
-  filters?: CollectionItemFiltersApiModel,
-  internalCollectionUsernameHash?: string
+  viewerUsernameHash: string,
+  filters?: CollectionItemFiltersApiModel
 ): CollectionStatisticsApiResponseModel => {
-  const viewerUsernameHash = internalCollectionUsernameHash ?? usernameHashes[0];
-  const queryParts = buildItemWhere(usernameHashes, filters, undefined, undefined, viewerUsernameHash);
+  const queryParts = buildItemWhere(viewerUsernameHash, filters);
   const whereSql = queryParts.where.join(' AND ');
   const matchingItemsSql = `SELECT id FROM collection_items WHERE ${whereSql}`;
   const countWhere = (condition: string): number =>
@@ -41,17 +39,14 @@ export const getCollectionStatistics = (
     }
   ).count;
 
-  const countListType = (listType: CollectionListTypeModel): number =>
-    (
+  const countListType = (listType: CollectionListTypeModel): number => {
+    const scope = buildReadableItemScope(viewerUsernameHash, { listType, shared: filters?.shared }, false);
+    return (
       db
-        .prepare(
-          `SELECT COUNT(*) as count
-           FROM collection_items
-           WHERE username_hash = ?
-           AND list_type = ?`
-        )
-        .get(internalCollectionUsernameHash ?? usernameHashes[0], listType) as { count: number }
+        .prepare(`SELECT COUNT(*) as count FROM collection_items WHERE ${scope.where.join(' AND ')}`)
+        .get(...scope.params) as { count: number }
     ).count;
+  };
 
   const upNextCount = countListType('up-next');
   const wishlistCount = countListType('wishlist');
@@ -134,13 +129,7 @@ export const getCollectionStatistics = (
   ).count;
 
   const shouldCountTrackerSeries = !filters?.listType || filters.listType === 'tracking';
-  const trackerQueryParts = buildItemWhere(
-    usernameHashes,
-    { ...filters, listType: 'tracking' },
-    undefined,
-    undefined,
-    viewerUsernameHash
-  );
+  const trackerQueryParts = buildItemWhere(viewerUsernameHash, { ...filters, listType: 'tracking' });
   const trackerWhereSql = trackerQueryParts.where.join(' AND ');
 
   const unwatchedTrackerSeriesCount = shouldCountTrackerSeries

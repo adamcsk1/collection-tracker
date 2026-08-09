@@ -1,5 +1,5 @@
 import { ExternalItemIdentityModel } from './external-metadata-provider-model';
-import { CollectionItemModel, CollectionListTypeModel } from './collection-item-model';
+import { CollectionItemContentTypeModel, CollectionItemModel, CollectionListTypeModel } from './collection-item-model';
 import { CollectionListDisplayPreferencesModel } from './collection-list-display-preferences-model';
 import { CollectionFeaturePreferencesModel } from './collection-feature-preferences-model';
 import { LanguageModel } from './language-model';
@@ -7,12 +7,14 @@ import { ThemeModel } from './theme-model';
 
 export type { CollectionItemContentTypeModel, CollectionListTypeModel } from './collection-item-model';
 
-export type CollectionItemApiModel = CollectionItemModel;
+export type CollectionItemApiModel = CollectionItemModel & Required<Pick<CollectionItemModel, 'ownerShareCode'>>;
 
 export type CollectionItemTypeFilter = 'movie' | 'series' | 'book';
 export type CollectionItemTagMode = 'any' | 'all';
 export type CollectionItemOrderBy = 'createdAt' | 'alphabet';
 export type CollectionItemOrderDirection = 'asc' | 'desc';
+
+export type CollectionItemSharedFilter = 'mine' | 'shared';
 
 export interface CollectionItemFiltersApiModel {
   search?: string;
@@ -23,6 +25,7 @@ export interface CollectionItemFiltersApiModel {
   watched?: boolean;
   completed?: boolean;
   favorite?: boolean;
+  shared?: CollectionItemSharedFilter;
   listType?: CollectionListTypeModel;
   orderBy?: CollectionItemOrderBy;
   orderDirection?: CollectionItemOrderDirection;
@@ -115,6 +118,7 @@ export type CollectionItemChangeApiModel = Pick<
 
 export interface CreateApiRequestModel extends CollectionItemChangeApiModel {
   listType?: CollectionListTypeModel;
+  targetOwnerShareCode?: string;
 }
 
 export interface CreateApiResponseModel {
@@ -272,22 +276,25 @@ export interface TrackingCompletedEpisodesApiRequestModel {
   completedEpisodes: TrackingCompletedEpisodeModel[];
 }
 
-export interface UserShareOutgoingApiModel {
-  sharedWithUserShareCode: string;
-  sharedWithUsername: string | null;
+export interface UserShareGrantApiModel {
+  listType: CollectionListTypeModel;
+  contentType: CollectionItemContentTypeModel;
   canRead: boolean;
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
 }
 
+export interface UserShareOutgoingApiModel {
+  sharedWithUserShareCode: string;
+  sharedWithUsername: string | null;
+  grants: UserShareGrantApiModel[];
+}
+
 export interface UserShareIncomingApiModel {
   ownerUserShareCode: string;
   ownerUsername: string | null;
-  canRead: boolean;
-  canCreate: boolean;
-  canUpdate: boolean;
-  canDelete: boolean;
+  grants: UserShareGrantApiModel[];
 }
 
 export interface UserSharesApiResponseModel {

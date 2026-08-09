@@ -54,14 +54,21 @@ describe('SharesService', () => {
   });
 
   it('saves shares by short share code', () => {
-    service.saveShare('friend-code', { canRead: true, canCreate: false, canUpdate: true, canDelete: false });
+    const grants = [
+      {
+        listType: 'library' as const,
+        contentType: 'movie' as const,
+        canRead: true,
+        canCreate: false,
+        canUpdate: true,
+        canDelete: false,
+      },
+    ];
+    service.saveShare('friend-code', grants);
 
     expect(api.saveShare).toHaveBeenCalledWith({
       sharedWithUserShareCode: 'friend-code',
-      canRead: true,
-      canCreate: false,
-      canUpdate: true,
-      canDelete: false,
+      grants,
     });
   });
 

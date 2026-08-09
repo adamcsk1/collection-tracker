@@ -4,10 +4,22 @@ import {
   CollectionListTypeModel,
   CollectionItemsApiResponseModel,
 } from '@shared/models/api-model';
+import {
+  COLLECTION_MATCHED_ALIAS_OWNER_IN_CHUNK_SIZE,
+  COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE,
+} from '@shared/constants/collection-matched-items-const';
 import Database from 'better-sqlite3';
+import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import { resolveCanonicalItemId } from '../external-item-identity-repository';
+import { ExternalIdentityRow } from '../external-item-identity-model';
 import { toApiItem } from './collection-mapper';
-import { buildItemWhere, normalizeLimit, normalizeListType, normalizeOffset } from './collection-query';
+import {
+  buildItemWhere,
+  buildReadableItemScope,
+  normalizeLimit,
+  normalizeListType,
+  normalizeOffset,
+} from './collection-query';
 import {
   AiSearchCollectionItem,
   CollectionItemOrderOptions,
@@ -28,6 +40,76 @@ const buildCollectionOrderBy = ({
 };
 
 const EPISODE_COUNT_IN_CHUNK_SIZE = 400;
+
+const getIdentityKey = (source: string, id: string): string => `${source}\u0000${id}`;
+
+const getAliasAssociationKey = (usernameHash: string, canonicalItemId: string): string =>
+  `${usernameHash}\u0000${canonicalItemId}`;
+
+const loadMatchedAliasRanks = (
+  db: Database.Database,
+  rows: CollectionItemRow[],
+  matchedIdentities: ExternalItemIdentityModel[],
+  rankByIdentity: Map<string, number>
+): Map<string, number> => {
+  const rankByAliasAssociation = new Map<string, number>();
+  const ownerUsernameHashes = [...new Set(rows.map((row) => row.username_hash))];
+  const readableAssociations = new Set(
+    rows.flatMap((row) =>
+      row.canonical_item_id ? [getAliasAssociationKey(row.username_hash, row.canonical_item_id)] : []
+    )
+  );
+  const identityIdsBySource = new Map<string, Set<string>>();
+
+  for (const identity of matchedIdentities) {
+    const identityIds = identityIdsBySource.get(identity.source) ?? new Set<string>();
+    identityIds.add(identity.id);
+    identityIdsBySource.set(identity.source, identityIds);
+  }
+
+  for (
+    let ownerIndex = 0;
+    ownerIndex < ownerUsernameHashes.length;
+    ownerIndex += COLLECTION_MATCHED_ALIAS_OWNER_IN_CHUNK_SIZE
+  ) {
+    const ownerChunk = ownerUsernameHashes.slice(ownerIndex, ownerIndex + COLLECTION_MATCHED_ALIAS_OWNER_IN_CHUNK_SIZE);
+    for (const [source, identityIdSet] of identityIdsBySource) {
+      const identityIds = [...identityIdSet];
+      for (
+        let identityIndex = 0;
+        identityIndex < identityIds.length;
+        identityIndex += COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE
+      ) {
+        const identityChunk = identityIds.slice(
+          identityIndex,
+          identityIndex + COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE
+        );
+        const aliasRows = db
+          .prepare(
+            `SELECT username_hash, canonical_item_id, external_provider, external_item_id, source_confidence
+             FROM external_item_identities
+             WHERE username_hash IN (${ownerChunk.map(() => '?').join(', ')})
+               AND external_provider = ?
+               AND external_item_id IN (${identityChunk.map(() => '?').join(', ')})`
+          )
+          .all(...ownerChunk, source, ...identityChunk) as ExternalIdentityRow[];
+
+        for (const aliasRow of aliasRows) {
+          const associationKey = getAliasAssociationKey(aliasRow.username_hash, aliasRow.canonical_item_id);
+          if (!readableAssociations.has(associationKey)) continue;
+          const rank = rankByIdentity.get(getIdentityKey(aliasRow.external_provider, aliasRow.external_item_id));
+          if (rank === undefined) continue;
+          rankByAliasAssociation.set(
+            associationKey,
+            Math.min(rankByAliasAssociation.get(associationKey) ?? rank, rank)
+          );
+        }
+      }
+    }
+  }
+
+  return rankByAliasAssociation;
+};
 
 const loadTrackingEpisodeCounts = (
   db: Database.Database,
@@ -185,18 +267,16 @@ export const findCollectionItems = (
 
 export const searchCollectionItems = (
   db: Database.Database,
-  usernameHashes: string[],
+  viewerUsernameHash: string,
   options: CollectionItemQueryOptions
 ): CollectionItemsApiResponseModel => {
   const offset = normalizeOffset(options.offset);
   const limit = normalizeLimit(options.limit);
-  const viewerUsernameHash = options.viewerUsernameHash ?? usernameHashes[0];
   const queryParts = buildItemWhere(
-    usernameHashes,
+    viewerUsernameHash,
     options.filters,
     options.matchedIdentities,
-    options.matchedCanonicalItemIds,
-    viewerUsernameHash
+    options.matchedCanonicalItemIds
   );
   const whereSql = queryParts.where.join(' AND ');
   const orderBySql = buildCollectionOrderBy({
@@ -226,17 +306,22 @@ export const searchCollectionItems = (
       (options.matchedCanonicalItemIds ?? []).map((canonicalItemId, index) => [canonicalItemId, index])
     );
     const rankByIdentity = new Map(
-      options.matchedIdentities.map((identity, index) => [`${identity.source}\u0000${identity.id}`, index])
+      options.matchedIdentities.map((identity, index) => [getIdentityKey(identity.source, identity.id), index])
     );
+    const rankByAliasAssociation = loadMatchedAliasRanks(db, rows, options.matchedIdentities, rankByIdentity);
     const getRank = (row: CollectionItemRow): number =>
       Math.min(
         row.canonical_item_id
           ? (rankByCanonicalItemId.get(row.canonical_item_id) ?? Number.POSITIVE_INFINITY)
           : Number.POSITIVE_INFINITY,
-        rankByIdentity.get(`${row.external_provider}\u0000${row.external_item_id ?? row.imdb_id ?? ''}`) ??
+        rankByIdentity.get(getIdentityKey(row.external_provider, row.external_item_id ?? row.imdb_id ?? '')) ??
           Number.POSITIVE_INFINITY,
         row.imdb_id
-          ? (rankByIdentity.get(`imdb\u0000${row.imdb_id}`) ?? Number.POSITIVE_INFINITY)
+          ? (rankByIdentity.get(getIdentityKey('imdb', row.imdb_id)) ?? Number.POSITIVE_INFINITY)
+          : Number.POSITIVE_INFINITY,
+        row.canonical_item_id
+          ? (rankByAliasAssociation.get(getAliasAssociationKey(row.username_hash, row.canonical_item_id)) ??
+              Number.POSITIVE_INFINITY)
           : Number.POSITIVE_INFINITY
       );
     const items = rows
@@ -356,32 +441,18 @@ export const findCollectionItemsForPrompt = (
 
 export const findCollectionItemsForAiSearch = (
   db: Database.Database,
-  usernameHashes: string[],
+  viewerUsernameHash: string,
   listType: CollectionListTypeModel = 'library'
 ): AiSearchCollectionItem[] => {
-  const viewerUsernameHash = usernameHashes[0];
-  const rows =
-    listType === 'library' && viewerUsernameHash
-      ? (db
-          .prepare(
-            `SELECT ${collectionItemProjection()}
-              FROM collection_items
-              WHERE (
-                (username_hash IN (${usernameHashes.map(() => '?').join(', ')}) AND list_type = 'library')
-                OR (username_hash = ? AND list_type = 'books')
-              )
-              ORDER BY created_at DESC, id DESC`
-          )
-          .all(...usernameHashes, viewerUsernameHash) as CollectionItemRow[])
-      : (db
-          .prepare(
-            `SELECT ${collectionItemProjection()}
-              FROM collection_items
-              WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-               AND list_type = ?
-              ORDER BY created_at DESC, id DESC`
-          )
-          .all(...usernameHashes, listType) as CollectionItemRow[]);
+  const scope = buildReadableItemScope(viewerUsernameHash, { listType });
+  const rows = db
+    .prepare(
+      `SELECT ${collectionItemProjection()}
+       FROM collection_items
+       WHERE ${scope.where.join(' AND ')}
+       ORDER BY created_at DESC, id DESC`
+    )
+    .all(...scope.params) as CollectionItemRow[];
 
   const watchingItemIds =
     listType === 'tracking'
@@ -397,38 +468,34 @@ export const findCollectionItemsForAiSearch = (
 
 export const findRandomCollectionItem = (
   db: Database.Database,
-  usernameHashes: string[]
+  viewerUsernameHash: string
 ): CollectionItemApiModel | undefined => {
+  const scope = buildReadableItemScope(viewerUsernameHash, { listType: 'library' }, false);
   const row = db
     .prepare(
       `SELECT ${collectionItemProjection()} FROM collection_items
-        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-         AND list_type = ?
+        WHERE ${scope.where.join(' AND ')}
         ORDER BY RANDOM() LIMIT 1`
     )
-    .get(...usernameHashes, 'library') as CollectionItemRow | undefined;
+    .get(...scope.params) as CollectionItemRow | undefined;
 
-  return row ? toApiItem(db, row) : undefined;
+  return row ? toApiItem(db, row, viewerUsernameHash) : undefined;
 };
 
 export const findRandomCollectionImages = (
   db: Database.Database,
-  usernameHash: string,
-  readableOwnerHashes: string[],
+  viewerUsernameHash: string,
   count: number
 ): string[] => {
-  const readableHashes = [usernameHash, ...readableOwnerHashes];
+  const scope = buildReadableItemScope(viewerUsernameHash, { listType: 'library' });
   const rows = db
     .prepare(
       `SELECT image FROM collection_items
        WHERE image != ?
-         AND (
-           (username_hash IN (${readableHashes.map(() => '?').join(', ')}) AND list_type = 'library')
-           OR (username_hash = ? AND list_type = 'books')
-         )
-         ORDER BY RANDOM() LIMIT ?`
+          AND ${scope.where.join(' AND ')}
+          ORDER BY RANDOM() LIMIT ?`
     )
-    .all('', ...readableHashes, usernameHash, count) as Array<{ image: string }>;
+    .all('', ...scope.params, count) as Array<{ image: string }>;
 
   return rows.map((row) => row.image);
 };

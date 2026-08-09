@@ -125,6 +125,31 @@ describe('SeriesSeasonMetadataDialog', () => {
     expect(portal.closeTop).toHaveBeenCalled();
   });
 
+  it('saves shared owner metadata using owner share code', async () => {
+    fixture.componentRef.setInput('ownerShareCode', 'owner-code');
+    fixture.detectChanges();
+
+    await component['onSave']();
+
+    expect(api.updateTrackingSeasonsByExternalId).toHaveBeenCalledWith(
+      'omdb',
+      'tt-series',
+      { seasons: [{ season: 1, episodes: 2, titles: [] }] },
+      'owner-code'
+    );
+    expect(fixture.nativeElement.querySelector('[data-test-id="series-metadata-refresh"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="series-metadata-remove-all"]')).not.toBeNull();
+  });
+
+  it('hides refresh and remove actions without update permission', () => {
+    fixture.componentRef.setInput('ownerShareCode', 'owner-code');
+    fixture.componentRef.setInput('canUpdate', false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="series-metadata-refresh"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="series-metadata-remove-all"]')).toBeNull();
+  });
+
   it('calls the default portal close when closed', () => {
     component['onClose']();
 
@@ -155,11 +180,19 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRefreshSeriesMetadata']();
 
-    expect(api.refreshTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
+    expect(api.refreshTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', undefined);
     expect(component['seasons']()).toEqual([{ season: 1, episodes: 3 }]);
     expect(component['getEpisodeTitle'](0, 0)).toBe('Pilot');
     expect(saved).toHaveBeenCalledWith([{ season: 1, episodes: 3, titles: ['Pilot'] }], { hash: 'refreshed-hash' });
     expect(toastState.state.message()).toBe('Toast.SeriesMetadataRefreshed');
+  });
+
+  it('refreshes shared owner series metadata', async () => {
+    fixture.componentRef.setInput('ownerShareCode', 'owner-code');
+
+    await component['onRefreshSeriesMetadata']();
+
+    expect(api.refreshTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', 'owner-code');
   });
 
   it('does not refresh series metadata when confirmation is declined', async () => {
@@ -176,10 +209,18 @@ describe('SeriesSeasonMetadataDialog', () => {
 
     await component['onRemoveSeriesMetadata']();
 
-    expect(api.deleteTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series');
+    expect(api.deleteTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', undefined);
     expect(component['formModel']().seasons).toEqual([]);
     expect(saved).toHaveBeenCalledWith([], { hash: 'metadata-deleted-hash' });
     expect(toastState.state.message()).toBe('Toast.SeriesMetadataDeleted');
+  });
+
+  it('removes shared owner series metadata', async () => {
+    fixture.componentRef.setInput('ownerShareCode', 'owner-code');
+
+    await component['onRemoveSeriesMetadata']();
+
+    expect(api.deleteTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', 'owner-code');
   });
 
   it('does not remove series metadata when confirmation is declined', async () => {

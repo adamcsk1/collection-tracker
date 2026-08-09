@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getDatabase } from '../database';
+import { insertLibraryShare } from '../../../../test/mocks/share-mock';
 import {
   copySeriesToTracking,
   deleteAllTrackingItems,
@@ -67,15 +68,6 @@ const insertItem = (
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
   return itemId;
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canRead: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, canRead ? 1 : 0, 0, 0, 0);
 };
 
 describe('watching-repository', () => {
@@ -217,7 +209,7 @@ describe('watching-repository', () => {
   it('copies from a readable shared library to requester tracking', () => {
     insertUser('owner');
     insertUser('viewer');
-    insertShare('owner', 'viewer', true);
+    insertLibraryShare(getDatabase(), 'owner', 'viewer', { canRead: true });
     insertItem('owner', 'tt-1', ['#series']);
     const db = getDatabase();
 
@@ -277,7 +269,7 @@ describe('watching-repository', () => {
   it('markAllSeriesAsCompleted copies from readable shared library', () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     insertItem('owner', 'tt-shared', ['#series']);
     const db = getDatabase();
 

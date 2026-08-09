@@ -2,6 +2,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const COMPLETED_TAG = '#completed';
 
@@ -135,15 +136,6 @@ const insertUser = (usernameHash: string) => {
   getDatabase()
     .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
     .run(usernameHash, `${usernameHash}-token`);
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, 1, 0, 0, 0);
 };
 
 const insertTrackingItem = (usernameHash: string, imdbId: string, title: string) => {
@@ -293,6 +285,84 @@ describe('statistics-api', () => {
     const statistics = response.send.mock.calls[0][0];
     expect(statistics).toEqual(expect.objectContaining({ booksCount: 1 }));
     expect(statistics).not.toHaveProperty('bookCount');
+  });
+
+  it('scopes totals and list counts consistently for mine and shared filters', async () => {
+    insertUser('user');
+    insertUser('owner');
+    const db = getDatabase();
+    const insertItem = db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+         title, title_lower, year, contributors, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', '', '', '', ?)`
+    );
+    const addItem = (
+      usernameHash: string,
+      itemId: string,
+      listType: 'library' | 'books' | 'up-next' | 'wishlist',
+      contentType: 'movie' | 'series' | 'book'
+    ): void => {
+      insertItem.run(
+        usernameHash,
+        contentType === 'book' ? 'openlibrary' : 'imdb',
+        itemId,
+        `${contentType}:${itemId}`,
+        listType,
+        contentType,
+        itemId,
+        itemId,
+        `${usernameHash}-${itemId}`
+      );
+    };
+
+    for (const usernameHash of ['user', 'owner']) {
+      addItem(usernameHash, `${usernameHash}-library`, 'library', 'movie');
+      addItem(usernameHash, `${usernameHash}-book`, 'books', 'book');
+      addItem(usernameHash, `${usernameHash}-up-next`, 'up-next', 'movie');
+      addItem(usernameHash, `${usernameHash}-wishlist`, 'wishlist', 'movie');
+    }
+    addItem('owner', 'owner-private-series', 'library', 'series');
+
+    const insertGrant = db.prepare(
+      `INSERT INTO user_share_grants
+        (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)
+       VALUES ('owner', 'user', ?, ?, 1)`
+    );
+    insertGrant.run('library', 'movie');
+    insertGrant.run('books', 'book');
+    insertGrant.run('up-next', 'movie');
+    insertGrant.run('wishlist', 'movie');
+
+    const readStatistics = async (query: Record<string, unknown>) => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp({ usernameHash: 'user', query }, response);
+      const { register } = await import('./statistics-api');
+      register(app);
+      await handlerPromise();
+      return response.send.mock.calls[0][0];
+    };
+
+    const allStatistics = await readStatistics({});
+    const mineStatistics = await readStatistics({ shared: 'mine' });
+    const sharedStatistics = await readStatistics({ shared: 'shared' });
+
+    expect(allStatistics).toEqual(
+      expect.objectContaining({
+        totalItems: 4,
+        movieCount: 2,
+        seriesCount: 0,
+        booksCount: 2,
+        upNextCount: 2,
+        wishlistCount: 2,
+      })
+    );
+    expect(mineStatistics).toEqual(
+      expect.objectContaining({ totalItems: 2, booksCount: 1, upNextCount: 1, wishlistCount: 1 })
+    );
+    expect(sharedStatistics).toEqual(
+      expect.objectContaining({ totalItems: 2, booksCount: 1, upNextCount: 1, wishlistCount: 1 })
+    );
   });
 
   it('applies search filters to watched statistics', async () => {
@@ -500,7 +570,7 @@ describe('statistics-api', () => {
   it('does not include shared-owner internal lists in filtered statistics', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user');
+    insertLibraryShare(getDatabase(), 'owner', 'user');
     insertTrackingItem('owner', 'tt-shared-series', 'Shared Series');
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { listType: 'tracking' } };

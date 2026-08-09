@@ -68,7 +68,16 @@ describe('buildCollectionRouteFilterKey', () => {
 
   it('builds a stable key from explicit filters', () => {
     expect(buildCollectionRouteFilterKey({ type: 'movie', watched: false })).toBe(
-      JSON.stringify({ type: 'movie', favorite: null, watched: false, completed: null })
+      JSON.stringify({ type: 'movie', favorite: null, watched: false, completed: null, shared: null })
+    );
+  });
+
+  it('includes shared filter in route filters and key', () => {
+    expect(buildCollectionRouteFilters({ get: (name) => (name === 'shared' ? 'mine' : null) })).toEqual({
+      shared: 'mine',
+    });
+    expect(buildCollectionRouteFilterKey({ shared: 'shared' })).toBe(
+      JSON.stringify({ type: null, favorite: null, watched: null, completed: null, shared: 'shared' })
     );
   });
 });

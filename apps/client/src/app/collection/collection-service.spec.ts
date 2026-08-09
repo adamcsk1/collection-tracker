@@ -14,7 +14,7 @@ describe('CollectionService', () => {
   let service: CollectionService;
   let mainCollectionState: NgxSimpleSignalStoreService<MainCollectionState>;
 
-  const buildCollectionItem = (title: string, ownerShareCode?: string): CollectionItemApiModel => ({
+  const buildCollectionItem = (title: string, ownerShareCode = 'own-code'): CollectionItemApiModel => ({
     image: '',
     title,
     titleLower: title.toLowerCase(),

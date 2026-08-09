@@ -115,10 +115,24 @@ describe('ListItem', () => {
       {
         ownerUserShareCode: 'owner-code',
         ownerUsername: 'Owner',
-        canRead: true,
-        canCreate: false,
-        canUpdate: false,
-        canDelete: false,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
       },
     ]);
     fixture.componentRef.setInput('collectionItem', { ...buildItem('Shared', []), ownerShareCode: 'owner-code' });
@@ -307,10 +321,24 @@ describe('ListItem', () => {
       {
         ownerUserShareCode: 'owner-code',
         ownerUsername: 'Owner',
-        canRead: true,
-        canCreate: false,
-        canUpdate: false,
-        canDelete: false,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
       },
     ]);
     fixture.componentRef.setInput('collectionItem', { ...buildItem('Shared', []), ownerShareCode: 'owner-code' });

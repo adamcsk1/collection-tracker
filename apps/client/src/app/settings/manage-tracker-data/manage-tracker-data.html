@@ -18,7 +18,7 @@
     <button
       data-test-id="settings-mark-all-books-completed"
       type="button"
-      [disabled]="apiLoadNetworkStatus() === 'pending' || !!selectedOwnerShareCode()"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !canMarkBooks()"
       (click)="onMarkAllBooksAsCompleted()"
     >
       <i class="material-icons" [title]="translations.markAllBooksAsCompleted()"> check_circle </i>
@@ -28,7 +28,7 @@
       data-test-id="settings-mark-all-books-uncompleted"
       type="button"
       class="button-danger"
-      [disabled]="apiLoadNetworkStatus() === 'pending' || !!selectedOwnerShareCode()"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !canMarkBooks()"
       (click)="onMarkAllBooksAsUncompleted()"
     >
       <i class="material-icons" [title]="translations.markAllBooksAsUncompleted()"> unpublished </i>
@@ -52,7 +52,7 @@
     <button
       data-test-id="settings-mark-all-completed"
       type="button"
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !canMarkMovies()"
       (click)="onMarkAllMoviesAsCompleted()"
     >
       <i class="material-icons" [title]="translations.markAllMoviesAsCompleted()"> visibility </i>
@@ -62,7 +62,7 @@
       data-test-id="settings-mark-all-uncompleted"
       type="button"
       class="button-danger"
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !canMarkMovies()"
       (click)="onMarkAllMoviesAsUncompleted()"
     >
       <i class="material-icons" [title]="translations.markAllMoviesAsUncompleted()"> visibility_off </i>
@@ -86,7 +86,7 @@
     <button
       data-test-id="settings-mark-all-series-completed"
       type="button"
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !canMarkSeries()"
       (click)="onMarkAllSeriesAsCompleted()"
     >
       <i class="material-icons" [title]="translations.markAllSeriesAsCompleted()"> playlist_add_check </i>
@@ -96,7 +96,7 @@
       data-test-id="settings-mark-all-series-uncompleted"
       type="button"
       class="button-danger"
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !canMarkSeries()"
       (click)="onMarkAllSeriesAsUncompleted()"
     >
       <i class="material-icons" [title]="translations.markAllSeriesAsUncompleted()"> playlist_remove </i>

@@ -15,7 +15,6 @@ import {
   upsertAiSearchEmbedding,
 } from '../core/database/repositories/ai-search-embedding-repository';
 import { AiSearchCollectionItem, findCollectionItemsForAiSearch } from '../core/database/repositories/collection';
-import { findReadableOwnerHashes } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { debugLog, errorLog, warningLog } from '../core/logger';
 import { createOllamaClient, getOllamaConfig, validateOllamaConnection } from '../core/ollama/ollama';
@@ -75,9 +74,7 @@ const stringifyPromptValue = (value: unknown): string => `${value}`.replace(/\s+
 
 const readCollectionItems = (usernameHash: string, listType: CollectionListTypeModel): AiSearchCollectionItem[] => {
   const db = getDatabase();
-  const usernameHashes =
-    listType === 'library' ? [usernameHash, ...findReadableOwnerHashes(db, usernameHash)] : [usernameHash];
-  return findCollectionItemsForAiSearch(db, usernameHashes, listType);
+  return findCollectionItemsForAiSearch(db, usernameHash, listType);
 };
 
 const toPromptItem = (item: AiSearchCollectionItem): string => {

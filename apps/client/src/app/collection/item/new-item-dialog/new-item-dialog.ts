@@ -500,9 +500,14 @@ export class NewItemDialog {
     return this.mode() === 'manual' || !!this.searchForm.selectedExternalReference().value();
   });
   protected readonly libraryOptions = computed(() => {
+    const contentType = this.activeAddContentType();
+    const listType = this.listType();
     const options = [{ text: this.translations.myLibrary(), value: '' }];
     for (const share of this.sharesState.state.incoming()) {
-      if (share.canCreate) {
+      const canCreate = share.grants.some(
+        (grant) => grant.listType === listType && grant.contentType === contentType && grant.canCreate
+      );
+      if (canCreate) {
         options.push({
           text: `${this.translations.sharedLibrary()} (${share.ownerUsername ?? share.ownerUserShareCode})`,
           value: share.ownerUserShareCode,
@@ -511,13 +516,9 @@ export class NewItemDialog {
     }
     return options;
   });
-  protected readonly showLibrarySelect = computed(
-    () => !this.internalListMode() && !this.isBookAdd() && this.libraryOptions().length > 1
-  );
+  protected readonly showLibrarySelect = computed(() => this.libraryOptions().length > 1);
   protected readonly selectedExternalReference = computed(() => this.searchForm.selectedExternalReference().value());
   private readonly defaultTargetOwnerShareCode = computed(() => {
-    if (this.internalListMode()) return null;
-
     const defaultLibraryOwnerShareCode = this.mainState.state.defaultLibraryOwnerShareCode();
     if (!defaultLibraryOwnerShareCode) return null;
 
@@ -581,12 +582,18 @@ export class NewItemDialog {
     });
 
     effect(() => {
+      const libraryOptions = this.libraryOptions();
       const defaultTargetOwnerShareCode = this.defaultTargetOwnerShareCode();
       const targetOwnerShareCode = untracked(() => this.searchForm.targetOwnerShareCode().value());
 
-      if (targetOwnerShareCode === null || targetOwnerShareCode === '') {
-        this.searchForm.targetOwnerShareCode().value.set(defaultTargetOwnerShareCode);
+      if (targetOwnerShareCode === null) {
+        if (defaultTargetOwnerShareCode) {
+          this.searchForm.targetOwnerShareCode().value.set(defaultTargetOwnerShareCode);
+        }
+        return;
       }
+      if (libraryOptions.some((option) => option.value === targetOwnerShareCode)) return;
+      this.searchForm.targetOwnerShareCode().value.set(defaultTargetOwnerShareCode);
     });
 
     effect(() => {
@@ -776,10 +783,7 @@ export class NewItemDialog {
 
   private async onSave(mode: SaveMode | null = null): Promise<void> {
     const options: SaveOptions = {};
-    const targetOwnerShareCode =
-      this.internalListMode() || this.isBookAdd()
-        ? undefined
-        : this.searchForm.targetOwnerShareCode().value() || undefined;
+    const targetOwnerShareCode = this.searchForm.targetOwnerShareCode().value() || undefined;
     if (targetOwnerShareCode) options.targetOwnerShareCode = targetOwnerShareCode;
     if (this.listType() !== 'library') options.listType = this.listType();
     if (this.showFinishedCheckbox() && this.searchForm.finished().value()) options.finished = true;

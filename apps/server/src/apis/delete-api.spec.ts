@@ -3,20 +3,12 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase()
     .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
     .run(usernameHash, `${usernameHash}-token`);
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canDelete: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, 1, 0, 0, canDelete ? 1 : 0);
 };
 
 const insertItem = (hash = 'abc123', usernameHash = 'user') => {
@@ -220,7 +212,7 @@ describe('delete-api', () => {
   it('deletes an item from a shared library when delete permission is granted', async () => {
     insertItem('abc123', 'owner');
     insertUser('user');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canDelete: true });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
@@ -245,7 +237,7 @@ describe('delete-api', () => {
   it('returns 403 when deleting from a shared library without delete permission', async () => {
     insertItem('abc123', 'owner');
     insertUser('user');
-    insertShare('owner', 'user', false);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: false });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
@@ -265,7 +257,7 @@ describe('delete-api', () => {
   it('returns 403 when deleting a shared watch later item', async () => {
     insertTypedItem('up-next', 'abc123', 'owner');
     insertUser('user');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
@@ -285,7 +277,7 @@ describe('delete-api', () => {
   it('returns 403 when deleting a shared non-library item by listType', async () => {
     insertTypedItem('up-next', 'abc123', 'owner');
     insertUser('user');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
@@ -305,7 +297,7 @@ describe('delete-api', () => {
   it('returns 403 when deleting a shared wishlist item', async () => {
     insertTypedItem('wishlist', 'abc123', 'owner');
     insertUser('user');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },

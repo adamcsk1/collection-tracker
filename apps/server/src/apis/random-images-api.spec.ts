@@ -2,6 +2,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { insertShare } from '../../test/mocks/share-mock';
 
 const insertUserAndItems = () => {
   const db = getDatabase();
@@ -68,11 +69,16 @@ describe('random-images-api', () => {
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('owner', 'token');
-    db.prepare(
-      `INSERT INTO user_shares
-        (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES ('owner', 'user', 1, 0, 0, 0)`
-    ).run();
+    insertShare(db, 'owner', 'user', [
+      {
+        listType: 'library',
+        contentType: 'movie',
+        canRead: true,
+        canCreate: false,
+        canUpdate: false,
+        canDelete: false,
+      },
+    ]);
     const insert = db.prepare(
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
@@ -83,6 +89,11 @@ describe('random-images-api', () => {
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
        VALUES ('owner', 'omdb', 'tt001', 'imdb:tt001', 'library', 'movie', 'Movie', 'movie', '', '', 'shared-library.jpg', 'shared-library')`
+    ).run();
+    db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+       VALUES ('owner', 'omdb', 'tt002', 'imdb:tt002', 'library', 'series', 'Series', 'series', '', '', 'private-series.jpg', 'private-series')`
     ).run();
     insert.run('owner', '9780140328721', 'isbn:9780140328721', 'books', 'shared-tracker.jpg', 'shared-tracker');
     const response = mockResponse();
@@ -96,5 +107,6 @@ describe('random-images-api', () => {
       images: expect.arrayContaining(['own-tracker.jpg', 'shared-library.jpg']),
     });
     expect(response.send.mock.calls[0][0].images).not.toContain('shared-tracker.jpg');
+    expect(response.send.mock.calls[0][0].images).not.toContain('private-series.jpg');
   });
 });

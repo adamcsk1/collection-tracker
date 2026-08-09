@@ -8,7 +8,7 @@ import {
   findCollectionItems,
   updateCollectionItemByExternalId,
 } from '../core/database/repositories/collection';
-import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { canAccessShare } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { getExternalMetadataProviderByName } from '../core/external-metadata/external-metadata-provider-factory';
 import { jwtGuard } from '../core/jwt';
@@ -44,13 +44,18 @@ export const register = (app: FastifyInstance): void => {
         return response.code(404).send();
       }
 
-      if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'update')) {
+      const sharedOperation = ownerHash !== request.usernameHash;
+      const excludedContentTypes = (['movie', 'series', 'book'] as const).filter(
+        (contentType) =>
+          contentType === 'book' ||
+          (sharedOperation && !canAccessShare(db, request.usernameHash, ownerHash, 'library', contentType, 'update'))
+      );
+      if (sharedOperation && excludedContentTypes.length === 3) {
         return response.code(403).send();
       }
 
-      const targetListType = ownerHash === request.usernameHash ? 'all' : 'library';
-      const excludeContentTypes = ['book'] as const;
-      const totalItems = countCollectionItems(db, [ownerHash], targetListType, excludeContentTypes);
+      const targetListType = sharedOperation ? 'library' : 'all';
+      const totalItems = countCollectionItems(db, [ownerHash], targetListType, excludedContentTypes);
       const batchSize = 50;
 
       await debugLog(`Found ${totalItems} items to check`);
@@ -68,7 +73,7 @@ export const register = (app: FastifyInstance): void => {
           batchSize,
           targetListType,
           ownerHash,
-          excludeContentTypes
+          excludedContentTypes
         );
         for (const item of items) {
           checked++;

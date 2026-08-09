@@ -35,7 +35,7 @@ describe('collection item tag validation util', () => {
         listType: 'up-next',
         targetOwnerShareCode: 'shared-code',
       })
-    ).toEqual({ kind: 'invalidSharedListCreate' });
+    ).toBeUndefined();
     expect(createCollectionItemTagValidation({ ...baseCreateInput, listType: 'tracking' })).toBeUndefined();
     expect(
       createCollectionItemTagValidation({
@@ -166,7 +166,7 @@ describe('collection item tag validation util', () => {
         existingListType: 'up-next',
         requesterIsOwner: false,
       })
-    ).toEqual({ kind: 'sharedInternalCollectionItemUpdate' });
+    ).toBeUndefined();
     expect(
       changeCollectionItemTagValidation({
         ...baseChangeInput,

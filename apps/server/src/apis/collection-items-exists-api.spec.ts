@@ -2,6 +2,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const insertUserAndItem = () => {
   const db = getDatabase();
@@ -92,15 +93,6 @@ const insertTypedItem = (usernameHash: string, imdbId: string, listType: 'up-nex
       'img.jpg',
       'hash'
     );
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, 1, 0, 0, 0);
 };
 
 describe('collection-items-exists-api', () => {
@@ -221,7 +213,7 @@ describe('collection-items-exists-api', () => {
     insertUser('user');
     insertUser('owner');
     insertItem('owner', 'tt-shared');
-    insertShare('owner', 'user');
+    insertLibraryShare(getDatabase(), 'owner', 'user');
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
@@ -237,11 +229,11 @@ describe('collection-items-exists-api', () => {
     expect(response.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
   });
 
-  it('returns false when a shared watch later item exists', async () => {
+  it('returns 403 when a shared up-next item exists without up-next grant', async () => {
     insertUser('user');
     insertUser('owner');
     insertTypedItem('owner', 'tt-watchlist', 'up-next');
-    insertShare('owner', 'user');
+    insertLibraryShare(getDatabase(), 'owner', 'user');
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
@@ -254,14 +246,14 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ exists: false, hash: undefined });
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 
-  it('returns false when a shared wishlist item exists', async () => {
+  it('returns 403 when a shared wishlist item exists without wishlist grant', async () => {
     insertUser('user');
     insertUser('owner');
     insertTypedItem('owner', 'tt-wishlist', 'wishlist');
-    insertShare('owner', 'user');
+    insertLibraryShare(getDatabase(), 'owner', 'user');
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
@@ -274,7 +266,7 @@ describe('collection-items-exists-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ exists: false, hash: undefined });
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 
   it('returns 400 when imdbId is missing', async () => {

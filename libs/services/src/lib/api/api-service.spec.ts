@@ -664,20 +664,48 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ changedCount: 1 });
   });
 
-  it('retrieves series tracker seasons by external identity', async () => {
-    const promise = lastValueFrom(service.getTrackingSeasonsByExternalId('provider/id', 'item/id'));
+  it('marks all books as completed for the selected shared library', async () => {
+    const promise = lastValueFrom(service.markAllBooksAsCompleted('owner-code'));
 
-    const request = httpMock.expectOne('https://api.test/tracking/provider%2Fid/item%2Fid/seasons');
+    const markAllRequest = httpMock.expectOne(
+      'https://api.test/items/mark-all-books-completed?ownerShareCode=owner-code'
+    );
+    expect(markAllRequest.request.method).toBe('POST');
+    markAllRequest.flush({ changedCount: 2 });
+
+    await expect(promise).resolves.toEqual({ changedCount: 2 });
+  });
+
+  it('marks all books as uncompleted for the selected shared library', async () => {
+    const promise = lastValueFrom(service.markAllBooksAsUncompleted('owner-code'));
+
+    const markAllRequest = httpMock.expectOne(
+      'https://api.test/items/mark-all-books-uncompleted?ownerShareCode=owner-code'
+    );
+    expect(markAllRequest.request.method).toBe('POST');
+    markAllRequest.flush({ changedCount: 1 });
+
+    await expect(promise).resolves.toEqual({ changedCount: 1 });
+  });
+
+  it('retrieves shared owner series tracker seasons by external identity', async () => {
+    const promise = lastValueFrom(service.getTrackingSeasonsByExternalId('provider/id', 'item/id', 'owner/code'));
+
+    const request = httpMock.expectOne(
+      'https://api.test/tracking/provider%2Fid/item%2Fid/seasons?ownerShareCode=owner%2Fcode'
+    );
     expect(request.request.method).toBe('GET');
     request.flush({ seasons: [] });
 
     await expect(promise).resolves.toEqual({ seasons: [] });
   });
 
-  it('refreshes series tracker seasons by external identity', async () => {
-    const promise = lastValueFrom(service.refreshTrackingSeasonsByExternalId('provider/id', 'item/id'));
+  it('refreshes shared owner series tracker seasons by external identity', async () => {
+    const promise = lastValueFrom(service.refreshTrackingSeasonsByExternalId('provider/id', 'item/id', 'owner/code'));
 
-    const request = httpMock.expectOne('https://api.test/tracking/provider%2Fid/item%2Fid/seasons/refresh');
+    const request = httpMock.expectOne(
+      'https://api.test/tracking/provider%2Fid/item%2Fid/seasons/refresh?ownerShareCode=owner%2Fcode'
+    );
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({});
     request.flush({ seasons: [] });
@@ -685,11 +713,15 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ seasons: [] });
   });
 
-  it('updates series tracker seasons by external identity', async () => {
+  it('updates shared owner series tracker seasons by external identity', async () => {
     const payload = { seasons: [{ season: 1, episodes: 2 }] };
-    const promise = lastValueFrom(service.updateTrackingSeasonsByExternalId('provider/id', 'item/id', payload));
+    const promise = lastValueFrom(
+      service.updateTrackingSeasonsByExternalId('provider/id', 'item/id', payload, 'owner/code')
+    );
 
-    const request = httpMock.expectOne('https://api.test/tracking/provider%2Fid/item%2Fid/seasons');
+    const request = httpMock.expectOne(
+      'https://api.test/tracking/provider%2Fid/item%2Fid/seasons?ownerShareCode=owner%2Fcode'
+    );
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual(payload);
     request.flush(payload);
@@ -697,33 +729,41 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual(payload);
   });
 
-  it('deletes series tracker seasons by external identity', async () => {
-    const promise = lastValueFrom(service.deleteTrackingSeasonsByExternalId('provider/id', 'item/id'));
+  it('deletes shared owner series tracker seasons by external identity', async () => {
+    const promise = lastValueFrom(service.deleteTrackingSeasonsByExternalId('provider/id', 'item/id', 'owner/code'));
 
-    const request = httpMock.expectOne('https://api.test/tracking/provider%2Fid/item%2Fid/seasons');
+    const request = httpMock.expectOne(
+      'https://api.test/tracking/provider%2Fid/item%2Fid/seasons?ownerShareCode=owner%2Fcode'
+    );
     expect(request.request.method).toBe('DELETE');
     request.flush({ seasons: [] });
 
     await expect(promise).resolves.toEqual({ seasons: [] });
   });
 
-  it('retrieves completed episodes by external identity', async () => {
-    const promise = lastValueFrom(service.getTrackingCompletedEpisodesByExternalId('provider/id', 'item/id'));
+  it('retrieves shared owner completed episodes by external identity', async () => {
+    const promise = lastValueFrom(
+      service.getTrackingCompletedEpisodesByExternalId('provider/id', 'item/id', 'owner/code')
+    );
 
-    const request = httpMock.expectOne('https://api.test/tracking/provider%2Fid/item%2Fid/completed-episodes');
+    const request = httpMock.expectOne(
+      'https://api.test/tracking/provider%2Fid/item%2Fid/completed-episodes?ownerShareCode=owner%2Fcode'
+    );
     expect(request.request.method).toBe('GET');
     request.flush({ completedEpisodes: [] });
 
     await expect(promise).resolves.toEqual({ completedEpisodes: [] });
   });
 
-  it('updates completed episodes by external identity', async () => {
+  it('updates shared owner completed episodes by external identity', async () => {
     const payload = { completedEpisodes: [{ season: 1, episode: 2 }] };
     const promise = lastValueFrom(
-      service.updateTrackingCompletedEpisodesByExternalId('provider/id', 'item/id', payload)
+      service.updateTrackingCompletedEpisodesByExternalId('provider/id', 'item/id', payload, 'owner/code')
     );
 
-    const request = httpMock.expectOne('https://api.test/tracking/provider%2Fid/item%2Fid/completed-episodes');
+    const request = httpMock.expectOne(
+      'https://api.test/tracking/provider%2Fid/item%2Fid/completed-episodes?ownerShareCode=owner%2Fcode'
+    );
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual(payload);
     request.flush(payload);

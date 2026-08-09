@@ -367,10 +367,24 @@ describe('NewItemDialog component', () => {
       {
         ownerUserShareCode: 'owner-code',
         ownerUsername: 'Owner',
-        canRead: true,
-        canCreate: true,
-        canUpdate: false,
-        canDelete: false,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
       },
     ]);
     component['searchForm'].selectedExternalReference().value.set('tt123');
@@ -387,10 +401,24 @@ describe('NewItemDialog component', () => {
       {
         ownerUserShareCode: 'owner-code',
         ownerUsername: 'Owner',
-        canRead: true,
-        canCreate: true,
-        canUpdate: false,
-        canDelete: false,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
       },
     ]);
     fixture.detectChanges();
@@ -404,10 +432,24 @@ describe('NewItemDialog component', () => {
       {
         ownerUserShareCode: 'readonly-code',
         ownerUsername: 'Read Only Owner',
-        canRead: true,
-        canCreate: false,
-        canUpdate: false,
-        canDelete: false,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
       },
     ]);
     fixture.detectChanges();
@@ -415,7 +457,57 @@ describe('NewItemDialog component', () => {
     expect(component['searchForm'].targetOwnerShareCode().value()).toBe(null);
   });
 
-  it('saves wishlist items without watched or shared library values', async () => {
+  it('retains an explicit my library selection when the configured default remains available', async () => {
+    mainState.setState('defaultLibraryOwnerShareCode', 'owner-code');
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
+    component['searchForm'].targetOwnerShareCode().value.set('');
+
+    component['selectedAddContentType'].set('series');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(component['searchForm'].targetOwnerShareCode().value()).toBe('');
+  });
+
+  it('saves wishlist items to a shared owner', async () => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        grants: [
+          {
+            listType: 'wishlist',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
     fixture.componentRef.setInput('wishlist', true);
     component['searchForm'].selectedExternalReference().value.set('tt123');
     component['searchForm'].tags().value.set('#tag');
@@ -424,10 +516,29 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', { listType: 'wishlist' });
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', {
+      targetOwnerShareCode: 'owner-code',
+      listType: 'wishlist',
+    });
   });
 
-  it('saves tracking items without watched, user rate, or shared library values', async () => {
+  it('saves tracking items to a shared owner without watched or user rate', async () => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        grants: [
+          {
+            listType: 'tracking',
+            contentType: 'series',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
     fixture.componentRef.setInput('tracking', true);
     fixture.componentRef.setInput('allowedContentTypes', ['series', 'book']);
     component['selectedAddContentType'].set('series');
@@ -439,7 +550,74 @@ describe('NewItemDialog component', () => {
 
     await component['onSave']('close');
 
-    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', { listType: 'tracking' });
+    expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', {
+      targetOwnerShareCode: 'owner-code',
+      listType: 'tracking',
+    });
+  });
+
+  it.each([
+    ['tracking', { tracking: true }],
+    ['wishlist', { wishlist: true }],
+    ['up-next', { upNext: true }],
+  ] as const)('offers and saves shared books in %s', async (listType, inputs) => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'book-owner',
+        ownerUsername: 'Book Owner',
+        grants: [{ listType, contentType: 'book', canRead: true, canCreate: true, canUpdate: false, canDelete: false }],
+      },
+    ]);
+    fixture.componentRef.setInput('allowedContentTypes', ['book']);
+    for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+    component['searchForm'].selectedExternalReference().value.set('openlibrary/9780306406157');
+    component['searchForm'].targetOwnerShareCode().value.set('book-owner');
+
+    expect(component['libraryOptions']()).toContainEqual({
+      text: 'SharedLibrary (Book Owner)',
+      value: 'book-owner',
+    });
+    await component['onSave']('close');
+
+    expect(service.save).toHaveBeenCalledWith(
+      'openlibrary/9780306406157',
+      null,
+      '',
+      'close',
+      expect.objectContaining({ targetOwnerShareCode: 'book-owner', listType })
+    );
+  });
+
+  it('resets a shared target when content type and list scope make it unavailable', async () => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'movie-owner',
+        ownerUsername: 'Movie Owner',
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
+    component['searchForm'].targetOwnerShareCode().value.set('movie-owner');
+
+    component['selectedAddContentType'].set('series');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(component['searchForm'].targetOwnerShareCode().value()).toBe(null);
+
+    component['selectedAddContentType'].set('movie');
+    component['searchForm'].targetOwnerShareCode().value.set('movie-owner');
+    fixture.componentRef.setInput('wishlist', true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(component['searchForm'].targetOwnerShareCode().value()).toBe(null);
   });
 
   it('filters matched content to series in tracking mode', () => {
@@ -464,18 +642,46 @@ describe('NewItemDialog component', () => {
       {
         ownerUserShareCode: 'creatable-code',
         ownerUsername: 'Creatable Owner',
-        canRead: true,
-        canCreate: true,
-        canUpdate: false,
-        canDelete: false,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
       },
       {
         ownerUserShareCode: 'readonly-code',
         ownerUsername: 'Read Only Owner',
-        canRead: true,
-        canCreate: false,
-        canUpdate: false,
-        canDelete: false,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
       },
     ]);
 

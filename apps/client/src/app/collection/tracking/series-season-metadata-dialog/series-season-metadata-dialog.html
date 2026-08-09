@@ -89,33 +89,35 @@
     </button>
   </ng-container>
   <ng-container dialog-shell-menu-content>
-    <button
-      class="button-icon button-reveal-label"
-      [libcRevealLabel]="translations.refreshSeriesMetadata()"
-      data-test-id="series-metadata-refresh"
-      type="button"
-      [attr.aria-label]="translations.refreshSeriesMetadata()"
-      [title]="translations.refreshSeriesMetadata()"
-      (click)="onRefreshSeriesMetadata()"
-    >
-      <i class="material-icons" aria-hidden="true"> sync </i>
-      <span class="button-reveal-label-text"
-        ><span>{{ translations.refreshSeriesMetadata() }}</span></span
+    @if (canUpdate()) {
+      <button
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations.refreshSeriesMetadata()"
+        data-test-id="series-metadata-refresh"
+        type="button"
+        [attr.aria-label]="translations.refreshSeriesMetadata()"
+        [title]="translations.refreshSeriesMetadata()"
+        (click)="onRefreshSeriesMetadata()"
       >
-    </button>
-    <button
-      class="button-icon button-reveal-label button-danger"
-      [libcRevealLabel]="translations.removeSeriesMetadata()"
-      data-test-id="series-metadata-remove-all"
-      type="button"
-      [attr.aria-label]="translations.removeSeriesMetadata()"
-      [title]="translations.removeSeriesMetadata()"
-      (click)="onRemoveSeriesMetadata()"
-    >
-      <i class="material-icons" aria-hidden="true"> playlist_remove </i>
-      <span class="button-reveal-label-text"
-        ><span>{{ translations.removeSeriesMetadata() }}</span></span
+        <i class="material-icons" aria-hidden="true"> sync </i>
+        <span class="button-reveal-label-text"
+          ><span>{{ translations.refreshSeriesMetadata() }}</span></span
+        >
+      </button>
+      <button
+        class="button-icon button-reveal-label button-danger"
+        [libcRevealLabel]="translations.removeSeriesMetadata()"
+        data-test-id="series-metadata-remove-all"
+        type="button"
+        [attr.aria-label]="translations.removeSeriesMetadata()"
+        [title]="translations.removeSeriesMetadata()"
+        (click)="onRemoveSeriesMetadata()"
       >
-    </button>
+        <i class="material-icons" aria-hidden="true"> playlist_remove </i>
+        <span class="button-reveal-label-text"
+          ><span>{{ translations.removeSeriesMetadata() }}</span></span
+        >
+      </button>
+    }
   </ng-container>
 </libc-dialog-shell>

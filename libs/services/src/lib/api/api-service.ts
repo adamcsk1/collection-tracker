@@ -37,6 +37,7 @@ import {
   UserImportApiRequestModel,
   UserImportApiResponseModel,
   UserSettingsApiResponseModel,
+  UserShareGrantApiModel,
   UserSharesApiResponseModel,
 } from '@shared/models/api-model';
 import { AiQueryRequestModel, AiQueryResponseModel } from '@shared/models/ai-model';
@@ -104,12 +105,12 @@ export class ApiService extends BaseApiService {
     return this.request('POST', `/items/mark-all-series-uncompleted${this.buildQuery({ ownerShareCode })}`);
   }
 
-  public markAllBooksAsCompleted(): Observable<MarkAllCompletedApiResponseModel> {
-    return this.request('POST', '/items/mark-all-books-completed');
+  public markAllBooksAsCompleted(ownerShareCode?: string): Observable<MarkAllCompletedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-books-completed${this.buildQuery({ ownerShareCode })}`);
   }
 
-  public markAllBooksAsUncompleted(): Observable<MarkAllUncompletedApiResponseModel> {
-    return this.request('POST', '/items/mark-all-books-uncompleted');
+  public markAllBooksAsUncompleted(ownerShareCode?: string): Observable<MarkAllUncompletedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-books-uncompleted${this.buildQuery({ ownerShareCode })}`);
   }
 
   public addCompletedItemByExternalId(
@@ -263,13 +264,7 @@ export class ApiService extends BaseApiService {
     return this.request('GET', '/user/shares');
   }
 
-  public saveShare(share: {
-    sharedWithUserShareCode: string;
-    canRead?: boolean;
-    canCreate?: boolean;
-    canUpdate?: boolean;
-    canDelete?: boolean;
-  }): Observable<void> {
+  public saveShare(share: { sharedWithUserShareCode: string; grants: UserShareGrantApiModel[] }): Observable<void> {
     return this.request('POST', '/user/shares', share);
   }
 
@@ -320,21 +315,23 @@ export class ApiService extends BaseApiService {
 
   public getTrackingSeasonsByExternalId(
     externalProvider: string,
-    externalItemId: string
+    externalItemId: string,
+    ownerShareCode?: string
   ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'GET',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons${this.buildQuery({ ownerShareCode })}`
     );
   }
 
   public refreshTrackingSeasonsByExternalId(
     externalProvider: string,
-    externalItemId: string
+    externalItemId: string,
+    ownerShareCode?: string
   ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'POST',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons/refresh`,
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons/refresh${this.buildQuery({ ownerShareCode })}`,
       {}
     );
   }
@@ -342,43 +339,47 @@ export class ApiService extends BaseApiService {
   public updateTrackingSeasonsByExternalId(
     externalProvider: string,
     externalItemId: string,
-    request: TrackingSeasonsApiRequestModel
+    request: TrackingSeasonsApiRequestModel,
+    ownerShareCode?: string
   ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'PUT',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`,
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons${this.buildQuery({ ownerShareCode })}`,
       request
     );
   }
 
   public deleteTrackingSeasonsByExternalId(
     externalProvider: string,
-    externalItemId: string
+    externalItemId: string,
+    ownerShareCode?: string
   ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'DELETE',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons`
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons${this.buildQuery({ ownerShareCode })}`
     );
   }
 
   public getTrackingCompletedEpisodesByExternalId(
     externalProvider: string,
-    externalItemId: string
+    externalItemId: string,
+    ownerShareCode?: string
   ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'GET',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed-episodes`
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed-episodes${this.buildQuery({ ownerShareCode })}`
     );
   }
 
   public updateTrackingCompletedEpisodesByExternalId(
     externalProvider: string,
     externalItemId: string,
-    request: TrackingCompletedEpisodesApiRequestModel
+    request: TrackingCompletedEpisodesApiRequestModel,
+    ownerShareCode?: string
   ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'PUT',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed-episodes`,
+      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed-episodes${this.buildQuery({ ownerShareCode })}`,
       request
     );
   }

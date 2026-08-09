@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { RefreshImagesApiResponseModel } from '@shared/models/api-model';
+import { CollectionItemContentTypeModel, RefreshImagesApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
@@ -7,7 +7,7 @@ import {
   findCollectionItems,
   updateCollectionItemByExternalId,
 } from '../core/database/repositories/collection';
-import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { canAccessShare } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { fetchAndCacheImage } from '../core/image/image-proxy';
 import { jwtGuard } from '../core/jwt';
@@ -32,12 +32,18 @@ export const register = (app: FastifyInstance): void => {
         return response.code(404).send();
       }
 
-      if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'update')) {
+      const sharedOperation = ownerHash !== request.usernameHash;
+      const excludedContentTypes: CollectionItemContentTypeModel[] = sharedOperation
+        ? (['movie', 'series', 'book'] as const).filter(
+            (contentType) => !canAccessShare(db, request.usernameHash, ownerHash, 'library', contentType, 'update')
+          )
+        : [];
+      if (sharedOperation && excludedContentTypes.length === 3) {
         return response.code(403).send();
       }
 
-      const targetListType = ownerHash === request.usernameHash ? 'all' : 'library';
-      const totalItems = countCollectionItems(db, [ownerHash], targetListType);
+      const targetListType = sharedOperation ? 'library' : 'all';
+      const totalItems = countCollectionItems(db, [ownerHash], targetListType, excludedContentTypes);
       const batchSize = 50;
 
       await debugLog(`Found ${totalItems} items to check`);
@@ -48,7 +54,15 @@ export const register = (app: FastifyInstance): void => {
       let offset = 0;
 
       while (offset < totalItems) {
-        const items = findCollectionItems(db, [ownerHash], offset, batchSize, targetListType);
+        const items = findCollectionItems(
+          db,
+          [ownerHash],
+          offset,
+          batchSize,
+          targetListType,
+          ownerHash,
+          excludedContentTypes
+        );
         for (const item of items) {
           checked++;
           const logId = item.IMDbId ?? item.externalItemId;

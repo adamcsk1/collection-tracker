@@ -3,7 +3,7 @@ import { MarkAllCompletedApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { markAllMoviesAsCompleted } from '../core/database/repositories/tracking-movie-repository';
-import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { canAccessShare } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
@@ -27,7 +27,7 @@ export const register = (app: FastifyInstance): void => {
       return response.code(404).send();
     }
 
-    if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'read')) {
+    if (!canAccessShare(db, request.usernameHash, ownerHash, 'library', 'movie', 'read')) {
       return response.code(403).send();
     }
 

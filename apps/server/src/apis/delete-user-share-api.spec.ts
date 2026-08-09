@@ -4,6 +4,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const insertUser = (usernameHash: string, username: string): void => {
   getDatabase()
@@ -20,12 +21,12 @@ describe('delete-user-share-api', () => {
   it('allows owners to remove outgoing shares', async () => {
     insertUser('owner-hash', 'Owner');
     insertUser('friend-hash', 'Friend');
-    getDatabase()
-      .prepare(
-        `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-      .run('owner-hash', 'friend-hash', 1, 1, 1, 1);
+    insertLibraryShare(getDatabase(), 'owner-hash', 'friend-hash', {
+      canRead: true,
+      canCreate: true,
+      canUpdate: true,
+      canDelete: true,
+    });
 
     const response = mockResponse();
     const request: any = {

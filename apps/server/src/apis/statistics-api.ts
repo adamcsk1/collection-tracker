@@ -2,7 +2,6 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { getCollectionStatistics } from '../core/database/repositories/collection';
-import { findReadableOwnerHashes } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { parseFilters } from '../core/utils/query-parse-util';
 import { withErrorHandler } from '../core/utils/api-error-handler';
@@ -14,11 +13,7 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
       const filters = parseFilters(request.query as Record<string, unknown>);
-      const usernameHashes =
-        filters.listType && filters.listType !== 'library'
-          ? [request.usernameHash]
-          : [request.usernameHash, ...findReadableOwnerHashes(db, request.usernameHash)];
-      response.send(getCollectionStatistics(db, usernameHashes, filters, request.usernameHash));
+      response.send(getCollectionStatistics(db, request.usernameHash, filters));
     })
   );
 };

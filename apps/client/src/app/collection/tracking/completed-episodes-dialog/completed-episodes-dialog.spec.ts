@@ -84,6 +84,30 @@ describe('CompletedEpisodesDialog', () => {
     expect(component['completedEpisodes']()).toEqual([{ season: 1, episode: 2 }]);
   });
 
+  it('loads and saves shared owner episode data using owner share code', async () => {
+    fixture.componentRef.setInput('ownerShareCode', 'owner-code');
+    api.getTrackingSeasonsByExternalId.mockClear();
+    api.getTrackingCompletedEpisodesByExternalId.mockClear();
+    component['loadData']();
+
+    expect(api.getTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', 'owner-code');
+    expect(api.getTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', 'owner-code');
+
+    await component['onToggleEpisode'](1, 1);
+
+    expect(api.updateTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith(
+      'omdb',
+      'tt-series',
+      {
+        completedEpisodes: [
+          { season: 1, episode: 1 },
+          { season: 1, episode: 2 },
+        ],
+      },
+      'owner-code'
+    );
+  });
+
   it('renders the translated mark-all action for both completed states', () => {
     const markCompletedButton = fixture.nativeElement.querySelector(
       '[data-test-id="completed-episodes-mark-all-completed"]'
@@ -408,6 +432,47 @@ describe('CompletedEpisodesDialog', () => {
 
     expect(component['seasonsMetadata']()).toEqual([{ season: 2, episodes: 4, titles: [] }]);
     expect(saved).toHaveBeenCalledWith([{ season: 1, episode: 2 }], { hash: 'metadata-hash' });
+  });
+
+  it('threads shared owner code to stacked metadata management', () => {
+    fixture.componentRef.setInput('ownerShareCode', 'owner-code');
+
+    component['onManageSeasonMetadata']();
+
+    expect(portal.openStacked).toHaveBeenCalledWith(
+      SeriesSeasonMetadataDialog,
+      expect.objectContaining({ ownerShareCode: 'owner-code' })
+    );
+  });
+
+  it('marks all shared owner episodes through owner-scoped update', async () => {
+    fixture.componentRef.setInput('ownerShareCode', 'owner-code');
+    api.updateTrackingCompletedEpisodesByExternalId.mockReturnValue(
+      of({
+        completedEpisodes: [
+          { season: 1, episode: 1 },
+          { season: 1, episode: 2 },
+          { season: 1, episode: 3 },
+        ],
+        lastCompletedEpisode: { season: 1, episode: 3 },
+      })
+    );
+
+    await component['onMarkAllEpisodesCompleted']();
+
+    expect(api.updateTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith(
+      'omdb',
+      'tt-series',
+      {
+        completedEpisodes: [
+          { season: 1, episode: 1 },
+          { season: 1, episode: 2 },
+          { season: 1, episode: 3 },
+        ],
+      },
+      'owner-code'
+    );
+    expect(api.markAllTrackingCompletedByExternalId).not.toHaveBeenCalled();
   });
 
   it('shows toast when no season metadata exists on mark all completed', async () => {

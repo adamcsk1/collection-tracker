@@ -1,0 +1,33 @@
+.share-grants-message {
+  margin-block-start: var(--size-md);
+}
+.grant-matrix,
+.grant-list-group,
+.grant-scope-row {
+  display: flex;
+  flex-direction: column;
+}
+.grant-matrix {
+  gap: var(--size-md);
+}
+.grant-list-group {
+  gap: var(--size-sm);
+}
+.grant-list-title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+.grant-scope-row {
+  gap: var(--size-2xs);
+  padding: var(--size-xs) 0;
+  border-top: var(--border-style);
+}
+.grant-content-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+.permission-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-sm) var(--size-md);
+}

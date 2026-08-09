@@ -64,8 +64,10 @@ const buildItem = (overrides: Partial<CollectionItemModel> = {}): CollectionItem
   };
 };
 
-const buildApiItem = (overrides: Partial<CollectionItemApiModel> = {}): CollectionItemApiModel =>
-  buildItem({ ...overrides, hash: overrides.hash ?? 'newhash' });
+const buildApiItem = (overrides: Partial<CollectionItemApiModel> = {}): CollectionItemApiModel => ({
+  ...buildItem({ ...overrides, hash: overrides.hash ?? 'newhash' }),
+  ownerShareCode: overrides.ownerShareCode ?? 'own-code',
+});
 
 describe('ItemDialog', () => {
   let fixture: ComponentFixture<ItemDialog>;
@@ -402,10 +404,24 @@ describe('ItemDialog', () => {
       {
         ownerUserShareCode: 'owner-code',
         ownerUsername: 'Owner',
-        canRead: true,
-        canCreate: false,
-        canUpdate: false,
-        canDelete: true,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: true,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: true,
+          },
+        ],
       },
     ]);
     fixture.componentRef.setInput('collectionItem', buildItem({ ownerShareCode: 'owner-code' }));
@@ -562,6 +578,19 @@ describe('ItemDialog', () => {
     expect(component['episodeProgressText']()).toBe('S01E02');
   });
 
+  it('loads shared owner tracking data using owner share code', () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'tracking', tags: [SERIES_TAG], ownerShareCode: 'owner-code' })
+    );
+    fixture.detectChanges();
+
+    component.ngOnInit();
+
+    expect(api.getTrackingSeasonsByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'owner-code');
+    expect(api.getTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'owner-code');
+  });
+
   it('opens watched episodes dialog on manage watched episodes', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
     fixture.detectChanges();
@@ -575,6 +604,44 @@ describe('ItemDialog', () => {
         imdbId: 'tt1234567',
         saved: expect.any(Function),
       })
+    );
+  });
+
+  it('threads shared owner code to tracking management dialogs', () => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        grants: [
+          {
+            listType: 'tracking',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: true,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ listType: 'tracking', tags: [SERIES_TAG], ownerShareCode: 'owner-code' })
+    );
+    fixture.detectChanges();
+
+    component['onManageSeriesMetadata']();
+    component['onManageCompletedEpisodes']();
+
+    expect(portal.openStacked).toHaveBeenNthCalledWith(
+      1,
+      SeriesSeasonMetadataDialog,
+      expect.objectContaining({ ownerShareCode: 'owner-code', canUpdate: true })
+    );
+    expect(portal.openStacked).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      expect.objectContaining({ ownerShareCode: 'owner-code' })
     );
   });
 
@@ -626,6 +693,7 @@ describe('ItemDialog', () => {
 
     expect(portal.openStacked).toHaveBeenCalledWith(SeriesSeasonMetadataDialog, {
       imdbId: 'tt1234567',
+      canUpdate: true,
       initialSeasons: [{ season: 1, episodes: 2 }],
       saved: expect.any(Function),
     });
@@ -1564,7 +1632,7 @@ describe('ItemDialog', () => {
     expect(api.getMatchedItems).toHaveBeenCalledWith({
       identities: [{ source: 'omdb', id: 'tt1234567' }],
       limit: 1,
-      filters: { listType: 'tracking' },
+      filters: { listType: 'tracking', shared: 'mine' },
     });
     expect(portal.closeAll).toHaveBeenCalled();
     expect(portal.open).toHaveBeenCalledWith(ItemDialog, { collectionItem: watchingItem });

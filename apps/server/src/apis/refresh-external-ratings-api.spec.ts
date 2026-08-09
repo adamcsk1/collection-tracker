@@ -3,6 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare, insertShare } from '../../test/mocks/share-mock';
 
 vi.mock('../core/logger', () => ({
   debugLog: vi.fn(),
@@ -63,15 +64,6 @@ const getRatings = (imdbId: string) =>
        ORDER BY ratings.source`
     )
     .all(imdbId);
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canUpdate: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, 1, 0, canUpdate ? 1 : 0, 0);
-};
 
 describe('refresh-external-ratings-api', () => {
   beforeEach(() => {
@@ -235,7 +227,7 @@ describe('refresh-external-ratings-api', () => {
   it('refreshes a shared library when the user has update permission and ignores non-library items', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canUpdate: true });
     insertItem('tt-own', 'own-hash', 'user');
     insertItem('tt-shared', 'shared-hash', 'owner');
     insertItem('tt-shared-watchlist', 'watchlist-hash', 'owner', '7.0', '', '', 'up-next');
@@ -296,7 +288,7 @@ describe('refresh-external-ratings-api', () => {
   it('rejects shared ratings refresh without update permission', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', false);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: false });
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };
@@ -366,5 +358,41 @@ describe('refresh-external-ratings-api', () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('tt-movie');
     expect(getRatings('tt-movie')).toEqual([{ source: 'imdb', value: '8.0' }]);
     expect(getRatings('9780140328721')).toEqual([]);
+  });
+
+  it('refreshes ratings only for shared content types with update permission', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertItem('tt-movie', 'movie-hash', 'owner');
+    insertItem('tt-series', 'series-hash', 'owner');
+    getDatabase()
+      .prepare("UPDATE collection_items SET content_type = 'series' WHERE external_item_id = ?")
+      .run('tt-series');
+    insertShare(getDatabase(), 'owner', 'user', [
+      {
+        listType: 'library',
+        contentType: 'movie',
+        canRead: true,
+        canCreate: false,
+        canUpdate: true,
+        canDelete: false,
+      },
+    ]);
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ imdbID: 'tt-movie', imdbRating: '8.0', Ratings: [] }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-external-ratings-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(getRatings('tt-series')).toEqual([{ source: 'imdb', value: '7.0' }]);
   });
 });

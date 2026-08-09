@@ -1,4 +1,5 @@
 import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
+import { COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE } from '@shared/constants/collection-matched-items-const';
 import {
   CollectionItemFiltersApiModel,
   CollectionItemTagMode,
@@ -97,8 +98,6 @@ export const canonicalOrExactIdentityMatch = (alias: string): string => `(
 )`;
 
 /** Keep IN-lists well under SQLite expression-tree and bind-variable limits. */
-const MATCHED_IDENTITY_IN_CHUNK_SIZE = 400;
-
 const pushInClauseConditions = (
   conditions: string[],
   queryParts: QueryParts,
@@ -108,8 +107,8 @@ const pushInClauseConditions = (
   if (!values.length) return;
 
   const chunkConditions: string[] = [];
-  for (let valueIndex = 0; valueIndex < values.length; valueIndex += MATCHED_IDENTITY_IN_CHUNK_SIZE) {
-    const chunk = values.slice(valueIndex, valueIndex + MATCHED_IDENTITY_IN_CHUNK_SIZE);
+  for (let valueIndex = 0; valueIndex < values.length; valueIndex += COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE) {
+    const chunk = values.slice(valueIndex, valueIndex + COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE);
     chunkConditions.push(`${columnExpression} IN (${chunk.map(() => '?').join(', ')})`);
     queryParts.params.push(...chunk);
   }
@@ -135,8 +134,12 @@ const addMatchedIdentityFilter = (
 
   for (const [source, sourceIds] of identitiesBySource) {
     const uniqueSourceIds = [...new Set(sourceIds)];
-    for (let valueIndex = 0; valueIndex < uniqueSourceIds.length; valueIndex += MATCHED_IDENTITY_IN_CHUNK_SIZE) {
-      const chunk = uniqueSourceIds.slice(valueIndex, valueIndex + MATCHED_IDENTITY_IN_CHUNK_SIZE);
+    for (
+      let valueIndex = 0;
+      valueIndex < uniqueSourceIds.length;
+      valueIndex += COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE
+    ) {
+      const chunk = uniqueSourceIds.slice(valueIndex, valueIndex + COLLECTION_MATCHED_IDENTITY_IN_CHUNK_SIZE);
       conditions.push(`(
         (collection_items.external_provider = ? AND collection_items.external_item_id IN (${chunk.map(() => '?').join(', ')}))
         OR EXISTS (
@@ -204,55 +207,79 @@ const seriesContentCondition = `collection_items.content_type = 'series'`;
 
 const bookContentCondition = `collection_items.content_type = 'book'`;
 
+export const buildReadableItemScope = (
+  viewerUsernameHash: string,
+  filters: CollectionItemFiltersApiModel | undefined,
+  foldBooksIntoLibrary = true
+): QueryParts => {
+  const listType = normalizeListType(filters?.listType);
+  const sharedFilter = filters?.shared;
+  const includeMine = sharedFilter !== 'shared';
+  const includeShared = sharedFilter !== 'mine';
+  const typeFilter =
+    filters?.type === 'movie' || filters?.type === 'series' || filters?.type === 'book' ? filters.type : undefined;
+
+  const itemClauses: string[] = [];
+  const params: Array<string | number> = [];
+
+  if (listType === 'library' && foldBooksIntoLibrary) {
+    if (typeFilter === 'book') {
+      itemClauses.push(`collection_items.list_type = 'books' AND collection_items.content_type = 'book'`);
+    } else if (typeFilter === 'movie' || typeFilter === 'series') {
+      itemClauses.push(`collection_items.list_type = 'library' AND collection_items.content_type = ?`);
+      params.push(typeFilter);
+    } else {
+      itemClauses.push(`(
+        collection_items.list_type = 'library'
+        OR (collection_items.list_type = 'books' AND collection_items.content_type = 'book')
+      )`);
+    }
+  } else {
+    itemClauses.push('collection_items.list_type = ?');
+    params.push(listType);
+    if (typeFilter) {
+      itemClauses.push('collection_items.content_type = ?');
+      params.push(typeFilter);
+    }
+  }
+
+  const readableGrantExists = `EXISTS (
+    SELECT 1 FROM user_share_grants readable_grant
+    WHERE readable_grant.shared_with_username_hash = ?
+      AND readable_grant.owner_username_hash = collection_items.username_hash
+      AND readable_grant.list_type = collection_items.list_type
+      AND readable_grant.content_type = collection_items.content_type
+      AND readable_grant.can_read = 1
+  )`;
+  if (includeMine && includeShared) {
+    itemClauses.push(`(collection_items.username_hash = ? OR ${readableGrantExists})`);
+    params.push(viewerUsernameHash, viewerUsernameHash);
+  } else if (includeMine) {
+    itemClauses.push('collection_items.username_hash = ?');
+    params.push(viewerUsernameHash);
+  } else {
+    itemClauses.push(readableGrantExists);
+    params.push(viewerUsernameHash);
+  }
+
+  return {
+    where: itemClauses,
+    params,
+  };
+};
+
 const addFilters = (
   queryParts: QueryParts,
   filters: CollectionItemFiltersApiModel | undefined,
   viewerUsernameHash?: string
 ): void => {
-  const listType = normalizeListType(filters?.listType);
-  if (listType === 'library') {
-    if (filters?.type === 'book') {
-      queryParts.where.push(`collection_items.list_type = ?`);
-      queryParts.params.push('books');
-      if (viewerUsernameHash) {
-        queryParts.where.push('collection_items.username_hash = ?');
-        queryParts.params.push(viewerUsernameHash);
-      }
-    } else {
-      // All / movie / series: owned library rows, plus own books when unfiltered (All).
-      if (filters?.type === 'movie' || filters?.type === 'series') {
-        queryParts.where.push('collection_items.list_type = ?');
-        queryParts.params.push('library');
-      } else if (viewerUsernameHash) {
-        queryParts.where.push(`(
-          collection_items.list_type = 'library'
-          OR (collection_items.list_type = 'books' AND collection_items.username_hash = ?)
-        )`);
-        queryParts.params.push(viewerUsernameHash);
-      } else {
-        queryParts.where.push(`collection_items.list_type IN ('library', 'books')`);
-      }
-    }
-  } else {
-    queryParts.where.push('collection_items.list_type = ?');
-    queryParts.params.push(listType);
-  }
   if (!filters) return;
 
+  const listType = normalizeListType(filters.listType);
   const tags = (filters.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
 
   addSearchFilter(queryParts, filters.search ?? '');
 
-  if (filters.type === 'movie') {
-    queryParts.where.push(movieContentCondition);
-  }
-  if (filters.type === 'series') {
-    queryParts.where.push(seriesContentCondition);
-  }
-  // type=book already scoped list_type above for library hub; still apply for other list types
-  if (filters.type === 'book' && listType !== 'library') {
-    queryParts.where.push(bookContentCondition);
-  }
   if (filters.watched !== undefined && viewerUsernameHash && listType !== 'tracking') {
     const exists = filters.watched;
     if (filters.type === 'series') addTrackingExists(queryParts, viewerUsernameHash, exists);
@@ -289,15 +316,15 @@ const addFilters = (
 };
 
 export const buildItemWhere = (
-  usernameHashes: string[],
+  viewerUsernameHash: string,
   filters: CollectionItemFiltersApiModel | undefined,
   matchedIdentities?: ExternalItemIdentityModel[],
-  matchedCanonicalItemIds?: string[],
-  viewerUsernameHash?: string
+  matchedCanonicalItemIds?: string[]
 ): QueryParts => {
+  const ownership = buildReadableItemScope(viewerUsernameHash, filters);
   const queryParts: QueryParts = {
-    where: [`collection_items.username_hash IN (${usernameHashes.map(() => '?').join(', ')})`],
-    params: [...usernameHashes],
+    where: [...ownership.where],
+    params: [...ownership.params],
   };
   addFilters(queryParts, filters, viewerUsernameHash);
   addMatchedIdentityFilter(queryParts, matchedIdentities, matchedCanonicalItemIds);

@@ -362,16 +362,15 @@ export class ItemDialog implements OnInit {
   });
   protected readonly permissionUpdate = computed(() => {
     const item = this.collectionItem();
+    if (this.isOwnItem()) return true;
     const share = this.sharesState.state
       .incoming()
       .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
-    if (item.listType === 'tracking') return this.isOwnItem();
-    if (item.listType === 'books') return this.isOwnItem();
-    if (item.listType === 'up-next') return this.isOwnItem();
-    if (item.listType === 'wishlist') return this.isOwnItem();
-    if (item.listType !== 'library') return false;
-    if (this.isOwnItem()) return true;
-    return share?.canUpdate === true;
+    return (
+      share?.grants.some(
+        (grant) => grant.listType === item.listType && grant.contentType === item.contentType && grant.canUpdate
+      ) === true
+    );
   });
   protected readonly libraryItem = computed(() => this.collectionItem().listType === 'library');
   protected readonly ownershipItem = computed(
@@ -402,11 +401,15 @@ export class ItemDialog implements OnInit {
   );
   protected readonly permissionDelete = computed(() => {
     const item = this.collectionItem();
+    if (this.isOwnItem()) return true;
     const share = this.sharesState.state
       .incoming()
       .find((incomingShare) => incomingShare.ownerUserShareCode === item.ownerShareCode);
-    if (this.isOwnItem()) return true;
-    return share?.canDelete === true;
+    return (
+      share?.grants.some(
+        (grant) => grant.listType === item.listType && grant.contentType === item.contentType && grant.canDelete
+      ) === true
+    );
   });
   protected readonly finished = computed(
     () =>
@@ -489,28 +492,31 @@ export class ItemDialog implements OnInit {
   }
 
   private loadSeriesSeasons(): void {
-    if (!this.tracking() || !this.isOwnItem()) return;
-    this.api
-      .getTrackingSeasonsByExternalId(this.collectionItem().externalProvider, this.collectionItem().externalItemId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        this.seriesSeasons.set(response.seasons);
-        this.seriesSeasonsLoaded.set(true);
-      });
+    if (!this.tracking()) return;
+    const item = this.collectionItem();
+    const seasonsRequest = item.ownerShareCode
+      ? this.api.getTrackingSeasonsByExternalId(item.externalProvider, item.externalItemId, item.ownerShareCode)
+      : this.api.getTrackingSeasonsByExternalId(item.externalProvider, item.externalItemId);
+    seasonsRequest.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
+      this.seriesSeasons.set(response.seasons);
+      this.seriesSeasonsLoaded.set(true);
+    });
   }
 
   private loadCompletedEpisodes(): void {
-    if (!this.tracking() || !this.isOwnItem()) return;
-    this.api
-      .getTrackingCompletedEpisodesByExternalId(
-        this.collectionItem().externalProvider,
-        this.collectionItem().externalItemId
-      )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        this.completedEpisodes.set(response.completedEpisodes);
-        this.completedEpisodesLoaded.set(true);
-      });
+    if (!this.tracking()) return;
+    const item = this.collectionItem();
+    const completedEpisodesRequest = item.ownerShareCode
+      ? this.api.getTrackingCompletedEpisodesByExternalId(
+          item.externalProvider,
+          item.externalItemId,
+          item.ownerShareCode
+        )
+      : this.api.getTrackingCompletedEpisodesByExternalId(item.externalProvider, item.externalItemId);
+    completedEpisodesRequest.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
+      this.completedEpisodes.set(response.completedEpisodes);
+      this.completedEpisodesLoaded.set(true);
+    });
   }
 
   private resetFormFromItem(item: CollectionItemModel): void {
@@ -822,7 +828,7 @@ export class ItemDialog implements OnInit {
         this.api.getMatchedItems({
           identities,
           limit: 1,
-          filters: { listType: 'tracking' },
+          filters: { listType: 'tracking', shared: 'mine' },
         })
       );
       const trackingItem = response.items[0];
@@ -928,6 +934,8 @@ export class ItemDialog implements OnInit {
     this.portal.openStacked(SeriesSeasonMetadataDialog, {
       imdbId: collectionItem.IMDbId,
       ...providerInputs,
+      ...(collectionItem.ownerShareCode ? { ownerShareCode: collectionItem.ownerShareCode } : {}),
+      canUpdate: this.permissionUpdate(),
       initialSeasons: this.seriesSeasons(),
       saved: (seasons: TrackingSeasonMetadataModel[], item?: CollectionItemModel) => {
         this.seriesSeasons.set(seasons);
@@ -950,6 +958,7 @@ export class ItemDialog implements OnInit {
     this.portal.openStacked(CompletedEpisodesDialog, {
       imdbId: collectionItem.IMDbId,
       ...providerInputs,
+      ...(collectionItem.ownerShareCode ? { ownerShareCode: collectionItem.ownerShareCode } : {}),
       saved: (completedEpisodes: TrackingCompletedEpisodeModel[], item?: CollectionItemModel) => {
         this.completedEpisodes.set(completedEpisodes);
         if (item) {

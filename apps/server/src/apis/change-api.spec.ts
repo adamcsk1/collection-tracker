@@ -4,6 +4,7 @@ import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { getDatabase } from '../core/database/database';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const COMPLETED_TAG = '#completed';
 
@@ -11,15 +12,6 @@ const insertUser = (usernameHash = 'user') => {
   getDatabase()
     .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
     .run(usernameHash, `${usernameHash}-token`);
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canUpdate: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, 1, 0, canUpdate ? 1 : 0, 0);
 };
 
 const insertItem = (hash = 'abc123', usernameHash = 'user', listType = 'library') => {
@@ -478,7 +470,7 @@ describe('change-api', () => {
   it('updates an item in a shared library when update permission is granted', async () => {
     insertItem('abc123', 'owner');
     insertUser('user');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canUpdate: true });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
@@ -503,10 +495,34 @@ describe('change-api', () => {
     ).toEqual({ title: 'Updated' });
   });
 
+  it('rejects changing content type in a shared library', async () => {
+    insertItem('abc123', 'owner');
+    insertUser('user');
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canUpdate: true });
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
+      query: { ownerShareCode: getUserShareCode('owner') },
+      body: { ...updatedItem, contentType: 'series', hash: 'abc123' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(403);
+    expect(
+      getDatabase().prepare('SELECT content_type FROM collection_items WHERE username_hash = ?').get('owner')
+    ).toEqual({ content_type: 'movie' });
+  });
+
   it('returns 403 when updating a shared library without update permission', async () => {
     insertItem('abc123', 'owner');
     insertUser('user');
-    insertShare('owner', 'user', false);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: false });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
@@ -527,7 +543,7 @@ describe('change-api', () => {
   it('returns 403 when updating a shared internal collection item directly', async () => {
     insertItem('abc123', 'owner', 'up-next');
     insertUser('user');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
@@ -548,7 +564,7 @@ describe('change-api', () => {
   it('returns 404 when updating a shared watch later item', async () => {
     insertItem('abc123', 'owner', 'up-next');
     insertUser('user');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
@@ -569,7 +585,7 @@ describe('change-api', () => {
   it('returns 404 when updating a shared wishlist item', async () => {
     insertItem('abc123', 'owner', 'wishlist');
     insertUser('user');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {

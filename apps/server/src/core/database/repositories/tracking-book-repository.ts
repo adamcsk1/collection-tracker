@@ -136,7 +136,11 @@ export const deleteCompletedBookByExternalId = (
   return clearCompletedBookTrackingItem(db, existingItem);
 };
 
-export const markAllBooksAsCompleted = (db: Database.Database, usernameHash: string): number => {
+export const markAllBooksAsCompleted = (
+  db: Database.Database,
+  usernameHash: string,
+  sourceOwnerHash = usernameHash
+): number => {
   const rows = db
     .prepare(
       `SELECT ${collectionItemProjection()} FROM collection_items
@@ -156,20 +160,26 @@ export const markAllBooksAsCompleted = (db: Database.Database, usernameHash: str
               AND book_tracker.list_type = ?
            )`
     )
-    .all(usernameHash, 'books', usernameHash, 'tracking') as CollectionItemRow[];
+    .all(sourceOwnerHash, 'books', usernameHash, 'tracking') as CollectionItemRow[];
 
-  void debugLog(`markAllBooksAsCompleted candidates: requester=${usernameHash}, count=${rows.length}`);
+  void debugLog(
+    `markAllBooksAsCompleted candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
+  );
 
   const transaction = db.transaction(() => {
     for (const row of rows) {
-      copyBookRowToCompleted(db, usernameHash, usernameHash, row, 'books', false);
+      copyBookRowToCompleted(db, usernameHash, sourceOwnerHash, row, 'books', false);
     }
   });
   transaction();
   return rows.length;
 };
 
-export const markAllBooksAsUncompleted = (db: Database.Database, usernameHash: string): number => {
+export const markAllBooksAsUncompleted = (
+  db: Database.Database,
+  usernameHash: string,
+  sourceOwnerHash = usernameHash
+): number => {
   const rows = db
     .prepare(
       `SELECT ${collectionItemProjection('book_tracker')} FROM collection_items book_tracker
@@ -189,9 +199,11 @@ export const markAllBooksAsUncompleted = (db: Database.Database, usernameHash: s
               AND library_item.list_type = ?
            )`
     )
-    .all(usernameHash, 'tracking', usernameHash, 'books') as CollectionItemRow[];
+    .all(usernameHash, 'tracking', sourceOwnerHash, 'books') as CollectionItemRow[];
 
-  void debugLog(`markAllBooksAsUncompleted candidates: requester=${usernameHash}, count=${rows.length}`);
+  void debugLog(
+    `markAllBooksAsUncompleted candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
+  );
 
   const transaction = db.transaction(() => {
     for (const row of rows) {

@@ -4,9 +4,7 @@ export type CollectionItemTagValidationError =
   | { kind: 'invalidInternalCollectionTag' }
   | { kind: 'invalidNonLibraryTag' }
   | { kind: 'invalidTrackingTags' }
-  | { kind: 'invalidSharedListCreate' }
-  | { kind: 'invalidInternalCollectionItemUpdate' }
-  | { kind: 'sharedInternalCollectionItemUpdate' };
+  | { kind: 'invalidInternalCollectionItemUpdate' };
 
 export interface CollectionItemCreateTagValidationInput {
   contentType: CollectionItemContentTypeModel;

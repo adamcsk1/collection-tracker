@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { parseBoolean, parseFilters, parseList, parseNumber, parseTagMode, parseType } from './query-parse-util';
+import {
+  parseBoolean,
+  parseFilters,
+  parseList,
+  parseNumber,
+  parseSharedFilter,
+  parseTagMode,
+  parseType,
+} from './query-parse-util';
 
 describe('query-parse-util', () => {
   describe('parseList', () => {
@@ -78,6 +86,21 @@ describe('query-parse-util', () => {
     });
   });
 
+  describe('parseSharedFilter', () => {
+    it('returns mine for "mine"', () => {
+      expect(parseSharedFilter('mine')).toBe('mine');
+    });
+
+    it('returns shared for "shared"', () => {
+      expect(parseSharedFilter('shared')).toBe('shared');
+    });
+
+    it('returns undefined for unsupported values', () => {
+      expect(parseSharedFilter('all')).toBeUndefined();
+      expect(parseSharedFilter(undefined)).toBeUndefined();
+    });
+  });
+
   describe('parseNumber', () => {
     it('parses valid numbers', () => {
       expect(parseNumber('42', 0)).toBe(42);
@@ -103,6 +126,7 @@ describe('query-parse-util', () => {
         favorite: 'true',
         watched: 'true',
         completed: 'false',
+        shared: 'shared',
         listType: 'library',
         orderBy: 'alphabet',
         orderDirection: 'asc',
@@ -117,6 +141,7 @@ describe('query-parse-util', () => {
         favorite: true,
         watched: true,
         completed: false,
+        shared: 'shared',
         listType: 'library',
         orderBy: 'alphabet',
         orderDirection: 'asc',
@@ -134,6 +159,7 @@ describe('query-parse-util', () => {
         favorite: undefined,
         watched: undefined,
         completed: undefined,
+        shared: undefined,
         listType: undefined,
         orderBy: undefined,
         orderDirection: undefined,
@@ -151,6 +177,7 @@ describe('query-parse-util', () => {
         favorite: undefined,
         watched: undefined,
         completed: undefined,
+        shared: undefined,
         listType: undefined,
         orderBy: undefined,
         orderDirection: undefined,

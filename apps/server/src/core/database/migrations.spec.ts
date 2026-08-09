@@ -29,10 +29,31 @@ const preparePreMigrationState = async (
   return { db, migrationsDir };
 };
 
+const preparePre034ShareState = async (
+  tempDirs: string[]
+): Promise<{ db: Database.Database; migrationsDir: string }> => {
+  const state = await preparePreMigrationState('034_share_grants_by_list_and_content.sql', tempDirs);
+  state.db.exec(`
+    INSERT INTO users (username_hash, user_token_hash, username) VALUES
+       ('owner', 'owner-token', 'Owner'),
+       ('reader', 'reader-token', 'Reader'),
+       ('editor', 'editor-token', 'Editor'),
+       ('disabled', 'disabled-token', 'Disabled');
+    INSERT INTO user_shares
+      (id, owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete, created_at)
+    VALUES
+      (10, 'owner', 'reader', 1, 0, 0, 0, '2026-01-01 00:00:00'),
+      (20, 'owner', 'editor', 1, 1, 1, 0, '2026-02-01 00:00:00'),
+      (30, 'owner', 'disabled', 0, 0, 0, 0, '2026-03-01 00:00:00');
+  `);
+  return state;
+};
+
 describe('runMigrations', () => {
   const tempDirs: string[] = [];
 
   afterEach(() => {
+    vi.restoreAllMocks();
     for (const tempDir of tempDirs.splice(0)) {
       rmSync(tempDir, { recursive: true, force: true });
     }
@@ -1920,8 +1941,11 @@ describe('runMigrations', () => {
           VALUES ('user1', 'dark', 1, 'en', 'share-abc', '{"grid":true}');
         INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight)
           VALUES ('user1', '#movie', '#ff0000', 1, 0, 1, 10);
-        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-          VALUES ('user1', 'user2', 1, 0, 0, 0);
+        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash)
+          VALUES ('user1', 'user2');
+        INSERT INTO user_share_grants (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, can_create, can_update, can_delete)
+          VALUES ('user1', 'user2', 'library', 'movie', 1, 0, 0, 0),
+                 ('user1', 'user2', 'library', 'series', 1, 0, 0, 0);
         INSERT INTO series_tracking_seasons (item_id, season, episodes, episode_titles)
           VALUES (1, 1, 3, '["E1","E2","E3"]');
         INSERT INTO series_completed_episodes (item_id, season, episode)
@@ -2503,6 +2527,199 @@ describe('runMigrations', () => {
           .run()
       ).toThrow();
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+  });
+
+  describe('034_share_grants_by_list_and_content', () => {
+    const migrationFile = '034_share_grants_by_list_and_content.sql';
+
+    it('preserves effective relationships and removes relationships without permissions', async () => {
+      const { db, migrationsDir } = await preparePre034ShareState(tempDirs);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+
+      await runMigrations(db, migrationsDir);
+
+      expect(
+        db
+          .prepare('SELECT id, owner_username_hash, shared_with_username_hash, created_at FROM user_shares ORDER BY id')
+          .all()
+      ).toEqual([
+        {
+          id: 10,
+          owner_username_hash: 'owner',
+          shared_with_username_hash: 'reader',
+          created_at: '2026-01-01 00:00:00',
+        },
+        {
+          id: 20,
+          owner_username_hash: 'owner',
+          shared_with_username_hash: 'editor',
+          created_at: '2026-02-01 00:00:00',
+        },
+      ]);
+      expect(
+        db
+          .prepare(
+            `SELECT shared_with_username_hash, list_type, content_type,
+                    can_read, can_create, can_update, can_delete
+             FROM user_share_grants
+             ORDER BY shared_with_username_hash, content_type`
+          )
+          .all()
+      ).toEqual([
+        {
+          shared_with_username_hash: 'editor',
+          list_type: 'library',
+          content_type: 'movie',
+          can_read: 1,
+          can_create: 1,
+          can_update: 1,
+          can_delete: 0,
+        },
+        {
+          shared_with_username_hash: 'editor',
+          list_type: 'library',
+          content_type: 'series',
+          can_read: 1,
+          can_create: 1,
+          can_update: 1,
+          can_delete: 0,
+        },
+        {
+          shared_with_username_hash: 'reader',
+          list_type: 'library',
+          content_type: 'movie',
+          can_read: 1,
+          can_create: 0,
+          can_update: 0,
+          can_delete: 0,
+        },
+        {
+          shared_with_username_hash: 'reader',
+          list_type: 'library',
+          content_type: 'series',
+          can_read: 1,
+          can_create: 0,
+          can_update: 0,
+          can_delete: 0,
+        },
+      ]);
+      expect(db.prepare('PRAGMA table_info(user_shares)').all()).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ name: 'can_read' })])
+      );
+      expect(db.prepare('SELECT id FROM schema_migrations WHERE id = ?').get(migrationFile)).toEqual({
+        id: migrationFile,
+      });
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+
+    it('rolls back schema, data, grants, and marker when migration fails before commit', async () => {
+      const { db, migrationsDir } = await preparePre034ShareState(tempDirs);
+      const migrationSql = readFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), 'utf8').replace(
+        `INSERT INTO schema_migrations (id) VALUES ('${migrationFile}');`,
+        `INSERT INTO missing_table (id) VALUES (1);\nINSERT INTO schema_migrations (id) VALUES ('${migrationFile}');`
+      );
+      writeFileSync(join(migrationsDir, migrationFile), migrationSql);
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      await expect(runMigrations(db, migrationsDir)).rejects.toThrow('no such table: missing_table');
+
+      expect(
+        db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'user_share_grants'").get()
+      ).toBeUndefined();
+      expect(
+        db.prepare('SELECT id, can_read, can_create, can_update, can_delete FROM user_shares ORDER BY id').all()
+      ).toEqual([
+        { id: 10, can_read: 1, can_create: 0, can_update: 0, can_delete: 0 },
+        { id: 20, can_read: 1, can_create: 1, can_update: 1, can_delete: 0 },
+        { id: 30, can_read: 0, can_create: 0, can_update: 0, can_delete: 0 },
+      ]);
+      expect(db.prepare('SELECT id FROM schema_migrations WHERE id = ?').get(migrationFile)).toBeUndefined();
+      expect(db.inTransaction).toBe(false);
+      expect(db.pragma('foreign_keys', { simple: true })).toBe(1);
+      expect(db.pragma('legacy_alter_table', { simple: true })).toBe(0);
+      db.close();
+    });
+
+    it('normalizes mutation-only legacy shares to readable grants', async () => {
+      const { db, migrationsDir } = await preparePre034ShareState(tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES
+          ('creator', 'creator-token'),
+          ('updater', 'updater-token'),
+          ('deleter', 'deleter-token');
+        INSERT INTO user_shares
+          (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
+        VALUES
+          ('owner', 'creator', 0, 1, 0, 0),
+          ('owner', 'updater', 0, 0, 1, 0),
+          ('owner', 'deleter', 0, 0, 0, 1);
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+
+      await runMigrations(db, migrationsDir);
+
+      expect(
+        db
+          .prepare(
+            `SELECT shared_with_username_hash, content_type, can_read, can_create, can_update, can_delete
+             FROM user_share_grants
+             WHERE shared_with_username_hash IN ('creator', 'updater', 'deleter')
+             ORDER BY shared_with_username_hash, content_type`
+          )
+          .all()
+      ).toEqual([
+        {
+          shared_with_username_hash: 'creator',
+          content_type: 'movie',
+          can_read: 1,
+          can_create: 1,
+          can_update: 0,
+          can_delete: 0,
+        },
+        {
+          shared_with_username_hash: 'creator',
+          content_type: 'series',
+          can_read: 1,
+          can_create: 1,
+          can_update: 0,
+          can_delete: 0,
+        },
+        {
+          shared_with_username_hash: 'deleter',
+          content_type: 'movie',
+          can_read: 1,
+          can_create: 0,
+          can_update: 0,
+          can_delete: 1,
+        },
+        {
+          shared_with_username_hash: 'deleter',
+          content_type: 'series',
+          can_read: 1,
+          can_create: 0,
+          can_update: 0,
+          can_delete: 1,
+        },
+        {
+          shared_with_username_hash: 'updater',
+          content_type: 'movie',
+          can_read: 1,
+          can_create: 0,
+          can_update: 1,
+          can_delete: 0,
+        },
+        {
+          shared_with_username_hash: 'updater',
+          content_type: 'series',
+          can_read: 1,
+          can_create: 0,
+          can_update: 1,
+          can_delete: 0,
+        },
+      ]);
       db.close();
     });
   });

@@ -1,6 +1,13 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { CollectionPage } from '../page-objects/collection.po';
 import { TagManagementPage } from '../page-objects/tag-management.po';
+import {
+  cleanupCreatedUsers,
+  libraryMovieSeriesGrants,
+  requestAs,
+  setupShare,
+  signInThroughUi,
+} from '../support/share-helpers';
 
 /**
  * Builds a movie collection item that also carries a custom tag.
@@ -28,119 +35,6 @@ const buildTagManagement = (
   weight: 0,
   ...overrides,
 });
-
-interface SharePermissions {
-  canRead: boolean;
-  canCreate: boolean;
-  canUpdate: boolean;
-  canDelete: boolean;
-}
-
-interface TestUser {
-  username: string;
-  token: string;
-  cookie: string;
-  shareCode: string;
-}
-
-const createdUsers: TestUser[] = [];
-
-const uniqueId = () => `${Date.now()}${Math.random().toString(36).slice(2, 7)}`;
-
-const getSetCookieHeaders = (headers: Cypress.Response<unknown>['headers']): string[] => {
-  const setCookie = headers['set-cookie'];
-  if (Array.isArray(setCookie)) return setCookie;
-  if (typeof setCookie === 'string') return [setCookie];
-  return [];
-};
-
-const toCookieHeader = (response: Cypress.Response<unknown>): string => {
-  return getSetCookieHeaders(response.headers)
-    .map((cookie) => cookie.split(';')[0])
-    .filter((cookie) => cookie.startsWith('CT.Token=') || cookie.startsWith('CT.RefreshToken='))
-    .join('; ');
-};
-
-const resetPermissionStorage = (browserWindow: Window): void => {
-  browserWindow.sessionStorage.removeItem('CT.AppMode');
-  browserWindow.sessionStorage.removeItem('CT.SettingLock');
-  browserWindow.localStorage.setItem('CT.AppMode', 'full');
-  browserWindow.localStorage.removeItem('CT.SettingLock');
-};
-
-const requestAs = <ResponseBody = unknown>(
-  user: Pick<TestUser, 'cookie'>,
-  method: Cypress.HttpMethod,
-  url: string,
-  body?: Cypress.RequestBody
-) => {
-  return cy.request<ResponseBody>({
-    method,
-    url,
-    body,
-    headers: { Cookie: user.cookie },
-  });
-};
-
-const createUser = (label: string): Cypress.Chainable<TestUser> => {
-  const username = `tm-${label}-${uniqueId()}`;
-
-  return cy
-    .request<{ token: string }>({
-      method: 'POST',
-      url: '/api/v1/sign-up',
-      body: { username },
-      headers: { Cookie: '' },
-    })
-    .then((signUpResponse) => {
-      const token = signUpResponse.body.token;
-      return cy
-        .request({ method: 'POST', url: '/api/v1/sign-in', body: { username, token }, headers: { Cookie: '' } })
-        .then((signInResponse) => ({
-          username,
-          token,
-          cookie: toCookieHeader(signInResponse),
-        }));
-    })
-    .then((user) =>
-      requestAs<{ userShareCode: string }>(user, 'GET', '/api/v1/user/shares').then((sharesResponse) => {
-        const createdUser = {
-          ...user,
-          shareCode: sharesResponse.body.userShareCode,
-        };
-        createdUsers.push(createdUser);
-        return createdUser;
-      })
-    );
-};
-
-const cleanupCreatedUsers = (): void => {
-  createdUsers.splice(0).forEach((user) => {
-    requestAs(user, 'DELETE', '/api/v1/user');
-  });
-};
-
-const signInThroughUi = (user: TestUser): void => {
-  cy.clearCookies({ log: false });
-  cy.visit('/login/#/sign-in', {
-    onBeforeLoad: resetPermissionStorage,
-  });
-  cy.getByTestId('sign-in-username').find('input').type(user.username);
-  cy.getByTestId('sign-in-token').find('input').type(user.token, { delay: 0 });
-  cy.getByTestId('sign-in-submit').click();
-  cy.url().should('include', '/client/');
-};
-
-const setupShare = (permissions: SharePermissions): Cypress.Chainable<{ owner: TestUser; sharedUser: TestUser }> => {
-  return createUser('owner').then((owner) =>
-    createUser('shared').then((sharedUser) => {
-      return requestAs(owner, 'POST', '/api/v1/user/shares', {
-        sharedWithUserShareCode: sharedUser.shareCode,
-        ...permissions,
-      }).then(() => ({ owner, sharedUser }));
-    })
-  );
-};
 
 afterEach(() => {
   cleanupCreatedUsers();
@@ -305,8 +199,10 @@ describe('Tag Management — rename', () => {
     const oldTag = '#shared-rename-old';
     const newTag = '#shared-rename-new';
 
-    return setupShare({ canRead: true, canCreate: false, canUpdate: false, canDelete: false }).then(
-      ({ owner, sharedUser }) => {
+    return setupShare(
+      libraryMovieSeriesGrants({ canRead: true, canCreate: false, canUpdate: false, canDelete: false }),
+      { prefix: 'tm' }
+    ).then(({ owner, sharedUser }) => {
         requestAs(
           owner,
           'POST',
@@ -345,8 +241,10 @@ describe('Tag Management — rename', () => {
     const oldTag = '#shared-only-old';
     const newTag = '#shared-only-new';
 
-    return setupShare({ canRead: true, canCreate: false, canUpdate: false, canDelete: false }).then(
-      ({ owner, sharedUser }) => {
+    return setupShare(
+      libraryMovieSeriesGrants({ canRead: true, canCreate: false, canUpdate: false, canDelete: false }),
+      { prefix: 'tm' }
+    ).then(({ owner, sharedUser }) => {
         requestAs(
           owner,
           'POST',

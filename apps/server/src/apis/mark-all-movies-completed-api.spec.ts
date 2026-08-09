@@ -3,6 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -39,15 +40,6 @@ const insertItem = (
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canRead: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, canRead ? 1 : 0, 0, 0, 0);
 };
 
 describe('mark-all-movies-completed-api', () => {
@@ -114,7 +106,7 @@ describe('mark-all-movies-completed-api', () => {
   it('copies readable shared library movies to the current user tracking', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     insertItem('tt-own', ['#movie'], 'library', 'user');
     insertItem('tt-shared', ['#movie'], 'library', 'owner');
     insertItem('tt-series', ['#series'], 'library', 'owner', 'series');
@@ -155,7 +147,7 @@ describe('mark-all-movies-completed-api', () => {
   it('returns 403 when the user cannot read the shared library', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', false);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: false });
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };

@@ -18,12 +18,14 @@ export const buildCollectionRouteFilters = (queryParams: QueryParamReader): Part
   const favorite = queryParams.get('favorite');
   const watched = queryParams.get('watched');
   const completed = queryParams.get('completed');
+  const shared = queryParams.get('shared');
 
   return {
     ...(type === 'movie' || type === 'series' || type === 'book' ? { type } : {}),
     ...(favorite === 'true' ? { favorite: true } : {}),
     ...(watched === 'false' ? { watched: false } : watched === 'true' ? { watched: true } : {}),
     ...(completed === 'false' ? { completed: false } : completed === 'true' ? { completed: true } : {}),
+    ...(shared === 'mine' || shared === 'shared' ? { shared } : {}),
   };
 };
 
@@ -32,7 +34,8 @@ export const buildCollectionRouteFilterKey = (filters: Partial<CollectionItemFil
     filters.type === undefined &&
     filters.favorite === undefined &&
     filters.watched === undefined &&
-    filters.completed === undefined
+    filters.completed === undefined &&
+    filters.shared === undefined
   ) {
     return '';
   }
@@ -42,6 +45,7 @@ export const buildCollectionRouteFilterKey = (filters: Partial<CollectionItemFil
     favorite: filters.favorite ?? null,
     watched: filters.watched ?? null,
     completed: filters.completed ?? null,
+    shared: filters.shared ?? null,
   });
 };
 

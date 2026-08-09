@@ -1,4 +1,5 @@
 type ItemType = 'movie' | 'series';
+type ListType = 'library' | 'up-next' | 'wishlist' | 'tracking' | 'books';
 
 interface CollectionItemFixture {
   image: string;
@@ -17,12 +18,14 @@ interface CollectionItemFixture {
   plot: string;
   contentType: ItemType;
   favorite: boolean;
+  listType?: ListType;
 }
 
 export const buildCollectionItem = (
   title: string,
   type: ItemType = 'movie',
-  imdbId = 'tt1234567'
+  imdbId = 'tt1234567',
+  listType?: ListType
 ): CollectionItemFixture => ({
   image: '',
   title,
@@ -40,6 +43,7 @@ export const buildCollectionItem = (
   plot: `A great ${type} for e2e testing.`,
   contentType: type,
   favorite: false,
+  ...(listType ? { listType } : {}),
 });
 
 export const buildCollectionItems = (titles: string[], type: ItemType = 'movie'): CollectionItemFixture[] =>

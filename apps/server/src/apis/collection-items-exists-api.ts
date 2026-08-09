@@ -15,7 +15,7 @@ import {
   normalizeExternalIdentities,
   resolveCanonicalItemId,
 } from '../core/database/repositories/external-item-identity-repository';
-import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { canAccessShare } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
@@ -55,11 +55,6 @@ export const register = (app: FastifyInstance): void => {
         return;
       }
 
-      if (!canAccessLibrary(db, request.usernameHash, targetOwnerHash, 'read')) {
-        response.code(403).send();
-        return;
-      }
-
       const canonicalItemId = hasExternalIdentity
         ? resolveCanonicalItemId(db, targetOwnerHash, externalIdentitySource, externalIdentityId, externalIds)
         : null;
@@ -67,10 +62,35 @@ export const register = (app: FastifyInstance): void => {
         ? (findCollectionItemByCanonicalItemId(db, targetOwnerHash, canonicalItemId, listType) ??
           findCollectionItemByExternalId(db, targetOwnerHash, externalIdentitySource, externalIdentityId, listType))
         : findCollectionItemByImdbId(db, targetOwnerHash, imdbId as string, listType);
-      const isSharedInternalCollectionItem =
-        targetOwnerHash !== request.usernameHash && !!existingItem && listType !== 'library';
-      const exists = isSharedInternalCollectionItem
-        ? false
+
+      if (
+        existingItem &&
+        !canAccessShare(
+          db,
+          request.usernameHash,
+          targetOwnerHash,
+          existingItem.list_type,
+          existingItem.content_type,
+          'read'
+        )
+      ) {
+        response.code(403).send();
+        return;
+      }
+
+      if (
+        !existingItem &&
+        targetOwnerHash !== request.usernameHash &&
+        !canAccessShare(db, request.usernameHash, targetOwnerHash, listType, 'movie', 'read') &&
+        !canAccessShare(db, request.usernameHash, targetOwnerHash, listType, 'series', 'read') &&
+        !canAccessShare(db, request.usernameHash, targetOwnerHash, listType, 'book', 'read')
+      ) {
+        response.code(403).send();
+        return;
+      }
+
+      const exists = existingItem
+        ? true
         : canonicalItemId
           ? collectionCanonicalItemExistsInList(db, [targetOwnerHash], canonicalItemId, listType) ||
             collectionExternalItemExistsInList(

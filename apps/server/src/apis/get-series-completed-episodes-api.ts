@@ -3,42 +3,42 @@ import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadat
 import { TrackingCompletedEpisodesApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import { findCollectionItemByExternalIdOrCanonicalItemId } from '../core/database/repositories/collection';
 import {
   findCompletedEpisodesByExternalId,
   findLastCompletedEpisodeByExternalId,
 } from '../core/database/repositories/series-completed-episodes-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
+import { resolveTrackingSeriesTarget } from '../core/utils/tracking-series-target-util';
 
 export const register = (app: FastifyInstance): void => {
   const handler = withErrorHandler(async (request, response) => {
     const { externalIdentitySource, externalIdentityId } = request.params as Record<string, string>;
     if (!isExternalItemIdentitySourceName(externalIdentitySource)) return response.code(400).send();
     const db = getDatabase();
-    if (
-      !findCollectionItemByExternalIdOrCanonicalItemId(
-        db,
-        request.usernameHash,
-        externalIdentitySource,
-        externalIdentityId,
-        'tracking'
-      )
-    ) {
-      return response.code(404).send();
-    }
+    const query = (request.query ?? {}) as Record<string, unknown>;
+    const target = resolveTrackingSeriesTarget(
+      db,
+      request.usernameHash,
+      query.ownerShareCode,
+      externalIdentitySource,
+      externalIdentityId,
+      'read'
+    );
+    if (target.status !== 200) return response.code(target.status).send();
+    const targetExternalItemId = target.item.external_item_id ?? externalIdentityId;
 
     const completedEpisodes = findCompletedEpisodesByExternalId(
       db,
-      request.usernameHash,
-      externalIdentitySource,
-      externalIdentityId
+      target.ownerHash,
+      target.item.external_provider,
+      targetExternalItemId
     );
     const lastCompletedEpisode = findLastCompletedEpisodeByExternalId(
       db,
-      request.usernameHash,
-      externalIdentitySource,
-      externalIdentityId
+      target.ownerHash,
+      target.item.external_provider,
+      targetExternalItemId
     );
     const result: TrackingCompletedEpisodesApiResponseModel = { completedEpisodes, lastCompletedEpisode };
     response.send(result);

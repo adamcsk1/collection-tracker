@@ -1,10 +1,10 @@
 import { CollectionItemSuggestionApiModel, CollectionListTypeModel } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
-import { escapeLike, normalizeLimit } from './collection-query';
+import { buildReadableItemScope, escapeLike, normalizeLimit } from './collection-query';
 
 export const findCollectionItemSuggestions = (
   db: Database.Database,
-  usernameHashes: string[],
+  viewerUsernameHash: string,
   query: string,
   limit: number,
   listType: CollectionListTypeModel = 'library'
@@ -14,7 +14,7 @@ export const findCollectionItemSuggestions = (
   if (!lowerQuery) return [];
 
   if (lowerQuery.startsWith('#')) {
-    return findTagSuggestions(db, usernameHashes, query, normalizedLimit, listType).map((tag) => ({
+    return findTagSuggestions(db, viewerUsernameHash, query, normalizedLimit, listType).map((tag) => ({
       label: tag,
       value: tag,
       kind: 'tag',
@@ -22,6 +22,7 @@ export const findCollectionItemSuggestions = (
   }
 
   const likeQuery = `%${escapeLike(lowerQuery)}%`;
+  const scope = buildReadableItemScope(viewerUsernameHash, { listType }, false);
   const rows = db
     .prepare(
       `SELECT external_item_id, title,
@@ -45,8 +46,7 @@ export const findCollectionItemSuggestions = (
             )
           ) AS imdb_id
        FROM collection_items
-       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-       AND list_type = ?
+       WHERE ${scope.where.join(' AND ')}
        AND (
           title_lower LIKE ? ESCAPE '\\'
            OR LOWER(external_item_id) LIKE ? ESCAPE '\\'
@@ -67,17 +67,7 @@ export const findCollectionItemSuggestions = (
        ORDER BY created_at DESC, id DESC
        LIMIT ?`
     )
-    .all(
-      ...usernameHashes,
-      listType,
-      likeQuery,
-      likeQuery,
-      likeQuery,
-      likeQuery,
-      likeQuery,
-      likeQuery,
-      normalizedLimit
-    ) as Array<{
+    .all(...scope.params, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, normalizedLimit) as Array<{
     imdb_id: string | null;
     external_item_id: string | null;
     title: string;
@@ -92,27 +82,28 @@ export const findCollectionItemSuggestions = (
 
 export const findTagSuggestions = (
   db: Database.Database,
-  usernameHashes: string[],
+  viewerUsernameHash: string,
   query: string,
   limit: number,
-  listType: CollectionListTypeModel = 'library'
+  listType: CollectionListTypeModel = 'library',
+  foldBooksIntoLibrary = false
 ): string[] => {
   const lowerQuery = query.trim().toLowerCase();
   if (!lowerQuery) return [];
 
+  const scope = buildReadableItemScope(viewerUsernameHash, { listType }, foldBooksIntoLibrary);
   const rows = db
     .prepare(
       `SELECT tag, COUNT(*) as count
        FROM collection_item_tags
        INNER JOIN collection_items ON collection_items.id = collection_item_tags.item_id
-       WHERE collection_items.username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-       AND collection_items.list_type = ?
+       WHERE ${scope.where.join(' AND ')}
        AND LOWER(tag) LIKE ? ESCAPE '\\'
         GROUP BY tag
        ORDER BY count DESC, tag
        LIMIT ?`
     )
-    .all(...usernameHashes, listType, `${escapeLike(lowerQuery)}%`, normalizeLimit(limit)) as Array<{
+    .all(...scope.params, `${escapeLike(lowerQuery)}%`, normalizeLimit(limit)) as Array<{
     tag: string;
   }>;
 
@@ -121,26 +112,26 @@ export const findTagSuggestions = (
 
 export const findGenreSuggestions = (
   db: Database.Database,
-  usernameHashes: string[],
+  viewerUsernameHash: string,
   query: string,
   limit: number
 ): string[] => {
   const lowerQuery = query.trim().toLowerCase();
   if (!lowerQuery) return [];
 
+  const scope = buildReadableItemScope(viewerUsernameHash, { listType: 'library' }, false);
   const rows = db
     .prepare(
       `SELECT genre, COUNT(*) as count
        FROM collection_item_genres
        INNER JOIN collection_items ON collection_items.id = collection_item_genres.item_id
-       WHERE collection_items.username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-       AND collection_items.list_type = ?
+       WHERE ${scope.where.join(' AND ')}
        AND LOWER(genre) LIKE ? ESCAPE '\\'
        GROUP BY genre
        ORDER BY count DESC, genre
        LIMIT ?`
     )
-    .all(...usernameHashes, 'library', `${escapeLike(lowerQuery)}%`, normalizeLimit(limit)) as Array<{ genre: string }>;
+    .all(...scope.params, `${escapeLike(lowerQuery)}%`, normalizeLimit(limit)) as Array<{ genre: string }>;
 
   return rows.map((row) => row.genre);
 };

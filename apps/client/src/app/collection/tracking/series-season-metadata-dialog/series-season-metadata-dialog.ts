@@ -35,6 +35,8 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   public readonly imdbId = input<string | undefined>();
   public readonly externalProvider = input(DEFAULT_EXTERNAL_METADATA_PROVIDER);
   public readonly externalItemId = input<string | undefined>();
+  public readonly ownerShareCode = input<string | undefined>();
+  public readonly canUpdate = input(true);
   public readonly initialSeasons = input<TrackingSeasonMetadataModel[]>([]);
   public readonly saved = input<(seasons: TrackingSeasonMetadataModel[], item?: CollectionItemApiModel) => void>(
     () => undefined
@@ -140,9 +142,16 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     const seasons = this.formModel()
       .seasons.map((season) => ({ season: season.season, episodes: season.episodes, titles: season.titles }))
       .sort((firstSeason, secondSeason) => firstSeason.season - secondSeason.season);
-    const result = await firstValueFrom(
-      this.api.updateTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId(), { seasons })
-    );
+    const ownerShareCode = this.ownerShareCode();
+    const updateRequest = ownerShareCode
+      ? this.api.updateTrackingSeasonsByExternalId(
+          this.externalProvider(),
+          this.providerItemId(),
+          { seasons },
+          ownerShareCode
+        )
+      : this.api.updateTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId(), { seasons });
+    const result = await firstValueFrom(updateRequest);
     this.saved()(result.seasons, result.item);
     this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SeriesMetadataSaved'));
     this.onClose();
@@ -161,7 +170,11 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     this.spinnerLoadingState.setState('show', true);
     try {
       const result = await firstValueFrom(
-        this.api.refreshTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId())
+        this.api.refreshTrackingSeasonsByExternalId(
+          this.externalProvider(),
+          this.providerItemId(),
+          this.ownerShareCode()
+        )
       );
       this.resetForm(result.seasons);
       this.saved()(result.seasons, result.item);
@@ -178,7 +191,7 @@ export class SeriesSeasonMetadataDialog implements OnInit {
     if (!confirmed) return;
 
     const result = await firstValueFrom(
-      this.api.deleteTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId())
+      this.api.deleteTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId(), this.ownerShareCode())
     );
     this.resetForm(result.seasons);
     this.saved()(result.seasons, result.item);

@@ -10,7 +10,7 @@ import {
 } from '../core/database/repositories/collection';
 import { resolveCanonicalItemIds } from '../core/database/repositories/external-item-identity-repository';
 import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/tracking-season-repository';
-import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { canAccessShare } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { fetchSeriesSeasonMetadata } from '../core/external-metadata/series-season-metadata';
@@ -23,7 +23,7 @@ export const register = (app: FastifyInstance): void => {
     `${API_PREFIX}/create`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      const body = request.body as CreateApiRequestModel & { targetOwnerShareCode?: string };
+      const body = request.body as CreateApiRequestModel;
       const item = normalizeItem(body);
       const listType = parseListType(body.listType) ?? 'library';
       if (!item) {
@@ -47,7 +47,7 @@ export const register = (app: FastifyInstance): void => {
         return response.code(404).send();
       }
 
-      if (!canAccessLibrary(db, request.usernameHash, targetOwnerHash, 'create')) {
+      if (!canAccessShare(db, request.usernameHash, targetOwnerHash, listType, item.contentType, 'create')) {
         return response.code(403).send();
       }
 

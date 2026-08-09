@@ -194,16 +194,16 @@ describe('ManageTrackerDataService', () => {
     expect(api.markAllSeriesAsUncompleted).toHaveBeenCalledWith('owner-code');
   });
 
-  it('marks all books completed without a shared library source', () => {
-    service.markAllBooksAsCompleted();
+  it('passes selected shared library to mark all books completed', () => {
+    service.markAllBooksAsCompleted('owner-code');
 
-    expect(api.markAllBooksAsCompleted).toHaveBeenCalledWith();
+    expect(api.markAllBooksAsCompleted).toHaveBeenCalledWith('owner-code');
   });
 
-  it('marks all books uncompleted without a shared library source', () => {
-    service.markAllBooksAsUncompleted();
+  it('passes selected shared library to mark all books uncompleted', () => {
+    service.markAllBooksAsUncompleted('owner-code');
 
-    expect(api.markAllBooksAsUncompleted).toHaveBeenCalledWith();
+    expect(api.markAllBooksAsUncompleted).toHaveBeenCalledWith('owner-code');
   });
 
   it('removes all tracked movie data and completes successfully', () => {

@@ -13,7 +13,7 @@ import {
   updateCollectionItemByRow,
 } from '../core/database/repositories/collection';
 import { resolveCanonicalItemIds } from '../core/database/repositories/external-item-identity-repository';
-import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { canAccessShare } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
@@ -44,10 +44,6 @@ export const register = (app: FastifyInstance): void => {
         return response.code(404).send();
       }
 
-      if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'update')) {
-        return response.code(403).send();
-      }
-
       const existingItem = findCollectionItemByExternalIdOrCanonicalItemId(
         db,
         ownerHash,
@@ -57,6 +53,22 @@ export const register = (app: FastifyInstance): void => {
       );
       if (!existingItem) {
         return response.code(404).send();
+      }
+
+      if (
+        !canAccessShare(
+          db,
+          request.usernameHash,
+          ownerHash,
+          existingItem.list_type,
+          existingItem.content_type,
+          'update'
+        )
+      ) {
+        return response.code(403).send();
+      }
+      if (ownerHash !== request.usernameHash && item.contentType !== existingItem.content_type) {
+        return response.code(403).send();
       }
 
       if (existingItem.content_hash !== hash) {
@@ -71,8 +83,7 @@ export const register = (app: FastifyInstance): void => {
         requesterIsOwner: ownerHash === request.usernameHash,
       });
       if (tagValidationError) {
-        const status = tagValidationError.kind === 'sharedInternalCollectionItemUpdate' ? 403 : 400;
-        return response.code(status).send();
+        return response.code(400).send();
       }
 
       if (item.IMDbId && item.IMDbId !== existingItem.imdb_id) {

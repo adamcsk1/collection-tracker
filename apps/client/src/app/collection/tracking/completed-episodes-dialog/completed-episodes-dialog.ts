@@ -45,6 +45,7 @@ export class CompletedEpisodesDialog implements OnInit {
   public readonly imdbId = input<string | undefined>();
   public readonly externalProvider = input(DEFAULT_EXTERNAL_METADATA_PROVIDER);
   public readonly externalItemId = input<string | undefined>();
+  public readonly ownerShareCode = input<string | undefined>();
   public readonly saved = input<
     (completedEpisodes: TrackingCompletedEpisodeModel[], item?: CollectionItemApiModel) => void
   >(() => undefined);
@@ -94,18 +95,23 @@ export class CompletedEpisodesDialog implements OnInit {
   }
 
   private loadData(): void {
-    this.api
-      .getTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((seasonsResponse) => {
-        this.seasonsMetadata.set(seasonsResponse.seasons);
-      });
-    this.api
-      .getTrackingCompletedEpisodesByExternalId(this.externalProvider(), this.providerItemId())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((completedResponse) => {
-        if (!this.hasLocalCompletedEpisodeChanges) this.completedEpisodes.set(completedResponse.completedEpisodes);
-      });
+    const ownerShareCode = this.ownerShareCode();
+    const seasonsRequest = ownerShareCode
+      ? this.api.getTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId(), ownerShareCode)
+      : this.api.getTrackingSeasonsByExternalId(this.externalProvider(), this.providerItemId());
+    seasonsRequest.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((seasonsResponse) => {
+      this.seasonsMetadata.set(seasonsResponse.seasons);
+    });
+    const completedEpisodesRequest = ownerShareCode
+      ? this.api.getTrackingCompletedEpisodesByExternalId(
+          this.externalProvider(),
+          this.providerItemId(),
+          ownerShareCode
+        )
+      : this.api.getTrackingCompletedEpisodesByExternalId(this.externalProvider(), this.providerItemId());
+    completedEpisodesRequest.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((completedResponse) => {
+      if (!this.hasLocalCompletedEpisodeChanges) this.completedEpisodes.set(completedResponse.completedEpisodes);
+    });
   }
 
   protected isEpisodeCompleted(season: number, episode: number): boolean {
@@ -186,11 +192,18 @@ export class CompletedEpisodesDialog implements OnInit {
     const save = this.saveCompletedEpisodesQueue
       .catch(() => undefined)
       .then(async () => {
-        const result = await firstValueFrom(
-          this.api.updateTrackingCompletedEpisodesByExternalId(this.externalProvider(), this.providerItemId(), {
-            completedEpisodes: episodes,
-          })
-        );
+        const ownerShareCode = this.ownerShareCode();
+        const updateRequest = ownerShareCode
+          ? this.api.updateTrackingCompletedEpisodesByExternalId(
+              this.externalProvider(),
+              this.providerItemId(),
+              { completedEpisodes: episodes },
+              ownerShareCode
+            )
+          : this.api.updateTrackingCompletedEpisodesByExternalId(this.externalProvider(), this.providerItemId(), {
+              completedEpisodes: episodes,
+            });
+        const result = await firstValueFrom(updateRequest);
         if (version === this.saveCompletedEpisodesVersion) this.applySavedCompletedEpisodes(result);
         this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.CompletedEpisodesSaved'));
       });
@@ -228,6 +241,7 @@ export class CompletedEpisodesDialog implements OnInit {
       imdbId: this.imdbId(),
       externalProvider: this.externalProvider(),
       externalItemId: this.providerItemId(),
+      ...(this.ownerShareCode() ? { ownerShareCode: this.ownerShareCode() } : {}),
       initialSeasons: this.seasonsMetadata(),
       saved: (seasons: TrackingSeasonMetadataModel[], item?: CollectionItemApiModel) => {
         this.seasonsMetadata.set(seasons);
@@ -249,8 +263,27 @@ export class CompletedEpisodesDialog implements OnInit {
     this.hasLocalCompletedEpisodeChanges = true;
     this.spinnerLoadingState.setState('show', true);
     try {
+      const ownerShareCode = this.ownerShareCode();
       await this.queueCompletedEpisodesMutation(() =>
-        firstValueFrom(this.api.markAllTrackingCompletedByExternalId(this.externalProvider(), this.providerItemId()))
+        ownerShareCode
+          ? firstValueFrom(
+              this.api.updateTrackingCompletedEpisodesByExternalId(
+                this.externalProvider(),
+                this.providerItemId(),
+                {
+                  completedEpisodes: this.seasonsMetadata().flatMap((season) =>
+                    Array.from({ length: season.episodes }, (_, index) => ({
+                      season: season.season,
+                      episode: index + 1,
+                    }))
+                  ),
+                },
+                ownerShareCode
+              )
+            )
+          : firstValueFrom(
+              this.api.markAllTrackingCompletedByExternalId(this.externalProvider(), this.providerItemId())
+            )
       );
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedCompleted'));
     } finally {
@@ -267,11 +300,19 @@ export class CompletedEpisodesDialog implements OnInit {
     this.hasLocalCompletedEpisodeChanges = true;
     this.spinnerLoadingState.setState('show', true);
     try {
+      const ownerShareCode = this.ownerShareCode();
       await this.queueCompletedEpisodesMutation(() =>
         firstValueFrom(
-          this.api.updateTrackingCompletedEpisodesByExternalId(this.externalProvider(), this.providerItemId(), {
-            completedEpisodes: [],
-          })
+          ownerShareCode
+            ? this.api.updateTrackingCompletedEpisodesByExternalId(
+                this.externalProvider(),
+                this.providerItemId(),
+                { completedEpisodes: [] },
+                ownerShareCode
+              )
+            : this.api.updateTrackingCompletedEpisodesByExternalId(this.externalProvider(), this.providerItemId(), {
+                completedEpisodes: [],
+              })
         )
       );
       this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.AllEpisodesMarkedUncompleted'));

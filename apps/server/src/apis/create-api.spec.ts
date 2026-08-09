@@ -3,20 +3,12 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase()
     .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
     .run(usernameHash, `${usernameHash}-token`);
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canCreate: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, 1, canCreate ? 1 : 0, 0, 0);
 };
 
 const item = {
@@ -549,7 +541,7 @@ describe('create-api', () => {
   it('creates an item in a shared library when create permission is granted', async () => {
     insertUser('owner');
     insertUser('user');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canCreate: true });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = { body: { ...item, targetOwnerShareCode: getUserShareCode('owner') }, usernameHash: 'user' };
@@ -570,7 +562,7 @@ describe('create-api', () => {
   it('returns 403 when creating in a shared library without create permission', async () => {
     insertUser('owner');
     insertUser('user');
-    insertShare('owner', 'user', false);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: false });
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = { body: { ...item, targetOwnerShareCode: getUserShareCode('owner') }, usernameHash: 'user' };
@@ -664,10 +656,11 @@ describe('create-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('returns 400 when creating watch later in a shared library', async () => {
+  it('returns 404 when creating into an unknown shared owner code', async () => {
+    insertUser('user');
     const response = mockResponse();
     const request: any = {
-      body: { ...item, listType: 'up-next', targetOwnerShareCode: 'shared-code' },
+      body: { ...item, listType: 'up-next', targetOwnerShareCode: 'missing-share-code' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -676,13 +669,17 @@ describe('create-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(404);
   });
 
-  it('returns 400 when creating non-library listType in a shared library', async () => {
+  it('returns 403 when creating wishlist without grant for that scope', async () => {
+    insertUser('owner');
+    insertUser('user');
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canCreate: true });
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
-      body: { ...item, listType: 'up-next', targetOwnerShareCode: 'shared-code' },
+      body: { ...item, listType: 'wishlist', targetOwnerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -691,22 +688,7 @@ describe('create-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(400);
-  });
-
-  it('returns 400 when creating wishlist in a shared library', async () => {
-    const response = mockResponse();
-    const request: any = {
-      body: { ...item, listType: 'wishlist', targetOwnerShareCode: 'shared-code' },
-      usernameHash: 'user',
-    };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./create-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.code).toHaveBeenCalledWith(403);
   });
 
   it('returns 500 on unexpected DB error', async () => {

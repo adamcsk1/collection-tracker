@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { mockResponse } from '../../test/mocks/response-mock';
+import { insertLibraryShare, insertShare, libraryGrants } from '../../test/mocks/share-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 
@@ -29,22 +30,12 @@ describe('user-shares-api', () => {
     vi.clearAllMocks();
   });
 
-  it('returns short share codes and display usernames for shares', async () => {
+  it('returns short share codes, usernames, and grants', async () => {
     insertUser('owner-hash', 'Owner');
     insertUser('friend-hash', 'Friend');
     insertUser('current-hash', 'Current');
-    getDatabase()
-      .prepare(
-        `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-      .run('current-hash', 'friend-hash', 1, 0, 1, 0);
-    getDatabase()
-      .prepare(
-        `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-      .run('owner-hash', 'current-hash', 1, 1, 0, 0);
+    insertShare(getDatabase(), 'current-hash', 'friend-hash', libraryGrants({ canRead: true, canUpdate: true }));
+    insertLibraryShare(getDatabase(), 'owner-hash', 'current-hash', { canRead: true, canCreate: true });
 
     const handlers = await buildRegisteredApp();
     const response = mockResponse();
@@ -56,20 +47,14 @@ describe('user-shares-api', () => {
         {
           sharedWithUserShareCode: getUserShareCode('friend-hash'),
           sharedWithUsername: 'Friend',
-          canRead: true,
-          canCreate: false,
-          canUpdate: true,
-          canDelete: false,
+          grants: libraryGrants({ canRead: true, canUpdate: true }),
         },
       ],
       incoming: [
         {
           ownerUserShareCode: getUserShareCode('owner-hash'),
           ownerUsername: 'Owner',
-          canRead: true,
-          canCreate: true,
-          canUpdate: false,
-          canDelete: false,
+          grants: libraryGrants({ canRead: true, canCreate: true }),
         },
       ],
     });

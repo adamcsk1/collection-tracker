@@ -41,6 +41,8 @@ export class FloatActionButtons implements OnDestroy {
     filterFavorite: computed(() => this.ngxSignalTranslate.translate('Favorites')),
     filterCompleted: computed(() => this.ngxSignalTranslate.translate('Completed')),
     filterUncompleted: computed(() => this.ngxSignalTranslate.translate('Uncompleted')),
+    filterSharedMine: computed(() => this.ngxSignalTranslate.translate('FilterSharedMine')),
+    filterSharedOnly: computed(() => this.ngxSignalTranslate.translate('FilterSharedOnly')),
   };
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
   protected readonly config = this.actionButtons.config;
@@ -147,6 +149,8 @@ export class FloatActionButtons implements OnDestroy {
       favorite: this.translations.filterFavorite(),
       completed: this.translations.filterCompleted(),
       uncompleted: this.translations.filterUncompleted(),
+      sharedMine: this.translations.filterSharedMine(),
+      sharedOnly: this.translations.filterSharedOnly(),
     };
 
     return labels[filter];
@@ -161,6 +165,8 @@ export class FloatActionButtons implements OnDestroy {
       favorite: 'star',
       completed: 'check_circle',
       uncompleted: 'radio_button_unchecked',
+      sharedMine: 'person',
+      sharedOnly: 'group',
     };
 
     return icons[filter];

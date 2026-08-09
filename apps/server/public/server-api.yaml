@@ -240,18 +240,33 @@ components:
           type: boolean
           description: When true, language and theme are only initialized if the user has not already stored those settings.
 
-    UserShare:
+    UserShareGrant:
       type: object
-      required: [canRead, canCreate, canUpdate, canDelete]
+      description: >-
+        Permissions for one list/content scope. Valid combinations follow collection rules: `library` supports movie
+        and series, `books` supports book, and `wishlist`, `up-next`, and `tracking` support all content types.
+        Create, update, or delete permission also implies read permission when stored.
+      required: [listType, contentType, canRead, canCreate, canUpdate, canDelete]
+      oneOf:
+        - properties:
+            listType:
+              const: library
+            contentType:
+              type: string
+              enum: [movie, series]
+        - properties:
+            listType:
+              const: books
+            contentType:
+              const: book
+        - properties:
+            listType:
+              type: string
+              enum: [wishlist, up-next, tracking]
+            contentType:
+              type: string
+              enum: [movie, series, book]
       properties:
-        sharedWithUserShareCode:
-          type: string
-        sharedWithUsername:
-          type: ['string', 'null']
-        ownerUserShareCode:
-          type: string
-        ownerUsername:
-          type: ['string', 'null']
         canRead:
           type: boolean
         canCreate:
@@ -260,6 +275,32 @@ components:
           type: boolean
         canDelete:
           type: boolean
+
+    UserShareOutgoing:
+      type: object
+      required: [sharedWithUserShareCode, sharedWithUsername, grants]
+      properties:
+        sharedWithUserShareCode:
+          type: string
+        sharedWithUsername:
+          type: ['string', 'null']
+        grants:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserShareGrant'
+
+    UserShareIncoming:
+      type: object
+      required: [ownerUserShareCode, ownerUsername, grants]
+      properties:
+        ownerUserShareCode:
+          type: string
+        ownerUsername:
+          type: ['string', 'null']
+        grants:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserShareGrant'
 
     UserSharesResponse:
       type: object
@@ -270,11 +311,11 @@ components:
         outgoing:
           type: array
           items:
-            $ref: '#/components/schemas/UserShare'
+            $ref: '#/components/schemas/UserShareOutgoing'
         incoming:
           type: array
           items:
-            $ref: '#/components/schemas/UserShare'
+            $ref: '#/components/schemas/UserShareIncoming'
 
     CollectionItem:
       type: object
@@ -300,6 +341,7 @@ components:
           favorite,
           watched,
           watchedAt,
+          ownerShareCode,
         ]
       properties:
         image:
@@ -389,7 +431,7 @@ components:
           description: Optional book total pages on tracking items.
         ownerShareCode:
           type: string
-          description: Share code of the item owner. Present when the item belongs to a shared library.
+          description: Share code of the item owner, including items owned by the authenticated user.
 
     CollectionItemChange:
       type: object
@@ -458,7 +500,9 @@ components:
         contentType:
           type: string
           enum: [movie, series, book]
-          description: 'Books must use `listType: books`; non-book content cannot use `books`.'
+          description: >-
+            `library` accepts movie and series, `books` accepts book, and `wishlist`, `up-next`, and `tracking`
+            accept all content types.
         favorite:
           type: boolean
         progressCurrent:
@@ -492,6 +536,7 @@ components:
         identities:
           type: array
           description: External identities to match, in result ranking order.
+          maxItems: 6000
           items:
             $ref: '#/components/schemas/ExternalItemIdentity'
         offset:
@@ -507,10 +552,12 @@ components:
               type: string
             tags:
               type: array
+              maxItems: 100
               items:
                 type: string
             genres:
               type: array
+              maxItems: 100
               items:
                 type: string
             tagMode:
@@ -525,6 +572,10 @@ components:
               type: boolean
             favorite:
               type: boolean
+            shared:
+              type: string
+              enum: [mine, shared]
+              description: Filter to own items only, shared items only, or omit for both.
             listType:
               type: string
               enum: [library, up-next, wishlist, tracking, books]
@@ -682,12 +733,16 @@ components:
           properties:
             targetOwnerShareCode:
               type: string
-              description: Optional owner share code to create the item in a shared library. Defaults to the authenticated user.
+              description: >-
+                Optional owner share code to create the item in that owner's target list/content scope. The caller must
+                have create permission for the exact `listType` and `contentType`. Defaults to the authenticated user.
             listType:
               type: string
               enum: [library, up-next, wishlist, tracking, books]
               default: library
-              description: 'Target list. Defaults to `library`. Books must use `books`, and non-books cannot use `books`.'
+              description: >-
+                Target list. Defaults to `library`. `library` accepts movies and series, `books` accepts books only,
+                and `wishlist`, `up-next`, and `tracking` accept movies, series, and books.
 
     CreateResponse:
       type: object
@@ -842,8 +897,7 @@ components:
           items:
             $ref: '#/components/schemas/TrackingCompletedEpisode'
         lastCompletedEpisode:
-          type: object
-          nullable: true
+          type: [object, 'null']
           required: [season, episode]
           properties:
             season:
@@ -1472,6 +1526,7 @@ paths:
     post:
       operationId: saveUserShare
       summary: Create or update a share
+      description: Replaces grants for the invited user. Each grant applies to one valid list/content scope; mutation permissions imply read permission, duplicate scopes are rejected, and at least one effective permission is required.
       tags: [User]
       requestBody:
         required: true
@@ -1479,22 +1534,23 @@ paths:
           application/json:
             schema:
               type: object
-              required: [sharedWithUserShareCode]
+              required: [sharedWithUserShareCode, grants]
               properties:
                 sharedWithUserShareCode:
                   type: string
                   description: Short share code shown by the invited user.
-                canRead:
-                  type: boolean
-                canCreate:
-                  type: boolean
-                canUpdate:
-                  type: boolean
-                canDelete:
-                  type: boolean
+                grants:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: '#/components/schemas/UserShareGrant'
       responses:
         '204':
           description: Share saved.
+        '400':
+          description: Missing invitee share code, invalid or duplicate grant scope, invalid permission values, or no effective permissions.
+        '404':
+          description: The invitee share code was not found or identifies the authenticated user.
 
   /user/shares/incoming/{ownerUserShareCode}:
     delete:
@@ -1530,7 +1586,7 @@ paths:
     get:
       operationId: searchItems
       summary: Search collection items
-      description: Returns a server-filtered and paginated collection result. Structured filters use `type`, `favorite`, `watched`, and `completed`; custom tags use `tags`. `listType` defaults to `library`.
+      description: Returns a server-filtered and paginated result containing the caller's items and items covered by exact readable list/content grants. Structured filters use `type`, `favorite`, `watched`, and `completed`; custom tags use `tags`. `listType` defaults to `library`.
       tags: [Collection]
       parameters:
         - name: offset
@@ -1580,6 +1636,12 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: shared
+          in: query
+          schema:
+            type: string
+            enum: [mine, shared]
+          description: Own items only, shared items only, or omit for both.
         - name: listType
           in: query
           schema:
@@ -1610,7 +1672,7 @@ paths:
     post:
       operationId: getMatchedItems
       summary: Get collection items from matched external identities
-      description: Returns paginated items from an external identity set, preserving the request order by default for AI search results.
+      description: Returns paginated caller-owned and readable shared items from an external identity set, preserving the request order by default for AI search results.
       tags: [Collection]
       requestBody:
         required: true
@@ -1626,12 +1688,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/CollectionItemsResponse'
         '400':
-          description: Invalid IMDb ID list.
+          description: Invalid external identity list or more than 6,000 identities.
 
   /items/search-suggestions:
     get:
       operationId: getItemSearchSuggestions
       summary: Get item search suggestions
+      description: Returns suggestions from caller-owned items and exact readable shared scopes in the selected list.
       tags: [Collection]
       parameters:
         - name: query
@@ -1693,7 +1756,7 @@ paths:
         - name: ownerShareCode
           in: query
           required: false
-          description: Owner share code of the library to check. Defaults to the authenticated user.
+          description: Owner share code whose selected list should be checked. The caller needs read permission for the matching content scope. Defaults to the authenticated user.
           schema:
             type: string
         - name: listType
@@ -1714,13 +1777,15 @@ paths:
         '400':
           description: Missing external identity.
         '403':
-          description: Not allowed to read the target library.
+          description: Not allowed to read any applicable content scope in the target list.
+        '404':
+          description: The requested owner share code was not found.
 
   /items/random:
     get:
       operationId: getRandomItem
       summary: Get a random collection item
-      description: Returns one random item from the user's collection.
+      description: Returns one random library item from caller-owned items and exact readable shared library/content scopes.
       tags: [Collection]
       responses:
         '200':
@@ -1736,7 +1801,7 @@ paths:
     get:
       operationId: getRandomImages
       summary: Get random collection image URLs
-      description: Returns a list of random image URLs from the user's collection.
+      description: Returns random library image URLs from caller-owned items and exact readable shared library/content scopes.
       tags: [Collection]
       parameters:
         - name: count
@@ -2003,9 +2068,17 @@ paths:
       operationId: markAllBooksAsCompleted
       summary: Mark all books as completed
       description: >-
-        Copies every uncompleted book from the authenticated user's private books list into their tracking as completed.
-        Shared libraries cannot be used as a source because books lists are not shared.
+        Copies every uncompleted book from the selected owner's books list into the authenticated user's tracking as
+        completed. When `ownerShareCode` is provided, the exact `books`/`book` scope requires read permission and the
+        shared owner's items are not modified.
       tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional owner share code for using a readable shared books scope as the source.
       responses:
         '200':
           description: Number of items that were updated.
@@ -2014,16 +2087,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/MarkAllCompletedResponse'
         '403':
-          description: Rejected when a shared-library ownerShareCode is supplied.
+          description: The authenticated user cannot read the requested books scope.
+        '404':
+          description: The requested shared owner was not found.
 
   /items/mark-all-books-uncompleted:
     post:
       operationId: markAllBooksAsUncompleted
       summary: Mark all books as uncompleted
       description: >-
-        Clears the completed status for authenticated-user tracking books that correspond to items on the user's private books list.
-        Tracking items are kept. Shared libraries cannot be used as a source because books lists are not shared.
+        Clears completed status for authenticated-user tracking books corresponding to books in the selected owner's
+        books list. Tracking items are kept. When `ownerShareCode` is provided, the exact `books`/`book` scope requires
+        read permission and the shared owner's items are not modified.
       tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional owner share code for using a readable shared books scope as the source.
       responses:
         '200':
           description: Number of items that were updated.
@@ -2032,20 +2115,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/MarkAllUncompletedResponse'
         '403':
-          description: Rejected when a shared-library ownerShareCode is supplied.
+          description: The authenticated user cannot read the requested books scope.
+        '404':
+          description: The requested shared owner was not found.
 
   /items/refresh-images:
     post:
       operationId: refreshImages
       summary: Refresh collection item images
-      description: Checks collection item images through the image proxy, caches available images, and fetches updated poster URLs from the configured external metadata provider for broken images. For the authenticated user's own library this covers all list types (library, up-next, wishlist, tracking, and books). When `ownerShareCode` is provided, the refresh targets only that owner's `library` list and requires update permission.
+      description: Checks collection item images through the image proxy, caches available images, and fetches updated poster URLs from the configured external metadata provider for broken images. For the authenticated user's own data this covers all list types and content types. When `ownerShareCode` identifies another owner, the refresh targets that owner's `library` list and processes only movie and series content scopes for which the caller has update permission. The request succeeds when at least one target content scope is writable.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
           in: query
           schema:
             type: string
-          description: Optional owner share code for refreshing an incoming shared library.
+          description: Optional owner share code for refreshing writable content scopes in an incoming shared library.
       responses:
         '200':
           description: Summary of the refresh operation.
@@ -2054,7 +2139,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RefreshImagesResponse'
         '403':
-          description: The authenticated user cannot update the requested library.
+          description: The authenticated user cannot update any refreshable content scope in the requested library.
         '404':
           description: The requested shared library owner was not found.
 
@@ -2062,14 +2147,14 @@ paths:
     post:
       operationId: refreshExternalRatings
       summary: Refresh collection item external ratings
-      description: Fetches collection items from the configured external metadata provider and refreshes IMDb, Rotten Tomatoes, and Metacritic ratings. Book items are excluded because book metadata providers do not supply those ratings. For the authenticated user's own library this covers all non-book list types (library, up-next, wishlist, and tracking). When `ownerShareCode` is provided, the refresh targets only that owner's `library` list and requires update permission.
+      description: Fetches collection items from the configured external metadata provider and refreshes IMDb, Rotten Tomatoes, and Metacritic ratings. Book items are excluded because book metadata providers do not supply those ratings. For the authenticated user's own data this covers all non-book list types. When `ownerShareCode` identifies another owner, the refresh targets that owner's `library` list and processes only movie and series content scopes for which the caller has update permission. The request succeeds when at least one target content scope is writable.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
           in: query
           schema:
             type: string
-          description: Optional owner share code for refreshing an incoming shared library.
+          description: Optional owner share code for refreshing writable content scopes in an incoming shared library.
       responses:
         '200':
           description: Summary of the refresh operation.
@@ -2078,7 +2163,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RefreshExternalRatingsResponse'
         '403':
-          description: The authenticated user cannot update the requested library.
+          description: The authenticated user cannot update any refreshable content scope in the requested library.
         '404':
           description: The requested shared library owner was not found.
 
@@ -2086,7 +2171,7 @@ paths:
     get:
       operationId: getTagSuggestions
       summary: Get custom tag suggestions
-      description: Returns matching stored custom tags.
+      description: Returns matching custom tags from caller-owned items and exact readable shared scopes.
       tags: [Collection]
       parameters:
         - name: query
@@ -2110,6 +2195,7 @@ paths:
     get:
       operationId: getGenreSuggestions
       summary: Get genre suggestions
+      description: Returns matching genres from caller-owned items and exact readable shared scopes.
       tags: [Collection]
       parameters:
         - name: query
@@ -2133,6 +2219,7 @@ paths:
     get:
       operationId: getStatistics
       summary: Get collection statistics
+      description: Returns statistics over caller-owned items and exact readable shared scopes after applying filters.
       tags: [Collection]
       parameters:
         - name: search
@@ -2167,10 +2254,20 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: completed
+          in: query
+          schema:
+            type: boolean
         - name: favorite
           in: query
           schema:
             type: boolean
+        - name: shared
+          in: query
+          description: Own items only, shared items only, or omit for both.
+          schema:
+            type: string
+            enum: [mine, shared]
       responses:
         '200':
           description: Collection statistics.
@@ -2186,10 +2283,10 @@ paths:
       description: >-
         Creates a structured item in the requested `listType`. External provider identity and locally resolved
         canonical identity must be unique within the target list.
-        Custom tags must not use reserved system or virtual tags. Optionally pass `targetOwnerShareCode` to create
-        in a shared library where you have create permission. up-next, wishlist, tracking,
-        and books items cannot be created in shared libraries. Favorites are allowed only on ownership lists
-        (`library`, `books`). Tracking items may use movie, series, or book; ownership books must use
+        Custom tags must not use reserved system or virtual tags. Optionally pass `targetOwnerShareCode` to create in
+        another owner's list when you have create permission for the exact list/content scope. Shared creation supports
+        every valid list/content combination. Favorites are allowed only on ownership lists (`library`, `books`).
+        Tracking items may use movie, series, or book; ownership books must use
         `listType: books`. Books may use `listType` of `books`, `wishlist`, `up-next`,
         or `tracking`. Non-book content cannot use `books`.
       tags: [Collection]
@@ -2209,7 +2306,9 @@ paths:
         '400':
           description: Request body is missing required item fields, contains invalid values, or uses an invalid tag/list combination.
         '403':
-          description: Not allowed to create in the target library.
+          description: Not allowed to create in the target list/content scope.
+        '404':
+          description: The requested target owner share code was not found.
         '409':
           description: An item with this external or canonical identity already exists in the target list.
 
@@ -2259,7 +2358,7 @@ paths:
     put:
       operationId: changeItemByExternalId
       summary: Update a collection item by external identity
-      description: Updates an item using an external identity source and ID instead of legacy IMDb-only identity.
+      description: Updates an item using an external identity source and ID. Shared updates require update permission for the item's exact list/content scope and cannot change its content type.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2278,7 +2377,7 @@ paths:
         - name: ownerShareCode
           in: query
           required: false
-          description: Owner share code of the library containing the item. Defaults to the authenticated user.
+          description: Owner share code of the list containing the item. Defaults to the authenticated user.
           schema:
             type: string
         - name: listType
@@ -2305,7 +2404,7 @@ paths:
         '400':
           description: Invalid external identity source, or request body is missing required item fields or contains invalid values.
         '403':
-          description: Not allowed to update in the target library or to update a shared internal collection item.
+          description: Not allowed to update the target list/content scope, or a shared update attempted to change content type.
         '404':
           description: Item not found.
         '409':
@@ -2315,7 +2414,7 @@ paths:
     delete:
       operationId: deleteItemByExternalId
       summary: Delete a collection item by external identity
-      description: Deletes an item from the requested list using an external identity source and ID when the supplied hash matches.
+      description: Deletes an item from the requested list using an external identity source and ID when the supplied hash matches. Shared deletes require delete permission for the item's exact list/content scope.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2353,7 +2452,7 @@ paths:
         '400':
           description: Missing or invalid hash query parameter.
         '403':
-          description: Not allowed to delete in the target library or to delete a shared internal collection item.
+          description: Not allowed to delete from the target list/content scope.
         '404':
           description: Item not found.
         '409':
@@ -2366,7 +2465,10 @@ paths:
       description: >-
         Copies a movie, series, or book into the authenticated user's tracking list using canonical provider identity.
         Movies are always completed. Series are added in progress (season metadata fetched when available).
-        Books are in progress unless `markCompleted=true`.
+        Books are in progress unless `markCompleted=true`. When `ownerShareCode` is supplied, the source can be a
+        shared `library`, `up-next`, or `books` list and requires read permission for the source item's exact
+        list/content scope. The source owner's item is not modified, except an authenticated user's own `up-next`
+        source is moved to tracking.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2397,6 +2499,7 @@ paths:
         - name: ownerShareCode
           in: query
           required: false
+          description: Optional owner share code for the source list.
           schema:
             type: string
       responses:
@@ -2409,9 +2512,9 @@ paths:
         '400':
           description: Invalid external metadata provider or unsupported source list type.
         '403':
-          description: The authenticated user cannot read the requested shared library.
+          description: The authenticated user cannot read the source item's exact list/content scope.
         '404':
-          description: Source item or shared library owner was not found, or content type is unsupported for tracking.
+          description: Source item or requested owner was not found, or content type is unsupported for tracking.
 
   /tracking/{externalIdentitySource}/{externalIdentityId}/completed:
     delete:
@@ -2444,6 +2547,7 @@ paths:
     get:
       operationId: getTrackingSeasonsByExternalId
       summary: Get tracking season metadata by external identity
+      description: Reads the authenticated user's tracking series by default, or a shared owner's tracking series when `ownerShareCode` is supplied and exact read permission exists.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2455,6 +2559,12 @@ paths:
         - name: externalIdentityId
           in: path
           required: true
+          schema:
+            type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          description: Optional owner share code for a readable shared `tracking`/`series` scope.
           schema:
             type: string
       responses:
@@ -2466,11 +2576,14 @@ paths:
                 $ref: '#/components/schemas/TrackingSeasonsResponse'
         '400':
           description: Invalid external metadata provider.
+        '403':
+          description: The authenticated user cannot read the requested tracking series scope.
         '404':
           description: Tracking item not found.
     put:
       operationId: updateTrackingSeasonsByExternalId
       summary: Replace tracking season metadata by external identity
+      description: Updates the authenticated user's tracking series by default, or a shared owner's tracking series when `ownerShareCode` is supplied and exact update permission exists.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2482,6 +2595,12 @@ paths:
         - name: externalIdentityId
           in: path
           required: true
+          schema:
+            type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          description: Optional owner share code for a writable shared `tracking`/`series` scope.
           schema:
             type: string
       requestBody:
@@ -2499,11 +2618,14 @@ paths:
                 $ref: '#/components/schemas/TrackingSeasonsResponse'
         '400':
           description: Invalid external metadata provider or season metadata.
+        '403':
+          description: The authenticated user cannot update the requested tracking series scope.
         '404':
           description: Tracking item not found.
     delete:
       operationId: deleteTrackingSeasonsByExternalId
       summary: Delete tracking season metadata by external identity
+      description: Removes metadata from the authenticated user's tracking series by default, or a shared owner's tracking series when `ownerShareCode` is supplied and exact update permission exists.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2515,6 +2637,12 @@ paths:
         - name: externalIdentityId
           in: path
           required: true
+          schema:
+            type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          description: Optional owner share code for a shared `tracking`/`series` scope with update permission.
           schema:
             type: string
       responses:
@@ -2526,6 +2654,8 @@ paths:
                 $ref: '#/components/schemas/TrackingSeasonsResponse'
         '400':
           description: Invalid external metadata provider.
+        '403':
+          description: The authenticated user cannot update the requested tracking series scope.
         '404':
           description: Tracking item not found.
 
@@ -2533,6 +2663,7 @@ paths:
     post:
       operationId: refreshTrackingSeasonsByExternalId
       summary: Refresh tracking season metadata by external identity
+      description: Refreshes metadata for the authenticated user's tracking series by default, or a shared owner's tracking series when `ownerShareCode` is supplied and exact update permission exists.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2546,6 +2677,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          description: Optional owner share code for a shared `tracking`/`series` scope with update permission.
+          schema:
+            type: string
       responses:
         '200':
           description: Stored season metadata.
@@ -2555,6 +2692,8 @@ paths:
                 $ref: '#/components/schemas/TrackingSeasonsResponse'
         '400':
           description: Invalid external metadata provider.
+        '403':
+          description: The authenticated user cannot update the requested tracking series scope.
         '404':
           description: Tracking item not found.
 
@@ -2591,6 +2730,7 @@ paths:
     get:
       operationId: getTrackingCompletedEpisodesByExternalId
       summary: Get completed episodes by external identity
+      description: Reads the authenticated user's tracking series by default, or a shared owner's tracking series when `ownerShareCode` is supplied and exact read permission exists.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2602,6 +2742,12 @@ paths:
         - name: externalIdentityId
           in: path
           required: true
+          schema:
+            type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          description: Optional owner share code for a readable shared `tracking`/`series` scope.
           schema:
             type: string
       responses:
@@ -2613,11 +2759,14 @@ paths:
                 $ref: '#/components/schemas/TrackingCompletedEpisodesResponse'
         '400':
           description: Invalid external metadata provider.
+        '403':
+          description: The authenticated user cannot read the requested tracking series scope.
         '404':
           description: Tracking item not found.
     put:
       operationId: updateTrackingCompletedEpisodesByExternalId
       summary: Replace completed episodes by external identity
+      description: Updates the authenticated user's tracking series by default, or a shared owner's tracking series when `ownerShareCode` is supplied and exact update permission exists.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2629,6 +2778,12 @@ paths:
         - name: externalIdentityId
           in: path
           required: true
+          schema:
+            type: string
+        - name: ownerShareCode
+          in: query
+          required: false
+          description: Optional owner share code for a writable shared `tracking`/`series` scope.
           schema:
             type: string
       requestBody:
@@ -2646,6 +2801,8 @@ paths:
                 $ref: '#/components/schemas/TrackingCompletedEpisodesResponse'
         '400':
           description: Invalid external metadata provider or completed episode data.
+        '403':
+          description: The authenticated user cannot update the requested tracking series scope.
         '404':
           description: Tracking item not found.
 
@@ -2796,7 +2953,7 @@ paths:
         Proxies a prompt to the Ollama API using `ollama.config.json` in the server data folder.
         The server reads the caller's collection metadata for the requested `listType` from the database, embeds collection items, retrieves semantic candidates, and builds the final filtering prompt internally.
         The client supplies the natural-language question and target list type.
-        Library searches include readable shared owners; other list types search only the caller's own items.
+        Searches include caller-owned items and items covered by exact readable list/content grants.
         The default config uses host `http://127.0.0.1:11434`, model `qwen2.5:14b`, embedding model `mxbai-embed-large`, and merges configured generate options over `DEFAULT_OLLAMA_OPTIONS` of `{ "temperature": 0, "top_k": 20, "num_thread": 16, "num_ctx": 16384 }`.
         Candidates include derived watch status and series progress. Pure status intents such as unfinished/completed/favorite may be resolved without calling the language model.
         Ollama availability and model presence for both the language and embedding models are checked by this endpoint before querying.

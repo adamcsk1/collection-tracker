@@ -43,7 +43,14 @@ export class SettingsMediaRefresh implements OnInit {
     { text: this.translations.myLibrary(), value: '' },
     ...this.sharesState.state
       .incoming()
-      .filter((share) => share.canUpdate)
+      .filter((share) =>
+        share.grants.some(
+          (grant) =>
+            grant.listType === 'library' &&
+            (grant.contentType === 'movie' || grant.contentType === 'series') &&
+            grant.canUpdate
+        )
+      )
       .map((share) => ({
         text: `${this.translations.sharedLibrary()} (${share.ownerUsername ?? share.ownerUserShareCode})`,
         value: share.ownerUserShareCode,

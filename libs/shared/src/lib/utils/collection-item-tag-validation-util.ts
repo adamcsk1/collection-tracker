@@ -3,31 +3,18 @@ import type {
   CollectionItemCreateTagValidationInput,
   CollectionItemTagValidationError,
 } from './collection-item-tag-validation-model';
+import { contentTypeAllowedOnList } from './share-grant-util';
 
 const isOwnershipList = (listType: string): boolean => listType === 'library' || listType === 'books';
 
 const isBookAllowedOnList = (listType: string): boolean =>
   listType === 'books' || listType === 'wishlist' || listType === 'up-next' || listType === 'tracking';
 
-const contentTypeAllowedOnList = (listType: string, contentType: string): boolean => {
-  if (listType === 'library') return contentType === 'movie' || contentType === 'series';
-  if (listType === 'books') return contentType === 'book';
-  if (listType === 'tracking') return contentType === 'movie' || contentType === 'series' || contentType === 'book';
-  if (listType === 'wishlist' || listType === 'up-next') {
-    return contentType === 'movie' || contentType === 'series' || contentType === 'book';
-  }
-  return false;
-};
-
 export const createCollectionItemTagValidation = ({
   contentType,
   favorite,
   listType,
-  targetOwnerShareCode,
 }: CollectionItemCreateTagValidationInput): CollectionItemTagValidationError | undefined => {
-  if (listType !== 'library' && typeof targetOwnerShareCode === 'string') {
-    return { kind: 'invalidSharedListCreate' };
-  }
   if (!isOwnershipList(listType) && favorite) {
     return { kind: 'invalidNonLibraryTag' };
   }
@@ -46,11 +33,7 @@ export const changeCollectionItemTagValidation = ({
   favorite,
   listType,
   existingListType,
-  requesterIsOwner,
 }: CollectionItemChangeTagValidationInput): CollectionItemTagValidationError | undefined => {
-  if (existingListType !== 'library' && !requesterIsOwner) {
-    return { kind: 'sharedInternalCollectionItemUpdate' };
-  }
   if (
     existingListType !== 'library' &&
     listType !== 'tracking' &&

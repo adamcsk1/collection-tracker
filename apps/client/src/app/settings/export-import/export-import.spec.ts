@@ -58,6 +58,7 @@ const mockExportResponse: UserExportApiResponseModel = {
       contentType: 'movie',
       favorite: false,
       watchedAt: null,
+      ownerShareCode: 'own-code',
     },
     {
       image: 'img2.jpg',
@@ -80,6 +81,7 @@ const mockExportResponse: UserExportApiResponseModel = {
       contentType: 'movie',
       favorite: false,
       watchedAt: null,
+      ownerShareCode: 'own-code',
     },
   ],
   tagManagement: [buildTagManagement('#movie', { color: '#111111' })],

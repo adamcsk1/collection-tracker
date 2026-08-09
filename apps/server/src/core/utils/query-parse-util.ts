@@ -3,6 +3,7 @@ import {
   CollectionItemFiltersApiModel,
   CollectionItemOrderBy,
   CollectionItemOrderDirection,
+  CollectionItemSharedFilter,
   CollectionItemTagMode,
   CollectionItemTypeFilter,
   CollectionListTypeModel,
@@ -46,6 +47,11 @@ export const parseOrderDirection = (value: unknown): CollectionItemOrderDirectio
   return;
 };
 
+export const parseSharedFilter = (value: unknown): CollectionItemSharedFilter | undefined => {
+  if (value === 'mine' || value === 'shared') return value;
+  return;
+};
+
 export const parseNumber = (value: unknown, fallback: number): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -64,6 +70,7 @@ export const parseFilters = (query: Record<string, unknown>): CollectionItemFilt
     favorite: parseBoolean(query.favorite),
     watched: parseBoolean(query.watched),
     completed: parseBoolean(query.completed),
+    shared: parseSharedFilter(query.shared),
     listType,
     orderBy: parseOrderBy(query.orderBy),
     orderDirection: parseOrderDirection(query.orderDirection),

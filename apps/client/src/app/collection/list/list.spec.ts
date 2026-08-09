@@ -1,7 +1,6 @@
 import { ElementRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { CollectionItemModel } from '../collection-model';
 import { CollectionState, collectionStateToken, initialCollectionState } from '../collection-store';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { initialMainState, mainStateToken } from '../../main/main-store';
@@ -10,7 +9,11 @@ import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_COLLECTION_LIST_ORDER_PREFERENCES } from '@shared/constants/storage-const';
-import { CollectionItemFiltersApiModel, CollectionItemsApiResponseModel } from '@shared/models/api-model';
+import {
+  CollectionItemApiModel,
+  CollectionItemFiltersApiModel,
+  CollectionItemsApiResponseModel,
+} from '@shared/models/api-model';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { Observable, of } from 'rxjs';
@@ -55,7 +58,7 @@ describe('List', () => {
     return search ? { search } : {};
   };
 
-  const buildItem = (title: string, IMDbId = title): CollectionItemModel => ({
+  const buildItem = (title: string, IMDbId = title): CollectionItemApiModel => ({
     image: '',
     title,
     titleLower: title.toLowerCase(),
@@ -76,6 +79,7 @@ describe('List', () => {
     contentType: 'movie',
     favorite: false,
     watchedAt: null,
+    ownerShareCode: 'own-code',
   });
 
   beforeEach(() => {
@@ -577,6 +581,27 @@ describe('List', () => {
     fixture.detectChanges();
 
     expect(actionButtons.config().activeFilterActions).toEqual(['uncompleted']);
+  });
+
+  it.each([
+    ['mine', 'sharedMine'],
+    ['shared', 'sharedOnly'],
+  ] as const)('preserves the books content filter while toggling the %s shared filter', (shared, action) => {
+    fixture.componentRef.setInput('listType', 'books');
+    fixture.componentRef.setInput(
+      'routeFilterKey',
+      JSON.stringify({ type: 'book', favorite: null, watched: null, completed: null, shared })
+    );
+    fixture.detectChanges();
+
+    expect(actionButtons.config().activeFilterActions).toEqual(['book', action]);
+
+    component['onApplyFilter'](action);
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: { shared: null },
+      queryParamsHandling: 'merge',
+    });
   });
 
   it('restores list order preference from local storage', () => {

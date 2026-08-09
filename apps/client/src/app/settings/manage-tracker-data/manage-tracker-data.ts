@@ -48,42 +48,59 @@ export class SettingsManageTrackerData implements OnInit {
     { text: this.translations.myLibrary(), value: '' },
     ...this.sharesState.state
       .incoming()
-      .filter((share) => share.canRead)
+      .filter((share) =>
+        share.grants.some(
+          (grant) =>
+            grant.canRead &&
+            ((grant.listType === 'library' && (grant.contentType === 'movie' || grant.contentType === 'series')) ||
+              (grant.listType === 'books' && grant.contentType === 'book'))
+        )
+      )
       .map((share) => ({
         text: `${this.translations.sharedLibrary()} (${share.ownerUsername ?? share.ownerUserShareCode})`,
         value: share.ownerUserShareCode,
       })),
   ]);
   protected readonly showLibrarySelect = computed(() => this.libraryOptions().length > 1);
+  private readonly selectedShare = computed(() =>
+    this.sharesState.state.incoming().find((share) => share.ownerUserShareCode === this.selectedOwnerShareCode())
+  );
+  protected readonly canMarkMovies = computed(() => this.canReadSelectedScope('library', 'movie'));
+  protected readonly canMarkSeries = computed(() => this.canReadSelectedScope('library', 'series'));
+  protected readonly canMarkBooks = computed(() => this.canReadSelectedScope('books', 'book'));
 
   public ngOnInit(): void {
     this.sharesService.loadShares();
   }
 
   protected onMarkAllMoviesAsCompleted(): void {
+    if (!this.canMarkMovies()) return;
     this.manageTrackerData.markAllMoviesAsCompleted(this.selectedOwnerShareCode() || undefined);
   }
 
   protected onMarkAllMoviesAsUncompleted(): void {
+    if (!this.canMarkMovies()) return;
     this.manageTrackerData.markAllMoviesAsUncompleted(this.selectedOwnerShareCode() || undefined);
   }
 
   protected onMarkAllSeriesAsCompleted(): void {
+    if (!this.canMarkSeries()) return;
     this.manageTrackerData.markAllSeriesAsCompleted(this.selectedOwnerShareCode() || undefined);
   }
 
   protected onMarkAllSeriesAsUncompleted(): void {
+    if (!this.canMarkSeries()) return;
     this.manageTrackerData.markAllSeriesAsUncompleted(this.selectedOwnerShareCode() || undefined);
   }
 
   protected onMarkAllBooksAsCompleted(): void {
-    if (this.selectedOwnerShareCode()) return;
-    this.manageTrackerData.markAllBooksAsCompleted();
+    if (!this.canMarkBooks()) return;
+    this.manageTrackerData.markAllBooksAsCompleted(this.selectedOwnerShareCode() || undefined);
   }
 
   protected onMarkAllBooksAsUncompleted(): void {
-    if (this.selectedOwnerShareCode()) return;
-    this.manageTrackerData.markAllBooksAsUncompleted();
+    if (!this.canMarkBooks()) return;
+    this.manageTrackerData.markAllBooksAsUncompleted(this.selectedOwnerShareCode() || undefined);
   }
 
   protected onRemoveAllTrackedMovieData(): void {
@@ -103,5 +120,14 @@ export class SettingsManageTrackerData implements OnInit {
 
   protected onLibraryChange(selectedValue: SelectDataModel['value']): void {
     this.selectedOwnerShareCode.set(typeof selectedValue === 'string' ? selectedValue : '');
+  }
+
+  private canReadSelectedScope(listType: 'library' | 'books', contentType: 'movie' | 'series' | 'book'): boolean {
+    if (!this.selectedOwnerShareCode()) return true;
+    return (
+      this.selectedShare()?.grants.some(
+        (grant) => grant.listType === listType && grant.contentType === contentType && grant.canRead
+      ) ?? false
+    );
   }
 }

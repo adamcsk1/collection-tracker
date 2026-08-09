@@ -10,7 +10,7 @@ import {
 import { resolveCanonicalItemId } from '../core/database/repositories/external-item-identity-repository';
 import { copyBookToCompletedByExternalId } from '../core/database/repositories/tracking-book-repository';
 import { copyMovieToCompletedByExternalId } from '../core/database/repositories/tracking-movie-repository';
-import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { canAccessShare } from '../core/database/repositories/share-repository';
 import { copySeriesToTrackingByExternalId } from '../core/database/repositories/tracking-series-repository';
 import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/tracking-season-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
@@ -31,24 +31,22 @@ export const register = (app: FastifyInstance): void => {
 
     const db = getDatabase();
     const ownerHash =
-      sourceListType === 'library' && typeof query.ownerShareCode === 'string'
+      typeof query.ownerShareCode === 'string'
         ? findUserByShareCode(db, query.ownerShareCode)?.username_hash
         : request.usernameHash;
     if (!ownerHash) return response.code(404).send();
 
-    if (sourceListType === 'library' && !canAccessLibrary(db, request.usernameHash, ownerHash, 'read')) {
-      return response.code(403).send();
-    }
-    if (sourceListType === 'books' && ownerHash !== request.usernameHash) return response.code(403).send();
-
     const moveFromUpNext = sourceListType === 'up-next';
-    if (moveFromUpNext && ownerHash !== request.usernameHash) return response.code(403).send();
-
     const canonicalItemId = resolveCanonicalItemId(db, ownerHash, externalIdentitySource, externalIdentityId);
     const sourceRow =
       findCollectionItemByCanonicalItemId(db, ownerHash, canonicalItemId, sourceListType) ??
       findCollectionItemByExternalId(db, ownerHash, externalIdentitySource, externalIdentityId, sourceListType);
     if (!sourceRow) return response.code(404).send();
+
+    if (!canAccessShare(db, request.usernameHash, ownerHash, sourceRow.list_type, sourceRow.content_type, 'read')) {
+      return response.code(403).send();
+    }
+    if (moveFromUpNext && ownerHash !== request.usernameHash) return response.code(403).send();
 
     const markCompleted = query.markCompleted === true || query.markCompleted === 'true';
     const item =

@@ -8,7 +8,7 @@ import {
   findCollectionItemByExternalId,
 } from '../core/database/repositories/collection';
 import { resolveCanonicalItemId } from '../core/database/repositories/external-item-identity-repository';
-import { canAccessLibrary } from '../core/database/repositories/share-repository';
+import { canAccessShare } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
@@ -36,10 +36,6 @@ export const register = (app: FastifyInstance): void => {
         return response.code(404).send();
       }
 
-      if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'delete')) {
-        return response.code(403).send();
-      }
-
       const canonicalItemId = resolveCanonicalItemId(db, ownerHash, externalIdentitySource, externalIdentityId);
       const existingItem =
         findCollectionItemByCanonicalItemId(db, ownerHash, canonicalItemId, listType) ??
@@ -49,13 +45,21 @@ export const register = (app: FastifyInstance): void => {
         return response.code(404).send();
       }
 
-      if (existingItem.content_hash !== hash) {
-        return response.code(409).send();
+      if (
+        !canAccessShare(
+          db,
+          request.usernameHash,
+          ownerHash,
+          existingItem.list_type,
+          existingItem.content_type,
+          'delete'
+        )
+      ) {
+        return response.code(403).send();
       }
 
-      const isInternalCollectionItem = listType !== 'library';
-      if (isInternalCollectionItem && ownerHash !== request.usernameHash) {
-        return response.code(403).send();
+      if (existingItem.content_hash !== hash) {
+        return response.code(409).send();
       }
 
       deleteCollectionItemByExternalId(

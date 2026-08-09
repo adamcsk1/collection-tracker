@@ -143,7 +143,39 @@ describe('SettingsManageTrackerData component', () => {
     expect(manageTrackerData.removeAllTrackedBookData).not.toHaveBeenCalled();
   });
 
-  it('passes selected shared library to movie and series completion actions only', () => {
+  it('passes selected shared library to supported completion actions', () => {
+    TestBed.inject(sharesStateToken).setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'books',
+            contentType: 'book',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
     component['onLibraryChange']('owner-code');
 
     component['onMarkAllMoviesAsCompleted']();
@@ -157,8 +189,8 @@ describe('SettingsManageTrackerData component', () => {
     expect(manageTrackerData.markAllMoviesAsUncompleted).toHaveBeenCalledWith('owner-code');
     expect(manageTrackerData.markAllSeriesAsCompleted).toHaveBeenCalledWith('owner-code');
     expect(manageTrackerData.markAllSeriesAsUncompleted).toHaveBeenCalledWith('owner-code');
-    expect(manageTrackerData.markAllBooksAsCompleted).not.toHaveBeenCalled();
-    expect(manageTrackerData.markAllBooksAsUncompleted).not.toHaveBeenCalled();
+    expect(manageTrackerData.markAllBooksAsCompleted).toHaveBeenCalledWith('owner-code');
+    expect(manageTrackerData.markAllBooksAsUncompleted).toHaveBeenCalledWith('owner-code');
   });
 
   it('shows the library selector for readable shared libraries', () => {
@@ -167,10 +199,24 @@ describe('SettingsManageTrackerData component', () => {
       {
         ownerUserShareCode: 'owner-code',
         ownerUsername: 'Owner',
-        canRead: true,
-        canCreate: false,
-        canUpdate: false,
-        canDelete: false,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
       },
     ]);
 
@@ -200,16 +246,65 @@ describe('SettingsManageTrackerData component', () => {
       {
         ownerUserShareCode: 'owner-code',
         ownerUsername: 'Owner',
-        canRead: false,
-        canCreate: true,
-        canUpdate: true,
-        canDelete: true,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: false,
+            canCreate: true,
+            canUpdate: true,
+            canDelete: true,
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: false,
+            canCreate: true,
+            canUpdate: true,
+            canDelete: true,
+          },
+        ],
       },
     ]);
 
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-manage-tracker-data-library"]')).toBeNull();
+  });
+
+  it('enables only completion actions backed by the exact readable grant', () => {
+    TestBed.inject(sharesStateToken).setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        grants: [
+          {
+            listType: 'books',
+            contentType: 'book',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
+    component['onLibraryChange']('owner-code');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-books-completed"]').disabled).toBe(
+      false
+    );
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-books-uncompleted"]').disabled).toBe(
+      false
+    );
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-completed"]').disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-series-completed"]').disabled).toBe(
+      true
+    );
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-book-data"]').disabled).toBe(
+      true
+    );
   });
 
   it('hides movie and series actions when both tracker features are disabled', () => {

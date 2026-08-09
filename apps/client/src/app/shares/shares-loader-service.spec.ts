@@ -23,10 +23,24 @@ describe('SharesLoaderService', () => {
             {
               ownerUserShareCode: 'owner-code',
               ownerUsername: 'Owner',
-              canRead: true,
-              canCreate: true,
-              canUpdate: false,
-              canDelete: false,
+              grants: [
+                {
+                  listType: 'library',
+                  contentType: 'movie',
+                  canRead: true,
+                  canCreate: true,
+                  canUpdate: false,
+                  canDelete: false,
+                },
+                {
+                  listType: 'library',
+                  contentType: 'series',
+                  canRead: true,
+                  canCreate: true,
+                  canUpdate: false,
+                  canDelete: false,
+                },
+              ],
             },
           ],
         })
@@ -52,7 +66,10 @@ describe('SharesLoaderService', () => {
     expect(sharesState.state.loaded()).toBe(true);
     expect(sharesState.state.userShareCode()).toBe('own-code');
     expect(sharesState.state.incoming()).toEqual([
-      expect.objectContaining({ ownerUserShareCode: 'owner-code', canCreate: true }),
+      expect.objectContaining({
+        ownerUserShareCode: 'owner-code',
+        grants: expect.arrayContaining([expect.objectContaining({ canCreate: true })]),
+      }),
     ]);
   });
 

@@ -3,6 +3,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -45,15 +46,6 @@ const insertItem = (
   return itemId;
 };
 
-const insertShare = (ownerHash: string, sharedWithHash: string, canRead: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, canRead ? 1 : 0, 0, 0, 0);
-};
-
 describe('mark-all-series-uncompleted-api', () => {
   afterEach(() => {
     vi.resetModules();
@@ -63,7 +55,7 @@ describe('mark-all-series-uncompleted-api', () => {
   it('clears matching tracking watched progress and keeps tracker metadata', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     insertItem('tt-shared', ['#series'], 'library', 'owner');
     const trackerItemId = insertItem('tt-shared', ['#series', '#completed'], 'tracking', 'user');
     insertItem('tt-own-only', ['#series'], 'library', 'user');
@@ -194,7 +186,7 @@ describe('mark-all-series-uncompleted-api', () => {
   it('does not clear unrelated tracker-only progress when a shared library is selected', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     insertItem('tt-shared', ['#series'], 'library', 'owner');
     const trackerOnlyItemId = insertItem('tt-tracker-only', ['#series', '#completed'], 'tracking', 'user');
     getDatabase()
@@ -238,7 +230,7 @@ describe('mark-all-series-uncompleted-api', () => {
   it('returns 403 when the user cannot read the shared library', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', false);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: false });
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };

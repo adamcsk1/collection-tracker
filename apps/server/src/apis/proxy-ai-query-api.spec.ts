@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
+import { insertShare } from '../../test/mocks/share-mock';
 
 vi.mock('../core/ollama/ollama', () => ({
   createOllamaClient: vi.fn(),
@@ -186,6 +187,35 @@ describe('proxy-ai-query-api', () => {
 
       await handlerPromise();
       expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0133093'] });
+    });
+
+    it('loads shared AI candidates only from exact readable scopes', async () => {
+      const db = getDatabase();
+      db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('owner', 'token');
+      setupCollection([
+        { imdbId: 'tt-movie', title: 'Readable Shared Movie', plot: '', usernameHash: 'owner', contentType: 'movie' },
+        { imdbId: 'tt-series', title: 'Private Shared Series', plot: '', usernameHash: 'owner', contentType: 'series' },
+      ]);
+      insertShare(db, 'owner', 'user', [
+        {
+          listType: 'library',
+          contentType: 'movie',
+          canRead: true,
+          canCreate: false,
+          canUpdate: false,
+          canDelete: false,
+        },
+      ]);
+      const generate = await mockGenerate('{"matchedIds":[]}');
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('shared media'), response);
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+      await handlerPromise();
+
+      expect(generate.mock.calls[0][0].prompt).toContain('Readable Shared Movie');
+      expect(generate.mock.calls[0][0].prompt).not.toContain('Private Shared Series');
     });
 
     it('includes structured metadata in the AI prompt', async () => {

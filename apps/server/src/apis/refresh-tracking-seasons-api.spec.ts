@@ -2,6 +2,8 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { insertTrackingItem } from '../../test/mocks/tracking-item-mock';
 import { getDatabase } from '../core/database/database';
+import { getUserShareCode } from '../core/database/repositories/user-repository';
+import { insertShare } from '../../test/mocks/share-mock';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 describe('refresh-tracking-seasons-api', () => {
@@ -69,6 +71,81 @@ describe('refresh-tracking-seasons-api', () => {
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({ seasons: [{ season: 1, episodes: 1, titles: ['Pilot'] }] })
     );
+  });
+
+  it('refreshes only shared owner metadata with exact update permission', async () => {
+    const viewerItemId = insertTrackingItem('user');
+    const ownerItemId = insertTrackingItem('owner');
+    getDatabase()
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?), (?, ?, ?)')
+      .run(viewerItemId, 1, 9, ownerItemId, 1, 2);
+    insertShare(getDatabase(), 'owner', 'user', [
+      {
+        listType: 'tracking',
+        contentType: 'series',
+        canRead: true,
+        canCreate: false,
+        canUpdate: true,
+        canDelete: false,
+      },
+    ]);
+    process.env.OMDB_API_KEY = 'key';
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ totalSeasons: '1' }) })
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ Episodes: [{ Title: 'Pilot' }] }) })
+    );
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      query: { ownerShareCode: getUserShareCode('owner') },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-tracking-seasons-api');
+    register(app);
+
+    await handlerPromise();
+    expect(
+      getDatabase().prepare('SELECT season, episodes FROM series_tracking_seasons WHERE item_id = ?').all(ownerItemId)
+    ).toEqual([{ season: 1, episodes: 1 }]);
+    expect(
+      getDatabase().prepare('SELECT season, episodes FROM series_tracking_seasons WHERE item_id = ?').all(viewerItemId)
+    ).toEqual([{ season: 1, episodes: 9 }]);
+  });
+
+  it('rejects shared owner refresh without exact update permission', async () => {
+    insertTrackingItem('user');
+    insertTrackingItem('owner');
+    insertShare(getDatabase(), 'owner', 'user', [
+      {
+        listType: 'tracking',
+        contentType: 'series',
+        canRead: true,
+        canCreate: false,
+        canUpdate: false,
+        canDelete: false,
+      },
+    ]);
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-series' },
+      query: { ownerShareCode: getUserShareCode('owner') },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-tracking-seasons-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(403);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('returns 400 when external provider is unsupported', async () => {

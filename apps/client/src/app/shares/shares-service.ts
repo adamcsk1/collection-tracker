@@ -2,6 +2,7 @@ import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ApiService } from '@services/api/api-service';
+import { UserShareGrantApiModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY, tap } from 'rxjs';
 import { sharesStateToken } from './shares-store';
@@ -33,12 +34,9 @@ export class SharesService {
       .subscribe();
   }
 
-  public saveShare(
-    sharedWithUserShareCode: string,
-    permissions: { canRead: boolean; canCreate: boolean; canUpdate: boolean; canDelete: boolean }
-  ): void {
+  public saveShare(sharedWithUserShareCode: string, grants: UserShareGrantApiModel[]): void {
     this.api
-      .saveShare({ sharedWithUserShareCode, ...permissions })
+      .saveShare({ sharedWithUserShareCode, grants })
       .pipe(
         tap(() => {
           this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.ShareSaved'));

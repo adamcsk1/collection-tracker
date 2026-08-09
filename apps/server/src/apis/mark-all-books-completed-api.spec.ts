@@ -3,6 +3,7 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { insertLibraryShare } from '../../test/mocks/share-mock';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -37,15 +38,6 @@ const insertBookItem = (bookId: string, tags: string[] = ['#book'], listType = '
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
-};
-
-const insertShare = (ownerHash: string, sharedWithHash: string, canRead: boolean) => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, sharedWithHash, canRead ? 1 : 0, 0, 0, 0);
 };
 
 describe('mark-all-books-completed-api', () => {
@@ -108,10 +100,10 @@ describe('mark-all-books-completed-api', () => {
     expect(response.send).toHaveBeenCalledWith({ changedCount: 0 });
   });
 
-  it('rejects shared-library ownerShareCode because books lists are private', async () => {
+  it('rejects shared ownerShareCode without books read grant', async () => {
     insertUser('user');
     insertUser('owner');
-    insertShare('owner', 'user', true);
+    insertLibraryShare(getDatabase(), 'owner', 'user', { canRead: true });
     insertBookItem('9780134685991', ['#book'], 'books', 'user');
     insertBookItem('9780201633610', ['#book'], 'books', 'owner');
 
