@@ -108,7 +108,7 @@ describe('mark-all-books-completed-api', () => {
     expect(response.send).toHaveBeenCalledWith({ changedCount: 0 });
   });
 
-  it('copies readable shared library books to the current user tracking', async () => {
+  it('rejects shared-library ownerShareCode because books lists are private', async () => {
     insertUser('user');
     insertUser('owner');
     insertShare('owner', 'user', true);
@@ -123,45 +123,12 @@ describe('mark-all-books-completed-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ changedCount: 1 });
-
-    const rows = getDatabase()
-      .prepare(
-        'SELECT username_hash, external_item_id, list_type FROM collection_items WHERE list_type = ? ORDER BY username_hash'
-      )
-      .all('tracking');
-    expect(rows).toEqual([{ username_hash: 'user', external_item_id: '9780201633610', list_type: 'tracking' }]);
-  });
-
-  it('returns 404 when the shared library owner is missing', async () => {
-    insertUser('user');
-
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { ownerShareCode: 'missing-owner-code' } };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./mark-all-books-completed-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(404);
-    expect(response.send).toHaveBeenCalledWith();
-  });
-
-  it('returns 403 when the user cannot read the shared library', async () => {
-    insertUser('user');
-    insertUser('owner');
-    insertShare('owner', 'user', false);
-
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./mark-all-books-completed-api');
-    register(app);
-
-    await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(403);
     expect(response.send).toHaveBeenCalledWith();
+
+    const rows = getDatabase()
+      .prepare('SELECT username_hash, external_item_id, list_type FROM collection_items WHERE list_type = ?')
+      .all('tracking');
+    expect(rows).toEqual([]);
   });
 });

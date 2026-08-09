@@ -143,7 +143,7 @@ describe('SettingsManageTrackerData component', () => {
     expect(manageTrackerData.removeAllTrackedBookData).not.toHaveBeenCalled();
   });
 
-  it('passes selected shared library to all completion status actions', () => {
+  it('passes selected shared library to movie and series completion actions only', () => {
     component['onLibraryChange']('owner-code');
 
     component['onMarkAllMoviesAsCompleted']();
@@ -157,8 +157,8 @@ describe('SettingsManageTrackerData component', () => {
     expect(manageTrackerData.markAllMoviesAsUncompleted).toHaveBeenCalledWith('owner-code');
     expect(manageTrackerData.markAllSeriesAsCompleted).toHaveBeenCalledWith('owner-code');
     expect(manageTrackerData.markAllSeriesAsUncompleted).toHaveBeenCalledWith('owner-code');
-    expect(manageTrackerData.markAllBooksAsCompleted).toHaveBeenCalledWith('owner-code');
-    expect(manageTrackerData.markAllBooksAsUncompleted).toHaveBeenCalledWith('owner-code');
+    expect(manageTrackerData.markAllBooksAsCompleted).not.toHaveBeenCalled();
+    expect(manageTrackerData.markAllBooksAsUncompleted).not.toHaveBeenCalled();
   });
 
   it('shows the library selector for readable shared libraries', () => {

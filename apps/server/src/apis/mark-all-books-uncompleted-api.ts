@@ -3,8 +3,6 @@ import { MarkAllUncompletedApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { markAllBooksAsUncompleted } from '../core/database/repositories/tracking-book-repository';
-import { canAccessLibrary } from '../core/database/repositories/share-repository';
-import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
 import { withErrorHandler } from '../core/utils/api-error-handler';
@@ -16,22 +14,12 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
       const query = (request.query ?? {}) as Record<string, unknown>;
-      const ownerHash =
-        typeof query.ownerShareCode === 'string'
-          ? findUserByShareCode(db, query.ownerShareCode)?.username_hash
-          : request.usernameHash;
-      if (!ownerHash) {
-        return response.code(404).send();
-      }
-
-      if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'read')) {
+      if (typeof query.ownerShareCode === 'string') {
         return response.code(403).send();
       }
 
-      await debugLog(
-        `POST /items/mark-all-books-uncompleted source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
-      );
-      const changedCount = markAllBooksAsUncompleted(db, request.usernameHash, ownerHash);
+      await debugLog(`POST /items/mark-all-books-uncompleted requester=${request.usernameHash}`);
+      const changedCount = markAllBooksAsUncompleted(db, request.usernameHash);
       await debugLog(`POST /items/mark-all-books-uncompleted finished: changed=${changedCount}`);
 
       const result: MarkAllUncompletedApiResponseModel = { changedCount };

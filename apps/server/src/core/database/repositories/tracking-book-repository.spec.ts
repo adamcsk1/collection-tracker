@@ -77,7 +77,7 @@ describe('tracking-book-repository', () => {
     insertBookItem('user', '9780132350884', ['#book']);
     const db = getDatabase();
 
-    const changedCount = markAllBooksAsCompleted(db, 'user', 'user');
+    const changedCount = markAllBooksAsCompleted(db, 'user');
 
     expect(changedCount).toBe(1);
     const tracker = db
@@ -100,7 +100,7 @@ describe('tracking-book-repository', () => {
     insertBookItem('user', '9780132350884', ['#book'], 'tracking');
     const db = getDatabase();
 
-    const changedCount = markAllBooksAsCompleted(db, 'user', 'user');
+    const changedCount = markAllBooksAsCompleted(db, 'user');
 
     expect(changedCount).toBe(0);
   });
@@ -115,7 +115,7 @@ describe('tracking-book-repository', () => {
     });
     const db = getDatabase();
 
-    const changedCount = markAllBooksAsCompleted(db, 'user', 'user');
+    const changedCount = markAllBooksAsCompleted(db, 'user');
 
     expect(changedCount).toBe(1);
     const state = db
@@ -138,7 +138,7 @@ describe('tracking-book-repository', () => {
     expect(count.count).toBe(1);
   });
 
-  it('markAllBooksAsCompleted copies readable shared library books to requester tracking', () => {
+  it('markAllBooksAsCompleted only uses the requester books list', () => {
     insertUser('user');
     insertUser('owner');
     insertShare('owner', 'user', true);
@@ -146,7 +146,7 @@ describe('tracking-book-repository', () => {
     insertBookItem('owner', '9780201633610', ['#book'], 'books');
     const db = getDatabase();
 
-    const changedCount = markAllBooksAsCompleted(db, 'user', 'owner');
+    const changedCount = markAllBooksAsCompleted(db, 'user');
 
     expect(changedCount).toBe(1);
     const rows = db
@@ -154,7 +154,7 @@ describe('tracking-book-repository', () => {
         'SELECT username_hash, external_item_id, list_type FROM collection_items WHERE list_type = ? ORDER BY username_hash'
       )
       .all('tracking');
-    expect(rows).toEqual([{ username_hash: 'user', external_item_id: '9780201633610', list_type: 'tracking' }]);
+    expect(rows).toEqual([{ username_hash: 'user', external_item_id: '9780134685991', list_type: 'tracking' }]);
   });
 
   it('markAllBooksAsUncompleted clears completed timestamp and keeps tracking row and progress', () => {
@@ -166,7 +166,7 @@ describe('tracking-book-repository', () => {
     });
     const db = getDatabase();
 
-    const changedCount = markAllBooksAsUncompleted(db, 'user', 'user');
+    const changedCount = markAllBooksAsUncompleted(db, 'user');
 
     expect(changedCount).toBe(1);
     const state = db
@@ -187,7 +187,7 @@ describe('tracking-book-repository', () => {
     expect(tracker).toBeDefined();
   });
 
-  it('markAllBooksAsUncompleted clears only matching shared-library source books', () => {
+  it('markAllBooksAsUncompleted only clears tracking copies of own books list items', () => {
     insertUser('user');
     insertUser('owner');
     insertShare('owner', 'user', true);
@@ -197,17 +197,17 @@ describe('tracking-book-repository', () => {
     const ownTrackerId = insertBookItem('user', '9780134685991', ['#book'], 'tracking');
     const db = getDatabase();
 
-    const changedCount = markAllBooksAsUncompleted(db, 'user', 'owner');
+    const changedCount = markAllBooksAsUncompleted(db, 'user');
 
     expect(changedCount).toBe(1);
     const sharedState = db
       .prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?')
       .get(sharedTrackerId) as { completed_at: string | null };
-    expect(sharedState.completed_at).toBeNull();
+    expect(sharedState.completed_at).not.toBeNull();
     const ownState = db
       .prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?')
       .get(ownTrackerId) as { completed_at: string | null };
-    expect(ownState.completed_at).not.toBeNull();
+    expect(ownState.completed_at).toBeNull();
   });
 
   it('copyBookToCompletedByExternalId copies a books-list item into tracking as completed', () => {

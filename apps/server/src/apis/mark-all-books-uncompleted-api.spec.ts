@@ -106,7 +106,7 @@ describe('mark-all-books-uncompleted-api', () => {
     expect(response.send).toHaveBeenCalledWith({ changedCount: 0 });
   });
 
-  it('clears completed timestamp for matching books from a readable shared library', async () => {
+  it('rejects shared-library ownerShareCode because books lists are private', async () => {
     insertUser('user');
     insertUser('owner');
     insertShare('owner', 'user', true);
@@ -123,48 +123,17 @@ describe('mark-all-books-uncompleted-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ changedCount: 1 });
+    expect(response.code).toHaveBeenCalledWith(403);
+    expect(response.send).toHaveBeenCalledWith();
 
     const sharedState = getDatabase()
       .prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?')
       .get(sharedTrackerId) as { completed_at: string | null };
-    expect(sharedState.completed_at).toBeNull();
+    expect(sharedState.completed_at).not.toBeNull();
 
     const ownState = getDatabase()
       .prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?')
       .get(ownTrackerId) as { completed_at: string | null };
     expect(ownState.completed_at).not.toBeNull();
-  });
-
-  it('returns 404 when the shared library owner is missing', async () => {
-    insertUser('user');
-
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { ownerShareCode: 'missing-owner-code' } };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./mark-all-books-uncompleted-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(404);
-    expect(response.send).toHaveBeenCalledWith();
-  });
-
-  it('returns 403 when the user cannot read the shared library', async () => {
-    insertUser('user');
-    insertUser('owner');
-    insertShare('owner', 'user', false);
-
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./mark-all-books-uncompleted-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.code).toHaveBeenCalledWith(403);
-    expect(response.send).toHaveBeenCalledWith();
   });
 });

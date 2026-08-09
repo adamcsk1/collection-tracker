@@ -77,11 +77,13 @@ export class SettingsManageTrackerData implements OnInit {
   }
 
   protected onMarkAllBooksAsCompleted(): void {
-    this.manageTrackerData.markAllBooksAsCompleted(this.selectedOwnerShareCode() || undefined);
+    if (this.selectedOwnerShareCode()) return;
+    this.manageTrackerData.markAllBooksAsCompleted();
   }
 
   protected onMarkAllBooksAsUncompleted(): void {
-    this.manageTrackerData.markAllBooksAsUncompleted(this.selectedOwnerShareCode() || undefined);
+    if (this.selectedOwnerShareCode()) return;
+    this.manageTrackerData.markAllBooksAsUncompleted();
   }
 
   protected onRemoveAllTrackedMovieData(): void {

@@ -104,12 +104,12 @@ export class ApiService extends BaseApiService {
     return this.request('POST', `/items/mark-all-series-uncompleted${this.buildQuery({ ownerShareCode })}`);
   }
 
-  public markAllBooksAsCompleted(ownerShareCode?: string): Observable<MarkAllCompletedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-books-completed${this.buildQuery({ ownerShareCode })}`);
+  public markAllBooksAsCompleted(): Observable<MarkAllCompletedApiResponseModel> {
+    return this.request('POST', '/items/mark-all-books-completed');
   }
 
-  public markAllBooksAsUncompleted(ownerShareCode?: string): Observable<MarkAllUncompletedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-books-uncompleted${this.buildQuery({ ownerShareCode })}`);
+  public markAllBooksAsUncompleted(): Observable<MarkAllUncompletedApiResponseModel> {
+    return this.request('POST', '/items/mark-all-books-uncompleted');
   }
 
   public addCompletedItemByExternalId(

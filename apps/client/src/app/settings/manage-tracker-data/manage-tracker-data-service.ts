@@ -160,7 +160,7 @@ export class ManageTrackerDataService {
       });
   }
 
-  public markAllBooksAsCompleted(ownerShareCode?: string): void {
+  public markAllBooksAsCompleted(): void {
     this.confirm
       .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllBooksAsCompleted'))
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -173,7 +173,7 @@ export class ManageTrackerDataService {
         );
 
         this.api
-          .markAllBooksAsCompleted(ownerShareCode)
+          .markAllBooksAsCompleted()
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {
@@ -193,7 +193,7 @@ export class ManageTrackerDataService {
       });
   }
 
-  public markAllBooksAsUncompleted(ownerShareCode?: string): void {
+  public markAllBooksAsUncompleted(): void {
     this.confirm
       .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllBooksAsUncompleted'))
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -206,7 +206,7 @@ export class ManageTrackerDataService {
         );
 
         this.api
-          .markAllBooksAsUncompleted(ownerShareCode)
+          .markAllBooksAsUncompleted()
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {

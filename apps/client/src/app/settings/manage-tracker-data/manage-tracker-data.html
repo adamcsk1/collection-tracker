@@ -18,7 +18,7 @@
     <button
       data-test-id="settings-mark-all-books-completed"
       type="button"
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !!selectedOwnerShareCode()"
       (click)="onMarkAllBooksAsCompleted()"
     >
       <i class="material-icons" [title]="translations.markAllBooksAsCompleted()"> check_circle </i>
@@ -28,7 +28,7 @@
       data-test-id="settings-mark-all-books-uncompleted"
       type="button"
       class="button-danger"
-      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      [disabled]="apiLoadNetworkStatus() === 'pending' || !!selectedOwnerShareCode()"
       (click)="onMarkAllBooksAsUncompleted()"
     >
       <i class="material-icons" [title]="translations.markAllBooksAsUncompleted()"> unpublished </i>
