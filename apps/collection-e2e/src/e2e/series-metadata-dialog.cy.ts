@@ -25,7 +25,7 @@ describe('Series metadata dialog', () => {
   });
 
   it('saves manual season metadata', () => {
-    cy.intercept('PUT', '/api/v1/tracking/**/seasons').as('saveSeriesMetadata');
+    cy.intercept('PUT', '/api/v1/tracking/*/*/seasons*').as('saveSeriesMetadata');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().contains(seriesTitle).click();
@@ -75,7 +75,7 @@ describe('Series metadata dialog', () => {
         { season: 2, episodes: 2 },
       ],
     });
-    cy.intercept('DELETE', '/api/v1/tracking/**/seasons').as('deleteSeriesMetadata');
+    cy.intercept('DELETE', '/api/v1/tracking/*/*/seasons*').as('deleteSeriesMetadata');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().contains(seriesTitle).click();
@@ -103,7 +103,7 @@ describe('Series metadata dialog', () => {
   });
 
   it('saves and restores episode titles in the metadata dialog', () => {
-    cy.intercept('PUT', '/api/v1/tracking/**/seasons').as('saveSeriesMetadata');
+    cy.intercept('PUT', '/api/v1/tracking/*/*/seasons*').as('saveSeriesMetadata');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();

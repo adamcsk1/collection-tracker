@@ -54,7 +54,7 @@ describe('Completed episodes dialog', () => {
     cy.request('PUT', `/api/v1/tracking/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.intercept('PUT', '/api/v1/tracking/**/completed-episodes').as('saveCompletedEpisodes');
+    cy.intercept('PUT', '/api/v1/tracking/*/*/completed-episodes*').as('saveCompletedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
@@ -74,7 +74,7 @@ describe('Completed episodes dialog', () => {
     cy.request('PUT', `/api/v1/tracking/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.intercept('PUT', '/api/v1/tracking/**/completed-episodes').as('saveCompletedEpisodes');
+    cy.intercept('PUT', '/api/v1/tracking/*/*/completed-episodes*').as('saveCompletedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
@@ -103,7 +103,7 @@ describe('Completed episodes dialog', () => {
         { season: 1, episode: 3 },
       ],
     });
-    cy.intercept('PUT', '/api/v1/tracking/**/completed-episodes').as('saveCompletedEpisodes');
+    cy.intercept('PUT', '/api/v1/tracking/*/*/completed-episodes*').as('saveCompletedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
@@ -122,7 +122,7 @@ describe('Completed episodes dialog', () => {
     cy.request('PUT', `/api/v1/tracking/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.intercept('PUT', '/api/v1/tracking/**/completed-episodes').as('saveCompletedEpisodes');
+    cy.intercept('PUT', '/api/v1/tracking/*/*/completed-episodes*').as('saveCompletedEpisodes');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();
@@ -143,7 +143,7 @@ describe('Completed episodes dialog', () => {
     cy.request('PUT', `/api/v1/tracking/omdb/${imdbId}/seasons`, {
       seasons: [{ season: 1, episodes: 3 }],
     });
-    cy.intercept('PUT', '/api/v1/tracking/**/completed-episodes', (request) => {
+    cy.intercept('PUT', '/api/v1/tracking/*/*/completed-episodes*', (request) => {
       request.continue((response) => {
         response.setDelay(250);
       });
@@ -180,8 +180,7 @@ describe('Completed episodes dialog', () => {
     cy.request('PUT', `/api/v1/tracking/omdb/${incompleteImdbId}/completed-episodes`, {
       completedEpisodes: [{ season: 1, episode: 1 }],
     });
-    cy.intercept('PUT', '/api/v1/tracking/**/mark-all-completed').as('markAllCompleted');
-    cy.intercept('PUT', '/api/v1/tracking/**/completed-episodes').as('markAllUncompleted');
+    cy.intercept('PUT', '/api/v1/tracking/*/*/completed-episodes*').as('changeCompletedEpisodes');
 
     cy.reload();
     waitForTrackingItem(imdbId);
@@ -190,7 +189,7 @@ describe('Completed episodes dialog', () => {
     CollectionPage.getItemDialogManageCompletedEpisodesButton().click();
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getCompletedEpisodesMarkAllCompletedButton().click();
-    cy.wait('@markAllCompleted').its('response.statusCode').should('eq', 200);
+    cy.wait('@changeCompletedEpisodes').its('response.statusCode').should('eq', 200);
     CollectionPage.closeDialogByOverlay();
     CollectionPage.getCompletedEpisodesDialogHost().should('not.exist');
     CollectionPage.getItemDialogEpisodeProgressChip().should('contain.text', 'S01E02');
@@ -214,7 +213,7 @@ describe('Completed episodes dialog', () => {
     CollectionPage.expectItemDialogActionsVisible();
     CollectionPage.getCompletedEpisodesMarkAllCompletedButton().should('not.exist');
     CollectionPage.getCompletedEpisodesMarkAllUncompletedButton().click();
-    cy.wait('@markAllUncompleted').then((interception) => {
+    cy.wait('@changeCompletedEpisodes').then((interception) => {
       expect(interception.request.body).to.deep.equal({ completedEpisodes: [] });
       expect(interception.response?.statusCode).to.eq(200);
     });

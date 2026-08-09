@@ -829,7 +829,7 @@ describe('Collection — tracking series', () => {
   });
 
   it('adds a series and persists watched-up-to progress', () => {
-    cy.intercept('PUT', '/api/v1/tracking/**/completed-episodes').as('saveCompletedEpisodes');
+    cy.intercept('PUT', '/api/v1/tracking/*/*/completed-episodes*').as('saveCompletedEpisodes');
     cy.on('window:confirm', () => true);
 
     CommonPage.openMenu();
