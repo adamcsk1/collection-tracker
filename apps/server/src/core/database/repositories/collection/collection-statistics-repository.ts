@@ -53,7 +53,7 @@ export const getCollectionStatistics = (
         .get(internalCollectionUsernameHash ?? usernameHashes[0], listType) as { count: number }
     ).count;
 
-  const watchlistCount = countListType('watchlist');
+  const upNextCount = countListType('up-next');
   const wishlistCount = countListType('wishlist');
   const booksCount = countListType('books');
 
@@ -262,7 +262,7 @@ export const getCollectionStatistics = (
     seriesCount: countWhere(seriesContentCondition),
     booksCount,
     favoriteCount: countWhere(favoriteCondition),
-    watchlistCount,
+    upNextCount,
     wishlistCount,
     watchedMovieCount,
     watchedSeriesCount,

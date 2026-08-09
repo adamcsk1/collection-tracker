@@ -29,7 +29,7 @@ const insertItem = (hash = 'abc123', usernameHash = 'user') => {
   ).run(usernameHash, 'omdb', 'tt-delete', 'omdb:tt-delete', '', '', '', '', '', hash);
 };
 
-const insertTypedItem = (listType: 'watchlist' | 'wishlist' | 'tracking', hash = 'abc123', usernameHash = 'user') => {
+const insertTypedItem = (listType: 'up-next' | 'wishlist' | 'tracking', hash = 'abc123', usernameHash = 'user') => {
   const db = getDatabase();
   insertUser(usernameHash);
   const result = db
@@ -131,10 +131,10 @@ describe('delete-api', () => {
   });
 
   it('deletes a watch later item when listType is provided', async () => {
-    insertTypedItem('watchlist');
+    insertTypedItem('up-next');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
-      query: { hash: 'abc123', listType: 'watchlist' },
+      query: { hash: 'abc123', listType: 'up-next' },
       usernameHash: 'user',
     };
     const response = mockResponse();
@@ -263,13 +263,13 @@ describe('delete-api', () => {
   });
 
   it('returns 403 when deleting a shared watch later item', async () => {
-    insertTypedItem('watchlist', 'abc123', 'owner');
+    insertTypedItem('up-next', 'abc123', 'owner');
     insertUser('user');
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
-      query: { hash: 'abc123', listType: 'watchlist', ownerShareCode: getUserShareCode('owner') },
+      query: { hash: 'abc123', listType: 'up-next', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
     const response = mockResponse();
@@ -283,13 +283,13 @@ describe('delete-api', () => {
   });
 
   it('returns 403 when deleting a shared non-library item by listType', async () => {
-    insertTypedItem('watchlist', 'abc123', 'owner');
+    insertTypedItem('up-next', 'abc123', 'owner');
     insertUser('user');
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
-      query: { hash: 'abc123', listType: 'watchlist', ownerShareCode: getUserShareCode('owner') },
+      query: { hash: 'abc123', listType: 'up-next', ownerShareCode: getUserShareCode('owner') },
       usernameHash: 'user',
     };
     const response = mockResponse();

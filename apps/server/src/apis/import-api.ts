@@ -232,10 +232,18 @@ const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiMod
   );
 };
 
+const SUPPORTED_IMPORT_VERSIONS = new Set([9, EXPORT_VERSION]);
+
 const isUserImport = (value: unknown): value is ImportedUserRequestModel => {
   if (!isPlainObject(value)) return false;
   const importVersion = value['version'];
-  if (value['type'] !== EXPORT_TYPE || importVersion !== EXPORT_VERSION) return false;
+  if (
+    value['type'] !== EXPORT_TYPE ||
+    typeof importVersion !== 'number' ||
+    !SUPPORTED_IMPORT_VERSIONS.has(importVersion)
+  ) {
+    return false;
+  }
   if (!isUserSettings(value['userSettings'])) return false;
   if (!Array.isArray(value['collectionItems']) || !value['collectionItems'].every(isCollectionItem)) {
     return false;

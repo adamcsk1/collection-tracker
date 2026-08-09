@@ -186,16 +186,16 @@ describe('tracking-movie-repository', () => {
 
   it('deletes source item when deleteSource is true', () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#movie'], 'watchlist');
+    insertItem('user', 'tt-1', ['#movie'], 'up-next');
     const db = getDatabase();
 
-    copyMovieToCompleted(db, 'user', 'user', 'tt-1', 'watchlist', true);
+    copyMovieToCompleted(db, 'user', 'user', 'tt-1', 'up-next', true);
 
     const source = db
       .prepare(
         'SELECT 1 FROM collection_items WHERE username_hash = ? AND external_provider = ? AND external_item_id = ? AND list_type = ?'
       )
-      .get('user', 'omdb', 'tt-1', 'watchlist');
+      .get('user', 'omdb', 'tt-1', 'up-next');
     expect(source).toBeUndefined();
   });
 

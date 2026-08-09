@@ -25,7 +25,7 @@ export const register = (app: FastifyInstance): void => {
     const query = (request.query ?? {}) as Record<string, unknown>;
     if (!isExternalItemIdentitySourceName(externalIdentitySource)) return response.code(400).send();
     const sourceListType = parseListType(query.sourceListType) ?? 'library';
-    if (sourceListType !== 'watchlist' && sourceListType !== 'library' && sourceListType !== 'books') {
+    if (sourceListType !== 'up-next' && sourceListType !== 'library' && sourceListType !== 'books') {
       return response.code(400).send();
     }
 
@@ -41,8 +41,8 @@ export const register = (app: FastifyInstance): void => {
     }
     if (sourceListType === 'books' && ownerHash !== request.usernameHash) return response.code(403).send();
 
-    const moveFromWatchlist = sourceListType === 'watchlist';
-    if (moveFromWatchlist && ownerHash !== request.usernameHash) return response.code(403).send();
+    const moveFromUpNext = sourceListType === 'up-next';
+    if (moveFromUpNext && ownerHash !== request.usernameHash) return response.code(403).send();
 
     const canonicalItemId = resolveCanonicalItemId(db, ownerHash, externalIdentitySource, externalIdentityId);
     const sourceRow =
@@ -60,7 +60,7 @@ export const register = (app: FastifyInstance): void => {
             externalIdentitySource,
             externalIdentityId,
             sourceListType,
-            moveFromWatchlist
+            moveFromUpNext
           )
         : sourceRow.content_type === 'book' && markCompleted
           ? copyBookToCompletedByExternalId(
@@ -70,7 +70,7 @@ export const register = (app: FastifyInstance): void => {
               externalIdentitySource,
               externalIdentityId,
               sourceListType,
-              moveFromWatchlist
+              moveFromUpNext
             )
           : copySeriesToTrackingByExternalId(
               db,
@@ -79,7 +79,7 @@ export const register = (app: FastifyInstance): void => {
               externalIdentitySource,
               externalIdentityId,
               sourceListType,
-              moveFromWatchlist
+              moveFromUpNext
             );
     if (!item) return response.code(404).send();
 

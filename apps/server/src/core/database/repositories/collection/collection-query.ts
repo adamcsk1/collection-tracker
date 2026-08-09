@@ -14,7 +14,7 @@ export const normalizeLimit = (limit: number): number => Math.min(Math.max(Math.
 export const normalizeOffset = (offset: number): number => Math.max(Math.floor(offset) || 0, 0);
 
 export const normalizeListType = (listType: CollectionListTypeModel | undefined): CollectionListTypeModel => {
-  if (listType === 'watchlist' || listType === 'wishlist' || listType === 'tracking' || listType === 'books')
+  if (listType === 'up-next' || listType === 'wishlist' || listType === 'tracking' || listType === 'books')
     return listType;
   return 'library';
 };

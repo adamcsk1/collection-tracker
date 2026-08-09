@@ -238,7 +238,7 @@ describe('refresh-external-ratings-api', () => {
     insertShare('owner', 'user', true);
     insertItem('tt-own', 'own-hash', 'user');
     insertItem('tt-shared', 'shared-hash', 'owner');
-    insertItem('tt-shared-watchlist', 'watchlist-hash', 'owner', '7.0', '', '', 'watchlist');
+    insertItem('tt-shared-watchlist', 'watchlist-hash', 'owner', '7.0', '', '', 'up-next');
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
@@ -273,7 +273,7 @@ describe('refresh-external-ratings-api', () => {
     ).toEqual([
       { username_hash: 'owner', list_type: 'library', source: 'imdb', value: '9.0' },
       { username_hash: 'owner', list_type: 'library', source: 'rotten-tomatoes', value: '99%' },
-      { username_hash: 'owner', list_type: 'watchlist', source: 'imdb', value: '7.0' },
+      { username_hash: 'owner', list_type: 'up-next', source: 'imdb', value: '7.0' },
       { username_hash: 'user', list_type: 'library', source: 'imdb', value: '7.0' },
     ]);
   });
@@ -312,7 +312,7 @@ describe('refresh-external-ratings-api', () => {
 
   it('refreshes ratings across all list types for a personal library', async () => {
     insertUser();
-    insertItem('tt-watchlist', 'hash', 'user', '7.0', '', '', 'watchlist');
+    insertItem('tt-watchlist', 'hash', 'user', '7.0', '', '', 'up-next');
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({

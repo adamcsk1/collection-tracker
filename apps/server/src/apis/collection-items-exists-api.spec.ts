@@ -72,7 +72,7 @@ const insertCanonicalItem = (
     .run(usernameHash, canonicalItemId, provider, externalItemId, 'alias');
 };
 
-const insertTypedItem = (usernameHash: string, imdbId: string, listType: 'watchlist' | 'wishlist') => {
+const insertTypedItem = (usernameHash: string, imdbId: string, listType: 'up-next' | 'wishlist') => {
   getDatabase()
     .prepare(
       `INSERT INTO collection_items
@@ -191,9 +191,9 @@ describe('collection-items-exists-api', () => {
 
   it('checks watch later existence using listType', async () => {
     insertUser('user');
-    insertTypedItem('user', 'tt001', 'watchlist');
+    insertTypedItem('user', 'tt001', 'up-next');
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { imdbId: 'tt001', listType: 'watchlist' } };
+    const request: any = { usernameHash: 'user', query: { imdbId: 'tt001', listType: 'up-next' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./collection-items-exists-api');
@@ -240,13 +240,13 @@ describe('collection-items-exists-api', () => {
   it('returns false when a shared watch later item exists', async () => {
     insertUser('user');
     insertUser('owner');
-    insertTypedItem('owner', 'tt-watchlist', 'watchlist');
+    insertTypedItem('owner', 'tt-watchlist', 'up-next');
     insertShare('owner', 'user');
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
-      query: { imdbId: 'tt-watchlist', listType: 'watchlist', ownerShareCode: getUserShareCode('owner') },
+      query: { imdbId: 'tt-watchlist', listType: 'up-next', ownerShareCode: getUserShareCode('owner') },
     };
     const { app, handlerPromise } = buildApp(request, response);
 

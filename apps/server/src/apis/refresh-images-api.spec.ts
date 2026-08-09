@@ -233,7 +233,7 @@ describe('refresh-images-api', () => {
       'https://images.example/owner-watchlist-broken.jpg',
       'watchlist-hash',
       'owner',
-      'watchlist'
+      'up-next'
     );
     insertBookItem('9780140328721', 'https://images.example/owner-book-broken.jpg', 'book-hash', 'owner');
 
@@ -291,7 +291,7 @@ describe('refresh-images-api', () => {
         username_hash: 'owner',
         external_item_id: 'tt-shared-watchlist',
         image: 'https://images.example/owner-watchlist-broken.jpg',
-        list_type: 'watchlist',
+        list_type: 'up-next',
       },
     ]);
   });
@@ -319,7 +319,7 @@ describe('refresh-images-api', () => {
   it('refreshes books and items across all lists for a personal library', async () => {
     insertUser();
     insertBookItem('9780140328721', 'https://images.example/broken-book.jpg');
-    insertItem('tt-watchlist', 'https://images.example/broken-watchlist.jpg', 'watchlist-hash', 'user', 'watchlist');
+    insertItem('tt-watchlist', 'https://images.example/broken-watchlist.jpg', 'watchlist-hash', 'user', 'up-next');
 
     fetchAndCacheImageResult = false;
     vi.stubGlobal(
@@ -372,7 +372,7 @@ describe('refresh-images-api', () => {
       {
         external_item_id: 'tt-watchlist',
         image: 'https://images.example/watchlist-new.jpg',
-        list_type: 'watchlist',
+        list_type: 'up-next',
       },
     ]);
   });

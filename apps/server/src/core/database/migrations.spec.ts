@@ -1922,7 +1922,7 @@ describe('runMigrations', () => {
           VALUES ('user1', '#movie', '#ff0000', 1, 0, 1, 10);
         INSERT INTO user_shares (owner_username_hash, shared_with_username_hash, can_read, can_create, can_update, can_delete)
           VALUES ('user1', 'user2', 1, 0, 0, 0);
-        INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles)
+        INSERT INTO series_tracking_seasons (item_id, season, episodes, episode_titles)
           VALUES (1, 1, 3, '["E1","E2","E3"]');
         INSERT INTO series_completed_episodes (item_id, season, episode)
           VALUES (1, 1, 1), (1, 1, 2);
@@ -1947,7 +1947,7 @@ describe('runMigrations', () => {
           'collection_items',
           'refresh_tokens',
           'schema_migrations',
-          'series_tracker_seasons',
+          'series_tracking_seasons',
           'series_completed_episodes',
           'tag_configs',
           'user_settings',
@@ -1982,7 +1982,7 @@ describe('runMigrations', () => {
       ).toThrow();
 
       expect(() =>
-        db.prepare(`INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (1, 51, 10)`).run()
+        db.prepare(`INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (1, 51, 10)`).run()
       ).toThrow();
 
       expect(() =>
@@ -2006,7 +2006,7 @@ describe('runMigrations', () => {
           'idx_collection_items_username',
           'idx_collection_item_tracker_state_completed_at',
           'idx_refresh_tokens_username',
-          'idx_series_tracker_seasons_item',
+          'idx_series_tracking_seasons_item',
           'idx_series_completed_episodes_item',
           'idx_tag_configs_username',
           'idx_user_shares_owner',
@@ -2394,6 +2394,114 @@ describe('runMigrations', () => {
           )
           .get()
       ).toEqual({ name: 'idx_series_completed_episodes_item' });
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+  });
+
+  describe('032_fix_tracking_pref_default_and_rename_seasons', () => {
+    it('defaults missing tracking pref to true and renames seasons table', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState(
+        '032_fix_tracking_pref_default_and_rename_seasons.sql',
+        tempDirs
+      );
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO user_settings (username_hash, collection_feature_preferences)
+        VALUES (
+          'user',
+          '{"wishlist":true,"watchlist":true,"books":true}'
+        );
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+           title, title_lower, year, user_rate, contributors, description, image, content_hash)
+        VALUES ('user', 'omdb', 'tt-st', 'imdb:tt-st', 'tracking', 'series', 'ST', 'st', '2020', NULL, '', '', '', 'h1');
+        INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles)
+        VALUES (1, 1, 3, '[]');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '032_fix_tracking_pref_default_and_rename_seasons.sql'),
+        join(migrationsDir, '032_fix_tracking_pref_default_and_rename_seasons.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      const stored = db
+        .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
+        .get('user') as { collection_feature_preferences: string };
+      expect(JSON.parse(stored.collection_feature_preferences)).toEqual({
+        books: true,
+        wishlist: true,
+        watchlist: true,
+        tracking: true,
+      });
+      expect(
+        db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'series_tracking_seasons'").get()
+      ).toEqual({ name: 'series_tracking_seasons' });
+      expect(
+        db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'series_tracker_seasons'").get()
+      ).toBeUndefined();
+      expect(db.prepare('SELECT season, episodes FROM series_tracking_seasons').all()).toEqual([
+        { season: 1, episodes: 3 },
+      ]);
+      expect(
+        db
+          .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_series_tracking_seasons_item'")
+          .get()
+      ).toEqual({ name: 'idx_series_tracking_seasons_item' });
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+  });
+
+  describe('033_rename_watchlist_to_up_next', () => {
+    it('renames watchlist list type and feature pref key to up-next / upNext', async () => {
+      const { db, migrationsDir } = await preparePreMigrationState('033_rename_watchlist_to_up_next.sql', tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES ('user', 'token');
+        INSERT INTO user_settings (username_hash, collection_feature_preferences)
+        VALUES (
+          'user',
+          '{"wishlist":true,"watchlist":false,"tracking":true,"books":true}'
+        );
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+           title, title_lower, year, user_rate, contributors, description, image, content_hash)
+        VALUES
+          ('user', 'omdb', 'tt-wl', 'imdb:tt-wl', 'watchlist', 'movie', 'WL', 'wl', '2020', NULL, '', '', '', 'h1'),
+          ('user', 'omdb', 'tt-lib', 'imdb:tt-lib', 'library', 'movie', 'LIB', 'lib', '2020', NULL, '', '', '', 'h2');
+      `);
+      copyFileSync(
+        join(MIGRATIONS_SRC_DIR, '033_rename_watchlist_to_up_next.sql'),
+        join(migrationsDir, '033_rename_watchlist_to_up_next.sql')
+      );
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT list_type, title FROM collection_items ORDER BY title').all()).toEqual([
+        { list_type: 'library', title: 'LIB' },
+        { list_type: 'up-next', title: 'WL' },
+      ]);
+      const stored = db
+        .prepare('SELECT collection_feature_preferences FROM user_settings WHERE username_hash = ?')
+        .get('user') as { collection_feature_preferences: string };
+      expect(JSON.parse(stored.collection_feature_preferences)).toEqual({
+        books: true,
+        wishlist: true,
+        upNext: false,
+        tracking: true,
+      });
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO collection_items
+              (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+               title, title_lower, year, user_rate, contributors, description, image, content_hash)
+             VALUES ('user', 'omdb', 'tt-new', 'imdb:tt-new', 'watchlist', 'movie',
+                     'Bad', 'bad', '2022', NULL, '', '', '', 'h3')`
+          )
+          .run()
+      ).toThrow();
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
       db.close();
     });

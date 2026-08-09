@@ -182,14 +182,14 @@ components:
     CollectionFeaturePreferences:
       type: object
       description: Collection features shown in navigation and connected actions. All features are enabled when omitted.
-      required: [books, wishlist, watchlist, tracking]
+      required: [books, wishlist, upNext, tracking]
       additionalProperties: false
       properties:
         books:
           type: boolean
         wishlist:
           type: boolean
-        watchlist:
+        upNext:
           type: boolean
         tracking:
           type: boolean
@@ -358,16 +358,16 @@ components:
           type: string
         listType:
           type: string
-          enum: [library, watchlist, wishlist, tracking, books]
+          enum: [library, up-next, wishlist, tracking, books]
           description: >-
             Logical list containing the item. Owned books use `books`. Books are also allowed on
-            `wishlist`, `watchlist`, and `tracking`. `library` is movie/series only.
+            `wishlist`, `up-next`, and `tracking`. `library` is movie/series only.
         contentType:
           type: string
           enum: [movie, series, book]
           description: >-
             Item media type. `library` is movie/series only. `tracking` accepts movie, series, and book.
-            `books` is book only. Wishlist/watchlist accept all three.
+            `books` is book only. Wishlist/up-next accept all three.
         favorite:
           type: boolean
           description: Whether the item is marked as a favorite. Allowed on ownership lists (`library`, `books`) only.
@@ -527,7 +527,7 @@ components:
               type: boolean
             listType:
               type: string
-              enum: [library, watchlist, wishlist, tracking, books]
+              enum: [library, up-next, wishlist, tracking, books]
             orderBy:
               type: string
               enum: [createdAt, alphabet]
@@ -601,7 +601,7 @@ components:
           seriesCount,
           booksCount,
           favoriteCount,
-          watchlistCount,
+          upNextCount,
           wishlistCount,
           watchedMovieCount,
           watchedSeriesCount,
@@ -624,7 +624,7 @@ components:
           type: integer
         favoriteCount:
           type: integer
-        watchlistCount:
+        upNextCount:
           type: integer
         wishlistCount:
           type: integer
@@ -685,7 +685,7 @@ components:
               description: Optional owner share code to create the item in a shared library. Defaults to the authenticated user.
             listType:
               type: string
-              enum: [library, watchlist, wishlist, tracking, books]
+              enum: [library, up-next, wishlist, tracking, books]
               default: library
               description: 'Target list. Defaults to `library`. Books must use `books`, and non-books cannot use `books`.'
 
@@ -950,7 +950,7 @@ components:
             - Which are sci-fi movies?
         listType:
           type: string
-          enum: [library, watchlist, wishlist, tracking, books]
+          enum: [library, up-next, wishlist, tracking, books]
           description: Collection list to search within.
 
     AiQueryResponse:
@@ -1028,8 +1028,8 @@ components:
           description: Export document type. Required for import round-trips.
         version:
           type: integer
-          enum: [6]
-          description: Export schema version. Import accepts only the current version.
+          enum: [10]
+          description: Export schema version. Import accepts version 10 and rewrites version 9 payloads.
         userSettings:
           $ref: '#/components/schemas/UserSettingsResponse'
         collectionItems:
@@ -1122,11 +1122,22 @@ components:
           description: Optional local canonical identity preserved from exports.
         listType:
           type: string
-          enum: [library, watchlist, wishlist, tracking, books]
+          enum: [library, up-next, wishlist, tracking, books]
+          description: >-
+            Logical list containing the item. Owned books use `books`. Books are also allowed on
+            `wishlist`, `up-next`, and `tracking`. `library` is movie/series only.
         watchedAt:
           type: ['string', 'null']
+        progressCurrent:
+          type: ['integer', 'null']
+          minimum: 0
+          description: Optional in-progress value for tracking items (for example book pages read).
+        progressTotal:
+          type: ['integer', 'null']
+          minimum: 0
+          description: Optional total progress units for tracking items (for example book page count).
 
-    ImportCollectionItemV5:
+    ImportCollectionItemV9:
       allOf:
         - $ref: '#/components/schemas/ImportCollectionItemBase'
         - type: object
@@ -1135,11 +1146,13 @@ components:
             contentType:
               type: string
               enum: [movie, series, book]
-              description: 'Imported books must use `listType: books`; all other imported content must use another list.'
+              description: >-
+                Item media type. `library` is movie/series only. `tracking` accepts movie, series, and book.
+                `books` is book only. Wishlist/up-next accept all three.
             favorite:
               type: boolean
 
-    ImportDataV5:
+    ImportDataV9:
       type: object
       required: [userSettings, collectionItems, tagManagement, trackingData]
       properties:
@@ -1148,7 +1161,7 @@ components:
         collectionItems:
           type: array
           items:
-            $ref: '#/components/schemas/ImportCollectionItemV5'
+            $ref: '#/components/schemas/ImportCollectionItemV9'
         tagManagement:
           $ref: '#/components/schemas/TagManagementResponse'
         trackingData:
@@ -1177,9 +1190,11 @@ components:
               const: collection-tracker-export
             version:
               type: integer
-              const: 5
-              description: Version 5 is exported by current clients and requires provider identity on every item.
-        - $ref: '#/components/schemas/ImportDataV5'
+              enum: [9, 10]
+              description: >-
+                Version 10 is exported by current clients. Version 9 imports are accepted and rewritten
+                (`watchlist` list types and feature prefs become `up-next` / `upNext`).
+        - $ref: '#/components/schemas/ImportDataV9'
 
     ImportResponse:
       type: object
@@ -1569,7 +1584,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books]
             default: library
         - name: orderBy
           in: query
@@ -1634,7 +1649,7 @@ paths:
           description: List to search suggestions within. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books]
       responses:
         '200':
           description: Search suggestions.
@@ -1687,7 +1702,7 @@ paths:
           description: List to check. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books]
             default: library
       responses:
         '200':
@@ -1987,14 +2002,10 @@ paths:
     post:
       operationId: markAllBooksAsCompleted
       summary: Mark all books as completed
-      description: Copies every uncompleted book in the selected library into the authenticated user's tracking as completed. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      description: >-
+        Copies every uncompleted book from the authenticated user's private books list into their tracking as completed.
+        Shared libraries cannot be used as a source because books lists are not shared.
       tags: [Collection]
-      parameters:
-        - name: ownerShareCode
-          in: query
-          schema:
-            type: string
-          description: Optional owner share code for using an incoming shared library as the source.
       responses:
         '200':
           description: Number of items that were updated.
@@ -2003,22 +2014,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/MarkAllCompletedResponse'
         '403':
-          description: The authenticated user cannot read the requested library.
-        '404':
-          description: The requested shared library owner was not found.
+          description: Rejected when a shared-library ownerShareCode is supplied.
 
   /items/mark-all-books-uncompleted:
     post:
       operationId: markAllBooksAsUncompleted
       summary: Mark all books as uncompleted
-      description: Clears the completed status for authenticated-user tracking books that correspond to books in the selected library. Tracking items are kept. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      description: >-
+        Clears the completed status for authenticated-user tracking books that correspond to items on the user's private books list.
+        Tracking items are kept. Shared libraries cannot be used as a source because books lists are not shared.
       tags: [Collection]
-      parameters:
-        - name: ownerShareCode
-          in: query
-          schema:
-            type: string
-          description: Optional owner share code for using an incoming shared library as the source.
       responses:
         '200':
           description: Number of items that were updated.
@@ -2027,15 +2032,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/MarkAllUncompletedResponse'
         '403':
-          description: The authenticated user cannot read the requested library.
-        '404':
-          description: The requested shared library owner was not found.
+          description: Rejected when a shared-library ownerShareCode is supplied.
 
   /items/refresh-images:
     post:
       operationId: refreshImages
       summary: Refresh collection item images
-      description: Checks collection item images through the image proxy, caches available images, and fetches updated poster URLs from the configured external metadata provider for broken images. For the authenticated user's own library this covers all list types (library, watchlist, wishlist, tracking, and books). When `ownerShareCode` is provided, the refresh targets only that owner's `library` list and requires update permission.
+      description: Checks collection item images through the image proxy, caches available images, and fetches updated poster URLs from the configured external metadata provider for broken images. For the authenticated user's own library this covers all list types (library, up-next, wishlist, tracking, and books). When `ownerShareCode` is provided, the refresh targets only that owner's `library` list and requires update permission.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -2059,7 +2062,7 @@ paths:
     post:
       operationId: refreshExternalRatings
       summary: Refresh collection item external ratings
-      description: Fetches collection items from the configured external metadata provider and refreshes IMDb, Rotten Tomatoes, and Metacritic ratings. Book items are excluded because book metadata providers do not supply those ratings. For the authenticated user's own library this covers all non-book list types (library, watchlist, wishlist, and tracking). When `ownerShareCode` is provided, the refresh targets only that owner's `library` list and requires update permission.
+      description: Fetches collection items from the configured external metadata provider and refreshes IMDb, Rotten Tomatoes, and Metacritic ratings. Book items are excluded because book metadata providers do not supply those ratings. For the authenticated user's own library this covers all non-book list types (library, up-next, wishlist, and tracking). When `ownerShareCode` is provided, the refresh targets only that owner's `library` list and requires update permission.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -2158,7 +2161,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books]
             default: library
         - name: watched
           in: query
@@ -2184,10 +2187,10 @@ paths:
         Creates a structured item in the requested `listType`. External provider identity and locally resolved
         canonical identity must be unique within the target list.
         Custom tags must not use reserved system or virtual tags. Optionally pass `targetOwnerShareCode` to create
-        in a shared library where you have create permission. Watchlist, wishlist, tracking,
+        in a shared library where you have create permission. up-next, wishlist, tracking,
         and books items cannot be created in shared libraries. Favorites are allowed only on ownership lists
         (`library`, `books`). Tracking items may use movie, series, or book; ownership books must use
-        `listType: books`. Books may use `listType` of `books`, `wishlist`, `watchlist`,
+        `listType: books`. Books may use `listType` of `books`, `wishlist`, `up-next`,
         or `tracking`. Non-book content cannot use `books`.
       tags: [Collection]
       requestBody:
@@ -2284,7 +2287,7 @@ paths:
           description: List containing the item. Defaults to `library`.
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books]
             default: library
       requestBody:
         required: true
@@ -2342,7 +2345,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [library, watchlist, wishlist, tracking, books]
+            enum: [library, up-next, wishlist, tracking, books]
             default: library
       responses:
         '204':
@@ -2382,7 +2385,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [library, watchlist, books]
+            enum: [library, up-next, books]
             default: library
         - name: markCompleted
           in: query
@@ -2834,7 +2837,7 @@ paths:
     get:
       operationId: getUserExport
       summary: Export all user-owned data
-      description: Returns a JSON export of all user-owned data including settings, collection items (library, watchlist, wishlist, tracking, and books), tag management, and tracking season metadata.
+      description: Returns a JSON export of all user-owned data including settings, collection items (library, up-next, wishlist, tracking, and books), tag management, and tracking season metadata.
       tags: [User]
       responses:
         '200':

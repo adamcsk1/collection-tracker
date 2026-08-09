@@ -82,7 +82,7 @@ describe('get-user-settings-api', () => {
     const preferences = {
       books: true,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     };
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');

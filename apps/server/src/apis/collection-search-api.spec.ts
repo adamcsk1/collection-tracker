@@ -385,15 +385,15 @@ describe('collection search APIs', () => {
   it('returns search suggestions for the requested list type', async () => {
     insertUser();
     insertItem({ imdbId: 'tt-library', title: 'Shared Title' });
-    insertItem({ imdbId: 'tt-watchlist', title: 'Shared Title', listType: 'watchlist', tags: ['#queued'] });
+    insertItem({ imdbId: 'tt-watchlist', title: 'Shared Title', listType: 'up-next', tags: ['#queued'] });
     const { register } = await import('./collection-items-search-suggestions-api');
 
     const titleResponse = await callRoute(register, 'get', '/api/v1/items/search-suggestions', {
-      query: { query: 'shared', limit: '5', listType: 'watchlist' },
+      query: { query: 'shared', limit: '5', listType: 'up-next' },
       usernameHash: 'user',
     });
     const tagResponse = await callRoute(register, 'get', '/api/v1/items/search-suggestions', {
-      query: { query: '#que', limit: '5', listType: 'watchlist' },
+      query: { query: '#que', limit: '5', listType: 'up-next' },
       usernameHash: 'user',
     });
 
@@ -491,7 +491,7 @@ describe('collection search APIs', () => {
         movieCount: 1,
         seriesCount: 1,
         favoriteCount: 1,
-        watchlistCount: 0,
+        upNextCount: 0,
         wishlistCount: 0,
         watchedMovieCount: 1,
         watchedSeriesCount: 0,

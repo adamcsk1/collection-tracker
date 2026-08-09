@@ -54,7 +54,7 @@ describe('ai-search-intent-util', () => {
   it('gates unfinished and completed intents by list type', () => {
     expect(getEffectiveStatusIntent('unfinished', 'tracking')).toBe('unfinished');
     expect(getEffectiveStatusIntent('unfinished', 'library')).toBeNull();
-    expect(getEffectiveStatusIntent('unfinished', 'watchlist')).toBeNull();
+    expect(getEffectiveStatusIntent('unfinished', 'up-next')).toBeNull();
     expect(getEffectiveStatusIntent('completed', 'tracking')).toBe('completed');
     expect(getEffectiveStatusIntent('completed', 'tracking')).toBe('completed');
     expect(getEffectiveStatusIntent('completed', 'library')).toBeNull();
