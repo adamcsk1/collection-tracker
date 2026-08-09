@@ -75,7 +75,6 @@ export const CollectionPage = {
     cy.getByTestId('list-item-title', options),
   getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
   getTrackingCompletedBadges: () => cy.getByTestId('list-item-tracking-completed'),
-  getFinishedBadges: () => cy.getByTestId('list-item-finished'),
   getSharedBadges: () => cy.getByTestId('list-item-shared'),
   getListItemYears: () => cy.getByTestId('list-item-year'),
   getListItemImdbRatings: () => cy.getByTestId('list-item-rating-imdb'),
