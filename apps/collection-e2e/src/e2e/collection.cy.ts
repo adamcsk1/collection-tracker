@@ -1207,7 +1207,7 @@ describe('Collection — unified tracking gaps', () => {
     CollectionPage.getItemDialogProgressCurrentInput().clear().type('120');
     CollectionPage.getItemDialogProgressTotalInput().clear().type('100');
     CollectionPage.getItemDialogSaveButton().should('be.disabled');
-    cy.contains('Total pages must be greater than or equal to pages read.').should('be.visible');
+    cy.contains('Total pages must be greater than or equal to pages read.').scrollIntoView().should('be.visible');
   });
 
   it('recovers save after fixing pages read above total pages', () => {
@@ -1225,7 +1225,7 @@ describe('Collection — unified tracking gaps', () => {
     CollectionPage.getItemDialogEditButton().click();
     CollectionPage.getItemDialogProgressCurrentInput().clear().type('150');
     CollectionPage.getItemDialogSaveButton().should('be.disabled');
-    cy.contains('Total pages must be greater than or equal to pages read.').should('be.visible');
+    cy.contains('Total pages must be greater than or equal to pages read.').scrollIntoView().should('be.visible');
 
     CollectionPage.getItemDialogProgressTotalInput().clear().type('200');
     CollectionPage.getItemDialogSaveButton().should('be.enabled').click();
