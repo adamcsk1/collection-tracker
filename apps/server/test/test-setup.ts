@@ -22,7 +22,7 @@ const tables = [
   'refresh_tokens',
   'tag_configs',
   'user_settings',
-  'series_tracker_seasons',
+  'series_tracking_seasons',
   'series_completed_episodes',
   'users',
 ];

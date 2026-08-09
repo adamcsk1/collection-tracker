@@ -95,9 +95,9 @@ describe('mark-all-series-completed-api', () => {
     expect(
       getDatabase()
         .prepare(
-          `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
-           FROM series_tracker_seasons
-           INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
+          `SELECT series_tracking_seasons.season, series_tracking_seasons.episodes
+           FROM series_tracking_seasons
+           INNER JOIN collection_items ON collection_items.id = series_tracking_seasons.item_id
            WHERE collection_items.external_item_id = ?`
         )
         .all('tt-shared')
@@ -136,7 +136,7 @@ describe('mark-all-series-completed-api', () => {
     insertItem('tt-1', ['#series'], 'library', 'user');
     const trackerItemId = insertItem('tt-1', ['#series'], 'tracking', 'user');
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
 
     const response = mockResponse();
@@ -179,7 +179,7 @@ describe('mark-all-series-completed-api', () => {
     insertItem('tt-1', ['#series'], 'library', 'user');
     const trackerItemId = insertItem('tt-1', ['#series'], 'tracking', 'user');
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
     getDatabase()
       .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?), (?, ?, ?)')
@@ -211,7 +211,7 @@ describe('mark-all-series-completed-api', () => {
     insertUser('user');
     const trackerItemId = insertItem('tt-tracker-only', ['#series'], 'tracking', 'user');
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
 
     const response = mockResponse();
@@ -256,7 +256,7 @@ describe('mark-all-series-completed-api', () => {
     insertItem('tt-shared', ['#series'], 'library', 'owner');
     const trackerOnlyItemId = insertItem('tt-tracker-only', ['#series'], 'tracking', 'user');
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerOnlyItemId, 1, 1);
 
     const response = mockResponse();

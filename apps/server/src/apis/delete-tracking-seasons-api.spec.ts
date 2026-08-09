@@ -32,7 +32,7 @@ describe('delete-tracking-seasons-api', () => {
   it('deletes metadata', async () => {
     const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 10);
     getDatabase()
       .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)')

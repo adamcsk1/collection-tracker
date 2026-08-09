@@ -137,7 +137,7 @@ describe('change-tracking-seasons-api', () => {
   it('prunes watched episodes outside replaced season metadata before syncing completion', async () => {
     const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 3);
     getDatabase()
       .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?), (?, ?, ?)')

@@ -32,7 +32,7 @@ describe('change-watching-completed-episodes-api', () => {
   it('replaces watched episodes and returns sorted list', async () => {
     const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?), (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?), (?, ?, ?)')
       .run(itemId, 1, 5, itemId, 2, 3);
     const response = mockResponse();
     const request: any = {
@@ -89,7 +89,7 @@ describe('change-watching-completed-episodes-api', () => {
   it('sets watched timestamp when all episodes are watched', async () => {
     const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
     const response = mockResponse();
     const request: any = {
@@ -118,7 +118,7 @@ describe('change-watching-completed-episodes-api', () => {
   it('rejects watched episodes outside saved metadata', async () => {
     const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
     const response = mockResponse();
     const request: any = {
@@ -146,7 +146,7 @@ describe('change-watching-completed-episodes-api', () => {
   it('rejects watched episode numbers above saved season episode count', async () => {
     const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
     const response = mockResponse();
     const request: any = {
@@ -169,7 +169,7 @@ describe('change-watching-completed-episodes-api', () => {
   it('clears watched timestamp when not all episodes are watched', async () => {
     const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 2);
     getDatabase()
       .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?')

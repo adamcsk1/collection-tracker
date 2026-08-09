@@ -75,7 +75,7 @@ describe('export-api', () => {
     const featurePreferences = {
       books: true,
       wishlist: false,
-      watchlist: true,
+      upNext: true,
       tracking: true,
     };
     db.prepare(
@@ -110,7 +110,7 @@ describe('export-api', () => {
       'INSERT INTO tag_configs (username_hash, tag, color, use_for_image_border, use_for_text_color, use_for_image_badge, weight) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run('user', '#owned', '#111111', 1, 0, 0, 1);
     db.prepare(
-      'INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles) VALUES (?, ?, ?, ?)'
+      'INSERT INTO series_tracking_seasons (item_id, season, episodes, episode_titles) VALUES (?, ?, ?, ?)'
     ).run(seriesItemId, 1, 10, JSON.stringify(['Episode 1']));
     db.prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(
       seriesItemId,
@@ -124,7 +124,7 @@ describe('export-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
       type: 'collection-tracker-export',
-      version: 9,
+      version: 10,
       userSettings: {
         theme: 'dark',
         animatedBackground: false,
@@ -195,7 +195,7 @@ describe('export-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
       type: 'collection-tracker-export',
-      version: 9,
+      version: 10,
       userSettings: {},
       collectionItems: [],
       tagManagement: [],

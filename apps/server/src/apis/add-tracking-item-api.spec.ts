@@ -12,7 +12,7 @@ const insertItem = (
   usernameHash: string,
   imdbId: string,
   tags: string[],
-  listType = 'watchlist',
+  listType = 'up-next',
   contentType = 'series'
 ) => {
   const db = getDatabase();
@@ -70,7 +70,7 @@ describe('add-tracking-item-api', () => {
     const request: any = {
       usernameHash: 'user',
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
-      query: { sourceListType: 'watchlist' },
+      query: { sourceListType: 'up-next' },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -89,14 +89,14 @@ describe('add-tracking-item-api', () => {
     expect(
       getDatabase()
         .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
-        .get('user', 'tt-1', 'watchlist')
+        .get('user', 'tt-1', 'up-next')
     ).toBeUndefined();
     expect(
       getDatabase()
         .prepare(
-          `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
-           FROM series_tracker_seasons
-           INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
+          `SELECT series_tracking_seasons.season, series_tracking_seasons.episodes
+           FROM series_tracking_seasons
+           INNER JOIN collection_items ON collection_items.id = series_tracking_seasons.item_id
             WHERE collection_items.external_item_id = ?`
         )
         .all('tt-1')
@@ -108,7 +108,7 @@ describe('add-tracking-item-api', () => {
     const request: any = {
       usernameHash: 'user',
       params: { externalIdentitySource: 'tmdb', externalIdentityId: '603' },
-      query: { sourceListType: 'watchlist' },
+      query: { sourceListType: 'up-next' },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -159,9 +159,9 @@ describe('add-tracking-item-api', () => {
     expect(
       getDatabase()
         .prepare(
-          `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
-           FROM series_tracker_seasons
-           INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
+          `SELECT series_tracking_seasons.season, series_tracking_seasons.episodes
+           FROM series_tracking_seasons
+           INNER JOIN collection_items ON collection_items.id = series_tracking_seasons.item_id
             WHERE collection_items.external_item_id = ? AND collection_items.list_type = ?`
         )
         .all('tt-1', 'tracking')
@@ -195,9 +195,9 @@ describe('add-tracking-item-api', () => {
     expect(
       getDatabase()
         .prepare(
-          `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
-           FROM series_tracker_seasons
-           INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
+          `SELECT series_tracking_seasons.season, series_tracking_seasons.episodes
+           FROM series_tracking_seasons
+           INNER JOIN collection_items ON collection_items.id = series_tracking_seasons.item_id
             WHERE collection_items.external_item_id = ? AND collection_items.list_type = ?`
         )
         .all('tt-1', 'tracking')
@@ -261,13 +261,13 @@ describe('add-tracking-item-api', () => {
 
   it('moves a watchlist movie to tracking', async () => {
     insertUser('user');
-    insertItem('user', 'tt-1', ['#movie', '#watchlist'], 'watchlist', 'movie');
+    insertItem('user', 'tt-1', ['#movie', '#watchlist'], 'up-next', 'movie');
 
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
-      query: { sourceListType: 'watchlist' },
+      query: { sourceListType: 'up-next' },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -281,7 +281,7 @@ describe('add-tracking-item-api', () => {
     expect(
       getDatabase()
         .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
-        .get('user', 'tt-1', 'watchlist')
+        .get('user', 'tt-1', 'up-next')
     ).toBeUndefined();
   });
 
@@ -294,7 +294,7 @@ describe('add-tracking-item-api', () => {
     const request: any = {
       usernameHash: 'user',
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
-      query: { sourceListType: 'watchlist' },
+      query: { sourceListType: 'up-next' },
     };
     const { app, handlerPromise } = buildApp(request, response);
 
@@ -308,7 +308,7 @@ describe('add-tracking-item-api', () => {
     expect(
       getDatabase()
         .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
-        .get('user', 'tt-1', 'watchlist')
+        .get('user', 'tt-1', 'up-next')
     ).toBeUndefined();
   });
 });

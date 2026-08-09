@@ -15,10 +15,10 @@ describe('mark-all-tracking-completed-api', () => {
   it('marks all episodes as watched when seasons exist', async () => {
     const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 3);
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 2, 2);
     const response = mockResponse();
     const request: any = {
@@ -83,7 +83,7 @@ describe('mark-all-tracking-completed-api', () => {
       })
     );
     expect(
-      getDatabase().prepare('SELECT season, episodes FROM series_tracker_seasons WHERE item_id = ?').all(itemId)
+      getDatabase().prepare('SELECT season, episodes FROM series_tracking_seasons WHERE item_id = ?').all(itemId)
     ).toEqual([{ season: 1, episodes: 2 }]);
     expect(
       getDatabase().prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?').get(itemId)

@@ -142,7 +142,7 @@ describe('proxy-ai-query-api', () => {
 
       if (file.totalEpisodes) {
         db.prepare(
-          'INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles) VALUES (?, ?, ?, ?)'
+          'INSERT INTO series_tracking_seasons (item_id, season, episodes, episode_titles) VALUES (?, ?, ?, ?)'
         ).run(itemId, 1, file.totalEpisodes, '[]');
       }
 
@@ -788,7 +788,7 @@ describe('proxy-ai-query-api', () => {
 
     it('searches only items from the requested list type', async () => {
       const response = mockResponse();
-      const { app, handlerPromise } = buildApp(request('sci-fi', 'watchlist'), response);
+      const { app, handlerPromise } = buildApp(request('sci-fi', 'up-next'), response);
       setupCollection([
         {
           imdbId: 'tt0133093',
@@ -800,7 +800,7 @@ describe('proxy-ai-query-api', () => {
           imdbId: 'tt0372784',
           title: 'Batman Begins',
           plot: 'The origin story of Batman.',
-          listType: 'watchlist',
+          listType: 'up-next',
         },
       ]);
       const generate = await mockGenerate('{"matchedIds":["tt0372784"]}');

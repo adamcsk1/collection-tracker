@@ -44,7 +44,7 @@ describe('delete-tracking-items-api', () => {
     insertItem('user', 'tt-library', 'library');
     const retainedItemId = insertItem('other-user', 'tt-other');
     const db = getDatabase();
-    db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(
+    db.prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(
       deletedItemId,
       1,
       2
@@ -54,7 +54,7 @@ describe('delete-tracking-items-api', () => {
       1,
       1
     );
-    db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(
+    db.prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(
       retainedItemId,
       1,
       2
@@ -76,9 +76,9 @@ describe('delete-tracking-items-api', () => {
       { username_hash: 'user', external_item_id: 'tt-library', list_type: 'library' },
       { username_hash: 'other-user', external_item_id: 'tt-other', list_type: 'tracking' },
     ]);
-    expect(db.prepare('SELECT 1 FROM series_tracker_seasons WHERE item_id = ?').get(deletedItemId)).toBeUndefined();
+    expect(db.prepare('SELECT 1 FROM series_tracking_seasons WHERE item_id = ?').get(deletedItemId)).toBeUndefined();
     expect(db.prepare('SELECT 1 FROM series_completed_episodes WHERE item_id = ?').get(deletedItemId)).toBeUndefined();
-    expect(db.prepare('SELECT 1 FROM series_tracker_seasons WHERE item_id = ?').get(retainedItemId)).toEqual({ 1: 1 });
+    expect(db.prepare('SELECT 1 FROM series_tracking_seasons WHERE item_id = ?').get(retainedItemId)).toEqual({ 1: 1 });
   });
 
   it('returns zero when the current user has no tracking items', async () => {

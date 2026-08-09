@@ -47,7 +47,7 @@ const loadTrackingEpisodeCounts = (
     const totalRows = db
       .prepare(
         `SELECT item_id AS itemId, COALESCE(SUM(episodes), 0) AS total
-         FROM series_tracker_seasons
+         FROM series_tracking_seasons
          WHERE item_id IN (${placeholders})
          GROUP BY item_id`
       )

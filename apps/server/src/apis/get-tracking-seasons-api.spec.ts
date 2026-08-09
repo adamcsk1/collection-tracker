@@ -27,7 +27,7 @@ describe('get-tracking-seasons-api', () => {
   it('returns stored season metadata', async () => {
     const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 10);
     const response = mockResponse();
     const request: any = {
@@ -61,7 +61,7 @@ describe('get-tracking-seasons-api', () => {
   it('returns stored episode titles', async () => {
     const itemId = insertTrackingItem();
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles) VALUES (?, ?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes, episode_titles) VALUES (?, ?, ?, ?)')
       .run(itemId, 1, 2, JSON.stringify(['Pilot', 'Episode 2']));
     const response = mockResponse();
     const request: any = {
@@ -92,7 +92,7 @@ describe('get-tracking-seasons-api', () => {
       )
       .run('user', 'imdb:tt-series', 'imdb', 'tt-series', 'alias');
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(itemId, 1, 10);
     const response = mockResponse();
     const request: any = {

@@ -58,7 +58,7 @@ const findTrackingSeasonsByItemId = (db: Database.Database, itemId: number | nul
     db
       .prepare(
         `SELECT season, episodes, episode_titles
-            FROM series_tracker_seasons
+            FROM series_tracking_seasons
             WHERE item_id = ?
             ORDER BY season`
       )
@@ -98,10 +98,10 @@ export const replaceTrackingSeasons = (
   if (!itemId) return [];
 
   const transaction = db.transaction(() => {
-    db.prepare('DELETE FROM series_tracker_seasons WHERE item_id = ?').run(itemId);
+    db.prepare('DELETE FROM series_tracking_seasons WHERE item_id = ?').run(itemId);
 
     const insert = db.prepare(
-      `INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles)
+      `INSERT INTO series_tracking_seasons (item_id, season, episodes, episode_titles)
        VALUES (?, ?, ?, ?)`
     );
     for (const season of seasons) {
@@ -125,10 +125,10 @@ export const replaceTrackingSeasonsByExternalId = (
   if (!itemId) return [];
 
   const transaction = db.transaction(() => {
-    db.prepare('DELETE FROM series_tracker_seasons WHERE item_id = ?').run(itemId);
+    db.prepare('DELETE FROM series_tracking_seasons WHERE item_id = ?').run(itemId);
 
     const insert = db.prepare(
-      `INSERT INTO series_tracker_seasons (item_id, season, episodes, episode_titles)
+      `INSERT INTO series_tracking_seasons (item_id, season, episodes, episode_titles)
        VALUES (?, ?, ?, ?)`
     );
     for (const season of seasons) {
@@ -144,7 +144,7 @@ export const replaceTrackingSeasonsByExternalId = (
 export const deleteTrackingSeasons = (db: Database.Database, usernameHash: string, imdbId: string): void => {
   const itemId = findTrackingItemId(db, usernameHash, imdbId);
   if (!itemId) return;
-  db.prepare('DELETE FROM series_tracker_seasons WHERE item_id = ?').run(itemId);
+  db.prepare('DELETE FROM series_tracking_seasons WHERE item_id = ?').run(itemId);
 };
 
 export const deleteTrackingSeasonsByExternalId = (
@@ -155,5 +155,5 @@ export const deleteTrackingSeasonsByExternalId = (
 ): void => {
   const itemId = findTrackingItemIdByExternalId(db, usernameHash, externalProvider, externalItemId);
   if (!itemId) return;
-  db.prepare('DELETE FROM series_tracker_seasons WHERE item_id = ?').run(itemId);
+  db.prepare('DELETE FROM series_tracking_seasons WHERE item_id = ?').run(itemId);
 };

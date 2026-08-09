@@ -308,11 +308,11 @@ describe('change-api', () => {
   });
 
   it('updates a watch later item when listType is provided', async () => {
-    insertItem('abc123', 'user', 'watchlist');
+    insertItem('abc123', 'user', 'up-next');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
-      query: { listType: 'watchlist' },
+      query: { listType: 'up-next' },
       body: { ...updatedItem, tags: ['#custom'], hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -325,18 +325,18 @@ describe('change-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({
         title: 'Updated',
-        listType: 'watchlist',
+        listType: 'up-next',
         tags: ['#custom'],
       }),
     });
   });
 
   it('returns 400 when updating a watch later item as favorite', async () => {
-    insertItem('abc123', 'user', 'watchlist');
+    insertItem('abc123', 'user', 'up-next');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
-      query: { listType: 'watchlist' },
+      query: { listType: 'up-next' },
       body: { ...updatedItem, favorite: true, hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -374,7 +374,7 @@ describe('change-api', () => {
       db.prepare('SELECT id FROM collection_items WHERE external_item_id = ?').get('tt-change') as { id: number }
     ).id;
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, COMPLETED_TAG);
-    db.prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(itemId, 1, 1);
+    db.prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)').run(itemId, 1, 1);
     db.prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)').run(itemId, 1, 1);
     const response = mockResponse();
     const request: any = {
@@ -525,14 +525,14 @@ describe('change-api', () => {
   });
 
   it('returns 403 when updating a shared internal collection item directly', async () => {
-    insertItem('abc123', 'owner', 'watchlist');
+    insertItem('abc123', 'owner', 'up-next');
     insertUser('user');
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
-      query: { ownerShareCode: getUserShareCode('owner'), listType: 'watchlist' },
+      query: { ownerShareCode: getUserShareCode('owner'), listType: 'up-next' },
       body: { ...updatedItem, hash: 'abc123' },
       usernameHash: 'user',
     };
@@ -546,7 +546,7 @@ describe('change-api', () => {
   });
 
   it('returns 404 when updating a shared watch later item', async () => {
-    insertItem('abc123', 'owner', 'watchlist');
+    insertItem('abc123', 'owner', 'up-next');
     insertUser('user');
     insertShare('owner', 'user', true);
     const { getUserShareCode } = await import('../core/database/repositories/user-repository');
@@ -622,7 +622,7 @@ describe('change-api', () => {
   });
 
   it('returns 404 when a watch later item is changed to a normal item', async () => {
-    insertItem('abc123', 'user', 'watchlist');
+    insertItem('abc123', 'user', 'up-next');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
@@ -656,7 +656,7 @@ describe('change-api', () => {
   });
 
   it('returns 404 when a watch later item is changed to wishlist', async () => {
-    insertItem('abc123', 'user', 'watchlist');
+    insertItem('abc123', 'user', 'up-next');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
@@ -690,7 +690,7 @@ describe('change-api', () => {
   });
 
   it('returns 404 when a watch later item is updated without listType', async () => {
-    insertItem('abc123', 'user', 'watchlist');
+    insertItem('abc123', 'user', 'up-next');
     const response = mockResponse();
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },

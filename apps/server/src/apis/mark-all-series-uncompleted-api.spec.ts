@@ -69,10 +69,10 @@ describe('mark-all-series-uncompleted-api', () => {
     insertItem('tt-own-only', ['#series'], 'library', 'user');
     const ownTrackerItemId = insertItem('tt-own-only', ['#series', '#completed'], 'tracking', 'user');
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(ownTrackerItemId, 1, 1);
     getDatabase()
       .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)')
@@ -97,9 +97,11 @@ describe('mark-all-series-uncompleted-api', () => {
         )
         .all('user', 'tracking')
     ).toEqual([{ external_item_id: 'tt-own-only' }, { external_item_id: 'tt-shared' }]);
-    expect(getDatabase().prepare('SELECT 1 FROM series_tracker_seasons WHERE item_id = ?').get(trackerItemId)).toEqual({
-      1: 1,
-    });
+    expect(getDatabase().prepare('SELECT 1 FROM series_tracking_seasons WHERE item_id = ?').get(trackerItemId)).toEqual(
+      {
+        1: 1,
+      }
+    );
     expect(
       getDatabase().prepare('SELECT 1 FROM series_completed_episodes WHERE item_id = ?').get(trackerItemId)
     ).toBeUndefined();
@@ -116,7 +118,7 @@ describe('mark-all-series-uncompleted-api', () => {
     insertItem('tt-1', ['#series'], 'library', 'user');
     const trackerItemId = insertItem('tt-1', ['#series'], 'tracking', 'user');
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
 
     const response = mockResponse();
@@ -161,7 +163,7 @@ describe('mark-all-series-uncompleted-api', () => {
     insertUser('user');
     const trackerItemId = insertItem('tt-tracker-only', ['#series', '#completed'], 'tracking', 'user');
     getDatabase()
-      .prepare('INSERT INTO series_tracker_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, ?, ?)')
       .run(trackerItemId, 1, 2);
     getDatabase()
       .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, ?, ?)')
@@ -176,9 +178,11 @@ describe('mark-all-series-uncompleted-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({ changedCount: 1 });
-    expect(getDatabase().prepare('SELECT 1 FROM series_tracker_seasons WHERE item_id = ?').get(trackerItemId)).toEqual({
-      1: 1,
-    });
+    expect(getDatabase().prepare('SELECT 1 FROM series_tracking_seasons WHERE item_id = ?').get(trackerItemId)).toEqual(
+      {
+        1: 1,
+      }
+    );
     expect(
       getDatabase().prepare('SELECT 1 FROM series_completed_episodes WHERE item_id = ?').get(trackerItemId)
     ).toBeUndefined();

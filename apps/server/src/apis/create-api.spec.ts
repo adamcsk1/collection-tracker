@@ -237,7 +237,7 @@ describe('create-api', () => {
         'omdb',
         '603',
         'omdb:603',
-        'watchlist',
+        'up-next',
         'Provider Movie',
         'provider movie',
         '1999',
@@ -275,7 +275,7 @@ describe('create-api', () => {
     expect(
       getDatabase()
         .prepare('SELECT canonical_item_id FROM collection_items WHERE username_hash = ? AND list_type = ?')
-        .get('fallback-user', 'watchlist')
+        .get('fallback-user', 'up-next')
     ).toEqual({ canonical_item_id: 'imdb:tt0133093' });
     expect(
       getDatabase()
@@ -339,7 +339,7 @@ describe('create-api', () => {
   it('creates a watch later item using listType', async () => {
     insertUser();
     const response = mockResponse();
-    const request: any = { body: { ...item, listType: 'watchlist' }, usernameHash: 'user' };
+    const request: any = { body: { ...item, listType: 'up-next' }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');
@@ -347,11 +347,11 @@ describe('create-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      item: expect.objectContaining({ title: 'Custom File', listType: 'watchlist', contentType: 'movie', tags: [] }),
+      item: expect.objectContaining({ title: 'Custom File', listType: 'up-next', contentType: 'movie', tags: [] }),
     });
     expect(
       getDatabase().prepare('SELECT list_type FROM collection_items WHERE external_item_id = ?').get('tt0000001')
-    ).toEqual({ list_type: 'watchlist' });
+    ).toEqual({ list_type: 'up-next' });
   });
 
   it('creates a wishlist item using listType', async () => {
@@ -413,9 +413,9 @@ describe('create-api', () => {
     expect(
       getDatabase()
         .prepare(
-          `SELECT series_tracker_seasons.season, series_tracker_seasons.episodes
-           FROM series_tracker_seasons
-           INNER JOIN collection_items ON collection_items.id = series_tracker_seasons.item_id
+          `SELECT series_tracking_seasons.season, series_tracking_seasons.episodes
+           FROM series_tracking_seasons
+           INNER JOIN collection_items ON collection_items.id = series_tracking_seasons.item_id
            WHERE collection_items.external_item_id = ?`
         )
         .all('tt0000001')
@@ -630,7 +630,7 @@ describe('create-api', () => {
 
   it('returns 400 when watch later is combined with favorite', async () => {
     const response = mockResponse();
-    const request: any = { body: { ...item, listType: 'watchlist', favorite: true }, usernameHash: 'user' };
+    const request: any = { body: { ...item, listType: 'up-next', favorite: true }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./create-api');
@@ -667,7 +667,7 @@ describe('create-api', () => {
   it('returns 400 when creating watch later in a shared library', async () => {
     const response = mockResponse();
     const request: any = {
-      body: { ...item, listType: 'watchlist', targetOwnerShareCode: 'shared-code' },
+      body: { ...item, listType: 'up-next', targetOwnerShareCode: 'shared-code' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
@@ -682,7 +682,7 @@ describe('create-api', () => {
   it('returns 400 when creating non-library listType in a shared library', async () => {
     const response = mockResponse();
     const request: any = {
-      body: { ...item, listType: 'watchlist', targetOwnerShareCode: 'shared-code' },
+      body: { ...item, listType: 'up-next', targetOwnerShareCode: 'shared-code' },
       usernameHash: 'user',
     };
     const { app, handlerPromise } = buildApp(request, response);
