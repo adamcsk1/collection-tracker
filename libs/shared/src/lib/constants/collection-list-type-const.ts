@@ -18,11 +18,3 @@ export const LEGACY_COLLECTION_LIST_TYPE_MAP: Readonly<Record<string, Collection
   watched: 'tracking',
   finished: 'tracking',
 };
-
-export const parseCollectionListType = (value: unknown): CollectionListTypeModel | undefined => {
-  if (typeof value !== 'string') return undefined;
-  if ((COLLECTION_LIST_TYPES as readonly string[]).includes(value)) {
-    return value as CollectionListTypeModel;
-  }
-  return LEGACY_COLLECTION_LIST_TYPE_MAP[value];
-};
