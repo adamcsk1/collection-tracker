@@ -169,7 +169,7 @@ describe('delete-api', () => {
     expect(response.code).toHaveBeenCalledWith(204);
   });
 
-  it('deletes a series tracker item when listType is provided', async () => {
+  it('deletes a tracking item when listType is provided', async () => {
     insertTypedItem('tracking');
     const request: any = {
       params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },

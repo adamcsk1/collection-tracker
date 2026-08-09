@@ -369,7 +369,7 @@ describe('create-api', () => {
     });
   });
 
-  it('creates a series tracker item using listType', async () => {
+  it('creates a tracking item using listType', async () => {
     insertUser();
     const response = mockResponse();
     const request: any = { body: { ...item, contentType: 'series', listType: 'tracking' }, usernameHash: 'user' };
@@ -422,7 +422,7 @@ describe('create-api', () => {
     ).toEqual([{ season: 1, episodes: 3 }]);
   });
 
-  it('still creates a series tracker item when metadata fetch fails', async () => {
+  it('still creates a tracking item when metadata fetch fails', async () => {
     process.env.OMDB_API_KEY = 'key';
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('OMDb unavailable')));
     insertUser();
@@ -460,6 +460,50 @@ describe('create-api', () => {
     expect(response.send).toHaveBeenCalledWith({
       item: expect.objectContaining({
         listType: 'tracking',
+      }),
+    });
+  });
+
+  it('marks a tracking book completed when created with full page progress', async () => {
+    insertUser();
+    const response = mockResponse();
+    const request: any = {
+      body: {
+        image: '',
+        title: 'Finished Book',
+        genre: [],
+        externalProvider: 'openlibrary',
+        externalItemId: '9780140328721',
+        externalIds: [{ source: 'isbn', id: '9780140328721' }],
+        tags: [],
+        year: '1988',
+        rate: '',
+        rottenTomatoesRate: '',
+        metacriticRate: '',
+        userRate: null,
+        actors: 'Author',
+        plot: 'Plot',
+        contentType: 'book',
+        favorite: false,
+        listType: 'tracking',
+        progressCurrent: 240,
+        progressTotal: 240,
+      },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        listType: 'tracking',
+        contentType: 'book',
+        progressCurrent: 240,
+        progressTotal: 240,
+        watchedAt: expect.any(String),
       }),
     });
   });

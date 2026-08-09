@@ -66,6 +66,9 @@ export const getCollectionStatistics = (
              AND ${movieContentCondition}
            AND EXISTS (
              SELECT 1 FROM collection_items movie_tracker
+             INNER JOIN collection_item_tracker_state movie_tracker_state
+               ON movie_tracker_state.item_id = movie_tracker.id
+              AND movie_tracker_state.completed_at IS NOT NULL
              WHERE movie_tracker.username_hash = ?
                AND ${canonicalOrExactIdentityMatch('movie_tracker')}
                 AND movie_tracker.list_type = 'tracking'
@@ -84,6 +87,9 @@ export const getCollectionStatistics = (
              AND ${movieContentCondition}
            AND NOT EXISTS (
              SELECT 1 FROM collection_items movie_tracker
+             INNER JOIN collection_item_tracker_state movie_tracker_state
+               ON movie_tracker_state.item_id = movie_tracker.id
+              AND movie_tracker_state.completed_at IS NOT NULL
              WHERE movie_tracker.username_hash = ?
                 AND ${canonicalOrExactIdentityMatch('movie_tracker')}
                AND movie_tracker.list_type = 'tracking'

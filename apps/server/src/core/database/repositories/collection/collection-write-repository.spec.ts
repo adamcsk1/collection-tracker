@@ -127,5 +127,84 @@ describe('collection-write-repository', () => {
       count: 0,
     });
     expect(db.prepare('SELECT COUNT(*) AS count FROM collection_item_external_ratings').get()).toEqual({ count: 0 });
+    db.exec('DROP TRIGGER fail_identity_insert');
+  });
+
+  it('marks tracking books complete from updated content type and equal progress', () => {
+    const db = getDatabase();
+    const bookItem: CollectionItemChangeApiModel = {
+      image: '',
+      title: 'Progress Book',
+      genre: [],
+      externalProvider: 'openlibrary',
+      externalItemId: '9780306406157',
+      externalIds: [{ source: 'isbn', id: '9780306406157' }],
+      tags: [],
+      year: '1965',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      actors: '',
+      plot: '',
+      contentType: 'book',
+      favorite: false,
+    };
+    insertCollectionItem(db, 'user', 'book-hash-1', bookItem, 'tracking', undefined, undefined, 10, 100);
+
+    const result = updateCollectionItemByExternalId(
+      db,
+      'user',
+      'openlibrary',
+      '9780306406157',
+      'book-hash-2',
+      { ...bookItem, progressCurrent: 200, progressTotal: 200 },
+      'tracking'
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        contentType: 'book',
+        progressCurrent: 200,
+        progressTotal: 200,
+        watchedAt: expect.any(String),
+      })
+    );
+  });
+
+  it('does not apply book completion rules when updated content type is not book', () => {
+    const db = getDatabase();
+    insertCollectionItem(db, 'user', 'hash-1', item, 'tracking');
+    const itemId = (db.prepare('SELECT id FROM collection_items WHERE username_hash = ?').get('user') as { id: number })
+      .id;
+    db.prepare(
+      'UPDATE collection_item_tracker_state SET completed_at = ?, progress_current = ?, progress_total = ? WHERE item_id = ?'
+    ).run('2026-01-01 00:00:00', 10, 100, itemId);
+
+    const result = updateCollectionItemByExternalId(
+      db,
+      'user',
+      'omdb',
+      'provider-123',
+      'hash-2',
+      { ...item, progressCurrent: 50, progressTotal: 100 },
+      'tracking'
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        contentType: 'movie',
+        progressCurrent: 50,
+        progressTotal: 100,
+        watchedAt: '2026-01-01 00:00:00',
+      })
+    );
+    expect(
+      db
+        .prepare(
+          'SELECT completed_at, progress_current, progress_total FROM collection_item_tracker_state WHERE item_id = ?'
+        )
+        .get(itemId)
+    ).toEqual({ completed_at: '2026-01-01 00:00:00', progress_current: 50, progress_total: 100 });
   });
 });

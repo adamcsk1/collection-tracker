@@ -303,7 +303,7 @@ describe('import-api', () => {
 
   it.each([
     ['book in library', { contentType: 'book', listType: 'library' }],
-    ['movie in book tracker', { contentType: 'movie', listType: 'books' }],
+    ['movie in books list', { contentType: 'movie', listType: 'books' }],
     ['favorite in a non-library list', { favorite: true, listType: 'watchlist' }],
   ])('returns 400 for invalid imported %s', async (_caseName, itemChanges) => {
     const response = mockResponse();
@@ -817,7 +817,7 @@ describe('import-api', () => {
     ]);
   });
 
-  it('returns 400 for invalid series tracker import metadata', async () => {
+  it('returns 400 for invalid tracking import metadata', async () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
@@ -844,7 +844,7 @@ describe('import-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('returns 400 for malformed encoded series tracker import keys', async () => {
+  it('returns 400 for malformed encoded tracking import keys', async () => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',

@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
+import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
 import { ChangeApiRequestModel, ChangeApiResponseModel } from '@shared/models/api-model';
 import { changeCollectionItemTagValidation } from '@shared/utils/collection-item-tag-validation-util';
 import type { FastifyInstance } from 'fastify';
@@ -109,7 +109,7 @@ export const register = (app: FastifyInstance): void => {
 
       const newHash = getItemHash(item);
       let updatedItem = updateCollectionItemByRow(db, ownerHash, existingItem, newHash, item, listType);
-      if (listType === 'tracking') {
+      if (listType === 'tracking' && item.contentType === 'series') {
         updatedItem =
           syncTrackingCompletedTagByExternalId(db, ownerHash, item.externalProvider, item.externalItemId) ??
           updatedItem;

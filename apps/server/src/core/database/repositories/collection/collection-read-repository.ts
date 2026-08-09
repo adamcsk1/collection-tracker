@@ -94,6 +94,16 @@ const toAiSearchItem = (
     if (apiItem.contentType === 'movie') {
       watchStatus = completed ? 'watched' : 'unwatched';
       progressPercent = completed ? 100 : 0;
+    } else if (apiItem.contentType === 'book') {
+      watchStatus = completed ? 'completed' : 'unfinished';
+      const progressCurrent = apiItem.progressCurrent;
+      const progressTotal = apiItem.progressTotal;
+      progressPercent =
+        progressTotal != null && progressTotal > 0 && progressCurrent != null
+          ? Math.min(100, Math.round((progressCurrent / progressTotal) * 100))
+          : completed
+            ? 100
+            : 0;
     } else {
       watchStatus = completed ? 'completed' : 'unfinished';
       const episodeCounts = episodeCountsByItemId?.get(row.id) ?? { completedEpisodes: 0, totalEpisodes: 0 };

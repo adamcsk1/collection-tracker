@@ -1,15 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OpenLibraryExternalMetadataProvider } from './openlibrary-provider';
 
+const jsonResponse = (body: unknown, status = 200): Response =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+
 describe('OpenLibraryExternalMetadataProvider', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('maps search results using canonical ISBN-13 identities', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
+      vi.fn().mockResolvedValue(
+        jsonResponse({
           docs: [
             {
               title: 'The Book',
@@ -21,8 +26,8 @@ describe('OpenLibraryExternalMetadataProvider', () => {
               editions: { docs: [{ key: 'OL1M', isbn: ['0-306-40615-2'] }] },
             },
           ],
-        }),
-      } as Response)
+        })
+      )
     );
 
     const result = await new OpenLibraryExternalMetadataProvider('https://books.example/').search('the book');
@@ -49,6 +54,7 @@ describe('OpenLibraryExternalMetadataProvider', () => {
         ratings: [],
       },
     ]);
+    expect(vi.mocked(fetch).mock.calls[0][1]).toEqual(expect.objectContaining({ signal: expect.any(AbortSignal) }));
   });
 
   it('maps ISBN details, description objects, covers, subjects, and author records', async () => {
@@ -56,20 +62,16 @@ describe('OpenLibraryExternalMetadataProvider', () => {
       'fetch',
       vi.fn().mockImplementation(async (input: string) => {
         if (input.endsWith('/authors/OL1A.json')) {
-          return { ok: true, json: async () => ({ name: 'Author One' }) } as Response;
+          return jsonResponse({ name: 'Author One' });
         }
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({
-            title: 'Detailed Book',
-            publish_date: 'April 1965',
-            description: { value: 'Book plot' },
-            subjects: ['Physics'],
-            covers: [-1, 123],
-            authors: [{ key: '/authors/OL1A' }, { name: 'Author Two' }],
-          }),
-        } as Response;
+        return jsonResponse({
+          title: 'Detailed Book',
+          publish_date: 'April 1965',
+          description: { value: 'Book plot' },
+          subjects: ['Physics'],
+          covers: [-1, 123],
+          authors: [{ key: '/authors/OL1A' }, { name: 'Author Two' }],
+        });
       })
     );
 
@@ -92,7 +94,7 @@ describe('OpenLibraryExternalMetadataProvider', () => {
   });
 
   it('returns null for invalid or missing ISBNs', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404 } as Response);
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
     vi.stubGlobal('fetch', fetchMock);
     const provider = new OpenLibraryExternalMetadataProvider();
 
@@ -102,11 +104,9 @@ describe('OpenLibraryExternalMetadataProvider', () => {
   });
 
   it('does not fetch untrusted author URLs', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ title: 'Book', authors: [{ key: 'https://attacker.example/author' }] }),
-    } as Response);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ title: 'Book', authors: [{ key: 'https://attacker.example/author' }] }));
     vi.stubGlobal('fetch', fetchMock);
 
     await new OpenLibraryExternalMetadataProvider().getItem('9780306406157');
@@ -117,15 +117,14 @@ describe('OpenLibraryExternalMetadataProvider', () => {
   it('loads exact ISBN searches from the edition endpoint', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
+      vi.fn().mockResolvedValue(
+        jsonResponse({
           title: 'Exact Edition Title',
           publish_date: '1988',
           covers: [123],
           authors: [{ name: 'Exact Author' }],
-        }),
-      } as Response)
+        })
+      )
     );
 
     const result = await new OpenLibraryExternalMetadataProvider().search('0-306-40615-2');
@@ -140,9 +139,8 @@ describe('OpenLibraryExternalMetadataProvider', () => {
   it('uses the cover edition ISBN for title searches and deduplicates canonical ISBNs', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
+      vi.fn().mockResolvedValue(
+        jsonResponse({
           docs: [
             {
               title: 'The Book',
@@ -161,8 +159,8 @@ describe('OpenLibraryExternalMetadataProvider', () => {
               editions: { docs: [{ isbn_13: ['9780140328721'] }] },
             },
           ],
-        }),
-      } as Response)
+        })
+      )
     );
 
     const result = await new OpenLibraryExternalMetadataProvider().search('The Book');
@@ -173,7 +171,7 @@ describe('OpenLibraryExternalMetadataProvider', () => {
   });
 
   it('keeps a custom base path without a trailing slash', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ docs: [] }) } as Response));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ docs: [] })));
 
     await new OpenLibraryExternalMetadataProvider('https://books.example/api').search('book');
 
@@ -181,18 +179,17 @@ describe('OpenLibraryExternalMetadataProvider', () => {
   });
 
   it('falls back from negative cover IDs and limits author lookups to five', async () => {
-    const fetchMock = vi.fn().mockImplementation(async (input: string) => ({
-      ok: true,
-      status: 200,
-      json: async () =>
+    const fetchMock = vi.fn().mockImplementation(async (input: string) =>
+      jsonResponse(
         input.includes('/authors/')
           ? { name: input.match(/OL\d+A/)?.[0] }
           : {
               title: 'Book',
               covers: [-1],
               authors: Array.from({ length: 7 }, (_, index) => ({ key: `/authors/OL${index + 1}A` })),
-            },
-    }));
+            }
+      )
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     const item = await new OpenLibraryExternalMetadataProvider().getItem('9780306406157');

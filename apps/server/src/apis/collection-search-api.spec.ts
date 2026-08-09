@@ -405,7 +405,7 @@ describe('collection search APIs', () => {
     });
   });
 
-  it('searches and suggests book tracker items by ISBN', async () => {
+  it('searches and suggests books list items by ISBN', async () => {
     insertUser();
     insertItem({
       imdbId: '',

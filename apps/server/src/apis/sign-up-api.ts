@@ -6,7 +6,7 @@ import { SignUpApiRequestModel, SignUpApiResponseModel } from '@shared/models/ap
 import { getDatabase } from '../core/database/database';
 import { countUsers, findUserByHash, insertUser } from '../core/database/repositories/user-repository';
 import type { FastifyInstance } from 'fastify';
-import { getAuthRateLimit } from '../core/constants/rate-limit-const';
+import { getAuthRateLimit } from '../core/utils/rate-limit-util';
 
 export const register = (app: FastifyInstance): void => {
   app.post(

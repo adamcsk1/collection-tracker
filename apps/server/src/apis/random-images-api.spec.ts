@@ -64,7 +64,7 @@ describe('random-images-api', () => {
     expect(result.images.length).toBeLessThanOrEqual(3);
   });
 
-  it('includes own book tracker and readable libraries but excludes shared trackers', async () => {
+  it('includes own books list and readable libraries but excludes shared trackers', async () => {
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('owner', 'token');

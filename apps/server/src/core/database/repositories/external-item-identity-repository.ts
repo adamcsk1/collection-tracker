@@ -1,4 +1,4 @@
-import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
+import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
 import {
   ExternalItemIdentityModel,
   ExternalItemIdentitySourceNameModel,

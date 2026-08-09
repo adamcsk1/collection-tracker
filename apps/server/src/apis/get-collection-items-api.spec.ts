@@ -300,7 +300,7 @@ describe('get-collection-items-api', () => {
     );
   });
 
-  it('excludes series tracker items from the default collection list', async () => {
+  it('excludes tracking items from the default collection list', async () => {
     insertUser('user');
     insertItem('user', 'tt-normal', 'Normal Item');
     insertTypedItem('user', 'tt-watching', 'Tracked Series', 'tracking');
@@ -342,7 +342,7 @@ describe('get-collection-items-api', () => {
     );
   });
 
-  it('returns own series tracker items when explicitly requested', async () => {
+  it('returns own tracking items when explicitly requested', async () => {
     insertUser('user');
     insertUser('owner');
     insertTypedItem('user', 'tt-own-watching', 'Own Tracked Series', 'tracking');
@@ -364,7 +364,7 @@ describe('get-collection-items-api', () => {
     );
   });
 
-  it('filters series tracker items by completed status', async () => {
+  it('filters tracking items by completed status', async () => {
     insertUser('user');
     insertTypedItem('user', 'tt-completed-watching', 'Completed Tracked Series', 'tracking');
     insertTypedItem('user', 'tt-uncompleted-watching', 'Uncompleted Tracked Series', 'tracking');

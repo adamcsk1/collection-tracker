@@ -23,7 +23,7 @@ import {
 import { generateAccessToken, generateRefreshToken } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getUserAccessToken, getUserRefreshToken } from '../core/utils/users-util';
-import { getAuthRateLimit } from '../core/constants/rate-limit-const';
+import { getAuthRateLimit } from '../core/utils/rate-limit-util';
 
 export const register = (app: FastifyInstance): void => {
   app.post(

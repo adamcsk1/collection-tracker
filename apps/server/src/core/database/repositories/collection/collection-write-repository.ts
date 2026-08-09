@@ -12,7 +12,7 @@ import {
   resolveCanonicalItemId,
   upsertExternalItemIdentities,
 } from '../external-item-identity-repository';
-import { findTrackingSeasons, findTrackingSeasonsByExternalId } from '../series-tracker-season-repository';
+import { findTrackingSeasons, findTrackingSeasonsByExternalId } from '../tracking-season-repository';
 import { findCompletedEpisodes, findCompletedEpisodesByExternalId } from '../series-completed-episodes-repository';
 import { toApiItem } from './collection-mapper';
 import { normalizeListType } from './collection-query';
@@ -22,6 +22,21 @@ import {
   findCollectionItemByImdbId,
 } from './collection-read-repository';
 import { CollectionItemRow } from './collection-model';
+
+const isCompleteBookProgress = (progressCurrent: number | null | undefined, progressTotal: number | null | undefined) =>
+  typeof progressCurrent === 'number' &&
+  typeof progressTotal === 'number' &&
+  progressTotal >= 1 &&
+  progressCurrent === progressTotal;
+
+const isIncompleteBookProgress = (
+  progressCurrent: number | null | undefined,
+  progressTotal: number | null | undefined
+) =>
+  typeof progressCurrent === 'number' &&
+  typeof progressTotal === 'number' &&
+  progressTotal >= 1 &&
+  progressCurrent < progressTotal;
 
 const countCollectionItemsByCanonicalItemId = (
   db: Database.Database,
@@ -109,7 +124,11 @@ export const insertCollectionItem = (
     const itemId = Number(result.lastInsertRowid);
     replaceExternalRatings(db, itemId, item);
     if (normalizedListType === 'tracking') {
-      const autoComplete = (markCompleted || item.contentType === 'movie') && !watchedAt;
+      const autoComplete =
+        (markCompleted ||
+          item.contentType === 'movie' ||
+          (item.contentType === 'book' && isCompleteBookProgress(progressCurrent, progressTotal))) &&
+        !watchedAt;
       db.prepare(
         `INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total)
          VALUES (?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE ? END, ?, ?)`
@@ -198,13 +217,31 @@ export const updateCollectionItemByRow = (
       normalizedListType === 'tracking' &&
       (updatedItem.progressCurrent !== undefined || updatedItem.progressTotal !== undefined)
     ) {
+      const completeBookProgress =
+        updatedItem.contentType === 'book' &&
+        isCompleteBookProgress(updatedItem.progressCurrent, updatedItem.progressTotal);
+      const incompleteBookProgress =
+        updatedItem.contentType === 'book' &&
+        isIncompleteBookProgress(updatedItem.progressCurrent, updatedItem.progressTotal);
       db.prepare(
         `INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total)
-         VALUES (?, NULL, ?, ?)
+         VALUES (?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END, ?, ?)
          ON CONFLICT(item_id) DO UPDATE SET
            progress_current = excluded.progress_current,
-           progress_total = excluded.progress_total`
-      ).run(existingItem.id, updatedItem.progressCurrent ?? null, updatedItem.progressTotal ?? null);
+           progress_total = excluded.progress_total,
+           completed_at = CASE
+             WHEN ? THEN COALESCE(collection_item_tracker_state.completed_at, CURRENT_TIMESTAMP)
+             WHEN ? THEN NULL
+             ELSE collection_item_tracker_state.completed_at
+           END`
+      ).run(
+        existingItem.id,
+        completeBookProgress ? 1 : 0,
+        updatedItem.progressCurrent ?? null,
+        updatedItem.progressTotal ?? null,
+        completeBookProgress ? 1 : 0,
+        incompleteBookProgress ? 1 : 0
+      );
     }
     if (existingCanonicalItemUseCount === 1) {
       deleteExternalItemIdentitiesForCanonicalItemId(db, usernameHash, existingItem.canonical_item_id);

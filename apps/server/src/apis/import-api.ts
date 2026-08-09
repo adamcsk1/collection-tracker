@@ -1,6 +1,6 @@
 import { EXPORT_TYPE, EXPORT_VERSION } from '@shared/constants/export-import-const';
-import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
-import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
+import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
+import { MAX_SERIES_EPISODES, MAX_SERIES_SEASONS } from '@shared/constants/tracking-const';
 import {
   CollectionItemChangeApiModel,
   TrackingSeasonMetadataModel,
@@ -35,7 +35,7 @@ import {
   inferCanonicalItemId,
   normalizeExternalIdentities,
 } from '../core/database/repositories/external-item-identity-repository';
-import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/tracking-season-repository';
 import { replaceCompletedEpisodesByExternalId } from '../core/database/repositories/series-completed-episodes-repository';
 import { deleteTagManagement, upsertTagManagement } from '../core/database/repositories/tag-management-repository';
 import { deleteUserSettings, upsertUserSettings } from '../core/database/repositories/user-repository';
@@ -43,7 +43,7 @@ import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
 import { parseListType } from '../core/utils/query-parse-util';
-import { normalizeTrackingSeasons } from '../core/utils/series-tracker-seasons-api-util';
+import { normalizeTrackingSeasons } from '../core/utils/tracking-seasons-api-util';
 import { ImportedCollectionItemApiModel, ImportedUserRequestModel } from './import-api-model';
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
@@ -305,10 +305,10 @@ const normalizeCompletedEpisodes = (
     if (
       !Number.isInteger(season) ||
       season < 1 ||
-      season > MAX_SERIES_TRACKER_SEASONS ||
+      season > MAX_SERIES_SEASONS ||
       !Number.isInteger(episode) ||
       episode < 1 ||
-      episode > MAX_SERIES_TRACKER_EPISODES
+      episode > MAX_SERIES_EPISODES
     ) {
       return null;
     }

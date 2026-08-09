@@ -9,7 +9,7 @@ import {
   insertCollectionItem,
 } from '../core/database/repositories/collection';
 import { resolveCanonicalItemIds } from '../core/database/repositories/external-item-identity-repository';
-import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/tracking-season-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
@@ -68,7 +68,17 @@ export const register = (app: FastifyInstance): void => {
       }
 
       const hash = getItemHash(item);
-      const createdItem = insertCollectionItem(db, targetOwnerHash, hash, item, listType);
+      const createdItem = insertCollectionItem(
+        db,
+        targetOwnerHash,
+        hash,
+        item,
+        listType,
+        undefined,
+        undefined,
+        item.progressCurrent,
+        item.progressTotal
+      );
 
       if (listType === 'tracking' && item.contentType === 'series') {
         const seasons = await fetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);

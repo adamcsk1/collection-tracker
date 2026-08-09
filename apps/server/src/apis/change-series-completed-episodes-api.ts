@@ -1,18 +1,18 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
+import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
 import {
   TrackingCompletedEpisodesApiRequestModel,
   TrackingCompletedEpisodesApiResponseModel,
   TrackingCompletedEpisodeModel,
 } from '@shared/models/api-model';
-import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
+import { MAX_SERIES_EPISODES, MAX_SERIES_SEASONS } from '@shared/constants/tracking-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
   findCollectionItemByExternalIdOrCanonicalItemId,
   syncTrackingCompletedTagByExternalId,
 } from '../core/database/repositories/collection';
-import { findTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { findTrackingSeasonsByExternalId } from '../core/database/repositories/tracking-season-repository';
 import { replaceCompletedEpisodesByExternalId } from '../core/database/repositories/series-completed-episodes-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
@@ -30,10 +30,10 @@ const normalizeCompletedEpisodes = (
     if (
       !Number.isInteger(season) ||
       season < 1 ||
-      season > MAX_SERIES_TRACKER_SEASONS ||
+      season > MAX_SERIES_SEASONS ||
       !Number.isInteger(episode) ||
       episode < 1 ||
-      episode > MAX_SERIES_TRACKER_EPISODES
+      episode > MAX_SERIES_EPISODES
     )
       return null;
     const key = `${season}-${episode}`;

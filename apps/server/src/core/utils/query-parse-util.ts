@@ -1,4 +1,4 @@
-import { parseCollectionListType } from '@shared/constants/collection-list-type-const';
+import { parseCollectionListType } from '@shared/utils/collection-list-type-util';
 import {
   CollectionItemFiltersApiModel,
   CollectionItemOrderBy,

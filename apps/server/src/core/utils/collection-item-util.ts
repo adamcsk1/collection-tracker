@@ -1,7 +1,7 @@
 import {
   isExternalItemIdentitySourceName,
   isExternalMetadataProviderName,
-} from '@shared/constants/external-metadata-const';
+} from '@shared/utils/external-metadata-provider-util';
 import { CollectionItemChangeApiModel } from '@shared/models/api-model';
 import { hashText } from '../crypto';
 import { normalizeIsbn13 } from './isbn-util';

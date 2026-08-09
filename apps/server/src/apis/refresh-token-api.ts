@@ -17,7 +17,7 @@ import { generateAccessToken } from '../core/jwt';
 import { debugLog, errorLog } from '../core/logger';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getUserAccessToken } from '../core/utils/users-util';
-import { getRefreshRateLimit } from '../core/constants/rate-limit-const';
+import { getRefreshRateLimit } from '../core/utils/rate-limit-util';
 
 const hasUsername = (data: jwtLib.JwtPayload | string | undefined): data is { username: string } =>
   typeof data === 'object' && data !== null && 'username' in data && typeof data.username === 'string';

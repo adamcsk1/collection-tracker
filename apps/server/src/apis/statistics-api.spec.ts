@@ -238,7 +238,43 @@ describe('statistics-api', () => {
     );
   });
 
-  it('counts current user book tracker items without library book statistics', async () => {
+  it('does not count incomplete tracking movie twins as watched', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    db.prepare(
+      `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
+       VALUES ('user', 'imdb', 'tt-incomplete', 'imdb:tt-incomplete', 'library', 'Incomplete Movie', 'incomplete movie', '1999', '', '', '', 'lib-hash', 'movie')`
+    ).run();
+    db.prepare(
+      `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
+       VALUES ('user', 'imdb', 'tt-incomplete', 'imdb:tt-incomplete', 'tracking', 'Incomplete Movie', 'incomplete movie', '1999', '', '', '', 'track-hash', 'movie')`
+    ).run();
+    const trackingItemId = Number(
+      (
+        db
+          .prepare('SELECT id FROM collection_items WHERE external_item_id = ? AND list_type = ?')
+          .get('tt-incomplete', 'tracking')! as { id: number }
+      ).id
+    );
+    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, NULL)').run(
+      trackingItemId
+    );
+
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp({ usernameHash: 'user', query: {} }, response);
+    const { register } = await import('./statistics-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        watchedMovieCount: 0,
+        unwatchedMovieCount: 1,
+      })
+    );
+  });
+
+  it('counts current user books list items without library book statistics', async () => {
     insertUser('user');
     const db = getDatabase();
     const insert = db.prepare(

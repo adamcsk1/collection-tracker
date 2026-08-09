@@ -173,7 +173,10 @@ describe('proxy-get-external-metadata-item-api', () => {
       register(app);
 
       await handlerPromise();
-      expect(fetch).toHaveBeenCalledWith('https://openlibrary.org/isbn/9780306406157.json');
+      expect(fetch).toHaveBeenCalledWith(
+        'https://openlibrary.org/isbn/9780306406157.json',
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
       expect(response.send).toHaveBeenCalledWith(
         expect.objectContaining({
           provider: 'openlibrary',

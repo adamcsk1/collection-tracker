@@ -1,4 +1,4 @@
-import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
+import { MAX_SERIES_EPISODES, MAX_SERIES_SEASONS } from '@shared/constants/tracking-const';
 import { TrackingSeasonMetadataModel } from '@shared/models/api-model';
 import { ExternalMetadataItemModel, ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
 import { debugLog } from '../../logger';
@@ -57,7 +57,7 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
       if (!totalSeasons) return [];
 
       const seasons: TrackingSeasonMetadataModel[] = [];
-      for (let season = 1; season <= Math.min(totalSeasons, MAX_SERIES_TRACKER_SEASONS); season++) {
+      for (let season = 1; season <= Math.min(totalSeasons, MAX_SERIES_SEASONS); season++) {
         try {
           const seasonInfo = await this.fetchJson<OmdbSeasonResponse>({ i: providerItemId, Season: `${season}` });
           if (isOmdbErrorResponse(seasonInfo)) continue;
@@ -65,9 +65,9 @@ export class OmdbExternalMetadataProvider implements ExternalMetadataSeasonProvi
           const episodes = seasonEpisodes.length;
           if (episodes >= 1) {
             const titles = seasonEpisodes
-              .slice(0, MAX_SERIES_TRACKER_EPISODES)
+              .slice(0, MAX_SERIES_EPISODES)
               .map((episode) => (typeof episode.Title === 'string' ? episode.Title : ''));
-            seasons.push({ season, episodes: Math.min(episodes, MAX_SERIES_TRACKER_EPISODES), titles });
+            seasons.push({ season, episodes: Math.min(episodes, MAX_SERIES_EPISODES), titles });
           }
         } catch {
           // External season data is best-effort; keep any other successful seasons.

@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
+import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
 import { CollectionMatchedItemsApiRequestModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';

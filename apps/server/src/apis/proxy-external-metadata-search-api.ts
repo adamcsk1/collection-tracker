@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { isExternalMetadataProviderName } from '@shared/constants/external-metadata-const';
+import { isExternalMetadataProviderName } from '@shared/utils/external-metadata-provider-util';
 import { ExternalMetadataSearchResponseModel } from '@shared/models/external-metadata-model';
 import type { FastifyInstance } from 'fastify';
 import {

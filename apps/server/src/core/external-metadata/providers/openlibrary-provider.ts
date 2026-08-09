@@ -10,6 +10,7 @@ import {
   OpenLibrarySearchResponseModel,
 } from './openlibrary-model';
 
+const FETCH_TIMEOUT_MS = 10_000;
 const SEARCH_LIMIT = 20;
 const SEARCH_FIELDS = [
   'key',
@@ -67,7 +68,7 @@ export class OpenLibraryExternalMetadataProvider implements ExternalMetadataProv
 
   private async getItemByIsbn(isbn: string, coverSize: 'M' | 'L'): Promise<ExternalMetadataItemModel | null> {
     const url = new URL(`isbn/${isbn}.json`, this.apiUrl);
-    const response = await fetch(url.href);
+    const response = await fetch(url.href, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`${this.name} responded with ${response.status}`);
     const book = (await response.json()) as OpenLibraryBookModel;
@@ -151,7 +152,7 @@ export class OpenLibraryExternalMetadataProvider implements ExternalMetadataProv
   }
 
   private async fetchJson<T>(url: URL): Promise<T> {
-    const response = await fetch(url.href);
+    const response = await fetch(url.href, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!response.ok) throw new Error(`${this.name} responded with ${response.status}`);
     return (await response.json()) as T;
   }

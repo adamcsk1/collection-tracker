@@ -726,10 +726,10 @@ components:
       properties:
         trackedCount:
           type: integer
-          description: Number of library series newly copied into the authenticated user's series tracker.
+          description: Number of library series newly copied into the authenticated user's tracking.
         progressChangedCount:
           type: integer
-          description: Number of series tracker items whose watched episode progress or completed status changed.
+          description: Number of tracking items whose watched episode progress or completed status changed.
 
     MarkAllUnwatchedResponse:
       type: object
@@ -1153,7 +1153,7 @@ components:
           $ref: '#/components/schemas/TagManagementResponse'
         trackingData:
           type: object
-          description: Series tracker data keyed by encoded provider identity, formatted as provider/externalItemId.
+          description: Tracking list data keyed by encoded provider identity, formatted as provider/externalItemId.
           additionalProperties:
             type: object
             required: [seasons, completedEpisodes]
@@ -1741,7 +1741,7 @@ paths:
     post:
       operationId: markAllAsWatched
       summary: Mark all movies as watched
-      description: Copies every unwatched movie in the selected library into the authenticated user's movie tracker. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      description: Copies every unwatched movie in the selected library into the authenticated user's tracking. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1765,7 +1765,7 @@ paths:
     post:
       operationId: markAllAsUnwatched
       summary: Mark all movies as unwatched
-      description: Removes authenticated-user movie tracker copies that correspond to movies in the selected library. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      description: Removes authenticated-user tracking copies that correspond to movies in the selected library. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1789,7 +1789,7 @@ paths:
     post:
       operationId: markAllSeriesAsWatched
       summary: Mark all series as watched
-      description: Copies every untracked series in the selected library into the authenticated user's series tracker, fetches season metadata from the configured external metadata provider only for newly added series, and marks all available episodes watched for matching tracker items. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      description: Copies every untracked series in the selected library into the authenticated user's tracking, fetches season metadata from the configured external metadata provider only for newly added series, and marks all available episodes watched for matching tracker items. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1799,7 +1799,7 @@ paths:
           description: Optional owner share code for using an incoming shared library as the source.
       responses:
         '200':
-          description: Number of series tracker items newly tracked and number with changed progress.
+          description: Number of tracking items newly tracked and number with changed progress.
           content:
             application/json:
               schema:
@@ -1813,7 +1813,7 @@ paths:
     post:
       operationId: markAllSeriesAsUnwatched
       summary: Mark all series as unwatched
-      description: Clears watched episode progress for authenticated-user series tracker items that correspond to series in the selected library. Series tracker items and season metadata are kept. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      description: Clears watched episode progress for authenticated-user tracking items that correspond to series in the selected library. Tracking items and season metadata are kept. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -2029,12 +2029,12 @@ paths:
   /books:
     delete:
       operationId: deleteAllBooksItems
-      summary: Remove all book tracker data
-      description: Deletes every book tracker item owned by the authenticated user. This affects only the user's own tracker data and cannot remove or change shared library owner items.
+      summary: Remove all books list data
+      description: Deletes every books list item owned by the authenticated user. This affects only the user's own books list data and cannot remove or change shared library owner items.
       tags: [Collection]
       responses:
         '200':
-          description: Number of book tracker items deleted.
+          description: Number of books list items deleted.
           content:
             application/json:
               schema:
@@ -2043,12 +2043,12 @@ paths:
   /tracking:
     delete:
       operationId: deleteAllTrackingItems
-      summary: Remove all series tracker data
-      description: Deletes every series tracker item owned by the authenticated user. Related season metadata and watched episode progress are removed with the tracker items. This affects only the user's own tracker data and cannot remove or change shared library owner items.
+      summary: Remove all tracking list data
+      description: Deletes every tracking item owned by the authenticated user. Related season metadata and watched episode progress are removed with the tracking items. This affects only the user's own tracking data and cannot remove or change shared library owner items.
       tags: [Collection]
       responses:
         '200':
-          description: Number of series tracker items deleted.
+          description: Number of tracking items deleted.
           content:
             application/json:
               schema:
@@ -2215,10 +2215,11 @@ paths:
   /tracking/{externalIdentitySource}/{externalIdentityId}/completed:
     delete:
       operationId: deleteCompletedTrackingItemByExternalId
-      summary: Delete a completed tracking twin by external identity
+      summary: Clear completion on a tracking twin by external identity
       description: >-
-        Deletes the authenticated user's completed movie or book tracking twin for the given external identity
-        (mark unfinished). Series tracking rows are not removed by this endpoint.
+        Marks the authenticated user's movie or book tracking twin unfinished by clearing completed_at.
+        Movie twins are then removed from tracking. Book twins stay on tracking as unfinished so reading
+        progress is preserved. Series tracking rows are not handled by this endpoint.
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2234,14 +2235,14 @@ paths:
             type: string
       responses:
         '204':
-          description: Completed tracking twin deleted.
+          description: Completion cleared (movie twin pruned; book twin kept unfinished).
         '404':
-          description: Completed tracking twin not found.
+          description: Tracking twin not found.
 
   /tracking/{externalIdentitySource}/{externalIdentityId}/seasons:
     get:
       operationId: getTrackingSeasonsByExternalId
-      summary: Get series tracker season metadata by external identity
+      summary: Get tracking season metadata by external identity
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2265,10 +2266,10 @@ paths:
         '400':
           description: Invalid external metadata provider.
         '404':
-          description: Series tracker item not found.
+          description: Tracking item not found.
     put:
       operationId: updateTrackingSeasonsByExternalId
-      summary: Replace series tracker season metadata by external identity
+      summary: Replace tracking season metadata by external identity
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2298,10 +2299,10 @@ paths:
         '400':
           description: Invalid external metadata provider or season metadata.
         '404':
-          description: Series tracker item not found.
+          description: Tracking item not found.
     delete:
       operationId: deleteTrackingSeasonsByExternalId
-      summary: Delete series tracker season metadata by external identity
+      summary: Delete tracking season metadata by external identity
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2325,12 +2326,12 @@ paths:
         '400':
           description: Invalid external metadata provider.
         '404':
-          description: Series tracker item not found.
+          description: Tracking item not found.
 
   /tracking/{externalIdentitySource}/{externalIdentityId}/seasons/refresh:
     post:
       operationId: refreshTrackingSeasonsByExternalId
-      summary: Refresh series tracker season metadata by external identity
+      summary: Refresh tracking season metadata by external identity
       tags: [Collection]
       parameters:
         - name: externalIdentitySource
@@ -2354,7 +2355,7 @@ paths:
         '400':
           description: Invalid external metadata provider.
         '404':
-          description: Series tracker item not found.
+          description: Tracking item not found.
 
   /tracking/{externalIdentitySource}/{externalIdentityId}/mark-all-completed:
     put:
@@ -2383,7 +2384,7 @@ paths:
         '400':
           description: Invalid external metadata provider or no season metadata exists for the item.
         '404':
-          description: Series tracker item not found.
+          description: Tracking item not found.
 
   /tracking/{externalIdentitySource}/{externalIdentityId}/completed-episodes:
     get:
@@ -2412,7 +2413,7 @@ paths:
         '400':
           description: Invalid external metadata provider.
         '404':
-          description: Series tracker item not found.
+          description: Tracking item not found.
     put:
       operationId: updateTrackingCompletedEpisodesByExternalId
       summary: Replace completed episodes by external identity
@@ -2445,7 +2446,7 @@ paths:
         '400':
           description: Invalid external metadata provider or completed episode data.
         '404':
-          description: Series tracker item not found.
+          description: Tracking item not found.
 
   /proxy/external-metadata/providers:
     get:
@@ -2635,7 +2636,7 @@ paths:
     get:
       operationId: getUserExport
       summary: Export all user-owned data
-      description: Returns a JSON export of all user-owned data including settings, collection items (library, watchlist, wishlist, tracking, and books), tag management, and series tracker metadata.
+      description: Returns a JSON export of all user-owned data including settings, collection items (library, watchlist, wishlist, tracking, and books), tag management, and tracking season metadata.
       tags: [User]
       responses:
         '200':

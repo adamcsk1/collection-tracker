@@ -10,11 +10,11 @@ import {
   inferCanonicalItemId,
   pickStrongerCanonicalItemId,
 } from '../core/database/repositories/external-item-identity-repository';
-import { findTrackingSeasonsByExternalId } from '../core/database/repositories/series-tracker-season-repository';
+import { findTrackingSeasonsByExternalId } from '../core/database/repositories/tracking-season-repository';
 import { findCompletedEpisodesByExternalId } from '../core/database/repositories/series-completed-episodes-repository';
 import { CollectionItemApiModel, UserExportApiResponseModel } from '@shared/models/api-model';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
-import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
+import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
 import type { FastifyInstance } from 'fastify';
 
 const getTrackingDataKey = (externalProvider: string, externalItemId: string): string =>

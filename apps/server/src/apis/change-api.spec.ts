@@ -258,7 +258,7 @@ describe('change-api', () => {
     expect(response.code).toHaveBeenCalledWith(409);
   });
 
-  it('updates a series tracker item when listType is provided', async () => {
+  it('updates a tracking item when listType is provided', async () => {
     insertItem('abc123', 'user', 'tracking');
     const response = mockResponse();
     const request: any = {
@@ -367,7 +367,7 @@ describe('change-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('preserves completed tag when updating a completed series tracker item', async () => {
+  it('preserves completed tag when updating a completed tracking item', async () => {
     insertItem('abc123', 'user', 'tracking');
     const db = getDatabase();
     const itemId = (
@@ -778,5 +778,382 @@ describe('change-api', () => {
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(404);
+  });
+
+  it('persists book reading progress on a tracking item', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    const result = db
+      .prepare(
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        'user',
+        'openlibrary',
+        '9780306406157',
+        'isbn:9780306406157',
+        'tracking',
+        'book',
+        'Book',
+        'book',
+        '1965',
+        '',
+        '',
+        'book-hash'
+      );
+    const itemId = Number(result.lastInsertRowid);
+    db.prepare(
+      'INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total) VALUES (?, ?, ?, ?)'
+    ).run(itemId, '2026-01-01 00:00:00', 10, 100);
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'isbn:9780306406157', 'isbn', '9780306406157', 'alias');
+
+    const bookItem: CollectionItemChangeApiModel = {
+      image: '',
+      title: 'Book',
+      genre: [],
+      externalProvider: 'openlibrary',
+      externalItemId: '9780306406157',
+      tags: [],
+      year: '1965',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      actors: '',
+      plot: '',
+      contentType: 'book',
+      favorite: false,
+      progressCurrent: 55,
+      progressTotal: 200,
+    };
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'openlibrary', externalIdentityId: '9780306406157' },
+      query: { listType: 'tracking' },
+      body: { ...bookItem, hash: 'book-hash' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+    const { register } = await import('./change-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        contentType: 'book',
+        progressCurrent: 55,
+        progressTotal: 200,
+        watchedAt: null,
+      }),
+    });
+    expect(
+      db
+        .prepare(
+          'SELECT completed_at, progress_current, progress_total FROM collection_item_tracker_state WHERE item_id = ?'
+        )
+        .get(itemId)
+    ).toEqual({ completed_at: null, progress_current: 55, progress_total: 200 });
+  });
+
+  it('marks a tracking book completed when progress current equals total', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    const result = db
+      .prepare(
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        'user',
+        'openlibrary',
+        '9780306406157',
+        'isbn:9780306406157',
+        'tracking',
+        'book',
+        'Book',
+        'book',
+        '1965',
+        '',
+        '',
+        'book-hash'
+      );
+    const itemId = Number(result.lastInsertRowid);
+    db.prepare(
+      'INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total) VALUES (?, ?, ?, ?)'
+    ).run(itemId, null, 10, 100);
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'isbn:9780306406157', 'isbn', '9780306406157', 'alias');
+
+    const bookItem: CollectionItemChangeApiModel = {
+      image: '',
+      title: 'Book',
+      genre: [],
+      externalProvider: 'openlibrary',
+      externalItemId: '9780306406157',
+      tags: [],
+      year: '1965',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      actors: '',
+      plot: '',
+      contentType: 'book',
+      favorite: false,
+      progressCurrent: 200,
+      progressTotal: 200,
+    };
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'openlibrary', externalIdentityId: '9780306406157' },
+      query: { listType: 'tracking' },
+      body: { ...bookItem, hash: 'book-hash' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+    const { register } = await import('./change-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        contentType: 'book',
+        progressCurrent: 200,
+        progressTotal: 200,
+        watchedAt: expect.any(String),
+      }),
+    });
+    const trackerState = db
+      .prepare(
+        'SELECT completed_at, progress_current, progress_total FROM collection_item_tracker_state WHERE item_id = ?'
+      )
+      .get(itemId) as { completed_at: string | null; progress_current: number; progress_total: number };
+    expect(trackerState.progress_current).toBe(200);
+    expect(trackerState.progress_total).toBe(200);
+    expect(trackerState.completed_at).toEqual(expect.any(String));
+  });
+
+  it('keeps existing book completion when progress stays complete', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    const result = db
+      .prepare(
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        'user',
+        'openlibrary',
+        '9780306406157',
+        'isbn:9780306406157',
+        'tracking',
+        'book',
+        'Book',
+        'book',
+        '1965',
+        '',
+        '',
+        'book-hash'
+      );
+    const itemId = Number(result.lastInsertRowid);
+    db.prepare(
+      'INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total) VALUES (?, ?, ?, ?)'
+    ).run(itemId, '2026-01-01 00:00:00', 100, 100);
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'isbn:9780306406157', 'isbn', '9780306406157', 'alias');
+
+    const bookItem: CollectionItemChangeApiModel = {
+      image: '',
+      title: 'Book',
+      genre: [],
+      externalProvider: 'openlibrary',
+      externalItemId: '9780306406157',
+      tags: [],
+      year: '1965',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      actors: '',
+      plot: '',
+      contentType: 'book',
+      favorite: false,
+      progressCurrent: 100,
+      progressTotal: 100,
+    };
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'openlibrary', externalIdentityId: '9780306406157' },
+      query: { listType: 'tracking' },
+      body: { ...bookItem, hash: 'book-hash' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+    const { register } = await import('./change-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        watchedAt: '2026-01-01 00:00:00',
+        progressCurrent: 100,
+        progressTotal: 100,
+      }),
+    });
+    expect(
+      db
+        .prepare(
+          'SELECT completed_at, progress_current, progress_total FROM collection_item_tracker_state WHERE item_id = ?'
+        )
+        .get(itemId)
+    ).toEqual({ completed_at: '2026-01-01 00:00:00', progress_current: 100, progress_total: 100 });
+  });
+
+  it('clears book completion when progress becomes incomplete', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    const result = db
+      .prepare(
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        'user',
+        'openlibrary',
+        '9780306406157',
+        'isbn:9780306406157',
+        'tracking',
+        'book',
+        'Book',
+        'book',
+        '1965',
+        '',
+        '',
+        'book-hash'
+      );
+    const itemId = Number(result.lastInsertRowid);
+    db.prepare(
+      'INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total) VALUES (?, ?, ?, ?)'
+    ).run(itemId, '2026-01-01 00:00:00', 100, 100);
+    db.prepare(
+      `INSERT INTO external_item_identities
+        (username_hash, canonical_item_id, external_provider, external_item_id, source_confidence)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run('user', 'isbn:9780306406157', 'isbn', '9780306406157', 'alias');
+
+    const bookItem: CollectionItemChangeApiModel = {
+      image: '',
+      title: 'Book',
+      genre: [],
+      externalProvider: 'openlibrary',
+      externalItemId: '9780306406157',
+      tags: [],
+      year: '1965',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      actors: '',
+      plot: '',
+      contentType: 'book',
+      favorite: false,
+      progressCurrent: 100,
+      progressTotal: 200,
+    };
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'openlibrary', externalIdentityId: '9780306406157' },
+      query: { listType: 'tracking' },
+      body: { ...bookItem, hash: 'book-hash' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+    const { register } = await import('./change-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({
+        progressCurrent: 100,
+        progressTotal: 200,
+        watchedAt: null,
+      }),
+    });
+    expect(
+      db
+        .prepare(
+          'SELECT completed_at, progress_current, progress_total FROM collection_item_tracker_state WHERE item_id = ?'
+        )
+        .get(itemId)
+    ).toEqual({ completed_at: null, progress_current: 100, progress_total: 200 });
+  });
+
+  it('returns 400 when book progress current exceeds total', async () => {
+    insertUser('user');
+    const db = getDatabase();
+    db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      'user',
+      'openlibrary',
+      '9780306406157',
+      'isbn:9780306406157',
+      'tracking',
+      'book',
+      'Book',
+      'book',
+      '1965',
+      '',
+      '',
+      'book-hash'
+    );
+    const bookItem: CollectionItemChangeApiModel = {
+      image: '',
+      title: 'Book',
+      genre: [],
+      externalProvider: 'openlibrary',
+      externalItemId: '9780306406157',
+      tags: [],
+      year: '1965',
+      rate: '',
+      rottenTomatoesRate: '',
+      metacriticRate: '',
+      userRate: null,
+      actors: '',
+      plot: '',
+      contentType: 'book',
+      favorite: false,
+      progressCurrent: 201,
+      progressTotal: 200,
+    };
+    const response = mockResponse();
+    const request: any = {
+      params: { externalIdentitySource: 'openlibrary', externalIdentityId: '9780306406157' },
+      query: { listType: 'tracking' },
+      body: { ...bookItem, hash: 'book-hash' },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+    const { register } = await import('./change-api');
+    register(app);
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 });

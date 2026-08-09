@@ -1,7 +1,5 @@
-import {
-  DEFAULT_EXTERNAL_METADATA_PROVIDER,
-  isExternalMetadataProviderName,
-} from '@shared/constants/external-metadata-const';
+import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
+import { isExternalMetadataProviderName } from '@shared/utils/external-metadata-provider-util';
 import { CollectionItemApiModel } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
 import { findExternalItemIdentitiesByCanonicalItemId } from '../external-item-identity-repository';

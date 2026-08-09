@@ -59,6 +59,8 @@ describe('proxy-ai-query-api', () => {
       watchedAt?: string | null;
       totalEpisodes?: number;
       completedEpisodes?: number;
+      progressCurrent?: number | null;
+      progressTotal?: number | null;
     }[]
   ) => {
     const db = getDatabase();
@@ -124,11 +126,10 @@ describe('proxy-ai-query-api', () => {
         }
       }
 
-      if (file.listType === 'tracking' || file.listType === 'tracking') {
-        db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
-          itemId,
-          file.watchedAt ?? null
-        );
+      if (file.listType === 'tracking') {
+        db.prepare(
+          'INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current, progress_total) VALUES (?, ?, ?, ?)'
+        ).run(itemId, file.watchedAt ?? null, file.progressCurrent ?? null, file.progressTotal ?? null);
       }
 
       for (const genre of file.genre ?? []) {
@@ -265,6 +266,35 @@ describe('proxy-ai-query-api', () => {
       await handlerPromise();
       expect(generate.mock.calls[0][0].prompt).toContain('CandidateId:\nopenlibrary:9780140328721');
       expect(response.send).toHaveBeenCalledWith({ matchedIds: ['openlibrary:9780140328721'] });
+    });
+
+    it('includes page-based progress percent for tracking books', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('fantasy adventure novels', 'tracking'), response);
+      setupCollection([
+        {
+          externalProvider: 'openlibrary',
+          externalItemId: '9780306406157',
+          title: 'Halfway Book',
+          plot: 'A fantasy adventure about midway points.',
+          listType: 'tracking',
+          contentType: 'book',
+          watchedAt: null,
+          progressCurrent: 50,
+          progressTotal: 200,
+        },
+      ]);
+      const generate = await mockGenerate('{"matchedIds":["openlibrary:9780306406157"]}');
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+
+      await handlerPromise();
+      expect(generate).toHaveBeenCalled();
+      const prompt = generate.mock.calls[0][0].prompt as string;
+      expect(prompt).toContain('contentType:\nbook');
+      expect(prompt).toContain('progressPercent:\n25');
+      expect(prompt).toContain('watchStatus:\nunfinished');
     });
 
     it('returns unfinished watching items without calling the LLM for pure status intents', async () => {
