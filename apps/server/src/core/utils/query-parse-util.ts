@@ -1,5 +1,9 @@
 import { parseCollectionListType } from '@shared/utils/collection-list-type-util';
 import {
+  MAX_COLLECTION_FILTER_GENRES,
+  MAX_COLLECTION_FILTER_TAGS,
+} from '@shared/constants/collection-filter-api-const';
+import {
   CollectionItemFiltersApiModel,
   CollectionItemOrderBy,
   CollectionItemOrderDirection,
@@ -76,3 +80,7 @@ export const parseFilters = (query: Record<string, unknown>): CollectionItemFilt
     orderDirection: parseOrderDirection(query.orderDirection),
   };
 };
+
+export const areCollectionFilterListsWithinLimits = (filters: CollectionItemFiltersApiModel): boolean =>
+  (filters.tags?.length ?? 0) <= MAX_COLLECTION_FILTER_TAGS &&
+  (filters.genres?.length ?? 0) <= MAX_COLLECTION_FILTER_GENRES;

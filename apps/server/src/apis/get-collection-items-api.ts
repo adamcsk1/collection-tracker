@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { searchCollectionItems } from '../core/database/repositories/collection';
 import { jwtGuard } from '../core/jwt';
-import { parseFilters, parseNumber } from '../core/utils/query-parse-util';
+import { areCollectionFilterListsWithinLimits, parseFilters, parseNumber } from '../core/utils/query-parse-util';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
 export const register = (app: FastifyInstance): void => {
@@ -13,6 +13,10 @@ export const register = (app: FastifyInstance): void => {
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
       const filters = parseFilters(request.query as Record<string, unknown>);
+      if (!areCollectionFilterListsWithinLimits(filters)) {
+        response.code(400).send();
+        return;
+      }
       response.send(
         searchCollectionItems(db, request.usernameHash, {
           filters,

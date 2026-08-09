@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAX_COLLECTION_FILTER_GENRES,
+  MAX_COLLECTION_FILTER_TAGS,
+} from '@shared/constants/collection-filter-api-const';
+import {
+  areCollectionFilterListsWithinLimits,
   parseBoolean,
   parseFilters,
   parseList,
@@ -182,6 +187,24 @@ describe('query-parse-util', () => {
         orderBy: undefined,
         orderDirection: undefined,
       });
+    });
+  });
+
+  describe('areCollectionFilterListsWithinLimits', () => {
+    it('accepts filter lists at their limits', () => {
+      expect(
+        areCollectionFilterListsWithinLimits({
+          tags: Array(MAX_COLLECTION_FILTER_TAGS).fill('tag'),
+          genres: Array(MAX_COLLECTION_FILTER_GENRES).fill('genre'),
+        })
+      ).toBe(true);
+    });
+
+    it.each([
+      { tags: Array(MAX_COLLECTION_FILTER_TAGS + 1).fill('tag') },
+      { genres: Array(MAX_COLLECTION_FILTER_GENRES + 1).fill('genre') },
+    ])('rejects filter lists over their limits', (filters) => {
+      expect(areCollectionFilterListsWithinLimits(filters)).toBe(false);
     });
   });
 });

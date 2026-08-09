@@ -27,7 +27,7 @@ const insertUser = (usernameHash: string, username: string): void => {
 describe('user-shares-api', () => {
   afterEach(() => {
     vi.resetModules();
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('returns short share codes, usernames, and grants', async () => {
@@ -39,6 +39,8 @@ describe('user-shares-api', () => {
 
     const handlers = await buildRegisteredApp();
     const response = mockResponse();
+    const statementPrototype = Object.getPrototypeOf(getDatabase().prepare('SELECT 1'));
+    const allSpy = vi.spyOn(statementPrototype, 'all');
     await handlers.get(`${API_PREFIX}/user/shares`)!({ usernameHash: 'current-hash' }, response);
 
     expect(response.send).toHaveBeenCalledWith({
@@ -58,5 +60,6 @@ describe('user-shares-api', () => {
         },
       ],
     });
+    expect(allSpy).toHaveBeenCalledTimes(1);
   });
 });

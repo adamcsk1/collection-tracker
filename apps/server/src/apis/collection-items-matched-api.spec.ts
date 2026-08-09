@@ -1,8 +1,8 @@
 import {
-  MAX_COLLECTION_MATCHED_FILTER_GENRES,
-  MAX_COLLECTION_MATCHED_FILTER_TAGS,
-  MAX_COLLECTION_MATCHED_ITEM_IDENTITIES,
-} from '@shared/constants/collection-matched-items-api-const';
+  MAX_COLLECTION_FILTER_GENRES,
+  MAX_COLLECTION_FILTER_TAGS,
+} from '@shared/constants/collection-filter-api-const';
+import { MAX_COLLECTION_MATCHED_ITEM_IDENTITIES } from '@shared/constants/collection-matched-items-api-const';
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
@@ -217,8 +217,8 @@ describe('collection-items-matched-api', () => {
   });
 
   it.each([
-    { tags: Array(MAX_COLLECTION_MATCHED_FILTER_TAGS + 1).fill('tag') },
-    { genres: Array(MAX_COLLECTION_MATCHED_FILTER_GENRES + 1).fill('genre') },
+    { tags: Array(MAX_COLLECTION_FILTER_TAGS + 1).fill('tag') },
+    { genres: Array(MAX_COLLECTION_FILTER_GENRES + 1).fill('genre') },
   ])('returns 400 when a filter array exceeds its limit', async (filters) => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user', body: { identities: [], filters } };
@@ -241,8 +241,8 @@ describe('collection-items-matched-api', () => {
           id: `tt${index}`,
         })),
         filters: {
-          tags: Array(MAX_COLLECTION_MATCHED_FILTER_TAGS).fill('tag'),
-          genres: Array(MAX_COLLECTION_MATCHED_FILTER_GENRES).fill('genre'),
+          tags: Array(MAX_COLLECTION_FILTER_TAGS).fill('tag'),
+          genres: Array(MAX_COLLECTION_FILTER_GENRES).fill('genre'),
         },
       },
     };

@@ -1,9 +1,9 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import {
-  MAX_COLLECTION_MATCHED_FILTER_GENRES,
-  MAX_COLLECTION_MATCHED_FILTER_TAGS,
-  MAX_COLLECTION_MATCHED_ITEM_IDENTITIES,
-} from '@shared/constants/collection-matched-items-api-const';
+  MAX_COLLECTION_FILTER_GENRES,
+  MAX_COLLECTION_FILTER_TAGS,
+} from '@shared/constants/collection-filter-api-const';
+import { MAX_COLLECTION_MATCHED_ITEM_IDENTITIES } from '@shared/constants/collection-matched-items-api-const';
 import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
 import { CollectionItemFiltersApiModel, CollectionMatchedItemsApiRequestModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
@@ -46,8 +46,8 @@ const isCollectionItemFilters = (value: unknown): value is CollectionItemFilters
   return (
     Object.keys(filters).every((key) => (FILTER_KEYS as readonly string[]).includes(key)) &&
     (filters.search === undefined || typeof filters.search === 'string') &&
-    (filters.tags === undefined || isStringArray(filters.tags, MAX_COLLECTION_MATCHED_FILTER_TAGS)) &&
-    (filters.genres === undefined || isStringArray(filters.genres, MAX_COLLECTION_MATCHED_FILTER_GENRES)) &&
+    (filters.tags === undefined || isStringArray(filters.tags, MAX_COLLECTION_FILTER_TAGS)) &&
+    (filters.genres === undefined || isStringArray(filters.genres, MAX_COLLECTION_FILTER_GENRES)) &&
     isOptionalMember(filters.tagMode, ['any', 'all']) &&
     isOptionalMember(filters.type, ['movie', 'series', 'book']) &&
     (filters.watched === undefined || typeof filters.watched === 'boolean') &&

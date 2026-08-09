@@ -6,41 +6,74 @@ import type {
 import type { SharePermission } from '@shared/models/share-grant-model';
 import { normalizeShareGrants } from '@shared/utils/share-grant-util';
 import Database from 'better-sqlite3';
-import { UserShareGrantRow, UserShareRow } from './share-model';
+import { UserShareDetailsModel, UserShareDetailsRow, UserShareGrantRow } from './share-model';
 
-export const findOutgoingShares = (db: Database.Database, usernameHash: string): UserShareRow[] => {
-  return db.prepare('SELECT * FROM user_shares WHERE owner_username_hash = ?').all(usernameHash) as UserShareRow[];
-};
-
-export const findIncomingShares = (db: Database.Database, usernameHash: string): UserShareRow[] => {
-  return db
-    .prepare('SELECT * FROM user_shares WHERE shared_with_username_hash = ?')
-    .all(usernameHash) as UserShareRow[];
-};
-
-export const findGrantsForShare = (
-  db: Database.Database,
-  ownerHash: string,
-  sharedWithHash: string
-): UserShareGrantRow[] => {
-  return db
+export const findSharesForUser = (db: Database.Database, usernameHash: string): UserShareDetailsModel[] => {
+  const rows = db
     .prepare(
-      `SELECT * FROM user_share_grants
-       WHERE owner_username_hash = ? AND shared_with_username_hash = ?
-       ORDER BY list_type, content_type`
+      `WITH related_shares AS (
+         SELECT
+           user_shares.id AS share_id,
+           'outgoing' AS direction,
+           user_shares.owner_username_hash,
+           user_shares.shared_with_username_hash,
+           counterpart.username AS counterpart_username
+         FROM user_shares
+         LEFT JOIN users counterpart ON counterpart.username_hash = user_shares.shared_with_username_hash
+         WHERE user_shares.owner_username_hash = ?
+         UNION ALL
+         SELECT
+           user_shares.id AS share_id,
+           'incoming' AS direction,
+           user_shares.owner_username_hash,
+           user_shares.shared_with_username_hash,
+           counterpart.username AS counterpart_username
+         FROM user_shares
+         LEFT JOIN users counterpart ON counterpart.username_hash = user_shares.owner_username_hash
+         WHERE user_shares.shared_with_username_hash = ?
+       )
+       SELECT
+         related_shares.*,
+         grants.id AS grant_id,
+         grants.list_type,
+         grants.content_type,
+         grants.can_read,
+         grants.can_create,
+         grants.can_update,
+         grants.can_delete
+       FROM related_shares
+       LEFT JOIN user_share_grants grants
+         ON grants.owner_username_hash = related_shares.owner_username_hash
+        AND grants.shared_with_username_hash = related_shares.shared_with_username_hash
+       ORDER BY related_shares.direction, related_shares.share_id, grants.list_type, grants.content_type`
     )
-    .all(ownerHash, sharedWithHash) as UserShareGrantRow[];
-};
+    .all(usernameHash, usernameHash) as UserShareDetailsRow[];
 
-export const mapGrantRowsToApi = (rows: UserShareGrantRow[]): UserShareGrantApiModel[] =>
-  rows.map((row) => ({
-    listType: row.list_type,
-    contentType: row.content_type,
-    canRead: row.can_read === 1,
-    canCreate: row.can_create === 1,
-    canUpdate: row.can_update === 1,
-    canDelete: row.can_delete === 1,
-  }));
+  const shares = new Map<string, UserShareDetailsModel>();
+  for (const row of rows) {
+    const key = `${row.direction}:${row.share_id}`;
+    const share = shares.get(key) ?? {
+      direction: row.direction,
+      ownerUsernameHash: row.owner_username_hash,
+      sharedWithUsernameHash: row.shared_with_username_hash,
+      counterpartUsername: row.counterpart_username,
+      grants: [],
+    };
+    if (row.grant_id !== null) {
+      share.grants.push({
+        listType: row.list_type!,
+        contentType: row.content_type!,
+        canRead: row.can_read === 1,
+        canCreate: row.can_create === 1,
+        canUpdate: row.can_update === 1,
+        canDelete: row.can_delete === 1,
+      });
+    }
+    shares.set(key, share);
+  }
+
+  return [...shares.values()];
+};
 
 export const upsertShare = (
   db: Database.Database,

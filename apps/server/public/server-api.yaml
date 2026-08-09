@@ -1605,12 +1605,12 @@ paths:
             type: string
         - name: tags
           in: query
-          description: Comma-separated custom tags.
+          description: Comma-separated custom tags. Maximum 100 values.
           schema:
             type: string
         - name: genres
           in: query
-          description: Comma-separated genres.
+          description: Comma-separated genres. Maximum 100 values.
           schema:
             type: string
         - name: tagMode
@@ -1667,6 +1667,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CollectionItemsResponse'
+        '400':
+          description: Tag or genre filter exceeds 100 values.
 
   /items/matched:
     post:

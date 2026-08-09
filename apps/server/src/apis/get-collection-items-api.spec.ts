@@ -1,4 +1,8 @@
 import { buildApp } from '../../test/mocks/build-app-mock';
+import {
+  MAX_COLLECTION_FILTER_GENRES,
+  MAX_COLLECTION_FILTER_TAGS,
+} from '@shared/constants/collection-filter-api-const';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -79,7 +83,7 @@ const insertTag = (imdbId: string, tag: string) => {
 describe('get-collection-items-api', () => {
   afterEach(() => {
     vi.resetModules();
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('returns paginated items', async () => {
@@ -103,6 +107,53 @@ describe('get-collection-items-api', () => {
         limit: 50,
       })
     );
+  });
+
+  it('accepts tag and genre filters at their limits', async () => {
+    insertUser('user');
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      query: {
+        tags: Array(MAX_COLLECTION_FILTER_TAGS).fill('tag').join(','),
+        genres: Array(MAX_COLLECTION_FILTER_GENRES).fill('genre').join(','),
+      },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).not.toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ items: [], total: 0 }));
+  });
+
+  it.each([
+    {
+      tags: Array(MAX_COLLECTION_FILTER_TAGS + 1)
+        .fill('tag')
+        .join(','),
+    },
+    {
+      genres: Array(MAX_COLLECTION_FILTER_GENRES + 1)
+        .fill('genre')
+        .join(','),
+    },
+  ])('returns 400 when tag or genre filters exceed their limits', async (query) => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query };
+    const { app, handlerPromise } = buildApp(request, response);
+    const prepareSpy = vi.spyOn(getDatabase(), 'prepare');
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith();
+    expect(response.send).toHaveBeenCalledTimes(1);
+    expect(prepareSpy).not.toHaveBeenCalled();
   });
 
   it('returns newly created library items first when ordering by created date descending', async () => {

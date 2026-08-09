@@ -1,13 +1,8 @@
 import { API_PREFIX } from '@shared/constants/api-const';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
-import {
-  findGrantsForShare,
-  findIncomingShares,
-  findOutgoingShares,
-  mapGrantRowsToApi,
-} from '../core/database/repositories/share-repository';
-import { findUserByShareCode, getUserShareCode } from '../core/database/repositories/user-repository';
+import { findSharesForUser } from '../core/database/repositories/share-repository';
+import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
@@ -17,22 +12,24 @@ export const register = (app: FastifyInstance): void => {
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
-      const outgoing = findOutgoingShares(db, request.usernameHash);
-      const incoming = findIncomingShares(db, request.usernameHash);
+      const shares = findSharesForUser(db, request.usernameHash);
 
       response.send({
         userShareCode: getUserShareCode(request.usernameHash),
-        outgoing: outgoing.map((row) => ({
-          sharedWithUserShareCode: getUserShareCode(row.shared_with_username_hash),
-          sharedWithUsername:
-            findUserByShareCode(db, getUserShareCode(row.shared_with_username_hash))?.username ?? null,
-          grants: mapGrantRowsToApi(findGrantsForShare(db, row.owner_username_hash, row.shared_with_username_hash)),
-        })),
-        incoming: incoming.map((row) => ({
-          ownerUserShareCode: getUserShareCode(row.owner_username_hash),
-          ownerUsername: findUserByShareCode(db, getUserShareCode(row.owner_username_hash))?.username ?? null,
-          grants: mapGrantRowsToApi(findGrantsForShare(db, row.owner_username_hash, row.shared_with_username_hash)),
-        })),
+        outgoing: shares
+          .filter((share) => share.direction === 'outgoing')
+          .map((share) => ({
+            sharedWithUserShareCode: getUserShareCode(share.sharedWithUsernameHash),
+            sharedWithUsername: share.counterpartUsername,
+            grants: share.grants,
+          })),
+        incoming: shares
+          .filter((share) => share.direction === 'incoming')
+          .map((share) => ({
+            ownerUserShareCode: getUserShareCode(share.ownerUsernameHash),
+            ownerUsername: share.counterpartUsername,
+            grants: share.grants,
+          })),
       });
     })
   );
