@@ -48,7 +48,9 @@ export const register = (app: FastifyInstance): void => {
         return response.code(403).send();
       }
 
-      const totalItems = countCollectionItems(db, [ownerHash]);
+      const targetListType = ownerHash === request.usernameHash ? 'all' : 'library';
+      const excludeContentTypes = ['book'] as const;
+      const totalItems = countCollectionItems(db, [ownerHash], targetListType, excludeContentTypes);
       const batchSize = 50;
 
       await debugLog(`Found ${totalItems} items to check`);
@@ -59,18 +61,27 @@ export const register = (app: FastifyInstance): void => {
       let offset = 0;
 
       while (offset < totalItems) {
-        const items = findCollectionItems(db, [ownerHash], offset, batchSize);
+        const items = findCollectionItems(
+          db,
+          [ownerHash],
+          offset,
+          batchSize,
+          targetListType,
+          ownerHash,
+          excludeContentTypes
+        );
         for (const item of items) {
           checked++;
+          const logId = item.IMDbId ?? item.externalItemId;
 
           const provider = getExternalMetadataProviderByName(item.externalProvider);
           if (!provider) {
-            await debugLog(`[${item.IMDbId}] External metadata provider is not configured`);
+            await debugLog(`[${logId}] External metadata provider is not configured`);
             errors++;
             continue;
           }
 
-          await debugLog(`[${item.IMDbId}] Fetching external ratings`);
+          await debugLog(`[${logId}] Fetching external ratings`);
           let metadataItem: Awaited<ReturnType<typeof provider.getItem>>;
           try {
             metadataItem = await provider.getItem(item.externalItemId);
@@ -84,7 +95,7 @@ export const register = (app: FastifyInstance): void => {
             metadataItem.provider !== item.externalProvider ||
             metadataItem.providerItemId !== item.externalItemId
           ) {
-            await debugLog(`[${item.IMDbId}] No external metadata item available`);
+            await debugLog(`[${logId}] No external metadata item available`);
             errors++;
             continue;
           }
@@ -101,11 +112,11 @@ export const register = (app: FastifyInstance): void => {
             updatedItem.rottenTomatoesRate === item.rottenTomatoesRate &&
             updatedItem.metacriticRate === item.metacriticRate
           ) {
-            await debugLog(`[${item.IMDbId}] Ratings are unchanged`);
+            await debugLog(`[${logId}] Ratings are unchanged`);
             continue;
           }
 
-          await debugLog(`[${item.IMDbId}] Ratings changed, updating item`);
+          await debugLog(`[${logId}] Ratings changed, updating item`);
           const newHash = getItemHash(updatedItem);
           updateCollectionItemByExternalId(
             db,

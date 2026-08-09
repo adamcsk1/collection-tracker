@@ -36,7 +36,8 @@ export const register = (app: FastifyInstance): void => {
         return response.code(403).send();
       }
 
-      const totalItems = countCollectionItems(db, [ownerHash]);
+      const targetListType = ownerHash === request.usernameHash ? 'all' : 'library';
+      const totalItems = countCollectionItems(db, [ownerHash], targetListType);
       const batchSize = 50;
 
       await debugLog(`Found ${totalItems} items to check`);
@@ -47,21 +48,22 @@ export const register = (app: FastifyInstance): void => {
       let offset = 0;
 
       while (offset < totalItems) {
-        const items = findCollectionItems(db, [ownerHash], offset, batchSize);
+        const items = findCollectionItems(db, [ownerHash], offset, batchSize, targetListType);
         for (const item of items) {
           checked++;
-          await debugLog(`[${item.IMDbId}] Checking image availability: ${item.image}`);
+          const logId = item.IMDbId ?? item.externalItemId;
+          await debugLog(`[${logId}] Checking image availability: ${item.image}`);
           const imageAvailable = await fetchAndCacheImage(item.image);
 
           if (imageAvailable) {
-            await debugLog(`[${item.IMDbId}] Image is available`);
+            await debugLog(`[${logId}] Image is available`);
             continue;
           }
 
-          await debugLog(`[${item.IMDbId}] Image missing, fetching external metadata`);
+          await debugLog(`[${logId}] Image missing, fetching external metadata`);
           const provider = getExternalMetadataProviderByName(item.externalProvider);
           if (!provider) {
-            await debugLog(`[${item.IMDbId}] External metadata provider is not configured`);
+            await debugLog(`[${logId}] External metadata provider is not configured`);
             errors++;
             continue;
           }
@@ -81,7 +83,7 @@ export const register = (app: FastifyInstance): void => {
             metadataItem.poster &&
             metadataItem.poster !== item.image
           ) {
-            await debugLog(`[${item.IMDbId}] New poster found, updating item`);
+            await debugLog(`[${logId}] New poster found, updating item`);
             const updatedItem = {
               ...item,
               image: metadataItem.poster,
@@ -98,7 +100,7 @@ export const register = (app: FastifyInstance): void => {
             );
             fixed++;
           } else {
-            await debugLog(`[${item.IMDbId}] No new poster available from external metadata`);
+            await debugLog(`[${logId}] No new poster available from external metadata`);
             errors++;
           }
         }

@@ -15,13 +15,22 @@ const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertItem = (imdbId: string, image: string, hash = 'hash', usernameHash = 'user') => {
+const insertItem = (imdbId: string, image: string, hash = 'hash', usernameHash = 'user', listType = 'library') => {
   const db = getDatabase();
   db.prepare(
     `INSERT INTO collection_items
-      (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
-     VALUES (?, 'omdb', ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(usernameHash, imdbId, `imdb:${imdbId}`, 'Title', 'title', '', '', image, hash);
+      (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+     VALUES (?, 'omdb', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(usernameHash, imdbId, `imdb:${imdbId}`, listType, 'Title', 'title', '', '', image, hash);
+};
+
+const insertBookItem = (isbn: string, image: string, hash = 'hash', usernameHash = 'user') => {
+  const db = getDatabase();
+  db.prepare(
+    `INSERT INTO collection_items
+      (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+     VALUES (?, 'openlibrary', ?, ?, 'books', 'book', ?, ?, ?, ?, ?, ?)`
+  ).run(usernameHash, isbn, `openlibrary:${isbn}`, 'Book Title', 'book title', '2021', '', image, hash);
 };
 
 const insertShare = (ownerHash: string, sharedWithHash: string, canUpdate: boolean) => {
@@ -213,12 +222,20 @@ describe('refresh-images-api', () => {
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 1 });
   });
 
-  it('refreshes a shared library when the user has update permission', async () => {
+  it('refreshes a shared library when the user has update permission and ignores non-library items', async () => {
     insertUser('user');
     insertUser('owner');
     insertShare('owner', 'user', true);
     insertItem('tt-own', 'https://images.example/own.jpg', 'own-hash', 'user');
     insertItem('tt-shared', 'https://images.example/shared-broken.jpg', 'shared-hash', 'owner');
+    insertItem(
+      'tt-shared-watchlist',
+      'https://images.example/owner-watchlist-broken.jpg',
+      'watchlist-hash',
+      'owner',
+      'watchlist'
+    );
+    insertBookItem('9780140328721', 'https://images.example/owner-book-broken.jpg', 'book-hash', 'owner');
 
     fetchAndCacheImageResult = false;
     vi.stubGlobal(
@@ -247,11 +264,35 @@ describe('refresh-images-api', () => {
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
 
     const rows = getDatabase()
-      .prepare('SELECT username_hash, image FROM collection_items ORDER BY username_hash')
-      .all() as Array<{ username_hash: string; image: string }>;
+      .prepare(
+        'SELECT username_hash, external_item_id, image, list_type FROM collection_items ORDER BY list_type, username_hash, external_item_id'
+      )
+      .all() as Array<{ username_hash: string; external_item_id: string; image: string; list_type: string }>;
     expect(rows).toEqual([
-      { username_hash: 'owner', image: 'https://images.example/shared-new.jpg' },
-      { username_hash: 'user', image: 'https://images.example/own.jpg' },
+      {
+        username_hash: 'owner',
+        external_item_id: '9780140328721',
+        image: 'https://images.example/owner-book-broken.jpg',
+        list_type: 'books',
+      },
+      {
+        username_hash: 'owner',
+        external_item_id: 'tt-shared',
+        image: 'https://images.example/shared-new.jpg',
+        list_type: 'library',
+      },
+      {
+        username_hash: 'user',
+        external_item_id: 'tt-own',
+        image: 'https://images.example/own.jpg',
+        list_type: 'library',
+      },
+      {
+        username_hash: 'owner',
+        external_item_id: 'tt-shared-watchlist',
+        image: 'https://images.example/owner-watchlist-broken.jpg',
+        list_type: 'watchlist',
+      },
     ]);
   });
 
@@ -273,5 +314,66 @@ describe('refresh-images-api', () => {
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(403);
+  });
+
+  it('refreshes books and items across all lists for a personal library', async () => {
+    insertUser();
+    insertBookItem('9780140328721', 'https://images.example/broken-book.jpg');
+    insertItem('tt-watchlist', 'https://images.example/broken-watchlist.jpg', 'watchlist-hash', 'user', 'watchlist');
+
+    fetchAndCacheImageResult = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('9780140328721') || url.includes('isbn/')) {
+          return {
+            ok: true,
+            json: async () => ({
+              title: 'Book Title',
+              publish_date: '2000',
+              covers: [12345],
+            }),
+          };
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            imdbID: 'tt-watchlist',
+            Poster: 'https://images.example/watchlist-new.jpg',
+          }),
+        };
+      })
+    );
+
+    vi.doMock('../core/image/image-proxy', () => ({
+      fetchAndCacheImage: vi.fn(async () => fetchAndCacheImageResult),
+    }));
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-images-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send).toHaveBeenCalledWith({ count: 2, checked: 2, fixed: 2, errors: 0 });
+
+    const rows = getDatabase()
+      .prepare('SELECT external_item_id, image, list_type FROM collection_items ORDER BY list_type, external_item_id')
+      .all() as Array<{ external_item_id: string; image: string; list_type: string }>;
+    expect(rows).toEqual([
+      {
+        external_item_id: '9780140328721',
+        image: 'https://covers.openlibrary.org/b/id/12345-L.jpg?default=false',
+        list_type: 'books',
+      },
+      {
+        external_item_id: 'tt-watchlist',
+        image: 'https://images.example/watchlist-new.jpg',
+        list_type: 'watchlist',
+      },
+    ]);
   });
 });

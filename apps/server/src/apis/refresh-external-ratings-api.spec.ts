@@ -19,16 +19,17 @@ const insertItem = (
   usernameHash = 'user',
   imdbRate = '7.0',
   rottenTomatoesRate = '',
-  metacriticRate = ''
+  metacriticRate = '',
+  listType = 'library'
 ) => {
   const db = getDatabase();
   const result = db
     .prepare(
       `INSERT INTO collection_items
-       (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
-       VALUES (?, 'omdb', ?, ?, ?, ?, ?, ?, ?, ?)`
+       (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, description, image, content_hash)
+       VALUES (?, 'omdb', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(usernameHash, imdbId, `imdb:${imdbId}`, 'Title', 'title', '', '', '', hash);
+    .run(usernameHash, imdbId, `imdb:${imdbId}`, listType, 'Title', 'title', '', '', '', hash);
   const itemId = Number(result.lastInsertRowid);
   const insertRating = db.prepare(
     'INSERT INTO collection_item_external_ratings (item_id, source, value) VALUES (?, ?, ?)'
@@ -40,6 +41,16 @@ const insertItem = (
   ]) {
     if (value) insertRating.run(itemId, source, value);
   }
+};
+
+const insertBookItem = (isbn: string, hash = 'hash', usernameHash = 'user', listType = 'books') => {
+  getDatabase()
+    .prepare(
+      `INSERT INTO collection_items
+       (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, description, image, content_hash)
+       VALUES (?, 'openlibrary', ?, ?, ?, 'book', ?, ?, ?, ?, ?, ?)`
+    )
+    .run(usernameHash, isbn, `openlibrary:${isbn}`, listType, 'Book Title', 'book title', '2021', '', '', hash);
 };
 
 const getRatings = (imdbId: string) =>
@@ -221,12 +232,13 @@ describe('refresh-external-ratings-api', () => {
     expect(getRatings('tt-1')).toEqual([{ source: 'imdb', value: '7.0' }]);
   });
 
-  it('refreshes a shared library when the user has update permission', async () => {
+  it('refreshes a shared library when the user has update permission and ignores non-library items', async () => {
     insertUser('user');
     insertUser('owner');
     insertShare('owner', 'user', true);
     insertItem('tt-own', 'own-hash', 'user');
     insertItem('tt-shared', 'shared-hash', 'owner');
+    insertItem('tt-shared-watchlist', 'watchlist-hash', 'owner', '7.0', '', '', 'watchlist');
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
@@ -252,16 +264,17 @@ describe('refresh-external-ratings-api', () => {
     expect(
       getDatabase()
         .prepare(
-          `SELECT collection_items.username_hash, ratings.source, ratings.value
+          `SELECT collection_items.username_hash, collection_items.list_type, ratings.source, ratings.value
            FROM collection_items
            INNER JOIN collection_item_external_ratings AS ratings ON ratings.item_id = collection_items.id
-           ORDER BY collection_items.username_hash, ratings.source`
+           ORDER BY collection_items.username_hash, collection_items.list_type, ratings.source`
         )
         .all()
     ).toEqual([
-      { username_hash: 'owner', source: 'imdb', value: '9.0' },
-      { username_hash: 'owner', source: 'rotten-tomatoes', value: '99%' },
-      { username_hash: 'user', source: 'imdb', value: '7.0' },
+      { username_hash: 'owner', list_type: 'library', source: 'imdb', value: '9.0' },
+      { username_hash: 'owner', list_type: 'library', source: 'rotten-tomatoes', value: '99%' },
+      { username_hash: 'owner', list_type: 'watchlist', source: 'imdb', value: '7.0' },
+      { username_hash: 'user', list_type: 'library', source: 'imdb', value: '7.0' },
     ]);
   });
 
@@ -295,5 +308,63 @@ describe('refresh-external-ratings-api', () => {
     await handlerPromise();
 
     expect(response.code).toHaveBeenCalledWith(403);
+  });
+
+  it('refreshes ratings across all list types for a personal library', async () => {
+    insertUser();
+    insertItem('tt-watchlist', 'hash', 'user', '7.0', '', '', 'watchlist');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          imdbID: 'tt-watchlist',
+          imdbRating: '8.0',
+          Ratings: [],
+        }),
+      }))
+    );
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-external-ratings-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
+    expect(getRatings('tt-watchlist')).toEqual([{ source: 'imdb', value: '8.0' }]);
+  });
+
+  it('skips books and does not call external metadata for them', async () => {
+    insertUser();
+    insertBookItem('9780140328721');
+    insertItem('tt-movie', 'movie-hash');
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        imdbID: 'tt-movie',
+        imdbRating: '8.0',
+        Ratings: [],
+      }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./refresh-external-ratings-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('tt-movie');
+    expect(getRatings('tt-movie')).toEqual([{ source: 'imdb', value: '8.0' }]);
+    expect(getRatings('9780140328721')).toEqual([]);
   });
 });

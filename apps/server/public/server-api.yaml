@@ -1837,7 +1837,7 @@ paths:
     post:
       operationId: refreshImages
       summary: Refresh collection item images
-      description: Checks every collection item image through the image proxy, caches available images, and fetches updated poster URLs from the configured external metadata provider for broken images. When `ownerShareCode` is provided, the refresh targets that shared library and requires update permission.
+      description: Checks collection item images through the image proxy, caches available images, and fetches updated poster URLs from the configured external metadata provider for broken images. For the authenticated user's own library this covers all list types (library, watchlist, wishlist, tracking, and books). When `ownerShareCode` is provided, the refresh targets only that owner's `library` list and requires update permission.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1861,7 +1861,7 @@ paths:
     post:
       operationId: refreshExternalRatings
       summary: Refresh collection item external ratings
-      description: Fetches every collection item from the configured external metadata provider and refreshes IMDb, Rotten Tomatoes, and Metacritic ratings. When `ownerShareCode` is provided, the refresh targets that shared library and requires update permission.
+      description: Fetches collection items from the configured external metadata provider and refreshes IMDb, Rotten Tomatoes, and Metacritic ratings. Book items are excluded because book metadata providers do not supply those ratings. For the authenticated user's own library this covers all non-book list types (library, watchlist, wishlist, and tracking). When `ownerShareCode` is provided, the refresh targets only that owner's `library` list and requires update permission.
       tags: [Collection]
       parameters:
         - name: ownerShareCode

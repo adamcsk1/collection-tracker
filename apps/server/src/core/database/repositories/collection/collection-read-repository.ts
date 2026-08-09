@@ -1,5 +1,6 @@
 import {
   CollectionItemApiModel,
+  CollectionItemContentTypeModel,
   CollectionListTypeModel,
   CollectionItemsApiResponseModel,
 } from '@shared/models/api-model';
@@ -154,20 +155,30 @@ export const findCollectionItems = (
   usernameHashes: string[],
   offset: number,
   limit: number,
-  listType: CollectionListTypeModel = 'library',
-  viewerUsernameHash = usernameHashes[0]
+  listType: CollectionListTypeModel | 'all' = 'library',
+  viewerUsernameHash = usernameHashes[0],
+  excludeContentTypes?: readonly CollectionItemContentTypeModel[]
 ): CollectionItemApiModel[] => {
-  const normalizedListType = normalizeListType(listType);
+  const whereParts = [`username_hash IN (${usernameHashes.map(() => '?').join(', ')})`];
+  const params: unknown[] = [...usernameHashes];
+  if (listType !== 'all') {
+    whereParts.push('list_type = ?');
+    params.push(normalizeListType(listType));
+  }
+  if (excludeContentTypes?.length) {
+    whereParts.push(`content_type NOT IN (${excludeContentTypes.map(() => '?').join(', ')})`);
+    params.push(...excludeContentTypes);
+  }
+  params.push(limit, offset);
   const rows = db
     .prepare(
       `SELECT ${collectionItemProjection()}
         FROM collection_items
-        WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-         AND list_type = ?
+        WHERE ${whereParts.join(' AND ')}
         ORDER BY created_at DESC, id DESC
         LIMIT ? OFFSET ?`
     )
-    .all(...usernameHashes, normalizedListType, limit, offset) as CollectionItemRow[];
+    .all(...params) as CollectionItemRow[];
 
   return rows.map((row) => toApiItem(db, row, viewerUsernameHash));
 };
@@ -422,14 +433,28 @@ export const findRandomCollectionImages = (
   return rows.map((row) => row.image);
 };
 
-export const countCollectionItems = (db: Database.Database, usernameHashes: string[]): number => {
+export const countCollectionItems = (
+  db: Database.Database,
+  usernameHashes: string[],
+  listType: CollectionListTypeModel | 'all' = 'library',
+  excludeContentTypes?: readonly CollectionItemContentTypeModel[]
+): number => {
+  const whereParts = [`username_hash IN (${usernameHashes.map(() => '?').join(', ')})`];
+  const params: unknown[] = [...usernameHashes];
+  if (listType !== 'all') {
+    whereParts.push('list_type = ?');
+    params.push(normalizeListType(listType));
+  }
+  if (excludeContentTypes?.length) {
+    whereParts.push(`content_type NOT IN (${excludeContentTypes.map(() => '?').join(', ')})`);
+    params.push(...excludeContentTypes);
+  }
   const row = db
     .prepare(
       `SELECT COUNT(*) as count FROM collection_items
-       WHERE username_hash IN (${usernameHashes.map(() => '?').join(', ')})
-         AND list_type = ?`
+       WHERE ${whereParts.join(' AND ')}`
     )
-    .get(...usernameHashes, 'library') as { count: number };
+    .get(...params) as { count: number };
   return row.count;
 };
 
