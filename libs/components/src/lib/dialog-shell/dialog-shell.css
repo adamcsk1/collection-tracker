@@ -17,7 +17,7 @@
 }
 
 .dialog-frame {
-  --dialog-frame-default-height: 90vh;
+  --dialog-frame-default-height: 99vh;
   --dialog-frame-height: min(
     var(--dialog-frame-default-height),
     var(--dialog-frame-max-height, var(--dialog-frame-default-height))

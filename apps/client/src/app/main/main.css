@@ -53,7 +53,8 @@
 
 .main-body:has(ct-list),
 .main-body:has(ct-settings),
-.main-body:has(ct-statistics) {
+.main-body:has(ct-statistics),
+.main-body:has(ct-about) {
   padding-bottom: var(--size-md);
 }
 

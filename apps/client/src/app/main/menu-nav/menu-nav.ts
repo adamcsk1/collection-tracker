@@ -90,10 +90,4 @@ export class MenuNav {
   protected onClose(): void {
     this.portal.closeAll();
   }
-
-  protected async onOpenAbout(event?: Event): Promise<void> {
-    event?.preventDefault();
-    const { AboutDialog } = await import('../../about/about-dialog');
-    this.portal.open(AboutDialog);
-  }
 }

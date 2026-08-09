@@ -7,7 +7,6 @@ export const AboutPage = {
     CommonPage.getNavAboutLink().click();
   },
 
-  getDialog: () => cy.getByTestId('about-dialog').find('[role="dialog"]'),
   getTitle: () => cy.getByTestId('about-title'),
   getBuild: () => cy.getByTestId('about-build'),
   getVersion: () => cy.getByTestId('about-version'),

@@ -7,4 +7,18 @@
   padding: var(--size-md);
   z-index: 1;
   position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  min-height: 0;
+  height: calc(100vh - var(--header-height) - 2 * var(--size-md));
+  height: calc(100svh - var(--header-height) - 2 * var(--size-md));
+  height: calc(100dvh - var(--header-height) - 2 * var(--size-md));
+}
+
+@media (width > 1250px) {
+  .page {
+    height: calc(100vh - 2 * var(--size-md));
+    height: calc(100svh - 2 * var(--size-md));
+    height: calc(100dvh - 2 * var(--size-md));
+  }
 }

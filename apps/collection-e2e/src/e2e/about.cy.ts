@@ -4,13 +4,13 @@ describe('About page', () => {
   beforeEach(() => {
     cy.autoLogin();
     AboutPage.visit();
-    AboutPage.getDialog().should('be.visible');
+    AboutPage.getTitle().should('be.visible');
   });
 
-  it('opens as a dialog over the collection page', () => {
-    AboutPage.getDialog().should('be.visible');
-    cy.url().should('include', '#/collection/library');
-    cy.url().should('not.include', '#/about');
+  it('navigates to the about page', () => {
+    AboutPage.getTitle().should('be.visible');
+    cy.url().should('include', '#/about');
+    cy.url().should('not.include', '#/collection/library');
   });
 
   it('shows the app title', () => {

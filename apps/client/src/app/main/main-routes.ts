@@ -14,6 +14,11 @@ export const routes: Routes = [
     canActivate: [mainGuard],
   },
   {
+    path: 'about',
+    loadComponent: () => import('../about/about').then((module) => module.About),
+    canActivate: [mainGuard],
+  },
+  {
     path: 'settings',
     loadChildren: () => import('../settings/settings-routes').then((module) => module.settingsRoutes),
     canActivate: [mainGuard, settingsLockedGuard],

@@ -9,6 +9,9 @@ import { NgxSignalTranslateService } from 'ngx-signal-translate';
   imports: [LinkButton],
   templateUrl: './about.html',
   styleUrl: './about.css',
+  host: {
+    class: 'page',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class About {

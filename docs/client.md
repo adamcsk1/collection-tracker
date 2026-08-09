@@ -26,7 +26,7 @@ Top navigation is **intent-first**. Media type uses always-visible chips on Coll
 - statistics dialog: tag-driven summaries and Chart.js visualizations opened from the main menu
 - `settings/features`: Wishlist, Watchlist, Tracking, Books
 - `settings/*`: account, tags, display, media refresh, tracker data, shares, export/import
-- about dialog: build metadata
+- about page: build metadata
 
 ## Technical Notes
 
