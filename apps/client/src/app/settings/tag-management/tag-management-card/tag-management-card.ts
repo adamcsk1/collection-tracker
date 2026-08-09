@@ -3,6 +3,7 @@ import { Checkbox } from '@components/checkbox/checkbox';
 import { Input } from '@components/input/input';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { getContrastColorHex } from '@shared/utils/get-contrast-color-hex-util';
+import { DEFAULT_TAG_MANAGEMENT_COLOR } from '../tag-management-const';
 import { TagManagementItemModel } from '../tag-management-model';
 
 @Component({
@@ -46,7 +47,7 @@ export class TagManagementCard {
 
   protected onColorButtonClick(colorInput: HTMLInputElement, color: string | null): void {
     if (color === null) {
-      this.colorChange.emit('#000000');
+      this.colorChange.emit(DEFAULT_TAG_MANAGEMENT_COLOR);
     }
     colorInput.click();
   }

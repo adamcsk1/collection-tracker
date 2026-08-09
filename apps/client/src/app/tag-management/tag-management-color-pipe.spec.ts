@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { DEFAULT_TAG_MANAGEMENT_COLOR } from '../settings/tag-management/tag-management-const';
 import { initialTagManagementState, TagManagementState, tagManagementStateToken } from './tag-management-store';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -131,11 +132,22 @@ describe('TagManagementColorPipe', () => {
         useForImageBadge: true,
         weight: 1,
       },
+      {
+        tag: '#null-badge',
+        color: null,
+        useForImageBorder: false,
+        useForTextColor: false,
+        useForImageBadge: true,
+        weight: 1,
+      },
     ]);
 
     expect(pipe.transform('#badge', { useForImageBadge: true })).toBeNull();
     expect(pipe.transform('#image-badge', { useForImageBadge: true })).toBe('#fefefe');
     expect(pipe.transform(['#badge', '#image-badge'], { useForImageBadge: true })).toBe('#fefefe');
-    expect(pipe.transform(['#badge', '#transparent-badge'], { useForImageBadge: true })).toBeNull();
+    expect(pipe.transform(['#badge', '#transparent-badge'], { useForImageBadge: true })).toBe(
+      DEFAULT_TAG_MANAGEMENT_COLOR
+    );
+    expect(pipe.transform('#null-badge', { useForImageBadge: true })).toBe(DEFAULT_TAG_MANAGEMENT_COLOR);
   });
 });

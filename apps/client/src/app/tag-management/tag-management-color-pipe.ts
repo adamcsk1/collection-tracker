@@ -1,4 +1,5 @@
 import { inject, Pipe, PipeTransform } from '@angular/core';
+import { DEFAULT_TAG_MANAGEMENT_COLOR } from '../settings/tag-management/tag-management-const';
 import { tagManagementStateToken } from './tag-management-store';
 
 @Pipe({
@@ -20,6 +21,12 @@ export class TagManagementColorPipe implements PipeTransform {
         (!useForImageBadge || (useForImageBadge && config.useForImageBadge)) &&
         (Array.isArray(tag) ? tag.includes(config.tag) : tag === config.tag)
     );
-    return borderColorConfig && borderColorConfig.color !== 'transparent' ? borderColorConfig.color : null;
+    if (!borderColorConfig) {
+      return null;
+    }
+    if (borderColorConfig.color && borderColorConfig.color !== 'transparent') {
+      return borderColorConfig.color;
+    }
+    return useForImageBadge ? DEFAULT_TAG_MANAGEMENT_COLOR : null;
   }
 }

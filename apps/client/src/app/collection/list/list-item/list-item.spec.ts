@@ -451,6 +451,28 @@ describe('ListItem', () => {
     );
   });
 
+  it('renders image badge with default color when badge tag has no color', () => {
+    tagManagementState.setState('configs', [
+      {
+        tag: '#badge-default',
+        color: null,
+        useForImageBorder: false,
+        useForTextColor: false,
+        useForImageBadge: true,
+        weight: 1,
+      },
+    ]);
+    fixture.componentRef.setInput('collectionItem', buildItem('Sample', ['#badge-default']));
+    fixture.detectChanges();
+
+    const badge = fixture.nativeElement.querySelector('.badge') as HTMLAnchorElement;
+    expect(badge).not.toBeNull();
+    expect(badge.textContent?.trim()).toBe('#badge-default');
+    expect(component['imageBadgeTag']()).toBe('#badge-default');
+    expect(['#000000', normalizeHexColor('#000000')]).toContain(badge.style.backgroundColor);
+    expect(['#ffffff', 'rgb(255,255,255)', 'rgb(255, 255, 255)']).toContain(normalizeStyleValue(badge.style.color));
+  });
+
   it('does nothing when AI filter is active', () => {
     collectionState.setState('aiSearchPromptText', 'sci-fi');
     collectionState.setState('forceStandardSearch', false);
