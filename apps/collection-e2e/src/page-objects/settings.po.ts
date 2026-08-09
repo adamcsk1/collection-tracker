@@ -66,10 +66,12 @@ export const SettingsPage = {
   getImageRefreshStatus: () => cy.getByTestId('settings-image-refresh-status').scrollIntoView(),
 
   // Manage tracker data page
-  getMarkAllWatchedButton: () => cy.getByTestId('settings-mark-all-watched').scrollIntoView(),
-  getMarkAllUnwatchedButton: () => cy.getByTestId('settings-mark-all-unwatched').scrollIntoView(),
-  getMarkAllSeriesWatchedButton: () => cy.getByTestId('settings-mark-all-series-watched').scrollIntoView(),
-  getMarkAllSeriesUnwatchedButton: () => cy.getByTestId('settings-mark-all-series-unwatched').scrollIntoView(),
+  getMarkAllCompletedButton: () => cy.getByTestId('settings-mark-all-completed').scrollIntoView(),
+  getMarkAllUncompletedButton: () => cy.getByTestId('settings-mark-all-uncompleted').scrollIntoView(),
+  getMarkAllSeriesCompletedButton: () => cy.getByTestId('settings-mark-all-series-completed').scrollIntoView(),
+  getMarkAllSeriesUncompletedButton: () => cy.getByTestId('settings-mark-all-series-uncompleted').scrollIntoView(),
+  getMarkAllBooksCompletedButton: () => cy.getByTestId('settings-mark-all-books-completed').scrollIntoView(),
+  getMarkAllBooksUncompletedButton: () => cy.getByTestId('settings-mark-all-books-uncompleted').scrollIntoView(),
   getRemoveAllTrackedMovieDataButton: () => cy.getByTestId('settings-remove-all-tracked-movie-data').scrollIntoView(),
   getRemoveAllTrackedSeriesDataButton: () => cy.getByTestId('settings-remove-all-tracked-series-data').scrollIntoView(),
   getRemoveAllTrackedBookDataButton: () => cy.getByTestId('settings-remove-all-tracked-book-data').scrollIntoView(),

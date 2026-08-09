@@ -19,10 +19,12 @@ describe('SettingsManageTrackerData component', () => {
   let component: SettingsManageTrackerData;
   let fixture: ComponentFixture<SettingsManageTrackerData>;
   let manageTrackerData: {
-    markAllMoviesAsWatched: ReturnType<typeof vi.fn>;
-    markAllMoviesAsUnwatched: ReturnType<typeof vi.fn>;
-    markAllSeriesAsWatched: ReturnType<typeof vi.fn>;
-    markAllSeriesAsUnwatched: ReturnType<typeof vi.fn>;
+    markAllMoviesAsCompleted: ReturnType<typeof vi.fn>;
+    markAllMoviesAsUncompleted: ReturnType<typeof vi.fn>;
+    markAllSeriesAsCompleted: ReturnType<typeof vi.fn>;
+    markAllSeriesAsUncompleted: ReturnType<typeof vi.fn>;
+    markAllBooksAsCompleted: ReturnType<typeof vi.fn>;
+    markAllBooksAsUncompleted: ReturnType<typeof vi.fn>;
     removeAllTrackedMovieData: ReturnType<typeof vi.fn>;
     removeAllTrackedSeriesData: ReturnType<typeof vi.fn>;
     removeAllTrackedBookData: ReturnType<typeof vi.fn>;
@@ -31,10 +33,12 @@ describe('SettingsManageTrackerData component', () => {
 
   beforeEach(() => {
     manageTrackerData = {
-      markAllMoviesAsWatched: vi.fn(),
-      markAllMoviesAsUnwatched: vi.fn(),
-      markAllSeriesAsWatched: vi.fn(),
-      markAllSeriesAsUnwatched: vi.fn(),
+      markAllMoviesAsCompleted: vi.fn(),
+      markAllMoviesAsUncompleted: vi.fn(),
+      markAllSeriesAsCompleted: vi.fn(),
+      markAllSeriesAsUncompleted: vi.fn(),
+      markAllBooksAsCompleted: vi.fn(),
+      markAllBooksAsUncompleted: vi.fn(),
       removeAllTrackedMovieData: vi.fn(),
       removeAllTrackedSeriesData: vi.fn(),
       removeAllTrackedBookData: vi.fn(),
@@ -68,29 +72,41 @@ describe('SettingsManageTrackerData component', () => {
     fixture.detectChanges();
   });
 
-  it('calls service to mark all movies as watched', () => {
-    component['onMarkAllMoviesAsWatched']();
+  it('calls service to mark all movies as completed', () => {
+    component['onMarkAllMoviesAsCompleted']();
 
-    expect(manageTrackerData.markAllMoviesAsWatched).toHaveBeenCalled();
-    expect(manageTrackerData.markAllMoviesAsUnwatched).not.toHaveBeenCalled();
+    expect(manageTrackerData.markAllMoviesAsCompleted).toHaveBeenCalled();
+    expect(manageTrackerData.markAllMoviesAsUncompleted).not.toHaveBeenCalled();
   });
 
-  it('calls service to mark all movies as unwatched', () => {
-    component['onMarkAllMoviesAsUnwatched']();
+  it('calls service to mark all movies as uncompleted', () => {
+    component['onMarkAllMoviesAsUncompleted']();
 
-    expect(manageTrackerData.markAllMoviesAsUnwatched).toHaveBeenCalled();
+    expect(manageTrackerData.markAllMoviesAsUncompleted).toHaveBeenCalled();
   });
 
-  it('calls service to mark all series as watched', () => {
-    component['onMarkAllSeriesAsWatched']();
+  it('calls service to mark all series as completed', () => {
+    component['onMarkAllSeriesAsCompleted']();
 
-    expect(manageTrackerData.markAllSeriesAsWatched).toHaveBeenCalled();
+    expect(manageTrackerData.markAllSeriesAsCompleted).toHaveBeenCalled();
   });
 
-  it('calls service to mark all series as unwatched', () => {
-    component['onMarkAllSeriesAsUnwatched']();
+  it('calls service to mark all series as uncompleted', () => {
+    component['onMarkAllSeriesAsUncompleted']();
 
-    expect(manageTrackerData.markAllSeriesAsUnwatched).toHaveBeenCalled();
+    expect(manageTrackerData.markAllSeriesAsUncompleted).toHaveBeenCalled();
+  });
+
+  it('calls service to mark all books as completed', () => {
+    component['onMarkAllBooksAsCompleted']();
+
+    expect(manageTrackerData.markAllBooksAsCompleted).toHaveBeenCalled();
+  });
+
+  it('calls service to mark all books as uncompleted', () => {
+    component['onMarkAllBooksAsUncompleted']();
+
+    expect(manageTrackerData.markAllBooksAsUncompleted).toHaveBeenCalled();
   });
 
   it('loads shares when created', () => {
@@ -127,18 +143,22 @@ describe('SettingsManageTrackerData component', () => {
     expect(manageTrackerData.removeAllTrackedBookData).not.toHaveBeenCalled();
   });
 
-  it('passes selected shared library to all watch status actions', () => {
+  it('passes selected shared library to all completion status actions', () => {
     component['onLibraryChange']('owner-code');
 
-    component['onMarkAllMoviesAsWatched']();
-    component['onMarkAllMoviesAsUnwatched']();
-    component['onMarkAllSeriesAsWatched']();
-    component['onMarkAllSeriesAsUnwatched']();
+    component['onMarkAllMoviesAsCompleted']();
+    component['onMarkAllMoviesAsUncompleted']();
+    component['onMarkAllSeriesAsCompleted']();
+    component['onMarkAllSeriesAsUncompleted']();
+    component['onMarkAllBooksAsCompleted']();
+    component['onMarkAllBooksAsUncompleted']();
 
-    expect(manageTrackerData.markAllMoviesAsWatched).toHaveBeenCalledWith('owner-code');
-    expect(manageTrackerData.markAllMoviesAsUnwatched).toHaveBeenCalledWith('owner-code');
-    expect(manageTrackerData.markAllSeriesAsWatched).toHaveBeenCalledWith('owner-code');
-    expect(manageTrackerData.markAllSeriesAsUnwatched).toHaveBeenCalledWith('owner-code');
+    expect(manageTrackerData.markAllMoviesAsCompleted).toHaveBeenCalledWith('owner-code');
+    expect(manageTrackerData.markAllMoviesAsUncompleted).toHaveBeenCalledWith('owner-code');
+    expect(manageTrackerData.markAllSeriesAsCompleted).toHaveBeenCalledWith('owner-code');
+    expect(manageTrackerData.markAllSeriesAsUncompleted).toHaveBeenCalledWith('owner-code');
+    expect(manageTrackerData.markAllBooksAsCompleted).toHaveBeenCalledWith('owner-code');
+    expect(manageTrackerData.markAllBooksAsUncompleted).toHaveBeenCalledWith('owner-code');
   });
 
   it('shows the library selector for readable shared libraries', () => {
@@ -200,8 +220,9 @@ describe('SettingsManageTrackerData component', () => {
     });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-watched"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-series-watched"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-completed"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-series-completed"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="settings-mark-all-books-completed"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-movie-data"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-series-data"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test-id="settings-remove-all-tracked-book-data"]')).toBeNull();

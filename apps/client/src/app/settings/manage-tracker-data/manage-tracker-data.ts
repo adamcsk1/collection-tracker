@@ -28,10 +28,12 @@ export class SettingsManageTrackerData implements OnInit {
   protected readonly translations = {
     library: computed(() => this.ngxSignalTranslate.translate('Library')),
     messageManageTrackerData: computed(() => this.ngxSignalTranslate.translate('Message.ManageTrackerData')),
-    markAllMoviesAsWatched: computed(() => this.ngxSignalTranslate.translate('MarkAllMoviesAsWatched')),
-    markAllMoviesAsUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAllMoviesAsUnwatched')),
-    markAllSeriesAsWatched: computed(() => this.ngxSignalTranslate.translate('MarkAllSeriesAsWatched')),
-    markAllSeriesAsUnwatched: computed(() => this.ngxSignalTranslate.translate('MarkAllSeriesAsUnwatched')),
+    markAllMoviesAsCompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllMoviesAsCompleted')),
+    markAllMoviesAsUncompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllMoviesAsUncompleted')),
+    markAllSeriesAsCompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllSeriesAsCompleted')),
+    markAllSeriesAsUncompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllSeriesAsUncompleted')),
+    markAllBooksAsCompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllBooksAsCompleted')),
+    markAllBooksAsUncompleted: computed(() => this.ngxSignalTranslate.translate('MarkAllBooksAsUncompleted')),
     messageTrackerCleanup: computed(() => this.ngxSignalTranslate.translate('Message.TrackerCleanup')),
     myLibrary: computed(() => this.ngxSignalTranslate.translate('MyLibrary')),
     removeAllTrackedMovieData: computed(() => this.ngxSignalTranslate.translate('RemoveAllTrackedMovieData')),
@@ -58,20 +60,28 @@ export class SettingsManageTrackerData implements OnInit {
     this.sharesService.loadShares();
   }
 
-  protected onMarkAllMoviesAsWatched(): void {
-    this.manageTrackerData.markAllMoviesAsWatched(this.selectedOwnerShareCode() || undefined);
+  protected onMarkAllMoviesAsCompleted(): void {
+    this.manageTrackerData.markAllMoviesAsCompleted(this.selectedOwnerShareCode() || undefined);
   }
 
-  protected onMarkAllMoviesAsUnwatched(): void {
-    this.manageTrackerData.markAllMoviesAsUnwatched(this.selectedOwnerShareCode() || undefined);
+  protected onMarkAllMoviesAsUncompleted(): void {
+    this.manageTrackerData.markAllMoviesAsUncompleted(this.selectedOwnerShareCode() || undefined);
   }
 
-  protected onMarkAllSeriesAsWatched(): void {
-    this.manageTrackerData.markAllSeriesAsWatched(this.selectedOwnerShareCode() || undefined);
+  protected onMarkAllSeriesAsCompleted(): void {
+    this.manageTrackerData.markAllSeriesAsCompleted(this.selectedOwnerShareCode() || undefined);
   }
 
-  protected onMarkAllSeriesAsUnwatched(): void {
-    this.manageTrackerData.markAllSeriesAsUnwatched(this.selectedOwnerShareCode() || undefined);
+  protected onMarkAllSeriesAsUncompleted(): void {
+    this.manageTrackerData.markAllSeriesAsUncompleted(this.selectedOwnerShareCode() || undefined);
+  }
+
+  protected onMarkAllBooksAsCompleted(): void {
+    this.manageTrackerData.markAllBooksAsCompleted(this.selectedOwnerShareCode() || undefined);
+  }
+
+  protected onMarkAllBooksAsUncompleted(): void {
+    this.manageTrackerData.markAllBooksAsUncompleted(this.selectedOwnerShareCode() || undefined);
   }
 
   protected onRemoveAllTrackedMovieData(): void {

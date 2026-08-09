@@ -1,4 +1,5 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
+import { buildBooksItem } from '../fixtures/openlibrary';
 import { CollectionPage } from '../page-objects/collection.po';
 import { CommonPage } from '../page-objects/common.po';
 import { SettingsPage } from '../page-objects/settings.po';
@@ -202,20 +203,28 @@ describe('Settings - manage tracker data page', () => {
     SettingsPage.visitManageTrackerData();
   });
 
-  it('shows the mark-all-watched button', () => {
-    SettingsPage.getMarkAllWatchedButton().should('be.visible');
+  it('shows the mark-all-completed button', () => {
+    SettingsPage.getMarkAllCompletedButton().should('be.visible');
   });
 
-  it('shows the mark-all-unwatched button', () => {
-    SettingsPage.getMarkAllUnwatchedButton().should('be.visible');
+  it('shows the mark-all-uncompleted button', () => {
+    SettingsPage.getMarkAllUncompletedButton().should('be.visible');
   });
 
-  it('shows the mark-all-series-watched button', () => {
-    SettingsPage.getMarkAllSeriesWatchedButton().should('be.visible');
+  it('shows the mark-all-series-completed button', () => {
+    SettingsPage.getMarkAllSeriesCompletedButton().should('be.visible');
   });
 
-  it('shows the mark-all-series-unwatched button', () => {
-    SettingsPage.getMarkAllSeriesUnwatchedButton().should('be.visible');
+  it('shows the mark-all-series-uncompleted button', () => {
+    SettingsPage.getMarkAllSeriesUncompletedButton().should('be.visible');
+  });
+
+  it('shows the mark-all-books-completed button', () => {
+    SettingsPage.getMarkAllBooksCompletedButton().should('be.visible');
+  });
+
+  it('shows the mark-all-books-uncompleted button', () => {
+    SettingsPage.getMarkAllBooksUncompletedButton().should('be.visible');
   });
 
   it('shows the remove-all-tracked-movie-data button', () => {
@@ -227,7 +236,7 @@ describe('Settings - manage tracker data page', () => {
   });
 });
 
-describe('Settings - mark all watched / unwatched', () => {
+describe('Settings - mark all completed / uncompleted', () => {
   beforeEach(() => {
     cy.autoLogin();
     cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie A', 'movie', 'tt8000001'));
@@ -235,9 +244,11 @@ describe('Settings - mark all watched / unwatched', () => {
     cy.request('POST', '/api/v1/create', {
       ...buildCollectionItem('Watch Test Series', 'series', 'tt8000003'),
     });
+    cy.request('POST', '/api/v1/create', buildBooksItem('Watch Test Book A', '9780132350884'));
+    cy.request('POST', '/api/v1/create', buildBooksItem('Watch Test Book B', '9780201633610'));
     // Force a full page reload so Angular reboots and its boot-time loadCollection()
-    // picks up the seeded items. ChangeWatchedStatusService reads from the in-memory
-    // store, not the API — the store must contain the items before we act.
+    // picks up the seeded items. Mark-all actions hit the API; reload keeps client
+    // collection state in sync before navigating to settings.
     // Register the intercept AFTER cy.visit but BEFORE cy.reload — cy.reload clears
     // the page and reboots Angular, which then fires items request with the seeded items.
     cy.visit('/client/#/collection/library');
@@ -248,13 +259,13 @@ describe('Settings - mark all watched / unwatched', () => {
     SettingsPage.visitManageTrackerData();
   });
 
-  it('marks all movies as watched and persists them in tracking', () => {
-    cy.intercept('POST', '/api/v1/items/mark-all-watched').as('markAllWatched');
+  it('marks all movies as completed and persists them in tracking', () => {
+    cy.intercept('POST', '/api/v1/items/mark-all-movies-completed').as('markAllCompleted');
     cy.on('window:confirm', () => true);
 
-    SettingsPage.getMarkAllWatchedButton().click();
+    SettingsPage.getMarkAllCompletedButton().click();
 
-    cy.wait('@markAllWatched').its('response.statusCode').should('eq', 200);
+    cy.wait('@markAllCompleted').its('response.statusCode').should('eq', 200);
 
     CollectionPage.visitTracking();
     CollectionPage.getListItems().should('have.length', 2);
@@ -264,41 +275,77 @@ describe('Settings - mark all watched / unwatched', () => {
     CollectionPage.getTrackingCompletedBadges().should('have.length', 2);
   });
 
-  it('marks all movies as unwatched and removes them from the tracking', () => {
+  it('marks all movies as uncompleted and removes them from tracking', () => {
     cy.on('window:confirm', () => true);
-    cy.intercept('POST', '/api/v1/items/mark-all-watched').as('markAllWatched');
-    cy.intercept('POST', '/api/v1/items/mark-all-unwatched').as('markAllUnwatched');
+    cy.intercept('POST', '/api/v1/items/mark-all-movies-completed').as('markAllCompleted');
+    cy.intercept('POST', '/api/v1/items/mark-all-movies-uncompleted').as('markAllUncompleted');
 
-    // First mark all as watched so there are watched items to unwatch
-    SettingsPage.getMarkAllWatchedButton().click();
-    cy.wait('@markAllWatched').its('response.statusCode').should('eq', 200);
+    // First mark all as completed so there are items to uncomplete
+    SettingsPage.getMarkAllCompletedButton().click();
+    cy.wait('@markAllCompleted').its('response.statusCode').should('eq', 200);
 
-    SettingsPage.getMarkAllUnwatchedButton().click();
-    cy.wait('@markAllUnwatched').its('response.statusCode').should('eq', 200);
+    SettingsPage.getMarkAllUncompletedButton().click();
+    cy.wait('@markAllUncompleted').its('response.statusCode').should('eq', 200);
 
     CollectionPage.visitTracking();
     CollectionPage.getEmptyState().should('be.visible');
   });
 
-  it('mark all series as watched calls the bulk update API', () => {
-    cy.intercept('POST', '/api/v1/items/mark-all-series-watched').as('markAllSeriesWatched');
+  it('mark all series as completed calls the bulk update API', () => {
+    cy.intercept('POST', '/api/v1/items/mark-all-series-completed').as('markAllSeriesCompleted');
     cy.on('window:confirm', () => true);
 
-    SettingsPage.getMarkAllSeriesWatchedButton().click();
+    SettingsPage.getMarkAllSeriesCompletedButton().click();
 
-    cy.wait('@markAllSeriesWatched').its('response.statusCode').should('eq', 200);
+    cy.wait('@markAllSeriesCompleted').its('response.statusCode').should('eq', 200);
   });
 
-  it('mark all series as unwatched calls the bulk update API', () => {
+  it('mark all series as uncompleted calls the bulk update API', () => {
     cy.on('window:confirm', () => true);
-    cy.intercept('POST', '/api/v1/items/mark-all-series-watched').as('markAllSeriesWatched');
-    cy.intercept('POST', '/api/v1/items/mark-all-series-unwatched').as('markAllSeriesUnwatched');
+    cy.intercept('POST', '/api/v1/items/mark-all-series-completed').as('markAllSeriesCompleted');
+    cy.intercept('POST', '/api/v1/items/mark-all-series-uncompleted').as('markAllSeriesUncompleted');
 
-    SettingsPage.getMarkAllSeriesWatchedButton().click();
-    cy.wait('@markAllSeriesWatched').its('response.statusCode').should('eq', 200);
+    SettingsPage.getMarkAllSeriesCompletedButton().click();
+    cy.wait('@markAllSeriesCompleted').its('response.statusCode').should('eq', 200);
 
-    SettingsPage.getMarkAllSeriesUnwatchedButton().click();
-    cy.wait('@markAllSeriesUnwatched').its('response.statusCode').should('eq', 200);
+    SettingsPage.getMarkAllSeriesUncompletedButton().click();
+    cy.wait('@markAllSeriesUncompleted').its('response.statusCode').should('eq', 200);
+  });
+
+  it('marks all books as completed and persists them in tracking', () => {
+    cy.intercept('POST', '/api/v1/items/mark-all-books-completed').as('markAllBooksCompleted');
+    cy.on('window:confirm', () => true);
+
+    SettingsPage.getMarkAllBooksCompletedButton().click();
+
+    cy.wait('@markAllBooksCompleted').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.visitTracking();
+    CollectionPage.getListItems()
+      .should('contain.text', 'Watch Test Book A')
+      .and('contain.text', 'Watch Test Book B');
+    CollectionPage.getTrackingCompletedBadges().should('have.length.at.least', 2);
+  });
+
+  it('marks all books as uncompleted and keeps tracking items without completed badges', () => {
+    cy.on('window:confirm', () => true);
+    cy.intercept('POST', '/api/v1/items/mark-all-books-completed').as('markAllBooksCompleted');
+    cy.intercept('POST', '/api/v1/items/mark-all-books-uncompleted').as('markAllBooksUncompleted');
+
+    SettingsPage.getMarkAllBooksCompletedButton().click();
+    cy.wait('@markAllBooksCompleted').its('response.statusCode').should('eq', 200);
+
+    SettingsPage.getMarkAllBooksUncompletedButton().click();
+    cy.wait('@markAllBooksUncompleted').its('response.statusCode').should('eq', 200);
+
+    CollectionPage.visitTracking();
+    CollectionPage.getListItems()
+      .should('contain.text', 'Watch Test Book A')
+      .and('contain.text', 'Watch Test Book B');
+    CollectionPage.getShowFunctionsButton().click();
+    CollectionPage.getCollectionFilterButton('completed').click();
+    CollectionPage.getListItems().should('not.contain.text', 'Watch Test Book A');
+    CollectionPage.getListItems().should('not.contain.text', 'Watch Test Book B');
   });
 
   it('remove all tracked movie data calls the delete API and empties the tracker', () => {

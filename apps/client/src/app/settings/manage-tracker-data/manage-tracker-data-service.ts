@@ -18,25 +18,28 @@ export class ManageTrackerDataService {
   private readonly api = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
 
-  public markAllMoviesAsWatched(ownerShareCode?: string): void {
+  public markAllMoviesAsCompleted(ownerShareCode?: string): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllMoviesAsWatched'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllMoviesAsCompleted'))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
         this.blockerLoadingState.patchState('show', true);
         this.blockerLoadingState.patchState(
           'message',
-          this.ngxSignalTranslate.translate('Message.MarkingAllMoviesAsWatched')
+          this.ngxSignalTranslate.translate('Message.MarkingAllMoviesAsCompleted')
         );
 
         this.api
-          .markAllMoviesAsWatched(ownerShareCode)
+          .markAllMoviesAsCompleted(ownerShareCode)
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {
               this.blockerLoadingState.patchState('show', false);
-              this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.MarkedAllMoviesAsWatched'));
+              this.toastState.setState(
+                'message',
+                this.ngxSignalTranslate.translate('Toast.MarkedAllMoviesAsCompleted')
+              );
               this.collection.triggerReload();
             },
             error: () => {
@@ -44,34 +47,34 @@ export class ManageTrackerDataService {
               this.toastState.setState('timeout', 10000);
               this.toastState.setState(
                 'message',
-                this.ngxSignalTranslate.translate('Toast.MarkingAllMoviesAsWatchedWithErrors')
+                this.ngxSignalTranslate.translate('Toast.MarkingAllMoviesAsCompletedWithErrors')
               );
             },
           });
       });
   }
 
-  public markAllMoviesAsUnwatched(ownerShareCode?: string): void {
+  public markAllMoviesAsUncompleted(ownerShareCode?: string): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllMoviesAsUnwatched'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllMoviesAsUncompleted'))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
         this.blockerLoadingState.patchState('show', true);
         this.blockerLoadingState.patchState(
           'message',
-          this.ngxSignalTranslate.translate('Message.MarkingAllMoviesAsUnwatched')
+          this.ngxSignalTranslate.translate('Message.MarkingAllMoviesAsUncompleted')
         );
 
         this.api
-          .markAllMoviesAsUnwatched(ownerShareCode)
+          .markAllMoviesAsUncompleted(ownerShareCode)
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {
               this.blockerLoadingState.patchState('show', false);
               this.toastState.setState(
                 'message',
-                this.ngxSignalTranslate.translate('Toast.MarkedAllMoviesAsUnwatched')
+                this.ngxSignalTranslate.translate('Toast.MarkedAllMoviesAsUncompleted')
               );
               this.collection.triggerReload();
             },
@@ -79,32 +82,35 @@ export class ManageTrackerDataService {
               this.blockerLoadingState.patchState('show', false);
               this.toastState.setState(
                 'message',
-                this.ngxSignalTranslate.translate('Toast.MarkingAllMoviesAsUnwatchedWithErrors')
+                this.ngxSignalTranslate.translate('Toast.MarkingAllMoviesAsUncompletedWithErrors')
               );
             },
           });
       });
   }
 
-  public markAllSeriesAsWatched(ownerShareCode?: string): void {
+  public markAllSeriesAsCompleted(ownerShareCode?: string): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllSeriesAsWatched'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllSeriesAsCompleted'))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
         this.blockerLoadingState.patchState('show', true);
         this.blockerLoadingState.patchState(
           'message',
-          this.ngxSignalTranslate.translate('Message.MarkingAllSeriesAsWatched')
+          this.ngxSignalTranslate.translate('Message.MarkingAllSeriesAsCompleted')
         );
 
         this.api
-          .markAllSeriesAsWatched(ownerShareCode)
+          .markAllSeriesAsCompleted(ownerShareCode)
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {
               this.blockerLoadingState.patchState('show', false);
-              this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.MarkedAllSeriesAsWatched'));
+              this.toastState.setState(
+                'message',
+                this.ngxSignalTranslate.translate('Toast.MarkedAllSeriesAsCompleted')
+              );
               this.collection.triggerReload();
             },
             error: () => {
@@ -112,34 +118,34 @@ export class ManageTrackerDataService {
               this.toastState.setState('timeout', 10000);
               this.toastState.setState(
                 'message',
-                this.ngxSignalTranslate.translate('Toast.MarkingAllSeriesAsWatchedWithErrors')
+                this.ngxSignalTranslate.translate('Toast.MarkingAllSeriesAsCompletedWithErrors')
               );
             },
           });
       });
   }
 
-  public markAllSeriesAsUnwatched(ownerShareCode?: string): void {
+  public markAllSeriesAsUncompleted(ownerShareCode?: string): void {
     this.confirm
-      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllSeriesAsUnwatched'))
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllSeriesAsUncompleted'))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.blockerLoadingState.patchState('withoutDelay', true);
         this.blockerLoadingState.patchState('show', true);
         this.blockerLoadingState.patchState(
           'message',
-          this.ngxSignalTranslate.translate('Message.MarkingAllSeriesAsUnwatched')
+          this.ngxSignalTranslate.translate('Message.MarkingAllSeriesAsUncompleted')
         );
 
         this.api
-          .markAllSeriesAsUnwatched(ownerShareCode)
+          .markAllSeriesAsUncompleted(ownerShareCode)
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {
               this.blockerLoadingState.patchState('show', false);
               this.toastState.setState(
                 'message',
-                this.ngxSignalTranslate.translate('Toast.MarkedAllSeriesAsUnwatched')
+                this.ngxSignalTranslate.translate('Toast.MarkedAllSeriesAsUncompleted')
               );
               this.collection.triggerReload();
             },
@@ -147,7 +153,75 @@ export class ManageTrackerDataService {
               this.blockerLoadingState.patchState('show', false);
               this.toastState.setState(
                 'message',
-                this.ngxSignalTranslate.translate('Toast.MarkingAllSeriesAsUnwatchedWithErrors')
+                this.ngxSignalTranslate.translate('Toast.MarkingAllSeriesAsUncompletedWithErrors')
+              );
+            },
+          });
+      });
+  }
+
+  public markAllBooksAsCompleted(ownerShareCode?: string): void {
+    this.confirm
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllBooksAsCompleted'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.blockerLoadingState.patchState('withoutDelay', true);
+        this.blockerLoadingState.patchState('show', true);
+        this.blockerLoadingState.patchState(
+          'message',
+          this.ngxSignalTranslate.translate('Message.MarkingAllBooksAsCompleted')
+        );
+
+        this.api
+          .markAllBooksAsCompleted(ownerShareCode)
+          .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.MarkedAllBooksAsCompleted'));
+              this.collection.triggerReload();
+            },
+            error: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState('timeout', 10000);
+              this.toastState.setState(
+                'message',
+                this.ngxSignalTranslate.translate('Toast.MarkingAllBooksAsCompletedWithErrors')
+              );
+            },
+          });
+      });
+  }
+
+  public markAllBooksAsUncompleted(ownerShareCode?: string): void {
+    this.confirm
+      .ifConfirmed(this.ngxSignalTranslate.translate('Confirm.MarkAllBooksAsUncompleted'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.blockerLoadingState.patchState('withoutDelay', true);
+        this.blockerLoadingState.patchState('show', true);
+        this.blockerLoadingState.patchState(
+          'message',
+          this.ngxSignalTranslate.translate('Message.MarkingAllBooksAsUncompleted')
+        );
+
+        this.api
+          .markAllBooksAsUncompleted(ownerShareCode)
+          .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState(
+                'message',
+                this.ngxSignalTranslate.translate('Toast.MarkedAllBooksAsUncompleted')
+              );
+              this.collection.triggerReload();
+            },
+            error: () => {
+              this.blockerLoadingState.patchState('show', false);
+              this.toastState.setState(
+                'message',
+                this.ngxSignalTranslate.translate('Toast.MarkingAllBooksAsUncompletedWithErrors')
               );
             },
           });
@@ -167,7 +241,7 @@ export class ManageTrackerDataService {
         );
 
         this.api
-          .deleteAllWatchedItems()
+          .deleteAllCompletedMovies()
           .pipe(take(1), takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {

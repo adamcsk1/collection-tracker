@@ -16,6 +16,25 @@
   <h4>{{ translations.books() }}</h4>
   <div class="actions">
     <button
+      data-test-id="settings-mark-all-books-completed"
+      type="button"
+      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      (click)="onMarkAllBooksAsCompleted()"
+    >
+      <i class="material-icons" [title]="translations.markAllBooksAsCompleted()"> check_circle </i>
+      {{ translations.markAllBooksAsCompleted() }}
+    </button>
+    <button
+      data-test-id="settings-mark-all-books-uncompleted"
+      type="button"
+      class="button-danger"
+      [disabled]="apiLoadNetworkStatus() === 'pending'"
+      (click)="onMarkAllBooksAsUncompleted()"
+    >
+      <i class="material-icons" [title]="translations.markAllBooksAsUncompleted()"> unpublished </i>
+      {{ translations.markAllBooksAsUncompleted() }}
+    </button>
+    <button
       data-test-id="settings-remove-all-tracked-book-data"
       type="button"
       class="button-danger"
@@ -31,23 +50,23 @@
   <h4>{{ translations.movies() }}</h4>
   <div class="actions">
     <button
-      data-test-id="settings-mark-all-watched"
+      data-test-id="settings-mark-all-completed"
       type="button"
       [disabled]="apiLoadNetworkStatus() === 'pending'"
-      (click)="onMarkAllMoviesAsWatched()"
+      (click)="onMarkAllMoviesAsCompleted()"
     >
-      <i class="material-icons" [title]="translations.markAllMoviesAsWatched()"> visibility </i>
-      {{ translations.markAllMoviesAsWatched() }}
+      <i class="material-icons" [title]="translations.markAllMoviesAsCompleted()"> visibility </i>
+      {{ translations.markAllMoviesAsCompleted() }}
     </button>
     <button
-      data-test-id="settings-mark-all-unwatched"
+      data-test-id="settings-mark-all-uncompleted"
       type="button"
       class="button-danger"
       [disabled]="apiLoadNetworkStatus() === 'pending'"
-      (click)="onMarkAllMoviesAsUnwatched()"
+      (click)="onMarkAllMoviesAsUncompleted()"
     >
-      <i class="material-icons" [title]="translations.markAllMoviesAsUnwatched()"> visibility_off </i>
-      {{ translations.markAllMoviesAsUnwatched() }}
+      <i class="material-icons" [title]="translations.markAllMoviesAsUncompleted()"> visibility_off </i>
+      {{ translations.markAllMoviesAsUncompleted() }}
     </button>
     <button
       data-test-id="settings-remove-all-tracked-movie-data"
@@ -65,23 +84,23 @@
   <h4>{{ translations.series() }}</h4>
   <div class="actions">
     <button
-      data-test-id="settings-mark-all-series-watched"
+      data-test-id="settings-mark-all-series-completed"
       type="button"
       [disabled]="apiLoadNetworkStatus() === 'pending'"
-      (click)="onMarkAllSeriesAsWatched()"
+      (click)="onMarkAllSeriesAsCompleted()"
     >
-      <i class="material-icons" [title]="translations.markAllSeriesAsWatched()"> playlist_add_check </i>
-      {{ translations.markAllSeriesAsWatched() }}
+      <i class="material-icons" [title]="translations.markAllSeriesAsCompleted()"> playlist_add_check </i>
+      {{ translations.markAllSeriesAsCompleted() }}
     </button>
     <button
-      data-test-id="settings-mark-all-series-unwatched"
+      data-test-id="settings-mark-all-series-uncompleted"
       type="button"
       class="button-danger"
       [disabled]="apiLoadNetworkStatus() === 'pending'"
-      (click)="onMarkAllSeriesAsUnwatched()"
+      (click)="onMarkAllSeriesAsUncompleted()"
     >
-      <i class="material-icons" [title]="translations.markAllSeriesAsUnwatched()"> playlist_remove </i>
-      {{ translations.markAllSeriesAsUnwatched() }}
+      <i class="material-icons" [title]="translations.markAllSeriesAsUncompleted()"> playlist_remove </i>
+      {{ translations.markAllSeriesAsUncompleted() }}
     </button>
     <button
       data-test-id="settings-remove-all-tracked-series-data"

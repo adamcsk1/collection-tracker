@@ -17,11 +17,13 @@ describe('ManageTrackerDataService', () => {
   let service: ManageTrackerDataService;
   let collectionService: { triggerReload: ReturnType<typeof vi.fn> };
   let api: {
-    markAllMoviesAsWatched: ReturnType<typeof vi.fn>;
-    markAllMoviesAsUnwatched: ReturnType<typeof vi.fn>;
-    markAllSeriesAsWatched: ReturnType<typeof vi.fn>;
-    markAllSeriesAsUnwatched: ReturnType<typeof vi.fn>;
-    deleteAllWatchedItems: ReturnType<typeof vi.fn>;
+    markAllMoviesAsCompleted: ReturnType<typeof vi.fn>;
+    markAllMoviesAsUncompleted: ReturnType<typeof vi.fn>;
+    markAllSeriesAsCompleted: ReturnType<typeof vi.fn>;
+    markAllSeriesAsUncompleted: ReturnType<typeof vi.fn>;
+    markAllBooksAsCompleted: ReturnType<typeof vi.fn>;
+    markAllBooksAsUncompleted: ReturnType<typeof vi.fn>;
+    deleteAllCompletedMovies: ReturnType<typeof vi.fn>;
     deleteAllTrackingItems: ReturnType<typeof vi.fn>;
     deleteAllBooksItems: ReturnType<typeof vi.fn>;
   };
@@ -30,11 +32,13 @@ describe('ManageTrackerDataService', () => {
   beforeEach(() => {
     collectionService = { triggerReload: vi.fn() };
     api = {
-      markAllMoviesAsWatched: vi.fn(() => of({ changedCount: 2 })),
-      markAllMoviesAsUnwatched: vi.fn(() => of({ changedCount: 1 })),
-      markAllSeriesAsWatched: vi.fn(() => of({ trackedCount: 1, progressChangedCount: 3 })),
-      markAllSeriesAsUnwatched: vi.fn(() => of({ changedCount: 2 })),
-      deleteAllWatchedItems: vi.fn(() => of({ changedCount: 2 })),
+      markAllMoviesAsCompleted: vi.fn(() => of({ changedCount: 2 })),
+      markAllMoviesAsUncompleted: vi.fn(() => of({ changedCount: 1 })),
+      markAllSeriesAsCompleted: vi.fn(() => of({ trackedCount: 1, progressChangedCount: 3 })),
+      markAllSeriesAsUncompleted: vi.fn(() => of({ changedCount: 2 })),
+      markAllBooksAsCompleted: vi.fn(() => of({ changedCount: 2 })),
+      markAllBooksAsUncompleted: vi.fn(() => of({ changedCount: 1 })),
+      deleteAllCompletedMovies: vi.fn(() => of({ changedCount: 2 })),
       deleteAllTrackingItems: vi.fn(() => of({ changedCount: 3 })),
       deleteAllBooksItems: vi.fn(() => of({ changedCount: 4 })),
     };
@@ -55,92 +59,158 @@ describe('ManageTrackerDataService', () => {
     service = TestBed.inject(ManageTrackerDataService);
   });
 
-  it('marks all movies as watched and completes successfully', () => {
-    service.markAllMoviesAsWatched();
+  it('marks all movies as completed and completes successfully', () => {
+    service.markAllMoviesAsCompleted();
 
-    expect(api.markAllMoviesAsWatched).toHaveBeenCalledTimes(1);
+    expect(api.markAllMoviesAsCompleted).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
-    expect(toast.state.message()).toBe('Toast.MarkedAllMoviesAsWatched');
+    expect(toast.state.message()).toBe('Toast.MarkedAllMoviesAsCompleted');
   });
 
-  it('marks all movies as unwatched and completes successfully', () => {
+  it('marks all movies as uncompleted and completes successfully', () => {
     const blocker = TestBed.inject(blockerLoadingStateToken);
 
-    service.markAllMoviesAsUnwatched();
+    service.markAllMoviesAsUncompleted();
 
-    expect(api.markAllMoviesAsUnwatched).toHaveBeenCalledTimes(1);
+    expect(api.markAllMoviesAsUncompleted).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
-    expect(toast.state.message()).toBe('Toast.MarkedAllMoviesAsUnwatched');
+    expect(toast.state.message()).toBe('Toast.MarkedAllMoviesAsUncompleted');
     expect(blocker.state.show()).toBe(false);
   });
 
-  it('marks all series as watched and completes successfully', () => {
-    service.markAllSeriesAsWatched();
+  it('marks all series as completed and completes successfully', () => {
+    service.markAllSeriesAsCompleted();
 
-    expect(api.markAllSeriesAsWatched).toHaveBeenCalledTimes(1);
+    expect(api.markAllSeriesAsCompleted).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
-    expect(toast.state.message()).toBe('Toast.MarkedAllSeriesAsWatched');
+    expect(toast.state.message()).toBe('Toast.MarkedAllSeriesAsCompleted');
   });
 
-  it('marks all series as unwatched and completes successfully', () => {
-    service.markAllSeriesAsUnwatched();
+  it('marks all series as uncompleted and completes successfully', () => {
+    service.markAllSeriesAsUncompleted();
 
-    expect(api.markAllSeriesAsUnwatched).toHaveBeenCalledTimes(1);
+    expect(api.markAllSeriesAsUncompleted).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
-    expect(toast.state.message()).toBe('Toast.MarkedAllSeriesAsUnwatched');
+    expect(toast.state.message()).toBe('Toast.MarkedAllSeriesAsUncompleted');
   });
 
-  it('does nothing when user declines marking all movies as watched', () => {
+  it('marks all books as completed and completes successfully', () => {
+    service.markAllBooksAsCompleted();
+
+    expect(api.markAllBooksAsCompleted).toHaveBeenCalledTimes(1);
+    expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
+    const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
+    expect(toast.state.message()).toBe('Toast.MarkedAllBooksAsCompleted');
+  });
+
+  it('marks all books as uncompleted and completes successfully', () => {
+    service.markAllBooksAsUncompleted();
+
+    expect(api.markAllBooksAsUncompleted).toHaveBeenCalledTimes(1);
+    expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
+    const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
+    expect(toast.state.message()).toBe('Toast.MarkedAllBooksAsUncompleted');
+  });
+
+  it('does nothing when user declines marking all movies as completed', () => {
     confirm.ifConfirmed = vi.fn(() => EMPTY);
-    service.markAllMoviesAsWatched();
+    service.markAllMoviesAsCompleted();
 
-    expect(api.markAllMoviesAsWatched).not.toHaveBeenCalled();
+    expect(api.markAllMoviesAsCompleted).not.toHaveBeenCalled();
     expect(collectionService.triggerReload).not.toHaveBeenCalled();
   });
 
-  it('shows error toast when mark all movies as watched fails', () => {
-    api.markAllMoviesAsWatched = vi.fn(() => throwError(() => new Error('fail')));
-    service.markAllMoviesAsWatched();
+  it('does nothing when user declines marking all books as completed', () => {
+    confirm.ifConfirmed = vi.fn(() => EMPTY);
+    service.markAllBooksAsCompleted();
 
-    expect(api.markAllMoviesAsWatched).toHaveBeenCalledTimes(1);
+    expect(api.markAllBooksAsCompleted).not.toHaveBeenCalled();
+    expect(collectionService.triggerReload).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when user declines marking all books as uncompleted', () => {
+    confirm.ifConfirmed = vi.fn(() => EMPTY);
+    service.markAllBooksAsUncompleted();
+
+    expect(api.markAllBooksAsUncompleted).not.toHaveBeenCalled();
+    expect(collectionService.triggerReload).not.toHaveBeenCalled();
+  });
+
+  it('shows error toast when mark all movies as completed fails', () => {
+    api.markAllMoviesAsCompleted = vi.fn(() => throwError(() => new Error('fail')));
+    service.markAllMoviesAsCompleted();
+
+    expect(api.markAllMoviesAsCompleted).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
-    expect(toast.state.message()).toBe('Toast.MarkingAllMoviesAsWatchedWithErrors');
+    expect(toast.state.message()).toBe('Toast.MarkingAllMoviesAsCompletedWithErrors');
     expect(collectionService.triggerReload).not.toHaveBeenCalled();
   });
 
-  it('passes selected shared library to mark all movies watched', () => {
-    service.markAllMoviesAsWatched('owner-code');
+  it('shows error toast when mark all books as completed fails', () => {
+    api.markAllBooksAsCompleted = vi.fn(() => throwError(() => new Error('fail')));
+    service.markAllBooksAsCompleted();
 
-    expect(api.markAllMoviesAsWatched).toHaveBeenCalledWith('owner-code');
+    expect(api.markAllBooksAsCompleted).toHaveBeenCalledTimes(1);
+    const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
+    expect(toast.state.message()).toBe('Toast.MarkingAllBooksAsCompletedWithErrors');
+    expect(collectionService.triggerReload).not.toHaveBeenCalled();
   });
 
-  it('passes selected shared library to mark all movies unwatched', () => {
-    service.markAllMoviesAsUnwatched('owner-code');
+  it('shows error toast when mark all books as uncompleted fails', () => {
+    api.markAllBooksAsUncompleted = vi.fn(() => throwError(() => new Error('fail')));
+    service.markAllBooksAsUncompleted();
 
-    expect(api.markAllMoviesAsUnwatched).toHaveBeenCalledWith('owner-code');
+    expect(api.markAllBooksAsUncompleted).toHaveBeenCalledTimes(1);
+    const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
+    expect(toast.state.message()).toBe('Toast.MarkingAllBooksAsUncompletedWithErrors');
+    expect(collectionService.triggerReload).not.toHaveBeenCalled();
   });
 
-  it('passes selected shared library to mark all series watched', () => {
-    service.markAllSeriesAsWatched('owner-code');
+  it('passes selected shared library to mark all movies completed', () => {
+    service.markAllMoviesAsCompleted('owner-code');
 
-    expect(api.markAllSeriesAsWatched).toHaveBeenCalledWith('owner-code');
+    expect(api.markAllMoviesAsCompleted).toHaveBeenCalledWith('owner-code');
   });
 
-  it('passes selected shared library to mark all series unwatched', () => {
-    service.markAllSeriesAsUnwatched('owner-code');
+  it('passes selected shared library to mark all movies uncompleted', () => {
+    service.markAllMoviesAsUncompleted('owner-code');
 
-    expect(api.markAllSeriesAsUnwatched).toHaveBeenCalledWith('owner-code');
+    expect(api.markAllMoviesAsUncompleted).toHaveBeenCalledWith('owner-code');
+  });
+
+  it('passes selected shared library to mark all series completed', () => {
+    service.markAllSeriesAsCompleted('owner-code');
+
+    expect(api.markAllSeriesAsCompleted).toHaveBeenCalledWith('owner-code');
+  });
+
+  it('passes selected shared library to mark all series uncompleted', () => {
+    service.markAllSeriesAsUncompleted('owner-code');
+
+    expect(api.markAllSeriesAsUncompleted).toHaveBeenCalledWith('owner-code');
+  });
+
+  it('passes selected shared library to mark all books completed', () => {
+    service.markAllBooksAsCompleted('owner-code');
+
+    expect(api.markAllBooksAsCompleted).toHaveBeenCalledWith('owner-code');
+  });
+
+  it('passes selected shared library to mark all books uncompleted', () => {
+    service.markAllBooksAsUncompleted('owner-code');
+
+    expect(api.markAllBooksAsUncompleted).toHaveBeenCalledWith('owner-code');
   });
 
   it('removes all tracked movie data and completes successfully', () => {
     service.removeAllTrackedMovieData();
 
     expect(confirm.ifConfirmed).toHaveBeenCalledWith('Confirm.RemoveAllTrackedMovieData');
-    expect(api.deleteAllWatchedItems).toHaveBeenCalledTimes(1);
+    expect(api.deleteAllCompletedMovies).toHaveBeenCalledTimes(1);
     expect(collectionService.triggerReload).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.RemovedTrackedMovieData');
@@ -167,10 +237,10 @@ describe('ManageTrackerDataService', () => {
   });
 
   it('shows error toast when removing tracked movie data fails', () => {
-    api.deleteAllWatchedItems = vi.fn(() => throwError(() => new Error('fail')));
+    api.deleteAllCompletedMovies = vi.fn(() => throwError(() => new Error('fail')));
     service.removeAllTrackedMovieData();
 
-    expect(api.deleteAllWatchedItems).toHaveBeenCalledTimes(1);
+    expect(api.deleteAllCompletedMovies).toHaveBeenCalledTimes(1);
     const toast = TestBed.inject(toastStateToken) as NgxSimpleSignalStoreService<ToastState>;
     expect(toast.state.message()).toBe('Toast.RemovingTrackedMovieDataWithErrors');
     expect(collectionService.triggerReload).not.toHaveBeenCalled();
