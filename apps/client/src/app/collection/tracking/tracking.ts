@@ -20,7 +20,7 @@ import { FloatActionsService } from '../../main/float-actions/float-actions-serv
 import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
 import { SearchSuggestionService, searchSuggestionListTypeToken } from '../library/search/search-suggestion-service';
-import { getMediaChipEmptyIcon } from '../list/list-const';
+import { getMediaChipEmptyIcon } from '../list/list-util';
 import { List } from '../list/list';
 import { CollectionMediaChip, CollectionMediaChips } from '../media-chips/media-chips';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';

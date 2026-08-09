@@ -290,7 +290,7 @@ describe('NewItemDialogService', () => {
     expect(externalMetadata.getSelectedContent).not.toHaveBeenCalled();
   });
 
-  it('saveManual creates a movie tracker copy for watched library movies', async () => {
+  it('saveManual creates a tracking copy for watched library movies', async () => {
     api.create.mockReturnValue(
       createResponse({
         title: 'Manual Title',
@@ -305,7 +305,7 @@ describe('NewItemDialogService', () => {
     expect(api.addWatchedItemByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', undefined);
   });
 
-  it('saveManual finalizes the created item when the movie tracker update fails', async () => {
+  it('saveManual finalizes the created item when the tracking update fails', async () => {
     const createdItem = {
       title: 'Manual Title',
       IMDbId: 'tt1234567',
@@ -327,7 +327,7 @@ describe('NewItemDialogService', () => {
     expect(spinnerStore.state.show()).toBe(false);
   });
 
-  it('saveManual creates a series tracker copy for watched library series', async () => {
+  it('saveManual creates a tracking copy for watched library series', async () => {
     api.create.mockReturnValue(
       createResponse({
         title: 'Manual Title',
@@ -391,7 +391,7 @@ describe('NewItemDialogService', () => {
     expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ rate: '8.0' }), undefined);
   });
 
-  it('creates a movie tracker copy when saving a watched library movie', async () => {
+  it('creates a tracking copy when saving a watched library movie', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(of(null, buildSelectedContent()) as any);
     api.create.mockReturnValue(
       createResponse({ title: 'Title', IMDbId: 'tt123', externalProvider: 'omdb', externalItemId: 'tt123' })
@@ -412,7 +412,7 @@ describe('NewItemDialogService', () => {
     );
   });
 
-  it('does not create a movie tracker copy when saving a watched library series', async () => {
+  it('does not create a tracking copy when saving a watched library series', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
       of(null, buildSelectedContent({ contentType: 'series' })) as any
     );
@@ -467,7 +467,7 @@ describe('NewItemDialogService', () => {
     );
   });
 
-  it('saves series tracker items with the series tracker list type', async () => {
+  it('saves tracking items with the tracking list type', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
       of(null, buildSelectedContent({ contentType: 'series' })) as any
     );
@@ -479,6 +479,81 @@ describe('NewItemDialogService', () => {
 
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({ tags: ['#tag'], contentType: 'series' }),
+      undefined,
+      'tracking'
+    );
+  });
+
+  it('saves tracking book search items with page progress', async () => {
+    externalMetadata.getSelectedContent.mockReturnValue(
+      of(
+        null,
+        buildSelectedContent({
+          provider: 'openlibrary',
+          providerItemId: '9780306406157',
+          externalIds: [{ source: 'isbn', id: '9780306406157' }],
+          contentType: 'book',
+          title: 'Progress Book',
+        })
+      ) as any
+    );
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Progress Book',
+        externalProvider: 'openlibrary',
+        externalItemId: '9780306406157',
+      })
+    );
+
+    await firstValueFrom(
+      service.save('9780306406157', null, '', 'close', {
+        listType: 'tracking',
+        progressCurrent: 40,
+        progressTotal: 320,
+      })
+    );
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: 'book',
+        progressCurrent: 40,
+        progressTotal: 320,
+      }),
+      undefined,
+      'tracking'
+    );
+  });
+
+  it('saves manual tracking books with page progress', async () => {
+    api.create.mockReturnValue(
+      createResponse({
+        title: 'Manual Book',
+        externalProvider: 'openlibrary',
+        externalItemId: '9780140328721',
+      })
+    );
+
+    await firstValueFrom(
+      service.saveManual(
+        {
+          ...buildManualItem(),
+          title: 'Manual Book',
+          IMDbId: '9780140328721',
+          contentType: 'book',
+          progressCurrent: 12,
+          progressTotal: 100,
+        },
+        'close',
+        { listType: 'tracking' }
+      )
+    );
+
+    expect(api.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: 'book',
+        progressCurrent: 12,
+        progressTotal: 100,
+      }),
       undefined,
       'tracking'
     );
@@ -514,7 +589,7 @@ describe('NewItemDialogService', () => {
     expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ contentType: 'movie' }), undefined, 'wishlist');
   });
 
-  it('saves manual items with the series tracker list type', async () => {
+  it('saves manual items with the tracking list type', async () => {
     api.create.mockReturnValue(
       createResponse({
         title: 'Manual Title',
@@ -558,7 +633,7 @@ describe('NewItemDialogService', () => {
     expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ year: '2005' }), undefined);
   });
 
-  it('creates a series tracker copy and marks all watched when saving a library series with copy flag', async () => {
+  it('creates a tracking copy and marks all watched when saving a library series with copy flag', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
       of(null, buildSelectedContent({ contentType: 'series' })) as any
     );
@@ -592,7 +667,7 @@ describe('NewItemDialogService', () => {
     );
   });
 
-  it('does not create a series tracker copy when copy flag is false', async () => {
+  it('does not create a tracking copy when copy flag is false', async () => {
     externalMetadata.getSelectedContent.mockReturnValue(
       of(null, buildSelectedContent({ contentType: 'series' })) as any
     );

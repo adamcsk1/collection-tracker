@@ -55,6 +55,8 @@ const defaultSearchModel = (): NewItemSearchModel => ({
   finished: false,
   copyToTrackingAsCompleted: false,
   targetOwnerShareCode: null,
+  progressCurrent: null,
+  progressTotal: null,
 });
 
 const defaultManualModel = (): ItemFormModel => ({
@@ -178,6 +180,9 @@ export class NewItemDialog {
     validationMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Validation.MetacriticRate')),
     validationRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('Validation.RottenTomatoesRate')),
     validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
+    validationProgressRange: computed(() => this.ngxSignalTranslate.translate('Validation.ProgressRange')),
+    pagesRead: computed(() => this.ngxSignalTranslate.translate('PagesRead')),
+    totalPages: computed(() => this.ngxSignalTranslate.translate('TotalPages')),
     collectionItemFinished: computed(() => this.ngxSignalTranslate.translate('CollectionItemFinished')),
     copyToTrackingAsCompleted: computed(() => this.ngxSignalTranslate.translate('CopyToTrackingAsWatched')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
@@ -215,6 +220,20 @@ export class NewItemDialog {
         if (userRate === null) return null;
         return Math.abs(userRate * 10 - Math.round(userRate * 10)) <= 1e-9 ? null : { kind: 'userRate' };
       });
+      min(newItem.progressCurrent, 0, { error: { kind: 'min' } });
+      min(newItem.progressTotal, 1, { error: { kind: 'min' } });
+      validate(newItem.progressCurrent, ({ value, valueOf }) => {
+        const progressCurrent = value();
+        const progressTotal = valueOf(newItem.progressTotal);
+        if (progressCurrent === null || progressTotal === null) return undefined;
+        return progressCurrent <= progressTotal ? undefined : { kind: 'progressRange' };
+      });
+      validate(newItem.progressTotal, ({ value, valueOf }) => {
+        const progressTotal = value();
+        const progressCurrent = valueOf(newItem.progressCurrent);
+        if (progressCurrent === null || progressTotal === null) return undefined;
+        return progressCurrent <= progressTotal ? undefined : { kind: 'progressRange' };
+      });
     },
     {
       submission: {
@@ -250,6 +269,20 @@ export class NewItemDialog {
         if (userRate === null) return undefined;
         return Math.abs(userRate * 10 - Math.round(userRate * 10)) <= 1e-9 ? undefined : { kind: 'userRate' };
       });
+      min(manualItem.progressCurrent, 0, { error: { kind: 'min' } });
+      min(manualItem.progressTotal, 1, { error: { kind: 'min' } });
+      validate(manualItem.progressCurrent, ({ value, valueOf }) => {
+        const progressCurrent = value();
+        const progressTotal = valueOf(manualItem.progressTotal);
+        if (progressCurrent === null || progressTotal === null) return undefined;
+        return progressCurrent <= progressTotal ? undefined : { kind: 'progressRange' };
+      });
+      validate(manualItem.progressTotal, ({ value, valueOf }) => {
+        const progressTotal = value();
+        const progressCurrent = valueOf(manualItem.progressCurrent);
+        if (progressCurrent === null || progressTotal === null) return undefined;
+        return progressCurrent <= progressTotal ? undefined : { kind: 'progressRange' };
+      });
     },
     {
       submission: {
@@ -278,6 +311,22 @@ export class NewItemDialog {
           .userRate()
           .errors()
           .some((error) => error.kind === 'max')
+      ),
+    },
+    progressCurrent: {
+      progressRange: computed(() =>
+        this.searchForm
+          .progressCurrent()
+          .errors()
+          .some((error) => error.kind === 'progressRange')
+      ),
+    },
+    progressTotal: {
+      progressRange: computed(() =>
+        this.searchForm
+          .progressTotal()
+          .errors()
+          .some((error) => error.kind === 'progressRange')
       ),
     },
   };
@@ -358,6 +407,22 @@ export class NewItemDialog {
           .userRate()
           .errors()
           .some((error) => error.kind === 'userRate')
+      ),
+    },
+    progressCurrent: {
+      progressRange: computed(() =>
+        this.manualForm
+          .progressCurrent()
+          .errors()
+          .some((error) => error.kind === 'progressRange')
+      ),
+    },
+    progressTotal: {
+      progressRange: computed(() =>
+        this.manualForm
+          .progressTotal()
+          .errors()
+          .some((error) => error.kind === 'progressRange')
       ),
     },
   };
@@ -476,6 +541,7 @@ export class NewItemDialog {
   );
   protected readonly showContentTypeSelect = computed(() => this.resolvedAllowedContentTypes().length > 1);
   protected readonly showManualUserRate = computed(() => !this.internalListMode());
+  protected readonly showBookProgress = computed(() => this.tracking() && this.isBookAdd());
   protected readonly internalListMode = computed(
     () => this.watchlist() || this.wishlist() || this.tracking() || this.books()
   );
@@ -720,6 +786,10 @@ export class NewItemDialog {
     if (this.showCopyToTrackingCheckbox()) {
       options.copyToTrackingAsCompleted = this.searchForm.copyToTrackingAsCompleted().value();
     }
+    if (this.showBookProgress()) {
+      options.progressCurrent = this.searchForm.progressCurrent().value();
+      options.progressTotal = this.searchForm.progressTotal().value();
+    }
 
     if (this.mode() === 'manual') {
       const manualValues = this.manualForm().value();
@@ -729,6 +799,8 @@ export class NewItemDialog {
           ...manualValues,
           contentType,
           userRate: this.internalListMode() ? null : manualValues.userRate,
+          progressCurrent: this.showBookProgress() ? manualValues.progressCurrent : null,
+          progressTotal: this.showBookProgress() ? manualValues.progressTotal : null,
         },
         mode,
         options

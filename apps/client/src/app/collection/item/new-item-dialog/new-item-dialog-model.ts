@@ -10,6 +10,8 @@ export interface NewItemSearchModel {
   finished: boolean;
   copyToTrackingAsCompleted: boolean;
   targetOwnerShareCode: string | null;
+  progressCurrent: number | null;
+  progressTotal: number | null;
 }
 
 export type SaveMode = 'new' | 'close' | null;
@@ -19,4 +21,6 @@ export interface SaveOptions {
   listType?: CollectionListTypeModel;
   finished?: boolean;
   copyToTrackingAsCompleted?: boolean;
+  progressCurrent?: number | null;
+  progressTotal?: number | null;
 }

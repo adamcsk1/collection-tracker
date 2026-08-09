@@ -31,9 +31,9 @@ import {
 } from '../utils/collection-search-filter-util';
 
 @Component({
-  selector: 'ct-book-tracker',
+  selector: 'ct-books',
   imports: [List, FormField, Autocomplete],
-  templateUrl: './book-tracker.html',
+  templateUrl: './books.html',
   styleUrl: '../collection.css',
   providers: [
     { provide: AutocompleteService, useClass: SearchSuggestionService },

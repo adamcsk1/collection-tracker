@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getAllowedAddContentTypes, getMediaChipEmptyIcon } from './list-const';
+import { getAllowedAddContentTypes, getMediaChipEmptyIcon } from './list-util';
 
 describe('getAllowedAddContentTypes', () => {
   it('locks to a single type when provided', () => {

@@ -10,7 +10,7 @@ import { ApiService } from '@services/api/api-service';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import { DEFAULT_EXTERNAL_METADATA_PROVIDER } from '@shared/constants/external-metadata-const';
-import { MAX_SERIES_TRACKER_EPISODES, MAX_SERIES_TRACKER_SEASONS } from '@shared/constants/series-tracker-const';
+import { MAX_SERIES_EPISODES, MAX_SERIES_SEASONS } from '@shared/constants/tracking-const';
 import { CollectionItemApiModel, TrackingSeasonMetadataModel } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { firstValueFrom } from 'rxjs';
@@ -59,9 +59,9 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   protected readonly form = form(this.formModel, (metadata) => {
     applyEach(metadata.seasons, (season) => {
       min(season.season, 1, { error: { kind: 'min' } });
-      max(season.season, MAX_SERIES_TRACKER_SEASONS, { error: { kind: 'max' } });
+      max(season.season, MAX_SERIES_SEASONS, { error: { kind: 'max' } });
       min(season.episodes, 1, { error: { kind: 'min' } });
-      max(season.episodes, MAX_SERIES_TRACKER_EPISODES, { error: { kind: 'max' } });
+      max(season.episodes, MAX_SERIES_EPISODES, { error: { kind: 'max' } });
     });
     validate(metadata.seasons, ({ value }) =>
       this.hasValidUniqueSeasons(value()) ? undefined : { kind: 'seriesMetadata' }
@@ -75,9 +75,8 @@ export class SeriesSeasonMetadataDialog implements OnInit {
   private hasValidUniqueSeasons(seasons: TrackingSeasonMetadataModel[]): boolean {
     const seasonNumbers = new Set<number>();
     for (const season of seasons) {
-      if (!Number.isInteger(season.season) || season.season < 1 || season.season > MAX_SERIES_TRACKER_SEASONS)
-        return false;
-      if (!Number.isInteger(season.episodes) || season.episodes < 1 || season.episodes > MAX_SERIES_TRACKER_EPISODES)
+      if (!Number.isInteger(season.season) || season.season < 1 || season.season > MAX_SERIES_SEASONS) return false;
+      if (!Number.isInteger(season.episodes) || season.episodes < 1 || season.episodes > MAX_SERIES_EPISODES)
         return false;
       if (seasonNumbers.has(season.season)) return false;
       seasonNumbers.add(season.season);

@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { FieldTree, form } from '@angular/forms/signals';
 import { ApiService } from '@services/api/api-service';
 import { PortalService } from '@services/portal-service';
-import { isExternalItemIdentitySourceName } from '@shared/constants/external-metadata-const';
+import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
 import { CollectionItemFiltersApiModel, CollectionListTypeModel } from '@shared/models/api-model';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import { NgxSimpleSignalStoreService } from 'ngx-simple-signal-store';

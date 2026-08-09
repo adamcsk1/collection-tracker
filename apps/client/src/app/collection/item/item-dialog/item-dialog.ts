@@ -166,6 +166,7 @@ export class ItemDialog implements OnInit {
     validationMetacriticRate: computed(() => this.ngxSignalTranslate.translate('Validation.MetacriticRate')),
     validationRottenTomatoesRate: computed(() => this.ngxSignalTranslate.translate('Validation.RottenTomatoesRate')),
     validationUserRate: computed(() => this.ngxSignalTranslate.translate('Validation.UserRate')),
+    validationProgressRange: computed(() => this.ngxSignalTranslate.translate('Validation.ProgressRange')),
     ratings: computed(() => this.ngxSignalTranslate.translate('Ratings')),
   };
   protected readonly formModel = signal<ItemFormModel>({
@@ -204,9 +205,15 @@ export class ItemDialog implements OnInit {
       });
       min(item.progressCurrent, 0, { error: { kind: 'min' } });
       min(item.progressTotal, 1, { error: { kind: 'min' } });
-      validate(item.progressCurrent, ({ value }) => {
+      validate(item.progressCurrent, ({ value, valueOf }) => {
         const progressCurrent = value();
-        const progressTotal = this.formModel().progressTotal;
+        const progressTotal = valueOf(item.progressTotal);
+        if (progressCurrent === null || progressTotal === null) return undefined;
+        return progressCurrent <= progressTotal ? undefined : { kind: 'progressRange' };
+      });
+      validate(item.progressTotal, ({ value, valueOf }) => {
+        const progressTotal = value();
+        const progressCurrent = valueOf(item.progressCurrent);
         if (progressCurrent === null || progressTotal === null) return undefined;
         return progressCurrent <= progressTotal ? undefined : { kind: 'progressRange' };
       });
@@ -276,6 +283,22 @@ export class ItemDialog implements OnInit {
           .userRate()
           .errors()
           .some((error) => error.kind === 'userRate')
+      ),
+    },
+    progressCurrent: {
+      progressRange: computed(() =>
+        this.form
+          .progressCurrent()
+          .errors()
+          .some((error) => error.kind === 'progressRange')
+      ),
+    },
+    progressTotal: {
+      progressRange: computed(() =>
+        this.form
+          .progressTotal()
+          .errors()
+          .some((error) => error.kind === 'progressRange')
       ),
     },
   };
@@ -387,8 +410,7 @@ export class ItemDialog implements OnInit {
   protected readonly finished = computed(
     () =>
       this.collectionItem().watched === true ||
-      (this.tracking() && this.movie()) ||
-      (this.tracking() && this.book() && this.collectionItem().watchedAt !== null)
+      (this.tracking() && (this.movie() || this.book()) && this.collectionItem().watchedAt !== null)
   );
   protected readonly favorite = computed(() => this.collectionItem().favorite);
   protected readonly watchlist = computed(() => this.collectionItem().listType === 'watchlist');
@@ -855,20 +877,23 @@ export class ItemDialog implements OnInit {
     if (!this.featurePreferences().tracking || !this.permissionWatch() || !this.finished()) return;
     this.spinnerLoadingState.setState('show', true);
     try {
+      const sourceItem = this.collectionItem();
       await firstValueFrom(
-        this.api.deleteWatchedItemByExternalId(
-          this.collectionItem().externalProvider,
-          this.collectionItem().externalItemId
-        )
+        this.api.deleteWatchedItemByExternalId(sourceItem.externalProvider, sourceItem.externalItemId)
       );
-      const updatedSource = { ...this.collectionItem(), watched: false };
-      this.collectionService.deleteCollectionItem(
-        { ...this.collectionItem(), listType: 'tracking' },
-        undefined,
-        'tracking'
-      );
+      const updatedSource = { ...sourceItem, watched: false };
+      if (sourceItem.contentType === 'movie') {
+        this.collectionService.deleteCollectionItem({ ...sourceItem, listType: 'tracking' }, undefined, 'tracking');
+      } else if (sourceItem.contentType === 'book') {
+        this.collectionService.updateCollectionItem(
+          { ...sourceItem, listType: 'tracking' },
+          { ...sourceItem, listType: 'tracking', watched: false, watchedAt: null },
+          undefined,
+          'tracking'
+        );
+      }
       this.collectionService.updateCollectionItem(
-        this.collectionItem(),
+        sourceItem,
         updatedSource,
         updatedSource.ownerShareCode,
         updatedSource.listType

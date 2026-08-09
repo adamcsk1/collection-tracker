@@ -228,19 +228,19 @@ describe('Statistics component', () => {
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'wishlist']);
   });
 
-  it('navigates to movie tracker when clicking the watched movies stat card', () => {
+  it('navigates to tracking when clicking the watched movies stat card', () => {
     component['onNavigateToWatched']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'tracking'], { queryParams: { type: 'movie' } });
   });
 
-  it('navigates to series tracker when clicking the watched series stat card', () => {
+  it('navigates to tracking when clicking the watched series stat card', () => {
     component['onNavigateToTracking']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'tracking']);
   });
 
-  it('navigates to book tracker when clicking the tracked books stat card', () => {
+  it('navigates to books list when clicking the tracked books stat card', () => {
     component['onNavigateToBooks']();
 
     expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'books']);

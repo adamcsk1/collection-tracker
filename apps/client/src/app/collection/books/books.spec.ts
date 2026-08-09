@@ -13,7 +13,7 @@ import { initialMainState, mainStateToken } from '../../main/main-store';
 import { collectionStateToken, initialCollectionState } from '../collection-store';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
 import { AiSearchService } from '../search/ai-search-service';
-import { Books } from './book-tracker';
+import { Books } from './books';
 
 describe('Books', () => {
   let fixture: ComponentFixture<Books>;
@@ -53,7 +53,7 @@ describe('Books', () => {
     fixture.detectChanges();
   });
 
-  it('searches only book tracker items', () => {
+  it('searches only books list items', () => {
     fixture.componentInstance['booksDataSource']({
       reset: true,
       offset: 0,
@@ -70,7 +70,7 @@ describe('Books', () => {
     );
   });
 
-  it('opens book tracker item creation', () => {
+  it('opens books list item creation', () => {
     const event = new Event('click');
     const preventDefault = vi.spyOn(event, 'preventDefault');
 

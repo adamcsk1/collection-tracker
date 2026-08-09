@@ -150,7 +150,7 @@ describe('ListItem', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-favorite"]')).not.toBeNull();
   });
 
-  it('renders completed status for completed series tracker items', () => {
+  it('renders completed status for completed tracking items', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [SERIES_TAG, COMPLETED_TAG]),
       listType: 'tracking',
@@ -169,7 +169,7 @@ describe('ListItem', () => {
     );
   });
 
-  it('renders completed status for completed movie tracker items', () => {
+  it('renders completed status for completed tracking items', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [MOVIE_TAG]),
       listType: 'tracking',
@@ -189,7 +189,7 @@ describe('ListItem', () => {
     );
   });
 
-  it('does not render completed status for partial series tracker items', () => {
+  it('does not render completed status for partial tracking items', () => {
     fixture.componentRef.setInput('collectionItem', {
       ...buildItem('Sample', [SERIES_TAG]),
       listType: 'tracking',
@@ -239,6 +239,43 @@ describe('ListItem', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-year"]')).toBeNull();
+  });
+
+  it('shows book reading progress on tracking list cards', () => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Tracking Book'),
+      listType: 'tracking',
+      contentType: 'book',
+      year: '2020',
+      progressCurrent: 55,
+      progressTotal: 200,
+      watchedAt: null,
+    });
+    fixture.detectChanges();
+
+    const progress = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-progress"]');
+    expect(progress?.textContent?.trim()).toBe('2020 · 55 / 200');
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-year"]')).toBeNull();
+  });
+
+  it('shows book progress without year when year display is disabled', () => {
+    mainState.setState('collectionListDisplayPreferences', {
+      ...mainState.state.collectionListDisplayPreferences(),
+      showYear: false,
+    });
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Tracking Book'),
+      listType: 'tracking',
+      contentType: 'book',
+      year: '2020',
+      progressCurrent: 12,
+      progressTotal: 100,
+      watchedAt: null,
+    });
+    fixture.detectChanges();
+
+    const progress = (fixture.nativeElement as HTMLElement).querySelector('[data-test-id="list-item-progress"]');
+    expect(progress?.textContent?.trim()).toBe('12 / 100');
   });
 
   it('hides the shared icon when collection list display settings disable it', () => {

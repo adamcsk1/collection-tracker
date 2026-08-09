@@ -57,7 +57,14 @@ export class NewItemDialogService {
     mode: SaveMode,
     options: SaveOptions = {}
   ) {
-    const { targetOwnerShareCode, listType = 'library', finished = false, copyToTrackingAsCompleted = false } = options;
+    const {
+      targetOwnerShareCode,
+      listType = 'library',
+      finished = false,
+      copyToTrackingAsCompleted = false,
+      progressCurrent = null,
+      progressTotal = null,
+    } = options;
 
     return this.externalMetadata.getSelectedContent(selectedExternalMetadataValue).pipe(
       skip(1),
@@ -82,8 +89,9 @@ export class NewItemDialogService {
             throw new Error('Tracking items must be movies, series, or books.');
           }
           if (listType === 'books' && selectedContentType !== 'book') {
-            throw new Error('Book tracker items must be books.');
+            throw new Error('Books list items must be books.');
           }
+          const includeBookProgress = listType === 'tracking' && selectedContentType === 'book';
           return {
             item: {
               image: selectedContent.poster,
@@ -103,6 +111,9 @@ export class NewItemDialogService {
               plot: selectedContent.plot,
               contentType: selectedContentType,
               favorite: false,
+              ...(includeBookProgress
+                ? { progressCurrent: progressCurrent ?? null, progressTotal: progressTotal ?? null }
+                : {}),
             },
             selectedContentIsMovie: selectedContentType === 'movie',
             selectedContentIsSeries: selectedContentType === 'series',
@@ -148,7 +159,7 @@ export class NewItemDialogService {
           throw new Error('Tracking items must be movies, series, or books.');
         }
         if (listType === 'books' && change.contentType !== 'book') {
-          throw new Error('Book tracker items must be books.');
+          throw new Error('Books list items must be books.');
         }
         return change;
       }),

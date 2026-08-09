@@ -29,7 +29,7 @@ export const collectionRoutes: Routes = [
       },
       {
         path: 'books',
-        loadComponent: () => import('./book-tracker/book-tracker').then((module) => module.Books),
+        loadComponent: () => import('./books/books').then((module) => module.Books),
       },
       {
         path: '',

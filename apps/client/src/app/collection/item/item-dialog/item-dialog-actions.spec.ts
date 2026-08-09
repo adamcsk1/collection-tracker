@@ -103,7 +103,7 @@ describe('ItemDialogActions', () => {
     expect(deleteButton.querySelector('.button-reveal-label-text')?.textContent).toContain('Delete');
   });
 
-  it('renders series tracker actions when update permission is available', () => {
+  it('renders tracking actions when update permission is available', () => {
     createComponent({ tracking: true, libraryItem: false, movie: false, series: true });
     const manageCompletedEpisodes = vi.fn();
     fixture.componentInstance.manageCompletedEpisodes.subscribe(manageCompletedEpisodes);

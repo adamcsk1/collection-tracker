@@ -48,7 +48,6 @@
   }
 }
 
-/* eslint-disable-next-line css/use-baseline */
 :host-context(.collection-container--with-chips) .list {
   height: 100%;
   padding-top: 0;

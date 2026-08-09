@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatTrackingEpisode, isTrackingCompleted } from './tracking-progress-util';
 
-describe('series tracker progress util', () => {
+describe('tracking progress util', () => {
   it('formats a watched episode', () => {
     expect(formatTrackingEpisode({ season: 1, episode: 2 })).toBe('S01E02');
   });
@@ -10,7 +10,7 @@ describe('series tracker progress util', () => {
     expect(formatTrackingEpisode(null)).toBeNull();
   });
 
-  it('detects completed series tracker progress', () => {
+  it('detects completed tracking progress', () => {
     expect(
       isTrackingCompleted(
         'tracking',
@@ -27,7 +27,7 @@ describe('series tracker progress util', () => {
     ).toBe(true);
   });
 
-  it('does not complete when the item is not a series tracker item', () => {
+  it('does not complete when the item is not a tracking item', () => {
     expect(isTrackingCompleted('library', [{ season: 1, episodes: 1 }], [{ season: 1, episode: 1 }])).toBe(false);
   });
 

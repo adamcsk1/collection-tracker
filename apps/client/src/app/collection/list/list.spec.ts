@@ -445,7 +445,7 @@ describe('List', () => {
     expect(addNewSpy).toHaveBeenCalled();
   });
 
-  it('opens the new item dialog in book tracker mode', () => {
+  it('opens the new item dialog in books list mode', () => {
     fixture.componentRef.setInput('listType', 'books');
 
     component['onAddNew']();
@@ -552,7 +552,7 @@ describe('List', () => {
     });
   });
 
-  it('publishes contextual filter actions for series tracker', () => {
+  it('publishes contextual filter actions for tracking', () => {
     fixture.componentRef.setInput('listType', 'tracking');
     fixture.detectChanges();
 

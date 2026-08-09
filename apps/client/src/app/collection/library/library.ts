@@ -23,7 +23,7 @@ import { mainStateToken } from '../../main/main-store';
 import { collectionStateToken } from '../collection-store';
 import { ItemDialog } from '../item/item-dialog/item-dialog';
 import { List } from '../list/list';
-import { getMediaChipEmptyIcon } from '../list/list-const';
+import { getMediaChipEmptyIcon } from '../list/list-util';
 import { CollectionMediaChip, CollectionMediaChips } from '../media-chips/media-chips';
 import { AiSearchService } from '../search/ai-search-service';
 import { setupCollectionAiSearch } from '../utils/collection-ai-search-util';

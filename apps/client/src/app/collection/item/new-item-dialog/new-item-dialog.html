@@ -209,6 +209,34 @@
             [formField]="manualForm.plot"
             [rows]="4"
           />
+          @if (showBookProgress()) {
+            <libc-input
+              data-test-id="new-item-manual-progress-current"
+              type="number"
+              [label]="translations.pagesRead()"
+              [formField]="manualForm.progressCurrent"
+              [step]="1"
+            >
+              <ng-container errors>
+                @if (manualFormErrors.progressCurrent.progressRange()) {
+                  {{ translations.validationProgressRange() }}
+                }
+              </ng-container>
+            </libc-input>
+            <libc-input
+              data-test-id="new-item-manual-progress-total"
+              type="number"
+              [label]="translations.totalPages()"
+              [formField]="manualForm.progressTotal"
+              [step]="1"
+            >
+              <ng-container errors>
+                @if (manualFormErrors.progressTotal.progressRange()) {
+                  {{ translations.validationProgressRange() }}
+                }
+              </ng-container>
+            </libc-input>
+          }
         </form>
       </ng-container>
     </libc-tabs>
@@ -282,6 +310,34 @@
         [formField]="searchForm.tags"
         ctTagSuggestions
       />
+    }
+    @if (showBookProgress() && mode() === 'search' && matchedContent().length) {
+      <libc-input
+        data-test-id="new-item-progress-current"
+        type="number"
+        [label]="translations.pagesRead()"
+        [formField]="searchForm.progressCurrent"
+        [step]="1"
+      >
+        <ng-container errors>
+          @if (searchFormErrors.progressCurrent.progressRange()) {
+            {{ translations.validationProgressRange() }}
+          }
+        </ng-container>
+      </libc-input>
+      <libc-input
+        data-test-id="new-item-progress-total"
+        type="number"
+        [label]="translations.totalPages()"
+        [formField]="searchForm.progressTotal"
+        [step]="1"
+      >
+        <ng-container errors>
+          @if (searchFormErrors.progressTotal.progressRange()) {
+            {{ translations.validationProgressRange() }}
+          }
+        </ng-container>
+      </libc-input>
     }
     @if (showFinishedCheckbox()) {
       <libc-checkbox

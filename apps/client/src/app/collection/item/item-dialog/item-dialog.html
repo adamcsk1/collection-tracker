@@ -134,14 +134,26 @@
             [label]="translations.pagesRead()"
             [formField]="form.progressCurrent"
             [step]="1"
-          />
+          >
+            <ng-container errors>
+              @if (formErrors.progressCurrent.progressRange()) {
+                {{ translations.validationProgressRange() }}
+              }
+            </ng-container>
+          </libc-input>
           <libc-input
             data-test-id="item-dialog-progress-total"
             type="number"
             [label]="translations.totalPages()"
             [formField]="form.progressTotal"
             [step]="1"
-          />
+          >
+            <ng-container errors>
+              @if (formErrors.progressTotal.progressRange()) {
+                {{ translations.validationProgressRange() }}
+              }
+            </ng-container>
+          </libc-input>
         }
       </form>
     } @else {

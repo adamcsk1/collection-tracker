@@ -1,6 +1,6 @@
 {
   "About": "About",
-  "About.Description": "A self-hosted media catalog for managing your personal movie and series collections.",
+  "About.Description": "A self-hosted media catalog for managing your personal movie, series, and book collections.",
   "AccessTokens": "Access tokens",
   "Actions": "Actions",
   "Actors": "Actors",
@@ -380,6 +380,7 @@
   "Validation.KnownIMDbId": "The content is already in the collection.",
   "Validation.KnownISBN": "The book is already in the collection.",
   "Validation.MetacriticRate": "Metacritic rate must be between 0/100 and 100/100.",
+  "Validation.ProgressRange": "Total pages must be greater than or equal to pages read.",
   "Validation.Required": "Required field.",
   "Validation.RottenTomatoesRate": "Rotten Tomatoes rate must be between 0% and 100%.",
   "Validation.SeriesMetadata": "Each season and episode count must be unique positive whole numbers.",

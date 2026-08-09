@@ -37,12 +37,8 @@ import { FloatActionButtons } from '../float-action-buttons/float-action-buttons
 import { FloatActionFilter } from '../float-action-buttons/float-action-buttons-model';
 import { FloatActionButtonsService } from '../float-action-buttons/float-action-buttons-service';
 import { NewItemDialog } from '../item/new-item-dialog/new-item-dialog';
-import {
-  COLLECTION_LIST_PAGE_SIZE,
-  COLLECTION_SEARCH_DEBOUNCE_MS,
-  FLOAT_ACTION_SCROLLING_IDLE_MS,
-  getAllowedAddContentTypes,
-} from './list-const';
+import { COLLECTION_LIST_PAGE_SIZE, COLLECTION_SEARCH_DEBOUNCE_MS, FLOAT_ACTION_SCROLLING_IDLE_MS } from './list-const';
+import { getAllowedAddContentTypes } from './list-util';
 import { ListItemSkeleton } from './list-item-skeleton/list-item-skeleton';
 import { ListItem } from './list-item/list-item';
 

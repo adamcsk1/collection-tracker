@@ -109,7 +109,7 @@ describe('Tracking', () => {
     expect(collectionState.state.searchText()).toBe('lost');
   });
 
-  it('searches series tracker items by standard text', () => {
+  it('searches tracking items by standard text', () => {
     fixture.componentInstance['trackingDataSource'](dataSourceRequest(' dark ', 10, 25));
 
     expect(api.searchItems).toHaveBeenCalledWith(
@@ -119,7 +119,7 @@ describe('Tracking', () => {
     );
   });
 
-  it('searches series tracker items by tag', () => {
+  it('searches tracking items by tag', () => {
     fixture.componentInstance['trackingDataSource'](dataSourceRequest('#drama'));
 
     expect(api.searchItems).toHaveBeenCalledWith(
@@ -145,7 +145,7 @@ describe('Tracking', () => {
     );
   });
 
-  it('merges completed query filters into series tracker searches', () => {
+  it('merges completed query filters into tracking searches', () => {
     TestBed.resetTestingModule();
     createFixture('', { completed: 'false' });
 
@@ -158,7 +158,7 @@ describe('Tracking', () => {
     );
   });
 
-  it('searches series tracker items without a text filter by default', () => {
+  it('searches tracking items without a text filter by default', () => {
     fixture.componentInstance['trackingDataSource'](dataSourceRequest(''));
 
     expect(api.searchItems).toHaveBeenCalledWith(
@@ -176,7 +176,7 @@ describe('Tracking', () => {
     expect(floatActions.searchTemplate()).toBeNull();
   });
 
-  it('opens the series tracker dialog from the empty CTA', () => {
+  it('opens the tracking dialog from the empty CTA', () => {
     const event = new Event('click');
     const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 

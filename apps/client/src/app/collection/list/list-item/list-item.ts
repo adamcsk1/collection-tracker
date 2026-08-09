@@ -115,10 +115,26 @@ export class ListItem {
   };
   public readonly collectionItem = input.required<CollectionItemModel>();
 
+  protected readonly bookProgressText = computed(() => {
+    const item = this.collectionItem();
+    if (item.listType !== 'tracking' || item.contentType !== 'book') return null;
+    const current = item.progressCurrent;
+    const total = item.progressTotal;
+    if (current == null && total == null) return null;
+    if (current != null && total != null) return `${current} / ${total}`;
+    if (current != null) return `${current}`;
+    return `${total}`;
+  });
   protected readonly itemMeta = computed(() => {
     const item = this.collectionItem();
-    return this.listDisplayPreferences().showYear && item.year ? item.year : null;
+    const year = this.listDisplayPreferences().showYear && item.year ? item.year : null;
+    const progress = this.bookProgressText();
+    if (year && progress) return `${year} · ${progress}`;
+    return progress ?? year;
   });
+  protected readonly itemMetaTestId = computed(() =>
+    this.bookProgressText() ? 'list-item-progress' : 'list-item-year'
+  );
 
   private getRatingDisplayValue(
     rating: CollectionListDisplayRatingModel,

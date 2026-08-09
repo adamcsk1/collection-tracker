@@ -102,7 +102,7 @@ describe('NewItemDialog component', () => {
     expect(component['searchForm'].searchText().value()).toBe('matrix');
   });
 
-  it('allows manual mode and filters books in book tracker mode', () => {
+  it('allows manual mode and filters books in books list mode', () => {
     fixture.componentRef.setInput('books', true);
     service.matchedContent.set([
       { contentType: 'movie', text: 'Dune', value: 'omdb/tt1160419' },
@@ -282,7 +282,7 @@ describe('NewItemDialog component', () => {
     expect(component['showCopyToTrackingCheckbox']()).toBe(true);
   });
 
-  it('hides watched checkbox when the movie tracker feature is disabled', () => {
+  it('hides watched checkbox when the tracking feature is disabled', () => {
     mainState.setState('collectionFeaturePreferences', {
       ...initialMainState.collectionFeaturePreferences,
       tracking: false,
@@ -294,7 +294,7 @@ describe('NewItemDialog component', () => {
     expect(component['showFinishedCheckbox']()).toBe(false);
   });
 
-  it('hides copy-to-watching checkbox when the series tracker feature is disabled', () => {
+  it('hides copy-to-watching checkbox when the tracking feature is disabled', () => {
     mainState.setState('collectionFeaturePreferences', {
       ...initialMainState.collectionFeaturePreferences,
       tracking: false,
@@ -427,7 +427,7 @@ describe('NewItemDialog component', () => {
     expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', { listType: 'wishlist' });
   });
 
-  it('saves series tracker items without watched, user rate, or shared library values', async () => {
+  it('saves tracking items without watched, user rate, or shared library values', async () => {
     fixture.componentRef.setInput('tracking', true);
     fixture.componentRef.setInput('allowedContentTypes', ['series', 'book']);
     component['selectedAddContentType'].set('series');
@@ -442,7 +442,7 @@ describe('NewItemDialog component', () => {
     expect(service.save).toHaveBeenCalledWith('tt123', null, '#tag', 'close', { listType: 'tracking' });
   });
 
-  it('filters matched content to series in series tracker mode', () => {
+  it('filters matched content to series in tracking mode', () => {
     fixture.componentRef.setInput('tracking', true);
     fixture.componentRef.setInput('allowedContentTypes', ['series', 'book']);
     component['selectedAddContentType'].set('series');
@@ -637,6 +637,33 @@ describe('NewItemDialog component', () => {
         'close',
         { listType: 'tracking' }
       );
+    });
+
+    it('revalidates manual book progress when the sibling field recovers the range', async () => {
+      fixture.componentRef.setInput('tracking', true);
+      fixture.componentRef.setInput('allowedContentTypes', ['series', 'book']);
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(0);
+
+      component['manualForm'].title().value.set('Manual Progress Book');
+      component['manualForm'].IMDbId().value.set('9780140328721');
+      component['manualForm'].contentType().value.set('book');
+      component['selectedAddContentType'].set('book');
+      component['manualForm'].progressCurrent().value.set(150);
+      component['manualForm'].progressTotal().value.set(100);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component['manualFormErrors'].progressCurrent.progressRange()).toBe(true);
+      expect(component['manualForm']().valid()).toBe(false);
+
+      component['manualForm'].progressTotal().value.set(200);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component['manualFormErrors'].progressCurrent.progressRange()).toBe(false);
+      expect(component['manualFormErrors'].progressTotal.progressRange()).toBe(false);
+      expect(component['manualForm']().valid()).toBe(true);
     });
 
     it('shows watched checkbox for manual library movies', () => {
