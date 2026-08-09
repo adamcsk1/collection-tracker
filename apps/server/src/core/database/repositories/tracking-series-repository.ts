@@ -109,7 +109,7 @@ export const copySeriesToTrackingByExternalId = (
   return copySeriesRowToTracking(db, usernameHash, sourceOwnerHash, sourceRow, sourceListType, deleteSource);
 };
 
-export const markAllSeriesAsWatched = (
+export const markAllSeriesAsCompleted = (
   db: Database.Database,
   usernameHash: string,
   sourceOwnerHash = usernameHash
@@ -133,7 +133,7 @@ export const markAllSeriesAsWatched = (
     .all(sourceOwnerHash, 'library', usernameHash, 'tracking') as CollectionItemRow[];
 
   void debugLog(
-    `markAllSeriesAsWatched candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
+    `markAllSeriesAsCompleted candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
   );
 
   const transaction = db.transaction(() => {

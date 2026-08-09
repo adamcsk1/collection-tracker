@@ -205,24 +205,24 @@ export interface RenameTagApiResponseModel {
   tagManagement: TagManagementApiResponseModel;
 }
 
-export interface MarkAllWatchedApiResponseModel {
+export interface MarkAllCompletedApiResponseModel {
   changedCount: number;
 }
 
-export interface MarkAllSeriesWatchedApiResponseModel {
+export interface MarkAllSeriesCompletedApiResponseModel {
   trackedCount: number;
   progressChangedCount: number;
 }
 
-export interface MarkAllUnwatchedApiResponseModel {
+export interface MarkAllUncompletedApiResponseModel {
   changedCount: number;
 }
 
-export interface WatchedApiResponseModel {
+export interface CompletedApiResponseModel {
   item: CollectionItemApiModel;
 }
 
-export type FinishedApiResponseModel = WatchedApiResponseModel;
+export type FinishedApiResponseModel = CompletedApiResponseModel;
 
 export interface TrackingApiResponseModel {
   item: CollectionItemApiModel;

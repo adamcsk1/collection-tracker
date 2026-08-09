@@ -8,7 +8,8 @@ import {
   findCollectionItemByExternalId,
 } from '../core/database/repositories/collection';
 import { resolveCanonicalItemId } from '../core/database/repositories/external-item-identity-repository';
-import { copyMovieToWatchedByExternalId } from '../core/database/repositories/tracking-movie-repository';
+import { copyBookToCompletedByExternalId } from '../core/database/repositories/tracking-book-repository';
+import { copyMovieToCompletedByExternalId } from '../core/database/repositories/tracking-movie-repository';
 import { canAccessLibrary } from '../core/database/repositories/share-repository';
 import { copySeriesToTrackingByExternalId } from '../core/database/repositories/tracking-series-repository';
 import { replaceTrackingSeasonsByExternalId } from '../core/database/repositories/tracking-season-repository';
@@ -50,27 +51,36 @@ export const register = (app: FastifyInstance): void => {
     if (!sourceRow) return response.code(404).send();
 
     const markCompleted = query.markCompleted === true || query.markCompleted === 'true';
-    const useCompletedCopy = sourceRow.content_type === 'movie' || (sourceRow.content_type === 'book' && markCompleted);
-
-    const item = useCompletedCopy
-      ? copyMovieToWatchedByExternalId(
-          db,
-          request.usernameHash,
-          ownerHash,
-          externalIdentitySource,
-          externalIdentityId,
-          sourceListType,
-          moveFromWatchlist
-        )
-      : copySeriesToTrackingByExternalId(
-          db,
-          request.usernameHash,
-          ownerHash,
-          externalIdentitySource,
-          externalIdentityId,
-          sourceListType,
-          moveFromWatchlist
-        );
+    const item =
+      sourceRow.content_type === 'movie'
+        ? copyMovieToCompletedByExternalId(
+            db,
+            request.usernameHash,
+            ownerHash,
+            externalIdentitySource,
+            externalIdentityId,
+            sourceListType,
+            moveFromWatchlist
+          )
+        : sourceRow.content_type === 'book' && markCompleted
+          ? copyBookToCompletedByExternalId(
+              db,
+              request.usernameHash,
+              ownerHash,
+              externalIdentitySource,
+              externalIdentityId,
+              sourceListType,
+              moveFromWatchlist
+            )
+          : copySeriesToTrackingByExternalId(
+              db,
+              request.usernameHash,
+              ownerHash,
+              externalIdentitySource,
+              externalIdentityId,
+              sourceListType,
+              moveFromWatchlist
+            );
     if (!item) return response.code(404).send();
 
     if (item.contentType === 'series') {

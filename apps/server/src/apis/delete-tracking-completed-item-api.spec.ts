@@ -8,7 +8,7 @@ const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
 };
 
-const insertWatchedItem = (usernameHash: string, imdbId: string) => {
+const insertCompletedItem = (usernameHash: string, imdbId: string) => {
   const db = getDatabase();
   const result = db
     .prepare(
@@ -24,7 +24,7 @@ const insertWatchedItem = (usernameHash: string, imdbId: string) => {
   db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, '#movie');
 };
 
-const insertWatchedItemByExternalId = (
+const insertCompletedItemByExternalId = (
   usernameHash: string,
   externalProvider: string,
   externalItemId: string,
@@ -53,7 +53,7 @@ const getDeleteHandler = (app: { delete: ReturnType<typeof vi.fn> }, path: strin
   return call?.[2] as ((request: any, response: any) => Promise<void> | void) | undefined;
 };
 
-describe('delete-watched-item-api', () => {
+describe('delete-tracking-completed-item-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -61,7 +61,7 @@ describe('delete-watched-item-api', () => {
 
   it('deletes an existing tracking item', async () => {
     insertUser('user');
-    insertWatchedItem('user', 'tt-1');
+    insertCompletedItem('user', 'tt-1');
 
     const response = mockResponse();
     const request: any = {
@@ -99,9 +99,9 @@ describe('delete-watched-item-api', () => {
   it('deletes all current user tracking items only', async () => {
     insertUser('user');
     insertUser('other-user');
-    insertWatchedItem('user', 'tt-1');
-    insertWatchedItem('user', 'tt-2');
-    insertWatchedItem('other-user', 'tt-other');
+    insertCompletedItem('user', 'tt-1');
+    insertCompletedItem('user', 'tt-2');
+    insertCompletedItem('other-user', 'tt-other');
 
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
@@ -137,7 +137,7 @@ describe('delete-watched-item-api', () => {
 
   it('deletes an existing tracking item by external identity', async () => {
     insertUser('user');
-    insertWatchedItemByExternalId('user', 'omdb', 'tt-1');
+    insertCompletedItemByExternalId('user', 'omdb', 'tt-1');
 
     const response = mockResponse();
     const request: any = {
@@ -161,7 +161,7 @@ describe('delete-watched-item-api', () => {
 
   it('clears book completion and keeps the tracking twin with progress', async () => {
     insertUser('user');
-    insertWatchedItemByExternalId('user', 'openlibrary', '9780306406157', 'book');
+    insertCompletedItemByExternalId('user', 'openlibrary', '9780306406157', 'book');
 
     const response = mockResponse();
     const request: any = {

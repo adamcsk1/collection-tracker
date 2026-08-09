@@ -1,5 +1,5 @@
 import { API_PREFIX } from '@shared/constants/api-const';
-import { MarkAllSeriesWatchedApiResponseModel, TrackingCompletedEpisodeModel } from '@shared/models/api-model';
+import { MarkAllSeriesCompletedApiResponseModel, TrackingCompletedEpisodeModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { syncTrackingCompletedTagByExternalId } from '../core/database/repositories/collection';
@@ -10,7 +10,7 @@ import {
 import {
   findOwnTrackingItems,
   findTrackingItemsForLibrarySeries,
-  markAllSeriesAsWatched,
+  markAllSeriesAsCompleted,
 } from '../core/database/repositories/tracking-series-repository';
 import {
   findCompletedEpisodesByExternalId,
@@ -33,92 +33,91 @@ const completedEpisodesEqual = (
       episode.season === secondEpisodes[index].season && episode.episode === secondEpisodes[index].episode
   );
 
+const SERIES_MARK_ALL_COMPLETED_PATHS = [
+  `${API_PREFIX}/items/mark-all-series-completed`,
+  `${API_PREFIX}/items/mark-all-series-watched`,
+] as const;
+
 export const register = (app: FastifyInstance): void => {
-  app.post(
-    `${API_PREFIX}/items/mark-all-series-watched`,
-    { preHandler: jwtGuard },
-    withErrorHandler(async (request, response) => {
-      const db = getDatabase();
-      const query = (request.query ?? {}) as Record<string, unknown>;
-      const ownerHash =
-        typeof query.ownerShareCode === 'string'
-          ? findUserByShareCode(db, query.ownerShareCode)?.username_hash
-          : request.usernameHash;
-      if (!ownerHash) {
-        return response.code(404).send();
-      }
+  const handler = withErrorHandler(async (request, response) => {
+    const db = getDatabase();
+    const query = (request.query ?? {}) as Record<string, unknown>;
+    const ownerHash =
+      typeof query.ownerShareCode === 'string'
+        ? findUserByShareCode(db, query.ownerShareCode)?.username_hash
+        : request.usernameHash;
+    if (!ownerHash) {
+      return response.code(404).send();
+    }
 
-      if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'read')) {
-        return response.code(403).send();
-      }
+    if (!canAccessLibrary(db, request.usernameHash, ownerHash, 'read')) {
+      return response.code(403).send();
+    }
 
-      await debugLog(
-        `POST /items/mark-all-series-watched source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
+    await debugLog(
+      `POST /items/mark-all-series-completed source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
+    );
+    const insertedItems = markAllSeriesAsCompleted(db, request.usernameHash, ownerHash);
+    const selectedOwnLibrary = ownerHash === request.usernameHash && typeof query.ownerShareCode !== 'string';
+
+    for (const item of insertedItems) {
+      const seasons = await fetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);
+      if (!seasons.length) continue;
+
+      replaceTrackingSeasonsByExternalId(db, request.usernameHash, item.externalProvider, item.externalItemId, seasons);
+    }
+
+    const trackerItems = selectedOwnLibrary
+      ? findOwnTrackingItems(db, request.usernameHash)
+      : findTrackingItemsForLibrarySeries(db, request.usernameHash, ownerHash);
+    let progressChangedCount = 0;
+
+    for (const item of trackerItems) {
+      const seasons = findTrackingSeasonsByExternalId(
+        db,
+        request.usernameHash,
+        item.externalProvider,
+        item.externalItemId
       );
-      const insertedItems = markAllSeriesAsWatched(db, request.usernameHash, ownerHash);
-      const selectedOwnLibrary = ownerHash === request.usernameHash && typeof query.ownerShareCode !== 'string';
+      if (!seasons.length) continue;
 
-      for (const item of insertedItems) {
-        const seasons = await fetchSeriesSeasonMetadata(item.externalProvider, item.externalItemId);
-        if (!seasons.length) continue;
-
-        replaceTrackingSeasonsByExternalId(
-          db,
-          request.usernameHash,
-          item.externalProvider,
-          item.externalItemId,
-          seasons
-        );
-      }
-
-      const trackerItems = selectedOwnLibrary
-        ? findOwnTrackingItems(db, request.usernameHash)
-        : findTrackingItemsForLibrarySeries(db, request.usernameHash, ownerHash);
-      let progressChangedCount = 0;
-
-      for (const item of trackerItems) {
-        const seasons = findTrackingSeasonsByExternalId(
-          db,
-          request.usernameHash,
-          item.externalProvider,
-          item.externalItemId
-        );
-        if (!seasons.length) continue;
-
-        const existingCompletedEpisodes = findCompletedEpisodesByExternalId(
-          db,
-          request.usernameHash,
-          item.externalProvider,
-          item.externalItemId
-        );
-        const wasCompleted = Boolean(item.watchedAt);
-        const completedEpisodes = markAllEpisodesCompletedByExternalId(
-          db,
-          request.usernameHash,
-          item.externalProvider,
-          item.externalItemId,
-          seasons
-        );
-        const syncedItem = syncTrackingCompletedTagByExternalId(
-          db,
-          request.usernameHash,
-          item.externalProvider,
-          item.externalItemId
-        );
-        const isCompleted = Boolean(syncedItem?.watchedAt);
-        if (!completedEpisodesEqual(existingCompletedEpisodes, completedEpisodes) || wasCompleted !== isCompleted) {
-          progressChangedCount++;
-        }
-      }
-      await debugLog(
-        `POST /items/mark-all-series-watched finished: tracked=${insertedItems.length}, progressChanged=${progressChangedCount}`
+      const existingCompletedEpisodes = findCompletedEpisodesByExternalId(
+        db,
+        request.usernameHash,
+        item.externalProvider,
+        item.externalItemId
       );
+      const wasCompleted = Boolean(item.watchedAt);
+      const completedEpisodes = markAllEpisodesCompletedByExternalId(
+        db,
+        request.usernameHash,
+        item.externalProvider,
+        item.externalItemId,
+        seasons
+      );
+      const syncedItem = syncTrackingCompletedTagByExternalId(
+        db,
+        request.usernameHash,
+        item.externalProvider,
+        item.externalItemId
+      );
+      const isCompleted = Boolean(syncedItem?.watchedAt);
+      if (!completedEpisodesEqual(existingCompletedEpisodes, completedEpisodes) || wasCompleted !== isCompleted) {
+        progressChangedCount++;
+      }
+    }
+    await debugLog(
+      `POST /items/mark-all-series-completed finished: tracked=${insertedItems.length}, progressChanged=${progressChangedCount}`
+    );
 
-      const result: MarkAllSeriesWatchedApiResponseModel = {
-        trackedCount: insertedItems.length,
-        progressChangedCount,
-      };
-      response.send(result);
-    })
-  );
+    const result: MarkAllSeriesCompletedApiResponseModel = {
+      trackedCount: insertedItems.length,
+      progressChangedCount,
+    };
+    response.send(result);
+  });
+
+  for (const path of SERIES_MARK_ALL_COMPLETED_PATHS) {
+    app.post(path, { preHandler: jwtGuard }, handler);
+  }
 };

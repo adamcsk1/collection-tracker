@@ -713,14 +713,14 @@ components:
         item:
           $ref: '#/components/schemas/CollectionItem'
 
-    MarkAllWatchedResponse:
+    MarkAllCompletedResponse:
       type: object
       required: [changedCount]
       properties:
         changedCount:
           type: integer
 
-    MarkAllSeriesWatchedResponse:
+    MarkAllSeriesCompletedResponse:
       type: object
       required: [trackedCount, progressChangedCount]
       properties:
@@ -729,9 +729,9 @@ components:
           description: Number of library series newly copied into the authenticated user's tracking.
         progressChangedCount:
           type: integer
-          description: Number of tracking items whose watched episode progress or completed status changed.
+          description: Number of tracking items whose completed episode progress or completed status changed.
 
-    MarkAllUnwatchedResponse:
+    MarkAllUncompletedResponse:
       type: object
       required: [changedCount]
       properties:
@@ -1737,11 +1737,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/RandomImagesResponse'
 
-  /items/mark-all-watched:
+  /items/mark-all-movies-completed:
     post:
-      operationId: markAllAsWatched
-      summary: Mark all movies as watched
-      description: Copies every unwatched movie in the selected library into the authenticated user's tracking. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      operationId: markAllMoviesAsCompleted
+      summary: Mark all movies as completed
+      description: Copies every uncompleted movie in the selected library into the authenticated user's tracking. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified. Alias paths `/items/mark-all-completed` and `/items/mark-all-watched` remain available for compatibility.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1755,7 +1755,106 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MarkAllWatchedResponse'
+                $ref: '#/components/schemas/MarkAllCompletedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
+  /items/mark-all-completed:
+    post:
+      operationId: markAllAsCompleted
+      summary: Mark all movies as completed (compatibility alias)
+      deprecated: true
+      description: Compatibility alias for `/items/mark-all-movies-completed`.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllCompletedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
+  /items/mark-all-watched:
+    post:
+      operationId: markAllAsWatched
+      summary: Mark all movies as completed (legacy alias)
+      deprecated: true
+      description: Legacy alias for `/items/mark-all-movies-completed`.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllCompletedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
+  /items/mark-all-movies-uncompleted:
+    post:
+      operationId: markAllMoviesAsUncompleted
+      summary: Mark all movies as uncompleted
+      description: Removes authenticated-user tracking copies that correspond to movies in the selected library. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified. Alias paths `/items/mark-all-uncompleted` and `/items/mark-all-unwatched` remain available for compatibility.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUncompletedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
+  /items/mark-all-uncompleted:
+    post:
+      operationId: markAllAsUncompleted
+      summary: Mark all movies as uncompleted (compatibility alias)
+      deprecated: true
+      description: Compatibility alias for `/items/mark-all-movies-uncompleted`.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUncompletedResponse'
         '403':
           description: The authenticated user cannot read the requested library.
         '404':
@@ -1764,8 +1863,9 @@ paths:
   /items/mark-all-unwatched:
     post:
       operationId: markAllAsUnwatched
-      summary: Mark all movies as unwatched
-      description: Removes authenticated-user tracking copies that correspond to movies in the selected library. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      summary: Mark all movies as uncompleted (legacy alias)
+      deprecated: true
+      description: Legacy alias for `/items/mark-all-movies-uncompleted`.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1779,17 +1879,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+                $ref: '#/components/schemas/MarkAllUncompletedResponse'
         '403':
           description: The authenticated user cannot read the requested library.
         '404':
           description: The requested shared library owner was not found.
 
-  /items/mark-all-series-watched:
+  /items/mark-all-series-completed:
     post:
-      operationId: markAllSeriesAsWatched
-      summary: Mark all series as watched
-      description: Copies every untracked series in the selected library into the authenticated user's tracking, fetches season metadata from the configured external metadata provider only for newly added series, and marks all available episodes watched for matching tracker items. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      operationId: markAllSeriesAsCompleted
+      summary: Mark all series as completed
+      description: Copies every untracked series in the selected library into the authenticated user's tracking, fetches season metadata from the configured external metadata provider only for newly added series, and marks all available episodes completed for matching tracker items. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified. Alias path `/items/mark-all-series-watched` remains available for compatibility.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1803,17 +1903,42 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MarkAllSeriesWatchedResponse'
+                $ref: '#/components/schemas/MarkAllSeriesCompletedResponse'
         '403':
           description: The authenticated user cannot read the requested library.
         '404':
           description: The requested shared library owner was not found.
 
-  /items/mark-all-series-unwatched:
+  /items/mark-all-series-watched:
     post:
-      operationId: markAllSeriesAsUnwatched
-      summary: Mark all series as unwatched
-      description: Clears watched episode progress for authenticated-user tracking items that correspond to series in the selected library. Tracking items and season metadata are kept. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      operationId: markAllSeriesAsWatched
+      summary: Mark all series as completed (legacy alias)
+      deprecated: true
+      description: Legacy alias for `/items/mark-all-series-completed`.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
+      responses:
+        '200':
+          description: Number of tracking items newly tracked and number with changed progress.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllSeriesCompletedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
+  /items/mark-all-series-uncompleted:
+    post:
+      operationId: markAllSeriesAsUncompleted
+      summary: Mark all series as uncompleted
+      description: Clears completed episode progress for authenticated-user tracking items that correspond to series in the selected library. Tracking items and season metadata are kept. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified. Alias path `/items/mark-all-series-unwatched` remains available for compatibility.
       tags: [Collection]
       parameters:
         - name: ownerShareCode
@@ -1827,7 +1952,80 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+                $ref: '#/components/schemas/MarkAllUncompletedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
+  /items/mark-all-series-unwatched:
+    post:
+      operationId: markAllSeriesAsUnwatched
+      summary: Mark all series as uncompleted (legacy alias)
+      deprecated: true
+      description: Legacy alias for `/items/mark-all-series-uncompleted`.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUncompletedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
+  /items/mark-all-books-completed:
+    post:
+      operationId: markAllBooksAsCompleted
+      summary: Mark all books as completed
+      description: Copies every uncompleted book in the selected library into the authenticated user's tracking as completed. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllCompletedResponse'
+        '403':
+          description: The authenticated user cannot read the requested library.
+        '404':
+          description: The requested shared library owner was not found.
+
+  /items/mark-all-books-uncompleted:
+    post:
+      operationId: markAllBooksAsUncompleted
+      summary: Mark all books as uncompleted
+      description: Clears the completed status for authenticated-user tracking books that correspond to books in the selected library. Tracking items are kept. When `ownerShareCode` is provided, the selected shared library requires read permission and the shared owner's items are not modified.
+      tags: [Collection]
+      parameters:
+        - name: ownerShareCode
+          in: query
+          schema:
+            type: string
+          description: Optional owner share code for using an incoming shared library as the source.
+      responses:
+        '200':
+          description: Number of items that were updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllUncompletedResponse'
         '403':
           description: The authenticated user cannot read the requested library.
         '404':
@@ -2024,7 +2222,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+                $ref: '#/components/schemas/MarkAllUncompletedResponse'
 
   /books:
     delete:
@@ -2038,7 +2236,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+                $ref: '#/components/schemas/MarkAllUncompletedResponse'
 
   /tracking:
     delete:
@@ -2052,7 +2250,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MarkAllUnwatchedResponse'
+                $ref: '#/components/schemas/MarkAllUncompletedResponse'
 
   /items/{externalIdentitySource}/{externalIdentityId}/change:
     put:

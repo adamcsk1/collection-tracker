@@ -6,7 +6,8 @@ import {
   findCollectionItemByCanonicalItemId,
   findCollectionItemByExternalId,
 } from '../core/database/repositories/collection';
-import { deleteWatchedItemByExternalId } from '../core/database/repositories/tracking-movie-repository';
+import { deleteCompletedBookByExternalId } from '../core/database/repositories/tracking-book-repository';
+import { deleteCompletedItemByExternalId } from '../core/database/repositories/tracking-movie-repository';
 import { resolveCanonicalItemId } from '../core/database/repositories/external-item-identity-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
@@ -27,12 +28,13 @@ export const register = (app: FastifyInstance): void => {
       findCollectionItemByExternalId(db, request.usernameHash, externalIdentitySource, externalIdentityId, 'tracking');
     if (!existingItem) return response.code(404).send();
 
-    deleteWatchedItemByExternalId(
-      db,
-      request.usernameHash,
-      existingItem.external_provider,
-      existingItem.external_item_id ?? existingItem.imdb_id ?? ''
-    );
+    const externalProvider = existingItem.external_provider;
+    const externalItemId = existingItem.external_item_id ?? existingItem.imdb_id ?? '';
+    if (existingItem.content_type === 'book') {
+      deleteCompletedBookByExternalId(db, request.usernameHash, externalProvider, externalItemId);
+    } else {
+      deleteCompletedItemByExternalId(db, request.usernameHash, externalProvider, externalItemId);
+    }
     response.code(204).send();
   });
 

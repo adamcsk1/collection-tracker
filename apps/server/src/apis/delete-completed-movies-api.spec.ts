@@ -30,7 +30,7 @@ const insertItem = (usernameHash: string, imdbId: string, listType = 'tracking')
   return Number(result.lastInsertRowid);
 };
 
-describe('delete-watched-items-api', () => {
+describe('delete-completed-movies-api', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

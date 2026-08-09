@@ -17,10 +17,10 @@ import {
   CreateAccessTokenApiResponseModel,
   CreateApiResponseModel,
   GenreSuggestionsApiResponseModel,
-  MarkAllSeriesWatchedApiResponseModel,
-  MarkAllUnwatchedApiResponseModel,
-  MarkAllWatchedApiResponseModel,
-  WatchedApiResponseModel,
+  MarkAllSeriesCompletedApiResponseModel,
+  MarkAllUncompletedApiResponseModel,
+  MarkAllCompletedApiResponseModel,
+  CompletedApiResponseModel,
   RandomImagesApiResponseModel,
   RefreshExternalRatingsApiResponseModel,
   RefreshImagesApiResponseModel,
@@ -88,28 +88,36 @@ export class ApiService extends BaseApiService {
     return this.request('GET', `/items/random-images${this.buildQuery({ count })}`);
   }
 
-  public markAllMoviesAsWatched(ownerShareCode?: string): Observable<MarkAllWatchedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-watched${this.buildQuery({ ownerShareCode })}`);
+  public markAllMoviesAsCompleted(ownerShareCode?: string): Observable<MarkAllCompletedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-movies-completed${this.buildQuery({ ownerShareCode })}`);
   }
 
-  public markAllMoviesAsUnwatched(ownerShareCode?: string): Observable<MarkAllUnwatchedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-unwatched${this.buildQuery({ ownerShareCode })}`);
+  public markAllMoviesAsUncompleted(ownerShareCode?: string): Observable<MarkAllUncompletedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-movies-uncompleted${this.buildQuery({ ownerShareCode })}`);
   }
 
-  public markAllSeriesAsWatched(ownerShareCode?: string): Observable<MarkAllSeriesWatchedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-series-watched${this.buildQuery({ ownerShareCode })}`);
+  public markAllSeriesAsCompleted(ownerShareCode?: string): Observable<MarkAllSeriesCompletedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-series-completed${this.buildQuery({ ownerShareCode })}`);
   }
 
-  public markAllSeriesAsUnwatched(ownerShareCode?: string): Observable<MarkAllUnwatchedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-series-unwatched${this.buildQuery({ ownerShareCode })}`);
+  public markAllSeriesAsUncompleted(ownerShareCode?: string): Observable<MarkAllUncompletedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-series-uncompleted${this.buildQuery({ ownerShareCode })}`);
   }
 
-  public addWatchedItemByExternalId(
+  public markAllBooksAsCompleted(ownerShareCode?: string): Observable<MarkAllCompletedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-books-completed${this.buildQuery({ ownerShareCode })}`);
+  }
+
+  public markAllBooksAsUncompleted(ownerShareCode?: string): Observable<MarkAllUncompletedApiResponseModel> {
+    return this.request('POST', `/items/mark-all-books-uncompleted${this.buildQuery({ ownerShareCode })}`);
+  }
+
+  public addCompletedItemByExternalId(
     externalProvider: string,
     externalItemId: string,
     ownerShareCode?: string,
     sourceListType?: CollectionListTypeModel
-  ): Observable<WatchedApiResponseModel> {
+  ): Observable<CompletedApiResponseModel> {
     return this.request(
       'POST',
       `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ ownerShareCode, sourceListType, markCompleted: true })}`,
@@ -130,22 +138,22 @@ export class ApiService extends BaseApiService {
     );
   }
 
-  public deleteWatchedItemByExternalId(externalProvider: string, externalItemId: string): Observable<void> {
+  public deleteCompletedItemByExternalId(externalProvider: string, externalItemId: string): Observable<void> {
     return this.request(
       'DELETE',
       `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed`
     );
   }
 
-  public deleteAllWatchedItems(): Observable<MarkAllUnwatchedApiResponseModel> {
+  public deleteAllCompletedMovies(): Observable<MarkAllUncompletedApiResponseModel> {
     return this.request('DELETE', '/tracking/completed-movies');
   }
 
-  public deleteAllTrackingItems(): Observable<MarkAllUnwatchedApiResponseModel> {
+  public deleteAllTrackingItems(): Observable<MarkAllUncompletedApiResponseModel> {
     return this.request('DELETE', '/tracking');
   }
 
-  public deleteAllBooksItems(): Observable<MarkAllUnwatchedApiResponseModel> {
+  public deleteAllBooksItems(): Observable<MarkAllUncompletedApiResponseModel> {
     return this.request('DELETE', '/books');
   }
 

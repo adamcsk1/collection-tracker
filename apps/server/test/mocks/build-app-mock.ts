@@ -4,28 +4,20 @@ import { vi } from 'vitest';
 export const buildApp = (request: any, response: any) => {
   request.cookies ??= {};
   request.unsignCookie ??= (value: string) => ({ valid: true, value });
-  let handlerPromise: Promise<any> | undefined;
+  let registeredHandler: ((request: any, response: any) => unknown) | undefined;
+  const captureHandler = (_path: string, guardOrHandler: any, maybeHandler?: any) => {
+    registeredHandler = maybeHandler ?? guardOrHandler;
+  };
   const app = {
-    get: vi.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
-      const handler = maybeHandler ?? guardOrHandler;
-      handlerPromise = Promise.resolve(handler(request, response));
-    }),
-    post: vi.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
-      const handler = maybeHandler ?? guardOrHandler;
-      handlerPromise = Promise.resolve(handler(request, response));
-    }),
-    delete: vi.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
-      const handler = maybeHandler ?? guardOrHandler;
-      handlerPromise = Promise.resolve(handler(request, response));
-    }),
-    put: vi.fn((_path: string, guardOrHandler: any, maybeHandler?: any) => {
-      const handler = maybeHandler ?? guardOrHandler;
-      handlerPromise = Promise.resolve(handler(request, response));
-    }),
+    get: vi.fn(captureHandler),
+    post: vi.fn(captureHandler),
+    delete: vi.fn(captureHandler),
+    put: vi.fn(captureHandler),
   } as any as FastifyInstance;
 
   return {
     app,
-    handlerPromise: () => handlerPromise ?? Promise.resolve(),
+    handlerPromise: () =>
+      registeredHandler ? Promise.resolve(registeredHandler(request, response)) : Promise.resolve(),
   };
 };
