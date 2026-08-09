@@ -38,7 +38,7 @@ const getItemByExternalIdentity = async (identitySource: string, identityId: str
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/proxy/external-metadata/item`,
+    `${API_PREFIX}/external-metadata/items`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const query = request.query as Record<string, unknown>;

@@ -48,9 +48,9 @@ describe('rate-limit-util', () => {
   );
 
   it.each([
-    [`${API_PREFIX}/sign-in`, getAuthRateLimit, 10],
-    [`${API_PREFIX}/sign-up`, getAuthRateLimit, 10],
-    [`${API_PREFIX}/session/refresh`, getRefreshRateLimit, 60],
+    [`${API_PREFIX}/auth/sign-in`, getAuthRateLimit, 10],
+    [`${API_PREFIX}/auth/sign-up`, getAuthRateLimit, 10],
+    [`${API_PREFIX}/auth/session/refresh`, getRefreshRateLimit, 60],
   ] as const)('does not exempt %s from its endpoint limit', async (path, getLimit, expectedLimit) => {
     const app = fastify();
     await app.register(fastifyRateLimit, {

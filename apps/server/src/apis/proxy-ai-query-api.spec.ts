@@ -164,7 +164,7 @@ describe('proxy-ai-query-api', () => {
     usernameHash: 'user',
   });
 
-  describe('POST /proxy/ai/query', () => {
+  describe('POST /ai/matches', () => {
     it('returns matched IMDB IDs from AI response', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are sci-fi movies?'), response);

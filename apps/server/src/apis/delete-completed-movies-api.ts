@@ -11,5 +11,5 @@ export const register = (app: FastifyInstance): void => {
     response.send({ changedCount });
   });
 
-  app.delete(`${API_PREFIX}/tracking/completed-movies`, { preHandler: jwtGuard }, handler);
+  app.delete(`${API_PREFIX}/collection-items/tracking/completed-movies`, { preHandler: jwtGuard }, handler);
 };

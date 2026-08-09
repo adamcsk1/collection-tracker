@@ -58,10 +58,10 @@ describe('Export/Import — tag management export and import', () => {
   beforeEach(() => {
     cy.autoLogin();
     clearDownloads();
-    cy.request('POST', '/api/v1/tag-management', []);
-    cy.request('POST', '/api/v1/create', item);
-    cy.request('POST', '/api/v1/tag-management', [exportedExistingConfig, exportedImportedConfig]);
-    cy.intercept('GET', '/api/v1/tag-management').as('getTagManagement');
+    cy.request('POST', '/api/v1/users/me/tags', []);
+    cy.request('POST', '/api/v1/collection-items', item);
+    cy.request('POST', '/api/v1/users/me/tags', [exportedExistingConfig, exportedImportedConfig]);
+    cy.intercept('GET', '/api/v1/users/me/tags').as('getTagManagement');
     ExportImportPage.visit();
     cy.wait('@getTagManagement');
   });
@@ -76,19 +76,19 @@ describe('Export/Import — tag management export and import', () => {
       });
     });
 
-    cy.request('POST', '/api/v1/tag-management', [localExistingConfig]);
-    cy.intercept('GET', '/api/v1/tag-management').as('getLocalTagManagement');
+    cy.request('POST', '/api/v1/users/me/tags', [localExistingConfig]);
+    cy.intercept('GET', '/api/v1/users/me/tags').as('getLocalTagManagement');
     ExportImportPage.visit();
     cy.wait('@getLocalTagManagement');
 
-    cy.intercept('POST', '/api/v1/tag-management').as('importTagManagement');
+    cy.intercept('POST', '/api/v1/users/me/tags').as('importTagManagement');
 
     cy.on('window:confirm', () => false);
     ExportImportPage.getTagManagementImportFileInput().selectFile(exportPath, { force: true });
     cy.wait('@importTagManagement');
 
-    cy.request('GET', '/api/v1/tag-management')
-      .its('body')
+    cy.request('GET', '/api/v1/users/me/tags')
+      .its('body.data')
       .should('deep.include', localExistingConfig)
       .and('deep.include', exportedImportedConfig)
       .and('not.deep.include', exportedExistingConfig);
@@ -103,23 +103,23 @@ describe('Export/Import — collection data export', () => {
   beforeEach(() => {
     cy.autoLogin();
     clearDownloads();
-    cy.request('POST', '/api/v1/tag-management', []);
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Export Movie', 'movie'));
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/users/me/tags', []);
+    cy.request('POST', '/api/v1/collection-items', buildCollectionItem('Export Movie', 'movie'));
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Export Series', 'series', seriesImdbId),
       listType: 'tracking',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Export Tracker Movie', 'movie', watchedImdbId),
       listType: 'tracking',
     });
-    cy.request('PUT', `/api/v1/tracking/omdb/${seriesImdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/collection-items/omdb/${seriesImdbId}/tracking/seasons`, {
       seasons: [{ season: 1, episodes: 2, titles: ['Pilot', 'Second'] }],
     });
-    cy.request('PUT', `/api/v1/tracking/omdb/${seriesImdbId}/completed-episodes`, {
+    cy.request('PUT', `/api/v1/collection-items/omdb/${seriesImdbId}/tracking/completed-episodes`, {
       completedEpisodes: [{ season: 1, episode: 1 }],
     });
-    cy.intercept('GET', '/api/v1/export').as('getExport');
+    cy.intercept('GET', '/api/v1/users/me/export').as('getExport');
     ExportImportPage.visit();
   });
 
@@ -138,8 +138,7 @@ describe('Export/Import — collection data export', () => {
         completedEpisodes: [{ season: 1, episode: 1 }],
       });
       const trackerItem = parsed.collectionItems.find(
-        (item: { IMDbId: string; listType: string }) =>
-          item.IMDbId === watchedImdbId && item.listType === 'tracking'
+        (item: { IMDbId: string; listType: string }) => item.IMDbId === watchedImdbId && item.listType === 'tracking'
       );
       expect(trackerItem).to.not.be.undefined;
       expect(trackerItem.title).to.equal('Export Tracker Movie');
@@ -155,39 +154,39 @@ describe('Export/Import — collection data export', () => {
 
     cy.request(
       'POST',
-      '/api/v1/create',
+      '/api/v1/collection-items',
       buildCollectionItem('Imported State Should Remove This', 'movie', 'tt8500001')
     );
-    cy.request('POST', '/api/v1/tag-management', []);
-    cy.intercept('POST', '/api/v1/import').as('importCollectionData');
+    cy.request('POST', '/api/v1/users/me/tags', []);
+    cy.intercept('POST', '/api/v1/users/me/imports').as('importCollectionData');
 
     cy.on('window:confirm', () => true);
     ExportImportPage.getCollectionDataImportFileInput().selectFile(exportPath, { force: true });
     cy.wait('@importCollectionData').its('response.statusCode').should('eq', 200);
 
-    cy.request('GET', '/api/v1/items?limit=1000&offset=0&listType=library')
-      .its('body.items')
-      .should((items) => {
-        const titles = items.map((item: { title: string }) => item.title);
-        expect(titles).to.include('Export Movie');
-        expect(titles).not.to.include('Imported State Should Remove This');
-      });
-    cy.request('GET', `/api/v1/tracking/omdb/${seriesImdbId}/completed-episodes`)
-      .its('body.completedEpisodes')
+    cy.request('GET', '/api/v1/collection-items?limit=100&listType=library').should((response) => {
+      expect(response.body.page).to.deep.equal({ limit: 100, hasMore: false, nextCursor: null });
+      const items = response.body.data as Array<{ title: string }>;
+      const titles = items.map((item: { title: string }) => item.title);
+      expect(titles).to.include('Export Movie');
+      expect(titles).not.to.include('Imported State Should Remove This');
+    });
+    cy.request('GET', `/api/v1/collection-items/omdb/${seriesImdbId}/tracking/completed-episodes`)
+      .its('body.data.completedEpisodes')
       .should('deep.equal', [{ season: 1, episode: 1 }]);
-    cy.request('GET', '/api/v1/items?limit=1000&offset=0&listType=tracking')
-      .its('body.items')
-      .should((items) => {
-        const titles = items.map((item: { title: string }) => item.title);
-        expect(titles).to.include('Export Tracker Movie');
-      });
+    cy.request('GET', '/api/v1/collection-items?limit=100&listType=tracking').should((response) => {
+      expect(response.body.page).to.deep.equal({ limit: 100, hasMore: false, nextCursor: null });
+      const items = response.body.data as Array<{ title: string }>;
+      const titles = items.map((item: { title: string }) => item.title);
+      expect(titles).to.include('Export Tracker Movie');
+    });
   });
 
   it('sends selected IMDb ID file content for collection-item import', () => {
     cy.writeFile('cypress/downloads/imdb-import.md', '- https://www.imdb.com/title/tt8600001/\n- tt8600002');
-    cy.intercept('POST', '/api/v1/import/collection-items', (request) => {
+    cy.intercept('POST', '/api/v1/collection-items/imports', (request) => {
       expect(request.body).to.deep.equal({ source: '- https://www.imdb.com/title/tt8600001/\n- tt8600002' });
-      request.reply({ totalCount: 2, importedCount: 2, skippedCount: 0, errorCount: 0 });
+      request.reply({ data: { totalCount: 2, importedCount: 2, skippedCount: 0, errorCount: 0 } });
     }).as('importCollectionItems');
 
     ExportImportPage.getCollectionItemsImdbIdImportFileInput().selectFile('cypress/downloads/imdb-import.md', {

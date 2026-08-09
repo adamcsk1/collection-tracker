@@ -22,7 +22,7 @@ const searchAllProviders = async (searchText: string): Promise<ExternalMetadataS
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/proxy/external-metadata/search`,
+    `${API_PREFIX}/external-metadata/search`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const query = request.query as Record<string, unknown>;

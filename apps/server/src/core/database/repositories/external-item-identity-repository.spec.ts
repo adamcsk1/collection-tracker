@@ -6,7 +6,7 @@ import {
   normalizeExternalIdentities,
   resolveCanonicalItemId,
   resolveCanonicalItemIds,
-  resolveCanonicalItemIdsForIdentities,
+  resolveCanonicalItemRanksForIdentities,
   upsertExternalItemIdentities,
 } from './external-item-identity-repository';
 
@@ -98,7 +98,7 @@ describe('external-item-identity-repository', () => {
     expect(resolveCanonicalItemIds(db, 'user', 'omdb', 'tt0133093')).toEqual(['imdb:tt9999999', 'imdb:tt0133093']);
   });
 
-  it('resolves identity batches with mapped candidates before caller-ordered inferred candidates', () => {
+  it('associates every canonical variant with its originating identity rank', () => {
     const db = getDatabase();
     insertUser('user');
     db.prepare(
@@ -108,11 +108,28 @@ describe('external-item-identity-repository', () => {
     ).run('user', 'imdb:tt9999999', 'omdb', 'custom-id', 'alias');
 
     expect(
-      resolveCanonicalItemIdsForIdentities(db, 'user', [
+      resolveCanonicalItemRanksForIdentities(db, 'user', [
         { source: 'omdb', id: 'custom-id' },
         { source: 'imdb', id: 'TT0133093' },
       ])
-    ).toEqual(['imdb:tt9999999', 'omdb:custom-id', 'imdb:tt0133093']);
+    ).toEqual([
+      { canonicalItemId: 'imdb:tt9999999', rank: 0 },
+      { canonicalItemId: 'omdb:custom-id', rank: 0 },
+      { canonicalItemId: 'imdb:tt0133093', rank: 1 },
+    ]);
+  });
+
+  it('retains the first rank for duplicate identities and canonical candidates', () => {
+    expect(
+      resolveCanonicalItemRanksForIdentities(getDatabase(), 'user', [
+        { source: 'imdb', id: 'tt0133093' },
+        { source: 'imdb', id: 'tt0000001' },
+        { source: 'imdb', id: 'TT0133093' },
+      ])
+    ).toEqual([
+      { canonicalItemId: 'imdb:tt0133093', rank: 0 },
+      { canonicalItemId: 'imdb:tt0000001', rank: 1 },
+    ]);
   });
 
   it('resolves mapped candidates from identity batches larger than the former bind chunk', () => {
@@ -124,13 +141,13 @@ describe('external-item-identity-repository', () => {
        VALUES (?, ?, ?, ?, ?)`
     ).run('user', 'imdb:tt9999999', 'omdb', 'custom-449', 'alias');
 
-    const canonicalItemIds = resolveCanonicalItemIdsForIdentities(
+    const canonicalItemRanks = resolveCanonicalItemRanksForIdentities(
       db,
       'user',
       Array.from({ length: 450 }, (_, index) => ({ source: 'omdb' as const, id: `custom-${index}` }))
     );
 
-    expect(canonicalItemIds).toContain('imdb:tt9999999');
+    expect(canonicalItemRanks).toContainEqual({ canonicalItemId: 'imdb:tt9999999', rank: 449 });
   });
 
   it('falls back to provider-scoped canonical ids when no IMDb identity exists', () => {

@@ -131,7 +131,7 @@ describe('Auth - Logout', () => {
   });
 
   it('logs the user out and redirects to the login page', () => {
-    cy.intercept('DELETE', '/api/v1/logout').as('logoutRequest');
+    cy.intercept('DELETE', '/api/v1/auth/session').as('logoutRequest');
 
     CommonPage.openMenu();
     CommonPage.getNavLogoutLink().click();

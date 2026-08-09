@@ -1,5 +1,4 @@
 import type { Interception } from 'cypress/types/net-stubbing';
-import { generate } from 'random-words';
 import { buildCollectionItem, buildCollectionItems } from '../fixtures/collection-item';
 import { buildBooksItem } from '../fixtures/openlibrary';
 import { buildOmdbItem, buildOmdbSearchResult } from '../fixtures/omdb';
@@ -9,7 +8,7 @@ import { CommonPage } from '../page-objects/common.po';
 /** Creates collection items on the real server via the authenticated session. */
 const seedItems = (items: ReturnType<typeof buildCollectionItem>[]) => {
   items.forEach((item) => {
-    cy.request('POST', '/api/v1/create', item);
+    cy.request('POST', '/api/v1/collection-items', item);
   });
 };
 
@@ -26,7 +25,7 @@ const saveManualItem = (
   contentType: 'movie' | 'series',
   listType: 'library' | 'up-next' | 'wishlist' | 'tracking'
 ) => {
-  cy.intercept('POST', '/api/v1/create').as('createManualItem');
+  cy.intercept('POST', '/api/v1/collection-items').as('createManualItem');
   CollectionPage.getNewItemManualModeButton().click();
   CollectionPage.getNewItemManualContentTypeSelect().select(contentType);
   CollectionPage.getNewItemManualTitleInput().type(title);
@@ -49,7 +48,7 @@ const saveManualItem = (
 };
 
 const reloadAndExpectPersistedTitle = (title: string, expectedItemCount = 1) => {
-  cy.intercept('GET', '/api/v1/items*').as('reloadItems');
+  cy.intercept('GET', '/api/v1/collection-items*').as('reloadItems');
   cy.reload();
   cy.wait('@reloadItems');
   CollectionPage.getListItems().should('have.length', expectedItemCount).and('contain.text', title);
@@ -93,7 +92,7 @@ describe('Collection — empty state', () => {
   it('shows the empty state message when collection has no items', () => {
     // Intercept items load and reload to ensure the collection API call completes
     // before asserting — the token rotation during page load can delay the response.
-    cy.intercept('GET', '/api/v1/items*').as('getAll');
+    cy.intercept('GET', '/api/v1/collection-items*').as('getAll');
     cy.reload();
     cy.wait('@getAll');
     CollectionPage.getEmptyState().should('be.visible');
@@ -112,13 +111,13 @@ describe('Collection — add a new element', () => {
   const newTitle = 'Test Movie Alpha';
 
   beforeEach(() => {
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
+    cy.intercept('GET', '/api/v1/external-metadata/search*', {
       statusCode: 200,
-      body: buildOmdbSearchResult(newTitle),
+      body: { data: buildOmdbSearchResult(newTitle) },
     }).as('omdbSearch');
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
+    cy.intercept('GET', '/api/v1/external-metadata/items*', {
       statusCode: 200,
-      body: buildOmdbItem(newTitle),
+      body: { data: buildOmdbItem(newTitle) },
     }).as('omdbItem');
 
     cy.autoLogin();
@@ -168,17 +167,17 @@ describe('Collection — add a new element', () => {
     const secondTitle = 'Save And New Movie Two';
 
     cy.intercept(
-      { method: 'GET', url: '/api/v1/proxy/external-metadata/search*', times: 1 },
+      { method: 'GET', url: '/api/v1/external-metadata/search*', times: 1 },
       {
         statusCode: 200,
-        body: buildOmdbSearchResult(firstTitle, 'tt5000001'),
+        body: { data: buildOmdbSearchResult(firstTitle, 'tt5000001') },
       }
     ).as('omdbSearchFirst');
     cy.intercept(
-      { method: 'GET', url: '/api/v1/proxy/external-metadata/item*', times: 1 },
+      { method: 'GET', url: '/api/v1/external-metadata/items*', times: 1 },
       {
         statusCode: 200,
-        body: buildOmdbItem(firstTitle, 'tt5000001'),
+        body: { data: buildOmdbItem(firstTitle, 'tt5000001') },
       }
     ).as('omdbItemFirst');
 
@@ -195,17 +194,17 @@ describe('Collection — add a new element', () => {
     CollectionPage.getListItems().should('contain.text', firstTitle);
 
     cy.intercept(
-      { method: 'GET', url: '/api/v1/proxy/external-metadata/search*', times: 1 },
+      { method: 'GET', url: '/api/v1/external-metadata/search*', times: 1 },
       {
         statusCode: 200,
-        body: buildOmdbSearchResult(secondTitle, 'tt5000002'),
+        body: { data: buildOmdbSearchResult(secondTitle, 'tt5000002') },
       }
     ).as('omdbSearchSecond');
     cy.intercept(
-      { method: 'GET', url: '/api/v1/proxy/external-metadata/item*', times: 1 },
+      { method: 'GET', url: '/api/v1/external-metadata/items*', times: 1 },
       {
         statusCode: 200,
-        body: buildOmdbItem(secondTitle, 'tt5000002'),
+        body: { data: buildOmdbItem(secondTitle, 'tt5000002') },
       }
     ).as('omdbItemSecond');
 
@@ -270,7 +269,7 @@ describe('Collection — add a new element', () => {
   it('adds a new item manually and persists it after reload', () => {
     const manualTitle = 'Manual Test Movie';
     const manualImdbId = 'tt9990001';
-    cy.intercept('POST', '/api/v1/create').as('createItem');
+    cy.intercept('POST', '/api/v1/collection-items').as('createItem');
 
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAddNewButton().click();
@@ -292,7 +291,7 @@ describe('Collection — add a new element', () => {
       });
       expect(request.body.externalIds).to.deep.equal([{ source: 'imdb', id: manualImdbId }]);
       expect(response?.statusCode).to.equal(200);
-      expect(response?.body.item).to.deep.include({
+      expect(response?.body.data.item).to.deep.include({
         title: manualTitle,
         IMDbId: manualImdbId,
         externalProvider: 'omdb',
@@ -301,7 +300,7 @@ describe('Collection — add a new element', () => {
       });
     });
 
-    cy.intercept('GET', '/api/v1/items*').as('reloadItems');
+    cy.intercept('GET', '/api/v1/collection-items*').as('reloadItems');
     cy.reload();
     cy.wait('@reloadItems');
     CollectionPage.getListItems().should((titleElements) => {
@@ -412,33 +411,64 @@ describe('Collection — delete an element', () => {
   });
 });
 
-describe('Collection — 25 random items', () => {
-  const rawWords = generate(25);
-  const titles = (Array.isArray(rawWords) ? rawWords : [String(rawWords)]) as string[];
-  const twentyFiveItems = buildCollectionItems(titles);
+describe('Collection — cursor pagination and API errors', () => {
+  const titles = Array.from({ length: 55 }, (_, index) => `Cursor Test Movie ${String(index + 1).padStart(2, '0')}`);
 
   beforeEach(() => {
     cy.autoLogin();
-    seedItems(twentyFiveItems);
+  });
+
+  it('continues the real cursor page when the collection list reaches the bottom', () => {
+    seedItems(buildCollectionItems(titles));
+    cy.intercept('GET', '/api/v1/collection-items*').as('getCursorPage');
     CollectionPage.visit();
+
+    let firstCursor = '';
+    cy.wait('@getCursorPage').then(({ response }) => {
+      expect(response?.statusCode).to.equal(200);
+      expect(response?.body).to.have.all.keys('data', 'page');
+      expect(response?.body.data).to.have.length(50);
+      expect(response?.body.page).to.have.all.keys('limit', 'hasMore', 'nextCursor');
+      expect(response?.body.page).to.deep.include({ limit: 50, hasMore: true });
+      expect(response?.body.page.nextCursor).to.be.a('string').and.not.be.empty;
+      firstCursor = response?.body.page.nextCursor;
+    });
+
+    CollectionPage.getListItems().should('have.length', 50);
+    CollectionPage.getList().scrollTo('bottom').trigger('scroll');
+
+    cy.wait('@getCursorPage').then(({ request, response }) => {
+      const requestUrl = new URL(request.url);
+      expect(requestUrl.searchParams.get('cursor')).to.equal(firstCursor);
+      expect(response?.statusCode).to.equal(200);
+      expect(response?.body.data).to.have.length(5);
+      expect(response?.body.page).to.deep.equal({ limit: 50, hasMore: false, nextCursor: null });
+    });
+
+    CollectionPage.getListItems().should((titleElements) => {
+      const renderedTitles = [...titleElements].map((titleElement) => titleElement.textContent?.trim());
+      expect(renderedTitles).to.have.length(55);
+      expect(new Set(renderedTitles).size).to.equal(55);
+      expect(renderedTitles.sort()).to.deep.equal([...titles].sort());
+    });
   });
 
-  it('renders all 25 items in the list', () => {
-    CollectionPage.getAllItems().should('have.length', 25);
-  });
-});
-
-describe('Collection — scrolling', () => {
-  const items = buildCollectionItems(Array.from({ length: 20 }, (_, index) => `Scroll Test Movie ${index + 1}`));
-
-  beforeEach(() => {
-    cy.autoLogin();
-    seedItems(items);
-    CollectionPage.visit();
-  });
-
-  it('the list remains intact after scrolling to the bottom', () => {
-    CollectionPage.getAllItems().should('have.length', 20);
+  it('returns RFC 9457 Problem Details for an invalid collection query', () => {
+    cy.request({
+      method: 'GET',
+      url: '/api/v1/collection-items?limit=0',
+      failOnStatusCode: false,
+    }).then((response) => {
+      expect(response.status).to.equal(400);
+      expect(response.headers['content-type']).to.include('application/problem+json');
+      expect(response.body).to.deep.equal({
+        type: 'about:blank',
+        title: 'Bad Request',
+        status: 400,
+        code: 'HTTP_400',
+        instance: '/api/v1/collection-items',
+      });
+    });
   });
 });
 
@@ -512,42 +542,42 @@ describe('Collection — fuzzy search', () => {
 describe('Collection — standard search in secondary lists', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Wishlist Search Alpha', 'movie', 'tt8300001'),
       listType: 'wishlist',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Wishlist Search Beta', 'movie', 'tt8300002'),
       listType: 'wishlist',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Watch Later Search Alpha', 'movie', 'tt8300003'),
       listType: 'up-next',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Watch Later Search Beta', 'movie', 'tt8300004'),
       listType: 'up-next',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Series Tracker Search Alpha', 'series', 'tt8300005'),
       listType: 'tracking',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Series Tracker Search Beta', 'series', 'tt8300006'),
       listType: 'tracking',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Movie Tracker Search Alpha', 'movie', 'tt8300007'),
       listType: 'tracking',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Movie Tracker Search Beta', 'movie', 'tt8300008'),
       listType: 'tracking',
     });
   });
 
   it('filters wishlist items and requests wishlist-scoped suggestions', () => {
-    cy.intercept('GET', '/api/v1/items/search-suggestions*').as('searchSuggestions');
+    cy.intercept('GET', '/api/v1/collection-items/suggestions*').as('searchSuggestions');
 
     CommonPage.openMenu();
     CommonPage.getNavWishlistLink().click();
@@ -592,7 +622,7 @@ describe('Collection — order controls', () => {
       buildCollectionItem('Order Charlie', 'movie', 'tt8400002'),
       buildCollectionItem('Order Bravo', 'movie', 'tt8400003'),
     ]);
-    cy.intercept('GET', '/api/v1/items*').as('getItems');
+    cy.intercept('GET', '/api/v1/collection-items*').as('getItems');
     CollectionPage.visit();
     cy.wait('@getItems');
 
@@ -623,15 +653,15 @@ describe('Collection — order controls', () => {
       buildCollectionItem('Library Alpha', 'movie', 'tt8400011'),
       buildCollectionItem('Library Bravo', 'movie', 'tt8400012'),
     ]);
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Wishlist Alpha', 'movie', 'tt8400013'),
       listType: 'wishlist',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Wishlist Bravo', 'movie', 'tt8400014'),
       listType: 'wishlist',
     });
-    cy.intercept('GET', '/api/v1/items*').as('getItems');
+    cy.intercept('GET', '/api/v1/collection-items*').as('getItems');
     CollectionPage.visit();
     cy.wait('@getItems');
 
@@ -662,20 +692,20 @@ describe('Collection — order controls', () => {
   });
 
   it('shows order controls on secondary collection pages', () => {
-    cy.intercept('GET', '/api/v1/items*').as('getItems');
-    cy.request('POST', '/api/v1/create', {
+    cy.intercept('GET', '/api/v1/collection-items*').as('getItems');
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Watch Later Order', 'movie', 'tt8400021'),
       listType: 'up-next',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Wishlist Order', 'movie', 'tt8400022'),
       listType: 'wishlist',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Series Tracker Order', 'series', 'tt8400023'),
       listType: 'tracking',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Movie Tracker Order', 'movie', 'tt8400025'),
       listType: 'tracking',
     });
@@ -710,7 +740,7 @@ describe('Collection — favorites', () => {
   });
 
   it('marks an item as favorite and filters favorites from the library actions menu', () => {
-    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
+    cy.intercept('PUT', '/api/v1/collection-items/**').as('updateItem');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().should('have.length', 2);
@@ -766,13 +796,13 @@ describe('Collection — wishlist', () => {
   const wishlistTitle = 'Wishlist Test Movie';
 
   beforeEach(() => {
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
+    cy.intercept('GET', '/api/v1/external-metadata/search*', {
       statusCode: 200,
-      body: buildOmdbSearchResult(wishlistTitle, 'tt8100001'),
+      body: { data: buildOmdbSearchResult(wishlistTitle, 'tt8100001') },
     }).as('wishlistOmdbSearch');
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
+    cy.intercept('GET', '/api/v1/external-metadata/items*', {
       statusCode: 200,
-      body: buildOmdbItem(wishlistTitle, 'tt8100001'),
+      body: { data: buildOmdbItem(wishlistTitle, 'tt8100001') },
     }).as('wishlistOmdbItem');
 
     cy.autoLogin();
@@ -811,25 +841,27 @@ describe('Collection — tracking series', () => {
   const seriesTitle = 'Series Tracker Test Show';
 
   beforeEach(() => {
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
+    cy.intercept('GET', '/api/v1/external-metadata/search*', {
       statusCode: 200,
       body: {
-        results: [
-          buildOmdbItem('Filtered Movie Result', 'tt8200000', 'movie'),
-          buildOmdbItem(seriesTitle, 'tt8200001', 'series'),
-        ],
+        data: {
+          results: [
+            buildOmdbItem('Filtered Movie Result', 'tt8200000', 'movie'),
+            buildOmdbItem(seriesTitle, 'tt8200001', 'series'),
+          ],
+        },
       },
     }).as('trackingOmdbSearch');
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
+    cy.intercept('GET', '/api/v1/external-metadata/items*', {
       statusCode: 200,
-      body: buildOmdbItem(seriesTitle, 'tt8200001', 'series'),
+      body: { data: buildOmdbItem(seriesTitle, 'tt8200001', 'series') },
     }).as('trackingOmdbItem');
 
     cy.autoLogin();
   });
 
   it('adds a series and persists watched-up-to progress', () => {
-    cy.intercept('PUT', '/api/v1/tracking/*/*/completed-episodes*').as('saveCompletedEpisodes');
+    cy.intercept('PUT', '/api/v1/collection-items/*/*/tracking/completed-episodes*').as('saveCompletedEpisodes');
     cy.on('window:confirm', () => true);
 
     CommonPage.openMenu();
@@ -851,7 +883,7 @@ describe('Collection — tracking series', () => {
     CollectionPage.getListItems().should('have.length', 1);
     CollectionPage.getListItems().first().should('contain.text', seriesTitle);
 
-    cy.request('PUT', '/api/v1/tracking/omdb/tt8200001/seasons', {
+    cy.request('PUT', '/api/v1/collection-items/omdb/tt8200001/tracking/seasons', {
       seasons: [{ season: 1, episodes: 3 }],
     });
     CollectionPage.visitTracking();
@@ -888,18 +920,20 @@ describe('Collection — tracking movies', () => {
   const movieTitle = 'Movie Tracker Test Movie';
 
   beforeEach(() => {
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
+    cy.intercept('GET', '/api/v1/external-metadata/search*', {
       statusCode: 200,
       body: {
-        results: [
-          buildOmdbItem('Filtered Series Result', 'tt8300000', 'series'),
-          buildOmdbItem(movieTitle, 'tt8300001', 'movie'),
-        ],
+        data: {
+          results: [
+            buildOmdbItem('Filtered Series Result', 'tt8300000', 'series'),
+            buildOmdbItem(movieTitle, 'tt8300001', 'movie'),
+          ],
+        },
       },
     }).as('trackingMovieOmdbSearch');
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
+    cy.intercept('GET', '/api/v1/external-metadata/items*', {
       statusCode: 200,
-      body: buildOmdbItem(movieTitle, 'tt8300001', 'movie'),
+      body: { data: buildOmdbItem(movieTitle, 'tt8300001', 'movie') },
     }).as('trackingMovieOmdbItem');
 
     cy.autoLogin();
@@ -930,11 +964,11 @@ describe('Collection — tracking movies', () => {
   it('adds a manual item from a non-empty tracking and persists it after reload', () => {
     const existingTitle = 'Existing Movie Tracker Item';
     const manualTitle = 'Manual Movie Tracker Item';
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem(existingTitle, 'movie', 'tt8300002'),
       listType: 'tracking',
     });
-    cy.intercept('GET', '/api/v1/items*').as('trackingItems');
+    cy.intercept('GET', '/api/v1/collection-items*').as('trackingItems');
     CollectionPage.visitTracking();
     cy.wait('@trackingItems');
     CollectionPage.getListItems().should('contain.text', existingTitle);
@@ -947,7 +981,7 @@ describe('Collection — tracking movies', () => {
   });
 
   it('opens the item dialog and shows watched status without episode controls', () => {
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem(movieTitle, 'movie', 'tt8300001'),
       listType: 'tracking',
     });
@@ -962,8 +996,8 @@ describe('Collection — tracking movies', () => {
   });
 
   it('moves a movie from watchlist to tracking', () => {
-    cy.intercept('POST', '/api/v1/tracking/**').as('moveToFinished');
-    cy.request('POST', '/api/v1/create', {
+    cy.intercept('POST', '/api/v1/collection-items/*/*/tracking*').as('moveToFinished');
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Watch Later Move Movie', 'movie', 'tt8300002'),
       listType: 'up-next',
     });
@@ -983,10 +1017,10 @@ describe('Collection — tracking movies', () => {
   });
 
   it('deletes a tracking item and shows empty state', () => {
-    cy.intercept('DELETE', '/api/v1/items/**').as('deleteTrackingItem');
+    cy.intercept('DELETE', '/api/v1/collection-items/**').as('deleteTrackingItem');
     cy.on('window:confirm', () => true);
 
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Delete Tracker Movie', 'movie', 'tt8300003'),
       listType: 'tracking',
     });
@@ -1002,11 +1036,11 @@ describe('Collection — tracking movies', () => {
   });
 
   it('filters tracking items via search', () => {
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Alpha Movie', 'movie', 'tt8300004'),
       listType: 'tracking',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Beta Movie', 'movie', 'tt8300005'),
       listType: 'tracking',
     });
@@ -1031,15 +1065,15 @@ describe('Collection — unified tracking gaps', () => {
   });
 
   it('filters tracking items with media chips', () => {
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Chip Movie', 'movie', 'tt8500001'),
       listType: 'tracking',
     });
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Chip Series', 'series', 'tt8500002'),
       listType: 'tracking',
     });
-    cy.intercept('GET', '/api/v1/items*').as('getItems');
+    cy.intercept('GET', '/api/v1/collection-items*').as('getItems');
     CollectionPage.visitTracking();
     waitForItemsRequestIncluding(['listType=tracking']);
 
@@ -1063,8 +1097,8 @@ describe('Collection — unified tracking gaps', () => {
   });
 
   it('moves a series from watchlist to tracking', () => {
-    cy.intercept('POST', '/api/v1/tracking/**').as('moveToTracking');
-    cy.request('POST', '/api/v1/create', {
+    cy.intercept('POST', '/api/v1/collection-items/*/*/tracking*').as('moveToTracking');
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Watchlist Move Series', 'series', 'tt8500003'),
       listType: 'up-next',
     });
@@ -1084,8 +1118,8 @@ describe('Collection — unified tracking gaps', () => {
   });
 
   it('copies a library series to tracking and can open the twin', () => {
-    cy.intercept('POST', '/api/v1/tracking/**').as('copyToTracking');
-    cy.request('POST', '/api/v1/create', {
+    cy.intercept('POST', '/api/v1/collection-items/*/*/tracking*').as('copyToTracking');
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Library Copy Series', 'series', 'tt8500004'),
     });
     CollectionPage.visit();
@@ -1104,8 +1138,8 @@ describe('Collection — unified tracking gaps', () => {
   });
 
   it('edits tracking book page progress and shows it on the list card', () => {
-    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateBookProgress');
-    cy.request('POST', '/api/v1/create', {
+    cy.intercept('PUT', '/api/v1/collection-items/**').as('updateBookProgress');
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildBooksItem('Progress Tracking Book', '9780306406157'),
       listType: 'tracking',
       progressCurrent: 10,
@@ -1130,9 +1164,9 @@ describe('Collection — unified tracking gaps', () => {
   });
 
   it('marks a tracking book completed when page progress becomes equal', () => {
-    cy.intercept('PUT', '/api/v1/items/**/change*').as('completeBookProgress');
+    cy.intercept('PUT', '/api/v1/collection-items/**').as('completeBookProgress');
     cy.on('window:confirm', () => true);
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildBooksItem('Complete Progress Book', '9780140328721'),
       listType: 'tracking',
       progressCurrent: 10,
@@ -1150,9 +1184,9 @@ describe('Collection — unified tracking gaps', () => {
     CollectionPage.getItemDialogSaveButton().click();
     cy.wait('@completeBookProgress').then(({ response }) => {
       expect(response?.statusCode).to.equal(200);
-      expect(response?.body?.item?.progressCurrent).to.equal(100);
-      expect(response?.body?.item?.progressTotal).to.equal(100);
-      expect(response?.body?.item?.watchedAt).to.be.a('string').and.not.be.empty;
+      expect(response?.body?.data.item?.progressCurrent).to.equal(100);
+      expect(response?.body?.data.item?.progressTotal).to.equal(100);
+      expect(response?.body?.data.item?.watchedAt).to.be.a('string').and.not.be.empty;
     });
 
     CollectionPage.getItemDialogBookProgressChip().should('contain.text', '100 / 100');
@@ -1162,9 +1196,9 @@ describe('Collection — unified tracking gaps', () => {
   });
 
   it('uncompletes a tracking book when total pages is raised above pages read', () => {
-    cy.intercept('PUT', '/api/v1/items/**/change*').as('uncompleteBookProgress');
+    cy.intercept('PUT', '/api/v1/collection-items/**').as('uncompleteBookProgress');
     cy.on('window:confirm', () => true);
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildBooksItem('Uncomplete Progress Book', '9780306406157'),
       listType: 'tracking',
       progressCurrent: 100,
@@ -1181,9 +1215,9 @@ describe('Collection — unified tracking gaps', () => {
     CollectionPage.getItemDialogSaveButton().click();
     cy.wait('@uncompleteBookProgress').then(({ response }) => {
       expect(response?.statusCode).to.equal(200);
-      expect(response?.body?.item?.progressCurrent).to.equal(100);
-      expect(response?.body?.item?.progressTotal).to.equal(200);
-      expect(response?.body?.item?.watchedAt).to.equal(null);
+      expect(response?.body?.data.item?.progressCurrent).to.equal(100);
+      expect(response?.body?.data.item?.progressTotal).to.equal(200);
+      expect(response?.body?.data.item?.watchedAt).to.equal(null);
     });
 
     CollectionPage.getItemDialogBookProgressChip().should('contain.text', '100 / 200');
@@ -1194,7 +1228,7 @@ describe('Collection — unified tracking gaps', () => {
 
   it('keeps save disabled when total pages is lower than pages read', () => {
     cy.on('window:confirm', () => true);
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildBooksItem('Invalid Progress Book', '9780140328721'),
       listType: 'tracking',
       progressCurrent: 50,
@@ -1211,9 +1245,9 @@ describe('Collection — unified tracking gaps', () => {
   });
 
   it('recovers save after fixing pages read above total pages', () => {
-    cy.intercept('PUT', '/api/v1/items/**/change*').as('recoverBookProgress');
+    cy.intercept('PUT', '/api/v1/collection-items/**').as('recoverBookProgress');
     cy.on('window:confirm', () => true);
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildBooksItem('Recover Progress Book', '9780306406157'),
       listType: 'tracking',
       progressCurrent: 50,
@@ -1231,8 +1265,8 @@ describe('Collection — unified tracking gaps', () => {
     CollectionPage.getItemDialogSaveButton().should('be.enabled').click();
     cy.wait('@recoverBookProgress').then(({ response }) => {
       expect(response?.statusCode).to.equal(200);
-      expect(response?.body?.item?.progressCurrent).to.equal(150);
-      expect(response?.body?.item?.progressTotal).to.equal(200);
+      expect(response?.body?.data.item?.progressCurrent).to.equal(150);
+      expect(response?.body?.data.item?.progressTotal).to.equal(200);
     });
 
     CollectionPage.getItemDialogBookProgressChip().should('contain.text', '150 / 200');
@@ -1241,7 +1275,7 @@ describe('Collection — unified tracking gaps', () => {
   });
 
   it('creates a tracking book with page progress from the new-item dialog', () => {
-    cy.intercept('POST', '/api/v1/create').as('createTrackingBook');
+    cy.intercept('POST', '/api/v1/collection-items').as('createTrackingBook');
     CollectionPage.visitTracking();
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getAddNewButton().click();
@@ -1271,22 +1305,24 @@ describe('Collection — unified tracking gaps', () => {
 
   it('saves a library series with copy-to-tracking-as-completed checked', () => {
     const seriesTitle = 'Copy Completed Series';
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
+    cy.intercept('GET', '/api/v1/external-metadata/search*', {
       statusCode: 200,
-      body: buildOmdbSearchResult(seriesTitle, 'tt8500005', 'series'),
+      body: { data: buildOmdbSearchResult(seriesTitle, 'tt8500005', 'series') },
     }).as('seriesSearch');
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
+    cy.intercept('GET', '/api/v1/external-metadata/items*', {
       statusCode: 200,
-      body: buildOmdbItem(seriesTitle, 'tt8500005', 'series'),
+      body: { data: buildOmdbItem(seriesTitle, 'tt8500005', 'series') },
     }).as('seriesItem');
-    cy.intercept('POST', '/api/v1/create').as('createSeries');
-    cy.intercept('POST', '/api/v1/tracking/**').as('addTracking');
-    cy.intercept('PUT', '/api/v1/tracking/**/mark-all-completed', {
+    cy.intercept('POST', '/api/v1/collection-items').as('createSeries');
+    cy.intercept('POST', '/api/v1/collection-items/*/*/tracking*').as('addTracking');
+    cy.intercept('PUT', '/api/v1/collection-items/*/*/tracking/actions/mark-completed*', {
       statusCode: 200,
       body: {
-        completedEpisodes: [{ season: 1, episode: 1 }],
-        lastCompletedEpisode: { season: 1, episode: 1 },
-        item: null,
+        data: {
+          completedEpisodes: [{ season: 1, episode: 1 }],
+          lastCompletedEpisode: { season: 1, episode: 1 },
+          item: null,
+        },
       },
     }).as('markAllCompleted');
 
@@ -1315,12 +1351,17 @@ describe('Collection - sync', () => {
   });
 
   it('triggers a collection reload when sync is clicked', () => {
-    cy.intercept('GET', '/api/v1/items*').as('getAll');
+    cy.intercept('GET', '/api/v1/collection-items*').as('getAll');
 
     CommonPage.openMenu();
     CommonPage.getNavSyncLink().click();
 
-    cy.wait('@getAll').its('response.statusCode').should('eq', 200);
+    cy.wait('@getAll').then(({ response }) => {
+      expect(response?.statusCode).to.eq(200);
+      expect(response?.body.data).to.be.an('array');
+      expect(response?.body.page.limit).to.be.greaterThan(0);
+      expect(response?.body.page).to.deep.include({ hasMore: false, nextCursor: null });
+    });
   });
 });
 
@@ -1330,9 +1371,9 @@ describe('Collection - tag badge filtering', () => {
   beforeEach(() => {
     cy.autoLogin();
     // Create item with a custom tag
-    cy.request('POST', '/api/v1/create', { ...taggedItem, tags: ['#action'] });
+    cy.request('POST', '/api/v1/collection-items', { ...taggedItem, tags: ['#action'] });
     // Enable image badge for the custom tag via API
-    cy.request('POST', '/api/v1/tag-management', [
+    cy.request('POST', '/api/v1/users/me/tags', [
       {
         tag: '#action',
         color: '#ff0000',

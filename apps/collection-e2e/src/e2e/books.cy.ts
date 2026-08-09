@@ -15,7 +15,7 @@ describe('Books', () => {
     cy.getByTestId('collection-media-chip-book').should('be.visible');
 
     SettingsPage.visitFeatures();
-    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+    cy.intercept('POST', '/api/v1/users/me/settings').as('saveSettings');
     SettingsPage.getFeatureBooksCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
 
@@ -39,16 +39,16 @@ describe('Books', () => {
   it('searches Open Library, creates a book, shows its details, and deletes it', () => {
     const title = 'The E2E Book';
     const isbn = '9780306406157';
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/search*provider=openlibrary*', {
+    cy.intercept('GET', '/api/v1/external-metadata/search*provider=openlibrary*', {
       statusCode: 200,
-      body: buildOpenLibrarySearchResult(title, isbn),
+      body: { data: buildOpenLibrarySearchResult(title, isbn) },
     }).as('openLibrarySearch');
-    cy.intercept('GET', '/api/v1/proxy/external-metadata/item*externalIdentitySource=openlibrary*', {
+    cy.intercept('GET', '/api/v1/external-metadata/items*externalIdentitySource=openlibrary*', {
       statusCode: 200,
-      body: buildOpenLibraryItem(title, isbn),
+      body: { data: buildOpenLibraryItem(title, isbn) },
     }).as('openLibraryItem');
-    cy.intercept('POST', '/api/v1/create').as('createBook');
-    cy.intercept('DELETE', '/api/v1/items/**').as('deleteBook');
+    cy.intercept('POST', '/api/v1/collection-items').as('createBook');
+    cy.intercept('DELETE', '/api/v1/collection-items/**').as('deleteBook');
 
     BooksPage.visit();
     BooksPage.getAddFirstItemLink().click();
@@ -85,7 +85,7 @@ describe('Books', () => {
     const title = 'Manual E2E Book';
     const isbn = '9780140328721';
     const authors = 'Manual Author';
-    cy.intercept('POST', '/api/v1/create').as('createManualBook');
+    cy.intercept('POST', '/api/v1/collection-items').as('createManualBook');
 
     BooksPage.visit();
     BooksPage.getShowFunctionsButton().click();
@@ -116,7 +116,7 @@ describe('Books', () => {
     BooksPage.getItemDialog().should('contain.text', title).and('contain.text', authors);
     BooksPage.getItemDialogIsbn().should('contain.text', isbn);
 
-    cy.intercept('GET', '/api/v1/items*').as('reloadBooks');
+    cy.intercept('GET', '/api/v1/collection-items*').as('reloadBooks');
     cy.reload();
     cy.wait('@reloadBooks');
     BooksPage.getListItemTitles().should('have.length', 1).and('contain.text', title);
@@ -139,8 +139,8 @@ describe('Books', () => {
   });
 
   it('clears all books list data from manage tracker data settings', () => {
-    cy.request('POST', '/api/v1/create', buildBooksItem('Book To Clear'));
-    cy.intercept('DELETE', '/api/v1/books').as('clearBooks');
+    cy.request('POST', '/api/v1/collection-items', buildBooksItem('Book To Clear'));
+    cy.intercept('DELETE', '/api/v1/collection-items/books').as('clearBooks');
     cy.on('window:confirm', () => true);
 
     SettingsPage.visitManageTrackerData();

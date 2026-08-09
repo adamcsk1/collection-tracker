@@ -153,7 +153,7 @@ export const setupCollectionAiSearch = ({
   });
 
   const dataSource: CollectionListDataSource = ({
-    offset,
+    cursor,
     limit,
     searchText,
     orderBy,
@@ -170,14 +170,14 @@ export const setupCollectionAiSearch = ({
     if (useAiFilter) {
       return api.getMatchedItems({
         identities: (aiIds as string[]).map(toMatchedIdentity),
-        offset,
+        cursor: cursor ?? undefined,
         limit,
         filters: { listType },
       });
     }
 
     const filters = buildStandardSearchFilters(searchText, listType, queryFilters());
-    return api.searchItems({ ...filters, orderBy, orderDirection }, offset, limit);
+    return api.searchItems({ ...filters, orderBy, orderDirection }, cursor, limit);
   };
 
   return {

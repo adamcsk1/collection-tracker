@@ -11,7 +11,7 @@ import { withErrorHandler } from '../core/utils/api-error-handler';
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/items/mark-all-books-completed`,
+    `${API_PREFIX}/collection-items/actions/mark-books-completed`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
@@ -29,10 +29,10 @@ export const register = (app: FastifyInstance): void => {
       }
 
       await debugLog(
-        `POST /items/mark-all-books-completed source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
+        `POST /collection-items/actions/mark-books-completed source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
       );
       const changedCount = markAllBooksAsCompleted(db, request.usernameHash, ownerHash);
-      await debugLog(`POST /items/mark-all-books-completed finished: changed=${changedCount}`);
+      await debugLog(`POST /collection-items/actions/mark-books-completed finished: changed=${changedCount}`);
 
       const result: MarkAllCompletedApiResponseModel = { changedCount };
       response.send(result);

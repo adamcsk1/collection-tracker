@@ -9,11 +9,12 @@ const MAX_IMAGE_COUNT = 50;
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/items/random-images`,
+    `${API_PREFIX}/collection-items/random-images`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
-      const count = Math.min(Number((request.query as Record<string, unknown>).count) || 10, MAX_IMAGE_COUNT);
+      const requestedCount = Math.floor(Number((request.query as Record<string, unknown>).count)) || 10;
+      const count = Math.min(Math.max(requestedCount, 1), MAX_IMAGE_COUNT);
       const images = findRandomCollectionImages(db, request.usernameHash, count);
 
       response.send({ images });

@@ -12,6 +12,50 @@ import {
   CollectionItemTypeFilter,
   CollectionListTypeModel,
 } from '@shared/models/api-model';
+import { isCursorToken } from './cursor-util';
+
+const COLLECTION_PAGE_DEFAULT_LIMIT = 50;
+const COLLECTION_PAGE_MAX_LIMIT = 100;
+
+const isOptionalString = (value: unknown): boolean => value === undefined || typeof value === 'string';
+
+const isOptionalStringList = (value: unknown): boolean =>
+  value === undefined ||
+  typeof value === 'string' ||
+  (Array.isArray(value) && value.every((entry) => typeof entry === 'string'));
+
+const isOptionalMember = (value: unknown, members: readonly string[]): boolean =>
+  value === undefined || (typeof value === 'string' && members.includes(value));
+
+const isOptionalQueryBoolean = (value: unknown): boolean =>
+  value === undefined || value === 'true' || value === 'false';
+
+export const isCanonicalCollectionQueryLimit = (value: unknown): value is string =>
+  typeof value === 'string' && /^[1-9]\d*$/.test(value) && Number(value) <= COLLECTION_PAGE_MAX_LIMIT;
+
+export const isCollectionJsonLimit = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= COLLECTION_PAGE_MAX_LIMIT;
+
+export const parseCollectionQueryLimit = (value: string | undefined): number =>
+  value === undefined ? COLLECTION_PAGE_DEFAULT_LIMIT : Number(value);
+
+export const isCollectionItemsQueryValid = (
+  query: Record<string, unknown>
+): query is Record<string, unknown> & { cursor?: string; limit?: string } =>
+  isOptionalString(query.search) &&
+  isOptionalStringList(query.tags) &&
+  isOptionalStringList(query.genres) &&
+  isOptionalMember(query.tagMode, ['any', 'all']) &&
+  isOptionalMember(query.type, ['movie', 'series', 'book']) &&
+  isOptionalQueryBoolean(query.favorite) &&
+  isOptionalQueryBoolean(query.watched) &&
+  isOptionalQueryBoolean(query.completed) &&
+  isOptionalMember(query.shared, ['mine', 'shared']) &&
+  isOptionalMember(query.listType, ['library', 'up-next', 'wishlist', 'tracking', 'books']) &&
+  isOptionalMember(query.orderBy, ['createdAt', 'alphabet']) &&
+  isOptionalMember(query.orderDirection, ['asc', 'desc']) &&
+  (query.cursor === undefined || isCursorToken(query.cursor)) &&
+  (query.limit === undefined || isCanonicalCollectionQueryLimit(query.limit));
 
 export const parseList = (value: unknown): string[] | undefined => {
   if (Array.isArray(value)) return value.flatMap((entry) => parseList(entry) ?? []);

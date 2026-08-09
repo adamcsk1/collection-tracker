@@ -24,6 +24,8 @@ const insertUserAndItems = () => {
 };
 
 describe('collection-items-matched-api', () => {
+  process.env.COOKIE_SECRET = 'matched-api-secret';
+
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -49,13 +51,181 @@ describe('collection-items-matched-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: expect.arrayContaining([
+        data: expect.arrayContaining([
           expect.objectContaining({ title: 'Beta' }),
           expect.objectContaining({ title: 'Alpha' }),
         ]),
-        total: 2,
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
+  });
+
+  it.each(['orderBy', 'orderDirection'])('rejects unsupported %s filters', async (filterName) => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        identities: [{ source: 'imdb', id: 'tt001' }],
+        filters: { [filterName]: filterName === 'orderBy' ? 'alphabet' : 'asc' },
+      },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-matched-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('pages ranked matches with a signed matches cursor', async () => {
+    insertUserAndItems();
+    const identities = [
+      { source: 'imdb' as const, id: 'tt002' },
+      { source: 'imdb' as const, id: 'tt001' },
+    ];
+    const firstResponse = mockResponse();
+    const firstRoute = buildApp({ usernameHash: 'user', body: { identities, limit: 1 } } as any, firstResponse);
+    const { register } = await import('./collection-items-matched-api');
+    register(firstRoute.app);
+    await firstRoute.handlerPromise();
+    const firstResult = firstResponse.send.mock.calls[0][0];
+
+    expect(firstResult).toEqual({
+      data: [expect.objectContaining({ title: 'Beta' })],
+      page: { limit: 1, hasMore: true, nextCursor: expect.any(String) },
+    });
+
+    const secondResponse = mockResponse();
+    const secondRoute = buildApp(
+      { usernameHash: 'user', body: { identities, cursor: firstResult.page.nextCursor, limit: 1 } } as any,
+      secondResponse
+    );
+    register(secondRoute.app);
+    await secondRoute.handlerPromise();
+
+    expect(secondResponse.send).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ title: 'Alpha' })],
+      page: { limit: 1, hasMore: false, nextCursor: null },
+    });
+  });
+
+  it.each([1, 100])('accepts matched page limit %s', async (limit) => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', body: { identities: [], limit } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-matched-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.code).not.toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith({
+      data: [],
+      page: { limit, hasMore: false, nextCursor: null },
+    });
+  });
+
+  it.each([0, -1, 1.5, 101, NaN, Infinity, '1', null, [1]])(
+    'returns 400 for invalid matched page limit %j',
+    async (limit) => {
+      const response = mockResponse();
+      const request: any = { usernameHash: 'user', body: { identities: [], limit } };
+      const { app, handlerPromise } = buildApp(request, response);
+
+      const { register } = await import('./collection-items-matched-api');
+      register(app);
+      await handlerPromise();
+
+      expect(response.code).toHaveBeenCalledWith(400);
+      expect(response.send).toHaveBeenCalledWith();
+    }
+  );
+
+  it('paginates own and shared rows at the same first identity rank without duplicates', async () => {
+    const db = getDatabase();
+    const insertUser = db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)');
+    const insertItem = db.prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+       VALUES (?, 'imdb', 'tt001', ?, ?, ?, '', '', '', ?)`
+    );
+    insertUser.run('viewer', 'viewer-token');
+    insertUser.run('owner', 'owner-token');
+    insertItem.run('viewer', 'imdb:viewer-item', 'Own Row', 'own row', 'own-hash');
+    insertItem.run('owner', 'imdb:owner-item', 'Shared Row', 'shared row', 'shared-hash');
+    db.prepare(
+      `INSERT INTO user_share_grants
+        (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)
+       VALUES ('owner', 'viewer', 'library', 'movie', 1)`
+    ).run();
+    const identities = [
+      { source: 'imdb' as const, id: 'tt001' },
+      { source: 'imdb' as const, id: 'tt002' },
+      { source: 'imdb' as const, id: 'tt001' },
+    ];
+    const { register } = await import('./collection-items-matched-api');
+    const firstResponse = mockResponse();
+    const firstRoute = buildApp({ usernameHash: 'viewer', body: { identities, limit: 1 } } as any, firstResponse);
+    register(firstRoute.app);
+    await firstRoute.handlerPromise();
+    const firstResult = firstResponse.send.mock.calls[0][0];
+
+    const secondResponse = mockResponse();
+    const secondRoute = buildApp(
+      { usernameHash: 'viewer', body: { identities, cursor: firstResult.page.nextCursor, limit: 1 } } as any,
+      secondResponse
+    );
+    register(secondRoute.app);
+    await secondRoute.handlerPromise();
+    const secondResult = secondResponse.send.mock.calls[0][0];
+
+    expect(firstResult.page).toEqual({ limit: 1, hasMore: true, nextCursor: expect.any(String) });
+    expect(secondResult.page).toEqual({ limit: 1, hasMore: false, nextCursor: null });
+    expect([firstResult.data[0].title, secondResult.data[0].title]).toEqual(['Own Row', 'Shared Row']);
+    expect(new Set([firstResult.data[0].title, secondResult.data[0].title]).size).toBe(2);
+  });
+
+  it('does not shift matched pages when a row before the cursor boundary is deleted', async () => {
+    insertUserAndItems();
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, description, image, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run('user', 'imdb', 'tt003', 'imdb:tt003', 'Gamma', 'gamma', '2001', 'Plot three', 'img3.jpg', 'hash3');
+    const identities = [
+      { source: 'imdb' as const, id: 'tt001' },
+      { source: 'imdb' as const, id: 'tt002' },
+      { source: 'imdb' as const, id: 'tt003' },
+    ];
+    const { register } = await import('./collection-items-matched-api');
+    const firstResponse = mockResponse();
+    const firstRoute = buildApp({ usernameHash: 'user', body: { identities, limit: 2 } } as any, firstResponse);
+    register(firstRoute.app);
+    await firstRoute.handlerPromise();
+    const firstResult = firstResponse.send.mock.calls[0][0];
+
+    getDatabase()
+      .prepare("DELETE FROM collection_items WHERE username_hash = 'user' AND external_item_id = 'tt001'")
+      .run();
+    const secondResponse = mockResponse();
+    const secondRoute = buildApp(
+      { usernameHash: 'user', body: { identities, cursor: firstResult.page.nextCursor, limit: 2 } } as any,
+      secondResponse
+    );
+    register(secondRoute.app);
+    await secondRoute.handlerPromise();
+
+    expect(firstResult.data).toEqual([
+      expect.objectContaining({ title: 'Alpha' }),
+      expect.objectContaining({ title: 'Beta' }),
+    ]);
+    expect(secondResponse.send).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ title: 'Gamma' })],
+      page: { limit: 2, hasMore: false, nextCursor: null },
+    });
   });
 
   it('matches items by resolved canonical identities', async () => {
@@ -84,8 +254,8 @@ describe('collection-items-matched-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Canonical Item' })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Canonical Item' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -140,8 +310,8 @@ describe('collection-items-matched-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Second Row' }), expect.objectContaining({ title: 'First Row' })],
-        total: 2,
+        data: [expect.objectContaining({ title: 'Second Row' }), expect.objectContaining({ title: 'First Row' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -156,6 +326,54 @@ describe('collection-items-matched-api', () => {
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 for a malformed cursor', async () => {
+    insertUserAndItems();
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: { identities: [{ source: 'imdb', id: 'tt001' }], cursor: 'invalid' },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-matched-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith({ error: 'Invalid cursor' });
+  });
+
+  it('returns 400 for a malformed cursor when identities are empty', async () => {
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', body: { identities: [], cursor: 'invalid' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./collection-items-matched-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith({ error: 'Invalid cursor' });
+  });
+
+  it.each(['', 'x'.repeat(4097)])('rejects invalid cursor length before database work', async (cursor) => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: { identities: [{ source: 'imdb', id: 'tt001' }], cursor },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+    const prepareSpy = vi.spyOn(getDatabase(), 'prepare');
+
+    const { register } = await import('./collection-items-matched-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(prepareSpy).not.toHaveBeenCalled();
+    prepareSpy.mockRestore();
   });
 
   it('returns 400 when identities contain invalid values', async () => {
@@ -253,7 +471,10 @@ describe('collection-items-matched-api', () => {
 
     await handlerPromise();
     expect(response.code).not.toHaveBeenCalledWith(400);
-    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ items: [], total: 0 }));
+    expect(response.send).toHaveBeenCalledWith({
+      data: [],
+      page: { limit: 50, hasMore: false, nextCursor: null },
+    });
   });
 
   it('returns empty when no identities match', async () => {
@@ -266,6 +487,9 @@ describe('collection-items-matched-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ items: [], total: 0 }));
+    expect(response.send).toHaveBeenCalledWith({
+      data: [],
+      page: { limit: 50, hasMore: false, nextCursor: null },
+    });
   });
 });

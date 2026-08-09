@@ -79,22 +79,24 @@ describe('ExternalMetadataService', () => {
   it('requests search results and maps them to select options', async () => {
     service.getMatchedContents('Matrix');
 
-    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/external-metadata/search?s=Matrix`);
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Matrix`);
     searchRequest.flush({
-      results: [
-        {
-          provider: 'omdb',
-          providerItemId: 'tt0133093',
-          title: 'The Matrix',
-          year: '1999',
-          contentType: 'movie',
-          poster: '',
-          plot: '',
-          actors: '',
-          genres: [],
-          ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
-        },
-      ],
+      data: {
+        results: [
+          {
+            provider: 'omdb',
+            providerItemId: 'tt0133093',
+            title: 'The Matrix',
+            year: '1999',
+            contentType: 'movie',
+            poster: '',
+            plot: '',
+            actors: '',
+            genres: [],
+            ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
+          },
+        ],
+      },
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -114,10 +116,8 @@ describe('ExternalMetadataService', () => {
   it('limits provider-specific searches and does not treat ISBN text as an IMDb lookup', () => {
     service.getMatchedContents('tt0133093', 'openlibrary');
 
-    const searchRequest = httpMock.expectOne(
-      `${API_URL}/proxy/external-metadata/search?s=tt0133093&provider=openlibrary`
-    );
-    searchRequest.flush({ results: [] });
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=tt0133093&provider=openlibrary`);
+    searchRequest.flush({ data: { results: [] } });
 
     expect(service.matchedContent()).toEqual([]);
   });
@@ -125,23 +125,25 @@ describe('ExternalMetadataService', () => {
   it('uses encoded reference keys without parsing provider references from JSON', async () => {
     service.getMatchedContents('Provider punctuation');
 
-    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/external-metadata/search?s=Provider%20punctuation`);
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Provider%20punctuation`);
     searchRequest.flush({
-      results: [
-        {
-          provider: 'provider:name',
-          providerItemId: 'id,with/slash',
-          externalIds: [{ source: 'imdb', id: 'tt0133093' }],
-          title: 'Provider Punctuation',
-          year: '1999',
-          contentType: 'movie',
-          poster: '',
-          plot: '',
-          actors: '',
-          genres: [],
-          ratings: [],
-        },
-      ],
+      data: {
+        results: [
+          {
+            provider: 'provider:name',
+            providerItemId: 'id,with/slash',
+            externalIds: [{ source: 'imdb', id: 'tt0133093' }],
+            title: 'Provider Punctuation',
+            year: '1999',
+            contentType: 'movie',
+            poster: '',
+            plot: '',
+            actors: '',
+            genres: [],
+            ratings: [],
+          },
+        ],
+      },
     });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -164,46 +166,50 @@ describe('ExternalMetadataService', () => {
 
   it('ignores stale search responses', () => {
     service.getMatchedContents('Matrix');
-    const firstSearchRequest = httpMock.expectOne(`${API_URL}/proxy/external-metadata/search?s=Matrix`);
+    const firstSearchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Matrix`);
 
     service.getMatchedContents('Dune');
-    const secondSearchRequest = httpMock.expectOne(`${API_URL}/proxy/external-metadata/search?s=Dune`);
+    const secondSearchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Dune`);
 
     firstSearchRequest.flush({
-      results: [
-        {
-          provider: 'omdb',
-          providerItemId: 'tt0133093',
-          title: 'The Matrix',
-          year: '1999',
-          contentType: 'movie',
-          poster: '',
-          plot: '',
-          actors: '',
-          genres: [],
-          ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
-        },
-      ],
+      data: {
+        results: [
+          {
+            provider: 'omdb',
+            providerItemId: 'tt0133093',
+            title: 'The Matrix',
+            year: '1999',
+            contentType: 'movie',
+            poster: '',
+            plot: '',
+            actors: '',
+            genres: [],
+            ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
+          },
+        ],
+      },
     });
 
     expect(service.matchedContent()).toEqual([]);
     expect(service.completedSearchText()).toBe('');
 
     secondSearchRequest.flush({
-      results: [
-        {
-          provider: 'omdb',
-          providerItemId: 'tt1160419',
-          title: 'Dune',
-          year: '2021',
-          contentType: 'movie',
-          poster: '',
-          plot: '',
-          actors: '',
-          genres: [],
-          ratings: [{ source: 'Internet Movie Database', value: '8.0' }],
-        },
-      ],
+      data: {
+        results: [
+          {
+            provider: 'omdb',
+            providerItemId: 'tt1160419',
+            title: 'Dune',
+            year: '2021',
+            contentType: 'movie',
+            poster: '',
+            plot: '',
+            actors: '',
+            genres: [],
+            ratings: [{ source: 'Internet Movie Database', value: '8.0' }],
+          },
+        ],
+      },
     });
 
     expect(service.matchedContent()).toEqual([
@@ -223,8 +229,8 @@ describe('ExternalMetadataService', () => {
   it('sets an empty result list when search returns no matches', () => {
     service.getMatchedContents('Nothing');
 
-    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/external-metadata/search?s=Nothing`);
-    searchRequest.flush({ results: [] });
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Nothing`);
+    searchRequest.flush({ data: { results: [] } });
 
     expect(service.matchedContent()).toEqual([]);
     expect(service.completedSearchText()).toBe('Nothing');
@@ -232,27 +238,29 @@ describe('ExternalMetadataService', () => {
 
   it('alerts and throws when search request fails', () => {
     service.getMatchedContents('OldSearch');
-    const oldSearchRequest = httpMock.expectOne(`${API_URL}/proxy/external-metadata/search?s=OldSearch`);
+    const oldSearchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=OldSearch`);
     oldSearchRequest.flush({
-      results: [
-        {
-          provider: 'omdb',
-          providerItemId: 'tt0133093',
-          title: 'The Matrix',
-          year: '1999',
-          contentType: 'movie',
-          poster: '',
-          plot: '',
-          actors: '',
-          genres: [],
-          ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
-        },
-      ],
+      data: {
+        results: [
+          {
+            provider: 'omdb',
+            providerItemId: 'tt0133093',
+            title: 'The Matrix',
+            year: '1999',
+            contentType: 'movie',
+            poster: '',
+            plot: '',
+            actors: '',
+            genres: [],
+            ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
+          },
+        ],
+      },
     });
 
     service.getMatchedContents('ErrorSearch');
 
-    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/external-metadata/search?s=ErrorSearch`);
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=ErrorSearch`);
     searchRequest.flush('failed', { status: 500, statusText: 'Server Error' });
 
     expect(alertSpy).toHaveBeenCalledTimes(1);
@@ -264,49 +272,53 @@ describe('ExternalMetadataService', () => {
   it('clears suggestions when response has no results property', () => {
     service.getMatchedContents('NoProp');
 
-    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/external-metadata/search?s=NoProp`);
-    searchRequest.flush({});
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=NoProp`);
+    searchRequest.flush({ data: {} });
 
     expect(service.matchedContent()).toEqual([]);
   });
 
   it('fetches a selected item by id', async () => {
     service.getMatchedContents('Matrix');
-    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/external-metadata/search?s=Matrix`);
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Matrix`);
     searchRequest.flush({
-      results: [
-        {
-          provider: 'omdb',
-          providerItemId: 'tt0133093',
-          title: 'The Matrix',
-          year: '1999',
-          contentType: 'movie',
-          poster: '',
-          plot: '',
-          actors: '',
-          genres: [],
-          ratings: [],
-        },
-      ],
+      data: {
+        results: [
+          {
+            provider: 'omdb',
+            providerItemId: 'tt0133093',
+            title: 'The Matrix',
+            year: '1999',
+            contentType: 'movie',
+            poster: '',
+            plot: '',
+            actors: '',
+            genres: [],
+            ratings: [],
+          },
+        ],
+      },
     });
 
     const selected$ = service.getSelectedContent(matrixReference).pipe(filter(Boolean));
 
     const detailRequest = httpMock.expectOne(
-      `${API_URL}/proxy/external-metadata/item?externalIdentitySource=omdb&externalIdentityId=tt0133093`
+      `${API_URL}/external-metadata/items?externalIdentitySource=omdb&externalIdentityId=tt0133093`
     );
     detailRequest.flush({
-      provider: 'omdb',
-      providerItemId: 'tt0133093',
-      title: 'The Matrix',
-      year: '1999',
-      contentType: 'movie',
-      poster: '',
-      plot: 'Plot text',
-      actors: 'Keanu Reeves',
-      genres: ['Sci-Fi'],
-      ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
-    } satisfies ExternalMetadataItemModel);
+      data: {
+        provider: 'omdb',
+        providerItemId: 'tt0133093',
+        title: 'The Matrix',
+        year: '1999',
+        contentType: 'movie',
+        poster: '',
+        plot: 'Plot text',
+        actors: 'Keanu Reeves',
+        genres: ['Sci-Fi'],
+        ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
+      } satisfies ExternalMetadataItemModel,
+    });
 
     const result = await firstValueFrom(selected$);
     expect(result?.title).toBe('The Matrix');
@@ -319,20 +331,22 @@ describe('ExternalMetadataService', () => {
     const selected$ = service.getSelectedContent(directMatrixReference).pipe(filter(Boolean));
 
     const detailRequest = httpMock.expectOne(
-      `${API_URL}/proxy/external-metadata/item?externalIdentitySource=imdb&externalIdentityId=tt0133093`
+      `${API_URL}/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt0133093`
     );
     detailRequest.flush({
-      provider: 'omdb',
-      providerItemId: 'tt0133093',
-      title: 'The Matrix',
-      year: '1999',
-      contentType: 'movie',
-      poster: '',
-      plot: 'Plot text',
-      actors: 'Keanu Reeves',
-      genres: ['Sci-Fi'],
-      ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
-    } satisfies ExternalMetadataItemModel);
+      data: {
+        provider: 'omdb',
+        providerItemId: 'tt0133093',
+        title: 'The Matrix',
+        year: '1999',
+        contentType: 'movie',
+        poster: '',
+        plot: 'Plot text',
+        actors: 'Keanu Reeves',
+        genres: ['Sci-Fi'],
+        ratings: [{ source: 'Internet Movie Database', value: '8.7' }],
+      } satisfies ExternalMetadataItemModel,
+    });
 
     const result = await firstValueFrom(selected$);
     expect(result?.provider).toBe('omdb');
@@ -340,28 +354,30 @@ describe('ExternalMetadataService', () => {
 
   it('alerts and throws when fetching selected item fails', () => {
     service.getMatchedContents('Missing');
-    const searchRequest = httpMock.expectOne(`${API_URL}/proxy/external-metadata/search?s=Missing`);
+    const searchRequest = httpMock.expectOne(`${API_URL}/external-metadata/search?s=Missing`);
     searchRequest.flush({
-      results: [
-        {
-          provider: 'omdb',
-          providerItemId: 'tt0000000',
-          title: 'Missing',
-          year: '1900',
-          contentType: 'movie',
-          poster: '',
-          plot: '',
-          actors: '',
-          genres: [],
-          ratings: [],
-        },
-      ],
+      data: {
+        results: [
+          {
+            provider: 'omdb',
+            providerItemId: 'tt0000000',
+            title: 'Missing',
+            year: '1900',
+            contentType: 'movie',
+            poster: '',
+            plot: '',
+            actors: '',
+            genres: [],
+            ratings: [],
+          },
+        ],
+      },
     });
 
     service.getSelectedContent(missingReference);
 
     const detailRequest = httpMock.expectOne(
-      `${API_URL}/proxy/external-metadata/item?externalIdentitySource=omdb&externalIdentityId=tt0000000`
+      `${API_URL}/external-metadata/items?externalIdentitySource=omdb&externalIdentityId=tt0000000`
     );
     detailRequest.flush('missing', { status: 404, statusText: 'Not Found' });
 

@@ -27,7 +27,7 @@ import { getAuthRateLimit } from '../core/utils/rate-limit-util';
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/sign-in`,
+    `${API_PREFIX}/auth/sign-in`,
     { config: { rateLimit: { max: getAuthRateLimit(), timeWindow: '1 minute' } } },
     withErrorHandler(async (request, response) => {
       const { username, token } = request.body as SignInApiRequestModel;
@@ -76,6 +76,7 @@ export const register = (app: FastifyInstance): void => {
       response
         .setCookie(COOKIE_TOKEN, newAccessToken, accessCookie)
         .setCookie(COOKIE_REFRESH_TOKEN, newRefreshToken, refreshCookie)
+        .code(204)
         .send();
     })
   );

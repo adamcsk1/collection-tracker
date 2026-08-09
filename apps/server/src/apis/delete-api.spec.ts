@@ -201,7 +201,10 @@ describe('delete-api', () => {
     const { register } = await import('./delete-api');
     register(app);
 
-    await getDeleteHandler(app, `${API_PREFIX}/items/:externalIdentitySource/:externalIdentityId`)!(request, response);
+    await getDeleteHandler(app, `${API_PREFIX}/collection-items/:externalIdentitySource/:externalIdentityId`)!(
+      request,
+      response
+    );
 
     expect(response.code).toHaveBeenCalledWith(204);
     expect(

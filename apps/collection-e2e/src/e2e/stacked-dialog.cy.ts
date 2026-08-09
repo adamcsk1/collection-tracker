@@ -3,7 +3,7 @@ import { CollectionPage } from '../page-objects/collection.po';
 
 const waitForTrackingItem = (imdbId: string) => {
   cy.wait('@getTrackingItems')
-    .its('response.body.items')
+    .its('response.body.data')
     .should((items: Array<{ IMDbId: string }>) => {
       expect(items.some((item) => item.IMDbId === imdbId)).to.eq(true);
     });
@@ -48,11 +48,11 @@ describe('Stacked dialogs', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem(seriesTitle, 'series', imdbId),
       listType: 'tracking',
     });
-    cy.intercept('GET', '/api/v1/items?*listType=tracking*').as('getTrackingItems');
+    cy.intercept('GET', '/api/v1/collection-items?*listType=tracking*').as('getTrackingItems');
     CollectionPage.visitTracking();
     waitForTrackingItem(imdbId);
   });

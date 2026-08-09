@@ -91,7 +91,7 @@ describe('proxy-image-api', () => {
 
     await handlerPromise();
     expect(app.get).toHaveBeenCalledWith(
-      `${API_PREFIX}/proxy/image`,
+      `${API_PREFIX}/images/proxy`,
       { preHandler: expect.any(Function) },
       expect.any(Function)
     );
@@ -222,6 +222,20 @@ describe('proxy-image-api', () => {
 
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(415);
+  });
+
+  it.each([404, 429, 503])('returns 502 when the upstream responds with %i', async (statusCode) => {
+    dataFolder = mkdtempSync(join(tmpdir(), 'collection-tracker-image-proxy-'));
+    upstreamResponses = [{ statusCode, headers: {}, body: Buffer.from('') }];
+    const response = createResponse();
+    const request: any = { query: { url: 'https://images.example/poster.png' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await importApi(dataFolder);
+    register(app);
+
+    await handlerPromise();
+    expect(response.code).toHaveBeenCalledWith(502);
   });
 
   it('rejects localhost and private network targets', async () => {

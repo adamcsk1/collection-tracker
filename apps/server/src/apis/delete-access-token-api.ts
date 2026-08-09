@@ -7,7 +7,7 @@ import type { FastifyInstance } from 'fastify';
 
 export const register = (app: FastifyInstance): void => {
   app.delete(
-    `${API_PREFIX}/user/access-token/:tokenHash`,
+    `${API_PREFIX}/users/me/access-tokens/:tokenHash`,
     { preHandler: jwtGuard },
     withErrorHandler((request, response) => {
       const { tokenHash } = request.params as Record<string, string>;

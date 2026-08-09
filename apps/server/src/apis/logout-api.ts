@@ -9,7 +9,7 @@ import type { FastifyInstance } from 'fastify';
 
 export const register = (app: FastifyInstance): void => {
   app.delete(
-    `${API_PREFIX}/logout`,
+    `${API_PREFIX}/auth/session`,
     { preHandler: jwtGuard },
     withErrorHandler((request, response) => {
       const signedCookieToken = request.cookies[COOKIE_TOKEN];

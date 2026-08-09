@@ -78,6 +78,9 @@ Issue description and why it matters. Suggested fix.
 - Persistence must go through the existing SQLite database layer and repository modules under `apps/server/src/core/database/repositories/` unless a nearby established pattern requires otherwise.
 - Schema changes must include migrations under `apps/server/src/migrations/` and be wired through the server migration flow.
 - API request and response shape changes must update `apps/server/public/server-api.yaml`.
+- The API base is `/api/v1`; canonical endpoint families are `/auth`, `/users/me`, `/collection-items`, `/external-metadata`, `/images`, and `/ai`. Do not accept reintroduction of replaced legacy paths or compatibility aliases without an explicit external-consumer requirement.
+- JSON successes must use `{ data }`; cursor pages must use `{ data: [], page: { limit, hasMore, nextCursor } }`. `204` and binary responses are the exceptions. JSON errors must use RFC 9457 `application/problem+json`.
+- Collection cursor pagination has a maximum limit of `100` and no exact total. Normal collection ordering must use keyset pagination over `createdAt` or `alphabet` plus `id`; cursors must be HMAC-signed and bound to viewer and filter context. Matched AI pagination uses the last visible rank and item ID as its signed, identity-bound keyset boundary.
 - Validate user input and external API data at system boundaries.
 - Internal code can be trusted. Do not require defensive checks for impossible internal states.
 - Flag command injection, SQL injection, XSS, path traversal, authentication, authorization, token handling, and sensitive data exposure risks.
@@ -110,7 +113,8 @@ Issue description and why it matters. Suggested fix.
 - Tests should use page objects from `page-objects/`; spec files should not call `cy.get()` directly when a page object exists or should be added.
 - Element selection should use `cy.getByTestId(...)`, not CSS classes, tag names, or text that may change with i18n.
 - For custom `Input`, `Select`, `Autocomplete`, and `Checkbox` components, the `data-test-id` is usually on the host. Tests should reach the actual control with `.find('input')`, `.find('select')`, or `.find('input[type="checkbox"]')` as appropriate.
-- Only `/api/v1/proxy/*` calls should normally be mocked with `cy.intercept`. Real app API endpoints such as sign-in, sign-up, get-all, settings, and tag management should hit the Docker test server unless an existing test pattern explicitly says otherwise.
+- Only capability endpoints under `/api/v1/external-metadata/*`, `/api/v1/images/*`, and `/api/v1/ai/*` should normally have responses stubbed with `cy.intercept`. Resource endpoints such as auth, collection items, settings, and tag management should hit the Docker test server unless an existing test pattern explicitly says otherwise. A pass-through intercept used only to observe a real request is acceptable.
+- Stubbed JSON success bodies must include the `{ data: ... }` envelope. Cursor-page stubs must also include `page`; binary image stubs are not enveloped.
 - Destructive account tests must use `cy.autoLoginWithNewUser()`, not the shared `cy.autoLogin()` user.
 - Tests involving `ConfirmService` actions must stub `window.confirm` before the action.
 - New pages should add `data-test-id` coverage, a page object, and relevant E2E coverage.

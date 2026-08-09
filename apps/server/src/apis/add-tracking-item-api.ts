@@ -98,5 +98,9 @@ export const register = (app: FastifyInstance): void => {
     response.send(result);
   });
 
-  app.post(`${API_PREFIX}/tracking/:externalIdentitySource/:externalIdentityId`, { preHandler: jwtGuard }, handler);
+  app.post(
+    `${API_PREFIX}/collection-items/:externalIdentitySource/:externalIdentityId/tracking`,
+    { preHandler: jwtGuard },
+    handler
+  );
 };

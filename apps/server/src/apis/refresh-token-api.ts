@@ -24,7 +24,7 @@ const hasUsername = (data: jwtLib.JwtPayload | string | undefined): data is { us
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/session/refresh`,
+    `${API_PREFIX}/auth/session/refresh`,
     { config: { rateLimit: { max: getRefreshRateLimit(), timeWindow: '1 minute' } } },
     withErrorHandler(async (request, response) => {
       const signedCookieToken = request.cookies[COOKIE_REFRESH_TOKEN];

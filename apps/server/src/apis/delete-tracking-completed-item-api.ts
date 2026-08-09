@@ -40,7 +40,7 @@ export const register = (app: FastifyInstance): void => {
 
   // Clears completion on a movie/book tracking twin (mark unfinished). Movies are pruned after clear; books stay unfinished.
   app.delete(
-    `${API_PREFIX}/tracking/:externalIdentitySource/:externalIdentityId/completed`,
+    `${API_PREFIX}/collection-items/:externalIdentitySource/:externalIdentityId/tracking/completed`,
     { preHandler: jwtGuard },
     handler
   );

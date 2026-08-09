@@ -18,10 +18,10 @@ import { getItemHash } from '../core/utils/collection-item-util';
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/items/refresh-images`,
+    `${API_PREFIX}/collection-items/actions/refresh-images`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      await debugLog('POST /items/refresh-images started');
+      await debugLog('POST /collection-items/actions/refresh-images started');
       const db = getDatabase();
       const query = (request.query ?? {}) as Record<string, unknown>;
       const ownerHash =
@@ -121,7 +121,9 @@ export const register = (app: FastifyInstance): void => {
         offset += batchSize;
       }
 
-      await debugLog(`POST /items/refresh-images finished: checked=${checked}, fixed=${fixed}, errors=${errors}`);
+      await debugLog(
+        `POST /collection-items/actions/refresh-images finished: checked=${checked}, fixed=${fixed}, errors=${errors}`
+      );
 
       const result: RefreshImagesApiResponseModel = {
         count: totalItems,

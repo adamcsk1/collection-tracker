@@ -17,7 +17,7 @@ describe('proxy-external-metadata-search-api', () => {
     vi.unstubAllGlobals();
   });
 
-  describe('GET /proxy/external-metadata/search', () => {
+  describe('GET /external-metadata/search', () => {
     it('proxies search query to the configured provider and returns normalized results', async () => {
       process.env.OMDB_API_KEY = 'test-key';
       const response = mockResponse();

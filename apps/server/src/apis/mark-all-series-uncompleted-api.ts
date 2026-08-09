@@ -17,11 +17,6 @@ import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
-const SERIES_MARK_ALL_UNCOMPLETED_PATHS = [
-  `${API_PREFIX}/items/mark-all-series-uncompleted`,
-  `${API_PREFIX}/items/mark-all-series-unwatched`,
-] as const;
-
 export const register = (app: FastifyInstance): void => {
   const handler = withErrorHandler(async (request, response) => {
     const db = getDatabase();
@@ -39,7 +34,7 @@ export const register = (app: FastifyInstance): void => {
     }
 
     await debugLog(
-      `POST /items/mark-all-series-uncompleted source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
+      `POST /collection-items/actions/mark-series-uncompleted source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
     );
     let changedCount = 0;
     const selectedOwnLibrary = ownerHash === request.usernameHash && typeof query.ownerShareCode !== 'string';
@@ -60,13 +55,11 @@ export const register = (app: FastifyInstance): void => {
       syncTrackingCompletedTagByExternalId(db, request.usernameHash, item.externalProvider, item.externalItemId);
       changedCount++;
     }
-    await debugLog(`POST /items/mark-all-series-uncompleted finished: changed=${changedCount}`);
+    await debugLog(`POST /collection-items/actions/mark-series-uncompleted finished: changed=${changedCount}`);
 
     const result: MarkAllUncompletedApiResponseModel = { changedCount };
     response.send(result);
   });
 
-  for (const path of SERIES_MARK_ALL_UNCOMPLETED_PATHS) {
-    app.post(path, { preHandler: jwtGuard }, handler);
-  }
+  app.post(`${API_PREFIX}/collection-items/actions/mark-series-uncompleted`, { preHandler: jwtGuard }, handler);
 };

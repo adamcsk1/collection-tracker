@@ -20,7 +20,7 @@ export class TagManagementService {
   public syncUserTagManagement(configs: TagManagementModel): Observable<void> {
     const sortedConfigs = this.sortTagManagement(configs);
     this.tagManagementState.setState('configs', sortedConfigs);
-    return this.api.updateUserTagManagement(sortedConfigs);
+    return this.api.updateUserTagManagement(sortedConfigs).pipe(map(() => void 0));
   }
 
   public renameTag(oldTag: string, newTag: string): Observable<RenameTagApiResponseModel> {

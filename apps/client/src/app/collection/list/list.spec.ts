@@ -5,18 +5,18 @@ import { CollectionState, collectionStateToken, initialCollectionState } from '.
 import { initialMainCollectionState, mainCollectionStateToken } from '../../main/main-collection-store';
 import { initialMainState, mainStateToken } from '../../main/main-store';
 import { ApiService } from '@services/api/api-service';
-import { apiStateToken, initialApiState } from '@services/api/api-store';
+import { ApiState, apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_COLLECTION_LIST_ORDER_PREFERENCES } from '@shared/constants/storage-const';
 import {
   CollectionItemApiModel,
   CollectionItemFiltersApiModel,
-  CollectionItemsApiResponseModel,
+  CollectionItemsPageModel,
 } from '@shared/models/api-model';
 import { provideSignalTranslateConfig } from 'ngx-signal-translate';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { Observable, of } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { initialTagManagementState, tagManagementStateToken } from '../../tag-management/tag-management-store';
@@ -37,15 +37,16 @@ describe('List', () => {
     searchItems: Mock<
       (
         filters: CollectionItemFiltersApiModel,
-        offset?: number,
+        cursor?: string | null,
         limit?: number
-      ) => Observable<CollectionItemsApiResponseModel>
+      ) => Observable<CollectionItemsPageModel>
     >;
     getMatchedItems: ReturnType<typeof vi.fn>;
     getRandomItem: ReturnType<typeof vi.fn>;
     getShares: ReturnType<typeof vi.fn>;
   };
   let collectionState: NgxSimpleSignalStoreService<CollectionState>;
+  let apiState: NgxSimpleSignalStoreService<ApiState>;
   let floatActions: FloatActionsService;
   let actionButtons: FloatActionButtonsService;
   let scrollSpy: ReturnType<typeof vi.fn>;
@@ -87,11 +88,13 @@ describe('List', () => {
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
     api = {
-      searchItems: vi.fn((_filters, offset = 0, limit = 50) => {
+      searchItems: vi.fn(() => {
         const items = [buildItem('Alpha'), buildItem('Beta'), buildItem('Gamma')];
-        return of({ items: items.slice(offset, offset + limit), total: items.length, offset, limit });
+        return of({ items, page: { limit: 50, hasMore: false, nextCursor: null } } as const);
       }),
-      getMatchedItems: vi.fn(() => of({ items: [buildItem('AI Match', 'tt-ai')], total: 1, offset: 0, limit: 50 })),
+      getMatchedItems: vi.fn(() =>
+        of({ items: [buildItem('AI Match', 'tt-ai')], page: { limit: 50, hasMore: false, nextCursor: null } })
+      ),
       getRandomItem: vi.fn(() => of(buildItem('Random Pick', 'tt-random'))),
       getShares: vi.fn(() => of({ userShareCode: 'own-code', outgoing: [], incoming: [] })),
     };
@@ -116,10 +119,11 @@ describe('List', () => {
 
     fixture = TestBed.createComponent(List);
     component = fixture.componentInstance;
-    fixture.componentRef.setInput('dataSource', ({ offset, limit, searchText }: any) =>
-      api.searchItems(buildFilters(searchText), offset, limit)
+    fixture.componentRef.setInput('dataSource', ({ cursor, limit, searchText }: any) =>
+      api.searchItems(buildFilters(searchText), cursor, limit)
     );
     collectionState = TestBed.inject(collectionStateToken);
+    apiState = TestBed.inject(apiStateToken);
     floatActions = TestBed.inject(FloatActionsService);
     actionButtons = TestBed.inject(FloatActionButtonsService);
 
@@ -134,7 +138,7 @@ describe('List', () => {
       fixture.detectChanges();
 
       expect(api.searchItems).toHaveBeenCalledTimes(1);
-      expect(api.searchItems).toHaveBeenCalledWith({}, 0, 50);
+      expect(api.searchItems).toHaveBeenCalledWith({}, null, 50);
     } finally {
       vi.useRealTimers();
     }
@@ -149,7 +153,7 @@ describe('List', () => {
       await vi.runAllTimersAsync();
       fixture.detectChanges();
 
-      expect(api.searchItems).toHaveBeenLastCalledWith({ search: 'be' }, 0, 50);
+      expect(api.searchItems).toHaveBeenLastCalledWith({ search: 'be' }, null, 50);
       expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Alpha', 'Beta', 'Gamma']);
       expect(scrollSpy).toHaveBeenCalled();
     } finally {
@@ -167,13 +171,13 @@ describe('List', () => {
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(api.searchItems).toHaveBeenCalledWith({ tags: ['#favorite'], tagMode: 'all' }, 0, 50);
+      expect(api.searchItems).toHaveBeenCalledWith({ tags: ['#favorite'], tagMode: 'all' }, null, 50);
 
       api.searchItems.mockClear();
       await vi.runAllTimersAsync();
       fixture.detectChanges();
 
-      expect(api.searchItems).not.toHaveBeenCalledWith({ search: 'typed' }, 0, 50);
+      expect(api.searchItems).not.toHaveBeenCalledWith({ search: 'typed' }, null, 50);
     } finally {
       vi.useRealTimers();
     }
@@ -189,15 +193,15 @@ describe('List', () => {
       await vi.runAllTimersAsync();
       fixture.detectChanges();
 
-      expect(api.searchItems).toHaveBeenLastCalledWith({ tags: ['#favorite'], tagMode: 'all' }, 0, 50);
-      expect(api.searchItems).not.toHaveBeenCalledWith({ search: 'typed' }, 0, 50);
+      expect(api.searchItems).toHaveBeenLastCalledWith({ tags: ['#favorite'], tagMode: 'all' }, null, 50);
+      expect(api.searchItems).not.toHaveBeenCalledWith({ search: 'typed' }, null, 50);
     } finally {
       vi.useRealTimers();
     }
   });
 
   it('shows the collection empty message when the collection is empty', async () => {
-    api.searchItems.mockReturnValue(of({ items: [], total: 0, offset: 0, limit: 50 }));
+    api.searchItems.mockReturnValue(of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } }));
     vi.useFakeTimers();
     try {
       fixture.detectChanges();
@@ -223,7 +227,7 @@ describe('List', () => {
       await vi.runAllTimersAsync();
       fixture.detectChanges();
 
-      expect(api.searchItems).toHaveBeenLastCalledWith({ tags: ['#unwatched'], tagMode: 'all' }, 0, 50);
+      expect(api.searchItems).toHaveBeenLastCalledWith({ tags: ['#unwatched'], tagMode: 'all' }, null, 50);
     } finally {
       vi.useRealTimers();
     }
@@ -238,14 +242,14 @@ describe('List', () => {
       await vi.runAllTimersAsync();
       fixture.detectChanges();
 
-      expect(api.searchItems).toHaveBeenLastCalledWith({ tags: ['#uncompleted'], tagMode: 'all' }, 0, 50);
+      expect(api.searchItems).toHaveBeenLastCalledWith({ tags: ['#uncompleted'], tagMode: 'all' }, null, 50);
     } finally {
       vi.useRealTimers();
     }
   });
 
   it('shows the search empty message when filtered results are empty', async () => {
-    api.searchItems.mockReturnValue(of({ items: [], total: 0, offset: 0, limit: 50 }));
+    api.searchItems.mockReturnValue(of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } }));
     fixture.componentRef.setInput('routeSearchText', '#favorite');
     vi.useFakeTimers();
     try {
@@ -263,7 +267,7 @@ describe('List', () => {
   });
 
   it('shows the filtered empty message when route filters return no items', async () => {
-    api.searchItems.mockReturnValue(of({ items: [], total: 0, offset: 0, limit: 50 }));
+    api.searchItems.mockReturnValue(of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } }));
     fixture.componentRef.setInput(
       'routeFilterKey',
       JSON.stringify({ type: null, favorite: true, watched: null, completed: null })
@@ -340,14 +344,31 @@ describe('List', () => {
   });
 
   it('loads more items when scrolled near the bottom', () => {
-    component['collectionLength'].set(6);
+    component['hasMore'].set(true);
+    component['nextCursor'].set('next-page');
     component['visibleCollection'].set([buildItem('One')]);
     const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100 };
     (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
 
     component['onScroll']();
 
-    expect(api.searchItems).toHaveBeenCalledWith({}, 1, 50);
+    expect(api.searchItems).toHaveBeenCalledWith({}, 'next-page', 50);
+  });
+
+  it('prevents concurrent scroll requests when global network status changes', () => {
+    const pageResponse = new Subject<CollectionItemsPageModel>();
+    api.searchItems.mockReturnValue(pageResponse);
+    component['hasMore'].set(true);
+    component['nextCursor'].set('next-page');
+    const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100 };
+    (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
+
+    component['onScroll']();
+    apiState.setState('loadNetworkStatus', 'finished');
+    component['onScroll']();
+
+    expect(api.searchItems).toHaveBeenCalledTimes(1);
+    expect(api.searchItems).toHaveBeenCalledWith({}, 'next-page', 50);
   });
 
   it('loads more route-filtered items when scrolled on a prefiltered page', async () => {
@@ -360,17 +381,109 @@ describe('List', () => {
       fixture.detectChanges();
 
       api.searchItems.mockClear();
-      component['collectionLength'].set(6);
+      component['hasMore'].set(true);
+      component['nextCursor'].set('next-page');
       component['visibleCollection'].set([buildItem('One')]);
       const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100 };
       (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
 
       component['onScroll']();
 
-      expect(api.searchItems).toHaveBeenCalledWith({ tags: ['#watchlist'], tagMode: 'all' }, 1, 50);
+      expect(api.searchItems).toHaveBeenCalledWith({ tags: ['#watchlist'], tagMode: 'all' }, 'next-page', 50);
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('ignores an older response after the search changes', () => {
+    const firstResponse = new Subject<CollectionItemsPageModel>();
+    const secondResponse = new Subject<CollectionItemsPageModel>();
+    api.searchItems.mockReturnValueOnce(firstResponse).mockReturnValueOnce(secondResponse);
+
+    component['loadItems'](true, 'first');
+    component['loadItems'](true, 'second');
+    secondResponse.next({
+      items: [buildItem('Second')],
+      page: { limit: 50, hasMore: true, nextCursor: 'second-cursor' },
+    });
+    firstResponse.next({
+      items: [buildItem('First')],
+      page: { limit: 50, hasMore: true, nextCursor: 'first-cursor' },
+    });
+
+    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Second']);
+    expect(component['nextCursor']()).toBe('second-cursor');
+  });
+
+  it('lets a reset supersede a pending page request', () => {
+    const pageResponse = new Subject<CollectionItemsPageModel>();
+    const resetResponse = new Subject<CollectionItemsPageModel>();
+    api.searchItems.mockReturnValueOnce(pageResponse).mockReturnValueOnce(resetResponse);
+    component['visibleCollection'].set([buildItem('Existing')]);
+    component['nextCursor'].set('next-page');
+
+    component['loadItems'](false);
+    component['loadItems'](true, 'new search');
+    pageResponse.next({
+      items: [buildItem('Old Page')],
+      page: { limit: 50, hasMore: false, nextCursor: null },
+    });
+    resetResponse.next({
+      items: [buildItem('Reset Result')],
+      page: { limit: 50, hasMore: true, nextCursor: 'reset-cursor' },
+    });
+
+    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Reset Result']);
+    expect(component['nextCursor']()).toBe('reset-cursor');
+    expect(apiState.state.loadNetworkStatus()).toBe('finished');
+  });
+
+  it('does not let a stale error clear the current pending request or status', () => {
+    const staleResponse = new Subject<CollectionItemsPageModel>();
+    const currentResponse = new Subject<CollectionItemsPageModel>();
+    api.searchItems.mockReturnValueOnce(staleResponse).mockReturnValueOnce(currentResponse);
+    component['nextCursor'].set('next-page');
+    const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100 };
+    (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
+
+    component['loadItems'](false);
+    component['loadItems'](true, 'new search');
+    staleResponse.error(new Error('stale request failed'));
+    component['onScroll']();
+
+    expect(api.searchItems).toHaveBeenCalledTimes(2);
+    expect(apiState.state.loadNetworkStatus()).toBe('pending');
+
+    currentResponse.next({
+      items: [buildItem('Current')],
+      page: { limit: 50, hasMore: false, nextCursor: null },
+    });
+
+    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Current']);
+    expect(apiState.state.loadNetworkStatus()).toBe('finished');
+  });
+
+  it('appends a malformed page once, stops pagination, and marks the load as an error', () => {
+    api.searchItems.mockReturnValue(
+      of({
+        items: [buildItem('Malformed Page')],
+        page: { limit: 50, hasMore: true, nextCursor: null },
+      } as unknown as CollectionItemsPageModel)
+    );
+    component['visibleCollection'].set([buildItem('Existing')]);
+    component['nextCursor'].set('next-page');
+    component['hasMore'].set(true);
+    const element = { scrollHeight: 1000, scrollTop: 850, clientHeight: 100 };
+    (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
+
+    component['onScroll']();
+    component['onScroll']();
+
+    expect(component['visibleCollection']().map((item) => item.title)).toEqual(['Existing', 'Malformed Page']);
+    expect(component['nextCursor']()).toBeNull();
+    expect(component['hasMore']()).toBe(false);
+    expect(apiState.state.loadNetworkStatus()).toBe('error');
+    expect(api.searchItems).toHaveBeenCalledTimes(1);
   });
 
   it('keeps scroll-to-top available after reset scroll events while still scrolled down', async () => {

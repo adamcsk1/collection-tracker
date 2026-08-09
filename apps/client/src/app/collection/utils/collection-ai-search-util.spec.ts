@@ -26,8 +26,8 @@ describe('setupCollectionAiSearch', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     api = {
-      getMatchedItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
-      searchItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
+      getMatchedItems: vi.fn(() => of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } })),
+      searchItems: vi.fn(() => of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } })),
     };
     aiSearch = {
       getMatchedIds: vi.fn(() => of(null)),
@@ -78,7 +78,7 @@ describe('setupCollectionAiSearch', () => {
 
     setup.dataSource({
       reset: true,
-      offset: 0,
+      cursor: null,
       limit: 50,
       searchText: 'matrix',
       orderBy: 'createdAt',
@@ -87,7 +87,7 @@ describe('setupCollectionAiSearch', () => {
 
     expect(api.searchItems).toHaveBeenCalledWith(
       { search: 'matrix', listType: 'up-next', orderBy: 'createdAt', orderDirection: 'desc' },
-      0,
+      null,
       50
     );
     expect(api.getMatchedItems).not.toHaveBeenCalled();
@@ -103,7 +103,7 @@ describe('setupCollectionAiSearch', () => {
       setup
         .dataSource({
           reset: true,
-          offset: 0,
+          cursor: null,
           limit: 50,
           searchText: '',
           orderBy: 'createdAt',
@@ -129,7 +129,7 @@ describe('setupCollectionAiSearch', () => {
 
     setup.dataSource({
       reset: true,
-      offset: 0,
+      cursor: 'matched-page',
       limit: 25,
       searchText: '',
       orderBy: 'createdAt',
@@ -142,7 +142,7 @@ describe('setupCollectionAiSearch', () => {
         { source: 'imdb', id: 'tt1' },
         { source: 'imdb', id: 'tt2' },
       ],
-      offset: 0,
+      cursor: 'matched-page',
       limit: 25,
       filters: { listType: 'up-next' },
     });
@@ -161,7 +161,7 @@ describe('setupCollectionAiSearch', () => {
 
     setup.dataSource({
       reset: true,
-      offset: 0,
+      cursor: null,
       limit: 25,
       searchText: '',
       orderBy: 'createdAt',
@@ -170,7 +170,6 @@ describe('setupCollectionAiSearch', () => {
 
     expect(api.getMatchedItems).toHaveBeenCalledWith({
       identities: [{ source: 'openlibrary', id: '9780140328721' }],
-      offset: 0,
       limit: 25,
       filters: { listType: 'books' },
     });

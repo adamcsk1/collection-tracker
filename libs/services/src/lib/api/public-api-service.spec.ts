@@ -52,37 +52,38 @@ describe('PublicApiService', () => {
 
     const healthRequest = httpMock.expectOne('https://api.test/health');
     expect(healthRequest.request.method).toBe('GET');
-    healthRequest.flush(healthData);
+    healthRequest.flush({ data: healthData });
 
     await expect(promise).resolves.toEqual(healthData);
   });
 
-  it('alerts and rethrows when health check fails', async () => {
+  it('falls back to the HTTP message and rethrows unchanged when RFC 9457 detail is missing', async () => {
+    const problem = { title: 'Service Unavailable', status: 503 };
     const promise = lastValueFrom(service.getHealth());
 
     const healthRequest = httpMock.expectOne('https://api.test/health');
-    healthRequest.flush('down', { status: 503, statusText: 'Service Unavailable' });
+    healthRequest.flush(problem, { status: 503, statusText: 'Service Unavailable' });
 
-    await expect(promise).rejects.toMatchObject({ status: 503 });
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-    expect(alertSpy.mock.calls[0][0]).toContain('Service Unavailable');
+    await expect(promise).rejects.toMatchObject({ status: 503, error: problem });
+    expect(alertSpy).toHaveBeenCalledOnce();
+    expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('Service Unavailable'));
   });
 
   it('posts signIn request with credentials', async () => {
     const promise = lastValueFrom(service.signIn('neo', 'matrix'));
 
-    const signInRequest = httpMock.expectOne('https://api.test/sign-in');
+    const signInRequest = httpMock.expectOne('https://api.test/auth/sign-in');
     expect(signInRequest.request.method).toBe('POST');
     expect(signInRequest.request.body).toEqual({ username: 'neo', token: 'matrix' });
-    signInRequest.flush({});
+    signInRequest.flush(null, { status: 204, statusText: 'No Content' });
 
-    await expect(promise).resolves.toEqual({});
+    await expect(promise).resolves.toBeNull();
   });
 
   it('alerts and rethrows when signIn fails', async () => {
     const promise = lastValueFrom(service.signIn('neo', 'invalid'));
 
-    const signInRequest = httpMock.expectOne('https://api.test/sign-in');
+    const signInRequest = httpMock.expectOne('https://api.test/auth/sign-in');
     signInRequest.flush('bad', { status: 401, statusText: 'Unauthorized' });
 
     await expect(promise).rejects.toMatchObject({ status: 401 });
@@ -92,21 +93,21 @@ describe('PublicApiService', () => {
   it('validates session by refreshing the access token', async () => {
     const promise = lastValueFrom(service.validateSession());
 
-    const request = httpMock.expectOne('https://api.test/session/refresh');
+    const request = httpMock.expectOne('https://api.test/auth/session/refresh');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({});
-    request.flush({});
+    request.flush(null, { status: 204, statusText: 'No Content' });
 
-    await expect(promise).resolves.toEqual({});
+    await expect(promise).resolves.toBeNull();
   });
 
   it('posts signUp request with username', async () => {
     const promise = lastValueFrom(service.signUp('neo'));
 
-    const signUpRequest = httpMock.expectOne('https://api.test/sign-up');
+    const signUpRequest = httpMock.expectOne('https://api.test/auth/sign-up');
     expect(signUpRequest.request.method).toBe('POST');
     expect(signUpRequest.request.body).toEqual({ username: 'neo' });
-    signUpRequest.flush({ token: 'secret' });
+    signUpRequest.flush({ data: { token: 'secret' } });
 
     await expect(promise).resolves.toEqual({ token: 'secret' });
   });
@@ -114,7 +115,7 @@ describe('PublicApiService', () => {
   it('alerts and rethrows when signUp fails', async () => {
     const promise = lastValueFrom(service.signUp('neo'));
 
-    const signUpRequest = httpMock.expectOne('https://api.test/sign-up');
+    const signUpRequest = httpMock.expectOne('https://api.test/auth/sign-up');
     signUpRequest.flush('invalid', { status: 400, statusText: 'Bad Request' });
 
     await expect(promise).rejects.toMatchObject({ status: 400 });

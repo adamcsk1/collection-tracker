@@ -52,7 +52,7 @@ describe('save-user-share-api', () => {
     const { register } = await import('./save-user-share-api');
     register(app);
 
-    expect(app.post).toHaveBeenCalledWith(`${API_PREFIX}/user/shares`, expect.anything(), expect.anything());
+    expect(app.post).toHaveBeenCalledWith(`${API_PREFIX}/users/me/shares`, expect.anything(), expect.anything());
 
     await handlerPromise();
 

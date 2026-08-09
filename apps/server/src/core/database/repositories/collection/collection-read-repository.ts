@@ -2,20 +2,15 @@ import {
   CollectionItemApiModel,
   CollectionItemContentTypeModel,
   CollectionListTypeModel,
-  CollectionItemsApiResponseModel,
+  CollectionItemsPageModel,
 } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import { resolveCanonicalItemId } from '../external-item-identity-repository';
 import { ExternalIdentityRow } from '../external-item-identity-model';
 import { toApiItem } from './collection-mapper';
-import {
-  buildItemWhere,
-  buildReadableItemScope,
-  normalizeLimit,
-  normalizeListType,
-  normalizeOffset,
-} from './collection-query';
+import { buildItemWhere, buildReadableItemScope, normalizeLimit, normalizeListType } from './collection-query';
+import { createCollectionFilterHash, decodeCursor, encodeCursor } from '../../../utils/cursor-util';
 import {
   AiSearchCollectionItem,
   CollectionItemOrderOptions,
@@ -247,45 +242,45 @@ export const searchCollectionItems = (
   db: Database.Database,
   viewerUsernameHash: string,
   options: CollectionItemQueryOptions
-): CollectionItemsApiResponseModel => {
-  const offset = normalizeOffset(options.offset);
+): CollectionItemsPageModel => {
   const limit = normalizeLimit(options.limit);
   const queryParts = buildItemWhere(
     viewerUsernameHash,
     options.filters,
     options.matchedIdentities,
-    options.matchedCanonicalItemIds
+    options.matchedCanonicalItemRanks
   );
-  const whereSql = queryParts.where.join(' AND ');
+  const baseWhereSql = queryParts.where.join(' AND ');
   const orderBySql = buildCollectionOrderBy({
     orderBy: options.filters?.orderBy,
     orderDirection: options.filters?.orderDirection,
   });
+  const filterHash = createCollectionFilterHash(viewerUsernameHash, options.filters, options.matchedIdentities);
+  const matchedCursor =
+    options.matchedIdentities !== undefined && options.cursor
+      ? decodeCursor(options.cursor, 'matches', filterHash)
+      : null;
 
   if (options.matchedIdentities?.length === 0) {
-    return { items: [], total: 0, offset, limit };
+    return { items: [], page: { limit, hasMore: false, nextCursor: null } };
   }
-
-  const total = (
-    db.prepare(`SELECT COUNT(*) as count FROM collection_items WHERE ${whereSql}`).get(...queryParts.params) as {
-      count: number;
-    }
-  ).count;
 
   if (options.matchedIdentities?.length) {
     const rows = db
       .prepare(
         `SELECT ${collectionItemProjection()}
          FROM collection_items
-         WHERE ${whereSql}`
+         WHERE ${baseWhereSql}`
       )
       .all(...queryParts.params) as CollectionItemRow[];
     const rankByCanonicalItemId = new Map(
-      (options.matchedCanonicalItemIds ?? []).map((canonicalItemId, index) => [canonicalItemId, index])
+      (options.matchedCanonicalItemRanks ?? []).map(({ canonicalItemId, rank }) => [canonicalItemId, rank])
     );
-    const rankByIdentity = new Map(
-      options.matchedIdentities.map((identity, index) => [getIdentityKey(identity.source, identity.id), index])
-    );
+    const rankByIdentity = new Map<string, number>();
+    for (const [rank, identity] of options.matchedIdentities.entries()) {
+      const identityKey = getIdentityKey(identity.source, identity.id);
+      if (!rankByIdentity.has(identityKey)) rankByIdentity.set(identityKey, rank);
+    }
     const rankByAliasAssociation = loadMatchedAliasRanks(db, rows, options.matchedIdentities, rankByIdentity);
     const getRank = (row: CollectionItemRow): number =>
       Math.min(
@@ -302,28 +297,82 @@ export const searchCollectionItems = (
               Number.POSITIVE_INFINITY)
           : Number.POSITIVE_INFINITY
       );
-    const items = rows
-      .sort((firstItem, secondItem) => {
-        const rankDifference = getRank(firstItem) - getRank(secondItem);
-        return Number.isFinite(rankDifference) ? rankDifference : firstItem.id - secondItem.id;
-      })
-      .slice(offset, offset + limit)
-      .map((row) => toApiItem(db, row, viewerUsernameHash));
+    const rankedRows = rows
+      .map((row) => ({ row, rank: getRank(row) }))
+      .sort((firstItem, secondItem) =>
+        firstItem.rank === secondItem.rank ? firstItem.row.id - secondItem.row.id : firstItem.rank - secondItem.rank
+      );
+    const pagedRows = rankedRows
+      .filter(
+        ({ row, rank }) =>
+          !matchedCursor || rank > matchedCursor.rank || (rank === matchedCursor.rank && row.id > matchedCursor.rowId)
+      )
+      .slice(0, limit + 1);
+    const hasMore = pagedRows.length > limit;
+    const visibleRows = pagedRows.slice(0, limit);
+    const lastVisibleRow = visibleRows.at(-1);
+    const items = visibleRows.map(({ row }) => toApiItem(db, row, viewerUsernameHash));
 
-    return { items, total, offset, limit };
+    return {
+      items,
+      page:
+        hasMore && lastVisibleRow
+          ? {
+              limit,
+              hasMore: true,
+              nextCursor: encodeCursor({
+                version: 1,
+                kind: 'matches',
+                rank: lastVisibleRow.rank,
+                rowId: lastVisibleRow.row.id,
+                filterHash,
+              }),
+            }
+          : { limit, hasMore: false, nextCursor: null },
+    };
   }
 
+  const orderBy = options.filters?.orderBy ?? 'createdAt';
+  const orderDirection = options.filters?.orderDirection ?? 'desc';
+  const sortColumn = orderBy === 'alphabet' ? 'title_lower' : 'created_at';
+  const cursor = options.cursor ? decodeCursor(options.cursor, 'collection', filterHash) : null;
+  if (cursor) {
+    const comparison = orderDirection === 'asc' ? '>' : '<';
+    queryParts.where.push(`id != ? AND (${sortColumn} ${comparison} ? OR (${sortColumn} = ? AND id ${comparison} ?))`);
+    queryParts.params.push(cursor.rowId, cursor.sortValue, cursor.sortValue, cursor.rowId);
+  }
+  const whereSql = queryParts.where.join(' AND ');
+  const pagedLimit = limit + 1;
   const rows = db
     .prepare(
       `SELECT ${collectionItemProjection()}
        FROM collection_items
        WHERE ${whereSql}
        ORDER BY ${orderBySql}
-       LIMIT ? OFFSET ?`
+       LIMIT ?`
     )
-    .all(...queryParts.params, limit, offset) as CollectionItemRow[];
+    .all(...queryParts.params, pagedLimit) as CollectionItemRow[];
 
-  return { items: rows.map((row) => toApiItem(db, row, viewerUsernameHash)), total, offset, limit };
+  const hasMore = rows.length > limit;
+  const visibleRows = rows.slice(0, limit);
+  const lastRow = visibleRows.at(-1);
+  return {
+    items: visibleRows.map((row) => toApiItem(db, row, viewerUsernameHash)),
+    page:
+      hasMore && lastRow
+        ? {
+            limit,
+            hasMore: true,
+            nextCursor: encodeCursor({
+              version: 1,
+              kind: 'collection',
+              sortValue: orderBy === 'alphabet' ? lastRow.title_lower : lastRow.created_at,
+              rowId: lastRow.id,
+              filterHash,
+            }),
+          }
+        : { limit, hasMore: false, nextCursor: null },
+  };
 };
 
 export const collectionItemExistsInList = (

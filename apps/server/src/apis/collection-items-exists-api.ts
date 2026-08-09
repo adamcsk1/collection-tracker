@@ -23,7 +23,7 @@ import { parseListType } from '../core/utils/query-parse-util';
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/items/exists`,
+    `${API_PREFIX}/collection-items/exists`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const query = request.query as Record<string, unknown>;

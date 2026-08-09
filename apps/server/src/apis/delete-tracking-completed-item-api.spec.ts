@@ -223,10 +223,10 @@ describe('delete-tracking-completed-item-api', () => {
     const { register } = await import('./delete-tracking-completed-item-api');
     register(app);
 
-    await getDeleteHandler(app, `${API_PREFIX}/tracking/:externalIdentitySource/:externalIdentityId/completed`)!(
-      request,
-      response
-    );
+    await getDeleteHandler(
+      app,
+      `${API_PREFIX}/collection-items/:externalIdentitySource/:externalIdentityId/tracking/completed`
+    )!(request, response);
 
     expect(response.code).toHaveBeenCalledWith(204);
     expect(

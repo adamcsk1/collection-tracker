@@ -8,7 +8,7 @@ import { withErrorHandler } from '../core/utils/api-error-handler';
 
 export const register = (app: FastifyInstance): void => {
   app.delete(
-    `${API_PREFIX}/user/shares/incoming/:ownerUserShareCode`,
+    `${API_PREFIX}/users/me/shares/incoming/:ownerUserShareCode`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const { ownerUserShareCode } = request.params as Record<string, string>;

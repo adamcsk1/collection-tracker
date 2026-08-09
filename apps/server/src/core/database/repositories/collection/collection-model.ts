@@ -7,6 +7,7 @@ import {
   CollectionListTypeModel,
 } from '@shared/models/api-model';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
+import { CanonicalItemRank } from '../external-item-identity-model';
 
 export interface CollectionItemRow {
   id: number;
@@ -93,10 +94,10 @@ export interface AiSearchCollectionItem extends CollectionItemApiModel {
 
 export interface CollectionItemQueryOptions {
   filters?: CollectionItemFiltersApiModel;
-  offset: number;
+  cursor?: string;
   limit: number;
   matchedIdentities?: ExternalItemIdentityModel[];
-  matchedCanonicalItemIds?: string[];
+  matchedCanonicalItemRanks?: CanonicalItemRank[];
 }
 
 export interface CollectionItemOrderOptions {

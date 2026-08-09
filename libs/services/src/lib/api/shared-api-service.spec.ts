@@ -43,14 +43,18 @@ describe('SharedApiService', () => {
       animatedBackground: false,
       language: 'en' as const,
     };
+    const settings = {
+      ...payload,
+      defaultLibraryOwnerShareCode: 'owner-code',
+    };
     const promise = lastValueFrom(service.updateUserSettings(payload));
 
-    const request = httpMock.expectOne('https://api.test/user/settings');
+    const request = httpMock.expectOne('https://api.test/users/me/settings');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(payload);
-    request.flush({});
+    request.flush({ data: settings });
 
-    await expect(promise).resolves.toEqual({});
+    await expect(promise).resolves.toEqual(settings);
   });
 
   it('alerts and rethrows when updating user settings fails', async () => {
@@ -62,7 +66,7 @@ describe('SharedApiService', () => {
       })
     );
 
-    const request = httpMock.expectOne('https://api.test/user/settings');
+    const request = httpMock.expectOne('https://api.test/users/me/settings');
     request.flush('bad', { status: 400, statusText: 'Bad Request' });
 
     await expect(promise).rejects.toMatchObject({ status: 400 });

@@ -40,7 +40,7 @@ export const register = (app: FastifyInstance): void => {
   });
 
   app.delete(
-    `${API_PREFIX}/tracking/:externalIdentitySource/:externalIdentityId/seasons`,
+    `${API_PREFIX}/collection-items/:externalIdentitySource/:externalIdentityId/tracking/seasons`,
     { preHandler: jwtGuard },
     handler
   );

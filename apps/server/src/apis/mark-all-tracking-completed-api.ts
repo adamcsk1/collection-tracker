@@ -81,7 +81,7 @@ export const register = (app: FastifyInstance): void => {
   });
 
   app.put(
-    `${API_PREFIX}/tracking/:externalIdentitySource/:externalIdentityId/mark-all-completed`,
+    `${API_PREFIX}/collection-items/:externalIdentitySource/:externalIdentityId/tracking/actions/mark-completed`,
     { preHandler: jwtGuard },
     handler
   );

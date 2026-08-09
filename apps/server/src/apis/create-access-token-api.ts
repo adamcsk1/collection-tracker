@@ -9,7 +9,7 @@ import { getUserAccessToken } from '../core/utils/users-util';
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/user/access-token`,
+    `${API_PREFIX}/users/me/access-tokens`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const newAccessToken = await generateAccessToken(request.username);

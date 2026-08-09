@@ -9,12 +9,6 @@ import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
-const MOVIE_MARK_ALL_UNCOMPLETED_PATHS = [
-  `${API_PREFIX}/items/mark-all-movies-uncompleted`,
-  `${API_PREFIX}/items/mark-all-uncompleted`,
-  `${API_PREFIX}/items/mark-all-unwatched`,
-] as const;
-
 export const register = (app: FastifyInstance): void => {
   const handler = withErrorHandler(async (request, response) => {
     const db = getDatabase();
@@ -32,16 +26,14 @@ export const register = (app: FastifyInstance): void => {
     }
 
     await debugLog(
-      `POST /items/mark-all-movies-uncompleted source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
+      `POST /collection-items/actions/mark-movies-uncompleted source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
     );
     const changedCount = markAllMoviesAsUncompleted(db, request.usernameHash, ownerHash);
-    await debugLog(`POST /items/mark-all-movies-uncompleted finished: changed=${changedCount}`);
+    await debugLog(`POST /collection-items/actions/mark-movies-uncompleted finished: changed=${changedCount}`);
 
     const result: MarkAllUncompletedApiResponseModel = { changedCount };
     response.send(result);
   });
 
-  for (const path of MOVIE_MARK_ALL_UNCOMPLETED_PATHS) {
-    app.post(path, { preHandler: jwtGuard }, handler);
-  }
+  app.post(`${API_PREFIX}/collection-items/actions/mark-movies-uncompleted`, { preHandler: jwtGuard }, handler);
 };

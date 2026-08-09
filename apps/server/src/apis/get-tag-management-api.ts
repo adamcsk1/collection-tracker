@@ -8,7 +8,7 @@ import type { FastifyInstance } from 'fastify';
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/tag-management`,
+    `${API_PREFIX}/users/me/tags`,
     { preHandler: jwtGuard },
     withErrorHandler((request, response) => {
       response.send(findTagManagement(getDatabase(), request.usernameHash) satisfies TagManagementApiResponseModel);

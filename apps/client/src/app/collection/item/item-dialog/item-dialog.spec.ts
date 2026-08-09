@@ -153,7 +153,7 @@ describe('ItemDialog', () => {
       ),
       deleteCompletedItemByExternalId: vi.fn(() => of(undefined)),
       collectionItemExists: vi.fn(() => of({ exists: false })),
-      getMatchedItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 0 })),
+      getMatchedItems: vi.fn(() => of({ items: [], page: { limit: 1, hasMore: false, nextCursor: null } })),
     };
     translate = { translate: vi.fn((key: string) => key) };
 
@@ -1509,8 +1509,8 @@ describe('ItemDialog', () => {
     apiState.setState('apiUrl', 'http://localhost:3000');
     fixture.detectChanges();
 
-    expect(component['imageUrl']()).toContain('/proxy/image?url=');
-    expect(component['draftImageUrl']()).toContain('/proxy/image?url=');
+    expect(component['imageUrl']()).toContain('/images/proxy?url=');
+    expect(component['draftImageUrl']()).toContain('/images/proxy?url=');
   });
 
   it('computes trailer, imdb, and web search urls', () => {
@@ -1622,7 +1622,9 @@ describe('ItemDialog', () => {
   it('opens the watching item dialog from a library series already in watching', async () => {
     const watchingItem = buildApiItem({ listType: 'tracking', tags: [SERIES_TAG], hash: 'watching-hash' });
     api.collectionItemExists.mockReturnValue(of({ exists: true, hash: 'watching-hash' }));
-    api.getMatchedItems.mockReturnValue(of({ items: [watchingItem], total: 1, offset: 0, limit: 1 }));
+    api.getMatchedItems.mockReturnValue(
+      of({ items: [watchingItem], page: { limit: 1, hasMore: false, nextCursor: null } })
+    );
     fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
     fixture.detectChanges();
     component.ngOnInit();

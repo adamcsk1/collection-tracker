@@ -71,7 +71,7 @@ describe('delete-access-token-api', () => {
 
     const response = await app.inject({
       method: 'DELETE',
-      url: `/api/v1/user/access-token/${tokenToDelete}`,
+      url: `/api/v1/users/me/access-tokens/${tokenToDelete}`,
       headers: { authorization: `Bearer ${accessToken}` },
     });
 

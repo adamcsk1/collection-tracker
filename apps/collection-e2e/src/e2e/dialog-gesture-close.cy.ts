@@ -3,7 +3,7 @@ import { CollectionPage } from '../page-objects/collection.po';
 
 const openMovieItemDialog = (title: string, imdbId: string): void => {
   cy.autoLogin();
-  cy.request('POST', '/api/v1/create', buildCollectionItem(title, 'movie', imdbId));
+  cy.request('POST', '/api/v1/collection-items', buildCollectionItem(title, 'movie', imdbId));
   CollectionPage.visit();
   CollectionPage.getListItems().contains(title).should('be.visible');
   CollectionPage.getListItemImages().first().click();
@@ -44,7 +44,7 @@ describe('Dialog gesture close', () => {
 
     cy.viewport('iphone-x');
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem(title, 'series', imdbId),
       listType: 'tracking',
     });

@@ -369,7 +369,7 @@ const normalizeTrackingImportData = (
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/import`,
+    `${API_PREFIX}/users/me/imports`,
     { preHandler: jwtGuard },
     withErrorHandler((request, response) => {
       const body = request.body as unknown;

@@ -28,8 +28,8 @@ describe('Collection library component', () => {
   let queryParamMap: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   const api = {
-    searchItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
-    getMatchedItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
+    searchItems: vi.fn(() => of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } })),
+    getMatchedItems: vi.fn(() => of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } })),
     getRandomItem: vi.fn(),
   };
 
@@ -183,7 +183,7 @@ describe('Collection library component', () => {
 
     fixture.componentInstance['collectionDataSource']({
       reset: false,
-      offset: 0,
+      cursor: null,
       limit: 50,
       searchText: '',
       orderBy: 'createdAt',
@@ -192,7 +192,7 @@ describe('Collection library component', () => {
 
     expect(api.searchItems).toHaveBeenCalledWith(
       { listType: 'library', orderBy: 'createdAt', orderDirection: 'desc' },
-      0,
+      null,
       50
     );
     expect(api.getMatchedItems).not.toHaveBeenCalled();

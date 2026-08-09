@@ -41,7 +41,7 @@ describe('user-shares-api', () => {
     const response = mockResponse();
     const statementPrototype = Object.getPrototypeOf(getDatabase().prepare('SELECT 1'));
     const allSpy = vi.spyOn(statementPrototype, 'all');
-    await handlers.get(`${API_PREFIX}/user/shares`)!({ usernameHash: 'current-hash' }, response);
+    await handlers.get(`${API_PREFIX}/users/me/shares`)!({ usernameHash: 'current-hash' }, response);
 
     expect(response.send).toHaveBeenCalledWith({
       userShareCode: getUserShareCode('current-hash'),

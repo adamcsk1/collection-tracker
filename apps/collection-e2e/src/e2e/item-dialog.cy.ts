@@ -7,7 +7,7 @@ const actionIconAlignmentTolerance = 1;
 describe('Item dialog — edit flow', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Edit Test Movie', 'movie', 'tt7000001'));
+    cy.request('POST', '/api/v1/collection-items', buildCollectionItem('Edit Test Movie', 'movie', 'tt7000001'));
     CollectionPage.visit();
   });
 
@@ -79,7 +79,7 @@ describe('Item dialog — edit flow', () => {
   });
 
   it('edits the title of an existing item and persists the change', () => {
-    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
+    cy.intercept('PUT', '/api/v1/collection-items/**').as('updateItem');
     cy.on('window:confirm', () => true);
 
     // Open the item dialog
@@ -107,7 +107,7 @@ describe('Item dialog — edit flow', () => {
   });
 
   it('edits multiple fields and persists the changes', () => {
-    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
+    cy.intercept('PUT', '/api/v1/collection-items/**').as('updateItem');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
@@ -133,7 +133,7 @@ describe('Item dialog — edit flow', () => {
   });
 
   it('edits the user rate and persists the change', () => {
-    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
+    cy.intercept('PUT', '/api/v1/collection-items/**').as('updateItem');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
@@ -152,7 +152,7 @@ describe('Item dialog — edit flow', () => {
   });
 
   it('clears an existing user rate', () => {
-    cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
+    cy.intercept('PUT', '/api/v1/collection-items/**').as('updateItem');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
@@ -228,7 +228,7 @@ describe('Item dialog — tag autocomplete', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', item);
+    cy.request('POST', '/api/v1/collection-items', item);
     CollectionPage.visit();
   });
 
@@ -245,7 +245,7 @@ describe('Item dialog — tag autocomplete', () => {
 describe('Item dialog — external links', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Link Test Movie', 'movie', 'tt7000003'));
+    cy.request('POST', '/api/v1/collection-items', buildCollectionItem('Link Test Movie', 'movie', 'tt7000003'));
     CollectionPage.visit();
   });
 
@@ -271,12 +271,12 @@ describe('Item dialog — external links', () => {
 describe('Item dialog — mark watched / unwatched', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie', 'movie', 'tt7000002'));
+    cy.request('POST', '/api/v1/collection-items', buildCollectionItem('Watch Test Movie', 'movie', 'tt7000002'));
     CollectionPage.visit();
   });
 
   it('marks an unwatched item as watched', () => {
-    cy.intercept('POST', '/api/v1/tracking/**').as('markWatched');
+    cy.intercept('POST', '/api/v1/collection-items/*/*/tracking*').as('markWatched');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItemImages().first().click();
@@ -291,8 +291,8 @@ describe('Item dialog — mark watched / unwatched', () => {
   });
 
   it('marks a watched item as unwatched', () => {
-    cy.intercept('POST', '/api/v1/tracking/**').as('markWatched');
-    cy.intercept('DELETE', '/api/v1/tracking/**').as('markUnwatched');
+    cy.intercept('POST', '/api/v1/collection-items/*/*/tracking*').as('markWatched');
+    cy.intercept('DELETE', '/api/v1/collection-items/*/*/tracking/completed*').as('markUnwatched');
     cy.on('window:confirm', () => true);
 
     // First mark as watched

@@ -3,7 +3,7 @@ import { CollectionPage } from '../page-objects/collection.po';
 
 const waitForTrackingItem = (imdbId: string) => {
   cy.wait('@getTrackingItems')
-    .its('response.body.items')
+    .its('response.body.data')
     .should((items: Array<{ IMDbId: string }>) => {
       expect(items.some((item) => item.IMDbId === imdbId)).to.eq(true);
     });
@@ -15,17 +15,17 @@ describe('Series metadata dialog', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem(seriesTitle, 'series', imdbId),
       listType: 'tracking',
     });
-    cy.intercept('GET', '/api/v1/items?*listType=tracking*').as('getTrackingItems');
+    cy.intercept('GET', '/api/v1/collection-items?*listType=tracking*').as('getTrackingItems');
     CollectionPage.visitTracking();
     waitForTrackingItem(imdbId);
   });
 
   it('saves manual season metadata', () => {
-    cy.intercept('PUT', '/api/v1/tracking/*/*/seasons*').as('saveSeriesMetadata');
+    cy.intercept('PUT', '/api/v1/collection-items/*/*/tracking/seasons*').as('saveSeriesMetadata');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().contains(seriesTitle).click();
@@ -69,13 +69,13 @@ describe('Series metadata dialog', () => {
   });
 
   it('removes stored season metadata', () => {
-    cy.request('PUT', `/api/v1/tracking/omdb/${imdbId}/seasons`, {
+    cy.request('PUT', `/api/v1/collection-items/omdb/${imdbId}/tracking/seasons`, {
       seasons: [
         { season: 1, episodes: 3 },
         { season: 2, episodes: 2 },
       ],
     });
-    cy.intercept('DELETE', '/api/v1/tracking/*/*/seasons*').as('deleteSeriesMetadata');
+    cy.intercept('DELETE', '/api/v1/collection-items/*/*/tracking/seasons*').as('deleteSeriesMetadata');
     cy.on('window:confirm', () => true);
 
     CollectionPage.getListItems().contains(seriesTitle).click();
@@ -103,7 +103,7 @@ describe('Series metadata dialog', () => {
   });
 
   it('saves and restores episode titles in the metadata dialog', () => {
-    cy.intercept('PUT', '/api/v1/tracking/*/*/seasons*').as('saveSeriesMetadata');
+    cy.intercept('PUT', '/api/v1/collection-items/*/*/tracking/seasons*').as('saveSeriesMetadata');
 
     CollectionPage.getListItems().contains(seriesTitle).click();
     CollectionPage.expectItemDialogActionsVisible();

@@ -18,7 +18,7 @@ const parseRenameRequest = (body: unknown): RenameTagApiRequestModel | undefined
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/tag-management/rename`,
+    `${API_PREFIX}/users/me/tags/rename`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const body = parseRenameRequest(request.body);

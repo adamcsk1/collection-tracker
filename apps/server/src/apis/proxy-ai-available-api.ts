@@ -7,7 +7,7 @@ import { withErrorHandler } from '../core/utils/api-error-handler';
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/proxy/ai/available`,
+    `${API_PREFIX}/ai/availability`,
     { preHandler: jwtGuard },
     withErrorHandler(async (_request, response) => {
       let aiAvailable = false;

@@ -16,6 +16,7 @@ import { initializeDatabase } from './database/database';
 import { hasSqlMigrations, runMigrations } from './database/migrations';
 import { debugLog, errorLog, infoLog } from './logger';
 import { SERVER_MAX_PARAM_LENGTH } from './main-const';
+import { apiResponseHook } from './utils/api-response-util';
 import { validateEnvironment } from './utils/environment-util';
 
 export const main = async () => {
@@ -67,6 +68,7 @@ export const main = async () => {
     app.addHook('onRequest', async (request) => {
       debugLog(`Incoming request: ${request.url}`);
     });
+    app.addHook('onSend', apiResponseHook);
     debugLog('Applying request logging middleware');
     await app.register(fastifyHelmet);
     debugLog('Applying security middleware');

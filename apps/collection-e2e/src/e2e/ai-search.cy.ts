@@ -4,7 +4,7 @@ import { CollectionPage } from '../page-objects/collection.po';
 /** Seeds items and reloads the collection page so the store is populated. */
 const seedAndVisit = (items: ReturnType<typeof buildCollectionItem>[]) => {
   items.forEach((item) => {
-    cy.request('POST', '/api/v1/create', item);
+    cy.request('POST', '/api/v1/collection-items', item);
   });
   CollectionPage.visit();
 };
@@ -12,7 +12,7 @@ const seedAndVisit = (items: ReturnType<typeof buildCollectionItem>[]) => {
 describe('AI search - floating button', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
+    cy.intercept('GET', '/api/v1/ai/availability', { statusCode: 200, body: { data: { aiAvailable: true } } }).as(
       'aiAvailable'
     );
   });
@@ -35,7 +35,7 @@ describe('AI search - floating button', () => {
 describe('AI search - input interaction', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
+    cy.intercept('GET', '/api/v1/ai/availability', { statusCode: 200, body: { data: { aiAvailable: true } } }).as(
       'aiAvailable'
     );
   });
@@ -47,7 +47,7 @@ describe('AI search - input interaction', () => {
   });
 
   it('closes the dialog when send is clicked', () => {
-    cy.intercept('POST', '/api/v1/proxy/ai/query', { statusCode: 200, body: { matchedIds: [] } }).as('aiQuery');
+    cy.intercept('POST', '/api/v1/ai/matches', { statusCode: 200, body: { data: { matchedIds: [] } } }).as('aiQuery');
     CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().type('any prompt');
     CollectionPage.getAiSearchSendButton().click();
@@ -62,18 +62,18 @@ describe('AI search - filtering', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
+    cy.intercept('GET', '/api/v1/ai/availability', { statusCode: 200, body: { data: { aiAvailable: true } } }).as(
       'aiAvailable'
     );
     seedAndVisit([movieA, movieB, movieC]);
   });
 
   it('filters the list to only matched items when AI returns IDs', () => {
-    cy.intercept('POST', '/api/v1/proxy/ai/query', {
+    cy.intercept('POST', '/api/v1/ai/matches', {
       statusCode: 200,
-      body: { matchedIds: ['tt1000001'] },
+      body: { data: { matchedIds: ['tt1000001'] } },
     }).as('aiQuery');
-    cy.intercept('POST', '/api/v1/items/matched').as('matchedItems');
+    cy.intercept('POST', '/api/v1/collection-items/matches').as('matchedItems');
 
     CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().type('sci-fi movies');
@@ -86,11 +86,11 @@ describe('AI search - filtering', () => {
   });
 
   it('shows the empty state when AI returns no matched IDs', () => {
-    cy.intercept('POST', '/api/v1/proxy/ai/query', {
+    cy.intercept('POST', '/api/v1/ai/matches', {
       statusCode: 200,
-      body: { matchedIds: [] },
+      body: { data: { matchedIds: [] } },
     }).as('aiQuery');
-    cy.intercept('POST', '/api/v1/items/matched').as('matchedItems');
+    cy.intercept('POST', '/api/v1/collection-items/matches').as('matchedItems');
 
     CollectionPage.openAiSearchDialog();
     CollectionPage.getAiSearchTextarea().type('something that matches nothing');
@@ -106,9 +106,9 @@ describe('AI search - filtering', () => {
   });
 
   it('sends the prompt text and library listType to the AI proxy endpoint', () => {
-    cy.intercept('POST', '/api/v1/proxy/ai/query', {
+    cy.intercept('POST', '/api/v1/ai/matches', {
       statusCode: 200,
-      body: { matchedIds: [] },
+      body: { data: { matchedIds: [] } },
     }).as('aiQuery');
 
     CollectionPage.openAiSearchDialog();
@@ -126,17 +126,17 @@ describe('AI search - watchlist list', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.intercept('GET', '/api/v1/proxy/ai/available', { statusCode: 200, body: { aiAvailable: true } }).as(
+    cy.intercept('GET', '/api/v1/ai/availability', { statusCode: 200, body: { data: { aiAvailable: true } } }).as(
       'aiAvailable'
     );
-    cy.request('POST', '/api/v1/create?listType=up-next', movieA);
+    cy.request('POST', '/api/v1/collection-items', { ...movieA, listType: 'up-next' });
     CollectionPage.visitUpNext();
   });
 
   it('shows the AI button and sends watchlist listType', () => {
-    cy.intercept('POST', '/api/v1/proxy/ai/query', {
+    cy.intercept('POST', '/api/v1/ai/matches', {
       statusCode: 200,
-      body: { matchedIds: ['tt2000001'] },
+      body: { data: { matchedIds: ['tt2000001'] } },
     }).as('aiQuery');
 
     CollectionPage.getAiSearchButton().should('be.visible');
@@ -144,8 +144,6 @@ describe('AI search - watchlist list', () => {
     CollectionPage.getAiSearchTextarea().type('sci-fi');
     CollectionPage.getAiSearchSendButton().click();
 
-    cy.wait('@aiQuery')
-      .its('request.body')
-      .should('deep.equal', { prompt: 'sci-fi', listType: 'up-next' });
+    cy.wait('@aiQuery').its('request.body').should('deep.equal', { prompt: 'sci-fi', listType: 'up-next' });
   });
 });

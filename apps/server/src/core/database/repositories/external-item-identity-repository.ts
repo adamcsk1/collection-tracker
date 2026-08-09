@@ -5,7 +5,7 @@ import {
 } from '@shared/models/external-metadata-provider-model';
 import Database from 'better-sqlite3';
 import { normalizeIsbn13 } from '../../utils/isbn-util';
-import { ExternalIdentityRow } from './external-item-identity-model';
+import { CanonicalItemRank, ExternalIdentityRow } from './external-item-identity-model';
 
 const IMDB_SHAPED_ID = /^tt\d+$/i;
 
@@ -181,11 +181,11 @@ export const resolveCanonicalItemIds = (
   return [...canonicalItemIds];
 };
 
-export const resolveCanonicalItemIdsForIdentities = (
+export const resolveCanonicalItemRanksForIdentities = (
   db: Database.Database,
   usernameHash: string,
   identities: ExternalItemIdentityModel[]
-): string[] => {
+): CanonicalItemRank[] => {
   const normalizedIdentityGroups = identities.map((identity) =>
     normalizeExternalIdentities(identity.source, identity.id)
   );
@@ -215,21 +215,24 @@ export const resolveCanonicalItemIdsForIdentities = (
     }
   }
 
-  const canonicalItemIds = new Set<string>();
-  for (const normalizedIdentities of normalizedIdentityGroups) {
+  const rankByCanonicalItemId = new Map<string, number>();
+  const addCanonicalItemRank = (canonicalItemId: string, rank: number): void => {
+    rankByCanonicalItemId.set(canonicalItemId, Math.min(rankByCanonicalItemId.get(canonicalItemId) ?? rank, rank));
+  };
+  for (const [rank, normalizedIdentities] of normalizedIdentityGroups.entries()) {
     for (const identity of normalizedIdentities) {
       const mappedCanonicalItemId = mappedCanonicalItemIds.get(`${identity.source}\u0000${identity.id}`);
-      if (mappedCanonicalItemId) canonicalItemIds.add(mappedCanonicalItemId);
+      if (mappedCanonicalItemId) addCanonicalItemRank(mappedCanonicalItemId, rank);
     }
     for (const identity of normalizedIdentities) {
       if (identity.source === 'imdb' && IMDB_SHAPED_ID.test(identity.id)) {
-        canonicalItemIds.add(`imdb:${identity.id.toLowerCase()}`);
+        addCanonicalItemRank(`imdb:${identity.id.toLowerCase()}`, rank);
       }
     }
-    if (normalizedIdentities.length) canonicalItemIds.add(inferCanonicalItemId(normalizedIdentities));
+    if (normalizedIdentities.length) addCanonicalItemRank(inferCanonicalItemId(normalizedIdentities), rank);
   }
 
-  return [...canonicalItemIds];
+  return [...rankByCanonicalItemId].map(([canonicalItemId, rank]) => ({ canonicalItemId, rank }));
 };
 
 export const upsertExternalItemIdentities = (

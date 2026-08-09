@@ -23,7 +23,7 @@ import { getUserAccessToken, getUserRefreshToken } from '../core/utils/users-uti
 
 export const register = (app: FastifyInstance): void => {
   app.put(
-    `${API_PREFIX}/user/change-token`,
+    `${API_PREFIX}/users/me/token`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();

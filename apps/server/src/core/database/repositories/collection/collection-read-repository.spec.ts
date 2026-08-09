@@ -52,6 +52,8 @@ const insertGrant = (
 };
 
 describe('collection-read-repository scoped reads', () => {
+  process.env.COOKIE_SECRET = 'collection-read-repository-secret';
+
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -69,30 +71,120 @@ describe('collection-read-repository scoped reads', () => {
     insertGrant('owner', 'viewer', 'library', 'series', false);
     insertGrant('owner', 'viewer', 'books', 'book');
 
-    const allItems = searchCollectionItems(getDatabase(), 'viewer', { offset: 0, limit: 20 });
+    const allItems = searchCollectionItems(getDatabase(), 'viewer', { limit: 20 });
     const ownItems = searchCollectionItems(getDatabase(), 'viewer', {
       filters: { shared: 'mine' },
-      offset: 0,
       limit: 20,
     });
     const sharedBooks = searchCollectionItems(getDatabase(), 'viewer', {
       filters: { shared: 'shared', type: 'book' },
-      offset: 0,
       limit: 20,
     });
 
-    expect(allItems.total).toBe(4);
+    expect(allItems.page).toEqual({ limit: 20, hasMore: false, nextCursor: null });
     expect(allItems.items.map(({ title }) => title)).toEqual(
       expect.arrayContaining(['Own Movie', 'Own Book', 'Shared Movie', 'Shared Book'])
     );
     expect(allItems.items.map(({ title }) => title)).not.toContain('Private Series');
-    expect(ownItems).toEqual(expect.objectContaining({ total: 2 }));
+    expect(ownItems.page.hasMore).toBe(false);
     expect(ownItems.items.map(({ title }) => title)).toEqual(expect.arrayContaining(['Own Movie', 'Own Book']));
-    expect(sharedBooks).toEqual(expect.objectContaining({ total: 1 }));
+    expect(sharedBooks.page.hasMore).toBe(false);
     expect(sharedBooks.items[0]).toEqual(expect.objectContaining({ title: 'Shared Book', listType: 'books' }));
   });
 
-  it('paginates across many readable shares without expanding SQLite expression depth', () => {
+  it.each([
+    ['createdAt', 'asc'],
+    ['createdAt', 'desc'],
+    ['alphabet', 'asc'],
+    ['alphabet', 'desc'],
+  ] as const)('keyset paginates duplicate %s values in %s order', (orderBy, orderDirection) => {
+    insertUser('viewer');
+    insertItem('viewer', 'one', 'Same');
+    insertItem('viewer', 'two', 'Same');
+    insertItem('viewer', 'three', 'Same');
+
+    const filters = { orderBy, orderDirection };
+    const firstPage = searchCollectionItems(getDatabase(), 'viewer', { filters, limit: 2 });
+    const secondPage = searchCollectionItems(getDatabase(), 'viewer', {
+      filters,
+      cursor: firstPage.page.nextCursor ?? undefined,
+      limit: 2,
+    });
+
+    expect(firstPage.page).toEqual({ limit: 2, hasMore: true, nextCursor: expect.any(String) });
+    expect(secondPage.page).toEqual({ limit: 2, hasMore: false, nextCursor: null });
+    expect([...firstPage.items, ...secondPage.items].map((item) => item.externalItemId)).toHaveLength(3);
+    expect(new Set([...firstPage.items, ...secondPage.items].map((item) => item.externalItemId)).size).toBe(3);
+  });
+
+  it('does not shift a created-desc page when a newer item is inserted', () => {
+    insertUser('viewer');
+    insertItem('viewer', 'one', 'One');
+    insertItem('viewer', 'two', 'Two');
+    insertItem('viewer', 'three', 'Three');
+    const filters = { orderBy: 'createdAt' as const, orderDirection: 'desc' as const };
+    const firstPage = searchCollectionItems(getDatabase(), 'viewer', { filters, limit: 2 });
+
+    insertItem('viewer', 'new', 'New');
+    const secondPage = searchCollectionItems(getDatabase(), 'viewer', {
+      filters,
+      cursor: firstPage.page.nextCursor ?? undefined,
+      limit: 2,
+    });
+
+    expect(secondPage.items).toHaveLength(1);
+    expect(secondPage.items[0].externalItemId).not.toBe('new');
+  });
+
+  it.each([
+    ['createdAt', 'asc'],
+    ['createdAt', 'desc'],
+    ['alphabet', 'asc'],
+    ['alphabet', 'desc'],
+  ] as const)(
+    'does not repeat the cursor item when its %s sort value changes in %s order',
+    (orderBy, orderDirection) => {
+      const db = getDatabase();
+      insertUser('viewer');
+      insertItem('viewer', 'alpha', 'Alpha');
+      insertItem('viewer', 'bravo', 'Bravo');
+      insertItem('viewer', 'charlie', 'Charlie');
+      insertItem('viewer', 'delta', 'Delta');
+      const updateCreatedAt = db.prepare('UPDATE collection_items SET created_at = ? WHERE external_item_id = ?');
+      updateCreatedAt.run('2026-01-01 00:00:01', 'alpha');
+      updateCreatedAt.run('2026-01-01 00:00:02', 'bravo');
+      updateCreatedAt.run('2026-01-01 00:00:03', 'charlie');
+      updateCreatedAt.run('2026-01-01 00:00:04', 'delta');
+      const filters = { orderBy, orderDirection };
+      const firstPage = searchCollectionItems(db, 'viewer', { filters, limit: 2 });
+      const cursorItem = firstPage.items.at(-1);
+      expect(cursorItem).toBeDefined();
+
+      if (orderBy === 'alphabet') {
+        const updatedTitle = orderDirection === 'asc' ? 'Zulu' : 'Able';
+        db.prepare('UPDATE collection_items SET title = ?, title_lower = ? WHERE external_item_id = ?').run(
+          updatedTitle,
+          updatedTitle.toLowerCase(),
+          cursorItem?.externalItemId
+        );
+      } else {
+        const updatedCreatedAt = orderDirection === 'asc' ? '2026-01-01 00:00:05' : '2026-01-01 00:00:00';
+        updateCreatedAt.run(updatedCreatedAt, cursorItem?.externalItemId);
+      }
+
+      const secondPage = searchCollectionItems(db, 'viewer', {
+        filters,
+        cursor: firstPage.page.nextCursor ?? undefined,
+        limit: 10,
+      });
+      const returnedIds = [...firstPage.items, ...secondPage.items].map((item) => item.externalItemId);
+
+      expect(returnedIds).toHaveLength(4);
+      expect(new Set(returnedIds)).toEqual(new Set(['alpha', 'bravo', 'charlie', 'delta']));
+    }
+  );
+
+  it('paginates readable shares without expanding SQLite expression depth', () => {
     const db = getDatabase();
     insertUser('viewer');
     const insertUserStatement = db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)');
@@ -129,14 +221,13 @@ describe('collection-read-repository scoped reads', () => {
 
     const result = searchCollectionItems(db, 'viewer', {
       filters: { shared: 'shared', orderBy: 'alphabet', orderDirection: 'asc' },
-      offset: 1000,
       limit: 25,
     });
 
-    expect(result).toEqual(expect.objectContaining({ total: 1100, offset: 1000, limit: 25 }));
+    expect(result.page).toEqual({ limit: 25, hasMore: true, nextCursor: expect.any(String) });
     expect(result.items).toHaveLength(25);
-    expect(result.items[0]).toEqual(expect.objectContaining({ title: 'Shared 1000' }));
-    expect(result.items[24]).toEqual(expect.objectContaining({ title: 'Shared 1024' }));
+    expect(result.items[0]).toEqual(expect.objectContaining({ title: 'Shared 0000' }));
+    expect(result.items[24]).toEqual(expect.objectContaining({ title: 'Shared 0024' }));
   });
 
   it('matches and ranks aliases across large identity and owner batches', () => {
@@ -186,11 +277,10 @@ describe('collection-read-repository scoped reads', () => {
     const result = searchCollectionItems(db, 'viewer', {
       filters: { shared: 'shared' },
       matchedIdentities,
-      offset: 0,
       limit: 20,
     });
 
-    expect(result).toEqual(expect.objectContaining({ total: 401 }));
+    expect(result.page).toEqual({ limit: 20, hasMore: true, nextCursor: expect.any(String) });
     expect(result.items.slice(0, 2).map(({ title }) => title)).toEqual(['Owner 400', 'Owner 399']);
   });
 });

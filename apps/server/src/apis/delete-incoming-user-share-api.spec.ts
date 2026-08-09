@@ -34,7 +34,7 @@ describe('delete-incoming-user-share-api', () => {
     register(app);
 
     expect(app.delete).toHaveBeenCalledWith(
-      `${API_PREFIX}/user/shares/incoming/:ownerUserShareCode`,
+      `${API_PREFIX}/users/me/shares/incoming/:ownerUserShareCode`,
       expect.anything(),
       expect.anything()
     );

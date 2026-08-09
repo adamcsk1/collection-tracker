@@ -6,7 +6,7 @@ import { withErrorHandler } from '../core/utils/api-error-handler';
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/proxy/image`,
+    `${API_PREFIX}/images/proxy`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const sourceUrl = String((request.query as Record<string, unknown>).url ?? '');
@@ -40,7 +40,7 @@ export const register = (app: FastifyInstance): void => {
           response.code(400).send();
           return;
         case 'upstream-error':
-          response.code(result.statusCode).send();
+          response.code(502).send();
           return;
         case 'not-image':
           response.code(415).send();

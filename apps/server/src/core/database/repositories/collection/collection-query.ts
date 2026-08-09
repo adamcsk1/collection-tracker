@@ -5,13 +5,12 @@ import {
   CollectionListTypeModel,
 } from '@shared/models/api-model';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
+import { CanonicalItemRank } from '../external-item-identity-model';
 import { QueryParts } from './collection-model';
 
 export const escapeLike = (value: string): string => value.replace(/[\\%_]/g, (match) => `\\${match}`);
 
 export const normalizeLimit = (limit: number): number => Math.min(Math.max(Math.floor(limit) || 10, 1), 100);
-
-export const normalizeOffset = (offset: number): number => Math.max(Math.floor(offset) || 0, 0);
 
 export const normalizeListType = (listType: CollectionListTypeModel | undefined): CollectionListTypeModel => {
   if (listType === 'up-next' || listType === 'wishlist' || listType === 'tracking' || listType === 'books')
@@ -110,10 +109,12 @@ const pushJsonArrayInCondition = (
 const addMatchedIdentityFilter = (
   queryParts: QueryParts,
   matchedIdentities: ExternalItemIdentityModel[] | undefined,
-  matchedCanonicalItemIds: string[] | undefined
+  matchedCanonicalItemRanks: CanonicalItemRank[] | undefined
 ): void => {
   const conditions: string[] = [];
-  const uniqueCanonicalItemIds = [...new Set(matchedCanonicalItemIds ?? [])];
+  const uniqueCanonicalItemIds = [
+    ...new Set((matchedCanonicalItemRanks ?? []).map(({ canonicalItemId }) => canonicalItemId)),
+  ];
   pushJsonArrayInCondition(conditions, queryParts, 'collection_items.canonical_item_id', uniqueCanonicalItemIds);
 
   const identitiesBySource = new Map<string, string[]>();
@@ -237,15 +238,25 @@ export const buildReadableItemScope = (
       AND readable_grant.content_type = collection_items.content_type
       AND readable_grant.can_read = 1
   )`;
+  const readableOwnerHashes = `SELECT candidate_grant.owner_username_hash
+    FROM user_share_grants candidate_grant
+    WHERE candidate_grant.shared_with_username_hash = ?
+      AND candidate_grant.can_read = 1`;
   if (includeMine && includeShared) {
+    itemClauses.push(`collection_items.username_hash IN (
+      SELECT ?
+      UNION
+      ${readableOwnerHashes}
+    )`);
     itemClauses.push(`(collection_items.username_hash = ? OR ${readableGrantExists})`);
-    params.push(viewerUsernameHash, viewerUsernameHash);
+    params.push(viewerUsernameHash, viewerUsernameHash, viewerUsernameHash, viewerUsernameHash);
   } else if (includeMine) {
     itemClauses.push('collection_items.username_hash = ?');
     params.push(viewerUsernameHash);
   } else {
+    itemClauses.push(`collection_items.username_hash IN (${readableOwnerHashes})`);
     itemClauses.push(readableGrantExists);
-    params.push(viewerUsernameHash);
+    params.push(viewerUsernameHash, viewerUsernameHash);
   }
 
   return {
@@ -305,7 +316,7 @@ export const buildItemWhere = (
   viewerUsernameHash: string,
   filters: CollectionItemFiltersApiModel | undefined,
   matchedIdentities?: ExternalItemIdentityModel[],
-  matchedCanonicalItemIds?: string[]
+  matchedCanonicalItemRanks?: CanonicalItemRank[]
 ): QueryParts => {
   const ownership = buildReadableItemScope(viewerUsernameHash, filters);
   const queryParts: QueryParts = {
@@ -313,7 +324,7 @@ export const buildItemWhere = (
     params: [...ownership.params],
   };
   addFilters(queryParts, filters, viewerUsernameHash);
-  addMatchedIdentityFilter(queryParts, matchedIdentities, matchedCanonicalItemIds);
+  addMatchedIdentityFilter(queryParts, matchedIdentities, matchedCanonicalItemRanks);
 
   return queryParts;
 };

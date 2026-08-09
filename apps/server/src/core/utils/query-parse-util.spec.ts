@@ -5,7 +5,11 @@ import {
 } from '@shared/constants/collection-filter-api-const';
 import {
   areCollectionFilterListsWithinLimits,
+  isCanonicalCollectionQueryLimit,
+  isCollectionItemsQueryValid,
+  isCollectionJsonLimit,
   parseBoolean,
+  parseCollectionQueryLimit,
   parseFilters,
   parseList,
   parseNumber,
@@ -117,6 +121,80 @@ describe('query-parse-util', () => {
       expect(parseNumber(undefined, 5)).toBe(5);
       expect(parseNumber(NaN, 3)).toBe(3);
       expect(parseNumber(Infinity, 2)).toBe(2);
+    });
+  });
+
+  describe('collection pagination validation', () => {
+    it.each(['1', '50', '100'])('accepts canonical query limit %s', (limit) => {
+      expect(isCanonicalCollectionQueryLimit(limit)).toBe(true);
+      expect(parseCollectionQueryLimit(limit)).toBe(Number(limit));
+    });
+
+    it.each(['0', '-1', '1.5', '101', 'NaN', 'text', '01', '+1', ' 1 ', 1, ['1']])(
+      'rejects non-canonical query limit %j',
+      (limit) => {
+        expect(isCanonicalCollectionQueryLimit(limit)).toBe(false);
+      }
+    );
+
+    it.each([1, 50, 100])('accepts JSON integer limit %s', (limit) => {
+      expect(isCollectionJsonLimit(limit)).toBe(true);
+    });
+
+    it.each([0, -1, 1.5, 101, NaN, Infinity, '1', null, [1]])('rejects invalid JSON limit %j', (limit) => {
+      expect(isCollectionJsonLimit(limit)).toBe(false);
+    });
+
+    it('defaults an omitted query limit to 50', () => {
+      expect(parseCollectionQueryLimit(undefined)).toBe(50);
+    });
+  });
+
+  describe('isCollectionItemsQueryValid', () => {
+    it('accepts all supported query fields and repeated filter strings', () => {
+      expect(
+        isCollectionItemsQueryValid({
+          search: 'matrix',
+          tags: ['sci-fi', 'action'],
+          genres: ['drama', 'thriller'],
+          tagMode: 'all',
+          type: 'movie',
+          favorite: 'true',
+          watched: 'false',
+          completed: 'true',
+          shared: 'mine',
+          listType: 'library',
+          orderBy: 'alphabet',
+          orderDirection: 'asc',
+          cursor: 'cursor',
+          limit: '100',
+        })
+      ).toBe(true);
+    });
+
+    it.each([
+      { search: ['matrix'] },
+      { tags: ['drama', 42] },
+      { genres: false },
+      { tagMode: 'some' },
+      { type: 'podcast' },
+      { favorite: true },
+      { watched: 'yes' },
+      { completed: ['true'] },
+      { shared: 'all' },
+      { listType: 'archive' },
+      { orderBy: 'rating' },
+      { orderDirection: 'sideways' },
+      { cursor: ['cursor'] },
+      { cursor: '' },
+      { cursor: 'x'.repeat(4097) },
+      { limit: '1.5' },
+    ])('rejects malformed known query value %j', (query) => {
+      expect(isCollectionItemsQueryValid(query)).toBe(false);
+    });
+
+    it('ignores unknown query keys', () => {
+      expect(isCollectionItemsQueryValid({ unknown: 'value' })).toBe(true);
     });
   });
 

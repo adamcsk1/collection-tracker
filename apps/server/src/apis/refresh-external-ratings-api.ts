@@ -30,10 +30,10 @@ const buildUpdatedItem = (
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/items/refresh-external-ratings`,
+    `${API_PREFIX}/collection-items/actions/refresh-external-ratings`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      await debugLog('POST /items/refresh-external-ratings started');
+      await debugLog('POST /collection-items/actions/refresh-external-ratings started');
       const db = getDatabase();
       const query = (request.query ?? {}) as Record<string, unknown>;
       const ownerHash =
@@ -138,7 +138,7 @@ export const register = (app: FastifyInstance): void => {
       }
 
       await debugLog(
-        `POST /items/refresh-external-ratings finished: checked=${checked}, fixed=${fixed}, errors=${errors}`
+        `POST /collection-items/actions/refresh-external-ratings finished: checked=${checked}, fixed=${fixed}, errors=${errors}`
       );
 
       const result: RefreshExternalRatingsApiResponseModel = {

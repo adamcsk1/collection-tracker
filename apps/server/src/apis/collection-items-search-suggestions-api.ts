@@ -13,7 +13,7 @@ const parseNumber = (value: unknown, fallback: number): number => {
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/items/search-suggestions`,
+    `${API_PREFIX}/collection-items/suggestions`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const queryParams = request.query as Record<string, unknown>;

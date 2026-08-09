@@ -12,7 +12,7 @@ vi.mock('@shared/utils/redirect-to-login-util', () => ({
 
 describe('refreshTokenInterceptor', () => {
   let refresh: ReturnType<typeof vi.fn>;
-  const request = new HttpRequest('GET', '/api/v1/items');
+  const request = new HttpRequest('GET', '/api/v1/collection-items');
 
   beforeEach(() => {
     refresh = vi.fn();

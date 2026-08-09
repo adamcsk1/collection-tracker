@@ -20,7 +20,7 @@ const toProviderModel = (
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/proxy/external-metadata/providers`,
+    `${API_PREFIX}/external-metadata/providers`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       void request;

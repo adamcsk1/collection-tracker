@@ -10,7 +10,7 @@ import {
   CollectionItemFiltersApiModel,
   CollectionItemsImportApiResponseModel,
   CollectionListTypeModel,
-  CollectionItemsApiResponseModel,
+  CollectionItemsPageModel,
   CollectionItemSuggestionsApiResponseModel,
   CollectionMatchedItemsApiRequestModel,
   CollectionStatisticsApiResponseModel,
@@ -65,52 +65,67 @@ export class ApiService extends BaseApiService {
   }
 
   public logout(): Observable<void> {
-    return this.request('DELETE', '/logout');
+    return this.request('DELETE', '/auth/session');
   }
 
   public searchItems(
     filters: CollectionItemFiltersApiModel = {},
-    offset = 0,
+    cursor: string | null = null,
     limit = 50
-  ): Observable<CollectionItemsApiResponseModel> {
-    const query = this.buildQuery({ offset, limit, ...filters });
-    return this.request('GET', `/items${query}`);
+  ): Observable<CollectionItemsPageModel> {
+    const query = this.buildQuery({ cursor: cursor ?? undefined, limit, ...filters });
+    return this.paginatedRequest('GET', `/collection-items${query}`);
   }
 
-  public getMatchedItems(request: CollectionMatchedItemsApiRequestModel): Observable<CollectionItemsApiResponseModel> {
-    return this.request('POST', '/items/matched', request);
+  public getMatchedItems(request: CollectionMatchedItemsApiRequestModel): Observable<CollectionItemsPageModel> {
+    return this.paginatedRequest('POST', '/collection-items/matches', request);
   }
 
   public getRandomItem(): Observable<CollectionItemApiModel> {
-    return this.request('GET', '/items/random');
+    return this.request('GET', '/collection-items/random');
   }
 
   public getRandomImages(count = 10): Observable<RandomImagesApiResponseModel> {
-    return this.request('GET', `/items/random-images${this.buildQuery({ count })}`);
+    return this.request('GET', `/collection-items/random-images${this.buildQuery({ count })}`);
   }
 
   public markAllMoviesAsCompleted(ownerShareCode?: string): Observable<MarkAllCompletedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-movies-completed${this.buildQuery({ ownerShareCode })}`);
+    return this.request(
+      'POST',
+      `/collection-items/actions/mark-movies-completed${this.buildQuery({ ownerShareCode })}`
+    );
   }
 
   public markAllMoviesAsUncompleted(ownerShareCode?: string): Observable<MarkAllUncompletedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-movies-uncompleted${this.buildQuery({ ownerShareCode })}`);
+    return this.request(
+      'POST',
+      `/collection-items/actions/mark-movies-uncompleted${this.buildQuery({ ownerShareCode })}`
+    );
   }
 
   public markAllSeriesAsCompleted(ownerShareCode?: string): Observable<MarkAllSeriesCompletedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-series-completed${this.buildQuery({ ownerShareCode })}`);
+    return this.request(
+      'POST',
+      `/collection-items/actions/mark-series-completed${this.buildQuery({ ownerShareCode })}`
+    );
   }
 
   public markAllSeriesAsUncompleted(ownerShareCode?: string): Observable<MarkAllUncompletedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-series-uncompleted${this.buildQuery({ ownerShareCode })}`);
+    return this.request(
+      'POST',
+      `/collection-items/actions/mark-series-uncompleted${this.buildQuery({ ownerShareCode })}`
+    );
   }
 
   public markAllBooksAsCompleted(ownerShareCode?: string): Observable<MarkAllCompletedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-books-completed${this.buildQuery({ ownerShareCode })}`);
+    return this.request('POST', `/collection-items/actions/mark-books-completed${this.buildQuery({ ownerShareCode })}`);
   }
 
   public markAllBooksAsUncompleted(ownerShareCode?: string): Observable<MarkAllUncompletedApiResponseModel> {
-    return this.request('POST', `/items/mark-all-books-uncompleted${this.buildQuery({ ownerShareCode })}`);
+    return this.request(
+      'POST',
+      `/collection-items/actions/mark-books-uncompleted${this.buildQuery({ ownerShareCode })}`
+    );
   }
 
   public addCompletedItemByExternalId(
@@ -121,7 +136,7 @@ export class ApiService extends BaseApiService {
   ): Observable<CompletedApiResponseModel> {
     return this.request(
       'POST',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ ownerShareCode, sourceListType, markCompleted: true })}`,
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking${this.buildQuery({ ownerShareCode, sourceListType, markCompleted: true })}`,
       {}
     );
   }
@@ -134,7 +149,7 @@ export class ApiService extends BaseApiService {
   ): Observable<TrackingApiResponseModel> {
     return this.request(
       'POST',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ sourceListType, ownerShareCode })}`,
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking${this.buildQuery({ sourceListType, ownerShareCode })}`,
       {}
     );
   }
@@ -142,28 +157,31 @@ export class ApiService extends BaseApiService {
   public deleteCompletedItemByExternalId(externalProvider: string, externalItemId: string): Observable<void> {
     return this.request(
       'DELETE',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed`
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/completed`
     );
   }
 
   public deleteAllCompletedMovies(): Observable<MarkAllUncompletedApiResponseModel> {
-    return this.request('DELETE', '/tracking/completed-movies');
+    return this.request('DELETE', '/collection-items/tracking/completed-movies');
   }
 
   public deleteAllTrackingItems(): Observable<MarkAllUncompletedApiResponseModel> {
-    return this.request('DELETE', '/tracking');
+    return this.request('DELETE', '/collection-items/tracking');
   }
 
   public deleteAllBooksItems(): Observable<MarkAllUncompletedApiResponseModel> {
-    return this.request('DELETE', '/books');
+    return this.request('DELETE', '/collection-items/books');
   }
 
   public refreshImages(ownerShareCode?: string): Observable<RefreshImagesApiResponseModel> {
-    return this.request('POST', `/items/refresh-images${this.buildQuery({ ownerShareCode })}`);
+    return this.request('POST', `/collection-items/actions/refresh-images${this.buildQuery({ ownerShareCode })}`);
   }
 
   public refreshExternalRatings(ownerShareCode?: string): Observable<RefreshExternalRatingsApiResponseModel> {
-    return this.request('POST', `/items/refresh-external-ratings${this.buildQuery({ ownerShareCode })}`);
+    return this.request(
+      'POST',
+      `/collection-items/actions/refresh-external-ratings${this.buildQuery({ ownerShareCode })}`
+    );
   }
 
   public getItemSearchSuggestions(
@@ -171,15 +189,15 @@ export class ApiService extends BaseApiService {
     limit = 10,
     listType?: CollectionListTypeModel
   ): Observable<CollectionItemSuggestionsApiResponseModel> {
-    return this.request('GET', `/items/search-suggestions${this.buildQuery({ query, limit, listType })}`);
+    return this.request('GET', `/collection-items/suggestions${this.buildQuery({ query, limit, listType })}`);
   }
 
   public getTagSuggestions(query: string, limit = 10): Observable<TagSuggestionsApiResponseModel> {
-    return this.request('GET', `/tags/suggestions${this.buildQuery({ query, limit })}`);
+    return this.request('GET', `/collection-items/tag-suggestions${this.buildQuery({ query, limit })}`);
   }
 
   public getGenreSuggestions(query: string, limit = 10): Observable<GenreSuggestionsApiResponseModel> {
-    return this.request('GET', `/genres/suggestions${this.buildQuery({ query, limit })}`);
+    return this.request('GET', `/collection-items/genre-suggestions${this.buildQuery({ query, limit })}`);
   }
 
   public collectionItemExists(
@@ -192,12 +210,12 @@ export class ApiService extends BaseApiService {
     const externalIdParams = externalIds?.length ? JSON.stringify(externalIds) : undefined;
     return this.request(
       'GET',
-      `/items/exists${this.buildQuery({ externalIdentitySource, externalIdentityId, ownerShareCode, listType, externalIds: externalIdParams })}`
+      `/collection-items/exists${this.buildQuery({ externalIdentitySource, externalIdentityId, ownerShareCode, listType, externalIds: externalIdParams })}`
     );
   }
 
   public getStatistics(filters: CollectionItemFiltersApiModel = {}): Observable<CollectionStatisticsApiResponseModel> {
-    return this.request('GET', `/statistics${this.buildQuery({ ...filters })}`);
+    return this.request('GET', `/collection-items/statistics${this.buildQuery({ ...filters })}`);
   }
 
   public create(
@@ -205,7 +223,7 @@ export class ApiService extends BaseApiService {
     targetOwnerShareCode?: string,
     listType?: CollectionListTypeModel
   ): Observable<CreateApiResponseModel> {
-    return this.request('POST', '/create', { ...item, targetOwnerShareCode, listType });
+    return this.request('POST', '/collection-items', { ...item, targetOwnerShareCode, listType });
   }
 
   public updateByExternalId(
@@ -218,7 +236,7 @@ export class ApiService extends BaseApiService {
   ): Observable<ChangeApiResponseModel> {
     return this.request(
       'PUT',
-      `/items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/change${this.buildQuery({ ownerShareCode, listType })}`,
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ ownerShareCode, listType })}`,
       { ...item, hash }
     );
   }
@@ -232,60 +250,62 @@ export class ApiService extends BaseApiService {
   ): Observable<void> {
     return this.request(
       'DELETE',
-      `/items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ hash, ownerShareCode, listType })}`
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ hash, ownerShareCode, listType })}`
     );
   }
 
   public getAccessTokens(): Observable<AccessTokensApiResponseModel> {
-    return this.request('GET', '/user/access-tokens');
+    return this.request('GET', '/users/me/access-tokens');
   }
 
   public deleteAccessToken(tokenHash: string): Observable<void> {
-    return this.request('DELETE', `/user/access-token/${tokenHash}`);
+    return this.request('DELETE', `/users/me/access-tokens/${tokenHash}`);
   }
 
   public createAccessToken(): Observable<CreateAccessTokenApiResponseModel> {
-    return this.request('POST', '/user/access-token', {});
+    return this.request('POST', '/users/me/access-tokens', {});
   }
 
   public createNewUserToken(): Observable<ChangeTokenApiResponseModel> {
-    return this.request('PUT', '/user/change-token', {});
+    return this.request('PUT', '/users/me/token', {});
   }
 
   public deleteUser(): Observable<void> {
-    return this.request('DELETE', '/user');
+    return this.request('DELETE', '/users/me');
   }
 
   public getUserSettings(): Observable<UserSettingsApiResponseModel> {
-    return this.request('GET', '/user/settings');
+    return this.request('GET', '/users/me/settings');
   }
 
   public getShares(): Observable<UserSharesApiResponseModel> {
-    return this.request('GET', '/user/shares');
+    return this.request('GET', '/users/me/shares');
   }
 
   public saveShare(share: { sharedWithUserShareCode: string; grants: UserShareGrantApiModel[] }): Observable<void> {
-    return this.request('POST', '/user/shares', share);
+    return this.request('POST', '/users/me/shares', share);
   }
 
   public deleteShare(sharedWithUserShareCode: string): Observable<void> {
-    return this.request('DELETE', `/user/shares/${sharedWithUserShareCode}`);
+    return this.request('DELETE', `/users/me/shares/${sharedWithUserShareCode}`);
   }
 
   public revokeIncomingShare(ownerUserShareCode: string): Observable<void> {
-    return this.request('DELETE', `/user/shares/incoming/${ownerUserShareCode}`);
+    return this.request('DELETE', `/users/me/shares/incoming/${ownerUserShareCode}`);
   }
 
   public getUserTagManagement(): Observable<TagManagementApiResponseModel> {
-    return this.request('GET', '/tag-management');
+    return this.request('GET', '/users/me/tags');
   }
 
-  public updateUserTagManagement(tagManagement: TagManagementApiRequestModel): Observable<void> {
-    return this.request('POST', '/tag-management', tagManagement);
+  public updateUserTagManagement(
+    tagManagement: TagManagementApiRequestModel
+  ): Observable<TagManagementApiResponseModel> {
+    return this.request('POST', '/users/me/tags', tagManagement);
   }
 
   public renameTag(oldTag: string, newTag: string): Observable<RenameTagApiResponseModel> {
-    return this.request('POST', '/tag-management/rename', { oldTag, newTag });
+    return this.request('POST', '/users/me/tags/rename', { oldTag, newTag });
   }
 
   public getExternalMetadataItem(queryParams: {
@@ -294,12 +314,12 @@ export class ApiService extends BaseApiService {
   }): Observable<ExternalMetadataItemModel> {
     return this.request(
       'GET',
-      `/proxy/external-metadata/item?externalIdentitySource=${encodeURIComponent(queryParams.externalIdentitySource ?? '')}&externalIdentityId=${encodeURIComponent(queryParams.externalIdentityId ?? '')}`
+      `/external-metadata/items?externalIdentitySource=${encodeURIComponent(queryParams.externalIdentitySource ?? '')}&externalIdentityId=${encodeURIComponent(queryParams.externalIdentityId ?? '')}`
     );
   }
 
   public getExternalMetadataProviders(): Observable<ExternalMetadataProvidersResponseModel> {
-    return this.request('GET', '/proxy/external-metadata/providers');
+    return this.request('GET', '/external-metadata/providers');
   }
 
   public searchExternalMetadata(queryParams: {
@@ -309,7 +329,7 @@ export class ApiService extends BaseApiService {
     const providerQuery = queryParams.provider ? `&provider=${encodeURIComponent(queryParams.provider)}` : '';
     return this.request(
       'GET',
-      `/proxy/external-metadata/search?s=${encodeURIComponent(queryParams.s ?? '')}${providerQuery}`
+      `/external-metadata/search?s=${encodeURIComponent(queryParams.s ?? '')}${providerQuery}`
     );
   }
 
@@ -320,7 +340,7 @@ export class ApiService extends BaseApiService {
   ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'GET',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons${this.buildQuery({ ownerShareCode })}`
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/seasons${this.buildQuery({ ownerShareCode })}`
     );
   }
 
@@ -331,7 +351,7 @@ export class ApiService extends BaseApiService {
   ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'POST',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons/refresh${this.buildQuery({ ownerShareCode })}`,
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/seasons/refresh${this.buildQuery({ ownerShareCode })}`,
       {}
     );
   }
@@ -344,7 +364,7 @@ export class ApiService extends BaseApiService {
   ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'PUT',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons${this.buildQuery({ ownerShareCode })}`,
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/seasons${this.buildQuery({ ownerShareCode })}`,
       request
     );
   }
@@ -356,7 +376,7 @@ export class ApiService extends BaseApiService {
   ): Observable<TrackingSeasonsApiResponseModel> {
     return this.request(
       'DELETE',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/seasons${this.buildQuery({ ownerShareCode })}`
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/seasons${this.buildQuery({ ownerShareCode })}`
     );
   }
 
@@ -367,7 +387,7 @@ export class ApiService extends BaseApiService {
   ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'GET',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed-episodes${this.buildQuery({ ownerShareCode })}`
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/completed-episodes${this.buildQuery({ ownerShareCode })}`
     );
   }
 
@@ -379,7 +399,7 @@ export class ApiService extends BaseApiService {
   ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'PUT',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/completed-episodes${this.buildQuery({ ownerShareCode })}`,
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/completed-episodes${this.buildQuery({ ownerShareCode })}`,
       request
     );
   }
@@ -390,28 +410,28 @@ export class ApiService extends BaseApiService {
   ): Observable<TrackingCompletedEpisodesApiResponseModel> {
     return this.request(
       'PUT',
-      `/tracking/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/mark-all-completed`
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/tracking/actions/mark-completed`
     );
   }
 
   public getAiQueryData(prompt: string, listType: CollectionListTypeModel): Observable<AiQueryResponseModel> {
     const body: AiQueryRequestModel = { prompt, listType };
-    return this.request('POST', '/proxy/ai/query', body);
+    return this.request('POST', '/ai/matches', body);
   }
 
   public getAiAvailable(): Observable<AiAvailableApiResponseModel> {
-    return this.request('GET', '/proxy/ai/available');
+    return this.request('GET', '/ai/availability');
   }
 
   public getUserExport(): Observable<UserExportApiResponseModel> {
-    return this.request('GET', '/export');
+    return this.request('GET', '/users/me/export');
   }
 
   public importUserExport(importData: UserImportApiRequestModel): Observable<UserImportApiResponseModel> {
-    return this.request('POST', '/import', importData);
+    return this.request('POST', '/users/me/imports', importData);
   }
 
   public importCollectionItems(source: string): Observable<CollectionItemsImportApiResponseModel> {
-    return this.request('POST', '/import/collection-items', { source });
+    return this.request('POST', '/collection-items/imports', { source });
   }
 }

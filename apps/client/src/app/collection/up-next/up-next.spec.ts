@@ -21,11 +21,11 @@ describe('UpNext', () => {
   let floatActions: FloatActionsService;
   const portal = { open: vi.fn() };
   const api = {
-    searchItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
+    searchItems: vi.fn(() => of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } })),
   };
-  const dataSourceRequest = (searchText: string, offset = 0, limit = 50) => ({
+  const dataSourceRequest = (searchText: string, cursor: string | null = null, limit = 50) => ({
     reset: true,
-    offset,
+    cursor,
     limit,
     searchText,
     orderBy: 'createdAt' as const,
@@ -98,11 +98,11 @@ describe('UpNext', () => {
   });
 
   it('searches watch later items by standard text', () => {
-    fixture.componentInstance['upNextDataSource'](dataSourceRequest(' alien ', 10, 25));
+    fixture.componentInstance['upNextDataSource'](dataSourceRequest(' alien ', 'next-page', 25));
 
     expect(api.searchItems).toHaveBeenCalledWith(
       { search: 'alien', listType: 'up-next', orderBy: 'createdAt', orderDirection: 'desc' },
-      10,
+      'next-page',
       25
     );
   });
@@ -140,7 +140,7 @@ describe('UpNext', () => {
 
     expect(api.searchItems).toHaveBeenCalledWith(
       { type: 'movie', listType: 'up-next', orderBy: 'createdAt', orderDirection: 'desc' },
-      0,
+      null,
       50
     );
   });

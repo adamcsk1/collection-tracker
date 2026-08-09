@@ -12,6 +12,10 @@ Server startup requires non-empty `JWT_SECRET` and `COOKIE_SECRET` values and an
 
 Rate limiting defaults to `120` requests per IP per minute globally, `10` for sign-in and sign-up through `AUTH_RATE_LIMIT`, and `60` for session refresh through `REFRESH_RATE_LIMIT`. A refresh `429` preserves browser login state so a later request can retry. Reverse-proxy deployments must configure `TRUSTED_PROXY_CIDRS` so unrelated clients do not share one rate-limit identity.
 
+The API base remains `/api/v1`, but the old endpoint paths were replaced without compatibility aliases. Canonical endpoint families are `/auth`, `/users/me`, `/collection-items`, `/external-metadata`, `/images`, and `/ai`; the public health endpoint remains `/health`. All JSON success responses use `{ data }`. Cursor pages use `{ data: [], page: { limit, hasMore, nextCursor } }`; successful `204` responses and binary responses are not enveloped. All JSON errors use RFC 9457 `application/problem+json` responses.
+
+Collection pages use signed cursor pagination with a maximum limit of `100` and no exact total. Normal collection queries use SQLite keyset pagination ordered by `createdAt` or `alphabet` plus item `id`. Cursor tokens are HMAC-signed and bound to the viewer, filters, ordering, and matched identities. Matched AI results preserve in-memory rank order and store the last visible rank and item ID as the signed keyset boundary because rank is not a database sort key.
+
 ## Docker Deployment Environment Variables
 
 | Variable              | Default                  | Description                                                                                                        |

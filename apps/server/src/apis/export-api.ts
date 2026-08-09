@@ -51,7 +51,7 @@ const toExportCollectionItem = (item: CollectionItemApiModel): CollectionItemApi
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/export`,
+    `${API_PREFIX}/users/me/export`,
     { preHandler: jwtGuard },
     withErrorHandler((request, response) => {
       const db = getDatabase();

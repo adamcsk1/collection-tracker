@@ -98,6 +98,8 @@ describe('sign-in-api', () => {
     await handlerPromise();
     expect(response.setCookie).toHaveBeenCalledWith(COOKIE_TOKEN, 'access', expect.any(Object));
     expect(response.setCookie).toHaveBeenCalledWith(COOKIE_REFRESH_TOKEN, 'refresh', expect.any(Object));
+    expect(response.code).toHaveBeenCalledWith(204);
+    expect(response.send).toHaveBeenCalledWith();
     expect(db.prepare('SELECT COUNT(*) as count FROM access_tokens WHERE token_hash = ?').get('old')).toEqual({
       count: 0,
     });

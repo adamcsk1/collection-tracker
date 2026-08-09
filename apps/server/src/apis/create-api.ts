@@ -20,7 +20,7 @@ import { parseListType } from '../core/utils/query-parse-util';
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/create`,
+    `${API_PREFIX}/collection-items`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const body = request.body as CreateApiRequestModel;

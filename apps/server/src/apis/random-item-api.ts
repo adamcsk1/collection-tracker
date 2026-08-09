@@ -7,7 +7,7 @@ import type { FastifyInstance } from 'fastify';
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/items/random`,
+    `${API_PREFIX}/collection-items/random`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();

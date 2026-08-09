@@ -21,12 +21,12 @@ import { STORAGE_COLLECTION_LIST_ORDER_PREFERENCES } from '@shared/constants/sto
 import {
   CollectionItemOrderBy,
   CollectionItemOrderDirection,
-  CollectionItemsApiResponseModel,
+  CollectionItemsPageModel,
   CollectionListTypeModel,
 } from '@shared/models/api-model';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { Router } from '@angular/router';
-import { asyncScheduler, catchError, debounceTime, EMPTY, fromEvent, Observable, Subscription } from 'rxjs';
+import { asyncScheduler, catchError, debounceTime, EMPTY, finalize, fromEvent, Observable, Subscription } from 'rxjs';
 import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
 import { mainStateToken } from '../../main/main-store';
@@ -76,10 +76,11 @@ export class List implements OnDestroy {
   };
   protected readonly visibleCollection = signal<CollectionItemModel[]>([]);
   protected readonly collectionLength = signal(0);
+  private readonly nextCursor = signal<string | null>(null);
+  protected readonly hasMore = signal(true);
   protected readonly orderBy = signal<CollectionItemOrderBy>('createdAt');
   protected readonly orderDirection = signal<CollectionItemOrderDirection>('desc');
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
-  protected readonly hasMore = computed(() => this.visibleCollection().length < this.collectionLength());
   protected readonly scrollContainer = viewChild<ElementRef>('scrollContainer');
   protected readonly scrollToTopAvailable = signal(false);
   protected readonly scrolling = signal(false);
@@ -96,6 +97,8 @@ export class List implements OnDestroy {
   public readonly randomPick = output<void>();
   public readonly showFunctions = output<void>();
   private scrollingIdleSubscription: Subscription | null = null;
+  private loadRequestId = 0;
+  private pendingLoadRequestId: number | null = null;
 
   constructor() {
     this.sharesLoader.load(this.destroyRef);
@@ -233,7 +236,7 @@ export class List implements OnDestroy {
     this.scrollToTopAvailable.set(element.scrollTop !== 0);
     this.markScrolling();
 
-    if (!this.hasMore() || this.apiLoadNetworkStatus() === 'pending') return;
+    if (!this.hasMore() || this.pendingLoadRequestId !== null) return;
     const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
     if (distanceFromBottom < 200) {
       this.loadItems(false, this.debouncedSearchText(), this.orderBy(), this.orderDirection());
@@ -297,9 +300,28 @@ export class List implements OnDestroy {
     orderBy = this.orderBy(),
     orderDirection = this.orderDirection()
   ): void {
+    const requestId = ++this.loadRequestId;
+    this.pendingLoadRequestId = requestId;
     this.getItemsRequest(reset, searchText, orderBy, orderDirection)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => this.applyItemsResponse(response, reset));
+      .pipe(
+        catchError(() => {
+          if (requestId === this.loadRequestId) {
+            this.apiState.setState('loadNetworkStatus', 'error');
+          }
+          return EMPTY;
+        }),
+        finalize(() => {
+          if (this.pendingLoadRequestId === requestId) {
+            this.pendingLoadRequestId = null;
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((response) => {
+        if (requestId === this.loadRequestId) {
+          this.applyItemsResponse(response, reset);
+        }
+      });
   }
 
   private getItemsRequest(
@@ -307,23 +329,21 @@ export class List implements OnDestroy {
     searchText: string,
     orderBy: CollectionItemOrderBy,
     orderDirection: CollectionItemOrderDirection
-  ): Observable<CollectionItemsApiResponseModel> {
-    const offset = reset ? 0 : this.visibleCollection().length;
+  ): Observable<CollectionItemsPageModel> {
+    const cursor = reset ? null : this.nextCursor();
     const limit = COLLECTION_LIST_PAGE_SIZE;
     if (reset) {
       this.visibleCollection.set([]);
+      this.collectionLength.set(0);
+      this.nextCursor.set(null);
+      this.hasMore.set(true);
     }
 
     this.apiState.setState('loadNetworkStatus', 'pending');
 
-    const request = this.dataSource()({ reset, offset, limit, searchText, orderBy, orderDirection });
+    const request = this.dataSource()({ reset, cursor, limit, searchText, orderBy, orderDirection });
 
-    return request.pipe(
-      catchError(() => {
-        this.apiState.setState('loadNetworkStatus', 'error');
-        return EMPTY;
-      })
-    );
+    return request;
   }
 
   private markScrolling(): void {
@@ -335,10 +355,13 @@ export class List implements OnDestroy {
     }, FLOAT_ACTION_SCROLLING_IDLE_MS);
   }
 
-  private applyItemsResponse(response: CollectionItemsApiResponseModel, reset: boolean): void {
+  private applyItemsResponse(response: CollectionItemsPageModel, reset: boolean): void {
+    const malformedContinuation = response.page.hasMore && response.page.nextCursor === null;
     this.visibleCollection.set(reset ? response.items : [...this.visibleCollection(), ...response.items]);
-    this.collectionLength.set(response.total);
-    this.apiState.setState('loadNetworkStatus', 'finished');
+    this.collectionLength.set(this.visibleCollection().length);
+    this.nextCursor.set(response.page.nextCursor);
+    this.hasMore.set(malformedContinuation ? false : response.page.hasMore);
+    this.apiState.setState('loadNetworkStatus', malformedContinuation ? 'error' : 'finished');
   }
 
   private getOrderStorageKey(): string {

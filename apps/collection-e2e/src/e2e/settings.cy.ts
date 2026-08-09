@@ -71,7 +71,7 @@ describe('Settings - media refresh page', () => {
   });
 
   it('calls the refresh images API when the image refresh button is clicked', () => {
-    cy.intercept('POST', '/api/v1/items/refresh-images').as('refreshImages');
+    cy.intercept('POST', '/api/v1/collection-items/actions/refresh-images').as('refreshImages');
     SettingsPage.getImageRefreshStartButton().click();
     cy.wait('@refreshImages').its('response.statusCode').should('eq', 200);
     SettingsPage.getImageRefreshStatus()
@@ -86,7 +86,7 @@ describe('Settings - media refresh page', () => {
 describe('Settings - collection list display page', () => {
   beforeEach(() => {
     cy.autoLoginWithNewUser();
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('List Display Test Movie', 'movie', 'tt8100001'),
       rottenTomatoesRate: '96%',
       metacriticRate: '85/100',
@@ -105,7 +105,7 @@ describe('Settings - collection list display page', () => {
 
   it('applies preferred rating and year visibility to the collection list', () => {
     SettingsPage.visitCollectionListDisplay();
-    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+    cy.intercept('POST', '/api/v1/users/me/settings').as('saveSettings');
 
     SettingsPage.getListShowYearCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
@@ -127,7 +127,7 @@ describe('Settings - features page', () => {
 
   it('persists disabled features and hides their menu links', () => {
     SettingsPage.visitFeatures();
-    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+    cy.intercept('POST', '/api/v1/users/me/settings').as('saveSettings');
 
     SettingsPage.getFeaturesForm().should('be.visible');
     SettingsPage.getFeatureWishlistCheckbox().uncheck();
@@ -150,7 +150,11 @@ describe('Settings - features page', () => {
     cy.visit('/client/#/collection/tracking');
     cy.url().should('include', '/collection/tracking');
 
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Feature Statistics Movie', 'movie', 'tt8100002'));
+    cy.request(
+      'POST',
+      '/api/v1/collection-items',
+      buildCollectionItem('Feature Statistics Movie', 'movie', 'tt8100002')
+    );
     cy.visit('/client/#/statistics');
     cy.getByTestId('statistics-summary-all').should('be.visible');
     cy.getByTestId('statistics-summary-wishlist').should('not.exist');
@@ -161,7 +165,7 @@ describe('Settings - features page', () => {
 
   it('hides the connected tracking option when adding a series', () => {
     SettingsPage.visitFeatures();
-    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+    cy.intercept('POST', '/api/v1/users/me/settings').as('saveSettings');
     SettingsPage.getFeatureTrackingCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
 
@@ -185,7 +189,7 @@ describe('Settings - features page', () => {
     SettingsPage.visitBasics();
     SettingsPage.getSensitiveDataStorageSelect().select('session');
     SettingsPage.visitFeatures();
-    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+    cy.intercept('POST', '/api/v1/users/me/settings').as('saveSettings');
 
     SettingsPage.getFeatureWishlistCheckbox().uncheck();
     cy.wait('@saveSettings').its('response.statusCode').should('eq', 200);
@@ -239,20 +243,20 @@ describe('Settings - manage tracker data page', () => {
 describe('Settings - mark all completed / uncompleted', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie A', 'movie', 'tt8000001'));
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Watch Test Movie B', 'movie', 'tt8000002'));
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', buildCollectionItem('Watch Test Movie A', 'movie', 'tt8000001'));
+    cy.request('POST', '/api/v1/collection-items', buildCollectionItem('Watch Test Movie B', 'movie', 'tt8000002'));
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Watch Test Series', 'series', 'tt8000003'),
     });
-    cy.request('POST', '/api/v1/create', buildBooksItem('Watch Test Book A', '9780132350884'));
-    cy.request('POST', '/api/v1/create', buildBooksItem('Watch Test Book B', '9780201633610'));
+    cy.request('POST', '/api/v1/collection-items', buildBooksItem('Watch Test Book A', '9780132350884'));
+    cy.request('POST', '/api/v1/collection-items', buildBooksItem('Watch Test Book B', '9780201633610'));
     // Force a full page reload so Angular reboots and its boot-time loadCollection()
     // picks up the seeded items. Mark-all actions hit the API; reload keeps client
     // collection state in sync before navigating to settings.
     // Register the intercept AFTER cy.visit but BEFORE cy.reload — cy.reload clears
     // the page and reboots Angular, which then fires items request with the seeded items.
     cy.visit('/client/#/collection/library');
-    cy.intercept('GET', '/api/v1/items*').as('collectionLoad');
+    cy.intercept('GET', '/api/v1/collection-items*').as('collectionLoad');
     cy.reload();
     cy.wait('@collectionLoad');
     // Navigate to manage tracker data page
@@ -260,7 +264,7 @@ describe('Settings - mark all completed / uncompleted', () => {
   });
 
   it('marks all movies as completed and persists them in tracking', () => {
-    cy.intercept('POST', '/api/v1/items/mark-all-movies-completed').as('markAllCompleted');
+    cy.intercept('POST', '/api/v1/collection-items/actions/mark-movies-completed').as('markAllCompleted');
     cy.on('window:confirm', () => true);
 
     SettingsPage.getMarkAllCompletedButton().click();
@@ -277,8 +281,8 @@ describe('Settings - mark all completed / uncompleted', () => {
 
   it('marks all movies as uncompleted and removes them from tracking', () => {
     cy.on('window:confirm', () => true);
-    cy.intercept('POST', '/api/v1/items/mark-all-movies-completed').as('markAllCompleted');
-    cy.intercept('POST', '/api/v1/items/mark-all-movies-uncompleted').as('markAllUncompleted');
+    cy.intercept('POST', '/api/v1/collection-items/actions/mark-movies-completed').as('markAllCompleted');
+    cy.intercept('POST', '/api/v1/collection-items/actions/mark-movies-uncompleted').as('markAllUncompleted');
 
     // First mark all as completed so there are items to uncomplete
     SettingsPage.getMarkAllCompletedButton().click();
@@ -292,7 +296,7 @@ describe('Settings - mark all completed / uncompleted', () => {
   });
 
   it('mark all series as completed calls the bulk update API', () => {
-    cy.intercept('POST', '/api/v1/items/mark-all-series-completed').as('markAllSeriesCompleted');
+    cy.intercept('POST', '/api/v1/collection-items/actions/mark-series-completed').as('markAllSeriesCompleted');
     cy.on('window:confirm', () => true);
 
     SettingsPage.getMarkAllSeriesCompletedButton().click();
@@ -302,8 +306,8 @@ describe('Settings - mark all completed / uncompleted', () => {
 
   it('mark all series as uncompleted calls the bulk update API', () => {
     cy.on('window:confirm', () => true);
-    cy.intercept('POST', '/api/v1/items/mark-all-series-completed').as('markAllSeriesCompleted');
-    cy.intercept('POST', '/api/v1/items/mark-all-series-uncompleted').as('markAllSeriesUncompleted');
+    cy.intercept('POST', '/api/v1/collection-items/actions/mark-series-completed').as('markAllSeriesCompleted');
+    cy.intercept('POST', '/api/v1/collection-items/actions/mark-series-uncompleted').as('markAllSeriesUncompleted');
 
     SettingsPage.getMarkAllSeriesCompletedButton().click();
     cy.wait('@markAllSeriesCompleted').its('response.statusCode').should('eq', 200);
@@ -313,7 +317,7 @@ describe('Settings - mark all completed / uncompleted', () => {
   });
 
   it('marks all books as completed and persists them in tracking', () => {
-    cy.intercept('POST', '/api/v1/items/mark-all-books-completed').as('markAllBooksCompleted');
+    cy.intercept('POST', '/api/v1/collection-items/actions/mark-books-completed').as('markAllBooksCompleted');
     cy.on('window:confirm', () => true);
 
     SettingsPage.getMarkAllBooksCompletedButton().click();
@@ -321,16 +325,14 @@ describe('Settings - mark all completed / uncompleted', () => {
     cy.wait('@markAllBooksCompleted').its('response.statusCode').should('eq', 200);
 
     CollectionPage.visitTracking();
-    CollectionPage.getListItems()
-      .should('contain.text', 'Watch Test Book A')
-      .and('contain.text', 'Watch Test Book B');
+    CollectionPage.getListItems().should('contain.text', 'Watch Test Book A').and('contain.text', 'Watch Test Book B');
     CollectionPage.getTrackingCompletedBadges().should('have.length.at.least', 2);
   });
 
   it('marks all books as uncompleted and keeps tracking items without completed badges', () => {
     cy.on('window:confirm', () => true);
-    cy.intercept('POST', '/api/v1/items/mark-all-books-completed').as('markAllBooksCompleted');
-    cy.intercept('POST', '/api/v1/items/mark-all-books-uncompleted').as('markAllBooksUncompleted');
+    cy.intercept('POST', '/api/v1/collection-items/actions/mark-books-completed').as('markAllBooksCompleted');
+    cy.intercept('POST', '/api/v1/collection-items/actions/mark-books-uncompleted').as('markAllBooksUncompleted');
 
     SettingsPage.getMarkAllBooksCompletedButton().click();
     cy.wait('@markAllBooksCompleted').its('response.statusCode').should('eq', 200);
@@ -339,20 +341,18 @@ describe('Settings - mark all completed / uncompleted', () => {
     cy.wait('@markAllBooksUncompleted').its('response.statusCode').should('eq', 200);
 
     CollectionPage.visitTracking();
-    CollectionPage.getListItems()
-      .should('contain.text', 'Watch Test Book A')
-      .and('contain.text', 'Watch Test Book B');
+    CollectionPage.getListItems().should('contain.text', 'Watch Test Book A').and('contain.text', 'Watch Test Book B');
     CollectionPage.getShowFunctionsButton().click();
     CollectionPage.getCollectionFilterButton('completed').click();
     CollectionPage.getEmptyState().should('be.visible');
   });
 
   it('remove all tracked movie data calls the delete API and empties the tracker', () => {
-    cy.intercept('DELETE', '/api/v1/tracking/completed-movies').as('deleteCompletedMovies');
+    cy.intercept('DELETE', '/api/v1/collection-items/tracking/completed-movies').as('deleteCompletedMovies');
     cy.on('window:confirm', () => true);
 
     // Seed a tracking item
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Tracked Movie', 'movie', 'tt8000004'),
       listType: 'tracking',
     });
@@ -366,11 +366,11 @@ describe('Settings - mark all completed / uncompleted', () => {
   });
 
   it('removes all tracked series data and persists an empty tracking', () => {
-    cy.intercept('DELETE', '/api/v1/tracking').as('deleteTracking');
+    cy.intercept('DELETE', '/api/v1/collection-items/tracking').as('deleteTracking');
     cy.on('window:confirm', () => true);
 
     // Seed a tracking item
-    cy.request('POST', '/api/v1/create', {
+    cy.request('POST', '/api/v1/collection-items', {
       ...buildCollectionItem('Tracked Series', 'series', 'tt8000005'),
       listType: 'tracking',
     });
@@ -395,8 +395,8 @@ describe('Settings - save changes', () => {
     SettingsPage.visitBasics();
   });
 
-  it('calls POST /api/v1/user/settings when a setting changes', () => {
-    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+  it('calls POST /api/v1/users/me/settings when a setting changes', () => {
+    cy.intercept('POST', '/api/v1/users/me/settings').as('saveSettings');
 
     SettingsPage.getThemeSelect()
       .find('option')
@@ -412,7 +412,7 @@ describe('Settings - save changes', () => {
   });
 
   it('persists a changed theme after it changes', () => {
-    cy.intercept('POST', '/api/v1/user/settings').as('saveSettings');
+    cy.intercept('POST', '/api/v1/users/me/settings').as('saveSettings');
 
     SettingsPage.getThemeSelect()
       .find('option')
@@ -462,8 +462,8 @@ describe('Settings - account actions (destructive)', () => {
     SettingsPage.visitAccount();
   });
 
-  it('create new user token calls PUT /api/v1/user/change-token and shows the token dialog', () => {
-    cy.intercept('PUT', '/api/v1/user/change-token').as('changeToken');
+  it('create new user token calls PUT /api/v1/users/me/token and shows the token dialog', () => {
+    cy.intercept('PUT', '/api/v1/users/me/token').as('changeToken');
     cy.on('window:confirm', () => true);
 
     SettingsPage.getCreateUserTokenButton().click();
@@ -472,8 +472,8 @@ describe('Settings - account actions (destructive)', () => {
     SettingsPage.getTokenDialogValue().should('be.visible').and('not.be.empty');
   });
 
-  it('delete user calls DELETE /api/v1/user and redirects to login', () => {
-    cy.intercept('DELETE', '/api/v1/user').as('deleteUser');
+  it('delete user calls DELETE /api/v1/users/me and redirects to login', () => {
+    cy.intercept('DELETE', '/api/v1/users/me').as('deleteUser');
     cy.on('window:confirm', () => true);
 
     SettingsPage.getDeleteUserButton().click();
@@ -493,8 +493,8 @@ describe('Settings - access tokens', () => {
     SettingsPage.getAccessTokensSection().should('exist');
   });
 
-  it('create access token calls POST /api/v1/user/access-token and shows the token dialog', () => {
-    cy.intercept('POST', '/api/v1/user/access-token').as('createToken');
+  it('create access token calls POST /api/v1/users/me/access-tokens and shows the token dialog', () => {
+    cy.intercept('POST', '/api/v1/users/me/access-tokens').as('createToken');
     cy.on('window:confirm', () => true);
 
     SettingsPage.getCreateAccessTokenButton().click();
@@ -503,13 +503,13 @@ describe('Settings - access tokens', () => {
     SettingsPage.getTokenDialogValue().should('be.visible').and('not.be.empty');
   });
 
-  it('revoke access token calls DELETE /api/v1/user/access-token/:hash', () => {
-    cy.intercept('DELETE', '/api/v1/user/access-token/*').as('revokeToken');
+  it('revoke access token calls DELETE /api/v1/users/me/access-tokens/:hash', () => {
+    cy.intercept('DELETE', '/api/v1/users/me/access-tokens/*').as('revokeToken');
     cy.on('window:confirm', () => true);
 
     // Create a token first so there is one to revoke, then fetch the token list
     // to get the tokenHash (the create response only returns the raw token, not the hash).
-    cy.intercept('POST', '/api/v1/user/access-token').as('createToken');
+    cy.intercept('POST', '/api/v1/users/me/access-tokens').as('createToken');
     SettingsPage.getCreateAccessTokenButton().click();
     cy.wait('@createToken').its('response.statusCode').should('eq', 200);
 
@@ -517,8 +517,8 @@ describe('Settings - access tokens', () => {
     CollectionPage.closeActiveDialogByOverlay();
 
     // Fetch the token list to get the stored tokenHash
-    cy.request('GET', '/api/v1/user/access-tokens').then((response) => {
-      const tokenHash = (response.body as Array<{ tokenHash: string }>)[0].tokenHash;
+    cy.request('GET', '/api/v1/users/me/access-tokens').then((response) => {
+      const tokenHash = (response.body.data as Array<{ tokenHash: string }>)[0].tokenHash;
       SettingsPage.getRevokeTokenButton(tokenHash).click();
       cy.wait('@revokeToken').its('response.statusCode').should('eq', 204);
     });
@@ -528,7 +528,7 @@ describe('Settings - access tokens', () => {
 describe('Settings - appMode: full (all permissions)', () => {
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', buildCollectionItem('Full Mode Movie', 'movie', 'tt8300001'));
+    cy.request('POST', '/api/v1/collection-items', buildCollectionItem('Full Mode Movie', 'movie', 'tt8300001'));
     CollectionPage.visit();
   });
 

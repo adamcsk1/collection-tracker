@@ -18,7 +18,9 @@ import { Books } from './books';
 describe('Books', () => {
   let fixture: ComponentFixture<Books>;
   const portal = { open: vi.fn() };
-  const api = { searchItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })) };
+  const api = {
+    searchItems: vi.fn(() => of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } })),
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -56,7 +58,7 @@ describe('Books', () => {
   it('searches only books list items', () => {
     fixture.componentInstance['booksDataSource']({
       reset: true,
-      offset: 0,
+      cursor: null,
       limit: 50,
       searchText: ' dune ',
       orderBy: 'createdAt',
@@ -65,7 +67,7 @@ describe('Books', () => {
 
     expect(api.searchItems).toHaveBeenCalledWith(
       { search: 'dune', listType: 'books', orderBy: 'createdAt', orderDirection: 'desc' },
-      0,
+      null,
       50
     );
   });

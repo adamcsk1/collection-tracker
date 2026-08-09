@@ -21,11 +21,11 @@ describe('Tracking', () => {
   let floatActions: FloatActionsService;
   const portal = { open: vi.fn() };
   const api = {
-    searchItems: vi.fn(() => of({ items: [], total: 0, offset: 0, limit: 50 })),
+    searchItems: vi.fn(() => of({ items: [], page: { limit: 50, hasMore: false, nextCursor: null } })),
   };
-  const dataSourceRequest = (searchText: string, offset = 0, limit = 50) => ({
+  const dataSourceRequest = (searchText: string, cursor: string | null = null, limit = 50) => ({
     reset: true,
-    offset,
+    cursor,
     limit,
     searchText,
     orderBy: 'createdAt' as const,
@@ -110,11 +110,11 @@ describe('Tracking', () => {
   });
 
   it('searches tracking items by standard text', () => {
-    fixture.componentInstance['trackingDataSource'](dataSourceRequest(' dark ', 10, 25));
+    fixture.componentInstance['trackingDataSource'](dataSourceRequest(' dark ', 'next-page', 25));
 
     expect(api.searchItems).toHaveBeenCalledWith(
       { search: 'dark', listType: 'tracking', orderBy: 'createdAt', orderDirection: 'desc' },
-      10,
+      'next-page',
       25
     );
   });
@@ -124,7 +124,7 @@ describe('Tracking', () => {
 
     expect(api.searchItems).toHaveBeenCalledWith(
       { tags: ['#drama'], tagMode: 'all', listType: 'tracking', orderBy: 'createdAt', orderDirection: 'desc' },
-      0,
+      null,
       50
     );
   });
@@ -140,7 +140,7 @@ describe('Tracking', () => {
         orderBy: 'createdAt',
         orderDirection: 'desc',
       },
-      0,
+      null,
       50
     );
   });
@@ -153,7 +153,7 @@ describe('Tracking', () => {
 
     expect(api.searchItems).toHaveBeenCalledWith(
       { completed: false, listType: 'tracking', orderBy: 'createdAt', orderDirection: 'desc' },
-      0,
+      null,
       50
     );
   });
@@ -163,7 +163,7 @@ describe('Tracking', () => {
 
     expect(api.searchItems).toHaveBeenCalledWith(
       { listType: 'tracking', orderBy: 'createdAt', orderDirection: 'desc' },
-      0,
+      null,
       50
     );
   });

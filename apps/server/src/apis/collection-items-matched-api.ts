@@ -9,14 +9,11 @@ import { CollectionItemFiltersApiModel, CollectionMatchedItemsApiRequestModel } 
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { searchCollectionItems } from '../core/database/repositories/collection';
-import { resolveCanonicalItemIdsForIdentities } from '../core/database/repositories/external-item-identity-repository';
+import { resolveCanonicalItemRanksForIdentities } from '../core/database/repositories/external-item-identity-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
-
-const parseNumber = (value: unknown, fallback: number): number => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
+import { CursorValidationError, isCursorToken } from '../core/utils/cursor-util';
+import { isCollectionJsonLimit } from '../core/utils/query-parse-util';
 
 const FILTER_KEYS = [
   'search',
@@ -29,8 +26,6 @@ const FILTER_KEYS = [
   'favorite',
   'shared',
   'listType',
-  'orderBy',
-  'orderDirection',
 ] as const;
 
 const isStringArray = (value: unknown, maxLength: number): value is string[] =>
@@ -54,15 +49,13 @@ const isCollectionItemFilters = (value: unknown): value is CollectionItemFilters
     (filters.completed === undefined || typeof filters.completed === 'boolean') &&
     (filters.favorite === undefined || typeof filters.favorite === 'boolean') &&
     isOptionalMember(filters.shared, ['mine', 'shared']) &&
-    isOptionalMember(filters.listType, ['library', 'up-next', 'wishlist', 'tracking', 'books']) &&
-    isOptionalMember(filters.orderBy, ['createdAt', 'alphabet']) &&
-    isOptionalMember(filters.orderDirection, ['asc', 'desc'])
+    isOptionalMember(filters.listType, ['library', 'up-next', 'wishlist', 'tracking', 'books'])
   );
 };
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/items/matched`,
+    `${API_PREFIX}/collection-items/matches`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const body = request.body as CollectionMatchedItemsApiRequestModel;
@@ -77,7 +70,9 @@ export const register = (app: FastifyInstance): void => {
             typeof identity?.id !== 'string' ||
             !identity.id.trim()
         ) ||
-        !filtersValid
+        !filtersValid ||
+        (body.cursor !== undefined && !isCursorToken(body.cursor)) ||
+        (body.limit !== undefined && !isCollectionJsonLimit(body.limit))
       ) {
         response.code(400).send();
         return;
@@ -88,17 +83,25 @@ export const register = (app: FastifyInstance): void => {
         source: identity.source,
         id: identity.source === 'imdb' ? identity.id.trim().toLowerCase() : identity.id.trim(),
       }));
-      const matchedCanonicalItemIds = resolveCanonicalItemIdsForIdentities(db, request.usernameHash, matchedIdentities);
-
-      response.send(
-        searchCollectionItems(db, request.usernameHash, {
-          filters: body.filters,
-          offset: parseNumber(body.offset, 0),
-          limit: parseNumber(body.limit, 50),
-          matchedIdentities,
-          matchedCanonicalItemIds,
-        })
+      const matchedCanonicalItemRanks = resolveCanonicalItemRanksForIdentities(
+        db,
+        request.usernameHash,
+        matchedIdentities
       );
+
+      try {
+        const result = searchCollectionItems(db, request.usernameHash, {
+          filters: body.filters,
+          cursor: body.cursor,
+          limit: body.limit ?? 50,
+          matchedIdentities,
+          matchedCanonicalItemRanks,
+        });
+        response.send({ data: result.items, page: result.page });
+      } catch (error) {
+        if (!(error instanceof CursorValidationError)) throw error;
+        response.code(400).send({ error: 'Invalid cursor' });
+      }
     })
   );
 };

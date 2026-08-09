@@ -10,7 +10,7 @@ import { getAuthRateLimit } from '../core/utils/rate-limit-util';
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/sign-up`,
+    `${API_PREFIX}/auth/sign-up`,
     { config: { rateLimit: { max: getAuthRateLimit(), timeWindow: '1 minute' } } },
     withErrorHandler((request, response) => {
       if (Number(process.env.DISABLE_REGISTRATION)) {

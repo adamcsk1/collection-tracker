@@ -81,6 +81,8 @@ const insertTag = (imdbId: string, tag: string) => {
 };
 
 describe('get-collection-items-api', () => {
+  process.env.COOKIE_SECRET = 'get-items-api-secret';
+
   afterEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
@@ -98,15 +100,75 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: expect.arrayContaining([
+        data: expect.arrayContaining([
           expect.objectContaining({ title: 'Alpha' }),
           expect.objectContaining({ title: 'Beta' }),
         ]),
-        total: 2,
-        offset: 0,
-        limit: 50,
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
+  });
+
+  it.each(['1', '100'])('accepts collection page limit %s', async (limit) => {
+    insertUser('user');
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp({ usernameHash: 'user', query: { limit } } as any, response);
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.code).not.toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith({
+      data: [],
+      page: { limit: Number(limit), hasMore: false, nextCursor: null },
+    });
+  });
+
+  it.each(['0', '-1', '1.5', '101', 'NaN', 'text', '01', '+1', ' 1 ', 1, ['1']])(
+    'returns 400 for invalid collection page limit %j',
+    async (limit) => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp({ usernameHash: 'user', query: { limit } } as any, response);
+      const prepareSpy = vi.spyOn(getDatabase(), 'prepare');
+
+      const { register } = await import('./get-collection-items-api');
+      register(app);
+      await handlerPromise();
+
+      expect(response.code).toHaveBeenCalledWith(400);
+      expect(response.send).toHaveBeenCalledWith();
+      expect(prepareSpy).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    { search: ['matrix'] },
+    { tags: ['drama', 42] },
+    { genres: false },
+    { tagMode: 'some' },
+    { type: 'podcast' },
+    { favorite: true },
+    { watched: 'yes' },
+    { completed: ['true'] },
+    { shared: 'all' },
+    { listType: 'archive' },
+    { orderBy: 'rating' },
+    { orderDirection: 'sideways' },
+    { cursor: '' },
+    { cursor: 'x'.repeat(4097) },
+  ])('returns 400 for malformed known filter %j', async (query) => {
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp({ usernameHash: 'user', query } as any, response);
+    const prepareSpy = vi.spyOn(getDatabase(), 'prepare');
+
+    const { register } = await import('./get-collection-items-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith();
+    expect(prepareSpy).not.toHaveBeenCalled();
   });
 
   it('accepts tag and genre filters at their limits', async () => {
@@ -126,7 +188,10 @@ describe('get-collection-items-api', () => {
 
     await handlerPromise();
     expect(response.code).not.toHaveBeenCalledWith(400);
-    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ items: [], total: 0 }));
+    expect(response.send).toHaveBeenCalledWith({
+      data: [],
+      page: { limit: 50, hasMore: false, nextCursor: null },
+    });
   });
 
   it.each([
@@ -203,16 +268,16 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'New Item' }), expect.objectContaining({ title: 'Old Item' })],
-        total: 2,
+        data: [expect.objectContaining({ title: 'New Item' }), expect.objectContaining({ title: 'Old Item' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
 
-  it('respects offset and limit', async () => {
+  it('returns cursor metadata for a limited page', async () => {
     insertUserAndItems();
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { offset: '1', limit: '1' } };
+    const request: any = { usernameHash: 'user', query: { limit: '1' } };
     const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./get-collection-items-api');
@@ -221,11 +286,37 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        total: 2,
-        offset: 1,
-        limit: 1,
+        data: [expect.objectContaining({ title: 'Beta' })],
+        page: { limit: 1, hasMore: true, nextCursor: expect.any(String) },
       })
     );
+  });
+
+  it('returns 400 for malformed and filter-mismatched cursors', async () => {
+    insertUserAndItems();
+    const firstResponse = mockResponse();
+    const firstRoute = buildApp(
+      { usernameHash: 'user', query: { limit: '1', orderBy: 'alphabet' } } as any,
+      firstResponse
+    );
+    const { register } = await import('./get-collection-items-api');
+    register(firstRoute.app);
+    await firstRoute.handlerPromise();
+    const cursor = firstResponse.send.mock.calls[0][0].page.nextCursor;
+
+    for (const invalidCursor of ['malformed', cursor]) {
+      const response = mockResponse();
+      const query =
+        invalidCursor === cursor
+          ? { limit: '1', orderBy: 'createdAt', cursor: invalidCursor }
+          : { limit: '1', orderBy: 'alphabet', cursor: invalidCursor };
+      const route = buildApp({ usernameHash: 'user', query } as any, response);
+      register(route.app);
+      await route.handlerPromise();
+
+      expect(response.code).toHaveBeenCalledWith(400);
+      expect(response.send).toHaveBeenCalledWith({ error: 'Invalid cursor' });
+    }
   });
 
   it('filters favorites from query parameters', async () => {
@@ -241,8 +332,8 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Beta', favorite: true })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Beta', favorite: true })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -258,7 +349,10 @@ describe('get-collection-items-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ items: [], total: 0, offset: 0, limit: 50 });
+    expect(response.send).toHaveBeenCalledWith({
+      data: [],
+      page: { limit: 50, hasMore: false, nextCursor: null },
+    });
   });
 
   it('includes items from readable shared libraries', async () => {
@@ -278,11 +372,11 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: expect.arrayContaining([
+        data: expect.arrayContaining([
           expect.objectContaining({ title: 'Own Item', ownerShareCode: getUserShareCode('user') }),
           expect.objectContaining({ title: 'Shared Item', ownerShareCode: getUserShareCode('owner') }),
         ]),
-        total: 2,
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -300,7 +394,10 @@ describe('get-collection-items-api', () => {
     register(app);
 
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith({ items: [], total: 0, offset: 0, limit: 50 });
+    expect(response.send).toHaveBeenCalledWith({
+      data: [],
+      page: { limit: 50, hasMore: false, nextCursor: null },
+    });
   });
 
   it('excludes watch later items from the default collection list', async () => {
@@ -317,8 +414,8 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Normal Item' })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Normal Item' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -337,8 +434,8 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Normal Item' })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Normal Item' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -357,8 +454,8 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Normal Item' })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Normal Item' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -379,8 +476,8 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Own Watch Later Item' })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Own Watch Later Item' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -401,8 +498,8 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Own Tracked Series' })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Own Tracked Series' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -428,12 +525,12 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [
+        data: [
           expect.objectContaining({
             title: 'Uncompleted Tracked Series',
           }),
         ],
-        total: 1,
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -451,8 +548,8 @@ describe('get-collection-items-api', () => {
 
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Library Movie' })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Library Movie' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -518,8 +615,8 @@ describe('get-collection-items-api', () => {
 
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Canonical Library Movie', watched: true })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Canonical Library Movie', watched: true })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -541,8 +638,8 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Watch Later Item', listType: 'up-next' })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Watch Later Item', listType: 'up-next' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -563,8 +660,8 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Own Wishlist Item' })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Own Wishlist Item' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -587,8 +684,8 @@ describe('get-collection-items-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [expect.objectContaining({ title: 'Watch Later Comedy Item' })],
-        total: 1,
+        data: [expect.objectContaining({ title: 'Watch Later Comedy Item' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
       })
     );
   });
@@ -625,8 +722,8 @@ describe('get-collection-items-api', () => {
 
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        total: 2,
-        items: expect.arrayContaining([
+        page: { limit: 50, hasMore: false, nextCursor: null },
+        data: expect.arrayContaining([
           expect.objectContaining({ title: 'Library Movie', listType: 'library' }),
           expect.objectContaining({ title: 'Own Book', listType: 'books' }),
         ]),
@@ -686,8 +783,8 @@ describe('get-collection-items-api', () => {
 
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        total: 1,
-        items: [expect.objectContaining({ title: 'Own Book', listType: 'books' })],
+        page: { limit: 50, hasMore: false, nextCursor: null },
+        data: [expect.objectContaining({ title: 'Own Book', listType: 'books' })],
       })
     );
   });

@@ -99,7 +99,7 @@ export const CollectionPage = {
   getAddFirstWishlistItemLink: () => cy.getByTestId('add-first-wishlist-item'),
   getAddFirstTrackingItemLink: () => cy.getByTestId('add-first-tracking-item'),
   setListPreferredRatingToUser: () =>
-    cy.request('POST', '/api/v1/user/settings', {
+    cy.request('POST', '/api/v1/users/me/settings', {
       collectionListDisplayPreferences: {
         showYear: true,
         showSharedIcon: true,

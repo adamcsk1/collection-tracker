@@ -122,7 +122,7 @@ describe('Background component', () => {
     TestBed.inject(apiStateToken).setState('apiUrl', '/api');
     createComponent();
 
-    expect(component['images']()[0].url).toBe('/api/proxy/image?url=https%3A%2F%2Fimages.example%2Fposter.png');
+    expect(component['images']()[0].url).toBe('/api/images/proxy?url=https%3A%2F%2Fimages.example%2Fposter.png');
   });
 
   it('recomputes images on resize', () => {

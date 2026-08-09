@@ -7,3 +7,8 @@ export interface ExternalIdentityRow {
   external_item_id: string;
   source_confidence: ExternalItemIdentitySourceConfidenceModel;
 }
+
+export interface CanonicalItemRank {
+  canonicalItemId: string;
+  rank: number;
+}

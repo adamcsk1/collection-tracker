@@ -135,6 +135,8 @@ const callRoute = async (
 };
 
 describe('collection search APIs', () => {
+  process.env.COOKIE_SECRET = 'collection-search-api-secret';
+
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -159,17 +161,15 @@ describe('collection search APIs', () => {
     });
     const { register } = await import('./get-collection-items-api');
 
-    const response = await callRoute(register, 'get', '/api/v1/items', {
-      query: { search: 'space', type: 'movie', watched: 'true', limit: '10', offset: '0' },
+    const response = await callRoute(register, 'get', '/api/v1/collection-items', {
+      query: { search: 'space', type: 'movie', watched: 'true', limit: '10' },
       usernameHash: 'user',
     });
 
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        total: 1,
-        offset: 0,
-        limit: 10,
-        items: [expect.objectContaining({ IMDbId: 'tt-alien' })],
+        page: { limit: 10, hasMore: false, nextCursor: null },
+        data: [expect.objectContaining({ IMDbId: 'tt-alien' })],
       })
     );
   });
@@ -189,15 +189,15 @@ describe('collection search APIs', () => {
     });
     const { register } = await import('./get-collection-items-api');
 
-    const response = await callRoute(register, 'get', '/api/v1/items', {
-      query: { watched: 'false', limit: '10', offset: '0' },
+    const response = await callRoute(register, 'get', '/api/v1/collection-items', {
+      query: { watched: 'false', limit: '10' },
       usernameHash: 'user',
     });
 
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        total: 2,
-        items: expect.arrayContaining([
+        page: { limit: 10, hasMore: false, nextCursor: null },
+        data: expect.arrayContaining([
           expect.objectContaining({ IMDbId: 'tt-unwatched-movie' }),
           expect.objectContaining({ IMDbId: 'tt-unwatched-series' }),
         ]),
@@ -211,20 +211,20 @@ describe('collection search APIs', () => {
     insertItem({ imdbId: 'tt-other', title: 'Other Movie', rottenTomatoesRate: '50%', metacriticRate: '40/100' });
     const { register } = await import('./get-collection-items-api');
 
-    const rottenTomatoesResponse = await callRoute(register, 'get', '/api/v1/items', {
+    const rottenTomatoesResponse = await callRoute(register, 'get', '/api/v1/collection-items', {
       query: { search: '96%' },
       usernameHash: 'user',
     });
-    const metacriticResponse = await callRoute(register, 'get', '/api/v1/items', {
+    const metacriticResponse = await callRoute(register, 'get', '/api/v1/collection-items', {
       query: { search: '85/100' },
       usernameHash: 'user',
     });
 
     expect(rottenTomatoesResponse.send).toHaveBeenCalledWith(
-      expect.objectContaining({ total: 1, items: [expect.objectContaining({ IMDbId: 'tt-rated' })] })
+      expect.objectContaining({ data: [expect.objectContaining({ IMDbId: 'tt-rated' })] })
     );
     expect(metacriticResponse.send).toHaveBeenCalledWith(
-      expect.objectContaining({ total: 1, items: [expect.objectContaining({ IMDbId: 'tt-rated' })] })
+      expect.objectContaining({ data: [expect.objectContaining({ IMDbId: 'tt-rated' })] })
     );
   });
 
@@ -235,18 +235,18 @@ describe('collection search APIs', () => {
     insertItem({ imdbId: 'tt-bravo', title: 'Bravo', createdAt: '2024-01-03T00:00:00.000Z' });
     const { register } = await import('./get-collection-items-api');
 
-    const createdAscendingResponse = await callRoute(register, 'get', '/api/v1/items', {
+    const createdAscendingResponse = await callRoute(register, 'get', '/api/v1/collection-items', {
       query: { orderBy: 'createdAt', orderDirection: 'asc' },
       usernameHash: 'user',
     });
-    const alphabetDescendingResponse = await callRoute(register, 'get', '/api/v1/items', {
+    const alphabetDescendingResponse = await callRoute(register, 'get', '/api/v1/collection-items', {
       query: { orderBy: 'alphabet', orderDirection: 'desc' },
       usernameHash: 'user',
     });
 
     expect(createdAscendingResponse.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [
+        data: [
           expect.objectContaining({ IMDbId: 'tt-alpha' }),
           expect.objectContaining({ IMDbId: 'tt-charlie' }),
           expect.objectContaining({ IMDbId: 'tt-bravo' }),
@@ -255,7 +255,7 @@ describe('collection search APIs', () => {
     );
     expect(alphabetDescendingResponse.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        items: [
+        data: [
           expect.objectContaining({ IMDbId: 'tt-charlie' }),
           expect.objectContaining({ IMDbId: 'tt-bravo' }),
           expect.objectContaining({ IMDbId: 'tt-alpha' }),
@@ -270,22 +270,21 @@ describe('collection search APIs', () => {
     insertItem({ imdbId: 'tt-second', title: 'Second', createdAt: '2024-01-02T00:00:00.000Z' });
     const { register } = await import('./collection-items-matched-api');
 
-    const response = await callRoute(register, 'post', '/api/v1/items/matched', {
+    const response = await callRoute(register, 'post', '/api/v1/collection-items/matches', {
       body: {
         identities: [
           { source: 'imdb', id: 'tt-first' },
           { source: 'imdb', id: 'tt-second' },
         ],
         limit: 10,
-        offset: 0,
       },
       usernameHash: 'user',
     });
 
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        total: 2,
-        items: [expect.objectContaining({ IMDbId: 'tt-first' }), expect.objectContaining({ IMDbId: 'tt-second' })],
+        page: { limit: 10, hasMore: false, nextCursor: null },
+        data: [expect.objectContaining({ IMDbId: 'tt-first' }), expect.objectContaining({ IMDbId: 'tt-second' })],
       })
     );
   });
@@ -307,12 +306,11 @@ describe('collection search APIs', () => {
     )();
     const { register } = await import('./collection-items-matched-api');
 
-    const response = await callRoute(register, 'post', '/api/v1/items/matched', {
+    const response = await callRoute(register, 'post', '/api/v1/collection-items/matches', {
       body: {
         identities,
         filters: { listType: 'tracking' },
         limit: 50,
-        offset: 0,
       },
       usernameHash: 'user',
     });
@@ -320,13 +318,11 @@ describe('collection search APIs', () => {
     expect(response.code).not.toHaveBeenCalledWith(500);
     expect(response.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        total: 1200,
-        limit: 50,
-        offset: 0,
-        items: expect.arrayContaining([expect.objectContaining({ IMDbId: 'tt0000000' })]),
+        page: { limit: 50, hasMore: true, nextCursor: expect.any(String) },
+        data: expect.arrayContaining([expect.objectContaining({ IMDbId: 'tt0000000' })]),
       })
     );
-    expect(response.send.mock.calls[0][0].items).toHaveLength(50);
+    expect(response.send.mock.calls[0][0].data).toHaveLength(50);
   }, 15_000);
 
   it('returns search suggestions and known item validation', async () => {
@@ -335,37 +331,42 @@ describe('collection search APIs', () => {
     const { register: registerSuggestions } = await import('./collection-items-search-suggestions-api');
     const { register: registerExists } = await import('./collection-items-exists-api');
 
-    const suggestionsResponse = await callRoute(registerSuggestions, 'get', '/api/v1/items/search-suggestions', {
+    const suggestionsResponse = await callRoute(registerSuggestions, 'get', '/api/v1/collection-items/suggestions', {
       query: { query: 'alien', limit: '5' },
       usernameHash: 'user',
     });
-    const tagSuggestionsResponse = await callRoute(registerSuggestions, 'get', '/api/v1/items/search-suggestions', {
+    const tagSuggestionsResponse = await callRoute(registerSuggestions, 'get', '/api/v1/collection-items/suggestions', {
       query: { query: '#sp', limit: '5' },
       usernameHash: 'user',
     });
     const favoriteSuggestionsResponse = await callRoute(
       registerSuggestions,
       'get',
-      '/api/v1/items/search-suggestions',
+      '/api/v1/collection-items/suggestions',
       {
         query: { query: '#fav', limit: '5' },
         usernameHash: 'user',
       }
     );
-    const watchedSuggestionsResponse = await callRoute(registerSuggestions, 'get', '/api/v1/items/search-suggestions', {
-      query: { query: '#watche', limit: '5' },
-      usernameHash: 'user',
-    });
+    const watchedSuggestionsResponse = await callRoute(
+      registerSuggestions,
+      'get',
+      '/api/v1/collection-items/suggestions',
+      {
+        query: { query: '#watche', limit: '5' },
+        usernameHash: 'user',
+      }
+    );
     const unwatchedSuggestionsResponse = await callRoute(
       registerSuggestions,
       'get',
-      '/api/v1/items/search-suggestions',
+      '/api/v1/collection-items/suggestions',
       {
         query: { query: '#unwat', limit: '5' },
         usernameHash: 'user',
       }
     );
-    const existsResponse = await callRoute(registerExists, 'get', '/api/v1/items/exists', {
+    const existsResponse = await callRoute(registerExists, 'get', '/api/v1/collection-items/exists', {
       query: { imdbId: 'tt-alien' },
       usernameHash: 'user',
     });
@@ -388,11 +389,11 @@ describe('collection search APIs', () => {
     insertItem({ imdbId: 'tt-watchlist', title: 'Shared Title', listType: 'up-next', tags: ['#queued'] });
     const { register } = await import('./collection-items-search-suggestions-api');
 
-    const titleResponse = await callRoute(register, 'get', '/api/v1/items/search-suggestions', {
+    const titleResponse = await callRoute(register, 'get', '/api/v1/collection-items/suggestions', {
       query: { query: 'shared', limit: '5', listType: 'up-next' },
       usernameHash: 'user',
     });
-    const tagResponse = await callRoute(register, 'get', '/api/v1/items/search-suggestions', {
+    const tagResponse = await callRoute(register, 'get', '/api/v1/collection-items/suggestions', {
       query: { query: '#que', limit: '5', listType: 'up-next' },
       usernameHash: 'user',
     });
@@ -418,17 +419,17 @@ describe('collection search APIs', () => {
     const { register: registerSearch } = await import('./get-collection-items-api');
     const { register: registerSuggestions } = await import('./collection-items-search-suggestions-api');
 
-    const searchResponse = await callRoute(registerSearch, 'get', '/api/v1/items', {
+    const searchResponse = await callRoute(registerSearch, 'get', '/api/v1/collection-items', {
       query: { search: '9780140328721', listType: 'books' },
       usernameHash: 'user',
     });
-    const suggestionsResponse = await callRoute(registerSuggestions, 'get', '/api/v1/items/search-suggestions', {
+    const suggestionsResponse = await callRoute(registerSuggestions, 'get', '/api/v1/collection-items/suggestions', {
       query: { query: '9780140328721', listType: 'books' },
       usernameHash: 'user',
     });
 
     expect(searchResponse.send).toHaveBeenCalledWith(
-      expect.objectContaining({ total: 1, items: [expect.objectContaining({ externalItemId: '9780140328721' })] })
+      expect.objectContaining({ data: [expect.objectContaining({ externalItemId: '9780140328721' })] })
     );
     expect(suggestionsResponse.send).toHaveBeenCalledWith({
       suggestions: [{ label: 'Matilda', value: '9780140328721', kind: 'title' }],
@@ -440,7 +441,7 @@ describe('collection search APIs', () => {
     insertItem({ imdbId: 'tt-one', title: 'One', tags: ['#movie', '#favorite', '#space'] });
     const { register } = await import('./tag-suggestions-api');
 
-    const response = await callRoute(register, 'get', '/api/v1/tags/suggestions', {
+    const response = await callRoute(register, 'get', '/api/v1/collection-items/tag-suggestions', {
       query: { query: '#', limit: '10' },
       usernameHash: 'user',
     });
@@ -453,7 +454,7 @@ describe('collection search APIs', () => {
     insertItem({ imdbId: 'tt-one', title: 'One', genres: ['Sci-Fi', 'Drama'] });
     const { register } = await import('./genre-suggestions-api');
 
-    const response = await callRoute(register, 'get', '/api/v1/genres/suggestions', {
+    const response = await callRoute(register, 'get', '/api/v1/collection-items/genre-suggestions', {
       query: { query: 'sci', limit: '10' },
       usernameHash: 'user',
     });
@@ -480,7 +481,7 @@ describe('collection search APIs', () => {
     });
     const { register } = await import('./statistics-api');
 
-    const response = await callRoute(register, 'get', '/api/v1/statistics', {
+    const response = await callRoute(register, 'get', '/api/v1/collection-items/statistics', {
       query: {},
       usernameHash: 'user',
     });

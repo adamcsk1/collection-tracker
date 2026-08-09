@@ -2723,4 +2723,33 @@ describe('runMigrations', () => {
       db.close();
     });
   });
+
+  describe('035_add_collection_cursor_indexes', () => {
+    it('adds the alphabetical cursor index', async () => {
+      const migrationFile = '035_add_collection_cursor_indexes.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+
+      await runMigrations(db, migrationsDir);
+
+      const indexes = db
+        .prepare(
+          `SELECT name, sql FROM sqlite_master
+           WHERE type = 'index'
+             AND name = 'idx_collection_items_list_title_id'
+           ORDER BY name`
+        )
+        .all();
+      expect(indexes).toEqual([
+        expect.objectContaining({
+          name: 'idx_collection_items_list_title_id',
+          sql: expect.stringContaining('username_hash, list_type, title_lower, id'),
+        }),
+      ]);
+      expect(db.prepare('SELECT id FROM schema_migrations WHERE id = ?').get(migrationFile)).toEqual({
+        id: migrationFile,
+      });
+      db.close();
+    });
+  });
 });

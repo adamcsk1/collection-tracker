@@ -10,7 +10,9 @@ export const refreshTokenInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error) => {
       const isAuthRequest =
-        req.url.includes('/session/refresh') || req.url.includes('/sign-in') || req.url.includes('/sign-up');
+        req.url.includes('/auth/session/refresh') ||
+        req.url.includes('/auth/sign-in') ||
+        req.url.includes('/auth/sign-up');
       if (error.status === 401 && !isAuthRequest) {
         return refreshService.refresh().pipe(
           switchMap(() => next(req)),

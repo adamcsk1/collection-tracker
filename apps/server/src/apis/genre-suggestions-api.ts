@@ -12,7 +12,7 @@ const parseLimit = (value: unknown): number => {
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/genres/suggestions`,
+    `${API_PREFIX}/collection-items/genre-suggestions`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const queryParams = request.query as Record<string, unknown>;

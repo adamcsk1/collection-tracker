@@ -407,7 +407,7 @@ const queryBatches = async (
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/proxy/ai/query`,
+    `${API_PREFIX}/ai/matches`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const ollamaConfig = getOllamaConfig();

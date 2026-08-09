@@ -41,7 +41,7 @@ describe('TagManagementService', () => {
           },
         ])
       ),
-      updateUserTagManagement: vi.fn(() => of(void 0)),
+      updateUserTagManagement: vi.fn((configs: unknown) => of(configs)),
       renameTag: vi.fn(() =>
         of({
           renamedItemCount: 1,

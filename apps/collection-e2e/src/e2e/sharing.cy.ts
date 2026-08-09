@@ -3,6 +3,7 @@ import { CollectionPage } from '../page-objects/collection.po';
 import { SettingsPage } from '../page-objects/settings.po';
 import {
   cleanupCreatedUsers,
+  CollectionPageEnvelope,
   createUser,
   expectGrant,
   expectNoGrant,
@@ -21,7 +22,7 @@ const visitSharedList = (
   list: 'library' | 'wishlist' | 'tracking' | 'books' | 'up-next' = 'library'
 ): void => {
   signInThroughUi(sharedUser);
-  cy.intercept('GET', '/api/v1/items*').as('itemsLoad');
+  cy.intercept('GET', '/api/v1/collection-items*').as('itemsLoad');
   switch (list) {
     case 'wishlist':
       CollectionPage.visitWishlist();
@@ -81,7 +82,7 @@ describe('Collection sharing - settings management', () => {
         SettingsPage.getAddShareGrantCheckbox('library', 'movie', 'can-create').check();
         SettingsPage.getAddShareGrantCheckbox('wishlist', 'movie', 'can-read').check();
 
-        cy.intercept('POST', '/api/v1/user/shares').as('saveShare');
+        cy.intercept('POST', '/api/v1/users/me/shares').as('saveShare');
         SettingsPage.getShareDialogSaveButton().click();
         cy.wait('@saveShare').then(({ request, response }) => {
           expect(response?.statusCode).to.eq(204);
@@ -114,12 +115,12 @@ describe('Collection sharing - settings management', () => {
         cy.get('body').type('{esc}');
 
         cy.on('window:confirm', () => true);
-        cy.intercept('DELETE', '/api/v1/user/shares/*').as('removeShare');
+        cy.intercept('DELETE', '/api/v1/users/me/shares/*').as('removeShare');
         SettingsPage.getRemoveShareButton(sharedUser.shareCode).click();
         cy.wait('@removeShare').its('response.statusCode').should('eq', 204);
 
         // Re-share for revoke path with multi-scope grants.
-        requestAs(owner, 'POST', '/api/v1/user/shares', {
+        requestAs(owner, 'POST', '/api/v1/users/me/shares', {
           sharedWithUserShareCode: sharedUser.shareCode,
           grants: [
             grant('library', 'movie', { canRead: true }),
@@ -139,7 +140,7 @@ describe('Collection sharing - settings management', () => {
         SettingsPage.getShareDialogSaveButton().should('not.exist');
         cy.get('body').type('{esc}');
 
-        cy.intercept('DELETE', '/api/v1/user/shares/incoming/*').as('revokeShare');
+        cy.intercept('DELETE', '/api/v1/users/me/shares/incoming/*').as('revokeShare');
         SettingsPage.getRevokeIncomingShareButton(owner.shareCode).click();
         cy.wait('@revokeShare').its('response.statusCode').should('eq', 204);
       })
@@ -170,13 +171,13 @@ describe('Collection sharing - library movie permissions', () => {
       ({ owner, sharedUser }) => {
         const title = 'Shared Create Movie';
         const imdbId = uniqueImdbId();
-        cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
+        cy.intercept('GET', '/api/v1/external-metadata/search*', {
           statusCode: 200,
-          body: buildOmdbSearchResult(title, imdbId),
+          body: { data: buildOmdbSearchResult(title, imdbId) },
         }).as('omdbSearch');
-        cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
+        cy.intercept('GET', '/api/v1/external-metadata/items*', {
           statusCode: 200,
-          body: buildOmdbItem(title, imdbId),
+          body: { data: buildOmdbItem(title, imdbId) },
         }).as('omdbItem');
 
         visitSharedList(sharedUser);
@@ -185,7 +186,7 @@ describe('Collection sharing - library movie permissions', () => {
         CollectionPage.getNewItemSearchInput().type(title);
         cy.wait('@omdbSearch');
         CollectionPage.getNewItemLibrarySelect().select(owner.shareCode);
-        cy.intercept('POST', '/api/v1/create').as('createItem');
+        cy.intercept('POST', '/api/v1/collection-items').as('createItem');
         CollectionPage.getNewItemSaveAndCloseButton().click();
         cy.wait('@omdbItem');
         cy.wait('@createItem').then(({ request, response }) => {
@@ -197,12 +198,12 @@ describe('Collection sharing - library movie permissions', () => {
         CollectionPage.getSharedBadges().should('be.visible');
 
         // Owner still owns the row.
-        requestAs<{ items: Array<{ title: string; ownerShareCode?: string }> }>(
+        requestAs<CollectionPageEnvelope<{ title: string; ownerShareCode?: string }>>(
           owner,
           'GET',
-          '/api/v1/items?listType=library&limit=50'
+          '/api/v1/collection-items?listType=library&limit=50'
         ).then((response) => {
-          expect(response.body.items.some((item) => item.title === title)).to.eq(true);
+          expect(response.body.data.some((item) => item.title === title)).to.eq(true);
         });
       }
     );
@@ -221,7 +222,7 @@ describe('Collection sharing - library movie permissions', () => {
         CollectionPage.getNewItemManualTitleInput().type(title);
         CollectionPage.getNewItemManualImdbIdInput().type(imdbId);
 
-        cy.intercept('POST', '/api/v1/create').as('createManualItem');
+        cy.intercept('POST', '/api/v1/collection-items').as('createManualItem');
         CollectionPage.getNewItemSaveAndCloseButton().should('be.enabled').click();
         cy.wait('@createManualItem').then(({ request, response }) => {
           expect(request.body).to.deep.include({
@@ -235,7 +236,7 @@ describe('Collection sharing - library movie permissions', () => {
           expect(response?.statusCode).to.equal(200);
         });
 
-        cy.intercept('GET', '/api/v1/items*').as('manualItemsReload');
+        cy.intercept('GET', '/api/v1/collection-items*').as('manualItemsReload');
         cy.reload();
         cy.wait('@manualItemsReload');
         CollectionPage.getListItems().should('have.length', 1).and('contain.text', title);
@@ -249,13 +250,13 @@ describe('Collection sharing - library movie permissions', () => {
       ({ owner, sharedUser }) => {
         const title = 'Shared Default Movie';
         const imdbId = uniqueImdbId();
-        cy.intercept('GET', '/api/v1/proxy/external-metadata/search*', {
+        cy.intercept('GET', '/api/v1/external-metadata/search*', {
           statusCode: 200,
-          body: buildOmdbSearchResult(title, imdbId),
+          body: { data: buildOmdbSearchResult(title, imdbId) },
         }).as('omdbSearch');
-        cy.intercept('GET', '/api/v1/proxy/external-metadata/item*', {
+        cy.intercept('GET', '/api/v1/external-metadata/items*', {
           statusCode: 200,
-          body: buildOmdbItem(title, imdbId),
+          body: { data: buildOmdbItem(title, imdbId) },
         }).as('omdbItem');
 
         signInThroughUi(sharedUser);
@@ -268,7 +269,7 @@ describe('Collection sharing - library movie permissions', () => {
         CollectionPage.getNewItemSearchInput().type(title);
         cy.wait('@omdbSearch');
         CollectionPage.getNewItemLibrarySelect().should('have.value', owner.shareCode);
-        cy.intercept('POST', '/api/v1/create').as('createItem');
+        cy.intercept('POST', '/api/v1/collection-items').as('createItem');
         CollectionPage.getNewItemSaveAndCloseButton().click();
         cy.wait('@omdbItem');
         cy.wait('@createItem').its('request.body.targetOwnerShareCode').should('eq', owner.shareCode);
@@ -282,7 +283,7 @@ describe('Collection sharing - library movie permissions', () => {
         seedOwnerItem(owner, { title: 'Shared Update Movie', externalId: uniqueImdbId() });
         visitSharedList(sharedUser);
 
-        cy.intercept('PUT', '/api/v1/items/**/change*').as('updateItem');
+        cy.intercept('PUT', '/api/v1/collection-items/**').as('updateItem');
         CollectionPage.getListItemImages().first().click();
         assertDialogPermissions({ update: true, delete: false });
         CollectionPage.getItemDialogEditButton().click();
@@ -303,7 +304,7 @@ describe('Collection sharing - library movie permissions', () => {
         seedOwnerItem(owner, { title: 'Shared Delete Movie', externalId: uniqueImdbId() });
         visitSharedList(sharedUser);
 
-        cy.intercept('DELETE', '/api/v1/items/**').as('deleteItem');
+        cy.intercept('DELETE', '/api/v1/collection-items/**').as('deleteItem');
         cy.on('window:confirm', () => true);
         CollectionPage.getListItemImages().first().click();
         assertDialogPermissions({ update: false, delete: true });
@@ -350,11 +351,11 @@ describe('Collection sharing - content type isolation', () => {
 
       visitSharedList(sharedUser);
 
-      cy.intercept('GET', '/api/v1/items*').as('libraryItems');
+      cy.intercept('GET', '/api/v1/collection-items*').as('libraryItems');
       CollectionPage.visit();
       cy.wait('@libraryItems').then(({ request, response }) => {
         expect(request.url).to.include('listType=library');
-        const items = (response?.body as { items: Array<{ title: string; contentType: string }> }).items;
+        const items = (response?.body as CollectionPageEnvelope<{ title: string; contentType: string }>).data;
         expect(items.some((item) => item.title === movieTitle)).to.eq(true);
         expect(items.some((item) => item.title === seriesTitle)).to.eq(false);
       });
@@ -386,7 +387,7 @@ describe('Collection sharing - non-library lists', () => {
         CollectionPage.getListItems().should('contain.text', title);
         CollectionPage.getSharedBadges().should('be.visible');
 
-        cy.intercept('PUT', '/api/v1/items/**/change*').as('updateWishlistItem');
+        cy.intercept('PUT', '/api/v1/collection-items/**').as('updateWishlistItem');
         CollectionPage.getListItemImages().first().click();
         assertDialogPermissions({ update: true, delete: true });
         CollectionPage.getItemDialogEditButton().click();
@@ -455,14 +456,14 @@ describe('Collection sharing - non-library lists', () => {
       SettingsPage.getManageTrackerLibrarySelect().select(owner.shareCode);
       cy.on('window:confirm', () => true);
 
-      cy.intercept('POST', '/api/v1/items/mark-all-books-completed*').as('markSharedBooksCompleted');
+      cy.intercept('POST', '/api/v1/collection-items/actions/mark-books-completed*').as('markSharedBooksCompleted');
       SettingsPage.getMarkAllBooksCompletedButton().should('be.enabled').click();
       cy.wait('@markSharedBooksCompleted').then(({ request, response }) => {
         expect(request.url).to.include(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
         expect(response?.statusCode).to.eq(200);
       });
 
-      cy.intercept('POST', '/api/v1/items/mark-all-books-uncompleted*').as('markSharedBooksUncompleted');
+      cy.intercept('POST', '/api/v1/collection-items/actions/mark-books-uncompleted*').as('markSharedBooksUncompleted');
       SettingsPage.getMarkAllBooksUncompletedButton().should('be.enabled').click();
       cy.wait('@markSharedBooksUncompleted').then(({ request, response }) => {
         expect(request.url).to.include(`ownerShareCode=${encodeURIComponent(owner.shareCode)}`);
@@ -486,7 +487,7 @@ describe('Collection sharing - non-library lists', () => {
       CollectionPage.getListItems().should('contain.text', title);
       CollectionPage.getSharedBadges().should('be.visible');
 
-      cy.intercept('PUT', '/api/v1/items/**/change*').as('updateTracking');
+      cy.intercept('PUT', '/api/v1/collection-items/**').as('updateTracking');
       CollectionPage.getListItemImages().first().click();
       assertDialogPermissions({ update: true, delete: false });
       CollectionPage.getItemDialogEditButton().click();
@@ -499,11 +500,13 @@ describe('Collection sharing - non-library lists', () => {
       });
 
       // Owner row updated (shared tracking, not a copy).
-      requestAs<{ items: Array<{ title: string }> }>(owner, 'GET', '/api/v1/items?listType=tracking&limit=50').then(
-        (response) => {
-          expect(response.body.items.some((item) => item.title === 'Shared Tracking Renamed')).to.eq(true);
-        }
-      );
+      requestAs<CollectionPageEnvelope<{ title: string }>>(
+        owner,
+        'GET',
+        '/api/v1/collection-items?listType=tracking&limit=50'
+      ).then((response) => {
+        expect(response.body.data.some((item) => item.title === 'Shared Tracking Renamed')).to.eq(true);
+      });
     });
   });
 });
@@ -520,23 +523,23 @@ describe('Collection sharing - shared list filter', () => {
       seedOwnerItem(sharedUser, { title: ownTitle, externalId: ownImdb });
 
       signInThroughUi(sharedUser);
-      cy.intercept('GET', '/api/v1/items*').as('allItems');
+      cy.intercept('GET', '/api/v1/collection-items*').as('allItems');
       CollectionPage.visit();
       cy.wait('@allItems').then(({ request, response }) => {
         expect(request.url).to.not.include('shared=');
-        const titles = (response?.body as { items: Array<{ title: string }> }).items.map((item) => item.title);
+        const titles = (response?.body as CollectionPageEnvelope<{ title: string }>).data.map((item) => item.title);
         expect(titles).to.include(ownTitle);
         expect(titles).to.include(sharedTitle);
       });
       CollectionPage.getListItems().should('contain.text', ownTitle).and('contain.text', sharedTitle);
       CollectionPage.getSharedBadges().should('have.length.at.least', 1);
 
-      cy.intercept('GET', '/api/v1/items*shared=mine*').as('mineItems');
+      cy.intercept('GET', '/api/v1/collection-items*shared=mine*').as('mineItems');
       openFloatFilters();
       CollectionPage.getCollectionFilterButton('sharedMine').click();
       cy.wait('@mineItems').then(({ request, response }) => {
         expect(request.url).to.include('shared=mine');
-        const titles = (response?.body as { items: Array<{ title: string }> }).items.map((item) => item.title);
+        const titles = (response?.body as CollectionPageEnvelope<{ title: string }>).data.map((item) => item.title);
         expect(titles).to.include(ownTitle);
         expect(titles).to.not.include(sharedTitle);
       });
@@ -544,12 +547,12 @@ describe('Collection sharing - shared list filter', () => {
       CollectionPage.getListItems().should('not.contain.text', sharedTitle);
       CollectionPage.getSharedBadges().should('not.exist');
 
-      cy.intercept('GET', '/api/v1/items*shared=shared*').as('sharedItems');
+      cy.intercept('GET', '/api/v1/collection-items*shared=shared*').as('sharedItems');
       openFloatFilters();
       CollectionPage.getCollectionFilterButton('sharedOnly').click();
       cy.wait('@sharedItems').then(({ request, response }) => {
         expect(request.url).to.include('shared=shared');
-        const titles = (response?.body as { items: Array<{ title: string }> }).items.map((item) => item.title);
+        const titles = (response?.body as CollectionPageEnvelope<{ title: string }>).data.map((item) => item.title);
         expect(titles).to.include(sharedTitle);
         expect(titles).to.not.include(ownTitle);
       });
@@ -558,7 +561,7 @@ describe('Collection sharing - shared list filter', () => {
       CollectionPage.getSharedBadges().should('have.length', 1);
 
       // Direct URL entry also works.
-      cy.intercept('GET', '/api/v1/items*').as('urlMine');
+      cy.intercept('GET', '/api/v1/collection-items*').as('urlMine');
       CollectionPage.visitLibraryWithSharedFilter('mine');
       cy.wait('@urlMine').its('request.url').should('include', 'shared=mine');
     });
@@ -585,7 +588,7 @@ describe('Collection sharing - image refresh', () => {
         SettingsPage.visitMediaRefresh();
 
         SettingsPage.getMediaRefreshLibrarySelect().should('be.visible').select(owner.shareCode);
-        cy.intercept('POST', '/api/v1/items/refresh-images*').as('refreshImages');
+        cy.intercept('POST', '/api/v1/collection-items/actions/refresh-images*').as('refreshImages');
         cy.on('window:confirm', () => true);
         SettingsPage.getImageRefreshStartButton().click();
 
@@ -620,7 +623,7 @@ describe('Collection sharing - tracking dual path', () => {
         seedOwnerItem(owner, { title, externalId: imdbId });
         visitSharedList(sharedUser);
 
-        cy.intercept('POST', '/api/v1/tracking/**').as('markWatched');
+        cy.intercept('POST', '/api/v1/collection-items/*/*/tracking*').as('markWatched');
         cy.on('window:confirm', () => true);
 
         CollectionPage.getListItems().contains(title).click();
@@ -632,10 +635,10 @@ describe('Collection sharing - tracking dual path', () => {
           expect(interception.response?.statusCode).to.eq(200);
         });
 
-        cy.intercept('GET', '/api/v1/items?*listType=tracking*').as('getTrackingItems');
+        cy.intercept('GET', '/api/v1/collection-items?*listType=tracking*').as('getTrackingItems');
         CollectionPage.visitTracking();
         cy.wait('@getTrackingItems').then(({ response }) => {
-          const items = (response?.body as { items: Array<{ title: string; ownerShareCode?: string }> }).items;
+          const items = (response?.body as CollectionPageEnvelope<{ title: string; ownerShareCode?: string }>).data;
           const trackingItem = items.find((item) => item.title === title);
           expect(trackingItem, 'viewer owns tracking twin').to.exist;
           // Mapper always includes a share code. It must identify the viewer, not source owner.

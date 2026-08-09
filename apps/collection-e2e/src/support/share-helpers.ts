@@ -28,6 +28,18 @@ export interface TestUser {
   shareCode: string;
 }
 
+export interface ApiEnvelope<ResponseData> {
+  data: ResponseData;
+}
+
+export interface CollectionPageEnvelope<Item> extends ApiEnvelope<Item[]> {
+  page: {
+    limit: number;
+    hasMore: boolean;
+    nextCursor: string | null;
+  };
+}
+
 const createdUsers: TestUser[] = [];
 let imdbIdCounter = 0;
 
@@ -75,16 +87,16 @@ export const createUser = (label: string, prefix = 'share'): Cypress.Chainable<T
   const username = `${prefix}-${label}-${uniqueId()}`;
 
   return cy
-    .request<{ token: string }>({
+    .request<ApiEnvelope<{ token: string }>>({
       method: 'POST',
-      url: '/api/v1/sign-up',
+      url: '/api/v1/auth/sign-up',
       body: { username },
       headers: { Cookie: '' },
     })
     .then((signUpResponse) => {
-      const token = signUpResponse.body.token;
+      const token = signUpResponse.body.data.token;
       return cy
-        .request({ method: 'POST', url: '/api/v1/sign-in', body: { username, token }, headers: { Cookie: '' } })
+        .request({ method: 'POST', url: '/api/v1/auth/sign-in', body: { username, token }, headers: { Cookie: '' } })
         .then((signInResponse) => ({
           username,
           token,
@@ -92,20 +104,22 @@ export const createUser = (label: string, prefix = 'share'): Cypress.Chainable<T
         }));
     })
     .then((user) =>
-      requestAs<{ userShareCode: string }>(user, 'GET', '/api/v1/user/shares').then((sharesResponse) => {
-        const createdUser = {
-          ...user,
-          shareCode: sharesResponse.body.userShareCode,
-        };
-        createdUsers.push(createdUser);
-        return createdUser;
-      })
+      requestAs<ApiEnvelope<{ userShareCode: string }>>(user, 'GET', '/api/v1/users/me/shares').then(
+        (sharesResponse) => {
+          const createdUser = {
+            ...user,
+            shareCode: sharesResponse.body.data.userShareCode,
+          };
+          createdUsers.push(createdUser);
+          return createdUser;
+        }
+      )
     );
 };
 
 export const cleanupCreatedUsers = (): void => {
   createdUsers.splice(0).forEach((user) => {
-    requestAs(user, 'DELETE', '/api/v1/user');
+    requestAs(user, 'DELETE', '/api/v1/users/me');
   });
 };
 
@@ -152,7 +166,7 @@ export const setupShare = (
   const prefix = options.prefix ?? 'share';
   return createUser(options.ownerLabel ?? 'owner', prefix).then((owner) =>
     createUser(options.sharedLabel ?? 'shared', prefix).then((sharedUser) =>
-      requestAs(owner, 'POST', '/api/v1/user/shares', {
+      requestAs(owner, 'POST', '/api/v1/users/me/shares', {
         sharedWithUserShareCode: sharedUser.shareCode,
         grants,
       }).then((response) => {
@@ -175,8 +189,7 @@ export const seedOwnerItem = (
 ): Cypress.Chainable<Cypress.Response<unknown>> => {
   const contentType = options.contentType ?? 'movie';
   const listType = options.listType ?? (contentType === 'book' ? 'books' : 'library');
-  const externalId =
-    options.externalId ?? (contentType === 'book' ? '9780306406157' : uniqueImdbId());
+  const externalId = options.externalId ?? (contentType === 'book' ? '9780306406157' : uniqueImdbId());
 
   const body =
     contentType === 'book'
@@ -191,7 +204,7 @@ export const seedOwnerItem = (
           tags: options.tags ?? [],
         };
 
-  return requestAs(owner, 'POST', '/api/v1/create', body).then((response) => {
+  return requestAs(owner, 'POST', '/api/v1/collection-items', body).then((response) => {
     expect(response.status, `seed ${listType}/${contentType} item`).to.eq(200);
     return response;
   });
@@ -217,10 +230,6 @@ export const expectGrant = (
   if (expected.canDelete !== undefined) expect(match!.canDelete).to.eq(expected.canDelete);
 };
 
-export const expectNoGrant = (
-  grants: ShareGrant[],
-  listType: ShareListType,
-  contentType: ShareContentType
-): void => {
+export const expectNoGrant = (grants: ShareGrant[], listType: ShareListType, contentType: ShareContentType): void => {
   expect(findGrantInPayload(grants, listType, contentType), `no grant ${listType}/${contentType}`).to.be.undefined;
 };

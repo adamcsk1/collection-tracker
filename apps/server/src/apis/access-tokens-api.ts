@@ -8,7 +8,7 @@ import type { FastifyInstance } from 'fastify';
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/user/access-tokens`,
+    `${API_PREFIX}/users/me/access-tokens`,
     { preHandler: jwtGuard },
     withErrorHandler((request, response) => {
       const allTokens: AccessTokensApiResponseModel = findAccessTokensByUser(getDatabase(), request.usernameHash);

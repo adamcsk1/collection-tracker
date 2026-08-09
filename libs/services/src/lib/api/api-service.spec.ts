@@ -40,11 +40,36 @@ describe('ApiService', () => {
   it('sends logout request', async () => {
     const promise = lastValueFrom(service.logout());
 
-    const logoutRequest = httpMock.expectOne('https://api.test/logout');
+    const logoutRequest = httpMock.expectOne('https://api.test/auth/session');
     expect(logoutRequest.request.method).toBe('DELETE');
-    logoutRequest.flush({});
+    logoutRequest.flush(null, { status: 204, statusText: 'No Content' });
 
-    await expect(promise).resolves.toEqual({});
+    await expect(promise).resolves.toBeNull();
+  });
+
+  it('maps paginated collection wire responses and sends cursor query parameters', async () => {
+    const promise = lastValueFrom(service.searchItems({ listType: 'library' }, 'next/cursor', 25));
+
+    const request = httpMock.expectOne(
+      'https://api.test/collection-items?cursor=next%2Fcursor&limit=25&listType=library'
+    );
+    const page = { limit: 25, hasMore: true, nextCursor: 'following' };
+    request.flush({ data: [{ title: 'Item' }], page });
+
+    await expect(promise).resolves.toEqual({ items: [{ title: 'Item' }], page });
+  });
+
+  it('maps paginated matched-item wire responses', async () => {
+    const body = { identities: [{ source: 'imdb' as const, id: 'tt001' }], cursor: 'next', limit: 1 };
+    const promise = lastValueFrom(service.getMatchedItems(body));
+
+    const request = httpMock.expectOne('https://api.test/collection-items/matches');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(body);
+    const page = { limit: 1, hasMore: false, nextCursor: null };
+    request.flush({ data: [{ title: 'Matched' }], page });
+
+    await expect(promise).resolves.toEqual({ items: [{ title: 'Matched' }], page });
   });
 
   it('creates an item with provided data', async () => {
@@ -68,10 +93,10 @@ describe('ApiService', () => {
     };
     const promise = lastValueFrom(service.create(item));
 
-    const createRequest = httpMock.expectOne('https://api.test/create');
+    const createRequest = httpMock.expectOne('https://api.test/collection-items');
     expect(createRequest.request.method).toBe('POST');
     expect(createRequest.request.body).toEqual(item);
-    createRequest.flush({ item });
+    createRequest.flush({ data: { item } });
 
     await expect(promise).resolves.toEqual({ item });
   });
@@ -83,10 +108,10 @@ describe('ApiService', () => {
     );
 
     const existsRequest = httpMock.expectOne(
-      `https://api.test/items/exists?externalIdentitySource=provider%2Fid&externalIdentityId=item%2Fid&ownerShareCode=share%2Fcode&listType=up-next&externalIds=${encodeURIComponent(JSON.stringify(externalIds))}`
+      `https://api.test/collection-items/exists?externalIdentitySource=provider%2Fid&externalIdentityId=item%2Fid&ownerShareCode=share%2Fcode&listType=up-next&externalIds=${encodeURIComponent(JSON.stringify(externalIds))}`
     );
     expect(existsRequest.request.method).toBe('GET');
-    existsRequest.flush({ exists: true });
+    existsRequest.flush({ data: { exists: true } });
 
     await expect(promise).resolves.toEqual({ exists: true });
   });
@@ -115,11 +140,11 @@ describe('ApiService', () => {
     );
 
     const updateRequest = httpMock.expectOne(
-      'https://api.test/items/provider%2Fid/item%2Fid/change?ownerShareCode=share%2Fcode&listType=up-next'
+      'https://api.test/collection-items/provider%2Fid/item%2Fid?ownerShareCode=share%2Fcode&listType=up-next'
     );
     expect(updateRequest.request.method).toBe('PUT');
     expect(updateRequest.request.body).toEqual({ ...item, hash: 'old-hash' });
-    updateRequest.flush({ item: { ...item, hash: 'new-hash' } });
+    updateRequest.flush({ data: { item: { ...item, hash: 'new-hash' } } });
 
     await expect(promise).resolves.toEqual({ item: { ...item, hash: 'new-hash' } });
   });
@@ -130,20 +155,20 @@ describe('ApiService', () => {
     );
 
     const deleteRequest = httpMock.expectOne(
-      'https://api.test/items/provider%2Fid/item%2Fid?hash=abc123&ownerShareCode=share%2Fcode&listType=up-next'
+      'https://api.test/collection-items/provider%2Fid/item%2Fid?hash=abc123&ownerShareCode=share%2Fcode&listType=up-next'
     );
     expect(deleteRequest.request.method).toBe('DELETE');
-    deleteRequest.flush({});
+    deleteRequest.flush(null, { status: 204, statusText: 'No Content' });
 
-    await expect(promise).resolves.toEqual({});
+    await expect(promise).resolves.toBeNull();
   });
 
   it('retrieves access tokens', async () => {
     const promise = lastValueFrom(service.getAccessTokens());
 
-    const accessTokensRequest = httpMock.expectOne('https://api.test/user/access-tokens');
+    const accessTokensRequest = httpMock.expectOne('https://api.test/users/me/access-tokens');
     expect(accessTokensRequest.request.method).toBe('GET');
-    accessTokensRequest.flush([{ tokenHash: 'token' }]);
+    accessTokensRequest.flush({ data: [{ tokenHash: 'token' }] });
 
     await expect(promise).resolves.toEqual([{ tokenHash: 'token' }]);
   });
@@ -151,19 +176,19 @@ describe('ApiService', () => {
   it('deletes an access token by hash', async () => {
     const promise = lastValueFrom(service.deleteAccessToken('abc123'));
 
-    const deleteAccessTokenRequest = httpMock.expectOne('https://api.test/user/access-token/abc123');
+    const deleteAccessTokenRequest = httpMock.expectOne('https://api.test/users/me/access-tokens/abc123');
     expect(deleteAccessTokenRequest.request.method).toBe('DELETE');
-    deleteAccessTokenRequest.flush({});
+    deleteAccessTokenRequest.flush(null, { status: 204, statusText: 'No Content' });
 
-    await expect(promise).resolves.toEqual({});
+    await expect(promise).resolves.toBeNull();
   });
 
   it('creates a new access token', async () => {
     const promise = lastValueFrom(service.createAccessToken());
 
-    const createAccessTokenRequest = httpMock.expectOne('https://api.test/user/access-token');
+    const createAccessTokenRequest = httpMock.expectOne('https://api.test/users/me/access-tokens');
     expect(createAccessTokenRequest.request.method).toBe('POST');
-    createAccessTokenRequest.flush({ token: 'new-token' });
+    createAccessTokenRequest.flush({ data: { token: 'new-token' } });
 
     await expect(promise).resolves.toEqual({ token: 'new-token' });
   });
@@ -171,9 +196,9 @@ describe('ApiService', () => {
   it('creates a new user token', async () => {
     const promise = lastValueFrom(service.createNewUserToken());
 
-    const newUserTokenRequest = httpMock.expectOne('https://api.test/user/change-token');
+    const newUserTokenRequest = httpMock.expectOne('https://api.test/users/me/token');
     expect(newUserTokenRequest.request.method).toBe('PUT');
-    newUserTokenRequest.flush({ token: 'user-token' });
+    newUserTokenRequest.flush({ data: { token: 'user-token' } });
 
     await expect(promise).resolves.toEqual({ token: 'user-token' });
   });
@@ -181,19 +206,19 @@ describe('ApiService', () => {
   it('deletes the current user', async () => {
     const promise = lastValueFrom(service.deleteUser());
 
-    const deleteUserRequest = httpMock.expectOne('https://api.test/user');
+    const deleteUserRequest = httpMock.expectOne('https://api.test/users/me');
     expect(deleteUserRequest.request.method).toBe('DELETE');
-    deleteUserRequest.flush({});
+    deleteUserRequest.flush(null, { status: 204, statusText: 'No Content' });
 
-    await expect(promise).resolves.toEqual({});
+    await expect(promise).resolves.toBeNull();
   });
 
   it('deletes all movie tracker items', async () => {
     const promise = lastValueFrom(service.deleteAllCompletedMovies());
 
-    const deleteRequest = httpMock.expectOne('https://api.test/tracking/completed-movies');
+    const deleteRequest = httpMock.expectOne('https://api.test/collection-items/tracking/completed-movies');
     expect(deleteRequest.request.method).toBe('DELETE');
-    deleteRequest.flush({ changedCount: 2 });
+    deleteRequest.flush({ data: { changedCount: 2 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 2 });
   });
@@ -201,9 +226,9 @@ describe('ApiService', () => {
   it('deletes all series tracker items', async () => {
     const promise = lastValueFrom(service.deleteAllTrackingItems());
 
-    const deleteRequest = httpMock.expectOne('https://api.test/tracking');
+    const deleteRequest = httpMock.expectOne('https://api.test/collection-items/tracking');
     expect(deleteRequest.request.method).toBe('DELETE');
-    deleteRequest.flush({ changedCount: 3 });
+    deleteRequest.flush({ data: { changedCount: 3 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 3 });
   });
@@ -211,9 +236,9 @@ describe('ApiService', () => {
   it('deletes all book tracker items', async () => {
     const promise = lastValueFrom(service.deleteAllBooksItems());
 
-    const deleteRequest = httpMock.expectOne('https://api.test/books');
+    const deleteRequest = httpMock.expectOne('https://api.test/collection-items/books');
     expect(deleteRequest.request.method).toBe('DELETE');
-    deleteRequest.flush({ changedCount: 4 });
+    deleteRequest.flush({ data: { changedCount: 4 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 4 });
   });
@@ -224,11 +249,11 @@ describe('ApiService', () => {
     );
 
     const addRequest = httpMock.expectOne(
-      'https://api.test/tracking/provider%2Fid/item%2Fid?ownerShareCode=share%2Fcode&sourceListType=up-next&markCompleted=true'
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking?ownerShareCode=share%2Fcode&sourceListType=up-next&markCompleted=true'
     );
     expect(addRequest.request.method).toBe('POST');
     expect(addRequest.request.body).toEqual({});
-    addRequest.flush({ changedCount: 1 });
+    addRequest.flush({ data: { changedCount: 1 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 1 });
   });
@@ -236,9 +261,11 @@ describe('ApiService', () => {
   it('deletes a movie tracker item by external identity', async () => {
     const promise = lastValueFrom(service.deleteCompletedItemByExternalId('provider/id', 'item/id'));
 
-    const deleteRequest = httpMock.expectOne('https://api.test/tracking/provider%2Fid/item%2Fid/completed');
+    const deleteRequest = httpMock.expectOne(
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking/completed'
+    );
     expect(deleteRequest.request.method).toBe('DELETE');
-    deleteRequest.flush(null);
+    deleteRequest.flush(null, { status: 204, statusText: 'No Content' });
 
     await expect(promise).resolves.toBeNull();
   });
@@ -249,11 +276,11 @@ describe('ApiService', () => {
     );
 
     const addRequest = httpMock.expectOne(
-      'https://api.test/tracking/provider%2Fid/item%2Fid?sourceListType=up-next&ownerShareCode=share%2Fcode'
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking?sourceListType=up-next&ownerShareCode=share%2Fcode'
     );
     expect(addRequest.request.method).toBe('POST');
     expect(addRequest.request.body).toEqual({});
-    addRequest.flush({ changedCount: 1 });
+    addRequest.flush({ data: { changedCount: 1 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 1 });
   });
@@ -261,18 +288,20 @@ describe('ApiService', () => {
   it('retrieves user tag management', async () => {
     const promise = lastValueFrom(service.getUserTagManagement());
 
-    const tagManagementRequest = httpMock.expectOne('https://api.test/tag-management');
+    const tagManagementRequest = httpMock.expectOne('https://api.test/users/me/tags');
     expect(tagManagementRequest.request.method).toBe('GET');
-    tagManagementRequest.flush([
-      {
-        tag: '#a',
-        color: '#111111',
-        useForImageBorder: true,
-        useForTextColor: false,
-        useForImageBadge: false,
-        weight: 1,
-      },
-    ]);
+    tagManagementRequest.flush({
+      data: [
+        {
+          tag: '#a',
+          color: '#111111',
+          useForImageBorder: true,
+          useForTextColor: false,
+          useForImageBadge: false,
+          weight: 1,
+        },
+      ],
+    });
 
     await expect(promise).resolves.toEqual([
       {
@@ -299,21 +328,21 @@ describe('ApiService', () => {
     ];
     const promise = lastValueFrom(service.updateUserTagManagement(payload));
 
-    const updateTagManagementRequest = httpMock.expectOne('https://api.test/tag-management');
+    const updateTagManagementRequest = httpMock.expectOne('https://api.test/users/me/tags');
     expect(updateTagManagementRequest.request.method).toBe('POST');
     expect(updateTagManagementRequest.request.body).toEqual(payload);
-    updateTagManagementRequest.flush({});
+    updateTagManagementRequest.flush({ data: payload });
 
-    await expect(promise).resolves.toEqual({});
+    await expect(promise).resolves.toEqual(payload);
   });
 
   it('renames a tag', async () => {
     const promise = lastValueFrom(service.renameTag('#old', '#new'));
 
-    const renameTagRequest = httpMock.expectOne('https://api.test/tag-management/rename');
+    const renameTagRequest = httpMock.expectOne('https://api.test/users/me/tags/rename');
     expect(renameTagRequest.request.method).toBe('POST');
     expect(renameTagRequest.request.body).toEqual({ oldTag: '#old', newTag: '#new' });
-    renameTagRequest.flush({ renamedItemCount: 1, tagManagement: [] });
+    renameTagRequest.flush({ data: { renamedItemCount: 1, tagManagement: [] } });
 
     await expect(promise).resolves.toEqual({ renamedItemCount: 1, tagManagement: [] });
   });
@@ -327,10 +356,10 @@ describe('ApiService', () => {
     );
 
     const itemRequest = httpMock.expectOne(
-      'https://api.test/proxy/external-metadata/item?externalIdentitySource=omdb%26extra%3Dtrue&externalIdentityId=tt0133093%26extra%3Dtrue'
+      'https://api.test/external-metadata/items?externalIdentitySource=omdb%26extra%3Dtrue&externalIdentityId=tt0133093%26extra%3Dtrue'
     );
     expect(itemRequest.request.method).toBe('GET');
-    itemRequest.flush({ provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' });
+    itemRequest.flush({ data: { provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' } });
 
     await expect(promise).resolves.toEqual({ provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' });
   });
@@ -341,10 +370,10 @@ describe('ApiService', () => {
     );
 
     const itemRequest = httpMock.expectOne(
-      'https://api.test/proxy/external-metadata/item?externalIdentitySource=imdb&externalIdentityId=tt0133093%26extra%3Dtrue'
+      'https://api.test/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=tt0133093%26extra%3Dtrue'
     );
     expect(itemRequest.request.method).toBe('GET');
-    itemRequest.flush({ provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' });
+    itemRequest.flush({ data: { provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' } });
 
     await expect(promise).resolves.toEqual({ provider: 'omdb', providerItemId: 'tt0133093', title: 'The Matrix' });
   });
@@ -352,11 +381,9 @@ describe('ApiService', () => {
   it('encodes external metadata search text in query params', async () => {
     const promise = lastValueFrom(service.searchExternalMetadata({ s: 'Matrix & Dune?' }));
 
-    const searchRequest = httpMock.expectOne(
-      'https://api.test/proxy/external-metadata/search?s=Matrix%20%26%20Dune%3F'
-    );
+    const searchRequest = httpMock.expectOne('https://api.test/external-metadata/search?s=Matrix%20%26%20Dune%3F');
     expect(searchRequest.request.method).toBe('GET');
-    searchRequest.flush({ results: [] });
+    searchRequest.flush({ data: { results: [] } });
 
     await expect(promise).resolves.toEqual({ results: [] });
   });
@@ -364,9 +391,11 @@ describe('ApiService', () => {
   it('retrieves configured external metadata providers', async () => {
     const promise = lastValueFrom(service.getExternalMetadataProviders());
 
-    const providersRequest = httpMock.expectOne('https://api.test/proxy/external-metadata/providers');
+    const providersRequest = httpMock.expectOne('https://api.test/external-metadata/providers');
     expect(providersRequest.request.method).toBe('GET');
-    providersRequest.flush({ providers: [{ name: 'omdb', supportsSeasonMetadata: true, supportsDirectImdbId: true }] });
+    providersRequest.flush({
+      data: { providers: [{ name: 'omdb', supportsSeasonMetadata: true, supportsDirectImdbId: true }] },
+    });
 
     await expect(promise).resolves.toEqual({
       providers: [{ name: 'omdb', supportsSeasonMetadata: true, supportsDirectImdbId: true }],
@@ -376,12 +405,14 @@ describe('ApiService', () => {
   it('retrieves user settings', async () => {
     const promise = lastValueFrom(service.getUserSettings());
 
-    const userSettingsRequest = httpMock.expectOne('https://api.test/user/settings');
+    const userSettingsRequest = httpMock.expectOne('https://api.test/users/me/settings');
     expect(userSettingsRequest.request.method).toBe('GET');
     userSettingsRequest.flush({
-      theme: 'dark',
-      animatedBackground: false,
-      language: 'en',
+      data: {
+        theme: 'dark',
+        animatedBackground: false,
+        language: 'en',
+      },
     });
 
     await expect(promise).resolves.toEqual({
@@ -394,9 +425,9 @@ describe('ApiService', () => {
   it('retrieves AI availability', async () => {
     const promise = lastValueFrom(service.getAiAvailable());
 
-    const aiAvailableRequest = httpMock.expectOne('https://api.test/proxy/ai/available');
+    const aiAvailableRequest = httpMock.expectOne('https://api.test/ai/availability');
     expect(aiAvailableRequest.request.method).toBe('GET');
-    aiAvailableRequest.flush({ aiAvailable: true });
+    aiAvailableRequest.flush({ data: { aiAvailable: true } });
 
     await expect(promise).resolves.toEqual({ aiAvailable: true });
   });
@@ -404,10 +435,10 @@ describe('ApiService', () => {
   it('posts a prompt to the AI query endpoint and returns matched IDs', async () => {
     const promise = lastValueFrom(service.getAiQueryData('sci-fi movies', 'library'));
 
-    const aiRequest = httpMock.expectOne('https://api.test/proxy/ai/query');
+    const aiRequest = httpMock.expectOne('https://api.test/ai/matches');
     expect(aiRequest.request.method).toBe('POST');
     expect(aiRequest.request.body).toEqual({ prompt: 'sci-fi movies', listType: 'library' });
-    aiRequest.flush({ matchedIds: ['tt0133093', 'tt0372784'] });
+    aiRequest.flush({ data: { matchedIds: ['tt0133093', 'tt0372784'] } });
 
     await expect(promise).resolves.toEqual({ matchedIds: ['tt0133093', 'tt0372784'] });
   });
@@ -423,9 +454,9 @@ describe('ApiService', () => {
     };
     const promise = lastValueFrom(service.getUserExport());
 
-    const exportRequest = httpMock.expectOne('https://api.test/export');
+    const exportRequest = httpMock.expectOne('https://api.test/users/me/export');
     expect(exportRequest.request.method).toBe('GET');
-    exportRequest.flush(exportData);
+    exportRequest.flush({ data: exportData });
 
     await expect(promise).resolves.toEqual(exportData);
   });
@@ -447,10 +478,10 @@ describe('ApiService', () => {
     };
     const promise = lastValueFrom(service.importUserExport(importData));
 
-    const importRequest = httpMock.expectOne('https://api.test/import');
+    const importRequest = httpMock.expectOne('https://api.test/users/me/imports');
     expect(importRequest.request.method).toBe('POST');
     expect(importRequest.request.body).toEqual(importData);
-    importRequest.flush(importResult);
+    importRequest.flush({ data: importResult });
 
     await expect(promise).resolves.toEqual(importResult);
   });
@@ -458,29 +489,36 @@ describe('ApiService', () => {
   it('imports collection items from source text', async () => {
     const promise = lastValueFrom(service.importCollectionItems('tt0133093'));
 
-    const importRequest = httpMock.expectOne('https://api.test/import/collection-items');
+    const importRequest = httpMock.expectOne('https://api.test/collection-items/imports');
     expect(importRequest.request.method).toBe('POST');
     expect(importRequest.request.body).toEqual({ source: 'tt0133093' });
-    importRequest.flush({ totalCount: 1, importedCount: 1, skippedCount: 0, errorCount: 0 });
+    importRequest.flush({ data: { totalCount: 1, importedCount: 1, skippedCount: 0, errorCount: 0 } });
 
     await expect(promise).resolves.toEqual({ totalCount: 1, importedCount: 1, skippedCount: 0, errorCount: 0 });
   });
 
-  it('alerts and rethrows when AI query fails', async () => {
+  it('alerts with RFC 9457 detail and rethrows when AI query fails', async () => {
+    const problem = {
+      type: 'https://collectiontracker.app/problems/ai-unavailable',
+      title: 'Bad Gateway',
+      status: 502,
+      detail: 'AI service is unavailable',
+    };
     const promise = lastValueFrom(service.getAiQueryData('sci-fi movies', 'up-next'));
 
-    const aiRequest = httpMock.expectOne('https://api.test/proxy/ai/query');
+    const aiRequest = httpMock.expectOne('https://api.test/ai/matches');
     expect(aiRequest.request.body).toEqual({ prompt: 'sci-fi movies', listType: 'up-next' });
-    aiRequest.flush('bad', { status: 502, statusText: 'Bad Gateway' });
+    aiRequest.flush(problem, { status: 502, statusText: 'Bad Gateway' });
 
-    await expect(promise).rejects.toMatchObject({ status: 502 });
-    expect(alertSpy).toHaveBeenCalledTimes(1);
+    await expect(promise).rejects.toMatchObject({ status: 502, error: problem });
+    expect(alertSpy).toHaveBeenCalledOnce();
+    expect(alertSpy).toHaveBeenCalledWith(problem.detail);
   });
 
   it('alerts and rethrows when retrieving user tag management fails', async () => {
     const promise = lastValueFrom(service.getUserTagManagement());
 
-    const tagManagementRequest = httpMock.expectOne('https://api.test/tag-management');
+    const tagManagementRequest = httpMock.expectOne('https://api.test/users/me/tags');
     tagManagementRequest.flush('bad', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
@@ -501,7 +539,7 @@ describe('ApiService', () => {
       ])
     );
 
-    const updateTagManagementRequest = httpMock.expectOne('https://api.test/tag-management');
+    const updateTagManagementRequest = httpMock.expectOne('https://api.test/users/me/tags');
     updateTagManagementRequest.flush('bad', { status: 400, statusText: 'Bad Request' });
 
     await expect(promise).rejects.toMatchObject({ status: 400 });
@@ -511,7 +549,7 @@ describe('ApiService', () => {
   it('alerts and rethrows when retrieving user settings fails', async () => {
     const promise = lastValueFrom(service.getUserSettings());
 
-    const userSettingsRequest = httpMock.expectOne('https://api.test/user/settings');
+    const userSettingsRequest = httpMock.expectOne('https://api.test/users/me/settings');
     userSettingsRequest.flush('bad', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
@@ -521,7 +559,7 @@ describe('ApiService', () => {
   it('alerts and rethrows when logout fails', async () => {
     const promise = lastValueFrom(service.logout());
 
-    const logoutRequest = httpMock.expectOne('https://api.test/logout');
+    const logoutRequest = httpMock.expectOne('https://api.test/auth/session');
     logoutRequest.flush('bad', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
@@ -549,7 +587,7 @@ describe('ApiService', () => {
     };
     const promise = lastValueFrom(service.create(item));
 
-    const createRequest = httpMock.expectOne('https://api.test/create');
+    const createRequest = httpMock.expectOne('https://api.test/collection-items');
     createRequest.flush('bad', { status: 400, statusText: 'Bad Request' });
 
     await expect(promise).rejects.toMatchObject({ status: 400 });
@@ -559,7 +597,7 @@ describe('ApiService', () => {
   it('alerts and rethrows when deleteAccessToken fails', async () => {
     const promise = lastValueFrom(service.deleteAccessToken('hash'));
 
-    const deleteAccessTokenRequest = httpMock.expectOne('https://api.test/user/access-token/hash');
+    const deleteAccessTokenRequest = httpMock.expectOne('https://api.test/users/me/access-tokens/hash');
     deleteAccessTokenRequest.flush('bad', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
@@ -569,7 +607,7 @@ describe('ApiService', () => {
   it('alerts and rethrows when createAccessToken fails', async () => {
     const promise = lastValueFrom(service.createAccessToken());
 
-    const createAccessTokenRequest = httpMock.expectOne('https://api.test/user/access-token');
+    const createAccessTokenRequest = httpMock.expectOne('https://api.test/users/me/access-tokens');
     createAccessTokenRequest.flush('bad', { status: 502, statusText: 'Bad Gateway' });
 
     await expect(promise).rejects.toMatchObject({ status: 502 });
@@ -579,7 +617,7 @@ describe('ApiService', () => {
   it('alerts and rethrows when createNewUserToken fails', async () => {
     const promise = lastValueFrom(service.createNewUserToken());
 
-    const newUserTokenRequest = httpMock.expectOne('https://api.test/user/change-token');
+    const newUserTokenRequest = httpMock.expectOne('https://api.test/users/me/token');
     newUserTokenRequest.flush('bad', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
@@ -589,7 +627,7 @@ describe('ApiService', () => {
   it('alerts and rethrows when deleteUser fails', async () => {
     const promise = lastValueFrom(service.deleteUser());
 
-    const deleteUserRequest = httpMock.expectOne('https://api.test/user');
+    const deleteUserRequest = httpMock.expectOne('https://api.test/users/me');
     deleteUserRequest.flush('bad', { status: 503, statusText: 'Service Unavailable' });
 
     await expect(promise).rejects.toMatchObject({ status: 503 });
@@ -600,10 +638,10 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.markAllMoviesAsCompleted('owner-code'));
 
     const markAllRequest = httpMock.expectOne(
-      'https://api.test/items/mark-all-movies-completed?ownerShareCode=owner-code'
+      'https://api.test/collection-items/actions/mark-movies-completed?ownerShareCode=owner-code'
     );
     expect(markAllRequest.request.method).toBe('POST');
-    markAllRequest.flush({ changedCount: 2 });
+    markAllRequest.flush({ data: { changedCount: 2 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 2 });
   });
@@ -612,10 +650,10 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.markAllMoviesAsUncompleted('owner-code'));
 
     const markAllRequest = httpMock.expectOne(
-      'https://api.test/items/mark-all-movies-uncompleted?ownerShareCode=owner-code'
+      'https://api.test/collection-items/actions/mark-movies-uncompleted?ownerShareCode=owner-code'
     );
     expect(markAllRequest.request.method).toBe('POST');
-    markAllRequest.flush({ changedCount: 1 });
+    markAllRequest.flush({ data: { changedCount: 1 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 1 });
   });
@@ -624,10 +662,10 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.markAllSeriesAsCompleted('owner-code'));
 
     const markAllRequest = httpMock.expectOne(
-      'https://api.test/items/mark-all-series-completed?ownerShareCode=owner-code'
+      'https://api.test/collection-items/actions/mark-series-completed?ownerShareCode=owner-code'
     );
     expect(markAllRequest.request.method).toBe('POST');
-    markAllRequest.flush({ trackedCount: 2, progressChangedCount: 3 });
+    markAllRequest.flush({ data: { trackedCount: 2, progressChangedCount: 3 } });
 
     await expect(promise).resolves.toEqual({ trackedCount: 2, progressChangedCount: 3 });
   });
@@ -636,10 +674,10 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.markAllSeriesAsUncompleted('owner-code'));
 
     const markAllRequest = httpMock.expectOne(
-      'https://api.test/items/mark-all-series-uncompleted?ownerShareCode=owner-code'
+      'https://api.test/collection-items/actions/mark-series-uncompleted?ownerShareCode=owner-code'
     );
     expect(markAllRequest.request.method).toBe('POST');
-    markAllRequest.flush({ changedCount: 1 });
+    markAllRequest.flush({ data: { changedCount: 1 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 1 });
   });
@@ -647,9 +685,9 @@ describe('ApiService', () => {
   it('marks all books as completed for the authenticated user', async () => {
     const promise = lastValueFrom(service.markAllBooksAsCompleted());
 
-    const markAllRequest = httpMock.expectOne('https://api.test/items/mark-all-books-completed');
+    const markAllRequest = httpMock.expectOne('https://api.test/collection-items/actions/mark-books-completed');
     expect(markAllRequest.request.method).toBe('POST');
-    markAllRequest.flush({ changedCount: 2 });
+    markAllRequest.flush({ data: { changedCount: 2 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 2 });
   });
@@ -657,9 +695,9 @@ describe('ApiService', () => {
   it('marks all books as uncompleted for the authenticated user', async () => {
     const promise = lastValueFrom(service.markAllBooksAsUncompleted());
 
-    const markAllRequest = httpMock.expectOne('https://api.test/items/mark-all-books-uncompleted');
+    const markAllRequest = httpMock.expectOne('https://api.test/collection-items/actions/mark-books-uncompleted');
     expect(markAllRequest.request.method).toBe('POST');
-    markAllRequest.flush({ changedCount: 1 });
+    markAllRequest.flush({ data: { changedCount: 1 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 1 });
   });
@@ -668,10 +706,10 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.markAllBooksAsCompleted('owner-code'));
 
     const markAllRequest = httpMock.expectOne(
-      'https://api.test/items/mark-all-books-completed?ownerShareCode=owner-code'
+      'https://api.test/collection-items/actions/mark-books-completed?ownerShareCode=owner-code'
     );
     expect(markAllRequest.request.method).toBe('POST');
-    markAllRequest.flush({ changedCount: 2 });
+    markAllRequest.flush({ data: { changedCount: 2 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 2 });
   });
@@ -680,10 +718,10 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.markAllBooksAsUncompleted('owner-code'));
 
     const markAllRequest = httpMock.expectOne(
-      'https://api.test/items/mark-all-books-uncompleted?ownerShareCode=owner-code'
+      'https://api.test/collection-items/actions/mark-books-uncompleted?ownerShareCode=owner-code'
     );
     expect(markAllRequest.request.method).toBe('POST');
-    markAllRequest.flush({ changedCount: 1 });
+    markAllRequest.flush({ data: { changedCount: 1 } });
 
     await expect(promise).resolves.toEqual({ changedCount: 1 });
   });
@@ -692,10 +730,10 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.getTrackingSeasonsByExternalId('provider/id', 'item/id', 'owner/code'));
 
     const request = httpMock.expectOne(
-      'https://api.test/tracking/provider%2Fid/item%2Fid/seasons?ownerShareCode=owner%2Fcode'
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking/seasons?ownerShareCode=owner%2Fcode'
     );
     expect(request.request.method).toBe('GET');
-    request.flush({ seasons: [] });
+    request.flush({ data: { seasons: [] } });
 
     await expect(promise).resolves.toEqual({ seasons: [] });
   });
@@ -704,11 +742,11 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.refreshTrackingSeasonsByExternalId('provider/id', 'item/id', 'owner/code'));
 
     const request = httpMock.expectOne(
-      'https://api.test/tracking/provider%2Fid/item%2Fid/seasons/refresh?ownerShareCode=owner%2Fcode'
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking/seasons/refresh?ownerShareCode=owner%2Fcode'
     );
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({});
-    request.flush({ seasons: [] });
+    request.flush({ data: { seasons: [] } });
 
     await expect(promise).resolves.toEqual({ seasons: [] });
   });
@@ -720,11 +758,11 @@ describe('ApiService', () => {
     );
 
     const request = httpMock.expectOne(
-      'https://api.test/tracking/provider%2Fid/item%2Fid/seasons?ownerShareCode=owner%2Fcode'
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking/seasons?ownerShareCode=owner%2Fcode'
     );
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual(payload);
-    request.flush(payload);
+    request.flush({ data: payload });
 
     await expect(promise).resolves.toEqual(payload);
   });
@@ -733,10 +771,10 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.deleteTrackingSeasonsByExternalId('provider/id', 'item/id', 'owner/code'));
 
     const request = httpMock.expectOne(
-      'https://api.test/tracking/provider%2Fid/item%2Fid/seasons?ownerShareCode=owner%2Fcode'
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking/seasons?ownerShareCode=owner%2Fcode'
     );
     expect(request.request.method).toBe('DELETE');
-    request.flush({ seasons: [] });
+    request.flush({ data: { seasons: [] } });
 
     await expect(promise).resolves.toEqual({ seasons: [] });
   });
@@ -747,10 +785,10 @@ describe('ApiService', () => {
     );
 
     const request = httpMock.expectOne(
-      'https://api.test/tracking/provider%2Fid/item%2Fid/completed-episodes?ownerShareCode=owner%2Fcode'
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking/completed-episodes?ownerShareCode=owner%2Fcode'
     );
     expect(request.request.method).toBe('GET');
-    request.flush({ completedEpisodes: [] });
+    request.flush({ data: { completedEpisodes: [] } });
 
     await expect(promise).resolves.toEqual({ completedEpisodes: [] });
   });
@@ -762,11 +800,11 @@ describe('ApiService', () => {
     );
 
     const request = httpMock.expectOne(
-      'https://api.test/tracking/provider%2Fid/item%2Fid/completed-episodes?ownerShareCode=owner%2Fcode'
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking/completed-episodes?ownerShareCode=owner%2Fcode'
     );
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual(payload);
-    request.flush(payload);
+    request.flush({ data: payload });
 
     await expect(promise).resolves.toEqual(payload);
   });
@@ -774,9 +812,11 @@ describe('ApiService', () => {
   it('marks all series tracker episodes completed by external identity', async () => {
     const promise = lastValueFrom(service.markAllTrackingCompletedByExternalId('provider/id', 'item/id'));
 
-    const request = httpMock.expectOne('https://api.test/tracking/provider%2Fid/item%2Fid/mark-all-completed');
+    const request = httpMock.expectOne(
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/tracking/actions/mark-completed'
+    );
     expect(request.request.method).toBe('PUT');
-    request.flush({ completedEpisodes: [] });
+    request.flush({ data: { completedEpisodes: [] } });
 
     await expect(promise).resolves.toEqual({ completedEpisodes: [] });
   });
@@ -784,9 +824,9 @@ describe('ApiService', () => {
   it('refreshes images and returns summary', async () => {
     const promise = lastValueFrom(service.refreshImages());
 
-    const refreshRequest = httpMock.expectOne('https://api.test/items/refresh-images');
+    const refreshRequest = httpMock.expectOne('https://api.test/collection-items/actions/refresh-images');
     expect(refreshRequest.request.method).toBe('POST');
-    refreshRequest.flush({ count: 5, checked: 5, fixed: 1, errors: 0 });
+    refreshRequest.flush({ data: { count: 5, checked: 5, fixed: 1, errors: 0 } });
 
     await expect(promise).resolves.toEqual({ count: 5, checked: 5, fixed: 1, errors: 0 });
   });
@@ -794,9 +834,11 @@ describe('ApiService', () => {
   it('refreshes shared library images when owner share code is provided', async () => {
     const promise = lastValueFrom(service.refreshImages('owner-code'));
 
-    const refreshRequest = httpMock.expectOne('https://api.test/items/refresh-images?ownerShareCode=owner-code');
+    const refreshRequest = httpMock.expectOne(
+      'https://api.test/collection-items/actions/refresh-images?ownerShareCode=owner-code'
+    );
     expect(refreshRequest.request.method).toBe('POST');
-    refreshRequest.flush({ count: 1, checked: 1, fixed: 1, errors: 0 });
+    refreshRequest.flush({ data: { count: 1, checked: 1, fixed: 1, errors: 0 } });
 
     await expect(promise).resolves.toEqual({ count: 1, checked: 1, fixed: 1, errors: 0 });
   });
@@ -804,9 +846,9 @@ describe('ApiService', () => {
   it('refreshes external ratings and returns summary', async () => {
     const promise = lastValueFrom(service.refreshExternalRatings());
 
-    const refreshRequest = httpMock.expectOne('https://api.test/items/refresh-external-ratings');
+    const refreshRequest = httpMock.expectOne('https://api.test/collection-items/actions/refresh-external-ratings');
     expect(refreshRequest.request.method).toBe('POST');
-    refreshRequest.flush({ count: 5, checked: 5, fixed: 1, errors: 0 });
+    refreshRequest.flush({ data: { count: 5, checked: 5, fixed: 1, errors: 0 } });
 
     await expect(promise).resolves.toEqual({ count: 5, checked: 5, fixed: 1, errors: 0 });
   });
@@ -815,10 +857,10 @@ describe('ApiService', () => {
     const promise = lastValueFrom(service.refreshExternalRatings('owner-code'));
 
     const refreshRequest = httpMock.expectOne(
-      'https://api.test/items/refresh-external-ratings?ownerShareCode=owner-code'
+      'https://api.test/collection-items/actions/refresh-external-ratings?ownerShareCode=owner-code'
     );
     expect(refreshRequest.request.method).toBe('POST');
-    refreshRequest.flush({ count: 1, checked: 1, fixed: 1, errors: 0 });
+    refreshRequest.flush({ data: { count: 1, checked: 1, fixed: 1, errors: 0 } });
 
     await expect(promise).resolves.toEqual({ count: 1, checked: 1, fixed: 1, errors: 0 });
   });
@@ -826,7 +868,7 @@ describe('ApiService', () => {
   it('alerts and rethrows when refreshImages fails', async () => {
     const promise = lastValueFrom(service.refreshImages());
 
-    const refreshRequest = httpMock.expectOne('https://api.test/items/refresh-images');
+    const refreshRequest = httpMock.expectOne('https://api.test/collection-items/actions/refresh-images');
     refreshRequest.flush('bad', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });
@@ -836,7 +878,7 @@ describe('ApiService', () => {
   it('alerts and rethrows when getAccessTokens fails', async () => {
     const promise = lastValueFrom(service.getAccessTokens());
 
-    const accessTokensRequest = httpMock.expectOne('https://api.test/user/access-tokens');
+    const accessTokensRequest = httpMock.expectOne('https://api.test/users/me/access-tokens');
     accessTokensRequest.flush('bad', { status: 500, statusText: 'Server Error' });
 
     await expect(promise).rejects.toMatchObject({ status: 500 });

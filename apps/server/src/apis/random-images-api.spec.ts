@@ -65,6 +65,19 @@ describe('random-images-api', () => {
     expect(result.images.length).toBeLessThanOrEqual(3);
   });
 
+  it('clamps negative count to one', async () => {
+    insertUserAndItems();
+    const response = mockResponse();
+    const request: any = { usernameHash: 'user', query: { count: '-1' } };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./random-images-api');
+    register(app);
+
+    await handlerPromise();
+    expect(response.send.mock.calls[0][0].images).toHaveLength(1);
+  });
+
   it('includes own books list and readable libraries but excludes shared trackers', async () => {
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');

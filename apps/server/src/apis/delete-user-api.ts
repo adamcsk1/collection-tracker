@@ -7,7 +7,7 @@ import type { FastifyInstance } from 'fastify';
 
 export const register = (app: FastifyInstance): void => {
   app.delete(
-    `${API_PREFIX}/user`,
+    `${API_PREFIX}/users/me`,
     { preHandler: jwtGuard },
     withErrorHandler((request, response) => {
       deleteUser(getDatabase(), request.usernameHash);

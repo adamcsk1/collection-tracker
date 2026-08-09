@@ -1,7 +1,7 @@
 import {
   CollectionItemOrderBy,
   CollectionItemOrderDirection,
-  CollectionItemsApiResponseModel,
+  CollectionItemsPageModel,
 } from '@shared/models/api-model';
 import { Observable } from 'rxjs';
 
@@ -9,7 +9,7 @@ export type { CollectionItemModel, CollectionModel } from '@shared/models/collec
 
 export interface CollectionListDataSourceRequest {
   reset: boolean;
-  offset: number;
+  cursor: string | null;
   limit: number;
   searchText: string;
   orderBy: CollectionItemOrderBy;
@@ -23,4 +23,4 @@ export interface CollectionListOrderPreference {
 
 export type CollectionListDataSource = (
   request: CollectionListDataSourceRequest
-) => Observable<CollectionItemsApiResponseModel>;
+) => Observable<CollectionItemsPageModel>;

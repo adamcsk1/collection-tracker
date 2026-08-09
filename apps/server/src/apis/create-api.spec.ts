@@ -47,7 +47,7 @@ describe('create-api', () => {
     register(app);
 
     expect(app.post).toHaveBeenCalledWith(
-      `${API_PREFIX}/create`,
+      `${API_PREFIX}/collection-items`,
       expect.not.objectContaining({ config: expect.anything() }),
       expect.any(Function)
     );

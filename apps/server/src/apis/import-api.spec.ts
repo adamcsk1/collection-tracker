@@ -3,6 +3,9 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const IMPORT_PATH = `${API_PREFIX}/users/me/imports`;
+const COLLECTION_ITEMS_IMPORT_PATH = `${API_PREFIX}/collection-items/imports`;
+
 const buildRouteApp = () =>
   ({
     post: vi.fn(),
@@ -79,7 +82,7 @@ describe('import-api', () => {
     register(app);
 
     expect(app.post).toHaveBeenCalledWith(
-      `${API_PREFIX}/import`,
+      IMPORT_PATH,
       expect.not.objectContaining({ config: expect.anything() }),
       expect.any(Function)
     );
@@ -92,7 +95,7 @@ describe('import-api', () => {
     register(app);
 
     expect(app.post).toHaveBeenCalledWith(
-      `${API_PREFIX}/import/collection-items`,
+      COLLECTION_ITEMS_IMPORT_PATH,
       expect.not.objectContaining({ config: expect.anything() }),
       expect.any(Function)
     );
@@ -197,7 +200,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith({
       importedCollectionItems: 6,
@@ -296,7 +299,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.code).toHaveBeenCalledWith(400);
   });
@@ -330,7 +333,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.send).toHaveBeenCalled();
     const db = getDatabase();
@@ -369,7 +372,7 @@ describe('import-api', () => {
 
     const { register } = await import('./import-api');
     register(app);
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.code).toHaveBeenCalledWith(400);
   });
@@ -402,7 +405,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.code).toHaveBeenCalledWith(400);
   });
@@ -442,7 +445,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.code).toHaveBeenCalledWith(400);
   });
@@ -475,7 +478,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 1 }));
     expect(
@@ -521,7 +524,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.code).toHaveBeenCalledWith(400);
   });
@@ -545,7 +548,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.code).toHaveBeenCalledWith(400);
   });
@@ -574,7 +577,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.code).toHaveBeenCalledWith(400);
   });
@@ -600,7 +603,7 @@ describe('import-api', () => {
       const { register } = await import('./import-api');
       register(app);
 
-      await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+      await getPostHandler(app, IMPORT_PATH)!(request, response);
 
       expect(response.code).toHaveBeenCalledWith(400);
     }
@@ -630,7 +633,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 1 }));
     expect(
@@ -663,7 +666,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -685,7 +688,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -708,7 +711,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 1 }));
     expect(
@@ -731,7 +734,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -753,7 +756,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -781,7 +784,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -820,7 +823,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -852,7 +855,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
     expect(response.send).toHaveBeenCalledWith({
       importedCollectionItems: 0,
       importedTagManagement: 1,
@@ -887,7 +890,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -914,7 +917,7 @@ describe('import-api', () => {
     const { register } = await import('./import-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import`)!(request, response);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -968,7 +971,7 @@ describe('import-api', () => {
     const { register } = await import('./import-collection-items-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
+    await getPostHandler(app, COLLECTION_ITEMS_IMPORT_PATH)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith({ totalCount: 3, importedCount: 1, skippedCount: 1, errorCount: 1 });
     expect(
@@ -1012,7 +1015,7 @@ describe('import-api', () => {
     const { register } = await import('./import-collection-items-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
+    await getPostHandler(app, COLLECTION_ITEMS_IMPORT_PATH)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith({ totalCount: 1, importedCount: 0, skippedCount: 1, errorCount: 0 });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -1035,7 +1038,7 @@ describe('import-api', () => {
     const { register } = await import('./import-collection-items-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
+    await getPostHandler(app, COLLECTION_ITEMS_IMPORT_PATH)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith({ totalCount: 1, importedCount: 0, skippedCount: 0, errorCount: 1 });
     expect(
@@ -1072,7 +1075,7 @@ describe('import-api', () => {
     const { register } = await import('./import-collection-items-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
+    await getPostHandler(app, COLLECTION_ITEMS_IMPORT_PATH)!(request, response);
 
     expect(response.send).toHaveBeenCalledWith({ totalCount: 1, importedCount: 0, skippedCount: 0, errorCount: 1 });
     expect(
@@ -1089,7 +1092,7 @@ describe('import-api', () => {
     const { register } = await import('./import-collection-items-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
+    await getPostHandler(app, COLLECTION_ITEMS_IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -1101,7 +1104,7 @@ describe('import-api', () => {
     const { register } = await import('./import-collection-items-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
+    await getPostHandler(app, COLLECTION_ITEMS_IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -1113,7 +1116,7 @@ describe('import-api', () => {
     const { register } = await import('./import-collection-items-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
+    await getPostHandler(app, COLLECTION_ITEMS_IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -1125,7 +1128,7 @@ describe('import-api', () => {
     const { register } = await import('./import-collection-items-api');
     register(app);
 
-    await getPostHandler(app, `${API_PREFIX}/import/collection-items`)!(request, response);
+    await getPostHandler(app, COLLECTION_ITEMS_IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
 });

@@ -8,7 +8,7 @@ import { withErrorHandler } from '../core/utils/api-error-handler';
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/user/shares`,
+    `${API_PREFIX}/users/me/shares`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();

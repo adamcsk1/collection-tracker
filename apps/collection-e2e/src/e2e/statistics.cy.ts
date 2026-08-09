@@ -25,9 +25,9 @@ describe('Statistics — with movies and series', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', movieOne);
-    cy.request('POST', '/api/v1/create', movieTwo);
-    cy.request('POST', '/api/v1/create', seriesOne);
+    cy.request('POST', '/api/v1/collection-items', movieOne);
+    cy.request('POST', '/api/v1/collection-items', movieTwo);
+    cy.request('POST', '/api/v1/collection-items', seriesOne);
     StatisticsPage.visit();
     StatisticsPage.getSummaryAll().should('contain.text', '3');
     StatisticsPage.openTagsDetails();
@@ -172,8 +172,8 @@ describe('Statistics — with tracking items', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', librarySeries);
-    cy.request('POST', '/api/v1/tracking/omdb/tt9000004');
+    cy.request('POST', '/api/v1/collection-items', librarySeries);
+    cy.request('POST', '/api/v1/collection-items/omdb/tt9000004/tracking');
     StatisticsPage.visit();
   });
 
@@ -210,7 +210,7 @@ describe('Statistics — wishlist', () => {
 
   beforeEach(() => {
     cy.autoLogin();
-    cy.request('POST', '/api/v1/create', wishlistItem);
+    cy.request('POST', '/api/v1/collection-items', wishlistItem);
     StatisticsPage.visit();
     StatisticsPage.getSummaryWishlist().should('contain.text', '1');
   });

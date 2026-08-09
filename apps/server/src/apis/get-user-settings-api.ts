@@ -8,7 +8,7 @@ import { withErrorHandler } from '../core/utils/api-error-handler';
 
 export const register = (app: FastifyInstance): void => {
   app.get(
-    `${API_PREFIX}/user/settings`,
+    `${API_PREFIX}/users/me/settings`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const dbSettings = findUserSettings(getDatabase(), request.usernameHash);

@@ -25,7 +25,7 @@ describe('withErrorHandler', () => {
     const error = new Error('boom');
     error.stack = 'Error: boom\n    at somewhere';
     const handler = vi.fn().mockRejectedValue(error);
-    const request = { method: 'POST', url: '/api/items' } as any;
+    const request = { method: 'POST', url: '/api/v1/collection-items' } as any;
     const response = mockResponse();
 
     const wrapped = withErrorHandler(handler);

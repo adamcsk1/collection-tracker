@@ -16,6 +16,50 @@ Source: [`apps/server`](../apps/server)
 - AI search proxying — embeds collection metadata for a requested `listType` (including derived watch status and series progress), applies deterministic status pre-filters for intents like unfinished/completed/favorite, retrieves semantic candidates, and forwards filtered CandidateId queries to Ollama using `ollama.config.json` in the active data folder (IMDb-backed items use raw IMDb IDs; provider-native items use `source:id`, e.g. `openlibrary:9780140328721`)
 - runtime safeguards through Fastify plugins for Helmet, no-cache headers, CORS validation, request limits, form bodies, and signed cookies
 
+## API Contract
+
+The API base remains `/api/v1`, but the previous endpoint paths were replaced rather than aliased. Canonical paths are grouped by capability and resource under `/auth`, `/users/me`, `/collection-items`, `/external-metadata`, `/images`, and `/ai`. The public health check remains at `/health`. See the OpenAPI reference for the complete path list.
+
+Every JSON success response uses a data envelope:
+
+```json
+{
+  "data": {}
+}
+```
+
+For example, sign-up returns `{ "data": { "token": "..." } }`, user-token rotation returns `{ "data": { "newToken": "..." } }`, access-token creation returns `{ "data": { "accessToken": "..." } }`, and access-token listing returns `{ "data": [{ "tokenHash": "..." }] }`. Successful `204 No Content` responses and binary responses such as `GET /api/v1/images/proxy` are not enveloped.
+
+Cursor-paginated responses use this shape and do not include an exact total:
+
+```json
+{
+  "data": [],
+  "page": {
+    "limit": 50,
+    "hasMore": false,
+    "nextCursor": null
+  }
+}
+```
+
+Collection pagination uses SQLite keyset ordering by `createdAt` or `alphabet`, with item `id` as the deterministic tie-breaker. Supporting indexes are installed by the collection cursor-index migration. Cursors are opaque HMAC-signed tokens bound to the authenticated viewer, active filters, ordering, and matched identities; changing that context invalidates the cursor. Matched AI results retain in-memory rank order and use the last visible rank and item ID as the signed keyset boundary because rank is not a database sort key. The maximum page limit is `100`. Pagination is live rather than snapshot-isolated: changing an item's title while traversing alphabetical pages can move that item across the active boundary, so clients reset pagination after mutations.
+
+Every JSON error uses RFC 9457 Problem Details with content type `application/problem+json`:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Bad Request",
+  "status": 400,
+  "code": "HTTP_400",
+  "detail": "Invalid cursor",
+  "instance": "/api/v1/collection-items"
+}
+```
+
+`detail` is optional and is omitted from internal-server-error responses.
+
 ## Runtime Model
 
 - Default data folder: `.data`
@@ -43,15 +87,15 @@ Books use `content_type = 'book'`. Owned catalog uses `list_type = 'books'` (fav
 ## Import And Export
 
 - Current collection data exports use `collection-tracker-export` version 10 (`trackingData` with `completedEpisodes`). Import accepts version 10 and rewrites version 9 payloads (`watchlist` → `up-next`, prefs `watchlist` → `upNext`).
-- Version 10 exports are complete import documents: server `/export` includes `type`, `version`, settings, items, tag management, and tracking season / completed-episode data.
-- Series episode progress is stored in `series_completed_episodes` (API `/tracking/.../completed-episodes`).
+- Version 10 exports are complete import documents: `GET /api/v1/users/me/export` includes `type`, `version`, settings, items, tag management, and tracking season / completed-episode data.
+- Series episode progress is stored in `series_completed_episodes` and exposed under `/api/v1/collection-items/{externalIdentitySource}/{externalIdentityId}/tracking/completed-episodes`.
 - Exported items always include `externalProvider`, `externalItemId`, `externalIds` (primary + aliases), and an identity-anchored `canonicalItemId`.
 - Imported `canonicalItemId` values must match an identity derived from the item (`infer` or `source:id`); unanchored overrides are rejected.
 - Identity upsert prefers stronger canonicals (`imdb:tt…` over `isbn:…` over provider-scoped ids) and rewrites all rows under a weaker canonical when merging.
 
 ## External Metadata Providers
 
-The provider seam supports provider-qualified search and external identity item lookup. Search aggregates all configured metadata providers when the `provider` query parameter is omitted, or filters to one known provider name when supplied. Unknown provider names return `400`; known but unconfigured providers return `503`. Providers can advertise direct IMDb ID lookup support for pasted IMDb shortcuts through the regular `/proxy/external-metadata/item?externalIdentitySource=imdb&externalIdentityId=...` endpoint. Collection items persist `externalProvider` and `externalItemId` for metadata refreshes, duplicate checks, imports, exports, and tracker copy flows. Existing rows are backfilled as `externalProvider = 'omdb'` and `externalItemId = IMDbId`.
+The provider seam supports provider-qualified search and external identity item lookup. Search aggregates all configured metadata providers when the `provider` query parameter is omitted, or filters to one known provider name when supplied. Unknown provider names return `400`; known but unconfigured providers return `503`. Providers can advertise direct IMDb ID lookup support for pasted IMDb shortcuts through `GET /api/v1/external-metadata/items?externalIdentitySource=imdb&externalIdentityId=...`. Collection items persist `externalProvider` and `externalItemId` for metadata refreshes, duplicate checks, imports, exports, and tracker copy flows. Existing rows are backfilled as `externalProvider = 'omdb'` and `externalItemId = IMDbId`.
 
 Each provider owns a default endpoint constant and can resolve a provider-specific override from the active data-folder `.env`. OMDb uses `OMDB_API_URL`; Open Library uses `OPENLIBRARY_API_URL`. Missing and empty values use provider defaults.
 
@@ -63,7 +107,7 @@ Ratings are normalized into `collection_item_external_ratings` rows for IMDb, Ro
 
 `IMDbId` remains in the public collection model as a legacy compatibility identifier. Provider-qualified routes own collection and tracker item URLs. Bulk text import remains IMDb-specific for now:
 
-1. Bulk text import: `/import/collection-items` extracts IMDb IDs and imports through the first configured provider that supports direct IMDb lookup.
+1. Bulk text import: `POST /api/v1/collection-items/imports` extracts IMDb IDs and imports through the first configured provider that supports direct IMDb lookup.
 
 ## Important Paths
 

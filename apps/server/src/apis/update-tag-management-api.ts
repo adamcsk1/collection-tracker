@@ -22,7 +22,7 @@ const isTagManagement = (tagManagement: unknown): tagManagement is TagManagement
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/tag-management`,
+    `${API_PREFIX}/users/me/tags`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const body = request.body as TagManagementApiRequestModel;

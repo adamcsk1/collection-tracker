@@ -71,7 +71,7 @@ const isValidUserSettings = (body: unknown): body is UserSettingsApiRequestModel
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/user/settings`,
+    `${API_PREFIX}/users/me/settings`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const body = request.body as UserSettingsApiRequestModel;

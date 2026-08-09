@@ -1,6 +1,12 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, Observable, throwError } from 'rxjs';
+import type {
+  ApiProblemModel,
+  ApiResponseModel,
+  CursorPageModel,
+  PaginatedApiResponseModel,
+} from '@shared/models/api-envelope-model';
+import { catchError, map, Observable, throwError } from 'rxjs';
 import { AlertService } from '../alert-service';
 import { apiStateToken } from './api-store';
 
@@ -13,11 +19,34 @@ export abstract class BaseApiService {
   }
 
   protected request<T>(method: string, path: string, body?: unknown): Observable<T> {
-    return this.httpClient.request<T>(method, `${this.apiUrl}${path}`, body !== undefined ? { body } : {}).pipe(
-      catchError((error) => {
-        this.alert.show(error.message);
-        return throwError(() => error);
-      })
-    );
+    return this.httpClient
+      .request<ApiResponseModel<T> | null>(method, `${this.apiUrl}${path}`, body !== undefined ? { body } : {})
+      .pipe(
+        map((response): T => (response === null ? (null as T) : response.data)),
+        catchError((error: HttpErrorResponse) => {
+          const problem = error.error as Partial<ApiProblemModel> | null;
+          const detail = problem && typeof problem === 'object' && typeof problem.detail === 'string' && problem.detail;
+          this.alert.show(detail || error.message);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  protected paginatedRequest<T>(
+    method: string,
+    path: string,
+    body?: unknown
+  ): Observable<{ items: T[]; page: CursorPageModel }> {
+    return this.httpClient
+      .request<PaginatedApiResponseModel<T>>(method, `${this.apiUrl}${path}`, body !== undefined ? { body } : {})
+      .pipe(
+        map(({ data, page }) => ({ items: data, page })),
+        catchError((error: HttpErrorResponse) => {
+          const problem = error.error as Partial<ApiProblemModel> | null;
+          const detail = problem && typeof problem === 'object' && typeof problem.detail === 'string' && problem.detail;
+          this.alert.show(detail || error.message);
+          return throwError(() => error);
+        })
+      );
   }
 }

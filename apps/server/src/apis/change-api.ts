@@ -22,7 +22,7 @@ import { parseListType } from '../core/utils/query-parse-util';
 
 export const register = (app: FastifyInstance): void => {
   app.put(
-    `${API_PREFIX}/items/:externalIdentitySource/:externalIdentityId/change`,
+    `${API_PREFIX}/collection-items/:externalIdentitySource/:externalIdentityId`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const { externalIdentitySource, externalIdentityId } = request.params as Record<string, string>;

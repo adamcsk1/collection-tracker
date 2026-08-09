@@ -33,11 +33,6 @@ const completedEpisodesEqual = (
       episode.season === secondEpisodes[index].season && episode.episode === secondEpisodes[index].episode
   );
 
-const SERIES_MARK_ALL_COMPLETED_PATHS = [
-  `${API_PREFIX}/items/mark-all-series-completed`,
-  `${API_PREFIX}/items/mark-all-series-watched`,
-] as const;
-
 export const register = (app: FastifyInstance): void => {
   const handler = withErrorHandler(async (request, response) => {
     const db = getDatabase();
@@ -55,7 +50,7 @@ export const register = (app: FastifyInstance): void => {
     }
 
     await debugLog(
-      `POST /items/mark-all-series-completed source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
+      `POST /collection-items/actions/mark-series-completed source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
     );
     const insertedItems = markAllSeriesAsCompleted(db, request.usernameHash, ownerHash);
     const selectedOwnLibrary = ownerHash === request.usernameHash && typeof query.ownerShareCode !== 'string';
@@ -107,7 +102,7 @@ export const register = (app: FastifyInstance): void => {
       }
     }
     await debugLog(
-      `POST /items/mark-all-series-completed finished: tracked=${insertedItems.length}, progressChanged=${progressChangedCount}`
+      `POST /collection-items/actions/mark-series-completed finished: tracked=${insertedItems.length}, progressChanged=${progressChangedCount}`
     );
 
     const result: MarkAllSeriesCompletedApiResponseModel = {
@@ -117,7 +112,5 @@ export const register = (app: FastifyInstance): void => {
     response.send(result);
   });
 
-  for (const path of SERIES_MARK_ALL_COMPLETED_PATHS) {
-    app.post(path, { preHandler: jwtGuard }, handler);
-  }
+  app.post(`${API_PREFIX}/collection-items/actions/mark-series-completed`, { preHandler: jwtGuard }, handler);
 };

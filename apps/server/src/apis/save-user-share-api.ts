@@ -24,7 +24,7 @@ const isGrantArray = (value: unknown): value is UserShareGrantApiModel[] =>
 
 export const register = (app: FastifyInstance): void => {
   app.post(
-    `${API_PREFIX}/user/shares`,
+    `${API_PREFIX}/users/me/shares`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const body = request.body as {

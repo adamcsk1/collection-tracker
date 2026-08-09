@@ -15,7 +15,7 @@ describe('proxy-external-metadata-providers-api', () => {
     vi.clearAllMocks();
   });
 
-  describe('GET /proxy/external-metadata/providers', () => {
+  describe('GET /external-metadata/providers', () => {
     it('returns configured external metadata providers', async () => {
       process.env.OMDB_API_KEY = 'test-key';
       const response = mockResponse();

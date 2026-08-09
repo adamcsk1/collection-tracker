@@ -10,13 +10,23 @@ type AuthCookie = {
   value: string;
 };
 
-const collectionListTypes = [
-  'library',
-  'up-next',
-  'wishlist',
-  'tracking',
-  'books',
-] as const;
+type CollectionCleanupItem = {
+  externalProvider: string;
+  externalItemId: string;
+  hash: string;
+  listType?: string;
+};
+
+type CollectionPageResponse = {
+  data: CollectionCleanupItem[];
+  page: {
+    limit: number;
+    hasMore: boolean;
+    nextCursor: string | null;
+  };
+};
+
+const collectionListTypes = ['library', 'up-next', 'wishlist', 'tracking', 'books'] as const;
 const defaultUserSettings = {
   theme: 'system',
   animatedBackground: true,
@@ -63,6 +73,71 @@ const storeAuthCookies = (response: Cypress.Response<unknown>): void => {
     .filter((cookie): cookie is AuthCookie => cookie !== null);
 
   authCookieHeader = authCookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
+};
+
+const fetchCollectionPages = (
+  listType: (typeof collectionListTypes)[number],
+  onComplete: (items: CollectionCleanupItem[]) => void,
+  cursor?: string,
+  collectedItems: CollectionCleanupItem[] = []
+): void => {
+  const cursorQuery = cursor ? `&cursor=${encodeURIComponent(cursor)}` : '';
+  const listItemsUrl = `/api/v1/collection-items?limit=100&listType=${encodeURIComponent(listType)}${cursorQuery}`;
+
+  cy.request<CollectionPageResponse>('GET', listItemsUrl).then((response) => {
+    const fetchedItems = [...collectedItems, ...response.body.data];
+    if (!response.body.page.hasMore) {
+      onComplete(fetchedItems);
+      return;
+    }
+
+    expect(response.body.page.nextCursor, `next cursor for ${listType}`).to.be.a('string').and.not.be.empty;
+    fetchCollectionPages(listType, onComplete, response.body.page.nextCursor!, fetchedItems);
+  });
+};
+
+const deleteCollectionItems = (
+  listType: (typeof collectionListTypes)[number],
+  items: CollectionCleanupItem[],
+  onComplete: () => void
+): void => {
+  const [item, ...remainingItems] = items;
+  if (!item) {
+    onComplete();
+    return;
+  }
+
+  // Library All merges owned books; delete must use the item's real list type.
+  const itemListType = item.listType || listType;
+  const deleteUrl = `/api/v1/collection-items/${encodeURIComponent(item.externalProvider)}/${encodeURIComponent(
+    item.externalItemId
+  )}?hash=${encodeURIComponent(item.hash)}&listType=${encodeURIComponent(itemListType)}`;
+
+  cy.request({ method: 'DELETE', url: deleteUrl }).then((response) => {
+    expect(response.status).to.equal(204);
+    deleteCollectionItems(listType, remainingItems, onComplete);
+  });
+};
+
+const clearCollectionList = (listType: (typeof collectionListTypes)[number], onComplete: () => void): void => {
+  fetchCollectionPages(listType, (items) => {
+    deleteCollectionItems(listType, items, () => {
+      fetchCollectionPages(listType, (remainingItems) => {
+        expect(remainingItems, `${listType} cleanup`).to.be.empty;
+        onComplete();
+      });
+    });
+  });
+};
+
+const clearCollectionLists = (listIndex: number, onComplete: () => void): void => {
+  const listType = collectionListTypes[listIndex];
+  if (!listType) {
+    onComplete();
+    return;
+  }
+
+  clearCollectionList(listType, () => clearCollectionLists(listIndex + 1, onComplete));
 };
 
 const resetPermissionStorage = (win: Window): void => {
@@ -158,39 +233,18 @@ Cypress.Commands.add('autoLogin', () => {
 
   authCookieHeader = '';
 
-  cy.request('POST', '/api/v1/sign-in', { username, token }).then(storeAuthCookies);
+  cy.request('POST', '/api/v1/auth/sign-in', { username, token }).then((response) => {
+    storeAuthCookies(response);
+    clearCollectionLists(0, () => {
+      cy.request('POST', '/api/v1/users/me/tags', []);
+      cy.request('POST', '/api/v1/users/me/settings', defaultUserSettings);
 
-  collectionListTypes.forEach((listType) => {
-    const listItemsUrl = `/api/v1/items?limit=1000&offset=0&listType=${encodeURIComponent(listType)}`;
-    cy.request('GET', listItemsUrl).then((response) => {
-      const items = (
-        response.body as {
-          items: Array<{
-            externalProvider: string;
-            externalItemId: string;
-            hash: string;
-            listType?: string;
-          }>;
-        }
-      ).items;
-      items.forEach((item) => {
-        // Library All merges owned books; delete must use the item's real list type.
-        const itemListType = item.listType || listType;
-        const deleteUrl = `/api/v1/items/${encodeURIComponent(item.externalProvider)}/${encodeURIComponent(
-          item.externalItemId
-        )}?hash=${encodeURIComponent(item.hash)}&listType=${encodeURIComponent(itemListType)}`;
-        cy.request({ method: 'DELETE', url: deleteUrl, failOnStatusCode: false });
+      signInThroughUi(username, token);
+
+      cy.visit('/client/#/collection/library', {
+        onBeforeLoad: resetPermissionStorage,
       });
     });
-  });
-
-  cy.request('POST', '/api/v1/tag-management', []);
-  cy.request('POST', '/api/v1/user/settings', defaultUserSettings);
-
-  signInThroughUi(username, token);
-
-  cy.visit('/client/#/collection/library', {
-    onBeforeLoad: resetPermissionStorage,
   });
 });
 
@@ -199,11 +253,11 @@ Cypress.Commands.add('autoLoginWithNewUser', () => {
 
   authCookieHeader = '';
 
-  cy.request('POST', '/api/v1/sign-up', { username })
-    .its('body')
+  cy.request('POST', '/api/v1/auth/sign-up', { username })
+    .its('body.data')
     .then((body) => {
       const { token } = body as { token: string };
-      cy.request('POST', '/api/v1/sign-in', { username, token }).then(storeAuthCookies);
+      cy.request('POST', '/api/v1/auth/sign-in', { username, token }).then(storeAuthCookies);
       signInThroughUi(username, token);
     })
     .then(() => {
