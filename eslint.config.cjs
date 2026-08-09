@@ -185,7 +185,11 @@ module.exports = [
       "css/no-invalid-properties": ["error", { allowUnknownVariables: true }],
       "css/use-baseline": [
         "error",
-        { available: "newly", allowProperties: ["accent-color", "resize"] },
+        {
+          available: "newly",
+          allowProperties: ["accent-color", "resize"],
+          allowSelectors: ["host-context"],
+        },
       ],
     },
   },
