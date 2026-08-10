@@ -779,87 +779,196 @@ components:
             type: string
 
     CollectionStatisticsResponse:
+      oneOf:
+        - $ref: '#/components/schemas/AllCollectionStatisticsResponse'
+        - $ref: '#/components/schemas/MovieCollectionStatisticsResponse'
+        - $ref: '#/components/schemas/SeriesCollectionStatisticsResponse'
+        - $ref: '#/components/schemas/BookCollectionStatisticsResponse'
+
+    CommonCollectionStatisticsCharts:
       type: object
-      required:
-        [
-          totalItems,
-          movieCount,
-          seriesCount,
-          booksCount,
-          favoriteCount,
-          upNextCount,
-          wishlistCount,
-          watchedMovieCount,
-          watchedSeriesCount,
-          unwatchedMovieCount,
-          unwatchedLibrarySeriesCount,
-          unwatchedTrackerSeriesCount,
-          completedTrackerSeriesCount,
-          watchedYearCounts,
-          tagCounts,
-          genreCounts,
-        ]
+      required: [tagCounts, genreCounts, releaseYearCounts, userRatingCounts]
       properties:
-        totalItems:
-          type: integer
-        movieCount:
-          type: integer
-        seriesCount:
-          type: integer
-        booksCount:
-          type: integer
-        favoriteCount:
-          type: integer
-        upNextCount:
-          type: integer
-        wishlistCount:
-          type: integer
-        watchedMovieCount:
-          type: integer
-        watchedSeriesCount:
-          type: integer
-        unwatchedMovieCount:
-          type: integer
-        unwatchedLibrarySeriesCount:
-          type: integer
-        unwatchedTrackerSeriesCount:
-          type: integer
-        completedTrackerSeriesCount:
-          type: integer
-        watchedYearCounts:
-          type: array
-          items:
-            type: object
-            required: [year, movieCount, seriesCount, count]
-            properties:
-              year:
-                type: string
-              movieCount:
-                type: integer
-              seriesCount:
-                type: integer
-              count:
-                type: integer
         tagCounts:
           type: array
           items:
             type: object
             required: [tag, count]
             properties:
-              tag:
-                type: string
-              count:
-                type: integer
+              tag: { type: string }
+              count: { type: integer }
         genreCounts:
           type: array
           items:
             type: object
             required: [genre, count]
             properties:
-              genre:
-                type: string
-              count:
-                type: integer
+              genre: { type: string }
+              count: { type: integer }
+        releaseYearCounts:
+          type: array
+          description: Counts for exact four-digit release years, ordered by year.
+          items:
+            type: object
+            required: [year, count]
+            properties:
+              year: { type: string, pattern: '^\d{4}$' }
+              count: { type: integer }
+        userRatingCounts:
+          type: array
+          description: Rated-item counts grouped by the integer floor of the 0-10 user rating.
+          items:
+            type: object
+            required: [rating, count]
+            properties:
+              rating: { type: integer }
+              count: { type: integer }
+
+    AllCollectionStatisticsCharts:
+      allOf:
+        - $ref: '#/components/schemas/CommonCollectionStatisticsCharts'
+        - type: object
+          required: [mediaTypeCounts, statusCounts]
+          properties:
+            mediaTypeCounts:
+              type: array
+              items:
+                type: object
+                required: [type, count]
+                properties:
+                  type: { type: string, enum: [movie, series, book] }
+                  count: { type: integer }
+            statusCounts:
+              type: array
+              maxItems: 0
+
+    MovieCollectionStatisticsCharts:
+      allOf:
+        - $ref: '#/components/schemas/CommonCollectionStatisticsCharts'
+        - $ref: '#/components/schemas/SpecificCollectionStatisticsCharts'
+        - type: object
+          properties:
+            statusCounts:
+              type: array
+              items:
+                $ref: '#/components/schemas/MovieCollectionStatisticsStatusCount'
+
+    SeriesCollectionStatisticsCharts:
+      allOf:
+        - $ref: '#/components/schemas/CommonCollectionStatisticsCharts'
+        - $ref: '#/components/schemas/SpecificCollectionStatisticsCharts'
+        - type: object
+          properties:
+            statusCounts:
+              type: array
+              items:
+                $ref: '#/components/schemas/SeriesCollectionStatisticsStatusCount'
+
+    BookCollectionStatisticsCharts:
+      allOf:
+        - $ref: '#/components/schemas/CommonCollectionStatisticsCharts'
+        - $ref: '#/components/schemas/SpecificCollectionStatisticsCharts'
+        - type: object
+          properties:
+            statusCounts:
+              type: array
+              items:
+                $ref: '#/components/schemas/BookCollectionStatisticsStatusCount'
+
+    SpecificCollectionStatisticsCharts:
+      type: object
+      required: [mediaTypeCounts, statusCounts]
+      properties:
+        mediaTypeCounts:
+          type: array
+          maxItems: 0
+        statusCounts:
+          type: array
+
+    MovieCollectionStatisticsStatusCount:
+      type: object
+      required: [status, count]
+      properties:
+        status: { type: string, enum: [watched, unwatched] }
+        count: { type: integer }
+
+    SeriesCollectionStatisticsStatusCount:
+      type: object
+      required: [status, count]
+      properties:
+        status: { type: string, enum: [untracked, completed, inProgress] }
+        count: { type: integer }
+
+    BookCollectionStatisticsStatusCount:
+      type: object
+      required: [status, count]
+      properties:
+        status: { type: string, enum: [read, unread, inProgress] }
+        count: { type: integer }
+
+    AllCollectionStatisticsResponse:
+      type: object
+      required: [scope, summary, charts]
+      properties:
+        scope: { type: string, const: all }
+        summary:
+          type: object
+          required: [total, movies, series, books, favorites]
+          properties:
+            total: { type: integer }
+            movies: { type: integer }
+            series: { type: integer }
+            books: { type: integer }
+            favorites: { type: integer }
+        charts: { $ref: '#/components/schemas/AllCollectionStatisticsCharts' }
+
+    MovieCollectionStatisticsResponse:
+      type: object
+      required: [scope, summary, charts]
+      properties:
+        scope: { type: string, const: movie }
+        summary:
+          type: object
+          required: [total, favorites, watched, unwatched]
+          properties:
+            total: { type: integer }
+            favorites: { type: integer }
+            watched: { type: integer }
+            unwatched: { type: integer }
+        charts: { $ref: '#/components/schemas/MovieCollectionStatisticsCharts' }
+
+    SeriesCollectionStatisticsResponse:
+      type: object
+      required: [scope, summary, charts]
+      properties:
+        scope: { type: string, const: series }
+        summary:
+          type: object
+          required: [total, favorites, tracked, untracked, completed, inProgress]
+          properties:
+            total: { type: integer }
+            favorites: { type: integer }
+            tracked: { type: integer }
+            untracked: { type: integer }
+            completed: { type: integer }
+            inProgress: { type: integer }
+        charts: { $ref: '#/components/schemas/SeriesCollectionStatisticsCharts' }
+
+    BookCollectionStatisticsResponse:
+      type: object
+      required: [scope, summary, charts]
+      properties:
+        scope: { type: string, const: book }
+        summary:
+          type: object
+          required: [total, favorites, read, unread, inProgress]
+          properties:
+            total: { type: integer }
+            favorites: { type: integer }
+            read: { type: integer }
+            unread: { type: integer }
+            inProgress: { type: integer }
+        charts: { $ref: '#/components/schemas/BookCollectionStatisticsCharts' }
 
     CreateRequest:
       allOf:
@@ -2703,59 +2812,19 @@ paths:
       operationId: getStatistics
       summary: Get collection statistics
       description: >-
-        `totalItems`, media counts, favorite count, watched/unwatched metrics, year counts, tag counts, and genre counts
-        use the current filters and readable scope. `upNextCount`, `wishlistCount`, and `booksCount` are global readable
-        counters for those physical lists and honor only the `shared` ownership filter. Tracker-series counters use the
-        tracking scope when `listType` is omitted or `tracking`, otherwise they are zero. Default library statistics
-        fold owned/readable books into the filtered result like GET /collection-items.
+        Returns statistics for the authenticated viewer's default readable library scope, folding readable books-list
+        books into library movies and series. Omit `type` for an all-media summary, or provide `movie`, `series`, or
+        `book` for that media scope. Tracking statuses use the current viewer's tracking items matched by canonical or
+        exact external identity. Media-type chart counts are available only in all-media scope; status chart counts are
+        available only in a specific media scope.
       tags: [Collection]
       parameters:
-        - name: search
-          in: query
-          schema:
-            type: string
-        - name: tags
-          in: query
-          schema:
-            type: string
-        - name: genres
-          in: query
-          schema:
-            type: string
-        - name: tagMode
-          in: query
-          schema:
-            type: string
-            enum: [any, all]
         - name: type
           in: query
+          description: Media scope. Omit for all movies, series, and books.
           schema:
             type: string
             enum: [movie, series, book]
-        - name: listType
-          in: query
-          schema:
-            type: string
-            enum: [library, up-next, wishlist, tracking, books]
-            default: library
-        - name: watched
-          in: query
-          schema:
-            type: boolean
-        - name: completed
-          in: query
-          schema:
-            type: boolean
-        - name: favorite
-          in: query
-          schema:
-            type: boolean
-        - name: shared
-          in: query
-          description: Own items only, shared items only, or omit for both.
-          schema:
-            type: string
-            enum: [mine, shared]
       responses:
         '200':
           description: Collection statistics.
@@ -2763,6 +2832,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CollectionStatisticsEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

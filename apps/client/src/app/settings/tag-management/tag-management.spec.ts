@@ -32,21 +32,16 @@ const buildTagManagement = (
 
 const mockStatistics = (tags: string[]) =>
   of({
-    totalItems: tags.length,
-    movieCount: 0,
-    seriesCount: 0,
-    favoriteCount: 0,
-    upNextCount: 0,
-    wishlistCount: 0,
-    watchedMovieCount: 0,
-    watchedSeriesCount: 0,
-    unwatchedMovieCount: 0,
-    unwatchedLibrarySeriesCount: 0,
-    unwatchedTrackerSeriesCount: 0,
-    completedTrackerSeriesCount: 0,
-    watchedYearCounts: [],
-    tagCounts: tags.map((tag) => ({ tag, count: 1 })),
-    genreCounts: [],
+    scope: 'all' as const,
+    summary: { total: tags.length, movies: 0, series: 0, books: 0, favorites: 0 },
+    charts: {
+      tagCounts: tags.map((tag) => ({ tag, count: 1 })),
+      genreCounts: [],
+      releaseYearCounts: [],
+      userRatingCounts: [],
+      mediaTypeCounts: [],
+      statusCounts: [],
+    },
   });
 
 describe('TagManagement component', () => {

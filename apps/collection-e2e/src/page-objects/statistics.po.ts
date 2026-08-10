@@ -1,22 +1,16 @@
+type StatisticsScope = 'all' | 'movie' | 'series' | 'book';
+
 export const StatisticsPage = {
   visit: () => {
     cy.visit('/client/#/statistics');
   },
-
+  getContent: () => cy.getByTestId('statistics-content', { timeout: 10000 }),
+  getScrollContainer: () => cy.getByTestId('statistics-scroll', { timeout: 10000 }),
   getEmptyMessage: () => cy.getByTestId('statistics-empty', { timeout: 10000 }),
   getSummary: () => cy.getByTestId('statistics-summary', { timeout: 10000 }),
-  getSummaryAll: () => cy.getByTestId('statistics-summary-all', { timeout: 10000 }),
-  getSummaryMovies: () => cy.getByTestId('statistics-summary-movies'),
-  getSummarySeries: () => cy.getByTestId('statistics-summary-series'),
-  getSummaryFavorites: () => cy.getByTestId('statistics-summary-favorites'),
-  getSummaryUpNext: () => cy.getByTestId('statistics-summary-up-next'),
-  getSummaryWishlist: () => cy.getByTestId('statistics-summary-wishlist'),
-  getSummaryWatchedMovies: () => cy.getByTestId('statistics-summary-watched-movies'),
-  getSummaryWatchedSeries: () => cy.getByTestId('statistics-summary-watched-series'),
-  getSummaryUnwatchedMovies: () => cy.getByTestId('statistics-summary-unwatched-movies'),
-  getSummaryUnwatchedLibrarySeries: () => cy.getByTestId('statistics-summary-unwatched-library-series'),
-  getSummaryUnwatchedTrackerSeries: () => cy.getByTestId('statistics-summary-unwatched-tracker-series'),
-  getSummaryCompletedTrackerSeries: () => cy.getByTestId('statistics-summary-completed-tracker-series'),
+  getSummaryCard: (card: string) => cy.getByTestId(`statistics-summary-${card}`, { timeout: 10000 }),
+  selectScope: (scope: StatisticsScope) => cy.getByTestId(`collection-media-chip-${scope}`).click(),
+  getScopeChip: (scope: StatisticsScope) => cy.getByTestId(`collection-media-chip-${scope}`),
   openTagsDetails: () => {
     cy.getByTestId('statistics-tags-details')
       .find('details')
@@ -24,26 +18,9 @@ export const StatisticsPage = {
         if (!$details.prop('open')) cy.wrap($details).find('summary').click();
       });
   },
-  getTagButton: (tag: string) => cy.getByTestId(`statistics-tag-${tag}`).scrollIntoView(),
-  clickAvailableTagButton: (tag: string) =>
-    cy
-      .getByTestId('statistics-tags')
-      .find(`[data-test-id="statistics-tag-${tag}"]`)
-      .scrollIntoView()
-      .then(($button) => {
-        ($button[0] as HTMLButtonElement).click();
-      }),
-  getSelectedTagButton: (tag: string) =>
-    cy.getByTestId('statistics-selected-tags').find(`[data-test-id="statistics-tag-${tag}"]`).scrollIntoView(),
-  clickSelectedTagButton: (tag: string) =>
-    cy
-      .getByTestId('statistics-selected-tags')
-      .find(`[data-test-id="statistics-tag-${tag}"]`)
-      .scrollIntoView()
-      .then(($button) => {
-        ($button[0] as HTMLButtonElement).click();
-      }),
-  getTagsEmpty: () => cy.getByTestId('statistics-tags-empty').scrollIntoView(),
+  getTag: (tag: string) => cy.getByTestId(`statistics-tag-${tag}`),
+  getUnavailableTagsMessage: () => cy.getByTestId('statistics-tags-unavailable').scrollIntoView(),
   getTagChartCard: () => cy.getByTestId('statistics-tag-chart-card'),
-  getWatchedYearChartCard: () => cy.getByTestId('statistics-watched-year-chart-card'),
+  getOverviewChartCard: () => cy.getByTestId('statistics-overview-chart-card'),
+  getRatingChartCard: () => cy.getByTestId('statistics-rating-chart-card'),
 };

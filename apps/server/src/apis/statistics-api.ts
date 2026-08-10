@@ -12,7 +12,11 @@ export const register = (app: FastifyInstance): void => {
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const db = getDatabase();
-      const filters = parseFilters(request.query as Record<string, unknown>);
+      const query = request.query as Record<string, unknown>;
+      if (query.type !== undefined && query.type !== 'movie' && query.type !== 'series' && query.type !== 'book') {
+        return response.code(400).send({ error: 'Invalid media type' });
+      }
+      const filters = parseFilters(query);
       response.send(getCollectionStatistics(db, request.usernameHash, filters));
     })
   );

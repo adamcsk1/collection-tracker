@@ -60,6 +60,13 @@ Every JSON error uses RFC 9457 Problem Details with content type `application/pr
 
 `detail` is optional and is omitted from internal-server-error responses.
 
+`GET /api/v1/collection-items/statistics` uses the readable folded library scope. Omitting `type` returns compact
+all-media totals. `type=movie|series|book` returns a focused summary and type-filtered tags, genres, release years, and
+user-rating bands. Statuses come from current-viewer tracking twins: completed movies are watched; series partition into
+untracked, completed, and in progress; books partition into read, positive-progress, and unread states. Tracking rows
+never increase owned/readable collection totals.
+Unsupported `type` values return an RFC 9457 `400 Bad Request` response instead of falling back to all-media scope.
+
 ## Runtime Model
 
 - Default data folder: `.data`

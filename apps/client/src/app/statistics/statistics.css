@@ -2,11 +2,27 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: var(--size-md);
-  overflow-y: auto;
-  overflow-x: hidden;
   min-width: 0;
   min-height: 0;
+}
+
+.statistics-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: var(--size-md);
+  overflow: hidden auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.statistics-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--size-sm);
+  text-align: center;
+  padding: var(--size-xl);
 }
 
 .summary-grid {
@@ -21,12 +37,15 @@
   justify-content: center;
   gap: var(--size-xs);
   padding: var(--size-md);
-  cursor: pointer;
   color: var(--text-color);
 
-  &:hover,
-  &:focus-within {
-    border-color: var(--main-color);
+  &.card-interactive {
+    cursor: pointer;
+
+    &:hover,
+    &:focus-within {
+      border-color: var(--main-color);
+    }
   }
 }
 
@@ -117,6 +136,7 @@
 }
 
 .charts-grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--size-md);
@@ -138,8 +158,21 @@
   grid-column: 1 / -1;
 }
 
-.chart-hidden {
-  display: none;
+.charts-grid.chart-hidden {
+  visibility: hidden;
+  max-height: 0;
+  min-height: 0;
+  padding-block: 0;
+  border-width: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.chart-card.chart-hidden {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .chart-container {

@@ -1,167 +1,80 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { insertLibraryShare } from '../../test/mocks/share-mock';
 
-const COMPLETED_TAG = '#completed';
+type ContentType = 'movie' | 'series' | 'book';
 
-const insertUserAndItems = () => {
-  const db = getDatabase();
-  db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
-  db.prepare(
-    `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, contributors, description, image, content_hash, content_type, favorite)
-     VALUES (?, 'imdb', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    'user',
-    'tt001',
-    'imdb:tt001',
-    'Movie One',
-    'movie one',
-    '1999',
-    '8.0',
-    'Plot one',
-    'img1.jpg',
-    'hash1',
-    'movie',
-    1
-  );
-  const item1Id = Number(
-    (db.prepare('SELECT id FROM collection_items WHERE external_item_id = ?').get('tt001')! as { id: number }).id
-  );
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#movie');
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, '#favorite');
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item1Id, 'sci-fi');
-  db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item1Id, 'Action');
+interface ItemOptions {
+  id: string;
+  type: ContentType;
+  listType?: 'library' | 'books' | 'tracking' | 'wishlist';
+  owner?: string;
+  canonicalId?: string;
+  year?: string;
+  rating?: number;
+  favorite?: boolean;
+  tags?: string[];
+  genres?: string[];
+  completedAt?: string | null;
+  progressCurrent?: number | null;
+}
 
-  db.prepare(
-    `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
-     VALUES (?, 'imdb', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    'user',
-    'tt001',
-    'imdb:tt001',
-    'tracking',
-    'Movie One',
-    'movie one',
-    '1999',
-    '8.0',
-    'Plot one',
-    'img1.jpg',
-    'hash1-watched',
-    'movie'
-  );
-  const watchedItemId = Number(
-    (
-      db
-        .prepare('SELECT id FROM collection_items WHERE external_item_id = ? AND list_type = ?')
-        .get('tt001', 'tracking')! as { id: number }
-    ).id
-  );
-  db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
-    watchedItemId,
-    '2026-03-04 00:00:00'
-  );
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(watchedItemId, '#movie');
-
-  db.prepare(
-    `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, contributors, description, image, content_hash, content_type)
-     VALUES (?, 'imdb', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    'user',
-    'tt002',
-    'imdb:tt002',
-    'Series One',
-    'series one',
-    '2000',
-    '7.5',
-    'Plot two',
-    'img2.jpg',
-    'hash2',
-    'series'
-  );
-  const item2Id = Number(
-    (db.prepare('SELECT id FROM collection_items WHERE external_item_id = ?').get('tt002')! as { id: number }).id
-  );
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item2Id, '#series');
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item2Id, 'drama');
-  db.prepare('INSERT OR IGNORE INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(item2Id, 'Drama');
-
-  db.prepare(
-    `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
-     VALUES (?, 'imdb', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    'user',
-    'tt003',
-    'imdb:tt003',
-    'up-next',
-    'Watch Later One',
-    'watch later one',
-    '2001',
-    '7.1',
-    'Plot three',
-    'img3.jpg',
-    'hash3',
-    'movie'
-  );
-  const item3Id = Number(
-    (db.prepare('SELECT id FROM collection_items WHERE external_item_id = ?').get('tt003')! as { id: number }).id
-  );
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item3Id, '#movie');
-
-  db.prepare(
-    `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
-     VALUES (?, 'imdb', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    'user',
-    'tt004',
-    'imdb:tt004',
-    'wishlist',
-    'Wishlist One',
-    'wishlist one',
-    '2002',
-    '7.2',
-    'Plot four',
-    'img4.jpg',
-    'hash4',
-    'movie'
-  );
-  const item4Id = Number(
-    (db.prepare('SELECT id FROM collection_items WHERE external_item_id = ?').get('tt004')! as { id: number }).id
-  );
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(item4Id, '#movie');
-};
-
-const insertUser = (usernameHash: string) => {
+const insertUser = (usernameHash: string): void => {
   getDatabase()
     .prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)')
     .run(usernameHash, `${usernameHash}-token`);
 };
 
-const insertTrackingItem = (usernameHash: string, imdbId: string, title: string) => {
+const insertItem = (options: ItemOptions): number => {
   const db = getDatabase();
-  db.prepare(
-    `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
-     VALUES (?, 'imdb', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    usernameHash,
-    imdbId,
-    `imdb:${imdbId}`,
-    'tracking',
-    title,
-    title.toLowerCase(),
-    '2001',
-    '7.0',
-    '',
-    '',
-    `${imdbId}-hash`,
-    'series'
-  );
-  const itemId = Number(
-    (db.prepare('SELECT id FROM collection_items WHERE external_item_id = ?').get(imdbId)! as { id: number }).id
-  );
-  db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, NULL)').run(itemId);
-  db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, '#series');
+  const owner = options.owner ?? 'user';
+  const listType = options.listType ?? (options.type === 'book' ? 'books' : 'library');
+  const provider = options.type === 'book' ? 'openlibrary' : 'imdb';
+  const result = db
+    .prepare(
+      `INSERT INTO collection_items
+        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+         favorite, title, title_lower, year, user_rate, contributors, description, image, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', '', ?)`
+    )
+    .run(
+      owner,
+      provider,
+      options.id,
+      options.canonicalId ?? `${provider}:${options.id}`,
+      listType,
+      options.type,
+      options.favorite ? 1 : 0,
+      options.id,
+      options.id.toLowerCase(),
+      options.year ?? '',
+      options.rating ?? null,
+      `${owner}-${listType}-${options.id}`
+    );
+  const itemId = Number(result.lastInsertRowid);
+  for (const tag of options.tags ?? []) {
+    db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
+  }
+  for (const genre of options.genres ?? []) {
+    db.prepare('INSERT INTO collection_item_genres (item_id, genre) VALUES (?, ?)').run(itemId, genre);
+  }
+  if (listType === 'tracking') {
+    db.prepare(
+      `INSERT INTO collection_item_tracker_state (item_id, completed_at, progress_current)
+       VALUES (?, ?, ?)`
+    ).run(itemId, options.completedAt ?? null, options.progressCurrent ?? null);
+  }
+  return itemId;
+};
+
+const readStatistics = async (query: Record<string, unknown> = {}) => {
+  const response = mockResponse();
+  const { app, handlerPromise } = buildApp({ usernameHash: 'user', query }, response);
+  const { register } = await import('./statistics-api');
+  register(app);
+  await handlerPromise();
+  return response.send.mock.calls[0][0];
 };
 
 describe('statistics-api', () => {
@@ -170,416 +83,177 @@ describe('statistics-api', () => {
     vi.clearAllMocks();
   });
 
-  it('returns collection statistics', async () => {
-    insertUserAndItems();
+  it.each(['invalid', '', ['movie']])('returns 400 for invalid media type %j', async (type) => {
     const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: {} };
-    const { app, handlerPromise } = buildApp(request, response);
-
+    const { app, handlerPromise } = buildApp({ usernameHash: 'user', query: { type } }, response);
     const { register } = await import('./statistics-api');
     register(app);
-
     await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        totalItems: 2,
-        movieCount: 1,
-        seriesCount: 1,
-        favoriteCount: 1,
-        upNextCount: 1,
-        wishlistCount: 1,
-        watchedMovieCount: 1,
-        watchedSeriesCount: 0,
-        unwatchedMovieCount: 0,
-        unwatchedLibrarySeriesCount: 1,
-        unwatchedTrackerSeriesCount: 0,
-        watchedYearCounts: [{ year: '2026', movieCount: 1, seriesCount: 0, count: 1 }],
-        tagCounts: expect.arrayContaining([
-          expect.objectContaining({ tag: 'sci-fi', count: 1 }),
-          expect.objectContaining({ tag: 'drama', count: 1 }),
-        ]),
-        genreCounts: expect.arrayContaining([
-          expect.objectContaining({ genre: 'Action', count: 1 }),
-          expect.objectContaining({ genre: 'Drama', count: 1 }),
-        ]),
-      })
-    );
+
+    expect(response.code).toHaveBeenCalledWith(400);
+    expect(response.send).toHaveBeenCalledWith({ error: 'Invalid media type' });
   });
 
-  it('applies filters to statistics', async () => {
-    insertUserAndItems();
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { type: 'movie' } };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./statistics-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        totalItems: 1,
-        movieCount: 1,
-        seriesCount: 0,
-        watchedMovieCount: 1,
-        watchedSeriesCount: 0,
-        unwatchedMovieCount: 0,
-        unwatchedLibrarySeriesCount: 0,
-        unwatchedTrackerSeriesCount: 0,
-      })
-    );
-  });
-
-  it('does not count incomplete tracking movie twins as watched', async () => {
+  it('returns all-scope summary and scoped chart counts for the folded library', async () => {
     insertUser('user');
-    const db = getDatabase();
-    db.prepare(
-      `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
-       VALUES ('user', 'imdb', 'tt-incomplete', 'imdb:tt-incomplete', 'library', 'Incomplete Movie', 'incomplete movie', '1999', '', '', '', 'lib-hash', 'movie')`
-    ).run();
-    db.prepare(
-      `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
-       VALUES ('user', 'imdb', 'tt-incomplete', 'imdb:tt-incomplete', 'tracking', 'Incomplete Movie', 'incomplete movie', '1999', '', '', '', 'track-hash', 'movie')`
-    ).run();
-    const trackingItemId = Number(
-      (
-        db
-          .prepare('SELECT id FROM collection_items WHERE external_item_id = ? AND list_type = ?')
-          .get('tt-incomplete', 'tracking')! as { id: number }
-      ).id
-    );
-    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, NULL)').run(
-      trackingItemId
-    );
+    insertItem({
+      id: 'movie-1',
+      type: 'movie',
+      favorite: true,
+      year: '1999',
+      rating: 8.5,
+      tags: ['favorite', 'shared-tag'],
+      genres: ['Action'],
+    });
+    insertItem({
+      id: 'series-1',
+      type: 'series',
+      year: '2001',
+      rating: 7,
+      tags: ['shared-tag'],
+      genres: ['Drama'],
+    });
+    insertItem({ id: 'book-1', type: 'book', favorite: true, year: '2020', rating: 8.5, genres: ['Drama'] });
+    insertItem({ id: 'ignored', type: 'movie', listType: 'wishlist', year: '2022', tags: ['ignored'] });
 
-    const response = mockResponse();
-    const { app, handlerPromise } = buildApp({ usernameHash: 'user', query: {} }, response);
-    const { register } = await import('./statistics-api');
-    register(app);
-    await handlerPromise();
-
-    expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        watchedMovieCount: 0,
-        unwatchedMovieCount: 1,
-      })
-    );
+    expect(await readStatistics()).toEqual({
+      scope: 'all',
+      summary: { total: 3, movies: 1, series: 1, books: 1, favorites: 2 },
+      charts: {
+        tagCounts: [
+          { tag: 'shared-tag', count: 2 },
+          { tag: 'favorite', count: 1 },
+        ],
+        genreCounts: [
+          { genre: 'Drama', count: 2 },
+          { genre: 'Action', count: 1 },
+        ],
+        releaseYearCounts: [
+          { year: '1999', count: 1 },
+          { year: '2001', count: 1 },
+          { year: '2020', count: 1 },
+        ],
+        userRatingCounts: [
+          { rating: 7, count: 1 },
+          { rating: 8, count: 2 },
+        ],
+        mediaTypeCounts: [
+          { type: 'movie', count: 1 },
+          { type: 'series', count: 1 },
+          { type: 'book', count: 1 },
+        ],
+        statusCounts: [],
+      },
+    });
   });
 
-  it('counts current user books list items without library book statistics', async () => {
-    insertUser('user');
-    const db = getDatabase();
-    const insert = db.prepare(
-      `INSERT INTO collection_items
-        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type, title, title_lower, year, contributors, description, image, content_hash)
-       VALUES ('user', 'openlibrary', ?, ?, ?, 'book', 'Book', 'book', '', '', '', '', ?)`
-    );
-    insert.run('9780804429573', 'isbn:9780804429573', 'books', 'books');
-    const response = mockResponse();
-    const { app, handlerPromise } = buildApp({ usernameHash: 'user', query: {} }, response);
-
-    const { register } = await import('./statistics-api');
-    register(app);
-    await handlerPromise();
-
-    const statistics = response.send.mock.calls[0][0];
-    expect(statistics).toEqual(expect.objectContaining({ booksCount: 1 }));
-    expect(statistics).not.toHaveProperty('bookCount');
-  });
-
-  it('scopes totals and list counts consistently for mine and shared filters', async () => {
+  it('returns movie status from completed current-viewer tracking twins', async () => {
     insertUser('user');
     insertUser('owner');
-    const db = getDatabase();
-    const insertItem = db.prepare(
-      `INSERT INTO collection_items
-        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
-         title, title_lower, year, contributors, description, image, content_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', '', '', '', ?)`
-    );
-    const addItem = (
-      usernameHash: string,
-      itemId: string,
-      listType: 'library' | 'books' | 'up-next' | 'wishlist',
-      contentType: 'movie' | 'series' | 'book'
-    ): void => {
-      insertItem.run(
-        usernameHash,
-        contentType === 'book' ? 'openlibrary' : 'imdb',
-        itemId,
-        `${contentType}:${itemId}`,
-        listType,
-        contentType,
-        itemId,
-        itemId,
-        `${usernameHash}-${itemId}`
-      );
-    };
+    insertItem({ id: 'movie-watched', type: 'movie', canonicalId: 'imdb:watched', favorite: true });
+    insertItem({ id: 'movie-unwatched', type: 'movie' });
+    insertItem({
+      id: 'movie-unwatched',
+      type: 'movie',
+      listType: 'tracking',
+      owner: 'owner',
+      completedAt: '2026-01-01',
+    });
+    insertItem({
+      id: 'different-provider-id',
+      canonicalId: 'imdb:watched',
+      type: 'movie',
+      listType: 'tracking',
+      completedAt: '2026-01-01 00:00:00',
+    });
 
-    for (const usernameHash of ['user', 'owner']) {
-      addItem(usernameHash, `${usernameHash}-library`, 'library', 'movie');
-      addItem(usernameHash, `${usernameHash}-book`, 'books', 'book');
-      addItem(usernameHash, `${usernameHash}-up-next`, 'up-next', 'movie');
-      addItem(usernameHash, `${usernameHash}-wishlist`, 'wishlist', 'movie');
-    }
-    addItem('owner', 'owner-private-series', 'library', 'series');
-
-    const insertGrant = db.prepare(
-      `INSERT INTO user_share_grants
-        (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)
-       VALUES ('owner', 'user', ?, ?, 1)`
-    );
-    insertGrant.run('library', 'movie');
-    insertGrant.run('books', 'book');
-    insertGrant.run('up-next', 'movie');
-    insertGrant.run('wishlist', 'movie');
-
-    const readStatistics = async (query: Record<string, unknown>) => {
-      const response = mockResponse();
-      const { app, handlerPromise } = buildApp({ usernameHash: 'user', query }, response);
-      const { register } = await import('./statistics-api');
-      register(app);
-      await handlerPromise();
-      return response.send.mock.calls[0][0];
-    };
-
-    const allStatistics = await readStatistics({});
-    const mineStatistics = await readStatistics({ shared: 'mine' });
-    const sharedStatistics = await readStatistics({ shared: 'shared' });
-
-    expect(allStatistics).toEqual(
+    expect(await readStatistics({ type: 'movie' })).toEqual(
       expect.objectContaining({
-        totalItems: 4,
-        movieCount: 2,
-        seriesCount: 0,
-        booksCount: 2,
-        upNextCount: 2,
-        wishlistCount: 2,
-      })
-    );
-    expect(mineStatistics).toEqual(
-      expect.objectContaining({ totalItems: 2, booksCount: 1, upNextCount: 1, wishlistCount: 1 })
-    );
-    expect(sharedStatistics).toEqual(
-      expect.objectContaining({ totalItems: 2, booksCount: 1, upNextCount: 1, wishlistCount: 1 })
-    );
-  });
-
-  it('applies search filters to watched statistics', async () => {
-    insertUserAndItems();
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { search: 'series' } };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./statistics-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        totalItems: 1,
-        movieCount: 0,
-        seriesCount: 1,
-        watchedMovieCount: 0,
-        watchedSeriesCount: 0,
-        unwatchedMovieCount: 0,
-        unwatchedLibrarySeriesCount: 1,
-        unwatchedTrackerSeriesCount: 0,
+        scope: 'movie',
+        summary: { total: 2, favorites: 1, watched: 1, unwatched: 1 },
+        charts: expect.objectContaining({
+          mediaTypeCounts: [],
+          statusCounts: [
+            { status: 'watched', count: 1 },
+            { status: 'unwatched', count: 1 },
+          ],
+        }),
       })
     );
   });
 
-  it('counts tracker series correctly without listType filter', async () => {
+  it('returns series tracked, completion, and in-progress counts', async () => {
     insertUser('user');
-    insertTrackingItem('user', 'tt-series-1', 'Incomplete Series');
-    insertTrackingItem('user', 'tt-series-2', 'Completed Series');
-    const db = getDatabase();
-    const completedItemId = Number(
-      (
-        db
-          .prepare('SELECT id FROM collection_items WHERE external_item_id = ? AND list_type = ?')
-          .get('tt-series-2', 'tracking')! as { id: number }
-      ).id
-    );
-    db.prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id = ?').run(
-      '2025-09-01 00:00:00',
-      completedItemId
-    );
+    for (const id of ['completed', 'progress', 'untracked']) insertItem({ id, type: 'series' });
+    insertItem({ id: 'completed', type: 'series', listType: 'tracking', completedAt: '2026-01-01' });
+    insertItem({ id: 'progress', type: 'series', listType: 'tracking' });
 
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: {} };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./statistics-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith(
+    expect(await readStatistics({ type: 'series' })).toEqual(
       expect.objectContaining({
-        unwatchedTrackerSeriesCount: 1,
-        completedTrackerSeriesCount: 1,
+        scope: 'series',
+        summary: {
+          total: 3,
+          favorites: 0,
+          tracked: 2,
+          untracked: 1,
+          completed: 1,
+          inProgress: 1,
+        },
+        charts: expect.objectContaining({
+          statusCounts: [
+            { status: 'untracked', count: 1 },
+            { status: 'completed', count: 1 },
+            { status: 'inProgress', count: 1 },
+          ],
+        }),
       })
     );
   });
 
-  it('returns completed series in watched year statistics', async () => {
+  it('keeps read, in-progress, and unread books mutually exclusive', async () => {
     insertUser('user');
-    const db = getDatabase();
-    db.prepare(
-      `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, contributors, description, image, content_hash, content_type)
-       VALUES (?, 'imdb', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      'user',
-      'tt-series',
-      'imdb:tt-series',
-      'Series',
-      'series',
-      '2024',
-      '8.0',
-      '',
-      '',
-      'library-series-hash',
-      'series'
-    );
-    const libraryItemId = Number(
-      (
-        db
-          .prepare('SELECT id FROM collection_items WHERE external_item_id = ? AND list_type = ?')
-          .get('tt-series', 'library')! as { id: number }
-      ).id
-    );
-    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(libraryItemId, '#series');
-    db.prepare(
-      `INSERT INTO collection_items (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
-       VALUES (?, 'imdb', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      'user',
-      'tt-series',
-      'imdb:tt-series',
-      'tracking',
-      'Series',
-      'series',
-      '2024',
-      '8.0',
-      '',
-      '',
-      'tracker-series-hash',
-      'series'
-    );
-    const trackerItemId = Number(
-      (
-        db
-          .prepare('SELECT id FROM collection_items WHERE external_item_id = ? AND list_type = ?')
-          .get('tt-series', 'tracking')! as { id: number }
-      ).id
-    );
-    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
-      trackerItemId,
-      '2025-09-01 00:00:00'
-    );
-    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(trackerItemId, '#series');
-    db.prepare('INSERT OR IGNORE INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(
-      trackerItemId,
-      COMPLETED_TAG
-    );
+    for (const id of ['read', 'progress', 'zero-progress', 'unread']) insertItem({ id, type: 'book' });
+    insertItem({ id: 'read', type: 'book', listType: 'tracking', completedAt: '2026-01-01', progressCurrent: 100 });
+    insertItem({ id: 'progress', type: 'book', listType: 'tracking', progressCurrent: 25 });
+    insertItem({ id: 'zero-progress', type: 'book', listType: 'tracking', progressCurrent: 0 });
 
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: {} };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./statistics-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith(
+    expect(await readStatistics({ type: 'book' })).toEqual(
       expect.objectContaining({
-        watchedYearCounts: [{ year: '2025', movieCount: 0, seriesCount: 1, count: 1 }],
+        scope: 'book',
+        summary: { total: 4, favorites: 0, read: 1, unread: 2, inProgress: 1 },
+        charts: expect.objectContaining({
+          statusCounts: [
+            { status: 'read', count: 1 },
+            { status: 'unread', count: 2 },
+            { status: 'inProgress', count: 1 },
+          ],
+        }),
       })
     );
   });
 
-  it('matches watched statistics by canonical identity when IMDb ID is absent', async () => {
-    insertUser('user');
-    const db = getDatabase();
-    db.prepare(
-      `INSERT INTO collection_items
-        (username_hash, external_provider, external_item_id, canonical_item_id, title, title_lower, year, contributors, description, image, content_hash, content_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      'user',
-      'omdb',
-      'provider-library-id',
-      'imdb:tt-canonical',
-      'Canonical Movie',
-      'canonical movie',
-      '2024',
-      '8.0',
-      '',
-      '',
-      'library-movie-hash',
-      'movie'
-    );
-    db.prepare(
-      `INSERT INTO collection_items
-        (username_hash, external_provider, external_item_id, canonical_item_id, list_type, title, title_lower, year, contributors, description, image, content_hash, content_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      'user',
-      'omdb',
-      'provider-tracker-id',
-      'imdb:tt-canonical',
-      'tracking',
-      'Canonical Movie',
-      'canonical movie',
-      '2024',
-      '8.0',
-      '',
-      '',
-      'tracker-movie-hash',
-      'movie'
-    );
-    const trackerItemId = Number(
-      (
-        db
-          .prepare('SELECT id FROM collection_items WHERE external_provider = ? AND external_item_id = ?')
-          .get('omdb', 'provider-tracker-id')! as { id: number }
-      ).id
-    );
-    db.prepare('INSERT INTO collection_item_tracker_state (item_id, completed_at) VALUES (?, ?)').run(
-      trackerItemId,
-      '2025-01-02 00:00:00'
-    );
-
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: {} };
-    const { app, handlerPromise } = buildApp(request, response);
-
-    const { register } = await import('./statistics-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        watchedMovieCount: 1,
-        unwatchedMovieCount: 0,
-        watchedYearCounts: [{ year: '2025', movieCount: 1, seriesCount: 0, count: 1 }],
-      })
-    );
-  });
-
-  it('does not include shared-owner internal lists in filtered statistics', async () => {
+  it('honors readable ownership and type scope while excluding invalid release years', async () => {
     insertUser('user');
     insertUser('owner');
-    insertLibraryShare(getDatabase(), 'owner', 'user');
-    insertTrackingItem('owner', 'tt-shared-series', 'Shared Series');
-    const response = mockResponse();
-    const request: any = { usernameHash: 'user', query: { listType: 'tracking' } };
-    const { app, handlerPromise } = buildApp(request, response);
+    insertItem({ id: 'mine', type: 'movie', year: '2024' });
+    insertItem({ id: 'invalid-short', type: 'movie', year: '24' });
+    insertItem({ id: 'invalid-text', type: 'movie', year: '202X' });
+    insertItem({ id: 'mine-series', type: 'series', year: '2027' });
+    insertItem({ id: 'shared', type: 'movie', owner: 'owner', year: '2025' });
+    insertItem({ id: 'private-series', type: 'series', owner: 'owner', year: '2026' });
+    getDatabase()
+      .prepare(
+        `INSERT INTO user_share_grants
+          (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)
+         VALUES ('owner', 'user', 'library', 'movie', 1)`
+      )
+      .run();
 
-    const { register } = await import('./statistics-api');
-    register(app);
-
-    await handlerPromise();
-    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ totalItems: 0 }));
+    const statistics = await readStatistics({ type: 'movie' });
+    expect(statistics.summary).toEqual({ total: 4, favorites: 0, watched: 0, unwatched: 4 });
+    expect(statistics.charts.releaseYearCounts).toEqual([
+      { year: '2024', count: 1 },
+      { year: '2025', count: 1 },
+    ]);
   });
 });

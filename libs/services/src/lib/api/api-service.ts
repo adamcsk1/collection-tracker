@@ -214,7 +214,9 @@ export class ApiService extends BaseApiService {
     );
   }
 
-  public getStatistics(filters: CollectionItemFiltersApiModel = {}): Observable<CollectionStatisticsApiResponseModel> {
+  public getStatistics(
+    filters: Pick<CollectionItemFiltersApiModel, 'type'> = {}
+  ): Observable<CollectionStatisticsApiResponseModel> {
     return this.request('GET', `/collection-items/statistics${this.buildQuery({ ...filters })}`);
   }
 

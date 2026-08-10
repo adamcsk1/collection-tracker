@@ -1,4 +1,14 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import {
+  afterRenderEffect,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  OnDestroy,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Details } from '@components/details/details';
@@ -8,27 +18,29 @@ import { apiStateToken } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
-import { CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
+import {
+  CollectionItemTypeFilter,
+  CollectionStatisticsApiResponseModel,
+  CollectionStatisticsStatus,
+} from '@shared/models/api-model';
 import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-import { catchError, EMPTY } from 'rxjs';
-import { StatisticsChartService } from './statistics-chart-service';
-import { StatisticsSummaryModel } from './statistics-model';
+import { BehaviorSubject, catchError, EMPTY, of, switchMap, tap } from 'rxjs';
+import { CollectionMediaChip, CollectionMediaChips } from '../collection/media-chips/media-chips';
 import { mainStateToken } from '../main/main-store';
+import { StatisticsChartService } from './statistics-chart-service';
 
 @Component({
   selector: 'ct-statistics',
-  imports: [Details, Input],
+  imports: [CollectionMediaChips, Details, Input],
   templateUrl: './statistics.html',
   styleUrl: './statistics.css',
   providers: [StatisticsChartService],
-  host: {
-    class: 'page',
-  },
+  host: { class: 'page' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Statistics implements AfterViewInit {
+export class Statistics implements OnDestroy {
   private readonly api = inject(ApiService);
   private readonly webstorage = inject(WebstorageService);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
@@ -37,11 +49,15 @@ export class Statistics implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly portal = inject(PortalService);
   private readonly charts = inject(StatisticsChartService);
+  private readonly scopeChanges = new BehaviorSubject<CollectionMediaChip>('all');
+  private readonly statisticsCache = new Map<CollectionMediaChip, CollectionStatisticsApiResponseModel>();
   protected readonly featurePreferences = inject(mainStateToken).state.collectionFeaturePreferences;
   protected readonly translations = {
     statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
     messageLoadStatistics: computed(() => this.ngxSignalTranslate.translate('Message.LoadStatistics')),
     messageEmptyStatistics: computed(() => this.ngxSignalTranslate.translate('Message.EmptyStatistics')),
+    loadStatisticsError: computed(() => this.ngxSignalTranslate.translate('Toast.LoadStatisticsError')),
+    retry: computed(() => this.ngxSignalTranslate.translate('Retry')),
     messageEmptyTags: computed(() => this.ngxSignalTranslate.translate('Message.EmptyTags')),
     summary: computed(() => this.ngxSignalTranslate.translate('Summary')),
     itemsInCollection: computed(() => this.ngxSignalTranslate.translate('ItemsInCollection')),
@@ -49,15 +65,15 @@ export class Statistics implements AfterViewInit {
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
     favorites: computed(() => this.ngxSignalTranslate.translate('Favorites')),
-    upNext: computed(() => this.ngxSignalTranslate.translate('UpNext')),
-    wishlist: computed(() => this.ngxSignalTranslate.translate('Wishlist')),
-    watchedMovies: computed(() => this.ngxSignalTranslate.translate('WatchedMovies')),
-    watchedSeries: computed(() => this.ngxSignalTranslate.translate('WatchedSeries')),
-    unwatchedMovies: computed(() => this.ngxSignalTranslate.translate('UnwatchedMovies')),
-    unwatchedLibrarySeries: computed(() => this.ngxSignalTranslate.translate('UnwatchedLibrarySeries')),
-    unwatchedTrackerSeries: computed(() => this.ngxSignalTranslate.translate('UnwatchedTrackerSeries')),
-    completedTrackerSeries: computed(() => this.ngxSignalTranslate.translate('CompletedTrackerSeries')),
-    chart: computed(() => this.ngxSignalTranslate.translate('Chart')),
+    watched: computed(() => this.ngxSignalTranslate.translate('Watched')),
+    unwatched: computed(() => this.ngxSignalTranslate.translate('Unwatched')),
+    tracked: computed(() => this.ngxSignalTranslate.translate('Tracked')),
+    untracked: computed(() => this.ngxSignalTranslate.translate('Untracked')),
+    completed: computed(() => this.ngxSignalTranslate.translate('Completed')),
+    inProgress: computed(() => this.ngxSignalTranslate.translate('InProgress')),
+    read: computed(() => this.ngxSignalTranslate.translate('Read')),
+    unread: computed(() => this.ngxSignalTranslate.translate('Unread')),
+    charts: computed(() => this.ngxSignalTranslate.translate('Charts')),
     availableTags: computed(() => this.ngxSignalTranslate.translate('AvailableTags')),
     clearSelectedTags: computed(() => this.ngxSignalTranslate.translate('ClearSelectedTags')),
     selectedTags: computed(() => this.ngxSignalTranslate.translate('SelectedTags')),
@@ -67,28 +83,33 @@ export class Statistics implements AfterViewInit {
     ),
     messageEmptyTagFilter: computed(() => this.ngxSignalTranslate.translate('Message.EmptyTagFilter')),
     tags: computed(() => this.ngxSignalTranslate.translate('Tags')),
-    trackerStatus: computed(() => this.ngxSignalTranslate.translate('TrackerStatus')),
-    type: computed(() => this.ngxSignalTranslate.translate('Type')),
+    mediaTypes: computed(() => this.ngxSignalTranslate.translate('MediaTypes')),
+    status: computed(() => this.ngxSignalTranslate.translate('Status')),
     genre: computed(() => this.ngxSignalTranslate.translate('Genre')),
-    watchedByYear: computed(() => this.ngxSignalTranslate.translate('WatchedByYear')),
+    releaseYears: computed(() => this.ngxSignalTranslate.translate('ReleaseYears')),
+    userRatings: computed(() => this.ngxSignalTranslate.translate('UserRatings')),
   };
   protected readonly apiLoadNetworkStatus = this.apiState.state.loadNetworkStatus;
+  protected readonly selectedScope = signal<CollectionMediaChip>('all');
   protected readonly statistics = signal<CollectionStatisticsApiResponseModel | null>(null);
-  protected readonly tags = computed(() => this.statistics()?.tagCounts.map((tagCount) => tagCount.tag) ?? []);
+  protected readonly tags = computed(() => this.statistics()?.charts.tagCounts.map(({ tag }) => tag) ?? []);
+  protected readonly applicableSelectedTags = computed(() => {
+    const availableTags = new Set(this.tags());
+    return this.selectedTags().filter((tag) => availableTags.has(tag));
+  });
   protected readonly tagChart = signal<Chart<'pie', number[], string> | null>(null);
-  protected readonly watchedChart = signal<Chart<'doughnut', number[], string> | null>(null);
-  protected readonly typeChart = signal<Chart<'doughnut', number[], string> | null>(null);
+  protected readonly overviewChart = signal<Chart<'doughnut', number[], string> | null>(null);
   protected readonly genreChart = signal<Chart<'bar', number[], string> | null>(null);
-  protected readonly watchedYearChart = signal<Chart<'bar', number[], string> | null>(null);
+  protected readonly releaseYearChart = signal<Chart<'bar', number[], string> | null>(null);
+  protected readonly ratingChart = signal<Chart<'bar', number[], string> | null>(null);
   protected readonly selectedTags = signal<string[]>([]);
   protected readonly tagFilter = signal('');
   protected readonly normalizedTagFilter = computed(() => this.tagFilter().trim().toLowerCase());
   protected readonly hasActiveTagFilter = computed(() => this.normalizedTagFilter().length > 0);
-  protected readonly selectedTagSet = computed(() => new Set(this.selectedTags()));
+  protected readonly selectedTagSet = computed(() => new Set(this.applicableSelectedTags()));
   protected readonly filteredTags = computed(() => {
-    const tagFilter = this.normalizedTagFilter();
-    const tags = this.tags();
-    return tagFilter ? tags.filter((tag) => tag.toLowerCase().includes(tagFilter)) : tags;
+    const filter = this.normalizedTagFilter();
+    return filter ? this.tags().filter((tag) => tag.toLowerCase().includes(filter)) : this.tags();
   });
   protected readonly selectedVisibleTags = computed(() =>
     this.filteredTags().filter((tag) => this.selectedTagSet().has(tag))
@@ -96,55 +117,115 @@ export class Statistics implements AfterViewInit {
   protected readonly availableVisibleTags = computed(() =>
     this.filteredTags().filter((tag) => !this.selectedTagSet().has(tag))
   );
-  protected readonly summary = computed<StatisticsSummaryModel>(() => {
-    const statistics = this.statistics();
-    return {
-      movies: statistics?.movieCount ?? 0,
-      series: statistics?.seriesCount ?? 0,
-      books: statistics?.booksCount ?? 0,
-      favorites: statistics?.favoriteCount ?? 0,
-      upNext: statistics?.upNextCount ?? 0,
-      wishlist: statistics?.wishlistCount ?? 0,
-      all: statistics?.totalItems ?? 0,
-      watchedMovies: statistics?.watchedMovieCount ?? 0,
-      watchedSeries: statistics?.watchedSeriesCount ?? 0,
-      unwatchedMovies: statistics?.unwatchedMovieCount ?? 0,
-      unwatchedLibrarySeries: statistics?.unwatchedLibrarySeriesCount ?? 0,
-      unwatchedTrackerSeries: statistics?.unwatchedTrackerSeriesCount ?? 0,
-      completedTrackerSeries: statistics?.completedTrackerSeriesCount ?? 0,
-    };
+  protected readonly tagChartDescription = computed(() => {
+    const countByTag = new Map(this.statistics()?.charts.tagCounts.map(({ tag, count }) => [tag, count]) ?? []);
+    return this.describeChart(
+      this.translations.tags(),
+      this.applicableSelectedTags().map((tag) => ({ label: tag, count: countByTag.get(tag) ?? 0 }))
+    );
   });
+  protected readonly overviewChartDescription = computed(() => {
+    const statistics = this.statistics();
+    const title = statistics?.scope === 'all' ? this.translations.mediaTypes() : this.translations.status();
+    const entries =
+      statistics?.scope === 'all'
+        ? statistics.charts.mediaTypeCounts.map(({ type, count }) => ({
+            label: this.translateChartLabel(type),
+            count,
+          }))
+        : (statistics?.charts.statusCounts ?? []).map(({ status, count }) => ({
+            label: this.translateChartLabel(status),
+            count,
+          }));
+    return this.describeChart(title, entries);
+  });
+  protected readonly genreChartDescription = computed(() =>
+    this.describeChart(
+      this.translations.genre(),
+      [...(this.statistics()?.charts.genreCounts ?? [])]
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
+        .map(({ genre, count }) => ({ label: genre, count }))
+    )
+  );
+  protected readonly releaseYearChartDescription = computed(() =>
+    this.describeChart(
+      this.translations.releaseYears(),
+      (this.statistics()?.charts.releaseYearCounts ?? []).map(({ year, count }) => ({ label: year, count }))
+    )
+  );
+  protected readonly ratingChartDescription = computed(() =>
+    this.describeChart(
+      this.translations.userRatings(),
+      (this.statistics()?.charts.userRatingCounts ?? []).map(({ rating, count }) => ({ label: `${rating}`, count }))
+    )
+  );
   protected readonly defaultOpenSelectedTags: boolean;
+  protected readonly textToHexColor = textToHexColor;
 
   constructor() {
     const storedTags = this.webstorage.getItem(STORAGE_STATISTICS_SELECTED_TAGS);
     if (storedTags) this.selectedTags.set(JSON.parse(storedTags));
     this.defaultOpenSelectedTags = this.selectedTags().length === 0;
-    this.loadStatistics();
+
+    afterRenderEffect(() => {
+      const statistics = this.statistics();
+      const networkStatus = this.apiLoadNetworkStatus();
+      this.applicableSelectedTags();
+      if (!statistics || networkStatus !== 'finished') return;
+      untracked(() => {
+        this.createCharts();
+        this.resizeCharts();
+        this.refreshCharts();
+      });
+    });
+
+    this.scopeChanges
+      .pipe(
+        tap(() => this.apiState.setState('loadNetworkStatus', 'pending')),
+        switchMap((scope) => {
+          const cached = this.statisticsCache.get(scope);
+          if (cached) return of(cached);
+          return this.api.getStatistics(scope === 'all' ? {} : { type: scope }).pipe(
+            tap((statistics) => this.statisticsCache.set(scope, statistics)),
+            catchError(() => {
+              this.apiState.setState('loadNetworkStatus', 'error');
+              return EMPTY;
+            })
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((statistics) => {
+        this.statistics.set(statistics);
+        this.apiState.setState('loadNetworkStatus', 'finished');
+      });
   }
 
-  public ngAfterViewInit(): void {
-    this.createTagChart();
-    this.createWatchedChart();
-    this.createTypeChart();
-    this.createGenreChart();
-    this.createWatchedYearChart();
-
-    if (this.selectedTags().length > 0) this.updateTagChart();
-    this.updateWatchedChart();
-    this.updateTypeChart();
-    this.updateGenreChart();
-    this.updateWatchedYearChart();
+  public ngOnDestroy(): void {
+    this.tagChart()?.destroy();
+    this.overviewChart()?.destroy();
+    this.genreChart()?.destroy();
+    this.releaseYearChart()?.destroy();
+    this.ratingChart()?.destroy();
   }
 
-  public onToggleTag(tag: string): void {
-    const currentTags = this.selectedTags();
-    if (currentTags.includes(tag)) {
-      this.selectedTags.update((selectedTags) => selectedTags.filter((selectedTag) => selectedTag !== tag));
-    } else this.selectedTags.update((selectedTags) => [...selectedTags, tag]);
+  protected onSelectScope(scope: CollectionMediaChip): void {
+    this.selectedScope.set(scope);
+    this.statistics.set(null);
+    this.tagFilter.set('');
+    this.scopeChanges.next(scope);
+  }
 
+  protected onRetryLoadStatistics(): void {
+    this.scopeChanges.next(this.selectedScope());
+  }
+
+  protected onToggleTag(tag: string): void {
+    this.selectedTags.update((tags) =>
+      tags.includes(tag) ? tags.filter((selectedTag) => selectedTag !== tag) : [...tags, tag]
+    );
     this.persistSelectedTags();
-    this.updateTagChart();
   }
 
   protected onFilterTags(value: string | null): void {
@@ -152,67 +233,21 @@ export class Statistics implements AfterViewInit {
   }
 
   protected onClearSelectedTags(): void {
-    this.selectedTags.set([]);
+    const applicable = new Set(this.applicableSelectedTags());
+    this.selectedTags.update((tags) => tags.filter((tag) => !applicable.has(tag)));
     this.persistSelectedTags();
-    this.updateTagChart();
   }
 
-  protected readonly textToHexColor = textToHexColor;
-
-  protected onNavigateToCollection(search?: string): void {
-    const navigation = search
-      ? this.router.navigate(['/collection', 'library'], { queryParams: { search } })
-      : this.router.navigate(['/collection', 'library']);
-
-    this.closeAfterNavigation(navigation);
-  }
-
-  protected onNavigateToCollectionType(type: 'movie' | 'series'): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'library'], { queryParams: { type } }));
-  }
-
-  protected onNavigateToUpNext(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'up-next']));
-  }
-
-  protected onNavigateToWishlist(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'wishlist']));
-  }
-
-  protected onNavigateToFavorites(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'library'], { queryParams: { favorite: 'true' } }));
-  }
-
-  protected onNavigateToWatched(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'tracking'], { queryParams: { type: 'movie' } }));
-  }
-
-  protected onNavigateToTracking(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'tracking']));
-  }
-
-  protected onNavigateToBooks(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'books']));
-  }
-
-  protected onNavigateToUnwatchedMovies(): void {
+  protected navigateToCollection(type?: 'movie' | 'series' | 'book', filters: Record<string, unknown> = {}): void {
+    const route = type === 'book' ? ['/collection', 'books'] : ['/collection', 'library'];
+    const queryParams = { ...(type && type !== 'book' ? { type } : {}), ...filters };
     this.closeAfterNavigation(
-      this.router.navigate(['/collection', 'library'], { queryParams: { watched: false, type: 'movie' } })
+      this.router.navigate(route, Object.keys(queryParams).length ? { queryParams } : undefined)
     );
   }
 
-  protected onNavigateToUnwatchedLibrarySeries(): void {
-    this.closeAfterNavigation(
-      this.router.navigate(['/collection', 'library'], { queryParams: { watched: false, type: 'series' } })
-    );
-  }
-
-  protected onNavigateToUnwatchedTrackerSeries(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'tracking'], { queryParams: { completed: false } }));
-  }
-
-  protected onNavigateToCompletedTrackerSeries(): void {
-    this.closeAfterNavigation(this.router.navigate(['/collection', 'tracking'], { queryParams: { completed: true } }));
+  protected navigateToTracking(type: 'movie' | 'series' | 'book', filters: Record<string, unknown> = {}): void {
+    this.closeAfterNavigation(this.router.navigate(['/collection', 'tracking'], { queryParams: { type, ...filters } }));
   }
 
   private closeAfterNavigation(navigation: Promise<boolean>): void {
@@ -221,74 +256,64 @@ export class Statistics implements AfterViewInit {
     });
   }
 
-  private createTagChart(): void {
+  private createCharts(): void {
     this.tagChart.set(this.charts.createTagChart(this.tagChart()));
-  }
-
-  private createWatchedChart(): void {
-    this.watchedChart.set(this.charts.createWatchedChart(this.watchedChart()));
-  }
-
-  private createTypeChart(): void {
-    this.typeChart.set(this.charts.createTypeChart(this.typeChart()));
-  }
-
-  private createGenreChart(): void {
+    this.overviewChart.set(this.charts.createOverviewChart(this.overviewChart()));
     this.genreChart.set(this.charts.createGenreChart(this.genreChart()));
+    this.releaseYearChart.set(this.charts.createReleaseYearChart(this.releaseYearChart()));
+    this.ratingChart.set(this.charts.createRatingChart(this.ratingChart()));
   }
 
-  private createWatchedYearChart(): void {
-    this.watchedYearChart.set(this.charts.createWatchedYearChart(this.watchedYearChart()));
+  private refreshCharts(): void {
+    const statistics = this.statistics();
+    if (!statistics) return;
+    this.updateTagChart();
+    this.charts.updateOverviewChart(this.overviewChart(), statistics);
+    this.charts.updateGenreChart(this.genreChart(), statistics.charts.genreCounts);
+    this.charts.updateReleaseYearChart(this.releaseYearChart(), statistics.charts.releaseYearCounts);
+    this.charts.updateRatingChart(this.ratingChart(), statistics.charts.userRatingCounts);
   }
 
   private updateTagChart(): void {
-    this.charts.updateTagChart(this.tagChart(), this.statistics(), this.selectedTags());
+    this.charts.updateTagChart(
+      this.tagChart(),
+      this.statistics()?.charts.tagCounts ?? [],
+      this.applicableSelectedTags()
+    );
   }
 
-  private updateWatchedChart(): void {
-    this.charts.updateWatchedChart(this.watchedChart(), this.statistics());
+  private resizeCharts(): void {
+    this.tagChart()?.resize();
+    this.overviewChart()?.resize();
+    this.genreChart()?.resize();
+    this.releaseYearChart()?.resize();
+    this.ratingChart()?.resize();
   }
 
-  private updateTypeChart(): void {
-    this.charts.updateTypeChart(this.typeChart(), this.statistics());
+  private describeChart(title: string, entries: Array<{ label: string; count: number }>): string {
+    const data = entries
+      .map(({ label, count }) => this.ngxSignalTranslate.translate('Aria.ChartDataPoint', { label, count }))
+      .join(', ');
+    return this.ngxSignalTranslate.translate('Aria.ChartSummary', { title, data });
   }
 
-  private updateGenreChart(): void {
-    this.charts.updateGenreChart(this.genreChart(), this.statistics());
-  }
-
-  private updateWatchedYearChart(): void {
-    this.charts.updateWatchedYearChart(this.watchedYearChart(), this.statistics());
+  private translateChartLabel(key: CollectionItemTypeFilter | CollectionStatisticsStatus): string {
+    const translationKeys: Record<typeof key, string> = {
+      movie: 'Movies',
+      series: 'Series',
+      book: 'Books',
+      watched: 'Watched',
+      unwatched: 'Unwatched',
+      untracked: 'Untracked',
+      completed: 'Completed',
+      inProgress: 'InProgress',
+      read: 'Read',
+      unread: 'Unread',
+    };
+    return this.ngxSignalTranslate.translate(translationKeys[key]);
   }
 
   private persistSelectedTags(): void {
     this.webstorage.setItem(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify(this.selectedTags()));
-  }
-
-  private loadStatistics(): void {
-    this.apiState.setState('loadNetworkStatus', 'pending');
-    this.api
-      .getStatistics()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        catchError(() => {
-          this.apiState.setState('loadNetworkStatus', 'error');
-          return EMPTY;
-        })
-      )
-      .subscribe((statistics) => {
-        this.statistics.set(statistics);
-        this.apiState.setState('loadNetworkStatus', 'finished');
-        this.createTagChart();
-        this.createWatchedChart();
-        this.createTypeChart();
-        this.createGenreChart();
-        this.createWatchedYearChart();
-        if (this.tagChart()) this.updateTagChart();
-        this.updateWatchedChart();
-        this.updateTypeChart();
-        this.updateGenreChart();
-        this.updateWatchedYearChart();
-      });
   }
 }

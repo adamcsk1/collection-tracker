@@ -1,168 +1,70 @@
 import {
   CollectionItemFiltersApiModel,
-  CollectionListTypeModel,
+  CollectionItemTypeFilter,
   CollectionStatisticsApiResponseModel,
 } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
-import { buildItemWhere, buildReadableItemScope, canonicalOrExactIdentityMatch } from './collection-query';
-import { WatchedYearCountRow } from './collection-model';
+import { buildItemWhere, canonicalOrExactIdentityMatch } from './collection-query';
 
-const movieContentCondition = `collection_items.content_type = 'movie'`;
+interface BaseSummaryRow {
+  total: number;
+  favorites: number;
+}
 
-const seriesContentCondition = `collection_items.content_type = 'series'`;
+interface AllSummaryRow extends BaseSummaryRow {
+  movies: number;
+  series: number;
+  books: number;
+}
 
-const favoriteCondition = `collection_items.favorite = 1`;
+interface SpecificSummaryRow extends BaseSummaryRow {
+  tracked: number;
+  completed: number;
+  in_progress: number;
+}
 
 export const getCollectionStatistics = (
   db: Database.Database,
   viewerUsernameHash: string,
   filters?: CollectionItemFiltersApiModel
 ): CollectionStatisticsApiResponseModel => {
-  const queryParts = buildItemWhere(viewerUsernameHash, filters);
+  const scope: 'all' | CollectionItemTypeFilter = filters?.type ?? 'all';
+  const queryParts = buildItemWhere(viewerUsernameHash, scope === 'all' ? undefined : { type: scope });
   const whereSql = queryParts.where.join(' AND ');
   const matchingItemsSql = `SELECT id FROM collection_items WHERE ${whereSql}`;
-  const countWhere = (condition: string): number =>
-    (
-      db
-        .prepare(
-          `SELECT COUNT(*) as count
-            FROM collection_items
-            WHERE ${whereSql}
-            AND ${condition}`
-        )
-        .get(...queryParts.params) as { count: number }
-    ).count;
 
-  const totalItems = (
-    db.prepare(`SELECT COUNT(*) as count FROM collection_items WHERE ${whereSql}`).get(...queryParts.params) as {
-      count: number;
-    }
-  ).count;
+  const trackerExists = (stateCondition?: string): string => `EXISTS (
+    SELECT 1
+    FROM collection_items current_viewer_tracker
+    ${stateCondition === undefined ? '' : 'LEFT JOIN collection_item_tracker_state tracker_state ON tracker_state.item_id = current_viewer_tracker.id'}
+    WHERE current_viewer_tracker.username_hash = ?
+      AND current_viewer_tracker.list_type = 'tracking'
+      AND current_viewer_tracker.content_type = collection_items.content_type
+      AND ${canonicalOrExactIdentityMatch('current_viewer_tracker')}
+      ${stateCondition === undefined ? '' : `AND ${stateCondition}`}
+  )`;
 
-  const countListType = (listType: CollectionListTypeModel): number => {
-    const scope = buildReadableItemScope(viewerUsernameHash, { listType, shared: filters?.shared }, false);
-    return (
-      db
-        .prepare(`SELECT COUNT(*) as count FROM collection_items WHERE ${scope.where.join(' AND ')}`)
-        .get(...scope.params) as { count: number }
-    ).count;
-  };
-
-  const upNextCount = countListType('up-next');
-  const wishlistCount = countListType('wishlist');
-  const booksCount = countListType('books');
-
-  const watchedMovieCount = (
-    db
+  let specificSummary: SpecificSummaryRow | undefined;
+  if (scope !== 'all') {
+    const trackedCondition = trackerExists();
+    const completedCondition = trackerExists('tracker_state.completed_at IS NOT NULL');
+    const inProgressCondition = trackerExists(
+      scope === 'book'
+        ? 'tracker_state.completed_at IS NULL AND COALESCE(tracker_state.progress_current, 0) > 0'
+        : 'tracker_state.completed_at IS NULL'
+    );
+    specificSummary = db
       .prepare(
-        `SELECT COUNT(*) as count
+        `SELECT COUNT(*) AS total,
+                COALESCE(SUM(collection_items.favorite = 1), 0) AS favorites,
+                COALESCE(SUM(${trackedCondition}), 0) AS tracked,
+                COALESCE(SUM(${completedCondition}), 0) AS completed,
+                COALESCE(SUM(${inProgressCondition}), 0) AS in_progress
          FROM collection_items
-         WHERE ${whereSql}
-             AND ${movieContentCondition}
-           AND EXISTS (
-             SELECT 1 FROM collection_items movie_tracker
-             INNER JOIN collection_item_tracker_state movie_tracker_state
-               ON movie_tracker_state.item_id = movie_tracker.id
-              AND movie_tracker_state.completed_at IS NOT NULL
-             WHERE movie_tracker.username_hash = ?
-               AND ${canonicalOrExactIdentityMatch('movie_tracker')}
-                AND movie_tracker.list_type = 'tracking'
-               AND movie_tracker.content_type = 'movie'
-            )`
+         WHERE ${whereSql}`
       )
-      .get(...queryParts.params, viewerUsernameHash) as { count: number }
-  ).count;
-
-  const unwatchedMovieCount = (
-    db
-      .prepare(
-        `SELECT COUNT(*) as count
-         FROM collection_items
-         WHERE ${whereSql}
-             AND ${movieContentCondition}
-           AND NOT EXISTS (
-             SELECT 1 FROM collection_items movie_tracker
-             INNER JOIN collection_item_tracker_state movie_tracker_state
-               ON movie_tracker_state.item_id = movie_tracker.id
-              AND movie_tracker_state.completed_at IS NOT NULL
-             WHERE movie_tracker.username_hash = ?
-                AND ${canonicalOrExactIdentityMatch('movie_tracker')}
-               AND movie_tracker.list_type = 'tracking'
-               AND movie_tracker.content_type = 'movie'
-           )`
-      )
-      .get(...queryParts.params, viewerUsernameHash) as { count: number }
-  ).count;
-
-  const watchedSeriesCount = (
-    db
-      .prepare(
-        `SELECT COUNT(*) as count
-         FROM collection_items
-         WHERE ${whereSql}
-             AND ${seriesContentCondition}
-           AND EXISTS (
-             SELECT 1 FROM collection_items series_tracker
-             WHERE series_tracker.username_hash = ?
-                AND ${canonicalOrExactIdentityMatch('series_tracker')}
-               AND series_tracker.list_type = ?
-           )`
-      )
-      .get(...queryParts.params, viewerUsernameHash, 'tracking') as { count: number }
-  ).count;
-
-  const unwatchedLibrarySeriesCount = (
-    db
-      .prepare(
-        `SELECT COUNT(*) as count
-         FROM collection_items
-         WHERE ${whereSql}
-             AND ${seriesContentCondition}
-           AND NOT EXISTS (
-             SELECT 1 FROM collection_items series_tracker
-             WHERE series_tracker.username_hash = ?
-                AND ${canonicalOrExactIdentityMatch('series_tracker')}
-               AND series_tracker.list_type = ?
-           )`
-      )
-      .get(...queryParts.params, viewerUsernameHash, 'tracking') as { count: number }
-  ).count;
-
-  const shouldCountTrackerSeries = !filters?.listType || filters.listType === 'tracking';
-  const trackerQueryParts = buildItemWhere(viewerUsernameHash, { ...filters, listType: 'tracking' });
-  const trackerWhereSql = trackerQueryParts.where.join(' AND ');
-
-  const unwatchedTrackerSeriesCount = shouldCountTrackerSeries
-    ? (
-        db
-          .prepare(
-            `SELECT COUNT(*) as count
-              FROM collection_items
-              INNER JOIN collection_item_tracker_state tracker_state
-                ON tracker_state.item_id = collection_items.id
-              WHERE ${trackerWhereSql}
-                 AND collection_items.content_type = 'series'
-                 AND tracker_state.completed_at IS NULL`
-          )
-          .get(...trackerQueryParts.params) as { count: number }
-      ).count
-    : 0;
-
-  const completedTrackerSeriesCount = shouldCountTrackerSeries
-    ? (
-        db
-          .prepare(
-            `SELECT COUNT(*) as count
-              FROM collection_items
-              INNER JOIN collection_item_tracker_state tracker_state
-                ON tracker_state.item_id = collection_items.id
-              WHERE ${trackerWhereSql}
-                 AND collection_items.content_type = 'series'
-                 AND tracker_state.completed_at IS NOT NULL`
-          )
-          .get(...trackerQueryParts.params) as { count: number }
-      ).count
-    : 0;
+      .get(viewerUsernameHash, viewerUsernameHash, viewerUsernameHash, ...queryParts.params) as SpecificSummaryRow;
+  }
 
   const tagCounts = db
     .prepare(
@@ -184,83 +86,121 @@ export const getCollectionStatistics = (
     )
     .all(...queryParts.params) as Array<{ genre: string; count: number }>;
 
-  const watchedMovieYearCounts = db
+  const releaseYearCounts = db
     .prepare(
-      `SELECT strftime('%Y', movie_tracker_state.completed_at) as watched_year, COUNT(*) as count
+      `SELECT year, COUNT(*) AS count
        FROM collection_items
-       INNER JOIN collection_items movie_tracker
-         ON movie_tracker.username_hash = ?
-         AND ${canonicalOrExactIdentityMatch('movie_tracker')}
-          AND movie_tracker.list_type = 'tracking'
-          AND movie_tracker.content_type = 'movie'
-        INNER JOIN collection_item_tracker_state movie_tracker_state
-          ON movie_tracker_state.item_id = movie_tracker.id
-         AND movie_tracker_state.completed_at IS NOT NULL
-        WHERE ${whereSql}
-            AND ${movieContentCondition}
-           GROUP BY watched_year`
+       WHERE id IN (${matchingItemsSql})
+         AND LENGTH(year) = 4
+         AND year GLOB '[0-9][0-9][0-9][0-9]'
+       GROUP BY year
+       ORDER BY year`
     )
-    .all(viewerUsernameHash, ...queryParts.params) as WatchedYearCountRow[];
+    .all(...queryParts.params) as Array<{ year: string; count: number }>;
 
-  const watchedSeriesYearCounts = db
+  const userRatingCounts = db
     .prepare(
-      `SELECT strftime('%Y', series_tracker_state.completed_at) as watched_year, COUNT(*) as count
+      `SELECT CAST(user_rate AS INTEGER) AS rating, COUNT(*) AS count
        FROM collection_items
-       INNER JOIN collection_items series_tracker
-         ON series_tracker.username_hash = ?
-         AND ${canonicalOrExactIdentityMatch('series_tracker')}
-         AND series_tracker.list_type = ?
-       INNER JOIN collection_item_tracker_state series_tracker_state
-         ON series_tracker_state.item_id = series_tracker.id
-        AND series_tracker_state.completed_at IS NOT NULL
-       WHERE ${whereSql}
-           AND ${seriesContentCondition}
-          GROUP BY watched_year`
+       WHERE id IN (${matchingItemsSql})
+         AND user_rate IS NOT NULL
+        GROUP BY rating
+        ORDER BY rating`
     )
-    .all(viewerUsernameHash, 'tracking', ...queryParts.params) as WatchedYearCountRow[];
+    .all(...queryParts.params) as Array<{ rating: number; count: number }>;
 
-  const watchedYearCountMap = new Map<
-    string,
-    { year: string; movieCount: number; seriesCount: number; count: number }
-  >();
-  for (const row of watchedMovieYearCounts) {
-    watchedYearCountMap.set(row.watched_year, {
-      year: row.watched_year,
-      movieCount: row.count,
-      seriesCount: 0,
-      count: row.count,
-    });
+  const mediaTypeCounts =
+    scope === 'all'
+      ? (db
+          .prepare(
+            `SELECT content_type AS type, COUNT(*) AS count
+             FROM collection_items
+             WHERE id IN (${matchingItemsSql})
+             GROUP BY content_type
+             ORDER BY CASE content_type WHEN 'movie' THEN 1 WHEN 'series' THEN 2 ELSE 3 END`
+          )
+          .all(...queryParts.params) as Array<{ type: CollectionItemTypeFilter; count: number }>)
+      : [];
+
+  const commonCharts = { tagCounts, genreCounts, releaseYearCounts, userRatingCounts };
+  if (scope === 'all') {
+    const summary = db
+      .prepare(
+        `SELECT COUNT(*) AS total,
+                COALESCE(SUM(collection_items.favorite = 1), 0) AS favorites,
+                COALESCE(SUM(collection_items.content_type = 'movie'), 0) AS movies,
+                COALESCE(SUM(collection_items.content_type = 'series'), 0) AS series,
+                COALESCE(SUM(collection_items.content_type = 'book'), 0) AS books
+         FROM collection_items
+         WHERE ${whereSql}`
+      )
+      .get(...queryParts.params) as AllSummaryRow;
+    return { scope, summary, charts: { ...commonCharts, mediaTypeCounts, statusCounts: [] } };
   }
-  for (const row of watchedSeriesYearCounts) {
-    const existingCount = watchedYearCountMap.get(row.watched_year) ?? {
-      year: row.watched_year,
-      movieCount: 0,
-      seriesCount: 0,
-      count: 0,
+
+  const summary = specificSummary!;
+  if (scope === 'movie') {
+    const movieSummary = {
+      total: summary.total,
+      favorites: summary.favorites,
+      watched: summary.completed,
+      unwatched: summary.total - summary.completed,
     };
-    existingCount.seriesCount = row.count;
-    existingCount.count = existingCount.movieCount + existingCount.seriesCount;
-    watchedYearCountMap.set(row.watched_year, existingCount);
+    return {
+      scope,
+      summary: movieSummary,
+      charts: {
+        ...commonCharts,
+        mediaTypeCounts: [],
+        statusCounts: [
+          { status: 'watched', count: movieSummary.watched },
+          { status: 'unwatched', count: movieSummary.unwatched },
+        ],
+      },
+    };
+  }
+  if (scope === 'series') {
+    const seriesSummary = {
+      total: summary.total,
+      favorites: summary.favorites,
+      tracked: summary.tracked,
+      untracked: summary.total - summary.tracked,
+      completed: summary.completed,
+      inProgress: summary.in_progress,
+    };
+    return {
+      scope,
+      summary: seriesSummary,
+      charts: {
+        ...commonCharts,
+        mediaTypeCounts: [],
+        statusCounts: [
+          { status: 'untracked', count: seriesSummary.untracked },
+          { status: 'completed', count: seriesSummary.completed },
+          { status: 'inProgress', count: seriesSummary.inProgress },
+        ],
+      },
+    };
   }
 
-  const watchedYearCounts = [...watchedYearCountMap.values()].sort((a, b) => a.year.localeCompare(b.year));
-
+  const bookSummary = {
+    total: summary.total,
+    favorites: summary.favorites,
+    read: summary.completed,
+    unread: summary.total - summary.completed - summary.in_progress,
+    inProgress: summary.in_progress,
+  };
   return {
-    totalItems,
-    movieCount: countWhere(movieContentCondition),
-    seriesCount: countWhere(seriesContentCondition),
-    booksCount,
-    favoriteCount: countWhere(favoriteCondition),
-    upNextCount,
-    wishlistCount,
-    watchedMovieCount,
-    watchedSeriesCount,
-    unwatchedMovieCount,
-    unwatchedLibrarySeriesCount,
-    unwatchedTrackerSeriesCount,
-    completedTrackerSeriesCount,
-    watchedYearCounts,
-    tagCounts,
-    genreCounts,
+    scope,
+    summary: bookSummary,
+    charts: {
+      ...commonCharts,
+      mediaTypeCounts: [],
+      statusCounts: [
+        { status: 'read', count: bookSummary.read },
+        { status: 'unread', count: bookSummary.unread },
+        { status: 'inProgress', count: bookSummary.inProgress },
+      ],
+    },
   };
 };

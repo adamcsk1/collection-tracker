@@ -11,6 +11,12 @@ export type CollectionItemOrderDirection = 'asc' | 'desc';
 
 export type CollectionItemSharedFilter = 'mine' | 'shared';
 
+export type MovieCollectionStatisticsStatus = 'watched' | 'unwatched';
+export type SeriesCollectionStatisticsStatus = 'untracked' | 'completed' | 'inProgress';
+export type BookCollectionStatisticsStatus = 'read' | 'unread' | 'inProgress';
+export type CollectionStatisticsStatus =
+  MovieCollectionStatisticsStatus | SeriesCollectionStatisticsStatus | BookCollectionStatisticsStatus;
+
 export interface CollectionItemFiltersApiModel {
   search?: string;
   tags?: string[];
@@ -69,24 +75,78 @@ export interface RandomImagesApiResponseModel {
   images: string[];
 }
 
-export interface CollectionStatisticsApiResponseModel {
-  totalItems: number;
-  movieCount: number;
-  seriesCount: number;
-  booksCount: number;
-  favoriteCount: number;
-  upNextCount: number;
-  wishlistCount: number;
-  watchedMovieCount: number;
-  watchedSeriesCount: number;
-  unwatchedMovieCount: number;
-  unwatchedLibrarySeriesCount: number;
-  unwatchedTrackerSeriesCount: number;
-  completedTrackerSeriesCount: number;
-  watchedYearCounts: Array<{ year: string; movieCount: number; seriesCount: number; count: number }>;
+export interface CommonCollectionStatisticsChartsApiModel {
   tagCounts: Array<{ tag: string; count: number }>;
   genreCounts: Array<{ genre: string; count: number }>;
+  releaseYearCounts: Array<{ year: string; count: number }>;
+  userRatingCounts: Array<{ rating: number; count: number }>;
 }
+
+export interface AllCollectionStatisticsChartsApiModel extends CommonCollectionStatisticsChartsApiModel {
+  mediaTypeCounts: Array<{ type: CollectionItemTypeFilter; count: number }>;
+  statusCounts: [];
+}
+
+export interface MovieCollectionStatisticsChartsApiModel extends CommonCollectionStatisticsChartsApiModel {
+  mediaTypeCounts: [];
+  statusCounts: Array<{ status: MovieCollectionStatisticsStatus; count: number }>;
+}
+
+export interface SeriesCollectionStatisticsChartsApiModel extends CommonCollectionStatisticsChartsApiModel {
+  mediaTypeCounts: [];
+  statusCounts: Array<{ status: SeriesCollectionStatisticsStatus; count: number }>;
+}
+
+export interface BookCollectionStatisticsChartsApiModel extends CommonCollectionStatisticsChartsApiModel {
+  mediaTypeCounts: [];
+  statusCounts: Array<{ status: BookCollectionStatisticsStatus; count: number }>;
+}
+
+export interface AllCollectionStatisticsSummaryApiModel {
+  total: number;
+  movies: number;
+  series: number;
+  books: number;
+  favorites: number;
+}
+
+export interface MovieCollectionStatisticsSummaryApiModel {
+  total: number;
+  favorites: number;
+  watched: number;
+  unwatched: number;
+}
+
+export interface SeriesCollectionStatisticsSummaryApiModel {
+  total: number;
+  favorites: number;
+  tracked: number;
+  untracked: number;
+  completed: number;
+  inProgress: number;
+}
+
+export interface BookCollectionStatisticsSummaryApiModel {
+  total: number;
+  favorites: number;
+  read: number;
+  unread: number;
+  inProgress: number;
+}
+
+export type CollectionStatisticsApiResponseModel =
+  | { scope: 'all'; summary: AllCollectionStatisticsSummaryApiModel; charts: AllCollectionStatisticsChartsApiModel }
+  | {
+      scope: 'movie';
+      summary: MovieCollectionStatisticsSummaryApiModel;
+      charts: MovieCollectionStatisticsChartsApiModel;
+    }
+  | {
+      scope: 'series';
+      summary: SeriesCollectionStatisticsSummaryApiModel;
+      charts: SeriesCollectionStatisticsChartsApiModel;
+    }
+  | { scope: 'book'; summary: BookCollectionStatisticsSummaryApiModel; charts: BookCollectionStatisticsChartsApiModel };
 
 export type CollectionItemChangeApiModel = Pick<
   CollectionItemModel,

@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { inject, Injectable } from '@angular/core';
-import { CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
+import { CollectionStatisticsApiResponseModel, CollectionStatisticsStatus } from '@shared/models/api-model';
 import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -12,151 +12,73 @@ export class StatisticsChartService {
 
   public createTagChart(chart: Chart<'pie', number[], string> | null): Chart<'pie', number[], string> | null {
     if (chart) return chart;
-    const canvas = this.document.getElementById('statistics-tag-chart') as HTMLCanvasElement | null;
+    const canvas = this.getCanvas('statistics-tag-chart');
     if (!canvas) return null;
-
     return new Chart(canvas, {
       type: 'pie',
-      data: {
-        labels: [],
-        datasets: [],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-      },
+      data: { labels: [], datasets: [] },
+      options: { responsive: true, maintainAspectRatio: false },
     });
   }
 
-  public createWatchedChart(
+  public createOverviewChart(
     chart: Chart<'doughnut', number[], string> | null
   ): Chart<'doughnut', number[], string> | null {
-    return this.createDoughnutChart(chart, 'statistics-watched-chart');
-  }
-
-  public createTypeChart(
-    chart: Chart<'doughnut', number[], string> | null
-  ): Chart<'doughnut', number[], string> | null {
-    return this.createDoughnutChart(chart, 'statistics-type-chart');
+    if (chart) return chart;
+    const canvas = this.getCanvas('statistics-overview-chart');
+    if (!canvas) return null;
+    return new Chart(canvas, {
+      type: 'doughnut',
+      data: { labels: [], datasets: [] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '60%' },
+    });
   }
 
   public createGenreChart(chart: Chart<'bar', number[], string> | null): Chart<'bar', number[], string> | null {
-    if (chart) return chart;
-    const canvas = this.document.getElementById('statistics-genre-chart') as HTMLCanvasElement | null;
-    if (!canvas) return null;
-
-    return new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: [],
-        datasets: [],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: 'y',
-        plugins: {
-          legend: { display: false },
-        },
-      },
-    });
+    return this.createBarChart(chart, 'statistics-genre-chart', true);
   }
 
-  public createWatchedYearChart(chart: Chart<'bar', number[], string> | null): Chart<'bar', number[], string> | null {
-    if (chart) return chart;
-    const canvas = this.document.getElementById('statistics-watched-year-chart') as HTMLCanvasElement | null;
-    if (!canvas) return null;
+  public createReleaseYearChart(chart: Chart<'bar', number[], string> | null): Chart<'bar', number[], string> | null {
+    return this.createBarChart(chart, 'statistics-release-year-chart');
+  }
 
-    return new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: [],
-        datasets: [],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: { stacked: true },
-          y: { stacked: true, ticks: { precision: 0 } },
-        },
-      },
-    });
+  public createRatingChart(chart: Chart<'bar', number[], string> | null): Chart<'bar', number[], string> | null {
+    return this.createBarChart(chart, 'statistics-rating-chart');
   }
 
   public updateTagChart(
     chart: Chart<'pie', number[], string> | null,
-    statistics: CollectionStatisticsApiResponseModel | null,
+    tagCounts: Array<{ tag: string; count: number }>,
     selectedTags: string[]
   ): void {
-    const tagCounts = statistics?.tagCounts ?? [];
     if (!chart) return;
-
+    const countByTag = new Map(tagCounts.map(({ tag, count }) => [tag, count]));
     chart.data.labels = selectedTags;
-    const data: number[] = [];
-
-    for (const tag of selectedTags) {
-      const count = tagCounts.find((tagCount) => tagCount.tag === tag)?.count ?? 0;
-      data.push(count);
-    }
-
     chart.data.datasets = [
       {
         label: this.ngxSignalTranslate.translate('Count'),
-        data,
+        data: selectedTags.map((tag) => countByTag.get(tag) ?? 0),
         backgroundColor: selectedTags.map((tag) => textToHexColor(tag.replace('#', ''))),
       },
     ];
     chart.update();
   }
 
-  public updateWatchedChart(
+  public updateOverviewChart(
     chart: Chart<'doughnut', number[], string> | null,
     statistics: CollectionStatisticsApiResponseModel | null
   ): void {
     if (!chart || !statistics) return;
-
-    chart.data.labels = [
-      this.ngxSignalTranslate.translate('WatchedMovies'),
-      this.ngxSignalTranslate.translate('UnwatchedMovies'),
-      this.ngxSignalTranslate.translate('CompletedSeries'),
-      this.ngxSignalTranslate.translate('InProgressSeries'),
-      this.ngxSignalTranslate.translate('UnwatchedLibrarySeries'),
-    ];
+    const entries =
+      statistics.scope === 'all'
+        ? statistics.charts.mediaTypeCounts.map(({ type, count }) => ({ key: type, count }))
+        : statistics.charts.statusCounts.map(({ status, count }) => ({ key: status, count }));
+    chart.data.labels = entries.map(({ key }) => this.translateOverviewLabel(key));
     chart.data.datasets = [
       {
         label: this.ngxSignalTranslate.translate('Count'),
-        data: [
-          statistics.watchedMovieCount,
-          statistics.unwatchedMovieCount,
-          statistics.completedTrackerSeriesCount,
-          statistics.unwatchedTrackerSeriesCount,
-          statistics.unwatchedLibrarySeriesCount,
-        ],
-        backgroundColor: [
-          textToHexColor('watchedMovies'),
-          textToHexColor('unwatchedMovies'),
-          textToHexColor('completedSeries'),
-          textToHexColor('inProgressSeries'),
-          textToHexColor('unwatchedLibrarySeries'),
-        ],
-      },
-    ];
-    chart.update();
-  }
-
-  public updateTypeChart(
-    chart: Chart<'doughnut', number[], string> | null,
-    statistics: CollectionStatisticsApiResponseModel | null
-  ): void {
-    if (!chart || !statistics) return;
-
-    chart.data.labels = [this.ngxSignalTranslate.translate('Movies'), this.ngxSignalTranslate.translate('Series')];
-    chart.data.datasets = [
-      {
-        label: this.ngxSignalTranslate.translate('Count'),
-        data: [statistics.movieCount, statistics.seriesCount],
-        backgroundColor: [textToHexColor('movie'), textToHexColor('series')],
+        data: entries.map(({ count }) => count),
+        backgroundColor: entries.map(({ key }) => textToHexColor(key)),
       },
     ];
     chart.update();
@@ -164,66 +86,91 @@ export class StatisticsChartService {
 
   public updateGenreChart(
     chart: Chart<'bar', number[], string> | null,
-    statistics: CollectionStatisticsApiResponseModel | null
+    genreCounts: Array<{ genre: string; count: number }>
   ): void {
-    const genreCounts = statistics?.genreCounts ?? [];
     if (!chart) return;
-
-    const sortedGenres = [...genreCounts].sort((a, b) => b.count - a.count).slice(0, 10);
-
-    chart.data.labels = sortedGenres.map((genreCount) => genreCount.genre);
+    const entries = [...genreCounts].sort((a, b) => b.count - a.count).slice(0, 10);
+    chart.data.labels = entries.map(({ genre }) => genre);
     chart.data.datasets = [
       {
         label: this.ngxSignalTranslate.translate('Count'),
-        data: sortedGenres.map((genreCount) => genreCount.count),
-        backgroundColor: sortedGenres.map((genreCount) => textToHexColor(genreCount.genre)),
+        data: entries.map(({ count }) => count),
+        backgroundColor: entries.map(({ genre }) => textToHexColor(genre)),
       },
     ];
     chart.update();
   }
 
-  public updateWatchedYearChart(
+  public updateReleaseYearChart(
     chart: Chart<'bar', number[], string> | null,
-    statistics: CollectionStatisticsApiResponseModel | null
+    releaseYearCounts: Array<{ year: string; count: number }>
   ): void {
-    const watchedYearCounts = statistics?.watchedYearCounts ?? [];
     if (!chart) return;
-
-    chart.data.labels = watchedYearCounts.map((yearCount) => yearCount.year);
+    chart.data.labels = releaseYearCounts.map(({ year }) => year);
     chart.data.datasets = [
       {
-        label: this.ngxSignalTranslate.translate('Movies'),
-        data: watchedYearCounts.map((yearCount) => yearCount.movieCount),
-        backgroundColor: textToHexColor('watchedMovies'),
-      },
-      {
-        label: this.ngxSignalTranslate.translate('Series'),
-        data: watchedYearCounts.map((yearCount) => yearCount.seriesCount),
-        backgroundColor: textToHexColor('completedSeries'),
+        label: this.ngxSignalTranslate.translate('Count'),
+        data: releaseYearCounts.map(({ count }) => count),
+        backgroundColor: textToHexColor('releaseYear'),
       },
     ];
     chart.update();
   }
 
-  private createDoughnutChart(
-    chart: Chart<'doughnut', number[], string> | null,
-    elementId: string
-  ): Chart<'doughnut', number[], string> | null {
-    if (chart) return chart;
-    const canvas = this.document.getElementById(elementId) as HTMLCanvasElement | null;
-    if (!canvas) return null;
-
-    return new Chart(canvas, {
-      type: 'doughnut',
-      data: {
-        labels: [],
-        datasets: [],
+  public updateRatingChart(
+    chart: Chart<'bar', number[], string> | null,
+    userRatingCounts: Array<{ rating: number; count: number }>
+  ): void {
+    if (!chart) return;
+    chart.data.labels = userRatingCounts.map(({ rating }) => `${rating}`);
+    chart.data.datasets = [
+      {
+        label: this.ngxSignalTranslate.translate('Count'),
+        data: userRatingCounts.map(({ count }) => count),
+        backgroundColor: textToHexColor('userRating'),
       },
+    ];
+    chart.update();
+  }
+
+  private createBarChart(
+    chart: Chart<'bar', number[], string> | null,
+    elementId: string,
+    horizontal = false
+  ): Chart<'bar', number[], string> | null {
+    if (chart) return chart;
+    const canvas = this.getCanvas(elementId);
+    if (!canvas) return null;
+    return new Chart(canvas, {
+      type: 'bar',
+      data: { labels: [], datasets: [] },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '60%',
+        indexAxis: horizontal ? 'y' : 'x',
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { precision: 0 } }, y: { ticks: { precision: 0 } } },
       },
     });
+  }
+
+  private getCanvas(elementId: string): HTMLCanvasElement | null {
+    return this.document.getElementById(elementId) as HTMLCanvasElement | null;
+  }
+
+  private translateOverviewLabel(key: CollectionStatisticsStatus | 'movie' | 'series' | 'book'): string {
+    const translationKeys: Record<typeof key, string> = {
+      movie: 'Movies',
+      series: 'Series',
+      book: 'Books',
+      watched: 'Watched',
+      unwatched: 'Unwatched',
+      untracked: 'Untracked',
+      completed: 'Completed',
+      inProgress: 'InProgress',
+      read: 'Read',
+      unread: 'Unread',
+    };
+    return this.ngxSignalTranslate.translate(translationKeys[key]);
   }
 }

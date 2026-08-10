@@ -486,21 +486,10 @@ describe('collection search APIs', () => {
       usernameHash: 'user',
     });
 
-    expect(response.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        totalItems: 2,
-        movieCount: 1,
-        seriesCount: 1,
-        favoriteCount: 1,
-        upNextCount: 0,
-        wishlistCount: 0,
-        watchedMovieCount: 1,
-        watchedSeriesCount: 0,
-        unwatchedMovieCount: 0,
-        unwatchedLibrarySeriesCount: 1,
-        unwatchedTrackerSeriesCount: 0,
-        completedTrackerSeriesCount: 0,
-        watchedYearCounts: [{ year: '2024', count: 1, movieCount: 1, seriesCount: 0 }],
+    expect(response.send).toHaveBeenCalledWith({
+      scope: 'all',
+      summary: { total: 2, movies: 1, series: 1, books: 0, favorites: 1 },
+      charts: {
         tagCounts: [
           { tag: '#drama', count: 1 },
           { tag: '#favorite', count: 1 },
@@ -512,7 +501,14 @@ describe('collection search APIs', () => {
           { genre: 'Drama', count: 1 },
           { genre: 'Sci-Fi', count: 1 },
         ],
-      })
-    );
+        releaseYearCounts: [{ year: '2024', count: 2 }],
+        userRatingCounts: [],
+        mediaTypeCounts: [
+          { type: 'movie', count: 1 },
+          { type: 'series', count: 1 },
+        ],
+        statusCounts: [],
+      },
+    });
   });
 });

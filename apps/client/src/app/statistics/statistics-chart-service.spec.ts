@@ -1,13 +1,34 @@
 import { TestBed } from '@angular/core/testing';
+import { CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StatisticsChartService } from './statistics-chart-service';
 
+const chartConstructorMock = vi.hoisted(() =>
+  vi.fn(function ChartMock(this: Record<string, unknown>, canvas: HTMLCanvasElement, config: unknown) {
+    this.canvas = canvas;
+    this.config = config;
+    this.data = { labels: [], datasets: [] };
+    this.update = vi.fn();
+  })
+);
+
+vi.mock('chart.js/auto', () => ({ default: chartConstructorMock }));
+
 describe('StatisticsChartService', () => {
   let service: StatisticsChartService;
 
+  const emptyCommonCharts = {
+    tagCounts: [],
+    genreCounts: [],
+    releaseYearCounts: [],
+    userRatingCounts: [],
+  };
+
   beforeEach(() => {
+    chartConstructorMock.mockClear();
+    document.body.replaceChildren();
     TestBed.configureTestingModule({
       providers: [
         StatisticsChartService,
@@ -17,32 +38,57 @@ describe('StatisticsChartService', () => {
     service = TestBed.inject(StatisticsChartService);
   });
 
-  it('updates the selected tag chart dataset', () => {
+  it('creates each chart with responsive options and a horizontal genre axis', () => {
+    document.body.innerHTML = `
+      <canvas id="statistics-tag-chart"></canvas>
+      <canvas id="statistics-overview-chart"></canvas>
+      <canvas id="statistics-genre-chart"></canvas>
+      <canvas id="statistics-release-year-chart"></canvas>
+      <canvas id="statistics-rating-chart"></canvas>
+    `;
+
+    expect(service.createTagChart(null)).not.toBeNull();
+    expect(service.createOverviewChart(null)).not.toBeNull();
+    expect(service.createGenreChart(null)).not.toBeNull();
+    expect(service.createReleaseYearChart(null)).not.toBeNull();
+    expect(service.createRatingChart(null)).not.toBeNull();
+
+    expect(chartConstructorMock).toHaveBeenCalledTimes(5);
+    expect(chartConstructorMock).toHaveBeenNthCalledWith(
+      1,
+      document.getElementById('statistics-tag-chart'),
+      expect.objectContaining({
+        type: 'pie',
+        options: expect.objectContaining({ responsive: true, maintainAspectRatio: false }),
+      })
+    );
+    expect(chartConstructorMock).toHaveBeenNthCalledWith(
+      3,
+      document.getElementById('statistics-genre-chart'),
+      expect.objectContaining({
+        type: 'bar',
+        options: expect.objectContaining({ indexAxis: 'y', maintainAspectRatio: false }),
+      })
+    );
+  });
+
+  it('reuses existing charts and returns null when a canvas is missing', () => {
+    const existingChart = buildChart<'pie'>();
+
+    expect(service.createTagChart(existingChart)).toBe(existingChart);
+    expect(service.createTagChart(null)).toBeNull();
+    expect(chartConstructorMock).not.toHaveBeenCalled();
+  });
+
+  it('updates the selected tag chart and includes missing selections as zero', () => {
     const chart = buildChart<'pie'>();
 
     service.updateTagChart(
       chart,
-      {
-        totalItems: 2,
-        movieCount: 1,
-        seriesCount: 1,
-        booksCount: 0,
-        favoriteCount: 0,
-        upNextCount: 0,
-        wishlistCount: 0,
-        watchedMovieCount: 1,
-        watchedSeriesCount: 0,
-        unwatchedMovieCount: 0,
-        unwatchedLibrarySeriesCount: 1,
-        unwatchedTrackerSeriesCount: 0,
-        completedTrackerSeriesCount: 0,
-        watchedYearCounts: [],
-        tagCounts: [
-          { tag: '#drama', count: 2 },
-          { tag: '#action', count: 1 },
-        ],
-        genreCounts: [],
-      },
+      [
+        { tag: '#drama', count: 2 },
+        { tag: '#action', count: 1 },
+      ],
       ['#action', '#missing']
     );
 
@@ -51,103 +97,67 @@ describe('StatisticsChartService', () => {
     expect(chart.update).toHaveBeenCalled();
   });
 
-  it('updates watched and type charts with translated labels', () => {
-    const watchedChart = buildChart<'doughnut'>();
-    const typeChart = buildChart<'doughnut'>();
-    const statistics = {
-      totalItems: 4,
-      movieCount: 3,
-      seriesCount: 1,
-      booksCount: 2,
-      favoriteCount: 0,
-      upNextCount: 0,
-      wishlistCount: 0,
-      watchedMovieCount: 2,
-      watchedSeriesCount: 7,
-      unwatchedMovieCount: 1,
-      unwatchedLibrarySeriesCount: 0,
-      unwatchedTrackerSeriesCount: 2,
-      completedTrackerSeriesCount: 3,
-      watchedYearCounts: [],
-      tagCounts: [],
-      genreCounts: [],
+  it('adapts the overview dataset to media types for the all scope', () => {
+    const chart = buildChart<'doughnut'>();
+    const statistics: CollectionStatisticsApiResponseModel = {
+      scope: 'all',
+      summary: { total: 4, movies: 2, series: 1, books: 1, favorites: 0 },
+      charts: {
+        ...emptyCommonCharts,
+        mediaTypeCounts: [
+          { type: 'movie', count: 2 },
+          { type: 'series', count: 1 },
+          { type: 'book', count: 1 },
+        ],
+        statusCounts: [],
+      },
     };
 
-    service.updateWatchedChart(watchedChart, statistics);
-    service.updateTypeChart(typeChart, statistics);
+    service.updateOverviewChart(chart, statistics);
 
-    expect(watchedChart.data.labels).toEqual([
-      'WatchedMovies',
-      'UnwatchedMovies',
-      'CompletedSeries',
-      'InProgressSeries',
-      'UnwatchedLibrarySeries',
+    expect(chart.data.labels).toEqual(['Movies', 'Series', 'Books']);
+    expect(chart.data.datasets[0].data).toEqual([2, 1, 1]);
+  });
+
+  it.each([
+    ['movie', ['Watched', 'Unwatched'], [2, 1]],
+    ['series', ['Completed', 'InProgress'], [1, 1]],
+    ['book', ['Read', 'Unread', 'InProgress'], [1, 2, 1]],
+  ] as const)('adapts the overview dataset to %s statuses', (scope, labels, counts) => {
+    const chart = buildChart<'doughnut'>();
+    const statistics = buildScopedStatistics(scope);
+
+    service.updateOverviewChart(chart, statistics);
+
+    expect(chart.data.labels).toEqual(labels);
+    expect(chart.data.datasets[0].data).toEqual(counts);
+  });
+
+  it('updates genre, release-year, and rating datasets', () => {
+    const genreChart = buildChart<'bar'>();
+    const releaseYearChart = buildChart<'bar'>();
+    const ratingChart = buildChart<'bar'>();
+
+    service.updateGenreChart(genreChart, [
+      { genre: 'Low', count: 1 },
+      { genre: 'High', count: 3 },
+      { genre: 'Mid', count: 2 },
     ]);
-    expect(watchedChart.data.datasets[0].data).toEqual([2, 1, 3, 2, 0]);
-    expect(typeChart.data.labels).toEqual(['Movies', 'Series']);
-    expect(typeChart.data.datasets[0].data).toEqual([3, 1]);
-  });
+    service.updateReleaseYearChart(releaseYearChart, [
+      { year: '2025', count: 2 },
+      { year: '2026', count: 1 },
+    ]);
+    service.updateRatingChart(ratingChart, [
+      { rating: 7, count: 1 },
+      { rating: 8.5, count: 2 },
+    ]);
 
-  it('updates the genre chart with the top ten genres by count', () => {
-    const chart = buildChart<'bar'>();
-
-    service.updateGenreChart(chart, {
-      totalItems: 0,
-      movieCount: 0,
-      seriesCount: 0,
-      booksCount: 0,
-      favoriteCount: 0,
-      upNextCount: 0,
-      wishlistCount: 0,
-      watchedMovieCount: 0,
-      watchedSeriesCount: 0,
-      unwatchedMovieCount: 0,
-      unwatchedLibrarySeriesCount: 0,
-      unwatchedTrackerSeriesCount: 0,
-      completedTrackerSeriesCount: 0,
-      watchedYearCounts: [],
-      tagCounts: [],
-      genreCounts: [
-        { genre: 'Low', count: 1 },
-        { genre: 'High', count: 3 },
-        { genre: 'Mid', count: 2 },
-      ],
-    });
-
-    expect(chart.data.labels).toEqual(['High', 'Mid', 'Low']);
-    expect(chart.data.datasets[0].data).toEqual([3, 2, 1]);
-  });
-
-  it('updates the watched year chart with movie and series datasets', () => {
-    const chart = buildChart<'bar'>();
-
-    service.updateWatchedYearChart(chart, {
-      totalItems: 0,
-      movieCount: 0,
-      seriesCount: 0,
-      booksCount: 0,
-      favoriteCount: 0,
-      upNextCount: 0,
-      wishlistCount: 0,
-      watchedMovieCount: 0,
-      watchedSeriesCount: 0,
-      unwatchedMovieCount: 0,
-      unwatchedLibrarySeriesCount: 0,
-      unwatchedTrackerSeriesCount: 0,
-      completedTrackerSeriesCount: 0,
-      watchedYearCounts: [
-        { year: '2025', movieCount: 2, seriesCount: 1, count: 3 },
-        { year: '2026', movieCount: 0, seriesCount: 1, count: 1 },
-      ],
-      tagCounts: [],
-      genreCounts: [],
-    });
-
-    expect(chart.data.labels).toEqual(['2025', '2026']);
-    expect(chart.data.datasets[0].label).toBe('Movies');
-    expect(chart.data.datasets[0].data).toEqual([2, 0]);
-    expect(chart.data.datasets[1].label).toBe('Series');
-    expect(chart.data.datasets[1].data).toEqual([1, 1]);
+    expect(genreChart.data.labels).toEqual(['High', 'Mid', 'Low']);
+    expect(genreChart.data.datasets[0].data).toEqual([3, 2, 1]);
+    expect(releaseYearChart.data.labels).toEqual(['2025', '2026']);
+    expect(releaseYearChart.data.datasets[0].data).toEqual([2, 1]);
+    expect(ratingChart.data.labels).toEqual(['7', '8.5']);
+    expect(ratingChart.data.datasets[0].data).toEqual([1, 2]);
   });
 
   const buildChart = <TType extends 'pie' | 'doughnut' | 'bar'>() =>
@@ -155,4 +165,48 @@ describe('StatisticsChartService', () => {
       data: { labels: [], datasets: [] },
       update: vi.fn(),
     }) as unknown as Chart<TType, number[], string>;
+
+  const buildScopedStatistics = (scope: 'movie' | 'series' | 'book'): CollectionStatisticsApiResponseModel => {
+    if (scope === 'movie') {
+      return {
+        scope,
+        summary: { total: 3, favorites: 0, watched: 2, unwatched: 1 },
+        charts: {
+          ...emptyCommonCharts,
+          mediaTypeCounts: [],
+          statusCounts: [
+            { status: 'watched', count: 2 },
+            { status: 'unwatched', count: 1 },
+          ],
+        },
+      };
+    }
+    if (scope === 'series') {
+      return {
+        scope,
+        summary: { total: 2, favorites: 0, tracked: 2, untracked: 0, completed: 1, inProgress: 1 },
+        charts: {
+          ...emptyCommonCharts,
+          mediaTypeCounts: [],
+          statusCounts: [
+            { status: 'completed', count: 1 },
+            { status: 'inProgress', count: 1 },
+          ],
+        },
+      };
+    }
+    return {
+      scope,
+      summary: { total: 4, favorites: 0, read: 1, unread: 2, inProgress: 1 },
+      charts: {
+        ...emptyCommonCharts,
+        mediaTypeCounts: [],
+        statusCounts: [
+          { status: 'read', count: 1 },
+          { status: 'unread', count: 2 },
+          { status: 'inProgress', count: 1 },
+        ],
+      },
+    };
+  };
 });

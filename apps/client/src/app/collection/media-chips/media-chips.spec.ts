@@ -28,6 +28,12 @@ describe('CollectionMediaChips', () => {
     const host = fixture.nativeElement as HTMLElement;
     const allChip = host.querySelector('[data-test-id="collection-media-chip-all"]') as HTMLButtonElement;
     expect(allChip).toBeTruthy();
+    expect(host.querySelector('.media-chips')?.getAttribute('role')).toBe('group');
+    expect(host.querySelector('.media-chips')?.getAttribute('aria-label')).toBe('MediaTypes');
+    expect(allChip.getAttribute('aria-pressed')).toBe('true');
+    expect(host.querySelector('[data-test-id="collection-media-chip-movie"]')?.getAttribute('aria-pressed')).toBe(
+      'false'
+    );
     expect(host.querySelector('[data-test-id="collection-media-chip-movie"]')).toBeTruthy();
     expect(host.querySelector('[data-test-id="collection-media-chip-series"]')).toBeTruthy();
     expect(host.querySelector('[data-test-id="collection-media-chip-book"]')).toBeTruthy();
@@ -69,5 +75,24 @@ describe('CollectionMediaChips', () => {
       queryParams: { type: null },
       queryParamsHandling: 'merge',
     });
+  });
+
+  it('emits presentational selection without navigating when navigate is false', () => {
+    const selectionChange = vi.fn();
+    fixture.componentRef.setInput('active', 'series');
+    fixture.componentRef.setInput('navigate', false);
+    fixture.componentInstance.selectionChange.subscribe(selectionChange);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(
+      host
+        .querySelector<HTMLButtonElement>('[data-test-id="collection-media-chip-series"]')
+        ?.getAttribute('aria-pressed')
+    ).toBe('true');
+    host.querySelector<HTMLButtonElement>('[data-test-id="collection-media-chip-movie"]')?.click();
+
+    expect(selectionChange).toHaveBeenCalledWith('movie');
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 });

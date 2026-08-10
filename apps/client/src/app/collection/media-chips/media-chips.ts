@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { Router } from '@angular/router';
 import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -20,9 +20,12 @@ export class CollectionMediaChips {
   public readonly listRoute = input('library');
   public readonly allowedChips = input<readonly CollectionMediaChip[]>(['all', 'movie', 'series', 'book']);
   public readonly booksEnabled = input(true);
+  public readonly navigate = input(true);
+  public readonly selectionChange = output<CollectionMediaChip>();
 
   protected readonly translations = {
     all: computed(() => this.ngxSignalTranslate.translate('All')),
+    mediaTypes: computed(() => this.ngxSignalTranslate.translate('MediaTypes')),
     movies: computed(() => this.ngxSignalTranslate.translate('Movies')),
     series: computed(() => this.ngxSignalTranslate.translate('Series')),
     books: computed(() => this.ngxSignalTranslate.translate('Books')),
@@ -45,6 +48,8 @@ export class CollectionMediaChips {
 
   protected onSelect(chip: CollectionMediaChip): void {
     if (chip === this.active()) return;
+    this.selectionChange.emit(chip);
+    if (!this.navigate()) return;
     void this.router.navigate(['/collection', this.listRoute()], {
       queryParams: { type: chip === 'all' ? null : chip },
       queryParamsHandling: 'merge',

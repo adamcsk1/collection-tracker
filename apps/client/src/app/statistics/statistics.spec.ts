@@ -5,12 +5,15 @@ import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { PortalService } from '@services/portal-service';
 import { WebstorageService } from '@services/webstorage/webstorage-service';
 import { STORAGE_STATISTICS_SELECTED_TAGS } from '@shared/constants/storage-const';
+import { AllCollectionStatisticsChartsApiModel, CollectionStatisticsApiResponseModel } from '@shared/models/api-model';
+import Chart from 'chart.js/auto';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { provideStore } from 'ngx-simple-signal-store';
-import { of } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Statistics } from './statistics';
 import { initialMainState, mainStateToken } from '../main/main-store';
+import { StatisticsChartService } from './statistics-chart-service';
+import { Statistics } from './statistics';
 
 describe('Statistics component', () => {
   let fixture: ComponentFixture<Statistics>;
@@ -20,35 +23,89 @@ describe('Statistics component', () => {
   let portal: { closeAll: ReturnType<typeof vi.fn> };
   let routerNavigate: ReturnType<typeof vi.fn>;
 
-  const statistics = {
-    totalItems: 2,
-    movieCount: 1,
-    seriesCount: 1,
-    booksCount: 1,
-    favoriteCount: 1,
-    upNextCount: 1,
-    wishlistCount: 1,
-    watchedMovieCount: 1,
-    watchedSeriesCount: 0,
-    unwatchedMovieCount: 0,
-    unwatchedLibrarySeriesCount: 1,
-    unwatchedTrackerSeriesCount: 0,
-    completedTrackerSeriesCount: 0,
-    watchedYearCounts: [{ year: '2026', movieCount: 1, seriesCount: 0, count: 1 }],
+  const charts: AllCollectionStatisticsChartsApiModel = {
     tagCounts: [
-      { tag: '#drama', count: 1 },
-      { tag: '#action', count: 2 },
+      { tag: '#shared', count: 2 },
+      { tag: '#movie', count: 1 },
+      { tag: '#book', count: 1 },
     ],
-    genreCounts: [{ genre: 'Action', count: 2 }],
+    genreCounts: [{ genre: 'Drama', count: 2 }],
+    releaseYearCounts: [{ year: '2026', count: 2 }],
+    userRatingCounts: [{ rating: 8, count: 2 }],
+    mediaTypeCounts: [
+      { type: 'movie' as const, count: 2 },
+      { type: 'series' as const, count: 1 },
+      { type: 'book' as const, count: 1 },
+    ],
+    statusCounts: [],
+  };
+  const responses: Record<'all' | 'movie' | 'series' | 'book', CollectionStatisticsApiResponseModel> = {
+    all: {
+      scope: 'all',
+      summary: { total: 4, movies: 2, series: 1, books: 1, favorites: 2 },
+      charts,
+    },
+    movie: {
+      scope: 'movie',
+      summary: { total: 2, favorites: 1, watched: 1, unwatched: 1 },
+      charts: {
+        ...charts,
+        tagCounts: [
+          { tag: '#shared', count: 1 },
+          { tag: '#movie', count: 1 },
+        ],
+        mediaTypeCounts: [],
+        statusCounts: [
+          { status: 'watched', count: 1 },
+          { status: 'unwatched', count: 1 },
+        ],
+      },
+    },
+    series: {
+      scope: 'series',
+      summary: { total: 1, favorites: 0, tracked: 1, untracked: 0, completed: 0, inProgress: 1 },
+      charts: {
+        ...charts,
+        tagCounts: [{ tag: '#series', count: 1 }],
+        mediaTypeCounts: [],
+        statusCounts: [
+          { status: 'completed', count: 0 },
+          { status: 'inProgress', count: 1 },
+        ],
+      },
+    },
+    book: {
+      scope: 'book',
+      summary: { total: 1, favorites: 1, read: 0, unread: 0, inProgress: 1 },
+      charts: {
+        ...charts,
+        tagCounts: [{ tag: '#book', count: 1 }],
+        mediaTypeCounts: [],
+        statusCounts: [{ status: 'inProgress', count: 1 }],
+      },
+    },
+  };
+  const chartService = {
+    createTagChart: vi.fn((chart) => chart ?? buildChart<'pie'>().chart),
+    createOverviewChart: vi.fn((chart) => chart ?? buildChart<'doughnut'>().chart),
+    createGenreChart: vi.fn((chart) => chart ?? buildChart<'bar'>().chart),
+    createReleaseYearChart: vi.fn((chart) => chart ?? buildChart<'bar'>().chart),
+    createRatingChart: vi.fn((chart) => chart ?? buildChart<'bar'>().chart),
+    updateTagChart: vi.fn(),
+    updateOverviewChart: vi.fn(),
+    updateGenreChart: vi.fn(),
+    updateReleaseYearChart: vi.fn(),
+    updateRatingChart: vi.fn(),
   };
 
-  const mockChart = () => ({ data: { labels: [], datasets: [] }, update: vi.fn() }) as any;
-
   beforeEach(() => {
-    api = { getStatistics: vi.fn(() => of(statistics)) };
+    api = {
+      getStatistics: vi.fn((filters: { type?: 'movie' | 'series' | 'book' }) => of(responses[filters.type ?? 'all'])),
+    };
     webstorage = { getItem: vi.fn(() => null), setItem: vi.fn() };
     portal = { closeAll: vi.fn() };
     routerNavigate = vi.fn(() => Promise.resolve(true));
+    vi.clearAllMocks();
 
     TestBed.configureTestingModule({
       imports: [Statistics],
@@ -56,232 +113,221 @@ describe('Statistics component', () => {
         provideStore(initialApiState, apiStateToken),
         provideStore(initialMainState, mainStateToken),
         { provide: ApiService, useValue: api },
-        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
+        {
+          provide: NgxSignalTranslateService,
+          useValue: {
+            translate: (key: string, values?: Record<string, string | number>) => {
+              if (key === 'Aria.ChartDataPoint') return `${values?.label}: ${values?.count}`;
+              if (key === 'Aria.ChartSummary') return `${values?.title} chart. ${values?.data}`;
+              return key;
+            },
+          },
+        },
         { provide: WebstorageService, useValue: webstorage },
         { provide: PortalService, useValue: portal },
         { provide: Router, useValue: { navigate: routerNavigate } },
       ],
+    });
+    TestBed.overrideComponent(Statistics, {
+      set: { providers: [{ provide: StatisticsChartService, useValue: chartService }] },
     });
 
     fixture = TestBed.createComponent(Statistics);
     component = fixture.componentInstance;
-    component['tagChart'].set(mockChart());
-    component['watchedChart'].set(mockChart());
-    component['typeChart'].set(mockChart());
-    component['genreChart'].set(mockChart());
-    component['watchedYearChart'].set(mockChart());
-  });
-
-  it('loads summary and tags from the statistics endpoint', () => {
-    expect(api.getStatistics).toHaveBeenCalled();
-    expect(component['translations'].statistics()).toBe('Statistics');
-    expect(component['summary']()).toEqual({
-      movies: 1,
-      series: 1,
-      books: 1,
-      favorites: 1,
-      upNext: 1,
-      wishlist: 1,
-      all: 2,
-      watchedMovies: 1,
-      watchedSeries: 0,
-      unwatchedMovies: 0,
-      unwatchedLibrarySeries: 1,
-      unwatchedTrackerSeries: 0,
-      completedTrackerSeries: 0,
-    });
-    expect(component['tags']()).toEqual(['#drama', '#action']);
-  });
-
-  it('shows only summary cards for enabled collection features', () => {
-    const mainState = TestBed.inject(mainStateToken);
-    const hasCard = (testId: string) => fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) !== null;
-
-    mainState.setState('collectionFeaturePreferences', {
-      books: true,
-      upNext: true,
-      wishlist: false,
-      tracking: true,
-    });
     fixture.detectChanges();
+  });
 
-    expect(hasCard('statistics-summary-up-next')).toBe(true);
-    expect(hasCard('statistics-summary-wishlist')).toBe(false);
-    expect(hasCard('statistics-summary-watched-movies')).toBe(true);
-    expect(hasCard('statistics-summary-watched-series')).toBe(true);
-    expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(true);
-    expect(hasCard('statistics-summary-completed-tracker-series')).toBe(true);
+  const hasCard = (testId: string): boolean =>
+    fixture.nativeElement.querySelector(`[data-test-id="${testId}"]`) !== null;
+
+  it('loads the all scope and renders only the limited all-summary cards', () => {
+    expect(api.getStatistics).toHaveBeenCalledWith({});
+    expect(component['tags']()).toEqual(['#shared', '#movie', '#book']);
+    expect(hasCard('statistics-summary-all')).toBe(true);
+    expect(hasCard('statistics-summary-movies')).toBe(true);
+    expect(hasCard('statistics-summary-series')).toBe(true);
     expect(hasCard('statistics-summary-books')).toBe(true);
+    expect(hasCard('statistics-summary-favorites')).toBe(true);
+    expect(hasCard('statistics-summary-watched-movies')).toBe(false);
+    expect(hasCard('statistics-summary-tracked-series')).toBe(false);
+    expect(hasCard('statistics-summary-read-books')).toBe(false);
+    expect(hasCard('statistics-summary-wishlist')).toBe(false);
+    expect(hasCard('statistics-summary-up-next')).toBe(false);
+  });
 
-    mainState.setState('collectionFeaturePreferences', {
-      books: false,
-      upNext: false,
-      wishlist: true,
-      tracking: false,
-    });
+  it('provides text alternatives for every chart', () => {
+    const canvases = fixture.nativeElement.querySelectorAll('canvas') as NodeListOf<HTMLCanvasElement>;
+    expect(canvases).toHaveLength(5);
+    for (const canvas of canvases) {
+      expect(canvas.getAttribute('role')).toBe('img');
+      expect(canvas.getAttribute('aria-label')).not.toContain('[object Object]');
+      expect(canvas.textContent).not.toContain('[object Object]');
+    }
+    expect(fixture.nativeElement.querySelector('#statistics-overview-chart')?.getAttribute('aria-label')).toBe(
+      'MediaTypes chart. Movies: 2, Series: 1, Books: 1'
+    );
+    expect(fixture.nativeElement.querySelector('#statistics-genre-chart')?.getAttribute('aria-label')).toBe(
+      'Genre chart. Drama: 2'
+    );
+    expect(component['overviewChart']()?.resize).toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'movie',
+      [
+        'statistics-summary-movies',
+        'statistics-summary-favorites',
+        'statistics-summary-watched-movies',
+        'statistics-summary-unwatched-movies',
+      ],
+    ],
+    [
+      'series',
+      [
+        'statistics-summary-series',
+        'statistics-summary-favorites',
+        'statistics-summary-tracked-series',
+        'statistics-summary-untracked-series',
+        'statistics-summary-completed-series',
+        'statistics-summary-in-progress-series',
+      ],
+    ],
+    [
+      'book',
+      [
+        'statistics-summary-books',
+        'statistics-summary-favorites',
+        'statistics-summary-read-books',
+        'statistics-summary-unread-books',
+        'statistics-summary-in-progress-books',
+      ],
+    ],
+  ] as const)('requests and renders only %s-focused summary cards', (scope, expectedCards) => {
+    component['onSelectScope'](scope);
     fixture.detectChanges();
 
-    expect(hasCard('statistics-summary-up-next')).toBe(false);
-    expect(hasCard('statistics-summary-wishlist')).toBe(true);
-    expect(hasCard('statistics-summary-watched-movies')).toBe(false);
-    expect(hasCard('statistics-summary-watched-series')).toBe(false);
-    expect(hasCard('statistics-summary-unwatched-tracker-series')).toBe(false);
-    expect(hasCard('statistics-summary-completed-tracker-series')).toBe(false);
-    expect(hasCard('statistics-summary-books')).toBe(false);
+    expect(api.getStatistics).toHaveBeenLastCalledWith({ type: scope });
+    for (const testId of expectedCards) expect(hasCard(testId)).toBe(true);
+    expect(hasCard('statistics-summary-all')).toBe(false);
+    const cards = fixture.nativeElement.querySelectorAll('[data-test-id^="statistics-summary-"]');
+    expect(cards.length).toBe(expectedCards.length);
   });
 
-  it('sets defaultOpenSelectedTags to true when no tags are stored', () => {
-    expect(component['defaultOpenSelectedTags']).toBe(true);
+  it('filters tags by media scope while preserving selections hidden in that scope', () => {
+    component['onToggleTag']('#book');
+    component['onSelectScope']('movie');
+
+    expect(component['tags']()).toEqual(['#shared', '#movie']);
+    expect(component['selectedTags']()).toEqual(['#book']);
+    expect(component['applicableSelectedTags']()).toEqual([]);
+    expect(component['selectedVisibleTags']()).toEqual([]);
+
+    component['onSelectScope']('all');
+    expect(component['applicableSelectedTags']()).toEqual(['#book']);
+    expect(component['selectedVisibleTags']()).toEqual(['#book']);
   });
 
-  it('sets defaultOpenSelectedTags to false when tags are stored', () => {
-    webstorage.getItem = vi.fn((key: string) => (key === STORAGE_STATISTICS_SELECTED_TAGS ? '["#action"]' : null));
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      imports: [Statistics],
-      providers: [
-        provideStore(initialApiState, apiStateToken),
-        provideStore(initialMainState, mainStateToken),
-        { provide: ApiService, useValue: api },
-        { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
-        { provide: WebstorageService, useValue: webstorage },
-        { provide: PortalService, useValue: portal },
-        { provide: Router, useValue: { navigate: routerNavigate } },
-      ],
-    });
-    TestBed.overrideComponent(Statistics, { set: { template: '' } });
+  it('uses cached statistics when returning to an already loaded scope', () => {
+    component['onSelectScope']('movie');
+    component['onSelectScope']('all');
+    component['onSelectScope']('movie');
 
-    const freshComponent = TestBed.createComponent(Statistics).componentInstance;
-
-    expect(freshComponent['defaultOpenSelectedTags']).toBe(false);
+    expect(api.getStatistics).toHaveBeenCalledTimes(2);
+    expect(api.getStatistics).toHaveBeenNthCalledWith(1, {});
+    expect(api.getStatistics).toHaveBeenNthCalledWith(2, { type: 'movie' });
   });
 
-  it('adds a tag to selectedTags when toggling an unselected tag', () => {
-    component['onToggleTag']('#action');
+  it('clears stale statistics while a new scope loads and shows request errors', () => {
+    const movieResponse = new Subject<CollectionStatisticsApiResponseModel>();
+    api.getStatistics.mockReturnValueOnce(movieResponse);
 
-    expect(component['selectedTags']()).toContain('#action');
+    component['onSelectScope']('movie');
+    fixture.detectChanges();
+    expect(component['statistics']()).toBeNull();
+    expect(hasCard('statistics-summary-all')).toBe(false);
+    expect(fixture.nativeElement.querySelector('[data-test-id="statistics-scroll"]')?.getAttribute('aria-busy')).toBe(
+      'true'
+    );
+    expect(fixture.nativeElement.querySelector('[role="status"]')).not.toBeNull();
+
+    api.getStatistics.mockReturnValueOnce(throwError(() => new Error('failed')));
+    component['onSelectScope']('series');
+    fixture.detectChanges();
+    expect(component['statistics']()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="statistics-error"]')?.textContent).toContain(
+      'Toast.LoadStatisticsError'
+    );
+    expect(fixture.nativeElement.querySelector('[data-test-id="statistics-error"]')?.getAttribute('role')).toBe(
+      'alert'
+    );
+    const retryButton = fixture.nativeElement.querySelector('[data-test-id="statistics-retry"]') as HTMLButtonElement;
+    expect(retryButton.textContent).toContain('Retry');
+
+    retryButton.click();
+    fixture.detectChanges();
+    expect(api.getStatistics).toHaveBeenLastCalledWith({ type: 'series' });
+    expect(hasCard('statistics-summary-series')).toBe(true);
   });
 
-  it('removes a tag from selectedTags when toggling an already selected tag', () => {
-    component['onToggleTag']('#action');
-    component['onToggleTag']('#action');
-
-    expect(component['selectedTags']()).not.toContain('#action');
-  });
-
-  it('persists selected tags to webstorage when toggling', () => {
-    component['onToggleTag']('#action');
-
-    expect(webstorage.setItem).toHaveBeenCalledWith(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify(['#action']));
-  });
-
-  it('filters visible tags by text', () => {
-    component['onFilterTags']('act');
-
-    expect(component['availableVisibleTags']()).toEqual(['#action']);
-  });
-
-  it('shows matching selected tags before available tags', () => {
-    component['onToggleTag']('#action');
-    component['onFilterTags']('a');
-
-    expect(component['selectedVisibleTags']()).toEqual(['#action']);
-    expect(component['availableVisibleTags']()).toEqual(['#drama']);
-  });
-
-  it('clears selected tags and persists the empty selection', () => {
-    component['onToggleTag']('#action');
+  it('filters, toggles, clears, and persists applicable tags', () => {
+    component['onToggleTag']('#shared');
+    component['onFilterTags']('mov');
+    expect(component['availableVisibleTags']()).toEqual(['#movie']);
 
     component['onClearSelectedTags']();
-
     expect(component['selectedTags']()).toEqual([]);
     expect(webstorage.setItem).toHaveBeenLastCalledWith(STORAGE_STATISTICS_SELECTED_TAGS, JSON.stringify([]));
   });
 
-  it('navigates to collection without search when clicking total stat card', () => {
-    component['onNavigateToCollection']();
+  it('navigates focused cards to their relevant lists and filters', () => {
+    component['navigateToCollection']('book', { favorite: true });
+    component['navigateToCollection']('movie', { watched: false });
+    component['navigateToTracking']('series', { completed: false });
 
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library']);
-  });
-
-  it('navigates to collection with type query when clicking a type stat card', () => {
-    component['onNavigateToCollectionType']('movie');
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], { queryParams: { type: 'movie' } });
-  });
-
-  it('navigates to favorites when clicking the favorites stat card', () => {
-    component['onNavigateToFavorites']();
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], { queryParams: { favorite: 'true' } });
-  });
-
-  it('navigates to watch later when clicking the watch later stat card', () => {
-    component['onNavigateToUpNext']();
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'up-next']);
-  });
-
-  it('navigates to wishlist when clicking the wishlist stat card', () => {
-    component['onNavigateToWishlist']();
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'wishlist']);
-  });
-
-  it('navigates to tracking when clicking the watched movies stat card', () => {
-    component['onNavigateToWatched']();
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'tracking'], { queryParams: { type: 'movie' } });
-  });
-
-  it('navigates to tracking when clicking the watched series stat card', () => {
-    component['onNavigateToTracking']();
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'tracking']);
-  });
-
-  it('navigates to books list when clicking the tracked books stat card', () => {
-    component['onNavigateToBooks']();
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'books']);
-  });
-
-  it('navigates to unwatched movies when clicking the unwatched movies stat card', () => {
-    component['onNavigateToUnwatchedMovies']();
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], {
-      queryParams: { watched: false, type: 'movie' },
+    expect(routerNavigate).toHaveBeenNthCalledWith(1, ['/collection', 'books'], { queryParams: { favorite: true } });
+    expect(routerNavigate).toHaveBeenNthCalledWith(2, ['/collection', 'library'], {
+      queryParams: { type: 'movie', watched: false },
+    });
+    expect(routerNavigate).toHaveBeenNthCalledWith(3, ['/collection', 'tracking'], {
+      queryParams: { type: 'series', completed: false },
     });
   });
 
-  it('navigates to unwatched library series when clicking the unwatched library series stat card', () => {
-    component['onNavigateToUnwatchedLibrarySeries']();
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'library'], {
-      queryParams: { watched: false, type: 'series' },
-    });
-  });
-
-  it('navigates to unwatched tracker series when clicking the unwatched tracker series stat card', () => {
-    component['onNavigateToUnwatchedTrackerSeries']();
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'tracking'], {
-      queryParams: { completed: false },
-    });
-  });
-
-  it('navigates to completed tracker series when clicking the completed tracker series stat card', () => {
-    component['onNavigateToCompletedTrackerSeries']();
-
-    expect(routerNavigate).toHaveBeenCalledWith(['/collection', 'tracking'], {
-      queryParams: { completed: true },
-    });
-  });
-
-  it('closes the dialog after a successful stat navigation', async () => {
-    component['onNavigateToCollection']();
+  it('closes the statistics portal after successful navigation', async () => {
+    component['navigateToCollection']();
     await Promise.resolve();
 
     expect(portal.closeAll).toHaveBeenCalled();
   });
+
+  it('destroys every chart with the component', () => {
+    const tagChart = buildChart<'pie'>();
+    const overviewChart = buildChart<'doughnut'>();
+    const genreChart = buildChart<'bar'>();
+    const releaseYearChart = buildChart<'bar'>();
+    const ratingChart = buildChart<'bar'>();
+    component['tagChart'].set(tagChart.chart);
+    component['overviewChart'].set(overviewChart.chart);
+    component['genreChart'].set(genreChart.chart);
+    component['releaseYearChart'].set(releaseYearChart.chart);
+    component['ratingChart'].set(ratingChart.chart);
+
+    fixture.destroy();
+
+    for (const destroy of [
+      tagChart.destroy,
+      overviewChart.destroy,
+      genreChart.destroy,
+      releaseYearChart.destroy,
+      ratingChart.destroy,
+    ])
+      expect(destroy).toHaveBeenCalledOnce();
+  });
+
+  const buildChart = <TType extends 'pie' | 'doughnut' | 'bar'>() => {
+    const destroy = vi.fn();
+    const resize = vi.fn();
+    return { chart: { destroy, resize } as unknown as Chart<TType, number[], string>, destroy, resize };
+  };
 });

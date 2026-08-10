@@ -211,7 +211,7 @@ export class TagManagement {
   private loadUniqueTags(): ReturnType<ApiService['getStatistics']> {
     return this.api.getStatistics().pipe(
       tap((statistics) => {
-        const tags = statistics.tagCounts.map((tagCount) => tagCount.tag);
+        const tags = statistics.charts.tagCounts.map((tagCount) => tagCount.tag);
         this.uniqueTags.set([...new Set(tags)].sort((a, b) => a.length - b.length));
       }),
       catchError(() => {

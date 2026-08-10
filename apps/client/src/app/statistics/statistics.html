@@ -1,292 +1,382 @@
-<div
-  data-test-id="statistics-content"
-  class="statistics-content"
-  role="region"
-  tabindex="0"
-  [attr.aria-label]="translations.statistics()"
->
-  @if (apiLoadNetworkStatus() === 'pending') {
-    {{ translations.messageLoadStatistics() }}
-  } @else if (
-    (statistics()?.totalItems ?? 0) === 0 &&
-    (statistics()?.upNextCount ?? 0) === 0 &&
-    (statistics()?.wishlistCount ?? 0) === 0 &&
-    (statistics()?.booksCount ?? 0) === 0
-  ) {
-    <span data-test-id="statistics-empty">{{ translations.messageEmptyStatistics() }}</span>
-  } @else {
-    <h2>{{ translations.summary() }}</h2>
-    @if (summary(); as summary) {
-      <div data-test-id="statistics-summary" class="summary-grid">
-        <button
-          data-test-id="statistics-summary-all"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToCollection()"
-          [attr.aria-label]="translations.itemsInCollection() + ': ' + summary.all"
-        >
-          <span class="stat-value">{{ summary.all }}</span>
-          <span class="stat-label">{{ translations.itemsInCollection() }}</span>
+<div data-test-id="statistics-content" class="statistics-content">
+  <ct-collection-media-chips
+    data-test-id="statistics-media-chips"
+    [active]="selectedScope()"
+    [booksEnabled]="featurePreferences().books"
+    [navigate]="false"
+    (selectionChange)="onSelectScope($event)"
+  />
+
+  <div
+    data-test-id="statistics-scroll"
+    class="statistics-scroll"
+    role="region"
+    tabindex="0"
+    [attr.aria-label]="translations.statistics()"
+    [attr.aria-busy]="apiLoadNetworkStatus() === 'pending'"
+  >
+    @if (apiLoadNetworkStatus() === 'pending') {
+      <span class="statistics-message" role="status">{{ translations.messageLoadStatistics() }}</span>
+    } @else if (apiLoadNetworkStatus() === 'error') {
+      <div class="statistics-message">
+        <span data-test-id="statistics-error" role="alert">{{ translations.loadStatisticsError() }}</span>
+        <button data-test-id="statistics-retry" type="button" (click)="onRetryLoadStatistics()">
+          {{ translations.retry() }}
         </button>
-        <button
-          data-test-id="statistics-summary-movies"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToCollectionType('movie')"
-          [attr.aria-label]="translations.movies() + ': ' + summary.movies"
-        >
-          <span class="stat-value">{{ summary.movies }}</span>
-          <span class="stat-label">{{ translations.movies() }}</span>
-        </button>
-        <button
-          data-test-id="statistics-summary-series"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToCollectionType('series')"
-          [attr.aria-label]="translations.series() + ': ' + summary.series"
-        >
-          <span class="stat-value">{{ summary.series }}</span>
-          <span class="stat-label">{{ translations.series() }}</span>
-        </button>
-        <button
-          data-test-id="statistics-summary-favorites"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToFavorites()"
-          [attr.aria-label]="translations.favorites() + ': ' + summary.favorites"
-        >
-          <span class="stat-value">{{ summary.favorites }}</span>
-          <span class="stat-label">{{ translations.favorites() }}</span>
-        </button>
-        @if (featurePreferences().upNext) {
-          <button
-            data-test-id="statistics-summary-up-next"
-            class="card card-interactive stat-card"
-            (click)="onNavigateToUpNext()"
-            [attr.aria-label]="translations.upNext() + ': ' + summary.upNext"
-          >
-            <span class="stat-value">{{ summary.upNext }}</span>
-            <span class="stat-label">{{ translations.upNext() }}</span>
-          </button>
-        }
-        @if (featurePreferences().wishlist) {
-          <button
-            data-test-id="statistics-summary-wishlist"
-            class="card card-interactive stat-card"
-            (click)="onNavigateToWishlist()"
-            [attr.aria-label]="translations.wishlist() + ': ' + summary.wishlist"
-          >
-            <span class="stat-value">{{ summary.wishlist }}</span>
-            <span class="stat-label">{{ translations.wishlist() }}</span>
-          </button>
-        }
-        @if (featurePreferences().tracking) {
-          <button
-            data-test-id="statistics-summary-watched-movies"
-            class="card card-interactive stat-card"
-            (click)="onNavigateToWatched()"
-            [attr.aria-label]="translations.watchedMovies() + ': ' + summary.watchedMovies"
-          >
-            <span class="stat-value">{{ summary.watchedMovies }}</span>
-            <span class="stat-label">{{ translations.watchedMovies() }}</span>
-          </button>
-        }
-        @if (featurePreferences().tracking) {
-          <button
-            data-test-id="statistics-summary-watched-series"
-            class="card card-interactive stat-card"
-            (click)="onNavigateToTracking()"
-            [attr.aria-label]="translations.watchedSeries() + ': ' + summary.watchedSeries"
-          >
-            <span class="stat-value">{{ summary.watchedSeries }}</span>
-            <span class="stat-label">{{ translations.watchedSeries() }}</span>
-          </button>
-        }
-        @if (featurePreferences().books) {
-          <button
-            data-test-id="statistics-summary-books"
-            class="card card-interactive stat-card"
-            (click)="onNavigateToBooks()"
-            [attr.aria-label]="translations.books() + ': ' + summary.books"
-          >
-            <span class="stat-value">{{ summary.books }}</span>
-            <span class="stat-label">{{ translations.books() }}</span>
-          </button>
-        }
-        <button
-          data-test-id="statistics-summary-unwatched-movies"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToUnwatchedMovies()"
-          [attr.aria-label]="translations.unwatchedMovies() + ': ' + summary.unwatchedMovies"
-        >
-          <span class="stat-value">{{ summary.unwatchedMovies }}</span>
-          <span class="stat-label">{{ translations.unwatchedMovies() }}</span>
-        </button>
-        <button
-          data-test-id="statistics-summary-unwatched-library-series"
-          class="card card-interactive stat-card"
-          (click)="onNavigateToUnwatchedLibrarySeries()"
-          [attr.aria-label]="translations.unwatchedLibrarySeries() + ': ' + summary.unwatchedLibrarySeries"
-        >
-          <span class="stat-value">{{ summary.unwatchedLibrarySeries }}</span>
-          <span class="stat-label">{{ translations.unwatchedLibrarySeries() }}</span>
-        </button>
-        @if (featurePreferences().tracking) {
-          <button
-            data-test-id="statistics-summary-unwatched-tracker-series"
-            class="card card-interactive stat-card"
-            (click)="onNavigateToUnwatchedTrackerSeries()"
-            [attr.aria-label]="translations.unwatchedTrackerSeries() + ': ' + summary.unwatchedTrackerSeries"
-          >
-            <span class="stat-value">{{ summary.unwatchedTrackerSeries }}</span>
-            <span class="stat-label">{{ translations.unwatchedTrackerSeries() }}</span>
-          </button>
-          <button
-            data-test-id="statistics-summary-completed-tracker-series"
-            class="card card-interactive stat-card"
-            (click)="onNavigateToCompletedTrackerSeries()"
-            [attr.aria-label]="translations.completedTrackerSeries() + ': ' + summary.completedTrackerSeries"
-          >
-            <span class="stat-value">{{ summary.completedTrackerSeries }}</span>
-            <span class="stat-label">{{ translations.completedTrackerSeries() }}</span>
-          </button>
-        }
       </div>
-    }
-
-    <hr />
-
-    <h2>{{ translations.chart() }}</h2>
-    <libc-details
-      data-test-id="statistics-tags-details"
-      [summary]="translations.selectedTags()"
-      [open]="defaultOpenSelectedTags"
-    >
-      <div class="tag-picker">
-        <div class="tag-picker-controls">
-          <libc-input
-            data-test-id="statistics-tag-filter"
-            class="tag-filter"
-            [icon]="'search'"
-            [showReset]="true"
-            resetButtonDataTestId="statistics-tag-filter-reset"
-            [placeholder]="translations.placeholderFilterTags()"
-            type="text"
-            (valueChange)="onFilterTags($event)"
-          />
-          @if (selectedTags().length > 0) {
+    } @else if ((statistics()?.summary?.total ?? 0) === 0) {
+      <span data-test-id="statistics-empty" class="statistics-message">{{
+        translations.messageEmptyStatistics()
+      }}</span>
+    } @else if (statistics(); as statistics) {
+      <h2>{{ translations.summary() }}</h2>
+      <div data-test-id="statistics-summary" class="summary-grid">
+        @switch (statistics.scope) {
+          @case ('all') {
             <button
-              data-test-id="statistics-tags-clear"
-              type="button"
-              class="text-button"
-              (click)="onClearSelectedTags()"
+              data-test-id="statistics-summary-all"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection()"
+              [attr.aria-label]="translations.itemsInCollection() + ': ' + statistics.summary.total"
             >
-              {{ translations.clearSelectedTags() }}
+              <span class="stat-value">{{ statistics.summary.total }}</span>
+              <span class="stat-label">{{ translations.itemsInCollection() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-movies"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('movie')"
+              [attr.aria-label]="translations.movies() + ': ' + statistics.summary.movies"
+            >
+              <span class="stat-value">{{ statistics.summary.movies }}</span>
+              <span class="stat-label">{{ translations.movies() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-series"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('series')"
+              [attr.aria-label]="translations.series() + ': ' + statistics.summary.series"
+            >
+              <span class="stat-value">{{ statistics.summary.series }}</span>
+              <span class="stat-label">{{ translations.series() }}</span>
+            </button>
+            @if (featurePreferences().books) {
+              <button
+                data-test-id="statistics-summary-books"
+                class="card card-interactive stat-card"
+                (click)="navigateToCollection('book')"
+                [attr.aria-label]="translations.books() + ': ' + statistics.summary.books"
+              >
+                <span class="stat-value">{{ statistics.summary.books }}</span>
+                <span class="stat-label">{{ translations.books() }}</span>
+              </button>
+            }
+            <button
+              data-test-id="statistics-summary-favorites"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection(undefined, { favorite: true })"
+              [attr.aria-label]="translations.favorites() + ': ' + statistics.summary.favorites"
+            >
+              <span class="stat-value">{{ statistics.summary.favorites }}</span>
+              <span class="stat-label">{{ translations.favorites() }}</span>
             </button>
           }
-        </div>
-
-        <div class="tag-picker-scroll">
-          @if (selectedVisibleTags().length > 0) {
-            <section
-              data-test-id="statistics-selected-tags-section"
-              class="tag-group"
-              [attr.aria-label]="translations.selectedTags()"
+          @case ('movie') {
+            <button
+              data-test-id="statistics-summary-movies"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('movie')"
+              [attr.aria-label]="translations.movies() + ': ' + statistics.summary.total"
             >
-              <h3>{{ translations.selectedTags() }}</h3>
-              <div data-test-id="statistics-selected-tags" class="tags">
-                @for (tag of selectedVisibleTags(); track tag) {
-                  <button
-                    [attr.data-test-id]="'statistics-tag-' + tag"
-                    class="tag-chip tag-chip-selected"
-                    [attr.aria-pressed]="true"
-                    (click)="onToggleTag(tag)"
-                    [style.--tag-color]="textToHexColor(tag.replace('#', ''))"
-                  >
-                    {{ tag }}
-                  </button>
-                }
-              </div>
-            </section>
-          }
-
-          @if (availableVisibleTags().length > 0) {
-            <section
-              data-test-id="statistics-available-tags-section"
-              class="tag-group"
-              [attr.aria-label]="translations.availableTags()"
+              <span class="stat-value">{{ statistics.summary.total }}</span>
+              <span class="stat-label">{{ translations.movies() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-favorites"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('movie', { favorite: true })"
+              [attr.aria-label]="translations.favorites() + ': ' + statistics.summary.favorites"
             >
-              <h3>{{ translations.availableTags() }}</h3>
-              <div data-test-id="statistics-tags" class="tags">
-                @for (tag of availableVisibleTags(); track tag) {
-                  <button
-                    [attr.data-test-id]="'statistics-tag-' + tag"
-                    class="tag-chip"
-                    [attr.aria-pressed]="false"
-                    (click)="onToggleTag(tag)"
-                    [style.--tag-color]="textToHexColor(tag.replace('#', ''))"
-                  >
-                    {{ tag }}
-                  </button>
-                }
-              </div>
-            </section>
-          } @else if (hasActiveTagFilter() && filteredTags().length === 0) {
-            <div data-test-id="statistics-tags-filter-empty" class="tags-empty">
-              {{ translations.messageEmptyTagFilter() }}
+              <span class="stat-value">{{ statistics.summary.favorites }}</span>
+              <span class="stat-label">{{ translations.favorites() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-watched-movies"
+              class="card card-interactive stat-card"
+              (click)="navigateToTracking('movie', { completed: true })"
+              [attr.aria-label]="translations.watched() + ': ' + statistics.summary.watched"
+            >
+              <span class="stat-value">{{ statistics.summary.watched }}</span>
+              <span class="stat-label">{{ translations.watched() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-unwatched-movies"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('movie', { watched: false })"
+              [attr.aria-label]="translations.unwatched() + ': ' + statistics.summary.unwatched"
+            >
+              <span class="stat-value">{{ statistics.summary.unwatched }}</span>
+              <span class="stat-label">{{ translations.unwatched() }}</span>
+            </button>
+          }
+          @case ('series') {
+            <button
+              data-test-id="statistics-summary-series"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('series')"
+              [attr.aria-label]="translations.series() + ': ' + statistics.summary.total"
+            >
+              <span class="stat-value">{{ statistics.summary.total }}</span>
+              <span class="stat-label">{{ translations.series() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-favorites"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('series', { favorite: true })"
+              [attr.aria-label]="translations.favorites() + ': ' + statistics.summary.favorites"
+            >
+              <span class="stat-value">{{ statistics.summary.favorites }}</span>
+              <span class="stat-label">{{ translations.favorites() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-tracked-series"
+              class="card card-interactive stat-card"
+              (click)="navigateToTracking('series')"
+              [attr.aria-label]="translations.tracked() + ': ' + statistics.summary.tracked"
+            >
+              <span class="stat-value">{{ statistics.summary.tracked }}</span>
+              <span class="stat-label">{{ translations.tracked() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-untracked-series"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('series', { watched: false })"
+              [attr.aria-label]="translations.untracked() + ': ' + statistics.summary.untracked"
+            >
+              <span class="stat-value">{{ statistics.summary.untracked }}</span>
+              <span class="stat-label">{{ translations.untracked() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-completed-series"
+              class="card card-interactive stat-card"
+              (click)="navigateToTracking('series', { completed: true })"
+              [attr.aria-label]="translations.completed() + ': ' + statistics.summary.completed"
+            >
+              <span class="stat-value">{{ statistics.summary.completed }}</span>
+              <span class="stat-label">{{ translations.completed() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-in-progress-series"
+              class="card card-interactive stat-card"
+              (click)="navigateToTracking('series', { completed: false })"
+              [attr.aria-label]="translations.inProgress() + ': ' + statistics.summary.inProgress"
+            >
+              <span class="stat-value">{{ statistics.summary.inProgress }}</span>
+              <span class="stat-label">{{ translations.inProgress() }}</span>
+            </button>
+          }
+          @case ('book') {
+            <button
+              data-test-id="statistics-summary-books"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('book')"
+              [attr.aria-label]="translations.books() + ': ' + statistics.summary.total"
+            >
+              <span class="stat-value">{{ statistics.summary.total }}</span>
+              <span class="stat-label">{{ translations.books() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-favorites"
+              class="card card-interactive stat-card"
+              (click)="navigateToCollection('book', { favorite: true })"
+              [attr.aria-label]="translations.favorites() + ': ' + statistics.summary.favorites"
+            >
+              <span class="stat-value">{{ statistics.summary.favorites }}</span>
+              <span class="stat-label">{{ translations.favorites() }}</span>
+            </button>
+            <button
+              data-test-id="statistics-summary-read-books"
+              class="card card-interactive stat-card"
+              (click)="navigateToTracking('book', { completed: true })"
+              [attr.aria-label]="translations.read() + ': ' + statistics.summary.read"
+            >
+              <span class="stat-value">{{ statistics.summary.read }}</span>
+              <span class="stat-label">{{ translations.read() }}</span>
+            </button>
+            <div
+              data-test-id="statistics-summary-unread-books"
+              class="card stat-card"
+              [attr.aria-label]="translations.unread() + ': ' + statistics.summary.unread"
+            >
+              <span class="stat-value">{{ statistics.summary.unread }}</span>
+              <span class="stat-label">{{ translations.unread() }}</span>
             </div>
-          } @else if (tags().length === 0) {
-            <div data-test-id="statistics-tags-unavailable" class="tags-empty">
-              {{ translations.messageEmptyTags() }}
+            <div
+              data-test-id="statistics-summary-in-progress-books"
+              class="card stat-card"
+              [attr.aria-label]="translations.inProgress() + ': ' + statistics.summary.inProgress"
+            >
+              <span class="stat-value">{{ statistics.summary.inProgress }}</span>
+              <span class="stat-label">{{ translations.inProgress() }}</span>
             </div>
           }
+        }
+      </div>
+
+      <hr />
+      <h2>{{ translations.charts() }}</h2>
+      <libc-details
+        data-test-id="statistics-tags-details"
+        [summary]="translations.selectedTags()"
+        [open]="defaultOpenSelectedTags"
+      >
+        <div class="tag-picker">
+          <div class="tag-picker-controls">
+            <libc-input
+              data-test-id="statistics-tag-filter"
+              class="tag-filter"
+              [icon]="'search'"
+              [showReset]="true"
+              resetButtonDataTestId="statistics-tag-filter-reset"
+              [placeholder]="translations.placeholderFilterTags()"
+              type="text"
+              (valueChange)="onFilterTags($event)"
+            />
+            @if (applicableSelectedTags().length > 0) {
+              <button
+                data-test-id="statistics-tags-clear"
+                type="button"
+                class="text-button"
+                (click)="onClearSelectedTags()"
+              >
+                {{ translations.clearSelectedTags() }}
+              </button>
+            }
+          </div>
+          <div class="tag-picker-scroll">
+            @if (selectedVisibleTags().length > 0) {
+              <section
+                data-test-id="statistics-selected-tags-section"
+                class="tag-group"
+                [attr.aria-label]="translations.selectedTags()"
+              >
+                <h3>{{ translations.selectedTags() }}</h3>
+                <div data-test-id="statistics-selected-tags" class="tags">
+                  @for (tag of selectedVisibleTags(); track tag) {
+                    <button
+                      [attr.data-test-id]="'statistics-tag-' + tag"
+                      class="tag-chip tag-chip-selected"
+                      [attr.aria-pressed]="true"
+                      (click)="onToggleTag(tag)"
+                      [style.--tag-color]="textToHexColor(tag.replace('#', ''))"
+                    >
+                      {{ tag }}
+                    </button>
+                  }
+                </div>
+              </section>
+            }
+            @if (availableVisibleTags().length > 0) {
+              <section
+                data-test-id="statistics-available-tags-section"
+                class="tag-group"
+                [attr.aria-label]="translations.availableTags()"
+              >
+                <h3>{{ translations.availableTags() }}</h3>
+                <div data-test-id="statistics-tags" class="tags">
+                  @for (tag of availableVisibleTags(); track tag) {
+                    <button
+                      [attr.data-test-id]="'statistics-tag-' + tag"
+                      class="tag-chip"
+                      [attr.aria-pressed]="false"
+                      (click)="onToggleTag(tag)"
+                      [style.--tag-color]="textToHexColor(tag.replace('#', ''))"
+                    >
+                      {{ tag }}
+                    </button>
+                  }
+                </div>
+              </section>
+            } @else if (hasActiveTagFilter() && filteredTags().length === 0) {
+              <div data-test-id="statistics-tags-filter-empty" class="tags-empty">
+                {{ translations.messageEmptyTagFilter() }}
+              </div>
+            } @else if (tags().length === 0) {
+              <div data-test-id="statistics-tags-unavailable" class="tags-empty">
+                {{ translations.messageEmptyTags() }}
+              </div>
+            }
+          </div>
         </div>
-      </div>
-    </libc-details>
-    @if (selectedTags().length === 0) {
-      <div data-test-id="statistics-tags-empty" class="tags-empty">
-        {{ translations.messageEmptySelectTagsForChart() }}
-      </div>
+      </libc-details>
+      @if (applicableSelectedTags().length === 0) {
+        <div data-test-id="statistics-tags-empty" class="tags-empty">
+          {{ translations.messageEmptySelectTagsForChart() }}
+        </div>
+      }
     }
-  }
-
-  <div class="charts-grid" [class.chart-hidden]="apiLoadNetworkStatus() !== 'finished'">
-    <div
-      data-test-id="statistics-tag-chart-card"
-      class="card chart-card"
-      [class.chart-hidden]="tags().length === 0 || selectedTags().length === 0"
-    >
-      <h3>{{ translations.tags() }}</h3>
-      <div class="chart-container">
-        <canvas id="statistics-tag-chart">{{ tagChart() }}</canvas>
-      </div>
-    </div>
-
-    <div class="card chart-card">
-      <h3>{{ translations.trackerStatus() }}</h3>
-      <div class="chart-container">
-        <canvas id="statistics-watched-chart">{{ watchedChart() }}</canvas>
-      </div>
-    </div>
-
-    <div class="card chart-card">
-      <h3>{{ translations.type() }}</h3>
-      <div class="chart-container">
-        <canvas id="statistics-type-chart">{{ typeChart() }}</canvas>
-      </div>
-    </div>
-
-    <div class="card chart-card chart-card-wide" [class.chart-hidden]="(statistics()?.genreCounts ?? []).length === 0">
-      <h3>{{ translations.genre() }}</h3>
-      <div class="chart-container">
-        <canvas id="statistics-genre-chart">{{ genreChart() }}</canvas>
-      </div>
-    </div>
 
     <div
-      data-test-id="statistics-watched-year-chart-card"
-      class="card chart-card chart-card-wide"
-      [class.chart-hidden]="(statistics()?.watchedYearCounts ?? []).length === 0"
+      class="charts-grid"
+      [class.chart-hidden]="apiLoadNetworkStatus() !== 'finished' || (statistics()?.summary?.total ?? 0) === 0"
     >
-      <h3>{{ translations.watchedByYear() }}</h3>
-      <div class="chart-container">
-        <canvas id="statistics-watched-year-chart">{{ watchedYearChart() }}</canvas>
+      <div
+        data-test-id="statistics-tag-chart-card"
+        class="card chart-card"
+        [class.chart-hidden]="tags().length === 0 || applicableSelectedTags().length === 0"
+      >
+        <h3>{{ translations.tags() }}</h3>
+        <div class="chart-container">
+          <canvas id="statistics-tag-chart" role="img" [attr.aria-label]="tagChartDescription()">{{
+            tagChartDescription()
+          }}</canvas>
+        </div>
+      </div>
+      <div data-test-id="statistics-overview-chart-card" class="card chart-card">
+        <h3>{{ statistics()?.scope === 'all' ? translations.mediaTypes() : translations.status() }}</h3>
+        <div class="chart-container">
+          <canvas id="statistics-overview-chart" role="img" [attr.aria-label]="overviewChartDescription()">{{
+            overviewChartDescription()
+          }}</canvas>
+        </div>
+      </div>
+      <div
+        data-test-id="statistics-genre-chart-card"
+        class="card chart-card chart-card-wide"
+        [class.chart-hidden]="(statistics()?.charts?.genreCounts?.length ?? 0) === 0"
+      >
+        <h3>{{ translations.genre() }}</h3>
+        <div class="chart-container">
+          <canvas id="statistics-genre-chart" role="img" [attr.aria-label]="genreChartDescription()">{{
+            genreChartDescription()
+          }}</canvas>
+        </div>
+      </div>
+      <div
+        data-test-id="statistics-release-year-chart-card"
+        class="card chart-card chart-card-wide"
+        [class.chart-hidden]="(statistics()?.charts?.releaseYearCounts?.length ?? 0) === 0"
+      >
+        <h3>{{ translations.releaseYears() }}</h3>
+        <div class="chart-container">
+          <canvas id="statistics-release-year-chart" role="img" [attr.aria-label]="releaseYearChartDescription()">{{
+            releaseYearChartDescription()
+          }}</canvas>
+        </div>
+      </div>
+      <div
+        data-test-id="statistics-rating-chart-card"
+        class="card chart-card chart-card-wide"
+        [class.chart-hidden]="
+          statistics()?.scope === 'all' || (statistics()?.charts?.userRatingCounts?.length ?? 0) === 0
+        "
+      >
+        <h3>{{ translations.userRatings() }}</h3>
+        <div class="chart-container">
+          <canvas id="statistics-rating-chart" role="img" [attr.aria-label]="ratingChartDescription()">{{
+            ratingChartDescription()
+          }}</canvas>
+        </div>
       </div>
     </div>
   </div>

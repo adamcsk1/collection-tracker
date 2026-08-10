@@ -174,7 +174,7 @@ describe('Tag Management — rename', () => {
     TagManagementPage.getRenameInput(newTag).should('have.value', newTag);
     TagManagementPage.findRenameInputHost(oldTag).should('not.exist');
     cy.request('/api/v1/collection-items/statistics')
-      .its('body.data.tagCounts')
+      .its('body.data.charts.tagCounts')
       .should('deep.include', { tag: newTag, count: 1 });
   });
 
@@ -196,7 +196,7 @@ describe('Tag Management — rename', () => {
     TagManagementPage.getRenameInput(newTag).should('have.value', newTag);
     TagManagementPage.findRenameInputHost(oldTag).should('not.exist');
     cy.request('/api/v1/collection-items/statistics')
-      .its('body.data.tagCounts')
+      .its('body.data.charts.tagCounts')
       .should('deep.include', { tag: newTag, count: 2 });
   });
 
@@ -234,12 +234,12 @@ describe('Tag Management — rename', () => {
 
       TagManagementPage.getRenameInput(oldTag).should('have.value', oldTag);
       TagManagementPage.getRenameInput(newTag).should('have.value', newTag);
-      requestAs<ApiEnvelope<{ tagCounts: Array<{ tag: string; count: number }> }>>(
+      requestAs<ApiEnvelope<{ charts: { tagCounts: Array<{ tag: string; count: number }> } }>>(
         sharedUser,
         'GET',
         '/api/v1/collection-items/statistics'
       )
-        .its('body.data.tagCounts')
+        .its('body.data.charts.tagCounts')
         .should('deep.include', { tag: oldTag, count: 1 })
         .and('deep.include', { tag: newTag, count: 1 });
     });
@@ -273,12 +273,12 @@ describe('Tag Management — rename', () => {
 
       TagManagementPage.getRenameInput(oldTag).should('have.value', oldTag);
       TagManagementPage.findRenameInputHost(newTag).should('not.exist');
-      requestAs<ApiEnvelope<{ tagCounts: Array<{ tag: string; count: number }> }>>(
+      requestAs<ApiEnvelope<{ charts: { tagCounts: Array<{ tag: string; count: number }> } }>>(
         sharedUser,
         'GET',
         '/api/v1/collection-items/statistics'
       )
-        .its('body.data.tagCounts')
+        .its('body.data.charts.tagCounts')
         .should('deep.include', { tag: oldTag, count: 1 })
         .and('not.deep.include', { tag: newTag, count: 1 });
     });

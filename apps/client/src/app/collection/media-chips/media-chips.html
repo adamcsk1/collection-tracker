@@ -1,13 +1,12 @@
-<div class="media-chips" role="tablist" [attr.aria-label]="translations.all()">
+<div class="media-chips" role="group" [attr.aria-label]="translations.mediaTypes()">
   @for (chip of chips(); track chip.id) {
     <button
       type="button"
-      role="tab"
       class="button-icon button-reveal-label"
       [libcRevealLabel]="chip.label"
       [attr.data-test-id]="chip.testId"
       [attr.aria-label]="chip.label"
-      [attr.aria-selected]="active() === chip.id"
+      [attr.aria-pressed]="active() === chip.id"
       [title]="chip.label"
       (click)="onSelect(chip.id)"
     >

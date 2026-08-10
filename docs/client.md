@@ -23,7 +23,10 @@ Top navigation is **intent-first**. Media type uses always-visible chips on Coll
 - **Movies** / **Series**: `library` + content type
 - **Books**: `type=book` → books list (own only); also `/collection/books`. Favorites allowed on books ownership items.
 
-- statistics dialog: tag-driven summaries and Chart.js visualizations opened from the main menu
+- statistics page: **All | Movies | Series | Books** media chips with focused summaries and scoped tags. All shows only
+  total, media-type, and favorite cards. Type views show relevant watch, tracking, or reading status cards. Chart.js
+  visualizations adapt between media mix and mutually exclusive status distributions, plus genres, release years, user
+  rating bands, and selected tags. Scope responses are loaded lazily and cached while the page remains open.
 - `settings/features`: Wishlist, Up Next, Tracking, Books
 - `settings/*`: account, tags, display, media refresh, tracker data, shares, export/import
 - about page: build metadata

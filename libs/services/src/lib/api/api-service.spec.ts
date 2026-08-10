@@ -59,6 +59,31 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ items: [{ title: 'Item' }], page });
   });
 
+  it.each([
+    [{}, 'https://api.test/collection-items/statistics'],
+    [{ type: 'movie' as const }, 'https://api.test/collection-items/statistics?type=movie'],
+  ])('loads scoped statistics with filters %o', async (filters, expectedUrl) => {
+    const statistics = {
+      scope: 'all' as const,
+      summary: { total: 0, movies: 0, series: 0, books: 0, favorites: 0 },
+      charts: {
+        tagCounts: [],
+        genreCounts: [],
+        releaseYearCounts: [],
+        userRatingCounts: [],
+        mediaTypeCounts: [],
+        statusCounts: [],
+      },
+    };
+    const promise = lastValueFrom(service.getStatistics(filters));
+
+    const request = httpMock.expectOne(expectedUrl);
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: statistics });
+
+    await expect(promise).resolves.toEqual(statistics);
+  });
+
   it('maps paginated matched-item wire responses', async () => {
     const body = { identities: [{ source: 'imdb' as const, id: 'tt001' }], cursor: 'next', limit: 1 };
     const promise = lastValueFrom(service.getMatchedItems(body));
