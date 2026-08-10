@@ -174,6 +174,7 @@ describe('SettingsService', () => {
   it('preloads collection list display preferences from the API', () => {
     api.getUserSettings.mockReturnValue(
       of({
+        defaultLibraryOwnerShareCode: null,
         collectionListDisplayPreferences: {
           showYear: false,
           showSharedIcon: false,
@@ -191,6 +192,26 @@ describe('SettingsService', () => {
       preferredRating: 'metacritic',
       imdbRatingFallback: true,
     });
+    expect(mainState.state.defaultLibraryOwnerShareCode()).toBeNull();
+  });
+
+  it('uses collection list display defaults for invalid API preferences', () => {
+    api.getUserSettings.mockReturnValue(
+      of({
+        collectionListDisplayPreferences: {
+          showYear: 'invalid',
+          showSharedIcon: 'invalid',
+          preferredRating: 'invalid',
+          imdbRatingFallback: 'invalid',
+        },
+      })
+    );
+
+    service.preloadUserSettings().subscribe();
+
+    expect(mainState.state.collectionListDisplayPreferences()).toEqual(
+      initialMainState.collectionListDisplayPreferences
+    );
   });
 
   it('overrides cached collection feature preferences with API preferences', () => {

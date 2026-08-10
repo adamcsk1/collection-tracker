@@ -91,6 +91,22 @@ describe('Collection library component', () => {
     expect(collectionState.state.searchText()).toBe('trinity');
   });
 
+  it('derives media state from route filters', () => {
+    expect(fixture.componentInstance['activeMediaChip']()).toBe('all');
+    expect(fixture.componentInstance['emptyIcon']()).toBe('local_library');
+    expect(fixture.componentInstance['translations'].placeholderReply()).toBe('Placeholder.Reply');
+    expect(fixture.componentInstance['translations'].placeholderSearchInCollection()).toBe(
+      'Placeholder.SearchInCollection'
+    );
+
+    queryParamMap.next(convertToParamMap({ type: 'book' }));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance['activeMediaChip']()).toBe('book');
+    expect(fixture.componentInstance['emptyIcon']()).toBe('menu_book');
+    expect(fixture.componentInstance['forceStandardSearch']()).toBe(true);
+  });
+
   it('initializes search text from query params and keeps the URL filter', () => {
     const routerNavigate = vi.fn(() => Promise.resolve(true));
     TestBed.resetTestingModule();

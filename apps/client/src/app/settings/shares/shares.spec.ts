@@ -69,6 +69,14 @@ describe('SettingsShares', () => {
     expect(sharesService.loadShares).toHaveBeenCalled();
   });
 
+  it('derives translated share labels and local default library', () => {
+    expect(component['translations'].titleShareManagement()).toBe('Title.ShareManagement');
+    expect(component['translations'].messageShareSettings()).toBe('Message.ShareSettings');
+    expect(component['translations'].outgoingShares()).toBe('OutgoingShares');
+    expect(component['translations'].incomingShares()).toBe('IncomingShares');
+    expect(component['defaultLibraryOptions']()).toEqual([{ text: 'MyLibrary', value: '' }]);
+  });
+
   it('disables share mutations while saved shares reload', async () => {
     const sharesState = TestBed.inject(sharesStateToken);
     sharesState.setState('outgoing', [
@@ -196,6 +204,75 @@ describe('SettingsShares', () => {
 
   it('stores null when my library is selected as default library', () => {
     component['onDefaultLibraryChange']('');
+
+    expect(settingsService.storeDefaultLibraryOwnerShareCode).toHaveBeenCalledWith(null);
+  });
+
+  it('labels every list and content type', () => {
+    expect(component['listTypeLabel']('library')).toBe('Library');
+    expect(component['listTypeLabel']('books')).toBe('Books');
+    expect(component['listTypeLabel']('wishlist')).toBe('Wishlist');
+    expect(component['listTypeLabel']('up-next')).toBe('UpNext');
+    expect(component['listTypeLabel']('tracking')).toBe('Tracking');
+    expect(component['contentTypeLabel']('movie')).toBe('Movies');
+    expect(component['contentTypeLabel']('series')).toBe('Series');
+    expect(component['contentTypeLabel']('book')).toBe('Books');
+  });
+
+  it('lists only incoming libraries with create grants', () => {
+    TestBed.inject(sharesStateToken).setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: null,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+      {
+        ownerUserShareCode: 'readonly-code',
+        ownerUsername: 'Read Only',
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+      {
+        ownerUserShareCode: 'tracking-code',
+        ownerUsername: 'Tracking',
+        grants: [
+          {
+            listType: 'tracking',
+            contentType: 'series',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
+
+    expect(component['defaultLibraryOptions']()).toEqual([
+      { text: 'MyLibrary', value: '' },
+      { text: 'SharedLibrary (owner-code)', value: 'owner-code' },
+    ]);
+  });
+
+  it('stores null for non-string default library values', () => {
+    component['onDefaultLibraryChange'](true);
 
     expect(settingsService.storeDefaultLibraryOwnerShareCode).toHaveBeenCalledWith(null);
   });

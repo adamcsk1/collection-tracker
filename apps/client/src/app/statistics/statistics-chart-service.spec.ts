@@ -80,6 +80,16 @@ describe('StatisticsChartService', () => {
     expect(chartConstructorMock).not.toHaveBeenCalled();
   });
 
+  it('reuses overview and bar charts and returns null for missing canvases', () => {
+    const overviewChart = buildChart<'doughnut'>();
+    const barChart = buildChart<'bar'>();
+
+    expect(service.createOverviewChart(overviewChart)).toBe(overviewChart);
+    expect(service.createOverviewChart(null)).toBeNull();
+    expect(service.createGenreChart(barChart)).toBe(barChart);
+    expect(service.createGenreChart(null)).toBeNull();
+  });
+
   it('updates the selected tag chart and includes missing selections as zero', () => {
     const chart = buildChart<'pie'>();
 
@@ -158,6 +168,19 @@ describe('StatisticsChartService', () => {
     expect(releaseYearChart.data.datasets[0].data).toEqual([2, 1]);
     expect(ratingChart.data.labels).toEqual(['7', '8.5']);
     expect(ratingChart.data.datasets[0].data).toEqual([1, 2]);
+  });
+
+  it('ignores chart updates when chart or statistics are missing', () => {
+    const overviewChart = buildChart<'doughnut'>();
+
+    service.updateTagChart(null, [], []);
+    service.updateOverviewChart(null, null);
+    service.updateOverviewChart(overviewChart, null);
+    service.updateGenreChart(null, []);
+    service.updateReleaseYearChart(null, []);
+    service.updateRatingChart(null, []);
+
+    expect(overviewChart.update).not.toHaveBeenCalled();
   });
 
   const buildChart = <TType extends 'pie' | 'doughnut' | 'bar'>() =>

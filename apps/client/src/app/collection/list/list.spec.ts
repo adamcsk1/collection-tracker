@@ -144,6 +144,19 @@ describe('List', () => {
     }
   });
 
+  it('derives list labels and internal prefilter state', () => {
+    expect(component['translations'].collection()).toBe('Collection');
+    expect(component['translations'].messageEmptyCollection()).toBe('Message.EmptyCollection');
+    expect(component['translations'].messageAddFirstCollectionItem()).toBe('Message.AddFirstCollectionItem');
+    expect(component['translations'].messageEmptySearch()).toBe('Message.EmptySearch');
+    expect(component['isInternalCollectionPrefiltered']()).toBe(false);
+
+    fixture.componentRef.setInput('listType', 'tracking');
+    fixture.detectChanges();
+
+    expect(component['isInternalCollectionPrefiltered']()).toBe(true);
+  });
+
   it('loads items from the server and resets scroll position for search text', async () => {
     vi.useFakeTimers();
     try {
@@ -738,5 +751,142 @@ describe('List', () => {
     const latestStoredValue = webstorage.setItem.mock.calls.at(-1)?.[1] as string;
     expect(webstorage.setItem.mock.calls.at(-1)?.[0]).toBe(STORAGE_COLLECTION_LIST_ORDER_PREFERENCES);
     expect(JSON.parse(latestStoredValue)).toEqual({ wishlist: { orderBy: 'alphabet', orderDirection: 'asc' } });
+  });
+
+  it.each([
+    ['movie', 'movie'],
+    ['series', 'series'],
+    ['book', 'book'],
+  ] as const)('locks new item content type to active %s filter', (filter, contentType) => {
+    fixture.componentRef.setInput('routeFilterKey', JSON.stringify({ type: filter }));
+    fixture.detectChanges();
+
+    component['onAddNew']();
+
+    expect(portal.open).toHaveBeenCalledWith(
+      NewItemDialog,
+      expect.objectContaining({ books: contentType === 'book', allowedContentTypes: [contentType] })
+    );
+  });
+
+  it('does not load another page while far from the bottom', () => {
+    api.searchItems.mockClear();
+    component['hasMore'].set(true);
+    const element = { scrollHeight: 1000, scrollTop: 100, clientHeight: 100 };
+    (component as any).scrollContainer = () => ({ nativeElement: element }) as ElementRef;
+
+    component['onScroll']();
+
+    expect(api.searchItems).not.toHaveBeenCalled();
+  });
+
+  it('toggles order controls in both directions', () => {
+    component['onToggleOrderBy']();
+    component['onToggleOrderDirection']();
+    expect(component['orderBy']()).toBe('alphabet');
+    expect(component['orderDirection']()).toBe('asc');
+
+    component['onToggleOrderBy']();
+    component['onToggleOrderDirection']();
+    expect(component['orderBy']()).toBe('createdAt');
+    expect(component['orderDirection']()).toBe('desc');
+  });
+
+  it.each([
+    ['sharedMine', { shared: 'mine' }],
+    ['sharedOnly', { shared: 'shared' }],
+    ['uncompleted', { completed: 'false' }],
+  ] as const)('adds inactive %s filter', (filter, queryParams) => {
+    component['onApplyFilter'](filter);
+
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams,
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('does not emit functions action for internal collections', () => {
+    const showFunctions = vi.fn();
+    fixture.componentRef.instance.showFunctions.subscribe(showFunctions);
+    fixture.componentRef.setInput('listType', 'tracking');
+
+    component['onShowFunctions']();
+
+    expect(showFunctions).not.toHaveBeenCalled();
+  });
+
+  it('handles missing scroll container for scroll actions', () => {
+    (component as any).scrollContainer = () => undefined;
+
+    component['onScroll']();
+    component['onResetScrollPosition']();
+
+    expect(scrollSpy).not.toHaveBeenCalled();
+  });
+
+  it('marks current load errors and clears pending request', () => {
+    const response = new Subject<CollectionItemsPageModel>();
+    api.searchItems.mockReturnValue(response);
+
+    component['loadItems'](true, 'failed');
+    response.error(new Error('failed'));
+
+    expect(apiState.state.loadNetworkStatus()).toBe('error');
+    expect(component['pendingLoadRequestId']).toBeNull();
+  });
+
+  it('hides filter actions when float actions are hidden', () => {
+    fixture.componentRef.setInput('hideFloatActions', true);
+    fixture.detectChanges();
+
+    expect(actionButtons.config().filterActions).toEqual([]);
+    expect(actionButtons.config().showActions).toBe(false);
+  });
+
+  it('adds shared filters for readable incoming grants', () => {
+    TestBed.inject(sharesStateToken).setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: null,
+        grants: [
+          {
+            listType: 'books',
+            contentType: 'book',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(actionButtons.config().filterActions).toEqual(['unwatched', 'favorite', 'sharedMine', 'sharedOnly']);
+  });
+
+  it('uses reduced library filters while book scope is active', () => {
+    fixture.componentRef.setInput('routeFilterKey', JSON.stringify({ type: 'book' }));
+    fixture.detectChanges();
+
+    expect(actionButtons.config().filterActions).toEqual(['favorite']);
+  });
+
+  it.each(['invalid-json', 'null', '1'])('falls back from malformed stored order preferences %s', (storedValue) => {
+    webstorage.getItem.mockReturnValue(storedValue);
+    fixture.componentRef.setInput('orderStorageKey', `key-${storedValue}`);
+    fixture.detectChanges();
+
+    expect(component['orderBy']()).toBe('createdAt');
+    expect(component['orderDirection']()).toBe('desc');
+  });
+
+  it('uses explicit order storage key', () => {
+    webstorage.getItem.mockReturnValue(JSON.stringify({ custom: { orderBy: 'alphabet', orderDirection: 'asc' } }));
+    fixture.componentRef.setInput('orderStorageKey', 'custom');
+    fixture.detectChanges();
+
+    expect(component['orderBy']()).toBe('alphabet');
+    expect(component['orderDirection']()).toBe('asc');
   });
 });

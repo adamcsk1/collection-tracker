@@ -60,6 +60,24 @@ describe('Input component', () => {
     expect(component['value']()).toBe('');
   });
 
+  it('parses numeric input values and resets invalid or empty values to null', () => {
+    const inputFixture = TestBed.createComponent(Input<number>);
+    inputFixture.componentRef.setInput('type', 'number');
+    const component = inputFixture.componentInstance;
+
+    component['onInput']({ target: { value: '12.5' } } as unknown as Event);
+    expect(component.value()).toBe(12.5);
+
+    component['onInput']({ target: { value: 'invalid' } } as unknown as Event);
+    expect(component.value()).toBeNull();
+
+    component['onInput']({ target: { value: '' } } as unknown as Event);
+    expect(component.value()).toBeNull();
+
+    component['onReset']();
+    expect(component.value()).toBeNull();
+  });
+
   it('provides hint id in describedBy when hint is set', () => {
     const component = fixture.debugElement.children[0].children[0].componentInstance as Input<string>;
 

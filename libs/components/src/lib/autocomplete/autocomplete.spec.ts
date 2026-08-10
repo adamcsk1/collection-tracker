@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { of } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Autocomplete, AutocompleteService } from './autocomplete';
 
 @Component({
@@ -69,6 +69,10 @@ describe('Autocomplete component', () => {
     fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
     component = fixture.debugElement.children[0].children[0].componentInstance as Autocomplete<string>;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders suggestions and accepts a selection', () => {
@@ -175,15 +179,18 @@ describe('Autocomplete component', () => {
   });
 
   it('does not show suggestions when current value already matches', () => {
+    vi.useFakeTimers();
     serviceStub.getSuggestion.mockReturnValue(['alpha']);
 
     component['onKeyup']({
       code: 'KeyA',
       target: { value: 'alpha' },
     } as unknown as KeyboardEvent);
+    vi.advanceTimersByTime(300);
     fixture.detectChanges();
 
     expect(component['suggestions']()).toHaveLength(0);
+    vi.useRealTimers();
   });
 
   it('skips duplicate Tab keydown events', () => {
@@ -284,14 +291,17 @@ describe('Autocomplete component', () => {
   });
 
   it('does not set suggestions when service returns empty array', () => {
+    vi.useFakeTimers();
     serviceStub.getSuggestion.mockReturnValue([]);
     component['onKeyup']({
       code: 'KeyZ',
       target: { value: 'z' },
     } as unknown as KeyboardEvent);
+    vi.advanceTimersByTime(300);
     fixture.detectChanges();
 
     expect(component['suggestions']()).toEqual([]);
+    vi.useRealTimers();
   });
 
   it('marks component touched on blur', () => {
@@ -328,15 +338,50 @@ describe('Autocomplete component', () => {
   });
 
   it('clears suggestions without calling service when input is empty', () => {
+    vi.useFakeTimers();
     serviceStub.getSuggestion.mockClear();
 
     component['onKeyup']({
       code: 'KeyX',
       target: { value: '' },
     } as unknown as KeyboardEvent);
+    vi.advanceTimersByTime(300);
 
     expect(serviceStub.getSuggestion).not.toHaveBeenCalled();
     expect(component['suggestions']()).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it('clears suggestions for non-string values', () => {
+    const numericComponent = component as unknown as Autocomplete<number>;
+    numericComponent.value.set(42);
+
+    numericComponent['getSuggestions']();
+
+    expect(numericComponent['suggestions']()).toEqual([]);
+    expect(serviceStub.getSuggestion).not.toHaveBeenCalled();
+  });
+
+  it('uses raw suggestion value when value formatter is unavailable', () => {
+    serviceStub.formatSuggestionValue = undefined;
+    component['_suggestions'].set(['alpha']);
+
+    component['onAcceptSuggestion'](0);
+
+    expect(component.value()).toBe('alpha');
+  });
+
+  it('does not prevent non-enter keypresses', () => {
+    const keyboardEvent = {
+      code: 'KeyA',
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    } as unknown as KeyboardEvent;
+
+    component['onKeypress'](keyboardEvent);
+
+    expect(keyboardEvent.preventDefault).not.toHaveBeenCalled();
+    expect(keyboardEvent.stopPropagation).not.toHaveBeenCalled();
   });
 
   it('provides hint id in describedBy when hint is set', () => {

@@ -32,7 +32,7 @@ describe('Wishlist', () => {
     orderDirection: 'desc' as const,
   });
 
-  const createFixture = (searchText = '') => {
+  const createFixture = (searchText = '', queryParams: Record<string, string> = {}) => {
     TestBed.configureTestingModule({
       imports: [Wishlist],
       providers: [
@@ -52,7 +52,10 @@ describe('Wishlist', () => {
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParams: {} }, queryParamMap: of({ get: () => null }) },
+          useValue: {
+            snapshot: { queryParams },
+            queryParamMap: of({ get: (key: string) => queryParams[key] ?? null }),
+          },
         },
       ],
     });
@@ -95,6 +98,37 @@ describe('Wishlist', () => {
     fixture.detectChanges();
 
     expect(collectionState.state.searchText()).toBe('dune');
+  });
+
+  it('derives initial wishlist page state', () => {
+    expect(fixture.componentInstance['activeMediaChip']()).toBe('all');
+    expect(fixture.componentInstance['emptyIcon']()).toBe('local_library');
+    expect(fixture.componentInstance['mediaChips']).toEqual(['all', 'movie', 'series', 'book']);
+    expect(fixture.componentInstance['translations'].messageEmptyWishlist()).toBe('Message.EmptyWishlist');
+    expect(fixture.componentInstance['translations'].messageAddFirstWishlist()).toBe('Message.AddFirstWishlist');
+    expect(fixture.componentInstance['translations'].placeholderSearchInWishlist()).toBe(
+      'Placeholder.SearchInWishlist'
+    );
+    expect(fixture.componentInstance['translations'].placeholderReply()).toBe('Placeholder.Reply');
+  });
+
+  it.each([
+    ['movie', 'movie'],
+    ['series', 'live_tv'],
+    ['book', 'menu_book'],
+  ] as const)('derives %s media state from route filters', (contentType, expectedIcon) => {
+    TestBed.resetTestingModule();
+    createFixture('', { type: contentType });
+
+    expect(fixture.componentInstance['activeMediaChip']()).toBe(contentType);
+    expect(fixture.componentInstance['emptyIcon']()).toBe(expectedIcon);
+    expect(fixture.componentInstance['forceStandardSearch']()).toBe(true);
+  });
+
+  it('forces standard search when collection state requests it', () => {
+    collectionState.setState('forceStandardSearch', true);
+
+    expect(fixture.componentInstance['forceStandardSearch']()).toBe(true);
   });
 
   it('searches wishlist items by standard text', () => {

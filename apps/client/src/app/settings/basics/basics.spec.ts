@@ -41,6 +41,15 @@ describe('SettingsBasics component', () => {
     expect(settingsService.storeFormData).not.toHaveBeenCalled();
   });
 
+  it('exposes translated labels and configured form options', () => {
+    expect(component['translations'].language()).toBe('Language');
+    expect(component['translations'].theme()).toBe('Theme');
+    expect(component['translations'].sensitiveDataStorage()).toBe('SensitiveDataStorage');
+    expect(component['translations'].clearLocalStorageAfterLogout()).toBe('ClearLocalStorageAfterLogout');
+    expect(component['themeOptions']()).toEqual(['light', 'dark']);
+    expect(component['languageOptions']()).toEqual(['en', 'de']);
+  });
+
   it('stores form data when a setting changes', () => {
     component['onThemeChange']('dark');
 
@@ -56,6 +65,46 @@ describe('SettingsBasics component', () => {
   it('ignores invalid select values', () => {
     component['onThemeChange']('unknown');
 
+    expect(settingsService.storeFormData).not.toHaveBeenCalled();
+  });
+
+  it('stores valid language and ignores invalid language', () => {
+    component['onLanguageChange']('en');
+    expect(settingsService.storeFormData).toHaveBeenCalledWith(expect.objectContaining({ language: 'en' }));
+
+    settingsService.storeFormData.mockClear();
+    component['onLanguageChange']('unknown');
+    expect(settingsService.storeFormData).not.toHaveBeenCalled();
+  });
+
+  it('stores boolean animated background and ignores non-booleans', () => {
+    component['onAnimatedBackgroundChange'](false);
+    expect(settingsService.storeFormData).toHaveBeenCalledWith(expect.objectContaining({ animatedBackground: false }));
+
+    settingsService.storeFormData.mockClear();
+    component['onAnimatedBackgroundChange'](null);
+    expect(settingsService.storeFormData).not.toHaveBeenCalled();
+  });
+
+  it('stores valid sensitive storage and ignores invalid storage', () => {
+    component['onSensitiveDataStorageChange']('session');
+    expect(settingsService.storeFormData).toHaveBeenCalledWith(
+      expect.objectContaining({ sensitiveDataStorage: 'session' })
+    );
+
+    settingsService.storeFormData.mockClear();
+    component['onSensitiveDataStorageChange']('unknown');
+    expect(settingsService.storeFormData).not.toHaveBeenCalled();
+  });
+
+  it('stores boolean logout clearing and ignores non-booleans', () => {
+    component['onClearLocalStorageAfterLogoutChange'](true);
+    expect(settingsService.storeFormData).toHaveBeenCalledWith(
+      expect.objectContaining({ clearLocalStorageAfterLogout: true })
+    );
+
+    settingsService.storeFormData.mockClear();
+    component['onClearLocalStorageAfterLogoutChange'](null);
     expect(settingsService.storeFormData).not.toHaveBeenCalled();
   });
 

@@ -20,6 +20,7 @@ describe('SharesService', () => {
   };
   let service: SharesService;
   let sharesState: NgxSimpleSignalStoreService<SharesState>;
+  let translate: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     api = {
@@ -34,13 +35,14 @@ describe('SharesService', () => {
       deleteShare: vi.fn(() => of(undefined)),
       revokeIncomingShare: vi.fn(() => of(undefined)),
     };
+    translate = vi.fn((key: string) => key);
 
     TestBed.configureTestingModule({
       providers: [
         SharesService,
         SharesLoaderService,
         { provide: ApiService, useValue: api },
-        { provide: NgxSignalTranslateService, useValue: { translate: vi.fn((key: string) => key) } },
+        { provide: NgxSignalTranslateService, useValue: { translate } },
         provideStore(initialSharesState, sharesStateToken),
         provideStore(initialToastState, toastStateToken),
       ],
@@ -109,6 +111,11 @@ describe('SharesService', () => {
     ];
     sharesState.setState('outgoing', [
       {
+        sharedWithUserShareCode: 'other-code',
+        sharedWithUsername: 'Other',
+        grants: [],
+      },
+      {
         sharedWithUserShareCode: 'friend-code',
         sharedWithUsername: 'Friend',
         grants: [{ ...grants[0], canUpdate: false }],
@@ -119,11 +126,15 @@ describe('SharesService', () => {
 
     service.saveShare('friend-code', grants);
     expect(sharesState.state.mutating()).toBe(true);
+    expect(translate).not.toHaveBeenCalled();
 
     saveResponse.next();
     saveResponse.complete();
 
-    expect(sharesState.state.outgoing()[0].grants).toEqual(grants);
+    expect(translate).toHaveBeenCalledWith('Toast.ShareSaved');
+    expect(
+      sharesState.state.outgoing().find((share) => share.sharedWithUserShareCode === 'friend-code')?.grants
+    ).toEqual(grants);
     expect(api.getShares).toHaveBeenCalledOnce();
     expect(sharesState.state.mutating()).toBe(true);
 
@@ -134,7 +145,9 @@ describe('SharesService', () => {
     });
     reloadResponse.complete();
 
-    expect(sharesState.state.outgoing()[0].grants).toEqual(grants);
+    expect(
+      sharesState.state.outgoing().find((share) => share.sharedWithUserShareCode === 'friend-code')?.grants
+    ).toEqual(grants);
     expect(sharesState.state.mutating()).toBe(false);
   });
 
@@ -145,6 +158,7 @@ describe('SharesService', () => {
 
     expect(sharesState.state.mutating()).toBe(false);
     expect(api.getShares).not.toHaveBeenCalled();
+    expect(translate).not.toHaveBeenCalled();
   });
 
   it('clears pending share actions when reloading saved shares fails', () => {

@@ -22,6 +22,7 @@ const insertBookItem = (
     externalProvider: string;
     externalItemId: string;
     canonicalItemId: string;
+    contentType: string;
     completed: boolean;
     progressCurrent: number | null;
     progressTotal: number | null;
@@ -47,7 +48,7 @@ const insertBookItem = (
       '',
       '',
       `${usernameHash}-${listType}-${bookId}`,
-      'book'
+      overrides.contentType ?? 'book'
     );
   const itemId = Number(result.lastInsertRowid);
   if (listType === 'tracking') {
@@ -245,5 +246,81 @@ describe('tracking-book-repository', () => {
         )
         .get(trackingId)
     ).toEqual({ completed_at: null, progress_current: 40, progress_total: 200 });
+  });
+
+  it('returns null when source book does not exist', () => {
+    insertUser('user');
+
+    expect(
+      copyBookToCompletedByExternalId(getDatabase(), 'user', 'user', 'openlibrary', '9780306406157', 'books')
+    ).toBeNull();
+  });
+
+  it('returns false when completed tracker book does not exist', () => {
+    insertUser('user');
+
+    expect(deleteCompletedBookByExternalId(getDatabase(), 'user', 'openlibrary', 'missing')).toBe(false);
+  });
+
+  it('rejects non-book source and tracking rows', () => {
+    insertUser('user');
+    insertBookItem('user', '9780306406157', [], 'library', { contentType: 'movie' });
+    insertBookItem('user', '9780140328721', [], 'tracking', { contentType: 'movie' });
+    const db = getDatabase();
+
+    expect(copyBookToCompletedByExternalId(db, 'user', 'user', 'openlibrary', '9780306406157', 'library')).toBeNull();
+    expect(deleteCompletedBookByExternalId(db, 'user', 'openlibrary', '9780140328721')).toBe(false);
+  });
+
+  it('deletes source after creating completed tracker copy', () => {
+    insertUser('user');
+    insertBookItem('user', '9780132350884', ['#book'], 'books');
+    const db = getDatabase();
+
+    const result = copyBookToCompletedByExternalId(db, 'user', 'user', 'openlibrary', '9780132350884', 'books', true);
+
+    expect(result?.listType).toBe('tracking');
+    expect(
+      db
+        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
+        .get('user', '9780132350884', 'books')
+    ).toBeUndefined();
+  });
+
+  it('deletes source after completing an existing tracker copy', () => {
+    insertUser('user');
+    insertBookItem('user', '9780132350884', ['#book'], 'books');
+    insertBookItem('user', '9780132350884', ['#book'], 'tracking', { completed: false });
+    const db = getDatabase();
+
+    const result = copyBookToCompletedByExternalId(db, 'user', 'user', 'openlibrary', '9780132350884', 'books', true);
+
+    expect(result?.watchedAt).not.toBeNull();
+    expect(
+      db
+        .prepare('SELECT 1 FROM collection_items WHERE username_hash = ? AND external_item_id = ? AND list_type = ?')
+        .get('user', '9780132350884', 'books')
+    ).toBeUndefined();
+  });
+
+  it('finds source by external identity when canonical identity is absent', () => {
+    insertUser('user');
+    const sourceId = insertBookItem('user', '9780132350884', ['#book'], 'books');
+    const db = getDatabase();
+    db.prepare('UPDATE collection_items SET canonical_item_id = NULL WHERE id = ?').run(sourceId);
+
+    const result = copyBookToCompletedByExternalId(db, 'user', 'user', 'openlibrary', '9780132350884', 'books');
+
+    expect(result?.listType).toBe('tracking');
+  });
+
+  it('marks and clears books from an explicit shared source owner', () => {
+    insertUser('user');
+    insertUser('owner');
+    insertBookItem('owner', '9780132350884', ['#book'], 'books');
+    const db = getDatabase();
+
+    expect(markAllBooksAsCompleted(db, 'user', 'owner')).toBe(1);
+    expect(markAllBooksAsUncompleted(db, 'user', 'owner')).toBe(1);
   });
 });

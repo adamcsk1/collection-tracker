@@ -52,7 +52,7 @@ export class SharesService {
             : [...outgoing, savedShare]
         );
       },
-      'Toast.ShareSaved'
+      () => this.ngxSignalTranslate.translate('Toast.ShareSaved')
     );
   }
 
@@ -72,7 +72,7 @@ export class SharesService {
           this.sharesState.state.outgoing().filter((share) => share.sharedWithUserShareCode !== sharedWithUserShareCode)
         );
       },
-      'Toast.ShareRemoved'
+      () => this.ngxSignalTranslate.translate('Toast.ShareRemoved')
     );
   }
 
@@ -85,11 +85,15 @@ export class SharesService {
           this.sharesState.state.incoming().filter((share) => share.ownerUserShareCode !== ownerUserShareCode)
         );
       },
-      'Toast.ShareRemoved'
+      () => this.ngxSignalTranslate.translate('Toast.ShareRemoved')
     );
   }
 
-  private mutateShares(request: () => Observable<void>, updateLocalState: () => void, toastKey: string): void {
+  private mutateShares(
+    request: () => Observable<void>,
+    updateLocalState: () => void,
+    getToastMessage: () => string
+  ): void {
     if (this.sharesState.state.mutating()) return;
     this.sharesState.setState('mutating', true);
     this.sharesState.setState('requestId', this.sharesState.state.requestId() + 1);
@@ -98,7 +102,7 @@ export class SharesService {
         tap(() => {
           updateLocalState();
           this.sharesState.setState('loaded', false);
-          this.toastState.setState('message', this.ngxSignalTranslate.translate(toastKey));
+          this.toastState.setState('message', getToastMessage());
         }),
         switchMap(() => this.api.getShares()),
         tap((result) => this.storeShares(result)),

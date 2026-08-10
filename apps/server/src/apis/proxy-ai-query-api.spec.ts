@@ -52,6 +52,7 @@ describe('proxy-ai-query-api', () => {
       genre?: string[];
       tags?: string[];
       favorite?: boolean;
+      year?: string;
       rottenTomatoesRate?: string;
       metacriticRate?: string;
       listType?: string;
@@ -91,7 +92,7 @@ describe('proxy-ai-query-api', () => {
           file.title,
           file.title.toLowerCase(),
           file.favorite ? 1 : 0,
-          '',
+          file.year ?? '',
           file.actors ?? '',
           file.plot,
           '',
@@ -662,6 +663,28 @@ describe('proxy-ai-query-api', () => {
       expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0133093'] });
     });
 
+    it.each([
+      ['string array', '["tt0133093"]'],
+      ['lowercase decision object', '[{"imdbid":"tt0133093","match":true}]'],
+      ['legacy matches property', '{"matches":["tt0133093"]}'],
+      ['JSON code block', '```json\n{"matchedIds":["tt0133093"]}\n```'],
+      [
+        'mixed decision values',
+        '[null,42,{"IMDbId":"tt0133093","match":false},{"IMDbId":42,"match":true},{"IMDbId":"tt0133093","match":true}]',
+      ],
+    ])('parses %s AI output', async (_caseName, aiOutput) => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('matrix'), response);
+      setupCollection([{ imdbId: 'tt0133093', title: 'The Matrix', plot: 'Reality.' }]);
+      await mockGenerate(aiOutput);
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+      await handlerPromise();
+
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0133093'] });
+    });
+
     it('returns IDs from malformed repeated object output', async () => {
       const response = mockResponse();
       const { app, handlerPromise } = buildApp(request('Which are christmas movies?'), response);
@@ -737,7 +760,119 @@ describe('proxy-ai-query-api', () => {
 
       await handlerPromise();
       expect(generate.mock.calls[0][0].prompt).toContain('title:\nThe Matrix');
+      expect(generate.mock.calls[0][0].prompt).not.toContain('title:\nBatman Begins');
+      expect(generate.mock.calls[0][0].prompt).not.toContain('title:\nBack to the Future');
       expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0133093'] });
+    });
+
+    it('ranks matching genre, tag, actor, year, status, and plot tokens ahead of a competitor', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(
+        request('completed 2024 sci-fi family keanu matrix', 'tracking'),
+        response
+      );
+      setupCollection([
+        {
+          imdbId: 'tt0133093',
+          title: 'The Matrix',
+          plot: 'A family science fiction story.',
+          actors: 'Keanu Reeves',
+          genre: ['Sci-Fi'],
+          tags: ['#family'],
+          year: '2024',
+          listType: 'tracking',
+          watchedAt: '2024-01-01T00:00:00.000Z',
+        },
+        {
+          imdbId: 'tt0372784',
+          title: 'Unrelated Archive',
+          plot: 'A historical courtroom drama.',
+          actors: 'Christian Bale',
+          genre: ['Drama'],
+          tags: ['#classic'],
+          year: '2020',
+          listType: 'tracking',
+          watchedAt: '2024-01-01T00:00:00.000Z',
+        },
+      ]);
+      const { getOllamaConfig } = await import('../core/ollama/ollama');
+      vi.mocked(getOllamaConfig).mockReturnValue({
+        host: 'http://127.0.0.1:11434',
+        model: 'qwen2.5:3b',
+        options: { temperature: 0, top_k: 10, num_thread: 4 },
+        parallelRequests: 1,
+        semanticCandidateLimit: 1,
+      });
+      const generate = await mockGenerate('{"matchedIds":["tt0133093"]}');
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+      await handlerPromise();
+
+      expect(generate).toHaveBeenCalledOnce();
+      expect(generate.mock.calls[0][0].prompt).toContain('CandidateId:\ntt0133093');
+      expect(generate.mock.calls[0][0].prompt).not.toContain('CandidateId:\ntt0372784');
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0133093'] });
+    });
+
+    it('ranks punctuation-only prompts by semantic similarity when lexical scores are zero', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('!!!'), response);
+      setupCollection([
+        { imdbId: 'tt0133093', title: 'The Matrix', plot: 'Reality.' },
+        { imdbId: 'tt0372784', title: 'Batman Begins', plot: 'A masked vigilante.' },
+      ]);
+      const { createOllamaClient, getOllamaConfig } = await import('../core/ollama/ollama');
+      vi.mocked(getOllamaConfig).mockReturnValue({
+        host: 'http://127.0.0.1:11434',
+        model: 'qwen2.5:3b',
+        options: { temperature: 0, top_k: 10, num_thread: 4 },
+        parallelRequests: 1,
+        semanticCandidateLimit: 1,
+      });
+      const generate = vi.fn().mockResolvedValue({
+        response: '{"matchedIds":["tt0372784"]}',
+        done: true,
+        done_reason: 'stop',
+      });
+      const embed = vi.fn(async (payload: { input: string | string[] }) => {
+        const inputs = Array.isArray(payload.input) ? payload.input : [payload.input];
+        if (inputs.length === 1 && inputs[0] === '!!!') return { embeddings: [[1, 0]] };
+        return { embeddings: inputs.map((input) => (input.includes('Batman Begins') ? [1, 0] : [0, 1])) };
+      });
+      vi.mocked(createOllamaClient).mockReturnValue({ generate, embed });
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+      await handlerPromise();
+
+      expect(generate).toHaveBeenCalledOnce();
+      expect(generate.mock.calls[0][0].prompt).toContain('CandidateId:\ntt0372784');
+      expect(generate.mock.calls[0][0].prompt).not.toContain('CandidateId:\ntt0133093');
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0372784'] });
+    });
+
+    it('reuses cached item embeddings on a subsequent query', async () => {
+      setupCollection([{ imdbId: 'tt0133093', title: 'The Matrix', plot: 'Reality.' }]);
+      const { createOllamaClient } = await import('../core/ollama/ollama');
+      const embed = mockEmbed();
+      vi.mocked(createOllamaClient).mockReturnValue({
+        generate: vi.fn().mockResolvedValue({ response: '{"matchedIds":[]}', done: true, done_reason: 'stop' }),
+        embed,
+      });
+      const { register } = await import('./proxy-ai-query-api');
+
+      const firstResponse = mockResponse();
+      const firstApp = buildApp(request('matrix'), firstResponse);
+      register(firstApp.app);
+      await firstApp.handlerPromise();
+
+      const secondResponse = mockResponse();
+      const secondApp = buildApp(request('matrix again'), secondResponse);
+      register(secondApp.app);
+      await secondApp.handlerPromise();
+
+      expect(embed).toHaveBeenCalledTimes(3);
     });
 
     it('filters out IDs that were not present in the queried batch', async () => {
@@ -927,6 +1062,83 @@ describe('proxy-ai-query-api', () => {
       await handlerPromise();
       expect(response.code).toHaveBeenCalledWith(502);
       expect(generate).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['missing embeddings', {}],
+      ['non-array embeddings', { embeddings: 'invalid' }],
+      ['wrong embedding count', { embeddings: [] }],
+      ['non-array first embedding', { embeddings: ['invalid'] }],
+    ])('handles Ollama %s', async (_caseName, embeddingResponse) => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('matrix'), response);
+      setupCollection([{ imdbId: 'tt0133093', title: 'The Matrix', plot: 'Reality.' }]);
+      const { createOllamaClient } = await import('../core/ollama/ollama');
+      const generate = vi.fn().mockResolvedValue({
+        response: '{"matchedIds":[]}',
+        done: true,
+        done_reason: 'stop',
+      });
+      vi.mocked(createOllamaClient).mockReturnValue({
+        generate,
+        embed: vi.fn().mockResolvedValue(embeddingResponse),
+      });
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+      await handlerPromise();
+
+      expect(response.code).toHaveBeenCalledWith(502);
+      expect(generate).not.toHaveBeenCalled();
+    });
+
+    it('continues to lexical ranking when Ollama returns zero-magnitude embeddings', async () => {
+      const response = mockResponse();
+      const { app, handlerPromise } = buildApp(request('matrix'), response);
+      setupCollection([{ imdbId: 'tt0133093', title: 'The Matrix', plot: 'Reality.' }]);
+      const { createOllamaClient } = await import('../core/ollama/ollama');
+      const generate = vi.fn().mockResolvedValue({
+        response: '{"matchedIds":["tt0133093"]}',
+        done: true,
+        done_reason: 'stop',
+      });
+      vi.mocked(createOllamaClient).mockReturnValue({
+        generate,
+        embed: vi.fn().mockResolvedValue({ embeddings: [[0, 0]] }),
+      });
+
+      const { register } = await import('./proxy-ai-query-api');
+      register(app);
+      await handlerPromise();
+
+      expect(generate).toHaveBeenCalledOnce();
+      expect(generate.mock.calls[0][0].prompt).toContain('CandidateId:\ntt0133093');
+      expect(response.send).toHaveBeenCalledWith({ matchedIds: ['tt0133093'] });
+    });
+
+    it('handles missing AI response text and non-error failures', async () => {
+      const missingTextResponse = mockResponse();
+      const missingTextApp = buildApp(request('matrix'), missingTextResponse);
+      setupCollection([{ imdbId: 'tt0133093', title: 'The Matrix', plot: 'Reality.' }]);
+      const { createOllamaClient } = await import('../core/ollama/ollama');
+      vi.mocked(createOllamaClient).mockReturnValue({
+        generate: vi.fn().mockResolvedValue({ done: true, done_reason: 'stop' }),
+        embed: mockEmbed(),
+      });
+      const { register } = await import('./proxy-ai-query-api');
+      register(missingTextApp.app);
+      await missingTextApp.handlerPromise();
+      expect(missingTextResponse.code).toHaveBeenCalledWith(502);
+
+      const failureResponse = mockResponse();
+      const failureApp = buildApp(request('matrix'), failureResponse);
+      vi.mocked(createOllamaClient).mockReturnValue({
+        generate: vi.fn(),
+        embed: vi.fn().mockRejectedValue('offline'),
+      });
+      register(failureApp.app);
+      await failureApp.handlerPromise();
+      expect(failureResponse.code).toHaveBeenCalledWith(502);
     });
 
     it('returns 502 when Ollama returns item embeddings with the wrong dimension', async () => {

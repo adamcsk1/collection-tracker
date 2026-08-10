@@ -355,6 +355,27 @@ describe('import-api', () => {
     ['book in library', { contentType: 'book', listType: 'library' }],
     ['movie in books list', { contentType: 'movie', listType: 'books' }],
     ['favorite in a non-library list', { favorite: true, listType: 'up-next' }],
+    ['image', { image: null }],
+    ['title', { title: null }],
+    ['genre', { genre: ['Drama', 1] }],
+    ['IMDb id', { IMDbId: null }],
+    ['external provider', { externalProvider: null }],
+    ['external item id', { externalItemId: null }],
+    ['external identities collection', { externalIds: 'imdb' }],
+    ['external identity source', { externalIds: [{ source: 'unknown', id: 'tt1' }] }],
+    ['external identity id', { externalIds: [{ source: 'imdb', id: null }] }],
+    ['tags', { tags: [1] }],
+    ['year', { year: 2024 }],
+    ['IMDb rating', { rate: null }],
+    ['Rotten Tomatoes rating', { rottenTomatoesRate: null }],
+    ['Metacritic rating', { metacriticRate: null }],
+    ['user rating', { userRate: '8' }],
+    ['actors', { actors: null }],
+    ['plot', { plot: null }],
+    ['content type', { contentType: 'podcast' }],
+    ['favorite flag', { favorite: 'true' }],
+    ['list type', { listType: 'archive' }],
+    ['watched timestamp', { watchedAt: 1 }],
   ])('returns 400 for invalid imported %s', async (_caseName, itemChanges) => {
     const response = mockResponse();
     const request: any = {
@@ -692,6 +713,101 @@ describe('import-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
+  it.each([
+    '2026-00-01',
+    '2026-13-01',
+    '2026-01-00',
+    '2026-01-01 24:00:00',
+    '2026-01-01 00:60:00',
+    '2026-01-01 00:00:60',
+    '2026-01-01 00:00:00+24:00',
+    '2026-01-01 00:00:00+00:60',
+  ])('returns 400 for out-of-range imported watchedAt timestamp %s', async (watchedAt) => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 10,
+        userSettings: {},
+        collectionItems: [{ ...watchedItem, watchedAt }],
+        tagManagement: [],
+        trackingData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('accepts date-only, fractional, and offset watched timestamps', async () => {
+    insertUser('user');
+    const watchedTimestamps = [
+      '2026-01-01',
+      '2026-01-01T01:02:03Z',
+      '2026-01-01 01:02:03.1Z',
+      '2026-01-01 01:02:03.12+01:30',
+      '2026-01-01 01:02:03.123-01:30',
+    ];
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 10,
+        userSettings: {},
+        collectionItems: watchedTimestamps.map((watchedAt, index) => ({
+          ...watchedItem,
+          IMDbId: `tt100000${index}`,
+          externalItemId: `tt100000${index}`,
+          watchedAt,
+        })),
+        tagManagement: [],
+        trackingData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(response.send).toHaveBeenCalledWith(expect.objectContaining({ importedCollectionItems: 5 }));
+  });
+
+  it.each([
+    ['current type', { progressCurrent: '1' }],
+    ['current integer', { progressCurrent: 1.5 }],
+    ['current range', { progressCurrent: -1 }],
+    ['total type', { progressTotal: '1' }],
+    ['total integer', { progressTotal: 1.5 }],
+    ['total range', { progressTotal: 0 }],
+  ])('returns 400 for invalid imported progress %s', async (_caseName, progressChanges) => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 10,
+        userSettings: {},
+        collectionItems: [{ ...watchedItem, ...progressChanges }],
+        tagManagement: [],
+        trackingData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('clears completion state for completed series imports without tracker data', async () => {
     insertUser('user');
     const response = mockResponse();
@@ -757,6 +873,94 @@ describe('import-api', () => {
     register(app);
 
     await getPostHandler(app, IMPORT_PATH)!(request, response);
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it.each([
+    ['non-object settings', null],
+    ['unknown setting', { unknown: true }],
+    ['theme type', { theme: 1 }],
+    ['theme value', { theme: 'sepia' }],
+    ['animated background', { animatedBackground: 'false' }],
+    ['language type', { language: 1 }],
+    ['language value', { language: 'xx' }],
+    ['default owner type', { defaultLibraryOwnerShareCode: 1 }],
+    ['blank default owner', { defaultLibraryOwnerShareCode: '   ' }],
+    ['display preference object', { collectionListDisplayPreferences: null }],
+    [
+      'display year',
+      {
+        collectionListDisplayPreferences: {
+          showYear: 'true',
+          showSharedIcon: true,
+          preferredRating: 'imdb',
+          imdbRatingFallback: true,
+        },
+      },
+    ],
+    [
+      'display shared icon',
+      {
+        collectionListDisplayPreferences: {
+          showYear: true,
+          showSharedIcon: 'true',
+          preferredRating: 'imdb',
+          imdbRatingFallback: true,
+        },
+      },
+    ],
+    [
+      'display rating type',
+      {
+        collectionListDisplayPreferences: {
+          showYear: true,
+          showSharedIcon: true,
+          preferredRating: 1,
+          imdbRatingFallback: true,
+        },
+      },
+    ],
+    [
+      'display rating value',
+      {
+        collectionListDisplayPreferences: {
+          showYear: true,
+          showSharedIcon: true,
+          preferredRating: 'unknown',
+          imdbRatingFallback: true,
+        },
+      },
+    ],
+    [
+      'display IMDb fallback',
+      {
+        collectionListDisplayPreferences: {
+          showYear: true,
+          showSharedIcon: true,
+          preferredRating: 'imdb',
+          imdbRatingFallback: 'true',
+        },
+      },
+    ],
+  ])('returns 400 for invalid imported user setting %s', async (_caseName, userSettings) => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 10,
+        userSettings,
+        collectionItems: [],
+        tagManagement: [],
+        trackingData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
@@ -827,6 +1031,66 @@ describe('import-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
+  it.each([
+    ['entry object', null],
+    ['tag', { tag: 1 }],
+    ['color', { tag: '#tag', color: 1 }],
+    ['image border', { tag: '#tag', color: null, useForImageBorder: 'true' }],
+    ['text color', { tag: '#tag', color: null, useForImageBorder: true, useForTextColor: 'false' }],
+    [
+      'image badge',
+      {
+        tag: '#tag',
+        color: null,
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: 'false',
+      },
+    ],
+    [
+      'weight type',
+      {
+        tag: '#tag',
+        color: null,
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: '1',
+      },
+    ],
+    [
+      'finite weight',
+      {
+        tag: '#tag',
+        color: null,
+        useForImageBorder: true,
+        useForTextColor: false,
+        useForImageBadge: false,
+        weight: Number.NaN,
+      },
+    ],
+  ])('returns 400 for invalid imported tag management %s', async (_caseName, tagManagementEntry) => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 10,
+        userSettings: {},
+        collectionItems: [],
+        tagManagement: [tagManagementEntry],
+        trackingData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
   it('imports former system tag management entries', async () => {
     insertUser('user');
     const response = mockResponse();
@@ -893,6 +1157,121 @@ describe('import-api', () => {
     await getPostHandler(app, IMPORT_PATH)!(request, response);
     expect(response.code).toHaveBeenCalledWith(400);
   });
+
+  it.each([
+    ['entry object', null],
+    ['seasons collection', { seasons: null, completedEpisodes: [] }],
+    ['season object', { seasons: [null], completedEpisodes: [] }],
+    ['season number type', { seasons: [{ season: '1', episodes: 1 }], completedEpisodes: [] }],
+    ['episode count type', { seasons: [{ season: 1, episodes: '1' }], completedEpisodes: [] }],
+    ['season integer', { seasons: [{ season: 1.5, episodes: 1 }], completedEpisodes: [] }],
+    ['episode count integer', { seasons: [{ season: 1, episodes: 1.5 }], completedEpisodes: [] }],
+    ['positive season', { seasons: [{ season: 0, episodes: 1 }], completedEpisodes: [] }],
+    ['positive episode count', { seasons: [{ season: 1, episodes: 0 }], completedEpisodes: [] }],
+    ['season titles', { seasons: [{ season: 1, episodes: 1, titles: [1] }], completedEpisodes: [] }],
+    ['completed episodes collection', { seasons: [], completedEpisodes: null }],
+    ['completed episode object', { seasons: [], completedEpisodes: [null] }],
+    ['completed season type', { seasons: [], completedEpisodes: [{ season: '1', episode: 1 }] }],
+    ['completed episode type', { seasons: [], completedEpisodes: [{ season: 1, episode: '1' }] }],
+    ['completed season integer', { seasons: [], completedEpisodes: [{ season: 1.5, episode: 1 }] }],
+    ['completed episode integer', { seasons: [], completedEpisodes: [{ season: 1, episode: 1.5 }] }],
+    ['positive completed season', { seasons: [], completedEpisodes: [{ season: 0, episode: 1 }] }],
+    ['positive completed episode', { seasons: [], completedEpisodes: [{ season: 1, episode: 0 }] }],
+  ])('returns 400 for invalid tracking import %s', async (_caseName, trackingEntry) => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 10,
+        userSettings: {},
+        collectionItems: [watchingItem],
+        tagManagement: [],
+        trackingData: { 'omdb/tt0000002': trackingEntry },
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  const invalidNormalizedTrackingData: Array<
+    [
+      string,
+      {
+        key: string;
+        seasons?: Array<{ season: number; episodes: number }>;
+        completedEpisodes?: Array<{ season: number; episode: number }>;
+      },
+    ]
+  > = [
+    ['tracking key without separator', { key: 'omdb', completedEpisodes: [] }],
+    ['tracking key without item ID', { key: 'omdb/', completedEpisodes: [] }],
+    ['season above limit', { key: 'omdb/tt0000002', seasons: [{ season: 10001, episodes: 1 }] }],
+    ['episode above limit', { key: 'omdb/tt0000002', seasons: [{ season: 1, episodes: 10001 }] }],
+    [
+      'duplicate completed episode',
+      {
+        key: 'omdb/tt0000002',
+        seasons: [{ season: 1, episodes: 1 }],
+        completedEpisodes: [
+          { season: 1, episode: 1 },
+          { season: 1, episode: 1 },
+        ],
+      },
+    ],
+    [
+      'completed season above limit',
+      {
+        key: 'omdb/tt0000002',
+        seasons: [{ season: 1, episodes: 1 }],
+        completedEpisodes: [{ season: 10001, episode: 1 }],
+      },
+    ],
+    [
+      'completed episode above limit',
+      {
+        key: 'omdb/tt0000002',
+        seasons: [{ season: 1, episodes: 1 }],
+        completedEpisodes: [{ season: 1, episode: 10001 }],
+      },
+    ],
+  ];
+
+  it.each(invalidNormalizedTrackingData)(
+    'returns 400 for invalid normalized tracking data %s',
+    async (_caseName, trackingChanges) => {
+      const response = mockResponse();
+      const key = trackingChanges.key;
+      const request: any = {
+        usernameHash: 'user',
+        body: {
+          type: 'collection-tracker-export',
+          version: 10,
+          userSettings: {},
+          collectionItems: [watchingItem],
+          tagManagement: [],
+          trackingData: {
+            [key]: {
+              seasons: trackingChanges.seasons ?? [{ season: 1, episodes: 1 }],
+              completedEpisodes: trackingChanges.completedEpisodes ?? [],
+            },
+          },
+        },
+      };
+      const app = buildRouteApp();
+
+      const { register } = await import('./import-api');
+      register(app);
+      await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+      expect(response.code).toHaveBeenCalledWith(400);
+    }
+  );
 
   it('returns 400 for malformed encoded tracking import keys', async () => {
     const response = mockResponse();

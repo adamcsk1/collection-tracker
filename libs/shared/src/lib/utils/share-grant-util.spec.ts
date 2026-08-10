@@ -24,6 +24,14 @@ describe('share-grant-util', () => {
     expect(isValidShareScope('library', 'book')).toBe(false);
   });
 
+  it('rejects unknown scopes and non-string scope values', () => {
+    expect(contentTypeAllowedOnList('archive', 'movie')).toBe(false);
+    expect(contentTypeAllowedOnList('books', 'movie')).toBe(false);
+    expect(contentTypeAllowedOnList('up-next', 'series')).toBe(true);
+    expect(isValidShareScope(null, 'movie')).toBe(false);
+    expect(isValidShareScope('library', null)).toBe(false);
+  });
+
   it('normalizes grants and forces read when write is set', () => {
     expect(
       normalizeShareGrants([
@@ -69,5 +77,56 @@ describe('share-grant-util', () => {
     expect(hasSharePermission(grants, 'library', 'movie', 'read')).toBe(true);
     expect(hasSharePermission(grants, 'library', 'movie', 'create')).toBe(false);
     expect(hasSharePermission(grants, 'wishlist', 'movie', 'read')).toBe(false);
+  });
+
+  it('checks every write permission and rejects unsupported permissions', () => {
+    const grants = [
+      {
+        listType: 'tracking' as const,
+        contentType: 'series' as const,
+        canRead: true,
+        canCreate: true,
+        canUpdate: true,
+        canDelete: true,
+      },
+    ];
+
+    expect(hasSharePermission(grants, 'tracking', 'series', 'create')).toBe(true);
+    expect(hasSharePermission(grants, 'tracking', 'series', 'update')).toBe(true);
+    expect(hasSharePermission(grants, 'tracking', 'series', 'delete')).toBe(true);
+  });
+
+  it('drops empty grants and sorts normalized scopes', () => {
+    expect(
+      normalizeShareGrants([
+        {
+          listType: 'wishlist',
+          contentType: 'series',
+          canRead: false,
+          canCreate: false,
+          canUpdate: false,
+          canDelete: false,
+        },
+        {
+          listType: 'tracking',
+          contentType: 'series',
+          canRead: true,
+          canCreate: false,
+          canUpdate: false,
+          canDelete: false,
+        },
+        {
+          listType: 'books',
+          contentType: 'book',
+          canRead: false,
+          canCreate: false,
+          canUpdate: false,
+          canDelete: true,
+        },
+      ])
+    ).toEqual([
+      expect.objectContaining({ listType: 'books', contentType: 'book', canRead: true, canDelete: true }),
+      expect.objectContaining({ listType: 'tracking', contentType: 'series', canRead: true }),
+    ]);
   });
 });

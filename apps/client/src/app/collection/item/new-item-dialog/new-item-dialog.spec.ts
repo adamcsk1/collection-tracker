@@ -4,7 +4,7 @@ import { ApiService } from '@services/api/api-service';
 import { apiStateToken, initialApiState } from '@services/api/api-store';
 import { ExternalMetadataSelectDataModel } from '@shared/models/external-metadata-model';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialMainCollectionState, mainCollectionStateToken } from '../../../main/main-collection-store';
 import { initialMainState, MainState, mainStateToken } from '../../../main/main-store';
@@ -87,6 +87,133 @@ describe('NewItemDialog component', () => {
       expect.objectContaining({ value: 'search', dataTestId: 'new-item-search-mode' }),
       expect.objectContaining({ value: 'manual', dataTestId: 'new-item-manual-mode' }),
     ]);
+  });
+
+  it('exposes translated labels used by dialog modes and validation', () => {
+    expect(component['translations'].titleNewCollectionItem()).toBe('Title.NewCollectionItem');
+    expect(component['translations'].titleNewBooksItem()).toBe('Title.NewBooksItem');
+    expect(component['translations'].titleNewTrackingItem()).toBe('Title.NewTrackingItem');
+    expect(component['translations'].validationProgressRange()).toBe('Validation.ProgressRange');
+  });
+
+  it('reports each expected validation error for invalid form values', () => {
+    component['searchForm'].userRate().value.set(-1);
+    component['searchForm'].progressCurrent().value.set(2);
+    component['searchForm'].progressTotal().value.set(1);
+    component['manualForm'].title().value.set('');
+    component['manualForm'].IMDbId().value.set('invalid');
+    component['manualForm'].rate().value.set('invalid');
+    component['manualForm'].rottenTomatoesRate().value.set('invalid');
+    component['manualForm'].metacriticRate().value.set('invalid');
+    component['manualForm'].userRate().value.set(10.01);
+    component['manualForm'].progressCurrent().value.set(2);
+    component['manualForm'].progressTotal().value.set(1);
+
+    expect(component['searchFormErrors'].selectedExternalReference.knownIMDbId()).toBe(false);
+    expect(component['searchFormErrors'].userRate.min()).toBe(true);
+    expect(component['searchFormErrors'].userRate.max()).toBe(false);
+    expect(component['searchFormErrors'].progressCurrent.progressRange()).toBe(true);
+    expect(component['searchFormErrors'].progressTotal.progressRange()).toBe(true);
+
+    expect(component['manualFormErrors'].title.required()).toBe(true);
+    expect(component['manualFormErrors'].IMDbId.required()).toBe(false);
+    expect(component['manualFormErrors'].IMDbId.imdbId()).toBe(true);
+    expect(component['manualFormErrors'].IMDbId.isbn()).toBe(false);
+    expect(component['manualFormErrors'].IMDbId.knownIMDbId()).toBe(false);
+    expect(component['manualFormErrors'].rate.rateFormat()).toBe(true);
+    expect(component['manualFormErrors'].rottenTomatoesRate.rateFormat()).toBe(true);
+    expect(component['manualFormErrors'].metacriticRate.rateFormat()).toBe(true);
+    expect(component['manualFormErrors'].userRate.min()).toBe(false);
+    expect(component['manualFormErrors'].userRate.max()).toBe(true);
+    expect(component['manualFormErrors'].userRate.userRate()).toBe(true);
+    expect(component['manualFormErrors'].progressCurrent.progressRange()).toBe(true);
+    expect(component['manualFormErrors'].progressTotal.progressRange()).toBe(true);
+  });
+
+  it('evaluates valid, empty, and boundary form branches', () => {
+    component['searchForm'].userRate().value.set(null);
+    component['searchForm'].progressCurrent().value.set(null);
+    component['searchForm'].progressTotal().value.set(null);
+    expect(component['searchForm']().valid()).toBe(false);
+
+    component['searchForm'].searchText().value.set('Dune');
+    component['searchForm'].selectedExternalReference().value.set('plain-reference');
+    component['searchForm'].userRate().value.set(8.5);
+    component['searchForm'].progressCurrent().value.set(1);
+    component['searchForm'].progressTotal().value.set(2);
+    expect(component['searchForm']().valid()).toBe(true);
+
+    component['onModeChange']('manual');
+    component['manualForm'].title().value.set('Dune');
+    component['manualForm'].IMDbId().value.set('tt1234567');
+    component['manualForm'].userRate().value.set(8.5);
+    component['manualForm'].progressCurrent().value.set(1);
+    component['manualForm'].progressTotal().value.set(2);
+    expect(component['manualForm']().valid()).toBe(true);
+  });
+
+  it('handles empty searches and partial matched-content metadata', () => {
+    const preventDefault = vi.fn();
+    component['searchForm'].searchText().value.set('   ');
+
+    component['onSearchEnter']({ preventDefault } as unknown as Event);
+    component['onAddContentTypeChange']('series');
+
+    expect(service.search).not.toHaveBeenCalled();
+    expect(component['getMatchedContentImageUrl']({ text: 'No image', value: 'none' })).toBe('');
+    expect(component['getMatchedContentMeta']({ contentType: 'movie', text: 'Movie', value: 'movie' })).toBe('(movie)');
+    expect(component['getMatchedContentMeta']({ text: 'Year only', value: 'year', year: '2026' })).toBe('2026');
+  });
+
+  it('changes content types and refreshes non-empty searches', () => {
+    component['searchForm'].searchText().value.set('Dune');
+
+    component['onAddContentTypeChange']('book');
+
+    expect(component['selectedAddContentType']()).toBe('book');
+    expect(service.search).toHaveBeenCalledWith('Dune', 'openlibrary');
+    expect(component['contentTypeOptions']().map((option) => option.value)).toEqual(['movie', 'series', 'book']);
+
+    component['onAddContentTypeChange']('invalid');
+    component['onAddContentTypeChange']('book');
+    expect(component['selectedAddContentType']()).toBe('book');
+  });
+
+  it('derives dialog state for internal list and content modes', () => {
+    expect(component['internalListMode']()).toBe(false);
+    expect(component['dialogTitle']()).toBe('Title.NewCollectionItem');
+    expect(component['dialogIcon']()).toBe('movie');
+    expect(component['showContentTypeSelect']()).toBe(true);
+    expect(component['showManualUserRate']()).toBe(true);
+
+    component['selectedAddContentType'].set('series');
+    fixture.componentRef.setInput('upNext', true);
+    fixture.detectChanges();
+
+    expect(component['internalListMode']()).toBe(true);
+    expect(component['activeAddContentType']()).toBe('series');
+    expect(component['dialogTitle']()).toBe('Title.NewUpNextItem');
+    expect(component['dialogIcon']()).toBe('live_tv');
+    expect(component['showManualUserRate']()).toBe(false);
+
+    fixture.componentRef.setInput('upNext', false);
+    fixture.componentRef.setInput('wishlist', true);
+    component['selectedAddContentType'].set('book');
+    fixture.detectChanges();
+
+    expect(component['isBookAdd']()).toBe(true);
+    expect(component['dialogTitle']()).toBe('Title.NewWishlistItem');
+    expect(component['dialogIcon']()).toBe('menu_book');
+
+    fixture.componentRef.setInput('wishlist', false);
+    fixture.componentRef.setInput('tracking', true);
+    component['onModeChange']('manual');
+    component['manualForm'].contentType().value.set('book');
+    fixture.detectChanges();
+
+    expect(component['form']()).toBe(component['manualForm']());
+    expect(component['dialogTitle']()).toBe('Title.NewTrackingItem');
+    expect(component['showBookProgress']()).toBe(true);
   });
 
   it('switches to manual mode and back preserving drafts', () => {
@@ -207,6 +334,43 @@ describe('NewItemDialog component', () => {
     service.completedSearchText.set('The Matrix');
 
     expect(component['showExternalSearchLinks']()).toBe(false);
+  });
+
+  it('hides external search links in manual and book modes', () => {
+    component['searchForm'].searchText().value.set('Dune');
+    service.completedSearchText.set('Dune');
+    component['onModeChange']('manual');
+    expect(component['showExternalSearchLinks']()).toBe(false);
+
+    component['onModeChange']('search');
+    component['selectedAddContentType'].set('book');
+    expect(component['showExternalSearchLinks']()).toBe(false);
+  });
+
+  it('reports no selected movie or series without a matching selection', () => {
+    component['searchForm'].selectedExternalReference().value.set(null);
+    expect(component['selectedContentIsMovie']()).toBe(false);
+    expect(component['selectedContentIsSeries']()).toBe(false);
+
+    component['searchForm'].selectedExternalReference().value.set('missing');
+    expect(component['selectedContentIsMovie']()).toBe(false);
+    expect(component['selectedContentIsSeries']()).toBe(false);
+  });
+
+  it('resets selected reference when search has no matches', async () => {
+    service.matchedContent.set([]);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(component['searchForm'].selectedExternalReference().value()).toBeNull();
+  });
+
+  it('debounces book searches through Open Library', () => {
+    component['selectedAddContentType'].set('book');
+    component['searchForm'].searchText().value.set('Dune');
+
+    vi.advanceTimersByTime(500);
+
+    expect(service.search).toHaveBeenCalledWith('Dune', 'openlibrary');
   });
 
   it('invokes save and resets when mode is new', async () => {
@@ -557,10 +721,10 @@ describe('NewItemDialog component', () => {
   });
 
   it.each([
-    ['tracking', { tracking: true }],
-    ['wishlist', { wishlist: true }],
-    ['up-next', { upNext: true }],
-  ] as const)('offers and saves shared books in %s', async (listType, inputs) => {
+    ['tracking', true, false, false],
+    ['wishlist', false, true, false],
+    ['up-next', false, false, true],
+  ] as const)('offers and saves shared books in %s', async (listType, tracking, wishlist, upNext) => {
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'book-owner',
@@ -569,7 +733,9 @@ describe('NewItemDialog component', () => {
       },
     ]);
     fixture.componentRef.setInput('allowedContentTypes', ['book']);
-    for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
+    fixture.componentRef.setInput('tracking', tracking);
+    fixture.componentRef.setInput('wishlist', wishlist);
+    fixture.componentRef.setInput('upNext', upNext);
     fixture.detectChanges();
     await vi.advanceTimersByTimeAsync(0);
     component['searchForm'].selectedExternalReference().value.set('openlibrary/9780306406157');
@@ -692,6 +858,30 @@ describe('NewItemDialog component', () => {
     expect(component['showLibrarySelect']()).toBe(true);
   });
 
+  it('uses share code in shared library option when username is unavailable', () => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: null,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
+
+    expect(component['libraryOptions']()).toContainEqual({
+      text: 'SharedLibrary (owner-code)',
+      value: 'owner-code',
+    });
+  });
+
   it('checks duplicate IMDb IDs again when the target library changes', async () => {
     service.matchedContent.set([{ text: 'IMDb id: tt123', value: matrixReference }]);
     component['searchForm'].selectedExternalReference().value.set(matrixReference);
@@ -709,6 +899,18 @@ describe('NewItemDialog component', () => {
     await vi.advanceTimersByTimeAsync(150);
 
     expect(api.collectionItemExists).not.toHaveBeenCalled();
+  });
+
+  it('checks search duplicates with internal list context and tolerates lookup errors', async () => {
+    api.collectionItemExists.mockReturnValue(throwError(() => new Error('offline')));
+    fixture.componentRef.setInput('upNext', true);
+    service.matchedContent.set([{ text: 'IMDb id: tt123', value: matrixReference }]);
+    component['searchForm'].selectedExternalReference().value.set(matrixReference);
+
+    await vi.advanceTimersByTimeAsync(150);
+
+    expect(api.collectionItemExists).toHaveBeenCalledWith('omdb', 'tt123', undefined, 'up-next', undefined);
+    expect(component['searchFormErrors'].selectedExternalReference.knownIMDbId()).toBe(false);
   });
 
   it('rechecks duplicate IMDb IDs when returning to search mode', async () => {
@@ -766,6 +968,32 @@ describe('NewItemDialog component', () => {
 
       expect(component['manualForm']().valid()).toBe(false);
       expect(component['manualFormErrors'].rate.rateFormat()).toBe(true);
+    });
+
+    it('validates manual user rating precision and bounds', () => {
+      component['manualForm'].userRate().value.set(8.5);
+      expect(component['manualFormErrors'].userRate.userRate()).toBe(false);
+      expect(component['manualFormErrors'].userRate.min()).toBe(false);
+      expect(component['manualFormErrors'].userRate.max()).toBe(false);
+
+      component['manualForm'].userRate().value.set(8.55);
+      expect(component['manualFormErrors'].userRate.userRate()).toBe(true);
+      component['manualForm'].userRate().value.set(-0.1);
+      expect(component['manualFormErrors'].userRate.min()).toBe(true);
+      component['manualForm'].userRate().value.set(10.1);
+      expect(component['manualFormErrors'].userRate.max()).toBe(true);
+    });
+
+    it('skips external rating format validation for books', () => {
+      fixture.componentRef.setInput('books', true);
+      component['manualForm'].contentType().value.set('book');
+      component['manualForm'].rate().value.set('invalid');
+      component['manualForm'].rottenTomatoesRate().value.set('invalid');
+      component['manualForm'].metacriticRate().value.set('invalid');
+
+      expect(component['manualFormErrors'].rate.rateFormat()).toBe(false);
+      expect(component['manualFormErrors'].rottenTomatoesRate.rateFormat()).toBe(false);
+      expect(component['manualFormErrors'].metacriticRate.rateFormat()).toBe(false);
     });
 
     it('saves manual items through the service', async () => {
@@ -921,6 +1149,51 @@ describe('NewItemDialog component', () => {
       expect(api.collectionItemExists).toHaveBeenCalledWith('openlibrary', '9780306406157', undefined, 'books', [
         { source: 'isbn', id: '9780306406157' },
       ]);
+    });
+
+    it('does not check malformed manual book identities', async () => {
+      fixture.componentRef.setInput('books', true);
+      fixture.detectChanges();
+      component['manualForm'].IMDbId().value.set('not-an-isbn');
+
+      await vi.advanceTimersByTimeAsync(150);
+
+      expect(api.collectionItemExists).not.toHaveBeenCalled();
+      expect(component['manualFormErrors'].IMDbId.isbn()).toBe(true);
+    });
+
+    it('tolerates manual duplicate lookup errors', async () => {
+      api.collectionItemExists.mockReturnValue(throwError(() => new Error('offline')));
+      component['manualForm'].IMDbId().value.set('tt1234567');
+
+      await vi.advanceTimersByTimeAsync(150);
+
+      expect(component['manualIMDbIdLookupPending']()).toBe(false);
+      expect(component['manualFormErrors'].IMDbId.knownIMDbId()).toBe(false);
+    });
+
+    it('saves manual tracking book progress', async () => {
+      fixture.componentRef.setInput('tracking', true);
+      fixture.componentRef.setInput('allowedContentTypes', ['book']);
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(0);
+      component['manualForm'].title().value.set('Manual Book');
+      component['manualForm'].IMDbId().value.set('9780306406157');
+      component['manualForm'].progressCurrent().value.set(25);
+      component['manualForm'].progressTotal().value.set(100);
+
+      await component['onSave']('close');
+
+      expect(service.saveManual).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contentType: 'book',
+          userRate: null,
+          progressCurrent: 25,
+          progressTotal: 100,
+        }),
+        'close',
+        { listType: 'tracking', progressCurrent: null, progressTotal: null }
+      );
     });
 
     it('keeps the manual form invalid while duplicate lookup is pending', async () => {

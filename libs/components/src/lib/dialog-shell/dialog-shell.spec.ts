@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { PortalService } from '@services/portal-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -213,6 +214,43 @@ describe('DialogShell component', () => {
     expect(document.activeElement).not.toBe(otherFocusable);
   });
 
+  it('wraps shift-tab focus from first to last control', () => {
+    const dialogShell = fixture.debugElement.query(By.directive(DialogShell)).componentInstance as DialogShell;
+    const firstFocusable = document.createElement('button');
+    const lastFocusable = document.createElement('button');
+    document.body.append(firstFocusable, lastFocusable);
+    try {
+      firstFocusable.focus();
+      vi.spyOn(
+        dialogShell as unknown as { getFocusableElements: () => HTMLElement[] },
+        'getFocusableElements'
+      ).mockReturnValue([firstFocusable, lastFocusable]);
+      const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, cancelable: true });
+
+      dialogShell.onTrapFocus(event);
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(lastFocusable);
+    } finally {
+      firstFocusable.remove();
+      lastFocusable.remove();
+    }
+  });
+
+  it('focuses dialog root when no focusable controls exist', () => {
+    const dialogShell = fixture.debugElement.query(By.directive(DialogShell)).componentInstance as DialogShell;
+    vi.spyOn(
+      dialogShell as unknown as { getFocusableElements: () => HTMLElement[] },
+      'getFocusableElements'
+    ).mockReturnValue([]);
+    const event = new KeyboardEvent('keydown', { key: 'Tab', cancelable: true });
+
+    dialogShell.onTrapFocus(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('.dialog-frame'));
+  });
+
   it('restores focus to the previously focused element after close', () => {
     const trigger = document.createElement('button');
     document.body.appendChild(trigger);
@@ -301,6 +339,17 @@ describe('DialogShell component', () => {
     dispatchPointerEvent(dragHandle, 'pointerdown', 100);
     dispatchPointerEvent(dragHandle, 'pointerup', 120);
     dragHandle.click();
+    finishCloseAnimation();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it('ignores drag move and release events from another pointer', () => {
+    const dragHandle = fixture.nativeElement.querySelector('[data-test-id="dialog-drag-handle"]') as HTMLElement;
+
+    dispatchPointerEvent(dragHandle, 'pointerdown', 100, 0, 1);
+    dispatchPointerEvent(dragHandle, 'pointermove', 160, 0, 2);
+    dispatchPointerEvent(dragHandle, 'pointerup', 160, 0, 2);
     finishCloseAnimation();
 
     expect(closeSpy).not.toHaveBeenCalled();
@@ -406,6 +455,17 @@ describe('DialogShell component', () => {
     expect(closeSpy).not.toHaveBeenCalled();
   });
 
+  it('ignores edge swipe release events from another pointer', () => {
+    setViewport(390, true);
+    const dialogRoot = fixture.nativeElement.querySelector('.dialog-frame') as HTMLElement;
+
+    dispatchPointerEvent(dialogRoot, 'pointerdown', 100, 2, 1);
+    dispatchPointerEvent(dialogRoot, 'pointerup', 108, 90, 2);
+    finishCloseAnimation();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
   it('does not close from a mobile edge swipe starting on the actions area', () => {
     setViewport(390, true);
     const menuFixture = TestBed.createComponent(MenuHostComponent);
@@ -431,6 +491,16 @@ describe('DialogShell component', () => {
   it('calls portal.closeTop when backdrop is clicked', () => {
     const overlay = fixture.nativeElement.querySelector('.dialog-overlay') as HTMLButtonElement;
     overlay?.click();
+    finishCloseAnimation();
+
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores repeated close requests while close animation runs', () => {
+    const overlay = fixture.nativeElement.querySelector('.dialog-overlay') as HTMLButtonElement;
+
+    overlay.click();
+    overlay.click();
     finishCloseAnimation();
 
     expect(closeSpy).toHaveBeenCalledTimes(1);

@@ -72,6 +72,24 @@ describe('SignUp component', () => {
     expect(component['secret']()).toBe('new-token');
   });
 
+  it('keeps matching API URL without storing it again', async () => {
+    const component = fixture.componentInstance;
+    component['signUpModel'].set({ username: 'neo', apiUrl: 'https://stored-api' });
+    webStorage.setItem.mockClear();
+
+    await component['onSend']();
+
+    expect(webStorage.setItem).not.toHaveBeenCalled();
+  });
+
+  it('uses empty API URL when none is configured', () => {
+    apiState.setState('apiUrl', '');
+
+    fixture.componentInstance.ngOnInit();
+
+    expect(fixture.componentInstance['signUpModel']().apiUrl).toBe('');
+  });
+
   it('copies the generated token and surfaces a toast on desktop browsers', () => {
     const component = fixture.componentInstance;
     const copySpy = copyToClipboard as Mock;

@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { asyncScheduler, Subscription } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RevealLabel } from './reveal-label';
@@ -97,6 +98,81 @@ describe('RevealLabel directive', () => {
     vi.advanceTimersByTime(500);
 
     expect(fixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
+
+  it('keeps a hold active while touch movement stays within tolerance', () => {
+    dispatchPointerEvent('pointerdown');
+    dispatchPointerEvent('pointermove', 108, 108);
+    vi.advanceTimersByTime(500);
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).not.toBeNull();
+  });
+
+  it.each(['mouse', 'pen'])('ignores %s pointer holds', (pointerType) => {
+    dispatchPointerEvent('pointerdown', 100, 100, pointerType);
+    vi.advanceTimersByTime(500);
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
+
+  it('ignores pointer holds while disabled', () => {
+    button.disabled = true;
+    dispatchPointerEvent('pointerdown');
+    vi.advanceTimersByTime(500);
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
+
+  it('ignores non-primary pointer holds', () => {
+    const event = new Event('pointerdown', { bubbles: true }) as PointerEvent;
+    Object.defineProperties(event, {
+      clientX: { value: 100 },
+      clientY: { value: 100 },
+      pointerId: { value: 1 },
+      pointerType: { value: 'touch' },
+      isPrimary: { value: false },
+    });
+    button.dispatchEvent(event);
+    vi.advanceTimersByTime(500);
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
+
+  it('clears a shown tooltip when held touch moves beyond tolerance', () => {
+    dispatchPointerEvent('pointerdown');
+    vi.advanceTimersByTime(500);
+    expect(fixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).not.toBeNull();
+
+    dispatchPointerEvent('pointermove', 109);
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
+
+  it('resets an active hold when pointer starts outside the button', () => {
+    dispatchPointerEvent('pointerdown');
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    vi.advanceTimersByTime(500);
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
+  });
+
+  it('prevents context menu while suppressing the held touch click', () => {
+    dispatchPointerEvent('pointerdown');
+    vi.advanceTimersByTime(500);
+    const contextMenuEvent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+
+    button.dispatchEvent(contextMenuEvent);
+
+    expect(contextMenuEvent.defaultPrevented).toBe(true);
+  });
+
+  it('does not show a tooltip without a container', () => {
+    const directive = fixture.debugElement.query(By.directive(RevealLabel)).injector.get(RevealLabel);
+    button.remove();
+
+    directive['showTooltip']();
+
+    expect(document.querySelector('[data-test-id="reveal-label-tooltip"]')).toBeNull();
   });
 
   it('cancels the previous dismissal schedule when another hold starts', () => {

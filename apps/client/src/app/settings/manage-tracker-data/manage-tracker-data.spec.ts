@@ -79,6 +79,16 @@ describe('SettingsManageTrackerData component', () => {
     expect(manageTrackerData.markAllMoviesAsUncompleted).not.toHaveBeenCalled();
   });
 
+  it('derives tracker actions for the local library', () => {
+    expect(component['translations'].messageManageTrackerData()).toBe('Message.ManageTrackerData');
+    expect(component['translations'].messageTrackerCleanup()).toBe('Message.TrackerCleanup');
+    expect(component['libraryOptions']()).toEqual([{ text: 'MyLibrary', value: '' }]);
+    expect(component['showLibrarySelect']()).toBe(false);
+    expect(component['canMarkMovies']()).toBe(true);
+    expect(component['canMarkSeries']()).toBe(true);
+    expect(component['canMarkBooks']()).toBe(true);
+  });
+
   it('calls service to mark all movies as uncompleted', () => {
     component['onMarkAllMoviesAsUncompleted']();
 

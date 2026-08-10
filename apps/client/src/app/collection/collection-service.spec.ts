@@ -78,13 +78,22 @@ describe('CollectionService', () => {
   });
 
   it('replaces an existing item with the same owner, list type, and provider identity', () => {
-    mainCollectionState.setState('collection', [buildCollectionItem('target')]);
+    mainCollectionState.setState('collection', [buildCollectionItem('keep'), buildCollectionItem('target')]);
 
     service.addCollectionItem({ ...buildCollectionItem('updated'), externalItemId: 'tt-target' }, true);
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([
+      buildCollectionItem('keep'),
       { ...buildCollectionItem('updated'), externalItemId: 'tt-target' },
     ]);
+  });
+
+  it('adds an item without an owner share code', () => {
+    const item = { ...buildCollectionItem('ownerless'), ownerShareCode: undefined };
+
+    service.addCollectionItem(item);
+
+    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([item]);
   });
 
   it('adds an item with the same provider identity but a different list type', () => {
@@ -145,6 +154,15 @@ describe('CollectionService', () => {
     service.updateCollectionItem(buildCollectionItem('target'), buildCollectionItem('updated'));
 
     expect(mainCollectionState.state.collection()).toEqual<CollectionModel>([buildCollectionItem('updated')]);
+  });
+
+  it('leaves the collection unchanged when the item to update does not exist', () => {
+    const collection = [buildCollectionItem('existing')];
+    mainCollectionState.setState('collection', collection);
+
+    service.updateCollectionItem(buildCollectionItem('missing'), buildCollectionItem('updated'));
+
+    expect(mainCollectionState.state.collection()).toEqual<CollectionModel>(collection);
   });
 
   it('updates only the matching shared-library item when provider identities overlap', () => {

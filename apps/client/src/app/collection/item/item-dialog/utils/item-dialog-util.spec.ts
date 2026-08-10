@@ -16,6 +16,9 @@ describe('item dialog util', () => {
     expect(buildTrailerUrl('The Matrix', 1999)).toBe(
       'https://www.youtube.com/results?search_query=The%20Matrix%201999%20trailer'
     );
+    expect(buildTrailerUrl('The Matrix', null)).toBe(
+      'https://www.youtube.com/results?search_query=The%20Matrix%20%20trailer'
+    );
   });
 
   it('builds a web search URL', () => {

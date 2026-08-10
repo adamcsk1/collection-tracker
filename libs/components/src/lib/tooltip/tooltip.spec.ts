@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Tooltip } from './tooltip';
 
 describe('Tooltip', () => {
   let fixture: ComponentFixture<Tooltip>;
+  const originalResizeObserver = window.ResizeObserver;
 
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [Tooltip] });
@@ -11,6 +12,10 @@ describe('Tooltip', () => {
     fixture.componentRef.setInput('text', 'Tooltip text');
     fixture.componentRef.setInput('tooltipId', 'test-tooltip');
     fixture.componentRef.setInput('left', 100);
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: originalResizeObserver });
   });
 
   it('does not render when hidden', () => {
@@ -67,5 +72,28 @@ describe('Tooltip', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[role="tooltip"]')).toBeNull();
+  });
+
+  it('observes tooltip size and disconnects observer on destroy', () => {
+    const disconnect = vi.fn();
+    const observe = vi.fn();
+    const ResizeObserverMock = vi.fn(function (this: ResizeObserver) {
+      Object.assign(this, { disconnect, observe, unobserve: vi.fn() });
+    });
+    Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: ResizeObserverMock });
+    const observedFixture = TestBed.createComponent(Tooltip);
+    observedFixture.componentRef.setInput('text', 'Observed tooltip');
+    observedFixture.componentRef.setInput('tooltipId', 'observed-tooltip');
+    observedFixture.componentRef.setInput('left', 20);
+    observedFixture.componentRef.setInput('visible', true);
+
+    try {
+      observedFixture.detectChanges();
+    } finally {
+      observedFixture.destroy();
+    }
+
+    expect(observe).toHaveBeenCalled();
+    expect(disconnect).toHaveBeenCalled();
   });
 });

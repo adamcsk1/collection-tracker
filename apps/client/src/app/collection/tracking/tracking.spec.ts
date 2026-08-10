@@ -109,6 +109,37 @@ describe('Tracking', () => {
     expect(collectionState.state.searchText()).toBe('lost');
   });
 
+  it('derives initial tracking page state', () => {
+    expect(fixture.componentInstance['activeMediaChip']()).toBe('all');
+    expect(fixture.componentInstance['emptyIcon']()).toBe('local_library');
+    expect(fixture.componentInstance['mediaChips']).toEqual(['all', 'movie', 'series', 'book']);
+    expect(fixture.componentInstance['translations'].messageEmptyTracking()).toBe('Message.EmptyTracking');
+    expect(fixture.componentInstance['translations'].messageAddFirstTracking()).toBe('Message.AddFirstTracking');
+    expect(fixture.componentInstance['translations'].placeholderSearchInTracking()).toBe(
+      'Placeholder.SearchInTracking'
+    );
+    expect(fixture.componentInstance['translations'].placeholderReply()).toBe('Placeholder.Reply');
+  });
+
+  it.each([
+    ['movie', 'movie'],
+    ['series', 'live_tv'],
+    ['book', 'menu_book'],
+  ] as const)('derives %s media state from route filters', (contentType, expectedIcon) => {
+    TestBed.resetTestingModule();
+    createFixture('', { type: contentType });
+
+    expect(fixture.componentInstance['activeMediaChip']()).toBe(contentType);
+    expect(fixture.componentInstance['emptyIcon']()).toBe(expectedIcon);
+    expect(fixture.componentInstance['forceStandardSearch']()).toBe(true);
+  });
+
+  it('forces standard search when collection state requests it', () => {
+    collectionState.setState('forceStandardSearch', true);
+
+    expect(fixture.componentInstance['forceStandardSearch']()).toBe(true);
+  });
+
   it('searches tracking items by standard text', () => {
     fixture.componentInstance['trackingDataSource'](dataSourceRequest(' dark ', 'next-page', 25));
 

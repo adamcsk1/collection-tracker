@@ -141,6 +141,30 @@ describe('SignIn component', () => {
     });
   });
 
+  it('keeps matching API URL without storing it again', async () => {
+    const component = fixture.componentInstance;
+    component['signInModel'].set({
+      username: 'neo',
+      token: 'matrix',
+      apiUrl: 'https://stored-api',
+      language: 'en',
+      theme: 'light',
+    });
+    webStorage.setItem.mockClear();
+
+    await component['onSend']();
+
+    expect(webStorage.setItem).not.toHaveBeenCalledWith(STORAGE_API_URL, expect.any(String));
+  });
+
+  it('uses empty API URL when none is configured', () => {
+    apiState.setState('apiUrl', '');
+
+    fixture.componentInstance.ngOnInit();
+
+    expect(fixture.componentInstance['signInModel']().apiUrl).toBe('');
+  });
+
   it('detects whether companion app is available', () => {
     delete (window as { CollectionTrackerInterface?: unknown }).CollectionTrackerInterface;
     expect(fixture.componentInstance['companionAppDetected']).toBe(false);

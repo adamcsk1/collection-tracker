@@ -62,6 +62,7 @@ describe('ai-search-intent-util', () => {
   });
 
   it('detects pure status intents without extra filters', () => {
+    expect(isPureStatusIntent('unfinished series', null)).toBe(false);
     expect(isPureStatusIntent('unfinished series', 'unfinished')).toBe(true);
     expect(isPureStatusIntent('completed', 'completed')).toBe(true);
     expect(isPureStatusIntent('unfinished sci-fi series', 'unfinished')).toBe(false);
@@ -82,6 +83,7 @@ describe('ai-search-intent-util', () => {
 
     expect(applyStatusIntentFilter(items, 'unfinished').map((item) => item.IMDbId)).toEqual(['tt1']);
     expect(applyStatusIntentFilter(items, 'completed').map((item) => item.IMDbId)).toEqual(['tt2', 'tt3']);
+    expect(applyStatusIntentFilter(items, null)).toBe(items);
   });
 
   it('filters favorite items', () => {
@@ -100,6 +102,15 @@ describe('ai-search-intent-util', () => {
         IMDbId: undefined,
         externalProvider: 'openlibrary',
         externalItemId: '9780140328721',
+        watchStatus: 'not-applicable',
+        completed: null,
+        listType: 'books',
+        contentType: 'book',
+      }),
+      buildItem({
+        IMDbId: undefined,
+        externalProvider: 'openlibrary',
+        externalItemId: '',
         watchStatus: 'not-applicable',
         completed: null,
         listType: 'books',

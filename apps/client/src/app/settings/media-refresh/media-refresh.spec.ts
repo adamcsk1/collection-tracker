@@ -65,6 +65,14 @@ describe('SettingsMediaRefresh component', () => {
     expect(imageRefresh.refreshImages).toHaveBeenCalled();
   });
 
+  it('derives refresh labels and local library option', () => {
+    expect(component['translations'].externalRatingsRefresh()).toBe('ExternalRatingsRefresh');
+    expect(component['translations'].imageRefresh()).toBe('ImageRefresh');
+    expect(component['translations'].messageMissingImages()).toBe('Message.MissingImages');
+    expect(component['libraryOptions']()).toEqual([{ text: 'MyLibrary', value: '' }]);
+    expect(component['showLibrarySelect']()).toBe(false);
+  });
+
   it('calls service to refresh external ratings', () => {
     component['onStartExternalRatingsRefresh']();
 
@@ -89,6 +97,65 @@ describe('SettingsMediaRefresh component', () => {
     component['onStartExternalRatingsRefresh']();
 
     expect(externalRatingsRefresh.refreshExternalRatings).toHaveBeenCalledWith('owner-code');
+  });
+
+  it('lists only shared libraries with media update permission', () => {
+    TestBed.inject(sharesStateToken).setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: null,
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: false,
+            canUpdate: true,
+            canDelete: false,
+          },
+        ],
+      },
+      {
+        ownerUserShareCode: 'readonly-code',
+        ownerUsername: 'Read Only',
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: false,
+            canUpdate: false,
+            canDelete: false,
+          },
+        ],
+      },
+      {
+        ownerUserShareCode: 'books-code',
+        ownerUsername: 'Books',
+        grants: [
+          {
+            listType: 'books',
+            contentType: 'book',
+            canRead: true,
+            canCreate: false,
+            canUpdate: true,
+            canDelete: false,
+          },
+        ],
+      },
+    ]);
+
+    expect(component['libraryOptions']()).toEqual([
+      { text: 'MyLibrary', value: '' },
+      { text: 'SharedLibrary (owner-code)', value: 'owner-code' },
+    ]);
+    expect(component['showLibrarySelect']()).toBe(true);
+  });
+
+  it('resets library selection for non-string values', () => {
+    component['onLibraryChange'](true);
+
+    expect(component['selectedOwnerShareCode']()).toBe('');
   });
 
   it('hides refresh statuses before a refresh completes', () => {

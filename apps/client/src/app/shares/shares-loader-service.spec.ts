@@ -98,6 +98,25 @@ describe('SharesLoaderService', () => {
     expect(sharesState.state.incoming()).toEqual([]);
   });
 
+  it('supports an empty shares fallback when loading fails', () => {
+    api.getShares.mockReturnValueOnce(throwError(() => new Error('fail')));
+
+    service.load(destroyRef, true);
+
+    expect(sharesState.state.loaded()).toBe(true);
+  });
+
+  it('ignores a stale load failure', () => {
+    const staleLoad = new Subject<{ userShareCode: string; outgoing: []; incoming: [] }>();
+    api.getShares.mockReturnValueOnce(staleLoad);
+
+    service.load(destroyRef);
+    sharesState.setState('requestId', sharesState.state.requestId() + 1);
+    staleLoad.error(new Error('fail'));
+
+    expect(sharesState.state.loaded()).toBe(false);
+  });
+
   it('ignores a response superseded by another share request', () => {
     const staleLoad = new Subject<{
       userShareCode: string;

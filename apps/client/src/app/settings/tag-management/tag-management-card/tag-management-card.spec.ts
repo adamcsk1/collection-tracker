@@ -41,6 +41,14 @@ describe('TagManagementCard', () => {
     expect(renameButton.disabled).toBe(true);
   });
 
+  it('derives translated labels and unchanged rename state', () => {
+    expect(component['translations'].selectColor()).toBe('SelectColor');
+    expect(component['translations'].rename()).toBe('Rename');
+    expect(component['translations'].newTagName()).toBe('Placeholder.NewTagName');
+    expect(component['translations'].weight()).toBe('Weight');
+    expect(component['canRename']()).toBe(false);
+  });
+
   it('emits the trimmed new tag when rename is clicked', () => {
     const emitted = vi.fn();
     component.rename.subscribe(emitted);
@@ -87,5 +95,55 @@ describe('TagManagementCard', () => {
     fixture.detectChanges();
 
     expect(renameButton.disabled).toBe(true);
+  });
+
+  it('handles color selection and input changes', () => {
+    const emittedColors: string[] = [];
+    component.colorChange.subscribe((color) => emittedColors.push(color));
+    const colorInput = document.createElement('input');
+    const clickSpy = vi.spyOn(colorInput, 'click');
+
+    component['onColorButtonClick'](colorInput, null);
+    component['onColorButtonClick'](colorInput, '#123456');
+    component['onColorInputChange']({ target: { value: '#abcdef' } } as unknown as Event);
+
+    expect(emittedColors).toEqual(['#000000', '#abcdef']);
+    expect(clickSpy).toHaveBeenCalledTimes(2);
+    expect(component['contrastColor'](null)).toBeNull();
+    expect(component['contrastColor']('#ffffff')).toBe('#000000');
+  });
+
+  it.each([
+    [null, 0],
+    ['', 0],
+    ['2.5', 2.5],
+    ['invalid', 0],
+  ] as const)('normalizes weight %s to %s', (weight, expected) => {
+    const emitted = vi.fn();
+    component.weightChange.subscribe(emitted);
+
+    component['onWeightChange'](weight);
+
+    expect(emitted).toHaveBeenCalledWith(expected);
+  });
+
+  it('normalizes nullable checkbox values and rename input', () => {
+    const imageBorder = vi.fn();
+    const textColor = vi.fn();
+    const imageBadge = vi.fn();
+    component.imageBorderChange.subscribe(imageBorder);
+    component.textColorChange.subscribe(textColor);
+    component.imageBadgeChange.subscribe(imageBadge);
+
+    component['onImageBorderChange'](true);
+    component['onTextColorChange'](false);
+    component['onImageBadgeChange'](null);
+    component['onRenameInputChange'](null);
+
+    expect(imageBorder).toHaveBeenCalledWith(true);
+    expect(textColor).toHaveBeenCalledWith(false);
+    expect(imageBadge).toHaveBeenCalledWith(false);
+    expect(component['renameValue']()).toBe('');
+    expect(component['canRename']()).toBe(false);
   });
 });

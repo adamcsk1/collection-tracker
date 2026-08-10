@@ -59,6 +59,36 @@ describe('ApiService', () => {
     await expect(promise).resolves.toEqual({ items: [{ title: 'Item' }], page });
   });
 
+  it('uses collection search defaults and omits absent filters', async () => {
+    const promise = lastValueFrom(service.searchItems());
+
+    const request = httpMock.expectOne('https://api.test/collection-items?limit=50');
+    request.flush({ data: [], page: { limit: 50, hasMore: false, nextCursor: null } });
+
+    await expect(promise).resolves.toEqual({
+      items: [],
+      page: { limit: 50, hasMore: false, nextCursor: null },
+    });
+  });
+
+  it.each([
+    [null, 'Http failure response for https://api.test/collection-items?limit=50: 500 Server Error'],
+    ['bad', 'Http failure response for https://api.test/collection-items?limit=50: 500 Server Error'],
+    [
+      { title: 'Server Error' },
+      'Http failure response for https://api.test/collection-items?limit=50: 500 Server Error',
+    ],
+    [{ detail: 'Collection unavailable' }, 'Collection unavailable'],
+  ])('alerts and rethrows paginated request errors for payload %j', async (errorPayload, expectedAlert) => {
+    const promise = lastValueFrom(service.searchItems());
+
+    const request = httpMock.expectOne('https://api.test/collection-items?limit=50');
+    request.flush(errorPayload, { status: 500, statusText: 'Server Error' });
+
+    await expect(promise).rejects.toMatchObject({ status: 500 });
+    expect(alertSpy).toHaveBeenCalledWith(expectedAlert);
+  });
+
   it.each([
     [{}, 'https://api.test/collection-items/statistics'],
     [{ type: 'movie' as const }, 'https://api.test/collection-items/statistics?type=movie'],
@@ -139,6 +169,17 @@ describe('ApiService', () => {
     existsRequest.flush({ data: { exists: true } });
 
     await expect(promise).resolves.toEqual({ exists: true });
+  });
+
+  it('omits empty optional item existence parameters', async () => {
+    const promise = lastValueFrom(service.collectionItemExists('omdb', 'tt1', undefined, undefined, []));
+
+    const existsRequest = httpMock.expectOne(
+      'https://api.test/collection-items/exists?externalIdentitySource=omdb&externalIdentityId=tt1'
+    );
+    existsRequest.flush({ data: { exists: false } });
+
+    await expect(promise).resolves.toEqual({ exists: false });
   });
 
   it('updates an item by external identity', async () => {
@@ -411,6 +452,52 @@ describe('ApiService', () => {
     searchRequest.flush({ data: { results: [] } });
 
     await expect(promise).resolves.toEqual({ results: [] });
+  });
+
+  it('handles absent external metadata query values and includes provider', async () => {
+    const itemPromise = lastValueFrom(
+      service.getExternalMetadataItem({ externalIdentitySource: null, externalIdentityId: null })
+    );
+    const itemRequest = httpMock.expectOne(
+      'https://api.test/external-metadata/items?externalIdentitySource=&externalIdentityId='
+    );
+    itemRequest.flush({ data: { provider: 'omdb', providerItemId: 'tt1', title: 'Item' } });
+    await itemPromise;
+
+    const searchPromise = lastValueFrom(service.searchExternalMetadata({ s: null, provider: 'openlibrary' }));
+    const searchRequest = httpMock.expectOne('https://api.test/external-metadata/search?s=&provider=openlibrary');
+    searchRequest.flush({ data: { results: [] } });
+
+    await expect(searchPromise).resolves.toEqual({ results: [] });
+  });
+
+  it('uses default limits for random images and suggestions', async () => {
+    const randomImagesPromise = lastValueFrom(service.getRandomImages());
+    const randomImagesRequest = httpMock.expectOne('https://api.test/collection-items/random-images?count=10');
+    randomImagesRequest.flush({ data: { images: [] } });
+    await randomImagesPromise;
+
+    const itemSuggestionsPromise = lastValueFrom(service.getItemSearchSuggestions('matrix'));
+    const itemSuggestionsRequest = httpMock.expectOne(
+      'https://api.test/collection-items/suggestions?query=matrix&limit=10'
+    );
+    itemSuggestionsRequest.flush({ data: { suggestions: [] } });
+    await itemSuggestionsPromise;
+
+    const tagSuggestionsPromise = lastValueFrom(service.getTagSuggestions('tag'));
+    const tagSuggestionsRequest = httpMock.expectOne(
+      'https://api.test/collection-items/tag-suggestions?query=tag&limit=10'
+    );
+    tagSuggestionsRequest.flush({ data: { suggestions: [] } });
+    await tagSuggestionsPromise;
+
+    const genreSuggestionsPromise = lastValueFrom(service.getGenreSuggestions('genre'));
+    const genreSuggestionsRequest = httpMock.expectOne(
+      'https://api.test/collection-items/genre-suggestions?query=genre&limit=10'
+    );
+    genreSuggestionsRequest.flush({ data: { suggestions: [] } });
+
+    await expect(genreSuggestionsPromise).resolves.toEqual({ suggestions: [] });
   });
 
   it('retrieves configured external metadata providers', async () => {

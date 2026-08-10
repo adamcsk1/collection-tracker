@@ -72,6 +72,15 @@ describe('Books', () => {
     );
   });
 
+  it('exposes translated books labels and standard-search state', () => {
+    expect(fixture.componentInstance['translations'].messageEmptyBooks()).toBe('Message.EmptyBooks');
+    expect(fixture.componentInstance['translations'].messageAddFirstBooks()).toBe('Message.AddFirstBooks');
+    expect(fixture.componentInstance['translations'].placeholderSearchInBooks()).toBe('Placeholder.SearchInBooks');
+    expect(fixture.componentInstance['translations'].placeholderReply()).toBe('Placeholder.Reply');
+    expect(fixture.componentInstance['queryFilterKey']()).toBe('');
+    expect(fixture.componentInstance['forceStandardSearch']()).toBe(false);
+  });
+
   it('opens books list item creation', () => {
     const event = new Event('click');
     const preventDefault = vi.spyOn(event, 'preventDefault');

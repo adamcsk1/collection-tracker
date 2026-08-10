@@ -32,7 +32,7 @@ describe('UpNext', () => {
     orderDirection: 'desc' as const,
   });
 
-  const createFixture = (searchText = '') => {
+  const createFixture = (searchText = '', queryParams: Record<string, string> = {}) => {
     TestBed.configureTestingModule({
       imports: [UpNext],
       providers: [
@@ -52,7 +52,10 @@ describe('UpNext', () => {
         { provide: NgxSignalTranslateService, useValue: { translate: (value: string) => value } },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParams: {} }, queryParamMap: of({ get: () => null }) },
+          useValue: {
+            snapshot: { queryParams },
+            queryParamMap: of({ get: (key: string) => queryParams[key] ?? null }),
+          },
         },
       ],
     });
@@ -95,6 +98,35 @@ describe('UpNext', () => {
     fixture.detectChanges();
 
     expect(collectionState.state.searchText()).toBe('alien');
+  });
+
+  it('derives initial up-next page state', () => {
+    expect(fixture.componentInstance['activeMediaChip']()).toBe('all');
+    expect(fixture.componentInstance['emptyIcon']()).toBe('local_library');
+    expect(fixture.componentInstance['mediaChips']).toEqual(['all', 'movie', 'series', 'book']);
+    expect(fixture.componentInstance['translations'].messageEmptyUpNext()).toBe('Message.EmptyUpNext');
+    expect(fixture.componentInstance['translations'].messageAddFirstUpNext()).toBe('Message.AddFirstUpNext');
+    expect(fixture.componentInstance['translations'].placeholderSearchInUpNext()).toBe('Placeholder.SearchInUpNext');
+    expect(fixture.componentInstance['translations'].placeholderReply()).toBe('Placeholder.Reply');
+  });
+
+  it.each([
+    ['movie', 'movie'],
+    ['series', 'live_tv'],
+    ['book', 'menu_book'],
+  ] as const)('derives %s media state from route filters', (contentType, expectedIcon) => {
+    TestBed.resetTestingModule();
+    createFixture('', { type: contentType });
+
+    expect(fixture.componentInstance['activeMediaChip']()).toBe(contentType);
+    expect(fixture.componentInstance['emptyIcon']()).toBe(expectedIcon);
+    expect(fixture.componentInstance['forceStandardSearch']()).toBe(true);
+  });
+
+  it('forces standard search when collection state requests it', () => {
+    collectionState.setState('forceStandardSearch', true);
+
+    expect(fixture.componentInstance['forceStandardSearch']()).toBe(true);
   });
 
   it('searches watch later items by standard text', () => {

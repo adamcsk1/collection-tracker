@@ -312,6 +312,51 @@ describe('ListItem', () => {
     expect(progress?.textContent?.trim()).toBe('12 / 100');
   });
 
+  it.each([
+    [25, null, '25'],
+    [null, 100, '100'],
+  ] as const)('shows partial book progress %s of %s', (progressCurrent, progressTotal, expected) => {
+    fixture.componentRef.setInput('collectionItem', {
+      ...buildItem('Tracking Book'),
+      listType: 'tracking',
+      contentType: 'book',
+      progressCurrent,
+      progressTotal,
+      watchedAt: null,
+    });
+    fixture.detectChanges();
+
+    expect(component['bookProgressText']()).toBe(expected);
+  });
+
+  it('renders user rating and handles missing user rating', () => {
+    mainState.setState('collectionListDisplayPreferences', {
+      ...mainState.state.collectionListDisplayPreferences(),
+      preferredRating: 'user',
+    });
+    fixture.componentRef.setInput('collectionItem', { ...buildItem('Rated'), userRate: 8.5 });
+    fixture.detectChanges();
+
+    expect(component['selectedRating']()).toEqual({
+      label: '',
+      value: 8.5,
+      testId: 'list-item-user-rate',
+      icon: 'person',
+    });
+
+    fixture.componentRef.setInput('collectionItem', { ...buildItem('Unrated'), userRate: null });
+    fixture.detectChanges();
+    expect(component['selectedRating']()).toBeNull();
+  });
+
+  it('exposes every translated list item label', () => {
+    expect(component['translations'].completed()).toBe('Completed');
+    expect(component['translations'].favorite()).toBe('Favorite');
+    expect(component['translations'].metacriticShort()).toBe('MC');
+    expect(component['translations'].rottenTomatoesShort()).toBe('RT');
+    expect(component['translations'].shared()).toBe('Shared');
+  });
+
   it('hides the shared icon when collection list display settings disable it', () => {
     mainState.setState('collectionListDisplayPreferences', {
       ...mainState.state.collectionListDisplayPreferences(),

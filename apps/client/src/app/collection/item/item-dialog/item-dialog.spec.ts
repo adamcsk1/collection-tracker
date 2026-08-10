@@ -189,6 +189,41 @@ describe('ItemDialog', () => {
     expect(component['form'].contentType().value()).toBe('movie');
   });
 
+  it('derives behavioral state across movie, series, and book list modes', () => {
+    expect(component['genreText']()).toBe('Drama, Thriller');
+    expect(component['tagsText']()).toBe('#action');
+    expect(component['libraryItem']()).toBe(true);
+    expect(component['movie']()).toBe(true);
+    expect(component['permissionWatch']()).toBe(true);
+    expect(component['dialogTitle']()).toBe('Title.CollectionItem');
+    expect(component['dialogIcon']()).toBe('movie');
+    expect(component['imdbUrl']()).toBe('https://www.imdb.com/title/tt1234567/');
+
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ contentType: 'series', listType: 'tracking', watchedAt: '2026-01-01T00:00:00.000Z' })
+    );
+    fixture.detectChanges();
+
+    expect(component['tracking']()).toBe(true);
+    expect(component['series']()).toBe(true);
+    expect(component['finished']()).toBe(false);
+    expect(component['dialogTitle']()).toBe('Title.TrackingItem');
+    expect(component['dialogIcon']()).toBe('live_tv');
+
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({ contentType: 'book', listType: 'books', externalProvider: 'openlibrary', externalItemId: 'book-id' })
+    );
+    fixture.detectChanges();
+
+    expect(component['books']()).toBe(true);
+    expect(component['book']()).toBe(true);
+    expect(component['isbn']()).toBe('book-id');
+    expect(component['dialogTitle']()).toBe('Title.BooksItem');
+    expect(component['dialogIcon']()).toBe('menu_book');
+  });
+
   it('initializes external rating fields from the input model', () => {
     fixture.componentRef.setInput('collectionItem', buildItem({ rottenTomatoesRate: '96%', metacriticRate: '85/100' }));
     fixture.detectChanges();
@@ -1638,5 +1673,204 @@ describe('ItemDialog', () => {
     });
     expect(portal.closeAll).toHaveBeenCalled();
     expect(portal.open).toHaveBeenCalledWith(ItemDialog, { collectionItem: watchingItem });
+  });
+
+  it('validates user rating precision and range', () => {
+    component['form'].userRate().value.set(8.5);
+    expect(component['formErrors'].userRate.userRate()).toBe(false);
+    expect(component['formErrors'].userRate.min()).toBe(false);
+    expect(component['formErrors'].userRate.max()).toBe(false);
+
+    component['form'].userRate().value.set(8.55);
+    expect(component['formErrors'].userRate.userRate()).toBe(true);
+
+    component['form'].userRate().value.set(-0.1);
+    expect(component['formErrors'].userRate.min()).toBe(true);
+
+    component['form'].userRate().value.set(10.1);
+    expect(component['formErrors'].userRate.max()).toBe(true);
+  });
+
+  it('uses share code as library name when owner username is unavailable', () => {
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: null,
+        grants: [],
+      },
+    ]);
+    fixture.componentRef.setInput('collectionItem', buildItem({ ownerShareCode: 'owner-code' }));
+    fixture.detectChanges();
+
+    expect(component['library']()).toBe('owner-code');
+  });
+
+  it.each([
+    [null, null, 'Fallback.NotAvailable'],
+    [25, 100, '25 / 100'],
+    [25, null, '25'],
+    [null, 100, '100'],
+  ] as const)('formats book progress %s of %s', (progressCurrent, progressTotal, expected) => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'tracking',
+        contentType: 'book',
+        externalProvider: 'openlibrary',
+        externalItemId: '9780306406157',
+        IMDbId: undefined,
+        progressCurrent,
+        progressTotal,
+      })
+    );
+    fixture.detectChanges();
+
+    expect(component['bookProgressText']()).toBe(expected);
+  });
+
+  it('falls back to Open Library item ID when ISBN identity is unavailable', () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'books',
+        contentType: 'book',
+        externalProvider: 'openlibrary',
+        externalItemId: '9780306406157',
+        externalIds: [],
+      })
+    );
+    fixture.detectChanges();
+
+    expect(component['isbn']()).toBe('9780306406157');
+  });
+
+  it('omits IMDb link when item has no IMDb ID', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ IMDbId: undefined }));
+    fixture.detectChanges();
+
+    expect(component['imdbUrl']()).toBe('');
+  });
+
+  it('deletes tracking items with tracking list context', () => {
+    confirm.open.mockReturnValue(of(true));
+    fixture.componentRef.setInput('collectionItem', buildItem({ listType: 'tracking', tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+
+    component['onDelete']();
+
+    expect(api.deleteByExternalId).toHaveBeenCalledWith('omdb', 'tt1234567', 'testhash', undefined, 'tracking');
+    expect(collectionService.deleteCollectionItem).toHaveBeenCalledWith(
+      expect.objectContaining({ listType: 'tracking' }),
+      undefined,
+      'tracking'
+    );
+  });
+
+  it('leaves draft unchanged when read-only mode has no saved item', () => {
+    component['onEdit']();
+    component['form'].title().value.set('Draft');
+    component['lastSavedItem'].set(null);
+
+    component['onReadOnly']();
+
+    expect(component['form'].title().value()).toBe('Draft');
+    expect(component['editMode']()).toBe(false);
+  });
+
+  it('marks books completed with books source context', async () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'books',
+        contentType: 'book',
+        externalProvider: 'openlibrary',
+        externalItemId: '9780306406157',
+      })
+    );
+    fixture.detectChanges();
+
+    await component['onMarkAsFinished']();
+
+    expect(api.addCompletedItemByExternalId).toHaveBeenCalledWith('openlibrary', '9780306406157', undefined, 'books');
+  });
+
+  it('uses existing identities and keeps dialog closed when tracking match is absent', async () => {
+    const externalIds = [{ source: 'imdb' as const, id: 'tt1234567' }];
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG], externalIds }));
+    fixture.detectChanges();
+    component['trackingExists'].set(true);
+
+    await component['onOpenInTracking']();
+
+    expect(api.getMatchedItems).toHaveBeenCalledWith({
+      identities: externalIds,
+      limit: 1,
+      filters: { listType: 'tracking', shared: 'mine' },
+    });
+    expect(portal.open).not.toHaveBeenCalled();
+  });
+
+  it('does not remove tracking twin without its hash', async () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ tags: [SERIES_TAG] }));
+    fixture.detectChanges();
+    component['trackingExists'].set(true);
+
+    await component['onRemoveFromTracking']();
+
+    expect(confirm.open).not.toHaveBeenCalled();
+    expect(api.deleteByExternalId).not.toHaveBeenCalled();
+  });
+
+  it('passes non-OMDb identity and applies saved metadata item updates', () => {
+    const trackingItem = buildItem({
+      listType: 'tracking',
+      tags: [SERIES_TAG],
+      externalProvider: 'openlibrary',
+      externalItemId: '9780306406157',
+    });
+    fixture.componentRef.setInput('collectionItem', trackingItem);
+    fixture.detectChanges();
+
+    component['onManageSeriesMetadata']();
+    const metadataInputs = portal.openStacked.mock.calls[0][1] as {
+      externalProvider: string;
+      externalItemId: string;
+      saved: (seasons: Array<{ season: number; episodes: number }>, item?: CollectionItemModel) => void;
+    };
+    const updatedItem = buildItem({ ...trackingItem, title: 'Updated Series' });
+    metadataInputs.saved([{ season: 1, episodes: 2 }], updatedItem);
+
+    expect(metadataInputs).toEqual(
+      expect.objectContaining({ externalProvider: 'openlibrary', externalItemId: '9780306406157' })
+    );
+    expect(component.collectionItem().title).toBe('Updated Series');
+    expect(collectionService.updateCollectionItem).toHaveBeenCalled();
+  });
+
+  it('updates completed episodes without replacing item when dialog returns no item', () => {
+    fixture.componentRef.setInput(
+      'collectionItem',
+      buildItem({
+        listType: 'tracking',
+        tags: [SERIES_TAG],
+        externalProvider: 'openlibrary',
+        externalItemId: '9780306406157',
+      })
+    );
+    fixture.detectChanges();
+
+    component['onManageCompletedEpisodes']();
+    const completedInputs = portal.openStacked.mock.calls[0][1] as {
+      externalProvider: string;
+      externalItemId: string;
+      saved: (episodes: Array<{ season: number; episode: number }>, item?: CollectionItemModel) => void;
+    };
+    completedInputs.saved([{ season: 1, episode: 1 }]);
+
+    expect(completedInputs).toEqual(
+      expect.objectContaining({ externalProvider: 'openlibrary', externalItemId: '9780306406157' })
+    );
+    expect(component['completedEpisodes']()).toEqual([{ season: 1, episode: 1 }]);
+    expect(collectionService.updateCollectionItem).not.toHaveBeenCalled();
   });
 });
