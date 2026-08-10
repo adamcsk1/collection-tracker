@@ -3,6 +3,8 @@ import { createInjectionToken } from 'ngx-simple-signal-store';
 
 export interface SharesState {
   loaded: boolean;
+  mutating: boolean;
+  requestId: number;
   userShareCode: string;
   outgoing: UserShareOutgoingApiModel[];
   incoming: UserShareIncomingApiModel[];
@@ -10,6 +12,8 @@ export interface SharesState {
 
 export const initialSharesState: SharesState = {
   loaded: false,
+  mutating: false,
+  requestId: 0,
   userShareCode: '',
   outgoing: [],
   incoming: [],

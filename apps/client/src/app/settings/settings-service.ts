@@ -54,20 +54,24 @@ export class SettingsService {
           })
         )
       ),
-      switchMap(() =>
-        this.api.getShares().pipe(
+      switchMap(() => {
+        if (this.sharesState.state.mutating()) return of(void 0);
+        const requestId = this.sharesState.state.requestId() + 1;
+        this.sharesState.setState('requestId', requestId);
+        return this.api.getShares().pipe(
           tap((result) => {
+            if (requestId !== this.sharesState.state.requestId()) return;
             this.sharesState.setState('loaded', true);
             this.sharesState.setState('userShareCode', result.userShareCode);
             this.sharesState.setState('outgoing', result.outgoing);
             this.sharesState.setState('incoming', result.incoming);
           }),
           catchError(() => {
-            this.sharesState.setState('loaded', true);
+            if (requestId === this.sharesState.state.requestId()) this.sharesState.setState('loaded', true);
             return of({ userShareCode: '', outgoing: [], incoming: [] });
           })
-        )
-      ),
+        );
+      }),
       map(() => void 0)
     );
   }

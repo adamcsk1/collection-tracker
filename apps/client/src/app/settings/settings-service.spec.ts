@@ -18,7 +18,7 @@ import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-sto
 import { of, Subject, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { SettingsService } from './settings-service';
-import { initialSharesState, sharesStateToken } from '../shares/shares-store';
+import { initialSharesState, SharesState, sharesStateToken } from '../shares/shares-store';
 
 const buildFormData = (overrides: Partial<SettingsModel> = {}): SettingsModel => ({
   sensitiveDataStorage: 'local',
@@ -45,6 +45,7 @@ describe('SettingsService', () => {
   let sharedApi: { updateUserSettings: ReturnType<typeof vi.fn> };
   let translate: { translate: ReturnType<typeof vi.fn>; setLanguage: ReturnType<typeof vi.fn> };
   let mainState: NgxSimpleSignalStoreService<MainState>;
+  let sharesState: NgxSimpleSignalStoreService<SharesState>;
 
   beforeEach(() => {
     router = { navigate: vi.fn() };
@@ -75,6 +76,7 @@ describe('SettingsService', () => {
 
     service = TestBed.inject(SettingsService);
     mainState = TestBed.inject(mainStateToken);
+    sharesState = TestBed.inject(sharesStateToken);
   });
 
   it('stores form data, syncs settings to the API', () => {
@@ -146,6 +148,27 @@ describe('SettingsService', () => {
     expect(mainState.state.language()).toBe('en');
     expect(mainState.state.animatedBackground()).toBe(true);
     expect(api.getAiAvailable).toHaveBeenCalled();
+  });
+
+  it('does not preload shares while a share mutation is pending', () => {
+    sharesState.setState('mutating', true);
+
+    service.preloadUserSettings().subscribe();
+
+    expect(api.getShares).not.toHaveBeenCalled();
+  });
+
+  it('ignores a share preload superseded by another share request', () => {
+    const staleShares = new Subject<{ userShareCode: string; outgoing: []; incoming: [] }>();
+    api.getShares.mockReturnValueOnce(staleShares);
+
+    service.preloadUserSettings().subscribe();
+    sharesState.setState('requestId', sharesState.state.requestId() + 1);
+    staleShares.next({ userShareCode: 'stale-code', outgoing: [], incoming: [] });
+    staleShares.complete();
+
+    expect(sharesState.state.loaded()).toBe(false);
+    expect(sharesState.state.userShareCode()).toBe('');
   });
 
   it('preloads collection list display preferences from the API', () => {

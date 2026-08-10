@@ -10,19 +10,22 @@ export class SharesLoaderService {
   private readonly sharesState = inject(sharesStateToken);
 
   public load(destroyRef: DestroyRef, fallbackToEmptyShares = false): void {
-    if (this.sharesState.state.loaded()) return;
+    if (this.sharesState.state.loaded() || this.sharesState.state.mutating()) return;
+    const requestId = this.sharesState.state.requestId() + 1;
+    this.sharesState.setState('requestId', requestId);
 
     this.api
       .getShares()
       .pipe(
         tap((result) => {
+          if (requestId !== this.sharesState.state.requestId()) return;
           this.sharesState.setState('loaded', true);
           this.sharesState.setState('userShareCode', result.userShareCode);
           this.sharesState.setState('outgoing', result.outgoing);
           this.sharesState.setState('incoming', result.incoming);
         }),
         catchError(() => {
-          this.sharesState.setState('loaded', true);
+          if (requestId === this.sharesState.state.requestId()) this.sharesState.setState('loaded', true);
           return fallbackToEmptyShares ? of({ userShareCode: '', outgoing: [], incoming: [] }) : EMPTY;
         }),
         takeUntilDestroyed(destroyRef)

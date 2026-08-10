@@ -1,4 +1,4 @@
-<div class="shares-page">
+<div class="shares-page" [attr.aria-busy]="mutating()">
   <p>{{ translations.messageShareSettings() }}</p>
   <div class="shares-grid">
     <section class="card share-code-card" data-test-id="share-code-card">
@@ -17,7 +17,13 @@
     <section class="card add-share-card" data-test-id="add-share-card">
       <h3 class="card-title">{{ translations.addShare() }}</h3>
       <div class="card-body">
-        <button class="share-action" data-test-id="add-share-open" type="button" (click)="onAddShare()">
+        <button
+          class="share-action"
+          data-test-id="add-share-open"
+          type="button"
+          [disabled]="mutating()"
+          (click)="onAddShare()"
+        >
           <i class="material-icons" aria-hidden="true">add</i>
           {{ translations.addShare() }}
         </button>
@@ -54,6 +60,7 @@
                 <button
                   [attr.data-test-id]="'remove-share-' + share.sharedWithUserShareCode"
                   class="button-danger"
+                  [disabled]="mutating()"
                   (click)="onRemoveShare(share.sharedWithUserShareCode)"
                 >
                   <i class="material-icons">delete</i>
@@ -65,6 +72,7 @@
                 [attr.data-test-id]="'edit-share-' + share.sharedWithUserShareCode"
                 class="share-action"
                 type="button"
+                [disabled]="mutating()"
                 (click)="onEditShare(share)"
               >
                 <i class="material-icons" aria-hidden="true">edit</i>
@@ -96,6 +104,7 @@
                 <button
                   [attr.data-test-id]="'revoke-incoming-share-' + share.ownerUserShareCode"
                   class="button-danger"
+                  [disabled]="mutating()"
                   (click)="onRevokeIncomingShare(share.ownerUserShareCode)"
                 >
                   <i class="material-icons">delete</i>

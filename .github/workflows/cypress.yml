@@ -15,7 +15,7 @@ jobs:
     name: Cypress (${{ matrix.browser }})
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         browser: [chrome, firefox]
     steps:
@@ -32,8 +32,12 @@ jobs:
       - name: Run Cypress (${{ matrix.browser }})
         run: npm run cypress:${{ matrix.browser }}
 
+      - name: Stop Cypress container
+        if: always()
+        run: bash apps/collection-e2e/scripts/stop.sh collection-tracker-cypress
+
       - name: Upload Cypress screenshots
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cypress-screenshots-${{ matrix.browser }}

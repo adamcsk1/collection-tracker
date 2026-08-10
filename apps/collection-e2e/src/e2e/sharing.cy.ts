@@ -85,6 +85,7 @@ describe('Collection sharing - settings management', () => {
         SettingsPage.getAddShareGrantCheckbox('wishlist', 'movie', 'can-read').should('be.checked');
 
         cy.intercept('POST', '/api/v1/users/me/shares').as('saveShare');
+        cy.intercept('GET', '/api/v1/users/me/shares').as('reloadShares');
         SettingsPage.getShareDialogSaveButton().click();
         cy.wait('@saveShare').then(({ request, response }) => {
           expect(response?.statusCode).to.eq(204);
@@ -95,6 +96,7 @@ describe('Collection sharing - settings management', () => {
           expectGrant(grants, 'wishlist', 'movie', { canRead: true, canDelete: true });
           expectNoGrant(grants, 'wishlist', 'series');
         });
+        cy.wait('@reloadShares').its('response.statusCode').should('eq', 200);
 
         SettingsPage.getEditShareButton(sharedUser.shareCode).click();
         SettingsPage.getShareDialog().should('be.visible');
@@ -116,6 +118,7 @@ describe('Collection sharing - settings management', () => {
           expectGrant(grants, 'wishlist', 'movie', { canRead: true, canUpdate: true });
           expectGrant(grants, 'library', 'movie', { canCreate: true });
         });
+        cy.wait('@reloadShares').its('response.statusCode').should('eq', 200);
         SettingsPage.getEditShareButton(sharedUser.shareCode).click();
         SettingsPage.getOutgoingShareGrantCheckbox('wishlist', 'movie', 'can-update').should('be.checked');
         SettingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-update').should('not.be.checked');

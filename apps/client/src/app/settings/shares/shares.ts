@@ -67,6 +67,7 @@ export class SettingsShares implements OnInit {
   protected readonly userShareCode = this.sharesState.state.userShareCode;
   protected readonly outgoing = this.sharesState.state.outgoing;
   protected readonly incoming = this.sharesState.state.incoming;
+  protected readonly mutating = this.sharesState.state.mutating;
   protected readonly defaultLibraryOwnerShareCode = this.mainState.state.defaultLibraryOwnerShareCode;
   protected readonly defaultLibraryOptions = computed(() => [
     { text: this.ngxSignalTranslate.translate('MyLibrary'), value: '' },

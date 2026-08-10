@@ -56,7 +56,6 @@ describe('SettingsShares', () => {
     });
     TestBed.overrideComponent(SettingsShares, {
       set: {
-        template: '',
         providers: [{ provide: SharesService, useValue: sharesService }],
       },
     });
@@ -68,6 +67,40 @@ describe('SettingsShares', () => {
 
   it('loads shares on init', () => {
     expect(sharesService.loadShares).toHaveBeenCalled();
+  });
+
+  it('disables share mutations while saved shares reload', async () => {
+    const sharesState = TestBed.inject(sharesStateToken);
+    sharesState.setState('outgoing', [
+      {
+        sharedWithUserShareCode: 'friend-code',
+        sharedWithUsername: 'Friend',
+        grants: [],
+      },
+    ]);
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'owner-code',
+        ownerUsername: 'Owner',
+        grants: [],
+      },
+    ]);
+
+    sharesState.setState('mutating', true);
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('.shares-page').getAttribute('aria-busy')).toBe('true');
+    expect(fixture.nativeElement.querySelector('[data-test-id="add-share-open"]').disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test-id="edit-share-friend-code"]').disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test-id="remove-share-friend-code"]').disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test-id="revoke-incoming-share-owner-code"]').disabled).toBe(
+      true
+    );
+
+    sharesState.setState('mutating', false);
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="edit-share-friend-code"]').disabled).toBe(false);
   });
 
   it('opens the share dialog for a new share and saves it', () => {
