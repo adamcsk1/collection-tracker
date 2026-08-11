@@ -296,9 +296,13 @@ export const CollectionPage = {
   getCompletedEpisodesDialogComponentHost: () => getDialogComponentHost('completed-episodes-dialog'),
   getCompletedEpisodesDialog: () => getDialogFrame(getCompletedEpisodesDialog()),
   getCompletedEpisodesSeasonToggle: () =>
-    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-season-toggle"]'),
+    getCompletedEpisodesDialog()
+      .find('[data-test-id="completed-episodes-season-toggle"]')
+      .find('input[type="checkbox"]'),
   getCompletedEpisodesEpisodeCheckbox: () =>
-    getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-episode-checkbox"]'),
+    getCompletedEpisodesDialog()
+      .find('[data-test-id="completed-episodes-episode-checkbox"]')
+      .find('input[type="checkbox"]'),
   getCompletedEpisodesMarkAllCompletedButton: () =>
     getCompletedEpisodesDialog().find('[data-test-id="completed-episodes-mark-all-completed"]'),
   getCompletedEpisodesMarkAllUncompletedButton: () =>

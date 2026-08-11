@@ -84,6 +84,50 @@ describe('CompletedEpisodesDialog', () => {
     expect(component['completedEpisodes']()).toEqual([{ season: 1, episode: 2 }]);
   });
 
+  it('renders shared season and episode checkboxes and handles mixed-state changes', async () => {
+    await fixture.whenStable();
+
+    const seasonToggle = fixture.nativeElement.querySelector(
+      '[data-test-id="completed-episodes-season-toggle"] input[type="checkbox"]'
+    ) as HTMLInputElement;
+    const episodeCheckboxes = [
+      ...fixture.nativeElement.querySelectorAll(
+        '[data-test-id="completed-episodes-episode-checkbox"] input[type="checkbox"]'
+      ),
+    ] as HTMLInputElement[];
+    const episodeLabels = [
+      ...fixture.nativeElement.querySelectorAll('[data-test-id="completed-episodes-episode-checkbox"] label'),
+    ].map((label) => label.textContent?.trim());
+
+    expect(seasonToggle.checked).toBe(false);
+    expect(seasonToggle.indeterminate).toBe(true);
+    expect(seasonToggle.getAttribute('aria-checked')).toBe('mixed');
+    expect(episodeCheckboxes.map((checkbox) => checkbox.checked)).toEqual([false, true, false]);
+    expect(episodeLabels).toEqual(['Episode 1', 'Episode 2', 'Episode 3']);
+
+    api.updateTrackingCompletedEpisodesByExternalId.mockReturnValue(
+      of({
+        completedEpisodes: [
+          { season: 1, episode: 1 },
+          { season: 1, episode: 2 },
+          { season: 1, episode: 3 },
+        ],
+        lastCompletedEpisode: { season: 1, episode: 3 },
+      })
+    );
+
+    seasonToggle.click();
+    await vi.waitFor(() =>
+      expect(api.updateTrackingCompletedEpisodesByExternalId).toHaveBeenCalledWith('omdb', 'tt-series', {
+        completedEpisodes: [
+          { season: 1, episode: 1 },
+          { season: 1, episode: 2 },
+          { season: 1, episode: 3 },
+        ],
+      })
+    );
+  });
+
   it('loads and saves shared owner episode data using owner share code', async () => {
     fixture.componentRef.setInput('ownerShareCode', 'owner-code');
     api.getTrackingSeasonsByExternalId.mockClear();

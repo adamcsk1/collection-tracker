@@ -20,8 +20,7 @@
   }
 
   .card-title {
-    display: flex;
-    gap: var(--size-xs);
+    display: block;
   }
 
   .episodes-list {
@@ -29,26 +28,6 @@
     flex-direction: column;
     gap: var(--size-2xs);
     padding-top: var(--size-xs);
-
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: var(--size-xs);
-      cursor: pointer;
-      padding: var(--size-2xs) 0;
-    }
-
-    .checkbox-label input[type='checkbox'] {
-      width: var(--size-lg);
-      height: var(--size-lg);
-      cursor: pointer;
-    }
-
-    .episode-label {
-      display: flex;
-      flex-direction: column;
-      gap: var(--size-2xs);
-    }
 
     .episode-title {
       opacity: 0.7;

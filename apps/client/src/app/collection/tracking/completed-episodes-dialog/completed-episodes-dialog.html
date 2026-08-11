@@ -27,31 +27,24 @@
             [summary]="translations.season() + ' ' + season.season"
           >
             <div class="season-toggle-row">
-              <label class="checkbox-label">
-                <input
-                  type="checkbox"
-                  data-test-id="completed-episodes-season-toggle"
-                  [checked]="isSeasonFullyCompleted(season.season, season.episodes)"
-                  [indeterminate]="isSeasonPartiallyCompleted(season.season, season.episodes)"
-                  (change)="onToggleSeason(season.season, season.episodes)"
-                />
-                {{ translations.markAllEpisodesCompleted() }}
-              </label>
+              <libc-checkbox
+                data-test-id="completed-episodes-season-toggle"
+                [label]="translations.markAllEpisodesCompleted()"
+                [value]="isSeasonFullyCompleted(season.season, season.episodes)"
+                [indeterminate]="isSeasonPartiallyCompleted(season.season, season.episodes)"
+                (valueChange)="onToggleSeason(season.season, season.episodes)"
+              />
             </div>
             <div class="episodes-list">
               @for (episode of [].constructor(season.episodes); track $index; let episodeIndex = $index) {
                 <div class="card">
-                  <label class="card-title">
-                    <input
-                      type="checkbox"
-                      data-test-id="completed-episodes-episode-checkbox"
-                      [checked]="isEpisodeCompleted(season.season, episodeIndex + 1)"
-                      (change)="onToggleEpisode(season.season, episodeIndex + 1)"
-                    />
-                    <span class="episode-label">
-                      <span>{{ translations.episode() }} {{ episodeIndex + 1 }}</span>
-                    </span>
-                  </label>
+                  <libc-checkbox
+                    class="card-title"
+                    data-test-id="completed-episodes-episode-checkbox"
+                    [label]="translations.episode() + ' ' + (episodeIndex + 1)"
+                    [value]="isEpisodeCompleted(season.season, episodeIndex + 1)"
+                    (valueChange)="onToggleEpisode(season.season, episodeIndex + 1)"
+                  />
                   <div class="card-body">
                     <div class="card-body-row">
                       @if (getEpisodeTitle(seasonIndex, episodeIndex)) {

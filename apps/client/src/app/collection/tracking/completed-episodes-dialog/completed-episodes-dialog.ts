@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Checkbox } from '@components/checkbox/checkbox';
 import { Details } from '@components/details/details';
 import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { RevealLabel } from '@components/reveal-label/reveal-label';
@@ -23,7 +24,7 @@ import { getOpenSeasons } from './utils/get-open-seasons-util';
 
 @Component({
   selector: 'ct-completed-episodes-dialog',
-  imports: [DialogShell, Details, RevealLabel],
+  imports: [Checkbox, DialogShell, Details, RevealLabel],
   templateUrl: './completed-episodes-dialog.html',
   styleUrl: './completed-episodes-dialog.css',
   host: {
