@@ -18,6 +18,7 @@ const translations: ItemDialogTranslations = {
   openInTracking: signal('Open in Tracking'),
   removeFavorite: signal('Remove favorite'),
   removeFromTracking: signal('Remove from Tracking'),
+  share: signal('Share item'),
   markAsFavorite: signal('Mark as favorite'),
   fallbackNotAvailable: signal('N/A'),
   fallbackUnknownYear: signal('Unknown year'),
@@ -64,6 +65,7 @@ describe('ItemDialogActions', () => {
     fixture.componentRef.setInput('inFinished', overrides['inFinished'] ?? false);
     fixture.componentRef.setInput('finishedEnabled', overrides['finishedEnabled'] ?? true);
     fixture.componentRef.setInput('trackingEnabled', overrides['trackingEnabled'] ?? true);
+    fixture.componentRef.setInput('ownItem', overrides['ownItem'] ?? true);
     fixture.detectChanges();
   };
 
@@ -83,6 +85,26 @@ describe('ItemDialogActions', () => {
 
     expect(edit).toHaveBeenCalled();
     expect(deleteItem).toHaveBeenCalled();
+  });
+
+  it('shows sharing for owned items and emits its action', () => {
+    createComponent();
+    const share = vi.fn();
+    fixture.componentInstance.share.subscribe(share);
+
+    const button = getButton('item-dialog-share');
+    button.click();
+
+    expect(button.getAttribute('aria-label')).toBe('Share item');
+    expect(share).toHaveBeenCalled();
+  });
+
+  it('hides sharing for received items and while editing', () => {
+    createComponent({ ownItem: false });
+    expect(queryButton('item-dialog-share')).toBeNull();
+
+    createComponent({ editMode: true });
+    expect(queryButton('item-dialog-share')).toBeNull();
   });
 
   it('renders provided edit and delete labels', () => {

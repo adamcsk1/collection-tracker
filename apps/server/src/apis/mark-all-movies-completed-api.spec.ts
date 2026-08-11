@@ -4,6 +4,8 @@ import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -127,6 +129,41 @@ describe('mark-all-movies-completed-api', () => {
       )
       .all('tracking');
     expect(rows).toEqual([{ username_hash: 'user', external_item_id: 'tt-shared', list_type: 'tracking' }]);
+  });
+
+  it('copies only explicitly selected shared movies', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertItem('tt-selected', [], 'library', 'owner');
+    insertItem('tt-hidden', [], 'library', 'owner');
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const selectedItem = getDatabase()
+      .prepare("SELECT * FROM collection_items WHERE external_item_id = 'tt-selected'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: false },
+      },
+    ]);
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(
+      { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } },
+      response
+    );
+    const { register } = await import('./mark-all-movies-completed-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ changedCount: 1 });
+    expect(
+      getDatabase()
+        .prepare(
+          "SELECT external_item_id FROM collection_items WHERE username_hash = 'user' AND list_type = 'tracking'"
+        )
+        .all()
+    ).toEqual([{ external_item_id: 'tt-selected' }]);
   });
 
   it('returns 404 when the shared library owner is missing', async () => {

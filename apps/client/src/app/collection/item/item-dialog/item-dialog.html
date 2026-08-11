@@ -231,6 +231,7 @@
       [inFinished]="inFinished()"
       [finishedEnabled]="featurePreferences().tracking"
       [trackingEnabled]="featurePreferences().tracking"
+      [ownItem]="isOwnItem()"
       (manageCompletedEpisodes)="onManageCompletedEpisodes()"
       (manageSeriesMetadata)="onManageSeriesMetadata()"
       (markAsUnfinished)="onMarkAsUnfinished()"
@@ -243,6 +244,7 @@
       (removeFavorite)="onRemoveFavorite()"
       (markAsFavorite)="onMarkAsFavorite()"
       (edit)="onEdit()"
+      (share)="onShare()"
       (delete)="onDelete()"
     />
   </ng-container>

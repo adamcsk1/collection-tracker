@@ -11,7 +11,7 @@ import {
   deleteCompletedEpisodesByExternalId,
   findCompletedEpisodesByExternalId,
 } from '../core/database/repositories/series-completed-episodes-repository';
-import { canAccessShare } from '../core/database/repositories/share-repository';
+import { findAccessibleShareItemIds } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
@@ -29,7 +29,8 @@ export const register = (app: FastifyInstance): void => {
       return response.code(404).send();
     }
 
-    if (!canAccessShare(db, request.usernameHash, ownerHash, 'library', 'series', 'read')) {
+    const access = findAccessibleShareItemIds(db, request.usernameHash, ownerHash, 'library', ['series'], 'read');
+    if (!access.authorized) {
       return response.code(403).send();
     }
 
@@ -40,7 +41,7 @@ export const register = (app: FastifyInstance): void => {
     const selectedOwnLibrary = ownerHash === request.usernameHash && typeof query.ownerShareCode !== 'string';
     const trackerItems = selectedOwnLibrary
       ? findOwnTrackingItems(db, request.usernameHash)
-      : findTrackingItemsForLibrarySeries(db, request.usernameHash, ownerHash);
+      : findTrackingItemsForLibrarySeries(db, request.usernameHash, ownerHash, access.itemIds);
 
     for (const item of trackerItems) {
       const completedEpisodes = findCompletedEpisodesByExternalId(

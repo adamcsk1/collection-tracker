@@ -126,6 +126,7 @@ describe('SettingsShares', () => {
         canCreate: false,
         canUpdate: false,
         canDelete: false,
+        readMode: 'all',
       },
     ];
     inputs.saved('share-code', grants);
@@ -144,6 +145,7 @@ describe('SettingsShares', () => {
           canCreate: false,
           canUpdate: false,
           canDelete: false,
+          readMode: 'all' as const,
         },
       ],
     };
@@ -232,6 +234,7 @@ describe('SettingsShares', () => {
             canCreate: true,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },
@@ -246,6 +249,7 @@ describe('SettingsShares', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },
@@ -260,6 +264,7 @@ describe('SettingsShares', () => {
             canCreate: true,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },

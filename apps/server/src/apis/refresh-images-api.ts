@@ -7,7 +7,7 @@ import {
   findCollectionItems,
   updateCollectionItemByExternalId,
 } from '../core/database/repositories/collection';
-import { canAccessShare } from '../core/database/repositories/share-repository';
+import { findAccessibleShareItemIds } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { fetchAndCacheImage } from '../core/image/image-proxy';
 import { jwtGuard } from '../core/jwt';
@@ -33,17 +33,16 @@ export const register = (app: FastifyInstance): void => {
       }
 
       const sharedOperation = ownerHash !== request.usernameHash;
-      const excludedContentTypes: CollectionItemContentTypeModel[] = sharedOperation
-        ? (['movie', 'series', 'book'] as const).filter(
-            (contentType) => !canAccessShare(db, request.usernameHash, ownerHash, 'library', contentType, 'update')
-          )
-        : [];
-      if (sharedOperation && excludedContentTypes.length === 3) {
+      const access = sharedOperation
+        ? findAccessibleShareItemIds(db, request.usernameHash, ownerHash, 'library', ['movie', 'series'], 'update')
+        : undefined;
+      if (access && !access.authorized) {
         return response.code(403).send();
       }
 
       const targetListType = sharedOperation ? 'library' : 'all';
-      const totalItems = countCollectionItems(db, [ownerHash], targetListType, excludedContentTypes);
+      const excludedContentTypes: CollectionItemContentTypeModel[] = [];
+      const totalItems = countCollectionItems(db, [ownerHash], targetListType, excludedContentTypes, access?.itemIds);
       const batchSize = 50;
 
       await debugLog(`Found ${totalItems} items to check`);
@@ -61,7 +60,8 @@ export const register = (app: FastifyInstance): void => {
           batchSize,
           targetListType,
           ownerHash,
-          excludedContentTypes
+          excludedContentTypes,
+          access?.itemIds
         );
         for (const item of items) {
           checked++;

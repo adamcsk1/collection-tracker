@@ -19,6 +19,7 @@ import { CollectionItemModel } from '../../collection-model';
 import { CollectionService } from '../../collection-service';
 import { ItemDialog } from './item-dialog';
 import { SeriesSeasonMetadataDialog } from '../../tracking/series-season-metadata-dialog/series-season-metadata-dialog';
+import { ItemShareDialog } from '../item-share-dialog/item-share-dialog';
 
 const CUSTOM_WATCHED_TAG = '#watched';
 const COMPLETED_TAG = '#completed';
@@ -447,6 +448,7 @@ describe('ItemDialog', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: true,
+            readMode: 'all',
           },
           {
             listType: 'library',
@@ -455,6 +457,7 @@ describe('ItemDialog', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: true,
+            readMode: 'all',
           },
         ],
       },
@@ -484,6 +487,32 @@ describe('ItemDialog', () => {
 
     expect(component['permissionUpdate']()).toBe(true);
     expect(component['permissionDelete']()).toBe(true);
+  });
+
+  it('opens item sharing as a stacked dialog for an owned item', () => {
+    component['onShare']();
+
+    expect(portal.openStacked).toHaveBeenCalledWith(ItemShareDialog, {
+      externalProvider: 'omdb',
+      externalItemId: 'tt1234567',
+      listType: 'library',
+      itemTitle: 'Test Movie',
+    });
+  });
+
+  it('does not open item sharing for a received item or during edit mode', () => {
+    fixture.componentRef.setInput('collectionItem', buildItem({ ownerShareCode: 'owner-code' }));
+    fixture.detectChanges();
+    component['onShare']();
+
+    expect(portal.openStacked).not.toHaveBeenCalled();
+
+    fixture.componentRef.setInput('collectionItem', buildItem());
+    fixture.detectChanges();
+    component['onEdit']();
+    component['onShare']();
+
+    expect(portal.openStacked).not.toHaveBeenCalled();
   });
 
   it('passes the owner share code when changing a shared item', async () => {
@@ -655,6 +684,7 @@ describe('ItemDialog', () => {
             canCreate: false,
             canUpdate: true,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },

@@ -86,6 +86,7 @@ describe('SharesService', () => {
         canCreate: false,
         canUpdate: true,
         canDelete: false,
+        readMode: 'all' as const,
       },
     ];
     service.saveShare('friend-code', grants);
@@ -107,6 +108,7 @@ describe('SharesService', () => {
         canCreate: false,
         canUpdate: true,
         canDelete: false,
+        readMode: 'all' as const,
       },
     ];
     sharesState.setState('outgoing', [

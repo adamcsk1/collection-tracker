@@ -71,7 +71,8 @@ export const register = (app: FastifyInstance): void => {
           targetOwnerHash,
           existingItem.list_type,
           existingItem.content_type,
-          'read'
+          'read',
+          existingItem.id
         )
       ) {
         response.code(403).send();

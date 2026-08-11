@@ -7,6 +7,33 @@ export interface UserShareGrantApiModel {
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
+  readMode: 'selected' | 'all';
+}
+
+export interface CollectionItemSharePermissionsApiModel {
+  canRead: boolean;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+}
+
+export interface CollectionItemShareSelectionPermissionsApiModel {
+  canRead: true;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+}
+
+export interface CollectionItemShareApiModel {
+  sharedWithUserShareCode: string;
+  sharedWithUsername: string | null;
+  readMode: 'none' | 'selected' | 'all';
+  permissions: CollectionItemSharePermissionsApiModel | null;
+}
+
+export interface CollectionItemShareSelectionApiModel {
+  sharedWithUserShareCode: string;
+  permissions?: CollectionItemShareSelectionPermissionsApiModel;
 }
 
 export interface UserShareOutgoingApiModel {

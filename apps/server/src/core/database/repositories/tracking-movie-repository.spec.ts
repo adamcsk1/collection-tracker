@@ -408,6 +408,23 @@ describe('tracking-movie-repository', () => {
     expect(changedCount).toBe(0);
   });
 
+  it('markAllMoviesAsCompleted limits candidates to explicit source item IDs', () => {
+    insertUser('user');
+    const firstItemId = insertItem('user', 'tt-1', []);
+    insertItem('user', 'tt-2', []);
+    const thirdItemId = insertItem('user', 'tt-3', []);
+    const db = getDatabase();
+
+    expect(markAllMoviesAsCompleted(db, 'user', 'user', [])).toBe(0);
+    expect(markAllMoviesAsCompleted(db, 'user', 'user', [firstItemId, thirdItemId])).toBe(2);
+
+    expect(
+      db
+        .prepare("SELECT external_item_id FROM collection_items WHERE list_type = 'tracking' ORDER BY external_item_id")
+        .all()
+    ).toEqual([{ external_item_id: 'tt-1' }, { external_item_id: 'tt-3' }]);
+  });
+
   it('markAllMoviesAsUncompleted deletes tracker copies matching own library', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#movie']);
@@ -516,5 +533,25 @@ describe('tracking-movie-repository', () => {
     const changedCount = markAllMoviesAsUncompleted(db, 'user', 'user');
 
     expect(changedCount).toBe(0);
+  });
+
+  it('markAllMoviesAsUncompleted limits completed tracking rows to explicit source item IDs', () => {
+    insertUser('user');
+    const firstItemId = insertItem('user', 'tt-1', []);
+    insertItem('user', 'tt-2', []);
+    const thirdItemId = insertItem('user', 'tt-3', []);
+    insertItem('user', 'tt-1', [], 'tracking');
+    insertItem('user', 'tt-2', [], 'tracking');
+    insertItem('user', 'tt-3', [], 'tracking');
+    const db = getDatabase();
+
+    expect(markAllMoviesAsUncompleted(db, 'user', 'user', [])).toBe(0);
+    expect(markAllMoviesAsUncompleted(db, 'user', 'user', [firstItemId, thirdItemId])).toBe(2);
+
+    expect(
+      db
+        .prepare("SELECT external_item_id FROM collection_items WHERE list_type = 'tracking' ORDER BY external_item_id")
+        .all()
+    ).toEqual([{ external_item_id: 'tt-2' }]);
   });
 });

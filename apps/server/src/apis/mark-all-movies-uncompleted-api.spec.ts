@@ -4,6 +4,8 @@ import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -38,6 +40,7 @@ const insertItem = (imdbId: string, tags: string[] = [], listType = 'library', u
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
+  return itemId;
 };
 
 describe('mark-all-movies-uncompleted-api', () => {
@@ -137,6 +140,43 @@ describe('mark-all-movies-uncompleted-api', () => {
     await handlerPromise();
     expect(response.code).toHaveBeenCalledWith(404);
     expect(response.send).toHaveBeenCalledWith();
+  });
+
+  it('leaves an unselected completed movie unchanged in selected mode', async () => {
+    insertUser('user');
+    insertUser('owner');
+    const selectedItemId = insertItem('tt-selected', [], 'library', 'owner');
+    insertItem('tt-hidden', [], 'library', 'owner');
+    insertItem('tt-selected', [], 'tracking', 'user');
+    insertItem('tt-hidden', [], 'tracking', 'user');
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const selectedItem = getDatabase()
+      .prepare('SELECT * FROM collection_items WHERE id = ?')
+      .get(selectedItemId) as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: false },
+      },
+    ]);
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(
+      { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } },
+      response
+    );
+    const { register } = await import('./mark-all-movies-uncompleted-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ changedCount: 1 });
+    expect(
+      getDatabase()
+        .prepare(
+          "SELECT external_item_id FROM collection_items WHERE username_hash = 'user' AND list_type = 'tracking'"
+        )
+        .all()
+    ).toEqual([{ external_item_id: 'tt-hidden' }]);
   });
 
   it('returns 403 when the user cannot read the shared library', async () => {

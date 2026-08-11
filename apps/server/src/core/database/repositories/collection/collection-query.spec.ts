@@ -38,13 +38,15 @@ const insertGrant = (
   contentType: 'movie' | 'series' | 'book',
   canRead: 0 | 1
 ): void => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_share_grants
+  const db = getDatabase();
+  db.prepare(
+    `INSERT OR IGNORE INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, 'viewer')`
+  ).run(ownerUsernameHash);
+  db.prepare(
+    `INSERT INTO user_share_grants
         (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)
        VALUES (?, 'viewer', ?, ?, ?)`
-    )
-    .run(ownerUsernameHash, listType, contentType, canRead);
+  ).run(ownerUsernameHash, listType, contentType, canRead);
 };
 
 const selectReadableIds = (shared?: 'mine' | 'shared', type?: 'movie' | 'series' | 'book'): string[] => {
@@ -60,9 +62,9 @@ const selectReadableIds = (shared?: 'mine' | 'shared', type?: 'movie' | 'series'
 
 describe('collection-query readable scope', () => {
   it.each([
-    [undefined, 4],
+    [undefined, 5],
     ['mine' as const, 1],
-    ['shared' as const, 2],
+    ['shared' as const, 3],
   ])('keeps a fixed query shape for shared filter %s', (shared, expectedParameterCount) => {
     const scope = buildReadableItemScope('viewer', { shared });
     const sql = scope.where.join(' AND ');

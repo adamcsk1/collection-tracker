@@ -106,6 +106,7 @@ describe('collection-items-search-suggestions-api', () => {
         canCreate: false,
         canUpdate: false,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const insert = db.prepare(

@@ -1,0 +1,117 @@
+<libc-dialog-shell data-test-id="item-share-dialog" ariaLabelledBy="item-share-dialog-title">
+  <ng-container dialog-shell-top-content>
+    <h2 id="item-share-dialog-title" class="dialog-title" data-test-id="item-share-dialog-title">
+      <i class="material-icons" aria-hidden="true">share</i>
+      {{ translations.title() }}
+    </h2>
+  </ng-container>
+  <ng-container dialog-shell-content>
+    @if (loading()) {
+      <p role="status" aria-live="polite" data-test-id="item-share-loading">{{ translations.loading() }}</p>
+    } @else if (loadError()) {
+      <libc-callout role="alert" data-test-id="item-share-load-error" icon="error">
+        {{ translations.loadError() }}
+      </libc-callout>
+    } @else if (!recipients().length) {
+      <libc-callout data-test-id="item-share-empty" icon="group_off">{{ translations.empty() }}</libc-callout>
+      <button data-test-id="item-share-open-settings" type="button" (click)="onOpenSharingSettings()">
+        {{ translations.settings() }}
+      </button>
+    } @else {
+      <ul class="recipient-list">
+        @for (recipient of recipients(); track recipient.sharedWithUserShareCode) {
+          <li class="recipient-card">
+            <libc-checkbox
+              [attr.data-test-id]="'item-share-recipient-' + recipient.sharedWithUserShareCode"
+              [checkboxId]="'item-share-recipient-input-' + recipient.sharedWithUserShareCode"
+              [label]="recipient.sharedWithUsername || recipient.sharedWithUserShareCode"
+              [value]="recipient.selected"
+              [disabled]="recipient.readMode === 'all' || saving()"
+              [ariaDescribedBy]="
+                recipient.readMode === 'all' ? 'item-share-broad-' + recipient.sharedWithUserShareCode : undefined
+              "
+              (valueChange)="onRecipientToggle(recipient.sharedWithUserShareCode, $event === true)"
+            />
+            @if (recipient.readMode === 'all') {
+              <p
+                class="recipient-note"
+                [id]="'item-share-broad-' + recipient.sharedWithUserShareCode"
+                [attr.data-test-id]="'item-share-broad-' + recipient.sharedWithUserShareCode"
+              >
+                {{ translations.broad() }}
+              </p>
+            }
+            @if (recipient.selected && recipient.permissionSetupRequired && recipient.permissions) {
+              <fieldset [attr.data-test-id]="'item-share-permissions-' + recipient.sharedWithUserShareCode">
+                <legend>{{ translations.permissions() }}</legend>
+                <div class="permission-grid">
+                  <libc-checkbox
+                    [attr.data-test-id]="'item-share-can-read-' + recipient.sharedWithUserShareCode"
+                    [checkboxId]="'item-share-can-read-input-' + recipient.sharedWithUserShareCode"
+                    [label]="translations.canRead()"
+                    [value]="true"
+                    [mandatory]="true"
+                    [disabled]="true"
+                    [ariaDescribedBy]="'item-share-read-required-' + recipient.sharedWithUserShareCode"
+                  />
+                  <libc-checkbox
+                    [attr.data-test-id]="'item-share-can-create-' + recipient.sharedWithUserShareCode"
+                    [label]="translations.canCreate()"
+                    [value]="recipient.permissions.canCreate"
+                    [disabled]="saving()"
+                    (valueChange)="onPermissionToggle(recipient.sharedWithUserShareCode, 'canCreate', $event === true)"
+                  />
+                  <libc-checkbox
+                    [attr.data-test-id]="'item-share-can-update-' + recipient.sharedWithUserShareCode"
+                    [label]="translations.canUpdate()"
+                    [value]="recipient.permissions.canUpdate"
+                    [disabled]="saving()"
+                    (valueChange)="onPermissionToggle(recipient.sharedWithUserShareCode, 'canUpdate', $event === true)"
+                  />
+                  <libc-checkbox
+                    [attr.data-test-id]="'item-share-can-delete-' + recipient.sharedWithUserShareCode"
+                    [label]="translations.canDelete()"
+                    [value]="recipient.permissions.canDelete"
+                    [disabled]="saving()"
+                    (valueChange)="onPermissionToggle(recipient.sharedWithUserShareCode, 'canDelete', $event === true)"
+                  />
+                </div>
+                <p
+                  class="recipient-note"
+                  [id]="'item-share-read-required-' + recipient.sharedWithUserShareCode"
+                  [attr.data-test-id]="'item-share-read-required-' + recipient.sharedWithUserShareCode"
+                >
+                  {{ translations.readRequired() }}
+                </p>
+              </fieldset>
+            }
+          </li>
+        }
+      </ul>
+    }
+    @if (saveError()) {
+      <libc-callout role="alert" data-test-id="item-share-save-error" icon="error">
+        {{ translations.saveError() }}
+      </libc-callout>
+    }
+  </ng-container>
+  @if (!loading() && !loadError() && recipients().length) {
+    <ng-container dialog-shell-bottom-content>
+      <button
+        class="button-icon button-reveal-label"
+        [libcRevealLabel]="translations.save()"
+        data-test-id="item-share-save"
+        type="button"
+        [attr.aria-label]="translations.save()"
+        [title]="translations.save()"
+        [disabled]="saving()"
+        (click)="onSave()"
+      >
+        <i class="material-icons" aria-hidden="true">save</i>
+        <span class="button-reveal-label-text"
+          ><span>{{ translations.save() }}</span></span
+        >
+      </button>
+    </ng-container>
+  }
+</libc-dialog-shell>

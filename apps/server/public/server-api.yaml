@@ -353,11 +353,12 @@ components:
 
     UserShareGrant:
       type: object
+      unevaluatedProperties: false
       description: >-
         Permissions for one list/content scope. Valid combinations follow collection rules: `library` supports movie
         and series, `books` supports book, and `wishlist`, `up-next`, and `tracking` support all content types.
         Create, update, or delete permission also implies read permission when stored.
-      required: [listType, contentType, canRead, canCreate, canUpdate, canDelete]
+      required: [listType, contentType, canRead, canCreate, canUpdate, canDelete, readMode]
       oneOf:
         - properties:
             listType:
@@ -386,6 +387,79 @@ components:
           type: boolean
         canDelete:
           type: boolean
+        readMode:
+          type: string
+          enum: [selected, all]
+          description: >-
+            Access mode for this scope. `all` grants full physical scope and `selected` grants explicit item rows.
+            Omit the scope from the grants array to remove its grant and selections. Settings can change `all` to
+            `selected` only when explicit selections already exist for exact scope; otherwise the scope is omitted.
+
+    CollectionItemSharePermissions:
+      type: object
+      additionalProperties: false
+      required: [canRead, canCreate, canUpdate, canDelete]
+      properties:
+        canRead:
+          type: boolean
+        canCreate:
+          type: boolean
+        canUpdate:
+          type: boolean
+        canDelete:
+          type: boolean
+
+    CollectionItemShareSelectionPermissions:
+      type: object
+      additionalProperties: false
+      required: [canRead, canCreate, canUpdate, canDelete]
+      properties:
+        canRead:
+          type: boolean
+          const: true
+        canCreate:
+          type: boolean
+        canUpdate:
+          type: boolean
+        canDelete:
+          type: boolean
+
+    CollectionItemShare:
+      type: object
+      required: [sharedWithUserShareCode, sharedWithUsername, readMode, permissions]
+      properties:
+        sharedWithUserShareCode:
+          type: string
+        sharedWithUsername:
+          type: ['string', 'null']
+        readMode:
+          type: string
+          enum: [none, selected, all]
+          description: Access state for this physical item. `none` can still have permissions for other selected items in the same scope.
+        permissions:
+          oneOf:
+            - $ref: '#/components/schemas/CollectionItemSharePermissions'
+            - type: 'null'
+
+    CollectionItemShareSelection:
+      type: object
+      additionalProperties: false
+      required: [sharedWithUserShareCode]
+      properties:
+        sharedWithUserShareCode:
+          type: string
+        permissions:
+          $ref: '#/components/schemas/CollectionItemShareSelectionPermissions'
+          description: Required only when recipient has no existing grant for item's exact physical list/content scope. Read must be true.
+
+    CollectionItemSharesEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionItemShare'
 
     UserShareOutgoing:
       type: object
@@ -2051,7 +2125,7 @@ paths:
     post:
       operationId: saveUserShare
       summary: Create or update a share
-      description: Replaces grants for the invited user. Each grant applies to one valid list/content scope; mutation permissions imply read permission, duplicate scopes are rejected, and at least one effective permission is required.
+      description: Replaces grants for invited user while preserving outgoing relationship. Each grant applies to one valid list/content scope; mutation permissions imply read permission, duplicate scopes are rejected, and omitting a previously granted scope removes that scope and its selections.
       tags: [User]
       requestBody:
         required: true
@@ -2059,6 +2133,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [sharedWithUserShareCode, grants]
               properties:
                 sharedWithUserShareCode:
@@ -2066,7 +2141,6 @@ paths:
                   description: Short share code shown by the invited user.
                 grants:
                   type: array
-                  minItems: 1
                   items:
                     $ref: '#/components/schemas/UserShareGrant'
       responses:
@@ -3019,6 +3093,104 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /collection-items/{externalIdentitySource}/{externalIdentityId}/shares:
+    get:
+      operationId: getCollectionItemShares
+      summary: Get outgoing share state for one physical collection item
+      description: Returns every existing outgoing recipient relationship and its access state for caller-owned item. Received items cannot be reshared.
+      tags: [Collection]
+      parameters:
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, openlibrary, imdb, isbn]
+        - name: externalIdentityId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: listType
+          in: query
+          schema:
+            type: string
+            enum: [library, up-next, wishlist, tracking, books]
+            default: library
+      responses:
+        '200':
+          description: Outgoing recipients and item share states.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionItemSharesEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      operationId: replaceCollectionItemShares
+      summary: Replace selected recipients for one physical collection item
+      description: >-
+        Atomically replaces selected recipients for caller-owned physical item. Omitted selected recipients lose this
+        item; their exact-scope grant is removed when no selected rows remain. New exact-scope recipients require all
+        four permission booleans with read enabled. Existing selected grants reuse stored create/update/delete
+        permissions. Recipients with broad `all` access must not be included because selection would be redundant.
+      tags: [Collection]
+      parameters:
+        - name: externalIdentitySource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [omdb, openlibrary, imdb, isbn]
+        - name: externalIdentityId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: listType
+          in: query
+          schema:
+            type: string
+            enum: [library, up-next, wishlist, tracking, books]
+            default: library
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [selections]
+              properties:
+                selections:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CollectionItemShareSelection'
+      responses:
+        '204':
+          description: Item selections replaced.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':

@@ -5,6 +5,8 @@ import { getDatabase } from '../core/database/database';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 const COMPLETED_TAG = '#completed';
 
@@ -493,6 +495,55 @@ describe('change-api', () => {
         .prepare('SELECT title FROM collection_items WHERE username_hash = ? AND external_item_id = ?')
         .get('owner', 'tt-change')
     ).toEqual({ title: 'Updated' });
+  });
+
+  it('denies an unselected item and allows it after explicit selection', async () => {
+    insertItem('abc123', 'owner');
+    insertUser('user');
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+          title, title_lower, year, contributors, description, image, content_hash)
+         VALUES ('owner', 'omdb', 'anchor', 'omdb:anchor', 'library', 'movie',
+                 'Anchor', 'anchor', '', '', '', '', 'anchor')`
+      )
+      .run();
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const anchor = getDatabase()
+      .prepare("SELECT * FROM collection_items WHERE external_item_id = 'anchor'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', anchor, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: false, canUpdate: true, canDelete: false },
+      },
+    ]);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const request = {
+      usernameHash: 'user',
+      params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-change' },
+      query: { ownerShareCode: getUserShareCode('owner') },
+      body: { ...updatedItem, hash: 'abc123' },
+    };
+    const { register } = await import('./change-api');
+    const deniedResponse = mockResponse();
+    const deniedApp = buildApp(request, deniedResponse);
+    register(deniedApp.app);
+    await deniedApp.handlerPromise();
+    expect(deniedResponse.code).toHaveBeenCalledWith(403);
+
+    const target = getDatabase()
+      .prepare("SELECT * FROM collection_items WHERE external_item_id = 'tt-change'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', target, [{ sharedWithUsernameHash: 'user' }]);
+    const allowedResponse = mockResponse();
+    const allowedApp = buildApp(request, allowedResponse);
+    register(allowedApp.app);
+    await allowedApp.handlerPromise();
+    expect(allowedResponse.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ title: 'Updated' }),
+    });
   });
 
   it('rejects changing content type in a shared library', async () => {

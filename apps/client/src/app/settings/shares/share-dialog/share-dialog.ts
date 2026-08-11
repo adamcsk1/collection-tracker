@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, required } from '@angular/forms/signals';
 import { Callout } from '@components/callout/callout';
 import { Checkbox } from '@components/checkbox/checkbox';
@@ -7,6 +9,7 @@ import { DialogShell } from '@components/dialog-shell/dialog-shell';
 import { Input } from '@components/input/input';
 import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { PortalService } from '@services/portal-service';
+import { ConfirmService } from '@services/confirm-service';
 import {
   CollectionItemContentTypeModel,
   CollectionListTypeModel,
@@ -34,7 +37,12 @@ type GrantPermissionKey = 'canRead' | 'canCreate' | 'canUpdate' | 'canDelete';
 })
 export class ShareDialog implements OnInit {
   private readonly portal = inject(PortalService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
+  private readonly previouslyFocusedElement =
+    this.document.activeElement instanceof HTMLElement ? this.document.activeElement : null;
   public readonly share = input<UserShareOutgoingApiModel | UserShareIncomingApiModel>();
   public readonly saved = input<(sharedWithUserShareCode: string, grants: UserShareGrantApiModel[]) => void>(
     () => undefined
@@ -74,9 +82,7 @@ export class ShareDialog implements OnInit {
     }
     return this.ngxSignalTranslate.translate('Message.NewShareGrants');
   });
-  protected readonly valid = computed(
-    () => !this.readOnly() && this.grants().length > 0 && (this.editing() || !this.form().invalid())
-  );
+  protected readonly valid = computed(() => !this.readOnly() && (this.editing() || !this.form().invalid()));
   protected readonly translations = {
     recipientShareCode: computed(() => this.ngxSignalTranslate.translate('RecipientShareCode')),
     dependency: computed(() => this.ngxSignalTranslate.translate('Message.ShareGrantDependency')),
@@ -91,6 +97,9 @@ export class ShareDialog implements OnInit {
     canCreateDescription: computed(() => this.ngxSignalTranslate.translate('Permission.CreateDescription')),
     canUpdateDescription: computed(() => this.ngxSignalTranslate.translate('Permission.UpdateDescription')),
     canDeleteDescription: computed(() => this.ngxSignalTranslate.translate('Permission.DeleteDescription')),
+    clearSelected: computed(() => this.ngxSignalTranslate.translate('ClearSelectedItemAccess')),
+    confirmSelectedToAll: computed(() => this.ngxSignalTranslate.translate('Confirm.ShareSelectedToAll')),
+    confirmSelectedToNone: computed(() => this.ngxSignalTranslate.translate('Confirm.ShareSelectedToNone')),
   };
 
   public ngOnInit(): void {
@@ -126,8 +135,21 @@ export class ShareDialog implements OnInit {
     contentType: CollectionItemContentTypeModel,
     permission: GrantPermissionKey
   ): boolean {
-    const permissionMap = { canRead: 'read', canCreate: 'create', canUpdate: 'update', canDelete: 'delete' } as const;
+    if (permission === 'canRead') return this.readMode(listType, contentType) === 'all';
+    const permissionMap = { canCreate: 'create', canUpdate: 'update', canDelete: 'delete' } as const;
     return hasSharePermission(this.grants(), listType, contentType, permissionMap[permission]);
+  }
+
+  protected readIndeterminate(listType: CollectionListTypeModel, contentType: CollectionItemContentTypeModel): boolean {
+    return this.readMode(listType, contentType) === 'selected';
+  }
+
+  private readMode(
+    listType: CollectionListTypeModel,
+    contentType: CollectionItemContentTypeModel
+  ): 'none' | 'selected' | 'all' {
+    const grant = this.grants().find((entry) => entry.listType === listType && entry.contentType === contentType);
+    return grant?.readMode ?? 'none';
   }
 
   protected permissionChanged(
@@ -135,11 +157,24 @@ export class ShareDialog implements OnInit {
     contentType: CollectionItemContentTypeModel,
     permission: GrantPermissionKey
   ): boolean {
-    const permissionMap = { canRead: 'read', canCreate: 'create', canUpdate: 'update', canDelete: 'delete' } as const;
+    if (permission === 'canRead') {
+      return this.readMode(listType, contentType) !== this.initialReadMode(listType, contentType);
+    }
+    const permissionMap = { canCreate: 'create', canUpdate: 'update', canDelete: 'delete' } as const;
     return (
       hasSharePermission(this.grants(), listType, contentType, permissionMap[permission]) !==
       hasSharePermission(this.initialGrants(), listType, contentType, permissionMap[permission])
     );
+  }
+
+  private initialReadMode(
+    listType: CollectionListTypeModel,
+    contentType: CollectionItemContentTypeModel
+  ): 'none' | 'selected' | 'all' {
+    const grant = this.initialGrants().find(
+      (entry) => entry.listType === listType && entry.contentType === contentType
+    );
+    return grant?.readMode ?? 'none';
   }
 
   protected onGrantToggle(
@@ -148,6 +183,10 @@ export class ShareDialog implements OnInit {
     permission: GrantPermissionKey,
     enabled: boolean
   ): void {
+    if (permission === 'canRead') {
+      this.onReadToggle(listType, contentType, enabled);
+      return;
+    }
     this.permissionChangeAnnouncement.set('');
     this.grants.update((grants) => {
       const existing = grants.find((grant) => grant.listType === listType && grant.contentType === contentType);
@@ -158,21 +197,10 @@ export class ShareDialog implements OnInit {
         canCreate: existing?.canCreate ?? false,
         canUpdate: existing?.canUpdate ?? false,
         canDelete: existing?.canDelete ?? false,
+        readMode: existing?.readMode ?? 'all',
         [permission]: enabled,
       };
-      if (permission === 'canRead' && !enabled) {
-        nextGrant.canCreate = false;
-        nextGrant.canUpdate = false;
-        nextGrant.canDelete = false;
-        if (existing?.canCreate || existing?.canUpdate || existing?.canDelete) {
-          this.permissionChangeAnnouncement.set(
-            this.ngxSignalTranslate.translate('Message.ShareGrantChildrenCleared', {
-              list: this.listTypeLabel(listType),
-              content: this.contentTypeLabel(contentType),
-            })
-          );
-        }
-      } else if (permission !== 'canRead' && enabled) {
+      if (enabled) {
         nextGrant.canRead = true;
         if (!(existing?.canRead ?? false)) {
           this.permissionChangeAnnouncement.set(
@@ -190,6 +218,72 @@ export class ShareDialog implements OnInit {
     });
   }
 
+  protected onReadToggle(
+    listType: CollectionListTypeModel,
+    contentType: CollectionItemContentTypeModel,
+    enabled: boolean
+  ): void {
+    const mode = this.readMode(listType, contentType);
+    if (mode === 'selected' && enabled) {
+      this.confirm
+        .open(this.translations.confirmSelectedToAll())
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((confirmed) => {
+          if (confirmed) this.setReadMode(listType, contentType, 'all');
+          else this.grants.set([...this.grants()]);
+        });
+      return;
+    }
+    this.setReadMode(listType, contentType, enabled ? 'all' : 'none');
+  }
+
+  protected onClearSelected(listType: CollectionListTypeModel, contentType: CollectionItemContentTypeModel): void {
+    if (this.readMode(listType, contentType) !== 'selected') return;
+    this.confirm
+      .open(this.translations.confirmSelectedToNone())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (confirmed) this.setReadMode(listType, contentType, 'none');
+      });
+  }
+
+  private setReadMode(
+    listType: CollectionListTypeModel,
+    contentType: CollectionItemContentTypeModel,
+    mode: 'none' | 'all'
+  ): void {
+    this.permissionChangeAnnouncement.set('');
+    this.grants.update((grants) => {
+      const existing = grants.find((grant) => grant.listType === listType && grant.contentType === contentType);
+      const withoutScope = grants.filter(
+        (grant) => !(grant.listType === listType && grant.contentType === contentType)
+      );
+      if (mode === 'none') {
+        if (existing?.canCreate || existing?.canUpdate || existing?.canDelete) {
+          this.permissionChangeAnnouncement.set(
+            this.ngxSignalTranslate.translate('Message.ShareGrantChildrenCleared', {
+              list: this.listTypeLabel(listType),
+              content: this.contentTypeLabel(contentType),
+            })
+          );
+        }
+        return withoutScope;
+      }
+      return normalizeShareGrants([
+        ...withoutScope,
+        {
+          listType,
+          contentType,
+          canRead: true,
+          canCreate: existing?.canCreate ?? false,
+          canUpdate: existing?.canUpdate ?? false,
+          canDelete: existing?.canDelete ?? false,
+          readMode: 'all',
+        },
+      ]);
+    });
+  }
+
   protected onSave(): void {
     if (!this.valid()) return;
     const share = this.share();
@@ -199,5 +293,6 @@ export class ShareDialog implements OnInit {
         : this.shareCodeModel().sharedWithUserShareCode;
     this.saved()(shareCode.trim(), this.grants());
     this.portal.closeTop();
+    this.previouslyFocusedElement?.focus();
   }
 }

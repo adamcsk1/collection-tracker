@@ -856,6 +856,7 @@ describe('List', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },

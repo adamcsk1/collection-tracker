@@ -28,7 +28,7 @@ export const resolveTrackingSeriesTarget = (
   );
   if (!item || item.list_type !== 'tracking' || item.content_type !== 'series') return { status: 404 };
 
-  if (!canAccessShare(db, accessorHash, ownerHash, item.list_type, item.content_type, permission)) {
+  if (!canAccessShare(db, accessorHash, ownerHash, item.list_type, item.content_type, permission, item.id)) {
     return { status: 403 };
   }
 

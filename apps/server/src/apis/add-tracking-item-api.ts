@@ -43,7 +43,17 @@ export const register = (app: FastifyInstance): void => {
       findCollectionItemByExternalId(db, ownerHash, externalIdentitySource, externalIdentityId, sourceListType);
     if (!sourceRow) return response.code(404).send();
 
-    if (!canAccessShare(db, request.usernameHash, ownerHash, sourceRow.list_type, sourceRow.content_type, 'read')) {
+    if (
+      !canAccessShare(
+        db,
+        request.usernameHash,
+        ownerHash,
+        sourceRow.list_type,
+        sourceRow.content_type,
+        'read',
+        sourceRow.id
+      )
+    ) {
       return response.code(403).send();
     }
     if (moveFromUpNext && ownerHash !== request.usernameHash) return response.code(403).send();

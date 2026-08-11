@@ -87,6 +87,7 @@ describe('refresh-tracking-seasons-api', () => {
         canCreate: false,
         canUpdate: true,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     process.env.OMDB_API_KEY = 'key';
@@ -128,6 +129,7 @@ describe('refresh-tracking-seasons-api', () => {
         canCreate: false,
         canUpdate: false,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const fetchMock = vi.fn();

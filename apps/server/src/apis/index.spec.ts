@@ -112,6 +112,15 @@ describe('registered API contract', () => {
     expect(new Set(operationIds).size).toBe(operationIds.length);
   });
 
+  it('requires read permission for first-time item share selections only', () => {
+    const schemas = asRecord(asRecord(getOpenApiDocument().components).schemas);
+    const requestProperties = asRecord(asRecord(schemas.CollectionItemShareSelectionPermissions).properties);
+    const responseProperties = asRecord(asRecord(schemas.CollectionItemSharePermissions).properties);
+
+    expect(asRecord(requestProperties.canRead)).toEqual({ type: 'boolean', const: true });
+    expect(asRecord(responseProperties.canRead)).toEqual({ type: 'boolean' });
+  });
+
   it('applies response envelopes to actual public and protected routes', async () => {
     registerAllApis(app);
     await app.ready();

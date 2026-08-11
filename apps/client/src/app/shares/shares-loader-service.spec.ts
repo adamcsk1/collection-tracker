@@ -31,6 +31,7 @@ describe('SharesLoaderService', () => {
                   canCreate: true,
                   canUpdate: false,
                   canDelete: false,
+                  readMode: 'all',
                 },
                 {
                   listType: 'library',
@@ -39,6 +40,7 @@ describe('SharesLoaderService', () => {
                   canCreate: true,
                   canUpdate: false,
                   canDelete: false,
+                  readMode: 'all',
                 },
               ],
             },

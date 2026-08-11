@@ -312,6 +312,23 @@ describe('watching-repository', () => {
     expect(result).toEqual([]);
   });
 
+  it('markAllSeriesAsCompleted limits candidates to explicit source item IDs', () => {
+    insertUser('user');
+    const firstItemId = insertItem('user', 'tt-1', []);
+    insertItem('user', 'tt-2', []);
+    const thirdItemId = insertItem('user', 'tt-3', []);
+    const db = getDatabase();
+
+    expect(markAllSeriesAsCompleted(db, 'user', 'user', [])).toEqual([]);
+    expect(markAllSeriesAsCompleted(db, 'user', 'user', [firstItemId, thirdItemId])).toHaveLength(2);
+
+    expect(
+      db
+        .prepare("SELECT external_item_id FROM collection_items WHERE list_type = 'tracking' ORDER BY external_item_id")
+        .all()
+    ).toEqual([{ external_item_id: 'tt-1' }, { external_item_id: 'tt-3' }]);
+  });
+
   it('findTrackingItemsForLibrarySeries returns tracker items with corresponding library series', () => {
     insertUser('user');
     insertItem('user', 'tt-1', ['#series'], 'library');
@@ -343,6 +360,24 @@ describe('watching-repository', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].canonicalItemId).toBe('imdb:tt-same');
+  });
+
+  it('findTrackingItemsForLibrarySeries limits progress targets to explicit source item IDs', () => {
+    insertUser('user');
+    const firstItemId = insertItem('user', 'tt-1', []);
+    insertItem('user', 'tt-2', []);
+    const thirdItemId = insertItem('user', 'tt-3', []);
+    insertItem('user', 'tt-1', [], 'tracking');
+    insertItem('user', 'tt-2', [], 'tracking');
+    insertItem('user', 'tt-3', [], 'tracking');
+    const db = getDatabase();
+
+    expect(findTrackingItemsForLibrarySeries(db, 'user', 'user', [])).toEqual([]);
+    expect(
+      findTrackingItemsForLibrarySeries(db, 'user', 'user', [firstItemId, thirdItemId]).map(
+        (item) => item.externalItemId
+      )
+    ).toEqual(['tt-1', 'tt-3']);
   });
 
   it('findOwnTrackingItems returns only own tracker items', () => {

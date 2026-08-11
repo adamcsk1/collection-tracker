@@ -2,9 +2,11 @@
   <input
     type="checkbox"
     [id]="checkboxId()"
-    [attr.aria-label]="label() || 'Checkbox'"
+    [attr.aria-label]="label()"
     [attr.aria-describedby]="describedBy()"
+    [attr.aria-checked]="indeterminate() ? 'mixed' : value() === true"
     [checked]="value() === true"
+    [indeterminate]="indeterminate()"
     [disabled]="disabled()"
     (change)="onChange($event)"
     (blur)="onBlur()"

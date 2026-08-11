@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import type { CollectionItemShareSelectionApiModel } from '@shared/models/api-model';
 import { AlertService } from '../alert-service';
 import { NgxSimpleSignalStoreService, provideStore } from 'ngx-simple-signal-store';
 import { lastValueFrom } from 'rxjs';
@@ -225,6 +226,45 @@ describe('ApiService', () => {
     );
     expect(deleteRequest.request.method).toBe('DELETE');
     deleteRequest.flush(null, { status: 204, statusText: 'No Content' });
+
+    await expect(promise).resolves.toBeNull();
+  });
+
+  it('retrieves collection item shares by external identity', async () => {
+    const promise = lastValueFrom(service.getCollectionItemShares('provider/id', 'item/id', 'up-next'));
+
+    const request = httpMock.expectOne(
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/shares?listType=up-next'
+    );
+    expect(request.request.method).toBe('GET');
+    const shares = [
+      {
+        sharedWithUserShareCode: 'share-code',
+        sharedWithUsername: 'viewer',
+        readMode: 'selected',
+        permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: false },
+      },
+    ];
+    request.flush({ data: shares });
+
+    await expect(promise).resolves.toEqual(shares);
+  });
+
+  it('saves collection item shares by external identity', async () => {
+    const selections: CollectionItemShareSelectionApiModel[] = [
+      {
+        sharedWithUserShareCode: 'share-code',
+        permissions: { canRead: true, canCreate: false, canUpdate: true, canDelete: false },
+      },
+    ];
+    const promise = lastValueFrom(service.saveCollectionItemShares('provider/id', 'item/id', 'up-next', selections));
+
+    const request = httpMock.expectOne(
+      'https://api.test/collection-items/provider%2Fid/item%2Fid/shares?listType=up-next'
+    );
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ selections });
+    request.flush(null, { status: 204, statusText: 'No Content' });
 
     await expect(promise).resolves.toBeNull();
   });

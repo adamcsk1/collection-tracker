@@ -19,6 +19,7 @@ export const libraryGrants = (
       canCreate,
       canUpdate,
       canDelete,
+      readMode: 'all',
     },
     {
       listType: 'library',
@@ -27,6 +28,7 @@ export const libraryGrants = (
       canCreate,
       canUpdate,
       canDelete,
+      readMode: 'all',
     },
   ];
 };

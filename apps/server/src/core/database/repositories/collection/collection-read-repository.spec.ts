@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getDatabase } from '../../database';
 import { searchCollectionItems } from './collection-read-repository';
+import { replaceCollectionItemSelections, upsertShare } from '../share-repository';
+import type { CollectionItemRow } from './collection-model';
 
 const insertUser = (usernameHash: string): void => {
   getDatabase()
@@ -42,13 +44,16 @@ const insertGrant = (
   contentType: 'movie' | 'series' | 'book',
   canRead = true
 ): void => {
-  getDatabase()
-    .prepare(
-      `INSERT INTO user_share_grants
+  const db = getDatabase();
+  db.prepare('INSERT OR IGNORE INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, ?)').run(
+    ownerHash,
+    viewerHash
+  );
+  db.prepare(
+    `INSERT INTO user_share_grants
         (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)
        VALUES (?, ?, ?, ?, ?)`
-    )
-    .run(ownerHash, viewerHash, listType, contentType, canRead ? 1 : 0);
+  ).run(ownerHash, viewerHash, listType, contentType, canRead ? 1 : 0);
 };
 
 describe('collection-read-repository scoped reads', () => {
@@ -90,6 +95,28 @@ describe('collection-read-repository scoped reads', () => {
     expect(ownItems.items.map(({ title }) => title)).toEqual(expect.arrayContaining(['Own Movie', 'Own Book']));
     expect(sharedBooks.page.hasMore).toBe(false);
     expect(sharedBooks.items[0]).toEqual(expect.objectContaining({ title: 'Shared Book', listType: 'books' }));
+  });
+
+  it('returns only physical rows selected by a selected grant', () => {
+    const db = getDatabase();
+    insertUser('viewer');
+    insertUser('owner');
+    insertItem('owner', 'selected', 'Selected');
+    insertItem('owner', 'hidden', 'Hidden');
+    upsertShare(db, 'owner', 'viewer', []);
+    const selectedItem = db
+      .prepare("SELECT * FROM collection_items WHERE external_item_id = 'selected'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(db, 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'viewer',
+        permissions: { canRead: true, canCreate: false, canUpdate: true, canDelete: true },
+      },
+    ]);
+
+    const result = searchCollectionItems(db, 'viewer', { filters: { shared: 'shared' }, limit: 20 });
+
+    expect(result.items.map((item) => item.externalItemId)).toEqual(['selected']);
   });
 
   it.each([
@@ -188,6 +215,9 @@ describe('collection-read-repository scoped reads', () => {
     const db = getDatabase();
     insertUser('viewer');
     const insertUserStatement = db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)');
+    const insertShareStatement = db.prepare(
+      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, 'viewer')`
+    );
     const insertGrantStatement = db.prepare(
       `INSERT INTO user_share_grants
         (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)
@@ -205,6 +235,7 @@ describe('collection-read-repository scoped reads', () => {
         const externalItemId = `shared-${shareIndex}`;
         const title = `Shared ${shareIndex.toString().padStart(4, '0')}`;
         insertUserStatement.run(ownerHash, `${ownerHash}-token`);
+        insertShareStatement.run(ownerHash);
         insertGrantStatement.run(ownerHash);
         insertItemStatement.run(
           ownerHash,
@@ -234,6 +265,9 @@ describe('collection-read-repository scoped reads', () => {
     const db = getDatabase();
     insertUser('viewer');
     const insertUserStatement = db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)');
+    const insertShareStatement = db.prepare(
+      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, 'viewer')`
+    );
     const insertItemStatement = db.prepare(
       `INSERT INTO collection_items
         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
@@ -265,6 +299,7 @@ describe('collection-read-repository scoped reads', () => {
           title.toLowerCase(),
           `${externalItemId}-hash`
         );
+        insertShareStatement.run(ownerHash);
         insertGrantStatement.run(ownerHash);
         insertAliasStatement.run(ownerHash, canonicalItemId, `alias-${ownerIndex}`);
       }

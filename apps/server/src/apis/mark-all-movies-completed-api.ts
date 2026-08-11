@@ -3,7 +3,7 @@ import { MarkAllCompletedApiResponseModel } from '@shared/models/api-model';
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import { markAllMoviesAsCompleted } from '../core/database/repositories/tracking-movie-repository';
-import { canAccessShare } from '../core/database/repositories/share-repository';
+import { findAccessibleShareItemIds } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
@@ -21,14 +21,15 @@ export const register = (app: FastifyInstance): void => {
       return response.code(404).send();
     }
 
-    if (!canAccessShare(db, request.usernameHash, ownerHash, 'library', 'movie', 'read')) {
+    const access = findAccessibleShareItemIds(db, request.usernameHash, ownerHash, 'library', ['movie'], 'read');
+    if (!access.authorized) {
       return response.code(403).send();
     }
 
     await debugLog(
       `POST /collection-items/actions/mark-movies-completed source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
     );
-    const changedCount = markAllMoviesAsCompleted(db, request.usernameHash, ownerHash);
+    const changedCount = markAllMoviesAsCompleted(db, request.usernameHash, ownerHash, access.itemIds);
     await debugLog(`POST /collection-items/actions/mark-movies-completed finished: changed=${changedCount}`);
 
     const result: MarkAllCompletedApiResponseModel = { changedCount };

@@ -8,6 +8,8 @@ Source: [`apps/collection-e2e`](../apps/collection-e2e)
 
 - Specs live under [`src/e2e`](../apps/collection-e2e/src/e2e) and use page objects from [`src/page-objects`](../apps/collection-e2e/src/page-objects).
 - [`env/`](../apps/collection-e2e/env) contains the Docker test data folder and `.env` used by the Cypress container.
+- `item-sharing.cy.ts` covers first-scope permission setup, permission reuse and cleanup, tri-state confirmation,
+  selected-scope creation, received-item re-share prevention, and physical book routing against the real server.
 
 ## Execution
 

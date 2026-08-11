@@ -205,6 +205,7 @@ describe('proxy-ai-query-api', () => {
           canCreate: false,
           canUpdate: false,
           canDelete: false,
+          readMode: 'all',
         },
       ]);
       const generate = await mockGenerate('{"matchedIds":[]}');

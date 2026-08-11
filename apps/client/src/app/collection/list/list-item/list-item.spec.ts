@@ -123,6 +123,7 @@ describe('ListItem', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
           {
             listType: 'library',
@@ -131,6 +132,7 @@ describe('ListItem', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },
@@ -374,6 +376,7 @@ describe('ListItem', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
           {
             listType: 'library',
@@ -382,6 +385,7 @@ describe('ListItem', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },

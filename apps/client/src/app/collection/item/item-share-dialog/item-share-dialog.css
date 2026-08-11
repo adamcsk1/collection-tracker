@@ -1,0 +1,40 @@
+.recipient-list {
+  display: grid;
+  gap: var(--size-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recipient-card {
+  padding: var(--size-md);
+  border: var(--border-style);
+  border-radius: var(--border-radius);
+  background: var(--background-color);
+}
+
+.recipient-note {
+  margin: var(--size-xs) 0 0;
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+}
+
+fieldset {
+  margin-block-start: var(--size-sm);
+}
+
+.permission-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--size-xs);
+}
+
+libc-callout {
+  margin-block: var(--size-md);
+}
+
+@media (width < 600px) {
+  .permission-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

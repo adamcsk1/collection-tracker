@@ -83,6 +83,10 @@ export const CollectionPage = {
   getList: () => cy.getByTestId('collection-list'),
   getListItems: (options: Partial<Cypress.Timeoutable> = { timeout: 10000 }) =>
     cy.getByTestId('list-item-title', options),
+  getListItemByTitle: (title: string) =>
+    cy
+      .getByTestId('list-item-title', { timeout: 10000 })
+      .filter((_index, element) => element.textContent?.trim() === title),
   getFavoriteBadges: () => cy.getByTestId('list-item-favorite'),
   getTrackingCompletedBadges: () => cy.getByTestId('list-item-tracking-completed'),
   getSharedBadges: () => cy.getByTestId('list-item-shared'),
@@ -189,6 +193,7 @@ export const CollectionPage = {
   getItemDialogSaveButton: () => getItemDialog().find('[data-test-id="item-dialog-save"]'),
   getItemDialogSaveLabel: () => getItemDialog().find('[data-test-id="item-dialog-save-label"]'),
   getItemDialogDeleteButton: () => getItemDialog().find('[data-test-id="item-dialog-delete"]'),
+  getItemDialogShareButton: () => getItemDialog().find('[data-test-id="item-dialog-share"]'),
   closeDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),
   closeActiveDialogByOverlay: () => getActiveDialog().find('[data-test-id="dialog-overlay"]').click({ force: true }),
   expectItemDialogActionsVisible: () => {

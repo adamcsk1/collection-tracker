@@ -4,6 +4,8 @@ import { buildBooksItem } from '../fixtures/openlibrary';
 export type ShareListType = 'library' | 'books' | 'wishlist' | 'up-next' | 'tracking';
 export type ShareContentType = 'movie' | 'series' | 'book';
 export type SharePermissionKey = 'canRead' | 'canCreate' | 'canUpdate' | 'canDelete';
+export type ShareReadMode = 'none' | 'selected' | 'all';
+export type ShareGrantReadMode = Exclude<ShareReadMode, 'none'>;
 
 export interface ShareGrant {
   listType: ShareListType;
@@ -12,6 +14,7 @@ export interface ShareGrant {
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
+  readMode: ShareGrantReadMode;
 }
 
 export interface SharePermissions {
@@ -19,6 +22,18 @@ export interface SharePermissions {
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
+}
+
+export interface ItemShareSelection {
+  sharedWithUserShareCode: string;
+  permissions: SharePermissions;
+}
+
+export interface ItemShareState {
+  sharedWithUserShareCode: string;
+  sharedWithUsername: string | null;
+  readMode: ShareReadMode;
+  permissions: SharePermissions | null;
 }
 
 export interface TestUser {
@@ -130,14 +145,14 @@ export const signInThroughUi = (user: TestUser): void => {
   });
   cy.getByTestId('sign-in-username').find('input').type(user.username);
   cy.getByTestId('sign-in-token').find('input').type(user.token, { delay: 0 });
-  cy.getByTestId('sign-in-submit').click();
+  cy.getByTestId('sign-in-submit').should('be.enabled').click();
   cy.url().should('include', '/client/');
 };
 
 export const grant = (
   listType: ShareListType,
   contentType: ShareContentType,
-  permissions: Partial<SharePermissions> = { canRead: true }
+  permissions: Partial<SharePermissions> & { readMode?: ShareGrantReadMode } = { canRead: true }
 ): ShareGrant => {
   const canCreate = permissions.canCreate === true;
   const canUpdate = permissions.canUpdate === true;
@@ -151,7 +166,52 @@ export const grant = (
     canCreate,
     canUpdate,
     canDelete,
+    readMode: permissions.readMode ?? 'all',
   };
+};
+
+export const saveItemShares = (
+  owner: TestUser,
+  item: { externalProvider: string; externalItemId: string; listType: ShareListType },
+  selections: ItemShareSelection[]
+): Cypress.Chainable<Cypress.Response<unknown>> =>
+  requestAs(
+    owner,
+    'PUT',
+    `/api/v1/collection-items/${encodeURIComponent(item.externalProvider)}/${encodeURIComponent(item.externalItemId)}/shares?listType=${encodeURIComponent(item.listType)}`,
+    { selections }
+  ).then((response) => {
+    expect(response.status, `save item shares for ${item.externalItemId}`).to.eq(204);
+    return response;
+  });
+
+export const getItemShares = (
+  owner: TestUser,
+  item: { externalProvider: string; externalItemId: string; listType: ShareListType }
+): Cypress.Chainable<Cypress.Response<ApiEnvelope<ItemShareState[]>>> =>
+  requestAs<ApiEnvelope<ItemShareState[]>>(
+    owner,
+    'GET',
+    `/api/v1/collection-items/${encodeURIComponent(item.externalProvider)}/${encodeURIComponent(item.externalItemId)}/shares?listType=${encodeURIComponent(item.listType)}`
+  );
+
+export const expectItemShare = (
+  shares: ItemShareState[],
+  recipientShareCode: string,
+  expected: { readMode: ShareReadMode; permissions?: Partial<SharePermissions> | null }
+): void => {
+  const share = shares.find((entry) => entry.sharedWithUserShareCode === recipientShareCode);
+  expect(share, `item share for ${recipientShareCode}`).to.exist;
+  expect(share!.readMode).to.eq(expected.readMode);
+  if (expected.permissions === null) {
+    expect(share!.permissions).to.be.null;
+    return;
+  }
+  if (!expected.permissions) return;
+  expect(share!.permissions, `item permissions for ${recipientShareCode}`).to.exist;
+  Object.entries(expected.permissions).forEach(([permission, enabled]) => {
+    expect(share!.permissions![permission as keyof SharePermissions]).to.eq(enabled);
+  });
 };
 
 export const libraryMovieSeriesGrants = (permissions: SharePermissions): ShareGrant[] => [
@@ -220,7 +280,7 @@ export const expectGrant = (
   grants: ShareGrant[],
   listType: ShareListType,
   contentType: ShareContentType,
-  expected: Partial<SharePermissions>
+  expected: Partial<SharePermissions> & { readMode?: ShareGrantReadMode }
 ): void => {
   const match = findGrantInPayload(grants, listType, contentType);
   expect(match, `grant ${listType}/${contentType}`).to.exist;
@@ -228,6 +288,7 @@ export const expectGrant = (
   if (expected.canCreate !== undefined) expect(match!.canCreate).to.eq(expected.canCreate);
   if (expected.canUpdate !== undefined) expect(match!.canUpdate).to.eq(expected.canUpdate);
   if (expected.canDelete !== undefined) expect(match!.canDelete).to.eq(expected.canDelete);
+  expect(match!.readMode).to.eq(expected.readMode ?? 'all');
 };
 
 export const expectNoGrant = (grants: ShareGrant[], listType: ShareListType, contentType: ShareContentType): void => {

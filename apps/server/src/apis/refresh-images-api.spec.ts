@@ -4,6 +4,8 @@ import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare, insertShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 vi.mock('../core/logger', () => ({
   debugLog: vi.fn(),
@@ -324,6 +326,7 @@ describe('refresh-images-api', () => {
         canCreate: false,
         canUpdate: true,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const imageMock = vi.fn(async () => true);
@@ -338,6 +341,49 @@ describe('refresh-images-api', () => {
 
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 0, errors: 0 });
     expect(imageMock).toHaveBeenCalledOnce();
+  });
+
+  it('processes only explicitly selected shared items with update permission', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertItem('tt-selected', 'selected-broken.jpg', 'selected-hash', 'owner');
+    insertItem('tt-hidden', 'hidden-broken.jpg', 'hidden-hash', 'owner');
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const selectedItem = getDatabase()
+      .prepare("SELECT * FROM collection_items WHERE external_item_id = 'tt-selected'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: false, canUpdate: true, canDelete: false },
+      },
+    ]);
+    const imageMock = vi.fn(async () => false);
+    vi.doMock('../core/image/image-proxy', () => ({ fetchAndCacheImage: imageMock }));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ imdbID: 'tt-selected', Poster: 'selected-new.jpg' }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(
+      { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } },
+      response
+    );
+    const { register } = await import('./refresh-images-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
+    expect(imageMock).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(
+      getDatabase().prepare('SELECT external_item_id, image FROM collection_items ORDER BY external_item_id').all()
+    ).toEqual([
+      { external_item_id: 'tt-hidden', image: 'hidden-broken.jpg' },
+      { external_item_id: 'tt-selected', image: 'selected-new.jpg' },
+    ]);
   });
 
   it('refreshes books and items across all lists for a personal library', async () => {

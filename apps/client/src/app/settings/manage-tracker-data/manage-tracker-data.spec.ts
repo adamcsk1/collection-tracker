@@ -166,6 +166,7 @@ describe('SettingsManageTrackerData component', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
           {
             listType: 'library',
@@ -174,6 +175,7 @@ describe('SettingsManageTrackerData component', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
           {
             listType: 'books',
@@ -182,6 +184,7 @@ describe('SettingsManageTrackerData component', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },
@@ -217,6 +220,7 @@ describe('SettingsManageTrackerData component', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
           {
             listType: 'library',
@@ -225,6 +229,7 @@ describe('SettingsManageTrackerData component', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },
@@ -264,6 +269,7 @@ describe('SettingsManageTrackerData component', () => {
             canCreate: true,
             canUpdate: true,
             canDelete: true,
+            readMode: 'all',
           },
           {
             listType: 'library',
@@ -272,6 +278,7 @@ describe('SettingsManageTrackerData component', () => {
             canCreate: true,
             canUpdate: true,
             canDelete: true,
+            readMode: 'all',
           },
         ],
       },
@@ -295,6 +302,7 @@ describe('SettingsManageTrackerData component', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },

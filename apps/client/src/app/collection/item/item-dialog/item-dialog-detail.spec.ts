@@ -38,6 +38,7 @@ const translations: ItemDialogTranslations = {
   openInTracking: signal('Open in Tracking'),
   removeFavorite: signal('Remove favorite'),
   removeFromTracking: signal('Remove from Tracking'),
+  share: signal('Share item'),
   readingProgress: signal('Reading progress'),
   pagesRead: signal('Pages read'),
   totalPages: signal('Total pages'),

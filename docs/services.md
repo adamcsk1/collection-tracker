@@ -6,7 +6,7 @@ Source: [`libs/services`](../libs/services)
 
 ## Modules
 
-- `api/`: HTTP client, auth/session integration, pagination, API store, collection CRUD, statistics, shares, media refresh, tracking and books cleanup, and AI list search query (`getAiQueryData(prompt, listType)`)
+- `api/`: HTTP client, auth/session integration, pagination, API store, collection CRUD, scope and individual-item shares, statistics, media refresh, tracking and books cleanup, and AI list search query (`getAiQueryData(prompt, listType)`)
 - `external-metadata/`: external metadata lookup logic (search and item fetch via server proxy)
 - `theme/`: theme state and DOM class management
 - `webstorage/`: local and session storage abstraction
@@ -17,6 +17,8 @@ Source: [`libs/services`](../libs/services)
 - Import through the `@services/*` path alias.
 - `apiStateToken` and `themeStateToken` are the primary cross-application stores.
 - `PortalService` is the common primitive for dialog and dynamic component hosting.
+- `ApiService.getCollectionItemShares()` and `saveCollectionItemShares()` load and replace explicit recipients for one
+  owned physical item.
 - The client uses the full library; the login app uses the API, theme, translation, and notification subset.
 
 ## Important Paths

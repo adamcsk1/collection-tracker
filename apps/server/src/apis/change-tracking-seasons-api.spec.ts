@@ -80,6 +80,7 @@ describe('change-tracking-seasons-api', () => {
         canCreate: false,
         canUpdate: true,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const response = mockResponse();

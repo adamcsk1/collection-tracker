@@ -44,6 +44,7 @@ export const normalizeShareGrant = (grant: UserShareGrantApiModel): UserShareGra
     canCreate,
     canUpdate,
     canDelete,
+    readMode: grant.readMode,
   };
 };
 
@@ -86,6 +87,22 @@ export const hasSharePermission = (
 };
 
 export const defaultLibraryReadGrants = (): UserShareGrantApiModel[] => [
-  { listType: 'library', contentType: 'movie', canRead: true, canCreate: false, canUpdate: false, canDelete: false },
-  { listType: 'library', contentType: 'series', canRead: true, canCreate: false, canUpdate: false, canDelete: false },
+  {
+    listType: 'library',
+    contentType: 'movie',
+    canRead: true,
+    canCreate: false,
+    canUpdate: false,
+    canDelete: false,
+    readMode: 'all',
+  },
+  {
+    listType: 'library',
+    contentType: 'series',
+    canRead: true,
+    canCreate: false,
+    canUpdate: false,
+    canDelete: false,
+    readMode: 'all',
+  },
 ];

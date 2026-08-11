@@ -28,6 +28,7 @@ export class ItemDialogActions {
   public readonly inFinished = input.required<boolean>();
   public readonly finishedEnabled = input.required<boolean>();
   public readonly trackingEnabled = input.required<boolean>();
+  public readonly ownItem = input.required<boolean>();
 
   public readonly manageCompletedEpisodes = output<void>();
   public readonly manageSeriesMetadata = output<void>();
@@ -41,5 +42,6 @@ export class ItemDialogActions {
   public readonly removeFavorite = output<void>();
   public readonly markAsFavorite = output<void>();
   public readonly edit = output<void>();
+  public readonly share = output<void>();
   public readonly delete = output<void>();
 }

@@ -16,6 +16,8 @@ Source: [`libs/shared`](../libs/shared)
 - Import through the `@shared/*` path alias.
 - The Angular applications consume the shared CSS and constants for consistent behavior and presentation.
 - The server reuses the same constants and DTOs so the API contract stays in one place.
+- Share grant DTOs require `readMode` values `all` or `selected`; an absent grant means no scope access. Item-share DTOs
+  use `none`, `selected`, or `all` because they report each recipient's state for one item.
 
 ## Important Paths
 

@@ -72,6 +72,7 @@ describe('get-tracking-seasons-api', () => {
         canCreate: false,
         canUpdate: false,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const response = mockResponse();

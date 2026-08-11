@@ -139,13 +139,15 @@ export const deleteCompletedBookByExternalId = (
 export const markAllBooksAsCompleted = (
   db: Database.Database,
   usernameHash: string,
-  sourceOwnerHash = usernameHash
+  sourceOwnerHash = usernameHash,
+  sourceItemIds?: readonly number[]
 ): number => {
   const rows = db
     .prepare(
       `SELECT ${collectionItemProjection()} FROM collection_items
        WHERE username_hash = ?
-         AND list_type = ?
+          AND list_type = ?
+            ${sourceItemIds ? 'AND id IN (SELECT value FROM json_each(?))' : ''}
            AND content_type = 'book'
            AND NOT EXISTS (
              SELECT 1 FROM collection_items book_tracker
@@ -160,7 +162,13 @@ export const markAllBooksAsCompleted = (
               AND book_tracker.list_type = ?
            )`
     )
-    .all(sourceOwnerHash, 'books', usernameHash, 'tracking') as CollectionItemRow[];
+    .all(
+      sourceOwnerHash,
+      'books',
+      ...(sourceItemIds ? [JSON.stringify(sourceItemIds)] : []),
+      usernameHash,
+      'tracking'
+    ) as CollectionItemRow[];
 
   void debugLog(
     `markAllBooksAsCompleted candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
@@ -178,7 +186,8 @@ export const markAllBooksAsCompleted = (
 export const markAllBooksAsUncompleted = (
   db: Database.Database,
   usernameHash: string,
-  sourceOwnerHash = usernameHash
+  sourceOwnerHash = usernameHash,
+  sourceItemIds?: readonly number[]
 ): number => {
   const rows = db
     .prepare(
@@ -197,9 +206,16 @@ export const markAllBooksAsUncompleted = (
                 OR (library_item.external_provider = book_tracker.external_provider AND library_item.external_item_id = book_tracker.external_item_id)
               )
               AND library_item.list_type = ?
-           )`
+              ${sourceItemIds ? 'AND library_item.id IN (SELECT value FROM json_each(?))' : ''}
+            )`
     )
-    .all(usernameHash, 'tracking', sourceOwnerHash, 'books') as CollectionItemRow[];
+    .all(
+      usernameHash,
+      'tracking',
+      sourceOwnerHash,
+      'books',
+      ...(sourceItemIds ? [JSON.stringify(sourceItemIds)] : [])
+    ) as CollectionItemRow[];
 
   void debugLog(
     `markAllBooksAsUncompleted candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`

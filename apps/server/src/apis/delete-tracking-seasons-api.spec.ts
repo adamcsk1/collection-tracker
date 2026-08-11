@@ -96,6 +96,7 @@ describe('delete-tracking-seasons-api', () => {
         canCreate: false,
         canUpdate: true,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const response = mockResponse();
@@ -132,6 +133,7 @@ describe('delete-tracking-seasons-api', () => {
         canCreate: false,
         canUpdate: false,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const response = mockResponse();

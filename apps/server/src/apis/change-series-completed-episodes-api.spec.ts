@@ -95,6 +95,7 @@ describe('change-watching-completed-episodes-api', () => {
         canCreate: false,
         canUpdate: true,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const response = mockResponse();

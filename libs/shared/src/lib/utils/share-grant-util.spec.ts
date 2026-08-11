@@ -42,6 +42,7 @@ describe('share-grant-util', () => {
           canCreate: true,
           canUpdate: false,
           canDelete: false,
+          readMode: 'all',
         },
         {
           listType: 'library',
@@ -50,6 +51,7 @@ describe('share-grant-util', () => {
           canCreate: false,
           canUpdate: false,
           canDelete: false,
+          readMode: 'all',
         },
         {
           listType: 'library',
@@ -58,6 +60,7 @@ describe('share-grant-util', () => {
           canCreate: false,
           canUpdate: true,
           canDelete: false,
+          readMode: 'selected',
         },
       ])
     ).toEqual([
@@ -68,12 +71,14 @@ describe('share-grant-util', () => {
         canCreate: false,
         canUpdate: true,
         canDelete: false,
+        readMode: 'selected',
       },
     ]);
   });
 
   it('checks permission on matching grant', () => {
     const grants = defaultLibraryReadGrants();
+    expect(grants.every((grant) => grant.readMode === 'all')).toBe(true);
     expect(hasSharePermission(grants, 'library', 'movie', 'read')).toBe(true);
     expect(hasSharePermission(grants, 'library', 'movie', 'create')).toBe(false);
     expect(hasSharePermission(grants, 'wishlist', 'movie', 'read')).toBe(false);
@@ -88,6 +93,7 @@ describe('share-grant-util', () => {
         canCreate: true,
         canUpdate: true,
         canDelete: true,
+        readMode: 'all' as const,
       },
     ];
 
@@ -106,6 +112,7 @@ describe('share-grant-util', () => {
           canCreate: false,
           canUpdate: false,
           canDelete: false,
+          readMode: 'all',
         },
         {
           listType: 'tracking',
@@ -114,6 +121,7 @@ describe('share-grant-util', () => {
           canCreate: false,
           canUpdate: false,
           canDelete: false,
+          readMode: 'all',
         },
         {
           listType: 'books',
@@ -122,11 +130,28 @@ describe('share-grant-util', () => {
           canCreate: false,
           canUpdate: false,
           canDelete: true,
+          readMode: 'all',
         },
       ])
     ).toEqual([
       expect.objectContaining({ listType: 'books', contentType: 'book', canRead: true, canDelete: true }),
       expect.objectContaining({ listType: 'tracking', contentType: 'series', canRead: true }),
     ]);
+  });
+
+  it('preserves selected mode', () => {
+    expect(
+      normalizeShareGrants([
+        {
+          listType: 'library',
+          contentType: 'series',
+          canRead: true,
+          canCreate: false,
+          canUpdate: false,
+          canDelete: false,
+          readMode: 'selected',
+        },
+      ])
+    ).toEqual([expect.objectContaining({ listType: 'library', contentType: 'series', readMode: 'selected' })]);
   });
 });

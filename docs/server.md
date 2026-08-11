@@ -91,6 +91,20 @@ Collection items, users, tokens, settings, shares, collection-list display prefe
 
 Books use `content_type = 'book'`. Owned catalog uses `list_type = 'books'` (favorites allowed). Books also allowed on `wishlist`, `up-next`, and `tracking` (in-progress or completed via tracker state). Collection **All** merges `library` + viewer’s own books; `type=book` is books-only. Canonical list types: `library`, `wishlist`, `up-next`, `tracking`, `books`. Feature prefs: `wishlist`, `upNext`, `tracking`, `books`. Tracker state may store `progress_current` / `progress_total` for book reading progress and `completed_at` for finished items. ISBN-10/13 normalize to ISBN-13.
 
+## Sharing
+
+Outgoing relationships live in `user_shares`. Each list/content grant has a read mode: `all` exposes every owned item in
+the physical scope, while `selected` exposes only rows recorded in `user_share_item_selections`. Item selections reference
+physical collection item IDs, so copies in different lists remain independent and books use the `books/book` scope even
+when displayed in Collection. Update and delete permissions apply only to readable selected rows. Create permission in a
+selected scope automatically selects the new owner item for the recipient who created it. Bulk tracking and metadata
+operations likewise process only authorized selected rows.
+
+Owners manage an item's recipients through
+`GET|PUT /api/v1/collection-items/{externalIdentitySource}/{externalIdentityId}/shares?listType=...`. Only existing
+outgoing relationships are eligible, and received items cannot be re-shared. Switching a scope to `all` or `none`,
+deleting an item, or changing its physical scope removes obsolete selections and prunes empty selected grants.
+
 ## Import And Export
 
 - Current collection data exports use `collection-tracker-export` version 10 (`trackingData` with `completedEpisodes`). Import accepts version 10 and rewrites version 9 payloads (`watchlist` → `up-next`, prefs `watchlist` → `upNext`).

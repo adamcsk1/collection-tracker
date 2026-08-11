@@ -67,14 +67,25 @@
                 >
                   <libc-checkbox
                     [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-read'"
+                    [checkboxId]="'share-dialog-read-' + listType + '-' + scope.contentType"
                     [label]="translations.canRead()"
-                    [hint]="
-                      permissionChanged(listType, scope.contentType, 'canRead') ? translations.changed() : undefined
-                    "
                     [value]="grantChecked(listType, scope.contentType, 'canRead')"
+                    [indeterminate]="readIndeterminate(listType, scope.contentType)"
                     [disabled]="readOnly()"
-                    (valueChange)="onGrantToggle(listType, scope.contentType, 'canRead', $event === true)"
+                    (valueChange)="onReadToggle(listType, scope.contentType, $event === true)"
                   />
+                  @if (!readOnly() && readIndeterminate(listType, scope.contentType)) {
+                    <button
+                      class="clear-selected"
+                      type="button"
+                      [attr.data-test-id]="
+                        'share-dialog-grant-' + listType + '-' + scope.contentType + '-clear-selected'
+                      "
+                      (click)="onClearSelected(listType, scope.contentType)"
+                    >
+                      {{ translations.clearSelected() }}
+                    </button>
+                  }
                 </div>
                 <div
                   class="permission-choice"

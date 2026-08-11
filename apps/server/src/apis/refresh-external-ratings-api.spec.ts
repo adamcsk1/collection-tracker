@@ -4,6 +4,8 @@ import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare, insertShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 vi.mock('../core/logger', () => ({
   debugLog: vi.fn(),
@@ -376,6 +378,7 @@ describe('refresh-external-ratings-api', () => {
         canCreate: false,
         canUpdate: true,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const fetchMock = vi.fn(async () => ({
@@ -394,5 +397,41 @@ describe('refresh-external-ratings-api', () => {
     expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(getRatings('tt-series')).toEqual([{ source: 'imdb', value: '7.0' }]);
+  });
+
+  it('processes only explicitly selected shared items with update permission', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertItem('tt-selected', 'selected-hash', 'owner');
+    insertItem('tt-hidden', 'hidden-hash', 'owner');
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const selectedItem = getDatabase()
+      .prepare("SELECT * FROM collection_items WHERE external_item_id = 'tt-selected'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: false, canUpdate: true, canDelete: false },
+      },
+    ]);
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ imdbID: 'tt-selected', imdbRating: '9.0', Ratings: [] }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(
+      { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } },
+      response
+    );
+    const { register } = await import('./refresh-external-ratings-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ count: 1, checked: 1, fixed: 1, errors: 0 });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(getRatings('tt-selected')).toEqual([{ source: 'imdb', value: '9.0' }]);
+    expect(getRatings('tt-hidden')).toEqual([{ source: 'imdb', value: '7.0' }]);
   });
 });

@@ -4,6 +4,8 @@ import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -38,6 +40,7 @@ const insertBookItem = (bookId: string, tags: string[] = ['#book'], listType = '
   for (const tag of tags) {
     db.prepare('INSERT INTO collection_item_tags (item_id, tag) VALUES (?, ?)').run(itemId, tag);
   }
+  return itemId;
 };
 
 describe('mark-all-books-completed-api', () => {
@@ -122,5 +125,40 @@ describe('mark-all-books-completed-api', () => {
       .prepare('SELECT username_hash, external_item_id, list_type FROM collection_items WHERE list_type = ?')
       .all('tracking');
     expect(rows).toEqual([]);
+  });
+
+  it('completes only explicitly selected shared books', async () => {
+    insertUser('user');
+    insertUser('owner');
+    const selectedItemId = insertBookItem('9780132350884', [], 'books', 'owner');
+    insertBookItem('9780134685991', [], 'books', 'owner');
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const selectedItem = getDatabase()
+      .prepare('SELECT * FROM collection_items WHERE id = ?')
+      .get(selectedItemId) as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: false },
+      },
+    ]);
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(
+      { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } },
+      response
+    );
+    const { register } = await import('./mark-all-books-completed-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ changedCount: 1 });
+    expect(
+      getDatabase()
+        .prepare(
+          "SELECT external_item_id FROM collection_items WHERE username_hash = 'user' AND list_type = 'tracking'"
+        )
+        .all()
+    ).toEqual([{ external_item_id: '9780132350884' }]);
   });
 });

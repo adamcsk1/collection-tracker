@@ -155,6 +155,9 @@ describe('collection-items-matched-api', () => {
     insertItem.run('viewer', 'imdb:viewer-item', 'Own Row', 'own row', 'own-hash');
     insertItem.run('owner', 'imdb:owner-item', 'Shared Row', 'shared row', 'shared-hash');
     db.prepare(
+      "INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES ('owner', 'viewer')"
+    ).run();
+    db.prepare(
       `INSERT INTO user_share_grants
         (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)
        VALUES ('owner', 'viewer', 'library', 'movie', 1)`
@@ -288,6 +291,11 @@ describe('collection-items-matched-api', () => {
     insertAlias.run('owner-first', 'custom:first', 'alias-first');
     insertAlias.run('owner-second', 'custom:second', 'alias-second');
     insertAlias.run('owner-private', 'custom:private', 'alias-private');
+    const insertShare = db.prepare(
+      `INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, 'viewer')`
+    );
+    insertShare.run('owner-first');
+    insertShare.run('owner-second');
     insertGrant.run('owner-first');
     insertGrant.run('owner-second');
 

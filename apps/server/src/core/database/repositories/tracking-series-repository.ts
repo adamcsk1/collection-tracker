@@ -112,13 +112,15 @@ export const copySeriesToTrackingByExternalId = (
 export const markAllSeriesAsCompleted = (
   db: Database.Database,
   usernameHash: string,
-  sourceOwnerHash = usernameHash
+  sourceOwnerHash = usernameHash,
+  sourceItemIds?: readonly number[]
 ): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
       `SELECT ${collectionItemProjection()} FROM collection_items
        WHERE username_hash = ?
-         AND list_type = ?
+          AND list_type = ?
+            ${sourceItemIds ? 'AND id IN (SELECT value FROM json_each(?))' : ''}
            AND ${seriesContentCondition}
           AND NOT EXISTS (
             SELECT 1 FROM collection_items series_tracker
@@ -130,7 +132,13 @@ export const markAllSeriesAsCompleted = (
                AND series_tracker.list_type = ?
           )`
     )
-    .all(sourceOwnerHash, 'library', usernameHash, 'tracking') as CollectionItemRow[];
+    .all(
+      sourceOwnerHash,
+      'library',
+      ...(sourceItemIds ? [JSON.stringify(sourceItemIds)] : []),
+      usernameHash,
+      'tracking'
+    ) as CollectionItemRow[];
 
   void debugLog(
     `markAllSeriesAsCompleted candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
@@ -150,7 +158,8 @@ export const markAllSeriesAsCompleted = (
 export const findTrackingItemsForLibrarySeries = (
   db: Database.Database,
   usernameHash: string,
-  sourceOwnerHash = usernameHash
+  sourceOwnerHash = usernameHash,
+  sourceItemIds?: readonly number[]
 ): CollectionItemApiModel[] => {
   const rows = db
     .prepare(
@@ -164,11 +173,18 @@ export const findTrackingItemsForLibrarySeries = (
                  (library_item.canonical_item_id IS NOT NULL AND library_item.canonical_item_id = series_tracker.canonical_item_id)
                  OR (library_item.external_provider = series_tracker.external_provider AND library_item.external_item_id = series_tracker.external_item_id)
                )
-               AND library_item.list_type = ?
-                AND ${librarySeriesContentCondition}
+                AND library_item.list_type = ?
+                ${sourceItemIds ? 'AND library_item.id IN (SELECT value FROM json_each(?))' : ''}
+                 AND ${librarySeriesContentCondition}
             )`
     )
-    .all(usernameHash, 'tracking', sourceOwnerHash, 'library') as CollectionItemRow[];
+    .all(
+      usernameHash,
+      'tracking',
+      sourceOwnerHash,
+      'library',
+      ...(sourceItemIds ? [JSON.stringify(sourceItemIds)] : [])
+    ) as CollectionItemRow[];
 
   return rows.map((row) => toApiItem(db, row, usernameHash));
 };

@@ -3,6 +3,8 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 const insertUserAndItem = () => {
   const db = getDatabase();
@@ -227,6 +229,49 @@ describe('collection-items-exists-api', () => {
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
+  });
+
+  it('returns selected item existence and denies an unselected sibling', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertItem('owner', 'tt-selected');
+    insertItem('owner', 'tt-hidden');
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const selectedItem = getDatabase()
+      .prepare("SELECT * FROM collection_items WHERE external_item_id = 'tt-selected'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: false },
+      },
+    ]);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const { register } = await import('./collection-items-exists-api');
+
+    const selectedResponse = mockResponse();
+    const selectedApp = buildApp(
+      {
+        usernameHash: 'user',
+        query: { imdbId: 'tt-selected', ownerShareCode: getUserShareCode('owner') },
+      },
+      selectedResponse
+    );
+    register(selectedApp.app);
+    await selectedApp.handlerPromise();
+    expect(selectedResponse.send).toHaveBeenCalledWith({ exists: true, hash: 'hash' });
+
+    const hiddenResponse = mockResponse();
+    const hiddenApp = buildApp(
+      {
+        usernameHash: 'user',
+        query: { imdbId: 'tt-hidden', ownerShareCode: getUserShareCode('owner') },
+      },
+      hiddenResponse
+    );
+    register(hiddenApp.app);
+    await hiddenApp.handlerPromise();
+    expect(hiddenResponse.code).toHaveBeenCalledWith(403);
   });
 
   it('returns 403 when a shared up-next item exists without up-next grant', async () => {

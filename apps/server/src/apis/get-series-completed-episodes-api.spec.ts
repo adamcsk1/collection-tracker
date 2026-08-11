@@ -97,6 +97,7 @@ describe('get-watching-completed-episodes-api', () => {
         canCreate: false,
         canUpdate: false,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const response = mockResponse();

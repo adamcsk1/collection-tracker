@@ -8,6 +8,8 @@ import {
   CollectionItemChangeApiModel,
   CollectionItemExistsApiResponseModel,
   CollectionItemFiltersApiModel,
+  CollectionItemShareApiModel,
+  CollectionItemShareSelectionApiModel,
   CollectionItemsImportApiResponseModel,
   CollectionListTypeModel,
   CollectionItemsPageModel,
@@ -253,6 +255,30 @@ export class ApiService extends BaseApiService {
     return this.request(
       'DELETE',
       `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}${this.buildQuery({ hash, ownerShareCode, listType })}`
+    );
+  }
+
+  public getCollectionItemShares(
+    externalProvider: string,
+    externalItemId: string,
+    listType: CollectionListTypeModel
+  ): Observable<CollectionItemShareApiModel[]> {
+    return this.request(
+      'GET',
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/shares${this.buildQuery({ listType })}`
+    );
+  }
+
+  public saveCollectionItemShares(
+    externalProvider: string,
+    externalItemId: string,
+    listType: CollectionListTypeModel,
+    selections: CollectionItemShareSelectionApiModel[]
+  ): Observable<void> {
+    return this.request(
+      'PUT',
+      `/collection-items/${encodeURIComponent(externalProvider)}/${encodeURIComponent(externalItemId)}/shares${this.buildQuery({ listType })}`,
+      { selections }
     );
   }
 

@@ -81,6 +81,7 @@ describe('genre-suggestions-api', () => {
         canCreate: false,
         canUpdate: false,
         canDelete: false,
+        readMode: 'all',
       },
     ]);
     const insert = db.prepare(

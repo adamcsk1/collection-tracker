@@ -4,6 +4,8 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase()
@@ -557,6 +559,49 @@ describe('create-api', () => {
         .prepare('SELECT title FROM collection_items WHERE username_hash = ? AND external_item_id = ?')
         .get('owner', 'tt0000001')
     ).toEqual({ title: 'Custom File' });
+  });
+
+  it('atomically selects an item created through selected create access', async () => {
+    insertUser('owner');
+    insertUser('user');
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+         (username_hash, external_provider, external_item_id, list_type, content_type,
+          title, title_lower, year, contributors, description, image, content_hash)
+         VALUES ('owner', 'imdb', 'anchor', 'library', 'movie', 'Anchor', 'anchor', '', '', '', '', 'anchor')`
+      )
+      .run();
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const anchorItem = getDatabase()
+      .prepare("SELECT * FROM collection_items WHERE external_item_id = 'anchor'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', anchorItem, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: true, canUpdate: false, canDelete: false },
+      },
+    ]);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const response = mockResponse();
+    const request: any = { body: { ...item, targetOwnerShareCode: getUserShareCode('owner') }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./create-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ item: expect.objectContaining({ title: 'Custom File' }) });
+    expect(
+      getDatabase()
+        .prepare(
+          `SELECT selection.owner_username_hash, selection.shared_with_username_hash
+           FROM user_share_item_selections selection
+           INNER JOIN collection_items item ON item.id = selection.collection_item_id
+           WHERE item.external_item_id = ?`
+        )
+        .get('tt0000001')
+    ).toEqual({ owner_username_hash: 'owner', shared_with_username_hash: 'user' });
   });
 
   it('returns 403 when creating in a shared library without create permission', async () => {

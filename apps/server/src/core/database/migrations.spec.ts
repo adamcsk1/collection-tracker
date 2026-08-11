@@ -2752,4 +2752,303 @@ describe('runMigrations', () => {
       db.close();
     });
   });
+
+  describe('036_add_individual_item_shares', () => {
+    it('preserves broad grants and requires an exact selected grant for owned items', async () => {
+      const migrationFile = '036_add_individual_item_shares.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES
+          ('owner', 'owner-token'), ('other', 'other-token'), ('recipient', 'recipient-token');
+        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash)
+          VALUES ('owner', 'recipient');
+        INSERT INTO user_share_grants
+          (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)
+          VALUES ('owner', 'recipient', 'library', 'movie', 1);
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, list_type, content_type,
+           title, title_lower, year, contributors, description, image, content_hash)
+          VALUES
+          ('owner', 'imdb', 'owned', 'library', 'movie', 'Owned', 'owned', '', '', '', '', 'h1'),
+          ('other', 'imdb', 'foreign', 'library', 'movie', 'Foreign', 'foreign', '', '', '', '', 'h2');
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT scope_mode FROM user_share_grants').all()).toEqual([{ scope_mode: 'all' }]);
+      const ownedItem = db.prepare("SELECT id FROM collection_items WHERE external_item_id = 'owned'").get() as {
+        id: number;
+      };
+      const foreignItem = db.prepare("SELECT id FROM collection_items WHERE external_item_id = 'foreign'").get() as {
+        id: number;
+      };
+      const insertSelection = db.prepare(
+        `INSERT INTO user_share_item_selections
+         (owner_username_hash, shared_with_username_hash, collection_item_id) VALUES ('owner', 'recipient', ?)`
+      );
+      expect(() => insertSelection.run(ownedItem.id)).toThrow('item selection requires an exact selected grant');
+      db.prepare("UPDATE user_share_grants SET scope_mode = 'selected'").run();
+      insertSelection.run(ownedItem.id);
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO user_share_item_selections
+             (owner_username_hash, shared_with_username_hash, collection_item_id) VALUES ('owner', 'recipient', ?)`
+          )
+          .run(foreignItem.id)
+      ).toThrow();
+      expect(() =>
+        db
+          .prepare(
+            `UPDATE user_share_item_selections SET collection_item_id = ?
+             WHERE owner_username_hash = 'owner' AND shared_with_username_hash = 'recipient'`
+          )
+          .run(foreignItem.id)
+      ).toThrow('item selection requires an exact selected grant');
+      db.prepare("DELETE FROM users WHERE username_hash = 'recipient'").run();
+      expect(db.prepare('SELECT * FROM user_share_item_selections').all()).toEqual([]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+  });
+
+  describe('037_cleanup_item_share_lifecycle', () => {
+    it('requires relationships and rejects direct grant identity and mode updates', async () => {
+      const migrationFile = '037_cleanup_item_share_lifecycle.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES
+          ('owner', 'owner-token'), ('recipient', 'recipient-token'), ('orphan', 'orphan-token');
+        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES ('owner', 'recipient');
+        INSERT INTO user_share_grants
+          (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, scope_mode)
+          VALUES ('owner', 'recipient', 'library', 'movie', 1, 'all');
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+      await runMigrations(db, migrationsDir);
+
+      expect(
+        db.prepare('SELECT owner_username_hash, shared_with_username_hash, scope_mode FROM user_share_grants').all()
+      ).toEqual([{ owner_username_hash: 'owner', shared_with_username_hash: 'recipient', scope_mode: 'all' }]);
+
+      const insertGrant = db.prepare(
+        `INSERT INTO user_share_grants
+         (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, scope_mode)
+         VALUES ('owner', ?, ?, ?, 1, ?)`
+      );
+      expect(() => insertGrant.run('orphan', 'wishlist', 'movie', 'all')).toThrow(
+        'share grant requires an existing user share relationship'
+      );
+      expect(() => insertGrant.run('orphan', 'wishlist', 'series', 'selected')).toThrow(
+        'share grant requires an existing user share relationship'
+      );
+
+      const immutableUpdates = [
+        "owner_username_hash = 'orphan'",
+        "shared_with_username_hash = 'orphan'",
+        "list_type = 'wishlist'",
+        "content_type = 'series'",
+        "scope_mode = 'selected'",
+      ];
+      for (const update of immutableUpdates) {
+        expect(() =>
+          db
+            .prepare(
+              `UPDATE user_share_grants SET ${update}
+               WHERE owner_username_hash = 'owner' AND shared_with_username_hash = 'recipient'
+                 AND list_type = 'library' AND content_type = 'movie'`
+            )
+            .run()
+        ).toThrow('share grant identity and scope mode cannot be updated');
+      }
+      db.prepare(
+        `UPDATE user_share_grants
+         SET can_read = 1, can_create = 1, can_update = 1, can_delete = 1
+         WHERE owner_username_hash = 'owner' AND shared_with_username_hash = 'recipient'`
+      ).run();
+      expect(
+        db
+          .prepare(
+            `SELECT shared_with_username_hash, scope_mode, can_read, can_create, can_update, can_delete
+             FROM user_share_grants WHERE list_type = 'library' AND content_type = 'movie'`
+          )
+          .get()
+      ).toEqual({
+        shared_with_username_hash: 'recipient',
+        scope_mode: 'all',
+        can_read: 1,
+        can_create: 1,
+        can_update: 1,
+        can_delete: 1,
+      });
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+
+    it('prunes the old empty selected scope after moving a selection to another valid scope', async () => {
+      const migrationFile = '037_cleanup_item_share_lifecycle.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES
+          ('owner', 'owner-token'), ('recipient', 'recipient-token');
+        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES ('owner', 'recipient');
+        INSERT INTO user_share_grants
+          (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, scope_mode)
+        VALUES
+          ('owner', 'recipient', 'library', 'movie', 1, 'selected'),
+          ('owner', 'recipient', 'library', 'series', 1, 'selected');
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, list_type, content_type,
+           title, title_lower, year, contributors, description, image, content_hash)
+        VALUES
+          ('owner', 'imdb', 'movie', 'library', 'movie', 'Movie', 'movie', '', '', '', '', 'movie'),
+          ('owner', 'imdb', 'series', 'library', 'series', 'Series', 'series', '', '', '', '', 'series');
+        INSERT INTO user_share_item_selections
+          (owner_username_hash, shared_with_username_hash, collection_item_id)
+        SELECT 'owner', 'recipient', id FROM collection_items WHERE external_item_id = 'movie';
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+      await runMigrations(db, migrationsDir);
+
+      db.prepare(
+        `UPDATE user_share_item_selections
+         SET collection_item_id = (SELECT id FROM collection_items WHERE external_item_id = 'series')`
+      ).run();
+
+      expect(db.prepare('SELECT content_type, scope_mode FROM user_share_grants').all()).toEqual([
+        { content_type: 'series', scope_mode: 'selected' },
+      ]);
+      expect(
+        db
+          .prepare(
+            `SELECT item.external_item_id
+             FROM user_share_item_selections selection
+             INNER JOIN collection_items item ON item.id = selection.collection_item_id`
+          )
+          .all()
+      ).toEqual([{ external_item_id: 'series' }]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+
+    it('prunes exact selected grants before item deletion and scope changes', async () => {
+      const migrationFile = '037_cleanup_item_share_lifecycle.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES
+          ('owner', 'owner-token'), ('recipient', 'recipient-token');
+        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES ('owner', 'recipient');
+        INSERT INTO user_share_grants
+          (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, scope_mode)
+        VALUES
+          ('owner', 'recipient', 'library', 'movie', 1, 'selected'),
+          ('owner', 'recipient', 'library', 'series', 1, 'selected');
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, list_type, content_type,
+           title, title_lower, year, contributors, description, image, content_hash)
+        VALUES
+          ('owner', 'imdb', 'movie', 'library', 'movie', 'Movie', 'movie', '', '', '', '', 'movie'),
+          ('owner', 'imdb', 'series', 'library', 'series', 'Series', 'series', '', '', '', '', 'series');
+        INSERT INTO user_share_item_selections
+          (owner_username_hash, shared_with_username_hash, collection_item_id)
+        SELECT 'owner', 'recipient', id FROM collection_items;
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+      await runMigrations(db, migrationsDir);
+
+      db.prepare("DELETE FROM collection_items WHERE external_item_id = 'movie'").run();
+      expect(db.prepare('SELECT content_type FROM user_share_grants').all()).toEqual([{ content_type: 'series' }]);
+      expect(db.prepare('SELECT collection_item_id FROM user_share_item_selections').all()).toHaveLength(1);
+
+      db.prepare("UPDATE collection_items SET list_type = 'wishlist' WHERE external_item_id = 'series'").run();
+      expect(db.prepare('SELECT * FROM user_share_grants').all()).toEqual([]);
+      expect(db.prepare('SELECT * FROM user_share_item_selections').all()).toEqual([]);
+      expect(db.prepare('SELECT * FROM user_shares').all()).toHaveLength(1);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+
+    it('enforces grant, selection, item, and relationship lifecycle invariants for direct writes', async () => {
+      const migrationFile = '037_cleanup_item_share_lifecycle.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES
+          ('owner', 'owner-token'), ('recipient', 'recipient-token'),
+          ('broad', 'broad-token'), ('deleted', 'deleted-token');
+        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES
+          ('owner', 'recipient'), ('owner', 'broad'), ('owner', 'deleted');
+        INSERT INTO user_share_grants
+          (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, scope_mode)
+        VALUES
+          ('owner', 'recipient', 'library', 'movie', 1, 'selected'),
+          ('owner', 'recipient', 'library', 'series', 1, 'selected'),
+          ('owner', 'broad', 'library', 'movie', 1, 'all'),
+          ('owner', 'deleted', 'library', 'movie', 1, 'selected');
+        INSERT INTO collection_items
+          (username_hash, external_provider, external_item_id, list_type, content_type,
+           title, title_lower, year, contributors, description, image, content_hash)
+        VALUES
+          ('owner', 'imdb', 'movie-one', 'library', 'movie', 'One', 'one', '', '', '', '', 'one'),
+          ('owner', 'imdb', 'movie-two', 'library', 'movie', 'Two', 'two', '', '', '', '', 'two'),
+          ('owner', 'imdb', 'series', 'library', 'series', 'Series', 'series', '', '', '', '', 'series');
+        INSERT INTO user_share_item_selections
+          (owner_username_hash, shared_with_username_hash, collection_item_id)
+        SELECT 'owner', 'recipient', id FROM collection_items;
+        INSERT INTO user_share_item_selections
+          (owner_username_hash, shared_with_username_hash, collection_item_id)
+        SELECT 'owner', 'deleted', id FROM collection_items WHERE external_item_id = 'movie-one';
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+      await runMigrations(db, migrationsDir);
+
+      const movieOne = db.prepare("SELECT id FROM collection_items WHERE external_item_id = 'movie-one'").get() as {
+        id: number;
+      };
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO user_share_item_selections
+             (owner_username_hash, shared_with_username_hash, collection_item_id) VALUES ('owner', 'broad', ?)`
+          )
+          .run(movieOne.id)
+      ).toThrow('item selection requires an exact selected grant');
+
+      db.prepare("DELETE FROM user_share_grants WHERE shared_with_username_hash = 'deleted'").run();
+      expect(
+        db.prepare("SELECT * FROM user_share_item_selections WHERE shared_with_username_hash = 'deleted'").all()
+      ).toEqual([]);
+
+      db.prepare(
+        `DELETE FROM user_share_item_selections
+         WHERE owner_username_hash = 'owner' AND shared_with_username_hash = 'recipient'
+           AND collection_item_id = ?`
+      ).run(movieOne.id);
+      expect(db.prepare("SELECT scope_mode FROM user_share_grants WHERE content_type = 'movie'").get()).toEqual({
+        scope_mode: 'selected',
+      });
+      db.prepare(
+        `DELETE FROM user_share_item_selections
+         WHERE owner_username_hash = 'owner' AND shared_with_username_hash = 'recipient'
+           AND collection_item_id IN (SELECT id FROM collection_items WHERE external_item_id = 'movie-two')`
+      ).run();
+      expect(
+        db
+          .prepare(
+            "SELECT 1 FROM user_share_grants WHERE shared_with_username_hash = 'recipient' AND content_type = 'movie'"
+          )
+          .get()
+      ).toBeUndefined();
+
+      db.prepare("DELETE FROM user_shares WHERE shared_with_username_hash = 'recipient'").run();
+      expect(db.prepare("SELECT * FROM user_share_grants WHERE shared_with_username_hash = 'recipient'").all()).toEqual(
+        []
+      );
+      expect(
+        db.prepare("SELECT * FROM user_share_item_selections WHERE shared_with_username_hash = 'recipient'").all()
+      ).toEqual([]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+  });
 });

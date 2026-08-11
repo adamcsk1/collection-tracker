@@ -51,6 +51,7 @@ export interface ItemDialogTranslations {
   ratings: Signal<string>;
   removeFavorite: Signal<string>;
   removeFromTracking: Signal<string>;
+  share: Signal<string>;
   tags: Signal<string>;
   watchedUpTo: Signal<string>;
   readingProgress: Signal<string>;

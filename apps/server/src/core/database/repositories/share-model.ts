@@ -14,6 +14,7 @@ export interface UserShareGrantRow {
   can_create: number;
   can_update: number;
   can_delete: number;
+  scope_mode: 'selected' | 'all';
 }
 
 export interface UserShareDetailsRow {
@@ -29,6 +30,7 @@ export interface UserShareDetailsRow {
   can_create: number | null;
   can_update: number | null;
   can_delete: number | null;
+  scope_mode: 'selected' | 'all' | null;
 }
 
 export interface UserShareDetailsModel {
@@ -37,4 +39,21 @@ export interface UserShareDetailsModel {
   sharedWithUsernameHash: string;
   counterpartUsername: string | null;
   grants: UserShareGrantApiModel[];
+}
+
+export interface CollectionItemShareDetails {
+  sharedWithUsernameHash: string;
+  sharedWithUsername: string | null;
+  readMode: 'none' | 'selected' | 'all';
+  permissions: Omit<UserShareGrantApiModel, 'listType' | 'contentType' | 'readMode'> | null;
+}
+
+export interface CollectionItemShareSelection {
+  sharedWithUsernameHash: string;
+  permissions?: Omit<UserShareGrantApiModel, 'listType' | 'contentType' | 'readMode'>;
+}
+
+export interface ShareScopeItemAccess {
+  authorized: boolean;
+  itemIds: number[];
 }

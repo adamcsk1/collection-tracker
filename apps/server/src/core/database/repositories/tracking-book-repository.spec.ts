@@ -150,6 +150,23 @@ describe('tracking-book-repository', () => {
     expect(rows).toEqual([{ username_hash: 'user', external_item_id: '9780134685991', list_type: 'tracking' }]);
   });
 
+  it('markAllBooksAsCompleted limits candidates to explicit source item IDs', () => {
+    insertUser('user');
+    const firstItemId = insertBookItem('user', '9780132350884');
+    insertBookItem('user', '9780134685991');
+    const thirdItemId = insertBookItem('user', '9780201633610');
+    const db = getDatabase();
+
+    expect(markAllBooksAsCompleted(db, 'user', 'user', [])).toBe(0);
+    expect(markAllBooksAsCompleted(db, 'user', 'user', [firstItemId, thirdItemId])).toBe(2);
+
+    expect(
+      db
+        .prepare("SELECT external_item_id FROM collection_items WHERE list_type = 'tracking' ORDER BY external_item_id")
+        .all()
+    ).toEqual([{ external_item_id: '9780132350884' }, { external_item_id: '9780201633610' }]);
+  });
+
   it('markAllBooksAsUncompleted clears completed timestamp and keeps tracking row and progress', () => {
     insertUser('user');
     insertBookItem('user', '9780132350884', ['#book'], 'books');
@@ -201,6 +218,28 @@ describe('tracking-book-repository', () => {
       .prepare('SELECT completed_at FROM collection_item_tracker_state WHERE item_id = ?')
       .get(ownTrackerId) as { completed_at: string | null };
     expect(ownState.completed_at).toBeNull();
+  });
+
+  it('markAllBooksAsUncompleted limits completed tracking rows to explicit source item IDs', () => {
+    insertUser('user');
+    const firstItemId = insertBookItem('user', '9780132350884');
+    insertBookItem('user', '9780134685991');
+    const thirdItemId = insertBookItem('user', '9780201633610');
+    const firstTrackerId = insertBookItem('user', '9780132350884', [], 'tracking');
+    const secondTrackerId = insertBookItem('user', '9780134685991', [], 'tracking');
+    const thirdTrackerId = insertBookItem('user', '9780201633610', [], 'tracking');
+    const db = getDatabase();
+
+    expect(markAllBooksAsUncompleted(db, 'user', 'user', [])).toBe(0);
+    expect(markAllBooksAsUncompleted(db, 'user', 'user', [firstItemId, thirdItemId])).toBe(2);
+
+    expect(
+      db.prepare('SELECT item_id, completed_at FROM collection_item_tracker_state ORDER BY item_id').all()
+    ).toEqual([
+      { item_id: firstTrackerId, completed_at: null },
+      { item_id: secondTrackerId, completed_at: expect.any(String) },
+      { item_id: thirdTrackerId, completed_at: null },
+    ]);
   });
 
   it('copyBookToCompletedByExternalId copies a books-list item into tracking as completed', () => {

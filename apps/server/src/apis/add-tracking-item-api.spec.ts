@@ -4,6 +4,8 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 const insertUser = (usernameHash: string) => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -227,6 +229,52 @@ describe('add-tracking-item-api', () => {
       { username_hash: 'owner', list_type: 'library' },
       { username_hash: 'user', list_type: 'tracking' },
     ]);
+  });
+
+  it('copies a selected shared source and rejects an unselected sibling', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertItem('owner', 'tt-1', ['#series'], 'library');
+    insertItem('owner', 'tt-2', ['#series'], 'library');
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const selectedItem = getDatabase()
+      .prepare("SELECT * FROM collection_items WHERE username_hash = 'owner' AND external_item_id = 'tt-1'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: false },
+      },
+    ]);
+    const { register } = await import('./add-tracking-item-api');
+
+    const selectedResponse = mockResponse();
+    const selectedApp = buildApp(
+      {
+        usernameHash: 'user',
+        params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-1' },
+        query: { ownerShareCode: getUserShareCode('owner') },
+      },
+      selectedResponse
+    );
+    register(selectedApp.app);
+    await selectedApp.handlerPromise();
+    expect(selectedResponse.send).toHaveBeenCalledWith({
+      item: expect.objectContaining({ externalItemId: 'tt-1', listType: 'tracking' }),
+    });
+
+    const hiddenResponse = mockResponse();
+    const hiddenApp = buildApp(
+      {
+        usernameHash: 'user',
+        params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-2' },
+        query: { ownerShareCode: getUserShareCode('owner') },
+      },
+      hiddenResponse
+    );
+    register(hiddenApp.app);
+    await hiddenApp.handlerPromise();
+    expect(hiddenResponse.code).toHaveBeenCalledWith(403);
   });
 
   it('returns 403 when copying from a shared library without read permission', async () => {

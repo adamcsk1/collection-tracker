@@ -192,13 +192,15 @@ export const deleteAllCompletedItems = (db: Database.Database, usernameHash: str
 export const markAllMoviesAsCompleted = (
   db: Database.Database,
   usernameHash: string,
-  sourceOwnerHash = usernameHash
+  sourceOwnerHash = usernameHash,
+  sourceItemIds?: readonly number[]
 ): number => {
   const rows = db
     .prepare(
       `SELECT ${collectionItemProjection()} FROM collection_items
        WHERE username_hash = ?
-         AND list_type = ?
+          AND list_type = ?
+            ${sourceItemIds ? 'AND id IN (SELECT value FROM json_each(?))' : ''}
            AND ${movieContentCondition}
            AND NOT EXISTS (
              SELECT 1 FROM collection_items movie_tracker
@@ -210,7 +212,13 @@ export const markAllMoviesAsCompleted = (
               AND movie_tracker.list_type = ?
            )`
     )
-    .all(sourceOwnerHash, 'library', usernameHash, 'tracking') as CollectionItemRow[];
+    .all(
+      sourceOwnerHash,
+      'library',
+      ...(sourceItemIds ? [JSON.stringify(sourceItemIds)] : []),
+      usernameHash,
+      'tracking'
+    ) as CollectionItemRow[];
 
   void debugLog(
     `markAllMoviesAsCompleted candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`
@@ -228,7 +236,8 @@ export const markAllMoviesAsCompleted = (
 export const markAllMoviesAsUncompleted = (
   db: Database.Database,
   usernameHash: string,
-  sourceOwnerHash = usernameHash
+  sourceOwnerHash = usernameHash,
+  sourceItemIds?: readonly number[]
 ): number => {
   const rows = db
     .prepare(
@@ -247,9 +256,16 @@ export const markAllMoviesAsUncompleted = (
                 OR (library_item.external_provider = movie_tracker.external_provider AND library_item.external_item_id = movie_tracker.external_item_id)
               )
               AND library_item.list_type = ?
-           )`
+              ${sourceItemIds ? 'AND library_item.id IN (SELECT value FROM json_each(?))' : ''}
+            )`
     )
-    .all(usernameHash, 'tracking', sourceOwnerHash, 'library') as CollectionItemRow[];
+    .all(
+      usernameHash,
+      'tracking',
+      sourceOwnerHash,
+      'library',
+      ...(sourceItemIds ? [JSON.stringify(sourceItemIds)] : [])
+    ) as CollectionItemRow[];
 
   void debugLog(
     `markAllMoviesAsUncompleted candidates: requester=${usernameHash}, sourceOwner=${sourceOwnerHash}, count=${rows.length}`

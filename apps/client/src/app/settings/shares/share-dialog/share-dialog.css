@@ -68,6 +68,11 @@
   background: var(--theme-color);
 }
 
+.clear-selected {
+  margin-inline-start: var(--size-xs);
+  font-size: var(--font-size-sm);
+}
+
 @media (width < 700px) {
   .permission-definitions,
   .permission-checkboxes {

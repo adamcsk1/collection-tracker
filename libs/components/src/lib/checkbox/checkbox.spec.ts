@@ -7,11 +7,22 @@ import { Checkbox } from './checkbox';
 
 @Component({
   imports: [FormField, Checkbox],
-  template: `<libc-checkbox [formField]="field" label="Watched" hint="Hint" [mandatory]="true"></libc-checkbox>`,
+  template: `<libc-checkbox
+    [formField]="field"
+    label="Watched"
+    hint="Hint"
+    [mandatory]="true"
+    [indeterminate]="indeterminate()"
+    [disabled]="disabled()"
+    (valueChange)="emittedValue.set($event)"
+  ></libc-checkbox>`,
 })
 class HostComponent {
   public readonly model = signal(false);
   public readonly field = form(this.model, (path) => required(path));
+  public readonly indeterminate = signal(true);
+  public readonly disabled = signal(false);
+  public readonly emittedValue = signal<boolean | null>(null);
 }
 
 @Component({
@@ -35,7 +46,7 @@ describe('Checkbox component', () => {
     fixture.detectChanges();
   });
 
-  it('updates value on change', () => {
+  it('updates and emits value on change', () => {
     const component = fixture.debugElement.children[0].children[0].componentInstance as Checkbox;
 
     component['onChange']({ target: { checked: true } } as unknown as Event);
@@ -43,6 +54,33 @@ describe('Checkbox component', () => {
 
     expect(fixture.componentInstance.model()).toBe(true);
     expect(component.value()).toBe(true);
+    expect(fixture.componentInstance.emittedValue()).toBe(true);
+  });
+
+  it('binds initial and updated indeterminate state to the native checkbox', () => {
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+
+    expect(input.indeterminate).toBe(true);
+    expect(input.checked).toBe(false);
+    expect(input.getAttribute('aria-checked')).toBe('mixed');
+
+    fixture.componentInstance.indeterminate.set(false);
+    fixture.detectChanges();
+
+    expect(input.indeterminate).toBe(false);
+    expect(input.checked).toBe(false);
+    expect(input.getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('binds disabled state to the native checkbox', () => {
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+
+    expect(input.disabled).toBe(false);
+
+    fixture.componentInstance.disabled.set(true);
+    fixture.detectChanges();
+
+    expect(input.disabled).toBe(true);
   });
 
   it('marks the field as touched on blur', () => {

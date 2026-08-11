@@ -212,7 +212,8 @@ export const findCollectionItems = (
   limit: number,
   listType: CollectionListTypeModel | 'all' = 'library',
   viewerUsernameHash = usernameHashes[0],
-  excludeContentTypes?: readonly CollectionItemContentTypeModel[]
+  excludeContentTypes?: readonly CollectionItemContentTypeModel[],
+  includeItemIds?: readonly number[]
 ): CollectionItemApiModel[] => {
   const whereParts = [`username_hash IN (${usernameHashes.map(() => '?').join(', ')})`];
   const params: unknown[] = [...usernameHashes];
@@ -223,6 +224,10 @@ export const findCollectionItems = (
   if (excludeContentTypes?.length) {
     whereParts.push(`content_type NOT IN (${excludeContentTypes.map(() => '?').join(', ')})`);
     params.push(...excludeContentTypes);
+  }
+  if (includeItemIds) {
+    whereParts.push('id IN (SELECT value FROM json_each(?))');
+    params.push(JSON.stringify(includeItemIds));
   }
   params.push(limit, offset);
   const rows = db
@@ -531,7 +536,8 @@ export const countCollectionItems = (
   db: Database.Database,
   usernameHashes: string[],
   listType: CollectionListTypeModel | 'all' = 'library',
-  excludeContentTypes?: readonly CollectionItemContentTypeModel[]
+  excludeContentTypes?: readonly CollectionItemContentTypeModel[],
+  includeItemIds?: readonly number[]
 ): number => {
   const whereParts = [`username_hash IN (${usernameHashes.map(() => '?').join(', ')})`];
   const params: unknown[] = [...usernameHashes];
@@ -542,6 +548,10 @@ export const countCollectionItems = (
   if (excludeContentTypes?.length) {
     whereParts.push(`content_type NOT IN (${excludeContentTypes.map(() => '?').join(', ')})`);
     params.push(...excludeContentTypes);
+  }
+  if (includeItemIds) {
+    whereParts.push('id IN (SELECT value FROM json_each(?))');
+    params.push(JSON.stringify(includeItemIds));
   }
   const row = db
     .prepare(

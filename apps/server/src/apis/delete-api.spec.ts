@@ -4,6 +4,8 @@ import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase()
@@ -235,6 +237,40 @@ describe('delete-api', () => {
         .prepare('SELECT COUNT(*) as count FROM collection_items WHERE username_hash = ? AND external_item_id = ?')
         .get('owner', 'tt-delete')
     ).toEqual({ count: 0 });
+  });
+
+  it('deletes a selected item and clears its final selected grant', async () => {
+    insertItem('abc123', 'owner');
+    insertUser('user');
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const selectedItem = getDatabase()
+      .prepare("SELECT * FROM collection_items WHERE username_hash = 'owner' AND external_item_id = 'tt-delete'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: true },
+      },
+    ]);
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(
+      {
+        usernameHash: 'user',
+        params: { externalIdentitySource: 'omdb', externalIdentityId: 'tt-delete' },
+        query: { hash: 'abc123', ownerShareCode: getUserShareCode('owner') },
+      },
+      response
+    );
+    const { register } = await import('./delete-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(204);
+    expect(getDatabase().prepare('SELECT * FROM user_share_grants').all()).toEqual([]);
+    expect(getDatabase().prepare('SELECT * FROM user_share_item_selections').all()).toEqual([]);
+    expect(getDatabase().prepare('SELECT * FROM user_shares').all()).toHaveLength(1);
   });
 
   it('returns 403 when deleting from a shared library without delete permission', async () => {

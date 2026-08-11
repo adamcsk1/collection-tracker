@@ -1,6 +1,7 @@
 import type { UserShareGrantApiModel } from '@shared/models/api-model';
 import { getDatabase } from '../database/database';
-import { upsertShare } from '../database/repositories/share-repository';
+import { replaceCollectionItemSelections, upsertShare } from '../database/repositories/share-repository';
+import type { CollectionItemRow } from '../database/repositories/collection/collection-model';
 import { getUserShareCode } from '../database/repositories/user-repository';
 import { describe, expect, it } from 'vitest';
 import { resolveTrackingSeriesTarget } from './tracking-series-target-util';
@@ -29,6 +30,7 @@ const grant = (canRead: boolean, canUpdate: boolean): UserShareGrantApiModel => 
   canCreate: false,
   canUpdate,
   canDelete: false,
+  readMode: 'all',
 });
 
 describe('resolveTrackingSeriesTarget', () => {
@@ -70,6 +72,38 @@ describe('resolveTrackingSeriesTarget', () => {
 
     expect(
       resolveTrackingSeriesTarget(getDatabase(), 'viewer', getUserShareCode('owner'), 'imdb', 'tt-series', 'update')
+    ).toEqual({ status: 403 });
+  });
+
+  it('allows a selected tracking series and denies an unselected sibling', () => {
+    insertUser('owner');
+    insertUser('viewer');
+    insertItem('owner');
+    getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+         (username_hash, external_provider, external_item_id, canonical_item_id, list_type, content_type,
+          title, title_lower, year, description, image, content_hash)
+         VALUES ('owner', 'imdb', 'tt-hidden', 'imdb:tt-hidden', 'tracking', 'series',
+                 'Hidden', 'hidden', '', '', '', 'hidden')`
+      )
+      .run();
+    upsertShare(getDatabase(), 'owner', 'viewer', []);
+    const selectedItem = getDatabase()
+      .prepare("SELECT * FROM collection_items WHERE external_item_id = 'tt-series'")
+      .get() as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'viewer',
+        permissions: { canRead: true, canCreate: false, canUpdate: true, canDelete: false },
+      },
+    ]);
+
+    expect(
+      resolveTrackingSeriesTarget(getDatabase(), 'viewer', getUserShareCode('owner'), 'imdb', 'tt-series', 'update')
+    ).toEqual({ status: 200, ownerHash: 'owner', item: expect.objectContaining({ external_item_id: 'tt-series' }) });
+    expect(
+      resolveTrackingSeriesTarget(getDatabase(), 'viewer', getUserShareCode('owner'), 'imdb', 'tt-hidden', 'update')
     ).toEqual({ status: 403 });
   });
 

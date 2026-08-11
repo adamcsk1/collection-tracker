@@ -235,8 +235,17 @@ export const buildReadableItemScope = (
     WHERE readable_grant.shared_with_username_hash = ?
       AND readable_grant.owner_username_hash = collection_items.username_hash
       AND readable_grant.list_type = collection_items.list_type
-      AND readable_grant.content_type = collection_items.content_type
-      AND readable_grant.can_read = 1
+       AND readable_grant.content_type = collection_items.content_type
+       AND readable_grant.can_read = 1
+       AND (
+         readable_grant.scope_mode = 'all'
+         OR EXISTS (
+           SELECT 1 FROM user_share_item_selections readable_selection
+           WHERE readable_selection.owner_username_hash = collection_items.username_hash
+             AND readable_selection.shared_with_username_hash = ?
+             AND readable_selection.collection_item_id = collection_items.id
+         )
+       )
   )`;
   const readableOwnerHashes = `SELECT candidate_grant.owner_username_hash
     FROM user_share_grants candidate_grant
@@ -249,14 +258,14 @@ export const buildReadableItemScope = (
       ${readableOwnerHashes}
     )`);
     itemClauses.push(`(collection_items.username_hash = ? OR ${readableGrantExists})`);
-    params.push(viewerUsernameHash, viewerUsernameHash, viewerUsernameHash, viewerUsernameHash);
+    params.push(viewerUsernameHash, viewerUsernameHash, viewerUsernameHash, viewerUsernameHash, viewerUsernameHash);
   } else if (includeMine) {
     itemClauses.push('collection_items.username_hash = ?');
     params.push(viewerUsernameHash);
   } else {
     itemClauses.push(`collection_items.username_hash IN (${readableOwnerHashes})`);
     itemClauses.push(readableGrantExists);
-    params.push(viewerUsernameHash, viewerUsernameHash);
+    params.push(viewerUsernameHash, viewerUsernameHash, viewerUsernameHash);
   }
 
   return {

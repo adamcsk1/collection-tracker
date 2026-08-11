@@ -4,6 +4,8 @@ import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { insertLibraryShare } from '../../test/mocks/share-mock';
+import { replaceCollectionItemSelections, upsertShare } from '../core/database/repositories/share-repository';
+import type { CollectionItemRow } from '../core/database/repositories/collection/collection-model';
 
 const insertUser = (usernameHash = 'user') => {
   getDatabase().prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run(usernameHash, 'token');
@@ -210,6 +212,58 @@ describe('mark-all-series-uncompleted-api', () => {
         .prepare('SELECT tag FROM collection_item_tags WHERE item_id = ? ORDER BY tag')
         .all(trackerOnlyItemId)
     ).toEqual([{ tag: '#completed' }, { tag: '#series' }]);
+  });
+
+  it('uncompletes only selected shared series and leaves sibling tracking progress untouched', async () => {
+    insertUser('user');
+    insertUser('owner');
+    const selectedItemId = insertItem('tt-selected', [], 'library', 'owner');
+    insertItem('tt-hidden', [], 'library', 'owner');
+    const selectedTrackerId = insertItem('tt-selected', [], 'tracking', 'user');
+    const hiddenTrackerId = insertItem('tt-hidden', [], 'tracking', 'user');
+    getDatabase()
+      .prepare('UPDATE collection_item_tracker_state SET completed_at = ? WHERE item_id IN (?, ?)')
+      .run('2026-01-01 00:00:00', selectedTrackerId, hiddenTrackerId);
+    getDatabase()
+      .prepare('INSERT INTO series_tracking_seasons (item_id, season, episodes) VALUES (?, 1, 2), (?, 1, 2)')
+      .run(selectedTrackerId, hiddenTrackerId);
+    getDatabase()
+      .prepare('INSERT INTO series_completed_episodes (item_id, season, episode) VALUES (?, 1, 1), (?, 1, 1)')
+      .run(selectedTrackerId, hiddenTrackerId);
+    upsertShare(getDatabase(), 'owner', 'user', []);
+    const selectedItem = getDatabase()
+      .prepare('SELECT * FROM collection_items WHERE id = ?')
+      .get(selectedItemId) as CollectionItemRow;
+    replaceCollectionItemSelections(getDatabase(), 'owner', selectedItem, [
+      {
+        sharedWithUsernameHash: 'user',
+        permissions: { canRead: true, canCreate: false, canUpdate: false, canDelete: false },
+      },
+    ]);
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(
+      { usernameHash: 'user', query: { ownerShareCode: getUserShareCode('owner') } },
+      response
+    );
+    const { register } = await import('./mark-all-series-uncompleted-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.send).toHaveBeenCalledWith({ changedCount: 1 });
+    expect(
+      getDatabase().prepare('SELECT item_id, completed_at FROM collection_item_tracker_state ORDER BY item_id').all()
+    ).toEqual([
+      { item_id: selectedTrackerId, completed_at: null },
+      { item_id: hiddenTrackerId, completed_at: '2026-01-01 00:00:00' },
+    ]);
+    expect(getDatabase().prepare('SELECT item_id FROM series_completed_episodes ORDER BY item_id').all()).toEqual([
+      { item_id: hiddenTrackerId },
+    ]);
+    expect(getDatabase().prepare('SELECT item_id FROM series_tracking_seasons ORDER BY item_id').all()).toEqual([
+      { item_id: selectedTrackerId },
+      { item_id: hiddenTrackerId },
+    ]);
   });
 
   it('returns 404 when the shared library owner is missing', async () => {

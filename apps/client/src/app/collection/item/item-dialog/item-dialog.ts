@@ -44,6 +44,7 @@ import { ItemFormModel } from '../item-form/item-form-model';
 import { GenreSuggestionsProvider, TagSuggestionsProvider } from '../item-form/suggestion/item-autocomplete-providers';
 import { ItemDialogActions } from './item-dialog-actions';
 import { ItemDialogDetail } from './item-dialog-detail';
+import { ItemShareDialog } from '../item-share-dialog/item-share-dialog';
 import { buildIMDbUrl, buildTrailerUrl, buildWebSearchUrl } from './utils/item-dialog-util';
 
 @Component({
@@ -147,6 +148,7 @@ export class ItemDialog implements OnInit {
     manageSeriesMetadata: computed(() => this.ngxSignalTranslate.translate('ManageSeriesMetadata')),
     removeFavorite: computed(() => this.ngxSignalTranslate.translate('RemoveFavorite')),
     removeFromTracking: computed(() => this.ngxSignalTranslate.translate('RemoveFromTracking')),
+    share: computed(() => this.ngxSignalTranslate.translate('ShareItem')),
     delete: computed(() => {
       switch (this.collectionItem().listType) {
         case 'tracking':
@@ -612,6 +614,17 @@ export class ItemDialog implements OnInit {
 
   protected onEdit(): void {
     this.editMode.set(true);
+  }
+
+  protected onShare(): void {
+    if (!this.isOwnItem() || this.editMode()) return;
+    const item = this.collectionItem();
+    this.portal.openStacked(ItemShareDialog, {
+      externalProvider: item.externalProvider,
+      externalItemId: item.externalItemId,
+      listType: item.listType,
+      itemTitle: item.title,
+    });
   }
 
   protected onReadOnly(): void {

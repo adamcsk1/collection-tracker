@@ -18,6 +18,8 @@ export class Checkbox implements FormValueControl<boolean | null> {
   public readonly touched = model(false);
   public readonly dirty = input(false);
   public readonly disabled = input(false);
+  public readonly indeterminate = input(false);
+  public readonly ariaDescribedBy = input<string>();
   public readonly errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public readonly checkboxId = input<string>(crypto.randomUUID());
   public readonly label = input.required<string>();
@@ -27,7 +29,10 @@ export class Checkbox implements FormValueControl<boolean | null> {
   protected readonly showError = this._a11y.showError;
   protected readonly hintId = this._a11y.hintId;
   protected readonly errorId = this._a11y.errorId;
-  protected readonly describedBy = this._a11y.describedBy;
+  protected readonly describedBy = computed(() => {
+    const ids = [this.ariaDescribedBy(), this._a11y.describedBy()].filter(Boolean);
+    return ids.length ? ids.join(' ') : null;
+  });
   protected readonly hasRequiredError = this._a11y.hasRequiredError;
 
   protected onChange(event: Event): void {

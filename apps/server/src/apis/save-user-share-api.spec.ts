@@ -35,6 +35,7 @@ describe('save-user-share-api', () => {
             canCreate: true,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
           {
             listType: 'wishlist',
@@ -43,6 +44,7 @@ describe('save-user-share-api', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },
@@ -104,6 +106,7 @@ describe('save-user-share-api', () => {
             canCreate: true,
             canUpdate: true,
             canDelete: true,
+            readMode: 'all',
           },
         ],
       },
@@ -136,6 +139,139 @@ describe('save-user-share-api', () => {
     ]);
   });
 
+  it('removes an omitted selected scope and preserves the relationship', async () => {
+    insertUser('owner-hash', 'Owner');
+    insertUser('friend-hash', 'Friend');
+    getDatabase()
+      .prepare('INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, ?)')
+      .run('owner-hash', 'friend-hash');
+    getDatabase()
+      .prepare(
+        `INSERT INTO user_share_grants
+         (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, scope_mode)
+         VALUES (?, ?, 'library', 'movie', 1, 'selected')`
+      )
+      .run('owner-hash', 'friend-hash');
+    const itemResult = getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+         (username_hash, external_provider, external_item_id, list_type, content_type,
+          title, title_lower, year, contributors, description, image, content_hash)
+         VALUES ('owner-hash', 'imdb', 'selected', 'library', 'movie', 'Selected', 'selected', '', '', '', '', 'h')`
+      )
+      .run();
+    getDatabase()
+      .prepare(
+        `INSERT INTO user_share_item_selections
+         (owner_username_hash, shared_with_username_hash, collection_item_id) VALUES (?, ?, ?)`
+      )
+      .run('owner-hash', 'friend-hash', Number(itemResult.lastInsertRowid));
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'owner-hash',
+      body: {
+        sharedWithUserShareCode: getUserShareCode('friend-hash'),
+        grants: [],
+      },
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+    const { register } = await import('./save-user-share-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(204);
+    expect(getDatabase().prepare('SELECT * FROM user_share_grants').all()).toEqual([]);
+    expect(getDatabase().prepare('SELECT * FROM user_share_item_selections').all()).toEqual([]);
+    expect(getDatabase().prepare('SELECT * FROM user_shares').all()).toHaveLength(1);
+  });
+
+  it('preserves selections when saving an unchanged selected scope and updates permissions', async () => {
+    insertUser('owner-hash', 'Owner');
+    insertUser('friend-hash', 'Friend');
+    getDatabase()
+      .prepare('INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, ?)')
+      .run('owner-hash', 'friend-hash');
+    getDatabase()
+      .prepare(
+        `INSERT INTO user_share_grants
+         (owner_username_hash, shared_with_username_hash, list_type, content_type,
+          can_read, can_create, can_update, can_delete, scope_mode)
+         VALUES (?, ?, 'books', 'book', 1, 0, 0, 0, 'selected')`
+      )
+      .run('owner-hash', 'friend-hash');
+    const itemResult = getDatabase()
+      .prepare(
+        `INSERT INTO collection_items
+         (username_hash, external_provider, external_item_id, list_type, content_type,
+          title, title_lower, year, contributors, description, image, content_hash)
+         VALUES ('owner-hash', 'openlibrary', 'book', 'books', 'book', 'Book', 'book', '', '', '', '', 'book')`
+      )
+      .run();
+    const itemId = Number(itemResult.lastInsertRowid);
+    getDatabase()
+      .prepare(
+        `INSERT INTO user_share_item_selections
+         (owner_username_hash, shared_with_username_hash, collection_item_id) VALUES (?, ?, ?)`
+      )
+      .run('owner-hash', 'friend-hash', itemId);
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(
+      {
+        usernameHash: 'owner-hash',
+        body: {
+          sharedWithUserShareCode: getUserShareCode('friend-hash'),
+          grants: [
+            {
+              listType: 'books',
+              contentType: 'book',
+              canRead: true,
+              canCreate: true,
+              canUpdate: true,
+              canDelete: true,
+              readMode: 'selected',
+            },
+          ],
+        },
+      },
+      response
+    );
+    const { register } = await import('./save-user-share-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(204);
+    expect(getDatabase().prepare('SELECT collection_item_id FROM user_share_item_selections').all()).toEqual([
+      { collection_item_id: itemId },
+    ]);
+    expect(
+      getDatabase().prepare('SELECT can_create, can_update, can_delete, scope_mode FROM user_share_grants').get()
+    ).toEqual({ can_create: 1, can_update: 1, can_delete: 1, scope_mode: 'selected' });
+  });
+
+  it('accepts an empty grant array and preserves the relationship', async () => {
+    insertUser('owner-hash', 'Owner');
+    insertUser('friend-hash', 'Friend');
+    insertLibraryShare(getDatabase(), 'owner-hash', 'friend-hash', { canRead: true });
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(
+      {
+        usernameHash: 'owner-hash',
+        body: { sharedWithUserShareCode: getUserShareCode('friend-hash'), grants: [] },
+      },
+      response
+    );
+    const { register } = await import('./save-user-share-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(204);
+    expect(getDatabase().prepare('SELECT * FROM user_share_grants').all()).toEqual([]);
+    expect(getDatabase().prepare('SELECT * FROM user_shares').all()).toHaveLength(1);
+  });
+
   it('rejects missing grants', async () => {
     insertUser('owner-hash', 'Owner');
     insertUser('friend-hash', 'Friend');
@@ -150,6 +286,36 @@ describe('save-user-share-api', () => {
     };
     const { app, handlerPromise } = buildApp(request, response);
 
+    const { register } = await import('./save-user-share-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it.each([undefined, 'none'])('rejects grant read mode %s', async (readMode) => {
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp(
+      {
+        usernameHash: 'owner-hash',
+        body: {
+          sharedWithUserShareCode: 'code',
+          grants: [
+            {
+              listType: 'library',
+              contentType: 'movie',
+              canRead: true,
+              canCreate: false,
+              canUpdate: false,
+              canDelete: false,
+              ...(readMode === undefined ? {} : { readMode }),
+            },
+          ],
+        },
+      },
+      response
+    );
     const { register } = await import('./save-user-share-api');
     register(app);
 
@@ -175,6 +341,7 @@ describe('save-user-share-api', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
           {
             listType: 'books',
@@ -183,6 +350,7 @@ describe('save-user-share-api', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
         ],
       },
@@ -215,6 +383,7 @@ describe('save-user-share-api', () => {
             canCreate: false,
             canUpdate: false,
             canDelete: false,
+            readMode: 'all',
           },
           {
             listType: 'library',
@@ -223,6 +392,7 @@ describe('save-user-share-api', () => {
             canCreate: true,
             canUpdate: true,
             canDelete: true,
+            readMode: 'all',
           },
         ],
       },
@@ -236,5 +406,37 @@ describe('save-user-share-api', () => {
 
     expect(response.code).toHaveBeenCalledWith(400);
     expect(getDatabase().prepare('SELECT * FROM user_shares').all()).toEqual([]);
+  });
+
+  it.each([
+    {
+      sharedWithUserShareCode: 'code',
+      grants: [],
+      unexpected: true,
+    },
+    {
+      sharedWithUserShareCode: 'code',
+      grants: [
+        {
+          listType: 'library',
+          contentType: 'movie',
+          canRead: true,
+          canCreate: false,
+          canUpdate: false,
+          canDelete: false,
+          readMode: 'all',
+          unexpected: true,
+        },
+      ],
+    },
+  ])('rejects malformed payload properties', async (body) => {
+    const response = mockResponse();
+    const { app, handlerPromise } = buildApp({ usernameHash: 'owner-hash', body }, response);
+    const { register } = await import('./save-user-share-api');
+    register(app);
+
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 });

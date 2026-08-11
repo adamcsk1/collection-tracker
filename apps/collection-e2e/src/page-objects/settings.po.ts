@@ -102,12 +102,16 @@ export const SettingsPage = {
     permission: 'can-read' | 'can-create' | 'can-update' | 'can-delete'
   ) => cy.getByTestId(`share-dialog-grant-${listType}-${contentType}-${permission}`).find('input[type="checkbox"]'),
   getShareDialogSaveButton: () => cy.getByTestId('share-dialog-save'),
+  closeShareDialogByOverlay: () =>
+    cy.getByTestId('share-dialog').last().find('[data-test-id="dialog-overlay"]').click({ force: true }),
   getEditShareButton: (shareCode: string) => cy.getByTestId(`edit-share-${shareCode}`),
   getOutgoingShareGrantCheckbox: (
     listType: string,
     contentType: string,
     permission: 'can-read' | 'can-create' | 'can-update' | 'can-delete'
   ) => cy.getByTestId(`share-dialog-grant-${listType}-${contentType}-${permission}`).find('input[type="checkbox"]'),
+  getClearSelectedShareButton: (listType: string, contentType: string) =>
+    cy.getByTestId(`share-dialog-grant-${listType}-${contentType}-clear-selected`),
   getRemoveShareButton: (shareCode: string) => cy.getByTestId(`remove-share-${shareCode}`),
   getRevokeIncomingShareButton: (shareCode: string) => cy.getByTestId(`revoke-incoming-share-${shareCode}`),
   getViewIncomingShareButton: (shareCode: string) => cy.getByTestId(`view-incoming-share-${shareCode}`),

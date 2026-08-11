@@ -16,7 +16,7 @@ import {
   findCompletedEpisodesByExternalId,
   markAllEpisodesCompletedByExternalId,
 } from '../core/database/repositories/series-completed-episodes-repository';
-import { canAccessShare } from '../core/database/repositories/share-repository';
+import { findAccessibleShareItemIds } from '../core/database/repositories/share-repository';
 import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { debugLog } from '../core/logger';
@@ -45,14 +45,15 @@ export const register = (app: FastifyInstance): void => {
       return response.code(404).send();
     }
 
-    if (!canAccessShare(db, request.usernameHash, ownerHash, 'library', 'series', 'read')) {
+    const access = findAccessibleShareItemIds(db, request.usernameHash, ownerHash, 'library', ['series'], 'read');
+    if (!access.authorized) {
       return response.code(403).send();
     }
 
     await debugLog(
       `POST /collection-items/actions/mark-series-completed source owner resolved: ownerShareCode=${query.ownerShareCode ?? ''}, requester=${request.usernameHash}, sourceOwner=${ownerHash}`
     );
-    const insertedItems = markAllSeriesAsCompleted(db, request.usernameHash, ownerHash);
+    const insertedItems = markAllSeriesAsCompleted(db, request.usernameHash, ownerHash, access.itemIds);
     const selectedOwnLibrary = ownerHash === request.usernameHash && typeof query.ownerShareCode !== 'string';
 
     for (const item of insertedItems) {
@@ -64,7 +65,7 @@ export const register = (app: FastifyInstance): void => {
 
     const trackerItems = selectedOwnLibrary
       ? findOwnTrackingItems(db, request.usernameHash)
-      : findTrackingItemsForLibrarySeries(db, request.usernameHash, ownerHash);
+      : findTrackingItemsForLibrarySeries(db, request.usernameHash, ownerHash, access.itemIds);
     let progressChangedCount = 0;
 
     for (const item of trackerItems) {

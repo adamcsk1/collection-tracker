@@ -9,7 +9,7 @@ Source: [`libs/components`](../libs/components)
 - `autocomplete`: suggestion-driven text input
 - `blocker-loading`: full-screen blocking overlay and store
 - `callout`: emphasized contextual message with a decorative icon and projected content
-- `checkbox`: reusable boolean form control
+- `checkbox`: reusable boolean form control with native indeterminate-state support
 - `details`: wrapper around native expandable panels
 - `dialog-shell`: shared dialog layout for portal-driven overlays
 - `input`: reusable text and password input
@@ -29,6 +29,8 @@ Source: [`libs/components`](../libs/components)
 - The applications provide the blocker, spinner, and toast stores from their application configuration.
 - `dialog-shell` works with `PortalService` from the services library.
 - `callout` owns the visual treatment and note semantics. Consumers provide the icon and translated projected content.
+- `checkbox` accepts `indeterminate` separately from its boolean value so select-all and partial-access controls expose
+  native mixed checkbox semantics.
 - `tooltip` owns presentation, accessibility semantics, animation, and horizontal collision handling. Consumers provide
   translated text, visibility, a stable ID, the desired horizontal anchor position, and trigger behavior.
 

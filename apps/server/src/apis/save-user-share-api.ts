@@ -8,18 +8,25 @@ import { findUserByShareCode } from '../core/database/repositories/user-reposito
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 
+const hasOnlyKeys = (value: object, allowedKeys: readonly string[]): boolean =>
+  Object.keys(value).every((key) => allowedKeys.includes(key));
+
 const isGrantArray = (value: unknown): value is UserShareGrantApiModel[] =>
   Array.isArray(value) &&
   value.every(
     (entry) =>
       typeof entry === 'object' &&
       entry !== null &&
+      !Array.isArray(entry) &&
+      hasOnlyKeys(entry, ['listType', 'contentType', 'canRead', 'canCreate', 'canUpdate', 'canDelete', 'readMode']) &&
       typeof (entry as UserShareGrantApiModel).listType === 'string' &&
       typeof (entry as UserShareGrantApiModel).contentType === 'string' &&
       typeof (entry as UserShareGrantApiModel).canRead === 'boolean' &&
       typeof (entry as UserShareGrantApiModel).canCreate === 'boolean' &&
       typeof (entry as UserShareGrantApiModel).canUpdate === 'boolean' &&
-      typeof (entry as UserShareGrantApiModel).canDelete === 'boolean'
+      typeof (entry as UserShareGrantApiModel).canDelete === 'boolean' &&
+      ((entry as UserShareGrantApiModel).readMode === 'selected' ||
+        (entry as UserShareGrantApiModel).readMode === 'all')
   );
 
 export const register = (app: FastifyInstance): void => {
@@ -27,10 +34,21 @@ export const register = (app: FastifyInstance): void => {
     `${API_PREFIX}/users/me/shares`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
-      const body = request.body as {
-        sharedWithUserShareCode?: string;
-        grants?: unknown;
-      };
+      const body = request.body as
+        | {
+            sharedWithUserShareCode?: string;
+            grants?: unknown;
+          }
+        | undefined;
+
+      if (
+        typeof body !== 'object' ||
+        body === null ||
+        Array.isArray(body) ||
+        !hasOnlyKeys(body, ['sharedWithUserShareCode', 'grants'])
+      ) {
+        return response.code(400).send();
+      }
 
       if (typeof body?.sharedWithUserShareCode !== 'string' || !body.sharedWithUserShareCode.trim()) {
         return response.code(400).send();
@@ -52,10 +70,6 @@ export const register = (app: FastifyInstance): void => {
       }
 
       const grants = normalizeShareGrants(body.grants);
-      if (!grants.length) {
-        return response.code(400).send();
-      }
-
       const db = getDatabase();
       const sharedWithUser = findUserByShareCode(db, body.sharedWithUserShareCode.trim());
       if (!sharedWithUser || sharedWithUser.username_hash === request.usernameHash) {

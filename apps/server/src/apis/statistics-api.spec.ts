@@ -242,6 +242,9 @@ describe('statistics-api', () => {
     insertItem({ id: 'shared', type: 'movie', owner: 'owner', year: '2025' });
     insertItem({ id: 'private-series', type: 'series', owner: 'owner', year: '2026' });
     getDatabase()
+      .prepare("INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES ('owner', 'user')")
+      .run();
+    getDatabase()
       .prepare(
         `INSERT INTO user_share_grants
           (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read)

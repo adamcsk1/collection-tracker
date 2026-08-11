@@ -178,6 +178,21 @@
       >
     </button>
   }
+  @if (ownItem()) {
+    <button
+      class="button-icon button-reveal-label"
+      [libcRevealLabel]="translations().share()"
+      data-test-id="item-dialog-share"
+      [attr.aria-label]="translations().share()"
+      [title]="translations().share()"
+      (click)="share.emit()"
+    >
+      <i class="material-icons" aria-hidden="true"> share </i>
+      <span class="button-reveal-label-text"
+        ><span>{{ translations().share() }}</span></span
+      >
+    </button>
+  }
   @if (permissionDelete()) {
     <button
       class="button-icon button-reveal-label button-danger"
