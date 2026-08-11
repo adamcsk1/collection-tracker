@@ -7,18 +7,13 @@ import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadat
 import type { FastifyInstance } from 'fastify';
 import { getDatabase } from '../core/database/database';
 import {
-  findCollectionItemByCanonicalItemId,
-  findCollectionItemByExternalId,
-} from '../core/database/repositories/collection';
-import { resolveCanonicalItemId } from '../core/database/repositories/external-item-identity-repository';
-import {
-  findCollectionItemShares,
   hasUserShareRelationship,
   replaceCollectionItemSelections,
 } from '../core/database/repositories/share-repository';
-import { findUserByShareCode, getUserShareCode } from '../core/database/repositories/user-repository';
+import { findUserByShareCode } from '../core/database/repositories/user-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
+import { findOwnedCollectionItemShareTarget } from '../core/utils/collection-item-share-target-util';
 import { parseListType } from '../core/utils/query-parse-util';
 
 const hasOnlyKeys = (value: object, allowedKeys: readonly string[]): boolean =>
@@ -47,50 +42,9 @@ const isSelectionArray = (value: unknown): value is CollectionItemShareSelection
       (selection.permissions === undefined || isPermissions(selection.permissions))
   );
 
-const findOwnedItem = (
-  ownerHash: string,
-  externalIdentitySource: string,
-  externalIdentityId: string,
-  listType: ReturnType<typeof parseListType>
-) => {
-  const db = getDatabase();
-  const effectiveListType = listType ?? 'library';
-  const canonicalItemId = resolveCanonicalItemId(db, ownerHash, externalIdentitySource, externalIdentityId);
-  return (
-    findCollectionItemByCanonicalItemId(db, ownerHash, canonicalItemId, effectiveListType) ??
-    findCollectionItemByExternalId(db, ownerHash, externalIdentitySource, externalIdentityId, effectiveListType)
-  );
-};
-
 export const register = (app: FastifyInstance): void => {
-  const route = `${API_PREFIX}/collection-items/:externalIdentitySource/:externalIdentityId/shares`;
-
-  app.get(
-    route,
-    { preHandler: jwtGuard },
-    withErrorHandler(async (request, response) => {
-      const { externalIdentitySource, externalIdentityId } = request.params as Record<string, string>;
-      if (!isExternalItemIdentitySourceName(externalIdentitySource) || !externalIdentityId?.trim()) {
-        return response.code(400).send();
-      }
-      const query = (request.query ?? {}) as Record<string, unknown>;
-      const listType = parseListType(query.listType);
-      if (query.listType !== undefined && !listType) return response.code(400).send();
-      const item = findOwnedItem(request.usernameHash, externalIdentitySource, externalIdentityId, listType);
-      if (!item) return response.code(404).send();
-
-      const data = findCollectionItemShares(getDatabase(), request.usernameHash, item).map((share) => ({
-        sharedWithUserShareCode: getUserShareCode(share.sharedWithUsernameHash),
-        sharedWithUsername: share.sharedWithUsername,
-        readMode: share.readMode,
-        permissions: share.permissions,
-      }));
-      response.send(data);
-    })
-  );
-
   app.put(
-    route,
+    `${API_PREFIX}/collection-items/:externalIdentitySource/:externalIdentityId/shares`,
     { preHandler: jwtGuard },
     withErrorHandler(async (request, response) => {
       const { externalIdentitySource, externalIdentityId } = request.params as Record<string, string>;
@@ -109,7 +63,12 @@ export const register = (app: FastifyInstance): void => {
       const query = (request.query ?? {}) as Record<string, unknown>;
       const listType = parseListType(query.listType);
       if (query.listType !== undefined && !listType) return response.code(400).send();
-      const item = findOwnedItem(request.usernameHash, externalIdentitySource, externalIdentityId, listType);
+      const item = findOwnedCollectionItemShareTarget(
+        request.usernameHash,
+        externalIdentitySource,
+        externalIdentityId,
+        listType
+      );
       if (!item) return response.code(404).send();
 
       const recipients = [];

@@ -7,7 +7,7 @@ import { register as registerRenameTagManagement } from './rename-tag-management
 import { register as registerChangeToken } from './change-token-api';
 import { register as registerChangeUserSettings } from './change-user-settings-api';
 import { register as registerCollectionItemsExists } from './collection-items-exists-api';
-import { register as registerCollectionItemShares } from './collection-item-shares-api';
+import { register as registerGetCollectionItemShares } from './get-collection-item-shares-api';
 import { register as registerCollectionItemsMatched } from './collection-items-matched-api';
 import { register as registerCollectionItemsSearchSuggestions } from './collection-items-search-suggestions-api';
 import { register as registerChangeTrackingSeasons } from './change-tracking-seasons-api';
@@ -60,6 +60,7 @@ import { register as registerTagSuggestions } from './tag-suggestions-api';
 import { register as registerExport } from './export-api';
 import { register as registerImportCollectionItems } from './import-collection-items-api';
 import { register as registerImport } from './import-api';
+import { register as registerReplaceCollectionItemShares } from './replace-collection-item-shares-api';
 
 export const registerAllApis = (app: FastifyInstance): void => {
   registerHealth(app);
@@ -76,7 +77,8 @@ export const registerAllApis = (app: FastifyInstance): void => {
   registerCollectionItemsMatched(app);
   registerCollectionItemsSearchSuggestions(app);
   registerCollectionItemsExists(app);
-  registerCollectionItemShares(app);
+  registerGetCollectionItemShares(app);
+  registerReplaceCollectionItemShares(app);
   registerRandomItem(app);
   registerRandomImages(app);
   registerMarkAllMoviesCompleted(app);

@@ -156,6 +156,7 @@ Scopes: `client`, `server`, `login`, `health`, `e2e`, `components`, `services`, 
 - Husky runs lint and format checks on commit.
 - Parameter names must be descriptive. Do not use single-letter or abbreviated names except `a`/`b` in sort comparators and `arg`/`args`/`argv` in CLI argument handling.
 - Keep interfaces and type aliases in dedicated `*-model.ts` files, constants in dedicated `*-const.ts` files, and reusable runtime helpers in utility files rather than combining them.
+- Each server route `*-api.ts` registrar must register exactly one HTTP operation. Different methods on the same path use separate files; plugin registrars such as `docs-api.ts` are exempt.
 - User-visible template text should use `NgxSignalTranslateService.translate()` from computed signals on a
   protected `translations` property. Keep the injected service private.
 - New interactive and landmark elements should include stable `data-test-id` attributes for Cypress.

@@ -75,6 +75,7 @@ Issue description and why it matters. Suggested fix.
 ## Server And API
 
 - API handlers live under `apps/server/src/apis/`.
+- Each route `*-api.ts` registrar must register one HTTP operation. Different methods on the same path belong in separate files; plugin registrars such as `docs-api.ts` are exempt.
 - Persistence must go through the existing SQLite database layer and repository modules under `apps/server/src/core/database/repositories/` unless a nearby established pattern requires otherwise.
 - Schema changes must include migrations under `apps/server/src/migrations/` and be wired through the server migration flow.
 - API request and response shape changes must update `apps/server/public/server-api.yaml`.
