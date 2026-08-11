@@ -168,7 +168,9 @@ describe('Individual item sharing - scope transitions', () => {
       openItemShare(selectedTitle);
       ItemSharingDialog.getRecipientCheckbox(sharedUser.shareCode).check();
       ItemSharingDialog.getSaveButton().click();
+      cy.get('body').find('[data-test-id=item-share-dialog]').should('not.exist');
       CollectionPage.closeActiveDialogByOverlay();
+      cy.get('body').find('[data-test-id=item-dialog]').should('not.exist');
 
       SettingsPage.visitShares();
       SettingsPage.getEditShareButton(sharedUser.shareCode).click({ scrollBehavior: 'center' });
