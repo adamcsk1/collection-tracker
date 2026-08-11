@@ -138,12 +138,12 @@ describe('Individual item sharing - scope transitions', () => {
       const confirmationResults = [false, true, false, true];
       cy.on('window:confirm', () => confirmationResults.shift() ?? true);
       SettingsPage.visitShares();
-      SettingsPage.getEditShareButton(sharedUser.shareCode).scrollIntoView().click();
+      SettingsPage.getEditShareButton(sharedUser.shareCode).click({ scrollBehavior: 'center' });
       SettingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-read')
         .should('have.prop', 'indeterminate', true)
         .check();
       SettingsPage.closeShareDialogByOverlay();
-      SettingsPage.getEditShareButton(sharedUser.shareCode).scrollIntoView().click();
+      SettingsPage.getEditShareButton(sharedUser.shareCode).click({ scrollBehavior: 'center' });
       SettingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-read').should(
         'have.prop',
         'indeterminate',
@@ -161,7 +161,7 @@ describe('Individual item sharing - scope transitions', () => {
 
       signInThroughUi(owner);
       SettingsPage.visitShares();
-      SettingsPage.getEditShareButton(sharedUser.shareCode).scrollIntoView().click();
+      SettingsPage.getEditShareButton(sharedUser.shareCode).click({ scrollBehavior: 'center' });
       SettingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-read').uncheck();
       SettingsPage.getShareDialogSaveButton().click();
       visitList(owner);
@@ -171,7 +171,7 @@ describe('Individual item sharing - scope transitions', () => {
       CollectionPage.closeActiveDialogByOverlay();
 
       SettingsPage.visitShares();
-      SettingsPage.getEditShareButton(sharedUser.shareCode).click();
+      SettingsPage.getEditShareButton(sharedUser.shareCode).click({ scrollBehavior: 'center' });
       SettingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-read').should(
         'have.prop',
         'indeterminate',
