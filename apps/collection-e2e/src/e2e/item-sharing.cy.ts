@@ -153,7 +153,11 @@ describe('Individual item sharing - scope transitions', () => {
       SettingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-read')
         .should('be.checked')
         .and('have.prop', 'indeterminate', false);
+      cy.intercept('POST', '/api/v1/users/me/shares').as('promoteSelectedScope');
+      cy.intercept('GET', '/api/v1/users/me/shares').as('reloadPromotedScope');
       SettingsPage.getShareDialogSaveButton().click();
+      cy.wait('@promoteSelectedScope').its('response.statusCode').should('eq', 204);
+      cy.wait('@reloadPromotedScope').its('response.statusCode').should('eq', 200);
 
       visitList(sharedUser);
       CollectionPage.getListItemByTitle(selectedTitle).should('be.visible');
@@ -163,11 +167,17 @@ describe('Individual item sharing - scope transitions', () => {
       SettingsPage.visitShares();
       SettingsPage.getEditShareButton(sharedUser.shareCode).click({ scrollBehavior: 'center' });
       SettingsPage.getOutgoingShareGrantCheckbox('library', 'movie', 'can-read').uncheck();
+      cy.intercept('POST', '/api/v1/users/me/shares').as('clearSharedScope');
+      cy.intercept('GET', '/api/v1/users/me/shares').as('reloadClearedScope');
       SettingsPage.getShareDialogSaveButton().click();
+      cy.wait('@clearSharedScope').its('response.statusCode').should('eq', 204);
+      cy.wait('@reloadClearedScope').its('response.statusCode').should('eq', 200);
       visitList(owner);
       openItemShare(selectedTitle);
       ItemSharingDialog.getRecipientCheckbox(sharedUser.shareCode).check();
+      cy.intercept('PUT', '/api/v1/collection-items/*/*/shares*').as('restoreSelectedScope');
       ItemSharingDialog.getSaveButton().click();
+      cy.wait('@restoreSelectedScope').its('response.statusCode').should('eq', 204);
       cy.get('body').find('[data-test-id=item-share-dialog]').should('not.exist');
       CollectionPage.closeActiveDialogByOverlay();
       cy.get('body').find('[data-test-id=item-dialog]').should('not.exist');
