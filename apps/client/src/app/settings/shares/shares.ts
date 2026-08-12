@@ -1,17 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Select } from '@components/select/select';
 import { toastStateToken } from '@components/toast/toast-store';
 import { ConfirmService } from '@services/confirm-service';
 import { PortalService } from '@services/portal-service';
 import {
-  CollectionItemContentTypeModel,
-  CollectionListTypeModel,
+  CollectionOwnerDefaultModel,
   UserShareGrantApiModel,
   UserShareIncomingApiModel,
   UserShareOutgoingApiModel,
 } from '@shared/models/api-model';
-import { SelectDataModel } from '@shared/models/select-model';
 import { copyToClipboard } from '@shared/utils/copy-to-clipboard-util';
 import { mobileUserAgent } from '@shared/utils/mobile-user-agent.util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -23,7 +20,7 @@ import { ShareDialog } from './share-dialog/share-dialog';
 
 @Component({
   selector: 'ct-settings-shares',
-  imports: [Select],
+  imports: [],
   templateUrl: './shares.html',
   styleUrl: './shares.css',
   providers: [SharesService],
@@ -46,8 +43,6 @@ export class SettingsShares implements OnInit {
     copy: computed(() => this.ngxSignalTranslate.translate('Copy')),
     outgoingShares: computed(() => this.ngxSignalTranslate.translate('OutgoingShares')),
     incomingShares: computed(() => this.ngxSignalTranslate.translate('IncomingShares')),
-    defaultLibrary: computed(() => this.ngxSignalTranslate.translate('DefaultLibrary')),
-    messageDefaultLibrary: computed(() => this.ngxSignalTranslate.translate('Message.DefaultLibrary')),
     sharedWith: computed(() => this.ngxSignalTranslate.translate('SharedWith')),
     owner: computed(() => this.ngxSignalTranslate.translate('Owner')),
     canRead: computed(() => this.ngxSignalTranslate.translate('CanRead')),
@@ -68,36 +63,9 @@ export class SettingsShares implements OnInit {
   protected readonly outgoing = this.sharesState.state.outgoing;
   protected readonly incoming = this.sharesState.state.incoming;
   protected readonly mutating = this.sharesState.state.mutating;
-  protected readonly defaultLibraryOwnerShareCode = this.mainState.state.defaultLibraryOwnerShareCode;
-  protected readonly defaultLibraryOptions = computed(() => [
-    { text: this.ngxSignalTranslate.translate('MyLibrary'), value: '' },
-    ...this.incoming()
-      .filter((share) => share.grants.some((grant) => grant.listType === 'library' && grant.canCreate))
-      .map((share) => ({
-        text: `${this.ngxSignalTranslate.translate('SharedLibrary')} (${share.ownerUsername ?? share.ownerUserShareCode})`,
-        value: share.ownerUserShareCode,
-      })),
-  ]);
 
   public ngOnInit(): void {
     this.sharesService.loadShares();
-  }
-
-  protected listTypeLabel(listType: CollectionListTypeModel): string {
-    const labels: Record<CollectionListTypeModel, string> = {
-      library: 'Library',
-      books: 'Books',
-      wishlist: 'Wishlist',
-      'up-next': 'UpNext',
-      tracking: 'Tracking',
-    };
-    return this.ngxSignalTranslate.translate(labels[listType]);
-  }
-
-  protected contentTypeLabel(contentType: CollectionItemContentTypeModel): string {
-    return this.ngxSignalTranslate.translate(
-      contentType === 'movie' ? 'Movies' : contentType === 'series' ? 'Series' : 'Books'
-    );
   }
 
   protected onAddShare(): void {
@@ -116,7 +84,12 @@ export class SettingsShares implements OnInit {
   }
 
   protected onViewIncomingShare(share: UserShareIncomingApiModel): void {
-    this.portal.open(ShareDialog, { share });
+    this.portal.open(ShareDialog, {
+      share,
+      defaultCollectionOwners: this.mainState.state.defaultCollectionOwners,
+      defaultsChanged: (defaults: CollectionOwnerDefaultModel[]) =>
+        this.settings.storeDefaultCollectionOwners(defaults),
+    });
   }
 
   protected onCopyUserHash(): void {
@@ -138,11 +111,5 @@ export class SettingsShares implements OnInit {
       .ifConfirmed(this.translations.confirmRevokeShare())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.sharesService.revokeIncomingShare(ownerUserShareCode));
-  }
-
-  protected onDefaultLibraryChange(selectedValue: SelectDataModel['value']): void {
-    this.settings.storeDefaultLibraryOwnerShareCode(
-      typeof selectedValue === 'string' && selectedValue ? selectedValue : null
-    );
   }
 }

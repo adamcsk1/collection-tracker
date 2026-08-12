@@ -1,5 +1,15 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  OnInit,
+  Signal,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, required } from '@angular/forms/signals';
 import { Callout } from '@components/callout/callout';
@@ -13,6 +23,7 @@ import { ConfirmService } from '@services/confirm-service';
 import {
   CollectionItemContentTypeModel,
   CollectionListTypeModel,
+  CollectionOwnerDefaultModel,
   UserShareGrantApiModel,
   UserShareIncomingApiModel,
   UserShareOutgoingApiModel,
@@ -47,6 +58,8 @@ export class ShareDialog implements OnInit {
   public readonly saved = input<(sharedWithUserShareCode: string, grants: UserShareGrantApiModel[]) => void>(
     () => undefined
   );
+  public readonly defaultCollectionOwners = input<Signal<CollectionOwnerDefaultModel[]>>(signal([]));
+  public readonly defaultsChanged = input<(defaults: CollectionOwnerDefaultModel[]) => void>(() => undefined);
   protected readonly shareableScopes = SHAREABLE_SCOPES;
   protected readonly listTypes = [...new Set(SHAREABLE_SCOPES.map((scope) => scope.listType))];
   protected readonly shareCodeModel = signal({ sharedWithUserShareCode: '' });
@@ -87,7 +100,6 @@ export class ShareDialog implements OnInit {
     recipientShareCode: computed(() => this.ngxSignalTranslate.translate('RecipientShareCode')),
     dependency: computed(() => this.ngxSignalTranslate.translate('Message.ShareGrantDependency')),
     permissions: computed(() => this.ngxSignalTranslate.translate('Permissions')),
-    changed: computed(() => this.ngxSignalTranslate.translate('Changed')),
     save: computed(() => this.ngxSignalTranslate.translate('Save')),
     canRead: computed(() => this.ngxSignalTranslate.translate('CanRead')),
     canCreate: computed(() => this.ngxSignalTranslate.translate('CanCreate')),
@@ -98,6 +110,7 @@ export class ShareDialog implements OnInit {
     canUpdateDescription: computed(() => this.ngxSignalTranslate.translate('Permission.UpdateDescription')),
     canDeleteDescription: computed(() => this.ngxSignalTranslate.translate('Permission.DeleteDescription')),
     clearSelected: computed(() => this.ngxSignalTranslate.translate('ClearSelectedItemAccess')),
+    defaultDestination: computed(() => this.ngxSignalTranslate.translate('DefaultDestination')),
     confirmSelectedToAll: computed(() => this.ngxSignalTranslate.translate('Confirm.ShareSelectedToAll')),
     confirmSelectedToNone: computed(() => this.ngxSignalTranslate.translate('Confirm.ShareSelectedToNone')),
   };
@@ -138,6 +151,37 @@ export class ShareDialog implements OnInit {
     if (permission === 'canRead') return this.readMode(listType, contentType) === 'all';
     const permissionMap = { canCreate: 'create', canUpdate: 'update', canDelete: 'delete' } as const;
     return hasSharePermission(this.grants(), listType, contentType, permissionMap[permission]);
+  }
+
+  protected canSetDefault(listType: CollectionListTypeModel, contentType: CollectionItemContentTypeModel): boolean {
+    return this.readOnly() && hasSharePermission(this.grants(), listType, contentType, 'create');
+  }
+
+  protected defaultChecked(listType: CollectionListTypeModel, contentType: CollectionItemContentTypeModel): boolean {
+    const share = this.share();
+    if (!share || !('ownerUserShareCode' in share)) return false;
+    return this.defaultCollectionOwners()().some(
+      (entry) =>
+        entry.listType === listType &&
+        entry.contentType === contentType &&
+        entry.ownerUserShareCode === share.ownerUserShareCode
+    );
+  }
+
+  protected onDefaultToggle(
+    listType: CollectionListTypeModel,
+    contentType: CollectionItemContentTypeModel,
+    enabled: boolean
+  ): void {
+    const share = this.share();
+    if (!share || !('ownerUserShareCode' in share) || !this.canSetDefault(listType, contentType)) return;
+    const defaults = this.defaultCollectionOwners()().filter(
+      (entry) => !(entry.listType === listType && entry.contentType === contentType)
+    );
+    if (enabled) {
+      defaults.push({ listType, contentType, ownerUserShareCode: share.ownerUserShareCode });
+    }
+    this.defaultsChanged()(defaults);
   }
 
   protected readIndeterminate(listType: CollectionListTypeModel, contentType: CollectionItemContentTypeModel): boolean {

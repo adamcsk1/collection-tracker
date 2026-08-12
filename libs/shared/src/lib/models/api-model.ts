@@ -1,4 +1,5 @@
 export type { CollectionItemContentTypeModel, CollectionListTypeModel } from './collection-item-model';
+export type { CollectionOwnerDefaultModel } from './collection-owner-default-model';
 export * from './api/collection-api-model';
 export * from './api/tracking-api-model';
 export * from './api/auth-api-model';

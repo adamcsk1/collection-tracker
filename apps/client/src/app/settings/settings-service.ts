@@ -15,7 +15,11 @@ import {
   COLLECTION_LIST_DISPLAY_RATINGS,
   DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES,
 } from '@shared/models/collection-list-display-preferences-model';
-import { UserSettingsApiRequestModel, UserSettingsApiResponseModel } from '@shared/models/api-model';
+import {
+  CollectionOwnerDefaultModel,
+  UserSettingsApiRequestModel,
+  UserSettingsApiResponseModel,
+} from '@shared/models/api-model';
 import { LANGUAGES } from '@shared/models/language-model';
 import { THEMES } from '@shared/models/theme-model';
 import { parseAllowedValue } from '@shared/utils/parse-allowed-value-util';
@@ -40,7 +44,15 @@ export class SettingsService {
   private readonly toastState = inject(toastStateToken);
   private readonly destroyRef = inject(DestroyRef);
   private readonly collectionFeaturePreferencesQueue: CollectionFeaturePreferencesModel[] = [];
+  private readonly defaultCollectionOwnersQueue: Array<{
+    defaults: CollectionOwnerDefaultModel[];
+    ownerRevisions: Map<string, number>;
+  }> = [];
+  private readonly removedDefaultOwnerShareCodes = new Set<string>();
+  private readonly defaultOwnerRevisions = new Map<string, number>();
+  private persistedDefaultCollectionOwners: CollectionOwnerDefaultModel[] = [];
   private collectionFeaturePreferencesSaveInProgress = false;
+  private defaultCollectionOwnersSaveInProgress = false;
 
   public preloadUserSettings(): Observable<void> {
     return this.api.getUserSettings().pipe(
@@ -90,9 +102,8 @@ export class SettingsService {
       this.ngxSignalTranslate.setLanguage(language);
     }
 
-    if (settings.defaultLibraryOwnerShareCode !== undefined) {
-      this.mainState.setState('defaultLibraryOwnerShareCode', settings.defaultLibraryOwnerShareCode);
-    }
+    this.persistedDefaultCollectionOwners = settings.defaultCollectionOwners ?? [];
+    this.mainState.setState('defaultCollectionOwners', this.persistedDefaultCollectionOwners);
 
     if (settings.collectionListDisplayPreferences) {
       this.mainState.setState(
@@ -170,15 +181,76 @@ export class SettingsService {
       .subscribe();
   }
 
-  public storeDefaultLibraryOwnerShareCode(defaultLibraryOwnerShareCode: string | null): void {
-    this.mainState.setState('defaultLibraryOwnerShareCode', defaultLibraryOwnerShareCode);
+  public storeDefaultCollectionOwners(
+    defaultCollectionOwners: UserSettingsApiRequestModel['defaultCollectionOwners']
+  ): void {
+    const normalizedDefaults = defaultCollectionOwners ?? [];
+    for (const ownerDefault of normalizedDefaults) {
+      this.removedDefaultOwnerShareCodes.delete(ownerDefault.ownerUserShareCode);
+    }
+    this.mainState.setState('defaultCollectionOwners', normalizedDefaults);
+    this.defaultCollectionOwnersQueue.push({
+      defaults: normalizedDefaults,
+      ownerRevisions: new Map(
+        normalizedDefaults.map((ownerDefault) => [
+          ownerDefault.ownerUserShareCode,
+          this.defaultOwnerRevisions.get(ownerDefault.ownerUserShareCode) ?? 0,
+        ])
+      ),
+    });
+    this.saveNextDefaultCollectionOwners();
+  }
+
+  public removeDefaultCollectionOwner(ownerUserShareCode: string): void {
+    this.removedDefaultOwnerShareCodes.add(ownerUserShareCode);
+    this.defaultOwnerRevisions.set(ownerUserShareCode, (this.defaultOwnerRevisions.get(ownerUserShareCode) ?? 0) + 1);
+    this.persistedDefaultCollectionOwners = this.persistedDefaultCollectionOwners.filter(
+      (ownerDefault) => ownerDefault.ownerUserShareCode !== ownerUserShareCode
+    );
+    this.mainState.setState(
+      'defaultCollectionOwners',
+      this.mainState.state
+        .defaultCollectionOwners()
+        .filter((ownerDefault) => ownerDefault.ownerUserShareCode !== ownerUserShareCode)
+    );
+  }
+
+  private saveNextDefaultCollectionOwners(): void {
+    if (this.defaultCollectionOwnersSaveInProgress) return;
+
+    const queuedUpdate = this.defaultCollectionOwnersQueue.shift();
+    if (!queuedUpdate) return;
+    const defaults = queuedUpdate.defaults.filter(
+      (ownerDefault) => !this.removedDefaultOwnerShareCodes.has(ownerDefault.ownerUserShareCode)
+    );
+    this.defaultCollectionOwnersSaveInProgress = true;
+    let acknowledged = false;
+    const acknowledge = (): void => {
+      if (acknowledged) return;
+      acknowledged = true;
+      this.persistedDefaultCollectionOwners = defaults.filter(
+        (ownerDefault) =>
+          !this.removedDefaultOwnerShareCodes.has(ownerDefault.ownerUserShareCode) &&
+          queuedUpdate.ownerRevisions.get(ownerDefault.ownerUserShareCode) ===
+            (this.defaultOwnerRevisions.get(ownerDefault.ownerUserShareCode) ?? 0)
+      );
+      this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'));
+    };
 
     this.sharedApi
-      .updateUserSettings({ defaultLibraryOwnerShareCode })
+      .updateUserSettings({ defaultCollectionOwners: defaults })
       .pipe(
-        tap(() => this.toastState.setState('message', this.ngxSignalTranslate.translate('Toast.SettingsSaved'))),
-        map(() => void 0),
-        catchError(() => EMPTY),
+        tap({ next: acknowledge, complete: acknowledge }),
+        catchError(() => {
+          if (!this.defaultCollectionOwnersQueue.length) {
+            this.mainState.setState('defaultCollectionOwners', this.persistedDefaultCollectionOwners);
+          }
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.defaultCollectionOwnersSaveInProgress = false;
+          this.saveNextDefaultCollectionOwners();
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();

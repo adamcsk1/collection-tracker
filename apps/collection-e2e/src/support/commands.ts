@@ -31,7 +31,7 @@ const defaultUserSettings = {
   theme: 'system',
   animatedBackground: true,
   language: 'en',
-  defaultLibraryOwnerShareCode: null,
+  defaultCollectionOwners: [],
   collectionListDisplayPreferences: {
     showYear: true,
     showSharedIcon: true,

@@ -5,6 +5,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getItemHash } from '../utils/collection-item-util';
 import { hasSqlMigrations, runMigrations } from './migrations';
+import { getUserShareCode } from './repositories/user-repository';
 
 const MIGRATIONS_SRC_DIR = join(__dirname, '..', '..', 'migrations');
 
@@ -3048,6 +3049,84 @@ describe('runMigrations', () => {
         db.prepare("SELECT * FROM user_share_item_selections WHERE shared_with_username_hash = 'recipient'").all()
       ).toEqual([]);
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      db.close();
+    });
+  });
+
+  describe('038_add_collection_owner_defaults', () => {
+    it('migrates the legacy library owner into movie and series defaults', async () => {
+      const migrationFile = '038_add_collection_owner_defaults.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES
+          ('recipient', 'token'), ('owner', 'owner-token');
+        INSERT INTO user_shares (owner_username_hash, shared_with_username_hash)
+          VALUES ('owner', 'recipient');
+        INSERT INTO user_share_grants
+          (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, can_create, scope_mode)
+          VALUES
+            ('owner', 'recipient', 'library', 'movie', 1, 1, 'all'),
+            ('owner', 'recipient', 'library', 'series', 1, 1, 'all');
+        INSERT INTO user_settings (username_hash, default_library_owner_share_code)
+          VALUES ('recipient', '${getUserShareCode('owner')}');
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+
+      await runMigrations(db, migrationsDir);
+
+      expect(
+        db
+          .prepare(
+            `SELECT list_type, content_type, owner_username_hash
+             FROM collection_owner_defaults
+             WHERE username_hash = 'recipient'
+             ORDER BY content_type`
+          )
+          .all()
+      ).toEqual([
+        { list_type: 'library', content_type: 'movie', owner_username_hash: 'owner' },
+        { list_type: 'library', content_type: 'series', owner_username_hash: 'owner' },
+      ]);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+             VALUES ('recipient', 'library', 'book', 'owner')`
+          )
+          .run()
+      ).toThrow();
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+             VALUES ('owner', 'library', 'movie', 'owner')`
+          )
+          .run()
+      ).toThrow();
+      expect(
+        db
+          .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?")
+          .get('collection_owner_defaults_owner_idx')
+      ).toBeDefined();
+      db.close();
+    });
+
+    it('discards legacy defaults without exact Add access', async () => {
+      const migrationFile = '038_add_collection_owner_defaults.sql';
+      const { db, migrationsDir } = await preparePreMigrationState(migrationFile, tempDirs);
+      db.exec(`
+        INSERT INTO users (username_hash, user_token_hash) VALUES
+          ('recipient', 'token'), ('owner', 'owner-token');
+        INSERT INTO user_settings (username_hash, default_library_owner_share_code) VALUES
+          ('recipient', '${getUserShareCode('owner')}'),
+          ('owner', '${getUserShareCode('owner')}');
+      `);
+      copyFileSync(join(MIGRATIONS_SRC_DIR, migrationFile), join(migrationsDir, migrationFile));
+
+      await runMigrations(db, migrationsDir);
+
+      expect(db.prepare('SELECT * FROM collection_owner_defaults').all()).toEqual([]);
       db.close();
     });
   });

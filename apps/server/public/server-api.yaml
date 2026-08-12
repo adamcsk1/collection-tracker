@@ -284,9 +284,11 @@ components:
         language:
           type: string
           enum: [en]
-        defaultLibraryOwnerShareCode:
-          type: ['string', 'null']
-          description: Share code of the incoming library selected by default when creating collection items. Null selects the caller's own library.
+        defaultCollectionOwners:
+          type: array
+          description: Incoming collection owners selected by default for exact list and content scopes. Omitted scopes use the caller's own collection.
+          items:
+            $ref: '#/components/schemas/CollectionOwnerDefault'
         collectionListDisplayPreferences:
           $ref: '#/components/schemas/CollectionListDisplayPreferences'
         collectionFeaturePreferences:
@@ -321,6 +323,37 @@ components:
         imdbRatingFallback:
           type: boolean
 
+    CollectionOwnerDefault:
+      type: object
+      additionalProperties: false
+      required: [listType, contentType, ownerUserShareCode]
+      oneOf:
+        - properties:
+            listType:
+              const: library
+            contentType:
+              enum: [movie, series]
+        - properties:
+            listType:
+              const: books
+            contentType:
+              const: book
+        - properties:
+            listType:
+              enum: [wishlist, up-next, tracking]
+            contentType:
+              enum: [movie, series, book]
+      properties:
+        listType:
+          type: string
+          enum: [library, books, wishlist, up-next, tracking]
+        contentType:
+          type: string
+          enum: [movie, series, book]
+        ownerUserShareCode:
+          type: string
+          minLength: 1
+
     AiAvailableResponse:
       type: object
       required: [aiAvailable]
@@ -340,9 +373,11 @@ components:
         language:
           type: string
           enum: [en]
-        defaultLibraryOwnerShareCode:
-          type: ['string', 'null']
-          description: Share code of the incoming library selected by default when creating collection items. Null selects the caller's own library.
+        defaultCollectionOwners:
+          type: array
+          description: Complete replacement set of incoming collection owners selected by default for exact list and content scopes. Each scope requires current Add permission.
+          items:
+            $ref: '#/components/schemas/CollectionOwnerDefault'
         collectionListDisplayPreferences:
           $ref: '#/components/schemas/CollectionListDisplayPreferences'
         collectionFeaturePreferences:
@@ -1400,8 +1435,8 @@ components:
           description: Export document type. Required for import round-trips.
         version:
           type: integer
-          enum: [10]
-          description: Export schema version. Import accepts version 10 and rewrites version 9 payloads.
+          enum: [11]
+          description: Export schema version. Import also accepts versions 9 and 10.
         userSettings:
           $ref: '#/components/schemas/UserSettingsResponse'
         collectionItems:
@@ -1494,7 +1529,6 @@ components:
           description: Optional local canonical identity preserved from exports.
         listType:
           type: string
-          enum: [library, up-next, wishlist, tracking, books]
           description: >-
             Logical list containing the item. Owned books use `books`. Books are also allowed on
             `wishlist`, `up-next`, and `tracking`. `library` is movie/series only.
@@ -1515,6 +1549,9 @@ components:
         - type: object
           required: [contentType, favorite]
           properties:
+            listType:
+              type: string
+              enum: [library, watchlist, up-next, wishlist, tracking, books]
             contentType:
               type: string
               enum: [movie, series, book]
@@ -1524,12 +1561,74 @@ components:
             favorite:
               type: boolean
 
+    ImportCollectionItemV10:
+      allOf:
+        - $ref: '#/components/schemas/ImportCollectionItemV9'
+        - type: object
+          properties:
+            listType:
+              type: string
+              enum: [library, up-next, wishlist, tracking, books]
+
+    ImportUserSettingsV9:
+      type: object
+      additionalProperties: false
+      properties:
+        theme:
+          type: string
+          enum: [system, dark, light]
+        animatedBackground:
+          type: boolean
+        language:
+          type: string
+          enum: [en]
+        defaultLibraryOwnerShareCode:
+          type: ['string', 'null']
+          minLength: 1
+          description: Legacy Library owner default converted into exact Movie and Series defaults when access remains valid.
+        collectionListDisplayPreferences:
+          $ref: '#/components/schemas/CollectionListDisplayPreferences'
+        collectionFeaturePreferences:
+          type: object
+          additionalProperties: false
+          required: [books, wishlist, watchlist, tracking]
+          properties:
+            books:
+              type: boolean
+            wishlist:
+              type: boolean
+            watchlist:
+              type: boolean
+            tracking:
+              type: boolean
+
+    ImportUserSettingsV10:
+      type: object
+      additionalProperties: false
+      properties:
+        theme:
+          type: string
+          enum: [system, dark, light]
+        animatedBackground:
+          type: boolean
+        language:
+          type: string
+          enum: [en]
+        defaultLibraryOwnerShareCode:
+          type: ['string', 'null']
+          minLength: 1
+          description: Legacy Library owner default converted into exact Movie and Series defaults when access remains valid.
+        collectionListDisplayPreferences:
+          $ref: '#/components/schemas/CollectionListDisplayPreferences'
+        collectionFeaturePreferences:
+          $ref: '#/components/schemas/CollectionFeaturePreferences'
+
     ImportDataV9:
       type: object
       required: [userSettings, collectionItems, tagManagement, trackingData]
       properties:
         userSettings:
-          $ref: '#/components/schemas/UserSettingsResponse'
+          $ref: '#/components/schemas/ImportUserSettingsV9'
         collectionItems:
           type: array
           items:
@@ -1552,21 +1651,97 @@ components:
                 items:
                   $ref: '#/components/schemas/TrackingCompletedEpisode'
 
+    ImportDataV10:
+      type: object
+      required: [userSettings, collectionItems, tagManagement, trackingData]
+      properties:
+        userSettings:
+          $ref: '#/components/schemas/ImportUserSettingsV10'
+        collectionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportCollectionItemV10'
+        tagManagement:
+          $ref: '#/components/schemas/TagManagementResponse'
+        trackingData:
+          type: object
+          description: Tracking list data keyed by encoded provider identity, formatted as provider/externalItemId.
+          additionalProperties:
+            type: object
+            required: [seasons, completedEpisodes]
+            properties:
+              seasons:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrackingSeason'
+              completedEpisodes:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrackingCompletedEpisode'
+
+    ImportDataV11:
+      type: object
+      required: [userSettings, collectionItems, tagManagement, trackingData]
+      properties:
+        userSettings:
+          $ref: '#/components/schemas/UserSettingsResponse'
+        collectionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportCollectionItemV10'
+        tagManagement:
+          $ref: '#/components/schemas/TagManagementResponse'
+        trackingData:
+          type: object
+          description: Tracking list data keyed by encoded provider identity, formatted as provider/externalItemId.
+          additionalProperties:
+            type: object
+            required: [seasons, completedEpisodes]
+            properties:
+              seasons:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrackingSeason'
+              completedEpisodes:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrackingCompletedEpisode'
+
     ImportRequest:
-      allOf:
-        - type: object
-          required: [type, version]
-          properties:
-            type:
-              type: string
-              const: collection-tracker-export
-            version:
-              type: integer
-              enum: [9, 10]
-              description: >-
-                Version 10 is exported by current clients. Version 9 imports are accepted and rewritten
-                (`watchlist` list types and feature prefs become `up-next` / `upNext`).
-        - $ref: '#/components/schemas/ImportDataV9'
+      oneOf:
+        - allOf:
+            - type: object
+              required: [type, version]
+              properties:
+                type:
+                  type: string
+                  const: collection-tracker-export
+                version:
+                  type: integer
+                  const: 9
+            - $ref: '#/components/schemas/ImportDataV9'
+        - allOf:
+            - type: object
+              required: [type, version]
+              properties:
+                type:
+                  type: string
+                  const: collection-tracker-export
+                version:
+                  type: integer
+                  const: 10
+            - $ref: '#/components/schemas/ImportDataV10'
+        - allOf:
+            - type: object
+              required: [type, version]
+              properties:
+                type:
+                  type: string
+                  const: collection-tracker-export
+                version:
+                  type: integer
+                  const: 11
+            - $ref: '#/components/schemas/ImportDataV11'
 
     ImportResponse:
       type: object

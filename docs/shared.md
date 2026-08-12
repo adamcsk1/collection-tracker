@@ -18,6 +18,8 @@ Source: [`libs/shared`](../libs/shared)
 - The server reuses the same constants and DTOs so the API contract stays in one place.
 - Share grant DTOs require `readMode` values `all` or `selected`; an absent grant means no scope access. Item-share DTOs
   use `none`, `selected`, or `all` because they report each recipient's state for one item.
+- Default collection owners are stored per exact list and content scope. Recipients can select an incoming owner only
+  when that scope grants Add permission; missing or invalid defaults use the recipient's own collection.
 
 ## Important Paths
 

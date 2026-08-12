@@ -1,6 +1,7 @@
 import { mockResponse } from '../../test/mocks/response-mock';
 import { API_PREFIX } from '@shared/constants/api-const';
 import { getDatabase } from '../core/database/database';
+import { getUserShareCode } from '../core/database/repositories/user-repository';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const IMPORT_PATH = `${API_PREFIX}/users/me/imports`;
@@ -877,6 +878,117 @@ describe('import-api', () => {
   });
 
   it.each([
+    [11, { defaultLibraryOwnerShareCode: 'legacy-owner' }],
+    [10, { defaultCollectionOwners: [] }],
+  ])('rejects settings fields from another import version for version %s', async (version, userSettings) => {
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version,
+        userSettings,
+        collectionItems: [],
+        tagManagement: [],
+        trackingData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('imports version 11 exact-scope defaults and filters inaccessible owners', async () => {
+    insertUser('user');
+    insertUser('owner');
+    insertUser('inaccessible-owner');
+    const db = getDatabase();
+    db.prepare('INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, ?)').run(
+      'owner',
+      'user'
+    );
+    db.prepare(
+      `INSERT INTO user_share_grants
+       (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, can_create, scope_mode)
+       VALUES ('owner', 'user', 'tracking', 'series', 1, 1, 'all')`
+    ).run();
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version: 11,
+        userSettings: {
+          defaultCollectionOwners: [
+            {
+              listType: 'tracking',
+              contentType: 'series',
+              ownerUserShareCode: getUserShareCode('owner'),
+            },
+            {
+              listType: 'wishlist',
+              contentType: 'movie',
+              ownerUserShareCode: getUserShareCode('inaccessible-owner'),
+            },
+          ],
+        },
+        collectionItems: [],
+        tagManagement: [],
+        trackingData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(
+      db.prepare('SELECT list_type, content_type, owner_username_hash FROM collection_owner_defaults').all()
+    ).toEqual([{ list_type: 'tracking', content_type: 'series', owner_username_hash: 'owner' }]);
+  });
+
+  it.each([9, 10])('converts a version %s legacy owner into valid exact-scope defaults', async (version) => {
+    insertUser('user');
+    insertUser('owner');
+    const db = getDatabase();
+    db.prepare('INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, ?)').run(
+      'owner',
+      'user'
+    );
+    db.prepare(
+      `INSERT INTO user_share_grants
+       (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, can_create, scope_mode)
+       VALUES ('owner', 'user', 'library', 'movie', 1, 1, 'all')`
+    ).run();
+    const response = mockResponse();
+    const request: any = {
+      usernameHash: 'user',
+      body: {
+        type: 'collection-tracker-export',
+        version,
+        userSettings: { defaultLibraryOwnerShareCode: getUserShareCode('owner') },
+        collectionItems: [],
+        tagManagement: [],
+        trackingData: {},
+      },
+    };
+    const app = buildRouteApp();
+
+    const { register } = await import('./import-api');
+    register(app);
+    await getPostHandler(app, IMPORT_PATH)!(request, response);
+
+    expect(
+      db.prepare('SELECT list_type, content_type, owner_username_hash FROM collection_owner_defaults').all()
+    ).toEqual([{ list_type: 'library', content_type: 'movie', owner_username_hash: 'owner' }]);
+  });
+
+  it.each([
     ['non-object settings', null],
     ['unknown setting', { unknown: true }],
     ['theme type', { theme: 1 }],
@@ -886,6 +998,16 @@ describe('import-api', () => {
     ['language value', { language: 'xx' }],
     ['default owner type', { defaultLibraryOwnerShareCode: 1 }],
     ['blank default owner', { defaultLibraryOwnerShareCode: '   ' }],
+    ['default owners type', { defaultCollectionOwners: null }],
+    [
+      'default owners duplicate scope',
+      {
+        defaultCollectionOwners: [
+          { listType: 'library', contentType: 'movie', ownerUserShareCode: 'owner-one' },
+          { listType: 'library', contentType: 'movie', ownerUserShareCode: 'owner-two' },
+        ],
+      },
+    ],
     ['display preference object', { collectionListDisplayPreferences: null }],
     [
       'display year',
@@ -942,13 +1064,13 @@ describe('import-api', () => {
         },
       },
     ],
-  ])('returns 400 for invalid imported user setting %s', async (_caseName, userSettings) => {
+  ])('returns 400 for invalid imported user setting %s', async (caseName, userSettings) => {
     const response = mockResponse();
     const request: any = {
       usernameHash: 'user',
       body: {
         type: 'collection-tracker-export',
-        version: 10,
+        version: caseName.startsWith('default owners') ? 11 : 10,
         userSettings,
         collectionItems: [],
         tagManagement: [],

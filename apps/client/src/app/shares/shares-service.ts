@@ -6,11 +6,13 @@ import { UserShareGrantApiModel, UserSharesApiResponseModel } from '@shared/mode
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY, finalize, Observable, switchMap, tap } from 'rxjs';
 import { sharesStateToken } from './shares-store';
+import { SettingsService } from '../settings/settings-service';
 
 @Injectable()
 export class SharesService {
   private readonly api = inject(ApiService);
   private readonly sharesState = inject(sharesStateToken);
+  private readonly settings = inject(SettingsService);
   private readonly toastState = inject(toastStateToken);
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
   private readonly destroyRef = inject(DestroyRef);
@@ -84,6 +86,7 @@ export class SharesService {
           'incoming',
           this.sharesState.state.incoming().filter((share) => share.ownerUserShareCode !== ownerUserShareCode)
         );
+        this.settings.removeDefaultCollectionOwner(ownerUserShareCode);
       },
       () => this.ngxSignalTranslate.translate('Toast.ShareRemoved')
     );

@@ -60,25 +60,89 @@ describe('change-user-settings-api', () => {
     });
   });
 
-  it('updates the default library owner share code', async () => {
+  it('updates an exact-scope default collection owner with Add permission', async () => {
     const response = mockResponse();
-    const request: any = { body: { defaultLibraryOwnerShareCode: 'owner-code' }, usernameHash: 'user' };
-    const { app, handlerPromise } = buildApp(request, response);
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('owner', 'token');
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const ownerCode = getUserShareCode('owner');
+    db.prepare('INSERT INTO user_shares (owner_username_hash, shared_with_username_hash) VALUES (?, ?)').run(
+      'owner',
+      'user'
+    );
+    db.prepare(
+      `INSERT INTO user_share_grants
+       (owner_username_hash, shared_with_username_hash, list_type, content_type, can_read, can_create, can_update, can_delete, scope_mode)
+       VALUES (?, ?, ?, ?, 1, 1, 0, 0, 'all')`
+    ).run('owner', 'user', 'wishlist', 'movie');
+    const defaults = [{ listType: 'wishlist', contentType: 'movie', ownerUserShareCode: ownerCode }];
+    const request: any = { body: { defaultCollectionOwners: defaults }, usernameHash: 'user' };
+    const { app, handlerPromise } = buildApp(request, response);
 
     const { register } = await import('./change-user-settings-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      defaultLibraryOwnerShareCode: 'owner-code',
+      defaultCollectionOwners: defaults,
     });
     expect(
-      db.prepare('SELECT default_library_owner_share_code FROM user_settings WHERE username_hash = ?').get('user')
+      db
+        .prepare(
+          'SELECT list_type, content_type, owner_username_hash FROM collection_owner_defaults WHERE username_hash = ?'
+        )
+        .get('user')
     ).toEqual({
-      default_library_owner_share_code: 'owner-code',
+      list_type: 'wishlist',
+      content_type: 'movie',
+      owner_username_hash: 'owner',
     });
+  });
+
+  it('rejects a default collection owner without exact Add permission', async () => {
+    const response = mockResponse();
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('owner', 'token');
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const request: any = {
+      body: {
+        defaultCollectionOwners: [
+          { listType: 'library', contentType: 'series', ownerUserShareCode: getUserShareCode('owner') },
+        ],
+      },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-user-settings-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
+  });
+
+  it('rejects the caller as a default collection owner', async () => {
+    const response = mockResponse();
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
+    const { getUserShareCode } = await import('../core/database/repositories/user-repository');
+    const request: any = {
+      body: {
+        defaultCollectionOwners: [
+          { listType: 'library', contentType: 'movie', ownerUserShareCode: getUserShareCode('user') },
+        ],
+      },
+      usernameHash: 'user',
+    };
+    const { app, handlerPromise } = buildApp(request, response);
+
+    const { register } = await import('./change-user-settings-api');
+    register(app);
+    await handlerPromise();
+
+    expect(response.code).toHaveBeenCalledWith(400);
   });
 
   it('updates collection list display preferences', async () => {
@@ -165,23 +229,19 @@ describe('change-user-settings-api', () => {
     expect(response.code).toHaveBeenCalledWith(400);
   });
 
-  it('accepts null to select my library as the default', async () => {
+  it('accepts an empty array to select own collections by default', async () => {
     const response = mockResponse();
-    const request: any = { body: { defaultLibraryOwnerShareCode: null }, usernameHash: 'user' };
+    const request: any = { body: { defaultCollectionOwners: [] }, usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
-    db.prepare('INSERT INTO user_settings (username_hash, default_library_owner_share_code) VALUES (?, ?)').run(
-      'user',
-      'owner-code'
-    );
 
     const { register } = await import('./change-user-settings-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      defaultLibraryOwnerShareCode: null,
+      defaultCollectionOwners: [],
     });
   });
 

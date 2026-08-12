@@ -2,6 +2,10 @@
 
 This directory contains the maintained project documentation. The root [`README.md`](../README.md) is the entry point; the pages below cover the individual applications, libraries, API surface, delivery assets, and runtime deployment variables.
 
+## Features
+
+- [Default collection owners](./default-collection-owners.md)
+
 ## Development
 
 - [Development workflow](./development.md)

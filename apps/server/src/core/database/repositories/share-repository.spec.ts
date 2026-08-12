@@ -6,6 +6,7 @@ import {
   findAccessibleShareItemIds,
   findSharesForUser,
   hasUserShareRelationship,
+  deleteShare,
   replaceCollectionItemSelections,
   upsertShare,
 } from './share-repository';
@@ -97,9 +98,14 @@ describe('share-repository', () => {
     expect(canAccessShare(db, 'viewer', 'owner', 'library', 'movie', 'update')).toBe(false);
     expect(canAccessShare(db, 'viewer', 'owner', 'library', 'movie', 'delete')).toBe(false);
     expect(canAccessShare(db, 'viewer', 'owner', 'library', 'movie', 'create')).toBe(true);
+    db.prepare(
+      `INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+       VALUES ('viewer', 'library', 'movie', 'owner')`
+    ).run();
 
     replaceCollectionItemSelections(db, 'owner', item, []);
     expect(db.prepare('SELECT * FROM user_share_grants').all()).toEqual([]);
+    expect(db.prepare('SELECT * FROM collection_owner_defaults').all()).toEqual([]);
     expect(db.prepare('SELECT * FROM user_shares').all()).toHaveLength(1);
   });
 
@@ -335,6 +341,48 @@ describe('share-repository', () => {
     expect(hasUserShareRelationship(db, 'owner', 'viewer')).toBe(true);
     expect(hasUserShareRelationship(db, 'viewer', 'owner')).toBe(false);
     expect(hasUserShareRelationship(db, 'owner', 'other')).toBe(false);
+  });
+
+  it('clears only defaults whose exact Add permission is removed', () => {
+    const db = getDatabase();
+    insertUser('owner');
+    insertUser('viewer');
+    insertShare(db, 'owner', 'viewer', libraryGrants({ canCreate: true }));
+    db.prepare(
+      `INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+       VALUES ('viewer', 'library', 'movie', ?), ('viewer', 'library', 'series', ?)`
+    ).run('owner', 'owner');
+
+    upsertShare(db, 'owner', 'viewer', [
+      {
+        listType: 'library',
+        contentType: 'series',
+        canRead: true,
+        canCreate: true,
+        canUpdate: false,
+        canDelete: false,
+        readMode: 'all',
+      },
+    ]);
+
+    expect(db.prepare('SELECT content_type FROM collection_owner_defaults').all()).toEqual([
+      { content_type: 'series' },
+    ]);
+  });
+
+  it('clears all defaults targeting a deleted share owner', () => {
+    const db = getDatabase();
+    insertUser('owner');
+    insertUser('viewer');
+    insertShare(db, 'owner', 'viewer', libraryGrants({ canCreate: true }));
+    db.prepare(
+      `INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+       VALUES ('viewer', 'library', 'movie', ?), ('viewer', 'library', 'series', ?)`
+    ).run('owner', 'owner');
+
+    deleteShare(db, 'owner', 'viewer');
+
+    expect(db.prepare('SELECT * FROM collection_owner_defaults').all()).toEqual([]);
   });
 
   it('resolves selected bulk access without authorizing hidden siblings', () => {

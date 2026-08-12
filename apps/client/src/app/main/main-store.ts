@@ -6,6 +6,7 @@ import {
 import { createInjectionToken } from 'ngx-simple-signal-store';
 import { CollectionFeaturePreferencesModel } from '@shared/models/collection-feature-preferences-model';
 import { DEFAULT_COLLECTION_FEATURE_PREFERENCES } from '@shared/constants/collection-feature-preferences-const';
+import { CollectionOwnerDefaultModel } from '@shared/models/api-model';
 
 export interface MainState {
   clearLocalStorageAfterLogout: boolean;
@@ -14,7 +15,7 @@ export interface MainState {
   language: LanguageModel;
   aiAvailable: boolean;
   backgroundImagesRefreshTrigger: number;
-  defaultLibraryOwnerShareCode: string | null;
+  defaultCollectionOwners: CollectionOwnerDefaultModel[];
   collectionListDisplayPreferences: CollectionListDisplayPreferencesModel;
   collectionFeaturePreferences: CollectionFeaturePreferencesModel;
 }
@@ -26,7 +27,7 @@ export const initialMainState: MainState = {
   language: 'en',
   aiAvailable: false,
   backgroundImagesRefreshTrigger: 0,
-  defaultLibraryOwnerShareCode: null,
+  defaultCollectionOwners: [],
   collectionListDisplayPreferences: DEFAULT_COLLECTION_LIST_DISPLAY_PREFERENCES,
   collectionFeaturePreferences: DEFAULT_COLLECTION_FEATURE_PREFERENCES,
 };

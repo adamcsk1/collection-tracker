@@ -174,7 +174,7 @@ describe('SettingsService', () => {
   it('preloads collection list display preferences from the API', () => {
     api.getUserSettings.mockReturnValue(
       of({
-        defaultLibraryOwnerShareCode: null,
+        defaultCollectionOwners: [{ listType: 'wishlist', contentType: 'movie', ownerUserShareCode: 'owner-code' }],
         collectionListDisplayPreferences: {
           showYear: false,
           showSharedIcon: false,
@@ -192,7 +192,9 @@ describe('SettingsService', () => {
       preferredRating: 'metacritic',
       imdbRatingFallback: true,
     });
-    expect(mainState.state.defaultLibraryOwnerShareCode()).toBeNull();
+    expect(mainState.state.defaultCollectionOwners()).toEqual([
+      { listType: 'wishlist', contentType: 'movie', ownerUserShareCode: 'owner-code' },
+    ]);
   });
 
   it('uses collection list display defaults for invalid API preferences', () => {
@@ -312,6 +314,98 @@ describe('SettingsService', () => {
       expect.any(String),
       'session'
     );
+  });
+
+  it('serializes default collection owner updates', () => {
+    const firstUpdate = new Subject<void>();
+    const firstDefaults = [{ listType: 'library' as const, contentType: 'movie' as const, ownerUserShareCode: 'one' }];
+    const secondDefaults = [
+      { listType: 'tracking' as const, contentType: 'series' as const, ownerUserShareCode: 'two' },
+    ];
+    sharedApi.updateUserSettings.mockReturnValueOnce(firstUpdate).mockReturnValueOnce(of(void 0));
+
+    service.storeDefaultCollectionOwners(firstDefaults);
+    service.storeDefaultCollectionOwners(secondDefaults);
+
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledTimes(1);
+    firstUpdate.complete();
+    expect(sharedApi.updateUserSettings).toHaveBeenLastCalledWith({ defaultCollectionOwners: secondDefaults });
+    expect(mainState.state.defaultCollectionOwners()).toEqual(secondDefaults);
+  });
+
+  it('restores persisted default collection owners after a failed final update', () => {
+    const persistedDefaults = [
+      { listType: 'library' as const, contentType: 'movie' as const, ownerUserShareCode: 'persisted' },
+    ];
+    api.getUserSettings.mockReturnValue(of({ defaultCollectionOwners: persistedDefaults }));
+    service.preloadUserSettings().subscribe();
+    sharedApi.updateUserSettings.mockReturnValueOnce(throwError(() => new Error('network')));
+
+    service.storeDefaultCollectionOwners([
+      { listType: 'wishlist', contentType: 'movie', ownerUserShareCode: 'failed' },
+    ]);
+
+    expect(mainState.state.defaultCollectionOwners()).toEqual(persistedDefaults);
+  });
+
+  it('continues a queued default owner update after an earlier failure', () => {
+    const firstUpdate = new Subject<void>();
+    const secondDefaults = [{ listType: 'books' as const, contentType: 'book' as const, ownerUserShareCode: 'two' }];
+    sharedApi.updateUserSettings.mockReturnValueOnce(firstUpdate).mockReturnValueOnce(of(void 0));
+
+    service.storeDefaultCollectionOwners([{ listType: 'library', contentType: 'movie', ownerUserShareCode: 'one' }]);
+    service.storeDefaultCollectionOwners(secondDefaults);
+    firstUpdate.error(new Error('network'));
+
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledTimes(2);
+    expect(mainState.state.defaultCollectionOwners()).toEqual(secondDefaults);
+  });
+
+  it('restores the latest successful default owner update when the next update fails', () => {
+    const firstUpdate = new Subject<void>();
+    const firstDefaults = [{ listType: 'library' as const, contentType: 'movie' as const, ownerUserShareCode: 'one' }];
+    const secondDefaults = [
+      { listType: 'tracking' as const, contentType: 'series' as const, ownerUserShareCode: 'two' },
+    ];
+    sharedApi.updateUserSettings
+      .mockReturnValueOnce(firstUpdate)
+      .mockReturnValueOnce(throwError(() => new Error('network')));
+
+    service.storeDefaultCollectionOwners(firstDefaults);
+    service.storeDefaultCollectionOwners(secondDefaults);
+    firstUpdate.complete();
+
+    expect(mainState.state.defaultCollectionOwners()).toEqual(firstDefaults);
+  });
+
+  it('allows defaults for an owner after the owner shares again', () => {
+    const defaults = [
+      { listType: 'library' as const, contentType: 'movie' as const, ownerUserShareCode: 'owner-code' },
+    ];
+
+    service.removeDefaultCollectionOwner('owner-code');
+    service.storeDefaultCollectionOwners(defaults);
+
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledWith({ defaultCollectionOwners: defaults });
+    expect(mainState.state.defaultCollectionOwners()).toEqual(defaults);
+  });
+
+  it('does not restore an acknowledged pre-revocation save when a re-share save fails', () => {
+    const inFlightUpdate = new Subject<void>();
+    const staleDefaults = [
+      { listType: 'library' as const, contentType: 'movie' as const, ownerUserShareCode: 'owner-code' },
+    ];
+    sharedApi.updateUserSettings
+      .mockReturnValueOnce(inFlightUpdate)
+      .mockReturnValueOnce(throwError(() => new Error('network')));
+
+    service.storeDefaultCollectionOwners(staleDefaults);
+    service.removeDefaultCollectionOwner('owner-code');
+    service.storeDefaultCollectionOwners(staleDefaults);
+    inFlightUpdate.complete();
+
+    expect(sharedApi.updateUserSettings).toHaveBeenCalledTimes(2);
+    expect(mainState.state.defaultCollectionOwners()).toEqual([]);
   });
 
   it('serializes collection feature preference updates', () => {

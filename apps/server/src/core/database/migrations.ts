@@ -7,6 +7,7 @@ import Database from 'better-sqlite3';
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { getItemHash } from '../utils/collection-item-util';
+import { hashText } from '../crypto';
 
 const MIGRATION_PATTERN = /^\d+_.+\.sql$/;
 
@@ -86,6 +87,43 @@ const recomputeCollectionItemHashes = (db: Database.Database): void => {
   transaction();
 };
 
+const migrateCollectionOwnerDefaults = (db: Database.Database): void => {
+  const rows = db
+    .prepare(
+      `SELECT username_hash, default_library_owner_share_code
+       FROM user_settings
+       WHERE default_library_owner_share_code IS NOT NULL AND TRIM(default_library_owner_share_code) <> ''`
+    )
+    .all() as Array<{
+    username_hash: string;
+    default_library_owner_share_code: string;
+  }>;
+  const ownerHashesByShareCode = new Map(
+    (db.prepare('SELECT username_hash FROM users').all() as Array<{ username_hash: string }>).map((user) => [
+      hashText(user.username_hash).slice(0, 16),
+      user.username_hash,
+    ])
+  );
+  const insertDefault = db.prepare(
+    `INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+     VALUES (?, 'library', ?, ?)`
+  );
+  for (const row of rows) {
+    const ownerHash = ownerHashesByShareCode.get(row.default_library_owner_share_code);
+    if (!ownerHash || ownerHash === row.username_hash) continue;
+    for (const contentType of ['movie', 'series']) {
+      const valid = db
+        .prepare(
+          `SELECT 1 FROM user_share_grants
+           WHERE owner_username_hash = ? AND shared_with_username_hash = ?
+             AND list_type = 'library' AND content_type = ? AND can_create = 1`
+        )
+        .get(ownerHash, row.username_hash, contentType);
+      if (valid) insertDefault.run(row.username_hash, contentType, ownerHash);
+    }
+  }
+};
+
 export const hasSqlMigrations = (migrationsDir: string): boolean =>
   readdirSync(migrationsDir).some((file) => MIGRATION_PATTERN.test(file));
 
@@ -113,6 +151,15 @@ export const runMigrations = async (db: Database.Database, migrationsDir: string
     const sql = readFileSync(filePath, 'utf-8');
 
     try {
+      if (file === '038_add_collection_owner_defaults.sql') {
+        db.transaction(() => {
+          db.exec(sql);
+          migrateCollectionOwnerDefaults(db);
+          db.prepare('INSERT INTO schema_migrations (id) VALUES (?)').run(file);
+        })();
+        appliedIds.add(file);
+        continue;
+      }
       // Self-transaction migrations insert their schema marker before COMMIT so schema and marker remain atomic.
       db.exec(sql);
       if (

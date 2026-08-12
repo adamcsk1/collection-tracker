@@ -31,18 +31,6 @@
     </section>
   </div>
 
-  <section class="shares-section" data-test-id="default-library-section">
-    <h3>{{ translations.defaultLibrary() }}</h3>
-    <p class="empty-message">{{ translations.messageDefaultLibrary() }}</p>
-    <libc-select
-      data-test-id="settings-default-library"
-      [label]="translations.defaultLibrary()"
-      [value]="defaultLibraryOwnerShareCode() ?? ''"
-      [options]="defaultLibraryOptions()"
-      (valueChange)="onDefaultLibraryChange($event)"
-    />
-  </section>
-
   <section class="shares-section">
     <h3>{{ translations.outgoingShares() }}</h3>
     @if (outgoing().length) {

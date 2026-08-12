@@ -53,6 +53,12 @@
   background: var(--background-color);
 }
 
+.default-destination {
+  margin-block-start: var(--size-xs);
+  padding: var(--size-xs);
+  border-block-start: var(--border-style);
+}
+
 .permission-choice {
   display: flex;
   align-items: center;
@@ -68,9 +74,16 @@
   background: var(--theme-color);
 }
 
-.clear-selected {
-  margin-inline-start: var(--size-xs);
-  font-size: var(--font-size-sm);
+.scope-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-block-start: var(--size-xs);
+  padding: var(--size-xs);
+  border-block-start: var(--border-style);
+
+  .clear-selected {
+    font-size: var(--font-size-sm);
+  }
 }
 
 @media (width < 700px) {

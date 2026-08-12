@@ -2,12 +2,13 @@ import type { CollectionFeaturePreferencesModel } from '../collection-feature-pr
 import type { CollectionListDisplayPreferencesModel } from '../collection-list-display-preferences-model';
 import type { LanguageModel } from '../language-model';
 import type { ThemeModel } from '../theme-model';
+import type { CollectionOwnerDefaultModel } from '../collection-owner-default-model';
 
 export interface UserSettingsApiResponseModel {
   theme?: ThemeModel;
   animatedBackground?: boolean;
   language?: LanguageModel;
-  defaultLibraryOwnerShareCode?: string | null;
+  defaultCollectionOwners?: CollectionOwnerDefaultModel[];
   collectionListDisplayPreferences?: CollectionListDisplayPreferencesModel;
   collectionFeaturePreferences?: CollectionFeaturePreferencesModel;
 }

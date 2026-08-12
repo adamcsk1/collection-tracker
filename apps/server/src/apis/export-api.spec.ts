@@ -124,7 +124,7 @@ describe('export-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
       type: 'collection-tracker-export',
-      version: 10,
+      version: 11,
       userSettings: {
         theme: 'dark',
         animatedBackground: false,
@@ -195,7 +195,7 @@ describe('export-api', () => {
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
       type: 'collection-tracker-export',
-      version: 10,
+      version: 11,
       userSettings: {},
       collectionItems: [],
       tagManagement: [],

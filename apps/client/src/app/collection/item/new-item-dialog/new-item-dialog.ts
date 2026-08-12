@@ -519,13 +519,16 @@ export class NewItemDialog {
   protected readonly showLibrarySelect = computed(() => this.libraryOptions().length > 1);
   protected readonly selectedExternalReference = computed(() => this.searchForm.selectedExternalReference().value());
   private readonly defaultTargetOwnerShareCode = computed(() => {
-    const defaultLibraryOwnerShareCode = this.mainState.state.defaultLibraryOwnerShareCode();
-    if (!defaultLibraryOwnerShareCode) return null;
+    const ownerDefault = this.mainState.state
+      .defaultCollectionOwners()
+      .find((entry) => entry.listType === this.listType() && entry.contentType === this.activeAddContentType());
+    if (!ownerDefault) return null;
 
-    return this.libraryOptions().some((option) => option.value === defaultLibraryOwnerShareCode)
-      ? defaultLibraryOwnerShareCode
+    return this.libraryOptions().some((option) => option.value === ownerDefault.ownerUserShareCode)
+      ? ownerDefault.ownerUserShareCode
       : null;
   });
+  private readonly automaticallySelectedOwnerShareCode = signal<string | null>(null);
   protected readonly draftImageUrl = computed(() =>
     getProxyImageUrl(this.apiState.state.apiUrl(), this.manualForm.image().value())
   );
@@ -585,15 +588,19 @@ export class NewItemDialog {
       const libraryOptions = this.libraryOptions();
       const defaultTargetOwnerShareCode = this.defaultTargetOwnerShareCode();
       const targetOwnerShareCode = untracked(() => this.searchForm.targetOwnerShareCode().value());
+      const automaticallySelectedOwnerShareCode = untracked(this.automaticallySelectedOwnerShareCode);
 
-      if (targetOwnerShareCode === null) {
-        if (defaultTargetOwnerShareCode) {
-          this.searchForm.targetOwnerShareCode().value.set(defaultTargetOwnerShareCode);
-        }
+      if (targetOwnerShareCode === null || targetOwnerShareCode === automaticallySelectedOwnerShareCode) {
+        this.searchForm.targetOwnerShareCode().value.set(defaultTargetOwnerShareCode);
+        this.automaticallySelectedOwnerShareCode.set(defaultTargetOwnerShareCode);
         return;
       }
-      if (libraryOptions.some((option) => option.value === targetOwnerShareCode)) return;
+      if (libraryOptions.some((option) => option.value === targetOwnerShareCode)) {
+        this.automaticallySelectedOwnerShareCode.set(null);
+        return;
+      }
       this.searchForm.targetOwnerShareCode().value.set(defaultTargetOwnerShareCode);
+      this.automaticallySelectedOwnerShareCode.set(defaultTargetOwnerShareCode);
     });
 
     effect(() => {

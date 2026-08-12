@@ -193,6 +193,19 @@ export const upsertShare = (
         scopeMode
       );
     }
+
+    db.prepare(
+      `DELETE FROM collection_owner_defaults
+       WHERE username_hash = ? AND owner_username_hash = ?
+         AND NOT EXISTS (
+           SELECT 1 FROM user_share_grants
+           WHERE owner_username_hash = ?
+             AND shared_with_username_hash = collection_owner_defaults.username_hash
+             AND list_type = collection_owner_defaults.list_type
+             AND content_type = collection_owner_defaults.content_type
+             AND can_create = 1
+         )`
+    ).run(sharedWithHash, ownerHash, ownerHash);
   });
 
   run();
@@ -200,6 +213,10 @@ export const upsertShare = (
 
 export const deleteShare = (db: Database.Database, ownerHash: string, sharedWithHash: string): void => {
   const run = db.transaction(() => {
+    db.prepare('DELETE FROM collection_owner_defaults WHERE username_hash = ? AND owner_username_hash = ?').run(
+      sharedWithHash,
+      ownerHash
+    );
     db.prepare('DELETE FROM user_share_grants WHERE owner_username_hash = ? AND shared_with_username_hash = ?').run(
       ownerHash,
       sharedWithHash
@@ -437,6 +454,24 @@ export const replaceCollectionItemSelections = (
       ).run(
         ownerHash,
         row.shared_with_username_hash,
+        item.list_type,
+        item.content_type,
+        ownerHash,
+        row.shared_with_username_hash,
+        item.list_type,
+        item.content_type
+      );
+      db.prepare(
+        `DELETE FROM collection_owner_defaults
+         WHERE username_hash = ? AND owner_username_hash = ? AND list_type = ? AND content_type = ?
+           AND NOT EXISTS (
+             SELECT 1 FROM user_share_grants
+             WHERE owner_username_hash = ? AND shared_with_username_hash = ?
+               AND list_type = ? AND content_type = ? AND can_create = 1
+           )`
+      ).run(
+        row.shared_with_username_hash,
+        ownerHash,
         item.list_type,
         item.content_type,
         ownerHash,

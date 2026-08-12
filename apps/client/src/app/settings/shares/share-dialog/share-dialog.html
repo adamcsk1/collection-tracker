@@ -74,18 +74,6 @@
                     [disabled]="readOnly()"
                     (valueChange)="onReadToggle(listType, scope.contentType, $event === true)"
                   />
-                  @if (!readOnly() && readIndeterminate(listType, scope.contentType)) {
-                    <button
-                      class="clear-selected"
-                      type="button"
-                      [attr.data-test-id]="
-                        'share-dialog-grant-' + listType + '-' + scope.contentType + '-clear-selected'
-                      "
-                      (click)="onClearSelected(listType, scope.contentType)"
-                    >
-                      {{ translations.clearSelected() }}
-                    </button>
-                  }
                 </div>
                 <div
                   class="permission-choice"
@@ -94,9 +82,6 @@
                   <libc-checkbox
                     [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-create'"
                     [label]="translations.canCreate()"
-                    [hint]="
-                      permissionChanged(listType, scope.contentType, 'canCreate') ? translations.changed() : undefined
-                    "
                     [value]="grantChecked(listType, scope.contentType, 'canCreate')"
                     [disabled]="readOnly()"
                     (valueChange)="onGrantToggle(listType, scope.contentType, 'canCreate', $event === true)"
@@ -109,9 +94,6 @@
                   <libc-checkbox
                     [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-update'"
                     [label]="translations.canUpdate()"
-                    [hint]="
-                      permissionChanged(listType, scope.contentType, 'canUpdate') ? translations.changed() : undefined
-                    "
                     [value]="grantChecked(listType, scope.contentType, 'canUpdate')"
                     [disabled]="readOnly()"
                     (valueChange)="onGrantToggle(listType, scope.contentType, 'canUpdate', $event === true)"
@@ -124,15 +106,34 @@
                   <libc-checkbox
                     [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-can-delete'"
                     [label]="translations.canDelete()"
-                    [hint]="
-                      permissionChanged(listType, scope.contentType, 'canDelete') ? translations.changed() : undefined
-                    "
                     [value]="grantChecked(listType, scope.contentType, 'canDelete')"
                     [disabled]="readOnly()"
                     (valueChange)="onGrantToggle(listType, scope.contentType, 'canDelete', $event === true)"
                   />
                 </div>
               </div>
+              @if (!readOnly() && readIndeterminate(listType, scope.contentType)) {
+                <div class="scope-actions">
+                  <button
+                    class="clear-selected"
+                    type="button"
+                    [attr.data-test-id]="'share-dialog-grant-' + listType + '-' + scope.contentType + '-clear-selected'"
+                    (click)="onClearSelected(listType, scope.contentType)"
+                  >
+                    {{ translations.clearSelected() }}
+                  </button>
+                </div>
+              }
+              @if (canSetDefault(listType, scope.contentType)) {
+                <div class="default-destination">
+                  <libc-checkbox
+                    [attr.data-test-id]="'share-dialog-default-' + listType + '-' + scope.contentType"
+                    [label]="translations.defaultDestination()"
+                    [value]="defaultChecked(listType, scope.contentType)"
+                    (valueChange)="onDefaultToggle(listType, scope.contentType, $event === true)"
+                  />
+                </div>
+              }
             </fieldset>
           }
         </libc-details>

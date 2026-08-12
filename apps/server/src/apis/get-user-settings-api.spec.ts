@@ -2,6 +2,7 @@ import { buildApp } from '../../test/mocks/build-app-mock';
 import { mockResponse } from '../../test/mocks/response-mock';
 import { getDatabase } from '../core/database/database';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { getUserShareCode } from '../core/database/repositories/user-repository';
 
 describe('get-user-settings-api', () => {
   afterEach(() => {
@@ -30,23 +31,27 @@ describe('get-user-settings-api', () => {
     });
   });
 
-  it('returns the configured default library owner share code', async () => {
+  it('returns configured exact-scope default collection owners', async () => {
     const response = mockResponse();
     const request: any = { usernameHash: 'user' };
     const { app, handlerPromise } = buildApp(request, response);
     const db = getDatabase();
     db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('user', 'token');
-    db.prepare('INSERT INTO user_settings (username_hash, default_library_owner_share_code) VALUES (?, ?)').run(
-      'user',
-      'owner-code'
-    );
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('owner', 'owner-token');
+    db.prepare('INSERT INTO user_settings (username_hash) VALUES (?)').run('user');
+    db.prepare(
+      `INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+       VALUES (?, ?, ?, ?)`
+    ).run('user', 'tracking', 'series', 'owner');
 
     const { register } = await import('./get-user-settings-api');
     register(app);
 
     await handlerPromise();
     expect(response.send).toHaveBeenCalledWith({
-      defaultLibraryOwnerShareCode: 'owner-code',
+      defaultCollectionOwners: [
+        { listType: 'tracking', contentType: 'series', ownerUserShareCode: getUserShareCode('owner') },
+      ],
     });
   });
 

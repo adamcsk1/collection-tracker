@@ -274,7 +274,16 @@ describe('Collection sharing - library movie permissions', () => {
 
         signInThroughUi(sharedUser);
         SettingsPage.visitShares();
-        SettingsPage.getDefaultLibrarySelect().select(owner.shareCode);
+        SettingsPage.getViewIncomingShareButton(owner.shareCode).click();
+        cy.intercept('POST', '/api/v1/users/me/settings').as('saveDefaultOwner');
+        SettingsPage.getIncomingShareDefaultCheckbox('library', 'movie').check();
+        cy.wait('@saveDefaultOwner').then(({ request, response }) => {
+          expect(response?.statusCode).to.eq(200);
+          expect(request.body.defaultCollectionOwners).to.deep.equal([
+            { listType: 'library', contentType: 'movie', ownerUserShareCode: owner.shareCode },
+          ]);
+        });
+        SettingsPage.closeShareDialogByOverlay();
 
         visitSharedList(sharedUser);
         CollectionPage.getShowFunctionsButton().click();

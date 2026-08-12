@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { PortalService } from '@services/portal-service';
 import { ConfirmService } from '@services/confirm-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
@@ -261,6 +262,53 @@ describe('ShareDialog', () => {
     expect(fixture.nativeElement.querySelector('[data-test-id="share-dialog-save"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test-id="share-dialog-dependency"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('input[type="checkbox"]')?.disabled).toBe(true);
+  });
+
+  it('offers exact add scopes as default destinations', () => {
+    const defaultsChanged = vi.fn();
+    fixture.componentRef.setInput('share', {
+      ownerUserShareCode: 'owner-code',
+      ownerUsername: 'Owner',
+      grants: [
+        {
+          listType: 'library',
+          contentType: 'movie',
+          canRead: true,
+          canCreate: true,
+          canUpdate: false,
+          canDelete: false,
+          readMode: 'all',
+        },
+        {
+          listType: 'library',
+          contentType: 'series',
+          canRead: true,
+          canCreate: false,
+          canUpdate: false,
+          canDelete: false,
+          readMode: 'all',
+        },
+      ],
+    });
+    const defaults = signal<Array<{ listType: 'library'; contentType: 'movie'; ownerUserShareCode: string }>>([]);
+    fixture.componentRef.setInput('defaultCollectionOwners', defaults);
+    fixture.componentRef.setInput(
+      'defaultsChanged',
+      (nextDefaults: Array<{ listType: 'library'; contentType: 'movie'; ownerUserShareCode: string }>) => {
+        defaults.set(nextDefaults);
+        defaultsChanged(nextDefaults);
+      }
+    );
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test-id="share-dialog-default-library-movie"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test-id="share-dialog-default-library-series"]')).toBeNull();
+    component['onDefaultToggle']('library', 'movie', true);
+
+    expect(defaultsChanged).toHaveBeenCalledWith([
+      { listType: 'library', contentType: 'movie', ownerUserShareCode: 'owner-code' },
+    ]);
+    expect(component['defaultChecked']('library', 'movie')).toBe(true);
   });
 });
 

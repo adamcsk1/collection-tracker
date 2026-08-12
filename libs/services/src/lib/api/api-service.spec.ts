@@ -598,7 +598,7 @@ describe('ApiService', () => {
   it('retrieves user export data', async () => {
     const exportData = {
       type: 'collection-tracker-export',
-      version: 10,
+      version: 11,
       userSettings: {},
       collectionItems: [],
       tagManagement: [],
@@ -616,7 +616,7 @@ describe('ApiService', () => {
   it('imports user export data', async () => {
     const importData = {
       type: 'collection-tracker-export',
-      version: 10,
+      version: 11,
       userSettings: {},
       collectionItems: [],
       tagManagement: [],

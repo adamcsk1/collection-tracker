@@ -10,6 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SharesService } from './shares-service';
 import { SharesLoaderService } from './shares-loader-service';
 import { initialSharesState, SharesState, sharesStateToken } from './shares-store';
+import { initialMainState, mainStateToken } from '../main/main-store';
+import { SettingsService } from '../settings/settings-service';
 
 describe('SharesService', () => {
   let api: {
@@ -43,7 +45,22 @@ describe('SharesService', () => {
         SharesLoaderService,
         { provide: ApiService, useValue: api },
         { provide: NgxSignalTranslateService, useValue: { translate } },
+        {
+          provide: SettingsService,
+          useValue: {
+            removeDefaultCollectionOwner: (ownerUserShareCode: string) => {
+              const mainState = TestBed.inject(mainStateToken);
+              mainState.setState(
+                'defaultCollectionOwners',
+                mainState.state
+                  .defaultCollectionOwners()
+                  .filter((ownerDefault) => ownerDefault.ownerUserShareCode !== ownerUserShareCode)
+              );
+            },
+          },
+        },
         provideStore(initialSharesState, sharesStateToken),
+        provideStore(initialMainState, mainStateToken),
         provideStore(initialToastState, toastStateToken),
       ],
     });
@@ -297,8 +314,17 @@ describe('SharesService', () => {
   });
 
   it('revokes incoming shares as the invited user', () => {
+    const mainState = TestBed.inject(mainStateToken);
+    mainState.setState('defaultCollectionOwners', [
+      { listType: 'library', contentType: 'movie', ownerUserShareCode: 'owner-code' },
+      { listType: 'tracking', contentType: 'series', ownerUserShareCode: 'other-code' },
+    ]);
+
     service.revokeIncomingShare('owner-code');
 
     expect(api.revokeIncomingShare).toHaveBeenCalledWith('owner-code');
+    expect(mainState.state.defaultCollectionOwners()).toEqual([
+      { listType: 'tracking', contentType: 'series', ownerUserShareCode: 'other-code' },
+    ]);
   });
 });

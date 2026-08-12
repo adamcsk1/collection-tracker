@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import {
   AccessTokenModel,
+  CollectionOwnerDefaultModel,
   RefreshTokenModel,
   UserSettingsApiResponseModel,
   UserSettingsApiRequestModel,
@@ -140,7 +141,6 @@ export const findUserSettings = (
         theme: string | null;
         animated_background: number | null;
         language: string | null;
-        default_library_owner_share_code: string | null;
         collection_list_display_preferences: string | null;
         collection_feature_preferences: string | null;
       }
@@ -152,8 +152,27 @@ export const findUserSettings = (
   if (row.theme) settings.theme = row.theme as UserSettingsApiResponseModel['theme'];
   if (row.animated_background !== null) settings.animatedBackground = row.animated_background === 1;
   if (row.language) settings.language = row.language as UserSettingsApiResponseModel['language'];
-  if (row.default_library_owner_share_code)
-    settings.defaultLibraryOwnerShareCode = row.default_library_owner_share_code;
+  const defaultCollectionOwners = db
+    .prepare(
+      `SELECT defaults.list_type, defaults.content_type, defaults.owner_username_hash
+       FROM collection_owner_defaults defaults
+       WHERE username_hash = ?
+       ORDER BY list_type, content_type`
+    )
+    .all(usernameHash)
+    .map((defaultRow) => {
+      const typedRow = defaultRow as {
+        list_type: CollectionOwnerDefaultModel['listType'];
+        content_type: CollectionOwnerDefaultModel['contentType'];
+        owner_username_hash: string;
+      };
+      return {
+        listType: typedRow.list_type,
+        contentType: typedRow.content_type,
+        ownerUserShareCode: getUserShareCode(typedRow.owner_username_hash),
+      };
+    });
+  if (defaultCollectionOwners.length) settings.defaultCollectionOwners = defaultCollectionOwners;
   const collectionListDisplayPreferences = parseCollectionListDisplayPreferences(
     row.collection_list_display_preferences
   );
@@ -208,28 +227,44 @@ export const upsertUserSettings = (
   usernameHash: string,
   settings: UserSettingsApiRequestModel
 ): void => {
-  db.prepare(
-    `INSERT INTO user_settings
-     (username_hash, theme, animated_background, language, default_library_owner_share_code, collection_list_display_preferences, collection_feature_preferences)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(username_hash) DO UPDATE SET
-       theme = excluded.theme,
-       animated_background = excluded.animated_background,
-       language = excluded.language,
-       default_library_owner_share_code = excluded.default_library_owner_share_code,
-       collection_list_display_preferences = excluded.collection_list_display_preferences,
-       collection_feature_preferences = excluded.collection_feature_preferences`
-  ).run(
-    usernameHash,
-    settings.theme ?? null,
-    settings.animatedBackground === undefined ? null : settings.animatedBackground ? 1 : 0,
-    settings.language ?? null,
-    settings.defaultLibraryOwnerShareCode ?? null,
-    settings.collectionListDisplayPreferences ? JSON.stringify(settings.collectionListDisplayPreferences) : null,
-    settings.collectionFeaturePreferences ? JSON.stringify(settings.collectionFeaturePreferences) : null
-  );
+  const run = db.transaction(() => {
+    db.prepare(
+      `INSERT INTO user_settings
+       (username_hash, theme, animated_background, language, default_library_owner_share_code, collection_list_display_preferences, collection_feature_preferences)
+       VALUES (?, ?, ?, ?, NULL, ?, ?)
+       ON CONFLICT(username_hash) DO UPDATE SET
+         theme = excluded.theme,
+         animated_background = excluded.animated_background,
+         language = excluded.language,
+         default_library_owner_share_code = NULL,
+         collection_list_display_preferences = excluded.collection_list_display_preferences,
+         collection_feature_preferences = excluded.collection_feature_preferences`
+    ).run(
+      usernameHash,
+      settings.theme ?? null,
+      settings.animatedBackground === undefined ? null : settings.animatedBackground ? 1 : 0,
+      settings.language ?? null,
+      settings.collectionListDisplayPreferences ? JSON.stringify(settings.collectionListDisplayPreferences) : null,
+      settings.collectionFeaturePreferences ? JSON.stringify(settings.collectionFeaturePreferences) : null
+    );
+
+    db.prepare('DELETE FROM collection_owner_defaults WHERE username_hash = ?').run(usernameHash);
+    const insertDefault = db.prepare(
+      `INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+       VALUES (?, ?, ?, ?)`
+    );
+    for (const ownerDefault of settings.defaultCollectionOwners ?? []) {
+      const owner = findUserByShareCode(db, ownerDefault.ownerUserShareCode);
+      if (owner) insertDefault.run(usernameHash, ownerDefault.listType, ownerDefault.contentType, owner.username_hash);
+    }
+  });
+  run();
 };
 
 export const deleteUserSettings = (db: Database.Database, usernameHash: string): void => {
-  db.prepare('DELETE FROM user_settings WHERE username_hash = ?').run(usernameHash);
+  const run = db.transaction(() => {
+    db.prepare('DELETE FROM collection_owner_defaults WHERE username_hash = ?').run(usernameHash);
+    db.prepare('DELETE FROM user_settings WHERE username_hash = ?').run(usernameHash);
+  });
+  run();
 };

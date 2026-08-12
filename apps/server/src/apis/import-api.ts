@@ -39,10 +39,13 @@ import { replaceTrackingSeasonsByExternalId } from '../core/database/repositorie
 import { replaceCompletedEpisodesByExternalId } from '../core/database/repositories/series-completed-episodes-repository';
 import { deleteTagManagement, upsertTagManagement } from '../core/database/repositories/tag-management-repository';
 import { deleteUserSettings, upsertUserSettings } from '../core/database/repositories/user-repository';
+import { findUserByShareCode } from '../core/database/repositories/user-repository';
+import { canAccessShare } from '../core/database/repositories/share-repository';
 import { jwtGuard } from '../core/jwt';
 import { withErrorHandler } from '../core/utils/api-error-handler';
 import { getItemHash, normalizeItem } from '../core/utils/collection-item-util';
 import { parseListType } from '../core/utils/query-parse-util';
+import { isValidShareScope } from '@shared/utils/share-grant-util';
 import { normalizeTrackingSeasons } from '../core/utils/tracking-seasons-api-util';
 import { ImportedCollectionItemApiModel, ImportedUserRequestModel } from './import-api-model';
 
@@ -52,7 +55,27 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'string');
 
-const isUserSettings = (value: unknown): value is UserSettingsApiResponseModel => {
+const isDefaultCollectionOwners = (value: unknown): boolean => {
+  if (!Array.isArray(value)) return false;
+  const scopes = new Set<string>();
+  return value.every((entry) => {
+    if (!isPlainObject(entry)) return false;
+    if (
+      Object.keys(entry).some((key) => !['listType', 'contentType', 'ownerUserShareCode'].includes(key)) ||
+      !isValidShareScope(entry['listType'], entry['contentType']) ||
+      typeof entry['ownerUserShareCode'] !== 'string' ||
+      !entry['ownerUserShareCode'].trim()
+    ) {
+      return false;
+    }
+    const scope = `${entry['listType']}:${entry['contentType']}`;
+    if (scopes.has(scope)) return false;
+    scopes.add(scope);
+    return true;
+  });
+};
+
+const isUserSettings = (value: unknown, importVersion: number): value is UserSettingsApiResponseModel => {
   if (!isPlainObject(value)) return false;
   return Object.entries(value).every(([key, setting]) => {
     switch (key) {
@@ -63,7 +86,12 @@ const isUserSettings = (value: unknown): value is UserSettingsApiResponseModel =
       case 'language':
         return typeof setting === 'string' && isAllowedValue(setting, LANGUAGES);
       case 'defaultLibraryOwnerShareCode':
-        return setting === null || (typeof setting === 'string' && setting.trim().length > 0);
+        return (
+          importVersion < EXPORT_VERSION &&
+          (setting === null || (typeof setting === 'string' && setting.trim().length > 0))
+        );
+      case 'defaultCollectionOwners':
+        return importVersion === EXPORT_VERSION && isDefaultCollectionOwners(setting);
       case 'collectionListDisplayPreferences':
         return isCollectionListDisplayPreferences(setting);
       case 'collectionFeaturePreferences':
@@ -232,7 +260,7 @@ const isCollectionItem = (value: unknown): value is ImportedCollectionItemApiMod
   );
 };
 
-const SUPPORTED_IMPORT_VERSIONS = new Set([9, EXPORT_VERSION]);
+const SUPPORTED_IMPORT_VERSIONS = new Set([9, 10, EXPORT_VERSION]);
 
 const isUserImport = (value: unknown): value is ImportedUserRequestModel => {
   if (!isPlainObject(value)) return false;
@@ -244,7 +272,7 @@ const isUserImport = (value: unknown): value is ImportedUserRequestModel => {
   ) {
     return false;
   }
-  if (!isUserSettings(value['userSettings'])) return false;
+  if (!isUserSettings(value['userSettings'], importVersion)) return false;
   if (!Array.isArray(value['collectionItems']) || !value['collectionItems'].every(isCollectionItem)) {
     return false;
   }
@@ -378,12 +406,23 @@ export const register = (app: FastifyInstance): void => {
       const normalizedFeaturePreferences = parseCollectionFeaturePreferences(
         importData.userSettings.collectionFeaturePreferences
       );
+      const importedSettings = { ...importData.userSettings } as UserSettingsApiResponseModel & {
+        defaultLibraryOwnerShareCode?: string | null;
+      };
+      const legacyDefaultOwner = importedSettings.defaultLibraryOwnerShareCode;
+      delete importedSettings.defaultLibraryOwnerShareCode;
+      if (legacyDefaultOwner && !importedSettings.defaultCollectionOwners) {
+        importedSettings.defaultCollectionOwners = [
+          { listType: 'library', contentType: 'movie', ownerUserShareCode: legacyDefaultOwner },
+          { listType: 'library', contentType: 'series', ownerUserShareCode: legacyDefaultOwner },
+        ];
+      }
       const userSettings = normalizedFeaturePreferences
         ? {
-            ...importData.userSettings,
+            ...importedSettings,
             collectionFeaturePreferences: normalizedFeaturePreferences,
           }
-        : importData.userSettings;
+        : importedSettings;
 
       const normalizedItems = importData.collectionItems.map((item) => {
         const normalizedItem = normalizeItem(toCollectionItemChange(item));
@@ -413,6 +452,22 @@ export const register = (app: FastifyInstance): void => {
 
       const db = getDatabase();
       const usernameHash = request.usernameHash;
+      userSettings.defaultCollectionOwners = (userSettings.defaultCollectionOwners ?? []).filter((ownerDefault) => {
+        ownerDefault.ownerUserShareCode = ownerDefault.ownerUserShareCode.trim();
+        const owner = findUserByShareCode(db, ownerDefault.ownerUserShareCode);
+        return (
+          !!owner &&
+          owner.username_hash !== usernameHash &&
+          canAccessShare(
+            db,
+            usernameHash,
+            owner.username_hash,
+            ownerDefault.listType,
+            ownerDefault.contentType,
+            'create'
+          )
+        );
+      });
       const uniqueItems = new Set<string>();
       const uniqueCanonicalItems = new Set<string>();
       const uniqueExternalIdentities = new Set<string>();

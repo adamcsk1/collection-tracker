@@ -45,7 +45,9 @@ describe('SharedApiService', () => {
     };
     const settings = {
       ...payload,
-      defaultLibraryOwnerShareCode: 'owner-code',
+      defaultCollectionOwners: [
+        { listType: 'library' as const, contentType: 'movie' as const, ownerUserShareCode: 'owner-code' },
+      ],
     };
     const promise = lastValueFrom(service.updateUserSettings(payload));
 

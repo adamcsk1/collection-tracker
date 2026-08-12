@@ -7,7 +7,7 @@ const { hashTextMock } = vi.hoisted(() => ({
 
 vi.mock('../../crypto', () => ({ hashText: hashTextMock }));
 
-import { findUserByShareCode, getUserShareCode } from './user-repository';
+import { deleteUser, findUserByShareCode, getUserShareCode } from './user-repository';
 
 describe('user-repository share codes', () => {
   beforeEach(() => {
@@ -28,5 +28,19 @@ describe('user-repository share codes', () => {
 
     expect(findUserByShareCode(db, shareCode)).toEqual(expect.objectContaining({ username_hash: 'user-0999' }));
     expect(hashTextMock).toHaveBeenCalledTimes(1_000);
+  });
+
+  it('clears recipient defaults when their selected owner is deleted', () => {
+    const db = getDatabase();
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('owner', 'owner-token');
+    db.prepare('INSERT INTO users (username_hash, user_token_hash) VALUES (?, ?)').run('recipient', 'recipient-token');
+    db.prepare(
+      `INSERT INTO collection_owner_defaults (username_hash, list_type, content_type, owner_username_hash)
+       VALUES ('recipient', 'library', 'movie', ?)`
+    ).run('owner');
+
+    deleteUser(db, 'owner');
+
+    expect(db.prepare('SELECT * FROM collection_owner_defaults').all()).toEqual([]);
   });
 });

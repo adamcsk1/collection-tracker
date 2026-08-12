@@ -562,7 +562,9 @@ describe('NewItemDialog component', () => {
   });
 
   it('selects the configured default shared library', () => {
-    mainState.setState('defaultLibraryOwnerShareCode', 'owner-code');
+    mainState.setState('defaultCollectionOwners', [
+      { listType: 'library', contentType: 'movie', ownerUserShareCode: 'owner-code' },
+    ]);
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
@@ -595,7 +597,9 @@ describe('NewItemDialog component', () => {
   });
 
   it('keeps my library selected when the configured default is not creatable', () => {
-    mainState.setState('defaultLibraryOwnerShareCode', 'readonly-code');
+    mainState.setState('defaultCollectionOwners', [
+      { listType: 'library', contentType: 'movie', ownerUserShareCode: 'readonly-code' },
+    ]);
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'readonly-code',
@@ -628,7 +632,10 @@ describe('NewItemDialog component', () => {
   });
 
   it('retains an explicit my library selection when the configured default remains available', async () => {
-    mainState.setState('defaultLibraryOwnerShareCode', 'owner-code');
+    mainState.setState('defaultCollectionOwners', [
+      { listType: 'library', contentType: 'movie', ownerUserShareCode: 'owner-code' },
+      { listType: 'library', contentType: 'series', ownerUserShareCode: 'owner-code' },
+    ]);
     sharesState.setState('incoming', [
       {
         ownerUserShareCode: 'owner-code',
@@ -661,6 +668,61 @@ describe('NewItemDialog component', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(component['searchForm'].targetOwnerShareCode().value()).toBe('');
+  });
+
+  it('switches automatic defaults with the active content scope', async () => {
+    mainState.setState('defaultCollectionOwners', [
+      { listType: 'library', contentType: 'movie', ownerUserShareCode: 'movie-owner' },
+      { listType: 'library', contentType: 'series', ownerUserShareCode: 'series-owner' },
+    ]);
+    sharesState.setState('incoming', [
+      {
+        ownerUserShareCode: 'movie-owner',
+        ownerUsername: 'Movie Owner',
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'movie',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+            readMode: 'all',
+          },
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+            readMode: 'all',
+          },
+        ],
+      },
+      {
+        ownerUserShareCode: 'series-owner',
+        ownerUsername: 'Series Owner',
+        grants: [
+          {
+            listType: 'library',
+            contentType: 'series',
+            canRead: true,
+            canCreate: true,
+            canUpdate: false,
+            canDelete: false,
+            readMode: 'all',
+          },
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+    expect(component['searchForm'].targetOwnerShareCode().value()).toBe('movie-owner');
+
+    component['selectedAddContentType'].set('series');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(component['searchForm'].targetOwnerShareCode().value()).toBe('series-owner');
   });
 
   it('saves wishlist items to a shared owner', async () => {

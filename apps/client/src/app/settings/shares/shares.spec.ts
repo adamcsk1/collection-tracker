@@ -28,7 +28,7 @@ describe('SettingsShares', () => {
     removeShare: ReturnType<typeof vi.fn>;
     revokeIncomingShare: ReturnType<typeof vi.fn>;
   };
-  let settingsService: { storeDefaultLibraryOwnerShareCode: ReturnType<typeof vi.fn> };
+  let settingsService: { storeDefaultCollectionOwners: ReturnType<typeof vi.fn> };
   let portal: { open: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
@@ -39,7 +39,7 @@ describe('SettingsShares', () => {
       removeShare: vi.fn(),
       revokeIncomingShare: vi.fn(),
     };
-    settingsService = { storeDefaultLibraryOwnerShareCode: vi.fn() };
+    settingsService = { storeDefaultCollectionOwners: vi.fn() };
     portal = { open: vi.fn() };
 
     TestBed.configureTestingModule({
@@ -69,12 +69,11 @@ describe('SettingsShares', () => {
     expect(sharesService.loadShares).toHaveBeenCalled();
   });
 
-  it('derives translated share labels and local default library', () => {
+  it('derives translated share labels', () => {
     expect(component['translations'].titleShareManagement()).toBe('Title.ShareManagement');
     expect(component['translations'].messageShareSettings()).toBe('Message.ShareSettings');
     expect(component['translations'].outgoingShares()).toBe('OutgoingShares');
     expect(component['translations'].incomingShares()).toBe('IncomingShares');
-    expect(component['defaultLibraryOptions']()).toEqual([{ text: 'MyLibrary', value: '' }]);
   });
 
   it('disables share mutations while saved shares reload', async () => {
@@ -169,7 +168,24 @@ describe('SettingsShares', () => {
 
     component['onViewIncomingShare'](share);
 
-    expect(portal.open).toHaveBeenCalledWith(ShareDialog, { share });
+    expect(portal.open).toHaveBeenCalledWith(
+      ShareDialog,
+      expect.objectContaining({
+        share,
+        defaultCollectionOwners: expect.any(Function),
+        defaultsChanged: expect.any(Function),
+      })
+    );
+    const inputs = portal.open.mock.calls[0][1] as {
+      defaultsChanged: (
+        defaults: Array<{ listType: 'library'; contentType: 'movie'; ownerUserShareCode: string }>
+      ) => void;
+    };
+    const defaults = [
+      { listType: 'library' as const, contentType: 'movie' as const, ownerUserShareCode: 'owner-code' },
+    ];
+    inputs.defaultsChanged(defaults);
+    expect(settingsService.storeDefaultCollectionOwners).toHaveBeenCalledWith(defaults);
   });
 
   it('revokes incoming shares after confirmation', () => {
@@ -196,89 +212,5 @@ describe('SettingsShares', () => {
     component['onCopyUserHash']();
 
     expect(toastState.state.message()).toBe('');
-  });
-
-  it('stores selected incoming share as default library', () => {
-    component['onDefaultLibraryChange']('owner-code');
-
-    expect(settingsService.storeDefaultLibraryOwnerShareCode).toHaveBeenCalledWith('owner-code');
-  });
-
-  it('stores null when my library is selected as default library', () => {
-    component['onDefaultLibraryChange']('');
-
-    expect(settingsService.storeDefaultLibraryOwnerShareCode).toHaveBeenCalledWith(null);
-  });
-
-  it('labels every list and content type', () => {
-    expect(component['listTypeLabel']('library')).toBe('Library');
-    expect(component['listTypeLabel']('books')).toBe('Books');
-    expect(component['listTypeLabel']('wishlist')).toBe('Wishlist');
-    expect(component['listTypeLabel']('up-next')).toBe('UpNext');
-    expect(component['listTypeLabel']('tracking')).toBe('Tracking');
-    expect(component['contentTypeLabel']('movie')).toBe('Movies');
-    expect(component['contentTypeLabel']('series')).toBe('Series');
-    expect(component['contentTypeLabel']('book')).toBe('Books');
-  });
-
-  it('lists only incoming libraries with create grants', () => {
-    TestBed.inject(sharesStateToken).setState('incoming', [
-      {
-        ownerUserShareCode: 'owner-code',
-        ownerUsername: null,
-        grants: [
-          {
-            listType: 'library',
-            contentType: 'movie',
-            canRead: true,
-            canCreate: true,
-            canUpdate: false,
-            canDelete: false,
-            readMode: 'all',
-          },
-        ],
-      },
-      {
-        ownerUserShareCode: 'readonly-code',
-        ownerUsername: 'Read Only',
-        grants: [
-          {
-            listType: 'library',
-            contentType: 'series',
-            canRead: true,
-            canCreate: false,
-            canUpdate: false,
-            canDelete: false,
-            readMode: 'all',
-          },
-        ],
-      },
-      {
-        ownerUserShareCode: 'tracking-code',
-        ownerUsername: 'Tracking',
-        grants: [
-          {
-            listType: 'tracking',
-            contentType: 'series',
-            canRead: true,
-            canCreate: true,
-            canUpdate: false,
-            canDelete: false,
-            readMode: 'all',
-          },
-        ],
-      },
-    ]);
-
-    expect(component['defaultLibraryOptions']()).toEqual([
-      { text: 'MyLibrary', value: '' },
-      { text: 'SharedLibrary (owner-code)', value: 'owner-code' },
-    ]);
-  });
-
-  it('stores null for non-string default library values', () => {
-    component['onDefaultLibraryChange'](true);
-
-    expect(settingsService.storeDefaultLibraryOwnerShareCode).toHaveBeenCalledWith(null);
   });
 });

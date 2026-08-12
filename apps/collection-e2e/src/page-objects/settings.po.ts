@@ -115,7 +115,8 @@ export const SettingsPage = {
   getRemoveShareButton: (shareCode: string) => cy.getByTestId(`remove-share-${shareCode}`),
   getRevokeIncomingShareButton: (shareCode: string) => cy.getByTestId(`revoke-incoming-share-${shareCode}`),
   getViewIncomingShareButton: (shareCode: string) => cy.getByTestId(`view-incoming-share-${shareCode}`),
-  getDefaultLibrarySelect: () => cy.getByTestId('settings-default-library').find('select'),
+  getIncomingShareDefaultCheckbox: (listType: string, contentType: string) =>
+    cy.getByTestId(`share-dialog-default-${listType}-${contentType}`).find('input[type="checkbox"]'),
   getManageTrackerLibrarySelect: () => cy.getByTestId('settings-manage-tracker-data-library').find('select'),
 
   // Token dialog (shown after creating a new user token or access token)
