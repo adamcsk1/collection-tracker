@@ -6,8 +6,6 @@ import { PortalService } from '@services/portal-service';
 import { ThemeService } from '@services/theme/theme-service';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { catchError, EMPTY, filter, map, startWith } from 'rxjs';
-import { CollectionService } from '../../collection/collection-service';
-import { SettingsService } from '../../settings/settings-service';
 import { LogoutService } from '../logout-service';
 import { mainStateToken } from '../main-store';
 
@@ -20,13 +18,11 @@ import { mainStateToken } from '../main-store';
 })
 export class MenuNav {
   private readonly ngxSignalTranslate = inject(NgxSignalTranslateService);
-  private readonly collection = inject(CollectionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(ApiService);
   private readonly logout = inject(LogoutService);
   private readonly portal = inject(PortalService);
   private readonly theme = inject(ThemeService);
-  private readonly settings = inject(SettingsService);
   private readonly mainState = inject(mainStateToken);
   private readonly router = inject(Router);
   private readonly currentUrl = toSignal(
@@ -55,24 +51,11 @@ export class MenuNav {
     tracking: computed(() => this.ngxSignalTranslate.translate('Tracking')),
     settings: computed(() => this.ngxSignalTranslate.translate('Settings')),
     statistics: computed(() => this.ngxSignalTranslate.translate('Statistics')),
-    sync: computed(() => this.ngxSignalTranslate.translate('Sync')),
     about: computed(() => this.ngxSignalTranslate.translate('About')),
     logout: computed(() => this.ngxSignalTranslate.translate('Logout')),
   };
   protected readonly themeLogo = this.theme.themeLogo;
   protected readonly featurePreferences = this.mainState.state.collectionFeaturePreferences;
-
-  protected onSync(): void {
-    this.settings
-      .preloadUserSettings()
-      .pipe(
-        catchError(() => EMPTY),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
-    this.collection.triggerReload();
-    this.portal.closeAll();
-  }
 
   protected onLogout(): void {
     this.api

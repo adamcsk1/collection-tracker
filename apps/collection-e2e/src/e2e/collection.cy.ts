@@ -1345,26 +1345,6 @@ describe('Collection — unified tracking gaps', () => {
   });
 });
 
-describe('Collection - sync', () => {
-  beforeEach(() => {
-    cy.autoLogin();
-  });
-
-  it('triggers a collection reload when sync is clicked', () => {
-    cy.intercept('GET', '/api/v1/collection-items*').as('getAll');
-
-    CommonPage.openMenu();
-    CommonPage.getNavSyncLink().click();
-
-    cy.wait('@getAll').then(({ response }) => {
-      expect(response?.statusCode).to.eq(200);
-      expect(response?.body.data).to.be.an('array');
-      expect(response?.body.page.limit).to.be.greaterThan(0);
-      expect(response?.body.page).to.deep.include({ hasMore: false, nextCursor: null });
-    });
-  });
-});
-
 describe('Collection - tag badge filtering', () => {
   const taggedItem = buildCollectionItem('Badge Test Movie', 'movie', 'tt6000001');
 

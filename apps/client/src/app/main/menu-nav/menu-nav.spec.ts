@@ -9,8 +9,6 @@ import { NgxSignalTranslateService, provideSignalTranslateConfig } from 'ngx-sig
 import { provideStore } from 'ngx-simple-signal-store';
 import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CollectionService } from '../../collection/collection-service';
-import { SettingsService } from '../../settings/settings-service';
 import { LogoutService } from '../logout-service';
 import { initialMainState, mainStateToken } from '../main-store';
 import { MenuNav } from './menu-nav';
@@ -19,8 +17,6 @@ describe('MenuNav', () => {
   let fixture: ComponentFixture<MenuNav>;
   let component: MenuNav;
   let portal: { closeAll: ReturnType<typeof vi.fn>; open: ReturnType<typeof vi.fn> };
-  let collection: { triggerReload: ReturnType<typeof vi.fn> };
-  let settings: { preloadUserSettings: ReturnType<typeof vi.fn> };
   let api: { logout: ReturnType<typeof vi.fn> };
   let logout: { performLogout: ReturnType<typeof vi.fn> };
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
@@ -28,8 +24,6 @@ describe('MenuNav', () => {
 
   beforeEach(() => {
     portal = { closeAll: vi.fn(), open: vi.fn() };
-    collection = { triggerReload: vi.fn() };
-    settings = { preloadUserSettings: vi.fn(() => of(void 0)) };
     api = { logout: vi.fn(() => of(void 0)) };
     logout = { performLogout: vi.fn() };
 
@@ -37,8 +31,6 @@ describe('MenuNav', () => {
       imports: [MenuNav],
       providers: [
         { provide: PortalService, useValue: portal },
-        { provide: CollectionService, useValue: collection },
-        { provide: SettingsService, useValue: settings },
         { provide: ApiService, useValue: api },
         { provide: LogoutService, useValue: logout },
         { provide: ThemeService, useValue: { themeLogo: signal('logo-mock.png') } },
@@ -64,14 +56,6 @@ describe('MenuNav', () => {
 
   it('closes dialog on close', () => {
     component['onClose']();
-    expect(portal.closeAll).toHaveBeenCalledTimes(1);
-  });
-
-  it('triggers collection reload and closes on sync', () => {
-    component['onSync']();
-
-    expect(settings.preloadUserSettings).toHaveBeenCalled();
-    expect(collection.triggerReload).toHaveBeenCalled();
     expect(portal.closeAll).toHaveBeenCalledTimes(1);
   });
 
@@ -104,15 +88,6 @@ describe('MenuNav', () => {
     expect(hasLink('nav-wishlist')).toBe(true);
     expect(hasLink('nav-tracking')).toBe(false);
     expect(hasLink('nav-books')).toBe(false);
-  });
-
-  it('still syncs collection when refreshing settings fails', () => {
-    settings.preloadUserSettings.mockReturnValue(throwError(() => new Error('fail')));
-
-    component['onSync']();
-
-    expect(collection.triggerReload).toHaveBeenCalled();
-    expect(portal.closeAll).toHaveBeenCalledTimes(1);
   });
 
   it('logs out successfully', () => {

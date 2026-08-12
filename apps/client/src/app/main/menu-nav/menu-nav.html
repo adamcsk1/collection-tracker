@@ -72,10 +72,6 @@
     <i class="material-icons" aria-hidden="true">bar_chart</i>
     {{ translations.statistics() }}
   </a>
-  <a data-test-id="nav-sync" href="#" (click)="onSync()">
-    <i class="material-icons">sync</i>
-    {{ translations.sync() }}
-  </a>
   <a data-test-id="nav-about" [routerLink]="['/', 'about']" routerLinkActive="active" (click)="onClose()">
     <i class="material-icons" aria-hidden="true">info</i>
     {{ translations.about() }}
