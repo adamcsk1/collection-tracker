@@ -19,9 +19,7 @@ import { finalize } from 'rxjs';
 import { CollectionService } from '../../collection-service';
 import { SharesLoaderService } from '../../../shares/shares-loader-service';
 import { sharesStateToken } from '../../../shares/shares-store';
-import { ItemShareDraft } from './item-share-dialog-model';
-
-type PermissionKey = 'canCreate' | 'canUpdate' | 'canDelete';
+import type { ItemShareDraft, PermissionKey } from './item-share-dialog-model';
 
 @Component({
   selector: 'ct-item-share-dialog',

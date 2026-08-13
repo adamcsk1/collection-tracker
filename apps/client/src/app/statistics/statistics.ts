@@ -27,7 +27,8 @@ import { textToHexColor } from '@shared/utils/text-to-hex-color-util';
 import Chart from 'chart.js/auto';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
 import { BehaviorSubject, catchError, EMPTY, of, switchMap, tap } from 'rxjs';
-import { CollectionMediaChip, CollectionMediaChips } from '../collection/media-chips/media-chips';
+import type { CollectionMediaChip } from '../collection/media-chips/media-chips-model';
+import { CollectionMediaChips } from '../collection/media-chips/media-chips';
 import { mainStateToken } from '../main/main-store';
 import { StatisticsChartService } from './statistics-chart-service';
 

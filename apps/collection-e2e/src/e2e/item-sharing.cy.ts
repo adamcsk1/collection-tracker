@@ -1,8 +1,8 @@
 import { CollectionPage } from '../page-objects/collection.po';
 import { ItemSharingDialog } from '../page-objects/item-sharing.po';
 import { SettingsPage } from '../page-objects/settings.po';
+import type { ApiEnvelope, OutgoingShareResponse, TestUser } from '../support/share-helper-model';
 import {
-  ApiEnvelope,
   cleanupCreatedUsers,
   createUser,
   expectGrant,
@@ -14,15 +14,9 @@ import {
   saveItemShares,
   seedOwnerItem,
   setupShare,
-  ShareGrant,
   signInThroughUi,
-  TestUser,
   uniqueImdbId,
 } from '../support/share-helpers';
-
-interface OutgoingShareResponse {
-  outgoing: { sharedWithUserShareCode: string; grants: ShareGrant[] }[];
-}
 
 const visitList = (user: TestUser, listType: 'library' | 'books' = 'library'): void => {
   signInThroughUi(user);

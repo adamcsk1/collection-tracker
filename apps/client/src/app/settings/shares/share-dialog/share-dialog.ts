@@ -35,8 +35,7 @@ import {
   SHAREABLE_SCOPES,
 } from '@shared/utils/share-grant-util';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-
-type GrantPermissionKey = 'canRead' | 'canCreate' | 'canUpdate' | 'canDelete';
+import type { GrantPermissionKey } from './share-dialog-model';
 
 @Component({
   selector: 'ct-share-dialog',

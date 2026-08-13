@@ -1,43 +1,14 @@
-import { computed, DestroyRef, effect, inject, Signal, signal, untracked } from '@angular/core';
+import { computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { FieldTree, form } from '@angular/forms/signals';
-import { ApiService } from '@services/api/api-service';
-import { PortalService } from '@services/portal-service';
+import { form } from '@angular/forms/signals';
 import { isExternalItemIdentitySourceName } from '@shared/utils/external-metadata-provider-util';
-import { CollectionItemFiltersApiModel, CollectionListTypeModel } from '@shared/models/api-model';
-import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
-import { NgxSimpleSignalStoreService } from 'ngx-simple-signal-store';
+import type { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import { catchError, debounceTime, EMPTY, startWith, switchMap } from 'rxjs';
-import { FloatActionsService } from '../../main/float-actions/float-actions-service';
 import { mainCollectionStateToken } from '../../main/main-collection-store';
-import { CollectionListDataSource, CollectionListDataSourceRequest } from '../collection-model';
-import { CollectionState } from '../collection-store';
+import type { CollectionListDataSource, CollectionListDataSourceRequest } from '../collection-model';
 import { AiSearchDialog } from '../search/ai-search-dialog';
-import { AiSearchService } from '../search/ai-search-service';
+import type { CollectionAiSearchSetup, CollectionAiSearchSetupOptions } from './collection-ai-search-model';
 import { buildStandardSearchFilters } from './collection-search-filter-util';
-
-export interface CollectionAiSearchSetupOptions {
-  collectionState: NgxSimpleSignalStoreService<CollectionState>;
-  aiSearch: AiSearchService;
-  api: ApiService;
-  portal: PortalService;
-  floatActions: FloatActionsService;
-  destroyRef: DestroyRef;
-  listType: CollectionListTypeModel;
-  queryFilters: Signal<Partial<CollectionItemFiltersApiModel>>;
-  forceStandardSearch?: Signal<boolean>;
-  placeholder: Signal<string>;
-  aiAvailable: Signal<boolean>;
-}
-
-export interface CollectionAiSearchSetup {
-  dataSource: CollectionListDataSource;
-  aiSearchPromptTextField: FieldTree<string>;
-  aiFilterActive: Signal<boolean>;
-  clearAiFilterOnStandardSearch: () => void;
-  openAiSearchDialog: () => void;
-  checkAiAvailableOnOpen: () => void;
-}
 
 const toMatchedIdentity = (candidateId: string): ExternalItemIdentityModel => {
   const separatorIndex = candidateId.indexOf(':');

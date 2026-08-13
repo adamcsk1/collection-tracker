@@ -1,5 +1,5 @@
 import { CollectionItemContentTypeModel, CollectionListTypeModel } from '@shared/models/api-model';
-import type { CollectionMediaChip } from '../media-chips/media-chips';
+import type { CollectionMediaChip } from '../media-chips/media-chips-model';
 
 export const getMediaChipEmptyIcon = (chip: CollectionMediaChip): string => {
   switch (chip) {

@@ -1,11 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, input, model, viewChildren } from '@angular/core';
-
-export interface TabOption<TValue extends string = string> {
-  value: TValue;
-  label: string;
-  dataTestId: string;
-  disabled?: boolean;
-}
+import type { TabOption } from './tabs-model';
 
 @Component({
   selector: 'libc-tabs',

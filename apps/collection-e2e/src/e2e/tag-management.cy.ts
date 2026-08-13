@@ -1,8 +1,8 @@
 import { buildCollectionItem } from '../fixtures/collection-item';
 import { CollectionPage } from '../page-objects/collection.po';
 import { TagManagementPage } from '../page-objects/tag-management.po';
+import type { ApiEnvelope } from '../support/share-helper-model';
 import {
-  ApiEnvelope,
   cleanupCreatedUsers,
   libraryMovieSeriesGrants,
   requestAs,

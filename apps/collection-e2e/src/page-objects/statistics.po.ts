@@ -1,4 +1,4 @@
-type StatisticsScope = 'all' | 'movie' | 'series' | 'book';
+import type { StatisticsScope } from './statistics-model';
 
 export const StatisticsPage = {
   visit: () => {

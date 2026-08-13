@@ -1,11 +1,9 @@
 import type { SharePermission } from '@shared/models/share-grant-model';
 import Database from 'better-sqlite3';
 import { findCollectionItemByExternalIdOrCanonicalItemId } from '../database/repositories/collection';
-import type { CollectionItemRow } from '../database/repositories/collection/collection-model';
 import { canAccessShare } from '../database/repositories/share-repository';
 import { findUserByShareCode } from '../database/repositories/user-repository';
-
-type TrackingSeriesTargetResult = { status: 200; ownerHash: string; item: CollectionItemRow } | { status: 403 | 404 };
+import type { TrackingSeriesTargetResult } from './tracking-series-target-model';
 
 export const resolveTrackingSeriesTarget = (
   db: Database.Database,

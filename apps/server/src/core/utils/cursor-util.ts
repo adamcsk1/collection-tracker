@@ -1,24 +1,7 @@
 import { CollectionItemFiltersApiModel } from '@shared/models/api-model';
 import { ExternalItemIdentityModel } from '@shared/models/external-metadata-provider-model';
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
-
-export interface CollectionCursorPayload {
-  version: 1;
-  kind: 'collection';
-  sortValue: string;
-  rowId: number;
-  filterHash: string;
-}
-
-export interface MatchesCursorPayload {
-  version: 1;
-  kind: 'matches';
-  rank: number;
-  rowId: number;
-  filterHash: string;
-}
-
-export type CursorPayload = CollectionCursorPayload | MatchesCursorPayload;
+import type { CollectionCursorPayload, CursorPayload, MatchesCursorPayload } from './cursor-model';
 
 export class CursorValidationError extends Error {}
 

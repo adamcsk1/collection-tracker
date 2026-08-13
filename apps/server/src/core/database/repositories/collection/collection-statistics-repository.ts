@@ -5,23 +5,7 @@ import {
 } from '@shared/models/api-model';
 import Database from 'better-sqlite3';
 import { buildItemWhere, canonicalOrExactIdentityMatch } from './collection-query';
-
-interface BaseSummaryRow {
-  total: number;
-  favorites: number;
-}
-
-interface AllSummaryRow extends BaseSummaryRow {
-  movies: number;
-  series: number;
-  books: number;
-}
-
-interface SpecificSummaryRow extends BaseSummaryRow {
-  tracked: number;
-  completed: number;
-  in_progress: number;
-}
+import type { AllSummaryRow, SpecificSummaryRow } from './collection-statistics-model';
 
 export const getCollectionStatistics = (
   db: Database.Database,

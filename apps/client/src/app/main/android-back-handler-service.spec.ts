@@ -1,8 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AndroidBackWindow } from './android-back-handler-model';
 import { AndroidBackHandlerService } from './android-back-handler-service';
-
-type AndroidBackWindow = Window & { CollectionTrackerAndroidBack?: () => boolean };
 
 describe('AndroidBackHandlerService', () => {
   let service: AndroidBackHandlerService;

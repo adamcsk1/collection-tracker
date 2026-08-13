@@ -1,30 +1,11 @@
 /// <reference types="cypress" />
 
+import type { AuthCookie, CollectionCleanupItem, CollectionPageResponse } from './commands-model';
+
 export {};
 
 let authCookieHeader = '';
 let requestIpSuffix = 1;
-
-type AuthCookie = {
-  name: string;
-  value: string;
-};
-
-type CollectionCleanupItem = {
-  externalProvider: string;
-  externalItemId: string;
-  hash: string;
-  listType?: string;
-};
-
-type CollectionPageResponse = {
-  data: CollectionCleanupItem[];
-  page: {
-    limit: number;
-    hasMore: boolean;
-    nextCursor: string | null;
-  };
-};
 
 const collectionListTypes = ['library', 'up-next', 'wishlist', 'tracking', 'books'] as const;
 const defaultUserSettings = {

@@ -1,9 +1,9 @@
 import { buildOmdbItem, buildOmdbSearchResult } from '../fixtures/omdb';
 import { CollectionPage } from '../page-objects/collection.po';
 import { SettingsPage } from '../page-objects/settings.po';
+import type { CollectionPageEnvelope, ShareGrant } from '../support/share-helper-model';
 import {
   cleanupCreatedUsers,
-  CollectionPageEnvelope,
   createUser,
   expectGrant,
   expectNoGrant,
@@ -12,7 +12,6 @@ import {
   requestAs,
   seedOwnerItem,
   setupShare,
-  ShareGrant,
   signInThroughUi,
   uniqueImdbId,
 } from '../support/share-helpers';

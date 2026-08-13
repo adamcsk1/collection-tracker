@@ -4,3 +4,5 @@ export interface ItemShareDraft extends CollectionItemShareApiModel {
   permissionSetupRequired: boolean;
   selected: boolean;
 }
+
+export type PermissionKey = 'canCreate' | 'canUpdate' | 'canDelete';

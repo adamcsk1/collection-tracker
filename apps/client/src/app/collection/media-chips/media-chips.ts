@@ -2,8 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { Router } from '@angular/router';
 import { RevealLabel } from '@components/reveal-label/reveal-label';
 import { NgxSignalTranslateService } from 'ngx-signal-translate';
-
-export type CollectionMediaChip = 'all' | 'movie' | 'series' | 'book';
+import type { CollectionMediaChip } from './media-chips-model';
 
 @Component({
   selector: 'ct-collection-media-chips',

@@ -1,25 +1,4 @@
-type ItemType = 'movie' | 'series';
-type ListType = 'library' | 'up-next' | 'wishlist' | 'tracking' | 'books';
-
-interface CollectionItemFixture {
-  image: string;
-  title: string;
-  genre: string[];
-  IMDbId: string;
-  externalProvider: string;
-  externalItemId: string;
-  tags: string[];
-  year: string | null;
-  rate: string;
-  rottenTomatoesRate: string;
-  metacriticRate: string;
-  userRate: number | null;
-  actors: string;
-  plot: string;
-  contentType: ItemType;
-  favorite: boolean;
-  listType?: ListType;
-}
+import type { CollectionItemFixture, ItemType, ListType } from './collection-item-model';
 
 export const buildCollectionItem = (
   title: string,

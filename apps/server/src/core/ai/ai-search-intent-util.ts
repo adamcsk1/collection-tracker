@@ -1,7 +1,6 @@
 import { CollectionListTypeModel } from '@shared/models/api-model';
 import { AiSearchCollectionItem } from '../database/repositories/collection';
-
-export type AiSearchStatusIntent = 'unfinished' | 'completed' | 'favorite';
+import type { AiSearchStatusIntent } from './ai-search-intent-model';
 
 const normalizeSearchText = (value: unknown): string =>
   `${value ?? ''}`
